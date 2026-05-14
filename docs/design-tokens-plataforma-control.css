@@ -1,0 +1,86 @@
+:root {
+  --surface: #ffffff;
+  --surface-page: #f4f0ed;
+  --surface-glow: #edf1f5;
+
+  --border: #dccfc8;
+  --border-subtle: #efe4df;
+
+  --accent: #be4f40;
+  --accent-deep: #a64436;
+  --accent-soft: #f8e7e2;
+  --accent-border: #e8c5bc;
+
+  --text-primary: #271f1b;
+  --text-base: #221f1d;
+  --text-muted: #6f655f;
+
+  --sidebar-start: #bf5445;
+  --sidebar-end: #b44739;
+
+  --font-text:
+    "Inter",
+    "Inter var",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  --font-display:
+    "Inter",
+    "Inter var",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  --radius-panel: 30px;
+  --radius-card: 24px;
+  --radius-input: 14px;
+  --radius-soft: 12px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 18px 42px rgba(109, 66, 47, 0.08);
+  --shadow-panel: 0 20px 40px rgba(95, 63, 49, 0.08);
+}
+
+body {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.92), rgba(244, 240, 237, 0.96)),
+    linear-gradient(180deg, var(--surface-glow) 0%, var(--surface-page) 100%);
+  color: var(--text-primary);
+  font-family: var(--font-text);
+}
+
+.app-sidebar {
+  background: linear-gradient(180deg, var(--sidebar-start) 0%, var(--sidebar-end) 100%);
+  color: #fffaf8;
+}
+
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.app-input {
+  min-height: 3.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  color: var(--text-base);
+  font-family: var(--font-text);
+}
+
+.app-button-primary {
+  min-height: 3.4rem;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: var(--accent);
+  color: #ffffff;
+  font-family: var(--font-text);
+  font-weight: 600;
+}
