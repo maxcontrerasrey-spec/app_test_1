@@ -6,6 +6,7 @@ import {
   type HiringRole,
   type ShiftCatalogItem
 } from "../services/hiringCatalogs";
+import { createHiringRequest } from "../services/hiringRequests";
 
 type GeneratedHiringRequest = {
   folio: string;
@@ -146,13 +147,6 @@ function formatCurrencyDisplay(value: string) {
   return new Intl.NumberFormat("es-CL").format(Number(value));
 }
 
-function createMockHiringFolio() {
-  const stored = window.localStorage.getItem("mock-last-hiring-folio");
-  const nextValue = stored ? Number(stored) + 1 : 1;
-  window.localStorage.setItem("mock-last-hiring-folio", String(nextValue));
-  return String(nextValue).padStart(4, "0");
-}
-
 export function HiringRequestPage() {
   const { displayName, jobTitle, email } = useAuth();
   const todayValue = toTodayDateValue();
@@ -173,6 +167,7 @@ export function HiringRequestPage() {
   const [rentaLiquidaOfrecida, setRentaLiquidaOfrecida] = useState("");
   const [turno, setTurno] = useState("");
   const [solicitanteFirmado, setSolicitanteFirmado] = useState(false);
+  const [isSavingRequest, setIsSavingRequest] = useState(false);
   const [localStatus, setLocalStatus] = useState("");
   const [isRequestedDatePickerOpen, setIsRequestedDatePickerOpen] = useState(false);
   const [requestedDateView, setRequestedDateView] = useState(() =>
@@ -296,15 +291,50 @@ export function HiringRequestPage() {
     [generatedRequest]
   );
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isSubmitEnabled || !selectedContract) {
       setGeneratedRequest(null);
       setLocalStatus("Complete los campos obligatorios y confirme la firma digital.");
       return;
     }
 
+    const selectedJobPosition =
+      hiringRoles.find((role) => role.name === cargoSolicitado) ?? null;
+    const selectedShift = shiftCatalog.find((shift) => shift.name === turno) ?? null;
+
+    if (!selectedJobPosition || !selectedShift) {
+      setGeneratedRequest(null);
+      setLocalStatus("No fue posible resolver todos los catálogos de la solicitud.");
+      return;
+    }
+
+    setIsSavingRequest(true);
+    const creationResult = await createHiringRequest({
+      requestedEntryDate: fechaSolicitadaIngreso,
+      jobPosition: selectedJobPosition,
+      vacancies: Number(numeroVacantes),
+      contract: selectedContract,
+      startDate: fechaInicio,
+      endDate: fechaTermino,
+      campamento: campamento === "Si",
+      pasajes: pasajes === "Si",
+      otherBenefits: otrosBeneficios,
+      salaryOffer: Number(rentaLiquidaOfrecida),
+      shift: selectedShift,
+      requesterSigned: solicitanteFirmado
+    });
+
+    if (creationResult.error || !creationResult.data) {
+      setGeneratedRequest(null);
+      setLocalStatus(
+        creationResult.error ?? "No fue posible guardar la solicitud en Supabase."
+      );
+      setIsSavingRequest(false);
+      return;
+    }
+
     const request: GeneratedHiringRequest = {
-      folio: createMockHiringFolio(),
+      folio: creationResult.data.folio,
       fechaSolicitud: formatDateForDisplay(toTodayDateValue()),
       estadoSolicitud: "Pendiente",
       solicitanteNombre: displayName,
@@ -331,7 +361,7 @@ export function HiringRequestPage() {
 
     setGeneratedRequest(request);
     setLocalStatus(
-      "Solicitud preparada con datos reales del solicitante y catalogos actualizados. El siguiente paso será guardarla en Supabase y disparar la cadena de aprobaciones."
+      `Solicitud ${creationResult.data.folio} guardada en Supabase. Permanecerá pendiente mientras falten aprobaciones requeridas.`
     );
     setFechaSolicitadaIngreso("");
     setCargoSolicitado("");
@@ -348,6 +378,7 @@ export function HiringRequestPage() {
     setRequestedDateView(parseDateValue(todayValue));
     setIsStartDatePickerOpen(false);
     setStartDateView(parseDateValue(todayValue));
+    setIsSavingRequest(false);
   };
 
   return (
@@ -948,11 +979,11 @@ export function HiringRequestPage() {
             <div className="action-row">
               <button
                 className="soft-primary-button"
-                disabled={!isSubmitEnabled}
+                disabled={!isSubmitEnabled || isSavingRequest}
                 onClick={handleSubmit}
                 type="button"
               >
-                Enviar solicitud
+                {isSavingRequest ? "Guardando solicitud" : "Enviar solicitud"}
               </button>
             </div>
 
