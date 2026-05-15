@@ -80,7 +80,7 @@ textarea {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(360px, max-content) 1fr;
+  grid-template-columns: minmax(280px, 320px) 1fr;
 }
 
 .sidebar {
@@ -460,6 +460,15 @@ textarea {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.home-overview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-detail-grid {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: start;
+}
+
 .info-card {
   display: grid;
   gap: 0.75rem;
@@ -804,6 +813,10 @@ textarea {
   min-width: 8.5rem;
 }
 
+.approval-panel-card {
+  align-self: start;
+}
+
 .approval-detail-card {
   gap: 1.2rem;
   margin-top: 0.15rem;
@@ -860,6 +873,83 @@ textarea {
 
 .approval-action-row-detail {
   padding-top: 0.1rem;
+}
+
+@media (max-width: 1500px) {
+  .main-content {
+    padding: 2.25rem 2.5rem 3rem;
+  }
+
+  .hero-panel h2,
+  .form-copy h2 {
+    font-size: clamp(2rem, 3.6vw, 3rem);
+  }
+
+  .home-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-overview-grid > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .home-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1320px) {
+  .app-shell {
+    grid-template-columns: minmax(250px, 280px) 1fr;
+  }
+
+  .sidebar {
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .brand-kicker {
+    font-size: 0.86rem;
+  }
+
+  .main-content {
+    padding: 2rem 1.75rem 2.5rem;
+  }
+
+  .hero-panel {
+    padding: 1.5rem;
+  }
+
+  .info-card {
+    padding: 1.25rem 1.25rem 1.35rem;
+  }
+
+  .approval-queue-item {
+    gap: 0.7rem;
+    padding: 0.85rem 0.85rem 0.95rem;
+  }
+
+  .approval-queue-copy {
+    display: grid;
+    gap: 0.45rem;
+    justify-items: start;
+  }
+
+  .approval-queue-copy span {
+    width: fit-content;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .approval-action-row .soft-primary-button {
+    min-width: 7.4rem;
+    min-height: 2.7rem;
+    padding: 0 1rem;
+  }
+
+  .approval-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .signature-panel {
@@ -1596,6 +1686,11 @@ textarea {
   .approval-detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .approval-action-row .soft-primary-button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1611,5 +1706,18 @@ textarea {
 
   .approval-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .approval-chip {
+    white-space: normal;
+  }
+
+  .approval-action-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .approval-action-row .soft-primary-button {
+    width: 100%;
   }
 }

@@ -168,3 +168,10 @@
 - [x] Ajustar composición visual y jerarquía de botones para la aprobación
 - [x] Completar detalle con renta, campamento, pasajes y beneficios
 - [x] Revalidar compilación y publicar el ajuste visual
+
+## Responsividad de Inicio
+
+- [x] Reducir presión visual del shell lateral en laptops pequeñas
+- [x] Hacer que las grillas de `Inicio` colapsen antes para evitar hacinamiento
+- [x] Reacomodar cards y acciones de aprobaciones para pantallas medianas y móviles
+- [x] Revalidar compilación y publicar el ajuste responsivo

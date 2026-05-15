@@ -228,7 +228,7 @@ export function HomePage() {
         </p>
       </div>
 
-      <div className="card-grid">
+      <div className="card-grid home-overview-grid">
         <article className="info-card">
           <h3>Mis solicitudes</h3>
           <p>{isLoading ? "Cargando..." : `${myRequests.length} registradas recientemente`}</p>
@@ -260,7 +260,7 @@ export function HomePage() {
         </article>
       </div>
 
-      <div className="card-grid">
+      <div className="card-grid home-detail-grid">
         <article className="info-card">
           <h3>Ultimas solicitudes realizadas</h3>
           {myRequests.length === 0 ? (
@@ -279,7 +279,7 @@ export function HomePage() {
         </article>
 
         {isApprover ? (
-          <article className="info-card">
+          <article className="info-card approval-panel-card">
             <h3>Aprobaciones pendientes para mi cuenta</h3>
             {pendingApprovals.length === 0 ? (
               <p>{isLoading ? "Cargando pendientes..." : "No tienes pendientes."}</p>
