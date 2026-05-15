@@ -33,7 +33,7 @@ export async function createHiringRequest(input: CreateHiringRequestInput) {
     };
   }
 
-  const { data, error } = await supabase.rpc("create_hiring_request", {
+  const { data, error } = await supabase.rpc("create_hiring_request_v2", {
     p_requested_entry_date: input.requestedEntryDate,
     p_job_position_id: input.jobPosition.id,
     p_job_position_name: input.jobPosition.name,
