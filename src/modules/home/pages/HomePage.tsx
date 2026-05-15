@@ -96,20 +96,26 @@ export function HomePage() {
       .order("created_at", { ascending: false })
       .limit(8);
 
-    const approvalsPromise = supabase
+    const isPrivilegedApprover =
+      isSuperAdmin || appRoles.includes("admin") || appRoles.includes("aprobador_folios");
+
+    let approvalsQuery = supabase
       .from("hiring_request_approvals")
       .select(
-        "id, step_code, step_name, hiring_request_id, hiring_requests!inner(folio, contract_name, contract_number, job_position_name, requester_name, requester_email, vacancies, requested_entry_date, start_date, end_date, shift_name, status)"
+        "id, step_code, step_name, hiring_request_id, approver_user_id, hiring_requests!inner(folio, contract_name, contract_number, job_position_name, requester_name, requester_email, vacancies, requested_entry_date, start_date, end_date, shift_name, status)"
       )
-      .eq("approver_user_id", user.id)
       .eq("status", "pending")
       .neq("step_code", "requester_signature")
       .order("created_at", { ascending: true })
       .limit(8);
 
+    if (!isPrivilegedApprover) {
+      approvalsQuery = approvalsQuery.eq("approver_user_id", user.id);
+    }
+
     const [requestsResponse, approvalsResponse] = await Promise.all([
       requestsPromise,
-      approvalsPromise
+      approvalsQuery
     ]);
 
     if (requestsResponse.error || approvalsResponse.error) {
@@ -123,7 +129,7 @@ export function HomePage() {
     setMyRequests((requestsResponse.data as HiringRequestSummaryRow[] | null) ?? []);
     setPendingApprovals((approvalsResponse.data as PendingApprovalRow[] | null) ?? []);
     setIsLoading(false);
-  }, [user?.id]);
+  }, [appRoles, isSuperAdmin, user?.id]);
 
   useEffect(() => {
     let isMounted = true;

@@ -124,17 +124,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userId = nextSession.user.id;
 
-      const profileResponse = await supabaseClient
-        .from("profiles")
-        .select("id, email, full_name, job_title, department, status, is_super_admin")
-        .eq("id", userId)
-        .maybeSingle<ProfileRecord>();
+      const [profileResponse, rolesResponse] = await Promise.all([
+        supabaseClient
+          .from("profiles")
+          .select("id, email, full_name, job_title, department, status, is_super_admin")
+          .eq("id", userId)
+          .maybeSingle<ProfileRecord>(),
+        supabaseClient.from("user_roles").select("*").eq("user_id", userId)
+      ]);
 
       if (!isMounted) {
         return;
       }
 
-      if (profileResponse.error) {
+      if (profileResponse.error || rolesResponse.error) {
         setProfile(null);
         setAppRoles([]);
         setAccessibleModules([]);
@@ -145,20 +148,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextProfile = profileResponse.data ?? null;
       setProfile(nextProfile);
 
-      const rolesResponse = await supabaseClient
-        .from("user_roles")
-        .select("role_code")
-        .eq("user_id", userId);
-
-      if (!isMounted) {
-        return;
-      }
-
       const nextRoles =
-        rolesResponse.error || !rolesResponse.data
+        !rolesResponse.data
           ? []
           : rolesResponse.data
-              .map((row) => normalizeRoleCode(row.role_code))
+              .map((row) => {
+                const roleValue =
+                  typeof row === "object" && row !== null
+                    ? "role_code" in row
+                      ? row.role_code
+                      : "role" in row
+                        ? row.role
+                        : null
+                    : null;
+
+                return normalizeRoleCode(typeof roleValue === "string" ? roleValue : null);
+              })
               .filter((role): role is AppRole => role !== null);
 
       setAppRoles(Array.from(new Set(nextRoles)));
