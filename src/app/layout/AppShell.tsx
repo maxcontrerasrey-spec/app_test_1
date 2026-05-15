@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { homeNavigationItem, navigationSections } from "../../shared/config/navigation";
 import logo from "../../assets/app-logo.png";
@@ -10,6 +10,7 @@ export function AppShell() {
   const { appRole, displayName, email, jobTitle, signOut } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const visibleSections = useMemo(
     () =>
       navigationSections
@@ -59,6 +60,21 @@ export function AppShell() {
 
     return initials || "U";
   }, [displayName]);
+
+  useEffect(() => {
+    if (!isUserMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isUserMenuOpen]);
 
   return (
     <div className="app-shell">
@@ -151,15 +167,13 @@ export function AppShell() {
           ) : null}
         </nav>
 
-        <div
-          className="user-panel-wrap"
-          onMouseEnter={() => setIsUserMenuOpen(true)}
-          onMouseLeave={() => setIsUserMenuOpen(false)}
-        >
+        <div className="user-panel-wrap" ref={userMenuRef}>
           <button
             type="button"
             className="user-panel"
             onClick={() => setIsUserMenuOpen((current) => !current)}
+            aria-expanded={isUserMenuOpen}
+            aria-haspopup="menu"
           >
             <div className="user-avatar" aria-hidden="true">
               {userInitials}
@@ -182,7 +196,14 @@ export function AppShell() {
               <button type="button" className="user-menu-action">
                 Mi perfil
               </button>
-              <button type="button" className="user-menu-action" onClick={() => void signOut()}>
+              <button
+                type="button"
+                className="user-menu-action"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  void signOut();
+                }}
+              >
                 Cerrar sesion
               </button>
             </div>
