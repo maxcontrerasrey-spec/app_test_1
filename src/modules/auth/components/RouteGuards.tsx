@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { hasRoleAccess, type AppRole } from "../config/access";
+import { hasModuleAccess, type AppModuleCode } from "../config/access";
 import { useAuth } from "../context/AuthContext";
 
 function AuthLoadingScreen() {
@@ -55,19 +55,19 @@ export function PublicOnlyRoute() {
 }
 
 export function RoleProtectedRoute({
-  allowedRoles,
+  moduleCode,
   children
 }: {
-  allowedRoles: AppRole[];
+  moduleCode: AppModuleCode;
   children: ReactNode;
 }) {
-  const { appRole, isLoading } = useAuth();
+  const { accessibleModules, isLoading, isSuperAdmin } = useAuth();
 
   if (isLoading) {
     return <AuthLoadingScreen />;
   }
 
-  if (!hasRoleAccess(appRole, allowedRoles)) {
+  if (!isSuperAdmin && !hasModuleAccess(accessibleModules, moduleCode)) {
     return <Navigate to="/sin-acceso" replace />;
   }
 

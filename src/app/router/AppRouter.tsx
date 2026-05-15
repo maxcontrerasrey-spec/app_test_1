@@ -70,7 +70,7 @@ export function AppRouter() {
             <Route
               path="/solicitud-contrataciones"
               element={
-                <RoleProtectedRoute allowedRoles={["admin", "reclutamiento"]}>
+                <RoleProtectedRoute moduleCode="solicitud_contrataciones">
                   <HiringRequestPage />
                 </RoleProtectedRoute>
               }
@@ -78,9 +78,7 @@ export function AppRouter() {
             <Route
               path="/control-contrataciones"
               element={
-                <RoleProtectedRoute
-                  allowedRoles={["admin", "reclutamiento", "control_contratos"]}
-                >
+                <RoleProtectedRoute moduleCode="control_contrataciones">
                   <HiringStatusPage />
                 </RoleProtectedRoute>
               }
@@ -88,9 +86,7 @@ export function AppRouter() {
             <Route
               path="/certificados"
               element={
-                <RoleProtectedRoute
-                  allowedRoles={["admin", "certificaciones", "instructor"]}
-                >
+                <RoleProtectedRoute moduleCode="certificados">
                   <CertificatesPage />
                 </RoleProtectedRoute>
               }
@@ -98,9 +94,7 @@ export function AppRouter() {
             <Route
               path="/seguimiento-certificados"
               element={
-                <RoleProtectedRoute
-                  allowedRoles={["admin", "certificaciones", "instructor"]}
-                >
+                <RoleProtectedRoute moduleCode="seguimiento_certificados">
                   <CertificateTrackingPage />
                 </RoleProtectedRoute>
               }

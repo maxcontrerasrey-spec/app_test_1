@@ -48,3 +48,12 @@
   - gating por rol en navegación y rutas
 - Recordatorio operativo:
   - Netlify debe tener `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` configuradas en variables de entorno; de lo contrario, `Continuar` no podrá autenticar contra Supabase
+
+## Base robusta de usuarios y permisos
+
+- [x] Definir un esquema formal de perfiles, roles y acceso a módulos en Supabase
+- [x] Materializar ese esquema en una migración SQL dentro del proyecto
+- [x] Documentar qué datos debe tener cada usuario futuro
+- [x] Documentar cómo poblar los dos primeros usuarios de prueba
+- [ ] Ejecutar la migración en Supabase
+- [ ] Cambiar el frontend para que lea roles desde tablas reales en vez de metadata temporal

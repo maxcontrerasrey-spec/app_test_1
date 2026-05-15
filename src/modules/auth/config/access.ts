@@ -1,5 +1,3 @@
-import type { User } from "@supabase/supabase-js";
-
 export type AppRole =
   | "admin"
   | "reclutamiento"
@@ -8,52 +6,59 @@ export type AppRole =
   | "instructor"
   | "guest";
 
-const SUPER_ADMIN_EMAILS = new Set(["maximiliano.contreras@busesjm.com"]);
+export type AppModuleCode =
+  | "solicitud_contrataciones"
+  | "control_contrataciones"
+  | "certificados"
+  | "seguimiento_certificados";
 
-const ROLE_ALIASES: Record<string, AppRole> = {
-  admin: "admin",
-  administrador: "admin",
-  reclutamiento: "reclutamiento",
-  recruitment: "reclutamiento",
-  control_contratos: "control_contratos",
-  "control contratos": "control_contratos",
-  certificaciones: "certificaciones",
-  certificacion: "certificaciones",
-  certifications: "certificaciones",
-  instructor: "instructor"
-};
+const KNOWN_ROLE_CODES = new Set<AppRole>([
+  "admin",
+  "reclutamiento",
+  "control_contratos",
+  "certificaciones",
+  "instructor",
+  "guest"
+]);
 
-function normalizeRoleCandidate(value: unknown) {
-  if (typeof value !== "string") {
+const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
+  "solicitud_contrataciones",
+  "control_contrataciones",
+  "certificados",
+  "seguimiento_certificados"
+]);
+
+export function normalizeRoleCode(value: string | null | undefined): AppRole | null {
+  if (!value) {
     return null;
   }
 
-  const normalized = value.trim().toLowerCase();
-  return ROLE_ALIASES[normalized] ?? null;
+  const normalized = value.trim().toLowerCase() as AppRole;
+  return KNOWN_ROLE_CODES.has(normalized) ? normalized : null;
 }
 
-export function resolveAppRole(user: User | null): AppRole {
-  const email = user?.email?.trim().toLowerCase();
-  if (email && SUPER_ADMIN_EMAILS.has(email)) {
-    return "admin";
+export function normalizeModuleCode(
+  value: string | null | undefined
+): AppModuleCode | null {
+  if (!value) {
+    return null;
   }
 
-  const candidates = [
-    user?.user_metadata?.app_role,
-    user?.user_metadata?.platform_role,
-    user?.user_metadata?.role
-  ];
-
-  for (const candidate of candidates) {
-    const role = normalizeRoleCandidate(candidate);
-    if (role) {
-      return role;
-    }
-  }
-
-  return "guest";
+  const normalized = value.trim().toLowerCase() as AppModuleCode;
+  return KNOWN_MODULE_CODES.has(normalized) ? normalized : null;
 }
 
-export function hasRoleAccess(role: AppRole, allowedRoles: AppRole[]) {
-  return allowedRoles.includes(role);
+export function resolvePrimaryRole(roles: AppRole[], isSuperAdmin: boolean) {
+  if (isSuperAdmin || roles.includes("admin")) {
+    return "admin" satisfies AppRole;
+  }
+
+  return roles[0] ?? "guest";
+}
+
+export function hasModuleAccess(
+  accessibleModules: AppModuleCode[],
+  moduleCode: AppModuleCode
+) {
+  return accessibleModules.includes(moduleCode);
 }

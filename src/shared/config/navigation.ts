@@ -1,4 +1,4 @@
-import type { AppRole } from "../../modules/auth/config/access";
+import type { AppModuleCode } from "../../modules/auth/config/access";
 
 export const homeNavigationItem = {
   to: "/",
@@ -6,9 +6,9 @@ export const homeNavigationItem = {
 };
 
 export type NavigationItem = {
+  moduleCode: AppModuleCode;
   to: string;
   label: string;
-  allowedRoles: AppRole[];
 };
 
 export type NavigationSection = {
@@ -21,24 +21,24 @@ export const navigationSections: NavigationSection[] = [
     title: "Reclutamiento & Entrenamiento",
     items: [
       {
+        moduleCode: "solicitud_contrataciones",
         to: "/solicitud-contrataciones",
-        label: "Solicitud de Contrataciones",
-        allowedRoles: ["admin", "reclutamiento"]
+        label: "Solicitud de Contrataciones"
       },
       {
+        moduleCode: "control_contrataciones",
         to: "/control-contrataciones",
-        label: "Control de Contrataciones",
-        allowedRoles: ["admin", "reclutamiento", "control_contratos"]
+        label: "Control de Contrataciones"
       },
       {
+        moduleCode: "certificados",
         to: "/certificados",
-        label: "Generador de Certificados - Competencias",
-        allowedRoles: ["admin", "certificaciones", "instructor"]
+        label: "Generador de Certificados - Competencias"
       },
       {
+        moduleCode: "seguimiento_certificados",
         to: "/seguimiento-certificados",
-        label: "Seguimiento de Certificados",
-        allowedRoles: ["admin", "certificaciones", "instructor"]
+        label: "Seguimiento de Certificados"
       }
     ]
   }

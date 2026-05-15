@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { homeNavigationItem, navigationSections } from "../../shared/config/navigation";
 import logo from "../../assets/app-logo.png";
-import { hasRoleAccess } from "../../modules/auth/config/access";
+import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
 
 export function AppShell() {
   const location = useLocation();
-  const { appRole, displayName, email, jobTitle, signOut } = useAuth();
+  const { accessibleModules, displayName, email, isSuperAdmin, jobTitle, signOut } =
+    useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
@@ -16,10 +17,12 @@ export function AppShell() {
       navigationSections
         .map((section) => ({
           ...section,
-          items: section.items.filter((item) => hasRoleAccess(appRole, item.allowedRoles))
+          items: section.items.filter(
+            (item) => isSuperAdmin || hasModuleAccess(accessibleModules, item.moduleCode)
+          )
         }))
         .filter((section) => section.items.length > 0),
-    [appRole]
+    [accessibleModules, isSuperAdmin]
   );
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
