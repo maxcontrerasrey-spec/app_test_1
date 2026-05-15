@@ -31,6 +31,10 @@ type PendingApprovalRow = {
         end_date?: string | null;
         shift_name?: string | null;
         status?: string | null;
+        salary_offer?: number | null;
+        campamento?: boolean | null;
+        pasajes?: boolean | null;
+        other_benefits?: string | null;
       }
     | {
         folio: string | null;
@@ -45,6 +49,10 @@ type PendingApprovalRow = {
         end_date?: string | null;
         shift_name?: string | null;
         status?: string | null;
+        salary_offer?: number | null;
+        campamento?: boolean | null;
+        pasajes?: boolean | null;
+        other_benefits?: string | null;
       }[]
     | null;
 };
@@ -66,6 +74,24 @@ function toStatusLabel(value: HiringRequestSummaryRow["status"]) {
   if (value === "rechazada") return "Rechazada";
   if (value === "cerrada") return "Cerrada";
   return "Pendiente";
+}
+
+function formatCurrencyValue(value: number | null | undefined) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "No disponible";
+  }
+
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function formatBooleanLabel(value: boolean | null | undefined) {
+  if (value === true) return "Si";
+  if (value === false) return "No";
+  return "No disponible";
 }
 
 export function HomePage() {
@@ -102,7 +128,7 @@ export function HomePage() {
     let approvalsQuery = supabase
       .from("hiring_request_approvals")
       .select(
-        "id, step_code, step_name, hiring_request_id, approver_user_id, hiring_requests!inner(folio, contract_name, contract_number, job_position_name, requester_name, requester_email, vacancies, requested_entry_date, start_date, end_date, shift_name, status)"
+        "id, step_code, step_name, hiring_request_id, approver_user_id, hiring_requests!inner(folio, contract_name, contract_number, job_position_name, requester_name, requester_email, vacancies, requested_entry_date, start_date, end_date, shift_name, status, salary_offer, campamento, pasajes, other_benefits)"
       )
       .eq("status", "pending")
       .neq("step_code", "requester_signature")
@@ -258,28 +284,31 @@ export function HomePage() {
             {pendingApprovals.length === 0 ? (
               <p>{isLoading ? "Cargando pendientes..." : "No tienes pendientes."}</p>
             ) : (
-              <ul className="summary-list">
+              <ul className="approval-queue">
                 {pendingApprovals.map((approval) => {
                   const request = Array.isArray(approval.hiring_requests)
                     ? approval.hiring_requests[0]
                     : approval.hiring_requests;
 
                   return (
-                    <li key={approval.id}>
-                      <strong>{request?.folio ?? "Sin folio"}</strong> · {approval.step_name} ·{" "}
-                      {request?.job_position_name ?? "Cargo no disponible"} ·{" "}
-                      {request?.contract_name ?? "Contrato no disponible"}
-                      <div style={{ marginTop: "0.45rem", display: "flex", gap: "0.5rem" }}>
+                    <li key={approval.id} className="approval-queue-item">
+                      <div className="approval-queue-copy">
+                        <strong>{request?.folio ?? "Sin folio"}</strong>
+                        <span>{approval.step_name}</span>
+                        <span>{request?.job_position_name ?? "Cargo no disponible"}</span>
+                        <span>{request?.contract_name ?? "Contrato no disponible"}</span>
+                      </div>
+                      <div className="approval-action-row">
                         <button
                           type="button"
-                          className="soft-primary-button"
+                          className="soft-primary-button soft-primary-button-neutral"
                           onClick={() => setSelectedApproval(approval)}
                         >
                           Ver detalle
                         </button>
                         <button
                           type="button"
-                          className="soft-primary-button"
+                          className="soft-primary-button soft-primary-button-success"
                           disabled={isDecisionLoading === approval.id}
                           onClick={() => handleApprovalDecision(approval.id, "approved")}
                         >
@@ -287,7 +316,7 @@ export function HomePage() {
                         </button>
                         <button
                           type="button"
-                          className="soft-primary-button"
+                          className="soft-primary-button soft-primary-button-danger"
                           disabled={isDecisionLoading === approval.id}
                           onClick={() => handleApprovalDecision(approval.id, "rejected")}
                         >
@@ -305,7 +334,7 @@ export function HomePage() {
       </div>
 
       {selectedApproval ? (
-        <div className="info-card" style={{ marginTop: "1.5rem" }}>
+        <div className="info-card approval-detail-card">
           {(() => {
             const request = Array.isArray(selectedApproval.hiring_requests)
               ? selectedApproval.hiring_requests[0]
@@ -314,40 +343,82 @@ export function HomePage() {
             return (
               <>
                 <h3>Detalle para aprobación</h3>
-                <p>
-                  <strong>Folio:</strong> {request?.folio ?? "Sin folio"} · <strong>Etapa:</strong>{" "}
-                  {selectedApproval.step_name}
-                </p>
-                <p>
-                  <strong>Solicitante:</strong> {request?.requester_name ?? "No disponible"} ·{" "}
-                  <strong>Correo:</strong> {request?.requester_email ?? "No disponible"}
-                </p>
-                <p>
-                  <strong>Cargo solicitado:</strong> {request?.job_position_name ?? "No disponible"} ·{" "}
-                  <strong>Vacantes:</strong> {request?.vacancies ?? 0}
-                </p>
-                <p>
-                  <strong>Contrato:</strong> {request?.contract_name ?? "No disponible"} ·{" "}
-                  <strong>Número contrato:</strong> {request?.contract_number ?? "No disponible"}
-                </p>
-                <p>
-                  <strong>Fecha solicitada ingreso:</strong>{" "}
-                  {request?.requested_entry_date
-                    ? formatRequestDate(request.requested_entry_date)
-                    : "No disponible"}{" "}
-                  · <strong>Inicio:</strong>{" "}
-                  {request?.start_date ? formatRequestDate(request.start_date) : "No disponible"} ·{" "}
-                  <strong>Término:</strong>{" "}
-                  {request?.end_date ? formatRequestDate(request.end_date) : "No disponible"}
-                </p>
-                <p>
-                  <strong>Turno:</strong> {request?.shift_name ?? "No disponible"} ·{" "}
-                  <strong>Estado actual:</strong> {request?.status ?? "No disponible"}
-                </p>
-                <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                <div className="approval-detail-grid">
+                  <div className="approval-detail-item">
+                    <small>Folio</small>
+                    <strong>{request?.folio ?? "Sin folio"}</strong>
+                  </div>
+                  <div className="approval-detail-item">
+                    <small>Etapa</small>
+                    <strong>{selectedApproval.step_name}</strong>
+                  </div>
+                  <div className="approval-detail-item">
+                    <small>Solicitante</small>
+                    <strong>{request?.requester_name ?? "No disponible"}</strong>
+                  </div>
+                  <div className="approval-detail-item">
+                    <small>Correo</small>
+                    <strong>{request?.requester_email ?? "No disponible"}</strong>
+                  </div>
+                  <div className="approval-detail-item">
+                    <small>Cargo solicitado</small>
+                    <strong>{request?.job_position_name ?? "No disponible"}</strong>
+                  </div>
+                  <div className="approval-detail-item">
+                    <small>Vacantes</small>
+                    <strong>{request?.vacancies ?? 0}</strong>
+                  </div>
+                  <div className="approval-detail-item">
+                    <small>Contrato</small>
+                    <strong>{request?.contract_name ?? "No disponible"}</strong>
+                  </div>
+                  <div className="approval-detail-item">
+                    <small>Numero contrato</small>
+                    <strong>{request?.contract_number ?? "No disponible"}</strong>
+                  </div>
+                </div>
+
+                <div className="approval-chip-row">
+                  <span className="approval-chip">
+                    Fecha ingreso:{" "}
+                    {request?.requested_entry_date
+                      ? formatRequestDate(request.requested_entry_date)
+                      : "No disponible"}
+                  </span>
+                  <span className="approval-chip">
+                    Inicio:{" "}
+                    {request?.start_date ? formatRequestDate(request.start_date) : "No disponible"}
+                  </span>
+                  <span className="approval-chip">
+                    Termino:{" "}
+                    {request?.end_date ? formatRequestDate(request.end_date) : "No disponible"}
+                  </span>
+                  <span className="approval-chip">
+                    Turno: {request?.shift_name ?? "No disponible"}
+                  </span>
+                  <span className="approval-chip">
+                    Renta: {formatCurrencyValue(request?.salary_offer)}
+                  </span>
+                  <span className="approval-chip">
+                    Campamento: {formatBooleanLabel(request?.campamento)}
+                  </span>
+                  <span className="approval-chip">
+                    Pasajes: {formatBooleanLabel(request?.pasajes)}
+                  </span>
+                  <span className="approval-chip">
+                    Estado: {request?.status ?? "No disponible"}
+                  </span>
+                </div>
+
+                <div className="approval-detail-note">
+                  <small>Otros beneficios</small>
+                  <strong>{request?.other_benefits?.trim() || "No informado"}</strong>
+                </div>
+
+                <div className="approval-action-row approval-action-row-detail">
                   <button
                     type="button"
-                    className="soft-primary-button"
+                    className="soft-primary-button soft-primary-button-success"
                     disabled={isDecisionLoading === selectedApproval.id}
                     onClick={() => handleApprovalDecision(selectedApproval.id, "approved")}
                   >
@@ -355,7 +426,7 @@ export function HomePage() {
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button"
+                    className="soft-primary-button soft-primary-button-danger"
                     disabled={isDecisionLoading === selectedApproval.id}
                     onClick={() => handleApprovalDecision(selectedApproval.id, "rejected")}
                   >
@@ -363,7 +434,7 @@ export function HomePage() {
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button"
+                    className="soft-primary-button soft-primary-button-neutral"
                     onClick={() => setSelectedApproval(null)}
                   >
                     Cerrar detalle

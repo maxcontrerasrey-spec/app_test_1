@@ -159,3 +159,12 @@
   - las aprobaciones quedan controladas por asignación de usuario en `hiring_approval_configs`
 - `npx tsc --noEmit`: correcto
 - `npm run build`: correcto
+
+## Refinamiento de Inicio para aprobaciones
+
+- [x] Corregir lectura de roles desde el esquema real de `user_roles`
+- [x] Hacer visible la bandeja de aprobaciones para `admin` y `aprobador_folios`
+- [x] Agregar vista de detalle del requerimiento desde `Inicio`
+- [x] Ajustar composición visual y jerarquía de botones para la aprobación
+- [x] Completar detalle con renta, campamento, pasajes y beneficios
+- [x] Revalidar compilación y publicar el ajuste visual
