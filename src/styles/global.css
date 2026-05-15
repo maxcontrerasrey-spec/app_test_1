@@ -311,6 +311,17 @@ textarea {
   padding-top: 0.2rem;
 }
 
+.nav-empty-state {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 247, 244, 0.84);
+  font-size: 0.9rem;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -1127,6 +1138,41 @@ textarea {
   background: #f4f6f8;
 }
 
+.auth-loading-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.92), rgba(244, 240, 237, 0.92)),
+    linear-gradient(180deg, #edf1f5 0%, #f4f0ed 100%);
+}
+
+.auth-loading-card {
+  display: grid;
+  gap: 0.35rem;
+  min-width: min(100%, 360px);
+  padding: 1.6rem 1.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 20px 40px rgba(95, 63, 49, 0.08);
+  text-align: center;
+}
+
+.auth-loading-card strong,
+.auth-loading-card span {
+  font-family: var(--font-text);
+}
+
+.auth-loading-card strong {
+  color: var(--title);
+}
+
+.auth-loading-card span {
+  color: var(--text-muted);
+}
+
 .login-shell {
   min-height: 100vh;
   display: grid;
@@ -1146,6 +1192,11 @@ textarea {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow: 0 28px 60px rgba(95, 63, 49, 0.16);
+}
+
+.login-frame-single {
+  grid-template-columns: minmax(360px, 520px);
+  justify-content: center;
 }
 
 .login-brand-panel {
@@ -1271,6 +1322,10 @@ textarea {
   padding: 2.5rem 2.2rem;
 }
 
+.login-form-panel-single {
+  min-height: 640px;
+}
+
 .login-card {
   display: grid;
   gap: 1rem;
@@ -1305,6 +1360,11 @@ textarea {
   min-height: 3.4rem;
 }
 
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .login-card .text-field:hover {
   border-color: #63a4ff;
   box-shadow: 0 0 0 1px rgba(76, 144, 255, 0.3), 0 0 14px rgba(76, 144, 255, 0.14);
@@ -1321,11 +1381,62 @@ textarea {
   text-align: center;
 }
 
-.login-link {
+.login-error {
+  margin: 0;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(190, 79, 64, 0.18);
+  border-radius: 14px;
+  background: rgba(248, 231, 226, 0.7);
+  color: var(--accent-deep);
+  font-size: 0.92rem;
+}
+
+.login-success {
+  margin: 0;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(45, 107, 81, 0.18);
+  border-radius: 14px;
+  background: rgba(229, 248, 239, 0.9);
+  color: #2d6b51;
+  font-size: 0.92rem;
+}
+
+.login-inline-link {
   width: fit-content;
+  padding: 0;
   margin: 0 auto;
+  border: 0;
+  background: transparent;
   color: var(--accent);
   font-weight: 600;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.login-inline-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-inline-link:hover,
+.login-inline-link:focus-visible {
+  color: var(--accent-deep);
+  text-decoration: underline;
+}
+
+.login-brand-top-centered {
+  justify-content: center;
+}
+
+.access-denied-card {
+  display: grid;
+  gap: 1rem;
+  max-width: 640px;
+}
+
+.access-denied-button {
+  width: fit-content;
 }
 
 @media (max-width: 1100px) {

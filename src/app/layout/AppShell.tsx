@@ -1,12 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { homeNavigationItem, navigationSections } from "../../shared/config/navigation";
 import logo from "../../assets/app-logo.png";
+import { hasRoleAccess } from "../../modules/auth/config/access";
+import { useAuth } from "../../modules/auth/context/AuthContext";
 
 export function AppShell() {
   const location = useLocation();
+  const { appRole, displayName, email, jobTitle, signOut } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const visibleSections = useMemo(
+    () =>
+      navigationSections
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) => hasRoleAccess(appRole, item.allowedRoles))
+        }))
+        .filter((section) => section.items.length > 0),
+    [appRole]
+  );
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       navigationSections.map((section) => [
@@ -33,10 +46,19 @@ export function AppShell() {
 
   const collapseAllSections = () => {
     setHoveredSection(null);
-    setOpenSections(
-      Object.fromEntries(navigationSections.map((section) => [section.title, false]))
-    );
+    setOpenSections(Object.fromEntries(visibleSections.map((section) => [section.title, false])));
   };
+
+  const userInitials = useMemo(() => {
+    const initials = displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((chunk) => chunk.charAt(0).toUpperCase())
+      .join("");
+
+    return initials || "U";
+  }, [displayName]);
 
   return (
     <div className="app-shell">
@@ -63,7 +85,7 @@ export function AppShell() {
             <span>{homeNavigationItem.label}</span>
           </NavLink>
 
-          {navigationSections.map((section) => (
+          {visibleSections.map((section) => (
             (() => {
               const isSectionActive = section.items.some((item) =>
                 location.pathname.startsWith(item.to)
@@ -120,6 +142,13 @@ export function AppShell() {
               );
             })()
           ))}
+
+          {visibleSections.length === 0 ? (
+            <div className="nav-empty-state">
+              <strong>Sin módulos habilitados</strong>
+              <span>Tu cuenta aún no tiene roles asignados para esta plataforma.</span>
+            </div>
+          ) : null}
         </nav>
 
         <div
@@ -133,27 +162,27 @@ export function AppShell() {
             onClick={() => setIsUserMenuOpen((current) => !current)}
           >
             <div className="user-avatar" aria-hidden="true">
-              MC
+              {userInitials}
             </div>
             <div className="user-meta">
-              <strong>Maximiliano Contreras</strong>
-              <span>max.contreras@empresa.com</span>
-              <small>Acceso Microsoft 365</small>
+              <strong>{displayName}</strong>
+              <span>{email || "Correo no disponible"}</span>
+              <small>{jobTitle}</small>
             </div>
           </button>
 
           {isUserMenuOpen ? (
             <div className="user-menu">
               <div className="user-menu-header">
-                <strong>Maximiliano Contreras</strong>
-                <span>max.contreras@empresa.com</span>
-                <small>Acceso Microsoft 365</small>
+                <strong>{displayName}</strong>
+                <span>{email || "Correo no disponible"}</span>
+                <small>{jobTitle}</small>
               </div>
 
               <button type="button" className="user-menu-action">
                 Mi perfil
               </button>
-              <button type="button" className="user-menu-action">
+              <button type="button" className="user-menu-action" onClick={() => void signOut()}>
                 Cerrar sesion
               </button>
             </div>
