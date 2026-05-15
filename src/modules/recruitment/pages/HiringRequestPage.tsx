@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../auth/context/AuthContext";
 import {
-  contractCatalog,
-  hiringRoles,
-  shiftCatalog
-} from "../../../shared/services/catalogs";
+  fetchHiringCatalogs,
+  type ContractCatalogItem,
+  type HiringRole,
+  type ShiftCatalogItem
+} from "../services/hiringCatalogs";
 
 type GeneratedHiringRequest = {
   folio: string;
@@ -21,8 +23,6 @@ type GeneratedHiringRequest = {
   unidadCosto: string;
   nombreCentroCosto: string;
   codigoCentroCosto: string;
-  gerenteArea: string;
-  gerenteAreaCorreo: string;
   fechaInicio: string;
   fechaTermino: string;
   campamento: string;
@@ -31,12 +31,6 @@ type GeneratedHiringRequest = {
   rentaLiquidaOfrecida: string;
   turno: string;
   solicitanteFirmado: string;
-};
-
-const requesterProfile = {
-  fullName: "Maximiliano Contreras",
-  role: "Gerente de Operaciones",
-  email: "max.contreras@empresa.com"
 };
 
 const yesNoOptions = ["Si", "No"];
@@ -160,8 +154,14 @@ function createMockHiringFolio() {
 }
 
 export function HiringRequestPage() {
+  const { displayName, jobTitle, email } = useAuth();
   const todayValue = toTodayDateValue();
   const currentYear = new Date().getFullYear();
+  const [hiringRoles, setHiringRoles] = useState<HiringRole[]>([]);
+  const [contractCatalog, setContractCatalog] = useState<ContractCatalogItem[]>([]);
+  const [shiftCatalog, setShiftCatalog] = useState<ShiftCatalogItem[]>([]);
+  const [isCatalogsLoading, setIsCatalogsLoading] = useState(true);
+  const [catalogsError, setCatalogsError] = useState("");
   const [fechaSolicitadaIngreso, setFechaSolicitadaIngreso] = useState("");
   const [cargoSolicitado, setCargoSolicitado] = useState("");
   const [numeroVacantes, setNumeroVacantes] = useState("1");
@@ -182,6 +182,32 @@ export function HiringRequestPage() {
   const [startDateView, setStartDateView] = useState(() => parseDateValue(todayValue));
   const [generatedRequest, setGeneratedRequest] =
     useState<GeneratedHiringRequest | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCatalogs = async () => {
+      setIsCatalogsLoading(true);
+      const result = await fetchHiringCatalogs();
+
+      if (!isMounted) {
+        return;
+      }
+
+      setHiringRoles(result.hiringRoles);
+      setContractCatalog(result.contractCatalog);
+      setShiftCatalog(result.shiftCatalog);
+      setCatalogsError(result.error ?? "");
+      setIsCatalogsLoading(false);
+    };
+
+    void loadCatalogs();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const contractOptions = useMemo(
     () =>
       [...contractCatalog].sort((left, right) =>
@@ -191,7 +217,7 @@ export function HiringRequestPage() {
   );
 
   const selectedContract =
-    contractCatalog.find((contract) => contract.contractName === nombreContrato) ?? null;
+    contractOptions.find((contract) => contract.contractName === nombreContrato) ?? null;
   const fechaTermino = addThreeMonths(fechaInicio);
   const selectedRequestedDate = fechaSolicitadaIngreso
     ? parseDateValue(fechaSolicitadaIngreso)
@@ -204,6 +230,8 @@ export function HiringRequestPage() {
   const yearOptions = Array.from({ length: 9 }, (_, index) => currentYear - 1 + index);
 
   const isSubmitEnabled =
+    !isCatalogsLoading &&
+    !catalogsError &&
     Boolean(fechaSolicitadaIngreso) &&
     Boolean(cargoSolicitado) &&
     Boolean(numeroVacantes) &&
@@ -218,11 +246,10 @@ export function HiringRequestPage() {
     solicitanteFirmado;
 
   const summaryRows = [
-    { label: "Solicitante", value: requesterProfile.fullName },
-    { label: "Cargo solicitante", value: requesterProfile.role },
+    { label: "Solicitante", value: displayName },
+    { label: "Cargo solicitante", value: jobTitle },
     { label: "Cargo solicitado", value: cargoSolicitado || "Pendiente" },
     { label: "Contrato", value: nombreContrato || "Pendiente" },
-    { label: "Gerente del area", value: selectedContract?.areaManager || "Pendiente" },
     { label: "Fecha inicio", value: formatDateForDisplay(fechaInicio) || "Pendiente" },
     { label: "Fecha termino", value: formatDateForDisplay(fechaTermino) || "Pendiente" },
     {
@@ -251,7 +278,6 @@ export function HiringRequestPage() {
             { label: "Numero contrato", value: generatedRequest.numeroContrato },
             { label: "Unidad costo", value: generatedRequest.unidadCosto },
             { label: "Centro costo", value: generatedRequest.nombreCentroCosto },
-            { label: "Gerente area", value: generatedRequest.gerenteArea },
             { label: "Fecha inicio", value: generatedRequest.fechaInicio },
             { label: "Fecha termino", value: generatedRequest.fechaTermino },
             { label: "Campamento", value: generatedRequest.campamento },
@@ -281,9 +307,9 @@ export function HiringRequestPage() {
       folio: createMockHiringFolio(),
       fechaSolicitud: formatDateForDisplay(toTodayDateValue()),
       estadoSolicitud: "Pendiente",
-      solicitanteNombre: requesterProfile.fullName,
-      solicitanteCargo: requesterProfile.role,
-      solicitanteCorreo: requesterProfile.email,
+      solicitanteNombre: displayName,
+      solicitanteCargo: jobTitle,
+      solicitanteCorreo: email,
       fechaSolicitadaIngreso: formatDateForDisplay(fechaSolicitadaIngreso),
       cargoSolicitado,
       numeroVacantes,
@@ -293,8 +319,6 @@ export function HiringRequestPage() {
       unidadCosto: selectedContract.costUnit,
       nombreCentroCosto: selectedContract.costCenterName,
       codigoCentroCosto: selectedContract.costCenterCode,
-      gerenteArea: selectedContract.areaManager,
-      gerenteAreaCorreo: selectedContract.areaManagerEmail,
       fechaInicio: formatDateForDisplay(fechaInicio),
       fechaTermino: formatDateForDisplay(fechaTermino),
       campamento,
@@ -307,7 +331,7 @@ export function HiringRequestPage() {
 
     setGeneratedRequest(request);
     setLocalStatus(
-      "Solicitud generada en modo local. El siguiente paso será enviarla a SharePoint y disparar la cadena de aprobaciones."
+      "Solicitud preparada con datos reales del solicitante y catalogos actualizados. El siguiente paso será guardarla en Supabase y disparar la cadena de aprobaciones."
     );
     setFechaSolicitadaIngreso("");
     setCargoSolicitado("");
@@ -336,6 +360,13 @@ export function HiringRequestPage() {
             Complete los campos obligatorios de la solicitud para registrar una nueva
             contratacion y dejarla lista para aprobacion.
           </p>
+          <p className="hero-copy">
+            {isCatalogsLoading
+              ? "Cargando catálogos desde Supabase."
+              : catalogsError
+                ? catalogsError
+                : "Catálogos operativos cargados desde Supabase."}
+          </p>
         </div>
 
         <div className="form-workspace">
@@ -348,7 +379,7 @@ export function HiringRequestPage() {
                 <input
                   className="text-field text-field-readonly"
                   id="solicitante-nombre"
-                  value={requesterProfile.fullName}
+                  value={displayName}
                   readOnly
                   type="text"
                 />
@@ -361,7 +392,7 @@ export function HiringRequestPage() {
                 <input
                   className="text-field text-field-readonly"
                   id="solicitante-cargo"
-                  value={requesterProfile.role}
+                  value={jobTitle}
                   readOnly
                   type="text"
                 />
@@ -375,7 +406,7 @@ export function HiringRequestPage() {
               <input
                 className="text-field text-field-readonly"
                 id="solicitante-correo"
-                value={requesterProfile.email}
+                value={email}
                 readOnly
                 type="email"
               />
@@ -388,6 +419,7 @@ export function HiringRequestPage() {
               <select
                 className="text-field"
                 id="cargo-solicitado"
+                disabled={isCatalogsLoading || Boolean(catalogsError)}
                 value={cargoSolicitado}
                 onChange={(event) => setCargoSolicitado(event.target.value)}
               >
@@ -564,6 +596,7 @@ export function HiringRequestPage() {
               <select
                 className="text-field"
                 id="nombre-contrato"
+                disabled={isCatalogsLoading || Boolean(catalogsError)}
                 value={nombreContrato}
                 onChange={(event) => setNombreContrato(event.target.value)}
               >
@@ -577,33 +610,17 @@ export function HiringRequestPage() {
             </div>
 
             <div className="field-group">
-              <div className="field-group">
-                <label className="field-label" htmlFor="numero-contrato">
-                  Numero contrato
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="numero-contrato"
-                  value={selectedContract?.contractNumber ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="gerente-area">
-                  Gerente del area
-                </label>
-                <input
-                  className="text-field text-field-readonly text-field-wrap"
-                  id="gerente-area"
-                  value={selectedContract?.areaManager ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
+              <label className="field-label" htmlFor="numero-contrato">
+                Numero contrato
+              </label>
+              <input
+                className="text-field text-field-readonly"
+                id="numero-contrato"
+                value={selectedContract?.contractNumber ?? ""}
+                placeholder="Se completa automaticamente"
+                readOnly
+                type="text"
+              />
             </div>
 
             <div className="field-group">
@@ -885,6 +902,7 @@ export function HiringRequestPage() {
                 <select
                   className="text-field"
                   id="turno"
+                  disabled={isCatalogsLoading || Boolean(catalogsError)}
                   value={turno}
                   onChange={(event) => setTurno(event.target.value)}
                 >

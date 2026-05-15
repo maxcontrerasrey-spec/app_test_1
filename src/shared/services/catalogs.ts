@@ -1,9 +1,6 @@
 import instructorsCsv from "../data/instructores.csv?raw";
 import workersCsv from "../data/trabajadores.csv?raw";
 import vehiclesCsv from "../data/catalogoVehiculos.csv?raw";
-import hiringRolesCsv from "../data/cargosSolicitud.csv?raw";
-import contractCatalogCsv from "../data/contratosSolicitud.csv?raw";
-import shiftCatalogCsv from "../data/turnosSolicitud.csv?raw";
 
 export type Instructor = {
   id: string;
@@ -26,31 +23,6 @@ export type VehicleCatalogItem = {
   brand: string;
   type: string;
   model: string;
-  active: boolean;
-};
-
-export type HiringRole = {
-  id: string;
-  name: string;
-  active: boolean;
-};
-
-export type ContractCatalogItem = {
-  id: string;
-  contractNumber: string;
-  contractName: string;
-  costUnit: string;
-  costUnitName: string;
-  costCenterCode: string;
-  costCenterName: string;
-  areaManager: string;
-  areaManagerEmail: string;
-  active: boolean;
-};
-
-export type ShiftCatalogItem = {
-  id: string;
-  name: string;
   active: boolean;
 };
 
@@ -150,34 +122,3 @@ export const vehicleCatalog: VehicleCatalogItem[] = parseCsv(vehiclesCsv)
     active: row.Activo === "1"
   }))
   .filter((item) => item.active && item.brand && item.model);
-
-export const hiringRoles: HiringRole[] = parseCsv(hiringRolesCsv)
-  .map((row) => ({
-    id: row.Title,
-    name: row.NombreCargo,
-    active: row.Activo === "1"
-  }))
-  .filter((item) => item.active && item.name);
-
-export const contractCatalog: ContractCatalogItem[] = parseCsv(contractCatalogCsv)
-  .map((row) => ({
-    id: row.Title,
-    contractNumber: row.NumeroContrato,
-    contractName: row.NombreContrato,
-    costUnit: row.UnidadCosto,
-    costUnitName: row.NombreUnidadCosto,
-    costCenterCode: row.CodigoCentroCosto,
-    costCenterName: row.NombreCentroCosto,
-    areaManager: row.GerenteArea,
-    areaManagerEmail: row.CorreoGerente,
-    active: row.Activo === "1"
-  }))
-  .filter((item) => item.active && item.contractName);
-
-export const shiftCatalog: ShiftCatalogItem[] = parseCsv(shiftCatalogCsv)
-  .map((row) => ({
-    id: row.Title,
-    name: row.NombreTurno,
-    active: row.Activo === "1"
-  }))
-  .filter((item) => item.active && item.name);
