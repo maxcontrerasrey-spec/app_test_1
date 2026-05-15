@@ -80,7 +80,7 @@ textarea {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(280px, 320px) 1fr;
+  grid-template-columns: minmax(320px, 350px) 1fr;
 }
 
 .sidebar {
@@ -138,6 +138,7 @@ textarea {
 
 .brand-kicker {
   color: rgba(255, 247, 244, 0.9);
+  white-space: nowrap;
 }
 
 .eyebrow {
@@ -356,6 +357,9 @@ textarea {
   font-weight: 500;
   font-family: var(--font-text);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-toggle-indicator {
@@ -395,6 +399,9 @@ textarea {
   font-weight: 450;
   font-family: var(--font-text);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .main-content {
@@ -850,6 +857,9 @@ textarea {
 .approval-detail-note strong {
   color: #31353a;
   line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .approval-chip-row {
@@ -900,7 +910,7 @@ textarea {
 
 @media (max-width: 1320px) {
   .app-shell {
-    grid-template-columns: minmax(250px, 280px) 1fr;
+    grid-template-columns: minmax(300px, 330px) 1fr;
   }
 
   .sidebar {
@@ -909,7 +919,11 @@ textarea {
   }
 
   .brand-kicker {
-    font-size: 0.86rem;
+    font-size: 0.82rem;
+  }
+
+  .nav-item span {
+    font-size: 0.9rem;
   }
 
   .main-content {
@@ -938,7 +952,9 @@ textarea {
   .approval-queue-copy span {
     width: fit-content;
     max-width: 100%;
-    white-space: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .approval-action-row .soft-primary-button {

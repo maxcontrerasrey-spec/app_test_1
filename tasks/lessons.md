@@ -14,3 +14,4 @@
 - Si un catálogo depende de datos cargados de forma asíncrona, no usar `useMemo` con dependencias vacías para derivar sus opciones. Eso congela el estado inicial y deja selects aparentemente vacíos aunque la consulta haya respondido bien.
 - Si el esquema real diverge del esperado en frontend, no asumir nombres de columnas como `role_code`; la integración debe tolerar transiciones controladas como `role` vs `role_code` cuando la base todavía está en consolidación.
 - Cuando se agreguen acciones nuevas al dashboard, no resolver la composición con estilos inline. Integrar clases en `global.css` y asegurar que el detalle muestre todos los datos relevantes para decidir, no solo un subconjunto mínimo.
+- En esta app, la regla visual para navegación lateral y datos compactos es una sola línea. Si un texto largo no cabe, debe truncarse con elipsis; no permitir saltos de línea en sidebar ni en tarjetas compactas salvo que el usuario pida lo contrario.

@@ -354,15 +354,21 @@ export function HomePage() {
                   </div>
                   <div className="approval-detail-item">
                     <small>Solicitante</small>
-                    <strong>{request?.requester_name ?? "No disponible"}</strong>
+                    <strong title={request?.requester_name ?? "No disponible"}>
+                      {request?.requester_name ?? "No disponible"}
+                    </strong>
                   </div>
                   <div className="approval-detail-item">
                     <small>Correo</small>
-                    <strong>{request?.requester_email ?? "No disponible"}</strong>
+                    <strong title={request?.requester_email ?? "No disponible"}>
+                      {request?.requester_email ?? "No disponible"}
+                    </strong>
                   </div>
                   <div className="approval-detail-item">
                     <small>Cargo solicitado</small>
-                    <strong>{request?.job_position_name ?? "No disponible"}</strong>
+                    <strong title={request?.job_position_name ?? "No disponible"}>
+                      {request?.job_position_name ?? "No disponible"}
+                    </strong>
                   </div>
                   <div className="approval-detail-item">
                     <small>Vacantes</small>
@@ -370,11 +376,15 @@ export function HomePage() {
                   </div>
                   <div className="approval-detail-item">
                     <small>Contrato</small>
-                    <strong>{request?.contract_name ?? "No disponible"}</strong>
+                    <strong title={request?.contract_name ?? "No disponible"}>
+                      {request?.contract_name ?? "No disponible"}
+                    </strong>
                   </div>
                   <div className="approval-detail-item">
                     <small>Numero contrato</small>
-                    <strong>{request?.contract_number ?? "No disponible"}</strong>
+                    <strong title={request?.contract_number ?? "No disponible"}>
+                      {request?.contract_number ?? "No disponible"}
+                    </strong>
                   </div>
                 </div>
 
