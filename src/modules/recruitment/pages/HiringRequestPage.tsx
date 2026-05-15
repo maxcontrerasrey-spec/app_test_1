@@ -213,7 +213,7 @@ export function HiringRequestPage() {
       [...contractCatalog].sort((left, right) =>
         left.contractName.localeCompare(right.contractName, "es")
       ),
-    []
+    [contractCatalog]
   );
 
   const selectedContract =

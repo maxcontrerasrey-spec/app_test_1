@@ -9,3 +9,6 @@
 - La autorización no se resuelve solo con sesión iniciada: navegación y rutas deben operar con política por defecto restrictiva hasta que exista una capa formal de roles en base de datos.
 - La recuperación de contraseña debe ser real o no existir; un enlace decorativo en login genera una falsa sensación de funcionalidad.
 - No usar hover como mecanismo principal para acciones críticas en menús de usuario; si hay acciones como `Cerrar sesión`, el menú debe mantenerse estable por clic y cerrarse por click afuera o acción explícita.
+- Cada vez que se agregue un módulo nuevo a la app, debe revisarse explícitamente si corresponde extender la base de datos de autorización (`app_modules`, `role_module_access`, y eventualmente `app_roles` o `profiles`). No dar por terminado un módulo nuevo sin esa verificación.
+- Los controles de inactividad deben implementarse en la capa central de auth/sesión, no dentro de pantallas aisladas. Si la sesión caduca por inactividad, el comportamiento debe ser consistente para toda la app.
+- Si un catálogo depende de datos cargados de forma asíncrona, no usar `useMemo` con dependencias vacías para derivar sus opciones. Eso congela el estado inicial y deja selects aparentemente vacíos aunque la consulta haya respondido bien.
