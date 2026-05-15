@@ -15,17 +15,36 @@ type HiringRequestSummaryRow = {
 type PendingApprovalRow = {
   id: number;
   step_name: string;
+  step_code?: string;
   hiring_request_id: string;
   hiring_requests:
     | {
         folio: string | null;
         contract_name: string;
+        contract_number?: string | null;
         job_position_name: string;
+        requester_name?: string | null;
+        requester_email?: string | null;
+        vacancies?: number | null;
+        requested_entry_date?: string | null;
+        start_date?: string | null;
+        end_date?: string | null;
+        shift_name?: string | null;
+        status?: string | null;
       }
     | {
         folio: string | null;
         contract_name: string;
+        contract_number?: string | null;
         job_position_name: string;
+        requester_name?: string | null;
+        requester_email?: string | null;
+        vacancies?: number | null;
+        requested_entry_date?: string | null;
+        start_date?: string | null;
+        end_date?: string | null;
+        shift_name?: string | null;
+        status?: string | null;
       }[]
     | null;
 };
@@ -57,6 +76,7 @@ export function HomePage() {
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovalRow[]>([]);
   const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
   const [decisionMessage, setDecisionMessage] = useState("");
+  const [selectedApproval, setSelectedApproval] = useState<PendingApprovalRow | null>(null);
 
   const loadHomeSummary = useCallback(async () => {
     if (!supabase || !user?.id) {
@@ -79,7 +99,7 @@ export function HomePage() {
     const approvalsPromise = supabase
       .from("hiring_request_approvals")
       .select(
-        "id, step_name, hiring_request_id, hiring_requests!inner(folio, contract_name, job_position_name)"
+        "id, step_code, step_name, hiring_request_id, hiring_requests!inner(folio, contract_name, contract_number, job_position_name, requester_name, requester_email, vacancies, requested_entry_date, start_date, end_date, shift_name, status)"
       )
       .eq("approver_user_id", user.id)
       .eq("status", "pending")
@@ -161,6 +181,7 @@ export function HomePage() {
 
     setDecisionMessage(decision === "approved" ? "Aprobación registrada." : "Rechazo registrado.");
     setIsDecisionLoading(null);
+    setSelectedApproval(null);
     await loadHomeSummary();
   };
 
@@ -246,6 +267,13 @@ export function HomePage() {
                         <button
                           type="button"
                           className="soft-primary-button"
+                          onClick={() => setSelectedApproval(approval)}
+                        >
+                          Ver detalle
+                        </button>
+                        <button
+                          type="button"
+                          className="soft-primary-button"
                           disabled={isDecisionLoading === approval.id}
                           onClick={() => handleApprovalDecision(approval.id, "approved")}
                         >
@@ -269,6 +297,77 @@ export function HomePage() {
           </article>
         ) : null}
       </div>
+
+      {selectedApproval ? (
+        <div className="info-card" style={{ marginTop: "1.5rem" }}>
+          {(() => {
+            const request = Array.isArray(selectedApproval.hiring_requests)
+              ? selectedApproval.hiring_requests[0]
+              : selectedApproval.hiring_requests;
+
+            return (
+              <>
+                <h3>Detalle para aprobación</h3>
+                <p>
+                  <strong>Folio:</strong> {request?.folio ?? "Sin folio"} · <strong>Etapa:</strong>{" "}
+                  {selectedApproval.step_name}
+                </p>
+                <p>
+                  <strong>Solicitante:</strong> {request?.requester_name ?? "No disponible"} ·{" "}
+                  <strong>Correo:</strong> {request?.requester_email ?? "No disponible"}
+                </p>
+                <p>
+                  <strong>Cargo solicitado:</strong> {request?.job_position_name ?? "No disponible"} ·{" "}
+                  <strong>Vacantes:</strong> {request?.vacancies ?? 0}
+                </p>
+                <p>
+                  <strong>Contrato:</strong> {request?.contract_name ?? "No disponible"} ·{" "}
+                  <strong>Número contrato:</strong> {request?.contract_number ?? "No disponible"}
+                </p>
+                <p>
+                  <strong>Fecha solicitada ingreso:</strong>{" "}
+                  {request?.requested_entry_date
+                    ? formatRequestDate(request.requested_entry_date)
+                    : "No disponible"}{" "}
+                  · <strong>Inicio:</strong>{" "}
+                  {request?.start_date ? formatRequestDate(request.start_date) : "No disponible"} ·{" "}
+                  <strong>Término:</strong>{" "}
+                  {request?.end_date ? formatRequestDate(request.end_date) : "No disponible"}
+                </p>
+                <p>
+                  <strong>Turno:</strong> {request?.shift_name ?? "No disponible"} ·{" "}
+                  <strong>Estado actual:</strong> {request?.status ?? "No disponible"}
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    disabled={isDecisionLoading === selectedApproval.id}
+                    onClick={() => handleApprovalDecision(selectedApproval.id, "approved")}
+                  >
+                    Aprobar
+                  </button>
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    disabled={isDecisionLoading === selectedApproval.id}
+                    onClick={() => handleApprovalDecision(selectedApproval.id, "rejected")}
+                  >
+                    Rechazar
+                  </button>
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    onClick={() => setSelectedApproval(null)}
+                  >
+                    Cerrar detalle
+                  </button>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      ) : null}
     </section>
   );
 }

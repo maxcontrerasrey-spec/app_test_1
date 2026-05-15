@@ -130,3 +130,32 @@
   - no fue necesario extender `app_modules`, `role_module_access`, `app_roles` ni `profiles`, porque el módulo y los perfiles operativos ya existían.
 - `npx tsc --noEmit`: correcto
 - `npm run build`: correcto
+
+## Persistencia y aprobaciones de contrataciones
+
+- [x] Extender el esquema de Supabase para soportar aprobaciones de solicitudes de contratación
+- [x] Agregar mecanismo de creación real de solicitudes en base de datos
+- [x] Dejar la solicitud en estado `pendiente` mientras falten aprobaciones requeridas
+- [x] Preparar estructura para que `Control de Contrataciones` lea el requerimiento base desde la misma fuente
+- [x] Verificar si este ajuste exige cambios en autorización o roles
+- [x] Revalidar compilación y build después del ajuste
+
+## Resultado de persistencia y aprobaciones de contrataciones
+
+- Se agregó la migración [20260515_000003_hiring_request_approvals.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260515_000003_hiring_request_approvals.sql:1) con:
+  - `hiring_approval_configs`
+  - `hiring_request_approvals`
+  - función `refresh_hiring_request_status(...)`
+  - RPC `create_hiring_request(...)`
+  - RPC `decide_hiring_request_approval(...)`
+- `Solicitud de Contrataciones` ya no solo arma un resumen local: ahora quedó preparada para guardar el requerimiento completo en Supabase usando [hiringRequests.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringRequests.ts:1).
+- La lógica de estado quedó definida así:
+  - `pendiente` mientras falte la aprobación operativa o de control de contratos
+  - `rechazada` si cualquier aprobación requerida rechaza
+  - `aprobada` si las tres etapas requeridas quedan aprobadas
+- La misma tabla `hiring_requests` queda como fuente maestra para que `Control de Contrataciones` lea el requerimiento base.
+- Revisión de autorización:
+  - no fue necesario extender `app_modules`, `role_module_access`, `app_roles` ni `profiles`, porque se reutilizan los perfiles y módulos ya existentes
+  - las aprobaciones quedan controladas por asignación de usuario en `hiring_approval_configs`
+- `npx tsc --noEmit`: correcto
+- `npm run build`: correcto
