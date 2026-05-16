@@ -1,5 +1,28 @@
 # Plan de trabajo
 
+## Navegación superior Opaline
+
+- [x] Reemplazar la barra lateral por una navegación superior que aproveche el ancho horizontal
+- [x] Renombrar `Reclutamiento & Entrenamiento` a `Reclutamiento`
+- [x] Implementar submenú flotante para `Reclutamiento` con apertura por hover y fijación por clic
+- [x] Agregar módulos vacíos `Operaciones` y `Recursos Humanos`
+- [x] Migrar la paleta visual principal a contrastes Opaline
+- [x] Verificar si el cambio de módulos exige extensión en `app_modules` y `role_module_access`
+- [x] Revalidar compilación y comportamiento base del shell superior
+
+## Resultado de navegación superior Opaline
+
+- La app dejó de usar la barra lateral y ahora concentra la navegación principal en una barra superior que aprovecha el ancho horizontal.
+- `Reclutamiento & Entrenamiento` fue renombrado a `Reclutamiento`.
+- El submenú de `Reclutamiento` quedó con apertura por hover y fijación por clic dentro del shell superior.
+- Se agregaron los módulos placeholder `Operaciones` y `Recursos Humanos`.
+- Se migró la paleta principal del shell y de los componentes base a contrastes Opaline, eliminando la dependencia visual del rojo anterior como lenguaje dominante.
+- Se agregó la migración [20260516_000004_add_topnav_modules.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260516_000004_add_topnav_modules.sql:1) para extender:
+  - `app_modules`
+  - `role_module_access`
+  con acceso inicial de `admin` para los dos módulos nuevos.
+- `npm run build`: correcto
+
 ## Integración inicial de login con Supabase
 
 - [x] Definir variables de entorno locales para `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
@@ -226,3 +249,10 @@
 - Las burbujas se adelgazaron aproximadamente un 30% mediante reducción de padding, radio y tipografía.
 - Los chips informativos también quedaron más compactos para sostener la limpieza visual del panel.
 - `npm run build`: correcto
+
+## Auditoría técnica, seguridad y limpieza base
+
+- [ ] Endurecer navegación protegida según estado real del perfil y obligación de reseteo de clave
+- [ ] Eliminar fragilidad entre frontend y RPC de contratación por deriva `v1`/`v2`
+- [ ] Limpiar redundancias de tipos/consultas en el dashboard de aprobaciones
+- [ ] Ejecutar validaciones técnicas y documentar hallazgos de seguridad/dependencias

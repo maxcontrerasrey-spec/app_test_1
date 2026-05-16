@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { homeNavigationItem, navigationSections } from "../../shared/config/navigation";
+import { homeNavigationItem, navigationModules } from "../../shared/config/navigation";
 import logo from "../../assets/app-logo.png";
 import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
@@ -10,61 +10,41 @@ export function AppShell() {
   const { accessibleModules, displayName, email, isSuperAdmin, jobTitle, signOut } =
     useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [hoveredModule, setHoveredModule] = useState<string | null>(null);
+  const [pinnedModule, setPinnedModule] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
-  const visibleSections = useMemo(
+  const navMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const visibleModules = useMemo(
     () =>
-      navigationSections
-        .map((section) => ({
-          ...section,
-          items: section.items.filter(
-            (item) => isSuperAdmin || hasModuleAccess(accessibleModules, item.moduleCode)
-          )
-        }))
-        .filter((section) => section.items.length > 0),
+      navigationModules
+        .map((module) => {
+          if (module.items?.length) {
+            const visibleItems = module.items.filter(
+              (item) => isSuperAdmin || hasModuleAccess(accessibleModules, item.moduleCode)
+            );
+
+            return visibleItems.length > 0 ? { ...module, items: visibleItems } : null;
+          }
+
+          if (!module.moduleCode) {
+            return null;
+          }
+
+          return isSuperAdmin || hasModuleAccess(accessibleModules, module.moduleCode)
+            ? module
+            : null;
+        })
+        .filter((module): module is NonNullable<typeof module> => module !== null),
     [accessibleModules, isSuperAdmin]
   );
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      navigationSections.map((section) => [
-        section.title,
-        section.items.some((item) => location.pathname.startsWith(item.to))
-      ])
-    )
-  );
 
-  const toggleSection = (title: string) => {
-    setOpenSections((current) => {
-      const nextValue = !current[title];
+  const openModuleLabel = pinnedModule ?? hoveredModule;
 
-      return {
-        ...current,
-        [title]: nextValue
-      };
-    });
+  const clearPinnedNavigation = () => {
+    setHoveredModule(null);
+    setPinnedModule(null);
   };
-
-  const collapseAllSections = () => {
-    setOpenSections(Object.fromEntries(visibleSections.map((section) => [section.title, false])));
-  };
-
-  const sidebarWidth = useMemo(() => {
-    const expandedSections = visibleSections.filter((section) => openSections[section.title]);
-    const labelsToMeasure = [
-      "AMBIENTE DE DESARROLLO [MC]",
-      homeNavigationItem.label,
-      ...visibleSections.map((section) => section.title)
-    ];
-
-    for (const section of expandedSections) {
-      labelsToMeasure.push(...section.items.map((item) => item.label));
-    }
-
-    const longestLabelLength = Math.max(...labelsToMeasure.map((label) => label.length));
-    const baseWidth = expandedSections.length > 0 ? 336 : 320;
-    const computedWidth = baseWidth + longestLabelLength * 5.4;
-
-    return Math.max(320, Math.min(560, Math.round(computedWidth)));
-  }, [openSections, visibleSections]);
 
   const userInitials = useMemo(() => {
     const initials = displayName
@@ -78,88 +58,119 @@ export function AppShell() {
   }, [displayName]);
 
   useEffect(() => {
-    if (!isUserMenuOpen) {
+    if (!isUserMenuOpen && !pinnedModule) {
       return;
     }
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!userMenuRef.current?.contains(event.target as Node)) {
+      if (isUserMenuOpen && !userMenuRef.current?.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
+      }
+
+      if (pinnedModule && !navMenuRef.current?.contains(event.target as Node)) {
+        clearPinnedNavigation();
       }
     };
 
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isUserMenuOpen]);
+  }, [isUserMenuOpen, pinnedModule]);
 
   return (
-    <div
-      className="app-shell"
-      style={
-        {
-          "--sidebar-width": `${sidebarWidth}px`
-        } as CSSProperties
-      }
-    >
-      <aside className="sidebar">
-        <NavLink
-          aria-label="Ir al inicio"
-          className="brand-block"
-          to="/"
-          onClick={collapseAllSections}
-        >
-          <img alt="Logo JM" className="app-logo app-logo-sidebar" src={logo} />
-          <span className="brand-kicker">AMBIENTE DE DESARROLLO [MC]</span>
-        </NavLink>
-
-        <nav className="nav-menu" aria-label="Modulos">
+    <div className="app-shell app-shell-topnav">
+      <header className="top-shell">
+        <div className="top-shell-bar">
           <NavLink
-            key={homeNavigationItem.to}
-            to={homeNavigationItem.to}
-            onClick={collapseAllSections}
-            className={({ isActive }) =>
-              isActive ? "nav-item nav-item-active" : "nav-item"
-            }
+            aria-label="Ir al inicio"
+            className="top-brand-block"
+            to="/"
+            onClick={clearPinnedNavigation}
           >
-            <span>{homeNavigationItem.label}</span>
+            <img alt="Logo JM" className="app-logo app-logo-topbar" src={logo} />
           </NavLink>
 
-          {visibleSections.map((section) => (
-            (() => {
-              const isSectionActive = section.items.some((item) =>
-                location.pathname.startsWith(item.to)
-              );
-              const isSectionOpen = openSections[section.title] ?? isSectionActive;
+          <nav className="top-nav" aria-label="Modulos" ref={navMenuRef}>
+            <NavLink
+              key={homeNavigationItem.to}
+              to={homeNavigationItem.to}
+              onClick={clearPinnedNavigation}
+              className={({ isActive }) =>
+                isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
+              }
+            >
+              <span>{homeNavigationItem.label}</span>
+            </NavLink>
+
+            {visibleModules.map((module) => {
+              const hasChildren = Boolean(module.items?.length);
+              const isModuleActive = hasChildren
+                ? module.items?.some((item) => location.pathname.startsWith(item.to))
+                : Boolean(module.to && location.pathname.startsWith(module.to));
+              const isModuleOpen = openModuleLabel === module.label && hasChildren;
+
+              if (!hasChildren || !module.items) {
+                return (
+                  <NavLink
+                    key={module.label}
+                    to={module.to ?? "/"}
+                    onClick={clearPinnedNavigation}
+                    className={({ isActive }) =>
+                      isActive || isModuleActive
+                        ? "top-nav-link top-nav-link-active"
+                        : "top-nav-link"
+                    }
+                  >
+                    <span>{module.label}</span>
+                  </NavLink>
+                );
+              }
 
               return (
                 <div
-                  key={section.title}
-                  className={isSectionOpen ? "nav-section nav-section-open" : "nav-section"}
+                  key={module.label}
+                  className="top-nav-group"
+                  onMouseEnter={() => setHoveredModule(module.label)}
+                  onMouseLeave={() => {
+                    if (pinnedModule !== module.label) {
+                      setHoveredModule((current) =>
+                        current === module.label ? null : current
+                      );
+                    }
+                  }}
                 >
                   <button
                     type="button"
-                    onClick={() => toggleSection(section.title)}
                     className={
-                      isSectionActive || isSectionOpen
-                        ? "nav-item nav-item-active nav-toggle"
-                        : "nav-item nav-toggle"
+                      isModuleActive || isModuleOpen
+                        ? "top-nav-link top-nav-link-active top-nav-toggle"
+                        : "top-nav-link top-nav-toggle"
                     }
+                    onClick={() =>
+                      setPinnedModule((current) => {
+                        const nextPinned = current === module.label ? null : module.label;
+                        setHoveredModule(nextPinned);
+                        return nextPinned;
+                      })
+                    }
+                    aria-expanded={isModuleOpen}
                   >
-                    <span>{section.title}</span>
-                    <span className="nav-toggle-indicator" aria-hidden="true">
-                      {isSectionOpen ? "−" : "+"}
+                    <span>{module.label}</span>
+                    <span className="top-nav-indicator" aria-hidden="true">
+                      ▾
                     </span>
                   </button>
 
-                  {isSectionOpen ? (
-                    <div className="nav-submenu">
-                      {section.items.map((item) => (
+                  {isModuleOpen ? (
+                    <div className="top-nav-flyout">
+                      {module.items.map((item) => (
                         <NavLink
                           key={item.to}
                           to={item.to}
-                          onClick={collapseAllSections}
+                          onClick={clearPinnedNavigation}
                           className={({ isActive }) =>
-                            isActive ? "nav-subitem nav-subitem-active" : "nav-subitem"
+                            isActive
+                              ? "top-nav-flyout-link top-nav-flyout-link-active"
+                              : "top-nav-flyout-link"
                           }
                         >
                           <span>{item.label}</span>
@@ -169,62 +180,54 @@ export function AppShell() {
                   ) : null}
                 </div>
               );
-            })()
-          ))}
+            })}
+          </nav>
 
-          {visibleSections.length === 0 ? (
-            <div className="nav-empty-state">
-              <strong>Sin módulos habilitados</strong>
-              <span>Tu cuenta aún no tiene roles asignados para esta plataforma.</span>
-            </div>
-          ) : null}
-        </nav>
-
-        <div className="user-panel-wrap" ref={userMenuRef}>
-          <button
-            type="button"
-            className="user-panel"
-            onClick={() => setIsUserMenuOpen((current) => !current)}
-            aria-expanded={isUserMenuOpen}
-            aria-haspopup="menu"
-          >
-            <div className="user-avatar" aria-hidden="true">
-              {userInitials}
-            </div>
-            <div className="user-meta">
-              <strong>{displayName}</strong>
-              <span>{email || "Correo no disponible"}</span>
-              <small>{jobTitle}</small>
-            </div>
-          </button>
-
-          {isUserMenuOpen ? (
-            <div className="user-menu">
-              <div className="user-menu-header">
-                <strong>{displayName}</strong>
-                <span>{email || "Correo no disponible"}</span>
-                <small>{jobTitle}</small>
+          <div className="top-user-panel-wrap" ref={userMenuRef}>
+            <button
+              type="button"
+              className="top-user-panel"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+              aria-expanded={isUserMenuOpen}
+              aria-haspopup="menu"
+            >
+              <div className="user-avatar" aria-hidden="true">
+                {userInitials}
               </div>
+              <div className="top-user-meta">
+                <strong>{displayName}</strong>
+                <span>{jobTitle}</span>
+              </div>
+            </button>
 
-              <button type="button" className="user-menu-action">
-                Mi perfil
-              </button>
-              <button
-                type="button"
-                className="user-menu-action"
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  void signOut();
-                }}
-              >
-                Cerrar sesion
-              </button>
-            </div>
-          ) : null}
+            {isUserMenuOpen ? (
+              <div className="user-menu top-user-menu">
+                <div className="user-menu-header">
+                  <strong>{displayName}</strong>
+                  <span>{email || "Correo no disponible"}</span>
+                  <small>{jobTitle}</small>
+                </div>
+
+                <button type="button" className="user-menu-action">
+                  Mi perfil
+                </button>
+                <button
+                  type="button"
+                  className="user-menu-action"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    void signOut();
+                  }}
+                >
+                  Cerrar sesion
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
-      </aside>
+      </header>
 
-      <main className="main-content">
+      <main className="main-content main-content-topnav">
         <Outlet />
       </main>
     </div>

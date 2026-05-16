@@ -11,14 +11,16 @@ export type NavigationItem = {
   label: string;
 };
 
-export type NavigationSection = {
-  title: string;
-  items: NavigationItem[];
+export type NavigationModule = {
+  label: string;
+  moduleCode?: AppModuleCode;
+  to?: string;
+  items?: NavigationItem[];
 };
 
-export const navigationSections: NavigationSection[] = [
+export const navigationModules: NavigationModule[] = [
   {
-    title: "Reclutamiento & Entrenamiento",
+    label: "Reclutamiento",
     items: [
       {
         moduleCode: "solicitud_contrataciones",
@@ -41,5 +43,15 @@ export const navigationSections: NavigationSection[] = [
         label: "Seguimiento de Certificados"
       }
     ]
+  },
+  {
+    label: "Operaciones",
+    moduleCode: "operaciones",
+    to: "/operaciones"
+  },
+  {
+    label: "Recursos Humanos",
+    moduleCode: "recursos_humanos",
+    to: "/recursos-humanos"
   }
 ];

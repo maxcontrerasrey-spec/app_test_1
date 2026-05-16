@@ -11,7 +11,9 @@ export type AppModuleCode =
   | "solicitud_contrataciones"
   | "control_contrataciones"
   | "certificados"
-  | "seguimiento_certificados";
+  | "seguimiento_certificados"
+  | "operaciones"
+  | "recursos_humanos";
 
 const KNOWN_ROLE_CODES = new Set<AppRole>([
   "admin",
@@ -27,7 +29,9 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "solicitud_contrataciones",
   "control_contrataciones",
   "certificados",
-  "seguimiento_certificados"
+  "seguimiento_certificados",
+  "operaciones",
+  "recursos_humanos"
 ]);
 
 export function normalizeRoleCode(value: string | null | undefined): AppRole | null {

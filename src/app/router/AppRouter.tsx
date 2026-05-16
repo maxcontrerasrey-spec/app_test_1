@@ -6,6 +6,7 @@ import {
   PublicOnlyRoute,
   RoleProtectedRoute
 } from "../../modules/auth/components/RouteGuards";
+import { ModulePlaceholderPage } from "../../shared/ui/ModulePlaceholderPage";
 
 const HomePage = lazy(async () => ({
   default: (await import("../../modules/home/pages/HomePage")).HomePage
@@ -96,6 +97,28 @@ export function AppRouter() {
               element={
                 <RoleProtectedRoute moduleCode="seguimiento_certificados">
                   <CertificateTrackingPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/operaciones"
+              element={
+                <RoleProtectedRoute moduleCode="operaciones">
+                  <ModulePlaceholderPage
+                    title="Operaciones"
+                    description="Espacio reservado para procesos operacionales y paneles de gestión."
+                  />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/recursos-humanos"
+              element={
+                <RoleProtectedRoute moduleCode="recursos_humanos">
+                  <ModulePlaceholderPage
+                    title="Recursos Humanos"
+                    description="Espacio reservado para procesos internos y herramientas de personas."
+                  />
                 </RoleProtectedRoute>
               }
             />
