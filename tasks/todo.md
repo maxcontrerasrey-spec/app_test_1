@@ -175,3 +175,39 @@
 - [x] Hacer que las grillas de `Inicio` colapsen antes para evitar hacinamiento
 - [x] Reacomodar cards y acciones de aprobaciones para pantallas medianas y móviles
 - [x] Revalidar compilación y publicar el ajuste responsivo
+
+## Estrategia de despliegue en Cloudflare
+
+- [x] Revisar si la app requiere runtime dinámico o si puede desplegarse como sitio estático
+- [x] Identificar la causa exacta del fallo de deploy observado en Cloudflare
+- [x] Definir la configuración correcta de Cloudflare para este repo
+- [x] Documentar el flujo operativo de despliegue y variables requeridas
+
+## Resultado de estrategia de despliegue en Cloudflare
+
+- La app actual no requiere Worker ni runtime Node en producción; el backend ya vive en Supabase y el frontend compila a `dist/`.
+- El fallo de deploy no está en la app ni en el build de Vite: proviene de ejecutar `npx wrangler deploy`, que intenta autodetectar un flujo de Worker/Framework y exige `Vite >= 6`.
+- Para este repo, el modo correcto es `Cloudflare Pages` con:
+  - `Build command`: `npm run build`
+  - `Build output directory`: `dist`
+  - sin `Deploy command`
+- Variables mínimas requeridas en Cloudflare:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+- Se documentó el procedimiento operativo en `docs/deploy-cloudflare-pages.md`.
+
+## Estructura de barra lateral adaptable
+
+- [x] Eliminar el patrón de submódulos flotantes del shell lateral
+- [x] Volver a integrar submódulos dentro de la barra lateral
+- [x] Hacer que el ancho lateral se adapte al contenido abierto en vez de truncar o romper textos
+- [x] Revalidar compilación después del cambio estructural
+
+## Resultado de estructura de barra lateral adaptable
+
+- Los submódulos volvieron a renderizarse dentro de la barra lateral; ya no usan panel flotante sobre el contenido principal.
+- El ancho del shell lateral ahora se calcula desde el contenido visible de navegación y se expande o contrae según la sección abierta.
+- Se mantuvo la regla visual del proyecto:
+  - una sola línea
+  - sin cortes en dos líneas
+  - sin acortar nombres por diseño cuando el shell puede ceder ancho

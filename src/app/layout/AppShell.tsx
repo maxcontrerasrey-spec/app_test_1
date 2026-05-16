@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { homeNavigationItem, navigationSections } from "../../shared/config/navigation";
 import logo from "../../assets/app-logo.png";
@@ -10,7 +10,6 @@ export function AppShell() {
   const { accessibleModules, displayName, email, isSuperAdmin, jobTitle, signOut } =
     useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const visibleSections = useMemo(
     () =>
@@ -37,10 +36,6 @@ export function AppShell() {
     setOpenSections((current) => {
       const nextValue = !current[title];
 
-      if (!nextValue) {
-        setHoveredSection((hovered) => (hovered === title ? null : hovered));
-      }
-
       return {
         ...current,
         [title]: nextValue
@@ -49,9 +44,27 @@ export function AppShell() {
   };
 
   const collapseAllSections = () => {
-    setHoveredSection(null);
     setOpenSections(Object.fromEntries(visibleSections.map((section) => [section.title, false])));
   };
+
+  const sidebarWidth = useMemo(() => {
+    const expandedSections = visibleSections.filter((section) => openSections[section.title]);
+    const labelsToMeasure = [
+      "AMBIENTE DE DESARROLLO [MC]",
+      homeNavigationItem.label,
+      ...visibleSections.map((section) => section.title)
+    ];
+
+    for (const section of expandedSections) {
+      labelsToMeasure.push(...section.items.map((item) => item.label));
+    }
+
+    const longestLabelLength = Math.max(...labelsToMeasure.map((label) => label.length));
+    const baseWidth = expandedSections.length > 0 ? 336 : 320;
+    const computedWidth = baseWidth + longestLabelLength * 5.4;
+
+    return Math.max(320, Math.min(560, Math.round(computedWidth)));
+  }, [openSections, visibleSections]);
 
   const userInitials = useMemo(() => {
     const initials = displayName
@@ -80,7 +93,14 @@ export function AppShell() {
   }, [isUserMenuOpen]);
 
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      style={
+        {
+          "--sidebar-width": `${sidebarWidth}px`
+        } as CSSProperties
+      }
+    >
       <aside className="sidebar">
         <NavLink
           aria-label="Ir al inicio"
@@ -109,18 +129,12 @@ export function AppShell() {
               const isSectionActive = section.items.some((item) =>
                 location.pathname.startsWith(item.to)
               );
-              const isSectionPinnedOpen = openSections[section.title] ?? isSectionActive;
-              const isSectionHovered = hoveredSection === section.title;
-              const isSectionOpen = isSectionPinnedOpen || isSectionHovered;
+              const isSectionOpen = openSections[section.title] ?? isSectionActive;
 
               return (
                 <div
                   key={section.title}
-                  className="nav-section"
-                  onMouseEnter={() => setHoveredSection(section.title)}
-                  onMouseLeave={() => setHoveredSection((current) =>
-                    current === section.title ? null : current
-                  )}
+                  className={isSectionOpen ? "nav-section nav-section-open" : "nav-section"}
                 >
                   <button
                     type="button"
@@ -143,11 +157,7 @@ export function AppShell() {
                         <NavLink
                           key={item.to}
                           to={item.to}
-                          onClick={() =>
-                            setHoveredSection((current) =>
-                              current === section.title ? null : current
-                            )
-                          }
+                          onClick={collapseAllSections}
                           className={({ isActive }) =>
                             isActive ? "nav-subitem nav-subitem-active" : "nav-subitem"
                           }
