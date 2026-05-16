@@ -89,99 +89,101 @@ export function AppShell() {
             <img alt="Logo JM" className="app-logo app-logo-topbar" src={logo} />
           </NavLink>
 
-          <nav className="top-nav" aria-label="Modulos" ref={navMenuRef}>
-            <NavLink
-              key={homeNavigationItem.to}
-              to={homeNavigationItem.to}
-              onClick={clearPinnedNavigation}
-              className={({ isActive }) =>
-                isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
-              }
-            >
-              <span>{homeNavigationItem.label}</span>
-            </NavLink>
+          <div className="top-nav-stage">
+            <nav className="top-nav" aria-label="Modulos" ref={navMenuRef}>
+              <NavLink
+                key={homeNavigationItem.to}
+                to={homeNavigationItem.to}
+                onClick={clearPinnedNavigation}
+                className={({ isActive }) =>
+                  isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
+                }
+              >
+                <span>{homeNavigationItem.label}</span>
+              </NavLink>
 
-            {visibleModules.map((module) => {
-              const hasChildren = Boolean(module.items?.length);
-              const isModuleActive = hasChildren
-                ? module.items?.some((item) => location.pathname.startsWith(item.to))
-                : Boolean(module.to && location.pathname.startsWith(module.to));
-              const isModuleOpen = openModuleLabel === module.label && hasChildren;
+              {visibleModules.map((module) => {
+                const hasChildren = Boolean(module.items?.length);
+                const isModuleActive = hasChildren
+                  ? module.items?.some((item) => location.pathname.startsWith(item.to))
+                  : Boolean(module.to && location.pathname.startsWith(module.to));
+                const isModuleOpen = openModuleLabel === module.label && hasChildren;
 
-              if (!hasChildren || !module.items) {
+                if (!hasChildren || !module.items) {
+                  return (
+                    <NavLink
+                      key={module.label}
+                      to={module.to ?? "/"}
+                      onClick={clearPinnedNavigation}
+                      className={({ isActive }) =>
+                        isActive || isModuleActive
+                          ? "top-nav-link top-nav-link-active"
+                          : "top-nav-link"
+                      }
+                    >
+                      <span>{module.label}</span>
+                    </NavLink>
+                  );
+                }
+
                 return (
-                  <NavLink
+                  <div
                     key={module.label}
-                    to={module.to ?? "/"}
-                    onClick={clearPinnedNavigation}
-                    className={({ isActive }) =>
-                      isActive || isModuleActive
-                        ? "top-nav-link top-nav-link-active"
-                        : "top-nav-link"
-                    }
+                    className="top-nav-group"
+                    onMouseEnter={() => setHoveredModule(module.label)}
+                    onMouseLeave={() => {
+                      if (pinnedModule !== module.label) {
+                        setHoveredModule((current) =>
+                          current === module.label ? null : current
+                        );
+                      }
+                    }}
                   >
-                    <span>{module.label}</span>
-                  </NavLink>
+                    <button
+                      type="button"
+                      className={
+                        isModuleActive || isModuleOpen
+                          ? "top-nav-link top-nav-link-active top-nav-toggle"
+                          : "top-nav-link top-nav-toggle"
+                      }
+                      onClick={() =>
+                        setPinnedModule((current) => {
+                          const nextPinned = current === module.label ? null : module.label;
+                          setHoveredModule(nextPinned);
+                          return nextPinned;
+                        })
+                      }
+                      aria-expanded={isModuleOpen}
+                    >
+                      <span>{module.label}</span>
+                      <span className="top-nav-indicator" aria-hidden="true">
+                        ▾
+                      </span>
+                    </button>
+
+                    {isModuleOpen ? (
+                      <div className="top-nav-flyout">
+                        {module.items.map((item) => (
+                          <NavLink
+                            key={item.to}
+                            to={item.to}
+                            onClick={clearPinnedNavigation}
+                            className={({ isActive }) =>
+                              isActive
+                                ? "top-nav-flyout-link top-nav-flyout-link-active"
+                                : "top-nav-flyout-link"
+                            }
+                          >
+                            <span>{item.label}</span>
+                          </NavLink>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 );
-              }
-
-              return (
-                <div
-                  key={module.label}
-                  className="top-nav-group"
-                  onMouseEnter={() => setHoveredModule(module.label)}
-                  onMouseLeave={() => {
-                    if (pinnedModule !== module.label) {
-                      setHoveredModule((current) =>
-                        current === module.label ? null : current
-                      );
-                    }
-                  }}
-                >
-                  <button
-                    type="button"
-                    className={
-                      isModuleActive || isModuleOpen
-                        ? "top-nav-link top-nav-link-active top-nav-toggle"
-                        : "top-nav-link top-nav-toggle"
-                    }
-                    onClick={() =>
-                      setPinnedModule((current) => {
-                        const nextPinned = current === module.label ? null : module.label;
-                        setHoveredModule(nextPinned);
-                        return nextPinned;
-                      })
-                    }
-                    aria-expanded={isModuleOpen}
-                  >
-                    <span>{module.label}</span>
-                    <span className="top-nav-indicator" aria-hidden="true">
-                      ▾
-                    </span>
-                  </button>
-
-                  {isModuleOpen ? (
-                    <div className="top-nav-flyout">
-                      {module.items.map((item) => (
-                        <NavLink
-                          key={item.to}
-                          to={item.to}
-                          onClick={clearPinnedNavigation}
-                          className={({ isActive }) =>
-                            isActive
-                              ? "top-nav-flyout-link top-nav-flyout-link-active"
-                              : "top-nav-flyout-link"
-                          }
-                        >
-                          <span>{item.label}</span>
-                        </NavLink>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </nav>
+              })}
+            </nav>
+          </div>
 
           <div className="top-user-panel-wrap" ref={userMenuRef}>
             <button
