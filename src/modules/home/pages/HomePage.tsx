@@ -361,15 +361,15 @@ export function HomePage() {
               <>
                 <h3>Detalle para aprobación</h3>
                 <div className="approval-detail-grid">
-                  <div className="approval-detail-item approval-detail-item-compact">
+                  <div className="approval-detail-item approval-detail-item-tiny">
                     <small>Folio</small>
                     <strong>{request?.folio ?? "Sin folio"}</strong>
                   </div>
-                  <div className="approval-detail-item">
+                  <div className="approval-detail-item approval-detail-item-regular">
                     <small>Etapa</small>
                     <strong>{selectedApproval.step_name}</strong>
                   </div>
-                  <div className="approval-detail-item">
+                  <div className="approval-detail-item approval-detail-item-xwide">
                     <small>Solicitante</small>
                     <strong title={formatPersonLabel(request?.requester_name)}>
                       {formatPersonLabel(request?.requester_name)}
@@ -381,17 +381,17 @@ export function HomePage() {
                       {request?.job_position_name ?? "No disponible"}
                     </strong>
                   </div>
-                  <div className="approval-detail-item approval-detail-item-compact">
+                  <div className="approval-detail-item approval-detail-item-tiny">
                     <small>Vacantes</small>
                     <strong>{request?.vacancies ?? 0}</strong>
                   </div>
-                  <div className="approval-detail-item">
+                  <div className="approval-detail-item approval-detail-item-regular">
                     <small>Contrato</small>
                     <strong title={request?.contract_name ?? "No disponible"}>
                       {request?.contract_name ?? "No disponible"}
                     </strong>
                   </div>
-                  <div className="approval-detail-item">
+                  <div className="approval-detail-item approval-detail-item-xwide">
                     <small>Numero contrato</small>
                     <strong title={request?.contract_number ?? "No disponible"}>
                       {request?.contract_number ?? "No disponible"}

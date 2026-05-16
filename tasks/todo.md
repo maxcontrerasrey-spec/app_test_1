@@ -211,3 +211,18 @@
   - una sola línea
   - sin cortes en dos líneas
   - sin acortar nombres por diseño cuando el shell puede ceder ancho
+
+## Compactación del detalle de aprobación
+
+- [x] Reconfigurar la grilla del detalle para dar prioridad de ancho a campos largos
+- [x] Reducir altura visual de burbujas y ajustar tipografía para mayor densidad
+- [x] Eliminar cortes visibles en `Solicitante` y `Número contrato`
+- [x] Revalidar compilación después del ajuste
+
+## Resultado de compactación del detalle de aprobación
+
+- La grilla del detalle dejó de usar celdas uniformes y pasó a una composición proporcional de 12 columnas.
+- `Solicitante`, `Cargo solicitado` y `Número contrato` recibieron más ancho estructural que `Folio` y `Vacantes`.
+- Las burbujas se adelgazaron aproximadamente un 30% mediante reducción de padding, radio y tipografía.
+- Los chips informativos también quedaron más compactos para sostener la limpieza visual del panel.
+- `npm run build`: correcto

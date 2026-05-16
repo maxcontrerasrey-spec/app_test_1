@@ -850,46 +850,60 @@ textarea {
 }
 
 .approval-detail-card {
-  gap: 1.2rem;
+  gap: 1rem;
   margin-top: 0.15rem;
 }
 
 .approval-detail-grid {
   display: grid;
-  gap: 0.8rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.approval-detail-item-tiny {
+  grid-column: span 2;
+}
+
+.approval-detail-item-regular {
+  grid-column: span 3;
 }
 
 .approval-detail-item-compact {
-  grid-column: span 1;
+  grid-column: span 3;
 }
 
 .approval-detail-item-wide {
-  grid-column: span 2;
+  grid-column: span 5;
+}
+
+.approval-detail-item-xwide {
+  grid-column: span 4;
 }
 
 .approval-detail-item,
 .approval-detail-note {
   display: grid;
-  gap: 0.24rem;
-  padding: 0.95rem 1rem;
+  gap: 0.18rem;
+  padding: 0.68rem 0.8rem;
   border: 1px solid var(--border-subtle);
-  border-radius: 18px;
+  border-radius: 16px;
   background: #fbfaf9;
 }
 
 .approval-detail-item small,
 .approval-detail-note small {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   color: #7b828a;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.075em;
 }
 
 .approval-detail-item strong,
 .approval-detail-note strong {
   color: #31353a;
-  line-height: 1.35;
+  line-height: 1.2;
+  font-size: 0.94rem;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -898,19 +912,19 @@ textarea {
 .approval-chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .approval-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 2.2rem;
-  padding: 0 0.9rem;
+  min-height: 1.92rem;
+  padding: 0 0.72rem;
   border: 1px solid #e6dcd5;
   border-radius: 999px;
   background: #f7f4f1;
   color: #545a61;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   white-space: nowrap;
 }
 
@@ -1001,10 +1015,20 @@ textarea {
   }
 
   .approval-detail-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .approval-detail-item-wide {
+    grid-column: span 3;
+  }
+
+  .approval-detail-item-xwide {
+    grid-column: span 3;
+  }
+
+  .approval-detail-item-tiny,
+  .approval-detail-item-regular,
+  .approval-detail-item-compact {
     grid-column: span 2;
   }
 }
@@ -1755,7 +1779,7 @@ textarea {
   }
 
   .approval-detail-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .approval-action-row .soft-primary-button {
@@ -1791,7 +1815,10 @@ textarea {
   }
 
   .approval-detail-item-wide,
-  .approval-detail-item-compact {
+  .approval-detail-item-compact,
+  .approval-detail-item-tiny,
+  .approval-detail-item-regular,
+  .approval-detail-item-xwide {
     grid-column: auto;
   }
 
