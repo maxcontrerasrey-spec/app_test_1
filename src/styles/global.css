@@ -296,6 +296,7 @@ textarea {
 .nav-section {
   display: grid;
   gap: 0.65rem;
+  min-width: 0;
 }
 
 .nav-section-title {
@@ -312,6 +313,8 @@ textarea {
   gap: 0.5rem;
   padding-left: 1rem;
   padding-top: 0.2rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .nav-empty-state {
@@ -330,15 +333,20 @@ textarea {
   align-items: center;
   justify-content: space-between;
   min-height: 3.05rem;
+  width: 100%;
   padding: 0 0.95rem;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.1);
   color: #fff9f6;
   transition: border-color 160ms ease, background 160ms ease;
+  overflow: hidden;
 }
 
 .nav-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   width: 100%;
   cursor: pointer;
   text-align: left;
@@ -356,6 +364,7 @@ textarea {
 
 .nav-item span {
   display: block;
+  flex: 1 1 auto;
   min-width: 0;
   font-size: 0.93rem;
   font-weight: 500;
@@ -368,6 +377,7 @@ textarea {
 
 .nav-toggle-indicator {
   flex: 0 0 auto;
+  margin-left: 0.85rem;
   font-size: 1.1rem;
   line-height: 1;
   color: inherit;
@@ -377,6 +387,7 @@ textarea {
   display: flex;
   align-items: center;
   min-height: 2.5rem;
+  width: 100%;
   padding: 0 0.85rem;
   border-radius: 12px;
   border: 1px solid transparent;
@@ -385,6 +396,7 @@ textarea {
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease,
     box-shadow 160ms ease;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .nav-subitem:hover {
