@@ -23,6 +23,29 @@
   con acceso inicial de `admin` para los dos módulos nuevos.
 - `npm run build`: correcto
 
+## Reordenamiento de Inicio y compactación de Solicitud de Contrataciones
+
+- [x] Priorizar la bandeja de aprobaciones pendientes en la parte superior de `Inicio`
+- [x] Eliminar `Estado operativo` y `Ultimas solicitudes realizadas`
+- [x] Enriquecer `Mis solicitudes` con folio, cargo solicitado, contrato y vacantes
+- [x] Separar visualmente acciones de aprobación con colores fijos gris/verde/rojo
+- [x] Compactar la cabecera del formulario de `Solicitud de Contrataciones` usando más columnas
+- [x] Revalidar compilación después del ajuste
+
+## Resultado de reordenamiento de Inicio y compactación
+
+- `Inicio` ahora muestra primero la bandeja de aprobaciones pendientes.
+- `Ver detalle` quedó gris, `Aprobar` verde y `Rechazar` rojo en la sección de aprobaciones.
+- Se eliminó la tarjeta `Estado operativo`.
+- Se eliminó la sección `Ultimas solicitudes realizadas`.
+- `Mis solicitudes` bajó a una sección propia y ahora muestra:
+  - folio
+  - cargo solicitado
+  - contrato
+  - vacantes
+- `Solicitud de Contrataciones` redistribuyó `Nombre solicitante`, `Cargo solicitante` y `Correo solicitante` en una grilla superior más compacta, y dejó `Cargo solicitado`, `Vacantes` y `Fecha solicitada ingreso` compartiendo la siguiente franja horizontal.
+- `npm run build`: correcto
+
 ## Integración inicial de login con Supabase
 
 - [x] Definir variables de entorno locales para `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`

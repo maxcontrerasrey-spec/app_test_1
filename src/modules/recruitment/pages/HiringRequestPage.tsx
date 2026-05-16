@@ -402,7 +402,7 @@ export function HiringRequestPage() {
 
         <div className="form-workspace">
           <div className="form-card">
-            <div className="field-row">
+            <div className="requester-grid">
               <div className="field-group">
                 <label className="field-label" htmlFor="solicitante-nombre">
                   Nombre solicitante
@@ -428,42 +428,42 @@ export function HiringRequestPage() {
                   type="text"
                 />
               </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="solicitante-correo">
+                  Correo solicitante
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="solicitante-correo"
+                  value={email}
+                  readOnly
+                  type="email"
+                />
+              </div>
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="solicitante-correo">
-                Correo solicitante
-              </label>
-              <input
-                className="text-field text-field-readonly"
-                id="solicitante-correo"
-                value={email}
-                readOnly
-                type="email"
-              />
-            </div>
+            <div className="request-primary-grid">
+              <div className="field-group request-primary-grid-wide">
+                <label className="field-label" htmlFor="cargo-solicitado">
+                  Cargo solicitado
+                </label>
+                <select
+                  className="text-field"
+                  id="cargo-solicitado"
+                  disabled={isCatalogsLoading || Boolean(catalogsError)}
+                  value={cargoSolicitado}
+                  onChange={(event) => setCargoSolicitado(event.target.value)}
+                >
+                  <option value="">Seleccione el cargo</option>
+                  {hiringRoles.map((role) => (
+                    <option key={role.id} value={role.name}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="cargo-solicitado">
-                Cargo solicitado
-              </label>
-              <select
-                className="text-field"
-                id="cargo-solicitado"
-                disabled={isCatalogsLoading || Boolean(catalogsError)}
-                value={cargoSolicitado}
-                onChange={(event) => setCargoSolicitado(event.target.value)}
-              >
-                <option value="">Seleccione el cargo</option>
-                {hiringRoles.map((role) => (
-                  <option key={role.id} value={role.name}>
-                    {role.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field-row">
               <div className="field-group">
                 <label className="field-label" htmlFor="numero-vacantes">
                   Numero de Vacantes

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/context/AuthContext";
 import { supabase } from "../../../shared/lib/supabase";
@@ -9,6 +9,7 @@ type HiringRequestSummaryRow = {
   status: "pendiente" | "aprobada" | "rechazada" | "cerrada";
   contract_name: string;
   job_position_name: string;
+  vacancies?: number | null;
   created_at: string;
 };
 
@@ -134,7 +135,7 @@ export function HomePage() {
 
     const requestsPromise = supabase
       .from("hiring_requests")
-      .select("id, folio, status, contract_name, job_position_name, created_at")
+      .select("id, folio, status, contract_name, job_position_name, vacancies, created_at")
       .eq("requester_id", user.id)
       .order("created_at", { ascending: false })
       .limit(8);
@@ -189,15 +190,6 @@ export function HomePage() {
     };
   }, [loadHomeSummary]);
 
-  const requestStatusSummary = useMemo(
-    () =>
-      myRequests.reduce<Record<string, number>>((accumulator, row) => {
-        accumulator[row.status] = (accumulator[row.status] ?? 0) + 1;
-        return accumulator;
-      }, {}),
-    [myRequests]
-  );
-
   const isApprover =
     isSuperAdmin ||
     appRoles.includes("admin") ||
@@ -245,110 +237,73 @@ export function HomePage() {
         </p>
       </div>
 
-      <div className="card-grid home-overview-grid">
-        <article className="info-card">
-          <h3>Mis solicitudes</h3>
-          <p>{isLoading ? "Cargando..." : `${myRequests.length} registradas recientemente`}</p>
-          <p>
-            Pendientes: {requestStatusSummary.pendiente ?? 0} · Aprobadas:{" "}
-            {requestStatusSummary.aprobada ?? 0} · Rechazadas:{" "}
-            {requestStatusSummary.rechazada ?? 0}
-          </p>
-        </article>
+      {isApprover ? (
+        <article className="info-card approval-panel-card approval-panel-primary">
+          <div className="home-section-header">
+            <div>
+              <h3>Aprobaciones pendientes</h3>
+              <p>
+                {isLoading
+                  ? "Cargando aprobaciones..."
+                  : `${pendingApprovalsCount} pendientes de decisión`}
+              </p>
+            </div>
+            <div className="home-section-meta">
+              {errorMessage ? <span>{errorMessage}</span> : null}
+              <Link to="/solicitud-contrataciones">Crear nueva solicitud</Link>
+            </div>
+          </div>
 
-        <article className="info-card">
-          <h3>Aprobaciones pendientes</h3>
-          <p>
-            {isApprover
-              ? isLoading
-                ? "Cargando..."
-                : `${pendingApprovalsCount} pendientes de decisión`
-              : "Tu perfil no tiene aprobaciones asignadas"}
-          </p>
-          {isApprover ? <p>Gestiona tus aprobaciones directamente desde este panel.</p> : null}
-        </article>
-
-        <article className="info-card">
-          <h3>Estado operativo</h3>
-          <p>{errorMessage || "Datos sincronizados desde Supabase."}</p>
-          <p>
-            <Link to="/solicitud-contrataciones">Crear nueva solicitud</Link>
-          </p>
-        </article>
-      </div>
-
-      <div className="card-grid home-detail-grid">
-        <article className="info-card">
-          <h3>Ultimas solicitudes realizadas</h3>
-          {myRequests.length === 0 ? (
-            <p>{isLoading ? "Cargando requerimientos..." : "Aun no tienes solicitudes."}</p>
+          {pendingApprovals.length === 0 ? (
+            <p>{isLoading ? "Cargando pendientes..." : "No tienes pendientes."}</p>
           ) : (
-            <ul className="summary-list">
-              {myRequests.map((request) => (
-                <li key={request.id}>
-                  <strong>{request.folio ?? "Sin folio"}</strong> ·{" "}
-                  {toStatusLabel(request.status)} · {request.job_position_name} ·{" "}
-                  {request.contract_name} · {formatRequestDate(request.created_at)}
-                </li>
-              ))}
+            <ul className="approval-queue">
+              {pendingApprovals.map((approval) => {
+                const request = Array.isArray(approval.hiring_requests)
+                  ? approval.hiring_requests[0]
+                  : approval.hiring_requests;
+
+                return (
+                  <li key={approval.id} className="approval-queue-item">
+                    <div className="approval-queue-copy">
+                      <strong>{request?.folio ?? "Sin folio"}</strong>
+                      <span>{approval.step_name}</span>
+                      <span>{request?.job_position_name ?? "Cargo no disponible"}</span>
+                      <span>{request?.contract_name ?? "Contrato no disponible"}</span>
+                    </div>
+                    <div className="approval-action-row">
+                      <button
+                        type="button"
+                        className="soft-primary-button approval-button-detail"
+                        onClick={() => setSelectedApproval(approval)}
+                      >
+                        Ver detalle
+                      </button>
+                      <button
+                        type="button"
+                        className="soft-primary-button approval-button-approve"
+                        disabled={isDecisionLoading === approval.id}
+                        onClick={() => handleApprovalDecision(approval.id, "approved")}
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        className="soft-primary-button approval-button-reject"
+                        disabled={isDecisionLoading === approval.id}
+                        onClick={() => handleApprovalDecision(approval.id, "rejected")}
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
+          {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
         </article>
-
-        {isApprover ? (
-          <article className="info-card approval-panel-card">
-            <h3>Aprobaciones pendientes para mi cuenta</h3>
-            {pendingApprovals.length === 0 ? (
-              <p>{isLoading ? "Cargando pendientes..." : "No tienes pendientes."}</p>
-            ) : (
-              <ul className="approval-queue">
-                {pendingApprovals.map((approval) => {
-                  const request = Array.isArray(approval.hiring_requests)
-                    ? approval.hiring_requests[0]
-                    : approval.hiring_requests;
-
-                  return (
-                    <li key={approval.id} className="approval-queue-item">
-                      <div className="approval-queue-copy">
-                        <strong>{request?.folio ?? "Sin folio"}</strong>
-                        <span>{approval.step_name}</span>
-                        <span>{request?.job_position_name ?? "Cargo no disponible"}</span>
-                        <span>{request?.contract_name ?? "Contrato no disponible"}</span>
-                      </div>
-                      <div className="approval-action-row">
-                        <button
-                          type="button"
-                          className="soft-primary-button soft-primary-button-neutral"
-                          onClick={() => setSelectedApproval(approval)}
-                        >
-                          Ver detalle
-                        </button>
-                        <button
-                          type="button"
-                          className="soft-primary-button soft-primary-button-success"
-                          disabled={isDecisionLoading === approval.id}
-                          onClick={() => handleApprovalDecision(approval.id, "approved")}
-                        >
-                          Aprobar
-                        </button>
-                        <button
-                          type="button"
-                          className="soft-primary-button soft-primary-button-danger"
-                          disabled={isDecisionLoading === approval.id}
-                          onClick={() => handleApprovalDecision(approval.id, "rejected")}
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
-          </article>
-        ) : null}
-      </div>
+      ) : null}
 
       {selectedApproval ? (
         <div className="info-card approval-detail-card">
@@ -431,7 +386,7 @@ export function HomePage() {
                 <div className="approval-action-row approval-action-row-detail">
                   <button
                     type="button"
-                    className="soft-primary-button soft-primary-button-success"
+                    className="soft-primary-button approval-button-approve"
                     disabled={isDecisionLoading === selectedApproval.id}
                     onClick={() => handleApprovalDecision(selectedApproval.id, "approved")}
                   >
@@ -439,7 +394,7 @@ export function HomePage() {
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button soft-primary-button-danger"
+                    className="soft-primary-button approval-button-reject"
                     disabled={isDecisionLoading === selectedApproval.id}
                     onClick={() => handleApprovalDecision(selectedApproval.id, "rejected")}
                   >
@@ -447,7 +402,7 @@ export function HomePage() {
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button soft-primary-button-neutral"
+                    className="soft-primary-button approval-button-detail"
                     onClick={() => setSelectedApproval(null)}
                   >
                     Cerrar detalle
@@ -458,6 +413,40 @@ export function HomePage() {
           })()}
         </div>
       ) : null}
+
+      <article className="info-card request-summary-panel">
+        <div className="home-section-header">
+          <div>
+            <h3>Mis solicitudes</h3>
+            <p>
+              {isLoading
+                ? "Cargando requerimientos..."
+                : `${myRequests.length} registradas recientemente`}
+            </p>
+          </div>
+        </div>
+
+        {myRequests.length === 0 ? (
+          <p>{isLoading ? "Cargando requerimientos..." : "Aun no tienes solicitudes."}</p>
+        ) : (
+          <ul className="request-summary-grid">
+            {myRequests.map((request) => (
+              <li key={request.id} className="request-summary-card">
+                <div className="request-summary-head">
+                  <strong>{request.folio ?? "Sin folio"}</strong>
+                  <span>{toStatusLabel(request.status)}</span>
+                </div>
+                <div className="request-summary-body">
+                  <span title={request.job_position_name}>{request.job_position_name}</span>
+                  <span title={request.contract_name}>{request.contract_name}</span>
+                  <span>Vacantes: {request.vacancies ?? 0}</span>
+                  <span>{formatRequestDate(request.created_at)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </article>
     </section>
   );
 }
