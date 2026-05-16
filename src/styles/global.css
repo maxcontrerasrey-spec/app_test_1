@@ -80,7 +80,7 @@ textarea {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(320px, 350px) 1fr;
+  grid-template-columns: clamp(340px, 24vw, 390px) minmax(0, 1fr);
 }
 
 .sidebar {
@@ -91,6 +91,7 @@ textarea {
   background: linear-gradient(180deg, #bf5445 0%, #b44739 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.18);
   color: #fffaf8;
+  overflow: visible;
 }
 
 .brand-block {
@@ -168,6 +169,7 @@ textarea {
 .nav-menu {
   display: grid;
   gap: 0.8rem;
+  overflow: visible;
 }
 
 .user-panel-wrap {
@@ -297,6 +299,7 @@ textarea {
   display: grid;
   gap: 0.65rem;
   min-width: 0;
+  position: relative;
 }
 
 .nav-section-title {
@@ -366,7 +369,7 @@ textarea {
   display: block;
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 0.93rem;
+  font-size: 0.88rem;
   font-weight: 500;
   font-family: var(--font-text);
   letter-spacing: -0.01em;
@@ -414,13 +417,37 @@ textarea {
 .nav-subitem span {
   display: block;
   min-width: 0;
-  font-size: 0.87rem;
+  font-size: 0.84rem;
   font-weight: 450;
   font-family: var(--font-text);
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (min-width: 901px) {
+  .nav-submenu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    z-index: 30;
+    width: max-content;
+    min-width: max(100%, 28rem);
+    max-width: min(34rem, calc(100vw - 4rem));
+    padding: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 18px;
+    background: rgba(180, 71, 57, 0.96);
+    box-shadow: 0 20px 36px rgba(88, 32, 24, 0.2);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-subitem {
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 14px;
+  }
 }
 
 .main-content {
@@ -937,7 +964,7 @@ textarea {
 
 @media (max-width: 1320px) {
   .app-shell {
-    grid-template-columns: minmax(300px, 330px) 1fr;
+    grid-template-columns: minmax(320px, 350px) minmax(0, 1fr);
   }
 
   .sidebar {
@@ -950,7 +977,11 @@ textarea {
   }
 
   .nav-item span {
-    font-size: 0.9rem;
+    font-size: 0.86rem;
+  }
+
+  .nav-subitem span {
+    font-size: 0.82rem;
   }
 
   .main-content {
@@ -1702,7 +1733,7 @@ textarea {
 
 @media (max-width: 1100px) {
   .app-shell {
-    grid-template-columns: minmax(250px, 280px) 1fr;
+    grid-template-columns: minmax(300px, 320px) minmax(0, 1fr);
   }
 
   .sidebar {
@@ -1710,6 +1741,14 @@ textarea {
     border-bottom: 0;
     padding: 1.35rem;
     gap: 1.35rem;
+  }
+
+  .nav-item span {
+    font-size: 0.84rem;
+  }
+
+  .nav-subitem span {
+    font-size: 0.8rem;
   }
 
   .main-content {
