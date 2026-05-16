@@ -94,6 +94,23 @@ function formatBooleanLabel(value: boolean | null | undefined) {
   return "No disponible";
 }
 
+function formatPersonLabel(value: string | null | undefined) {
+  if (!value?.trim()) {
+    return "No disponible";
+  }
+
+  const normalized = value.trim();
+  if (!normalized.includes(".") && !normalized.includes("_") && !normalized.includes("-")) {
+    return normalized;
+  }
+
+  return normalized
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
+}
+
 export function HomePage() {
   const { user, displayName, appRoles, isSuperAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -344,7 +361,7 @@ export function HomePage() {
               <>
                 <h3>Detalle para aprobación</h3>
                 <div className="approval-detail-grid">
-                  <div className="approval-detail-item">
+                  <div className="approval-detail-item approval-detail-item-compact">
                     <small>Folio</small>
                     <strong>{request?.folio ?? "Sin folio"}</strong>
                   </div>
@@ -354,23 +371,17 @@ export function HomePage() {
                   </div>
                   <div className="approval-detail-item">
                     <small>Solicitante</small>
-                    <strong title={request?.requester_name ?? "No disponible"}>
-                      {request?.requester_name ?? "No disponible"}
+                    <strong title={formatPersonLabel(request?.requester_name)}>
+                      {formatPersonLabel(request?.requester_name)}
                     </strong>
                   </div>
-                  <div className="approval-detail-item">
-                    <small>Correo</small>
-                    <strong title={request?.requester_email ?? "No disponible"}>
-                      {request?.requester_email ?? "No disponible"}
-                    </strong>
-                  </div>
-                  <div className="approval-detail-item">
+                  <div className="approval-detail-item approval-detail-item-wide">
                     <small>Cargo solicitado</small>
                     <strong title={request?.job_position_name ?? "No disponible"}>
                       {request?.job_position_name ?? "No disponible"}
                     </strong>
                   </div>
-                  <div className="approval-detail-item">
+                  <div className="approval-detail-item approval-detail-item-compact">
                     <small>Vacantes</small>
                     <strong>{request?.vacancies ?? 0}</strong>
                   </div>
@@ -394,14 +405,6 @@ export function HomePage() {
                     {request?.requested_entry_date
                       ? formatRequestDate(request.requested_entry_date)
                       : "No disponible"}
-                  </span>
-                  <span className="approval-chip">
-                    Inicio:{" "}
-                    {request?.start_date ? formatRequestDate(request.start_date) : "No disponible"}
-                  </span>
-                  <span className="approval-chip">
-                    Termino:{" "}
-                    {request?.end_date ? formatRequestDate(request.end_date) : "No disponible"}
                   </span>
                   <span className="approval-chip">
                     Turno: {request?.shift_name ?? "No disponible"}

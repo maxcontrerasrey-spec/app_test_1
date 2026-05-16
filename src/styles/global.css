@@ -835,6 +835,14 @@ textarea {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.approval-detail-item-compact {
+  grid-column: span 1;
+}
+
+.approval-detail-item-wide {
+  grid-column: span 2;
+}
+
 .approval-detail-item,
 .approval-detail-note {
   display: grid;
@@ -965,6 +973,10 @@ textarea {
 
   .approval-detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .approval-detail-item-wide {
+    grid-column: span 2;
   }
 }
 
@@ -1722,6 +1734,11 @@ textarea {
 
   .approval-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .approval-detail-item-wide,
+  .approval-detail-item-compact {
+    grid-column: auto;
   }
 
   .approval-chip {
