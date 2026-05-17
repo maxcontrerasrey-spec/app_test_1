@@ -530,6 +530,13 @@ textarea {
   gap: 1rem;
 }
 
+.form-header-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.15fr) minmax(360px, 0.85fr);
+  gap: 2rem;
+  align-items: start;
+}
+
 .form-hero {
   width: 100%;
 }
@@ -539,6 +546,10 @@ textarea {
   grid-template-columns: minmax(0, 2.15fr) minmax(360px, 0.85fr);
   gap: 2rem;
   align-items: start;
+}
+
+.form-workspace-single {
+  grid-template-columns: 1fr;
 }
 
 .form-copy {
@@ -1954,6 +1965,10 @@ textarea {
   }
 
   .form-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .form-header-grid {
     grid-template-columns: 1fr;
   }
 

@@ -386,24 +386,38 @@ export function HiringRequestPage() {
   return (
     <section className="page">
       <section className="form-shell">
-        <div className="hero-panel form-copy form-hero">
-          <span className="eyebrow">Reclutamiento</span>
-          <span className="build-marker">{HIRING_REQUEST_BUILD_MARKER}</span>
-          <h2>Solicitud de Contrataciones</h2>
-          <p className="hero-copy">
-            Complete los campos obligatorios de la solicitud para registrar una nueva
-            contratacion y dejarla lista para aprobacion.
-          </p>
-          <p className="hero-copy">
-            {isCatalogsLoading
-              ? "Cargando catálogos desde Supabase."
-              : catalogsError
-                ? catalogsError
-                : "Catálogos operativos cargados desde Supabase."}
-          </p>
+        <div className="form-header-grid">
+          <div className="hero-panel form-copy form-hero">
+            <span className="eyebrow">Reclutamiento</span>
+            <span className="build-marker">{HIRING_REQUEST_BUILD_MARKER}</span>
+            <h2>Solicitud de Contrataciones</h2>
+            <p className="hero-copy">
+              Complete los campos obligatorios de la solicitud para registrar una nueva
+              contratacion y dejarla lista para aprobacion.
+            </p>
+            <p className="hero-copy">
+              {isCatalogsLoading
+                ? "Cargando catálogos desde Supabase."
+                : catalogsError
+                  ? catalogsError
+                  : "Catálogos operativos cargados desde Supabase."}
+            </p>
+          </div>
+
+          <aside className="summary-panel">
+            <span className="section-chip">Resumen de solicitud</span>
+            <div className="summary-grid">
+              {summaryRows.map((row) => (
+                <div key={row.label}>
+                  <small>{row.label}</small>
+                  <strong>{row.value}</strong>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
 
-        <div className="form-workspace">
+        <div className="form-workspace form-workspace-single">
           <div className="form-card">
               <div className="requester-grid">
                 <div className="field-group">
@@ -992,18 +1006,6 @@ export function HiringRequestPage() {
 
             {localStatus ? <p className="form-status">{localStatus}</p> : null}
           </div>
-
-          <aside className="summary-panel">
-            <span className="section-chip">Resumen de solicitud</span>
-            <div className="summary-grid">
-              {summaryRows.map((row) => (
-                <div key={row.label}>
-                  <small>{row.label}</small>
-                  <strong>{row.value}</strong>
-                </div>
-              ))}
-            </div>
-          </aside>
         </div>
 
         {generatedRequest ? (
