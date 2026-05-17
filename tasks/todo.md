@@ -292,6 +292,19 @@
 - El resumen lateral se desplazó levemente para alinearse con el hero sin invadir el header.
 - `npm run build`: correcto
 
+## Reposición estructural del resumen lateral
+
+- [x] Separar el hero superior de la fila donde conviven formulario y resumen
+- [x] Mantener el resumen lateral usando la banda derecha, pero sin competir con el hero
+- [x] Revalidar compilación
+
+## Resultado de reposición estructural
+
+- El hero de `Solicitud de Contrataciones` vuelve a ocupar una franja superior completa.
+- El formulario y el resumen ahora conviven recién en la segunda fila del workspace.
+- Se elimina la sensación de superposición entre el resumen de la derecha y la cabecera del módulo.
+- `npm run build`: correcto
+
 ## Compactación del detalle de aprobación
 
 - [x] Reconfigurar la grilla del detalle para dar prioridad de ancho a campos largos

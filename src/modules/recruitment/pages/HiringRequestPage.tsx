@@ -384,25 +384,24 @@ export function HiringRequestPage() {
   return (
     <section className="page">
       <section className="form-shell">
-        <div className="form-workspace">
-          <div className="form-main">
-            <div className="hero-panel form-copy">
-              <span className="eyebrow">Reclutamiento</span>
-              <h2>Solicitud de Contrataciones</h2>
-              <p className="hero-copy">
-                Complete los campos obligatorios de la solicitud para registrar una nueva
-                contratacion y dejarla lista para aprobacion.
-              </p>
-              <p className="hero-copy">
-                {isCatalogsLoading
-                  ? "Cargando catálogos desde Supabase."
-                  : catalogsError
-                    ? catalogsError
-                    : "Catálogos operativos cargados desde Supabase."}
-              </p>
-            </div>
+        <div className="hero-panel form-copy form-hero">
+          <span className="eyebrow">Reclutamiento</span>
+          <h2>Solicitud de Contrataciones</h2>
+          <p className="hero-copy">
+            Complete los campos obligatorios de la solicitud para registrar una nueva
+            contratacion y dejarla lista para aprobacion.
+          </p>
+          <p className="hero-copy">
+            {isCatalogsLoading
+              ? "Cargando catálogos desde Supabase."
+              : catalogsError
+                ? catalogsError
+                : "Catálogos operativos cargados desde Supabase."}
+          </p>
+        </div>
 
-            <div className="form-card">
+        <div className="form-workspace">
+          <div className="form-card">
               <div className="requester-grid">
                 <div className="field-group">
                   <label className="field-label" htmlFor="solicitante-nombre">
@@ -989,7 +988,6 @@ export function HiringRequestPage() {
             </div>
 
             {localStatus ? <p className="form-status">{localStatus}</p> : null}
-          </div>
           </div>
 
           <aside className="summary-panel">
