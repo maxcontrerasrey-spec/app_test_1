@@ -384,277 +384,280 @@ export function HiringRequestPage() {
   return (
     <section className="page">
       <section className="form-shell">
-        <div className="hero-panel form-copy">
-          <span className="eyebrow">Reclutamiento & Entrenamiento</span>
-          <h2>Solicitud de Contrataciones</h2>
-          <p className="hero-copy">
-            Complete los campos obligatorios de la solicitud para registrar una nueva
-            contratacion y dejarla lista para aprobacion.
-          </p>
-          <p className="hero-copy">
-            {isCatalogsLoading
-              ? "Cargando catálogos desde Supabase."
-              : catalogsError
-                ? catalogsError
-                : "Catálogos operativos cargados desde Supabase."}
-          </p>
-        </div>
-
         <div className="form-workspace">
-          <div className="form-card">
-            <div className="requester-grid">
-              <div className="field-group">
-                <label className="field-label" htmlFor="solicitante-nombre">
-                  Nombre solicitante
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="solicitante-nombre"
-                  value={displayName}
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="solicitante-cargo">
-                  Cargo solicitante
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="solicitante-cargo"
-                  value={jobTitle}
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="solicitante-correo">
-                  Correo solicitante
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="solicitante-correo"
-                  value={email}
-                  readOnly
-                  type="email"
-                />
-              </div>
+          <div className="form-main">
+            <div className="hero-panel form-copy">
+              <span className="eyebrow">Reclutamiento</span>
+              <h2>Solicitud de Contrataciones</h2>
+              <p className="hero-copy">
+                Complete los campos obligatorios de la solicitud para registrar una nueva
+                contratacion y dejarla lista para aprobacion.
+              </p>
+              <p className="hero-copy">
+                {isCatalogsLoading
+                  ? "Cargando catálogos desde Supabase."
+                  : catalogsError
+                    ? catalogsError
+                    : "Catálogos operativos cargados desde Supabase."}
+              </p>
             </div>
 
-            <div className="request-primary-grid">
-              <div className="field-group request-primary-grid-wide">
-                <label className="field-label" htmlFor="cargo-solicitado">
-                  Cargo solicitado
+            <div className="form-card">
+              <div className="requester-grid">
+                <div className="field-group">
+                  <label className="field-label" htmlFor="solicitante-nombre">
+                    Nombre solicitante
+                  </label>
+                  <input
+                    className="text-field text-field-readonly"
+                    id="solicitante-nombre"
+                    value={displayName}
+                    readOnly
+                    type="text"
+                  />
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label" htmlFor="solicitante-cargo">
+                    Cargo solicitante
+                  </label>
+                  <input
+                    className="text-field text-field-readonly"
+                    id="solicitante-cargo"
+                    value={jobTitle}
+                    readOnly
+                    type="text"
+                  />
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label" htmlFor="solicitante-correo">
+                    Correo solicitante
+                  </label>
+                  <input
+                    className="text-field text-field-readonly"
+                    id="solicitante-correo"
+                    value={email}
+                    readOnly
+                    type="email"
+                  />
+                </div>
+              </div>
+
+              <div className="request-primary-grid">
+                <div className="field-group request-primary-grid-wide">
+                  <label className="field-label" htmlFor="cargo-solicitado">
+                    Cargo solicitado
+                  </label>
+                  <select
+                    className="text-field"
+                    id="cargo-solicitado"
+                    disabled={isCatalogsLoading || Boolean(catalogsError)}
+                    value={cargoSolicitado}
+                    onChange={(event) => setCargoSolicitado(event.target.value)}
+                  >
+                    <option value="">Seleccione el cargo</option>
+                    {hiringRoles.map((role) => (
+                      <option key={role.id} value={role.name}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label" htmlFor="numero-vacantes">
+                    Numero de Vacantes
+                  </label>
+                  <input
+                    className="text-field"
+                    id="numero-vacantes"
+                    min="1"
+                    step="1"
+                    value={numeroVacantes}
+                    onChange={(event) => setNumeroVacantes(event.target.value)}
+                    type="number"
+                  />
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label" htmlFor="fecha-solicitada-ingreso">
+                    Fecha solicitada ingreso
+                  </label>
+                  <div className="date-picker">
+                    <button
+                      type="button"
+                      id="fecha-solicitada-ingreso"
+                      className="text-field date-trigger"
+                      onClick={() => setIsRequestedDatePickerOpen((current) => !current)}
+                    >
+                      <span>
+                        {fechaSolicitadaIngreso
+                          ? formatDateForDisplay(fechaSolicitadaIngreso)
+                          : "Seleccione la fecha"}
+                      </span>
+                      <span className="date-trigger-icon" aria-hidden="true">
+                        ▾
+                      </span>
+                    </button>
+
+                    {isRequestedDatePickerOpen ? (
+                      <div className="date-popover">
+                        <div className="date-popover-header">
+                          <button
+                            type="button"
+                            className="calendar-nav-button"
+                            onClick={() =>
+                              setRequestedDateView(
+                                (current) =>
+                                  new Date(current.getFullYear(), current.getMonth() - 1, 1)
+                              )
+                            }
+                          >
+                            ‹
+                          </button>
+                          <div className="calendar-selectors">
+                            <select
+                              className="calendar-select"
+                              value={requestedDateView.getMonth()}
+                              onChange={(event) =>
+                                setRequestedDateView(
+                                  (current) =>
+                                    new Date(
+                                      current.getFullYear(),
+                                      Number(event.target.value),
+                                      1
+                                    )
+                                )
+                              }
+                            >
+                              {monthOptions.map((month, index) => (
+                                <option key={month} value={index}>
+                                  {month}
+                                </option>
+                              ))}
+                            </select>
+
+                            <select
+                              className="calendar-select"
+                              value={requestedDateView.getFullYear()}
+                              onChange={(event) =>
+                                setRequestedDateView(
+                                  (current) =>
+                                    new Date(
+                                      Number(event.target.value),
+                                      current.getMonth(),
+                                      1
+                                    )
+                                )
+                              }
+                            >
+                              {yearOptions.map((year) => (
+                                <option key={year} value={year}>
+                                  {year}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <button
+                            type="button"
+                            className="calendar-nav-button"
+                            onClick={() =>
+                              setRequestedDateView(
+                                (current) =>
+                                  new Date(current.getFullYear(), current.getMonth() + 1, 1)
+                              )
+                            }
+                          >
+                            ›
+                          </button>
+                        </div>
+
+                        <div className="calendar-weekdays">
+                          {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
+                            <span key={day}>{day}</span>
+                          ))}
+                        </div>
+
+                        <div className="calendar-grid">
+                          {requestedDateCalendarDays.map((calendarDay) => {
+                            const value = formatDateValue(calendarDay.value);
+                            const isSelected =
+                              value === formatDateValue(selectedRequestedDate);
+                            const isBeforeToday = value < todayValue;
+
+                            return (
+                              <button
+                                key={calendarDay.key}
+                                type="button"
+                                className={
+                                  isSelected
+                                    ? "calendar-day calendar-day-selected"
+                                    : calendarDay.inMonth
+                                      ? "calendar-day"
+                                      : "calendar-day calendar-day-muted"
+                                }
+                                disabled={isBeforeToday}
+                                onClick={() => {
+                                  setFechaSolicitadaIngreso(value);
+                                  setRequestedDateView(
+                                    new Date(
+                                      calendarDay.value.getFullYear(),
+                                      calendarDay.value.getMonth(),
+                                      1
+                                    )
+                                  );
+                                  setIsRequestedDatePickerOpen(false);
+                                }}
+                              >
+                                {calendarDay.value.getDate()}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+            <div className="contract-grid">
+              <div className="field-group">
+                <label className="field-label" htmlFor="nombre-contrato">
+                  Nombre de contrato
                 </label>
                 <select
                   className="text-field"
-                  id="cargo-solicitado"
+                  id="nombre-contrato"
                   disabled={isCatalogsLoading || Boolean(catalogsError)}
-                  value={cargoSolicitado}
-                  onChange={(event) => setCargoSolicitado(event.target.value)}
+                  value={nombreContrato}
+                  onChange={(event) => setNombreContrato(event.target.value)}
                 >
-                  <option value="">Seleccione el cargo</option>
-                  {hiringRoles.map((role) => (
-                    <option key={role.id} value={role.name}>
-                      {role.name}
+                  <option value="">Seleccione el contrato</option>
+                  {contractOptions.map((contract) => (
+                    <option key={contract.id} value={contract.contractName}>
+                      {contract.contractName}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="field-group">
-                <label className="field-label" htmlFor="numero-vacantes">
-                  Numero de Vacantes
+                <label className="field-label" htmlFor="numero-contrato">
+                  Numero contrato
                 </label>
                 <input
-                  className="text-field"
-                  id="numero-vacantes"
-                  min="1"
-                  step="1"
-                  value={numeroVacantes}
-                  onChange={(event) => setNumeroVacantes(event.target.value)}
-                  type="number"
+                  className="text-field text-field-readonly"
+                  id="numero-contrato"
+                  value={selectedContract?.contractNumber ?? ""}
+                  placeholder="Se completa automaticamente"
+                  readOnly
+                  type="text"
                 />
               </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="fecha-solicitada-ingreso">
-                  Fecha solicitada ingreso
-                </label>
-                <div className="date-picker">
-                  <button
-                    type="button"
-                    id="fecha-solicitada-ingreso"
-                    className="text-field date-trigger"
-                    onClick={() => setIsRequestedDatePickerOpen((current) => !current)}
-                  >
-                    <span>
-                      {fechaSolicitadaIngreso
-                        ? formatDateForDisplay(fechaSolicitadaIngreso)
-                        : "Seleccione la fecha"}
-                    </span>
-                    <span className="date-trigger-icon" aria-hidden="true">
-                      ▾
-                    </span>
-                  </button>
-
-                  {isRequestedDatePickerOpen ? (
-                    <div className="date-popover">
-                      <div className="date-popover-header">
-                        <button
-                          type="button"
-                          className="calendar-nav-button"
-                          onClick={() =>
-                            setRequestedDateView(
-                              (current) =>
-                                new Date(current.getFullYear(), current.getMonth() - 1, 1)
-                            )
-                          }
-                        >
-                          ‹
-                        </button>
-                        <div className="calendar-selectors">
-                          <select
-                            className="calendar-select"
-                            value={requestedDateView.getMonth()}
-                            onChange={(event) =>
-                              setRequestedDateView(
-                                (current) =>
-                                  new Date(
-                                    current.getFullYear(),
-                                    Number(event.target.value),
-                                    1
-                                  )
-                              )
-                            }
-                          >
-                            {monthOptions.map((month, index) => (
-                              <option key={month} value={index}>
-                                {month}
-                              </option>
-                            ))}
-                          </select>
-
-                          <select
-                            className="calendar-select"
-                            value={requestedDateView.getFullYear()}
-                            onChange={(event) =>
-                              setRequestedDateView(
-                                (current) =>
-                                  new Date(
-                                    Number(event.target.value),
-                                    current.getMonth(),
-                                    1
-                                  )
-                              )
-                            }
-                          >
-                            {yearOptions.map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          type="button"
-                          className="calendar-nav-button"
-                          onClick={() =>
-                            setRequestedDateView(
-                              (current) =>
-                                new Date(current.getFullYear(), current.getMonth() + 1, 1)
-                            )
-                          }
-                        >
-                          ›
-                        </button>
-                      </div>
-
-                      <div className="calendar-weekdays">
-                        {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
-                          <span key={day}>{day}</span>
-                        ))}
-                      </div>
-
-                      <div className="calendar-grid">
-                        {requestedDateCalendarDays.map((calendarDay) => {
-                          const value = formatDateValue(calendarDay.value);
-                          const isSelected =
-                            value === formatDateValue(selectedRequestedDate);
-                          const isBeforeToday = value < todayValue;
-
-                          return (
-                            <button
-                              key={calendarDay.key}
-                              type="button"
-                              className={
-                                isSelected
-                                  ? "calendar-day calendar-day-selected"
-                                  : calendarDay.inMonth
-                                    ? "calendar-day"
-                                    : "calendar-day calendar-day-muted"
-                              }
-                              disabled={isBeforeToday}
-                              onClick={() => {
-                                setFechaSolicitadaIngreso(value);
-                                setRequestedDateView(
-                                  new Date(
-                                    calendarDay.value.getFullYear(),
-                                    calendarDay.value.getMonth(),
-                                    1
-                                  )
-                                );
-                                setIsRequestedDatePickerOpen(false);
-                              }}
-                            >
-                              {calendarDay.value.getDate()}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="nombre-contrato">
-                Nombre de contrato
-              </label>
-              <select
-                className="text-field"
-                id="nombre-contrato"
-                disabled={isCatalogsLoading || Boolean(catalogsError)}
-                value={nombreContrato}
-                onChange={(event) => setNombreContrato(event.target.value)}
-              >
-                <option value="">Seleccione el contrato</option>
-                {contractOptions.map((contract) => (
-                  <option key={contract.id} value={contract.contractName}>
-                    {contract.contractName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field-group">
-              <label className="field-label" htmlFor="numero-contrato">
-                Numero contrato
-              </label>
-              <input
-                className="text-field text-field-readonly"
-                id="numero-contrato"
-                value={selectedContract?.contractNumber ?? ""}
-                placeholder="Se completa automaticamente"
-                readOnly
-                type="text"
-              />
-            </div>
-
-            <div className="field-group">
+            <div className="field-group field-pair">
               <div className="field-group">
                 <label className="field-label" htmlFor="unidad-costo">
                   Unidad de costo
@@ -684,7 +687,7 @@ export function HiringRequestPage() {
               </div>
             </div>
 
-            <div className="field-group">
+            <div className="field-group field-pair">
               <div className="field-group">
                 <label className="field-label" htmlFor="codigo-centro-costo">
                   Codigo centro de costo
@@ -714,7 +717,7 @@ export function HiringRequestPage() {
               </div>
             </div>
 
-            <div className="field-row">
+            <div className="schedule-grid">
               <div className="field-group">
                 <label className="field-label" htmlFor="fecha-inicio">
                   Fecha inicio
@@ -865,9 +868,29 @@ export function HiringRequestPage() {
                   type="text"
                 />
               </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="turno">
+                  Turno
+                </label>
+                <select
+                  className="text-field"
+                  id="turno"
+                  disabled={isCatalogsLoading || Boolean(catalogsError)}
+                  value={turno}
+                  onChange={(event) => setTurno(event.target.value)}
+                >
+                  <option value="">Seleccione el turno</option>
+                  {shiftCatalog.map((shift) => (
+                    <option key={shift.id} value={shift.name}>
+                      {shift.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="field-row">
+            <div className="support-grid">
               <div className="field-group">
                 <label className="field-label" htmlFor="campamento">
                   Campamento
@@ -905,9 +928,7 @@ export function HiringRequestPage() {
                   ))}
                 </select>
               </div>
-            </div>
 
-            <div className="field-row">
               <div className="field-group field-with-suffix">
                 <label className="field-label" htmlFor="renta-liquida">
                   Renta liquida ofrecida
@@ -924,26 +945,6 @@ export function HiringRequestPage() {
                   type="text"
                 />
                 <span className="field-suffix">$</span>
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="turno">
-                  Turno
-                </label>
-                <select
-                  className="text-field"
-                  id="turno"
-                  disabled={isCatalogsLoading || Boolean(catalogsError)}
-                  value={turno}
-                  onChange={(event) => setTurno(event.target.value)}
-                >
-                  <option value="">Seleccione el turno</option>
-                  {shiftCatalog.map((shift) => (
-                    <option key={shift.id} value={shift.name}>
-                      {shift.name}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 
@@ -988,6 +989,7 @@ export function HiringRequestPage() {
             </div>
 
             {localStatus ? <p className="form-status">{localStatus}</p> : null}
+          </div>
           </div>
 
           <aside className="summary-panel">

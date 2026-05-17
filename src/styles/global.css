@@ -510,37 +510,53 @@ textarea {
 
 .form-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 520px) minmax(260px, 340px);
+  grid-template-columns: minmax(0, 2.25fr) minmax(360px, 0.9fr);
   gap: 2rem;
   align-items: start;
 }
 
+.form-main,
 .form-copy {
   display: grid;
   gap: 1rem;
-  max-width: 52rem;
+}
+
+.form-copy {
+  max-width: none;
 }
 
 .form-card {
   display: grid;
   gap: 1.2rem;
-  width: min(100%, 520px);
+  width: 100%;
 }
 
 .requester-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.25fr);
+  grid-template-columns: minmax(250px, 1.05fr) minmax(300px, 1.15fr) minmax(440px, 1.55fr);
   gap: 1rem;
 }
 
 .request-primary-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(140px, 0.55fr) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 1.7fr) minmax(220px, 0.78fr) minmax(320px, 1.12fr);
   gap: 1rem;
 }
 
 .request-primary-grid-wide {
   min-width: 0;
+}
+
+.contract-grid {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.55fr) minmax(300px, 1fr);
+  gap: 1rem;
+}
+
+.field-pair {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+  gap: 1rem;
 }
 
 .field-group {
@@ -558,9 +574,24 @@ textarea {
   gap: 1rem;
 }
 
+.schedule-grid,
+.support-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.schedule-grid {
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(260px, 0.92fr);
+}
+
+.support-grid {
+  grid-template-columns: minmax(220px, 0.85fr) minmax(220px, 0.85fr) minmax(320px, 1.3fr);
+}
+
 .field-label {
-  font-size: 0.96rem;
+  font-size: 0.84rem;
   color: #3d3d3d;
+  white-space: nowrap;
 }
 
 .field-label-optional {
@@ -756,6 +787,8 @@ textarea {
 .text-field-readonly {
   background: #f6f7f8;
   color: #5f6368;
+  font-size: 0.88rem;
+  letter-spacing: -0.01em;
 }
 
 .text-field-wrap {
@@ -1902,12 +1935,20 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .form-copy {
+    max-width: 100%;
+  }
+
   .generated-request-grid {
     grid-template-columns: 1fr;
   }
 
   .requester-grid,
-  .request-primary-grid {
+  .request-primary-grid,
+  .contract-grid,
+  .field-pair,
+  .schedule-grid,
+  .support-grid {
     grid-template-columns: 1fr;
   }
 

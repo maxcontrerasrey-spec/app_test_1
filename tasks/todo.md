@@ -258,6 +258,27 @@
   - sin cortes en dos líneas
   - sin acortar nombres por diseño cuando el shell puede ceder ancho
 
+## Reconfiguración ancha de Solicitud de Contrataciones
+
+- [x] Reestructurar el formulario para usar el ancho libre dejado por la barra superior
+- [x] Mover el hero y el resumen a la franja superior útil del workspace
+- [x] Reasignar anchos de grilla por prioridad para solicitante, cargo, correo, contrato y número de contrato
+- [x] Recompactar labels y campos sin saltos de línea ni filas dobles
+- [x] Revalidar compilación después del refactor
+
+## Resultado de reconfiguración ancha
+
+- `Solicitud de Contrataciones` dejó de usar una composición heredada de la época de barra lateral.
+- El `hero-panel` ahora vive dentro del `workspace` principal y el resumen lateral ocupa la franja derecha superior en vez de dejar media pantalla vacía.
+- La grilla superior fue redistribuida por prioridad real:
+  - `Nombre solicitante`, `Cargo solicitante` y `Correo solicitante` reciben más ancho útil
+  - `Cargo solicitado`, `Numero de Vacantes` y `Fecha solicitada ingreso` quedaron balanceados para mantener una sola línea
+  - `Nombre de contrato` y `Numero contrato` ahora comparten la misma fila
+- Se reorganizaron también:
+  - `Fecha inicio`, `Fecha termino`, `Turno`
+  - `Campamento`, `Pasajes`, `Renta liquida ofrecida`
+- `npm run build`: correcto
+
 ## Compactación del detalle de aprobación
 
 - [x] Reconfigurar la grilla del detalle para dar prioridad de ancho a campos largos
