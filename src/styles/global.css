@@ -169,6 +169,23 @@ textarea {
   color: var(--accent);
 }
 
+.build-marker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 1.75rem;
+  padding: 0 0.7rem;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--accent-deep);
+  font-family: var(--font-text);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
 .eyebrow-inverse {
   color: rgba(255, 255, 255, 0.88);
 }

@@ -50,6 +50,8 @@ const monthOptions = [
   "Diciembre"
 ];
 
+const HIRING_REQUEST_BUILD_MARKER = "HR-BUILD-2026-05-16-01";
+
 function toTodayDateValue() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
@@ -386,6 +388,7 @@ export function HiringRequestPage() {
       <section className="form-shell">
         <div className="hero-panel form-copy form-hero">
           <span className="eyebrow">Reclutamiento</span>
+          <span className="build-marker">{HIRING_REQUEST_BUILD_MARKER}</span>
           <h2>Solicitud de Contrataciones</h2>
           <p className="hero-copy">
             Complete los campos obligatorios de la solicitud para registrar una nueva
