@@ -95,7 +95,7 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: 1rem 1.5rem 0;
+  padding: 1rem 1.5rem 1rem;
   backdrop-filter: blur(18px);
 }
 
@@ -418,7 +418,7 @@ textarea {
 }
 
 .main-content-topnav {
-  padding-top: 1.25rem;
+  padding-top: 0.5rem;
 }
 
 .page {
@@ -1222,6 +1222,8 @@ textarea {
 .summary-panel {
   display: grid;
   gap: 1rem;
+  align-self: start;
+  margin-top: 0.35rem;
   padding: 1.4rem;
   border: 1px solid var(--border-subtle);
   border-radius: 24px;
@@ -1901,7 +1903,7 @@ textarea {
 
 @media (max-width: 1100px) {
   .top-shell {
-    padding-inline: 1rem;
+    padding: 1rem 1rem 0.9rem;
   }
 
   .top-shell-bar {

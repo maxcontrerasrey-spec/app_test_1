@@ -279,6 +279,19 @@
   - `Campamento`, `Pasajes`, `Renta liquida ofrecida`
 - `npm run build`: correcto
 
+## Ajuste de separación entre shell superior y contenido
+
+- [x] Corregir la reserva vertical del header sticky para evitar que el contenido quede visualmente debajo de la barra
+- [x] Alinear el resumen lateral con la franja superior del formulario sin invadir el shell
+- [x] Revalidar compilación después del ajuste
+
+## Resultado de ajuste de separación
+
+- El shell superior ahora reserva altura real coherente con su volumen visual.
+- Se eliminó el efecto de solapamiento entre la barra superior y la primera franja de `Solicitud de Contrataciones`.
+- El resumen lateral se desplazó levemente para alinearse con el hero sin invadir el header.
+- `npm run build`: correcto
+
 ## Compactación del detalle de aprobación
 
 - [x] Reconfigurar la grilla del detalle para dar prioridad de ancho a campos largos
