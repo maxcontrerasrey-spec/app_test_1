@@ -12,16 +12,20 @@ function normalizeText(value) {
 }
 
 function readEnvFile() {
-  return Object.fromEntries(
-    fs
-      .readFileSync(".env.local", "utf8")
-      .split(/\n+/)
-      .filter(Boolean)
-      .map((line) => {
-        const index = line.indexOf("=");
-        return [line.slice(0, index), line.slice(index + 1)];
-      }),
-  );
+  try {
+    return Object.fromEntries(
+      fs
+        .readFileSync(".env.local", "utf8")
+        .split(/\n+/)
+        .filter(Boolean)
+        .map((line) => {
+          const index = line.indexOf("=");
+          return [line.slice(0, index), line.slice(index + 1)];
+        }),
+    );
+  } catch (error) {
+    return process.env;
+  }
 }
 
 function getFullName(employee) {
