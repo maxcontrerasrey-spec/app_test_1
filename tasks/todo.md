@@ -354,3 +354,15 @@
 - El resumen lateral volvió a una sola columna de lectura continua.
 - La columna izquierda del formulario cedió ancho suficiente para que el resumen use la altura lateral completa sin compactarse en dos columnas.
 - `npm run build`: correcto
+
+## Corrección de desborde del formulario bajo el resumen
+
+- [x] Eliminar mínimos rígidos acumulados en las subgrillas internas del formulario
+- [x] Forzar `min-width: 0` en grupos de campo y fecha
+- [x] Revalidar compilación
+
+## Resultado de corrección de desborde
+
+- Las grillas internas del formulario dejaron de empujar contenido hacia la columna del resumen.
+- `Nombre solicitante`, `Cargo solicitante`, `Correo solicitante`, `Cargo solicitado` y las filas siguientes ahora ceden ancho entre sí en vez de invadir el panel derecho.
+- `npm run build`: correcto
