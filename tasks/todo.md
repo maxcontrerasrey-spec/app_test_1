@@ -467,3 +467,56 @@
 - Los submenús quedaron como panel limpio, sin cuadros internos ni globos alrededor de cada opción.
 - Se mantuvieron iconos y copy, pero con jerarquía visual más plana y editorial.
 - `npm run build`: correcto
+
+
+## Barrido profundo de limpieza, rendimiento y seguridad
+
+- [x] Ejecutar verificación técnica base (`build`, `npm audit`) y capturar hallazgos
+- [x] Detectar archivos, assets y catálogos residuales que no tengan referencias reales
+- [x] Eliminar residuos seguros y simplificar código/configuración redundante
+- [x] Ajustar puntos de rendimiento o mantenibilidad de bajo riesgo encontrados en la pasada
+- [ ] Documentar lecciones, revalidar build y empujar a `main`
+
+## Hallazgos iniciales del barrido
+
+- `npm audit --omit=dev` detectó 1 vulnerabilidad alta en `xlsx`; no tiene fix publicado desde upstream.
+- Hay duplicidad de assets entre `src/assets` y `public/assets`. Las copias públicas de:
+  - `app-logo.png`
+  - `certification-icon.png`
+  - `recruiting-icon.png`
+  - `status-success.png`
+  no tienen ya consumidores directos necesarios fuera de runtime legado.
+- Los catálogos locales:
+  - `src/shared/data/cargosSolicitud.csv`
+  - `src/shared/data/contratosSolicitud.csv`
+  - `src/shared/data/turnosSolicitud.csv`
+  quedaron sin referencias tras migrar Reclutamiento a Supabase.
+- El paquete exportado de Power Automate/SharePoint y su script de provisión siguen versionados, pero ya no forman parte del runtime actual de la app.
+
+## Resultado del barrido profundo
+
+- Se eliminaron catálogos locales de Reclutamiento ya reemplazados por Supabase:
+  - `src/shared/data/cargosSolicitud.csv`
+  - `src/shared/data/contratosSolicitud.csv`
+  - `src/shared/data/turnosSolicitud.csv`
+- Se eliminaron artefactos heredados de SharePoint/Power Automate:
+  - `scripts/sharepoint/provision-certificates-lists.ps1`
+  - `GeneradordeCertificados_20260417034937/`
+  - documentación operativa SharePoint específica asociada
+- Se consolidó el logo de `Operaciones` para usar el asset empaquetado de `src/assets` en vez de la copia pública duplicada.
+- Se eliminaron copias públicas no utilizadas de:
+  - `app-logo.png`
+  - `certification-icon.png`
+  - `recruiting-icon.png`
+  - `status-success.png`
+- `npm run build`: correcto
+- No se detectaron secretos hardcodeados en runtime; las referencias encontradas a claves son nombres de variables/documentación o lectura desde entorno.
+- Riesgo/vulnerabilidad pendiente:
+  - `xlsx` mantiene 1 vulnerabilidad alta reportada por `npm audit --omit=dev`
+  - no existe fix publicado desde upstream; el paquete sigue aislado por import dinámico solo en el exportador de `Operaciones`
+- Deuda técnica detectada y no tocada en esta pasada por riesgo de regresión:
+  - `// @ts-nocheck` sigue presente en:
+    - `src/modules/operaciones/pages/OperacionesDashboard.tsx`
+    - `src/modules/operaciones/services/operacionesApi.ts`
+    - `src/modules/operaciones/lib/service-entry.ts`
+    - `src/modules/operaciones/data/services-data.ts`

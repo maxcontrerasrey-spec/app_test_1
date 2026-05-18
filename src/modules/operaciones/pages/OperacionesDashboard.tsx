@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import appLogo from "../../../assets/app-logo.png";
 
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
@@ -333,7 +334,7 @@ function LoginScreen({ email, password, onEmailChange, onPasswordChange, onSubmi
         <div className="login-copy">
           <div className="login-heading">
             <div className="login-brand">
-              <img src="/assets/app-logo.png" alt="JM" />
+              <img src={appLogo} alt="JM" />
             </div>
             <h1>Plataforma de Control</h1>
           </div>
