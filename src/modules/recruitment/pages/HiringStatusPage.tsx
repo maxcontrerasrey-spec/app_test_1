@@ -175,7 +175,7 @@ export function HiringStatusPage() {
     }
 
     setLocalStatus(
-      `Cambios del folio ${selectedRow.folio} guardados en modo local. Luego esto actualizará SharePoint.`
+      `Cambios del folio ${selectedRow.folio} guardados en modo local. Luego esto actualizará Supabase.`
     );
   };
 

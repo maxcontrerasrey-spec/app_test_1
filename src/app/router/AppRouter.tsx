@@ -42,6 +42,10 @@ const AccessDeniedPage = lazy(async () => ({
   default: (await import("../../modules/auth/pages/AccessDeniedPage")).AccessDeniedPage
 }));
 
+const OperacionesDashboard = lazy(async () => ({
+  default: (await import("../../modules/operaciones/pages/OperacionesDashboard")).OperacionesDashboard
+}));
+
 function RouteLoadingScreen() {
   return (
     <section className="auth-loading-screen">
@@ -104,10 +108,7 @@ export function AppRouter() {
               path="/operaciones"
               element={
                 <RoleProtectedRoute moduleCode="operaciones">
-                  <ModulePlaceholderPage
-                    title="Operaciones"
-                    description="Espacio reservado para procesos operacionales y paneles de gestión."
-                  />
+                  <OperacionesDashboard />
                 </RoleProtectedRoute>
               }
             />

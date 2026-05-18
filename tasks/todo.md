@@ -93,7 +93,7 @@
   - `/sin-acceso`
   - gating por rol en navegación y rutas
 - Recordatorio operativo:
-  - Netlify debe tener `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` configuradas en variables de entorno; de lo contrario, `Continuar` no podrá autenticar contra Supabase
+  - Cloudflare Pages debe tener `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` configuradas en variables de entorno; de lo contrario, `Continuar` no podrá autenticar contra Supabase
 
 ## Base robusta de usuarios y permisos
 

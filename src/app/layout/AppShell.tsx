@@ -1,9 +1,60 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { homeNavigationItem, navigationModules } from "../../shared/config/navigation";
+import {
+  homeNavigationItem,
+  navigationModules,
+  type NavigationItem
+} from "../../shared/config/navigation";
 import logo from "../../assets/app-logo.png";
 import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
+
+function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
+  const commonProps = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const
+  };
+
+  switch (iconKey) {
+    case "timeline":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M5 18h14" />
+          <path {...commonProps} d="M7 15V9" />
+          <path {...commonProps} d="M12 15V6" />
+          <path {...commonProps} d="M17 15v-3" />
+        </svg>
+      );
+    case "certificate":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M7 4h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+          <path {...commonProps} d="m9 20 3-2 3 2v-4H9Z" />
+          <path {...commonProps} d="M9 8h6" />
+        </svg>
+      );
+    case "tracking":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle {...commonProps} cx="11" cy="11" r="6" />
+          <path {...commonProps} d="m20 20-4.2-4.2" />
+          <path {...commonProps} d="M11 8v3l2 1.5" />
+        </svg>
+      );
+    case "document":
+    default:
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M8 4h6l4 4v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+          <path {...commonProps} d="M14 4v4h4" />
+          <path {...commonProps} d="M9 13h6" />
+        </svg>
+      );
+  }
+}
 
 export function AppShell() {
   const location = useLocation();
@@ -40,6 +91,9 @@ export function AppShell() {
   );
 
   const openModuleLabel = pinnedModule ?? hoveredModule;
+  const openModule = visibleModules.find(
+    (module) => module.items?.length && module.label === openModuleLabel
+  );
 
   const clearPinnedNavigation = () => {
     setHoveredModule(null);
@@ -79,7 +133,7 @@ export function AppShell() {
   return (
     <div className="app-shell app-shell-topnav">
       <header className="top-shell">
-        <div className="top-shell-bar">
+        <div className="top-shell-bar" ref={navMenuRef}>
           <NavLink
             aria-label="Ir al inicio"
             className="top-brand-block"
@@ -90,7 +144,7 @@ export function AppShell() {
           </NavLink>
 
           <div className="top-nav-stage">
-            <nav className="top-nav" aria-label="Modulos" ref={navMenuRef}>
+            <nav className="top-nav" aria-label="Modulos">
               <NavLink
                 key={homeNavigationItem.to}
                 to={homeNavigationItem.to}
@@ -161,24 +215,6 @@ export function AppShell() {
                       </span>
                     </button>
 
-                    {isModuleOpen ? (
-                      <div className="top-nav-flyout">
-                        {module.items.map((item) => (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            onClick={clearPinnedNavigation}
-                            className={({ isActive }) =>
-                              isActive
-                                ? "top-nav-flyout-link top-nav-flyout-link-active"
-                                : "top-nav-flyout-link"
-                            }
-                          >
-                            <span>{item.label}</span>
-                          </NavLink>
-                        ))}
-                      </div>
-                    ) : null}
                   </div>
                 );
               })}
@@ -227,6 +263,38 @@ export function AppShell() {
             ) : null}
           </div>
         </div>
+
+        {openModule?.items?.length ? (
+          <div
+            className="top-nav-mega-shell"
+            onMouseLeave={() => !pinnedModule && setHoveredModule(null)}
+          >
+            <div className="top-nav-mega-panel">
+              <div className="top-nav-mega-grid">
+                {openModule.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={clearPinnedNavigation}
+                    className={({ isActive }) =>
+                      isActive
+                        ? "top-nav-mega-link top-nav-mega-link-active"
+                        : "top-nav-mega-link"
+                    }
+                  >
+                    <span className="top-nav-mega-icon">
+                      <SubmenuIcon iconKey={item.iconKey} />
+                    </span>
+                    <span className="top-nav-mega-copy">
+                      <strong>{item.label}</strong>
+                      <small>{item.description ?? "Modulo disponible"}</small>
+                    </span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       <main className="main-content main-content-topnav">

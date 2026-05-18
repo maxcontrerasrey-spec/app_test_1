@@ -9,6 +9,8 @@ export type NavigationItem = {
   moduleCode: AppModuleCode;
   to: string;
   label: string;
+  description?: string;
+  iconKey?: "document" | "timeline" | "certificate" | "tracking";
 };
 
 export type NavigationModule = {
@@ -25,22 +27,30 @@ export const navigationModules: NavigationModule[] = [
       {
         moduleCode: "solicitud_contrataciones",
         to: "/solicitud-contrataciones",
-        label: "Solicitud de Contrataciones"
+        label: "Solicitud de Contrataciones",
+        description: "Crea y envía requerimientos para aprobación.",
+        iconKey: "document"
       },
       {
         moduleCode: "control_contrataciones",
         to: "/control-contrataciones",
-        label: "Control de Contrataciones"
+        label: "Control de Contrataciones",
+        description: "Revisa y administra folios y seguimiento.",
+        iconKey: "timeline"
       },
       {
         moduleCode: "certificados",
         to: "/certificados",
-        label: "Generador de Certificados - Competencias"
+        label: "Generador de Certificados - Competencias",
+        description: "Genera certificados operativos por competencias.",
+        iconKey: "certificate"
       },
       {
         moduleCode: "seguimiento_certificados",
         to: "/seguimiento-certificados",
-        label: "Seguimiento de Certificados"
+        label: "Seguimiento de Certificados",
+        description: "Consulta estados y trazabilidad de certificados.",
+        iconKey: "tracking"
       }
     ]
   },

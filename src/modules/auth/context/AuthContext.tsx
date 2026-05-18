@@ -25,6 +25,7 @@ type ProfileRecord = {
   department: string | null;
   status: "pending" | "active" | "suspended" | "inactive";
   is_super_admin: boolean;
+  must_reset_password: boolean;
 };
 
 type AuthContextValue = {
@@ -127,7 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const [profileResponse, rolesResponse] = await Promise.all([
         supabaseClient
           .from("profiles")
-          .select("id, email, full_name, job_title, department, status, is_super_admin")
+          .select(
+            "id, email, full_name, job_title, department, status, is_super_admin, must_reset_password"
+          )
           .eq("id", userId)
           .maybeSingle<ProfileRecord>(),
         supabaseClient.from("user_roles").select("*").eq("user_id", userId)

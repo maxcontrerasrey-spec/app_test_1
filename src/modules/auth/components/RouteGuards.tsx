@@ -15,7 +15,7 @@ function AuthLoadingScreen() {
 }
 
 export function ProtectedRoute() {
-  const { isConfigured, isLoading, user } = useAuth();
+  const { isConfigured, isLoading, profile, user } = useAuth();
   const location = useLocation();
 
   if (!isConfigured) {
@@ -37,14 +37,32 @@ export function ProtectedRoute() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
+  if (profile?.must_reset_password) {
+    return <Navigate to="/reset-password" replace />;
+  }
+
+  if (profile && profile.status !== "active") {
+    return (
+      <Navigate
+        to="/sin-acceso"
+        replace
+        state={{ reason: "profile-status", status: profile.status }}
+      />
+    );
+  }
+
   return <Outlet />;
 }
 
 export function PublicOnlyRoute() {
-  const { isConfigured, isLoading, isRecoveryMode, user } = useAuth();
+  const { isConfigured, isLoading, isRecoveryMode, profile, user } = useAuth();
 
   if (isConfigured && isLoading) {
     return <AuthLoadingScreen />;
+  }
+
+  if (isConfigured && user && profile?.must_reset_password && !isRecoveryMode) {
+    return <Navigate to="/reset-password" replace />;
   }
 
   if (isConfigured && user && !isRecoveryMode) {

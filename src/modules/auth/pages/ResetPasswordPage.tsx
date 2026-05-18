@@ -5,8 +5,15 @@ import { useAuth } from "../context/AuthContext";
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
-  const { isConfigured, isLoading, isRecoveryMode, updatePassword, signOut, user } =
-    useAuth();
+  const {
+    isConfigured,
+    isLoading,
+    isRecoveryMode,
+    profile,
+    updatePassword,
+    signOut,
+    user
+  } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -18,7 +25,13 @@ export function ResetPasswordPage() {
     confirmPassword.trim().length >= 8 &&
     !isSubmitting;
 
-  if (isConfigured && !isLoading && user && !isRecoveryMode) {
+  if (
+    isConfigured &&
+    !isLoading &&
+    user &&
+    !isRecoveryMode &&
+    !profile?.must_reset_password
+  ) {
     return <Navigate to="/" replace />;
   }
 
