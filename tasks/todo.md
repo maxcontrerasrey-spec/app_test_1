@@ -261,6 +261,20 @@
 - El mega menú mantiene iconos y estructura flotante, pero con una densidad más controlada.
 - `Solicitud de Contrataciones` eliminó el marcador temporal, bajó la altura del hero y compactó el resumen lateral para que el formulario arranque antes.
 - `npm run build`: correcto
+
+## Corrección de login, overlays de calendario y shell superior
+
+- [x] Corregir el layout del login para que colapse correctamente en pantallas más estrechas
+- [x] Asegurar que los calendarios flotantes queden sobre tarjetas y resúmenes adyacentes
+- [x] Convertir el shell superior en una barra plana continua pegada al borde superior
+- [x] Revalidar compilación
+
+## Resultado de corrección de login, overlays y shell
+
+- El login ahora tiene un breakpoint real para pasar de dos columnas a una sola antes de que una mitad se degrade visualmente.
+- Los calendarios de selección de fecha quedaron por encima de cajas y paneles vecinos tanto en Reclutamiento como en Operaciones.
+- La navegación superior dejó de estar encapsulada en una cápsula redondeada y pasó a una barra continua pegada al borde superior del lienzo.
+- `npm run build`: correcto
 - [x] Hacer que las grillas de `Inicio` colapsen antes para evitar hacinamiento
 - [x] Reacomodar cards y acciones de aprobaciones para pantallas medianas y móviles
 - [x] Revalidar compilación y publicar el ajuste responsivo

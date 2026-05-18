@@ -95,7 +95,9 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: 0.55rem 1.1rem 0.25rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid rgba(210, 210, 212, 0.9);
   backdrop-filter: blur(18px);
 }
 
@@ -105,11 +107,10 @@ textarea {
   align-items: center;
   gap: 0.8rem;
   min-height: 3.55rem;
-  padding: 0.35rem 0.8rem;
-  border: 1px solid rgba(210, 210, 212, 0.9);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 10px 28px rgba(32, 32, 36, 0.06);
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  padding: 0.35rem 1.2rem;
+  background: transparent;
 }
 
 .top-nav-stage {
@@ -127,9 +128,8 @@ textarea {
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f4f4f6 100%);
+  border-radius: 12px;
+  background: transparent;
 }
 
 .app-logo {
@@ -255,7 +255,9 @@ textarea {
 }
 
 .top-nav-mega-shell {
-  padding: 0.1rem 0.2rem 0;
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  padding: 0 1.2rem 0.2rem;
 }
 
 .top-nav-mega-panel {
@@ -669,6 +671,8 @@ textarea {
   gap: 1rem;
   width: 100%;
   min-width: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .requester-grid {
@@ -703,6 +707,7 @@ textarea {
   display: grid;
   gap: 0.45rem;
   min-width: 0;
+  position: relative;
 }
 
 .field-with-suffix {
@@ -787,6 +792,7 @@ textarea {
 .date-picker {
   position: relative;
   min-width: 0;
+  z-index: 12;
 }
 
 .date-trigger {
@@ -814,7 +820,7 @@ textarea {
   border-radius: 18px;
   background: #ffffff;
   box-shadow: 0 18px 40px rgba(28, 48, 74, 0.12);
-  z-index: 30;
+  z-index: 240;
 }
 
 .date-popover-header {
@@ -1376,6 +1382,8 @@ textarea {
   border-radius: 24px;
   background: #fbfbfc;
   justify-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .summary-grid {
@@ -1792,7 +1800,7 @@ textarea {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 3rem;
+  padding: 2rem;
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.92), rgba(244, 240, 237, 0.92)),
     linear-gradient(180deg, #edf1f5 0%, #f4f0ed 100%);
@@ -1935,6 +1943,7 @@ textarea {
   align-content: center;
   gap: 1.5rem;
   padding: 2.5rem 2.2rem;
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .login-form-panel-single {
@@ -2056,12 +2065,13 @@ textarea {
 
 @media (max-width: 1100px) {
   .top-shell {
-    padding: 1rem 1rem 0.9rem;
+    padding: 0;
   }
 
   .top-shell-bar {
     grid-template-columns: auto minmax(0, 1fr);
     row-gap: 0.9rem;
+    padding-inline: 1rem;
   }
 
   .top-nav-stage {
@@ -2149,6 +2159,16 @@ textarea {
     justify-items: start;
     text-align: left;
   }
+
+  .login-frame {
+    grid-template-columns: 1fr;
+    max-width: 680px;
+  }
+
+  .login-brand-panel,
+  .login-form-panel {
+    padding: 1.8rem;
+  }
 }
 
 @media (max-width: 900px) {
@@ -2180,15 +2200,33 @@ textarea {
   .top-nav-mega-panel {
     padding: 0.9rem 1rem;
   }
+
+  .login-shell {
+    padding: 1.1rem;
+  }
+
+  .login-frame {
+    border-radius: 24px;
+  }
+
+  .login-brand-copy-spacer,
+  .login-card-copy-spacer {
+    min-height: 0;
+  }
 }
 
 @media (max-width: 720px) {
   .top-shell {
-    padding-inline: 0.75rem;
+    padding: 0;
   }
 
   .main-content {
     padding: 1.25rem;
+  }
+
+  .top-shell-bar,
+  .top-nav-mega-shell {
+    padding-inline: 0.75rem;
   }
 
   .field-row,
@@ -2230,5 +2268,14 @@ textarea {
   .request-summary-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .login-brand-copy h1 {
+    white-space: normal;
+  }
+
+  .login-benefits li {
+    min-height: 0;
+    align-items: flex-start;
   }
 }

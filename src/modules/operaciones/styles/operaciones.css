@@ -676,6 +676,7 @@ textarea[aria-invalid="true"] {
 
 .date-picker-field {
   position: relative;
+  z-index: 12;
 }
 
 .jornada-panel select {
@@ -719,7 +720,7 @@ textarea[aria-invalid="true"] {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  z-index: 100;
+  z-index: 260;
   width: 320px;
   padding: 16px;
   border: 1px solid rgba(216, 221, 225, 0.95);
