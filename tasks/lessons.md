@@ -37,3 +37,5 @@
 - Si una barra superior busca parecerse a un patrón editorial/marketing como Mailgun, la corrección principal no es centrar o ensanchar elementos sino bajar altura útil: menos padding, menos radio, dropdown más compacto y panel de usuario más corto.
 - En login no confiar en una grilla fija de dos columnas. Debe existir un breakpoint explícito que apile marca y formulario antes de que una mitad quede convertida en bloque vacío o panel gris dominante.
 - Los calendarios flotantes deben ganarle siempre a tarjetas, resúmenes y paneles adyacentes. No basta con subir el `z-index` del popover; el contenedor inmediato también debe crear una capa superior.
+- En la navegación superior, la ruta raíz `"/"` debe usar `end` en `NavLink`; si no, `Inicio` aparece activo en todas las vistas y falsea la selección real.
+- Si el shell superior adopta una estética plana, los submenús no deben volver como cápsulas o globos redondeados. Mantenerlos en panel rectangular alineado al header, sin sombras y con separadores claros.

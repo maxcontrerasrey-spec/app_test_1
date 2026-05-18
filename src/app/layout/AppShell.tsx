@@ -153,6 +153,7 @@ export function AppShell() {
               <NavLink
                 key={homeNavigationItem.to}
                 to={homeNavigationItem.to}
+                end
                 className={({ isActive }) =>
                   isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
                 }
@@ -172,6 +173,7 @@ export function AppShell() {
                     <NavLink
                       key={module.label}
                       to={module.to ?? "/"}
+                      end
                       className={({ isActive }) =>
                         isActive || isModuleActive
                           ? "top-nav-link top-nav-link-active"

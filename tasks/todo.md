@@ -435,3 +435,20 @@
 - `Generador de Certificados` ahora usa una grilla específica para su relación `formulario/resumen`.
 - Se evita arrastrar la misma tensión de layout que tenía `Solicitud de Contrataciones`.
 - `npm run build`: correcto
+
+
+## Ajuste fino de shell superior y submenús rectos
+
+- [x] Corregir estado activo para que `Inicio` solo aparezca seleccionado en `/`
+- [x] Agrandar y reposicionar el logo JM arriba a la izquierda del header
+- [x] Reemplazar el globo de submenús por panel rectangular alineado al header y con separadores
+- [x] Eliminar sombra del estado activo y dejar solo contorno del menú seleccionado
+- [x] Revalidar compilación y empujar a `main`
+
+## Resultado de ajuste fino de shell superior y submenús rectos
+
+- `Inicio` ya no queda falsamente activo fuera de `/`; ahora usa coincidencia exacta.
+- El logo JM del header superior ganó tamaño y quedó anclado más arriba y a la izquierda dentro de su bloque.
+- Los submenús dejaron de abrirse como cápsulas redondeadas y ahora usan un panel rectangular continuo, sin sombra y con separadores entre opciones.
+- Los menús seleccionados mantienen solo el contorno/cápsula de selección, sin sombras activas.
+- `npm run build`: correcto
