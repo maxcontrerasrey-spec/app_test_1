@@ -527,7 +527,7 @@ textarea {
 
 .hiring-layout-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.78fr) minmax(320px, 0.82fr);
+  grid-template-columns: minmax(0, 1.58fr) minmax(380px, 0.98fr);
   grid-template-areas:
     "hero summary"
     "form summary";
@@ -551,7 +551,7 @@ textarea {
 }
 
 .form-hero .hero-copy {
-  max-width: 46ch;
+  max-width: 42ch;
   font-size: 0.98rem;
 }
 
@@ -619,6 +619,7 @@ textarea {
 
 .field-with-suffix {
   position: relative;
+  display: grid;
 }
 
 .field-row {
@@ -1288,8 +1289,8 @@ textarea {
 .summary-grid {
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem 0.9rem;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
 }
 
 .summary-grid div {
@@ -1300,7 +1301,7 @@ textarea {
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.summary-grid div:nth-last-child(-n + 2) {
+.summary-grid div:last-child {
   border-bottom: 0;
   padding-bottom: 0;
 }
@@ -2016,15 +2017,6 @@ textarea {
   .schedule-grid,
   .support-grid {
     grid-template-columns: 1fr;
-  }
-
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .summary-grid div:nth-last-child(-n + 2) {
-    border-bottom: 1px solid var(--border-subtle);
-    padding-bottom: 0.65rem;
   }
 
   .summary-grid div:last-child {

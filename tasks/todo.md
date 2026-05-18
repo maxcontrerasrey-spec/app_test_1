@@ -340,3 +340,17 @@
 - El panel de resumen lateral fue reducido a un set corto de campos clave y a una malla de dos columnas para no generar una lista vertical innecesariamente larga.
 - El hero se compactó para liberar altura útil y hacer que los primeros controles del formulario aparezcan antes.
 - `npm run build`: correcto
+
+## Ajuste fino del resumen y campo de renta
+
+- [x] Reubicar correctamente el sufijo `$` del campo `Renta liquida ofrecida`
+- [x] Volver el resumen lateral a una sola columna vertical
+- [x] Ceder algo de ancho del formulario para mejorar lectura del resumen
+- [x] Revalidar compilación
+
+## Resultado de ajuste fino del resumen y renta
+
+- El símbolo `$` quedó anclado al control de renta y ya no al bloque completo del campo.
+- El resumen lateral volvió a una sola columna de lectura continua.
+- La columna izquierda del formulario cedió ancho suficiente para que el resumen use la altura lateral completa sin compactarse en dos columnas.
+- `npm run build`: correcto

@@ -940,22 +940,24 @@ export function HiringRequestPage() {
                 </select>
               </div>
 
-              <div className="field-group field-with-suffix">
+              <div className="field-group">
                 <label className="field-label" htmlFor="renta-liquida">
                   Renta liquida ofrecida
                 </label>
-                <input
-                  className="text-field text-field-with-suffix"
-                  id="renta-liquida"
-                  inputMode="numeric"
-                  value={formatCurrencyDisplay(rentaLiquidaOfrecida)}
-                  onChange={(event) =>
-                    setRentaLiquidaOfrecida(normalizeCurrencyInput(event.target.value))
-                  }
-                  placeholder="Ingrese renta liquida"
-                  type="text"
-                />
-                <span className="field-suffix">$</span>
+                <div className="field-with-suffix">
+                  <input
+                    className="text-field text-field-with-suffix"
+                    id="renta-liquida"
+                    inputMode="numeric"
+                    value={formatCurrencyDisplay(rentaLiquidaOfrecida)}
+                    onChange={(event) =>
+                      setRentaLiquidaOfrecida(normalizeCurrencyInput(event.target.value))
+                    }
+                    placeholder="Ingrese renta liquida"
+                    type="text"
+                  />
+                  <span className="field-suffix">$</span>
+                </div>
               </div>
             </div>
 
