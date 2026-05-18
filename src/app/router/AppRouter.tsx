@@ -106,6 +106,10 @@ export function AppRouter() {
             />
             <Route
               path="/operaciones"
+              element={<Navigate to="/operaciones/resumen" replace />}
+            />
+            <Route
+              path="/operaciones/:view"
               element={
                 <RoleProtectedRoute moduleCode="operaciones">
                   <OperacionesDashboard />

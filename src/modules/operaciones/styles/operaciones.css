@@ -246,31 +246,90 @@ textarea {
   gap: 18px;
 }
 
-.app-rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 22px;
-  padding: 18px 14px;
-  border-radius: 30px;
-  background: linear-gradient(180deg, #17191d 0%, #101215 100%);
-  box-shadow: 0 22px 40px rgba(11, 14, 18, 0.28);
-}
-
-.app-rail__brand {
+.operaciones-layout-grid {
   display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.96);
+  grid-template-columns: clamp(320px, 24vw, 380px) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
 }
 
-.app-rail__brand img {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
+.operaciones-module-shell {
+  display: grid;
 }
+
+.operaciones-content {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.operations-page-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.operations-page-hero .dashboard-hero__copy {
+  padding: 1.2rem 1.35rem;
+}
+
+.operations-page-hero .dashboard-hero__copy h3 {
+  font-size: clamp(1.45rem, 1.8vw, 1.95rem);
+}
+
+.operations-page-hero .dashboard-hero__copy p {
+  max-width: 56ch;
+}
+
+.operations-control-grid {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+.operations-control-grid--summary,
+.operations-control-grid--base,
+.operations-control-grid--export {
+  grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
+}
+
+.operations-panel {
+  margin-bottom: 0;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: none;
+}
+
+.operations-panel .panel-label,
+.operations-panel label span,
+.operations-panel .metrics span,
+.operations-panel .metrics strong {
+  color: var(--muted);
+}
+
+.operations-panel strong,
+.operations-panel h3 {
+  color: var(--text-base);
+}
+
+.operations-panel input,
+.operations-panel select,
+.operations-panel textarea,
+.operations-panel .input-like-button {
+  background: #ffffff;
+  border-color: var(--border);
+}
+
+.operations-metrics-panel {
+  height: 100%;
+  align-content: start;
+}
+
+.operations-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
 
 .sidebar {
   position: relative;
@@ -663,11 +722,10 @@ textarea[aria-invalid="true"] {
   z-index: 100;
   width: 320px;
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(216, 221, 225, 0.95);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  background: #f4f4f6;
+  box-shadow: 0 18px 40px rgba(31, 42, 51, 0.18);
 }
 
 .date-picker.is-hidden {
@@ -699,7 +757,7 @@ textarea[aria-invalid="true"] {
   text-align: center;
   font-size: var(--text-xs);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.84);
+  color: var(--muted);
 }
 
 .date-picker__grid {
@@ -824,7 +882,7 @@ textarea[aria-invalid="true"] {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin: 24px 0 18px;
+  margin: 0 0 18px;
 }
 
 .toolbar-copy {
@@ -1603,6 +1661,12 @@ textarea[aria-invalid="true"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .operations-control-grid--summary,
+  .operations-control-grid--base,
+  .operations-control-grid--export {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (max-width: 760px) {
@@ -1641,6 +1705,10 @@ textarea[aria-invalid="true"] {
     grid-template-columns: 1fr;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .operations-inline-fields {
+    grid-template-columns: 1fr;
   }
 
   .brand h1 {

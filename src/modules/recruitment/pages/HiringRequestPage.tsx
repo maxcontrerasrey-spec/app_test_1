@@ -50,8 +50,6 @@ const monthOptions = [
   "Diciembre"
 ];
 
-const HIRING_REQUEST_BUILD_MARKER = "HR-BUILD-2026-05-16-01";
-
 function toTodayDateValue() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
@@ -384,36 +382,25 @@ export function HiringRequestPage() {
     <section className="page">
       <section className="form-shell">
         <div className="hiring-layout-grid">
-          <div className="hero-panel form-copy form-hero">
-            <span className="eyebrow">Reclutamiento</span>
-            <span className="build-marker">{HIRING_REQUEST_BUILD_MARKER}</span>
-            <h2>Solicitud de Contrataciones</h2>
-            <p className="hero-copy">
-              Complete los campos obligatorios de la solicitud para registrar una nueva
-              contratacion y dejarla lista para aprobacion.
-            </p>
-            <p className="hero-copy">
-              {isCatalogsLoading
-                ? "Cargando catálogos desde Supabase."
-                : catalogsError
-                  ? catalogsError
-                  : "Catálogos operativos cargados desde Supabase."}
-            </p>
-          </div>
-
-          <aside className="summary-panel">
-            <span className="section-chip">Resumen de solicitud</span>
-            <div className="summary-grid">
-              {summaryRows.map((row) => (
-                <div key={row.label}>
-                  <small>{row.label}</small>
-                  <strong>{row.value}</strong>
-                </div>
-              ))}
+          <div className="hiring-main-column">
+            <div className="hero-panel hero-panel-compact form-copy form-hero">
+              <div className="hero-panel-meta">
+                <span className="eyebrow">Reclutamiento</span>
+                <span className="hero-copy-status">
+                  {isCatalogsLoading
+                    ? "Cargando catalogos"
+                    : catalogsError
+                      ? "Catalogos con incidencia"
+                      : "Catalogos sincronizados"}
+                </span>
+              </div>
+              <h2>Solicitud de Contrataciones</h2>
+              <p className="hero-copy">
+                Registra una nueva contratación y déjala lista para aprobación.
+              </p>
             </div>
-          </aside>
 
-          <div className="form-card">
+            <div className="form-card">
             <div className="requester-grid">
               <div className="field-group">
                 <label className="field-label" htmlFor="solicitante-nombre">
@@ -661,66 +648,6 @@ export function HiringRequestPage() {
                   className="text-field text-field-readonly"
                   id="numero-contrato"
                   value={selectedContract?.contractNumber ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-            </div>
-
-            <div className="field-group field-pair">
-              <div className="field-group">
-                <label className="field-label" htmlFor="unidad-costo">
-                  Unidad de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="unidad-costo"
-                  value={selectedContract?.costUnit ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="nombre-unidad-costo">
-                  Nombre unidad de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="nombre-unidad-costo"
-                  value={selectedContract?.costUnitName ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-            </div>
-
-            <div className="field-group field-pair">
-              <div className="field-group">
-                <label className="field-label" htmlFor="codigo-centro-costo">
-                  Codigo centro de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="codigo-centro-costo"
-                  value={selectedContract?.costCenterCode ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="nombre-centro-costo">
-                  Nombre centro de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="nombre-centro-costo"
-                  value={selectedContract?.costCenterName ?? ""}
                   placeholder="Se completa automaticamente"
                   readOnly
                   type="text"
@@ -1062,7 +989,20 @@ export function HiringRequestPage() {
             </div>
 
             {localStatus ? <p className="form-status">{localStatus}</p> : null}
+            </div>
           </div>
+
+          <aside className="summary-panel">
+            <span className="section-chip">Resumen de solicitud</span>
+            <div className="summary-grid">
+              {summaryRows.map((row) => (
+                <div key={row.label}>
+                  <small>{row.label}</small>
+                  <strong>{row.value}</strong>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
 
         {generatedRequest ? (

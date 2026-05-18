@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
@@ -517,7 +518,8 @@ export function OperacionesDashboard() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
-  const [activePage, setActivePage] = useState("inicio");
+  const { view } = useParams();
+  const activePage = view?.replace("-", "_") || "resumen";
   const [selectedContract, setSelectedContract] = useState("");
   const [selectedShift, setSelectedShift] = useState("");
   const [selectedDateValue, setSelectedDateValue] = useState(formatStorageDate(today));
@@ -1222,249 +1224,193 @@ export function OperacionesDashboard() {
       return Boolean(getDriverById(draft.driverId) && getEquipmentByCode(draft.equipmentCode));
     });
 
-  return (
-    <div className="app-shell">
-      <div className="shell shell--with-rail">
-        <aside className="app-rail">
-          <div className="app-rail__brand">
-            <img src="/assets/app-logo.png" alt="JM" />
-          </div>
-
-          <nav className="page-nav page-nav--rail" aria-label="Paginas principales">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`page-nav__item page-nav__item--rail${activePage === item.id ? " is-active" : ""}`}
-                aria-label={item.label}
-                title={item.label}
-                onClick={() => setActivePage(item.id)}
-              >
-                <span className="page-nav__marker" aria-hidden="true">
-                  <img src={item.icon} alt="" />
-                </span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="sidebar-user sidebar-user--rail">
-            <button type="button" className="user-menu-trigger user-menu-trigger--rail" onClick={() => setIsUserMenuOpen((current) => !current)} aria-expanded={isUserMenuOpen} aria-label="Opciones de usuario">
-              <span className="user-menu-avatar">{displayName.charAt(0)}</span>
-            </button>
-
-            {isUserMenuOpen ? (
-              <div className="user-menu-popover user-menu-popover--rail">
-                <div className="user-menu-section">
-                  <p className="user-menu-label">Usuario</p>
-                  <strong>{displayName}</strong>
-                  <span>{session.user.email}</span>
-                  <span>{displayRole}</span>
-                </div>
-
-                <div className="user-menu-section">
-                  <p className="user-menu-label">Contratos disponibles</p>
-                  <ul className="user-menu-list">
-                    {(userContracts.length > 0 ? userContracts : availableContracts).map((contract) => (
-                      <li key={contract}>{contract}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="user-menu-actions">
-                  <button
-                    type="button"
-                    className="ghost-button ghost-button--full"
-                    onClick={() => {
-                      setIsPasswordCardOpen(true);
-                      setIsUserMenuOpen(false);
-                    }}
-                  >
-                    Cambiar contraseña
-                  </button>
-                  <button type="button" className="ghost-button ghost-button--full" onClick={handleSignOut}>
-                    Cerrar sesión
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </aside>
-
-        <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">
-            <img src="/assets/app-logo.png" alt="JM" />
-          </div>
-          <div>
-            <h1>Registro de Servicios</h1>
-          </div>
+  const operationsSummaryControls = (
+    <section className="operations-page-shell">
+      <section className="dashboard-hero operations-page-hero">
+        <div className="dashboard-hero__copy">
+          <h3>Resumen</h3>
+          <p>Indicadores operacionales alimentados desde los registros históricos de planificación.</p>
         </div>
+      </section>
 
-        {activePage === "registros_base" ? (
+      <section className="operations-control-grid operations-control-grid--summary">
+        <section className="panel operations-panel">
+          <p className="panel-label">Resumen</p>
+          <label>
+            <span>Contrato</span>
+            <select value={dashboardContract} onChange={(event) => setDashboardContract(event.target.value)}>
+              <option value="">Todos los contratos</option>
+              {contractOptions.map((contract) => (
+                <option key={contract} value={contract}>
+                  {contract}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="operations-inline-fields">
+            <DatePickerField label="Desde" value={dashboardDateFrom} onChange={setDashboardDateFrom} today={today} />
+            <DatePickerField label="Hasta" value={dashboardDateTo} onChange={setDashboardDateTo} today={today} />
+          </div>
+        </section>
+
+        <section className="panel operations-panel metrics operations-metrics-panel">
+          <article>
+            <span>Planificados</span>
+            <strong>{dashboardSummary.totalPlanned}</strong>
+          </article>
+          <article>
+            <span>Base habilitada</span>
+            <strong>{dashboardSummary.totalExpected}</strong>
+          </article>
+          <article>
+            <span>Cobertura</span>
+            <strong>{dashboardCompletionRate}%</strong>
+          </article>
+        </section>
+      </section>
+    </section>
+  );
+
+  const operationsBaseControls = (
+    <section className="operations-page-shell">
+      <section className="dashboard-hero operations-page-hero">
+        <div className="dashboard-hero__copy">
+          <h3>Registro de servicios base</h3>
+          <p>Define fecha, turno y contrato para habilitar la planificación operativa del día.</p>
+        </div>
+      </section>
+
+      <section className="operations-control-grid operations-control-grid--base">
+        <section className="panel operations-panel jornada-panel">
+          <p className="panel-label">Jornada</p>
+          <div className="field-grid">
+            <DatePickerField label="Fecha" value={selectedDateValue} onChange={setSelectedDateValue} today={today} />
+            <label>
+              <span>Turno</span>
+              <select value={selectedShift} onChange={(event) => setSelectedShift(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.shift)}>
+                <option value="">Selecciona turno</option>
+                <option value="am">AM</option>
+                <option value="pm">PM</option>
+              </select>
+            </label>
+          </div>
+          {submitState.fieldErrors.serviceDate || submitState.fieldErrors.shift ? (
+            <div className="panel-inline-errors">
+              <p className="field-error">{submitState.fieldErrors.serviceDate || ""}</p>
+              <p className="field-error">{submitState.fieldErrors.shift || ""}</p>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="panel operations-panel">
+          <p className="panel-label">Ingreso</p>
+          <label>
+            <span>Contrato</span>
+            <select value={selectedContract} onChange={(event) => setSelectedContract(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.contractCode)}>
+              <option value="">Selecciona contrato</option>
+              {contractOptions.map((contract) => (
+                <option key={contract} value={contract}>
+                  {contract}
+                </option>
+              ))}
+            </select>
+          </label>
+          {submitState.fieldErrors.contractCode ? <p className="field-error">{submitState.fieldErrors.contractCode}</p> : null}
+        </section>
+
+        <section className="panel operations-panel metrics operations-metrics-panel">
+          <article>
+            <span>Servicios del día</span>
+            <strong>{eligibleServices.length}</strong>
+          </article>
+          <article>
+            <span>Contrato activo</span>
+            <strong>{selectedContract || "Todos"}</strong>
+          </article>
+          <article>
+            <span>Categorías</span>
+            <strong>{categoriesCount}</strong>
+          </article>
+        </section>
+      </section>
+    </section>
+  );
+
+  const operationsExportControls = (
+    <section className="operations-page-shell">
+      <section className="dashboard-hero operations-page-hero">
+        <div className="dashboard-hero__copy">
+          <h3>Exportador de Información</h3>
+          <p>Consulta información histórica por contrato y rango de fechas, revisa una vista previa y exporta el resultado a Excel.</p>
+        </div>
+      </section>
+
+      <section className="operations-control-grid operations-control-grid--export">
+        <section className="panel operations-panel">
+          <p className="panel-label">Exportador</p>
+          <label>
+            <span>Contrato</span>
+            <select value={exportContract} onChange={(event) => setExportContract(event.target.value)}>
+              <option value="">Todos los contratos</option>
+              {contractOptions.map((contract) => (
+                <option key={contract} value={contract}>
+                  {contract}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="operations-inline-fields">
+            <DatePickerField label="Desde" value={exportDateFrom} onChange={setExportDateFrom} today={today} />
+            <DatePickerField label="Hasta" value={exportDateTo} onChange={setExportDateTo} today={today} />
+          </div>
+          <div className="export-sidebar-actions">
+            <button type="button" className="ghost-button ghost-button--full" onClick={handleExportSearch} disabled={exportLoading}>
+              {exportLoading ? "Buscando..." : "Buscar"}
+            </button>
+            <button type="button" className="primary-button export-button" onClick={handleExportExcel} disabled={!exportHasRows || exportLoading}>
+              Exportar Excel
+            </button>
+          </div>
+          {exportError ? <p className="field-error">{exportError}</p> : null}
+        </section>
+
+        <section className="panel operations-panel metrics operations-metrics-panel">
+          <article>
+            <span>Filas encontradas</span>
+            <strong>{exportRows.length}</strong>
+          </article>
+          <article>
+            <span>Contrato</span>
+            <strong>{exportContract || "Todos"}</strong>
+          </article>
+          <article>
+            <span>Rango</span>
+            <strong>{exportDateFrom && exportDateTo ? `${exportDateFrom} a ${exportDateTo}` : "Sin rango"}</strong>
+          </article>
+        </section>
+      </section>
+    </section>
+  );
+
+  const operationsSpecialControls = (
+    <section className="operations-page-shell">
+      <section className="dashboard-hero operations-page-hero">
+        <div className="dashboard-hero__copy">
+          <h3>Registro de servicios especiales</h3>
+          <p>Espacio reservado para el flujo de servicios no base. El diseño funcional aún no está definido.</p>
+        </div>
+      </section>
+    </section>
+  );
+
+  return (
+    <div className="operaciones-module-shell">
+      <main className="content operaciones-content">
+
+        {activePage === "resumen" ? (
           <>
-            <section className="panel jornada-panel">
-              <p className="panel-label">Jornada</p>
-              <div className="field-grid">
-                <DatePickerField label="Fecha" value={selectedDateValue} onChange={setSelectedDateValue} today={today} />
-                <label>
-                  <span>Turno</span>
-                  <select value={selectedShift} onChange={(event) => setSelectedShift(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.shift)}>
-                    <option value="">Selecciona turno</option>
-                    <option value="am">AM</option>
-                    <option value="pm">PM</option>
-                  </select>
-                </label>
-              </div>
-              {submitState.fieldErrors.serviceDate || submitState.fieldErrors.shift ? (
-                <div className="panel-inline-errors">
-                  <p className="field-error">{submitState.fieldErrors.serviceDate || ""}</p>
-                  <p className="field-error">{submitState.fieldErrors.shift || ""}</p>
-                </div>
-              ) : null}
-            </section>
-
-            <section className="panel">
-              <p className="panel-label">Ingreso</p>
-              <label>
-                <span>Contrato</span>
-                <select value={selectedContract} onChange={(event) => setSelectedContract(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.contractCode)}>
-                  <option value="">Selecciona contrato</option>
-                  {contractOptions.map((contract) => (
-                    <option key={contract} value={contract}>
-                      {contract}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {submitState.fieldErrors.contractCode ? <p className="field-error">{submitState.fieldErrors.contractCode}</p> : null}
-            </section>
-
-            <section className="panel metrics">
-              <article>
-                <span>Servicios del dia</span>
-                <strong>{eligibleServices.length}</strong>
-              </article>
-              <article>
-                <span>Contrato activo</span>
-                <strong>{selectedContract || "Todos"}</strong>
-              </article>
-              <article>
-                <span>Categorias</span>
-                <strong>{categoriesCount}</strong>
-              </article>
-            </section>
-          </>
-        ) : activePage === "inicio" ? (
-          <>
-            <section className="panel">
-              <p className="panel-label">Inicio</p>
-              <label>
-                <span>Contrato</span>
-                <select value={dashboardContract} onChange={(event) => setDashboardContract(event.target.value)}>
-                  <option value="">Todos los contratos</option>
-                  {contractOptions.map((contract) => (
-                    <option key={contract} value={contract}>
-                      {contract}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <DatePickerField label="Desde" value={dashboardDateFrom} onChange={setDashboardDateFrom} today={today} />
-              <DatePickerField label="Hasta" value={dashboardDateTo} onChange={setDashboardDateTo} today={today} />
-            </section>
-
-            <section className="panel metrics">
-              <article>
-                <span>Planificados</span>
-                <strong>{dashboardSummary.totalPlanned}</strong>
-              </article>
-              <article>
-                <span>Base habilitada</span>
-                <strong>{dashboardSummary.totalExpected}</strong>
-              </article>
-              <article>
-                <span>Cobertura</span>
-                <strong>{dashboardCompletionRate}%</strong>
-              </article>
-            </section>
-          </>
-        ) : activePage === "exportador" ? (
-          <>
-            <section className="panel">
-              <p className="panel-label">Exportador</p>
-              <label>
-                <span>Contrato</span>
-                <select value={exportContract} onChange={(event) => setExportContract(event.target.value)}>
-                  <option value="">Todos los contratos</option>
-                  {contractOptions.map((contract) => (
-                    <option key={contract} value={contract}>
-                      {contract}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <DatePickerField label="Desde" value={exportDateFrom} onChange={setExportDateFrom} today={today} />
-              <DatePickerField label="Hasta" value={exportDateTo} onChange={setExportDateTo} today={today} />
-              <div className="export-sidebar-actions">
-                <button type="button" className="ghost-button ghost-button--full" onClick={handleExportSearch} disabled={exportLoading}>
-                  {exportLoading ? "Buscando..." : "Buscar"}
-                </button>
-                <button type="button" className="primary-button export-button" onClick={handleExportExcel} disabled={!exportHasRows || exportLoading}>
-                  Exportar Excel
-                </button>
-              </div>
-              {exportError ? <p className="field-error">{exportError}</p> : null}
-            </section>
-
-            <section className="panel metrics">
-              <article>
-                <span>Filas encontradas</span>
-                <strong>{exportRows.length}</strong>
-              </article>
-              <article>
-                <span>Contrato</span>
-                <strong>{exportContract || "Todos"}</strong>
-              </article>
-              <article>
-                <span>Rango</span>
-                <strong>{exportDateFrom && exportDateTo ? `${exportDateFrom} a ${exportDateTo}` : "Sin rango"}</strong>
-              </article>
-            </section>
-          </>
-        ) : (
-          <>
-            <section className="panel">
-              <p className="panel-label">Modulo</p>
-              <p className="helper-copy helper-copy--sidebar">
-                Registro de servicios especiales quedará disponible como página independiente. La estructura base ya está lista para integrarlo sin mezclarlo con la planificación estándar.
-              </p>
-            </section>
-
-            <section className="panel metrics">
-              <article>
-                <span>Contratos visibles</span>
-                <strong>{contractOptions.length}</strong>
-              </article>
-              <article>
-                <span>Servicios base</span>
-                <strong>{servicesData.length}</strong>
-              </article>
-            </section>
-          </>
-        )}
-        </aside>
-
-        <main className="content">
-
-        {activePage === "inicio" ? (
-          <section className="dashboard-shell">
-            <section className="dashboard-hero">
-              <div className="dashboard-hero__copy">
-                <h3>Inicio</h3>
-                <p>Indicadores operacionales alimentados desde los registros históricos de planificación.</p>
-              </div>
-            </section>
-
+            {operationsSummaryControls}
+            <section className="dashboard-shell">
             <section className="dashboard-cards">
               <article className="dashboard-card">
                 <span>Servicios planificados</span>
@@ -1530,11 +1476,13 @@ export function OperacionesDashboard() {
                 )}
               </div>
             </section>
-          </section>
+            </section>
+          </>
         ) : null}
 
         {activePage === "registros_base" ? (
           <>
+            {operationsBaseControls}
             <section className="toolbar">
               <div className="toolbar-copy">
                 <h3>Planificacion de Servicios - {selectedContract || "Sin contrato"} - {shiftLabel}</h3>
@@ -1904,12 +1852,7 @@ export function OperacionesDashboard() {
 
         {activePage === "registros_especiales" ? (
           <section className="specials-shell">
-            <section className="toolbar toolbar--page">
-              <div className="toolbar-copy">
-                <h3>Registro de servicios especiales</h3>
-                <p>Espacio reservado para el flujo de servicios no base. El diseño funcional aún no está definido.</p>
-              </div>
-            </section>
+            {operationsSpecialControls}
 
             <article className="reference-card">
               <div className="section-head">
@@ -1927,12 +1870,7 @@ export function OperacionesDashboard() {
 
         {activePage === "exportador" ? (
           <section className="export-shell">
-            <section className="toolbar toolbar--page">
-              <div className="toolbar-copy">
-                <h3>Exportador de Información</h3>
-                <p>Consulta información histórica por contrato y rango de fechas, revisa una vista previa y exporta el resultado a Excel.</p>
-              </div>
-            </section>
+            {operationsExportControls}
 
             <article className="dashboard-table-card">
               <div className="section-head">
@@ -1986,8 +1924,7 @@ export function OperacionesDashboard() {
             </article>
           </section>
         ) : null}
-        </main>
-      </div>
+      </main>
     </div>
   );
 }

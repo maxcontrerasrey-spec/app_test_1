@@ -111,6 +111,12 @@ export function AppShell() {
     return initials || "U";
   }, [displayName]);
 
+
+
+  useEffect(() => {
+    clearPinnedNavigation();
+  }, [location.pathname]);
+
   useEffect(() => {
     if (!isUserMenuOpen && !pinnedModule) {
       return;
@@ -132,13 +138,12 @@ export function AppShell() {
 
   return (
     <div className="app-shell app-shell-topnav">
-      <header className="top-shell">
-        <div className="top-shell-bar" ref={navMenuRef}>
+      <header className="top-shell" ref={navMenuRef}>
+        <div className="top-shell-bar">
           <NavLink
             aria-label="Ir al inicio"
             className="top-brand-block"
             to="/"
-            onClick={clearPinnedNavigation}
           >
             <img alt="Logo JM" className="app-logo app-logo-topbar" src={logo} />
           </NavLink>
@@ -148,7 +153,6 @@ export function AppShell() {
               <NavLink
                 key={homeNavigationItem.to}
                 to={homeNavigationItem.to}
-                onClick={clearPinnedNavigation}
                 className={({ isActive }) =>
                   isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
                 }
@@ -168,7 +172,6 @@ export function AppShell() {
                     <NavLink
                       key={module.label}
                       to={module.to ?? "/"}
-                      onClick={clearPinnedNavigation}
                       className={({ isActive }) =>
                         isActive || isModuleActive
                           ? "top-nav-link top-nav-link-active"

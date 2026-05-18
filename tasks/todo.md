@@ -218,6 +218,49 @@
 ## Responsividad de Inicio
 
 - [x] Reducir presión visual del shell lateral en laptops pequeñas
+
+## Corrección estructural de shell superior y módulos Operativos
+
+- [x] Corregir la interacción del mega menú superior para que los submódulos de `Reclutamiento` y `Operaciones` sean clickeables
+- [x] Eliminar la barra lateral interna del módulo `Operaciones` y reestructurarlo bajo el shell superior común
+- [x] Renombrar `Inicio` a `Resumen` en `Operaciones` y alinear sus submódulos al patrón de navegación superior
+- [x] Corregir el calendario de `Operaciones` para que tenga fondo opaco y contraste legible
+- [x] Reequilibrar `Solicitud de Contrataciones` para que el resumen lateral no empuje visualmente el formulario
+- [x] Documentar la revisión de concordancia del módulo `Operaciones` con la arquitectura general
+- [x] Revalidar compilación y preparar deploy verificado
+
+## Resultado de corrección estructural de shell superior y módulos Operativos
+
+- El mega menú superior ahora usa un contenedor de referencia que incluye tanto la barra como el panel flotante, evitando que el detector de click externo cierre el menú antes de navegar.
+- `Reclutamiento` y `Operaciones` comparten ahora el mismo patrón de submódulos flotantes en la barra superior.
+- `Operaciones` dejó de comportarse como una mini app interna:
+  - se eliminó la barra lateral negra
+  - los filtros y métricas se movieron a tarjetas contextuales dentro del área principal
+  - `Inicio` pasó a `Resumen`
+- El selector de fecha de `Operaciones` quedó con fondo opaco y contraste legible.
+- `Solicitud de Contrataciones` se reequilibró:
+  - el resumen volvió a una columna lateral limpia
+  - el `hero` superior se compactó
+  - se eliminaron bloques duplicados de unidad/centro de costo que estaban alargando la página
+- Revisión de concordancia y autorización:
+  - no fue necesario extender `app_modules` ni `role_module_access`
+  - todos los submódulos de `Operaciones` siguen agrupados bajo `moduleCode: "operaciones"`
+  - `Recursos Humanos` mantiene su propio `moduleCode` separado
+- `npm run build`: correcto
+
+## Ajuste de densidad del shell superior y hero de contratación
+
+- [x] Compactar la barra superior al patrón visual de referencia
+- [x] Retirar el marcador temporal de build del módulo de contratación
+- [x] Reducir altura del hero y densidad del resumen lateral
+- [x] Revalidar compilación
+
+## Resultado de ajuste de densidad
+
+- La barra superior redujo altura útil y padding para acercarse al patrón compacto de referencia.
+- El mega menú mantiene iconos y estructura flotante, pero con una densidad más controlada.
+- `Solicitud de Contrataciones` eliminó el marcador temporal, bajó la altura del hero y compactó el resumen lateral para que el formulario arranque antes.
+- `npm run build`: correcto
 - [x] Hacer que las grillas de `Inicio` colapsen antes para evitar hacinamiento
 - [x] Reacomodar cards y acciones de aprobaciones para pantallas medianas y móviles
 - [x] Revalidar compilación y publicar el ajuste responsivo

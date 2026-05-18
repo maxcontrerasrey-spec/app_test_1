@@ -56,8 +56,36 @@ export const navigationModules: NavigationModule[] = [
   },
   {
     label: "Operaciones",
-    moduleCode: "operaciones",
-    to: "/operaciones"
+    items: [
+      {
+        moduleCode: "operaciones",
+        to: "/operaciones/resumen",
+        label: "Resumen",
+        description: "Vista general y métricas operacionales.",
+        iconKey: "tracking"
+      },
+      {
+        moduleCode: "operaciones",
+        to: "/operaciones/registros-base",
+        label: "Registro de servicios base",
+        description: "Planificación de servicios por contrato.",
+        iconKey: "document"
+      },
+      {
+        moduleCode: "operaciones",
+        to: "/operaciones/registros-especiales",
+        label: "Registro de servicios especiales",
+        description: "Gestión de requerimientos no programados.",
+        iconKey: "document"
+      },
+      {
+        moduleCode: "operaciones",
+        to: "/operaciones/exportador",
+        label: "Exportador de Información",
+        description: "Descarga reportes operacionales detallados.",
+        iconKey: "certificate"
+      }
+    ]
   },
   {
     label: "Recursos Humanos",
