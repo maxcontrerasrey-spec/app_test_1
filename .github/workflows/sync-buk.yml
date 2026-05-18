@@ -25,6 +25,6 @@ jobs:
           BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
           BUK_AREAS_URL: ${{ secrets.BUK_AREAS_URL }}
           BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/sync-buk-employees.mjs
