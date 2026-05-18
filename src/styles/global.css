@@ -569,6 +569,34 @@ textarea {
   align-items: start;
 }
 
+.certificates-layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.52fr) minmax(320px, 0.88fr);
+  gap: 1.7rem;
+  align-items: start;
+}
+
+.certificates-layout-grid > * {
+  min-width: 0;
+}
+
+.certificates-form-card {
+  min-width: 0;
+}
+
+.certificates-summary-panel {
+  align-self: start;
+}
+
+.certificates-summary-grid {
+  grid-template-columns: 1fr;
+}
+
+.certificates-summary-grid div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 .form-workspace-single {
   grid-template-columns: 1fr;
 }
@@ -2003,6 +2031,10 @@ textarea {
       "hero"
       "form"
       "summary";
+  }
+
+  .certificates-layout-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-copy {

@@ -366,3 +366,15 @@
 - Las grillas internas del formulario dejaron de empujar contenido hacia la columna del resumen.
 - `Nombre solicitante`, `Cargo solicitante`, `Correo solicitante`, `Cargo solicitado` y las filas siguientes ahora ceden ancho entre sí en vez de invadir el panel derecho.
 - `npm run build`: correcto
+
+## Corrección del layout lateral en Generador de Certificados
+
+- [x] Aislar una grilla propia para `Generador de Certificados`
+- [x] Evitar que el formulario reutilice la grilla lateral de contratación
+- [x] Revalidar compilación
+
+## Resultado de corrección en certificados
+
+- `Generador de Certificados` ahora usa una grilla específica para su relación `formulario/resumen`.
+- Se evita arrastrar la misma tensión de layout que tenía `Solicitud de Contrataciones`.
+- `npm run build`: correcto

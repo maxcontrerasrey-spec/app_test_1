@@ -293,7 +293,7 @@ export function CertificatesPage() {
 
     setGeneratedRequest(request);
     setLocalStatus(
-      "Solicitud generada en modo local. El siguiente paso será enviar esta misma estructura a SharePoint."
+      "Solicitud generada en modo local. El siguiente paso será persistir esta estructura en Supabase."
     );
     setSelectedInstructorId("");
     setSelectedWorkerLabel("");
@@ -325,8 +325,8 @@ export function CertificatesPage() {
           </p>
         </div>
 
-        <div className="form-workspace">
-          <div className="form-card">
+        <div className="certificates-layout-grid">
+          <div className="form-card certificates-form-card">
             <div className="field-group">
               <label className="field-label" htmlFor="instructor">
                 Instructor
@@ -700,9 +700,9 @@ export function CertificatesPage() {
             {localStatus ? <p className="form-status">{localStatus}</p> : null}
           </div>
 
-          <aside className="summary-panel">
+          <aside className="summary-panel certificates-summary-panel">
             <span className="micro-label section-chip">Resumen de solicitud</span>
-            <div className="summary-grid">
+            <div className="summary-grid certificates-summary-grid">
               <div>
                 <small>Instructor</small>
                 <strong>{selectedInstructor?.fullName ?? "Sin seleccionar"}</strong>
