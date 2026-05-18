@@ -326,3 +326,17 @@
 - [ ] Eliminar fragilidad entre frontend y RPC de contratación por deriva `v1`/`v2`
 - [ ] Limpiar redundancias de tipos/consultas en el dashboard de aprobaciones
 - [ ] Ejecutar validaciones técnicas y documentar hallazgos de seguridad/dependencias
+
+## Compactación estructural del formulario de contratación
+
+- [x] Definir una grilla específica para `hero`, `formulario` y `resumen`
+- [x] Compactar el resumen lateral para que no empuje visualmente el formulario hacia abajo
+- [x] Reducir altura del bloque hero sin perder jerarquía visual
+- [x] Revalidar compilación después del ajuste
+
+## Resultado de compactación estructural
+
+- `Solicitud de Contrataciones` dejó de depender de una composición implícita del shell; ahora usa una grilla dedicada para `hero`, `formulario` y `resumen`.
+- El panel de resumen lateral fue reducido a un set corto de campos clave y a una malla de dos columnas para no generar una lista vertical innecesariamente larga.
+- El hero se compactó para liberar altura útil y hacer que los primeros controles del formulario aparezcan antes.
+- `npm run build`: correcto

@@ -251,14 +251,11 @@ export function HiringRequestPage() {
     { label: "Fecha termino", value: formatDateForDisplay(fechaTermino) || "Pendiente" },
     {
       label: "Renta liquida",
-      value: rentaLiquidaOfrecida ? `$ ${formatCurrencyDisplay(rentaLiquidaOfrecida)}` : "Pendiente"
+      value: rentaLiquidaOfrecida
+        ? `$ ${formatCurrencyDisplay(rentaLiquidaOfrecida)}`
+        : "Pendiente"
     },
-    { label: "Turno", value: turno || "Pendiente" },
-    {
-      label: "Firma solicitante",
-      value: solicitanteFirmado ? "Confirmada" : "Pendiente"
-    },
-    { label: "Estado solicitud", value: "Pendiente" }
+    { label: "Turno", value: turno || "Pendiente" }
   ];
 
   const generatedRows = useMemo(
@@ -386,7 +383,7 @@ export function HiringRequestPage() {
   return (
     <section className="page">
       <section className="form-shell">
-        <div className="form-header-grid">
+        <div className="hiring-layout-grid">
           <div className="hero-panel form-copy form-hero">
             <span className="eyebrow">Reclutamiento</span>
             <span className="build-marker">{HIRING_REQUEST_BUILD_MARKER}</span>
@@ -415,227 +412,225 @@ export function HiringRequestPage() {
               ))}
             </div>
           </aside>
-        </div>
 
-        <div className="form-workspace form-workspace-single">
           <div className="form-card">
-              <div className="requester-grid">
-                <div className="field-group">
-                  <label className="field-label" htmlFor="solicitante-nombre">
-                    Nombre solicitante
-                  </label>
-                  <input
-                    className="text-field text-field-readonly"
-                    id="solicitante-nombre"
-                    value={displayName}
-                    readOnly
-                    type="text"
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="solicitante-cargo">
-                    Cargo solicitante
-                  </label>
-                  <input
-                    className="text-field text-field-readonly"
-                    id="solicitante-cargo"
-                    value={jobTitle}
-                    readOnly
-                    type="text"
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="solicitante-correo">
-                    Correo solicitante
-                  </label>
-                  <input
-                    className="text-field text-field-readonly"
-                    id="solicitante-correo"
-                    value={email}
-                    readOnly
-                    type="email"
-                  />
-                </div>
+            <div className="requester-grid">
+              <div className="field-group">
+                <label className="field-label" htmlFor="solicitante-nombre">
+                  Nombre solicitante
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="solicitante-nombre"
+                  value={displayName}
+                  readOnly
+                  type="text"
+                />
               </div>
 
-              <div className="request-primary-grid">
-                <div className="field-group request-primary-grid-wide">
-                  <label className="field-label" htmlFor="cargo-solicitado">
-                    Cargo solicitado
-                  </label>
-                  <select
-                    className="text-field"
-                    id="cargo-solicitado"
-                    disabled={isCatalogsLoading || Boolean(catalogsError)}
-                    value={cargoSolicitado}
-                    onChange={(event) => setCargoSolicitado(event.target.value)}
+              <div className="field-group">
+                <label className="field-label" htmlFor="solicitante-cargo">
+                  Cargo solicitante
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="solicitante-cargo"
+                  value={jobTitle}
+                  readOnly
+                  type="text"
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="solicitante-correo">
+                  Correo solicitante
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="solicitante-correo"
+                  value={email}
+                  readOnly
+                  type="email"
+                />
+              </div>
+            </div>
+
+            <div className="request-primary-grid">
+              <div className="field-group request-primary-grid-wide">
+                <label className="field-label" htmlFor="cargo-solicitado">
+                  Cargo solicitado
+                </label>
+                <select
+                  className="text-field"
+                  id="cargo-solicitado"
+                  disabled={isCatalogsLoading || Boolean(catalogsError)}
+                  value={cargoSolicitado}
+                  onChange={(event) => setCargoSolicitado(event.target.value)}
+                >
+                  <option value="">Seleccione el cargo</option>
+                  {hiringRoles.map((role) => (
+                    <option key={role.id} value={role.name}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="numero-vacantes">
+                  Numero de Vacantes
+                </label>
+                <input
+                  className="text-field"
+                  id="numero-vacantes"
+                  min="1"
+                  step="1"
+                  value={numeroVacantes}
+                  onChange={(event) => setNumeroVacantes(event.target.value)}
+                  type="number"
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="fecha-solicitada-ingreso">
+                  Fecha solicitada ingreso
+                </label>
+                <div className="date-picker">
+                  <button
+                    type="button"
+                    id="fecha-solicitada-ingreso"
+                    className="text-field date-trigger"
+                    onClick={() => setIsRequestedDatePickerOpen((current) => !current)}
                   >
-                    <option value="">Seleccione el cargo</option>
-                    {hiringRoles.map((role) => (
-                      <option key={role.id} value={role.name}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <span>
+                      {fechaSolicitadaIngreso
+                        ? formatDateForDisplay(fechaSolicitadaIngreso)
+                        : "Seleccione la fecha"}
+                    </span>
+                    <span className="date-trigger-icon" aria-hidden="true">
+                      ▾
+                    </span>
+                  </button>
 
-                <div className="field-group">
-                  <label className="field-label" htmlFor="numero-vacantes">
-                    Numero de Vacantes
-                  </label>
-                  <input
-                    className="text-field"
-                    id="numero-vacantes"
-                    min="1"
-                    step="1"
-                    value={numeroVacantes}
-                    onChange={(event) => setNumeroVacantes(event.target.value)}
-                    type="number"
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="fecha-solicitada-ingreso">
-                    Fecha solicitada ingreso
-                  </label>
-                  <div className="date-picker">
-                    <button
-                      type="button"
-                      id="fecha-solicitada-ingreso"
-                      className="text-field date-trigger"
-                      onClick={() => setIsRequestedDatePickerOpen((current) => !current)}
-                    >
-                      <span>
-                        {fechaSolicitadaIngreso
-                          ? formatDateForDisplay(fechaSolicitadaIngreso)
-                          : "Seleccione la fecha"}
-                      </span>
-                      <span className="date-trigger-icon" aria-hidden="true">
-                        ▾
-                      </span>
-                    </button>
-
-                    {isRequestedDatePickerOpen ? (
-                      <div className="date-popover">
-                        <div className="date-popover-header">
-                          <button
-                            type="button"
-                            className="calendar-nav-button"
-                            onClick={() =>
+                  {isRequestedDatePickerOpen ? (
+                    <div className="date-popover">
+                      <div className="date-popover-header">
+                        <button
+                          type="button"
+                          className="calendar-nav-button"
+                          onClick={() =>
+                            setRequestedDateView(
+                              (current) =>
+                                new Date(current.getFullYear(), current.getMonth() - 1, 1)
+                            )
+                          }
+                        >
+                          ‹
+                        </button>
+                        <div className="calendar-selectors">
+                          <select
+                            className="calendar-select"
+                            value={requestedDateView.getMonth()}
+                            onChange={(event) =>
                               setRequestedDateView(
                                 (current) =>
-                                  new Date(current.getFullYear(), current.getMonth() - 1, 1)
+                                  new Date(
+                                    current.getFullYear(),
+                                    Number(event.target.value),
+                                    1
+                                  )
                               )
                             }
                           >
-                            ‹
-                          </button>
-                          <div className="calendar-selectors">
-                            <select
-                              className="calendar-select"
-                              value={requestedDateView.getMonth()}
-                              onChange={(event) =>
-                                setRequestedDateView(
-                                  (current) =>
-                                    new Date(
-                                      current.getFullYear(),
-                                      Number(event.target.value),
-                                      1
-                                    )
-                                )
-                              }
-                            >
-                              {monthOptions.map((month, index) => (
-                                <option key={month} value={index}>
-                                  {month}
-                                </option>
-                              ))}
-                            </select>
+                            {monthOptions.map((month, index) => (
+                              <option key={month} value={index}>
+                                {month}
+                              </option>
+                            ))}
+                          </select>
 
-                            <select
-                              className="calendar-select"
-                              value={requestedDateView.getFullYear()}
-                              onChange={(event) =>
-                                setRequestedDateView(
-                                  (current) =>
-                                    new Date(
-                                      Number(event.target.value),
-                                      current.getMonth(),
-                                      1
-                                    )
-                                )
-                              }
-                            >
-                              {yearOptions.map((year) => (
-                                <option key={year} value={year}>
-                                  {year}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <button
-                            type="button"
-                            className="calendar-nav-button"
-                            onClick={() =>
+                          <select
+                            className="calendar-select"
+                            value={requestedDateView.getFullYear()}
+                            onChange={(event) =>
                               setRequestedDateView(
                                 (current) =>
-                                  new Date(current.getFullYear(), current.getMonth() + 1, 1)
+                                  new Date(
+                                    Number(event.target.value),
+                                    current.getMonth(),
+                                    1
+                                  )
                               )
                             }
                           >
-                            ›
-                          </button>
+                            {yearOptions.map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))}
+                          </select>
                         </div>
-
-                        <div className="calendar-weekdays">
-                          {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
-                            <span key={day}>{day}</span>
-                          ))}
-                        </div>
-
-                        <div className="calendar-grid">
-                          {requestedDateCalendarDays.map((calendarDay) => {
-                            const value = formatDateValue(calendarDay.value);
-                            const isSelected =
-                              value === formatDateValue(selectedRequestedDate);
-                            const isBeforeToday = value < todayValue;
-
-                            return (
-                              <button
-                                key={calendarDay.key}
-                                type="button"
-                                className={
-                                  isSelected
-                                    ? "calendar-day calendar-day-selected"
-                                    : calendarDay.inMonth
-                                      ? "calendar-day"
-                                      : "calendar-day calendar-day-muted"
-                                }
-                                disabled={isBeforeToday}
-                                onClick={() => {
-                                  setFechaSolicitadaIngreso(value);
-                                  setRequestedDateView(
-                                    new Date(
-                                      calendarDay.value.getFullYear(),
-                                      calendarDay.value.getMonth(),
-                                      1
-                                    )
-                                  );
-                                  setIsRequestedDatePickerOpen(false);
-                                }}
-                              >
-                                {calendarDay.value.getDate()}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <button
+                          type="button"
+                          className="calendar-nav-button"
+                          onClick={() =>
+                            setRequestedDateView(
+                              (current) =>
+                                new Date(current.getFullYear(), current.getMonth() + 1, 1)
+                            )
+                          }
+                        >
+                          ›
+                        </button>
                       </div>
-                    ) : null}
-                  </div>
+
+                      <div className="calendar-weekdays">
+                        {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
+                          <span key={day}>{day}</span>
+                        ))}
+                      </div>
+
+                      <div className="calendar-grid">
+                        {requestedDateCalendarDays.map((calendarDay) => {
+                          const value = formatDateValue(calendarDay.value);
+                          const isSelected =
+                            value === formatDateValue(selectedRequestedDate);
+                          const isBeforeToday = value < todayValue;
+
+                          return (
+                            <button
+                              key={calendarDay.key}
+                              type="button"
+                              className={
+                                isSelected
+                                  ? "calendar-day calendar-day-selected"
+                                  : calendarDay.inMonth
+                                    ? "calendar-day"
+                                    : "calendar-day calendar-day-muted"
+                              }
+                              disabled={isBeforeToday}
+                              onClick={() => {
+                                setFechaSolicitadaIngreso(value);
+                                setRequestedDateView(
+                                  new Date(
+                                    calendarDay.value.getFullYear(),
+                                    calendarDay.value.getMonth(),
+                                    1
+                                  )
+                                );
+                                setIsRequestedDatePickerOpen(false);
+                              }}
+                            >
+                              {calendarDay.value.getDate()}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
+            </div>
 
             <div className="contract-grid">
               <div className="field-group">
@@ -764,11 +759,11 @@ export function HiringRequestPage() {
                               (current) =>
                                 new Date(current.getFullYear(), current.getMonth() - 1, 1)
                             )
-                          }
-                        >
-                          ‹
-                        </button>
-                        <div className="calendar-selectors">
+                            }
+                          >
+                            ‹
+                          </button>
+                          <div className="calendar-selectors">
                           <select
                             className="calendar-select"
                             value={startDateView.getMonth()}
@@ -777,18 +772,18 @@ export function HiringRequestPage() {
                                 (current) =>
                                   new Date(
                                     current.getFullYear(),
-                                    Number(event.target.value),
-                                    1
-                                  )
-                              )
-                            }
-                          >
-                            {monthOptions.map((month, index) => (
-                              <option key={month} value={index}>
-                                {month}
-                              </option>
-                            ))}
-                          </select>
+                                      Number(event.target.value),
+                                      1
+                                    )
+                                )
+                              }
+                            >
+                              {monthOptions.map((month, index) => (
+                                <option key={month} value={index}>
+                                  {month}
+                                </option>
+                              ))}
+                            </select>
 
                           <select
                             className="calendar-select"
@@ -798,19 +793,19 @@ export function HiringRequestPage() {
                                 (current) =>
                                   new Date(
                                     Number(event.target.value),
-                                    current.getMonth(),
-                                    1
-                                  )
-                              )
-                            }
-                          >
-                            {yearOptions.map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                                      current.getMonth(),
+                                      1
+                                    )
+                                )
+                              }
+                            >
+                              {yearOptions.map((year) => (
+                                <option key={year} value={year}>
+                                  {year}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         <button
                           type="button"
                           className="calendar-nav-button"
@@ -819,17 +814,17 @@ export function HiringRequestPage() {
                               (current) =>
                                 new Date(current.getFullYear(), current.getMonth() + 1, 1)
                             )
-                          }
-                        >
-                          ›
-                        </button>
-                      </div>
+                            }
+                          >
+                            ›
+                          </button>
+                        </div>
 
-                      <div className="calendar-weekdays">
-                        {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
-                          <span key={day}>{day}</span>
-                        ))}
-                      </div>
+                        <div className="calendar-weekdays">
+                          {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
+                            <span key={day}>{day}</span>
+                          ))}
+                        </div>
 
                       <div className="calendar-grid">
                         {startDateCalendarDays.map((calendarDay) => {
@@ -838,15 +833,15 @@ export function HiringRequestPage() {
                           const isBeforeToday = value < todayValue;
 
                           return (
-                            <button
-                              key={calendarDay.key}
-                              type="button"
-                              className={
-                                isSelected
-                                  ? "calendar-day calendar-day-selected"
-                                  : calendarDay.inMonth
-                                    ? "calendar-day"
-                                    : "calendar-day calendar-day-muted"
+                              <button
+                                key={calendarDay.key}
+                                type="button"
+                                className={
+                                  isSelected
+                                    ? "calendar-day calendar-day-selected"
+                                    : calendarDay.inMonth
+                                      ? "calendar-day"
+                                      : "calendar-day calendar-day-muted"
                               }
                               disabled={isBeforeToday}
                               onClick={() => {
@@ -862,9 +857,9 @@ export function HiringRequestPage() {
                               }}
                             >
                               {calendarDay.value.getDate()}
-                            </button>
-                          );
-                        })}
+                              </button>
+                            );
+                          })}
                       </div>
                     </div>
                   ) : null}
@@ -961,6 +956,66 @@ export function HiringRequestPage() {
                   type="text"
                 />
                 <span className="field-suffix">$</span>
+              </div>
+            </div>
+
+            <div className="field-group field-pair">
+              <div className="field-group">
+                <label className="field-label" htmlFor="unidad-costo">
+                  Unidad de costo
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="unidad-costo"
+                  value={selectedContract?.costUnit ?? ""}
+                  placeholder="Se completa automaticamente"
+                  readOnly
+                  type="text"
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="nombre-unidad-costo">
+                  Nombre unidad de costo
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="nombre-unidad-costo"
+                  value={selectedContract?.costUnitName ?? ""}
+                  placeholder="Se calcula automaticamente"
+                  readOnly
+                  type="text"
+                />
+              </div>
+            </div>
+
+            <div className="field-group field-pair">
+              <div className="field-group">
+                <label className="field-label" htmlFor="codigo-centro-costo">
+                  Codigo centro de costo
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="codigo-centro-costo"
+                  value={selectedContract?.costCenterCode ?? ""}
+                  placeholder="Se completa automaticamente"
+                  readOnly
+                  type="text"
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="nombre-centro-costo">
+                  Nombre centro de costo
+                </label>
+                <input
+                  className="text-field text-field-readonly"
+                  id="nombre-centro-costo"
+                  value={selectedContract?.costCenterName ?? ""}
+                  placeholder="Se completa automaticamente"
+                  readOnly
+                  type="text"
+                />
               </div>
             </div>
 
