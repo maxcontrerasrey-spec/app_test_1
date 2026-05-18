@@ -452,3 +452,18 @@
 - Los submenús dejaron de abrirse como cápsulas redondeadas y ahora usan un panel rectangular continuo, sin sombra y con separadores entre opciones.
 - Los menús seleccionados mantienen solo el contorno/cápsula de selección, sin sombras activas.
 - `npm run build`: correcto
+
+
+## Ajuste visual Mailgun del header superior
+
+- [x] Eliminar cápsulas por defecto en módulos superiores y dejar solo selección por línea azul inferior
+- [x] Convertir submenús en panel limpio sin tarjetas internas ni globos
+- [x] Mantener iconos y texto alineados con jerarquía editorial simple
+- [x] Revalidar compilación y empujar a `main`
+
+## Resultado de ajuste visual Mailgun del header superior
+
+- Los módulos superiores dejaron de verse como botones/cápsulas por defecto; ahora son texto limpio y solo el seleccionado muestra línea azul inferior.
+- Los submenús quedaron como panel limpio, sin cuadros internos ni globos alrededor de cada opción.
+- Se mantuvieron iconos y copy, pero con jerarquía visual más plana y editorial.
+- `npm run build`: correcto

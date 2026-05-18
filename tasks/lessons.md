@@ -39,3 +39,4 @@
 - Los calendarios flotantes deben ganarle siempre a tarjetas, resúmenes y paneles adyacentes. No basta con subir el `z-index` del popover; el contenedor inmediato también debe crear una capa superior.
 - En la navegación superior, la ruta raíz `"/"` debe usar `end` en `NavLink`; si no, `Inicio` aparece activo en todas las vistas y falsea la selección real.
 - Si el shell superior adopta una estética plana, los submenús no deben volver como cápsulas o globos redondeados. Mantenerlos en panel rectangular alineado al header, sin sombras y con separadores claros.
+- Si la referencia visual del header es tipo Mailgun, los módulos superiores no deben verse como botones por defecto. Deben leerse como texto limpio, y solo el seleccionado debe mostrar línea azul inferior.
