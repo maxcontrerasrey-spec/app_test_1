@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import logo from "../../../assets/app-logo.png";
 import recruitingIcon from "../../../assets/recruiting-icon.png";
 import certificationIcon from "../../../assets/certification-icon.png";
+import operationsIcon from "../../../assets/operacion.png";
+import hrCommercialIcon from "../../../assets/recursos-humanos.png";
 import { useAuth } from "../context/AuthContext";
 
 export function LoginPage() {
@@ -107,8 +109,26 @@ export function LoginPage() {
               Gestión, control y seguimiento del proceso de certificación por
               competencias
             </li>
-            <li>Tu equipo ahorra tiempo con software integrado y facil de usar.</li>
-            <li>Experiencia consistente y profesional en todo momento.</li>
+            <li className="login-benefit-with-image">
+              <span className="login-benefit-icon-wrap" aria-hidden="true">
+                <img
+                  alt=""
+                  className="login-benefit-icon-image login-benefit-icon-image-wide"
+                  src={operationsIcon}
+                />
+              </span>
+              Control y gestion de servicios y asignacion de recursos operativos.
+            </li>
+            <li className="login-benefit-with-image">
+              <span className="login-benefit-icon-wrap" aria-hidden="true">
+                <img
+                  alt=""
+                  className="login-benefit-icon-image login-benefit-icon-image-wide"
+                  src={hrCommercialIcon}
+                />
+              </span>
+              Control y gestion de alcances contractuales y comerciales.
+            </li>
           </ul>
 
           <p className="login-brand-footer">
@@ -180,7 +200,11 @@ export function LoginPage() {
           </form>
 
           <p className="login-caption">
-            Diseñada para mejorar nuestros timpos y procesos.
+            Plataforma diseñada por{" "}
+            <a className="login-caption-link" href="mailto:max.contrerasrey@icolud.com">
+              Maximiliano Contreras
+            </a>
+            .
           </p>
         </div>
       </div>

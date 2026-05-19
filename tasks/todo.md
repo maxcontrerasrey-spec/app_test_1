@@ -520,3 +520,19 @@
     - `src/modules/operaciones/services/operacionesApi.ts`
     - `src/modules/operaciones/lib/service-entry.ts`
     - `src/modules/operaciones/data/services-data.ts`
+
+
+## Ajuste de contenido e iconografía del login
+
+- [x] Cambiar textos solicitados del panel izquierdo y del pie derecho del login
+- [x] Corregir contraste del texto inferior izquierdo para que sea blanco
+- [x] Integrar iconos `operacion.png` y `recursos-humanos.png` con tamaño consistente
+- [x] Convertir `Maximiliano Contreras` en enlace `mailto:`
+- [x] Revalidar compilación y empujar a `main`
+
+## Resultado de ajuste de contenido e iconografía del login
+
+- El texto inferior del panel izquierdo volvió a blanco/alto contraste sobre el fondo rojo.
+- Se reemplazaron los dos textos solicitados del bloque de beneficios y se integraron los iconos `operacion.png` y `recursos-humanos.png`.
+- El pie derecho ahora dice `Plataforma diseñada por Maximiliano Contreras.` y el nombre abre `mailto:max.contrerasrey@icolud.com`.
+- `npm run build`: correcto

@@ -1930,10 +1930,15 @@ textarea {
   object-fit: contain;
 }
 
+.login-benefit-icon-image-wide {
+  width: 2rem;
+  height: 2rem;
+}
+
 .login-brand-footer {
   align-self: end;
   margin-top: 1.5rem;
-  color: var(--text-muted);
+  color: rgba(255, 249, 247, 0.88);
   font-size: 0.95rem;
 }
 
@@ -2002,6 +2007,18 @@ textarea {
 .login-caption {
   font-size: 0.92rem;
   text-align: center;
+}
+
+.login-caption-link {
+  color: var(--title);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.16rem;
+}
+
+.login-caption-link:hover,
+.login-caption-link:focus-visible {
+  color: #111215;
 }
 
 .login-error {

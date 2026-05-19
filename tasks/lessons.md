@@ -41,3 +41,4 @@
 - En la navegación superior, la ruta raíz `"/"` debe usar `end` en `NavLink`; si no, `Inicio` aparece activo en todas las vistas y falsea la selección real.
 - Si el shell superior adopta una estética plana, los submenús no deben volver como cápsulas o globos redondeados. Mantenerlos en panel rectangular alineado al header, sin sombras y con separadores claros.
 - Si la referencia visual del header es tipo Mailgun, los módulos superiores no deben verse como botones por defecto. Deben leerse como texto limpio, y solo el seleccionado debe mostrar línea azul inferior.
+- En el login, los textos secundarios del panel izquierdo no pueden heredar gris bajo contraste si viven sobre fondo rojo. El pie y los mensajes de apoyo deben revisarse explícitamente sobre el fondo real para mantener legibilidad.
