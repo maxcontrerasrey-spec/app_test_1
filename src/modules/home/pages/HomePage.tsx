@@ -113,7 +113,7 @@ function formatPersonLabel(value: string | null | undefined) {
 }
 
 export function HomePage() {
-  const { user, displayName, appRoles, isSuperAdmin } = useAuth();
+  const { user, appRoles, isSuperAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [myRequests, setMyRequests] = useState<HiringRequestSummaryRow[]>([]);
@@ -228,15 +228,6 @@ export function HomePage() {
 
   return (
     <section className="page">
-      <div className="hero-panel hero-panel-accent">
-        <span className="eyebrow eyebrow-inverse">Plataforma JM</span>
-        <h2>Panel de Inicio de {displayName}</h2>
-        <p className="hero-copy">
-          Este panel resume tus requerimientos de contratación y, cuando corresponda, tus
-          aprobaciones pendientes.
-        </p>
-      </div>
-
       {isApprover ? (
         <article className="info-card approval-panel-card approval-panel-primary">
           <div className="home-section-header">
