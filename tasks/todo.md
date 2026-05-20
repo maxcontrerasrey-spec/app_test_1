@@ -536,3 +536,23 @@
 - Se reemplazaron los dos textos solicitados del bloque de beneficios y se integraron los iconos `operacion.png` y `recursos-humanos.png`.
 - El pie derecho ahora dice `Plataforma diseñada por Maximiliano Contreras.` y el nombre abre `mailto:max.contrerasrey@icolud.com`.
 - `npm run build`: correcto
+
+
+## Consolidación versionada de `create_hiring_request_v2`
+
+- [x] Revisar la deriva entre el SQL de producción y las migraciones versionadas del repo
+- [x] Formalizar `create_hiring_request_v2` en una migración nueva
+- [x] Alinear dependencias directas de la RPC (`area_manager` vs `operational_approval`) para que un entorno nuevo no nazca inconsistente
+- [x] Documentar la deriva detectada y la corrección aplicada
+- [x] Revalidar compilación y empujar a `main`
+
+## Resultado de consolidación de `create_hiring_request_v2`
+
+- Se agregó la migración [20260519_000005_consolidate_hiring_request_v2.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260519_000005_consolidate_hiring_request_v2.sql:1) para convertir en código versionado lo que hasta ahora solo existía en la base de producción.
+- La migración no solo define `public.create_hiring_request_v2(...)`; también corrige la deriva inmediata que la rompía en entornos nuevos:
+  - renombra `operational_approval` a `area_manager`
+  - ajusta los `check constraints` de `hiring_approval_configs` y `hiring_request_approvals`
+  - reemplaza `refresh_hiring_request_status(...)` para usar los códigos reales del flujo actual
+  - deja `grant execute` formal para la RPC usada por el frontend
+- El frontend sigue usando [hiringRequests.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringRequests.ts:1) sin cambios funcionales; la corrección se hizo en la capa correcta: el esquema versionado.
+- `npm run build`: correcto
