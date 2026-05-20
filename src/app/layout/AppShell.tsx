@@ -292,7 +292,6 @@ export function AppShell() {
                     </span>
                     <span className="top-nav-mega-copy">
                       <strong>{item.label}</strong>
-                      <small>{item.description ?? "Modulo disponible"}</small>
                     </span>
                   </NavLink>
                 ))}
