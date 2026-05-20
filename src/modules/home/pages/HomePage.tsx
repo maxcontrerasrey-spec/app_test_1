@@ -429,22 +429,38 @@ export function HomePage() {
         {myRequests.length === 0 ? (
           <p>{isLoading ? "Cargando requerimientos..." : "Aun no tienes solicitudes."}</p>
         ) : (
-          <ul className="request-summary-grid">
-            {myRequests.map((request) => (
-              <li key={request.id} className="request-summary-card">
-                <div className="request-summary-head">
-                  <strong>{request.folio ?? "Sin folio"}</strong>
-                  <span>{toStatusLabel(request.status)}</span>
-                </div>
-                <div className="request-summary-body">
-                  <span title={request.job_position_name}>{request.job_position_name}</span>
-                  <span title={request.contract_name}>{request.contract_name}</span>
-                  <span>Vacantes: {request.vacancies ?? 0}</span>
-                  <span>{formatRequestDate(request.created_at)}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="request-table-shell">
+            <div className="request-table-scroll">
+              <table className="request-table">
+                <thead>
+                  <tr>
+                    <th>Folio</th>
+                    <th>Estado</th>
+                    <th>Cargo solicitado</th>
+                    <th>Contrato</th>
+                    <th>Vacantes</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myRequests.map((request) => (
+                    <tr key={request.id}>
+                      <td className="request-table-folio">{request.folio ?? "Sin folio"}</td>
+                      <td>
+                        <span className="request-table-status">
+                          {toStatusLabel(request.status)}
+                        </span>
+                      </td>
+                      <td title={request.job_position_name}>{request.job_position_name}</td>
+                      <td title={request.contract_name}>{request.contract_name}</td>
+                      <td>{request.vacancies ?? 0}</td>
+                      <td>{formatRequestDate(request.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </article>
     </section>
