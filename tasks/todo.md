@@ -576,3 +576,16 @@
 - Validación técnica ejecutada:
   - `npx tsc -b`
   - `npx vite build`
+
+
+## Ajuste de resumen operativo en `Inicio`
+
+- [x] Reemplazar la columna `Fecha` por una métrica de antigüedad en `Mis solicitudes`
+- [x] Mantener el cálculo en frontend usando `created_at` ya disponible en el resumen
+- [x] Revalidar compilación y dejar documentada la preferencia operacional
+
+## Resultado de ajuste de resumen operativo en `Inicio`
+
+- La tabla `Mis solicitudes` ahora muestra `Dias desde solicitud` en vez de una fecha fija.
+- El cálculo usa la diferencia entre el inicio del día actual y el inicio del día de creación para evitar variaciones por hora.
+- Se documentó la regla en `tasks/lessons.md`: para dashboards operacionales, la antigüedad es más útil que la fecha cruda cuando se busca priorización rápida.

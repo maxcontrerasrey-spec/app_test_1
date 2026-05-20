@@ -70,6 +70,26 @@ function formatRequestDate(value: string) {
   }).format(date);
 }
 
+function formatDaysSince(value: string) {
+  const createdAt = new Date(value);
+  if (Number.isNaN(createdAt.getTime())) {
+    return "No disponible";
+  }
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const startOfCreatedDay = new Date(createdAt);
+  startOfCreatedDay.setHours(0, 0, 0, 0);
+
+  const diffInMs = startOfToday.getTime() - startOfCreatedDay.getTime();
+  const diffInDays = Math.max(0, Math.floor(diffInMs / 86_400_000));
+
+  if (diffInDays === 0) return "Hoy";
+  if (diffInDays === 1) return "1 dia";
+  return `${diffInDays} dias`;
+}
+
 function toStatusLabel(value: HiringRequestSummaryRow["status"]) {
   if (value === "aprobada") return "Aprobada";
   if (value === "rechazada") return "Rechazada";
@@ -430,7 +450,7 @@ export function HomePage() {
                     <th>Cargo solicitado</th>
                     <th>Contrato</th>
                     <th>Vacantes</th>
-                    <th>Fecha</th>
+                    <th>Dias desde solicitud</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -445,7 +465,7 @@ export function HomePage() {
                       <td title={request.job_position_name}>{request.job_position_name}</td>
                       <td title={request.contract_name}>{request.contract_name}</td>
                       <td>{request.vacancies ?? 0}</td>
-                      <td>{formatRequestDate(request.created_at)}</td>
+                      <td>{formatDaysSince(request.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

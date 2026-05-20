@@ -49,3 +49,4 @@
 - Si el usuario prioriza limpieza extrema en el shell superior, los submenús deben quedar solo con icono y título. La descripción secundaria debe eliminarse por completo en vez de intentar comprimirla.
 - En formularios compactos con date picker, el popover no debe heredar el ancho completo del campo ni parecer un panel adicional del layout. Debe abrir como tarjeta acotada, con la misma gramática visual que chips, inputs y paneles laterales del módulo.
 - En `Inicio`, evitar héroes decorativos si no añaden información operacional nueva. La página debe abrir directamente en la primera sección útil para mantener la estética minimalista y el foco en trabajo real.
+- En resúmenes operacionales de `Inicio`, la antigüedad de una solicitud es más útil que la fecha cruda. Si la tabla busca priorización rápida, mostrar días transcurridos desde la creación antes que una fecha estática.
