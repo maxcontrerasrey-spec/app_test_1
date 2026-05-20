@@ -1165,6 +1165,15 @@ textarea {
   text-overflow: ellipsis;
 }
 
+.approval-comment-box {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.approval-comment-box .text-area-field {
+  min-height: 7rem;
+}
+
 .approval-chip-row {
   display: flex;
   flex-wrap: wrap;

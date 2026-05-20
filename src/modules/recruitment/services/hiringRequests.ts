@@ -33,18 +33,11 @@ export async function createHiringRequest(input: CreateHiringRequestInput) {
     };
   }
 
-  const { data, error } = await supabase.rpc("create_hiring_request_v2", {
-    p_requested_entry_date: input.requestedEntryDate,
-    p_job_position_id: input.jobPosition.id,
-    p_job_position_name: input.jobPosition.name,
-    p_vacancies: input.vacancies,
+  const { data, error } = await supabase.rpc("submit_hiring_request", {
     p_contract_id: input.contract.id,
-    p_contract_name: input.contract.contractName,
-    p_contract_number: input.contract.contractNumber,
-    p_cost_unit: input.contract.costUnit,
-    p_cost_unit_name: input.contract.costUnitName,
-    p_cost_center_code: input.contract.costCenterCode,
-    p_cost_center_name: input.contract.costCenterName,
+    p_job_position_id: input.jobPosition.id,
+    p_vacancies: input.vacancies,
+    p_requested_entry_date: input.requestedEntryDate,
     p_start_date: input.startDate,
     p_end_date: input.endDate,
     p_campamento: input.campamento,
@@ -52,7 +45,6 @@ export async function createHiringRequest(input: CreateHiringRequestInput) {
     p_other_benefits: input.otherBenefits || null,
     p_salary_offer: input.salaryOffer,
     p_shift_id: input.shift.id,
-    p_shift_name: input.shift.name,
     p_requester_signed: input.requesterSigned
   });
 

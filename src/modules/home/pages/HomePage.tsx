@@ -6,10 +6,19 @@ import { supabase } from "../../../shared/lib/supabase";
 type HiringRequestSummaryRow = {
   id: string;
   folio: string | null;
-  status: "pendiente" | "aprobada" | "rechazada" | "cerrada";
+  status:
+    | "pending_area_manager"
+    | "pending_contracts_control"
+    | "approved"
+    | "rejected"
+    | "pendiente"
+    | "aprobada"
+    | "rechazada"
+    | "cerrada";
   contract_name: string;
   job_position_name: string;
   vacancies?: number | null;
+  submitted_at?: string | null;
   created_at: string;
 };
 
@@ -90,9 +99,13 @@ function formatDaysSince(value: string) {
   return `${diffInDays} dias`;
 }
 
-function toStatusLabel(value: HiringRequestSummaryRow["status"]) {
-  if (value === "aprobada") return "Aprobada";
-  if (value === "rechazada") return "Rechazada";
+function toStatusLabel(value: HiringRequestSummaryRow["status"] | string | null | undefined) {
+  if (value === "approved" || value === "aprobada") return "Aprobada";
+  if (value === "rejected" || value === "rechazada") return "Rechazada";
+  if (value === "pending_contracts_control") return "Pendiente control contratos";
+  if (value === "pending_area_manager" || value === "pendiente") {
+    return "Pendiente gerente de area";
+  }
   if (value === "cerrada") return "Cerrada";
   return "Pendiente";
 }
@@ -141,6 +154,7 @@ export function HomePage() {
   const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
   const [decisionMessage, setDecisionMessage] = useState("");
   const [selectedApproval, setSelectedApproval] = useState<PendingApprovalRow | null>(null);
+  const [decisionComment, setDecisionComment] = useState("");
 
   const loadHomeSummary = useCallback(async () => {
     if (!supabase || !user?.id) {
@@ -155,13 +169,10 @@ export function HomePage() {
 
     const requestsPromise = supabase
       .from("hiring_requests")
-      .select("id, folio, status, contract_name, job_position_name, vacancies, created_at")
+      .select("id, folio, status, contract_name, job_position_name, vacancies, submitted_at, created_at")
       .eq("requester_id", user.id)
-      .order("created_at", { ascending: false })
+      .order("submitted_at", { ascending: false })
       .limit(8);
-
-    const isPrivilegedApprover =
-      isSuperAdmin || appRoles.includes("admin") || appRoles.includes("aprobador_folios");
 
     let approvalsQuery = supabase
       .from("hiring_request_approvals")
@@ -170,12 +181,9 @@ export function HomePage() {
       )
       .eq("status", "pending")
       .neq("step_code", "requester_signature")
+      .eq("approver_user_id", user.id)
       .order("created_at", { ascending: true })
       .limit(8);
-
-    if (!isPrivilegedApprover) {
-      approvalsQuery = approvalsQuery.eq("approver_user_id", user.id);
-    }
 
     const [requestsResponse, approvalsResponse] = await Promise.all([
       requestsPromise,
@@ -193,7 +201,7 @@ export function HomePage() {
     setMyRequests((requestsResponse.data as HiringRequestSummaryRow[] | null) ?? []);
     setPendingApprovals((approvalsResponse.data as PendingApprovalRow[] | null) ?? []);
     setIsLoading(false);
-  }, [appRoles, isSuperAdmin, user?.id]);
+  }, [user?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -213,14 +221,13 @@ export function HomePage() {
   const isApprover =
     isSuperAdmin ||
     appRoles.includes("admin") ||
-    appRoles.includes("aprobador_folios");
+    appRoles.includes("aprobador_folios") ||
+    appRoles.includes("control_contratos") ||
+    pendingApprovals.length > 0;
 
   const pendingApprovalsCount = pendingApprovals.length;
 
-  const handleApprovalDecision = async (
-    approvalId: number,
-    decision: "approved" | "rejected"
-  ) => {
+  const handleApprovalDecision = async (approvalId: number, decision: "approved" | "rejected") => {
     if (!supabase) {
       return;
     }
@@ -228,14 +235,17 @@ export function HomePage() {
     setIsDecisionLoading(approvalId);
     setDecisionMessage("");
 
-    const { error } = await supabase.rpc("decide_hiring_request_approval", {
+    const normalizedComment =
+      selectedApproval?.id === approvalId ? decisionComment.trim() : "";
+
+    const { error } = await supabase.rpc("decide_hiring_request_approval_v2", {
       p_approval_id: approvalId,
       p_decision: decision,
-      p_comments: null
+      p_comment: normalizedComment || null
     });
 
     if (error) {
-      setDecisionMessage("No fue posible registrar la decisión.");
+      setDecisionMessage(error.message || "No fue posible registrar la decisión.");
       setIsDecisionLoading(null);
       return;
     }
@@ -243,6 +253,7 @@ export function HomePage() {
     setDecisionMessage(decision === "approved" ? "Aprobación registrada." : "Rechazo registrado.");
     setIsDecisionLoading(null);
     setSelectedApproval(null);
+    setDecisionComment("");
     await loadHomeSummary();
   };
 
@@ -286,7 +297,10 @@ export function HomePage() {
                       <button
                         type="button"
                         className="soft-primary-button approval-button-detail"
-                        onClick={() => setSelectedApproval(approval)}
+                        onClick={() => {
+                          setSelectedApproval(approval);
+                          setDecisionComment("");
+                        }}
                       >
                         Ver detalle
                       </button>
@@ -385,13 +399,26 @@ export function HomePage() {
                     Pasajes: {formatBooleanLabel(request?.pasajes)}
                   </span>
                   <span className="approval-chip">
-                    Estado: {request?.status ?? "No disponible"}
+                    Estado: {toStatusLabel(request?.status)}
                   </span>
                 </div>
 
                 <div className="approval-detail-note">
                   <small>Otros beneficios</small>
                   <strong>{request?.other_benefits?.trim() || "No informado"}</strong>
+                </div>
+
+                <div className="approval-comment-box">
+                  <label className="field-label" htmlFor="approval-comment">
+                    Comentario de decision <span className="field-label-optional">(Opcional)</span>
+                  </label>
+                  <textarea
+                    id="approval-comment"
+                    className="text-field text-area-field"
+                    value={decisionComment}
+                    onChange={(event) => setDecisionComment(event.target.value)}
+                    placeholder="Agregue contexto si necesita dejar trazabilidad de la decision"
+                  />
                 </div>
 
                 <div className="approval-action-row approval-action-row-detail">
@@ -414,7 +441,10 @@ export function HomePage() {
                   <button
                     type="button"
                     className="soft-primary-button approval-button-detail"
-                    onClick={() => setSelectedApproval(null)}
+                    onClick={() => {
+                      setSelectedApproval(null);
+                      setDecisionComment("");
+                    }}
                   >
                     Cerrar detalle
                   </button>
@@ -465,7 +495,7 @@ export function HomePage() {
                       <td title={request.job_position_name}>{request.job_position_name}</td>
                       <td title={request.contract_name}>{request.contract_name}</td>
                       <td>{request.vacancies ?? 0}</td>
-                      <td>{formatDaysSince(request.created_at)}</td>
+                      <td>{formatDaysSince(request.submitted_at ?? request.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

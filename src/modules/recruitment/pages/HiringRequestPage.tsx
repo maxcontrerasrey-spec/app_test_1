@@ -333,7 +333,7 @@ export function HiringRequestPage() {
     const request: GeneratedHiringRequest = {
       folio: creationResult.data.folio,
       fechaSolicitud: formatDateForDisplay(toTodayDateValue()),
-      estadoSolicitud: "Pendiente",
+      estadoSolicitud: "Pendiente gerente de area",
       solicitanteNombre: displayName,
       solicitanteCargo: jobTitle,
       solicitanteCorreo: email,
@@ -358,7 +358,7 @@ export function HiringRequestPage() {
 
     setGeneratedRequest(request);
     setLocalStatus(
-      `Solicitud ${creationResult.data.folio} guardada en Supabase. Permanecerá pendiente mientras falten aprobaciones requeridas.`
+      `Solicitud ${creationResult.data.folio} guardada en Supabase. Quedó enviada a Gerente de Area como primera etapa de aprobación.`
     );
     setFechaSolicitadaIngreso("");
     setCargoSolicitado("");

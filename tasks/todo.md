@@ -1,5 +1,31 @@
 # Plan de trabajo
 
+## Endurecimiento seguro de hiring_requests
+
+- [x] Revisar y cerrar la migración `20260520_000006_secure_hiring_requests_workflow.sql` para que la cadena quede secuencial, auditable y sin `UPDATE` directo desde frontend
+- [x] Adaptar `Solicitud de Contrataciones` para usar `submit_hiring_request(...)` enviando solo IDs y campos libres del solicitante
+- [x] Adaptar `Inicio` para usar `decide_hiring_request_approval_v2(...)`, mostrar comentario opcional y reflejar los nuevos estados del flujo
+- [x] Revalidar compilación y build, documentar el cierre y dejar el cambio publicado
+
+## Resultado de endurecimiento seguro de hiring_requests
+
+- Se formalizó la migración [20260520_000006_secure_hiring_requests_workflow.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000006_secure_hiring_requests_workflow.sql:1) con:
+  - `cost_center_approvers`
+  - `workflow_approvers`
+  - `hiring_request_snapshots`
+  - `hiring_request_audit_log`
+  - nuevos estados secuenciales en `hiring_requests`
+  - bloqueo de `UPDATE` directo desde `authenticated`
+  - RPC `submit_hiring_request(...)`
+  - RPC `decide_hiring_request_approval_v2(...)`
+- La visibilidad de solicitudes y snapshots quedó restringida al solicitante, admin y aprobador de la etapa pendiente actual.
+- `Solicitud de Contrataciones` ya no envía nombres derivados del frontend; solo IDs y campos libres del solicitante mediante [hiringRequests.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringRequests.ts:1).
+- `Inicio` ahora decide por `decide_hiring_request_approval_v2(...)`, siempre filtra pendientes por `approver_user_id = auth.uid()` y permite comentario opcional en el detalle de aprobación.
+- `Mis solicitudes` usa `submitted_at` cuando existe para calcular `Días desde solicitud`.
+- Validación:
+  - `npx tsc -b`: correcto
+  - `npx vite build`: correcto
+
 ## Navegación superior Opaline
 
 - [x] Reemplazar la barra lateral por una navegación superior que aproveche el ancho horizontal
