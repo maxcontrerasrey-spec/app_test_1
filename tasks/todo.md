@@ -556,3 +556,23 @@
   - deja `grant execute` formal para la RPC usada por el frontend
 - El frontend sigue usando [hiringRequests.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringRequests.ts:1) sin cambios funcionales; la corrección se hizo en la capa correcta: el esquema versionado.
 - `npm run build`: correcto
+
+
+## Rediseño integral premium y consistente
+
+- [x] Auditar shell, tokens globales, patrones de layout y deuda visual transversal
+- [x] Redefinir design system global con tipografía, color, spacing y superficies coherentes
+- [x] Rehacer navegación superior y submenús al patrón editorial enterprise solicitado
+- [x] Unificar `Login`, `Inicio`, `Solicitud de Contrataciones`, `Control de Contrataciones`, `Certificados` y placeholders bajo el mismo lenguaje visual
+- [x] Normalizar formularios, tablas, resúmenes laterales y estados
+- [x] Revalidar compilación y revisar resultado final
+
+### Revisión final
+
+- Se eliminó la dependencia visual de `Inter` en el arranque y se unificó la app sobre una paleta neutra con acento funcional azul.
+- El shell superior pasó a una navegación plana de estilo enterprise con submenús rectos y densidad visual más baja.
+- `Login`, `Inicio`, `Solicitud de Contrataciones`, `Control de Contrataciones`, `Certificados` y paneles compartidos quedaron sobre el mismo sistema de superficies, radios, bordes y foco.
+- Se detectó y corrigió fuga de estilos en `Operaciones`: el módulo redefinía `:root` y selectores genéricos como `label`, `input`, `select`, `textarea`, `login-shell` y `loading-shell`, contaminando el resto de la app tras navegar.
+- Validación técnica ejecutada:
+  - `npx tsc -b`
+  - `npx vite build`

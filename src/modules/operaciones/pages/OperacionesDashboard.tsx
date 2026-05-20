@@ -329,7 +329,7 @@ const LOCAL_NORMALIZED_DATA = SERVICE_DATA.map((item) => ({
 
 function LoginScreen({ email, password, onEmailChange, onPasswordChange, onSubmit, authLoading, authError }) {
   return (
-    <main className="login-shell">
+    <main className="ops-login-shell operations-theme">
       <section className="login-panel">
         <div className="login-copy">
           <div className="login-heading">
@@ -1204,11 +1204,11 @@ export function OperacionesDashboard() {
   }
 
   if (!sessionReady) {
-    return <main className="loading-shell">Cargando plataforma...</main>;
+    return <main className="ops-loading-shell operations-theme">Cargando plataforma...</main>;
   }
 
   if (!session) {
-    return <main className="loading-shell">Acceso denegado. Debes iniciar sesión.</main>;
+    return <main className="ops-loading-shell operations-theme">Acceso denegado. Debes iniciar sesión.</main>;
   }
 
   const categoriesCount = new Set(eligibleServices.map((item) => item.category)).size;
@@ -1405,7 +1405,7 @@ export function OperacionesDashboard() {
   );
 
   return (
-    <div className="operaciones-module-shell">
+    <div className="operaciones-module-shell operations-theme">
       <main className="content operaciones-content">
 
         {activePage === "resumen" ? (
