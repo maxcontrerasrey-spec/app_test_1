@@ -757,3 +757,53 @@
 - Validación ejecutada:
   - `npx tsc -b`
   - `npm run build`
+
+
+## Diseño incremental del submódulo operativo de `Control de Contrataciones`
+
+- [x] Definir el encaje del submódulo sobre `hiring_requests`, `hiring_request_approvals`, auditoría y RPCs existentes
+- [x] Diseñar entidades nuevas para casos activos, candidatos, pipeline, checklist documental y vencimientos
+- [x] Definir impacto de autorización en `app_modules`, `role_module_access`, `app_roles` y `profiles`
+- [x] Proponer estrategia incremental de migraciones, RLS, RPCs y frontend sin romper producción
+
+## Implementación Fase 1 de `Control de Contrataciones`
+
+- [x] Crear migración aditiva para `recruitment_cases`, asignaciones, candidatos, historial de etapas y auditoría propia
+- [x] Integrar apertura automática de caso al aprobar `contracts_control` sin romper `decide_hiring_request_approval_v2(...)`
+- [x] Exponer RPCs Fase 1 para dashboard, detalle de caso, alta de candidato y avance de etapa
+- [x] Evolucionar `/control-contrataciones` a workspace real de casos activos con tabla, detalle y pipeline básico
+- [x] Revalidar autorización del submódulo con roles actuales y documentar si no se requieren roles nuevos en Fase 1
+- [x] Ejecutar validación técnica con `npx tsc -b` y `npm run build`
+
+## Resultado de Implementación Fase 1 de `Control de Contrataciones`
+
+- Se agregó la migración [20260520_000012_recruitment_cases_phase1.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000012_recruitment_cases_phase1.sql:1) con:
+  - `recruitment_cases`
+  - `recruitment_case_assignments`
+  - `candidate_profiles`
+  - `recruitment_case_candidates`
+  - `recruitment_case_candidate_stage_history`
+  - `recruitment_case_audit_log`
+  - helpers de acceso y sincronización de estado del caso
+  - RPCs Fase 1 para dashboard, detalle, alta de candidato y avance de etapa
+- `decide_hiring_request_approval_v2(...)` quedó extendida para abrir automáticamente el `recruitment_case` cuando `contracts_control` aprueba la solicitud.
+- La migración incluye backfill seguro para solicitudes ya aprobadas que todavía no tengan caso.
+- Revisión de autorización:
+  - no fue necesario crear un `app_module` nuevo
+  - en Fase 1 no se agregaron `app_roles` nuevos
+  - el submódulo opera con `admin`, `control_contratos` y `reclutamiento`, más asignaciones por caso
+- [hiringControl.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) quedó como capa de servicios del workspace:
+  - dashboard
+  - detalle de caso
+  - alta de candidato
+  - avance de etapa
+- [HiringStatusPage.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1) ahora es un workspace operacional Fase 1 con:
+  - cola de aprobación final
+  - tabla de casos activos
+  - detalle del caso
+  - alta de candidatos
+  - pipeline básico por etapas
+  - auditoría resumida
+- Validación ejecutada:
+  - `npx tsc -b`
+  - `npm run build`

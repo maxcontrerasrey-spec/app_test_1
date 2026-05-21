@@ -1,58 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
+import { decideHiringApproval } from "../services/hiringWorkflow";
 import {
-  decideHiringApproval,
-  toHiringStatusLabel,
-  type HiringWorkflowStatus
-} from "../services/hiringWorkflow";
-import {
-  fetchHiringControlDashboard,
+  addCandidateToRecruitmentCase,
+  advanceRecruitmentCandidateStage,
+  fetchRecruitmentCaseDetail,
+  fetchRecruitmentControlDashboard,
+  toRecruitmentCandidateStageLabel,
+  toRecruitmentCaseStatusLabel,
   type HiringControlApproval,
-  type HiringControlRequestRow,
-  type HiringControlSummary
+  type RecruitmentCandidateStage,
+  type RecruitmentCaseCandidateRow,
+  type RecruitmentCaseDetail,
+  type RecruitmentCaseListRow,
+  type RecruitmentDashboardSummary
 } from "../services/hiringControl";
 
-type StatusFilter = HiringWorkflowStatus | null;
-
-const emptySummary: HiringControlSummary = {
-  pending_area_manager: 0,
+const emptySummary: RecruitmentDashboardSummary = {
   pending_contracts_control: 0,
-  approved: 0,
-  rejected: 0,
-  total: 0
+  active_cases: 0,
+  ready_to_hire_cases: 0,
+  filled_cases: 0,
+  total_cases: 0
 };
 
-const kpiCards: Array<{
-  key: StatusFilter;
-  label: string;
-  summaryKey: keyof HiringControlSummary;
-  className: string;
-}> = [
-  {
-    key: "pending_contracts_control",
-    label: "Pendiente control",
-    summaryKey: "pending_contracts_control",
-    className: "tracking-kpi-card-en-proceso"
-  },
-  {
-    key: "pending_area_manager",
-    label: "Pendiente gerencia",
-    summaryKey: "pending_area_manager",
-    className: "tracking-kpi-card-pendiente"
-  },
-  {
-    key: "approved",
-    label: "Aprobadas",
-    summaryKey: "approved",
-    className: "tracking-kpi-card-generado"
-  },
-  {
-    key: "rejected",
-    label: "Rechazadas",
-    summaryKey: "rejected",
-    className: "tracking-kpi-card-error"
-  }
-];
+const caseFilterOptions = [
+  { key: null, label: "Todos" },
+  { key: "open", label: "Abiertos" },
+  { key: "screening", label: "Screening" },
+  { key: "ready_to_hire", label: "Listos para contratar" },
+  { key: "filled", label: "Cubiertos" }
+] as const;
 
 function formatDateValue(value: string | null | undefined) {
   if (!value) {
@@ -68,6 +46,25 @@ function formatDateValue(value: string | null | undefined) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
+  }).format(date);
+}
+
+function formatDateTimeValue(value: string | null | undefined) {
+  if (!value) {
+    return "No disponible";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "No disponible";
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   }).format(date);
 }
 
@@ -89,93 +86,172 @@ function formatBooleanLabel(value: boolean | null | undefined) {
   return "No disponible";
 }
 
-function formatPersonLabel(value: string | null | undefined) {
-  if (!value?.trim()) {
-    return "No disponible";
+function getNextStageOptions(
+  currentStage: RecruitmentCandidateStage
+): RecruitmentCandidateStage[] {
+  switch (currentStage) {
+    case "lead":
+      return ["contacted", "screening", "rejected", "withdrawn"];
+    case "contacted":
+      return ["screening", "shortlisted", "rejected", "withdrawn"];
+    case "screening":
+      return ["shortlisted", "documents_pending", "rejected", "withdrawn"];
+    case "shortlisted":
+      return ["documents_pending", "rejected", "withdrawn"];
+    case "documents_pending":
+      return ["ready_for_hire", "rejected", "withdrawn"];
+    case "ready_for_hire":
+      return ["hired", "rejected", "withdrawn"];
+    default:
+      return [];
   }
+}
 
-  return value.trim();
+function getStageChipClass(stage: RecruitmentCandidateStage) {
+  if (stage === "hired") return "tracking-kpi-card-generado";
+  if (stage === "ready_for_hire") return "tracking-kpi-card-en-proceso";
+  if (stage === "rejected" || stage === "withdrawn") return "tracking-kpi-card-error";
+  return "tracking-kpi-card-pendiente";
 }
 
 export function HiringStatusPage() {
   const { user } = useAuth();
-  const [summary, setSummary] = useState<HiringControlSummary>(emptySummary);
+  const [summary, setSummary] = useState<RecruitmentDashboardSummary>(emptySummary);
   const [pendingApprovals, setPendingApprovals] = useState<HiringControlApproval[]>([]);
-  const [recentRequests, setRecentRequests] = useState<HiringControlRequestRow[]>([]);
-  const [selectedRequestId, setSelectedRequestId] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [decisionComment, setDecisionComment] = useState("");
-  const [decisionMessage, setDecisionMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [activeCases, setActiveCases] = useState<RecruitmentCaseListRow[]>([]);
+  const [selectedCaseId, setSelectedCaseId] = useState("");
+  const [selectedCandidateId, setSelectedCandidateId] = useState("");
+  const [selectedCaseDetail, setSelectedCaseDetail] = useState<RecruitmentCaseDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
+  const [isCandidateSaving, setIsCandidateSaving] = useState(false);
+  const [isStageSaving, setIsStageSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [decisionMessage, setDecisionMessage] = useState("");
+  const [approvalComment, setApprovalComment] = useState("");
+  const [candidateForm, setCandidateForm] = useState({
+    nationalId: "",
+    fullName: "",
+    email: "",
+    phone: ""
+  });
+  const [caseSearchTerm, setCaseSearchTerm] = useState("");
+  const [caseFilter, setCaseFilter] = useState<(typeof caseFilterOptions)[number]["key"]>(null);
+  const [stageDraft, setStageDraft] = useState<RecruitmentCandidateStage | "">("");
+  const [stageComment, setStageComment] = useState("");
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (preferredCaseId?: string) => {
     setIsLoading(true);
     setErrorMessage("");
 
-    const result = await fetchHiringControlDashboard();
+    const result = await fetchRecruitmentControlDashboard();
 
     if (result.error || !result.data) {
       setSummary(emptySummary);
       setPendingApprovals([]);
-      setRecentRequests([]);
-      setErrorMessage(result.error ?? "No fue posible cargar el tablero de contrataciones.");
+      setActiveCases([]);
+      setErrorMessage(result.error ?? "No fue posible cargar el tablero.");
       setIsLoading(false);
       return;
     }
 
     setSummary(result.data.summary);
     setPendingApprovals(result.data.pendingApprovals);
-    setRecentRequests(result.data.recentRequests);
+    setActiveCases(result.data.activeCases);
+
+    const nextCaseId =
+      preferredCaseId && result.data.activeCases.some((item) => item.id === preferredCaseId)
+        ? preferredCaseId
+        : result.data.activeCases[0]?.id ?? "";
+
+    setSelectedCaseId(nextCaseId);
     setIsLoading(false);
+  };
+
+  const loadCaseDetail = async (caseId: string) => {
+    if (!caseId) {
+      setSelectedCaseDetail(null);
+      return;
+    }
+
+    setIsDetailLoading(true);
+    const result = await fetchRecruitmentCaseDetail(caseId);
+
+    if (result.error || !result.data) {
+      setSelectedCaseDetail(null);
+      setErrorMessage(result.error ?? "No fue posible cargar el detalle del caso.");
+      setIsDetailLoading(false);
+      return;
+    }
+
+    setSelectedCaseDetail(result.data);
+    setSelectedCandidateId(result.data.candidates[0]?.id ?? "");
+    setStageDraft("");
+    setStageComment("");
+    setIsDetailLoading(false);
   };
 
   useEffect(() => {
     void loadDashboard();
   }, []);
 
-  const filteredRequests = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    return recentRequests.filter((request) => {
-      const matchesStatus = !statusFilter || request.status === statusFilter;
-      const matchesSearch =
-        !normalizedSearch ||
-        (request.folio ?? "").toLowerCase().includes(normalizedSearch) ||
-        (request.requester_name ?? "").toLowerCase().includes(normalizedSearch) ||
-        request.job_position_name.toLowerCase().includes(normalizedSearch) ||
-        request.contract_name.toLowerCase().includes(normalizedSearch);
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [recentRequests, searchTerm, statusFilter]);
-
   useEffect(() => {
-    if (filteredRequests.length === 0) {
-      setSelectedRequestId("");
+    if (!selectedCaseId) {
+      setSelectedCaseDetail(null);
       return;
     }
 
-    const selectedStillVisible = filteredRequests.some((request) => request.id === selectedRequestId);
-    if (!selectedStillVisible) {
-      setSelectedRequestId(filteredRequests[0]?.id ?? "");
-    }
-  }, [filteredRequests, selectedRequestId]);
+    void loadCaseDetail(selectedCaseId);
+  }, [selectedCaseId]);
 
-  const selectedRequest =
-    filteredRequests.find((request) => request.id === selectedRequestId) ??
-    filteredRequests[0] ??
+  const filteredCases = useMemo(() => {
+    const normalizedSearch = caseSearchTerm.trim().toLowerCase();
+
+    return activeCases.filter((caseRow) => {
+      const matchesFilter = !caseFilter || caseRow.status === caseFilter;
+      const matchesSearch =
+        !normalizedSearch ||
+        caseRow.case_code.toLowerCase().includes(normalizedSearch) ||
+        caseRow.contract_name.toLowerCase().includes(normalizedSearch) ||
+        caseRow.job_position_name.toLowerCase().includes(normalizedSearch) ||
+        caseRow.cost_center_name.toLowerCase().includes(normalizedSearch);
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [activeCases, caseFilter, caseSearchTerm]);
+
+  useEffect(() => {
+    if (filteredCases.length === 0) {
+      setSelectedCaseId("");
+      return;
+    }
+
+    if (!filteredCases.some((caseRow) => caseRow.id === selectedCaseId)) {
+      setSelectedCaseId(filteredCases[0]?.id ?? "");
+    }
+  }, [filteredCases, selectedCaseId]);
+
+  const selectedCase =
+    filteredCases.find((caseRow) => caseRow.id === selectedCaseId) ??
+    filteredCases[0] ??
+    null;
+
+  const selectedCandidate =
+    selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
+    selectedCaseDetail?.candidates[0] ??
     null;
 
   const selectedPendingApproval =
-    selectedRequest &&
-    pendingApprovals.find((approval) => approval.hiring_request_id === selectedRequest.id);
-  const canDecideSelectedApproval =
+    selectedCaseDetail &&
+    pendingApprovals.find(
+      (approval) => approval.hiring_request_id === selectedCaseDetail.case.hiring_request.id
+    );
+
+  const canDecideApproval =
     Boolean(user?.id) && selectedPendingApproval?.approver_user_id === user?.id;
 
-  const handleDecision = async (
+  const handleApprovalDecision = async (
     approvalId: number,
     decision: "approved" | "rejected"
   ) => {
@@ -185,7 +261,7 @@ export function HiringStatusPage() {
     const { error } = await decideHiringApproval({
       approvalId,
       decision,
-      comment: decisionComment
+      comment: approvalComment
     });
 
     if (error) {
@@ -194,12 +270,77 @@ export function HiringStatusPage() {
       return;
     }
 
-    setDecisionComment("");
+    setApprovalComment("");
     setDecisionMessage(
       decision === "approved" ? "Aprobación registrada." : "Rechazo registrado."
     );
     setIsDecisionLoading(null);
-    await loadDashboard();
+    await loadDashboard(selectedCaseId);
+  };
+
+  const handleAddCandidate = async () => {
+    if (!selectedCaseDetail) {
+      return;
+    }
+
+    setIsCandidateSaving(true);
+    setDecisionMessage("");
+
+    const { error } = await addCandidateToRecruitmentCase({
+      caseId: selectedCaseDetail.case.id,
+      nationalId: candidateForm.nationalId,
+      fullName: candidateForm.fullName,
+      email: candidateForm.email,
+      phone: candidateForm.phone
+    });
+
+    if (error) {
+      setDecisionMessage(error);
+      setIsCandidateSaving(false);
+      return;
+    }
+
+    setCandidateForm({
+      nationalId: "",
+      fullName: "",
+      email: "",
+      phone: ""
+    });
+    setDecisionMessage("Candidato agregado al caso.");
+    setIsCandidateSaving(false);
+    await loadDashboard(selectedCaseDetail.case.id);
+    await loadCaseDetail(selectedCaseDetail.case.id);
+  };
+
+  const handleAdvanceStage = async () => {
+    if (!selectedCandidate || !stageDraft) {
+      return;
+    }
+
+    setIsStageSaving(true);
+    setDecisionMessage("");
+
+    const { error } = await advanceRecruitmentCandidateStage({
+      caseCandidateId: selectedCandidate.id,
+      toStage: stageDraft,
+      comment: stageComment
+    });
+
+    if (error) {
+      setDecisionMessage(error);
+      setIsStageSaving(false);
+      return;
+    }
+
+    setDecisionMessage("Etapa del candidato actualizada.");
+    setStageDraft("");
+    setStageComment("");
+    setIsStageSaving(false);
+
+    if (selectedCaseDetail) {
+      await loadDashboard(selectedCaseDetail.case.id);
+      await loadCaseDetail(selectedCaseDetail.case.id);
+    }
   };
 
   return (
@@ -207,39 +348,40 @@ export function HiringStatusPage() {
       <div className="hero-panel hero-panel-compact">
         <h2>Control de Contrataciones</h2>
         <p>
-          Vista consolidada del flujo real de contrataciones, sin estados locales ni
-          seguimiento ficticio.
+          Casos activos de reclutamiento abiertos desde solicitudes aprobadas, con
+          pipeline inicial de candidatos y trazabilidad operacional.
         </p>
       </div>
 
       <section className="tracking-panel">
         <div className="tracking-kpi-row">
-          {kpiCards.map((card) => (
-            <button
-              key={card.label}
-              type="button"
-              className={`tracking-kpi-card ${card.className} ${
-                statusFilter === card.key ? "tracking-kpi-card-active" : ""
-              }`}
-              onClick={() =>
-                setStatusFilter((current) => (current === card.key ? null : card.key))
-              }
-            >
-              <span className="micro-label">{card.label}</span>
-              <strong>{summary[card.summaryKey] ?? 0}</strong>
-            </button>
-          ))}
+          <article className="tracking-kpi-card tracking-kpi-card-en-proceso">
+            <span className="micro-label">Pendientes control</span>
+            <strong>{summary.pending_contracts_control}</strong>
+          </article>
+          <article className="tracking-kpi-card tracking-kpi-card-pendiente">
+            <span className="micro-label">Casos activos</span>
+            <strong>{summary.active_cases}</strong>
+          </article>
+          <article className="tracking-kpi-card tracking-kpi-card-en-proceso">
+            <span className="micro-label">Listos para contratar</span>
+            <strong>{summary.ready_to_hire_cases}</strong>
+          </article>
+          <article className="tracking-kpi-card tracking-kpi-card-generado">
+            <span className="micro-label">Casos cubiertos</span>
+            <strong>{summary.filled_cases}</strong>
+          </article>
         </div>
 
         {pendingApprovals.length > 0 ? (
           <article className="info-card approval-panel-card approval-panel-primary">
             <div className="home-section-header">
               <div>
-                <h3>Cola de Control de Contratos</h3>
+                <h3>Cola de aprobación final</h3>
                 <p>
                   {isLoading
                     ? "Cargando aprobaciones..."
-                    : `${pendingApprovals.length} pendientes en esta etapa`}
+                    : `${pendingApprovals.length} folios pendientes de Control de Contratos`}
                 </p>
               </div>
             </div>
@@ -250,23 +392,24 @@ export function HiringStatusPage() {
                   <div className="approval-queue-copy">
                     <strong>{approval.hiring_requests?.folio ?? "Sin folio"}</strong>
                     <span>{approval.step_name}</span>
-                    <span>
-                      {approval.hiring_requests?.job_position_name ?? "Cargo no disponible"}
-                    </span>
-                    <span>
-                      {approval.hiring_requests?.contract_name ?? "Contrato no disponible"}
-                    </span>
+                    <span>{approval.hiring_requests?.job_position_name ?? "Cargo no disponible"}</span>
+                    <span>{approval.hiring_requests?.contract_name ?? "Contrato no disponible"}</span>
                   </div>
                   <div className="approval-action-row">
                     <button
                       type="button"
                       className="soft-primary-button approval-button-detail"
                       onClick={() => {
-                        setSelectedRequestId(approval.hiring_request_id);
-                        setDecisionMessage("");
+                        const existingCase = activeCases.find(
+                          (caseRow) =>
+                            caseRow.case_code === `RC-${approval.hiring_requests?.folio ?? ""}`
+                        );
+                        if (existingCase) {
+                          setSelectedCaseId(existingCase.id);
+                        }
                       }}
                     >
-                      Ver detalle
+                      Ver contexto
                     </button>
                     {approval.approver_user_id === user?.id ? (
                       <>
@@ -274,7 +417,7 @@ export function HiringStatusPage() {
                           type="button"
                           className="soft-primary-button approval-button-approve"
                           disabled={isDecisionLoading === approval.id}
-                          onClick={() => handleDecision(approval.id, "approved")}
+                          onClick={() => handleApprovalDecision(approval.id, "approved")}
                         >
                           Aprobar
                         </button>
@@ -282,7 +425,7 @@ export function HiringStatusPage() {
                           type="button"
                           className="soft-primary-button approval-button-reject"
                           disabled={isDecisionLoading === approval.id}
-                          onClick={() => handleDecision(approval.id, "rejected")}
+                          onClick={() => handleApprovalDecision(approval.id, "rejected")}
                         >
                           Rechazar
                         </button>
@@ -297,22 +440,32 @@ export function HiringStatusPage() {
 
         <div className="tracking-toolbar">
           <div className="tracking-toolbar-copy">
-            <h3>Resumen de solicitudes</h3>
-            {statusFilter ? (
-              <span className="tracking-filter-caption">
-                Filtrando por estado: {toHiringStatusLabel(statusFilter)}
-              </span>
-            ) : null}
-            {errorMessage ? <span className="tracking-filter-caption">{errorMessage}</span> : null}
+            <h3>Casos activos</h3>
+            <span className="tracking-filter-caption">
+              {errorMessage || "Cada caso nace desde un folio aprobado y mantiene trazabilidad propia."}
+            </span>
           </div>
           <div className="tracking-filters">
             <input
               className="text-field tracking-search"
-              placeholder="Buscar por folio, solicitante, cargo o contrato"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Buscar por caso, contrato, cargo o centro de costo"
+              value={caseSearchTerm}
+              onChange={(event) => setCaseSearchTerm(event.target.value)}
             />
           </div>
+        </div>
+
+        <div className="approval-chip-row">
+          {caseFilterOptions.map((option) => (
+            <button
+              key={option.label}
+              type="button"
+              className={`approval-chip ${caseFilter === option.key ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => setCaseFilter(option.key)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         <div className="control-layout">
@@ -321,45 +474,46 @@ export function HiringStatusPage() {
               <table className="tracking-table">
                 <thead>
                   <tr>
-                    <th>Folio</th>
+                    <th>Caso</th>
                     <th>Estado</th>
-                    <th>Solicitante</th>
                     <th>Cargo</th>
                     <th>Contrato</th>
-                    <th>Area manager</th>
-                    <th>Control contratos</th>
+                    <th>Cupos</th>
+                    <th>Candidatos</th>
+                    <th>Owner</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRequests.length > 0 ? (
-                    filteredRequests.map((request) => (
+                  {filteredCases.length > 0 ? (
+                    filteredCases.map((caseRow) => (
                       <tr
-                        key={request.id}
-                        className={request.id === selectedRequest?.id ? "tracking-row-selected" : ""}
-                        onClick={() => {
-                          setSelectedRequestId(request.id);
-                          setDecisionMessage("");
-                        }}
+                        key={caseRow.id}
+                        className={caseRow.id === selectedCase?.id ? "tracking-row-selected" : ""}
+                        onClick={() => setSelectedCaseId(caseRow.id)}
                       >
-                        <td>{request.folio ?? "Sin folio"}</td>
+                        <td>{caseRow.case_code}</td>
                         <td>
                           <span className="tracking-status-pill">
-                            {toHiringStatusLabel(request.status)}
+                            {toRecruitmentCaseStatusLabel(caseRow.status)}
                           </span>
                         </td>
-                        <td>{formatPersonLabel(request.requester_name)}</td>
-                        <td>{request.job_position_name}</td>
-                        <td>{request.contract_name}</td>
-                        <td>{toHiringStatusLabel(request.area_manager_status)}</td>
-                        <td>{toHiringStatusLabel(request.contracts_control_status)}</td>
+                        <td>{caseRow.job_position_name}</td>
+                        <td>{caseRow.contract_name}</td>
+                        <td>
+                          {caseRow.filled_vacancies}/{caseRow.requested_vacancies}
+                        </td>
+                        <td>
+                          {caseRow.candidate_count} · listos {caseRow.ready_candidates}
+                        </td>
+                        <td>{caseRow.owner_name ?? "No asignado"}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td className="tracking-empty-state" colSpan={7}>
                         {isLoading
-                          ? "Cargando solicitudes..."
-                          : "No hay solicitudes para el filtro actual."}
+                          ? "Cargando casos..."
+                          : "No hay casos para el filtro actual."}
                       </td>
                     </tr>
                   )}
@@ -369,181 +523,344 @@ export function HiringStatusPage() {
           </div>
 
           <aside className="control-detail-panel">
-            {selectedRequest ? (
+            {selectedCaseDetail ? (
               <>
                 <div className="control-detail-header">
-                  <h3>{selectedRequest.folio ?? "Sin folio"}</h3>
+                  <h3>{selectedCaseDetail.case.case_code}</h3>
                   <span className="tracking-status-pill">
-                    {toHiringStatusLabel(selectedRequest.status)}
+                    {toRecruitmentCaseStatusLabel(selectedCaseDetail.case.status)}
                   </span>
                 </div>
 
                 <div className="control-readonly-grid">
                   <div>
+                    <small>Folio origen</small>
+                    <strong>{selectedCaseDetail.case.hiring_request.folio ?? "Sin folio"}</strong>
+                  </div>
+                  <div>
                     <small>Solicitante</small>
-                    <strong>{formatPersonLabel(selectedRequest.requester_name)}</strong>
+                    <strong>{selectedCaseDetail.case.hiring_request.requester_name ?? "No disponible"}</strong>
                   </div>
                   <div>
-                    <small>Correo</small>
-                    <strong>{selectedRequest.requester_email ?? "No disponible"}</strong>
-                  </div>
-                  <div>
-                    <small>Cargo solicitado</small>
-                    <strong>{selectedRequest.job_position_name}</strong>
-                  </div>
-                  <div>
-                    <small>Vacantes</small>
-                    <strong>{selectedRequest.vacancies ?? 0}</strong>
+                    <small>Cargo</small>
+                    <strong>{selectedCaseDetail.case.job_position_name}</strong>
                   </div>
                   <div>
                     <small>Contrato</small>
-                    <strong>{selectedRequest.contract_name}</strong>
-                  </div>
-                  <div>
-                    <small>Numero contrato</small>
-                    <strong>{selectedRequest.contract_number ?? "No disponible"}</strong>
+                    <strong>{selectedCaseDetail.case.contract_name}</strong>
                   </div>
                   <div>
                     <small>Centro de costo</small>
                     <strong>
-                      {selectedRequest.cost_center_code ?? "No disponible"} ·{" "}
-                      {selectedRequest.cost_center_name ?? "No disponible"}
+                      {selectedCaseDetail.case.cost_center_code} · {selectedCaseDetail.case.cost_center_name}
                     </strong>
                   </div>
                   <div>
-                    <small>Turno</small>
-                    <strong>{selectedRequest.shift_name ?? "No disponible"}</strong>
-                  </div>
-                  <div>
-                    <small>Ingreso solicitado</small>
-                    <strong>{formatDateValue(selectedRequest.requested_entry_date)}</strong>
-                  </div>
-                  <div>
-                    <small>Inicio / termino</small>
+                    <small>Vacantes</small>
                     <strong>
-                      {formatDateValue(selectedRequest.start_date)} -{" "}
-                      {formatDateValue(selectedRequest.end_date)}
+                      {selectedCaseDetail.case.filled_vacancies}/{selectedCaseDetail.case.requested_vacancies}
                     </strong>
+                  </div>
+                  <div>
+                    <small>Ingreso objetivo</small>
+                    <strong>{formatDateValue(selectedCaseDetail.case.requested_entry_date)}</strong>
+                  </div>
+                  <div>
+                    <small>Apertura</small>
+                    <strong>{formatDateTimeValue(selectedCaseDetail.case.opened_at)}</strong>
                   </div>
                 </div>
 
                 <div className="approval-chip-row">
                   <span className="approval-chip">
-                    Renta: {formatCurrencyValue(selectedRequest.salary_offer)}
+                    Turno: {selectedCaseDetail.case.hiring_request.shift_name ?? "No disponible"}
                   </span>
                   <span className="approval-chip">
-                    Campamento: {formatBooleanLabel(selectedRequest.campamento)}
+                    Renta: {formatCurrencyValue(selectedCaseDetail.case.hiring_request.salary_offer)}
                   </span>
                   <span className="approval-chip">
-                    Pasajes: {formatBooleanLabel(selectedRequest.pasajes)}
+                    Campamento: {formatBooleanLabel(selectedCaseDetail.case.hiring_request.campamento)}
                   </span>
                   <span className="approval-chip">
-                    Area manager: {toHiringStatusLabel(selectedRequest.area_manager_status)}
-                  </span>
-                  <span className="approval-chip">
-                    Control contratos:{" "}
-                    {toHiringStatusLabel(selectedRequest.contracts_control_status)}
+                    Pasajes: {formatBooleanLabel(selectedCaseDetail.case.hiring_request.pasajes)}
                   </span>
                 </div>
 
-                <div className="control-readonly-grid">
-                  <div>
-                    <small>Aprobador area</small>
-                    <strong>
-                      {selectedRequest.area_manager_approver_name ?? "No disponible"}
-                    </strong>
+                {selectedPendingApproval ? (
+                  <div className="approval-comment-box">
+                    <label className="field-label" htmlFor="control-approval-comment">
+                      Comentario aprobación final
+                    </label>
+                    <textarea
+                      id="control-approval-comment"
+                      className="text-field text-area-field"
+                      value={approvalComment}
+                      onChange={(event) => setApprovalComment(event.target.value)}
+                      placeholder="Comentario opcional para la decisión final"
+                    />
+                    {canDecideApproval ? (
+                      <div className="approval-action-row approval-action-row-detail">
+                        <button
+                          type="button"
+                          className="soft-primary-button approval-button-approve"
+                          disabled={isDecisionLoading === selectedPendingApproval.id}
+                          onClick={() => handleApprovalDecision(selectedPendingApproval.id, "approved")}
+                        >
+                          Aprobar y abrir caso
+                        </button>
+                        <button
+                          type="button"
+                          className="soft-primary-button approval-button-reject"
+                          disabled={isDecisionLoading === selectedPendingApproval.id}
+                          onClick={() => handleApprovalDecision(selectedPendingApproval.id, "rejected")}
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                  <div>
-                    <small>Decision area</small>
-                    <strong>{formatDateValue(selectedRequest.area_manager_decided_at)}</strong>
-                  </div>
-                  <div>
-                    <small>Aprobador control</small>
-                    <strong>
-                      {selectedRequest.contracts_control_approver_name ?? "No disponible"}
-                    </strong>
-                  </div>
-                  <div>
-                    <small>Decision control</small>
-                    <strong>
-                      {formatDateValue(selectedRequest.contracts_control_decided_at)}
-                    </strong>
-                  </div>
-                  <div>
-                    <small>Fecha solicitud</small>
-                    <strong>
-                      {formatDateValue(selectedRequest.submitted_at ?? selectedRequest.created_at)}
-                    </strong>
-                  </div>
-                  <div>
-                    <small>Cierre</small>
-                    <strong>
-                      {formatDateValue(selectedRequest.approved_at ?? selectedRequest.rejected_at)}
-                    </strong>
+                ) : null}
+
+                <div className="tracking-toolbar">
+                  <div className="tracking-toolbar-copy">
+                    <h3>Pipeline inicial</h3>
+                    <span className="tracking-filter-caption">
+                      Alta de candidatos y avance manual de etapa Fase 1.
+                    </span>
                   </div>
                 </div>
 
-                <div className="approval-detail-note">
-                  <small>Otros beneficios</small>
-                  <strong>{selectedRequest.other_benefits?.trim() || "No informado"}</strong>
+                <div className="control-edit-grid">
+                  <div>
+                    <label className="field-label" htmlFor="candidate-national-id">
+                      RUT / Identificador
+                    </label>
+                    <input
+                      id="candidate-national-id"
+                      className="text-field"
+                      value={candidateForm.nationalId}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          nationalId: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="candidate-full-name">
+                      Nombre completo
+                    </label>
+                    <input
+                      id="candidate-full-name"
+                      className="text-field"
+                      value={candidateForm.fullName}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          fullName: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="candidate-email">
+                      Correo
+                    </label>
+                    <input
+                      id="candidate-email"
+                      className="text-field"
+                      value={candidateForm.email}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          email: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="candidate-phone">
+                      Teléfono
+                    </label>
+                    <input
+                      id="candidate-phone"
+                      className="text-field"
+                      value={candidateForm.phone}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          phone: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="control-span-full">
+                    <button
+                      type="button"
+                      className="soft-primary-button approval-button-approve"
+                      disabled={isCandidateSaving}
+                      onClick={() => void handleAddCandidate()}
+                    >
+                      Agregar candidato al caso
+                    </button>
+                  </div>
                 </div>
 
-                {selectedPendingApproval && canDecideSelectedApproval ? (
+                <div className="tracking-table-wrap">
+                  <div className="tracking-table-scroll">
+                    <table className="tracking-table">
+                      <thead>
+                        <tr>
+                          <th>Candidato</th>
+                          <th>Contacto</th>
+                          <th>Etapa</th>
+                          <th>Licencia</th>
+                          <th>Ingreso etapa</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedCaseDetail.candidates.length > 0 ? (
+                          selectedCaseDetail.candidates.map((candidate) => (
+                            <tr
+                              key={candidate.id}
+                              className={
+                                candidate.id === selectedCandidate?.id ? "tracking-row-selected" : ""
+                              }
+                              onClick={() => {
+                                setSelectedCandidateId(candidate.id);
+                                setStageDraft("");
+                                setStageComment("");
+                              }}
+                            >
+                              <td>{candidate.full_name}</td>
+                              <td>{candidate.email ?? candidate.phone ?? "No disponible"}</td>
+                              <td>
+                                <span
+                                  className={`tracking-status-pill ${getStageChipClass(
+                                    candidate.stage_code
+                                  )}`}
+                                >
+                                  {toRecruitmentCandidateStageLabel(candidate.stage_code)}
+                                </span>
+                              </td>
+                              <td>
+                                {candidate.driver_license_class
+                                  ? `${candidate.driver_license_class} · ${formatDateValue(
+                                      candidate.driver_license_expiry
+                                    )}`
+                                  : "No registrada"}
+                              </td>
+                              <td>{formatDateTimeValue(candidate.stage_entered_at)}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td className="tracking-empty-state" colSpan={5}>
+                              {isDetailLoading
+                                ? "Cargando candidatos..."
+                                : "Aún no hay candidatos en este caso."}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {selectedCandidate ? (
                   <>
-                    <div className="approval-comment-box">
-                      <label className="field-label" htmlFor="control-approval-comment">
-                        Comentario de decision{" "}
-                        <span className="field-label-optional">(Opcional)</span>
-                      </label>
-                      <textarea
-                        id="control-approval-comment"
-                        className="text-field text-area-field"
-                        value={decisionComment}
-                        onChange={(event) => setDecisionComment(event.target.value)}
-                        placeholder="Agregue contexto si necesita dejar trazabilidad de la decision"
-                      />
+                    <div className="approval-detail-note">
+                      <small>Candidato seleccionado</small>
+                      <strong>
+                        {selectedCandidate.full_name} · {selectedCandidate.national_id}
+                      </strong>
                     </div>
 
-                    <div className="approval-action-row approval-action-row-detail">
-                      <button
-                        type="button"
-                        className="soft-primary-button approval-button-approve"
-                        disabled={isDecisionLoading === selectedPendingApproval.id}
-                        onClick={() => handleDecision(selectedPendingApproval.id, "approved")}
-                      >
-                        Aprobar
-                      </button>
-                      <button
-                        type="button"
-                        className="soft-primary-button approval-button-reject"
-                        disabled={isDecisionLoading === selectedPendingApproval.id}
-                        onClick={() => handleDecision(selectedPendingApproval.id, "rejected")}
-                      >
-                        Rechazar
-                      </button>
+                    <div className="control-edit-grid">
+                      <div>
+                        <label className="field-label" htmlFor="candidate-next-stage">
+                          Siguiente etapa
+                        </label>
+                        <select
+                          id="candidate-next-stage"
+                          className="text-field"
+                          value={stageDraft}
+                          onChange={(event) =>
+                            setStageDraft(event.target.value as RecruitmentCandidateStage | "")
+                          }
+                        >
+                          <option value="">Selecciona una etapa</option>
+                          {getNextStageOptions(selectedCandidate.stage_code).map((stage) => (
+                            <option key={stage} value={stage}>
+                              {toRecruitmentCandidateStageLabel(stage)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="field-label" htmlFor="candidate-stage-comment">
+                          Comentario
+                        </label>
+                        <input
+                          id="candidate-stage-comment"
+                          className="text-field"
+                          value={stageComment}
+                          onChange={(event) => setStageComment(event.target.value)}
+                        />
+                      </div>
+                      <div className="control-span-full">
+                        <button
+                          type="button"
+                          className="soft-primary-button approval-button-approve"
+                          disabled={isStageSaving || !stageDraft}
+                          onClick={() => void handleAdvanceStage()}
+                        >
+                          Mover candidato de etapa
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="approval-detail-note">
+                      <small>Historial de etapa</small>
+                      <strong>
+                        {selectedCandidate.stage_history.length > 0
+                          ? selectedCandidate.stage_history
+                              .map(
+                                (entry) =>
+                                  `${toRecruitmentCandidateStageLabel(entry.to_stage)} · ${formatDateTimeValue(entry.created_at)}`
+                              )
+                              .join(" | ")
+                          : "Sin historial adicional"}
+                      </strong>
                     </div>
                   </>
                 ) : null}
 
-                {selectedPendingApproval && !canDecideSelectedApproval ? (
-                  <div className="approval-detail-note">
-                    <small>Etapa asignada</small>
-                    <strong>
-                      Esta aprobación está asignada a{" "}
-                      {selectedPendingApproval.approver_name ??
-                        selectedPendingApproval.approver_email ??
-                        "otro usuario"}.
-                    </strong>
-                  </div>
-                ) : null}
+                <div className="approval-detail-note">
+                  <small>Auditoría del caso</small>
+                  <strong>
+                    {selectedCaseDetail.audit.length > 0
+                      ? selectedCaseDetail.audit
+                          .slice(0, 5)
+                          .map(
+                            (entry) =>
+                              `${entry.action_type} · ${entry.actor_name ?? "Usuario"} · ${formatDateTimeValue(entry.created_at)}`
+                          )
+                          .join(" | ")
+                      : "Sin eventos registrados"}
+                  </strong>
+                </div>
 
                 {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
               </>
             ) : (
               <div className="control-detail-header">
-                <h3>Sin solicitud seleccionada</h3>
+                <h3>Sin caso seleccionado</h3>
                 <span className="tracking-filter-caption">
-                  {isLoading ? "Cargando detalle..." : "Seleccione un folio para revisar su trazabilidad."}
+                  {isLoading
+                    ? "Cargando casos..."
+                    : "Selecciona un caso para revisar requerimiento, candidatos y auditoría."}
                 </span>
               </div>
             )}
