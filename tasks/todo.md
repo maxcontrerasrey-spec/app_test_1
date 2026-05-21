@@ -690,9 +690,15 @@
 
 ## Corrección de recursión RLS entre `hiring_requests` y `hiring_request_approvals`
 
-- [ ] Confirmar la dependencia circular entre las policies de selección
-- [ ] Agregar migración que simplifique `hiring_request_approvals_select_scoped`
-- [ ] Empujar el ajuste y dejar SQL exacto para aplicar en Supabase
+- [x] Confirmar la dependencia circular entre las policies de selección
+- [x] Agregar migración que simplifique `hiring_request_approvals_select_scoped`
+- [x] Empujar el ajuste y dejar SQL exacto para aplicar en Supabase
+
+## Resultado de corrección de recursión RLS entre `hiring_requests` y `hiring_request_approvals`
+
+- Se confirmó la recursión entre las policies de `hiring_requests` y `hiring_request_approvals`, que rompía lecturas válidas del dashboard aun cuando los datos estuvieran bien asignados.
+- Se versionó [20260520_000008_fix_hiring_approvals_rls_recursion.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000008_fix_hiring_approvals_rls_recursion.sql:1) para dejar `hiring_request_approvals_select_scoped` acotada al aprobador asignado o admin.
+- El ajuste quedó aplicado y permitió estabilizar la capa de lectura previa a la consolidación por RPC.
 
 
 ## Consolidación del resumen de `Inicio` por RPC segura
@@ -715,6 +721,39 @@
 
 ## Hotfix de ambigüedad en `decide_hiring_request_approval_v2`
 
-- [ ] Corregir referencias ambiguas entre variables de salida y columnas SQL dentro de la RPC de aprobación
-- [ ] Versionar el hotfix en una migración puntual y empujarlo a `main`
-- [ ] Entregar SQL exacto para aplicar inmediatamente en Supabase
+- [x] Corregir referencias ambiguas entre variables de salida y columnas SQL dentro de la RPC de aprobación
+- [x] Versionar el hotfix en una migración puntual y empujarlo a `main`
+- [x] Entregar SQL exacto para aplicar inmediatamente en Supabase
+
+## Resultado del hotfix de ambigüedad en `decide_hiring_request_approval_v2`
+
+- Se corrigió la ambigüedad SQL entre `hiring_request_id` como nombre de salida y como columna interna dentro de la RPC de aprobación.
+- El hotfix quedó versionado en [20260520_000010_fix_decide_hiring_request_approval_ambiguity.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000010_fix_decide_hiring_request_approval_ambiguity.sql:1).
+- La aprobación secuencial quedó validada end-to-end con los folios `0005` y `0007`, incluyendo aprobación, rechazo, traspaso a `contracts_control`, auditoría y snapshot para el flujo nuevo.
+
+
+## Limpieza final del módulo de contrataciones
+
+- [x] Eliminar remanentes legacy del flujo de contrataciones en Supabase mediante una migración final de cleanup
+- [x] Reemplazar `Control de Contrataciones` basado en mocks por una vista real conectada a Supabase
+- [x] Simplificar la capa frontend compartiendo servicios del flujo de aprobación donde hoy hay lógica duplicada
+- [x] Revalidar compilación/build y documentar el cierre final del módulo
+
+## Resultado de limpieza final del módulo de contrataciones
+
+- Se agregó [20260520_000011_finalize_hiring_requests_cleanup.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000011_finalize_hiring_requests_cleanup.sql:1), que:
+  - elimina funciones legacy remanentes del flujo anterior
+  - elimina `hiring_approval_configs` si aún existe
+  - expone `public.get_hiring_control_dashboard()` como RPC `security definer` para la vista real de `Control de Contrataciones`
+- [HiringStatusPage.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1) dejó de usar mocks locales y ahora consume datos reales del módulo:
+  - cola pendiente de `contracts_control`
+  - resumen por estado
+  - tabla de solicitudes recientes
+  - detalle real por folio
+- Se agregaron servicios compartidos:
+  - [hiringControl.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1)
+  - [hiringWorkflow.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringWorkflow.ts:1)
+- [HomePage.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/home/pages/HomePage.tsx:1) dejó de duplicar la llamada directa a la RPC de decisión y ahora comparte la misma capa de workflow.
+- Validación ejecutada:
+  - `npx tsc -b`
+  - `npm run build`

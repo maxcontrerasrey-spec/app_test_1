@@ -2,19 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/context/AuthContext";
 import { supabase } from "../../../shared/lib/supabase";
+import {
+  decideHiringApproval,
+  toHiringStatusLabel,
+  type HiringWorkflowStatus
+} from "../../recruitment/services/hiringWorkflow";
 
 type HiringRequestSummaryRow = {
   id: string;
   folio: string | null;
-  status:
-    | "pending_area_manager"
-    | "pending_contracts_control"
-    | "approved"
-    | "rejected"
-    | "pendiente"
-    | "aprobada"
-    | "rechazada"
-    | "cerrada";
+  status: HiringWorkflowStatus;
   contract_name: string;
   job_position_name: string;
   vacancies?: number | null;
@@ -98,17 +95,6 @@ function formatDaysSince(value: string) {
   if (diffInDays === 0) return "Hoy";
   if (diffInDays === 1) return "1 dia";
   return `${diffInDays} dias`;
-}
-
-function toStatusLabel(value: HiringRequestSummaryRow["status"] | string | null | undefined) {
-  if (value === "approved" || value === "aprobada") return "Aprobada";
-  if (value === "rejected" || value === "rechazada") return "Rechazada";
-  if (value === "pending_contracts_control") return "Pendiente control contratos";
-  if (value === "pending_area_manager" || value === "pendiente") {
-    return "Pendiente gerente de area";
-  }
-  if (value === "cerrada") return "Cerrada";
-  return "Pendiente";
 }
 
 function formatCurrencyValue(value: number | null | undefined) {
@@ -213,24 +199,16 @@ export function HomePage() {
   const pendingApprovalsCount = pendingApprovals.length;
 
   const handleApprovalDecision = async (approvalId: number, decision: "approved" | "rejected") => {
-    if (!supabase) {
-      return;
-    }
-
     setIsDecisionLoading(approvalId);
     setDecisionMessage("");
-
-    const normalizedComment =
-      selectedApproval?.id === approvalId ? decisionComment.trim() : "";
-
-    const { error } = await supabase.rpc("decide_hiring_request_approval_v2", {
-      p_approval_id: approvalId,
-      p_decision: decision,
-      p_comment: normalizedComment || null
+    const { error } = await decideHiringApproval({
+      approvalId,
+      decision,
+      comment: selectedApproval?.id === approvalId ? decisionComment : null
     });
 
     if (error) {
-      setDecisionMessage(error.message || "No fue posible registrar la decisión.");
+      setDecisionMessage(error);
       setIsDecisionLoading(null);
       return;
     }
@@ -384,7 +362,7 @@ export function HomePage() {
                     Pasajes: {formatBooleanLabel(request?.pasajes)}
                   </span>
                   <span className="approval-chip">
-                    Estado: {toStatusLabel(request?.status)}
+                    Estado: {toHiringStatusLabel(request?.status)}
                   </span>
                 </div>
 
@@ -474,7 +452,7 @@ export function HomePage() {
                       <td className="request-table-folio">{request.folio ?? "Sin folio"}</td>
                       <td>
                         <span className="request-table-status">
-                          {toStatusLabel(request.status)}
+                          {toHiringStatusLabel(request.status)}
                         </span>
                       </td>
                       <td title={request.job_position_name}>{request.job_position_name}</td>

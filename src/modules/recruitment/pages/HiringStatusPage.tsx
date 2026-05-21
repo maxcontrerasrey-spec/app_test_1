@@ -1,224 +1,314 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../auth/context/AuthContext";
+import {
+  decideHiringApproval,
+  toHiringStatusLabel,
+  type HiringWorkflowStatus
+} from "../services/hiringWorkflow";
+import {
+  fetchHiringControlDashboard,
+  type HiringControlApproval,
+  type HiringControlRequestRow,
+  type HiringControlSummary
+} from "../services/hiringControl";
 
-type HiringControlRow = {
-  folio: string;
-  estadoSolicitud: "Pendiente" | "Aprobada" | "Rechazada" | "Cerrada";
-  solicitanteNombre: string;
-  cargoSolicitado: string;
-  numeroVacantes: string;
-  nombreContrato: string;
-  gerenteArea: string;
-  fechaSolicitud: string;
-  fechaInicio: string;
-  fechaTermino: string;
-  gerenteAreaResultado: string;
-  controlContratosResultado: string;
-  turno: string;
-  rentaLiquidaOfrecida: string;
-  otrosBeneficios: string;
-  fechaIngresoEfectiva: string;
-  resultadoSeguimiento: string;
-  observacionInterna: string;
-  comentarioProceso: string;
+type StatusFilter = HiringWorkflowStatus | null;
+
+const emptySummary: HiringControlSummary = {
+  pending_area_manager: 0,
+  pending_contracts_control: 0,
+  approved: 0,
+  rejected: 0,
+  total: 0
 };
 
-const mockRows: HiringControlRow[] = [
+const kpiCards: Array<{
+  key: StatusFilter;
+  label: string;
+  summaryKey: keyof HiringControlSummary;
+  className: string;
+}> = [
   {
-    folio: "0001",
-    estadoSolicitud: "Pendiente",
-    solicitanteNombre: "Maximiliano Contreras",
-    cargoSolicitado: "CONDUCTOR DE BUS",
-    numeroVacantes: "2",
-    nombreContrato: "CONTROL FLOTA",
-    gerenteArea: "JUAN CARLOS NAVEA",
-    fechaSolicitud: "18/04/2026",
-    fechaInicio: "22/04/2026",
-    fechaTermino: "22/07/2026",
-    gerenteAreaResultado: "Pendiente",
-    controlContratosResultado: "Pendiente",
-    turno: "5X2",
-    rentaLiquidaOfrecida: "1000000",
-    otrosBeneficios: "",
-    fechaIngresoEfectiva: "",
-    resultadoSeguimiento: "En revision",
-    observacionInterna: "",
-    comentarioProceso: ""
+    key: "pending_contracts_control",
+    label: "Pendiente control",
+    summaryKey: "pending_contracts_control",
+    className: "tracking-kpi-card-en-proceso"
   },
   {
-    folio: "0002",
-    estadoSolicitud: "Aprobada",
-    solicitanteNombre: "Daniela Rojas",
-    cargoSolicitado: "ANALISTA CONTABLE",
-    numeroVacantes: "1",
-    nombreContrato: "FACTURACION Y COBRANZAS",
-    gerenteArea: "RAUL LOPEZ",
-    fechaSolicitud: "18/04/2026",
-    fechaInicio: "25/04/2026",
-    fechaTermino: "25/07/2026",
-    gerenteAreaResultado: "Aprobada",
-    controlContratosResultado: "Aprobada",
-    turno: "5X2",
-    rentaLiquidaOfrecida: "1350000",
-    otrosBeneficios: "Bono movilizacion",
-    fechaIngresoEfectiva: "25/04/2026",
-    resultadoSeguimiento: "Listo para ingreso",
-    observacionInterna: "Documentacion completa",
-    comentarioProceso: "Ingreso coordinado con jefatura"
+    key: "pending_area_manager",
+    label: "Pendiente gerencia",
+    summaryKey: "pending_area_manager",
+    className: "tracking-kpi-card-pendiente"
   },
   {
-    folio: "0003",
-    estadoSolicitud: "Rechazada",
-    solicitanteNombre: "Cristian Salgado",
-    cargoSolicitado: "ADMINISTRATIVO RRHH",
-    numeroVacantes: "3",
-    nombreContrato: "COMERCIAL",
-    gerenteArea: "ALAN BRAIN",
-    fechaSolicitud: "19/04/2026",
-    fechaInicio: "28/04/2026",
-    fechaTermino: "28/07/2026",
-    gerenteAreaResultado: "Rechazada",
-    controlContratosResultado: "Pendiente",
-    turno: "ART 22",
-    rentaLiquidaOfrecida: "950000",
-    otrosBeneficios: "",
-    fechaIngresoEfectiva: "",
-    resultadoSeguimiento: "Documentacion pendiente",
-    observacionInterna: "Falta validacion presupuestaria",
-    comentarioProceso: ""
+    key: "approved",
+    label: "Aprobadas",
+    summaryKey: "approved",
+    className: "tracking-kpi-card-generado"
+  },
+  {
+    key: "rejected",
+    label: "Rechazadas",
+    summaryKey: "rejected",
+    className: "tracking-kpi-card-error"
   }
 ];
 
-const statusOptions = ["Pendiente", "Aprobada", "Rechazada", "Cerrada"];
-const followUpOptions = [
-  "En revision",
-  "Documentacion pendiente",
-  "Listo para ingreso",
-  "Ingreso realizado",
-  "Cerrado"
-];
-
-function formatCurrencyDisplay(value: string) {
+function formatDateValue(value: string | null | undefined) {
   if (!value) {
-    return "";
+    return "No disponible";
   }
 
-  return new Intl.NumberFormat("es-CL").format(Number(value));
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "No disponible";
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(date);
 }
 
-function normalizeCurrencyInput(rawValue: string) {
-  const digits = rawValue.replace(/\D/g, "");
-  return digits ? String(Number(digits)) : "";
+function formatCurrencyValue(value: number | null | undefined) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "No disponible";
+  }
+
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function formatBooleanLabel(value: boolean | null | undefined) {
+  if (value === true) return "Si";
+  if (value === false) return "No";
+  return "No disponible";
+}
+
+function formatPersonLabel(value: string | null | undefined) {
+  if (!value?.trim()) {
+    return "No disponible";
+  }
+
+  return value.trim();
 }
 
 export function HiringStatusPage() {
-  const [rows, setRows] = useState(mockRows);
+  const { user } = useAuth();
+  const [summary, setSummary] = useState<HiringControlSummary>(emptySummary);
+  const [pendingApprovals, setPendingApprovals] = useState<HiringControlApproval[]>([]);
+  const [recentRequests, setRecentRequests] = useState<HiringControlRequestRow[]>([]);
+  const [selectedRequestId, setSelectedRequestId] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null);
-  const [selectedFolio, setSelectedFolio] = useState(mockRows[0]?.folio ?? "");
-  const [localStatus, setLocalStatus] = useState("");
+  const [decisionComment, setDecisionComment] = useState("");
+  const [decisionMessage, setDecisionMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
 
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
-  const filteredRows = rows.filter((row) => {
-    const matchesSearch =
-      !normalizedSearchTerm ||
-      row.folio.toLowerCase().includes(normalizedSearchTerm) ||
-      row.solicitanteNombre.toLowerCase().includes(normalizedSearchTerm);
+  const loadDashboard = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
 
-    const matchesStatus = !activeStatusFilter || row.estadoSolicitud === activeStatusFilter;
+    const result = await fetchHiringControlDashboard();
 
-    return matchesSearch && matchesStatus;
-  });
-
-  useEffect(() => {
-    if (filteredRows.length === 0) {
-      if (selectedFolio) {
-        setSelectedFolio("");
-      }
-
+    if (result.error || !result.data) {
+      setSummary(emptySummary);
+      setPendingApprovals([]);
+      setRecentRequests([]);
+      setErrorMessage(result.error ?? "No fue posible cargar el tablero de contrataciones.");
+      setIsLoading(false);
       return;
     }
 
-    const selectedRowIsVisible = filteredRows.some((row) => row.folio === selectedFolio);
-
-    if (!selectedRowIsVisible) {
-      setSelectedFolio(filteredRows[0].folio);
-    }
-  }, [filteredRows, selectedFolio]);
-
-  const selectedRow =
-    filteredRows.find((row) => row.folio === selectedFolio) ?? filteredRows[0] ?? null;
-
-  const statusCounts = useMemo(
-    () =>
-      rows.reduce<Record<string, number>>((accumulator, row) => {
-        accumulator[row.estadoSolicitud] = (accumulator[row.estadoSolicitud] ?? 0) + 1;
-        return accumulator;
-      }, {}),
-    [rows]
-  );
-
-  const updateSelectedRow = (field: keyof HiringControlRow, value: string) => {
-    if (!selectedRow) {
-      return;
-    }
-
-    setRows((current) =>
-      current.map((row) =>
-        row.folio === selectedRow.folio ? { ...row, [field]: value } : row
-      )
-    );
+    setSummary(result.data.summary);
+    setPendingApprovals(result.data.pendingApprovals);
+    setRecentRequests(result.data.recentRequests);
+    setIsLoading(false);
   };
 
-  const handleSave = () => {
-    if (!selectedRow) {
+  useEffect(() => {
+    void loadDashboard();
+  }, []);
+
+  const filteredRequests = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return recentRequests.filter((request) => {
+      const matchesStatus = !statusFilter || request.status === statusFilter;
+      const matchesSearch =
+        !normalizedSearch ||
+        (request.folio ?? "").toLowerCase().includes(normalizedSearch) ||
+        (request.requester_name ?? "").toLowerCase().includes(normalizedSearch) ||
+        request.job_position_name.toLowerCase().includes(normalizedSearch) ||
+        request.contract_name.toLowerCase().includes(normalizedSearch);
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [recentRequests, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    if (filteredRequests.length === 0) {
+      setSelectedRequestId("");
       return;
     }
 
-    setLocalStatus(
-      `Cambios del folio ${selectedRow.folio} guardados en modo local. Luego esto actualizará Supabase.`
+    const selectedStillVisible = filteredRequests.some((request) => request.id === selectedRequestId);
+    if (!selectedStillVisible) {
+      setSelectedRequestId(filteredRequests[0]?.id ?? "");
+    }
+  }, [filteredRequests, selectedRequestId]);
+
+  const selectedRequest =
+    filteredRequests.find((request) => request.id === selectedRequestId) ??
+    filteredRequests[0] ??
+    null;
+
+  const selectedPendingApproval =
+    selectedRequest &&
+    pendingApprovals.find((approval) => approval.hiring_request_id === selectedRequest.id);
+  const canDecideSelectedApproval =
+    Boolean(user?.id) && selectedPendingApproval?.approver_user_id === user?.id;
+
+  const handleDecision = async (
+    approvalId: number,
+    decision: "approved" | "rejected"
+  ) => {
+    setIsDecisionLoading(approvalId);
+    setDecisionMessage("");
+
+    const { error } = await decideHiringApproval({
+      approvalId,
+      decision,
+      comment: decisionComment
+    });
+
+    if (error) {
+      setDecisionMessage(error);
+      setIsDecisionLoading(null);
+      return;
+    }
+
+    setDecisionComment("");
+    setDecisionMessage(
+      decision === "approved" ? "Aprobación registrada." : "Rechazo registrado."
     );
+    setIsDecisionLoading(null);
+    await loadDashboard();
   };
 
   return (
     <section className="page">
-      <div className="hero-panel">
+      <div className="hero-panel hero-panel-compact">
         <h2>Control de Contrataciones</h2>
+        <p>
+          Vista consolidada del flujo real de contrataciones, sin estados locales ni
+          seguimiento ficticio.
+        </p>
       </div>
 
       <section className="tracking-panel">
         <div className="tracking-kpi-row">
-          {statusOptions.map((status) => (
+          {kpiCards.map((card) => (
             <button
-              key={status}
+              key={card.label}
               type="button"
-              className={`tracking-kpi-card tracking-kpi-card-${status
-                .toLowerCase()
-                .replace(/\s+/g, "-")} ${
-                activeStatusFilter === status ? "tracking-kpi-card-active" : ""
+              className={`tracking-kpi-card ${card.className} ${
+                statusFilter === card.key ? "tracking-kpi-card-active" : ""
               }`}
               onClick={() =>
-                setActiveStatusFilter((current) => (current === status ? null : status))
+                setStatusFilter((current) => (current === card.key ? null : card.key))
               }
             >
-              <span className="micro-label">{status}</span>
-              <strong>{statusCounts[status] ?? 0}</strong>
+              <span className="micro-label">{card.label}</span>
+              <strong>{summary[card.summaryKey] ?? 0}</strong>
             </button>
           ))}
         </div>
 
+        {pendingApprovals.length > 0 ? (
+          <article className="info-card approval-panel-card approval-panel-primary">
+            <div className="home-section-header">
+              <div>
+                <h3>Cola de Control de Contratos</h3>
+                <p>
+                  {isLoading
+                    ? "Cargando aprobaciones..."
+                    : `${pendingApprovals.length} pendientes en esta etapa`}
+                </p>
+              </div>
+            </div>
+
+            <ul className="approval-queue">
+              {pendingApprovals.map((approval) => (
+                <li key={approval.id} className="approval-queue-item">
+                  <div className="approval-queue-copy">
+                    <strong>{approval.hiring_requests?.folio ?? "Sin folio"}</strong>
+                    <span>{approval.step_name}</span>
+                    <span>
+                      {approval.hiring_requests?.job_position_name ?? "Cargo no disponible"}
+                    </span>
+                    <span>
+                      {approval.hiring_requests?.contract_name ?? "Contrato no disponible"}
+                    </span>
+                  </div>
+                  <div className="approval-action-row">
+                    <button
+                      type="button"
+                      className="soft-primary-button approval-button-detail"
+                      onClick={() => {
+                        setSelectedRequestId(approval.hiring_request_id);
+                        setDecisionMessage("");
+                      }}
+                    >
+                      Ver detalle
+                    </button>
+                    {approval.approver_user_id === user?.id ? (
+                      <>
+                        <button
+                          type="button"
+                          className="soft-primary-button approval-button-approve"
+                          disabled={isDecisionLoading === approval.id}
+                          onClick={() => handleDecision(approval.id, "approved")}
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          type="button"
+                          className="soft-primary-button approval-button-reject"
+                          disabled={isDecisionLoading === approval.id}
+                          onClick={() => handleDecision(approval.id, "rejected")}
+                        >
+                          Rechazar
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ) : null}
+
         <div className="tracking-toolbar">
           <div className="tracking-toolbar-copy">
-            <h3>Resumen de Solicitudes</h3>
-            {activeStatusFilter ? (
+            <h3>Resumen de solicitudes</h3>
+            {statusFilter ? (
               <span className="tracking-filter-caption">
-                Filtrando por estado: {activeStatusFilter}
+                Filtrando por estado: {toHiringStatusLabel(statusFilter)}
               </span>
             ) : null}
+            {errorMessage ? <span className="tracking-filter-caption">{errorMessage}</span> : null}
           </div>
           <div className="tracking-filters">
             <input
               className="text-field tracking-search"
-              placeholder="Buscar por folio o solicitante"
+              placeholder="Buscar por folio, solicitante, cargo o contrato"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
@@ -235,30 +325,41 @@ export function HiringStatusPage() {
                     <th>Estado</th>
                     <th>Solicitante</th>
                     <th>Cargo</th>
-                    <th>Cupos</th>
                     <th>Contrato</th>
+                    <th>Area manager</th>
+                    <th>Control contratos</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRows.length > 0 ? (
-                    filteredRows.map((row) => (
+                  {filteredRequests.length > 0 ? (
+                    filteredRequests.map((request) => (
                       <tr
-                        key={row.folio}
-                        className={row.folio === selectedRow?.folio ? "tracking-row-selected" : ""}
-                        onClick={() => setSelectedFolio(row.folio)}
+                        key={request.id}
+                        className={request.id === selectedRequest?.id ? "tracking-row-selected" : ""}
+                        onClick={() => {
+                          setSelectedRequestId(request.id);
+                          setDecisionMessage("");
+                        }}
                       >
-                        <td>{row.folio}</td>
-                        <td>{row.estadoSolicitud}</td>
-                        <td>{row.solicitanteNombre}</td>
-                        <td>{row.cargoSolicitado}</td>
-                        <td>{row.numeroVacantes}</td>
-                        <td>{row.nombreContrato}</td>
+                        <td>{request.folio ?? "Sin folio"}</td>
+                        <td>
+                          <span className="tracking-status-pill">
+                            {toHiringStatusLabel(request.status)}
+                          </span>
+                        </td>
+                        <td>{formatPersonLabel(request.requester_name)}</td>
+                        <td>{request.job_position_name}</td>
+                        <td>{request.contract_name}</td>
+                        <td>{toHiringStatusLabel(request.area_manager_status)}</td>
+                        <td>{toHiringStatusLabel(request.contracts_control_status)}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td className="tracking-empty-state" colSpan={6}>
-                        No hay coincidencias para esa busqueda.
+                      <td className="tracking-empty-state" colSpan={7}>
+                        {isLoading
+                          ? "Cargando solicitudes..."
+                          : "No hay solicitudes para el filtro actual."}
                       </td>
                     </tr>
                   )}
@@ -267,206 +368,186 @@ export function HiringStatusPage() {
             </div>
           </div>
 
-          {selectedRow ? (
-            <aside className="control-detail-panel">
+          <aside className="control-detail-panel">
+            {selectedRequest ? (
+              <>
+                <div className="control-detail-header">
+                  <h3>{selectedRequest.folio ?? "Sin folio"}</h3>
+                  <span className="tracking-status-pill">
+                    {toHiringStatusLabel(selectedRequest.status)}
+                  </span>
+                </div>
+
+                <div className="control-readonly-grid">
+                  <div>
+                    <small>Solicitante</small>
+                    <strong>{formatPersonLabel(selectedRequest.requester_name)}</strong>
+                  </div>
+                  <div>
+                    <small>Correo</small>
+                    <strong>{selectedRequest.requester_email ?? "No disponible"}</strong>
+                  </div>
+                  <div>
+                    <small>Cargo solicitado</small>
+                    <strong>{selectedRequest.job_position_name}</strong>
+                  </div>
+                  <div>
+                    <small>Vacantes</small>
+                    <strong>{selectedRequest.vacancies ?? 0}</strong>
+                  </div>
+                  <div>
+                    <small>Contrato</small>
+                    <strong>{selectedRequest.contract_name}</strong>
+                  </div>
+                  <div>
+                    <small>Numero contrato</small>
+                    <strong>{selectedRequest.contract_number ?? "No disponible"}</strong>
+                  </div>
+                  <div>
+                    <small>Centro de costo</small>
+                    <strong>
+                      {selectedRequest.cost_center_code ?? "No disponible"} ·{" "}
+                      {selectedRequest.cost_center_name ?? "No disponible"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>Turno</small>
+                    <strong>{selectedRequest.shift_name ?? "No disponible"}</strong>
+                  </div>
+                  <div>
+                    <small>Ingreso solicitado</small>
+                    <strong>{formatDateValue(selectedRequest.requested_entry_date)}</strong>
+                  </div>
+                  <div>
+                    <small>Inicio / termino</small>
+                    <strong>
+                      {formatDateValue(selectedRequest.start_date)} -{" "}
+                      {formatDateValue(selectedRequest.end_date)}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="approval-chip-row">
+                  <span className="approval-chip">
+                    Renta: {formatCurrencyValue(selectedRequest.salary_offer)}
+                  </span>
+                  <span className="approval-chip">
+                    Campamento: {formatBooleanLabel(selectedRequest.campamento)}
+                  </span>
+                  <span className="approval-chip">
+                    Pasajes: {formatBooleanLabel(selectedRequest.pasajes)}
+                  </span>
+                  <span className="approval-chip">
+                    Area manager: {toHiringStatusLabel(selectedRequest.area_manager_status)}
+                  </span>
+                  <span className="approval-chip">
+                    Control contratos:{" "}
+                    {toHiringStatusLabel(selectedRequest.contracts_control_status)}
+                  </span>
+                </div>
+
+                <div className="control-readonly-grid">
+                  <div>
+                    <small>Aprobador area</small>
+                    <strong>
+                      {selectedRequest.area_manager_approver_name ?? "No disponible"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>Decision area</small>
+                    <strong>{formatDateValue(selectedRequest.area_manager_decided_at)}</strong>
+                  </div>
+                  <div>
+                    <small>Aprobador control</small>
+                    <strong>
+                      {selectedRequest.contracts_control_approver_name ?? "No disponible"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>Decision control</small>
+                    <strong>
+                      {formatDateValue(selectedRequest.contracts_control_decided_at)}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>Fecha solicitud</small>
+                    <strong>
+                      {formatDateValue(selectedRequest.submitted_at ?? selectedRequest.created_at)}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>Cierre</small>
+                    <strong>
+                      {formatDateValue(selectedRequest.approved_at ?? selectedRequest.rejected_at)}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="approval-detail-note">
+                  <small>Otros beneficios</small>
+                  <strong>{selectedRequest.other_benefits?.trim() || "No informado"}</strong>
+                </div>
+
+                {selectedPendingApproval && canDecideSelectedApproval ? (
+                  <>
+                    <div className="approval-comment-box">
+                      <label className="field-label" htmlFor="control-approval-comment">
+                        Comentario de decision{" "}
+                        <span className="field-label-optional">(Opcional)</span>
+                      </label>
+                      <textarea
+                        id="control-approval-comment"
+                        className="text-field text-area-field"
+                        value={decisionComment}
+                        onChange={(event) => setDecisionComment(event.target.value)}
+                        placeholder="Agregue contexto si necesita dejar trazabilidad de la decision"
+                      />
+                    </div>
+
+                    <div className="approval-action-row approval-action-row-detail">
+                      <button
+                        type="button"
+                        className="soft-primary-button approval-button-approve"
+                        disabled={isDecisionLoading === selectedPendingApproval.id}
+                        onClick={() => handleDecision(selectedPendingApproval.id, "approved")}
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        className="soft-primary-button approval-button-reject"
+                        disabled={isDecisionLoading === selectedPendingApproval.id}
+                        onClick={() => handleDecision(selectedPendingApproval.id, "rejected")}
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+
+                {selectedPendingApproval && !canDecideSelectedApproval ? (
+                  <div className="approval-detail-note">
+                    <small>Etapa asignada</small>
+                    <strong>
+                      Esta aprobación está asignada a{" "}
+                      {selectedPendingApproval.approver_name ??
+                        selectedPendingApproval.approver_email ??
+                        "otro usuario"}.
+                    </strong>
+                  </div>
+                ) : null}
+
+                {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
+              </>
+            ) : (
               <div className="control-detail-header">
-                <span className="eyebrow">Folio {selectedRow.folio}</span>
-                <h3>Detalle y Control</h3>
+                <h3>Sin solicitud seleccionada</h3>
+                <span className="tracking-filter-caption">
+                  {isLoading ? "Cargando detalle..." : "Seleccione un folio para revisar su trazabilidad."}
+                </span>
               </div>
-
-              <div className="control-readonly-grid">
-                <div>
-                  <small>Solicitante</small>
-                  <strong>{selectedRow.solicitanteNombre}</strong>
-                </div>
-                <div>
-                  <small>Fecha solicitud</small>
-                  <strong>{selectedRow.fechaSolicitud}</strong>
-                </div>
-                <div>
-                  <small>Contrato</small>
-                  <strong>{selectedRow.nombreContrato}</strong>
-                </div>
-                <div>
-                  <small>Gerente area</small>
-                  <strong>{selectedRow.gerenteArea}</strong>
-                </div>
-                <div>
-                  <small>Aprobacion gerente</small>
-                  <strong>{selectedRow.gerenteAreaResultado}</strong>
-                </div>
-                <div>
-                  <small>Control de contratos</small>
-                  <strong>{selectedRow.controlContratosResultado}</strong>
-                </div>
-              </div>
-
-              <div className="control-edit-grid">
-                <div className="field-group">
-                  <label className="field-label" htmlFor="estado-solicitud">
-                    Estado solicitud
-                  </label>
-                  <select
-                    id="estado-solicitud"
-                    className="text-field"
-                    value={selectedRow.estadoSolicitud}
-                    onChange={(event) => updateSelectedRow("estadoSolicitud", event.target.value)}
-                  >
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="turno-control">
-                    Turno
-                  </label>
-                  <input
-                    id="turno-control"
-                    className="text-field"
-                    value={selectedRow.turno}
-                    onChange={(event) => updateSelectedRow("turno", event.target.value)}
-                    type="text"
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="fecha-inicio-control">
-                    Fecha inicio
-                  </label>
-                  <input
-                    id="fecha-inicio-control"
-                    className="text-field"
-                    value={selectedRow.fechaInicio}
-                    onChange={(event) => updateSelectedRow("fechaInicio", event.target.value)}
-                    type="text"
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="fecha-termino-control">
-                    Fecha termino
-                  </label>
-                  <input
-                    id="fecha-termino-control"
-                    className="text-field"
-                    value={selectedRow.fechaTermino}
-                    onChange={(event) => updateSelectedRow("fechaTermino", event.target.value)}
-                    type="text"
-                  />
-                </div>
-
-                <div className="field-group field-with-suffix">
-                  <label className="field-label" htmlFor="renta-control">
-                    Renta liquida ofrecida
-                  </label>
-                  <input
-                    id="renta-control"
-                    className="text-field text-field-with-suffix"
-                    inputMode="numeric"
-                    value={formatCurrencyDisplay(selectedRow.rentaLiquidaOfrecida)}
-                    onChange={(event) =>
-                      updateSelectedRow(
-                        "rentaLiquidaOfrecida",
-                        normalizeCurrencyInput(event.target.value)
-                      )
-                    }
-                    type="text"
-                  />
-                  <span className="field-suffix">$</span>
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="fecha-ingreso-efectiva">
-                    Fecha ingreso efectiva
-                  </label>
-                  <input
-                    id="fecha-ingreso-efectiva"
-                    className="text-field"
-                    value={selectedRow.fechaIngresoEfectiva}
-                    onChange={(event) =>
-                      updateSelectedRow("fechaIngresoEfectiva", event.target.value)
-                    }
-                    placeholder="Pendiente"
-                    type="text"
-                  />
-                </div>
-
-                <div className="field-group control-span-full">
-                  <label className="field-label" htmlFor="resultado-seguimiento">
-                    Resultado seguimiento
-                  </label>
-                  <select
-                    id="resultado-seguimiento"
-                    className="text-field"
-                    value={selectedRow.resultadoSeguimiento}
-                    onChange={(event) =>
-                      updateSelectedRow("resultadoSeguimiento", event.target.value)
-                    }
-                  >
-                    {followUpOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="field-group control-span-full">
-                  <label className="field-label" htmlFor="otros-beneficios-control">
-                    Otros beneficios
-                  </label>
-                  <textarea
-                    id="otros-beneficios-control"
-                    className="text-field text-area-field"
-                    value={selectedRow.otrosBeneficios}
-                    onChange={(event) =>
-                      updateSelectedRow("otrosBeneficios", event.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="field-group control-span-full">
-                  <label className="field-label" htmlFor="observacion-interna">
-                    Observacion interna
-                  </label>
-                  <textarea
-                    id="observacion-interna"
-                    className="text-field text-area-field"
-                    value={selectedRow.observacionInterna}
-                    onChange={(event) =>
-                      updateSelectedRow("observacionInterna", event.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="field-group control-span-full">
-                  <label className="field-label" htmlFor="comentario-proceso">
-                    Comentario proceso
-                  </label>
-                  <textarea
-                    id="comentario-proceso"
-                    className="text-field text-area-field"
-                    value={selectedRow.comentarioProceso}
-                    onChange={(event) =>
-                      updateSelectedRow("comentarioProceso", event.target.value)
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="action-row">
-                <button type="button" className="soft-primary-button" onClick={handleSave}>
-                  Guardar cambios
-                </button>
-              </div>
-
-              {localStatus ? <p className="form-status">{localStatus}</p> : null}
-            </aside>
-          ) : null}
+            )}
+          </aside>
         </div>
       </section>
     </section>
