@@ -686,3 +686,10 @@
 - Validación ejecutada:
   - `npx tsc -b`
   - `npm run build`
+
+
+## Corrección de recursión RLS entre `hiring_requests` y `hiring_request_approvals`
+
+- [ ] Confirmar la dependencia circular entre las policies de selección
+- [ ] Agregar migración que simplifique `hiring_request_approvals_select_scoped`
+- [ ] Empujar el ajuste y dejar SQL exacto para aplicar en Supabase
