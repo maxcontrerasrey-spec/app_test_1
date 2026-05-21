@@ -1,5 +1,33 @@
 # Plan de trabajo
 
+## Reencuadre Fase 1 de Control de Contrataciones
+
+- [x] Reestructurar el frontend del submódulo `Control de Contrataciones` en dos submódulos internos:
+  - `Resumen de procesos de contratación`
+  - `Control de candidatos`
+- [x] Extender el backend de Fase 1 para soportar una bandeja operativa de candidatos transversal a folios/casos activos
+- [x] Endurecer la regla operacional de candidato multi-folio: puede participar en varios folios, pero solo uno puede quedar avanzando a contrato
+- [x] Verificar si el ajuste requiere extensión de autorización en `app_modules`, `role_module_access`, `app_roles` o `profiles`
+- [x] Revalidar compilación, build y flujo base del submódulo después del ajuste
+
+## Resultado del reencuadre Fase 1 de Control de Contrataciones
+
+- `Control de Contrataciones` quedó separado en dos submódulos internos dentro de la misma pantalla:
+  - `Resumen de procesos de contratación`
+  - `Control de candidatos`
+- Se agregó la migración [20260520_000013_refine_recruitment_control_phase1.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000013_refine_recruitment_control_phase1.sql:1) para:
+  - enriquecer `get_recruitment_control_dashboard_v2()` con una bandeja transversal de candidatos activos
+  - endurecer `advance_recruitment_candidate_stage(...)` para impedir que un mismo candidato avance a `ready_for_hire` o `hired` en más de un folio activo a la vez
+  - exponer el contexto de bloqueo contractual desde backend
+- [HiringStatusPage.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1) ahora separa explícitamente el seguimiento por folio del control operativo de candidatos sin abrir un módulo nuevo en la navegación global.
+- [hiringControl.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) ahora tipa y consume `candidate_control` como fuente oficial del submódulo de candidatos.
+- Revisión de autorización:
+  - no fue necesario extender `app_modules`, `role_module_access`, `app_roles` ni `profiles`
+  - el ajuste vive dentro de `control_contrataciones` y reutiliza los scopes operativos ya definidos para el módulo
+- Validación:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto
+
 ## Endurecimiento seguro de hiring_requests
 
 - [x] Revisar y cerrar la migración `20260520_000006_secure_hiring_requests_workflow.sql` para que la cadena quede secuencial, auditable y sin `UPDATE` directo desde frontend

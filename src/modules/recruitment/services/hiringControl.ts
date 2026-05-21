@@ -79,6 +79,37 @@ export type RecruitmentCaseListRow = {
   hired_candidates: number;
 };
 
+export type RecruitmentCandidateControlRow = {
+  id: string;
+  candidate_profile_id: string;
+  recruitment_case_id: string;
+  case_code: string;
+  folio: string | null;
+  case_status: RecruitmentCaseStatus;
+  national_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  driver_license_number: string | null;
+  driver_license_class: string | null;
+  driver_license_expiry: string | null;
+  stage_code: RecruitmentCandidateStage;
+  stage_entered_at: string;
+  suitability_status: "unknown" | "fit" | "risk" | "blocked";
+  is_selected: boolean;
+  contract_name: string;
+  job_position_name: string;
+  cost_center_code: string;
+  cost_center_name: string;
+  owner_name: string | null;
+  active_process_count: number;
+  contract_locked_case_id: string | null;
+  contract_locked_case_code: string | null;
+  contract_locked_folio: string | null;
+  contract_locked_stage_code: RecruitmentCandidateStage | null;
+  is_contract_path_blocked: boolean;
+};
+
 export type RecruitmentCaseAssignment = {
   id: number;
   user_id: string;
@@ -168,6 +199,7 @@ type RecruitmentControlDashboardPayload = {
   summary?: RecruitmentDashboardSummary | null;
   pending_approvals?: HiringControlApproval[] | null;
   active_cases?: RecruitmentCaseListRow[] | null;
+  candidate_control?: RecruitmentCandidateControlRow[] | null;
 };
 
 function formatRpcError(error: {
@@ -242,7 +274,8 @@ export async function fetchRecruitmentControlDashboard() {
         total_cases: 0
       },
       pendingApprovals: payload.pending_approvals ?? [],
-      activeCases: payload.active_cases ?? []
+      activeCases: payload.active_cases ?? [],
+      candidateControl: payload.candidate_control ?? []
     },
     error: null
   };
