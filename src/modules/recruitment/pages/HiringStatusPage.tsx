@@ -563,7 +563,7 @@ export function HiringStatusPage() {
                         <th>Contrato</th>
                         <th>Cupos</th>
                         <th>Candidatos activos</th>
-                        <th>Owner</th>
+                        <th>Solicitó</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -588,7 +588,7 @@ export function HiringStatusPage() {
                             <td>
                               {caseRow.candidate_count} · listos {caseRow.ready_candidates}
                             </td>
-                            <td>{caseRow.owner_name ?? "No asignado"}</td>
+                            <td>{caseRow.requester_name ?? "No disponible"}</td>
                           </tr>
                         ))
                       ) : (

@@ -72,6 +72,8 @@ export type RecruitmentCaseListRow = {
   requested_entry_date: string | null;
   target_close_date: string | null;
   opened_at: string;
+  requester_name: string | null;
+  requester_email: string | null;
   owner_name: string | null;
   owner_user_id: string | null;
   candidate_count: number;
