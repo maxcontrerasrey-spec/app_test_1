@@ -1,5 +1,17 @@
 # Plan de trabajo
 
+## Cierre de migraciones manuales de Recruitment Phase 1
+
+- [x] Dejar explícita la regla de utilidad real del producto en la documentación operativa del proyecto
+- [x] Revisar y versionar las migraciones `20260521_000014_align_recruitment_phase1_schema_and_backfill.sql` y `20260521_000015_align_recruitment_phase1_constraints.sql`
+- [x] Publicar el cierre para que la alineación de Supabase no dependa de memoria oral ni de cambios manuales sueltos
+
+## Resultado del cierre de migraciones manuales de Recruitment Phase 1
+
+- Quedó asentada como regla permanente del proyecto que no se incorporan datos falsos, módulos vacíos ni interacciones sin utilidad operativa real.
+- Se versionaron las migraciones [20260521_000014_align_recruitment_phase1_schema_and_backfill.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260521_000014_align_recruitment_phase1_schema_and_backfill.sql:1) y [20260521_000015_align_recruitment_phase1_constraints.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260521_000015_align_recruitment_phase1_constraints.sql:1) como reflejo formal del ajuste ya aplicado en Supabase.
+- Con esto, la apertura automática de `recruitment_cases`, el backfill de folios aprobados y la alineación de constraints dejan de depender de memoria oral o correcciones manuales sueltas.
+
 ## Refinamiento UX de Control de Contrataciones
 
 - [x] Quitar elementos sin utilidad operativa inmediata en `Resumen de procesos de contratación`
