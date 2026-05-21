@@ -668,6 +668,21 @@
 
 ## Hotfix de columnas faltantes en `hiring_request_approvals`
 
-- [ ] Confirmar la deriva real entre la RPC desplegada y el esquema productivo de `hiring_request_approvals`
-- [ ] Agregar migración idempotente para `approver_name` y `approver_email`
-- [ ] Empujar el hotfix al repo y dejar SQL exacto para aplicar en Supabase
+- [x] Confirmar la deriva real entre la RPC desplegada y el esquema productivo de `hiring_request_approvals`
+- [x] Agregar migración idempotente para `approver_name` y `approver_email`
+- [x] Empujar el hotfix al repo y dejar SQL exacto para aplicar en Supabase
+
+## Resultado de corrección de carga de aprobaciones en `Inicio`
+
+- La solicitud y su asignación estaban correctas en base:
+  - `status = pending_area_manager`
+  - `current_step_code = area_manager`
+  - `approver_user_id = 0de4ef6f-3e52-4bab-8042-ab04ea7763ae`
+- La falla estaba en el frontend de [HomePage.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/home/pages/HomePage.tsx): la bandeja dependía de un `select` con `hiring_requests!inner(...)`, y ante error de esa relación/embebido vaciaba también `Mis solicitudes`.
+- Se reemplazó por una carga en dos pasos:
+  - primero `hiring_request_approvals`
+  - luego `hiring_requests` por `id`
+  - unión en frontend
+- Validación ejecutada:
+  - `npx tsc -b`
+  - `npm run build`
