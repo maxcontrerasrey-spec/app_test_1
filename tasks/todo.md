@@ -711,3 +711,10 @@
 - Validación ejecutada:
   - `npx tsc -b`
   - `npm run build`
+
+
+## Hotfix de ambigüedad en `decide_hiring_request_approval_v2`
+
+- [ ] Corregir referencias ambiguas entre variables de salida y columnas SQL dentro de la RPC de aprobación
+- [ ] Versionar el hotfix en una migración puntual y empujarlo a `main`
+- [ ] Entregar SQL exacto para aplicar inmediatamente en Supabase
