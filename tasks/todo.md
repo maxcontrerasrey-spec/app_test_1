@@ -1,5 +1,32 @@
 # Plan de trabajo
 
+## Corrección funcional y validación de RUT en alta de candidatos
+
+- [x] Corregir el flujo de registro de candidato para que entregue feedback visible en el mismo formulario
+- [x] Implementar utilidades reutilizables `sanitizeRut`, `formatRut`, `validateRut`, `normalizeRut`
+- [x] Aplicar formato y validación de RUT chileno al input controlado de candidatos
+- [x] Guardar el RUT normalizado antes de enviarlo a Supabase y mostrarlo formateado en UI
+- [x] Revalidar compilación y build después del ajuste
+
+## Resultado de corrección funcional y validación de RUT en alta de candidatos
+
+- El formulario de alta de candidatos ahora entrega feedback visible de error o éxito dentro del mismo bloque de alta.
+- Se creó la utilidad reusable [rut.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/rut.ts:1) con:
+  - `sanitizeRut`
+  - `formatRut`
+  - `validateRut`
+  - `normalizeRut`
+- El campo RUT:
+  - acepta solo números y `K`
+  - formatea automáticamente con puntos y guion
+  - valida por módulo 11
+  - se envía normalizado al backend, sin puntos ni guion
+- El campo `Nombre completo` ahora muestra la reseña `Nombres Apellido Paterno Apellido Materno`.
+- El RUT se muestra formateado también en la tabla y detalle de candidatos.
+- Validación:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto
+
 ## Alta útil de candidatos en Control de Contrataciones
 
 - [x] Definir el flujo mínimo útil de alta de candidato dentro de `Control de candidatos`

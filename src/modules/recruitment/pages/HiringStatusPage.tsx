@@ -6,6 +6,7 @@ import {
   advanceRecruitmentCandidateStage,
   fetchRecruitmentCaseDetail,
   fetchRecruitmentControlDashboard,
+  formatRut,
   toRecruitmentCandidateStageLabel,
   toRecruitmentCaseStatusLabel,
   type HiringControlApproval,
@@ -15,6 +16,7 @@ import {
   type RecruitmentCaseListRow,
   type RecruitmentDashboardSummary
 } from "../services/hiringControl";
+import { validateRut } from "../../../shared/lib/rut";
 
 const emptySummary: RecruitmentDashboardSummary = {
   pending_contracts_control: 0,
@@ -143,6 +145,9 @@ export function HiringStatusPage() {
     email: "",
     phone: ""
   });
+  const [candidateFormStatus, setCandidateFormStatus] = useState("");
+  const [candidateFormError, setCandidateFormError] = useState("");
+  const [candidateRutTouched, setCandidateRutTouched] = useState(false);
   const [caseSearchTerm, setCaseSearchTerm] = useState("");
   const [caseFilter, setCaseFilter] = useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
@@ -266,6 +271,17 @@ export function HiringStatusPage() {
     [activeCases]
   );
 
+  const isCandidateRutValid = useMemo(() => {
+    if (!candidateForm.nationalId) {
+      return true;
+    }
+
+    return validateRut(candidateForm.nationalId);
+  }, [candidateForm.nationalId]);
+
+  const shouldShowCandidateRutError =
+    candidateRutTouched && Boolean(candidateForm.nationalId) && !isCandidateRutValid;
+
   useEffect(() => {
     if (filteredCases.length === 0) {
       if (activeView === "processes") {
@@ -332,17 +348,29 @@ export function HiringStatusPage() {
 
   const handleAddCandidate = async () => {
     if (!candidateForm.caseId) {
-      setDecisionMessage("Debes seleccionar un caso activo para registrar el candidato.");
+      setCandidateRutTouched(true);
+      setCandidateFormError("Debes seleccionar un caso activo para registrar el candidato.");
+      setCandidateFormStatus("");
       return;
     }
 
     if (!candidateForm.nationalId.trim() || !candidateForm.fullName.trim()) {
-      setDecisionMessage("RUT e identificación del candidato son obligatorios.");
+      setCandidateRutTouched(true);
+      setCandidateFormError("RUT y nombre del candidato son obligatorios.");
+      setCandidateFormStatus("");
+      return;
+    }
+
+    if (!validateRut(candidateForm.nationalId)) {
+      setCandidateRutTouched(true);
+      setCandidateFormError("El RUT ingresado no es válido.");
+      setCandidateFormStatus("");
       return;
     }
 
     setIsCandidateSaving(true);
-    setDecisionMessage("");
+    setCandidateFormError("");
+    setCandidateFormStatus("");
 
     const { data, error } = await addCandidateToRecruitmentCase({
       caseId: candidateForm.caseId,
@@ -353,7 +381,7 @@ export function HiringStatusPage() {
     });
 
     if (error) {
-      setDecisionMessage(error);
+      setCandidateFormError(error);
       setIsCandidateSaving(false);
       return;
     }
@@ -365,8 +393,8 @@ export function HiringStatusPage() {
       email: "",
       phone: ""
     });
-    setShowCandidateForm(false);
-    setDecisionMessage("Candidato registrado en el caso seleccionado.");
+    setCandidateRutTouched(false);
+    setCandidateFormStatus("Candidato registrado en el caso seleccionado.");
     setSelectedCaseId(candidateForm.caseId);
     setSelectedCandidateId(data?.case_candidate_id ?? "");
     setIsCandidateSaving(false);
@@ -598,7 +626,9 @@ export function HiringStatusPage() {
                   disabled={candidateIntakeCases.length === 0}
                   onClick={() => {
                     setShowCandidateForm((current) => !current);
-                    setDecisionMessage("");
+                    setCandidateFormError("");
+                    setCandidateFormStatus("");
+                    setCandidateRutTouched(false);
                     setCandidateForm((current) => ({
                       ...current,
                       caseId: current.caseId || candidateIntakeCases[0]?.id || ""
@@ -655,14 +685,38 @@ export function HiringStatusPage() {
                     </label>
                     <input
                       id="candidate-national-id"
-                      className="text-field"
+                      className={`text-field ${shouldShowCandidateRutError ? "text-field-error" : ""}`}
                       value={candidateForm.nationalId}
-                      onChange={(event) =>
+                      inputMode="text"
+                      autoComplete="off"
+                      placeholder="12.345.678-K"
+                      onChange={(event) => {
+                        const nextRut = formatRut(event.target.value);
+
                         setCandidateForm((current) => ({
                           ...current,
-                          nationalId: event.target.value
-                        }))
-                      }
+                          nationalId: nextRut
+                        }));
+
+                        if (!candidateRutTouched) {
+                          return;
+                        }
+
+                        if (!nextRut || validateRut(nextRut)) {
+                          setCandidateFormError("");
+                        } else {
+                          setCandidateFormError("El RUT ingresado no es válido.");
+                        }
+                      }}
+                      onBlur={() => {
+                        setCandidateRutTouched(true);
+                        if (candidateForm.nationalId && !validateRut(candidateForm.nationalId)) {
+                          setCandidateFormError("El RUT ingresado no es válido.");
+                          return;
+                        }
+
+                        setCandidateFormError("");
+                      }}
                     />
                   </div>
                   <div>
@@ -673,12 +727,14 @@ export function HiringStatusPage() {
                       id="candidate-full-name"
                       className="text-field"
                       value={candidateForm.fullName}
-                      onChange={(event) =>
+                      placeholder="Nombres Apellido Paterno Apellido Materno"
+                      onChange={(event) => {
                         setCandidateForm((current) => ({
                           ...current,
                           fullName: event.target.value
-                        }))
-                      }
+                        }));
+                        setCandidateFormError("");
+                      }}
                     />
                   </div>
                   <div>
@@ -724,6 +780,11 @@ export function HiringStatusPage() {
                     </button>
                   </div>
                 </div>
+
+                {candidateFormError ? (
+                  <p className="form-status form-status-error">{candidateFormError}</p>
+                ) : null}
+                {candidateFormStatus ? <p className="form-status">{candidateFormStatus}</p> : null}
               </div>
             ) : null}
 
@@ -769,7 +830,9 @@ export function HiringStatusPage() {
                           >
                             <td>
                               <strong>{candidate.full_name}</strong>
-                              <div className="tracking-filter-caption">{candidate.national_id}</div>
+                              <div className="tracking-filter-caption">
+                                {formatRut(candidate.national_id)}
+                              </div>
                             </td>
                             <td>
                               {(candidate.folio ?? "Sin folio")} · {candidate.case_code}
@@ -815,7 +878,7 @@ export function HiringStatusPage() {
                     <div className="control-readonly-grid">
                       <div>
                         <small>RUT / Identificador</small>
-                        <strong>{selectedCandidate.national_id}</strong>
+                        <strong>{formatRut(selectedCandidate.national_id)}</strong>
                       </div>
                       <div>
                         <small>Correo / Teléfono</small>

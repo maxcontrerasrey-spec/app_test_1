@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase";
+import { formatRut, normalizeRut } from "../../../shared/lib/rut";
 
 export type RecruitmentCaseStatus =
   | "open"
@@ -321,9 +322,11 @@ export async function addCandidateToRecruitmentCase(input: {
     };
   }
 
+  const normalizedNationalId = normalizeRut(input.nationalId);
+
   const { data, error } = await supabase.rpc("add_candidate_to_recruitment_case", {
     p_case_id: input.caseId,
-    p_national_id: input.nationalId,
+    p_national_id: normalizedNationalId,
     p_full_name: input.fullName,
     p_email: input.email?.trim() ? input.email.trim() : null,
     p_phone: input.phone?.trim() ? input.phone.trim() : null
@@ -341,6 +344,8 @@ export async function addCandidateToRecruitmentCase(input: {
     error: null
   };
 }
+
+export { formatRut, normalizeRut };
 
 export async function advanceRecruitmentCandidateStage(input: {
   caseCandidateId: string;
