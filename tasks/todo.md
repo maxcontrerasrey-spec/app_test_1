@@ -664,3 +664,10 @@
 - Validación ejecutada:
   - `npx tsc -b`
   - `npm run build`
+
+
+## Hotfix de columnas faltantes en `hiring_request_approvals`
+
+- [ ] Confirmar la deriva real entre la RPC desplegada y el esquema productivo de `hiring_request_approvals`
+- [ ] Agregar migración idempotente para `approver_name` y `approver_email`
+- [ ] Empujar el hotfix al repo y dejar SQL exacto para aplicar en Supabase
