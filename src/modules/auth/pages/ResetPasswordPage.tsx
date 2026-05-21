@@ -19,11 +19,14 @@ export function ResetPasswordPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isForcedPasswordChange = Boolean(user && profile?.must_reset_password);
+  const canUsePage = isRecoveryMode || isForcedPasswordChange;
 
   const canSubmit =
     password.trim().length >= 8 &&
     confirmPassword.trim().length >= 8 &&
-    !isSubmitting;
+    !isSubmitting &&
+    canUsePage;
 
   if (
     isConfigured &&
@@ -45,9 +48,9 @@ export function ResetPasswordPage() {
       return;
     }
 
-    if (!isRecoveryMode) {
+    if (!canUsePage) {
       setErrorMessage(
-        "El enlace de recuperación no es válido o ya expiró. Solicita uno nuevo."
+        "No hay una sesión válida para cambiar la contraseña. Solicita un nuevo enlace o inicia sesión otra vez."
       );
       return;
     }
@@ -88,7 +91,9 @@ export function ResetPasswordPage() {
             <div className="login-card-copy">
               <h2>Restablecer contraseña</h2>
               <p>
-                Define una nueva contraseña segura para tu cuenta corporativa.
+                {isForcedPasswordChange
+                  ? "Tu cuenta fue creada con una contraseña temporal. Define una nueva contraseña para continuar."
+                  : "Define una nueva contraseña segura para tu cuenta corporativa."}
               </p>
             </div>
 

@@ -352,7 +352,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const { error } = await supabase.auth.updateUser({ password });
-        return { error: error?.message ?? null };
+        if (error) {
+          return { error: error.message };
+        }
+
+        const currentUserId = supabase.auth.getUser
+          ? (await supabase.auth.getUser()).data.user?.id ?? null
+          : null;
+
+        if (currentUserId) {
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .update({
+              must_reset_password: false,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", currentUserId);
+
+          if (profileError) {
+            return { error: profileError.message };
+          }
+
+          setProfile((currentProfile) =>
+            currentProfile
+              ? {
+                  ...currentProfile,
+                  must_reset_password: false
+                }
+              : currentProfile
+          );
+        }
+
+        return { error: null };
       },
       signOut: async () => {
         if (!supabase) {

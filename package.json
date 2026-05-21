@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "provision:hiring-approvers": "node scripts/provision-hiring-approvers.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",

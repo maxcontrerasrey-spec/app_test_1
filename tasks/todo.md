@@ -615,3 +615,52 @@
 - La tabla `Mis solicitudes` ahora muestra `Dias desde solicitud` en vez de una fecha fija.
 - El cálculo usa la diferencia entre el inicio del día actual y el inicio del día de creación para evitar variaciones por hora.
 - Se documentó la regla en `tasks/lessons.md`: para dashboards operacionales, la antigüedad es más útil que la fecha cruda cuando se busca priorización rápida.
+
+
+## Provisionamiento definitivo de aprobadores desde Excel
+
+- [x] Revisar la estructura real de `Hoja1` y mapear columnas a `auth.users`, `profiles`, `user_roles`, `cost_center_approvers` y `workflow_approvers`
+- [x] Confirmar los roles y relaciones necesarias para `Aprobador Area` y `Aprobador Control de Contratos` en el esquema actual
+- [x] Generar un script definitivo de provisión recomendado para Supabase Auth + tablas de aplicación
+- [x] Entregar el script en una sola pieza, listo para ejecutar, con validaciones y orden de ejecución claro
+- [x] Documentar el cierre y los supuestos operativos
+
+## Resultado de provisionamiento definitivo de aprobadores desde Excel
+
+- Se creó [scripts/provision-hiring-approvers.mjs](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/provision-hiring-approvers.mjs), un aprovisionador idempotente que:
+  - lee `Hoja1` del Excel
+  - crea o actualiza usuarios en Supabase Auth mediante `auth.admin`
+  - sincroniza `profiles`
+  - asigna `user_roles`
+  - vincula `cost_center_approvers`
+  - vincula `workflow_approvers` para `contracts_control`
+- Se agregó el comando `npm run provision:hiring-approvers`.
+- El mapeo de roles quedó así:
+  - `Aprobador Area` -> `aprobador_folios`
+  - `Aprobador Control de Contratos` -> `control_contratos` + `aprobador_folios`
+- Si el usuario ya existe en Auth, el script lo actualiza por email y agrega los roles faltantes sin borrar roles previos. Eso cubre tu caso: el usuario administrador existente puede seguir siendo `admin` y además quedar como aprobador de `GERENCIA OPERACIONES ZONA II (NORTE INTERIOR)`.
+- El script exige `SUPABASE_SERVICE_ROLE_KEY` para la ejecución real y permite `--dry-run` para validar el archivo antes de escribir.
+- Validación ejecutada:
+  - lectura real de `Hoja1` con 12 usuarios esperados
+  - `node --check scripts/provision-hiring-approvers.mjs`
+- Supuestos operativos:
+  - las contraseñas del Excel son bootstrap passwords
+  - el script deja `must_reset_password = true`
+  - la carga de módulos/permisos base ya existe en la base actual
+
+
+## Corrección de cambio forzado de contraseña para usuarios aprovisionados
+
+- [x] Revisar el flujo actual de `must_reset_password` versus recuperación por correo
+- [x] Permitir cambio de contraseña desde sesión autenticada sin exigir `recovery mode`
+- [x] Limpiar `must_reset_password` al completar el cambio exitoso
+- [x] Validar compilación y documentar la lección
+
+## Resultado de corrección de cambio forzado de contraseña para usuarios aprovisionados
+
+- La causa raíz estaba en [ResetPasswordPage.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/pages/ResetPasswordPage.tsx): la vista usaba el mismo formulario para recuperación por correo y para cambio forzado por `must_reset_password`, pero bloqueaba el submit si `isRecoveryMode` era `false`.
+- Se corrigió el flujo para aceptar también el caso de sesión autenticada normal con `must_reset_password = true`.
+- En [AuthContext.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/context/AuthContext.tsx) el cambio de contraseña ahora además limpia `profiles.must_reset_password = false`, evitando el loop de redirección a `/reset-password`.
+- Validación ejecutada:
+  - `npx tsc -b`
+  - `npm run build`
