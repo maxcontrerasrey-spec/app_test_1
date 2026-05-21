@@ -1749,6 +1749,10 @@ textarea {
   background: #ffffff;
 }
 
+.control-detail-panel-inline {
+  margin-bottom: 1.25rem;
+}
+
 .control-detail-header {
   display: grid;
   gap: 0.25rem;

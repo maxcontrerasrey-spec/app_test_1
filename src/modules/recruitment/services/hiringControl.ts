@@ -321,7 +321,7 @@ export async function addCandidateToRecruitmentCase(input: {
     };
   }
 
-  const { error } = await supabase.rpc("add_candidate_to_recruitment_case", {
+  const { data, error } = await supabase.rpc("add_candidate_to_recruitment_case", {
     p_case_id: input.caseId,
     p_national_id: input.nationalId,
     p_full_name: input.fullName,
@@ -331,11 +331,15 @@ export async function addCandidateToRecruitmentCase(input: {
 
   if (error) {
     return {
+      data: null,
       error: formatRpcError(error) || "No fue posible agregar el candidato."
     };
   }
 
-  return { error: null };
+  return {
+    data: Array.isArray(data) ? data[0] ?? null : null,
+    error: null
+  };
 }
 
 export async function advanceRecruitmentCandidateStage(input: {

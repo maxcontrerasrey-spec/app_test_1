@@ -1,5 +1,35 @@
 # Plan de trabajo
 
+## Alta útil de candidatos en Control de Contrataciones
+
+- [x] Definir el flujo mínimo útil de alta de candidato dentro de `Control de candidatos`
+- [x] Implementar una entrada explícita de candidato asociada a un caso activo real
+- [x] Reutilizar la RPC existente `add_candidate_to_recruitment_case(...)` sin inventar lógica paralela
+- [x] Revalidar compilación y build después del ajuste
+
+## Resultado de alta útil de candidatos en Control de Contrataciones
+
+- `Control de candidatos` ahora expone una entrada explícita `Registrar candidato`, ubicada en el submódulo correcto y vinculada a un caso activo real.
+- El alta pide:
+  - caso activo
+  - RUT / identificador
+  - nombre completo
+  - correo
+  - teléfono
+- La implementación reutiliza la RPC `add_candidate_to_recruitment_case(...)`, por lo que mantiene:
+  - creación o reutilización de `candidate_profiles`
+  - vinculación al `recruitment_case`
+  - `stage_history`
+  - auditoría
+  - sincronización de estado del caso
+- Después del alta, el frontend recarga dashboard y detalle para dejar seleccionado el candidato recién incorporado.
+- Revisión de autorización:
+  - no fue necesario extender `app_modules`, `role_module_access`, `app_roles` ni `profiles`
+  - el flujo sigue dentro del módulo `control_contrataciones` y reutiliza la seguridad ya definida
+- Validación:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto
+
 ## Cierre de migraciones manuales de Recruitment Phase 1
 
 - [x] Dejar explícita la regla de utilidad real del producto en la documentación operativa del proyecto

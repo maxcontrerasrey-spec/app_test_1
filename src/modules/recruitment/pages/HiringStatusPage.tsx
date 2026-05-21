@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import { decideHiringApproval } from "../services/hiringWorkflow";
 import {
+  addCandidateToRecruitmentCase,
   advanceRecruitmentCandidateStage,
   fetchRecruitmentCaseDetail,
   fetchRecruitmentControlDashboard,
@@ -130,9 +131,18 @@ export function HiringStatusPage() {
   const [selectedCaseDetail, setSelectedCaseDetail] = useState<RecruitmentCaseDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
+  const [isCandidateSaving, setIsCandidateSaving] = useState(false);
   const [isStageSaving, setIsStageSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [decisionMessage, setDecisionMessage] = useState("");
+  const [showCandidateForm, setShowCandidateForm] = useState(false);
+  const [candidateForm, setCandidateForm] = useState({
+    caseId: "",
+    nationalId: "",
+    fullName: "",
+    email: "",
+    phone: ""
+  });
   const [caseSearchTerm, setCaseSearchTerm] = useState("");
   const [caseFilter, setCaseFilter] = useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
@@ -248,6 +258,14 @@ export function HiringStatusPage() {
     });
   }, [candidateControl, candidateSearchTerm, candidateStageFilter]);
 
+  const candidateIntakeCases = useMemo(
+    () =>
+      activeCases.filter(
+        (caseRow) => !["filled", "closed_unfilled", "cancelled"].includes(caseRow.status)
+      ),
+    [activeCases]
+  );
+
   useEffect(() => {
     if (filteredCases.length === 0) {
       if (activeView === "processes") {
@@ -310,6 +328,50 @@ export function HiringStatusPage() {
     );
     setIsDecisionLoading(null);
     await loadDashboard(selectedCaseId);
+  };
+
+  const handleAddCandidate = async () => {
+    if (!candidateForm.caseId) {
+      setDecisionMessage("Debes seleccionar un caso activo para registrar el candidato.");
+      return;
+    }
+
+    if (!candidateForm.nationalId.trim() || !candidateForm.fullName.trim()) {
+      setDecisionMessage("RUT e identificación del candidato son obligatorios.");
+      return;
+    }
+
+    setIsCandidateSaving(true);
+    setDecisionMessage("");
+
+    const { data, error } = await addCandidateToRecruitmentCase({
+      caseId: candidateForm.caseId,
+      nationalId: candidateForm.nationalId,
+      fullName: candidateForm.fullName,
+      email: candidateForm.email,
+      phone: candidateForm.phone
+    });
+
+    if (error) {
+      setDecisionMessage(error);
+      setIsCandidateSaving(false);
+      return;
+    }
+
+    setCandidateForm({
+      caseId: "",
+      nationalId: "",
+      fullName: "",
+      email: "",
+      phone: ""
+    });
+    setShowCandidateForm(false);
+    setDecisionMessage("Candidato registrado en el caso seleccionado.");
+    setSelectedCaseId(candidateForm.caseId);
+    setSelectedCandidateId(data?.case_candidate_id ?? "");
+    setIsCandidateSaving(false);
+    await loadDashboard(candidateForm.caseId);
+    await loadCaseDetail(candidateForm.caseId, data?.case_candidate_id);
   };
 
   const handleAdvanceStage = async () => {
@@ -530,6 +592,21 @@ export function HiringStatusPage() {
                 </span>
               </div>
               <div className="tracking-filters">
+                <button
+                  type="button"
+                  className="soft-primary-button"
+                  disabled={candidateIntakeCases.length === 0}
+                  onClick={() => {
+                    setShowCandidateForm((current) => !current);
+                    setDecisionMessage("");
+                    setCandidateForm((current) => ({
+                      ...current,
+                      caseId: current.caseId || candidateIntakeCases[0]?.id || ""
+                    }));
+                  }}
+                >
+                  {showCandidateForm ? "Cerrar alta" : "Registrar candidato"}
+                </button>
                 <input
                   className="text-field tracking-search"
                   placeholder="Buscar por candidato, RUT, caso, folio o contrato"
@@ -538,6 +615,117 @@ export function HiringStatusPage() {
                 />
               </div>
             </div>
+
+            {showCandidateForm ? (
+              <div className="control-detail-panel control-detail-panel-inline">
+                <div className="control-detail-header">
+                  <h3>Alta de candidato</h3>
+                  <span className="tracking-filter-caption">
+                    Registro inicial asociado a un caso activo real.
+                  </span>
+                </div>
+
+                <div className="control-edit-grid">
+                  <div>
+                    <label className="field-label" htmlFor="candidate-case-id">
+                      Caso activo
+                    </label>
+                    <select
+                      id="candidate-case-id"
+                      className="text-field"
+                      value={candidateForm.caseId}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          caseId: event.target.value
+                        }))
+                      }
+                    >
+                      <option value="">Selecciona un caso</option>
+                      {candidateIntakeCases.map((caseRow) => (
+                        <option key={caseRow.id} value={caseRow.id}>
+                          {caseRow.case_code} · {caseRow.contract_name} · {caseRow.job_position_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="candidate-national-id">
+                      RUT / Identificador
+                    </label>
+                    <input
+                      id="candidate-national-id"
+                      className="text-field"
+                      value={candidateForm.nationalId}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          nationalId: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="candidate-full-name">
+                      Nombre completo
+                    </label>
+                    <input
+                      id="candidate-full-name"
+                      className="text-field"
+                      value={candidateForm.fullName}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          fullName: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="candidate-email">
+                      Correo
+                    </label>
+                    <input
+                      id="candidate-email"
+                      className="text-field"
+                      value={candidateForm.email}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          email: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="candidate-phone">
+                      Teléfono
+                    </label>
+                    <input
+                      id="candidate-phone"
+                      className="text-field"
+                      value={candidateForm.phone}
+                      onChange={(event) =>
+                        setCandidateForm((current) => ({
+                          ...current,
+                          phone: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="control-span-full">
+                    <button
+                      type="button"
+                      className="soft-primary-button approval-button-approve"
+                      disabled={isCandidateSaving}
+                      onClick={() => void handleAddCandidate()}
+                    >
+                      Registrar candidato en el caso
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="approval-chip-row">
               {candidateStageFilterOptions.map((option) => (
