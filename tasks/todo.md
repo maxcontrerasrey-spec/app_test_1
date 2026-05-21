@@ -1,5 +1,22 @@
 # Plan de trabajo
 
+## Refinamiento UX de Control de Contrataciones
+
+- [x] Quitar elementos sin utilidad operativa inmediata en `Resumen de procesos de contratación`
+- [x] Expandir la tabla de resumen a ancho completo y eliminar el panel lateral vacío
+- [x] Retirar la alta improvisada de candidatos del frontend actual
+- [x] Revalidar compilación, build y publicar el ajuste
+
+## Resultado del refinamiento UX de Control de Contrataciones
+
+- Se eliminó la tarjeta `Pendientes control` del resumen superior por no comunicar una métrica operativa clara.
+- `Resumen de procesos de contratación` quedó reducido a una tabla de seguimiento a ancho completo, sin panel lateral vacío y sin filas que aparenten una interacción que hoy no existe.
+- Se retiró del frontend la alta manual de candidatos dentro del resumen por no existir todavía un flujo operacional defendible para esa acción.
+- `Control de candidatos` se mantiene como consola de seguimiento y avance de etapa, sin mezclar una carga inicial improvisada de personas.
+- Validación:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto
+
 ## Reencuadre Fase 1 de Control de Contrataciones
 
 - [x] Reestructurar el frontend del submódulo `Control de Contrataciones` en dos submódulos internos:
