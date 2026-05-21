@@ -168,76 +168,23 @@ export function HomePage() {
     setIsLoading(true);
     setErrorMessage("");
 
-    const requestsPromise = supabase
-      .from("hiring_requests")
-      .select("id, folio, status, contract_name, job_position_name, vacancies, submitted_at, created_at")
-      .eq("requester_id", user.id)
-      .order("submitted_at", { ascending: false })
-      .limit(8);
+    const { data, error } = await supabase.rpc("get_home_dashboard_summary");
 
-    const approvalsPromise = supabase
-      .from("hiring_request_approvals")
-      .select("id, step_code, step_name, hiring_request_id, approver_user_id")
-      .eq("status", "pending")
-      .neq("step_code", "requester_signature")
-      .eq("approver_user_id", user.id)
-      .order("created_at", { ascending: true })
-      .limit(8);
-
-    const [requestsResponse, approvalsResponse] = await Promise.all([
-      requestsPromise,
-      approvalsPromise
-    ]);
-
-    const nextMyRequests = (requestsResponse.data as HiringRequestSummaryRow[] | null) ?? [];
-    const nextApprovalsBase = (approvalsResponse.data as PendingApprovalRow[] | null) ?? [];
-
-    let nextPendingApprovals: PendingApprovalRow[] = nextApprovalsBase;
-    const errors: string[] = [];
-
-    if (requestsResponse.error) {
-      errors.push("solicitudes");
-      setMyRequests([]);
-    } else {
-      setMyRequests(nextMyRequests);
-    }
-
-    if (approvalsResponse.error) {
-      errors.push("aprobaciones");
-      setPendingApprovals([]);
-    } else if (nextApprovalsBase.length > 0) {
-      const requestIds = nextApprovalsBase.map((approval) => approval.hiring_request_id);
-
-      const requestDetailsResponse = await supabase
-        .from("hiring_requests")
-        .select(
-          "id, folio, contract_name, contract_number, job_position_name, requester_name, requester_email, vacancies, requested_entry_date, start_date, end_date, shift_name, status, salary_offer, campamento, pasajes, other_benefits"
-        )
-        .in("id", requestIds);
-
-      if (requestDetailsResponse.error) {
-        errors.push("detalle de aprobaciones");
-        setPendingApprovals([]);
-      } else {
-        const requestMap = new Map(
-          (requestDetailsResponse.data ?? []).map((request) => [request.id, request])
-        );
-
-        nextPendingApprovals = nextApprovalsBase.map((approval) => ({
-          ...approval,
-          hiring_requests: requestMap.get(approval.hiring_request_id) ?? null
-        }));
-
-        setPendingApprovals(nextPendingApprovals);
-      }
-    } else {
-      setPendingApprovals([]);
-    }
-
-    if (errors.length > 0) {
+    if (error) {
       setErrorMessage("No fue posible cargar el resumen del inicio.");
+      setMyRequests([]);
+      setPendingApprovals([]);
+      setIsLoading(false);
+      return;
     }
 
+    const payload = (data ?? {}) as {
+      my_requests?: HiringRequestSummaryRow[] | null;
+      pending_approvals?: PendingApprovalRow[] | null;
+    };
+
+    setMyRequests(payload.my_requests ?? []);
+    setPendingApprovals(payload.pending_approvals ?? []);
     setIsLoading(false);
   }, [user?.id]);
 

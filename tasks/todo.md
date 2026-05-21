@@ -693,3 +693,21 @@
 - [ ] Confirmar la dependencia circular entre las policies de selección
 - [ ] Agregar migración que simplifique `hiring_request_approvals_select_scoped`
 - [ ] Empujar el ajuste y dejar SQL exacto para aplicar en Supabase
+
+
+## Consolidación del resumen de `Inicio` por RPC segura
+
+- [x] Reemplazar las consultas client-side dispersas por una RPC `security definer` para el dashboard de inicio
+- [x] Actualizar `HomePage.tsx` para consumir la RPC y dejar de depender de joins/RLS complejos
+- [x] Validar build y empujar el ajuste
+
+## Resultado de consolidación del resumen de `Inicio` por RPC segura
+
+- Se agregó [20260520_000009_add_home_dashboard_summary_rpc.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000009_add_home_dashboard_summary_rpc.sql), que crea `public.get_home_dashboard_summary()` como RPC `security definer`.
+- [HomePage.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/home/pages/HomePage.tsx) dejó de depender de múltiples consultas RLS desde cliente y ahora consume una sola RPC con:
+  - `my_requests`
+  - `pending_approvals`
+- Esto elimina la fragilidad del resumen ante recursiones o joins problemáticos de PostgREST/RLS.
+- Validación ejecutada:
+  - `npx tsc -b`
+  - `npm run build`
