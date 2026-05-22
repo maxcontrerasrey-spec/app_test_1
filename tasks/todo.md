@@ -1,5 +1,39 @@
 # Plan de trabajo
 
+## Refactor modular de Control de Contrataciones
+
+- [x] Extraer `HiringProcessesView.tsx` con tabla de procesos y cola de aprobación final con modal de decisión
+- [x] Extraer `CandidateDetailSidebar.tsx` usando `SelectField` y `TextField` para cambio de etapa
+- [x] Extraer `HiringCandidatesView.tsx` integrando `CandidateIntakeForm` y `CandidateDetailSidebar`
+- [x] Refactorizar `HiringStatusPage.tsx` para dejarlo como contenedor de datos y usar `PageShell`
+- [x] Revalidar compilación, build y publicar el refactor
+
+## Resultado del refactor modular de Control de Contrataciones
+
+- Se extrajo `HiringProcessesView.tsx` para encapsular:
+  - tabla de `Resumen de procesos de contratación`
+  - cola de aprobación final
+  - modal de decisión por folio en lugar de botones inline en la lista
+- Se consolidó `CandidateDetailSidebar.tsx` como panel reusable del detalle de candidato y cambio de etapa usando `SelectField` y `TextField`.
+- Se creó `HiringCandidatesView.tsx` para contener:
+  - tabla `Control de candidatos`
+  - `CandidateIntakeForm`
+  - `CandidateDetailSidebar`
+- `HiringStatusPage.tsx` quedó reducida a orquestación de datos:
+  - `loadDashboard`
+  - `loadCaseDetail`
+  - estados globales
+  - selección de vista
+  - callbacks de aprobación, alta y avance de etapa
+- El shell principal del módulo ahora usa `PageShell`.
+- Se ajustó `global.css` para soportar:
+  - modal de aprobación
+  - toolbar con `TextField`
+  - layout responsive del refactor
+- Validación ejecutada:
+  - `npx tsc -b`
+  - `npm run build`
+
 ## Auditoría Zero Trust de Contrataciones
 
 - [x] Auditar separación de poderes entre `control_contratos` y `reclutamiento` en Supabase y frontend protegido
@@ -943,3 +977,35 @@
 - Validación ejecutada:
   - `npx tsc -b`
   - `npm run build`
+
+## Refactorización de Arquitectura UI (Fase 1C)
+
+- [x] Crear directorios para componentes compartidos en `src/shared/ui/`
+- [x] Implementar componentes de Layout (`PageShell`)
+- [x] Implementar componentes de Formulario (`TextField`, `SelectField`, `DatePickerField`)
+- [x] Centralizar lógica de manejo de fechas en `src/shared/lib/date.ts`
+- [x] Refactorizar `HiringRequestPage` para usar los nuevos componentes
+- [x] Refactorizar inputs de fecha en `OperacionesDashboard` para usar `DatePickerField`
+
+## Resultado de Refactorización de Arquitectura UI (Fase 1C)
+
+- Se extrajo todo el HTML crudo y repetitivo hacia la nueva librería de componentes UI estandarizados, elevando la plataforma a nivel Enterprise.
+- `HiringRequestPage.tsx` se redujo de más de 1,000 líneas a solo 571 líneas manteniendo exactitud visual y funcional.
+- Se resolvió el bug de superposición de capas del calendario consolidando un `DatePickerField` robusto.
+- Se reutilizó el mismo calendario corregido en `OperacionesDashboard.tsx`, garantizando consistencia.
+- El código fue pusheado y desplegado exitosamente vía Cloudflare Pages.
+- Validación ejecutada:
+  - `npx tsc -b`
+  - `npm run build`
+
+## Auditoría Zero-Trust y Alineación de Supabase (Fase 2)
+
+- [x] Auditar y restringir acceso de `control_contratos` al embudo operativo
+- [x] Forzar RLS en tablas de auditoría como append-only
+- [x] Bloquear ejecución manual de RPCs de apertura de casos fuera del flujo de aprobación
+
+## Resultado de Auditoría Zero-Trust y Alineación de Supabase (Fase 2)
+
+- Se aplicó la migración `20260522_000017_harden_recruitment_zero_trust.sql` para forzar la separación de poderes estricta en el pipeline de reclutamiento.
+- Se blindó la inmutabilidad de la auditoría limitando su mutación a nivel RLS (`FORCE ROW LEVEL SECURITY`).
+- Parche empaquetado, verificado y empujado a `main` en paralelo a las mejoras de interfaz.

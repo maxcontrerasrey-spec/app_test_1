@@ -1,14 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { PageShell } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
 import { decideHiringApproval } from "../services/hiringWorkflow";
 import {
-  addCandidateToRecruitmentCase,
   advanceRecruitmentCandidateStage,
   fetchRecruitmentCaseDetail,
   fetchRecruitmentControlDashboard,
-  formatRut,
-  toRecruitmentCandidateStageLabel,
-  toRecruitmentCaseStatusLabel,
   type HiringControlApproval,
   type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
@@ -16,7 +13,10 @@ import {
   type RecruitmentCaseListRow,
   type RecruitmentDashboardSummary
 } from "../services/hiringControl";
-import { validateRut } from "../../../shared/lib/rut";
+import { HiringCandidatesView } from "../components/HiringCandidatesView";
+import { HiringProcessesView } from "../components/HiringProcessesView";
+
+type RecruitmentInternalView = "processes" | "candidates";
 
 const emptySummary: RecruitmentDashboardSummary = {
   pending_contracts_control: 0,
@@ -25,101 +25,6 @@ const emptySummary: RecruitmentDashboardSummary = {
   filled_cases: 0,
   total_cases: 0
 };
-
-const caseFilterOptions = [
-  { key: null, label: "Todos" },
-  { key: "open", label: "Abiertos" },
-  { key: "screening", label: "Screening" },
-  { key: "ready_to_hire", label: "Listos para contratar" },
-  { key: "filled", label: "Cubiertos" }
-] as const;
-
-const candidateStageFilterOptions = [
-  { key: null, label: "Todas las etapas" },
-  { key: "lead", label: "Lead" },
-  { key: "screening", label: "Screening" },
-  { key: "documents_pending", label: "Docs pendientes" },
-  { key: "ready_for_hire", label: "Listos para contratar" },
-  { key: "hired", label: "Contratados" }
-] as const;
-
-type RecruitmentInternalView = "processes" | "candidates";
-
-function formatDateValue(value: string | null | undefined) {
-  if (!value) {
-    return "No disponible";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "No disponible";
-  }
-
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(date);
-}
-
-function formatDateTimeValue(value: string | null | undefined) {
-  if (!value) {
-    return "No disponible";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "No disponible";
-  }
-
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(date);
-}
-
-function getNextStageOptions(
-  currentStage: RecruitmentCandidateStage
-): RecruitmentCandidateStage[] {
-  switch (currentStage) {
-    case "lead":
-      return ["contacted", "screening", "rejected", "withdrawn"];
-    case "contacted":
-      return ["screening", "shortlisted", "rejected", "withdrawn"];
-    case "screening":
-      return ["shortlisted", "documents_pending", "rejected", "withdrawn"];
-    case "shortlisted":
-      return ["documents_pending", "rejected", "withdrawn"];
-    case "documents_pending":
-      return ["ready_for_hire", "rejected", "withdrawn"];
-    case "ready_for_hire":
-      return ["hired", "rejected", "withdrawn"];
-    default:
-      return [];
-  }
-}
-
-function getStageChipClass(stage: RecruitmentCandidateStage) {
-  if (stage === "hired") return "tracking-kpi-card-generado";
-  if (stage === "ready_for_hire") return "tracking-kpi-card-en-proceso";
-  if (stage === "rejected" || stage === "withdrawn") return "tracking-kpi-card-error";
-  return "tracking-kpi-card-pendiente";
-}
-
-function getCandidateControlLockLabel(candidate: RecruitmentCandidateControlRow) {
-  if (!candidate.is_contract_path_blocked) {
-    if (candidate.stage_code === "ready_for_hire" || candidate.stage_code === "hired") {
-      return "Ruta contractual activa";
-    }
-
-    return "Ruta libre";
-  }
-
-  return `Bloqueado por ${candidate.contract_locked_case_code ?? "otro caso"}${candidate.contract_locked_folio ? ` · ${candidate.contract_locked_folio}` : ""}`;
-}
 
 export function HiringStatusPage() {
   const { user } = useAuth();
@@ -133,26 +38,9 @@ export function HiringStatusPage() {
   const [selectedCaseDetail, setSelectedCaseDetail] = useState<RecruitmentCaseDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
-  const [isCandidateSaving, setIsCandidateSaving] = useState(false);
   const [isStageSaving, setIsStageSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [decisionMessage, setDecisionMessage] = useState("");
-  const [showCandidateForm, setShowCandidateForm] = useState(false);
-  const [candidateForm, setCandidateForm] = useState({
-    caseId: "",
-    nationalId: "",
-    fullName: "",
-    email: "",
-    phone: ""
-  });
-  const [candidateFormStatus, setCandidateFormStatus] = useState("");
-  const [candidateFormError, setCandidateFormError] = useState("");
-  const [candidateRutTouched, setCandidateRutTouched] = useState(false);
-  const [caseSearchTerm, setCaseSearchTerm] = useState("");
-  const [caseFilter, setCaseFilter] = useState<(typeof caseFilterOptions)[number]["key"]>(null);
-  const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
-  const [candidateStageFilter, setCandidateStageFilter] =
-    useState<(typeof candidateStageFilterOptions)[number]["key"]>(null);
   const [stageDraft, setStageDraft] = useState<RecruitmentCandidateStage | "">("");
   const [stageComment, setStageComment] = useState("");
 
@@ -230,96 +118,6 @@ export function HiringStatusPage() {
     void loadCaseDetail(selectedCaseId, selectedCandidateId);
   }, [activeView, selectedCaseId, selectedCandidateId]);
 
-  const filteredCases = useMemo(() => {
-    const normalizedSearch = caseSearchTerm.trim().toLowerCase();
-
-    return activeCases.filter((caseRow) => {
-      const matchesFilter = !caseFilter || caseRow.status === caseFilter;
-      const matchesSearch =
-        !normalizedSearch ||
-        caseRow.case_code.toLowerCase().includes(normalizedSearch) ||
-        caseRow.contract_name.toLowerCase().includes(normalizedSearch) ||
-        caseRow.job_position_name.toLowerCase().includes(normalizedSearch) ||
-        caseRow.cost_center_name.toLowerCase().includes(normalizedSearch);
-
-      return matchesFilter && matchesSearch;
-    });
-  }, [activeCases, caseFilter, caseSearchTerm]);
-
-  const filteredCandidateControl = useMemo(() => {
-    const normalizedSearch = candidateSearchTerm.trim().toLowerCase();
-
-    return candidateControl.filter((candidate) => {
-      const matchesStage = !candidateStageFilter || candidate.stage_code === candidateStageFilter;
-      const matchesSearch =
-        !normalizedSearch ||
-        candidate.full_name.toLowerCase().includes(normalizedSearch) ||
-        candidate.national_id.toLowerCase().includes(normalizedSearch) ||
-        candidate.case_code.toLowerCase().includes(normalizedSearch) ||
-        candidate.contract_name.toLowerCase().includes(normalizedSearch) ||
-        (candidate.folio ?? "").toLowerCase().includes(normalizedSearch);
-
-      return matchesStage && matchesSearch;
-    });
-  }, [candidateControl, candidateSearchTerm, candidateStageFilter]);
-
-  const candidateIntakeCases = useMemo(
-    () =>
-      activeCases.filter(
-        (caseRow) => !["filled", "closed_unfilled", "cancelled"].includes(caseRow.status)
-      ),
-    [activeCases]
-  );
-
-  const isCandidateRutValid = useMemo(() => {
-    if (!candidateForm.nationalId) {
-      return true;
-    }
-
-    return validateRut(candidateForm.nationalId);
-  }, [candidateForm.nationalId]);
-
-  const shouldShowCandidateRutError =
-    candidateRutTouched && Boolean(candidateForm.nationalId) && !isCandidateRutValid;
-
-  useEffect(() => {
-    if (filteredCases.length === 0) {
-      if (activeView === "processes") {
-        setSelectedCaseId("");
-      }
-      return;
-    }
-
-    if (!filteredCases.some((caseRow) => caseRow.id === selectedCaseId) && activeView === "processes") {
-      setSelectedCaseId(filteredCases[0]?.id ?? "");
-    }
-  }, [filteredCases, selectedCaseId, activeView]);
-
-  useEffect(() => {
-    if (filteredCandidateControl.length === 0) {
-      if (activeView === "candidates") {
-        setSelectedCandidateId("");
-      }
-      return;
-    }
-
-    if (!filteredCandidateControl.some((candidate) => candidate.id === selectedCandidateId)) {
-      const nextCandidate = filteredCandidateControl[0];
-      setSelectedCandidateId(nextCandidate.id);
-      setSelectedCaseId(nextCandidate.recruitment_case_id);
-    }
-  }, [filteredCandidateControl, selectedCandidateId, activeView]);
-
-  const selectedCandidateBoardRow =
-    candidateControl.find((candidate) => candidate.id === selectedCandidateId) ??
-    filteredCandidateControl[0] ??
-    null;
-
-  const selectedCandidate =
-    selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
-    selectedCaseDetail?.candidates[0] ??
-    null;
-
   const handleApprovalDecision = async (
     approvalId: number,
     decision: "approved" | "rejected"
@@ -336,7 +134,7 @@ export function HiringStatusPage() {
     if (error) {
       setDecisionMessage(error);
       setIsDecisionLoading(null);
-      return;
+      return false;
     }
 
     setDecisionMessage(
@@ -344,65 +142,22 @@ export function HiringStatusPage() {
     );
     setIsDecisionLoading(null);
     await loadDashboard(selectedCaseId);
+    return true;
   };
 
-  const handleAddCandidate = async () => {
-    if (!candidateForm.caseId) {
-      setCandidateRutTouched(true);
-      setCandidateFormError("Debes seleccionar un caso activo para registrar el candidato.");
-      setCandidateFormStatus("");
-      return;
-    }
-
-    if (!candidateForm.nationalId.trim() || !candidateForm.fullName.trim()) {
-      setCandidateRutTouched(true);
-      setCandidateFormError("RUT y nombre del candidato son obligatorios.");
-      setCandidateFormStatus("");
-      return;
-    }
-
-    if (!validateRut(candidateForm.nationalId)) {
-      setCandidateRutTouched(true);
-      setCandidateFormError("El RUT ingresado no es válido.");
-      setCandidateFormStatus("");
-      return;
-    }
-
-    setIsCandidateSaving(true);
-    setCandidateFormError("");
-    setCandidateFormStatus("");
-
-    const { data, error } = await addCandidateToRecruitmentCase({
-      caseId: candidateForm.caseId,
-      nationalId: candidateForm.nationalId,
-      fullName: candidateForm.fullName,
-      email: candidateForm.email,
-      phone: candidateForm.phone
-    });
-
-    if (error) {
-      setCandidateFormError(error);
-      setIsCandidateSaving(false);
-      return;
-    }
-
-    setCandidateForm({
-      caseId: "",
-      nationalId: "",
-      fullName: "",
-      email: "",
-      phone: ""
-    });
-    setCandidateRutTouched(false);
-    setCandidateFormStatus("Candidato registrado en el caso seleccionado.");
-    setSelectedCaseId(candidateForm.caseId);
-    setSelectedCandidateId(data?.case_candidate_id ?? "");
-    setIsCandidateSaving(false);
-    await loadDashboard(candidateForm.caseId);
-    await loadCaseDetail(candidateForm.caseId, data?.case_candidate_id);
+  const handleCandidateAdded = async (caseId: string, candidateId: string) => {
+    setSelectedCaseId(caseId);
+    setSelectedCandidateId(candidateId);
+    await loadDashboard(caseId);
+    await loadCaseDetail(caseId, candidateId);
   };
 
   const handleAdvanceStage = async () => {
+    const selectedCandidate =
+      selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
+      selectedCaseDetail?.candidates[0] ??
+      null;
+
     if (!selectedCandidate || !stageDraft) {
       return;
     }
@@ -434,7 +189,7 @@ export function HiringStatusPage() {
   };
 
   return (
-    <section className="page">
+    <PageShell>
       <div className="hero-panel hero-panel-compact">
         <h2>Control de Contrataciones</h2>
         <p>
@@ -477,560 +232,39 @@ export function HiringStatusPage() {
         </div>
 
         {activeView === "processes" ? (
-          <>
-            {pendingApprovals.length > 0 ? (
-              <article className="info-card approval-panel-card approval-panel-primary">
-                <div className="home-section-header">
-                  <div>
-                    <h3>Cola de aprobación final</h3>
-                    <p>
-                      {isLoading
-                        ? "Cargando aprobaciones..."
-                        : `${pendingApprovals.length} folios pendientes de Control de Contratos`}
-                    </p>
-                  </div>
-                </div>
-
-                <ul className="approval-queue">
-                  {pendingApprovals.map((approval) => (
-                    <li key={approval.id} className="approval-queue-item">
-                      <div className="approval-queue-copy">
-                        <strong>{approval.hiring_requests?.folio ?? "Sin folio"}</strong>
-                        <span>{approval.step_name}</span>
-                        <span>
-                          {approval.hiring_requests?.job_position_name ?? "Cargo no disponible"}
-                        </span>
-                        <span>{approval.hiring_requests?.contract_name ?? "Contrato no disponible"}</span>
-                      </div>
-                      <div className="approval-action-row">
-                        {approval.approver_user_id === user?.id ? (
-                          <>
-                            <button
-                              type="button"
-                              className="soft-primary-button approval-button-approve"
-                              disabled={isDecisionLoading === approval.id}
-                              onClick={() => handleApprovalDecision(approval.id, "approved")}
-                            >
-                              Aprobar
-                            </button>
-                            <button
-                              type="button"
-                              className="soft-primary-button approval-button-reject"
-                              disabled={isDecisionLoading === approval.id}
-                              onClick={() => handleApprovalDecision(approval.id, "rejected")}
-                            >
-                              Rechazar
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ) : null}
-
-            <div className="tracking-toolbar">
-              <div className="tracking-toolbar-copy">
-                <h3>Resumen de procesos de contratación</h3>
-                <span className="tracking-filter-caption">
-                  Tabla de seguimiento de folios aprobados y activos en búsqueda, con volumen operativo por folio.
-                </span>
-              </div>
-              <div className="tracking-filters">
-                <input
-                  className="text-field tracking-search"
-                  placeholder="Buscar por caso, contrato, cargo o centro de costo"
-                  value={caseSearchTerm}
-                  onChange={(event) => setCaseSearchTerm(event.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="approval-chip-row">
-              {caseFilterOptions.map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  className={`approval-chip ${caseFilter === option.key ? "tracking-kpi-card-active" : ""}`}
-                  onClick={() => setCaseFilter(option.key)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="tracking-table-wrap">
-              <div className="tracking-table-scroll">
-                <table className="tracking-table">
-                  <thead>
-                    <tr>
-                      <th>Caso</th>
-                      <th>Estado</th>
-                      <th>Cargo</th>
-                      <th>Contrato</th>
-                      <th>Cupos</th>
-                      <th>Candidatos activos</th>
-                      <th>Solicitó</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCases.length > 0 ? (
-                      filteredCases.map((caseRow) => (
-                        <tr key={caseRow.id}>
-                          <td>{caseRow.case_code}</td>
-                          <td>
-                            <span className="tracking-status-pill">
-                              {toRecruitmentCaseStatusLabel(caseRow.status)}
-                            </span>
-                          </td>
-                          <td>{caseRow.job_position_name}</td>
-                          <td>{caseRow.contract_name}</td>
-                          <td>
-                            {caseRow.filled_vacancies}/{caseRow.requested_vacancies}
-                          </td>
-                          <td>
-                            {caseRow.candidate_count} · listos {caseRow.ready_candidates}
-                          </td>
-                          <td>{caseRow.requester_name ?? "No disponible"}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td className="tracking-empty-state" colSpan={7}>
-                          {isLoading
-                            ? "Cargando casos..."
-                            : "No hay folios activos para el filtro actual."}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
+          <HiringProcessesView
+            isLoading={isLoading}
+            pendingApprovals={pendingApprovals}
+            activeCases={activeCases}
+            currentUserId={user?.id}
+            isDecisionLoading={isDecisionLoading}
+            decisionMessage={decisionMessage}
+            errorMessage={errorMessage}
+            onApprovalDecision={handleApprovalDecision}
+          />
         ) : (
-          <>
-            <div className="tracking-toolbar">
-              <div className="tracking-toolbar-copy">
-                <h3>Control de candidatos</h3>
-                <span className="tracking-filter-caption">
-                  {errorMessage ||
-                    "Consola transversal de candidatos. Un mismo candidato puede participar en varios folios, pero solo uno puede sostener la ruta contractual activa."}
-                </span>
-              </div>
-              <div className="tracking-filters">
-                <button
-                  type="button"
-                  className="soft-primary-button"
-                  disabled={candidateIntakeCases.length === 0}
-                  onClick={() => {
-                    setShowCandidateForm((current) => !current);
-                    setCandidateFormError("");
-                    setCandidateFormStatus("");
-                    setCandidateRutTouched(false);
-                    setCandidateForm((current) => ({
-                      ...current,
-                      caseId: current.caseId || candidateIntakeCases[0]?.id || ""
-                    }));
-                  }}
-                >
-                  {showCandidateForm ? "Cerrar alta" : "Registrar candidato"}
-                </button>
-                <input
-                  className="text-field tracking-search"
-                  placeholder="Buscar por candidato, RUT, caso, folio o contrato"
-                  value={candidateSearchTerm}
-                  onChange={(event) => setCandidateSearchTerm(event.target.value)}
-                />
-              </div>
-            </div>
-
-            {showCandidateForm ? (
-              <div className="control-detail-panel control-detail-panel-inline">
-                <div className="control-detail-header">
-                  <h3>Alta de candidato</h3>
-                  <span className="tracking-filter-caption">
-                    Registro inicial asociado a un caso activo real.
-                  </span>
-                </div>
-
-                <div className="control-edit-grid">
-                  <div>
-                    <label className="field-label" htmlFor="candidate-case-id">
-                      Caso activo
-                    </label>
-                    <select
-                      id="candidate-case-id"
-                      className="text-field"
-                      value={candidateForm.caseId}
-                      onChange={(event) =>
-                        setCandidateForm((current) => ({
-                          ...current,
-                          caseId: event.target.value
-                        }))
-                      }
-                    >
-                      <option value="">Selecciona un caso</option>
-                      {candidateIntakeCases.map((caseRow) => (
-                        <option key={caseRow.id} value={caseRow.id}>
-                          {caseRow.case_code} · {caseRow.contract_name} · {caseRow.job_position_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="field-label" htmlFor="candidate-national-id">
-                      RUT / Identificador
-                    </label>
-                    <input
-                      id="candidate-national-id"
-                      className={`text-field ${shouldShowCandidateRutError ? "text-field-error" : ""}`}
-                      value={candidateForm.nationalId}
-                      inputMode="text"
-                      autoComplete="off"
-                      placeholder="12.345.678-K"
-                      onChange={(event) => {
-                        const nextRut = formatRut(event.target.value);
-
-                        setCandidateForm((current) => ({
-                          ...current,
-                          nationalId: nextRut
-                        }));
-
-                        if (!candidateRutTouched) {
-                          return;
-                        }
-
-                        if (!nextRut || validateRut(nextRut)) {
-                          setCandidateFormError("");
-                        } else {
-                          setCandidateFormError("El RUT ingresado no es válido.");
-                        }
-                      }}
-                      onBlur={() => {
-                        setCandidateRutTouched(true);
-                        if (candidateForm.nationalId && !validateRut(candidateForm.nationalId)) {
-                          setCandidateFormError("El RUT ingresado no es válido.");
-                          return;
-                        }
-
-                        setCandidateFormError("");
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="field-label" htmlFor="candidate-full-name">
-                      Nombre completo
-                    </label>
-                    <input
-                      id="candidate-full-name"
-                      className="text-field"
-                      value={candidateForm.fullName}
-                      placeholder="Nombres Apellido Paterno Apellido Materno"
-                      onChange={(event) => {
-                        setCandidateForm((current) => ({
-                          ...current,
-                          fullName: event.target.value
-                        }));
-                        setCandidateFormError("");
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="field-label" htmlFor="candidate-email">
-                      Correo
-                    </label>
-                    <input
-                      id="candidate-email"
-                      className="text-field"
-                      value={candidateForm.email}
-                      onChange={(event) =>
-                        setCandidateForm((current) => ({
-                          ...current,
-                          email: event.target.value
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="field-label" htmlFor="candidate-phone">
-                      Teléfono
-                    </label>
-                    <input
-                      id="candidate-phone"
-                      className="text-field"
-                      value={candidateForm.phone}
-                      onChange={(event) =>
-                        setCandidateForm((current) => ({
-                          ...current,
-                          phone: event.target.value
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="control-span-full">
-                    <button
-                      type="button"
-                      className="soft-primary-button approval-button-approve"
-                      disabled={isCandidateSaving}
-                      onClick={() => void handleAddCandidate()}
-                    >
-                      Registrar candidato en el caso
-                    </button>
-                  </div>
-                </div>
-
-                {candidateFormError ? (
-                  <p className="form-status form-status-error">{candidateFormError}</p>
-                ) : null}
-                {candidateFormStatus ? <p className="form-status">{candidateFormStatus}</p> : null}
-              </div>
-            ) : null}
-
-            <div className="approval-chip-row">
-              {candidateStageFilterOptions.map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  className={`approval-chip ${candidateStageFilter === option.key ? "tracking-kpi-card-active" : ""}`}
-                  onClick={() => setCandidateStageFilter(option.key)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="control-layout">
-              <div className="tracking-table-wrap">
-                <div className="tracking-table-scroll">
-                  <table className="tracking-table">
-                    <thead>
-                      <tr>
-                        <th>Candidato</th>
-                        <th>Folio / Caso</th>
-                        <th>Etapa</th>
-                        <th>Contrato</th>
-                        <th>Participaciones activas</th>
-                        <th>Ruta contractual</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredCandidateControl.length > 0 ? (
-                        filteredCandidateControl.map((candidate) => (
-                          <tr
-                            key={candidate.id}
-                            className={
-                              candidate.id === selectedCandidateBoardRow?.id ? "tracking-row-selected" : ""
-                            }
-                            onClick={() => {
-                              setSelectedCandidateId(candidate.id);
-                              setSelectedCaseId(candidate.recruitment_case_id);
-                            }}
-                          >
-                            <td>
-                              <strong>{candidate.full_name}</strong>
-                              <div className="tracking-filter-caption">
-                                {formatRut(candidate.national_id)}
-                              </div>
-                            </td>
-                            <td>
-                              {(candidate.folio ?? "Sin folio")} · {candidate.case_code}
-                            </td>
-                            <td>
-                              <span
-                                className={`tracking-status-pill ${getStageChipClass(
-                                  candidate.stage_code
-                                )}`}
-                              >
-                                {toRecruitmentCandidateStageLabel(candidate.stage_code)}
-                              </span>
-                            </td>
-                            <td>{candidate.contract_name}</td>
-                            <td>{candidate.active_process_count}</td>
-                            <td>{getCandidateControlLockLabel(candidate)}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td className="tracking-empty-state" colSpan={6}>
-                            {isLoading
-                              ? "Cargando candidatos..."
-                              : "No hay candidatos activos para el filtro actual."}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <aside className="control-detail-panel">
-                {selectedCaseDetail && selectedCandidate ? (
-                  <>
-                    <div className="control-detail-header">
-                      <h3>{selectedCandidate.full_name}</h3>
-                      <span className="tracking-status-pill">
-                        {toRecruitmentCandidateStageLabel(selectedCandidate.stage_code)}
-                      </span>
-                    </div>
-
-                    <div className="control-readonly-grid">
-                      <div>
-                        <small>RUT / Identificador</small>
-                        <strong>{formatRut(selectedCandidate.national_id)}</strong>
-                      </div>
-                      <div>
-                        <small>Correo / Teléfono</small>
-                        <strong>{selectedCandidate.email ?? selectedCandidate.phone ?? "No disponible"}</strong>
-                      </div>
-                      <div>
-                        <small>Folio activo</small>
-                        <strong>{selectedCaseDetail.case.hiring_request.folio ?? "Sin folio"}</strong>
-                      </div>
-                      <div>
-                        <small>Caso</small>
-                        <strong>{selectedCaseDetail.case.case_code}</strong>
-                      </div>
-                      <div>
-                        <small>Contrato</small>
-                        <strong>{selectedCaseDetail.case.contract_name}</strong>
-                      </div>
-                      <div>
-                        <small>Cargo</small>
-                        <strong>{selectedCaseDetail.case.job_position_name}</strong>
-                      </div>
-                      <div>
-                        <small>Participaciones activas</small>
-                        <strong>{selectedCandidateBoardRow?.active_process_count ?? 1}</strong>
-                      </div>
-                      <div>
-                        <small>Ruta contractual</small>
-                        <strong>
-                          {selectedCandidateBoardRow
-                            ? getCandidateControlLockLabel(selectedCandidateBoardRow)
-                            : "No disponible"}
-                        </strong>
-                      </div>
-                    </div>
-
-                    <div className="approval-chip-row">
-                      <span className="approval-chip">
-                        Owner: {selectedCandidateBoardRow?.owner_name ?? "No asignado"}
-                      </span>
-                      <span className="approval-chip">
-                        Licencia:{" "}
-                        {selectedCandidate.driver_license_class
-                          ? `${selectedCandidate.driver_license_class} · ${formatDateValue(
-                              selectedCandidate.driver_license_expiry
-                            )}`
-                          : "No registrada"}
-                      </span>
-                    </div>
-
-                    {selectedCandidateBoardRow?.is_contract_path_blocked ? (
-                      <div className="approval-detail-note">
-                        <small>Bloqueo operacional</small>
-                        <strong>
-                          El candidato ya sostiene una ruta contractual en{" "}
-                          {selectedCandidateBoardRow.contract_locked_case_code ?? "otro caso"}
-                          {selectedCandidateBoardRow.contract_locked_folio
-                            ? ` · folio ${selectedCandidateBoardRow.contract_locked_folio}`
-                            : ""}.
-                        </strong>
-                      </div>
-                    ) : null}
-
-                    <div className="control-edit-grid">
-                      <div>
-                        <label className="field-label" htmlFor="candidate-next-stage">
-                          Siguiente etapa
-                        </label>
-                        <select
-                          id="candidate-next-stage"
-                          className="text-field"
-                          value={stageDraft}
-                          onChange={(event) =>
-                            setStageDraft(event.target.value as RecruitmentCandidateStage | "")
-                          }
-                        >
-                          <option value="">Selecciona una etapa</option>
-                          {getNextStageOptions(selectedCandidate.stage_code).map((stage) => (
-                            <option key={stage} value={stage}>
-                              {toRecruitmentCandidateStageLabel(stage)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="field-label" htmlFor="candidate-stage-comment">
-                          Comentario
-                        </label>
-                        <input
-                          id="candidate-stage-comment"
-                          className="text-field"
-                          value={stageComment}
-                          onChange={(event) => setStageComment(event.target.value)}
-                        />
-                      </div>
-                      <div className="control-span-full">
-                        <button
-                          type="button"
-                          className="soft-primary-button approval-button-approve"
-                          disabled={isStageSaving || !stageDraft}
-                          onClick={() => void handleAdvanceStage()}
-                        >
-                          Mover candidato de etapa
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="approval-detail-note">
-                      <small>Historial de etapa</small>
-                      <strong>
-                        {selectedCandidate.stage_history.length > 0
-                          ? selectedCandidate.stage_history
-                              .map(
-                                (entry) =>
-                                  `${toRecruitmentCandidateStageLabel(entry.to_stage)} · ${formatDateTimeValue(entry.created_at)}`
-                              )
-                              .join(" | ")
-                          : "Sin historial adicional"}
-                      </strong>
-                    </div>
-
-                    <div className="approval-detail-note">
-                      <small>Auditoría del caso</small>
-                      <strong>
-                        {selectedCaseDetail.audit.length > 0
-                          ? selectedCaseDetail.audit
-                              .slice(0, 5)
-                              .map(
-                                (entry) =>
-                                  `${entry.action_type} · ${entry.actor_name ?? "Usuario"} · ${formatDateTimeValue(entry.created_at)}`
-                              )
-                              .join(" | ")
-                          : "Sin eventos registrados"}
-                      </strong>
-                    </div>
-
-                    {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
-                  </>
-                ) : (
-                  <div className="control-detail-header">
-                    <h3>Sin candidato seleccionado</h3>
-                    <span className="tracking-filter-caption">
-                      {isLoading
-                        ? "Cargando candidatos..."
-                        : "Selecciona una participación activa para revisar su detalle y mover etapa."}
-                    </span>
-                  </div>
-                )}
-              </aside>
-            </div>
-          </>
+          <HiringCandidatesView
+            isLoading={isLoading}
+            errorMessage={errorMessage}
+            activeCases={activeCases}
+            candidateControl={candidateControl}
+            selectedCandidateId={selectedCandidateId}
+            selectedCaseDetail={selectedCaseDetail}
+            stageDraft={stageDraft}
+            stageComment={stageComment}
+            isStageSaving={isStageSaving}
+            decisionMessage={decisionMessage}
+            onSelectCandidate={(candidateId, caseId) => {
+              setSelectedCandidateId(candidateId);
+              setSelectedCaseId(caseId);
+            }}
+            onCandidateAdded={handleCandidateAdded}
+            onStageDraftChange={setStageDraft}
+            onStageCommentChange={setStageComment}
+            onAdvanceStage={handleAdvanceStage}
+          />
         )}
       </section>
-    </section>
+    </PageShell>
   );
 }

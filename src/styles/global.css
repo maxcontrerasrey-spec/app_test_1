@@ -1052,6 +1052,18 @@ textarea {
   background: var(--surface);
 }
 
+.approval-queue-item-button {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.approval-queue-item-button:hover {
+  border-color: #d7dbe1;
+  background: #fbfcfd;
+}
+
 .approval-queue-copy {
   display: flex;
   flex-wrap: wrap;
@@ -1074,6 +1086,12 @@ textarea {
   background: var(--surface-soft);
   color: var(--text-muted);
   font-size: 0.86rem;
+}
+
+.approval-queue-link {
+  color: var(--accent-deep);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
 .approval-action-row {
@@ -1227,6 +1245,30 @@ textarea {
   background: #fff1f1;
   border-color: #f2d2d2;
   color: #b42318;
+}
+
+.approval-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(6px);
+}
+
+.approval-modal-card {
+  display: grid;
+  gap: 1rem;
+  width: min(920px, 100%);
+  max-height: min(88vh, 920px);
+  padding: 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  overflow-y: auto;
 }
 
 .request-summary-panel {
@@ -1383,6 +1425,10 @@ textarea {
     min-width: 7.4rem;
     min-height: 2.7rem;
     padding: 0 1rem;
+  }
+
+  .approval-modal-card {
+    padding: 1.15rem;
   }
 
   .approval-detail-grid {
@@ -1673,6 +1719,22 @@ textarea {
   width: min(100%, 320px);
 }
 
+.tracking-filters-inline {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  width: auto;
+  min-width: min(100%, 520px);
+}
+
+.tracking-search-field {
+  width: 100%;
+}
+
+.tracking-search-field .field-label {
+  font-size: 0.76rem;
+}
+
 .tracking-search {
   min-height: 3rem;
 }
@@ -1681,12 +1743,20 @@ textarea {
   overflow-x: auto;
 }
 
+.tracking-table-wrap-full {
+  overflow-x: visible;
+}
+
 .tracking-table-scroll {
   max-height: 364px;
   overflow-y: auto;
   overflow-x: auto;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
+}
+
+.tracking-table-scroll-wide {
+  max-height: none;
 }
 
 .tracking-table {
@@ -2216,6 +2286,21 @@ textarea {
 
   .tracking-kpi-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tracking-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tracking-filters-inline {
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .control-layout {
+    grid-template-columns: 1fr;
   }
 
   .approval-detail-grid {
