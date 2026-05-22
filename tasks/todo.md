@@ -1,5 +1,27 @@
 # Plan de trabajo
 
+## Auditoría Zero Trust de Contrataciones
+
+- [x] Auditar separación de poderes entre `control_contratos` y `reclutamiento` en Supabase y frontend protegido
+- [x] Identificar brechas RLS/RPC en `hiring_requests`, `recruitment_cases` y auditorías
+- [x] Materializar los parches SQL de hardening en una migración versionada
+- [x] Dejar documentado el resultado con hallazgos y alcance
+
+## Resultado de auditoría Zero Trust de Contrataciones
+
+- Se detectó que la separación de poderes no estaba blindada en backend:
+  - `control_contratos` y el solicitante original heredaban acceso a `recruitment_cases` vía `user_can_access_recruitment_case(...)`
+  - las RPCs de reclutamiento reutilizaban ese helper para mutar candidatos
+  - `open_recruitment_case_from_hiring_request(...)` seguía ejecutable por `authenticated`
+- Se creó la migración [20260522_000017_harden_recruitment_zero_trust.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260522_000017_harden_recruitment_zero_trust.sql:1) para:
+  - separar explícitamente `user_can_view_recruitment_case(...)` y `user_can_manage_recruitment_case(...)`
+  - restringir lectura/mutación de `recruitment_cases` y `recruitment_case_candidates` a `reclutamiento`, `admin` y asignaciones operativas válidas
+  - revocar la ejecución directa de `open_recruitment_case_from_hiring_request(...)`
+  - forzar RLS y endurecer la inmutabilidad de auditoría sobre `recruitment_case_audit_log`, `hiring_request_audit_log` y `recruitment_case_candidate_stage_history`
+- Observación de routing:
+  - el frontend sigue trabajando con autorización a nivel módulo en [access.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/config/access.ts:1) y [RouteGuards.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/components/RouteGuards.tsx:1)
+  - por diseño, la separación fina entre `control_contratos` y `reclutamiento` debe seguir viviendo en Supabase y no depender del router
+
 ## Corrección funcional y validación de RUT en alta de candidatos
 
 - [x] Corregir el flujo de registro de candidato para que entregue feedback visible en el mismo formulario
