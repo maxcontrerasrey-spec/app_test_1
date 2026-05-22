@@ -1083,3 +1083,30 @@
   - `npx tsc -b`: correcto
   - `npm run build`: correcto
 
+
+## Fila expandible en Resumen de procesos de contratación
+
+- [x] Agregar estados `expandedCaseId` y `caseDetailsCache` a `HiringProcessesView.tsx`
+- [x] Hacer filas de la tabla clickeables con comportamiento acordeón (una sola abierta a la vez)
+- [x] Cargar detalle del caso bajo demanda vía `fetchRecruitmentCaseDetail(caseId)` con caché
+- [x] Renderizar fila hija con `colSpan={7}` mostrando grilla de 3 columnas: Solicitud original, Fechas y operación, Compensación y beneficios
+- [x] Agregar estilos enterprise: chevron animado, hover suave, fondo Opaline para la fila expandida, secciones con bordes verticales
+- [x] Revalidar compilación y build
+- [x] Registrar en `todo.md` y `lessons.md`
+- [x] Empujar a `main` para deploy
+
+## Resultado de fila expandible en Resumen de procesos
+
+- [HiringProcessesView.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1) ahora soporta filas expandibles tipo acordeón:
+  - Al hacer clic en cualquier fila, se expande un panel debajo con el detalle completo de la solicitud original
+  - El detalle se carga bajo demanda desde la RPC `get_recruitment_case_detail` y se cachea para no volver a consultarlo
+  - Un chevron animado (▸ → ▾) indica visualmente qué fila está abierta
+  - Solo una fila puede estar abierta a la vez
+- La grilla expandida muestra 3 secciones con estilo enterprise:
+  - **Solicitud original:** Solicitante, Correo, Folio, Centro de costo
+  - **Fechas y operación:** Ingreso solicitado, Inicio/Fin contrato, Turno
+  - **Compensación y beneficios:** Renta líquida, Campamento, Pasajes, Otros beneficios
+- Estilos en [global.css](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1): filas clickeables con hover, fondo Opaline para la fila expandida, secciones con separadores verticales, tipografía escalonada (labels en 0.7rem, valores en 0.85rem)
+- Validación ejecutada:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto

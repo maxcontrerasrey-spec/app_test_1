@@ -85,4 +85,6 @@
 - Al rediseñar un panel lateral con Tabs para separar preocupaciones (pipeline vs documentos), cada pestaña debe manejar su propio ciclo de carga. No precargar datos de ambas pestañas si el usuario solo ve una a la vez; eso genera consultas innecesarias y ralentiza el panel.
 - Si se inyecta un bloqueo documental en `advance_recruitment_candidate_stage`, la RPC debe invocar internamente la misma función de checklist (`get_candidate_checklist`) para garantizar coherencia. No duplicar la lógica de cálculo del semáforo en dos lugares.
 - Antes de hacer cambios, siempre registrar el trabajo completo en `todo.md` (tareas + resultado) y en `lessons.md` (aprendizajes), y empujar a `main`. No dejar cambios funcionales solo en local.
+- En tablas operacionales con muchos registros, no precargar detalles de todos los casos al montar el componente. Usar carga bajo demanda (lazy loading) al expandir la fila y cachear el resultado en un `Record<string, Detail>` local. Esto evita consultas masivas al backend y mantiene el dashboard ágil.
+- Para filas expandibles tipo acordeón en tablas, usar un `<Fragment>` (`<>`) que contenga el `<tr>` principal y el `<tr>` de detalle condicional con `colSpan` completo. Esto mantiene la semántica de tabla sin romper el layout.
 

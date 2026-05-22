@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { TextField } from "../../../shared/ui";
 import {
   toRecruitmentCaseStatusLabel,
+  fetchRecruitmentCaseDetail,
   type HiringControlApproval,
-  type RecruitmentCaseListRow
+  type RecruitmentCaseListRow,
+  type RecruitmentCaseDetail
 } from "../services/hiringControl";
 import {
   caseFilterOptions,
@@ -39,6 +41,27 @@ export function HiringProcessesView({
   const [caseFilter, setCaseFilter] =
     useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [selectedApprovalId, setSelectedApprovalId] = useState<number | null>(null);
+  const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
+  const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail>>({});
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+  const handleRowClick = useCallback(async (caseId: string) => {
+    if (expandedCaseId === caseId) {
+      setExpandedCaseId(null);
+      return;
+    }
+
+    setExpandedCaseId(caseId);
+
+    if (caseDetailsCache[caseId]) return;
+
+    setIsLoadingDetail(true);
+    const { data } = await fetchRecruitmentCaseDetail(caseId);
+    if (data) {
+      setCaseDetailsCache((prev) => ({ ...prev, [caseId]: data }));
+    }
+    setIsLoadingDetail(false);
+  }, [expandedCaseId, caseDetailsCache]);
 
   const filteredCases = useMemo(() => {
     const normalizedSearch = caseSearchTerm.trim().toLowerCase();
@@ -163,25 +186,119 @@ export function HiringProcessesView({
             </thead>
             <tbody>
               {filteredCases.length > 0 ? (
-                filteredCases.map((caseRow) => (
-                  <tr key={caseRow.id}>
-                    <td>{caseRow.case_code}</td>
-                    <td>
-                      <span className="tracking-status-pill">
-                        {toRecruitmentCaseStatusLabel(caseRow.status)}
-                      </span>
-                    </td>
-                    <td>{caseRow.job_position_name}</td>
-                    <td>{caseRow.contract_name}</td>
-                    <td>
-                      {caseRow.filled_vacancies}/{caseRow.requested_vacancies}
-                    </td>
-                    <td>
-                      {caseRow.candidate_count} · listos {caseRow.ready_candidates}
-                    </td>
-                    <td>{caseRow.requester_name ?? "No disponible"}</td>
-                  </tr>
-                ))
+                filteredCases.map((caseRow) => {
+                  const isExpanded = expandedCaseId === caseRow.id;
+                  const detail = caseDetailsCache[caseRow.id] ?? null;
+                  const hr = detail?.case?.hiring_request;
+
+                  return (
+                    <>
+                      <tr
+                        key={caseRow.id}
+                        className={`tracking-table-row-clickable ${isExpanded ? "tracking-table-row-expanded" : ""}`}
+                        onClick={() => void handleRowClick(caseRow.id)}
+                      >
+                        <td>
+                          <span className="case-code-toggle">
+                            <span className={`expand-chevron ${isExpanded ? "expand-chevron-open" : ""}`}>▸</span>
+                            {caseRow.case_code}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="tracking-status-pill">
+                            {toRecruitmentCaseStatusLabel(caseRow.status)}
+                          </span>
+                        </td>
+                        <td>{caseRow.job_position_name}</td>
+                        <td>{caseRow.contract_name}</td>
+                        <td>
+                          {caseRow.filled_vacancies}/{caseRow.requested_vacancies}
+                        </td>
+                        <td>
+                          {caseRow.candidate_count} · listos {caseRow.ready_candidates}
+                        </td>
+                        <td>{caseRow.requester_name ?? "No disponible"}</td>
+                      </tr>
+                      {isExpanded ? (
+                        <tr key={`${caseRow.id}-detail`} className="tracking-table-expanded-row">
+                          <td colSpan={7}>
+                            {isLoadingDetail && !detail ? (
+                              <div className="expanded-case-loading">Cargando detalle del caso...</div>
+                            ) : detail ? (
+                              <div className="expanded-case-detail-grid">
+                                <div className="expanded-detail-section">
+                                  <h4>Solicitud original</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Solicitante</small>
+                                      <strong>{hr?.requester_name ?? caseRow.requester_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Correo</small>
+                                      <strong>{hr?.requester_email ?? caseRow.requester_email ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Folio</small>
+                                      <strong>{hr?.folio ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Centro de costo</small>
+                                      <strong>{detail.case.cost_center_name} ({detail.case.cost_center_code})</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Fechas y operación</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Ingreso solicitado</small>
+                                      <strong>{formatDateValue(detail.case.requested_entry_date)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Inicio contrato</small>
+                                      <strong>{formatDateValue(hr?.start_date)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Fin contrato</small>
+                                      <strong>{formatDateValue(hr?.end_date)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Turno</small>
+                                      <strong>{hr?.shift_name ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Compensación y beneficios</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Renta líquida ofrecida</small>
+                                      <strong>{hr?.salary_offer ? `$${hr.salary_offer.toLocaleString("es-CL")}` : "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Campamento</small>
+                                      <strong>{hr?.campamento ? "Sí" : "No"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Pasajes</small>
+                                      <strong>{hr?.pasajes ? "Sí" : "No"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Otros beneficios</small>
+                                      <strong>{hr?.other_benefits?.trim() || "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="expanded-case-loading">No se pudo cargar el detalle.</div>
+                            )}
+                          </td>
+                        </tr>
+                      ) : null}
+                    </>
+                  );
+                })
               ) : (
                 <tr>
                   <td className="tracking-empty-state" colSpan={7}>
