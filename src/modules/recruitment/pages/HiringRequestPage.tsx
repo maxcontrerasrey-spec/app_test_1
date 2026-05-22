@@ -7,6 +7,20 @@ import {
   type ShiftCatalogItem
 } from "../services/hiringCatalogs";
 import { createHiringRequest } from "../services/hiringRequests";
+import {
+  toTodayDateValue,
+  formatDateForDisplay,
+  addThreeMonths,
+  parseDateValue,
+  formatDateValue,
+  buildCalendarDays
+} from "../../../shared/lib/date";
+import {
+  PageShell,
+  TextField,
+  SelectField,
+  DatePickerField
+} from "../../../shared/ui";
 
 type GeneratedHiringRequest = {
   folio: string;
@@ -35,104 +49,7 @@ type GeneratedHiringRequest = {
 };
 
 const yesNoOptions = ["Si", "No"];
-const monthOptions = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre"
-];
 
-function toTodayDateValue() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-    now.getDate()
-  ).padStart(2, "0")}`;
-}
-
-function formatDateForDisplay(dateValue: string) {
-  const [year, month, day] = dateValue.split("-");
-  if (!year || !month || !day) {
-    return "";
-  }
-
-  return `${day}/${month}/${year}`;
-}
-
-function addThreeMonths(dateValue: string) {
-  if (!dateValue) {
-    return "";
-  }
-
-  const [year, month, day] = dateValue.split("-").map(Number);
-  const targetMonthIndex = month - 1 + 3;
-  const targetYear = year + Math.floor(targetMonthIndex / 12);
-  const targetMonth = targetMonthIndex % 12;
-  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-  const targetDay = Math.min(day, lastDayOfTargetMonth);
-
-  return `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(
-    targetDay
-  ).padStart(2, "0")}`;
-}
-
-function parseDateValue(dateValue: string) {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatDateValue(dateObject: Date) {
-  return `${dateObject.getFullYear()}-${String(dateObject.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}-${String(dateObject.getDate()).padStart(2, "0")}`;
-}
-
-function buildCalendarDays(viewDate: Date) {
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const leadingDays = (firstDayOfMonth.getDay() + 6) % 7;
-  const totalDays = lastDayOfMonth.getDate();
-  const calendarDays: Array<{ key: string; value: Date; inMonth: boolean }> = [];
-
-  for (let index = leadingDays; index > 0; index -= 1) {
-    const date = new Date(year, month, 1 - index);
-    calendarDays.push({
-      key: `prev-${formatDateValue(date)}`,
-      value: date,
-      inMonth: false
-    });
-  }
-
-  for (let day = 1; day <= totalDays; day += 1) {
-    const date = new Date(year, month, day);
-    calendarDays.push({
-      key: `current-${formatDateValue(date)}`,
-      value: date,
-      inMonth: true
-    });
-  }
-
-  while (calendarDays.length % 7 !== 0) {
-    const date = new Date(year, month, totalDays + (calendarDays.length % 7) + 1);
-    calendarDays.push({
-      key: `next-${formatDateValue(date)}`,
-      value: date,
-      inMonth: false
-    });
-  }
-
-  return calendarDays;
-}
 
 function normalizeCurrencyInput(rawValue: string) {
   const digits = rawValue.replace(/\D/g, "");
@@ -379,493 +296,144 @@ export function HiringRequestPage() {
   };
 
   return (
-    <section className="page">
-      <section className="form-shell">
-        <div className="hiring-layout-grid">
-          <div className="hiring-main-column">
-            <div className="hero-panel hero-panel-compact form-copy form-hero">
-              <div className="hero-panel-meta">
-                <span className="eyebrow">Reclutamiento</span>
-                <span className="hero-copy-status">
-                  {isCatalogsLoading
-                    ? "Cargando catalogos"
-                    : catalogsError
-                      ? "Catalogos con incidencia"
-                      : "Catalogos sincronizados"}
-                </span>
-              </div>
-              <h2>Solicitud de Contrataciones</h2>
-              <p className="hero-copy">
-                Registra una nueva contratación y déjala lista para aprobación.
-              </p>
+    <PageShell useFormShell>
+      <div className="hiring-layout-grid">
+        <div className="hiring-main-column">
+          <div className="hero-panel hero-panel-compact form-copy form-hero">
+            <div className="hero-panel-meta">
+              <span className="eyebrow">Reclutamiento</span>
+              <span className="hero-copy-status">
+                {isCatalogsLoading
+                  ? "Cargando catalogos"
+                  : catalogsError
+                    ? "Catalogos con incidencia"
+                    : "Catalogos sincronizados"}
+              </span>
             </div>
+            <h2>Solicitud de Contrataciones</h2>
+            <p className="hero-copy">
+              Registra una nueva contratación y déjala lista para aprobación.
+            </p>
+          </div>
 
-            <div className="form-card">
+          <div className="form-card">
             <div className="requester-grid">
-              <div className="field-group">
-                <label className="field-label" htmlFor="solicitante-nombre">
-                  Nombre solicitante
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="solicitante-nombre"
-                  value={displayName}
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="solicitante-cargo">
-                  Cargo solicitante
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="solicitante-cargo"
-                  value={jobTitle}
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="solicitante-correo">
-                  Correo solicitante
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="solicitante-correo"
-                  value={email}
-                  readOnly
-                  type="email"
-                />
-              </div>
+              <TextField
+                id="solicitante-nombre"
+                label="Nombre solicitante"
+                value={displayName}
+                readOnly
+              />
+              <TextField
+                id="solicitante-cargo"
+                label="Cargo solicitante"
+                value={jobTitle}
+                readOnly
+              />
+              <TextField
+                id="solicitante-correo"
+                label="Correo solicitante"
+                value={email}
+                type="email"
+                readOnly
+              />
             </div>
 
             <div className="request-primary-grid">
-              <div className="field-group request-primary-grid-wide">
-                <label className="field-label" htmlFor="cargo-solicitado">
-                  Cargo solicitado
-                </label>
-                <select
-                  className="text-field"
-                  id="cargo-solicitado"
-                  disabled={isCatalogsLoading || Boolean(catalogsError)}
-                  value={cargoSolicitado}
-                  onChange={(event) => setCargoSolicitado(event.target.value)}
-                >
-                  <option value="">Seleccione el cargo</option>
-                  {hiringRoles.map((role) => (
-                    <option key={role.id} value={role.name}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                id="cargo-solicitado"
+                label="Cargo solicitado"
+                className="request-primary-grid-wide"
+                value={cargoSolicitado}
+                onChange={(e) => setCargoSolicitado(e.target.value)}
+                disabled={isCatalogsLoading || Boolean(catalogsError)}
+                options={hiringRoles.map((role) => ({ value: role.name, label: role.name }))}
+                placeholder="Seleccione el cargo"
+              />
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="numero-vacantes">
-                  Numero de Vacantes
-                </label>
-                <input
-                  className="text-field"
-                  id="numero-vacantes"
-                  min="1"
-                  step="1"
-                  value={numeroVacantes}
-                  onChange={(event) => setNumeroVacantes(event.target.value)}
-                  type="number"
-                />
-              </div>
+              <TextField
+                id="numero-vacantes"
+                label="Numero de Vacantes"
+                type="number"
+                min="1"
+                step="1"
+                value={numeroVacantes}
+                onChange={(e) => setNumeroVacantes(e.target.value)}
+              />
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="fecha-solicitada-ingreso">
-                  Fecha solicitada ingreso
-                </label>
-                <div className="date-picker">
-                  <button
-                    type="button"
-                    id="fecha-solicitada-ingreso"
-                    className="text-field date-trigger"
-                    onClick={() => setIsRequestedDatePickerOpen((current) => !current)}
-                  >
-                    <span>
-                      {fechaSolicitadaIngreso
-                        ? formatDateForDisplay(fechaSolicitadaIngreso)
-                        : "Seleccione la fecha"}
-                    </span>
-                    <span className="date-trigger-icon" aria-hidden="true">
-                      ▾
-                    </span>
-                  </button>
-
-                  {isRequestedDatePickerOpen ? (
-                    <div className="date-popover">
-                      <div className="date-popover-header">
-                        <button
-                          type="button"
-                          className="calendar-nav-button"
-                          onClick={() =>
-                            setRequestedDateView(
-                              (current) =>
-                                new Date(current.getFullYear(), current.getMonth() - 1, 1)
-                            )
-                          }
-                        >
-                          ‹
-                        </button>
-                        <div className="calendar-selectors">
-                          <select
-                            className="calendar-select"
-                            value={requestedDateView.getMonth()}
-                            onChange={(event) =>
-                              setRequestedDateView(
-                                (current) =>
-                                  new Date(
-                                    current.getFullYear(),
-                                    Number(event.target.value),
-                                    1
-                                  )
-                              )
-                            }
-                          >
-                            {monthOptions.map((month, index) => (
-                              <option key={month} value={index}>
-                                {month}
-                              </option>
-                            ))}
-                          </select>
-
-                          <select
-                            className="calendar-select"
-                            value={requestedDateView.getFullYear()}
-                            onChange={(event) =>
-                              setRequestedDateView(
-                                (current) =>
-                                  new Date(
-                                    Number(event.target.value),
-                                    current.getMonth(),
-                                    1
-                                  )
-                              )
-                            }
-                          >
-                            {yearOptions.map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          type="button"
-                          className="calendar-nav-button"
-                          onClick={() =>
-                            setRequestedDateView(
-                              (current) =>
-                                new Date(current.getFullYear(), current.getMonth() + 1, 1)
-                            )
-                          }
-                        >
-                          ›
-                        </button>
-                      </div>
-
-                      <div className="calendar-weekdays">
-                        {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
-                          <span key={day}>{day}</span>
-                        ))}
-                      </div>
-
-                      <div className="calendar-grid">
-                        {requestedDateCalendarDays.map((calendarDay) => {
-                          const value = formatDateValue(calendarDay.value);
-                          const isSelected =
-                            value === formatDateValue(selectedRequestedDate);
-                          const isBeforeToday = value < todayValue;
-
-                          return (
-                            <button
-                              key={calendarDay.key}
-                              type="button"
-                              className={
-                                isSelected
-                                  ? "calendar-day calendar-day-selected"
-                                  : calendarDay.inMonth
-                                    ? "calendar-day"
-                                    : "calendar-day calendar-day-muted"
-                              }
-                              disabled={isBeforeToday}
-                              onClick={() => {
-                                setFechaSolicitadaIngreso(value);
-                                setRequestedDateView(
-                                  new Date(
-                                    calendarDay.value.getFullYear(),
-                                    calendarDay.value.getMonth(),
-                                    1
-                                  )
-                                );
-                                setIsRequestedDatePickerOpen(false);
-                              }}
-                            >
-                              {calendarDay.value.getDate()}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+              <DatePickerField
+                id="fecha-solicitada-ingreso"
+                label="Fecha solicitada ingreso"
+                value={fechaSolicitadaIngreso}
+                onChange={setFechaSolicitadaIngreso}
+              />
             </div>
 
             <div className="contract-grid">
-              <div className="field-group">
-                <label className="field-label" htmlFor="nombre-contrato">
-                  Nombre de contrato
-                </label>
-                <select
-                  className="text-field"
-                  id="nombre-contrato"
-                  disabled={isCatalogsLoading || Boolean(catalogsError)}
-                  value={nombreContrato}
-                  onChange={(event) => setNombreContrato(event.target.value)}
-                >
-                  <option value="">Seleccione el contrato</option>
-                  {contractOptions.map((contract) => (
-                    <option key={contract.id} value={contract.contractName}>
-                      {contract.contractName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                id="nombre-contrato"
+                label="Nombre de contrato"
+                value={nombreContrato}
+                onChange={(e) => setNombreContrato(e.target.value)}
+                disabled={isCatalogsLoading || Boolean(catalogsError)}
+                options={contractOptions.map((c) => ({ value: c.contractName, label: c.contractName }))}
+                placeholder="Seleccione el contrato"
+              />
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="numero-contrato">
-                  Numero contrato
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="numero-contrato"
-                  value={selectedContract?.contractNumber ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
+              <TextField
+                id="numero-contrato"
+                label="Numero contrato"
+                value={selectedContract?.contractNumber ?? ""}
+                placeholder="Se completa automaticamente"
+                readOnly
+              />
             </div>
 
             <div className="schedule-grid">
-              <div className="field-group">
-                <label className="field-label" htmlFor="fecha-inicio">
-                  Fecha inicio
-                </label>
-                <div className="date-picker">
-                  <button
-                    type="button"
-                    id="fecha-inicio"
-                    className="text-field date-trigger"
-                    onClick={() => setIsStartDatePickerOpen((current) => !current)}
-                  >
-                    <span>
-                      {fechaInicio ? formatDateForDisplay(fechaInicio) : "Seleccione la fecha"}
-                    </span>
-                    <span className="date-trigger-icon" aria-hidden="true">
-                      ▾
-                    </span>
-                  </button>
+              <DatePickerField
+                id="fecha-inicio"
+                label="Fecha inicio"
+                value={fechaInicio}
+                onChange={setFechaInicio}
+              />
 
-                  {isStartDatePickerOpen ? (
-                    <div className="date-popover">
-                      <div className="date-popover-header">
-                        <button
-                          type="button"
-                          className="calendar-nav-button"
-                          onClick={() =>
-                            setStartDateView(
-                              (current) =>
-                                new Date(current.getFullYear(), current.getMonth() - 1, 1)
-                            )
-                            }
-                          >
-                            ‹
-                          </button>
-                          <div className="calendar-selectors">
-                          <select
-                            className="calendar-select"
-                            value={startDateView.getMonth()}
-                            onChange={(event) =>
-                              setStartDateView(
-                                (current) =>
-                                  new Date(
-                                    current.getFullYear(),
-                                      Number(event.target.value),
-                                      1
-                                    )
-                                )
-                              }
-                            >
-                              {monthOptions.map((month, index) => (
-                                <option key={month} value={index}>
-                                  {month}
-                                </option>
-                              ))}
-                            </select>
+              <TextField
+                id="fecha-termino"
+                label="Fecha termino"
+                value={formatDateForDisplay(fechaTermino)}
+                placeholder="Se calcula automaticamente"
+                readOnly
+              />
 
-                          <select
-                            className="calendar-select"
-                            value={startDateView.getFullYear()}
-                            onChange={(event) =>
-                              setStartDateView(
-                                (current) =>
-                                  new Date(
-                                    Number(event.target.value),
-                                      current.getMonth(),
-                                      1
-                                    )
-                                )
-                              }
-                            >
-                              {yearOptions.map((year) => (
-                                <option key={year} value={year}>
-                                  {year}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        <button
-                          type="button"
-                          className="calendar-nav-button"
-                          onClick={() =>
-                            setStartDateView(
-                              (current) =>
-                                new Date(current.getFullYear(), current.getMonth() + 1, 1)
-                            )
-                            }
-                          >
-                            ›
-                          </button>
-                        </div>
-
-                        <div className="calendar-weekdays">
-                          {["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"].map((day) => (
-                            <span key={day}>{day}</span>
-                          ))}
-                        </div>
-
-                      <div className="calendar-grid">
-                        {startDateCalendarDays.map((calendarDay) => {
-                          const value = formatDateValue(calendarDay.value);
-                          const isSelected = value === formatDateValue(selectedStartDate);
-                          const isBeforeToday = value < todayValue;
-
-                          return (
-                              <button
-                                key={calendarDay.key}
-                                type="button"
-                                className={
-                                  isSelected
-                                    ? "calendar-day calendar-day-selected"
-                                    : calendarDay.inMonth
-                                      ? "calendar-day"
-                                      : "calendar-day calendar-day-muted"
-                              }
-                              disabled={isBeforeToday}
-                              onClick={() => {
-                                setFechaInicio(value);
-                                setStartDateView(
-                                  new Date(
-                                    calendarDay.value.getFullYear(),
-                                    calendarDay.value.getMonth(),
-                                    1
-                                  )
-                                );
-                                setIsStartDatePickerOpen(false);
-                              }}
-                            >
-                              {calendarDay.value.getDate()}
-                              </button>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="fecha-termino">
-                  Fecha termino
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="fecha-termino"
-                  value={formatDateForDisplay(fechaTermino)}
-                  placeholder="Se calcula automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="turno">
-                  Turno
-                </label>
-                <select
-                  className="text-field"
-                  id="turno"
-                  disabled={isCatalogsLoading || Boolean(catalogsError)}
-                  value={turno}
-                  onChange={(event) => setTurno(event.target.value)}
-                >
-                  <option value="">Seleccione el turno</option>
-                  {shiftCatalog.map((shift) => (
-                    <option key={shift.id} value={shift.name}>
-                      {shift.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                id="turno"
+                label="Turno"
+                value={turno}
+                onChange={(e) => setTurno(e.target.value)}
+                disabled={isCatalogsLoading || Boolean(catalogsError)}
+                options={shiftCatalog.map((shift) => ({ value: shift.name, label: shift.name }))}
+                placeholder="Seleccione el turno"
+              />
             </div>
 
             <div className="support-grid">
-              <div className="field-group">
-                <label className="field-label" htmlFor="campamento">
-                  Campamento
-                </label>
-                <select
-                  className="text-field"
-                  id="campamento"
-                  value={campamento}
-                  onChange={(event) => setCampamento(event.target.value)}
-                >
-                  <option value="">Seleccione</option>
-                  {yesNoOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                id="campamento"
+                label="Campamento"
+                value={campamento}
+                onChange={(e) => setCampamento(e.target.value)}
+                options={yesNoOptions.map((opt) => ({ value: opt, label: opt }))}
+                placeholder="Seleccione"
+              />
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="pasajes">
-                  Pasajes
-                </label>
-                <select
-                  className="text-field"
-                  id="pasajes"
-                  value={pasajes}
-                  onChange={(event) => setPasajes(event.target.value)}
-                >
-                  <option value="">Seleccione</option>
-                  {yesNoOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                id="pasajes"
+                label="Pasajes"
+                value={pasajes}
+                onChange={(e) => setPasajes(e.target.value)}
+                options={yesNoOptions.map((opt) => ({ value: opt, label: opt }))}
+                placeholder="Seleccione"
+              />
 
               <div className="field-group">
                 <label className="field-label" htmlFor="renta-liquida">
@@ -889,63 +457,37 @@ export function HiringRequestPage() {
             </div>
 
             <div className="field-group field-pair">
-              <div className="field-group">
-                <label className="field-label" htmlFor="unidad-costo">
-                  Unidad de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="unidad-costo"
-                  value={selectedContract?.costUnit ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="nombre-unidad-costo">
-                  Nombre unidad de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="nombre-unidad-costo"
-                  value={selectedContract?.costUnitName ?? ""}
-                  placeholder="Se calcula automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
+              <TextField
+                id="unidad-costo"
+                label="Unidad de costo"
+                value={selectedContract?.costUnit ?? ""}
+                placeholder="Se completa automaticamente"
+                readOnly
+              />
+              <TextField
+                id="nombre-unidad-costo"
+                label="Nombre unidad de costo"
+                value={selectedContract?.costUnitName ?? ""}
+                placeholder="Se calcula automaticamente"
+                readOnly
+              />
             </div>
 
             <div className="field-group field-pair">
-              <div className="field-group">
-                <label className="field-label" htmlFor="codigo-centro-costo">
-                  Codigo centro de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="codigo-centro-costo"
-                  value={selectedContract?.costCenterCode ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="nombre-centro-costo">
-                  Nombre centro de costo
-                </label>
-                <input
-                  className="text-field text-field-readonly"
-                  id="nombre-centro-costo"
-                  value={selectedContract?.costCenterName ?? ""}
-                  placeholder="Se completa automaticamente"
-                  readOnly
-                  type="text"
-                />
-              </div>
+              <TextField
+                id="codigo-centro-costo"
+                label="Codigo centro de costo"
+                value={selectedContract?.costCenterCode ?? ""}
+                placeholder="Se completa automaticamente"
+                readOnly
+              />
+              <TextField
+                id="nombre-centro-costo"
+                label="Nombre centro de costo"
+                value={selectedContract?.costCenterName ?? ""}
+                placeholder="Se completa automaticamente"
+                readOnly
+              />
             </div>
 
             <div className="field-group">
@@ -1022,7 +564,6 @@ export function HiringRequestPage() {
             </div>
           </section>
         ) : null}
-      </section>
-    </section>
+    </PageShell>
   );
 }

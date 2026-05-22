@@ -7,6 +7,7 @@ import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
 import { submitServiceEntry } from "../services/operacionesApi";
 import { SERVICE_DATA } from "../data/services-data";
+import { DatePickerField } from "../../../shared/ui";
 import "../styles/operaciones.css";
 
 const PILOT_CONTRACTS = ["CODELCO DRT", "SERVICIO CODELCO DMH"];
@@ -385,130 +386,7 @@ function LoginScreen({ email, password, onEmailChange, onPasswordChange, onSubmi
   );
 }
 
-function DatePickerField({ label, value, onChange, today }) {
-  const selectedDate = getDateFromStorage(value) ?? today;
-  const [isOpen, setIsOpen] = useState(false);
-  const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selectedDate.getMonth());
-  const pickerRef = useRef(null);
-  const triggerRef = useRef(null);
 
-  useEffect(() => {
-    const nextDate = getDateFromStorage(value) ?? today;
-    setViewYear(nextDate.getFullYear());
-    setViewMonth(nextDate.getMonth());
-  }, [today, value]);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (
-        pickerRef.current &&
-        !pickerRef.current.contains(event.target) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const calendarDays = useMemo(() => {
-    const firstDay = new Date(viewYear, viewMonth, 1);
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const startOffset = (firstDay.getDay() + 6) % 7;
-    const items = [];
-
-    for (let i = 0; i < startOffset; i += 1) {
-      items.push({ type: "spacer", key: `spacer-${viewYear}-${viewMonth}-${i}` });
-    }
-
-    for (let day = 1; day <= daysInMonth; day += 1) {
-      const date = new Date(viewYear, viewMonth, day, 12, 0, 0);
-      items.push({
-        type: "day",
-        key: formatStorageDate(date),
-        date,
-        day,
-        isSelected: formatStorageDate(date) === value,
-        isToday: formatStorageDate(date) === formatStorageDate(today),
-      });
-    }
-
-    return items;
-  }, [today, value, viewMonth, viewYear]);
-
-  function handleDateSelection(date) {
-    onChange(formatStorageDate(date));
-    setViewYear(date.getFullYear());
-    setViewMonth(date.getMonth());
-    setIsOpen(false);
-  }
-
-  return (
-    <label className="date-picker-field">
-      <span>{label}</span>
-      <button
-        ref={triggerRef}
-        className="input-like-button"
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        {formatDisplayDate(selectedDate)}
-      </button>
-
-      <div ref={pickerRef} className={`date-picker${isOpen ? "" : " is-hidden"}`} role="dialog" aria-label={`Seleccionar ${label.toLowerCase()}`}>
-        <div className="date-picker__header">
-          <select value={viewMonth} onChange={(event) => setViewMonth(Number(event.target.value))}>
-            {MONTH_LABELS.map((month, index) => (
-              <option key={month} value={index}>
-                {month}
-              </option>
-            ))}
-          </select>
-          <select value={viewYear} onChange={(event) => setViewYear(Number(event.target.value))}>
-            {Array.from({ length: 7 }, (_, index) => today.getFullYear() - 4 + index).map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="date-picker__weekdays">
-          <span>L</span>
-          <span>M</span>
-          <span>M</span>
-          <span>J</span>
-          <span>V</span>
-          <span>S</span>
-          <span>D</span>
-        </div>
-
-        <div className="date-picker__grid">
-          {calendarDays.map((item) =>
-            item.type === "spacer" ? (
-              <span key={item.key} className="date-picker__spacer" />
-            ) : (
-              <button
-                key={item.key}
-                type="button"
-                className={`date-picker__day${item.isSelected ? " is-selected" : ""}${item.isToday ? " is-today" : ""}`}
-                onClick={() => handleDateSelection(item.date)}
-              >
-                {item.day}
-              </button>
-            ),
-          )}
-        </div>
-      </div>
-    </label>
-  );
-}
 
 export function OperacionesDashboard() {
   const today = useMemo(() => new Date(), []);
@@ -1249,8 +1127,8 @@ export function OperacionesDashboard() {
             </select>
           </label>
           <div className="operations-inline-fields">
-            <DatePickerField label="Desde" value={dashboardDateFrom} onChange={setDashboardDateFrom} today={today} />
-            <DatePickerField label="Hasta" value={dashboardDateTo} onChange={setDashboardDateTo} today={today} />
+            <DatePickerField id="dashboard-date-from" label="Desde" value={dashboardDateFrom} onChange={setDashboardDateFrom} />
+            <DatePickerField id="dashboard-date-to" label="Hasta" value={dashboardDateTo} onChange={setDashboardDateTo} />
           </div>
         </section>
 
@@ -1285,7 +1163,7 @@ export function OperacionesDashboard() {
         <section className="panel operations-panel jornada-panel">
           <p className="panel-label">Jornada</p>
           <div className="field-grid">
-            <DatePickerField label="Fecha" value={selectedDateValue} onChange={setSelectedDateValue} today={today} />
+            <DatePickerField id="selected-date-value" label="Fecha" value={selectedDateValue} onChange={setSelectedDateValue} />
             <label>
               <span>Turno</span>
               <select value={selectedShift} onChange={(event) => setSelectedShift(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.shift)}>
@@ -1361,8 +1239,8 @@ export function OperacionesDashboard() {
             </select>
           </label>
           <div className="operations-inline-fields">
-            <DatePickerField label="Desde" value={exportDateFrom} onChange={setExportDateFrom} today={today} />
-            <DatePickerField label="Hasta" value={exportDateTo} onChange={setExportDateTo} today={today} />
+            <DatePickerField id="export-date-from" label="Desde" value={exportDateFrom} onChange={setExportDateFrom} />
+            <DatePickerField id="export-date-to" label="Hasta" value={exportDateTo} onChange={setExportDateTo} />
           </div>
           <div className="export-sidebar-actions">
             <button type="button" className="ghost-button ghost-button--full" onClick={handleExportSearch} disabled={exportLoading}>

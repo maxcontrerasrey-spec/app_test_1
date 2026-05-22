@@ -1,0 +1,97 @@
+export const monthOptions = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre"
+];
+
+export function toTodayDateValue() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
+}
+
+export function formatDateForDisplay(dateValue: string) {
+  if (!dateValue) return "";
+  const [year, month, day] = dateValue.split("-");
+  if (!year || !month || !day) return "";
+  return `${day}/${month}/${year}`;
+}
+
+export function addThreeMonths(dateValue: string) {
+  if (!dateValue) {
+    return "";
+  }
+
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const targetMonthIndex = month - 1 + 3;
+  const targetYear = year + Math.floor(targetMonthIndex / 12);
+  const targetMonth = targetMonthIndex % 12;
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const targetDay = Math.min(day, lastDayOfTargetMonth);
+
+  return `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(
+    targetDay
+  ).padStart(2, "0")}`;
+}
+
+export function parseDateValue(dateValue: string) {
+  if (!dateValue) return new Date();
+  const [year, month, day] = dateValue.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function formatDateValue(dateObject: Date) {
+  return `${dateObject.getFullYear()}-${String(dateObject.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(dateObject.getDate()).padStart(2, "0")}`;
+}
+
+export function buildCalendarDays(viewDate: Date) {
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  const leadingDays = (firstDayOfMonth.getDay() + 6) % 7;
+  const totalDays = lastDayOfMonth.getDate();
+  const calendarDays: Array<{ key: string; value: Date; inMonth: boolean }> = [];
+
+  for (let index = leadingDays; index > 0; index -= 1) {
+    const date = new Date(year, month, 1 - index);
+    calendarDays.push({
+      key: `prev-${formatDateValue(date)}`,
+      value: date,
+      inMonth: false
+    });
+  }
+
+  for (let day = 1; day <= totalDays; day += 1) {
+    const date = new Date(year, month, day);
+    calendarDays.push({
+      key: `current-${formatDateValue(date)}`,
+      value: date,
+      inMonth: true
+    });
+  }
+
+  while (calendarDays.length % 7 !== 0) {
+    const date = new Date(year, month, totalDays + (calendarDays.length % 7) + 1);
+    calendarDays.push({
+      key: `next-${formatDateValue(date)}`,
+      value: date,
+      inMonth: false
+    });
+  }
+
+  return calendarDays;
+}
