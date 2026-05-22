@@ -73,3 +73,16 @@
 - Validaciones de dominio como RUT chileno no deben dispersarse dentro de pantallas. Deben vivir en utilidades reutilizables con sanitización, formato, normalización y validación coherentes entre UI y persistencia.
 - No mezclar lógica repetitiva de formularios, estado o componentes complejos (como z-index de calendarios) en archivos de módulos grandes. Extraerlos a una librería de componentes compartidos (`PageShell`, `DatePickerField`) centraliza la lógica, previene inconsistencias visuales y reduce drásticamente el tamaño y la fragilidad del código.
 - Cuando una pantalla crítica depende de una RPC nueva o reemplazada, no basta con tener la migración en el repo. Hay que confirmar que Supabase publicó la función correcta y que PostgREST recargó el schema; si no, el frontend queda bien desplegado pero la operación falla con `PGRST202`.
+- Cuidado extremo con `DROP FUNCTION ... CASCADE;` en Supabase. En PostgreSQL, un `cascade` sobre una función no solo elimina vistas dependientes, sino que **elimina todas las políticas de RLS** que invocan esa función dentro de su bloque `USING()`. Si se usa, es obligatorio recrear todas las políticas RLS afectadas inmediatamente.
+- Si un componente usa flex y sus botones interiores tienden a colapsar texto en dos líneas, agregar siempre `white-space: nowrap` de manera predeterminada en los estilos globales de los botones (como `.soft-primary-button`) para asegurar lectura pulcra y uniforme.
+
+## 2026-05-22 (ATS Documental)
+
+- Cuando se agregan reglas de bloqueo transaccionales sobre RPCs existentes (como impedir avance de etapa si faltan documentos), el bloqueo debe vivir dentro de la misma RPC mutadora, no como validación de frontend. Si la regla vive solo en UI, se puede saltear con una llamada directa a la API.
+- Las tablas de documentos deben usar `unique (recruitment_case_id, candidate_profile_id, document_type_id)` para permitir upsert limpio. Sin esa constraint, el `on conflict` de la RPC de carga falla y obliga a lógica condicional frágil de `insert or update`.
+- Para control documental con segregación de poderes, la revisión (approve/reject) de documentos `is_critical = true` debe estar protegida en la RPC con verificación de rol (`compliance_documental` o `admin`). No basta con ocultar botones en frontend; la RPC debe arrojar excepción si el rol no califica.
+- El semáforo documental debe calcularse en tiempo de consulta dentro de la misma RPC que devuelve el checklist, no almacenarse como campo derivado. Si se almacena, queda desactualizado ante cambios de estado de documentos individuales.
+- Al rediseñar un panel lateral con Tabs para separar preocupaciones (pipeline vs documentos), cada pestaña debe manejar su propio ciclo de carga. No precargar datos de ambas pestañas si el usuario solo ve una a la vez; eso genera consultas innecesarias y ralentiza el panel.
+- Si se inyecta un bloqueo documental en `advance_recruitment_candidate_stage`, la RPC debe invocar internamente la misma función de checklist (`get_candidate_checklist`) para garantizar coherencia. No duplicar la lógica de cálculo del semáforo en dos lugares.
+- Antes de hacer cambios, siempre registrar el trabajo completo en `todo.md` (tareas + resultado) y en `lessons.md` (aprendizajes), y empujar a `main`. No dejar cambios funcionales solo en local.
+

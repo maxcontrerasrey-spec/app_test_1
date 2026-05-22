@@ -1,5 +1,21 @@
 # Plan de trabajo
 
+## Restauración de RPC y políticas de Control de Candidatos
+
+- [x] Diagnosticar el fallo de `get_recruitment_case_detail(...)` reportado como `PGRST202`
+- [x] Generar una migración para reconstruir políticas RLS eliminadas accidentalmente por `CASCADE`
+- [x] Asegurar que la RPC esté expuesta nuevamente al esquema con permisos de `authenticated`
+- [x] Corregir en CSS la fractura del botón `Registrar candidato` añadiendo `white-space: nowrap`
+
+## Resultado de Restauración de RPC y políticas de Control de Candidatos
+
+- La causa raíz del fallo en el panel de detalle de candidato era que, al hacer `DROP FUNCTION ... CASCADE;` sobre `user_can_view_recruitment_case`, PostgreSQL borró también todas las políticas RLS (`recruitment_cases_select_scoped`, etc.) que dependían de esa función.
+- Sin políticas, el `SELECT` fallaba implícitamente o PostgREST no permitía exponer bien la estructura.
+- Se creó la migración [20260522_000019_restore_case_detail_and_policies.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260522_000019_restore_case_detail_and_policies.sql:1) para:
+  - Recrear 6 políticas RLS (`recruitment_cases`, `recruitment_case_assignments`, `candidate_profiles`, `recruitment_case_candidates`, `recruitment_case_candidate_stage_history`, `recruitment_case_audit_log`).
+  - Reinstalar de forma segura y completa la RPC `get_recruitment_case_detail(...)`.
+- En el frontend, se solucionó el desbordamiento visual del botón agregando `white-space: nowrap` a la clase `.soft-primary-button` en `global.css`.
+
 ## Reparación de RPC de alta de candidatos
 
 - [x] Verificar si el error de alta viene del frontend o de una desalineación de Supabase/PostgREST
@@ -1030,3 +1046,40 @@
 - Se aplicó la migración `20260522_000017_harden_recruitment_zero_trust.sql` para forzar la separación de poderes estricta en el pipeline de reclutamiento.
 - Se blindó la inmutabilidad de la auditoría limitando su mutación a nivel RLS (`FORCE ROW LEVEL SECURITY`).
 - Parche empaquetado, verificado y empujado a `main` en paralelo a las mejoras de interfaz.
+
+## Implementación MVP del ATS Documental y Semáforo de Contratación
+
+- [x] Crear tablas `document_types` y `candidate_documents` con RLS y enum `candidate_document_status`
+- [x] Insertar catálogo maestro de 10 documentos base (Cédula, CV, Antecedentes, Licencia, etc.)
+- [x] Implementar RPC `get_candidate_checklist(p_case_candidate_id)` con cálculo de semáforo dinámico (gris/verde/amarillo/rojo)
+- [x] Implementar RPC `upload_candidate_document(...)` con auditoría y upsert por caso/candidato/documento
+- [x] Implementar RPC `review_candidate_document(...)` con segregación de poderes: solo `compliance_documental` o `admin` aprueba documentos críticos
+- [x] Endurecer `advance_recruitment_candidate_stage(...)` con bloqueo transaccional: si el semáforo no está verde, la DB rechaza avance a `ready_for_hire` o `hired`
+- [x] Agregar tipos `CandidateDocumentRow`, `CandidateChecklistResult`, `CandidateDocumentStatus` a [hiringControl.ts](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1)
+- [x] Agregar servicios `fetchCandidateChecklist`, `uploadCandidateDocument`, `reviewCandidateDocument`
+- [x] Rediseñar [CandidateDetailSidebar.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDetailSidebar.tsx:1) con sistema de Tabs: `Pipeline Operativo` / `Control Documental`
+- [x] Crear [CandidateDocumentChecklist.tsx](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:1) con banner de semáforo, grilla de documentos, indicadores visuales de estado y botones de acción
+- [x] Agregar estilos enterprise para tabs, semáforo, filas documentales y badges críticos en [global.css](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1)
+- [x] Revalidar compilación con `npx tsc -b` y `npm run build`
+- [x] Registrar en `todo.md` y `lessons.md`
+- [x] Empujar a `main` para deploy
+
+## Resultado de implementación MVP del ATS Documental
+
+- Se creó la migración [20260522_000020_candidate_documents_module.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260522_000020_candidate_documents_module.sql:1) con:
+  - enum `candidate_document_status` (`pending`, `uploaded`, `approved`, `rejected`, `expired`)
+  - tabla `document_types` (catálogo maestro de documentos exigibles, con flags `is_critical` y `requires_expiry_date`)
+  - tabla `candidate_documents` (instancia por candidato/caso/tipo, con unique constraint, índices y RLS scoped)
+  - 10 documentos base pre-cargados (5 críticos, 5 no críticos)
+  - RPC `get_candidate_checklist(...)` con cálculo de semáforo en tiempo de consulta
+  - RPC `upload_candidate_document(...)` con upsert idempotente y auditoría
+  - RPC `review_candidate_document(...)` con segregación: solo `compliance_documental` o `admin` revisa documentos `is_critical = true`
+  - Regla de bloqueo inyectada en `advance_recruitment_candidate_stage(...)`: si el semáforo no es `green`, la DB arroja excepción bloqueante para `ready_for_hire` y `hired`
+- El panel lateral de candidatos (`CandidateDetailSidebar`) fue rediseñado con un sistema de pestañas (Tabs):
+  - **Pipeline Operativo:** datos del candidato, historial de etapas, bloqueo contractual, avance de etapa
+  - **Control Documental:** banner de semáforo, grilla de documentos con indicadores de estado visual (borde izquierdo por color), badges `*Crítico`, y botones de acción contextuales (Cargar / Aprobar / Rechazar)
+- Los estilos del sistema de tabs, semáforo y grilla documental usan la misma paleta Opaline y el design system enterprise del proyecto
+- Validación ejecutada:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto
+
