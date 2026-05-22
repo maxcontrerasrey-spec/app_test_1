@@ -1,5 +1,26 @@
 # Plan de trabajo
 
+## Reparación de RPC de alta de candidatos
+
+- [x] Verificar si el error de alta viene del frontend o de una desalineación de Supabase/PostgREST
+- [x] Materializar una migración de reparación idempotente para `add_candidate_to_recruitment_case(...)`
+- [x] Reotorgar permisos y forzar `notify pgrst, 'reload schema'`
+- [x] Documentar el cierre y dejar instrucciones listas para ejecución manual en producción
+
+## Resultado de reparación de RPC de alta de candidatos
+
+- La causa raíz no está en React ni en el formulario.
+- El frontend invoca correctamente `public.add_candidate_to_recruitment_case(...)`.
+- El error `PGRST202` indica que en Supabase la función no existe en el schema cache activo de PostgREST o quedó fuera de la base publicada.
+- Se agregó la migración [20260522_000018_repair_add_candidate_rpc.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260522_000018_repair_add_candidate_rpc.sql:1) para:
+  - reponer `user_can_view_recruitment_case(...)`
+  - reponer `user_can_manage_recruitment_case(...)`
+  - reponer `user_can_access_recruitment_case(...)`
+  - recrear `add_candidate_to_recruitment_case(...)`
+  - restaurar grants de ejecución para `authenticated`
+  - forzar `notify pgrst, 'reload schema'`
+- Con eso, la alta de candidatos vuelve a quedar alineada con el frontend ya desplegado.
+
 ## Refactor modular de Control de Contrataciones
 
 - [x] Extraer `HiringProcessesView.tsx` con tabla de procesos y cola de aprobación final con modal de decisión
