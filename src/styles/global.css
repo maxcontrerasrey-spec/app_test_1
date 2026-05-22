@@ -988,6 +988,7 @@ textarea {
   cursor: pointer;
   font-family: var(--font-text);
   box-shadow: none;
+  white-space: nowrap;
 }
 
 .soft-primary-button:disabled {
@@ -1847,6 +1848,130 @@ textarea {
   font-family: var(--font-display);
   font-size: 1.35rem;
   letter-spacing: -0.03em;
+}
+
+.control-tabs-row {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-top: 0.5rem;
+  padding-bottom: 0;
+}
+
+.control-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.5rem 0.25rem;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -1px;
+}
+
+.control-tab:hover {
+  color: var(--title);
+}
+
+.control-tab.active {
+  color: var(--title);
+  border-bottom-color: var(--title);
+}
+
+.control-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.document-checklist-container {
+  gap: 1.5rem;
+}
+
+.document-semaphore-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-text);
+  font-size: 0.9rem;
+  color: var(--title);
+}
+
+.semaphore-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+}
+
+.semaphore-green { background: #10B981; }
+.semaphore-yellow { background: #F59E0B; }
+.semaphore-red { background: #EF4444; }
+.semaphore-gray { background: #9CA3AF; }
+
+.document-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.document-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.document-row.document-status-approved { border-left: 4px solid #10B981; }
+.document-row.document-status-rejected { border-left: 4px solid #EF4444; }
+.document-row.document-status-expired { border-left: 4px solid #EF4444; }
+.document-row.document-status-uploaded { border-left: 4px solid #F59E0B; }
+.document-row.document-status-pending { border-left: 4px solid var(--border-subtle); }
+
+.document-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.document-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--title);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.critical-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  background: #FEE2E2;
+  color: #B91C1C;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.document-meta {
+  font-family: var(--font-text);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.document-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .control-readonly-grid {
