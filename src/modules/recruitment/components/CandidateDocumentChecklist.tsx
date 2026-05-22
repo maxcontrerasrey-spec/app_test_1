@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   fetchCandidateChecklist,
   uploadCandidateDocument,
@@ -7,6 +7,7 @@ import {
   type CandidateDocumentRow
 } from "../services/hiringControl";
 import { formatDateValue } from "./hiringControlViewUtils";
+import { supabase } from "../../../shared/lib/supabase";
 
 type CandidateDocumentChecklistProps = {
   caseCandidateId: string;
@@ -18,6 +19,8 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
   const [errorMsg, setErrorMsg] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedDocForUpload, setSelectedDocForUpload] = useState<CandidateDocumentRow | null>(null);
 
   async function loadChecklist() {
     setIsLoading(true);
@@ -35,28 +38,87 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
     void loadChecklist();
   }, [caseCandidateId]);
 
-  async function handleSimulatedUpload(doc: CandidateDocumentRow) {
+  async function handleRealUploadStart(doc: CandidateDocumentRow) {
+    setSelectedDocForUpload(doc);
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !selectedDocForUpload) return;
+    
+    // Limpiar input
+    e.target.value = "";
+
     if (isUploading) return;
     setIsUploading(true);
     setUploadError("");
     
-    // Simular uploader. En producción esto iría a Supabase Storage y obtendría un path.
-    const fakePath = `/documents/${caseCandidateId}/${doc.document_type_id}/file.pdf`;
-    const fakeExpiry = doc.requires_expiry_date ? "2028-01-01" : null;
+    try {
+      let expiryToUse = null;
+      if (selectedDocForUpload.requires_expiry_date) {
+        const input = window.prompt("Ingresa la fecha de vencimiento (YYYY-MM-DD):");
+        if (!input) {
+          throw new Error("Fecha de vencimiento es obligatoria para este documento.");
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+          throw new Error("Formato de fecha inválido. Usa YYYY-MM-DD.");
+        }
+        expiryToUse = input;
+      }
 
-    const { error } = await uploadCandidateDocument({
-      caseCandidateId,
-      documentTypeId: doc.document_type_id,
-      filePath: fakePath,
-      expiryDate: fakeExpiry
-    });
+      // 1. Upload to Supabase Storage
+      if (!supabase) throw new Error("Cliente Supabase no configurado");
+      
+      const fileExt = file.name.split('.').pop() || "pdf";
+      const fileName = `${selectedDocForUpload.document_type_id}_${Date.now()}.${fileExt}`;
+      const storagePath = `${caseCandidateId}/${fileName}`;
+
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('candidate-docs')
+        .upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadErr) throw new Error(`Error subiendo archivo: ${uploadErr.message}`);
+      if (!uploadData) throw new Error("No se devolvió path de subida");
+
+      // 2. Call RPC
+      const { error: rpcError } = await uploadCandidateDocument({
+        caseCandidateId,
+        documentTypeId: selectedDocForUpload.document_type_id,
+        filePath: uploadData.path,
+        expiryDate: expiryToUse
+      });
+
+      if (rpcError) throw new Error(`Error en base de datos: ${rpcError}`);
+
+      await loadChecklist();
+    } catch (err: any) {
+      setUploadError(err.message || "Error desconocido al subir");
+    } finally {
+      setIsUploading(false);
+      setSelectedDocForUpload(null);
+    }
+  }
+
+  async function handleDownload(doc: CandidateDocumentRow) {
+    if (!doc.file_path) return;
+    if (!supabase) {
+      alert("Cliente Supabase no configurado");
+      return;
+    }
+    
+    const { data, error } = await supabase.storage
+      .from('candidate-docs')
+      .createSignedUrl(doc.file_path, 3600); // 1 hora de validez
 
     if (error) {
-      setUploadError(error);
-    } else {
-      await loadChecklist();
+      alert(`Error obteniendo enlace: ${error.message}`);
+    } else if (data) {
+      window.open(data.signedUrl, '_blank');
     }
-    setIsUploading(false);
   }
 
   async function handleReview(docId: string, status: "approved" | "rejected") {
@@ -105,6 +167,14 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
 
       {uploadError && <p className="form-status">{uploadError}</p>}
 
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        onChange={(e) => void handleFileChange(e)} 
+        accept=".pdf,.png,.jpg,.jpeg"
+      />
+
       <div className="document-grid">
         {checklist.documents.map((doc) => (
           <div key={doc.document_type_id} className={`document-row document-status-${doc.status}`}>
@@ -120,14 +190,24 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
             </div>
             
             <div className="document-actions">
+              {doc.file_path ? (
+                <button 
+                  type="button" 
+                  className="soft-primary-button soft-primary-button-neutral"
+                  onClick={() => void handleDownload(doc)}
+                >
+                  Ver
+                </button>
+              ) : null}
+
               {doc.status === "pending" || doc.status === "rejected" || doc.status === "expired" ? (
                 <button 
                   type="button" 
                   className="soft-primary-button soft-primary-button-neutral"
-                  onClick={() => void handleSimulatedUpload(doc)}
+                  onClick={() => void handleRealUploadStart(doc)}
                   disabled={isUploading}
                 >
-                  Cargar
+                  {isUploading && selectedDocForUpload?.document_type_id === doc.document_type_id ? "Subiendo..." : "Cargar"}
                 </button>
               ) : null}
 
