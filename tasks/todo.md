@@ -1,5 +1,22 @@
 # Plan de trabajo
 
+## Correcciones Generales de Interfaz y UX (Sprint de Pulido)
+
+- [x] Eliminar texto publicitario/descriptivo en el panel de marca de login
+- [x] Implementar activación por hover con retardo (`setTimeout` 150ms) en submenús del menú superior para evitar parpadeos
+- [x] Eliminar texto explicativo en el toolbar de Control de Candidatos para limpiar la interfaz
+- [x] Reubicar y enmarcar la sección "Registrar candidato" dentro del layout de columna izquierda (`tracking-table-wrap`)
+- [x] Separar la celda combinada Correo/Teléfono en el detalle del candidato en campos independientes
+- [x] Convertir el historial de etapas en una lista vertical estructurada y hacerlo colapsable por defecto
+
+## Resultado de Correcciones Generales de Interfaz y UX (Sprint de Pulido)
+
+- **Login Simplificado**: Se eliminó la firma inferior en [LoginPage.tsx](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/pages/LoginPage.tsx).
+- **Hover Intuitivo en Topbar**: Se configuró soporte hover con delay en [AppShell.tsx](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx), resolviendo la fricción de navegación.
+- **Limpieza de Control de Candidatos**: Se retiró el caption explicativo redundante de la toolbar en [HiringCandidatesView.tsx](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringCandidatesView.tsx).
+- **Consistencia Visual en Registro**: Se reubicó [CandidateIntakeForm](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx) dentro del flujo de la columna de la tabla principal para evitar desbordamientos de ancho de pantalla.
+- **Mejora en Sidebar de Detalle**: En [CandidateDetailSidebar.tsx](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDetailSidebar.tsx) se dividieron los datos de contacto en celdas separadas y se convirtió el historial de etapas en una sección colapsable (con contador y auto-collapse al cambiar de candidato) y con formato línea por línea.
+
 ## Refactorización y Tipado de Operaciones (Alineación de Arquitectura ERP)
 
 - [x] Refactorizar `src/modules/operaciones/lib/service-entry.ts` para agregar interfaces y tipado estricto

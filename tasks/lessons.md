@@ -91,5 +91,10 @@
 - Al normalizar datos asíncronos para actualizar el estado, se debe tipar la constante de mapeo directamente con la interfaz extendida que requiere el estado (ej. `OperationsServiceRecord[]`), aplicando transformaciones explícitas de tipos (como `Number(value)`) para evitar errores de asignación.
 - Evitar la duplicación de funciones de fecha y formato en diferentes páginas. Centralizar estas utilidades en un solo punto (`src/shared/lib/date.ts`) y reutilizarlas a lo largo de todo el proyecto.
 - Modularizar los dashboards monolíticos grandes dividiéndolos en subcomponentes ubicados en una carpeta local `components/` dentro del módulo. Esto mantiene el shell principal enfocado y legible.
+- **Navegación Interactiva por Hover (Hover Intent):** Al activar dropdowns o mega-menús flotantes por evento de mouse, los manejadores `onMouseLeave` deben aplicar una pequeña demora (ej. `setTimeout` de 150ms) y cancelarse al reingresar. Esto soluciona la pérdida de foco provocada por brechas físicas en el layout y proporciona una transición fluida al usuario.
+- **Encuadre de Formularios Dinámicos:** Los formularios de entrada de datos (`intake`) deben renderizarse dentro de los mismos contenedores de columna de la grilla (ej. la columna izquierda que aloja la tabla) en lugar de hacerlo a nivel raíz del módulo. Esto los encuadra estéticamente dentro de las proporciones del layout y evita que se estiren al ancho completo de la pantalla.
+- **Segregación de Campos en Paneles Laterales:** Evitar la concatenación de campos distintos (como Correo/Teléfono) en una misma fila de lectura compacta. Dividir la información en celdas individuales para mantener una visualización despejada en paneles angostos.
+- **Listas Históricas Collapsible:** Las colecciones de eventos dinámicos largos no deben concatenarse con separadores de texto. Deben estructurarse línea por línea y encapsularse en contenedores colapsables con un estado inicial cerrado por defecto (el cual debe resetearse al cambiar de entidad seleccionada) para preservar espacio útil en pantalla.
+
 
 
