@@ -197,7 +197,9 @@ export function HiringStatusPage() {
 
   return (
     <PageShell>
-
+      <div className="minimal-page-header">
+        <h1>Control de Contrataciones</h1>
+      </div>
 
       <section className="tracking-panel">
         <div className="tracking-kpi-row">

@@ -1164,13 +1164,13 @@
 - [x] Bloquear registro de candidato en la UI e inhabilitar botón si el candidato ya participa en el caso seleccionado.
 - [x] Reestructurar filtros del submódulo de candidatos para añadir "Activos en Proceso" (por defecto, excluye rechazados/retirados) y "Descartados" (muestra rechazados/retirados).
 - [x] Habilitar la reactivación de candidatos en terminal states (`rejected` / `withdrawn`) permitiendo transiciones de vuelta a `"contacted"` o `"screening"`.
-- [x] Eliminar el panel hero de cabecera en `HiringStatusPage.tsx` para lograr un diseño más limpio y minimalista.
+- [x] Reemplazar la cabecera grande (hero-panel) en `HiringStatusPage.tsx` por una cabecera minimalista delgada con un título elegante.
 - [x] Validar compilación y empaquetado del bundle productivo sin errores.
 
 ## Resultado de Registro de Licencias y Mejoras de UX
 
 - **Simplificación y Limpieza visual**: La columna de la tabla de candidatos ahora muestra únicamente el código del caso (`case_code`), eliminando el folio redundante. El formulario de alta se reencuadró dentro de la columna izquierda para evitar desbordes.
-- **Remoción de Hero-Panel**: Se eliminó la cabecera superior de título y descripción en [HiringStatusPage.tsx](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx) para potenciar la estética minimalista y limpia del submódulo.
+- **Cabecera Minimalista**: Se reemplazó la sección superior grande (hero-panel) en [HiringStatusPage.tsx](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx) por una cabecera delgada y elegante (`.minimal-page-header`), que muestra solo el título con fuente apenas mayor que el cuerpo de la página, alineado al diseño limpio del submódulo.
 - **Edición local de Licencia**: Se integró un sub-formulario de edición en la sección de Licencia de Conducir en el sidebar del candidato, permitiendo registrar la clase y fecha de vencimiento. La persistencia se realiza mediante la RPC `update_candidate_driver_license` (Zero Trust).
 - **Lookup por RUT y Autocompletado**: Al escribir un RUT válido, la UI ejecuta en segundo plano la RPC `find_candidate_profile_by_rut` para recuperar perfiles registrados globalmente y autocompletar sus datos.
 - **Prevención de Duplicados en Caso**: Si el RUT ingresado ya está asignado al caso actual, el sistema muestra la advertencia `⚠️ Este candidato ya participa en el caso seleccionado en la etapa "..."` y deshabilita el botón de registro.
