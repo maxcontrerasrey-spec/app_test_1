@@ -188,6 +188,13 @@ export function HiringStatusPage() {
     }
   };
 
+  const handleLicenseUpdated = async () => {
+    if (selectedCaseId && selectedCandidateId) {
+      await loadDashboard(selectedCaseId);
+      await loadCaseDetail(selectedCaseId, selectedCandidateId);
+    }
+  };
+
   return (
     <PageShell>
       <div className="hero-panel hero-panel-compact">
@@ -262,6 +269,7 @@ export function HiringStatusPage() {
             onStageDraftChange={setStageDraft}
             onStageCommentChange={setStageComment}
             onAdvanceStage={handleAdvanceStage}
+            onLicenseUpdated={handleLicenseUpdated}
           />
         )}
       </section>

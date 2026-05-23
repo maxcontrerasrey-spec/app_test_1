@@ -97,6 +97,9 @@
 - **Listas Históricas Collapsible:** Las colecciones de eventos dinámicos largos no deben concatenarse con separadores de texto. Deben estructurarse línea por línea y encapsularse en contenedores colapsables con un estado inicial cerrado por defecto (el cual debe resetearse al cambiar de entidad seleccionada) para preservar espacio útil en pantalla.
 - **Colapso de Botones en Flexbox:** Cuando un botón con texto largo y `white-space: nowrap` se ubica junto a un input con `width: 100%` dentro de un contenedor flex, el botón puede contraerse por debajo del ancho de su texto provocando desbordamientos visuales que invaden otros elementos. Agregar `flex-shrink: 0` al botón asegura que mantenga su proporción y respete su margen y padding.
 - **Auditorías y Logs Secundarios:** Evitar recargar la UI del pipeline principal con eventos de auditoría técnica que no aporten valor de negocio diario para la operación. Remover secciones secundarias como "Auditoría del caso" del panel lateral ayuda a priorizar la información de negocio clave (fechas, contacto, etapas y compliance documental).
+- **Simplificación de Nomenclatura en Tablas:** Si dos columnas (como Folio y Caso) describen conceptos conceptualmente idénticos o estrechamente emparejados en el flujo operativo, se deben unificar bajo un solo concepto ("Caso") y mostrar el valor del código representativo. Esto simplifica las cabeceras y reduce la carga cognitiva del usuario.
+- **Edición Directa de Atributos de Perfil (Licencia de Conducir):** Para campos que cambian o se completan de forma progresiva en el control documental o el perfil (como la clase de licencia de conducir y su fecha de vencimiento), proveer un sub-formulario de edición local directo dentro del panel de detalle lateral. Al guardar, invocar un callback para actualizar el estado del contenedor padre, asegurando que la tabla y el sidebar reflejen el dato en tiempo real sin recargar la página.
+
 
 
 

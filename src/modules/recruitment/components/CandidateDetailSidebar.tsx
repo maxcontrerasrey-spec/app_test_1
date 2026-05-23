@@ -3,6 +3,7 @@ import { SelectField, TextField } from "../../../shared/ui";
 import {
   formatRut,
   toRecruitmentCandidateStageLabel,
+  updateCandidateDriverLicense,
   type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
   type RecruitmentCaseCandidateRow,
@@ -28,6 +29,7 @@ type CandidateDetailSidebarProps = {
   onStageDraftChange: (value: RecruitmentCandidateStage | "") => void;
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: () => Promise<void>;
+  onLicenseUpdated?: () => Promise<void>;
 };
 
 export function CandidateDetailSidebar({
@@ -41,14 +43,47 @@ export function CandidateDetailSidebar({
   decisionMessage,
   onStageDraftChange,
   onStageCommentChange,
-  onAdvanceStage
+  onAdvanceStage,
+  onLicenseUpdated
 }: CandidateDetailSidebarProps) {
   const [activeTab, setActiveTab] = useState<"pipeline" | "documents">("pipeline");
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
+  const [isEditingLicense, setIsEditingLicense] = useState(false);
+  const [licenseClass, setLicenseClass] = useState("");
+  const [licenseExpiry, setLicenseExpiry] = useState("");
+  const [isLicenseSaving, setIsLicenseSaving] = useState(false);
+  const [licenseError, setLicenseError] = useState("");
+
   useEffect(() => {
     setIsHistoryExpanded(false);
+    setIsEditingLicense(false);
+    setLicenseError("");
   }, [selectedCandidate?.id]);
+
+  const handleSaveLicense = async () => {
+    if (!selectedCandidate) return;
+    setIsLicenseSaving(true);
+    setLicenseError("");
+
+    const { error } = await updateCandidateDriverLicense({
+      candidateProfileId: selectedCandidate.candidate_profile_id,
+      driverLicenseClass: licenseClass.trim() || null,
+      driverLicenseExpiry: licenseExpiry || null
+    });
+
+    if (error) {
+      setLicenseError(error);
+      setIsLicenseSaving(false);
+      return;
+    }
+
+    setIsLicenseSaving(false);
+    setIsEditingLicense(false);
+    if (onLicenseUpdated) {
+      await onLicenseUpdated();
+    }
+  };
 
   if (!selectedCaseDetail || !selectedCandidate) {
     return (
@@ -145,14 +180,84 @@ export function CandidateDetailSidebar({
             <span className="approval-chip">
               Owner: {selectedCandidateBoardRow?.owner_name ?? "No asignado"}
             </span>
-            <span className="approval-chip">
-              Licencia:{" "}
-              {selectedCandidate.driver_license_class
-                ? `${selectedCandidate.driver_license_class} · ${formatDateValue(
-                    selectedCandidate.driver_license_expiry
-                  )}`
-                : "No registrada"}
-            </span>
+          </div>
+
+          <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+              <small>Licencia de Conducir</small>
+              {!isEditingLicense ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLicenseClass(selectedCandidate.driver_license_class || "");
+                    setLicenseExpiry(selectedCandidate.driver_license_expiry || "");
+                    setIsEditingLicense(true);
+                    setLicenseError("");
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--accent, #0052cc)",
+                    cursor: "pointer",
+                    fontSize: "0.8rem",
+                    padding: 0,
+                    fontWeight: "medium"
+                  }}
+                >
+                  [Editar]
+                </button>
+              ) : null}
+            </div>
+
+            {!isEditingLicense ? (
+              <strong>
+                {selectedCandidate.driver_license_class
+                  ? `${selectedCandidate.driver_license_class} · Vence: ${formatDateValue(selectedCandidate.driver_license_expiry)}`
+                  : "No registrada"}
+              </strong>
+            ) : (
+              <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                  <TextField
+                    id="license-class-input"
+                    label="Clase de Licencia"
+                    value={licenseClass}
+                    placeholder="Ej: A2, A4, B"
+                    onChange={(e) => setLicenseClass(e.target.value)}
+                  />
+                  <TextField
+                    id="license-expiry-input"
+                    label="Vencimiento"
+                    type="date"
+                    value={licenseExpiry}
+                    onChange={(e) => setLicenseExpiry(e.target.value)}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "end" }}>
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem" }}
+                    onClick={() => setIsEditingLicense(false)}
+                    disabled={isLicenseSaving}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="soft-primary-button approval-button-approve"
+                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem", color: "#fff", background: "var(--accent, #0052cc)" }}
+                    onClick={handleSaveLicense}
+                    disabled={isLicenseSaving}
+                  >
+                    {isLicenseSaving ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+                {licenseError ? (
+                  <p style={{ margin: "0.25rem 0 0", color: "var(--error, #e53e3e)", fontSize: "0.8rem" }}>{licenseError}</p>
+                ) : null}
+              </div>
+            )}
           </div>
 
           {selectedCandidateBoardRow?.is_contract_path_blocked ? (

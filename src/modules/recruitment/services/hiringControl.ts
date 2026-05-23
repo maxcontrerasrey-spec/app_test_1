@@ -463,3 +463,27 @@ export async function reviewCandidateDocument(input: {
 
   return { error: null };
 }
+
+export async function updateCandidateDriverLicense(input: {
+  candidateProfileId: string;
+  driverLicenseClass: string | null;
+  driverLicenseExpiry: string | null;
+}) {
+  if (!supabase) {
+    return { error: "Supabase no está configurado." };
+  }
+
+  const { error } = await supabase
+    .from("candidate_profiles")
+    .update({
+      driver_license_class: input.driverLicenseClass ? input.driverLicenseClass.trim().toUpperCase() : null,
+      driver_license_expiry: input.driverLicenseExpiry || null
+    })
+    .eq("id", input.candidateProfileId);
+
+  if (error) {
+    return { error: error.message || "No fue posible actualizar la licencia." };
+  }
+
+  return { error: null };
+}

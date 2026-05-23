@@ -32,6 +32,7 @@ type HiringCandidatesViewProps = {
   onStageDraftChange: (value: RecruitmentCandidateStage | "") => void;
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: () => Promise<void>;
+  onLicenseUpdated: () => Promise<void>;
 };
 
 export function HiringCandidatesView({
@@ -49,7 +50,8 @@ export function HiringCandidatesView({
   onCandidateAdded,
   onStageDraftChange,
   onStageCommentChange,
-  onAdvanceStage
+  onAdvanceStage,
+  onLicenseUpdated
 }: HiringCandidatesViewProps) {
   const [showCandidateForm, setShowCandidateForm] = useState(false);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
@@ -158,9 +160,9 @@ export function HiringCandidatesView({
             <table className="tracking-table">
               <thead>
                 <tr>
-                  <th>Candidato</th>
-                  <th>Folio / Caso</th>
-                  <th>Etapa</th>
+                   <th>Candidato</th>
+                   <th>Caso</th>
+                   <th>Etapa</th>
                   <th>Contrato</th>
                   <th>Participaciones activas</th>
                   <th>Ruta contractual</th>
@@ -186,9 +188,9 @@ export function HiringCandidatesView({
                           {formatRut(candidate.national_id)}
                         </div>
                       </td>
-                      <td>
-                        {(candidate.folio ?? "Sin folio")} · {candidate.case_code}
-                      </td>
+                       <td>
+                         {candidate.case_code}
+                       </td>
                       <td>
                         <span
                           className={`tracking-status-pill ${getStageChipClass(
@@ -229,6 +231,7 @@ export function HiringCandidatesView({
           onStageDraftChange={onStageDraftChange}
           onStageCommentChange={onStageCommentChange}
           onAdvanceStage={onAdvanceStage}
+          onLicenseUpdated={onLicenseUpdated}
         />
       </div>
     </>
