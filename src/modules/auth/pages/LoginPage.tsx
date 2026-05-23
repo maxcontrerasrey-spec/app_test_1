@@ -131,10 +131,7 @@ export function LoginPage() {
             </li>
           </ul>
 
-          <p className="login-brand-footer">
-            Somos especialistas en faenas mineras. Conectamos colaboradores entre V y
-            II region.
-          </p>
+
         </div>
 
         <div className="login-form-panel">

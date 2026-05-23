@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SelectField, TextField } from "../../../shared/ui";
 import {
   formatRut,
@@ -44,6 +44,11 @@ export function CandidateDetailSidebar({
   onAdvanceStage
 }: CandidateDetailSidebarProps) {
   const [activeTab, setActiveTab] = useState<"pipeline" | "documents">("pipeline");
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+
+  useEffect(() => {
+    setIsHistoryExpanded(false);
+  }, [selectedCandidate?.id]);
 
   if (!selectedCaseDetail || !selectedCandidate) {
     return (
@@ -99,8 +104,12 @@ export function CandidateDetailSidebar({
               <strong>{formatRut(selectedCandidate.national_id)}</strong>
             </div>
             <div>
-              <small>Correo / Teléfono</small>
-              <strong>{selectedCandidate.email ?? selectedCandidate.phone ?? "No disponible"}</strong>
+              <small>Correo</small>
+              <strong>{selectedCandidate.email || "No disponible"}</strong>
+            </div>
+            <div>
+              <small>Teléfono</small>
+              <strong>{selectedCandidate.phone || "No disponible"}</strong>
             </div>
             <div>
               <small>Folio activo</small>
@@ -191,32 +200,71 @@ export function CandidateDetailSidebar({
           </div>
 
           <div className="approval-detail-note" style={{ marginTop: "1.5rem" }}>
-            <small>Historial de etapa</small>
-            <strong>
-              {selectedCandidate.stage_history.length > 0
-                ? selectedCandidate.stage_history
-                    .map(
-                      (entry) =>
-                        `${toRecruitmentCandidateStageLabel(entry.to_stage)} · ${formatDateTimeValue(entry.created_at)}${entry.comment ? ` · "${entry.comment}"` : ""}`
-                    )
-                    .join(" | ")
-                : "Sin historial adicional"}
-            </strong>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <small>Historial de etapa</small>
+              <button
+                type="button"
+                onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--accent, #0052cc)",
+                  cursor: "pointer",
+                  fontSize: "0.8rem",
+                  padding: 0,
+                  fontWeight: "medium"
+                }}
+              >
+                {isHistoryExpanded ? "Contraer ▲" : `Ver historial (${selectedCandidate.stage_history.length}) ▼`}
+              </button>
+            </div>
+
+            {isHistoryExpanded ? (
+              <div style={{ marginTop: "0.5rem", maxHeight: "150px", overflowY: "auto" }}>
+                {selectedCandidate.stage_history.length > 0 ? (
+                  selectedCandidate.stage_history.map((entry, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        padding: "0.35rem 0",
+                        borderBottom: index < selectedCandidate.stage_history.length - 1 ? "1px solid #f0f0f0" : "none",
+                        fontSize: "0.85rem",
+                        lineHeight: "1.3"
+                      }}
+                    >
+                      <strong style={{ display: "block", color: "#333" }}>
+                        {toRecruitmentCandidateStageLabel(entry.to_stage)}
+                      </strong>
+                      <span style={{ fontSize: "0.78rem", color: "#666" }}>
+                        {formatDateTimeValue(entry.created_at)}
+                      </span>
+                      {entry.comment ? (
+                        <p style={{ margin: "0.25rem 0 0", fontSize: "0.82rem", color: "#555", fontStyle: "italic" }}>
+                          "{entry.comment}"
+                        </p>
+                      ) : null}
+                    </div>
+                  ))
+                ) : (
+                  <span style={{ fontSize: "0.85rem", color: "#777" }}>Sin historial adicional</span>
+                )}
+              </div>
+            ) : null}
           </div>
 
           <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
-            <small>Auditoría del caso</small>
-            <strong>
-              {selectedCaseDetail.audit.length > 0
-                ? selectedCaseDetail.audit
-                    .slice(0, 5)
-                    .map(
-                      (entry) =>
-                        `${entry.action_type} · ${entry.actor_name ?? "Usuario"} · ${formatDateTimeValue(entry.created_at)}`
-                    )
-                    .join(" | ")
-                : "Sin eventos registrados"}
-            </strong>
+            <small style={{ display: "block", marginBottom: "0.35rem" }}>Auditoría del caso (últimos 5 eventos)</small>
+            <div style={{ fontSize: "0.82rem", color: "#555" }}>
+              {selectedCaseDetail.audit.length > 0 ? (
+                selectedCaseDetail.audit.slice(0, 5).map((entry, index) => (
+                  <div key={index} style={{ padding: "0.15rem 0" }}>
+                    • {entry.action_type} · {entry.actor_name ?? "Usuario"} · {formatDateTimeValue(entry.created_at)}
+                  </div>
+                ))
+              ) : (
+                <span>Sin eventos registrados</span>
+              )}
+            </div>
           </div>
 
           {decisionMessage ? <p className="form-status" style={{ marginTop: "1rem" }}>{decisionMessage}</p> : null}

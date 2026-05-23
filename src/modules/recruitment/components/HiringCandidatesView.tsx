@@ -105,10 +105,11 @@ export function HiringCandidatesView({
       <div className="tracking-toolbar">
         <div className="tracking-toolbar-copy">
           <h3>Control de candidatos</h3>
-          <span className="tracking-filter-caption">
-            {errorMessage ||
-              "Consola transversal de candidatos. Un mismo candidato puede participar en varios folios, pero solo uno puede sostener la ruta contractual activa."}
-          </span>
+          {errorMessage ? (
+            <span className="tracking-filter-caption">
+              {errorMessage}
+            </span>
+          ) : null}
         </div>
         <div className="tracking-filters tracking-filters-inline">
           <button
@@ -130,14 +131,6 @@ export function HiringCandidatesView({
         </div>
       </div>
 
-      {showCandidateForm ? (
-        <CandidateIntakeForm
-          initialCaseId={selectedCaseDetail?.case.id ?? candidateIntakeCases[0]?.id ?? ""}
-          candidateIntakeCases={candidateIntakeCases}
-          onCandidateAdded={onCandidateAdded}
-        />
-      ) : null}
-
       <div className="approval-chip-row">
         {candidateStageFilterOptions.map((option) => (
           <button
@@ -153,6 +146,13 @@ export function HiringCandidatesView({
 
       <div className="control-layout">
         <div className="tracking-table-wrap">
+          {showCandidateForm ? (
+            <CandidateIntakeForm
+              initialCaseId={selectedCaseDetail?.case.id ?? candidateIntakeCases[0]?.id ?? ""}
+              candidateIntakeCases={candidateIntakeCases}
+              onCandidateAdded={onCandidateAdded}
+            />
+          ) : null}
           <div className="tracking-table-scroll">
             <table className="tracking-table">
               <thead>

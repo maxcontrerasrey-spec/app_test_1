@@ -65,6 +65,52 @@ export function AppShell() {
   const [pinnedModule, setPinnedModule] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const navMenuRef = useRef<HTMLDivElement | null>(null);
+  const timeoutRef = useRef<any>(null);
+
+  const handleMouseEnterModule = (label: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setHoveredModule(label);
+  };
+
+  const handleMouseLeaveModule = (label: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      if (pinnedModule !== label) {
+        setHoveredModule((current) => (current === label ? null : current));
+      }
+    }, 150);
+  };
+
+  const handleMouseEnterMega = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+
+  const handleMouseLeaveMega = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      if (!pinnedModule) {
+        setHoveredModule(null);
+      }
+    }, 150);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const visibleModules = useMemo(
     () =>
@@ -189,14 +235,8 @@ export function AppShell() {
                   <div
                     key={module.label}
                     className="top-nav-group"
-                    onMouseEnter={() => setHoveredModule(module.label)}
-                    onMouseLeave={() => {
-                      if (pinnedModule !== module.label) {
-                        setHoveredModule((current) =>
-                          current === module.label ? null : current
-                        );
-                      }
-                    }}
+                    onMouseEnter={() => handleMouseEnterModule(module.label)}
+                    onMouseLeave={() => handleMouseLeaveModule(module.label)}
                   >
                     <button
                       type="button"
@@ -272,7 +312,8 @@ export function AppShell() {
         {openModule?.items?.length ? (
           <div
             className="top-nav-mega-shell"
-            onMouseLeave={() => !pinnedModule && setHoveredModule(null)}
+            onMouseEnter={handleMouseEnterMega}
+            onMouseLeave={handleMouseLeaveMega}
           >
             <div className="top-nav-mega-panel">
               <div className="top-nav-mega-grid">
