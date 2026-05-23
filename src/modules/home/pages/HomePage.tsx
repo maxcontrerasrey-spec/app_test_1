@@ -3,6 +3,13 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/context/AuthContext";
 import { supabase } from "../../../shared/lib/supabase";
 import {
+  formatRequestDate,
+  formatDaysSince,
+  formatCurrencyValue,
+  formatBooleanLabel,
+  formatPersonLabel,
+} from "../../../shared/lib/format";
+import {
   decideHiringApproval,
   toHiringStatusLabel,
   type HiringWorkflowStatus
@@ -64,73 +71,6 @@ type PendingApprovalRow = {
       }[]
     | null;
 };
-
-function formatRequestDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(date);
-}
-
-function formatDaysSince(value: string) {
-  const createdAt = new Date(value);
-  if (Number.isNaN(createdAt.getTime())) {
-    return "No disponible";
-  }
-
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const startOfCreatedDay = new Date(createdAt);
-  startOfCreatedDay.setHours(0, 0, 0, 0);
-
-  const diffInMs = startOfToday.getTime() - startOfCreatedDay.getTime();
-  const diffInDays = Math.max(0, Math.floor(diffInMs / 86_400_000));
-
-  if (diffInDays === 0) return "Hoy";
-  if (diffInDays === 1) return "1 dia";
-  return `${diffInDays} dias`;
-}
-
-function formatCurrencyValue(value: number | null | undefined) {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return "No disponible";
-  }
-
-  return new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0
-  }).format(value);
-}
-
-function formatBooleanLabel(value: boolean | null | undefined) {
-  if (value === true) return "Si";
-  if (value === false) return "No";
-  return "No disponible";
-}
-
-function formatPersonLabel(value: string | null | undefined) {
-  if (!value?.trim()) {
-    return "No disponible";
-  }
-
-  const normalized = value.trim();
-  if (!normalized.includes(".") && !normalized.includes("_") && !normalized.includes("-")) {
-    return normalized;
-  }
-
-  return normalized
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
-    .join(" ");
-}
 
 export function HomePage() {
   const { user, appRoles, isSuperAdmin } = useAuth();

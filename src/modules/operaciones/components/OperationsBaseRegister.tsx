@@ -22,16 +22,6 @@ interface OperationsBaseRegisterProps {
   };
   allServicesComplete: boolean;
   handlePlanSubmit: () => Promise<void>;
-  isPasswordCardOpen: boolean;
-  setIsPasswordCardOpen: (value: boolean) => void;
-  newPassword: string;
-  setNewPassword: (value: string) => void;
-  confirmPassword: string;
-  setConfirmPassword: (value: string) => void;
-  passwordMessage: string;
-  setPasswordMessage: (value: string) => void;
-  passwordLoading: boolean;
-  handlePasswordUpdate: (event: React.FormEvent) => Promise<void>;
   getDraft: (serviceId: number) => ServiceDraft;
   updateDraft: (serviceId: number, patch: Partial<ServiceDraft>) => void;
   getDriverById: (driverId: string) => Driver | null;
@@ -73,16 +63,6 @@ export function OperationsBaseRegister({
   submitState,
   allServicesComplete,
   handlePlanSubmit,
-  isPasswordCardOpen,
-  setIsPasswordCardOpen,
-  newPassword,
-  setNewPassword,
-  confirmPassword,
-  setConfirmPassword,
-  passwordMessage,
-  setPasswordMessage,
-  passwordLoading,
-  handlePasswordUpdate,
   getDraft,
   updateDraft,
   getDriverById,
@@ -184,47 +164,6 @@ export function OperationsBaseRegister({
       </section>
 
       <section className="operation-workspace">
-        {isPasswordCardOpen ? (
-          <article className="reference-card">
-            <div className="section-head">
-              <div>
-                <p className="eyebrow">Cuenta</p>
-                <h3>Cambiar contraseña</h3>
-              </div>
-              <button
-                type="button"
-                className="close-icon-button"
-                aria-label="Cerrar cambio de contraseña"
-                onClick={() => {
-                  setIsPasswordCardOpen(false);
-                  setPasswordMessage("");
-                  setNewPassword("");
-                  setConfirmPassword("");
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <form className="assignment-grid" onSubmit={handlePasswordUpdate}>
-              <label>
-                <span>Nueva contraseña</span>
-                <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
-              </label>
-              <label>
-                <span>Repite la contraseña</span>
-                <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
-              </label>
-              <div className="account-actions">
-                <button type="submit" className="primary-button" disabled={passwordLoading}>
-                  {passwordLoading ? "Actualizando..." : "Actualizar contraseña"}
-                </button>
-              </div>
-              <p className="account-message">{passwordMessage || "Puedes cambiar tu contraseña sin salir de la plataforma."}</p>
-            </form>
-          </article>
-        ) : null}
-
         {eligibleServices.length === 0 ? (
           <article className="service-module service-module--empty">
             <p className="helper-copy">Selecciona contrato, fecha y turno para habilitar servicios operacionales.</p>

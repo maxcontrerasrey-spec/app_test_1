@@ -337,13 +337,7 @@ export function OperacionesDashboard() {
   const [serviceDrafts, setServiceDrafts] = useState<Record<number, ServiceDraft>>({});
   const [expandedServiceId, setExpandedServiceId] = useState<number | null>(null);
 
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordMessage, setPasswordMessage] = useState("");
-  const [passwordLoading, setPasswordLoading] = useState(false);
-
   const [userContracts, setUserContracts] = useState<string[]>([]);
-  const [isPasswordCardOpen, setIsPasswordCardOpen] = useState(false);
 
   const [openDriverServiceId, setOpenDriverServiceId] = useState<number | null>(null);
   const [driversData, setDriversData] = useState<Driver[]>(SAMPLE_DRIVERS);
@@ -784,42 +778,7 @@ export function OperacionesDashboard() {
     });
   }
 
-  async function handlePasswordUpdate(event: React.FormEvent) {
-    event.preventDefault();
-    setPasswordMessage("");
 
-    if (!newPassword || !confirmPassword) {
-      setPasswordMessage("Completa ambos campos de contraseña.");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordMessage("Las contraseñas no coinciden.");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setPasswordMessage("La nueva contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
-
-    if (!supabase) {
-      setPasswordMessage("Supabase no está configurado.");
-      return;
-    }
-
-    setPasswordLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-    if (error) {
-      setPasswordMessage("No fue posible actualizar la contraseña.");
-    } else {
-      setPasswordMessage("Contraseña actualizada correctamente.");
-      setNewPassword("");
-      setConfirmPassword("");
-    }
-    setPasswordLoading(false);
-  }
 
   async function handleExportSearch() {
     if (!exportDateFrom || !exportDateTo || exportDateFrom > exportDateTo) {
@@ -958,16 +917,7 @@ export function OperacionesDashboard() {
             submitState={submitState}
             allServicesComplete={allServicesComplete}
             handlePlanSubmit={handlePlanSubmit}
-            isPasswordCardOpen={isPasswordCardOpen}
-            setIsPasswordCardOpen={setIsPasswordCardOpen}
-            newPassword={newPassword}
-            setNewPassword={setNewPassword}
-            confirmPassword={confirmPassword}
-            setConfirmPassword={setConfirmPassword}
-            passwordMessage={passwordMessage}
-            setPasswordMessage={setPasswordMessage}
-            passwordLoading={passwordLoading}
-            handlePasswordUpdate={handlePasswordUpdate}
+
             getDraft={getDraft}
             updateDraft={updateDraft}
             getDriverById={getDriverById}
