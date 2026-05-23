@@ -1818,6 +1818,45 @@ textarea {
   flex: 0 0 auto;
 }
 
+.candidate-count-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.candidate-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.candidate-circle-neutral {
+  background: #e0f2fe; /* Light blue / water */
+  color: #0369a1;
+}
+
+.candidate-circle-success {
+  background: #dcfce7; /* Light green */
+  color: #15803d;
+}
+
+.candidate-circle-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-right: 0.4rem;
+}
+
+.candidate-circle-label:last-child {
+  margin-right: 0;
+}
+
 /* Expandable table rows */
 .tracking-table-row-clickable {
   cursor: pointer;

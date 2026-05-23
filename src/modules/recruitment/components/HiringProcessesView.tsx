@@ -215,7 +215,16 @@ export function HiringProcessesView({
                           {caseRow.filled_vacancies}/{caseRow.requested_vacancies}
                         </td>
                         <td>
-                          {caseRow.candidate_count} · listos {caseRow.ready_candidates}
+                          <div className="candidate-count-indicator">
+                            <span className="candidate-circle candidate-circle-neutral" title="Candidatos activos en el proceso">
+                              {caseRow.candidate_count}
+                            </span>
+                            <span className="candidate-circle-label">Activos</span>
+                            <span className="candidate-circle candidate-circle-success" title="Candidatos listos para contratar">
+                              {caseRow.ready_candidates}
+                            </span>
+                            <span className="candidate-circle-label">Listos</span>
+                          </div>
                         </td>
                         <td>{caseRow.requester_name ?? "No disponible"}</td>
                       </tr>
