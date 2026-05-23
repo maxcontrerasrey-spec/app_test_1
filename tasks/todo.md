@@ -1,5 +1,25 @@
 # Plan de trabajo
 
+## Refactorización y Tipado de Operaciones (Alineación de Arquitectura ERP)
+
+- [x] Refactorizar `src/modules/operaciones/lib/service-entry.ts` para agregar interfaces y tipado estricto
+- [x] Refactorizar `src/modules/operaciones/services/operacionesApi.ts` para tipar llamadas Supabase y parámetros
+- [x] Refactorizar `src/modules/operaciones/data/services-data.ts` para tipar el catálogo estático
+- [x] Implementar componentes modulares: `OperationsSummary.tsx`, `OperationsBaseRegister.tsx`, `OperationsExport.tsx`, `OperationsSpecialRegister.tsx`
+- [x] Refactorizar `src/modules/operaciones/pages/OperacionesDashboard.tsx` para delegar visualización a los submódulos, limpiar código muerto y eliminar `@ts-nocheck`
+- [x] Refactorizar `src/modules/certificates/pages/CertificatesPage.tsx` para importar y reutilizar las utilidades de fecha globales
+- [x] Resolver advertencias de TypeScript (`TS18047`) de nulabilidad de `supabase` mediante constantes locales y estrechamiento de tipo
+- [x] Validar compilación (`npx tsc -b`) y construcción productiva (`npm run build`) del proyecto con éxito
+
+## Resultado de Refactorización y Tipado de Operaciones (Alineación de Arquitectura ERP)
+
+- **Código Limpio y Libre de `@ts-nocheck`**: Se removieron todas las directivas que omitían el compilador TypeScript en el módulo de operaciones.
+- **Modularización del Dashboard**: Se desintegró el archivo monolítico `OperacionesDashboard.tsx` creando submódulos especializados en `components/`. Esto disminuyó a la mitad su tamaño y separó claramente las responsabilidades visuales.
+- **Tipado Estricto**: Definición e integración de las interfaces `OperationsServiceRecord`, `ServiceEntryPayload`, `CleanedServiceEntryPayload` y `ServiceEntryValidationResult`.
+- **Eliminación de Redundancia de Fechas**: Ambos módulos (`operaciones` y `certificates`) ahora consumen directamente las utilidades de fecha de `src/shared/lib/date.ts`.
+- **Resolución de Nulidad de Supabase**: Se aplicaron asignaciones locales e inmutables de `const client = supabase;` previniendo la pérdida de la validación de nulidad dentro de closures asíncronos y query-builders.
+- **Construcción Exitosa**: El proyecto compila y construye de forma óptima sin advertencias ni errores.
+
 ## Restauración de RPC y políticas de Control de Candidatos
 
 - [x] Diagnosticar el fallo de `get_recruitment_case_detail(...)` reportado como `PGRST202`

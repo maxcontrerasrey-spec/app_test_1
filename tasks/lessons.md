@@ -87,4 +87,9 @@
 - Antes de hacer cambios, siempre registrar el trabajo completo en `todo.md` (tareas + resultado) y en `lessons.md` (aprendizajes), y empujar a `main`. No dejar cambios funcionales solo en local.
 - En tablas operacionales con muchos registros, no precargar detalles de todos los casos al montar el componente. Usar carga bajo demanda (lazy loading) al expandir la fila y cachear el resultado en un `Record<string, Detail>` local. Esto evita consultas masivas al backend y mantiene el dashboard ágil.
 - Para filas expandibles tipo acordeón en tablas, usar un `<Fragment>` (`<>`) que contenga el `<tr>` principal y el `<tr>` de detalle condicional con `colSpan` completo. Esto mantiene la semántica de tabla sin romper el layout.
+- Para resolver advertencias de TypeScript (`TS18047`) donde `supabase` es posiblemente `null` dentro de closures o callbacks, se debe definir una copia en una constante local (`const client = supabase;`) y validar su nulabilidad. Como la constante es inmutable, el estrechamiento de tipo se conserva dentro de los callbacks anidados.
+- Al normalizar datos asíncronos para actualizar el estado, se debe tipar la constante de mapeo directamente con la interfaz extendida que requiere el estado (ej. `OperationsServiceRecord[]`), aplicando transformaciones explícitas de tipos (como `Number(value)`) para evitar errores de asignación.
+- Evitar la duplicación de funciones de fecha y formato en diferentes páginas. Centralizar estas utilidades en un solo punto (`src/shared/lib/date.ts`) y reutilizarlas a lo largo de todo el proyecto.
+- Modularizar los dashboards monolíticos grandes dividiéndolos en subcomponentes ubicados en una carpeta local `components/` dentro del módulo. Esto mantiene el shell principal enfocado y legible.
+
 
