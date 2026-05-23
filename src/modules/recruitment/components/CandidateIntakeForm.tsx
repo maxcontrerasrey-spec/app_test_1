@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   addCandidateToRecruitmentCase,
   formatRut,
-  type RecruitmentCaseListRow
+  normalizeRut,
+  findCandidateProfileByRut,
+  toRecruitmentCandidateStageLabel,
+  type RecruitmentCaseListRow,
+  type RecruitmentCaseDetail
 } from "../services/hiringControl";
 import { validateRut } from "../../../shared/lib/rut";
 import { SelectField, TextField } from "../../../shared/ui";
@@ -10,12 +14,14 @@ import { SelectField, TextField } from "../../../shared/ui";
 type CandidateIntakeFormProps = {
   initialCaseId: string;
   candidateIntakeCases: RecruitmentCaseListRow[];
+  selectedCaseDetail: RecruitmentCaseDetail | null;
   onCandidateAdded: (caseId: string, candidateId: string) => Promise<void>;
 };
 
 export function CandidateIntakeForm({
   initialCaseId,
   candidateIntakeCases,
+  selectedCaseDetail,
   onCandidateAdded
 }: CandidateIntakeFormProps) {
   const [candidateForm, setCandidateForm] = useState({
@@ -29,6 +35,11 @@ export function CandidateIntakeForm({
   const [candidateFormError, setCandidateFormError] = useState("");
   const [candidateFormStatus, setCandidateFormStatus] = useState("");
   const [isCandidateSaving, setIsCandidateSaving] = useState(false);
+
+  // States for candidate lookup
+  const [isSearchingCandidate, setIsSearchingCandidate] = useState(false);
+  const [foundCandidateProfile, setFoundCandidateProfile] = useState<any>(null);
+  const [lastSearchedRut, setLastSearchedRut] = useState("");
 
   useEffect(() => {
     if (!candidateForm.caseId && initialCaseId) {
@@ -50,6 +61,80 @@ export function CandidateIntakeForm({
   const shouldShowCandidateRutError =
     candidateRutTouched && Boolean(candidateForm.nationalId) && !isCandidateRutValid;
 
+  // Perform candidate lookup in background when RUT is valid
+  useEffect(() => {
+    const rut = candidateForm.nationalId;
+    if (validateRut(rut)) {
+      const normalized = normalizeRut(rut);
+      const lastNormalized = normalizeRut(lastSearchedRut);
+
+      if (normalized && normalized !== lastNormalized) {
+        setLastSearchedRut(rut);
+        void performCandidateLookup(rut);
+      }
+    } else {
+      // If the RUT is cleared or becomes invalid, reset lookup states
+      if (!rut && foundCandidateProfile) {
+        setFoundCandidateProfile(null);
+        setLastSearchedRut("");
+        setCandidateForm((current) => ({
+          ...current,
+          fullName: "",
+          email: "",
+          phone: ""
+        }));
+        setCandidateFormStatus("");
+      }
+    }
+  }, [candidateForm.nationalId, lastSearchedRut, foundCandidateProfile]);
+
+  const performCandidateLookup = async (rut: string) => {
+    setIsSearchingCandidate(true);
+    setCandidateFormError("");
+    setCandidateFormStatus("🔍 Buscando candidato en el sistema...");
+
+    const { data, error } = await findCandidateProfileByRut(rut);
+
+    setIsSearchingCandidate(false);
+
+    if (error) {
+      console.error("Lookup error:", error);
+      setCandidateFormStatus("");
+      return;
+    }
+
+    if (data) {
+      setFoundCandidateProfile(data);
+      setCandidateForm((current) => ({
+        ...current,
+        fullName: data.full_name,
+        email: data.email || "",
+        phone: data.phone || ""
+      }));
+      setCandidateFormStatus("✓ Candidato registrado en el sistema. Datos autocompletados.");
+    } else {
+      setFoundCandidateProfile(null);
+      setCandidateFormStatus("");
+    }
+  };
+
+  // Check if candidate is already in the selected case
+  const candidateInSelectedCase = useMemo(() => {
+    if (!candidateForm.nationalId || !validateRut(candidateForm.nationalId)) {
+      return null;
+    }
+    if (!selectedCaseDetail || selectedCaseDetail.case.id !== candidateForm.caseId) {
+      return null;
+    }
+
+    const normalizedInputRut = normalizeRut(candidateForm.nationalId);
+    const existing = selectedCaseDetail.candidates.find(
+      (c) => normalizeRut(c.national_id) === normalizedInputRut
+    );
+
+    return existing || null;
+  }, [candidateForm.nationalId, candidateForm.caseId, selectedCaseDetail]);
+
   const handleAddCandidate = async () => {
     if (!candidateForm.caseId) {
       setCandidateRutTouched(true);
@@ -68,6 +153,12 @@ export function CandidateIntakeForm({
     if (!validateRut(candidateForm.nationalId)) {
       setCandidateRutTouched(true);
       setCandidateFormError("El RUT ingresado no es válido.");
+      setCandidateFormStatus("");
+      return;
+    }
+
+    if (candidateInSelectedCase) {
+      setCandidateFormError("Este candidato ya participa en el caso seleccionado.");
       setCandidateFormStatus("");
       return;
     }
@@ -100,6 +191,8 @@ export function CandidateIntakeForm({
       email: "",
       phone: ""
     });
+    setFoundCandidateProfile(null);
+    setLastSearchedRut("");
     setCandidateRutTouched(false);
     setCandidateFormStatus("Candidato registrado en el caso seleccionado.");
     setIsCandidateSaving(false);
@@ -210,22 +303,44 @@ export function CandidateIntakeForm({
           }
         />
 
+        {candidateInSelectedCase ? (
+          <div className="control-span-full" style={{ margin: "0.25rem 0" }}>
+            <p className="form-status form-status-error" style={{ fontSize: "0.88rem", fontWeight: 500 }}>
+              ⚠️ Este candidato ya participa en el caso seleccionado en la etapa "
+              {toRecruitmentCandidateStageLabel(candidateInSelectedCase.stage_code)}".
+            </p>
+          </div>
+        ) : null}
+
         <div className="control-span-full">
           <button
             type="button"
             className="soft-primary-button approval-button-approve"
-            disabled={isCandidateSaving}
+            disabled={isCandidateSaving || isSearchingCandidate || Boolean(candidateInSelectedCase)}
             onClick={() => void handleAddCandidate()}
           >
-            Registrar candidato en el caso
+            {isCandidateSaving ? "Registrando..." : "Registrar candidato en el caso"}
           </button>
         </div>
       </div>
 
-      {candidateFormError ? (
-        <p className="form-status form-status-error">{candidateFormError}</p>
+      {candidateFormError && !candidateInSelectedCase ? (
+        <p className="form-status form-status-error" style={{ marginTop: "0.5rem" }}>
+          {candidateFormError}
+        </p>
       ) : null}
-      {candidateFormStatus ? <p className="form-status">{candidateFormStatus}</p> : null}
+      {candidateFormStatus ? (
+        <p
+          className="form-status"
+          style={{
+            marginTop: "0.5rem",
+            color: foundCandidateProfile ? "#027a48" : isSearchingCandidate ? "var(--accent)" : "var(--text-muted)",
+            fontWeight: foundCandidateProfile ? 500 : "normal"
+          }}
+        >
+          {candidateFormStatus}
+        </p>
+      ) : null}
     </div>
   );
 }

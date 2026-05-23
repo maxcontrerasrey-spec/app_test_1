@@ -153,6 +153,7 @@ export function HiringCandidatesView({
             <CandidateIntakeForm
               initialCaseId={selectedCaseDetail?.case.id ?? candidateIntakeCases[0]?.id ?? ""}
               candidateIntakeCases={candidateIntakeCases}
+              selectedCaseDetail={selectedCaseDetail}
               onCandidateAdded={onCandidateAdded}
             />
           ) : null}

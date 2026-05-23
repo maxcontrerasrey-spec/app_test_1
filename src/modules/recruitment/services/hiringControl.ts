@@ -485,3 +485,39 @@ export async function updateCandidateDriverLicense(input: {
 
   return { error: null };
 }
+
+export interface CandidateProfileSearchResult {
+  id: string;
+  national_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+export async function findCandidateProfileByRut(rut: string): Promise<{
+  data: CandidateProfileSearchResult | null;
+  error: string | null;
+}> {
+  if (!supabase) {
+    return { data: null, error: "Supabase no está configurado." };
+  }
+
+  const normalizedNationalId = normalizeRut(rut);
+
+  const { data, error } = await supabase.rpc("find_candidate_profile_by_rut", {
+    p_national_id: normalizedNationalId
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: formatRpcError(error) || "No fue posible buscar el candidato."
+    };
+  }
+
+  const results = data as unknown as CandidateProfileSearchResult[];
+  return {
+    data: (results && results.length > 0 ? results[0] : null),
+    error: null
+  };
+}
