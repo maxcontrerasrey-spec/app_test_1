@@ -103,6 +103,8 @@
 - **Buscador/Lookup de Perfiles bajo Zero Trust:** Para buscar información en tablas restringidas sin otorgar privilegios generales de lectura (`SELECT`) al cliente, se debe diseñar una función RPC `SECURITY DEFINER` que limite la consulta a una coincidencia exacta de campo (por ejemplo, el RUT exacto del candidato) y que valide estrictamente los roles del usuario ejecutor en base de datos.
 - **Reactivación Lógica de Estados Terminales:** Las etapas que marcan el fin del ciclo de un candidato (como `rejected` o `withdrawn`) deben contemplar vías de retorno controladas en la máquina de estados del frontend. Permitir la transición hacia atrás (por ejemplo, devolver al candidato a `"contacted"` o `"screening"`) evita que los candidatos queden atrapados permanentemente en el historial de un caso ante errores operacionales o rectificaciones.
 - **Segmentación de Vistas Mediante Agrupamientos del Filtro:** Cuando los candidatos inactivos o descartados empiezan a saturar la consola de trabajo diario, se debe estructurar el filtro de estados agregando opciones sintéticas de grupo (como `"Activos en Proceso"` y `"Descartados"`). Inicializar el filtro en el grupo activo limpia la vista principal de manera nativa sin agregar menús adicionales.
+- **Simplificación de Cabeceras (Hero-Panels):** Eliminar títulos y descripciones estáticas secundarias de la parte superior de las pantallas operacionales despeja espacio útil vertical y refuerza la estética SaaS minimalista, delegando la identidad del módulo a la navegación principal y al título de las secciones de contenido.
+
 
 
 
