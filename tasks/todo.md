@@ -1180,3 +1180,17 @@
   - `npx tsc -b`: correcto
   - `npm run build`: correcto
 
+## Sincronización de Procesos y Conteo de Candidatos Activos (Sprint de Pulido - Fase 3)
+
+- [x] Corregir la discrepancia del conteo de "Activos" en la tabla de procesos de contratación para que solo cuente los candidatos en fases de evaluación activas (excluyendo `rejected`, `withdrawn`, `ready_for_hire` y `hired`).
+- [x] Crear e integrar la migración SQL `20260523_000023_fix_dashboard_candidate_counts.sql` que actualiza `get_recruitment_control_dashboard_v2()` con el conteo depurado.
+- [x] Documentar el funcionamiento del pipeline y de las etapas en el manual del usuario/lecciones para clarificar las diferencias entre los filtros de Casos y los estados de Candidatos.
+
+## Resultado de Sincronización de Procesos y Conteo de Candidatos Activos
+
+- **Filtro de Conteos Activos en el Dashboard**: Se modificó la consulta lateral de conteo dentro de `get_recruitment_control_dashboard_v2()` en la migración [20260523_000023_fix_dashboard_candidate_counts.sql](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260523_000023_fix_dashboard_candidate_counts.sql). Ahora la columna azul de "Activos" cuenta únicamente a los candidatos que están en proceso de selección real, mientras que los candidatos que ya fueron aprobados y puestos "Listos para contratar" o "Contratados" se excluyen para evitar conteos duplicados o confusos, y los descartados/retirados ya no inflan el contador activo del caso.
+- **Validación ejecutada**:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto
+
+
