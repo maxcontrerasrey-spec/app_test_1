@@ -111,6 +111,7 @@ export type RecruitmentCandidateControlRow = {
   contract_locked_folio: string | null;
   contract_locked_stage_code: RecruitmentCandidateStage | null;
   is_contract_path_blocked: boolean;
+  interview_notes: string | null;
 };
 
 export type RecruitmentCaseAssignment = {
@@ -150,6 +151,7 @@ export type RecruitmentCaseCandidateRow = {
   hired_at: string | null;
   created_at: string;
   stage_history: RecruitmentCaseCandidateHistoryRow[];
+  interview_notes: string | null;
 };
 
 export type RecruitmentCaseAuditRow = {
@@ -485,6 +487,27 @@ export async function updateCandidateDriverLicense(input: {
 
   return { error: null };
 }
+
+export async function updateCandidateInterviewNotes(input: {
+  caseCandidateId: string;
+  notes: string | null;
+}) {
+  if (!supabase) {
+    return { error: "Supabase no está configurado." };
+  }
+
+  const { error } = await supabase.rpc("update_candidate_interview_notes", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_notes: input.notes ? input.notes.trim() : null
+  });
+
+  if (error) {
+    return { error: error.message || "No fue posible actualizar las notas de entrevista." };
+  }
+
+  return { error: null };
+}
+
 
 export interface CandidateProfileSearchResult {
   id: string;

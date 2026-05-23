@@ -33,6 +33,7 @@ type HiringCandidatesViewProps = {
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: () => Promise<void>;
   onLicenseUpdated: () => Promise<void>;
+  onInterviewNotesUpdated: () => Promise<void>;
 };
 
 export function HiringCandidatesView({
@@ -51,7 +52,8 @@ export function HiringCandidatesView({
   onStageDraftChange,
   onStageCommentChange,
   onAdvanceStage,
-  onLicenseUpdated
+  onLicenseUpdated,
+  onInterviewNotesUpdated
 }: HiringCandidatesViewProps) {
   const [showCandidateForm, setShowCandidateForm] = useState(false);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
@@ -241,6 +243,7 @@ export function HiringCandidatesView({
           onStageCommentChange={onStageCommentChange}
           onAdvanceStage={onAdvanceStage}
           onLicenseUpdated={onLicenseUpdated}
+          onInterviewNotesUpdated={onInterviewNotesUpdated}
         />
       </div>
     </>

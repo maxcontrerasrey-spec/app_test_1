@@ -266,6 +266,7 @@ export function HiringStatusPage() {
             onStageCommentChange={setStageComment}
             onAdvanceStage={handleAdvanceStage}
             onLicenseUpdated={handleLicenseUpdated}
+            onInterviewNotesUpdated={handleLicenseUpdated}
           />
         )}
       </section>

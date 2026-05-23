@@ -1,5 +1,19 @@
 # Plan de trabajo
 
+## Resumen de Entrevista para Candidatos (Puntos Clave)
+
+- [x] Crear la migración SQL `20260523_000024_add_interview_notes.sql` para añadir la columna `interview_notes` en `recruitment_case_candidates` y la RPC segura de actualización.
+- [x] Modificar el tipo en `hiringControl.ts` y exportar la función `updateCandidateInterviewNotes`.
+- [x] Integrar el control visual de "Puntos Clave de la Entrevista" en el sidebar del candidato (`CandidateDetailSidebar.tsx`) con un área de edición minimalista y manejo de estados.
+- [x] Propagar los callbacks y mapear la actualización y recarga asíncrona de datos en `HiringCandidatesView.tsx` y `HiringStatusPage.tsx`.
+- [x] Validar que el build general del proyecto (`npm run build`) no arroje errores de compilación ni tipado.
+
+## Resultado de Resumen de Entrevista para Candidatos (Puntos Clave)
+
+- **Persistencia Segura (Zero Trust)**: La edición de observaciones no realiza `UPDATE` directo desde el cliente. Pasa por la RPC segura `update_candidate_interview_notes(uuid, text)` en base de datos, la cual valida la identidad y los permisos del usuario con RLS y el helper `user_can_manage_recruitment_case`.
+- **UI Minimalista**: El área de notas de la entrevista se presenta con bordes discretos de color `#d2d2d4` y tipografía premium, permitiendo editar/cancelar de forma local y actualizando el sidebar al instante con feedback de guardado.
+- **Historial e Integración**: La acción de guardado registra un evento de tipo `candidate_interview_notes_updated` en la tabla de auditoría (`recruitment_case_audit_log`) con el nuevo valor en formato JSONB.
+
 ## Correcciones Generales de Interfaz y UX (Sprint de Pulido)
 
 - [x] Eliminar texto publicitario/descriptivo en el panel de marca de login

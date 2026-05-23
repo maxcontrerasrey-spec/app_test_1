@@ -4,6 +4,7 @@ import {
   formatRut,
   toRecruitmentCandidateStageLabel,
   updateCandidateDriverLicense,
+  updateCandidateInterviewNotes,
   type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
   type RecruitmentCaseCandidateRow,
@@ -30,6 +31,7 @@ type CandidateDetailSidebarProps = {
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: () => Promise<void>;
   onLicenseUpdated?: () => Promise<void>;
+  onInterviewNotesUpdated?: () => Promise<void>;
 };
 
 export function CandidateDetailSidebar({
@@ -44,7 +46,8 @@ export function CandidateDetailSidebar({
   onStageDraftChange,
   onStageCommentChange,
   onAdvanceStage,
-  onLicenseUpdated
+  onLicenseUpdated,
+  onInterviewNotesUpdated
 }: CandidateDetailSidebarProps) {
   const [activeTab, setActiveTab] = useState<"pipeline" | "documents">("pipeline");
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
@@ -55,10 +58,19 @@ export function CandidateDetailSidebar({
   const [isLicenseSaving, setIsLicenseSaving] = useState(false);
   const [licenseError, setLicenseError] = useState("");
 
+  const [isEditingInterview, setIsEditingInterview] = useState(false);
+  const [interviewNotesText, setInterviewNotesText] = useState("");
+  const [isInterviewSaving, setIsInterviewSaving] = useState(false);
+  const [interviewError, setInterviewError] = useState("");
+
   useEffect(() => {
     setIsHistoryExpanded(false);
     setIsEditingLicense(false);
     setLicenseError("");
+
+    setIsEditingInterview(false);
+    setInterviewNotesText(selectedCandidate?.interview_notes || "");
+    setInterviewError("");
   }, [selectedCandidate?.id]);
 
   const handleSaveLicense = async () => {
@@ -82,6 +94,29 @@ export function CandidateDetailSidebar({
     setIsEditingLicense(false);
     if (onLicenseUpdated) {
       await onLicenseUpdated();
+    }
+  };
+
+  const handleSaveInterviewNotes = async () => {
+    if (!selectedCandidate) return;
+    setIsInterviewSaving(true);
+    setInterviewError("");
+
+    const { error } = await updateCandidateInterviewNotes({
+      caseCandidateId: selectedCandidate.id,
+      notes: interviewNotesText.trim() || null
+    });
+
+    if (error) {
+      setInterviewError(error);
+      setIsInterviewSaving(false);
+      return;
+    }
+
+    setIsInterviewSaving(false);
+    setIsEditingInterview(false);
+    if (onInterviewNotesUpdated) {
+      await onInterviewNotesUpdated();
     }
   };
 
@@ -302,6 +337,84 @@ export function CandidateDetailSidebar({
                 Mover candidato de etapa
               </button>
             </div>
+          </div>
+
+          {/* Resumen de Entrevista / Puntos Clave */}
+          <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+              <small>Puntos Clave de la Entrevista</small>
+              {!isEditingInterview ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInterviewNotesText(selectedCandidate.interview_notes || "");
+                    setIsEditingInterview(true);
+                    setInterviewError("");
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--accent, #0052cc)",
+                    cursor: "pointer",
+                    fontSize: "0.8rem",
+                    padding: 0,
+                    fontWeight: "medium"
+                  }}
+                >
+                  [Editar]
+                </button>
+              ) : null}
+            </div>
+
+            {!isEditingInterview ? (
+              <p style={{ margin: 0, fontSize: "0.88rem", whiteSpace: "pre-wrap", color: selectedCandidate.interview_notes ? "#333" : "#777", fontStyle: selectedCandidate.interview_notes ? "normal" : "italic" }}>
+                {selectedCandidate.interview_notes || "Sin observaciones de entrevista registradas."}
+              </p>
+            ) : (
+              <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <textarea
+                  id="interview-notes-input"
+                  style={{
+                    width: "100%",
+                    minHeight: "100px",
+                    padding: "0.5rem",
+                    fontSize: "0.88rem",
+                    border: "1px solid #d2d2d4",
+                    borderRadius: "4px",
+                    fontFamily: "inherit",
+                    resize: "vertical",
+                    outline: "none",
+                    boxSizing: "border-box"
+                  }}
+                  placeholder="Escribe aquí los puntos clave, fortalezas y debilidades identificadas en la entrevista..."
+                  value={interviewNotesText}
+                  onChange={(e) => setInterviewNotesText(e.target.value)}
+                />
+                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "end" }}>
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem" }}
+                    onClick={() => setIsEditingInterview(false)}
+                    disabled={isInterviewSaving}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="soft-primary-button approval-button-approve"
+                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem", color: "#fff", background: "var(--accent, #0052cc)" }}
+                    onClick={handleSaveInterviewNotes}
+                    disabled={isInterviewSaving}
+                  >
+                    {isInterviewSaving ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+                {interviewError ? (
+                  <p style={{ margin: "0.25rem 0 0", color: "var(--error, #e53e3e)", fontSize: "0.8rem" }}>{interviewError}</p>
+                ) : null}
+              </div>
+            )}
           </div>
 
           <div className="approval-detail-note" style={{ marginTop: "1.5rem" }}>

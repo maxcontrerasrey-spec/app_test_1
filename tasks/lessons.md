@@ -1,5 +1,10 @@
 # Lecciones del proyecto
 
+## 2026-05-23
+
+- **Puntos Clave / Notas de Entrevista y RLS Contextual:** Al guardar notas u observaciones de una entrevista en procesos de contratación, la información debe ser específica al caso o postulación del candidato (`recruitment_case_candidates`) y no al perfil global (`candidate_profiles`), ya que un candidato puede participar en múltiples procesos independientes y sus notas de entrevista pueden variar de un cargo/contrato a otro.
+- **Validación del Árbol de JSX en Edición:** Al realizar modificaciones en bloques de React complejos que contienen condicionales anidados, se debe tener especial cuidado de no alterar las etiquetas de cierre adyacentes (`</div>`, `</aside>`), ya que pueden dejar etiquetas sin cerrar en componentes principales afectando todo el empaquetado del bundle.
+
 ## 2026-05-14
 
 - Cuando se integre un proveedor real de autenticación, la tarea no se considera terminada hasta validar compilación, build y comportamiento base de rutas protegidas.
