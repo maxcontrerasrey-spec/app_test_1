@@ -56,7 +56,7 @@ export function HiringCandidatesView({
   const [showCandidateForm, setShowCandidateForm] = useState(false);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
   const [candidateStageFilter, setCandidateStageFilter] =
-    useState<(typeof candidateStageFilterOptions)[number]["key"]>(null);
+    useState<(typeof candidateStageFilterOptions)[number]["key"]>("active");
 
   const candidateIntakeCases = useMemo(
     () =>
@@ -70,7 +70,15 @@ export function HiringCandidatesView({
     const normalizedSearch = candidateSearchTerm.trim().toLowerCase();
 
     return candidateControl.filter((candidate) => {
-      const matchesStage = !candidateStageFilter || candidate.stage_code === candidateStageFilter;
+      let matchesStage = false;
+      if (candidateStageFilter === "active") {
+        matchesStage = candidate.stage_code !== "rejected" && candidate.stage_code !== "withdrawn";
+      } else if (candidateStageFilter === "discarded") {
+        matchesStage = candidate.stage_code === "rejected" || candidate.stage_code === "withdrawn";
+      } else {
+        matchesStage = candidate.stage_code === candidateStageFilter;
+      }
+
       const matchesSearch =
         !normalizedSearch ||
         candidate.full_name.toLowerCase().includes(normalizedSearch) ||

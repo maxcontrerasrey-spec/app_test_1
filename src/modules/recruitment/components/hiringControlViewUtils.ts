@@ -9,12 +9,13 @@ export const caseFilterOptions = [
 ] as const;
 
 export const candidateStageFilterOptions = [
-  { key: null, label: "Todas las etapas" },
+  { key: "active", label: "Activos en Proceso" },
   { key: "lead", label: "Lead" },
   { key: "screening", label: "Screening" },
   { key: "documents_pending", label: "Docs pendientes" },
   { key: "ready_for_hire", label: "Listos para contratar" },
-  { key: "hired", label: "Contratados" }
+  { key: "hired", label: "Contratados" },
+  { key: "discarded", label: "Descartados" }
 ] as const;
 
 export function formatDateValue(value: string | null | undefined) {
@@ -69,6 +70,9 @@ export function getNextStageOptions(
       return ["ready_for_hire", "rejected", "withdrawn"];
     case "ready_for_hire":
       return ["hired", "rejected", "withdrawn"];
+    case "rejected":
+    case "withdrawn":
+      return ["contacted", "screening"];
     default:
       return [];
   }
