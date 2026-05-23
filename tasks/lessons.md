@@ -95,6 +95,9 @@
 - **Encuadre de Formularios Dinámicos:** Los formularios de entrada de datos (`intake`) deben renderizarse dentro de los mismos contenedores de columna de la grilla (ej. la columna izquierda que aloja la tabla) en lugar de hacerlo a nivel raíz del módulo. Esto los encuadra estéticamente dentro de las proporciones del layout y evita que se estiren al ancho completo de la pantalla.
 - **Segregación de Campos en Paneles Laterales:** Evitar la concatenación de campos distintos (como Correo/Teléfono) en una misma fila de lectura compacta. Dividir la información en celdas individuales para mantener una visualización despejada en paneles angostos.
 - **Listas Históricas Collapsible:** Las colecciones de eventos dinámicos largos no deben concatenarse con separadores de texto. Deben estructurarse línea por línea y encapsularse en contenedores colapsables con un estado inicial cerrado por defecto (el cual debe resetearse al cambiar de entidad seleccionada) para preservar espacio útil en pantalla.
+- **Colapso de Botones en Flexbox:** Cuando un botón con texto largo y `white-space: nowrap` se ubica junto a un input con `width: 100%` dentro de un contenedor flex, el botón puede contraerse por debajo del ancho de su texto provocando desbordamientos visuales que invaden otros elementos. Agregar `flex-shrink: 0` al botón asegura que mantenga su proporción y respete su margen y padding.
+- **Auditorías y Logs Secundarios:** Evitar recargar la UI del pipeline principal con eventos de auditoría técnica que no aporten valor de negocio diario para la operación. Remover secciones secundarias como "Auditoría del caso" del panel lateral ayuda a priorizar la información de negocio clave (fechas, contacto, etapas y compliance documental).
+
 
 
 

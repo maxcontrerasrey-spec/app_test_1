@@ -115,6 +115,7 @@ export function HiringCandidatesView({
           <button
             type="button"
             className="soft-primary-button"
+            style={{ flexShrink: 0 }}
             disabled={candidateIntakeCases.length === 0}
             onClick={() => setShowCandidateForm((current) => !current)}
           >

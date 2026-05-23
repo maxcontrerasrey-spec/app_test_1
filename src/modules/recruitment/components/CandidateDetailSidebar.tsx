@@ -252,20 +252,7 @@ export function CandidateDetailSidebar({
             ) : null}
           </div>
 
-          <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
-            <small style={{ display: "block", marginBottom: "0.35rem" }}>Auditoría del caso (últimos 5 eventos)</small>
-            <div style={{ fontSize: "0.82rem", color: "#555" }}>
-              {selectedCaseDetail.audit.length > 0 ? (
-                selectedCaseDetail.audit.slice(0, 5).map((entry, index) => (
-                  <div key={index} style={{ padding: "0.15rem 0" }}>
-                    • {entry.action_type} · {entry.actor_name ?? "Usuario"} · {formatDateTimeValue(entry.created_at)}
-                  </div>
-                ))
-              ) : (
-                <span>Sin eventos registrados</span>
-              )}
-            </div>
-          </div>
+
 
           {decisionMessage ? <p className="form-status" style={{ marginTop: "1rem" }}>{decisionMessage}</p> : null}
         </div>
