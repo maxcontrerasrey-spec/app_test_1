@@ -1155,3 +1155,26 @@
 - Validación ejecutada:
   - `npx tsc -b`: correcto
   - `npm run build`: correcto
+
+## Registro de Licencias y Mejoras de UX (Sprint de Pulido - Fase 2)
+
+- [x] Unificar columna "Folio / Caso" a solo "Caso" mostrando `case_code`.
+- [x] Implementar formulario interactivo para registrar/editar Licencia de Conducir (Clase y Vencimiento) en el sidebar del candidato, persistiendo cambios mediante RPC segura `update_candidate_driver_license`.
+- [x] Implementar buscador/lookup de candidato existente en `CandidateIntakeForm` mediante RPC segura `find_candidate_profile_by_rut` al ingresar un RUT válido, autocompletando nombre, correo y teléfono.
+- [x] Bloquear registro de candidato en la UI e inhabilitar botón si el candidato ya participa en el caso seleccionado.
+- [x] Reestructurar filtros del submódulo de candidatos para añadir "Activos en Proceso" (por defecto, excluye rechazados/retirados) y "Descartados" (muestra rechazados/retirados).
+- [x] Habilitar la reactivación de candidatos en terminal states (`rejected` / `withdrawn`) permitiendo transiciones de vuelta a `"contacted"` o `"screening"`.
+- [x] Validar compilación y empaquetado del bundle productivo sin errores.
+
+## Resultado de Registro de Licencias y Mejoras de UX
+
+- **Simplificación y Limpieza visual**: La columna de la tabla de candidatos ahora muestra únicamente el código del caso (`case_code`), eliminando el folio redundante. El formulario de alta se reencuadró dentro de la columna izquierda para evitar desbordes.
+- **Edición local de Licencia**: Se integró un sub-formulario de edición en la sección de Licencia de Conducir en el sidebar del candidato, permitiendo registrar la clase y fecha de vencimiento. La persistencia se realiza mediante la RPC `update_candidate_driver_license` (Zero Trust).
+- **Lookup por RUT y Autocompletado**: Al escribir un RUT válido, la UI ejecuta en segundo plano la RPC `find_candidate_profile_by_rut` para recuperar perfiles registrados globalmente y autocompletar sus datos.
+- **Prevención de Duplicados en Caso**: Si el RUT ingresado ya está asignado al caso actual, el sistema muestra la advertencia `⚠️ Este candidato ya participa en el caso seleccionado en la etapa "..."` y deshabilita el botón de registro.
+- **Filtro de Descartados**: El filtro por defecto de la tabla `"Activos en Proceso"` ahora limpia visualmente la vista ocultando candidatos en estado `rejected` o `withdrawn`. Para verlos o recuperarlos, se añadió la pestaña `"Descartados"`.
+- **Reactivación de Candidatos**: En el panel lateral, el selector de etapa para candidatos descartados/retirados ahora habilita transiciones hacia `"contacted"` o `"screening"`. Al guardarse el cambio, el candidato regresa inmediatamente a la lista de activos en proceso.
+- **Validación ejecutada**:
+  - `npx tsc -b`: correcto
+  - `npm run build`: correcto
+
