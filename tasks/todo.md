@@ -11,7 +11,8 @@
 - [x] Convertir el historial de etapas en una lista vertical estructurada y hacerlo colapsable por defecto
 - [x] Eliminar la sección secundaria "Auditoría del caso" del panel lateral del candidato para evitar ruido técnico
 - [x] Unificar la columna "Folio / Caso" a una sola cabecera de "Caso" mostrando solo el `case_code` para simplificar la nomenclatura de la tabla
-- [x] Implementar un formulario interactivo en el panel lateral del candidato para editar/registrar la Licencia de Conducir (Clase y Vencimiento) persistiendo los cambios en `candidate_profiles` de Supabase
+- [x] Implementar un formulario interactivo en el panel lateral del candidato para editar/registrar la Licencia de Conducir (Clase y Vencimiento)
+- [x] Crear una migración SQL en Supabase para exponer la RPC segura `update_candidate_driver_license` y refactorear el cliente para llamarla de forma segura (Zero Trust)
 
 ## Resultado de Correcciones Generales de Interfaz y UX (Sprint de Pulido)
 
@@ -21,7 +22,8 @@
 - **Consistencia Visual en Registro**: Se reubicó [CandidateIntakeForm](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx) dentro del flujo de la columna de la tabla principal para evitar desbordamientos de ancho de pantalla, y se aplicó `flexShrink: 0` al botón "Registrar candidato" para evitar que se aplaste o sea invadido por el buscador.
 - **Mejora en Sidebar de Detalle**: En [CandidateDetailSidebar.tsx](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDetailSidebar.tsx) se dividieron los datos de contacto en celdas separadas, se convirtió el historial de etapas en una sección colapsable (con contador y auto-collapse al cambiar de candidato) y con formato línea por línea, y se removió la auditoría del caso técnica para despejar la vista.
 - **Caso Unificado**: En la tabla de candidatos se renombró el encabezado a "Caso" y se simplificó la columna mostrando únicamente el código del caso (`case_code`), eliminando la concatenación del folio redundante.
-- **Registro y Edición de Licencia**: Se agregó un sub-formulario interactivo en la sección de Licencia de Conducir en el sidebar. El usuario puede hacer clic en `[Editar]`, rellenar los inputs de clase de licencia y vencimiento (con selector de fecha) y guardar el resultado directamente en Supabase, el cual se propaga al estado del componente padre y actualiza la tabla de candidatos al instante.
+- **Registro y Edición de Licencia**: Se agregó un sub-formulario interactivo en la sección de Licencia de Conducir en el sidebar. El usuario puede hacer clic en `[Editar]`, rellenar los inputs de clase de licencia y vencimiento (con selector de fecha) y guardar el resultado directamente.
+- **Migración SQL de Licencias (Zero Trust)**: Para evitar dar privilegios generales de `UPDATE` al cliente en la tabla `candidate_profiles`, se diseñó y guardó la migración [20260522_000020_add_update_candidate_driver_license_rpc.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260522_000020_add_update_candidate_driver_license_rpc.sql:1) para instalar la función RPC `update_candidate_driver_license(...)` con validación estricta de sesión y permisos. El servicio de frontend [hiringControl.ts](file:///Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts) se adaptó para usar `supabase.rpc`.
 
 ## Refactorización y Tipado de Operaciones (Alineación de Arquitectura ERP)
 

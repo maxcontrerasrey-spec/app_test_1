@@ -473,13 +473,11 @@ export async function updateCandidateDriverLicense(input: {
     return { error: "Supabase no está configurado." };
   }
 
-  const { error } = await supabase
-    .from("candidate_profiles")
-    .update({
-      driver_license_class: input.driverLicenseClass ? input.driverLicenseClass.trim().toUpperCase() : null,
-      driver_license_expiry: input.driverLicenseExpiry || null
-    })
-    .eq("id", input.candidateProfileId);
+  const { error } = await supabase.rpc("update_candidate_driver_license", {
+    p_profile_id: input.candidateProfileId,
+    p_license_class: input.driverLicenseClass ? input.driverLicenseClass.trim().toUpperCase() : null,
+    p_license_expiry: input.driverLicenseExpiry || null
+  });
 
   if (error) {
     return { error: error.message || "No fue posible actualizar la licencia." };
