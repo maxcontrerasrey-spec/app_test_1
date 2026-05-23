@@ -1,15 +1,29 @@
-// @ts-nocheck
 import { supabase } from "../../../shared/lib/supabase";
-import { validateServiceEntryPayload } from "../lib/service-entry";
+import { validateServiceEntryPayload, type ServiceEntryPayload } from "../lib/service-entry";
 
-export async function submitServiceEntry(payload: any, userId: string) {
+export interface SubmitServiceEntryResult {
+  ok: boolean;
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  mode?: "inserted" | "updated";
+  message?: string;
+}
+
+export async function submitServiceEntry(
+  payload: ServiceEntryPayload,
+  userId: string
+): Promise<SubmitServiceEntryResult> {
   const validation = validateServiceEntryPayload(payload);
 
-  if (!validation.isValid) {
+  if (!validation.isValid || !validation.cleaned) {
     return { ok: false, error: "Hay campos inválidos en la planificación.", fieldErrors: validation.errors };
   }
 
   const { cleaned } = validation;
+
+  if (!supabase) {
+    return { ok: false, error: "Supabase no está configurado." };
+  }
 
   const { data: contract, error: contractError } = await supabase
     .from("contracts")

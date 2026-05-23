@@ -1,6 +1,15 @@
-// @ts-nocheck
+export interface ServiceDataRecord {
+  id: number;
+  service: string;
+  company: string;
+  type: string;
+  contractName: string;
+  category: string;
+  contract: string;
+  schedule: string;
+}
 
-export const SERVICE_DATA = [
+export const SERVICE_DATA: ServiceDataRecord[] = [
   { id: 1, service: "Bus Administrativo 1", company: "Codelco", type: "BUS", contractName: "Bus Eléctrico 42 asientos - 4x3", category: "Submódulo 1.1", contract: "CODELCO DRT", schedule: "Lunes a Jueves" },
   { id: 2, service: "Bus Administrativo 2", company: "Codelco", type: "BUS", contractName: "Bus Eléctrico 42 asientos - 4x3", category: "Submódulo 1.1", contract: "CODELCO DRT", schedule: "Lunes a Jueves" },
   { id: 3, service: "Bus Administrativo 3", company: "Codelco", type: "BUS", contractName: "Bus Eléctrico 42 asientos - 4x3", category: "Submódulo 1.1", contract: "CODELCO DRT", schedule: "Lunes a Jueves" },

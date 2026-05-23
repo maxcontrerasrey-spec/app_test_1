@@ -1,4 +1,32 @@
-// @ts-nocheck
+export interface ServiceEntryPayload {
+  contractCode?: string;
+  shift?: string;
+  serviceDate?: string;
+  serviceExternalKey?: number;
+  driverName?: string;
+  driverDocument?: string;
+  driverArea?: string;
+  driverShiftStatus?: string;
+  equipmentCode?: string;
+}
+
+export interface CleanedServiceEntryPayload {
+  contractCode: string;
+  shift: string;
+  serviceDate: string;
+  serviceExternalKey: number;
+  driverName: string;
+  driverDocument: string;
+  driverArea: string;
+  driverShiftStatus: string;
+  equipmentCode: string;
+}
+
+export interface ServiceEntryValidationResult {
+  isValid: boolean;
+  errors: Record<string, string>;
+  cleaned: CleanedServiceEntryPayload | null;
+}
 
 const SHIFT_OPTIONS = new Set(["am", "pm"]);
 const DRIVER_SHIFT_STATUS_OPTIONS = new Set(["en_turno", "fuera_de_turno"]);
@@ -6,18 +34,18 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DRIVER_PATTERN = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.'\- ]{2,140}$/;
 const EQUIPMENT_PATTERN = /^[A-Za-z0-9._\-\/ ]{2,50}$/;
 
-function sanitizeText(value) {
+function sanitizeText(value: string | null | undefined): string {
   return (value ?? "").toString().trim().replace(/\s+/g, " ");
 }
 
-function isValidDate(value) {
+function isValidDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
   const date = new Date(year, month - 1, day, 12, 0, 0);
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
 
-export function validateServiceEntryPayload(payload) {
+export function validateServiceEntryPayload(payload: any): ServiceEntryValidationResult {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     return {
       isValid: false,
@@ -28,7 +56,7 @@ export function validateServiceEntryPayload(payload) {
     };
   }
 
-  const cleaned = {
+  const cleaned: CleanedServiceEntryPayload = {
     contractCode: sanitizeText(payload?.contractCode),
     shift: sanitizeText(payload?.shift).toLowerCase(),
     serviceDate: sanitizeText(payload?.serviceDate),
@@ -40,7 +68,7 @@ export function validateServiceEntryPayload(payload) {
     equipmentCode: sanitizeText(payload?.equipmentCode).toUpperCase(),
   };
 
-  const errors = {};
+  const errors: Record<string, string> = {};
 
   if (!cleaned.contractCode || cleaned.contractCode.length > 120) {
     errors.contractCode = "Selecciona un contrato válido.";
@@ -81,6 +109,6 @@ export function validateServiceEntryPayload(payload) {
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
-    cleaned,
+    cleaned: Object.keys(errors).length === 0 ? cleaned : null,
   };
 }

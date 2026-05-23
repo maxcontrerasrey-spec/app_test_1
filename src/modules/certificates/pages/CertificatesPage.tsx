@@ -8,6 +8,14 @@ import statusAlertIcon from "../../../assets/status-alert.png";
 import statusPendingProcessIcon from "../../../assets/status-pending.png";
 import statusErrorIcon from "../../../assets/status-error.png";
 import statusSuccessIcon from "../../../assets/status-success.png";
+import {
+  toTodayDateValue,
+  parseDateValue,
+  formatDateForDisplay,
+  formatDateValue,
+  buildCalendarDays,
+  monthOptions
+} from "../../../shared/lib/date";
 
 const workerOptions = workers.map((worker) => ({
   ...worker,
@@ -71,30 +79,12 @@ const authorizationMeta = {
   }
 } as const;
 
-function toTodayDateValue() {
-  return formatDateValue(new Date());
-}
-
 function toCurrentTimeValue() {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(
     2,
     "0"
   )}`;
-}
-
-function parseDateValue(dateValue: string) {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatDateForDisplay(dateValue: string) {
-  const [year, month, day] = dateValue.split("-");
-  if (!year || !month || !day) {
-    return dateValue;
-  }
-
-  return `${day}/${month}/${year}`;
 }
 
 function createMockCorrelative() {
@@ -124,67 +114,6 @@ function normalizeEvaluationInput(rawValue: string) {
   }
 
   return String(normalizedValue);
-}
-
-function formatDateValue(dateObject: Date) {
-  return `${dateObject.getFullYear()}-${String(dateObject.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}-${String(dateObject.getDate()).padStart(2, "0")}`;
-}
-
-const monthOptions = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre"
-];
-
-function buildCalendarDays(viewDate: Date) {
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const leadingDays = (firstDayOfMonth.getDay() + 6) % 7;
-  const totalDays = lastDayOfMonth.getDate();
-  const calendarDays: Array<{ key: string; value: Date; inMonth: boolean }> = [];
-
-  for (let index = leadingDays; index > 0; index -= 1) {
-    const date = new Date(year, month, 1 - index);
-    calendarDays.push({
-      key: `prev-${formatDateValue(date)}`,
-      value: date,
-      inMonth: false
-    });
-  }
-
-  for (let day = 1; day <= totalDays; day += 1) {
-    const date = new Date(year, month, day);
-    calendarDays.push({
-      key: `current-${formatDateValue(date)}`,
-      value: date,
-      inMonth: true
-    });
-  }
-
-  while (calendarDays.length % 7 !== 0) {
-    const date = new Date(year, month, totalDays + (calendarDays.length % 7) + 1);
-    calendarDays.push({
-      key: `next-${formatDateValue(date)}`,
-      value: date,
-      inMonth: false
-    });
-  }
-
-  return calendarDays;
 }
 
 export function CertificatesPage() {

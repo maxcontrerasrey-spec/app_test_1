@@ -1,32 +1,73 @@
-// @ts-nocheck
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import appLogo from "../../../assets/app-logo.png";
-
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
 import { submitServiceEntry } from "../services/operacionesApi";
-import { SERVICE_DATA } from "../data/services-data";
-import { DatePickerField } from "../../../shared/ui";
+import { SERVICE_DATA, type ServiceDataRecord } from "../data/services-data";
+import { useAuth } from "../../auth/context/AuthContext";
+import {
+  formatDateValue,
+  parseDateValue,
+  toTodayDateValue,
+} from "../../../shared/lib/date";
+
+import { OperationsSummary } from "../components/OperationsSummary";
+import { OperationsBaseRegister } from "../components/OperationsBaseRegister";
+import { OperationsExport } from "../components/OperationsExport";
+import { OperationsSpecialRegister } from "../components/OperationsSpecialRegister";
 import "../styles/operaciones.css";
 
 const PILOT_CONTRACTS = ["CODELCO DRT", "SERVICIO CODELCO DMH"];
 const WEEKDAY_NAMES = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-const MONTH_LABELS = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-];
-const SAMPLE_DRIVERS = ["Carlos Rojas", "Juan Araya", "Luis Muñoz", "Pedro Cortés", "Marco Silva", "Héctor Díaz"].map((fullName, index) => ({
+
+export interface Driver {
+  id: string;
+  fullName: string;
+  documentNumber: string;
+  areaName: string;
+  areaCode: string;
+  isActive: boolean;
+}
+
+export interface Equipment {
+  code: string;
+  plate: string;
+  type: string;
+  currentClient: string;
+  brand?: string;
+  model?: string;
+  year?: string;
+  isActive?: boolean;
+}
+
+export interface ServiceDraft {
+  driverId: string;
+  driverShiftStatus: string;
+  equipmentCode: string;
+}
+
+export interface ContractSummary {
+  contractCode: string;
+  plannedServices: number;
+  expectedServices: number;
+  inTurnWorkers: number;
+  outOfTurnWorkers: number;
+  completionRate: number;
+}
+
+export interface DashboardSummary {
+  byContract: ContractSummary[];
+  totalPlanned: number;
+  totalExpected: number;
+  totalInTurn: number;
+  totalOutOfTurn: number;
+}
+
+export interface OperationsServiceRecord extends ServiceDataRecord {
+  normalizedSchedule: string;
+}
+
+const SAMPLE_DRIVERS: Driver[] = ["Carlos Rojas", "Juan Araya", "Luis Muñoz", "Pedro Cortés", "Marco Silva", "Héctor Díaz"].map((fullName, index) => ({
   id: `sample-${index + 1}`,
   fullName,
   documentNumber: "",
@@ -34,34 +75,14 @@ const SAMPLE_DRIVERS = ["Carlos Rojas", "Juan Araya", "Luis Muñoz", "Pedro Cort
   areaCode: "",
   isActive: true,
 }));
-const SAMPLE_EQUIPMENT = ["BUS-042", "BUS-115", "MB-203", "TX-018", "TX-026", "CRY-015"].map((equipmentCode) => ({
+
+const SAMPLE_EQUIPMENT: Equipment[] = ["BUS-042", "BUS-115", "MB-203", "TX-018", "TX-026", "CRY-015"].map((equipmentCode) => ({
   code: equipmentCode,
   plate: "",
   type: "",
+  currentClient: "",
 }));
-const LOGIN_BULLETS = [
-  {
-    text: "Planificación y control de servicios operacionales por contrato.",
-    icon: "/assets/login-planificacion.png",
-    alt: "Planificación operativa",
-  },
-  {
-    text: "Control y gestión de conductores y turnos.",
-    icon: "/assets/login-control.png",
-    alt: "Gestión de conductores y turnos",
-  },
-  {
-    text: "Control y gestión de base de datos histórica de servicios.",
-    icon: "/assets/login-registro.png",
-    alt: "Base histórica de servicios",
-  },
-];
-const NAV_ITEMS = [
-  { id: "inicio", label: "Inicio", icon: "/assets/nav-home.png" },
-  { id: "registros_base", label: "Registro de servicios base", icon: "/assets/nav-base.png" },
-  { id: "registros_especiales", label: "Registro de servicios especiales", icon: "/assets/nav-specials.png" },
-  { id: "exportador", label: "Exportador de Información", icon: "/assets/nav-export.png" },
-];
+
 const EMPLOYEES_PAGE_SIZE = 1000;
 const EXPORT_PAGE_SIZE = 1000;
 const DASHBOARD_PAGE_SIZE = 1000;
@@ -69,15 +90,7 @@ const DASHBOARD_ENTRY_SELECT = "contract_code, service_date, shift, driver_name,
 const EXPORT_ENTRY_SELECT =
   "service_date, shift, contract_code, service_operational_name, service_contractual_name, service_category, service_company, driver_name, driver_document, driver_area, driver_shift_status, equipment_code, equipment_plate, equipment_type, equipment_client, created_at";
 
-function formatShiftLabel(shift) {
-  return shift ? shift.toUpperCase() : "";
-}
-
-function formatTurnStatusLabel(value) {
-  return value === "fuera_de_turno" ? "Fuera de Turno" : "En Turno";
-}
-
-function normalizeText(value) {
+function normalizeText(value: string | null | undefined): string {
   return (value ?? "")
     .toString()
     .trim()
@@ -86,55 +99,36 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
-function formatStorageDate(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+function matchesSchedule(normalizedSchedule: string, date: Date | null): boolean {
+  if (!date || !normalizedSchedule) return true;
+  const weekday = date.getDay();
+  if (normalizedSchedule === "lunes a domingo") return true;
+  if (normalizedSchedule === "lunes a jueves") return weekday >= 1 && weekday <= 4;
+  if (normalizedSchedule === "lunes a viernes") return weekday >= 1 && weekday <= 5;
+  return normalizedSchedule.includes(WEEKDAY_NAMES[weekday]);
 }
 
-function getDateFromStorage(value) {
-  if (!value) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day, 12, 0, 0);
-}
-
-function formatDisplayDate(date) {
-  return date.toLocaleDateString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function formatLongDate(date) {
-  if (!date) return "sin fecha";
-  return date.toLocaleDateString("es-CL", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function enumerateDateRange(startValue, endValue) {
+function enumerateDateRange(startValue: string, endValue: string): string[] {
   if (!startValue || !endValue || startValue > endValue) return [];
 
-  const startDate = getDateFromStorage(startValue);
-  const endDate = getDateFromStorage(endValue);
+  const startDate = parseDateValue(startValue);
+  const endDate = parseDateValue(endValue);
 
   if (!startDate || !endDate || startDate > endDate) return [];
 
-  const dates = [];
+  const dates: string[] = [];
   const cursor = new Date(startDate);
 
   while (cursor <= endDate && dates.length < 400) {
-    dates.push(formatStorageDate(cursor));
+    dates.push(formatDateValue(cursor));
     cursor.setDate(cursor.getDate() + 1);
   }
 
   return dates;
 }
 
-async function fetchAllPagedRows({ pageSize, buildQuery }) {
-  const rows = [];
+async function fetchAllPagedRows({ pageSize, buildQuery }: { pageSize: number; buildQuery: (from: number, to: number) => any }) {
+  const rows: any[] = [];
   let from = 0;
 
   while (true) {
@@ -160,43 +154,21 @@ async function fetchAllPagedRows({ pageSize, buildQuery }) {
   return rows;
 }
 
-function formatDisplayName(email) {
-  if (!email) return "Usuario";
-  const [namePart] = email.split("@");
-  return namePart
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
-    .join(" ");
-}
-
-function matchesSchedule(normalizedSchedule, date) {
-  if (!date || !normalizedSchedule) return true;
-  const weekday = date.getDay();
-  if (normalizedSchedule === "lunes a domingo") return true;
-  if (normalizedSchedule === "lunes a jueves") return weekday >= 1 && weekday <= 4;
-  if (normalizedSchedule === "lunes a viernes") return weekday >= 1 && weekday <= 5;
-  return normalizedSchedule.includes(WEEKDAY_NAMES[weekday]);
-}
-
-function buildDriverDirectory(rows) {
-  const grouped = new Map();
+function buildDriverDirectory(rows: any[]): Driver[] {
+  const grouped = new Map<string, Driver>();
 
   for (const employee of rows ?? []) {
     if (!employee?.full_name) continue;
 
     const key = `${employee.document_number || "sin-documento"}::${normalizeText(employee.full_name)}`;
     const current = grouped.get(key);
-    const candidate = {
+    const candidate: Driver = {
       id: employee.buk_employee_id,
       fullName: employee.full_name,
       documentNumber: employee.document_number ?? "",
-      documentType: employee.document_type ?? "",
       areaName: employee.area_name ?? "",
       areaCode: employee.area_code ?? "",
       isActive: employee.is_active !== false,
-      status: employee.status ?? "",
-      updatedAt: employee.updated_at ?? "",
     };
 
     if (!current) {
@@ -207,13 +179,11 @@ function buildDriverDirectory(rows) {
     const currentScore =
       (current.isActive ? 100 : 0) +
       (current.areaName ? 10 : 0) +
-      (current.documentNumber ? 5 : 0) +
-      (current.updatedAt ? new Date(current.updatedAt).getTime() / 10 ** 12 : 0);
+      (current.documentNumber ? 5 : 0);
     const candidateScore =
       (candidate.isActive ? 100 : 0) +
       (candidate.areaName ? 10 : 0) +
-      (candidate.documentNumber ? 5 : 0) +
-      (candidate.updatedAt ? new Date(candidate.updatedAt).getTime() / 10 ** 12 : 0);
+      (candidate.documentNumber ? 5 : 0);
 
     if (candidateScore > currentScore) {
       grouped.set(key, candidate);
@@ -223,14 +193,14 @@ function buildDriverDirectory(rows) {
   return [...grouped.values()].sort((left, right) => left.fullName.localeCompare(right.fullName, "es"));
 }
 
-function buildEquipmentDirectory(rows) {
-  const grouped = new Map();
+function buildEquipmentDirectory(rows: any[]): Equipment[] {
+  const grouped = new Map<string, Equipment>();
 
   for (const row of rows ?? []) {
     const code = (row?.equipment_code ?? "").toString().trim();
     if (!code) continue;
 
-    const candidate = {
+    const candidate: Equipment = {
       code,
       plate: (row?.plate ?? "").toString().trim(),
       type: (row?.equipment_type ?? "").toString().trim(),
@@ -239,7 +209,6 @@ function buildEquipmentDirectory(rows) {
       model: (row?.model ?? "").toString().trim(),
       year: row?.year ? String(row.year).trim() : "",
       isActive: row?.is_active !== false,
-      updatedAt: row?.updated_at ?? "",
     };
 
     const current = grouped.get(code);
@@ -251,13 +220,11 @@ function buildEquipmentDirectory(rows) {
     const currentScore =
       (current.isActive ? 100 : 0) +
       (current.plate ? 10 : 0) +
-      (current.type ? 5 : 0) +
-      (current.updatedAt ? new Date(current.updatedAt).getTime() / 10 ** 12 : 0);
+      (current.type ? 5 : 0);
     const candidateScore =
       (candidate.isActive ? 100 : 0) +
       (candidate.plate ? 10 : 0) +
-      (candidate.type ? 5 : 0) +
-      (candidate.updatedAt ? new Date(candidate.updatedAt).getTime() / 10 ** 12 : 0);
+      (candidate.type ? 5 : 0);
 
     if (candidateScore > currentScore) {
       grouped.set(code, candidate);
@@ -267,13 +234,25 @@ function buildEquipmentDirectory(rows) {
   return [...grouped.values()].sort((left, right) => left.code.localeCompare(right.code, "es"));
 }
 
-function buildDashboardSummary({ entries, servicesData, contracts, dateRangeValues, selectedContract }) {
+function buildDashboardSummary({
+  entries,
+  servicesData,
+  contracts,
+  dateRangeValues,
+  selectedContract,
+}: {
+  entries: any[];
+  servicesData: OperationsServiceRecord[];
+  contracts: string[];
+  dateRangeValues: string[];
+  selectedContract: string;
+}): DashboardSummary {
   const contractScope = (selectedContract ? [selectedContract] : contracts).filter(Boolean);
 
   const byContract = contractScope.map((contractCode) => {
     const contractEntries = entries.filter((entry) => entry.contract_code === contractCode);
     const expectedServices = dateRangeValues.reduce((total, dateValue) => {
-      const date = getDateFromStorage(dateValue);
+      const date = dateValue ? parseDateValue(dateValue) : null;
       return (
         total +
         servicesData.filter((service) => service.contract === contractCode && matchesSchedule(service.normalizedSchedule, date)).length
@@ -305,7 +284,7 @@ function buildDashboardSummary({ entries, servicesData, contracts, dateRangeValu
   });
 
   return byContract.reduce(
-    (summary, contractSummary) => {
+    (summary: DashboardSummary, contractSummary) => {
       summary.byContract.push(contractSummary);
       summary.totalPlanned += contractSummary.plannedServices;
       summary.totalExpected += contractSummary.expectedServices;
@@ -323,124 +302,65 @@ function buildDashboardSummary({ entries, servicesData, contracts, dateRangeValu
   );
 }
 
-const LOCAL_NORMALIZED_DATA = SERVICE_DATA.map((item) => ({
+const LOCAL_NORMALIZED_DATA: OperationsServiceRecord[] = SERVICE_DATA.map((item) => ({
   ...item,
   normalizedSchedule: normalizeText(item.schedule),
 }));
 
-function LoginScreen({ email, password, onEmailChange, onPasswordChange, onSubmit, authLoading, authError }) {
-  return (
-    <main className="ops-login-shell operations-theme">
-      <section className="login-panel">
-        <div className="login-copy">
-          <div className="login-heading">
-            <div className="login-brand">
-              <img src={appLogo} alt="JM" />
-            </div>
-            <h1>Plataforma de Control</h1>
-          </div>
-          <div className="login-bullets">
-            {LOGIN_BULLETS.map((bullet, index) => (
-              <article key={bullet.text} className="login-bullet">
-                <span className="login-bullet__icon">
-                  <img
-                    src={bullet.icon}
-                    alt={bullet.alt}
-                    className={index === 0 ? "login-bullet__image login-bullet__image--planificacion" : "login-bullet__image"}
-                  />
-                </span>
-                <p>{bullet.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-        <p className="login-footnote">
-          Somos especialistas en faenas mineras. Conectamos planificación, control y seguimiento en una sola plataforma.
-        </p>
-      </section>
-
-      <section className="login-card-wrap">
-        <div className="login-card">
-          <h2>Iniciar sesión</h2>
-          <form className="login-form" onSubmit={onSubmit}>
-            <label>
-              <span>Correo corporativo</span>
-              <input type="email" value={email} onChange={(event) => onEmailChange(event.target.value)} placeholder="nombre.apellido@busesjm.cl" required />
-            </label>
-            <label>
-              <span>Contraseña</span>
-              <input type="password" value={password} onChange={(event) => onPasswordChange(event.target.value)} placeholder="••••••••" required />
-            </label>
-            {authError ? <p className="login-error">{authError}</p> : null}
-            <button type="submit" className="primary-button login-submit" disabled={authLoading}>
-              {authLoading ? "Ingresando..." : "Continuar"}
-            </button>
-            <button type="button" className="link-button" onClick={() => onSubmit("reset")} disabled={authLoading}>
-              Olvidé mi contraseña
-            </button>
-          </form>
-          <p className="login-note">Conexión segura. Usa tus credenciales de Buses JM.</p>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-
-
 export function OperacionesDashboard() {
   const today = useMemo(() => new Date(), []);
-  const [session, setSession] = useState(null);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [authNotice, setAuthNotice] = useState("");
+  const todayStr = useMemo(() => toTodayDateValue(), []);
+  const { session, user } = useAuth();
   const { view } = useParams();
   const activePage = view?.replace("-", "_") || "resumen";
+
   const [selectedContract, setSelectedContract] = useState("");
   const [selectedShift, setSelectedShift] = useState("");
-  const [selectedDateValue, setSelectedDateValue] = useState(formatStorageDate(today));
+  const [selectedDateValue, setSelectedDateValue] = useState(todayStr);
+
   const [dashboardContract, setDashboardContract] = useState("");
-  const [dashboardDateFrom, setDashboardDateFrom] = useState(formatStorageDate(today));
-  const [dashboardDateTo, setDashboardDateTo] = useState(formatStorageDate(today));
-  const [dashboardEntries, setDashboardEntries] = useState([]);
+  const [dashboardDateFrom, setDashboardDateFrom] = useState(todayStr);
+  const [dashboardDateTo, setDashboardDateTo] = useState(todayStr);
+  const [dashboardEntries, setDashboardEntries] = useState<any[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState("");
+
   const [exportContract, setExportContract] = useState("");
-  const [exportDateFrom, setExportDateFrom] = useState(formatStorageDate(today));
-  const [exportDateTo, setExportDateTo] = useState(formatStorageDate(today));
-  const [exportRows, setExportRows] = useState([]);
+  const [exportDateFrom, setExportDateFrom] = useState(todayStr);
+  const [exportDateTo, setExportDateTo] = useState(todayStr);
+  const [exportRows, setExportRows] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState("");
   const [exportSearched, setExportSearched] = useState(false);
-  const [servicesData, setServicesData] = useState(LOCAL_NORMALIZED_DATA);
-  const [serviceDrafts, setServiceDrafts] = useState({});
-  const [expandedServiceId, setExpandedServiceId] = useState(null);
+
+  const [servicesData, setServicesData] = useState<OperationsServiceRecord[]>(LOCAL_NORMALIZED_DATA);
+  const [serviceDrafts, setServiceDrafts] = useState<Record<number, ServiceDraft>>({});
+  const [expandedServiceId, setExpandedServiceId] = useState<number | null>(null);
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [userContracts, setUserContracts] = useState([]);
-  const [userProfile, setUserProfile] = useState(null);
+
+  const [userContracts, setUserContracts] = useState<string[]>([]);
   const [isPasswordCardOpen, setIsPasswordCardOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [openDriverServiceId, setOpenDriverServiceId] = useState(null);
-  const [driversData, setDriversData] = useState(SAMPLE_DRIVERS);
-  const [equipmentData, setEquipmentData] = useState(SAMPLE_EQUIPMENT);
+
+  const [openDriverServiceId, setOpenDriverServiceId] = useState<number | null>(null);
+  const [driversData, setDriversData] = useState<Driver[]>(SAMPLE_DRIVERS);
+  const [equipmentData, setEquipmentData] = useState<Equipment[]>(SAMPLE_EQUIPMENT);
   const [driverQuery, setDriverQuery] = useState("");
-  const [openEquipmentServiceId, setOpenEquipmentServiceId] = useState(null);
+  const [openEquipmentServiceId, setOpenEquipmentServiceId] = useState<number | null>(null);
   const [equipmentQuery, setEquipmentQuery] = useState("");
+
   const [submitState, setSubmitState] = useState({
     loading: false,
     error: "",
     success: "",
-    fieldErrors: {},
-    fieldErrorsByService: {},
+    fieldErrors: {} as Record<string, string>,
+    fieldErrorsByService: {} as Record<number, Record<string, string>>,
   });
 
-  const selectedDate = getDateFromStorage(selectedDateValue);
+  const selectedDate = selectedDateValue ? parseDateValue(selectedDateValue) : null;
 
   const availableContracts = useMemo(() => {
     const currentContracts = new Set(servicesData.map((item) => item.contract).filter(Boolean));
@@ -479,6 +399,7 @@ export function OperacionesDashboard() {
       });
     });
   }, [driverQuery, driversData]);
+
   const filteredEquipment = useMemo(() => {
     const query = normalizeText(equipmentQuery);
 
@@ -496,6 +417,7 @@ export function OperacionesDashboard() {
       return parts.every((part) => haystack.includes(part));
     });
   }, [equipmentData, equipmentQuery]);
+
   const dashboardDateRangeValues = useMemo(() => enumerateDateRange(dashboardDateFrom, dashboardDateTo), [dashboardDateFrom, dashboardDateTo]);
   const dashboardSummary = useMemo(
     () =>
@@ -509,7 +431,7 @@ export function OperacionesDashboard() {
     [contractOptions, dashboardContract, dashboardDateRangeValues, dashboardEntries, servicesData],
   );
 
-  function getDraft(serviceId) {
+  function getDraft(serviceId: number): ServiceDraft {
     return (
       serviceDrafts[serviceId] ?? {
         driverId: "",
@@ -519,7 +441,7 @@ export function OperacionesDashboard() {
     );
   }
 
-  function updateDraft(serviceId, patch) {
+  function updateDraft(serviceId: number, patch: Partial<ServiceDraft>) {
     setServiceDrafts((current) => ({
       ...current,
       [serviceId]: {
@@ -530,49 +452,26 @@ export function OperacionesDashboard() {
     }));
   }
 
-  function getDriverById(driverId) {
+  function getDriverById(driverId: string): Driver | null {
     return driversData.find((employee) => employee.id === driverId) ?? null;
   }
 
-  function getEquipmentByCode(code) {
+  function getEquipmentByCode(code: string): Equipment | null {
     return equipmentData.find((item) => item.code === code) ?? null;
   }
 
   useEffect(() => {
-    let active = true;
-
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!active) return;
-      if (error) {
-        setAuthError("No pudimos recuperar la sesión actual.");
-      }
-      setSession(data.session ?? null);
-      setSessionReady(true);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession ?? null);
-      setSessionReady(true);
-    });
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  useEffect(() => {
-    if (!session) return;
+    const client = supabase;
+    if (!session || !client) return;
 
     let active = true;
 
     async function fetchAllActiveEmployees() {
+      if (!client) return [];
       return fetchAllPagedRows({
         pageSize: EMPLOYEES_PAGE_SIZE,
         buildQuery: (from, to) =>
-          supabase
+          client
             .from("employees")
             .select("buk_employee_id, full_name, document_number, document_type, area_name, area_code, is_active, status, updated_at")
             .eq("is_active", true)
@@ -582,9 +481,10 @@ export function OperacionesDashboard() {
     }
 
     async function loadSessionData() {
+      if (!client || !session) return;
       try {
-        const [servicesResponse, contractsResponse, profileResponse, employeeRows, equipmentResponse] = await Promise.all([
-          supabase
+        const [servicesResponse, contractsResponse, employeeRows, equipmentResponse] = await Promise.all([
+          client
             .from("base_services")
             .select(
               `
@@ -599,7 +499,7 @@ export function OperacionesDashboard() {
               `,
             )
             .order("external_key", { ascending: true }),
-          supabase
+          client
             .from("user_contracts")
             .select(
               `
@@ -607,13 +507,8 @@ export function OperacionesDashboard() {
               `,
             )
             .eq("user_id", session.user.id),
-          supabase
-            .from("profiles")
-            .select("full_name, app_role")
-            .eq("id", session.user.id)
-            .maybeSingle(),
           fetchAllActiveEmployees(),
-          supabase
+          client
             .from("equipment")
             .select("equipment_code, plate, equipment_type, current_client, brand, model, year, is_active, updated_at")
             .eq("is_active", true)
@@ -624,15 +519,14 @@ export function OperacionesDashboard() {
 
         const { data: rows, error: servicesError } = servicesResponse;
         const { data: contractRows } = contractsResponse;
-        const { data: profileRow } = profileResponse;
         const { data: equipmentRows, error: equipmentError } = equipmentResponse;
 
         if (servicesError) {
           return;
         }
 
-        const normalizedRemoteData = (rows ?? []).map((row) => ({
-          id: row.external_key,
+        const normalizedRemoteData: OperationsServiceRecord[] = (rows ?? []).map((row: any) => ({
+          id: Number(row.external_key),
           service: row.operational_name,
           company: row.company_name,
           type: row.service_type,
@@ -649,18 +543,9 @@ export function OperacionesDashboard() {
 
         setUserContracts(
           (contractRows ?? [])
-            .map((row) => row.contracts)
+            .map((row: any) => row.contracts)
             .filter(Boolean)
-            .map((contract) => contract.display_name || contract.code),
-        );
-
-        setUserProfile(
-          profileRow
-            ? {
-                fullName: profileRow.full_name,
-                role: profileRow.app_role,
-              }
-            : null,
+            .map((contract: any) => contract.display_name || contract.code),
         );
 
         if ((employeeRows ?? []).length > 0) {
@@ -683,14 +568,16 @@ export function OperacionesDashboard() {
     return () => {
       active = false;
     };
-  }, [session, supabase]);
+  }, [session]);
 
   useEffect(() => {
-    if (!session) return;
+    const client = supabase;
+    if (!session || !client) return;
 
     let active = true;
 
     async function fetchDashboardEntries() {
+      if (!client) return;
       if (!dashboardDateFrom || !dashboardDateTo || dashboardDateFrom > dashboardDateTo) {
         if (!active) return;
         setDashboardEntries([]);
@@ -705,7 +592,7 @@ export function OperacionesDashboard() {
         const rows = await fetchAllPagedRows({
           pageSize: DASHBOARD_PAGE_SIZE,
           buildQuery: (from, to) => {
-            let query = supabase
+            let query = client
               .from("service_entries")
               .select(DASHBOARD_ENTRY_SELECT)
               .gte("service_date", dashboardDateFrom)
@@ -739,7 +626,7 @@ export function OperacionesDashboard() {
     return () => {
       active = false;
     };
-  }, [dashboardContract, dashboardDateFrom, dashboardDateTo, session, submitState.success, supabase]);
+  }, [dashboardContract, dashboardDateFrom, dashboardDateTo, session, submitState.success]);
 
   useEffect(() => {
     setServiceDrafts({});
@@ -758,8 +645,9 @@ export function OperacionesDashboard() {
   }, [selectedContract, selectedShift, selectedDateValue]);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (!event.target.closest(".driver-picker")) {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".driver-picker")) {
         setOpenDriverServiceId(null);
         setDriverQuery("");
         setOpenEquipmentServiceId(null);
@@ -771,66 +659,8 @@ export function OperacionesDashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  async function handleSignIn(eventOrMode) {
-    const mode = typeof eventOrMode === "string" ? eventOrMode : "login";
-    if (typeof eventOrMode !== "string") {
-      eventOrMode.preventDefault();
-    }
-
-    setAuthError("");
-    setAuthNotice("");
-
-    if (mode === "reset") {
-      if (!email) {
-        setAuthError("Ingresa tu correo para enviarte el enlace de recuperacion.");
-        return;
-      }
-
-      setAuthLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin,
-      });
-
-      if (error) {
-        setAuthError("No pudimos enviar el correo de recuperacion.");
-      } else {
-        setAuthNotice("Te enviamos un correo para restablecer tu contraseña.");
-      }
-
-      setAuthLoading(false);
-      return;
-    }
-
-    setAuthLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setAuthError("No fue posible iniciar sesión. Revisa tu correo y contraseña.");
-    }
-
-    setAuthLoading(false);
-  }
-
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    setSelectedContract("");
-    setSelectedShift("");
-    setServiceDrafts({});
-    setExpandedServiceId(null);
-    setDriverQuery("");
-    setOpenDriverServiceId(null);
-    setEquipmentQuery("");
-    setOpenEquipmentServiceId(null);
-    setIsUserMenuOpen(false);
-    setIsPasswordCardOpen(false);
-  }
-
   async function handlePlanSubmit() {
-    const globalFieldErrors = {};
+    const globalFieldErrors: Record<string, string> = {};
 
     if (!selectedContract) globalFieldErrors.contractCode = "Selecciona un contrato válido.";
     if (!selectedShift) globalFieldErrors.shift = "Selecciona un turno válido.";
@@ -847,8 +677,8 @@ export function OperacionesDashboard() {
       return;
     }
 
-    const fieldErrorsByService = {};
-    const entriesToSubmit = [];
+    const fieldErrorsByService: Record<number, Record<string, string>> = {};
+    const entriesToSubmit: Array<{ serviceId: number; payload: any }> = [];
 
     for (const service of eligibleServices) {
       const draft = getDraft(service.id);
@@ -872,7 +702,7 @@ export function OperacionesDashboard() {
         equipmentCode: draft.equipmentCode,
       });
 
-      if (!validation.isValid || !completed) {
+      if (!validation.isValid || !completed || !validation.cleaned) {
         fieldErrorsByService[service.id] = validation.errors;
         if (!completed) {
           fieldErrorsByService[service.id] = {
@@ -922,14 +752,10 @@ export function OperacionesDashboard() {
       fieldErrorsByService: {},
     });
 
-    const {
-      data: { session: currentSession },
-    } = await supabase.auth.getSession();
-
-    const apiFieldErrorsByService = {};
+    const apiFieldErrorsByService: Record<number, Record<string, string>> = {};
 
     for (const entry of entriesToSubmit) {
-      const response = await submitServiceEntry(entry.payload, currentSession?.user?.id || "");
+      const response = await submitServiceEntry(entry.payload, user?.id || "");
       
       if (!response.ok) {
         apiFieldErrorsByService[entry.serviceId] = response.fieldErrors || { serviceExternalKey: response.error || "No fue posible guardar la planificación." };
@@ -958,7 +784,7 @@ export function OperacionesDashboard() {
     });
   }
 
-  async function handlePasswordUpdate(event) {
+  async function handlePasswordUpdate(event: React.FormEvent) {
     event.preventDefault();
     setPasswordMessage("");
 
@@ -974,6 +800,11 @@ export function OperacionesDashboard() {
 
     if (newPassword.length < 6) {
       setPasswordMessage("La nueva contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    if (!supabase) {
+      setPasswordMessage("Supabase no está configurado.");
       return;
     }
 
@@ -998,6 +829,12 @@ export function OperacionesDashboard() {
       return;
     }
 
+    const client = supabase;
+    if (!client) {
+      setExportError("Supabase no está configurado.");
+      return;
+    }
+
     setExportLoading(true);
     setExportError("");
     setExportSearched(true);
@@ -1006,7 +843,7 @@ export function OperacionesDashboard() {
       const rows = await fetchAllPagedRows({
         pageSize: EXPORT_PAGE_SIZE,
         buildQuery: (from, to) => {
-          let query = supabase
+          let query = client
             .from("service_entries")
             .select(EXPORT_ENTRY_SELECT)
             .gte("service_date", exportDateFrom)
@@ -1039,7 +876,7 @@ export function OperacionesDashboard() {
     const workbook = utils.book_new();
     const worksheetRows = exportRows.map((row) => ({
       Fecha: row.service_date,
-      Turno: formatShiftLabel(row.shift),
+      Turno: row.shift ? row.shift.toUpperCase() : "",
       Contrato: row.contract_code ?? "",
       Servicio: row.service_operational_name ?? "",
       "Nombre contractual": row.service_contractual_name ?? "",
@@ -1048,7 +885,7 @@ export function OperacionesDashboard() {
       Conductor: row.driver_name ?? "",
       "RUT / Documento": row.driver_document ?? "",
       Area: row.driver_area ?? "",
-      "Estado de turno": formatTurnStatusLabel(row.driver_shift_status),
+      "Estado de turno": row.driver_shift_status === "fuera_de_turno" ? "Fuera de Turno" : "En Turno",
       Equipo: row.equipment_code ?? "",
       Patente: row.equipment_plate ?? "",
       Tipo: row.equipment_type ?? "",
@@ -1081,21 +918,7 @@ export function OperacionesDashboard() {
     writeFile(workbook, filename);
   }
 
-  if (!sessionReady) {
-    return <main className="ops-loading-shell operations-theme">Cargando plataforma...</main>;
-  }
-
-  if (!session) {
-    return <main className="ops-loading-shell operations-theme">Acceso denegado. Debes iniciar sesión.</main>;
-  }
-
   const categoriesCount = new Set(eligibleServices.map((item) => item.category)).size;
-  const shiftLabel = selectedShift ? selectedShift.toUpperCase() : "Sin turno";
-  const displayName = userProfile?.fullName || session.user.user_metadata?.full_name || formatDisplayName(session.user.email);
-  const displayRole = userProfile?.role === "admin" ? "Administrador" : "Operaciones";
-  const dashboardCompletionRate =
-    dashboardSummary.totalExpected > 0 ? Math.round((dashboardSummary.totalPlanned / dashboardSummary.totalExpected) * 100) : 0;
-  const exportHasRows = exportRows.length > 0;
   const allServicesComplete =
     eligibleServices.length > 0 &&
     eligibleServices.every((service) => {
@@ -1103,706 +926,88 @@ export function OperacionesDashboard() {
       return Boolean(getDriverById(draft.driverId) && getEquipmentByCode(draft.equipmentCode));
     });
 
-  const operationsSummaryControls = (
-    <section className="operations-page-shell">
-      <section className="dashboard-hero operations-page-hero">
-        <div className="dashboard-hero__copy">
-          <h3>Resumen</h3>
-          <p>Indicadores operacionales alimentados desde los registros históricos de planificación.</p>
-        </div>
-      </section>
-
-      <section className="operations-control-grid operations-control-grid--summary">
-        <section className="panel operations-panel">
-          <p className="panel-label">Resumen</p>
-          <label>
-            <span>Contrato</span>
-            <select value={dashboardContract} onChange={(event) => setDashboardContract(event.target.value)}>
-              <option value="">Todos los contratos</option>
-              {contractOptions.map((contract) => (
-                <option key={contract} value={contract}>
-                  {contract}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="operations-inline-fields">
-            <DatePickerField id="dashboard-date-from" label="Desde" value={dashboardDateFrom} onChange={setDashboardDateFrom} />
-            <DatePickerField id="dashboard-date-to" label="Hasta" value={dashboardDateTo} onChange={setDashboardDateTo} />
-          </div>
-        </section>
-
-        <section className="panel operations-panel metrics operations-metrics-panel">
-          <article>
-            <span>Planificados</span>
-            <strong>{dashboardSummary.totalPlanned}</strong>
-          </article>
-          <article>
-            <span>Base habilitada</span>
-            <strong>{dashboardSummary.totalExpected}</strong>
-          </article>
-          <article>
-            <span>Cobertura</span>
-            <strong>{dashboardCompletionRate}%</strong>
-          </article>
-        </section>
-      </section>
-    </section>
-  );
-
-  const operationsBaseControls = (
-    <section className="operations-page-shell">
-      <section className="dashboard-hero operations-page-hero">
-        <div className="dashboard-hero__copy">
-          <h3>Registro de servicios base</h3>
-          <p>Define fecha, turno y contrato para habilitar la planificación operativa del día.</p>
-        </div>
-      </section>
-
-      <section className="operations-control-grid operations-control-grid--base">
-        <section className="panel operations-panel jornada-panel">
-          <p className="panel-label">Jornada</p>
-          <div className="field-grid">
-            <DatePickerField id="selected-date-value" label="Fecha" value={selectedDateValue} onChange={setSelectedDateValue} />
-            <label>
-              <span>Turno</span>
-              <select value={selectedShift} onChange={(event) => setSelectedShift(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.shift)}>
-                <option value="">Selecciona turno</option>
-                <option value="am">AM</option>
-                <option value="pm">PM</option>
-              </select>
-            </label>
-          </div>
-          {submitState.fieldErrors.serviceDate || submitState.fieldErrors.shift ? (
-            <div className="panel-inline-errors">
-              <p className="field-error">{submitState.fieldErrors.serviceDate || ""}</p>
-              <p className="field-error">{submitState.fieldErrors.shift || ""}</p>
-            </div>
-          ) : null}
-        </section>
-
-        <section className="panel operations-panel">
-          <p className="panel-label">Ingreso</p>
-          <label>
-            <span>Contrato</span>
-            <select value={selectedContract} onChange={(event) => setSelectedContract(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.contractCode)}>
-              <option value="">Selecciona contrato</option>
-              {contractOptions.map((contract) => (
-                <option key={contract} value={contract}>
-                  {contract}
-                </option>
-              ))}
-            </select>
-          </label>
-          {submitState.fieldErrors.contractCode ? <p className="field-error">{submitState.fieldErrors.contractCode}</p> : null}
-        </section>
-
-        <section className="panel operations-panel metrics operations-metrics-panel">
-          <article>
-            <span>Servicios del día</span>
-            <strong>{eligibleServices.length}</strong>
-          </article>
-          <article>
-            <span>Contrato activo</span>
-            <strong>{selectedContract || "Todos"}</strong>
-          </article>
-          <article>
-            <span>Categorías</span>
-            <strong>{categoriesCount}</strong>
-          </article>
-        </section>
-      </section>
-    </section>
-  );
-
-  const operationsExportControls = (
-    <section className="operations-page-shell">
-      <section className="dashboard-hero operations-page-hero">
-        <div className="dashboard-hero__copy">
-          <h3>Exportador de Información</h3>
-          <p>Consulta información histórica por contrato y rango de fechas, revisa una vista previa y exporta el resultado a Excel.</p>
-        </div>
-      </section>
-
-      <section className="operations-control-grid operations-control-grid--export">
-        <section className="panel operations-panel">
-          <p className="panel-label">Exportador</p>
-          <label>
-            <span>Contrato</span>
-            <select value={exportContract} onChange={(event) => setExportContract(event.target.value)}>
-              <option value="">Todos los contratos</option>
-              {contractOptions.map((contract) => (
-                <option key={contract} value={contract}>
-                  {contract}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="operations-inline-fields">
-            <DatePickerField id="export-date-from" label="Desde" value={exportDateFrom} onChange={setExportDateFrom} />
-            <DatePickerField id="export-date-to" label="Hasta" value={exportDateTo} onChange={setExportDateTo} />
-          </div>
-          <div className="export-sidebar-actions">
-            <button type="button" className="ghost-button ghost-button--full" onClick={handleExportSearch} disabled={exportLoading}>
-              {exportLoading ? "Buscando..." : "Buscar"}
-            </button>
-            <button type="button" className="primary-button export-button" onClick={handleExportExcel} disabled={!exportHasRows || exportLoading}>
-              Exportar Excel
-            </button>
-          </div>
-          {exportError ? <p className="field-error">{exportError}</p> : null}
-        </section>
-
-        <section className="panel operations-panel metrics operations-metrics-panel">
-          <article>
-            <span>Filas encontradas</span>
-            <strong>{exportRows.length}</strong>
-          </article>
-          <article>
-            <span>Contrato</span>
-            <strong>{exportContract || "Todos"}</strong>
-          </article>
-          <article>
-            <span>Rango</span>
-            <strong>{exportDateFrom && exportDateTo ? `${exportDateFrom} a ${exportDateTo}` : "Sin rango"}</strong>
-          </article>
-        </section>
-      </section>
-    </section>
-  );
-
-  const operationsSpecialControls = (
-    <section className="operations-page-shell">
-      <section className="dashboard-hero operations-page-hero">
-        <div className="dashboard-hero__copy">
-          <h3>Registro de servicios especiales</h3>
-          <p>Espacio reservado para el flujo de servicios no base. El diseño funcional aún no está definido.</p>
-        </div>
-      </section>
-    </section>
-  );
-
   return (
     <div className="operaciones-module-shell operations-theme">
       <main className="content operaciones-content">
+        {activePage === "resumen" && (
+          <OperationsSummary
+            dashboardContract={dashboardContract}
+            setDashboardContract={setDashboardContract}
+            contractOptions={contractOptions}
+            dashboardDateFrom={dashboardDateFrom}
+            setDashboardDateFrom={setDashboardDateFrom}
+            dashboardDateTo={dashboardDateTo}
+            setDashboardDateTo={setDashboardDateTo}
+            dashboardSummary={dashboardSummary}
+            dashboardLoading={dashboardLoading}
+            dashboardError={dashboardError}
+          />
+        )}
 
-        {activePage === "resumen" ? (
-          <>
-            {operationsSummaryControls}
-            <section className="dashboard-shell">
-            <section className="dashboard-cards">
-              <article className="dashboard-card">
-                <span>Servicios planificados</span>
-                <strong>{dashboardSummary.totalPlanned}</strong>
-                <small>Registros guardados en el rango seleccionado.</small>
-              </article>
-              <article className="dashboard-card">
-                <span>Servicios base habilitados</span>
-                <strong>{dashboardSummary.totalExpected}</strong>
-                <small>Servicios programables según periodicidad y contrato.</small>
-              </article>
-              <article className="dashboard-card">
-                <span>Conductores en turno</span>
-                <strong>{dashboardSummary.totalInTurn}</strong>
-                <small>Conductores distintos marcados como en turno.</small>
-              </article>
-              <article className="dashboard-card">
-                <span>Conductores fuera de turno</span>
-                <strong>{dashboardSummary.totalOutOfTurn}</strong>
-                <small>Conductores distintos marcados como fuera de turno.</small>
-              </article>
-            </section>
+        {activePage === "registros_base" && (
+          <OperationsBaseRegister
+            selectedDateValue={selectedDateValue}
+            setSelectedDateValue={setSelectedDateValue}
+            selectedShift={selectedShift}
+            setSelectedShift={setSelectedShift}
+            selectedContract={selectedContract}
+            setSelectedContract={setSelectedContract}
+            contractOptions={contractOptions}
+            eligibleServices={eligibleServices}
+            categoriesCount={categoriesCount}
+            submitState={submitState}
+            allServicesComplete={allServicesComplete}
+            handlePlanSubmit={handlePlanSubmit}
+            isPasswordCardOpen={isPasswordCardOpen}
+            setIsPasswordCardOpen={setIsPasswordCardOpen}
+            newPassword={newPassword}
+            setNewPassword={setNewPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
+            passwordMessage={passwordMessage}
+            setPasswordMessage={setPasswordMessage}
+            passwordLoading={passwordLoading}
+            handlePasswordUpdate={handlePasswordUpdate}
+            getDraft={getDraft}
+            updateDraft={updateDraft}
+            getDriverById={getDriverById}
+            getEquipmentByCode={getEquipmentByCode}
+            expandedServiceId={expandedServiceId}
+            setExpandedServiceId={setExpandedServiceId}
+            openDriverServiceId={openDriverServiceId}
+            setOpenDriverServiceId={setOpenDriverServiceId}
+            openEquipmentServiceId={openEquipmentServiceId}
+            setOpenEquipmentServiceId={setOpenEquipmentServiceId}
+            driverQuery={driverQuery}
+            setDriverQuery={setDriverQuery}
+            equipmentQuery={equipmentQuery}
+            setEquipmentQuery={setEquipmentQuery}
+            filteredDrivers={filteredDrivers}
+            filteredEquipment={filteredEquipment}
+          />
+        )}
 
-            <section className="dashboard-table-card">
-              <div className="section-head">
-                <div>
-                  <p className="eyebrow">Dashboard</p>
-                  <h3>Servicios planificados vs base habilitada por contrato</h3>
-                </div>
-              </div>
+        {activePage === "registros_especiales" && (
+          <OperationsSpecialRegister />
+        )}
 
-              {dashboardError ? <p className="submit-feedback submit-feedback--error">{dashboardError}</p> : null}
-
-              <div className="dashboard-table">
-                <div className="dashboard-table__head">
-                  <span>Contrato</span>
-                  <span>Planificados</span>
-                  <span>Base habilitada</span>
-                  <span>En turno</span>
-                  <span>Fuera de turno</span>
-                  <span>Cobertura</span>
-                </div>
-
-                {dashboardLoading ? (
-                  <div className="dashboard-table__row dashboard-table__row--empty">
-                    <span>Cargando indicadores...</span>
-                  </div>
-                ) : dashboardSummary.byContract.length > 0 ? (
-                  dashboardSummary.byContract.map((item) => (
-                    <div key={item.contractCode} className="dashboard-table__row">
-                      <strong>{item.contractCode}</strong>
-                      <span>{item.plannedServices}</span>
-                      <span>{item.expectedServices}</span>
-                      <span>{item.inTurnWorkers}</span>
-                      <span>{item.outOfTurnWorkers}</span>
-                      <span>{item.completionRate}%</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="dashboard-table__row dashboard-table__row--empty">
-                    <span>No hay datos para el rango seleccionado.</span>
-                  </div>
-                )}
-              </div>
-            </section>
-            </section>
-          </>
-        ) : null}
-
-        {activePage === "registros_base" ? (
-          <>
-            {operationsBaseControls}
-            <section className="toolbar">
-              <div className="toolbar-copy">
-                <h3>Planificacion de Servicios - {selectedContract || "Sin contrato"} - {shiftLabel}</h3>
-                <p>Para {formatLongDate(selectedDate)}.</p>
-              </div>
-              <div className="toolbar-actions">
-                <button
-                  type="button"
-                  className={`primary-button submit-plan-button${allServicesComplete ? " is-ready" : ""}`}
-                  onClick={handlePlanSubmit}
-                  disabled={submitState.loading || !allServicesComplete}
-                >
-                  {submitState.loading ? "Enviando..." : "Enviar Planificacion"}
-                </button>
-              </div>
-            </section>
-
-            <section className="operation-workspace">
-              {isPasswordCardOpen ? (
-                <article className="reference-card">
-                  <div className="section-head">
-                    <div>
-                      <p className="eyebrow">Cuenta</p>
-                      <h3>Cambiar contraseña</h3>
-                    </div>
-                    <button
-                      type="button"
-                      className="close-icon-button"
-                      aria-label="Cerrar cambio de contraseña"
-                      onClick={() => {
-                        setIsPasswordCardOpen(false);
-                        setPasswordMessage("");
-                        setNewPassword("");
-                        setConfirmPassword("");
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <form className="assignment-grid" onSubmit={handlePasswordUpdate}>
-                    <label>
-                      <span>Nueva contraseña</span>
-                      <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
-                    </label>
-                    <label>
-                      <span>Repite la contraseña</span>
-                      <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
-                    </label>
-                    <div className="account-actions">
-                      <button type="submit" className="primary-button" disabled={passwordLoading}>
-                        {passwordLoading ? "Actualizando..." : "Actualizar contraseña"}
-                      </button>
-                    </div>
-                    <p className="account-message">{passwordMessage || "Puedes cambiar tu contraseña sin salir de la plataforma."}</p>
-                  </form>
-                </article>
-              ) : null}
-
-              {eligibleServices.length === 0 ? (
-                <article className="service-module service-module--empty">
-                  <p className="helper-copy">Selecciona contrato, fecha y turno para habilitar servicios operacionales.</p>
-                </article>
-              ) : (
-                eligibleServices.map((service) => {
-                  const draft = getDraft(service.id);
-                  const selectedDriver = getDriverById(draft.driverId);
-                  const selectedEquipment = getEquipmentByCode(draft.equipmentCode);
-                  const isExpanded = expandedServiceId === service.id;
-                  const isComplete = Boolean(selectedDriver && selectedEquipment);
-                  const fieldErrors = submitState.fieldErrorsByService[service.id] || {};
-
-                  return (
-                    <article
-                      key={service.id}
-                      className={`service-module${isExpanded ? " is-expanded" : " is-collapsed"}${isComplete ? " is-complete" : ""}`}
-                    >
-                      <div className="service-module__header">
-                        <button
-                          type="button"
-                          className="service-module__toggle"
-                          aria-expanded={isExpanded}
-                          onClick={() => {
-                            setExpandedServiceId((current) => (current === service.id ? null : service.id));
-                            setOpenDriverServiceId(null);
-                            setOpenEquipmentServiceId(null);
-                            setDriverQuery("");
-                            setEquipmentQuery("");
-                          }}
-                        >
-                          <span className="service-module__toggle-mark">−</span>
-                        </button>
-
-                        {!isExpanded ? (
-                          <div className="service-module__summary">
-                            <strong className={`service-module__service-pill${isComplete ? " is-complete" : " is-pending"}`}>{service.service}</strong>
-                            <span>{selectedDriver?.fullName || "Sin conductor"}</span>
-                            <span>{selectedEquipment?.code || "Sin equipo"}</span>
-                          </div>
-                        ) : (
-                          <div className="service-module__summary service-module__summary--expanded" />
-                        )}
-
-                        <div className="service-module__header-side">
-                          {isComplete ? <span className="service-module__complete-dot" aria-label="Servicio completo" /> : null}
-                          <span className="badge badge-soft">{service.schedule ?? "Sin periodicidad"}</span>
-                        </div>
-                      </div>
-
-                      {isExpanded ? (
-                        <div className="service-module__body">
-                          <div className="service-assignment-row">
-                            <label className="service-assignment-field">
-                              <span>Servicio</span>
-                              <input type="text" readOnly value={service.service} className="compact-readonly" />
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Nombre contractual</span>
-                              <input type="text" readOnly value={service.contractName ?? ""} className="compact-readonly" />
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Categoría contractual</span>
-                              <input type="text" readOnly value={service.category ?? ""} className="compact-readonly" />
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Empresa usuaria</span>
-                              <input type="text" readOnly value={service.company ?? ""} className="compact-readonly" />
-                            </label>
-                          </div>
-
-                          <div className="service-reference-row service-reference-row--driver">
-                            <label className="service-assignment-field">
-                              <span>Conductor</span>
-                              <div className="driver-picker">
-                                <button
-                                  type="button"
-                                  className="driver-picker__trigger"
-                                  aria-expanded={selectedDriver ? false : openDriverServiceId === service.id}
-                                  aria-invalid={Boolean(fieldErrors.driverName)}
-                                  onClick={() => {
-                                    if (selectedDriver) return;
-                                    setOpenDriverServiceId((current) => (current === service.id ? null : service.id));
-                                    setOpenEquipmentServiceId(null);
-                                    setEquipmentQuery("");
-                                  }}
-                                >
-                                  <span className="driver-picker__value">{selectedDriver?.fullName || "Selecciona conductor"}</span>
-                                  {selectedDriver ? (
-                                    <span
-                                      className="driver-picker__clear"
-                                      role="button"
-                                      tabIndex={0}
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        updateDraft(service.id, { driverId: "", driverShiftStatus: "en_turno" });
-                                        setDriverQuery("");
-                                        setOpenDriverServiceId(null);
-                                      }}
-                                      onKeyDown={(event) => {
-                                        if (event.key === "Enter" || event.key === " ") {
-                                          event.preventDefault();
-                                          event.stopPropagation();
-                                          updateDraft(service.id, { driverId: "", driverShiftStatus: "en_turno" });
-                                          setDriverQuery("");
-                                          setOpenDriverServiceId(null);
-                                        }
-                                      }}
-                                      aria-label="Quitar conductor seleccionado"
-                                    >
-                                      ×
-                                    </span>
-                                  ) : null}
-                                  {!selectedDriver ? <span className="driver-picker__chevron" /> : null}
-                                </button>
-
-                                {openDriverServiceId === service.id ? (
-                                  <div className="driver-picker__popover">
-                                    <input
-                                      type="text"
-                                      value={driverQuery}
-                                      onChange={(event) => setDriverQuery(event.target.value)}
-                                      placeholder="Buscar por nombre o apellidos"
-                                      className="driver-picker__search"
-                                      autoFocus
-                                    />
-                                    <div className="driver-picker__list" role="listbox" aria-label="Resultados de conductor">
-                                      {filteredDrivers.length > 0 ? (
-                                        filteredDrivers.map((employee) => (
-                                          <button
-                                            key={employee.id}
-                                            type="button"
-                                            className={`driver-picker__option${employee.id === draft.driverId ? " is-selected" : ""}`}
-                                            onClick={() => {
-                                              updateDraft(service.id, { driverId: employee.id });
-                                              setOpenDriverServiceId(null);
-                                              setDriverQuery("");
-                                            }}
-                                          >
-                                            {employee.fullName}
-                                          </button>
-                                        ))
-                                      ) : (
-                                        <p className="driver-picker__empty">No se encontraron conductores.</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : null}
-                              </div>
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>RUT / Documento</span>
-                              <input type="text" readOnly value={selectedDriver?.documentNumber ?? ""} className="compact-readonly" />
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Área</span>
-                              <input type="text" readOnly value={selectedDriver?.areaName || selectedDriver?.areaCode || ""} className="compact-readonly" />
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Estado de turno</span>
-                              <div className={`turn-status-control turn-status-control--${draft.driverShiftStatus}`}>
-                                <select
-                                  value={draft.driverShiftStatus}
-                                  onChange={(event) => updateDraft(service.id, { driverShiftStatus: event.target.value })}
-                                  aria-invalid={Boolean(fieldErrors.driverShiftStatus)}
-                                >
-                                  <option value="en_turno">En Turno</option>
-                                  <option value="fuera_de_turno">Fuera de Turno</option>
-                                </select>
-                                <span className="turn-status-control__dot" aria-hidden="true" />
-                              </div>
-                            </label>
-                          </div>
-
-                          <div className="service-reference-row service-reference-row--equipment">
-                            <label className="service-assignment-field">
-                              <span>Equipo</span>
-                              <div className="driver-picker">
-                                <button
-                                  type="button"
-                                  className="driver-picker__trigger"
-                                  aria-expanded={selectedEquipment ? false : openEquipmentServiceId === service.id}
-                                  aria-invalid={Boolean(fieldErrors.equipmentCode)}
-                                  onClick={() => {
-                                    if (selectedEquipment) return;
-                                    setOpenEquipmentServiceId((current) => (current === service.id ? null : service.id));
-                                    setOpenDriverServiceId(null);
-                                    setDriverQuery("");
-                                  }}
-                                >
-                                  <span className="driver-picker__value">{selectedEquipment?.code || "Selecciona equipo"}</span>
-                                  {selectedEquipment ? (
-                                    <span
-                                      className="driver-picker__clear"
-                                      role="button"
-                                      tabIndex={0}
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        updateDraft(service.id, { equipmentCode: "" });
-                                        setEquipmentQuery("");
-                                        setOpenEquipmentServiceId(null);
-                                      }}
-                                      onKeyDown={(event) => {
-                                        if (event.key === "Enter" || event.key === " ") {
-                                          event.preventDefault();
-                                          event.stopPropagation();
-                                          updateDraft(service.id, { equipmentCode: "" });
-                                          setEquipmentQuery("");
-                                          setOpenEquipmentServiceId(null);
-                                        }
-                                      }}
-                                      aria-label="Quitar equipo seleccionado"
-                                    >
-                                      ×
-                                    </span>
-                                  ) : null}
-                                  {!selectedEquipment ? <span className="driver-picker__chevron" /> : null}
-                                </button>
-
-                                {openEquipmentServiceId === service.id ? (
-                                  <div className="driver-picker__popover">
-                                    <input
-                                      type="text"
-                                      value={equipmentQuery}
-                                      onChange={(event) => setEquipmentQuery(event.target.value)}
-                                      placeholder="Buscar por equipo, patente o tipo"
-                                      className="driver-picker__search"
-                                      autoFocus
-                                    />
-                                    <div className="driver-picker__list" role="listbox" aria-label="Resultados de equipo">
-                                      {filteredEquipment.length > 0 ? (
-                                        filteredEquipment.map((item) => (
-                                          <button
-                                            key={item.code}
-                                            type="button"
-                                            className={`driver-picker__option${item.code === draft.equipmentCode ? " is-selected" : ""}`}
-                                            onClick={() => {
-                                              updateDraft(service.id, { equipmentCode: item.code });
-                                              setOpenEquipmentServiceId(null);
-                                              setEquipmentQuery("");
-                                            }}
-                                          >
-                                            {item.code}
-                                          </button>
-                                        ))
-                                      ) : (
-                                        <p className="driver-picker__empty">No se encontraron equipos.</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : null}
-                              </div>
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Tipo</span>
-                              <input type="text" readOnly value={selectedEquipment?.type ?? ""} className="compact-readonly" />
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Patente</span>
-                              <input type="text" readOnly value={selectedEquipment?.plate ?? ""} className="compact-readonly" />
-                            </label>
-
-                            <label className="service-assignment-field">
-                              <span>Cliente actual</span>
-                              <input type="text" readOnly value={selectedEquipment?.currentClient ?? ""} className="compact-readonly" />
-                            </label>
-                          </div>
-
-                          <div className="field-errors-grid field-errors-grid--service field-errors-grid--compact">
-                            <span />
-                            <span />
-                            <span />
-                            <span />
-                          </div>
-                          <div className="field-errors-grid field-errors-grid--service field-errors-grid--compact">
-                            {fieldErrors.driverName ? <p className="field-error">{fieldErrors.driverName}</p> : <span />}
-                            <span />
-                            <span />
-                            {fieldErrors.driverShiftStatus ? <p className="field-error">{fieldErrors.driverShiftStatus}</p> : <span />}
-                          </div>
-                          <div className="field-errors-grid field-errors-grid--service field-errors-grid--compact">
-                            {fieldErrors.equipmentCode ? <p className="field-error">{fieldErrors.equipmentCode}</p> : <span />}
-                            <span />
-                            <span />
-                            <span />
-                          </div>
-                          {openDriverServiceId === service.id && driverQuery ? <p className="helper-copy helper-copy--tight">{filteredDrivers.length} conductor(es) encontrados.</p> : null}
-                          {openEquipmentServiceId === service.id && equipmentQuery ? <p className="helper-copy helper-copy--tight">{filteredEquipment.length} equipo(s) encontrados.</p> : null}
-                        </div>
-                      ) : null}
-                    </article>
-                  );
-                })
-              )}
-              {submitState.error ? <p className="submit-feedback submit-feedback--error">{submitState.error}</p> : null}
-              {submitState.success ? <p className="submit-feedback submit-feedback--success">{submitState.success}</p> : null}
-            </section>
-          </>
-        ) : null}
-
-        {activePage === "registros_especiales" ? (
-          <section className="specials-shell">
-            {operationsSpecialControls}
-
-            <article className="reference-card">
-              <div className="section-head">
-                <div>
-                  <p className="eyebrow">Pendiente</p>
-                  <h3>Modulo en definición</h3>
-                </div>
-              </div>
-              <p className="helper-copy">
-                Esta página quedará destinada al registro de servicios especiales. La estructura de navegación ya la separa del flujo base para que el diseño posterior no mezcle reglas de negocio distintas.
-              </p>
-            </article>
-          </section>
-        ) : null}
-
-        {activePage === "exportador" ? (
-          <section className="export-shell">
-            {operationsExportControls}
-
-            <article className="dashboard-table-card">
-              <div className="section-head">
-                <div>
-                  <p className="eyebrow">Vista previa</p>
-                  <h3>Planificaciones históricas</h3>
-                </div>
-              </div>
-
-              {exportError ? <p className="submit-feedback submit-feedback--error">{exportError}</p> : null}
-
-              {exportLoading ? (
-                <div className="export-empty-state">
-                  <span>Cargando vista previa...</span>
-                </div>
-              ) : exportHasRows ? (
-                <div className="dashboard-table dashboard-table--export">
-                  <div className="dashboard-table__head dashboard-table__head--export">
-                    <span>Fecha</span>
-                    <span>Turno</span>
-                    <span>Contrato</span>
-                    <span>Servicio</span>
-                    <span>Conductor</span>
-                    <span>Estado</span>
-                    <span>Equipo</span>
-                    <span>Patente</span>
-                  </div>
-
-                  {exportRows.map((row, index) => (
-                    <div key={`${row.service_date}-${row.contract_code}-${row.service_operational_name}-${row.equipment_code}-${index}`} className="dashboard-table__row dashboard-table__row--export">
-                      <span>{row.service_date}</span>
-                      <span>{formatShiftLabel(row.shift)}</span>
-                      <strong>{row.contract_code || ""}</strong>
-                      <span>{row.service_operational_name || ""}</span>
-                      <span>{row.driver_name || ""}</span>
-                      <span>{formatTurnStatusLabel(row.driver_shift_status)}</span>
-                      <span>{row.equipment_code || ""}</span>
-                      <span>{row.equipment_plate || ""}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : exportSearched ? (
-                <div className="export-empty-state">
-                  <span>No hay registros para el criterio seleccionado.</span>
-                </div>
-              ) : (
-                <div className="export-empty-state">
-                  <span>Define contrato y rango de fechas, luego presiona Buscar para cargar la vista previa.</span>
-                </div>
-              )}
-            </article>
-          </section>
-        ) : null}
+        {activePage === "exportador" && (
+          <OperationsExport
+            exportContract={exportContract}
+            setExportContract={setExportContract}
+            contractOptions={contractOptions}
+            exportDateFrom={exportDateFrom}
+            setExportDateFrom={setExportDateFrom}
+            exportDateTo={exportDateTo}
+            setExportDateTo={setExportDateTo}
+            exportRows={exportRows}
+            exportLoading={exportLoading}
+            exportError={exportError}
+            exportSearched={exportSearched}
+            handleExportSearch={handleExportSearch}
+            handleExportExcel={handleExportExcel}
+          />
+        )}
       </main>
     </div>
   );
