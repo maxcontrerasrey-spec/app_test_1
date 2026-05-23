@@ -197,13 +197,7 @@ export function HiringStatusPage() {
 
   return (
     <PageShell>
-      <div className="hero-panel hero-panel-compact">
-        <h2>Control de Contrataciones</h2>
-        <p>
-          Seguimiento de procesos activos por folio aprobado y control operativo
-          transversal de candidatos dentro del mismo submódulo.
-        </p>
-      </div>
+
 
       <section className="tracking-panel">
         <div className="tracking-kpi-row">
