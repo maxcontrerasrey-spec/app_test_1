@@ -7,6 +7,12 @@ export function useDashboard() {
   const { user, appRoles } = useAuth();
   const [widgets, setWidgets] = useState<ResolvedWidget[]>([]);
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
+  
+  // Data stores for widgets
+  const [tasksData, setTasksData] = useState<any[]>([]);
+  const [alertsData, setAlertsData] = useState<any[]>([]);
+  const [kpisData, setKpisData] = useState<any>(null);
+
   const [isLoading, setIsLoading] = useState(true);
 
   const loadDashboardData = useCallback(async () => {
@@ -14,10 +20,13 @@ export function useDashboard() {
     setIsLoading(true);
     
     try {
-      const [availableWidgets, userPrefs, unreadNotifications] = await Promise.all([
+      const [availableWidgets, userPrefs, unreadNotifications, tasks, alerts, kpis] = await Promise.all([
         dashboardService.getAvailableWidgets(appRoles),
         dashboardService.getUserPreferences(),
-        dashboardService.getUnreadNotifications()
+        dashboardService.getUnreadNotifications(),
+        dashboardService.getDashboardTasks(user.id),
+        dashboardService.getDashboardAlerts(user.id),
+        dashboardService.getDashboardKpis(user.id)
       ]);
 
       // Merge base widgets with user preferences
@@ -36,6 +45,9 @@ export function useDashboard() {
 
       setWidgets(resolvedWidgets);
       setNotifications(unreadNotifications);
+      setTasksData(tasks);
+      setAlertsData(alerts);
+      setKpisData(kpis);
     } catch (error) {
       console.error("Failed to load dashboard data", error);
     } finally {
@@ -61,6 +73,9 @@ export function useDashboard() {
   return {
     widgets,
     notifications,
+    tasksData,
+    alertsData,
+    kpisData,
     isLoading,
     toggleWidgetVisibility,
     refresh: loadDashboardData

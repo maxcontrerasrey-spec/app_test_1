@@ -1,6 +1,8 @@
 import type { ResolvedWidget } from "../../types";
 
-export function AlertsWidget({ widget }: { widget: ResolvedWidget }) {
+export function AlertsWidget({ widget, dashboardData }: { widget: ResolvedWidget, dashboardData?: any }) {
+  const alerts = dashboardData?.alertsData || [];
+
   return (
     <article className="widget-card widget-alert" style={{ width: '100%' }}>
       <div className="widget-header">
@@ -10,26 +12,18 @@ export function AlertsWidget({ widget }: { widget: ResolvedWidget }) {
         </button>
       </div>
       
-      <div className="nx-alerts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-        
-        <div className="nx-alert-item warning">
-          <p className="nx-alert-title">SLA Atrasado: 3 Candidatos</p>
-          <p className="nx-alert-desc">Operador Equipo Pesado superó los 15 días límite en revisión técnica.</p>
-          <p className="nx-alert-meta">Hace 2 hrs · reclutamiento</p>
-        </div>
-
-        <div className="nx-alert-item critical">
-          <p className="nx-alert-title">Acreditaciones Críticas</p>
-          <p className="nx-alert-desc">5 conductores vencerán pase minero en menos de 48 horas.</p>
-          <p className="nx-alert-meta">Hace 4 hrs · operaciones</p>
-        </div>
-
-        <div className="nx-alert-item info">
-          <p className="nx-alert-title">Nuevo Turno Asignado</p>
-          <p className="nx-alert-desc">Se generó exitosamente la rotativa 7x7 para Faena Norte.</p>
-          <p className="nx-alert-meta">Hace 6 hrs · sistema</p>
-        </div>
-
+      <div className="nx-alerts-grid">
+        {alerts.length === 0 ? (
+          <p className="helper-copy" style={{ padding: '16px' }}>No hay alertas activas en este momento.</p>
+        ) : (
+          alerts.map((alert: any) => (
+            <div key={alert.id} className={`nx-alert-item ${alert.severity}`}>
+              <p className="nx-alert-title">{alert.title}</p>
+              <p className="nx-alert-desc">{alert.description}</p>
+              <p className="nx-alert-meta">Generado: {new Date(alert.created_at).toLocaleDateString()} · {alert.source}</p>
+            </div>
+          ))
+        )}
       </div>
     </article>
   );

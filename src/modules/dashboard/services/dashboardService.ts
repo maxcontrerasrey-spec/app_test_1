@@ -82,5 +82,44 @@ export const dashboardService = {
     }
 
     return data as DashboardNotification[];
+  },
+
+  /**
+   * Fetches dynamic tasks for the TasksWidget via RPC
+   */
+  async getDashboardTasks(userId: string): Promise<any[]> {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc("get_dashboard_tasks", { p_user_id: userId });
+    if (error) {
+      console.error("Error fetching dashboard tasks:", error);
+      return [];
+    }
+    return data || [];
+  },
+
+  /**
+   * Fetches dynamic alerts for the AlertsWidget via RPC
+   */
+  async getDashboardAlerts(userId: string): Promise<any[]> {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc("get_dashboard_alerts", { p_user_id: userId });
+    if (error) {
+      console.error("Error fetching dashboard alerts:", error);
+      return [];
+    }
+    return data || [];
+  },
+
+  /**
+   * Fetches dynamic KPIs for the KPIWidget via RPC
+   */
+  async getDashboardKpis(userId: string): Promise<any> {
+    if (!supabase) return null;
+    const { data, error } = await supabase.rpc("get_dashboard_kpis", { p_user_id: userId });
+    if (error) {
+      console.error("Error fetching dashboard KPIs:", error);
+      return null;
+    }
+    return data || null;
   }
 };

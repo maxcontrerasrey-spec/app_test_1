@@ -6,7 +6,7 @@ import "../styles/dashboard.css"; // We will create this file
 
 export function DashboardHome() {
   const { user, appRoles, displayName } = useAuth();
-  const { widgets, isLoading } = useDashboard();
+  const { widgets, isLoading, tasksData, alertsData, kpisData } = useDashboard();
 
   // Map backend roles to readable department names for greeting
   const roleDisplayNames: Record<string, string> = {
@@ -35,7 +35,11 @@ export function DashboardHome() {
       </header>
 
       <main className="dashboard-main">
-        <DashboardGrid widgets={widgets} isLoading={isLoading} />
+        <DashboardGrid 
+          widgets={widgets} 
+          isLoading={isLoading} 
+          dashboardData={{ tasksData, alertsData, kpisData }}
+        />
       </main>
     </div>
   );

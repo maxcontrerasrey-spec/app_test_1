@@ -18,9 +18,14 @@ const WidgetRegistry: Record<string, React.FC<any>> = {
 interface DashboardGridProps {
   widgets: ResolvedWidget[];
   isLoading: boolean;
+  dashboardData?: {
+    tasksData: any[];
+    alertsData: any[];
+    kpisData: any;
+  };
 }
 
-export function DashboardGrid({ widgets, isLoading }: DashboardGridProps) {
+export function DashboardGrid({ widgets, isLoading, dashboardData }: DashboardGridProps) {
   if (isLoading) {
     return (
       <div className="dashboard-loading">
@@ -43,9 +48,6 @@ export function DashboardGrid({ widgets, isLoading }: DashboardGridProps) {
   }
 
   // Z-Pattern Layout strategy
-  // 1. Critical priorities (Alerts) top full width
-  // 2. KPIs row
-  // 3. Main content (Tasks) left, (Timeline & Actions) right
   const alerts = visibleWidgets.filter((w) => w.component_key === "AlertsWidget");
   const kpis = visibleWidgets.filter((w) => w.component_key === "KPIWidget");
   const mainCol = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
@@ -58,7 +60,7 @@ export function DashboardGrid({ widgets, isLoading }: DashboardGridProps) {
         <div className="dashboard-zone dashboard-zone--alerts">
           {alerts.map((w) => {
             const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} /> : null;
+            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
           })}
         </div>
       )}
@@ -68,7 +70,7 @@ export function DashboardGrid({ widgets, isLoading }: DashboardGridProps) {
         <div className="dashboard-zone dashboard-zone--kpis">
           {kpis.map((w) => {
             const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} /> : null;
+            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
           })}
         </div>
       )}
@@ -78,13 +80,13 @@ export function DashboardGrid({ widgets, isLoading }: DashboardGridProps) {
         <div className="dashboard-col dashboard-col--main">
           {mainCol.map((w) => {
             const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} /> : null;
+            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
           })}
         </div>
         <div className="dashboard-col dashboard-col--side">
           {sideCol.map((w) => {
             const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} /> : null;
+            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
           })}
         </div>
       </div>

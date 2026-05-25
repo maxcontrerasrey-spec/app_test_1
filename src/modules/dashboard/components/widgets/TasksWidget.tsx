@@ -1,6 +1,8 @@
 import type { ResolvedWidget } from "../../types";
 
-export function TasksWidget({ widget }: { widget: ResolvedWidget }) {
+export function TasksWidget({ widget, dashboardData }: { widget: ResolvedWidget, dashboardData?: any }) {
+  const tasks = dashboardData?.tasksData || [];
+
   return (
     <article className="widget-card widget-tasks" style={{ height: '100%' }}>
       <div className="widget-header">
@@ -14,48 +16,46 @@ export function TasksWidget({ widget }: { widget: ResolvedWidget }) {
         <table className="nx-table">
           <thead>
             <tr>
-              <th>Folio / Elemento</th>
+              <th>Elemento ({tasks.length})</th>
               <th>Estado</th>
               <th className="nx-td-numeric">Prioridad</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="nx-td-primary">REQ-0042 (Operador Camión)</td>
-              <td>
-                <span className="nx-status">
-                  <span className="nx-dot pending"></span> En Revisión
-                </span>
-              </td>
-              <td className="nx-td-numeric" style={{ color: 'var(--color-warning)' }}>Alta</td>
-            </tr>
-            <tr>
-              <td className="nx-td-primary">Anexo Contrato (J. Pérez)</td>
-              <td>
-                <span className="nx-status">
-                  <span className="nx-dot healthy"></span> Aprobado
-                </span>
-              </td>
-              <td className="nx-td-numeric">Normal</td>
-            </tr>
-            <tr>
-              <td className="nx-td-primary">Certificado Antigüedad</td>
-              <td>
-                <span className="nx-status">
-                  <span className="nx-dot error"></span> Bloqueado
-                </span>
-              </td>
-              <td className="nx-td-numeric" style={{ color: 'var(--color-danger)' }}>Crítica</td>
-            </tr>
-            <tr>
-              <td className="nx-td-primary">REQ-0045 (Supervisor)</td>
-              <td>
-                <span className="nx-status">
-                  <span className="nx-dot running"></span> Entrevista
-                </span>
-              </td>
-              <td className="nx-td-numeric">Alta</td>
-            </tr>
+            {tasks.length === 0 ? (
+              <tr>
+                <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                  Excelente, no tienes tareas pendientes.
+                </td>
+              </tr>
+            ) : (
+              tasks.map((task: any) => {
+                // Determine color based on priority
+                const priorityColor = task.priority === 'Alta' ? 'var(--color-warning)' : 
+                                      task.priority === 'Crítica' ? 'var(--color-danger)' : 'var(--text-muted)';
+                
+                // Determine dot class based on status
+                const dotClass = task.status_code === 'pending' ? 'pending' : 
+                                 task.status_code === 'sourcing' ? 'running' : 'healthy';
+
+                return (
+                  <tr key={task.id}>
+                    <td className="nx-td-primary" title={task.title}>
+                      {task.title}
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'normal', marginTop: '2px' }}>
+                        {task.subtitle}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="nx-status">
+                        <span className={`nx-dot ${dotClass}`}></span> {task.status_label}
+                      </span>
+                    </td>
+                    <td className="nx-td-numeric" style={{ color: priorityColor }}>{task.priority}</td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

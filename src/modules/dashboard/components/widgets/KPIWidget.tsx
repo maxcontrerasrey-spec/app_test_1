@@ -1,6 +1,12 @@
 import type { ResolvedWidget } from "../../types";
 
-export function KPIWidget({ widget }: { widget: ResolvedWidget }) {
+export function KPIWidget({ widget, dashboardData }: { widget: ResolvedWidget, dashboardData?: any }) {
+  const kpis = dashboardData?.kpisData || {
+    total_vacancies: 0,
+    active_cases: 0,
+    pending_approvals: 0
+  };
+
   return (
     <article className="widget-card widget-kpi">
       <div className="widget-header">
@@ -13,26 +19,23 @@ export function KPIWidget({ widget }: { widget: ResolvedWidget }) {
       <div className="nx-kpi-grid">
         <div className="nx-kpi-box">
           <div className="nx-kpi-main">
-            <span className="nx-kpi-value">142</span>
-            <span className="nx-kpi-label">Vacantes</span>
+            <span className="nx-kpi-value">{kpis.total_vacancies}</span>
+            <span className="nx-kpi-label">Vacantes Activas</span>
           </div>
           <div className="nx-bar-row">
-            <span className="nx-bar-label">Norte</span>
-            <div className="nx-bar-track"><div className="nx-bar-fill blue" style={{ width: '85%' }}></div></div>
-            <span className="nx-bar-value">85</span>
+            <span className="nx-bar-label">Casos Activos</span>
+            <div className="nx-bar-track"><div className="nx-bar-fill blue" style={{ width: '100%' }}></div></div>
+            <span className="nx-bar-value">{kpis.active_cases}</span>
           </div>
           <div className="nx-bar-row">
-            <span className="nx-bar-label">Sur</span>
-            <div className="nx-bar-track"><div className="nx-bar-fill purple" style={{ width: '40%' }}></div></div>
-            <span className="nx-bar-value">40</span>
-          </div>
-          <div className="nx-bar-row">
-            <span className="nx-bar-label">Centro</span>
-            <div className="nx-bar-track"><div className="nx-bar-fill yellow" style={{ width: '17%' }}></div></div>
-            <span className="nx-bar-value">17</span>
+            <span className="nx-bar-label">Pendientes Aprob.</span>
+            <div className="nx-bar-track"><div className="nx-bar-fill yellow" style={{ width: kpis.pending_approvals > 0 ? '50%' : '0%' }}></div></div>
+            <span className="nx-bar-value">{kpis.pending_approvals}</span>
           </div>
         </div>
 
+        {/* Keeping the coverage one static for now as example of multi-box KPI, 
+            unless we write a complex SQL to calculate SLA coverage */}
         <div className="nx-kpi-box">
           <div className="nx-kpi-main">
             <span className="nx-kpi-value">98%</span>
@@ -40,7 +43,7 @@ export function KPIWidget({ widget }: { widget: ResolvedWidget }) {
           </div>
           <div className="nx-bar-row">
             <span className="nx-bar-label">Reclut.</span>
-            <div className="nx-bar-track"><div className="nx-bar-fill green" style={{ width: '92%', background: '#10B981' }}></div></div>
+            <div className="nx-bar-track"><div className="nx-bar-fill green" style={{ width: '92%' }}></div></div>
             <span className="nx-bar-value">92%</span>
           </div>
           <div className="nx-bar-row">
