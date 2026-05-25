@@ -1,6 +1,6 @@
 import type { ResolvedWidget } from "../../types";
 
-export function TasksWidget({ widget, dashboardData }: { widget: ResolvedWidget, dashboardData?: any }) {
+export function TasksWidget({ widget, dashboardData, onAction }: { widget: ResolvedWidget, dashboardData?: any, onAction?: (actionType: string, payload: any) => void }) {
   const tasks = dashboardData?.tasksData || [];
 
   return (
@@ -39,7 +39,15 @@ export function TasksWidget({ widget, dashboardData }: { widget: ResolvedWidget,
                                  task.status_code === 'sourcing' ? 'running' : 'healthy';
 
                 return (
-                  <tr key={task.id}>
+                  <tr 
+                    key={task.id} 
+                    style={onAction && task.id.startsWith("approval_") ? { cursor: "pointer" } : undefined}
+                    onClick={() => {
+                      if (onAction && task.id.startsWith("approval_")) {
+                        onAction("OPEN_APPROVAL", task.id.replace("approval_", ""));
+                      }
+                    }}
+                  >
                     <td className="nx-td-primary" title={task.title}>
                       {task.title}
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'normal', marginTop: '2px' }}>

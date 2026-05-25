@@ -243,7 +243,7 @@ export function HiringStatusPage() {
             isDecisionLoading={isDecisionLoading}
             decisionMessage={decisionMessage}
             errorMessage={errorMessage}
-            onApprovalDecision={handleApprovalDecision}
+            onApprovalSuccess={() => void loadDashboard(selectedCaseId)}
           />
         ) : (
           <HiringCandidatesView

@@ -59,3 +59,22 @@ export async function decideHiringApproval(params: {
     error: null
   };
 }
+
+export async function getHiringApprovalDetails(approvalId: number) {
+  if (!supabase) return { data: null, error: "Supabase no está configurado." };
+
+  const { data, error } = await supabase
+    .from("hiring_request_approvals")
+    .select(`
+      *,
+      hiring_requests (*)
+    `)
+    .eq("id", approvalId)
+    .single();
+
+  if (error) {
+    return { data: null, error: "Error al cargar detalles de la aprobación." };
+  }
+
+  return { data, error: null };
+}

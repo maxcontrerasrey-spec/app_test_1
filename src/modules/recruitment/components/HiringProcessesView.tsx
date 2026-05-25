@@ -12,6 +12,7 @@ import {
   formatDateValue,
   formatDateTimeValue
 } from "./hiringControlViewUtils";
+import { ApprovalModal } from "./ApprovalModal";
 
 type HiringProcessesViewProps = {
   isLoading: boolean;
@@ -21,10 +22,7 @@ type HiringProcessesViewProps = {
   isDecisionLoading: number | null;
   decisionMessage: string;
   errorMessage: string;
-  onApprovalDecision: (
-    approvalId: number,
-    decision: "approved" | "rejected"
-  ) => Promise<boolean>;
+  onApprovalSuccess: () => void;
 };
 
 export function HiringProcessesView({
@@ -35,7 +33,7 @@ export function HiringProcessesView({
   isDecisionLoading,
   decisionMessage,
   errorMessage,
-  onApprovalDecision
+  onApprovalSuccess
 }: HiringProcessesViewProps) {
   const [caseSearchTerm, setCaseSearchTerm] = useState("");
   const [caseFilter, setCaseFilter] =
@@ -82,16 +80,9 @@ export function HiringProcessesView({
   const selectedApproval =
     pendingApprovals.find((approval) => approval.id === selectedApprovalId) ?? null;
 
-  const handleApproval = async (decision: "approved" | "rejected") => {
-    if (!selectedApproval) {
-      return;
-    }
-
-    const wasSuccessful = await onApprovalDecision(selectedApproval.id, decision);
-
-    if (wasSuccessful) {
-      setSelectedApprovalId(null);
-    }
+  const handleApprovalSuccess = () => {
+    setSelectedApprovalId(null);
+    onApprovalSuccess();
   };
 
   return (
@@ -320,136 +311,13 @@ export function HiringProcessesView({
         </div>
       </div>
 
-      {selectedApproval ? (
-        <div
-          className="approval-modal-backdrop"
-          role="presentation"
-          onClick={() => setSelectedApprovalId(null)}
-        >
-          <div
-            className="approval-modal-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="approval-modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="home-section-header">
-              <div>
-                <h3 id="approval-modal-title">
-                  Folio {selectedApproval.hiring_requests?.folio ?? "Sin folio"}
-                </h3>
-                <p>{selectedApproval.step_name}</p>
-              </div>
-              <button
-                type="button"
-                className="soft-primary-button approval-button-detail"
-                onClick={() => setSelectedApprovalId(null)}
-              >
-                Cerrar
-              </button>
-            </div>
-
-            <div className="approval-detail-grid">
-              <div className="approval-detail-item approval-detail-item-tiny">
-                <small>Solicitó</small>
-                <strong>
-                  {selectedApproval.hiring_requests?.requester_name ?? "No disponible"}
-                </strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-wide">
-                <small>Correo solicitante</small>
-                <strong>
-                  {selectedApproval.hiring_requests?.requester_email ?? "No disponible"}
-                </strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-compact">
-                <small>Cargo solicitado</small>
-                <strong>
-                  {selectedApproval.hiring_requests?.job_position_name ?? "No disponible"}
-                </strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-regular">
-                <small>Contrato</small>
-                <strong>
-                  {selectedApproval.hiring_requests?.contract_name ?? "No disponible"}
-                </strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-tiny">
-                <small>Vacantes</small>
-                <strong>{selectedApproval.hiring_requests?.vacancies ?? 0}</strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-tiny">
-                <small>Ingreso solicitado</small>
-                <strong>
-                  {formatDateValue(selectedApproval.hiring_requests?.requested_entry_date)}
-                </strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-tiny">
-                <small>Inicio contrato</small>
-                <strong>{formatDateValue(selectedApproval.hiring_requests?.start_date)}</strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-tiny">
-                <small>Fin contrato</small>
-                <strong>{formatDateValue(selectedApproval.hiring_requests?.end_date)}</strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-tiny">
-                <small>Turno</small>
-                <strong>{selectedApproval.hiring_requests?.shift_name ?? "No disponible"}</strong>
-              </div>
-              <div className="approval-detail-item approval-detail-item-tiny">
-                <small>Creado</small>
-                <strong>{formatDateTimeValue(selectedApproval.created_at)}</strong>
-              </div>
-            </div>
-
-            <div className="approval-detail-note">
-              <small>Beneficios</small>
-              <strong>
-                {selectedApproval.hiring_requests?.other_benefits?.trim() ||
-                selectedApproval.hiring_requests?.campamento ||
-                selectedApproval.hiring_requests?.pasajes
-                  ? [
-                      selectedApproval.hiring_requests?.campamento ? "Campamento" : null,
-                      selectedApproval.hiring_requests?.pasajes ? "Pasajes" : null,
-                      selectedApproval.hiring_requests?.other_benefits?.trim() || null
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")
-                  : "Sin beneficios adicionales registrados"}
-              </strong>
-            </div>
-
-            {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
-            {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
-
-            {selectedApproval.approver_user_id === currentUserId ? (
-              <div className="approval-action-row approval-action-row-detail">
-                <button
-                  type="button"
-                  className="soft-primary-button approval-button-approve"
-                  disabled={isDecisionLoading === selectedApproval.id}
-                  onClick={() => void handleApproval("approved")}
-                >
-                  Aprobar folio
-                </button>
-                <button
-                  type="button"
-                  className="soft-primary-button approval-button-reject"
-                  disabled={isDecisionLoading === selectedApproval.id}
-                  onClick={() => void handleApproval("rejected")}
-                >
-                  Rechazar folio
-                </button>
-              </div>
-            ) : (
-              <div className="approval-detail-note">
-                <small>Decisión</small>
-                <strong>Solo el aprobador asignado puede decidir este folio.</strong>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
+      <ApprovalModal
+        isOpen={!!selectedApproval}
+        approvalData={selectedApproval}
+        currentUserId={currentUserId}
+        onClose={() => setSelectedApprovalId(null)}
+        onSuccess={handleApprovalSuccess}
+      />
     </>
   );
 }

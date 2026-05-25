@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           )
           .eq("id", userId)
           .maybeSingle<ProfileRecord>(),
-        supabaseClient.from("user_roles").select("*").eq("user_id", userId)
+        supabaseClient.from("user_roles").select("role_code").eq("user_id", userId)
       ]);
 
       if (!isMounted) {
@@ -156,16 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? []
           : rolesResponse.data
               .map((row) => {
-                const roleValue =
-                  typeof row === "object" && row !== null
-                    ? "role_code" in row
-                      ? row.role_code
-                      : "role" in row
-                        ? row.role
-                        : null
-                    : null;
-
-                return normalizeRoleCode(typeof roleValue === "string" ? roleValue : null);
+                return normalizeRoleCode(typeof row.role_code === "string" ? row.role_code : null);
               })
               .filter((role): role is AppRole => role !== null);
 
@@ -356,9 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: error.message };
         }
 
-        const currentUserId = supabase.auth.getUser
-          ? (await supabase.auth.getUser()).data.user?.id ?? null
-          : null;
+        const currentUserId = user?.id ?? null;
 
         if (currentUserId) {
           const { error: profileError } = await supabase
@@ -391,9 +380,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         await supabase.auth.signOut();
-        setProfile(null);
-        setAppRoles([]);
-        setAccessibleModules([]);
         setIsRecoveryMode(false);
       }
     };

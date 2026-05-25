@@ -23,9 +23,10 @@ interface DashboardGridProps {
     alertsData: any[];
     kpisData: any;
   };
+  onAction?: (actionType: string, payload: any) => void;
 }
 
-export function DashboardGrid({ widgets, isLoading, dashboardData }: DashboardGridProps) {
+export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: DashboardGridProps) {
   if (isLoading) {
     return (
       <div className="dashboard-loading">
@@ -70,7 +71,7 @@ export function DashboardGrid({ widgets, isLoading, dashboardData }: DashboardGr
         <div className="dashboard-zone dashboard-zone--kpis">
           {kpis.map((w) => {
             const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
+            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
           })}
         </div>
       )}
@@ -80,13 +81,13 @@ export function DashboardGrid({ widgets, isLoading, dashboardData }: DashboardGr
         <div className="dashboard-col dashboard-col--main">
           {mainCol.map((w) => {
             const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
+            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
           })}
         </div>
         <div className="dashboard-col dashboard-col--side">
           {sideCol.map((w) => {
             const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
+            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
           })}
         </div>
       </div>

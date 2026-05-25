@@ -41,7 +41,7 @@ export function ProtectedRoute() {
     return <Navigate to="/reset-password" replace />;
   }
 
-  if (profile && profile.status !== "active") {
+  if (profile && profile.status !== "active" && location.pathname !== "/sin-acceso") {
     return (
       <Navigate
         to="/sin-acceso"

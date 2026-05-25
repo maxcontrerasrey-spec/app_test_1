@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { DashboardGrid } from "../components/DashboardGrid";
+import { ApprovalModal } from "../../recruitment/components/ApprovalModal";
+import { getHiringApprovalDetails } from "../../recruitment/services/hiringWorkflow";
 import "../styles/dashboard.css"; // We will create this file
 
 export function DashboardHome() {
   const { user, appRoles, displayName } = useAuth();
-  const { widgets, isLoading, tasksData, alertsData, kpisData } = useDashboard();
+  const { widgets, isLoading, tasksData, alertsData, kpisData, refresh } = useDashboard();
+
+  const [selectedApprovalData, setSelectedApprovalData] = useState<any>(null);
 
   // Map backend roles to readable department names for greeting
   const roleDisplayNames: Record<string, string> = {
@@ -20,6 +24,23 @@ export function DashboardHome() {
 
   const primaryRole = appRoles[0] || "invitado";
   const departmentName = roleDisplayNames[primaryRole] || "Staff";
+
+  const handleAction = async (actionType: string, payload: any) => {
+    if (actionType === "OPEN_APPROVAL") {
+      const approvalId = Number(payload);
+      const { data, error } = await getHiringApprovalDetails(approvalId);
+      if (data) {
+        setSelectedApprovalData(data);
+      } else {
+        console.error(error);
+      }
+    }
+  };
+
+  const handleApprovalSuccess = () => {
+    setSelectedApprovalData(null);
+    void refresh();
+  };
 
   return (
     <div className="dashboard-container">
@@ -39,8 +60,17 @@ export function DashboardHome() {
           widgets={widgets} 
           isLoading={isLoading} 
           dashboardData={{ tasksData, alertsData, kpisData }}
+          onAction={handleAction}
         />
       </main>
+
+      <ApprovalModal
+        isOpen={!!selectedApprovalData}
+        approvalData={selectedApprovalData}
+        currentUserId={user?.id}
+        onClose={() => setSelectedApprovalData(null)}
+        onSuccess={handleApprovalSuccess}
+      />
     </div>
   );
 }
