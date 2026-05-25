@@ -1,5 +1,6 @@
 import React from "react";
 import type { DashboardDataBundle, ResolvedWidget } from "../types";
+import { ActiveFoliosWidget } from "./widgets/ActiveFoliosWidget";
 import { TasksWidget } from "./widgets/TasksWidget";
 import { QuickActionsWidget } from "./widgets/QuickActionsWidget";
 
@@ -45,6 +46,15 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
 
   const tasks = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
   const quickActions = visibleWidgets.filter((w) => w.component_key === "QuickActionsWidget");
+  const activeFoliosWidget: ResolvedWidget | null =
+    tasks[0]
+      ? {
+          ...tasks[0],
+          id: "dashboard-active-folios",
+          name: "Folios en curso",
+          component_key: "ActiveFoliosWidget"
+        }
+      : null;
 
   return (
     <div className="dashboard-grid">
@@ -69,6 +79,14 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
           </div>
         </div>
       )}
+
+      {activeFoliosWidget ? (
+        <div className="dashboard-zone dashboard-zone-full">
+          <div className="dashboard-zone-column">
+            <ActiveFoliosWidget widget={activeFoliosWidget} dashboardData={dashboardData} />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

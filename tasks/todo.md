@@ -87,6 +87,18 @@
 
 - El dashboard queda concentrado en `Tareas Pendientes` y `Acciones Rápidas`, sin reservar espacio para KPIs que hoy no soportan una decisión operativa directa.
 
+## Separación ERP entre pendientes y folios activos
+
+- [x] Dejar `Tareas Pendientes` solo con aprobaciones pendientes
+- [x] Crear `Folios en curso` con búsqueda y formato expandible consistente
+- [x] Reutilizar el detalle de caso real para que un folio aprobado baje de pendientes a la bandeja de activos
+
+## Resultado de separación ERP entre pendientes y folios activos
+
+- `Tareas Pendientes` ahora muestra solo solicitudes pendientes de aprobación.
+- `Folios en curso` aparece como sección independiente con búsqueda y usa el mismo lenguaje visual de la bandeja principal.
+- Al aprobar un folio, sale de pendientes y pasa a la bandeja de casos activos según el estado operativo que le corresponda.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización

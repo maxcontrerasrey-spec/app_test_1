@@ -131,6 +131,14 @@
   min-height: 320px;
 }
 
+.dashboard-folios-toolbar {
+  margin-bottom: 1rem;
+}
+
+.dashboard-folios-search {
+  max-width: 420px;
+}
+
 .widget-header {
   display: flex;
   justify-content: space-between;

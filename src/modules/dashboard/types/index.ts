@@ -65,6 +65,29 @@ export interface DashboardTaskItem {
   created_at: string;
 }
 
+export interface DashboardActiveFolioItem {
+  id: string;
+  case_code: string;
+  status: string;
+  requested_vacancies: number;
+  filled_vacancies: number;
+  title: string;
+  contract_name: string;
+  job_position_name: string;
+  cost_center_code: string;
+  cost_center_name: string;
+  requested_entry_date: string | null;
+  target_close_date: string | null;
+  opened_at: string;
+  requester_name: string | null;
+  requester_email: string | null;
+  owner_name: string | null;
+  owner_user_id: string | null;
+  candidate_count: number;
+  ready_candidates: number;
+  hired_candidates: number;
+}
+
 export interface DashboardAlertItem {
   id: string;
   title: string;
@@ -84,6 +107,7 @@ export interface DashboardKpis {
 
 export interface DashboardDataBundle {
   tasksData: DashboardTaskItem[];
+  activeFoliosData: DashboardActiveFolioItem[];
   alertsData: DashboardAlertItem[];
   kpisData: DashboardKpis | null;
 }

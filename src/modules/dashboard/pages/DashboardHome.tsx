@@ -6,7 +6,8 @@ import "../styles/dashboard.css";
 
 export function DashboardHome() {
   const { displayName } = useAuth();
-  const { widgets, isLoading, tasksData, alertsData, kpisData, refresh } = useDashboard();
+  const { widgets, isLoading, tasksData, activeFoliosData, alertsData, kpisData, refresh } =
+    useDashboard();
 
   const handleAction = async (actionType: string) => {
     if (actionType === "REFRESH_DATA") {
@@ -30,7 +31,7 @@ export function DashboardHome() {
         <DashboardGrid 
           widgets={widgets} 
           isLoading={isLoading} 
-          dashboardData={{ tasksData, alertsData, kpisData }}
+          dashboardData={{ tasksData, activeFoliosData, alertsData, kpisData }}
           onAction={handleAction}
         />
       </main>

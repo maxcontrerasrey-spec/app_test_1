@@ -1,5 +1,6 @@
 import { supabase } from "../../../shared/lib/supabase";
 import type {
+  DashboardActiveFolioItem,
   DashboardAlertItem,
   DashboardKpis,
   DashboardNotification,
@@ -95,6 +96,21 @@ export const dashboardService = {
       return [];
     }
     return (data ?? []) as DashboardTaskItem[];
+  },
+
+  async getDashboardActiveFolios(): Promise<DashboardActiveFolioItem[]> {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc("get_recruitment_control_dashboard_v2");
+    if (error) {
+      console.error("Error fetching active folios:", error);
+      return [];
+    }
+
+    const payload = (data ?? {}) as {
+      active_cases?: DashboardActiveFolioItem[] | null;
+    };
+
+    return payload.active_cases ?? [];
   },
 
   /**

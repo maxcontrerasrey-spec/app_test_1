@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import { dashboardService } from "../services/dashboardService";
 import type {
+  DashboardActiveFolioItem,
   DashboardAlertItem,
   DashboardKpis,
   DashboardNotification,
@@ -16,6 +17,7 @@ export function useDashboard() {
   
   // Data stores for widgets
   const [tasksData, setTasksData] = useState<DashboardTaskItem[]>([]);
+  const [activeFoliosData, setActiveFoliosData] = useState<DashboardActiveFolioItem[]>([]);
   const [alertsData, setAlertsData] = useState<DashboardAlertItem[]>([]);
   const [kpisData, setKpisData] = useState<DashboardKpis | null>(null);
 
@@ -26,13 +28,12 @@ export function useDashboard() {
     setIsLoading(true);
     
     try {
-      const [availableWidgets, userPrefs, unreadNotifications, tasks, alerts, kpis] = await Promise.all([
+      const [availableWidgets, userPrefs, unreadNotifications, tasks, activeFolios] = await Promise.all([
         dashboardService.getAvailableWidgets(appRoles),
         dashboardService.getUserPreferences(),
         dashboardService.getUnreadNotifications(),
         dashboardService.getDashboardTasks(user.id),
-        dashboardService.getDashboardAlerts(user.id),
-        dashboardService.getDashboardKpis(user.id)
+        dashboardService.getDashboardActiveFolios()
       ]);
 
       // Merge base widgets with user preferences
@@ -52,8 +53,9 @@ export function useDashboard() {
       setWidgets(resolvedWidgets);
       setNotifications(unreadNotifications);
       setTasksData(tasks);
-      setAlertsData(alerts);
-      setKpisData(kpis);
+      setActiveFoliosData(activeFolios);
+      setAlertsData([]);
+      setKpisData(null);
     } catch (error) {
       console.error("Failed to load dashboard data", error);
     } finally {
@@ -80,6 +82,7 @@ export function useDashboard() {
     widgets,
     notifications,
     tasksData,
+    activeFoliosData,
     alertsData,
     kpisData,
     isLoading,
