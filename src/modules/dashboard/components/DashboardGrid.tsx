@@ -69,6 +69,14 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
         </div>
       )}
 
+      {activeFoliosWidget ? (
+        <div className="dashboard-zone dashboard-zone-full">
+          <div className="dashboard-zone-column">
+            <ActiveFoliosWidget widget={activeFoliosWidget} dashboardData={dashboardData} />
+          </div>
+        </div>
+      ) : null}
+
       {quickActions.length > 0 && (
         <div className="dashboard-secondary-row dashboard-split-layout-spaced">
           <div className="dashboard-col">
@@ -79,14 +87,6 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
           </div>
         </div>
       )}
-
-      {activeFoliosWidget ? (
-        <div className="dashboard-zone dashboard-zone-full">
-          <div className="dashboard-zone-column">
-            <ActiveFoliosWidget widget={activeFoliosWidget} dashboardData={dashboardData} />
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

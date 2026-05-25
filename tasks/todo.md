@@ -99,6 +99,16 @@
 - `Folios en curso` aparece como sección independiente con búsqueda y usa el mismo lenguaje visual de la bandeja principal.
 - Al aprobar un folio, sale de pendientes y pasa a la bandeja de casos activos según el estado operativo que le corresponda.
 
+## Ajuste ERP de jerarquía visual entre pendientes y folios activos
+
+- [x] Mover `Folios en curso` inmediatamente debajo de `Tareas Pendientes`
+- [x] Dejar `Acciones Rápidas` después de las dos bandejas operativas para no ocultar seguimiento real
+
+## Resultado de ajuste ERP de jerarquía visual entre pendientes y folios activos
+
+- `Folios en curso` ya no queda escondido debajo de widgets secundarios.
+- El dashboard presenta primero trabajo pendiente de decisión y luego seguimiento de folios activos, que es la secuencia operacional correcta.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
