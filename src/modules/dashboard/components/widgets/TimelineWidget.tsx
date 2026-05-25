@@ -2,33 +2,34 @@ import type { ResolvedWidget } from "../../types";
 
 export function TimelineWidget({ widget }: { widget: ResolvedWidget }) {
   return (
-    <article className="reference-card widget-timeline">
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">Trazabilidad</p>
-          <h3>{widget.name}</h3>
-        </div>
+    <article className="widget-card widget-timeline" style={{ height: '100%' }}>
+      <div className="widget-header">
+        <h3 className="widget-title">{widget.name}</h3>
+        <button className="widget-menu-btn" title="Options">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
       </div>
-      <div className="timeline-container">
-        <div className="timeline-item">
-          <div className="timeline-marker"></div>
-          <div className="timeline-content">
-            <p className="timeline-time">Hace 15 min</p>
-            <p className="timeline-desc"><strong>Juan Pérez</strong> aprobó el folio REQ-0041.</p>
+      
+      <div className="nx-timeline">
+        <div className="nx-time-item">
+          <div className="nx-time-dot" style={{ background: 'var(--color-success)' }}></div>
+          <div className="nx-time-content">
+            <p className="nx-time-date">Hace 15 min</p>
+            <p className="nx-time-text"><strong>Folio REQ-0041</strong> fue aprobado por Operaciones.</p>
           </div>
         </div>
-        <div className="timeline-item">
-          <div className="timeline-marker"></div>
-          <div className="timeline-content">
-            <p className="timeline-time">Hace 2 horas</p>
-            <p className="timeline-desc">Sistema generó 45 nuevos pases de ingreso.</p>
+        <div className="nx-time-item">
+          <div className="nx-time-dot" style={{ background: 'var(--accent)' }}></div>
+          <div className="nx-time-content">
+            <p className="nx-time-date">Hace 2 horas</p>
+            <p className="nx-time-text">Sistema generó <strong>45 pases de ingreso</strong> automáticamente.</p>
           </div>
         </div>
-        <div className="timeline-item">
-          <div className="timeline-marker"></div>
-          <div className="timeline-content">
-            <p className="timeline-time">Ayer, 16:30</p>
-            <p className="timeline-desc"><strong>María López</strong> creó 2 nuevos casos de reclutamiento.</p>
+        <div className="nx-time-item">
+          <div className="nx-time-dot" style={{ background: 'var(--color-warning)' }}></div>
+          <div className="nx-time-content">
+            <p className="nx-time-date">Ayer, 16:30</p>
+            <p className="nx-time-text"><strong>Alerta SLA:</strong> Proceso de firmas superó el umbral de 48h.</p>
           </div>
         </div>
       </div>
