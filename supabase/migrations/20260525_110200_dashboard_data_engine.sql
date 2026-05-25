@@ -48,31 +48,14 @@ BEGIN
         JOIN public.recruitment_cases rc ON rc.id = rca.recruitment_case_id
         WHERE rca.user_id = p_user_id
           AND rc.status NOT IN ('closed', 'cancelled')
-          
-        UNION ALL
-        
-        -- Query 3: My Hiring Requests (Solicitudes creadas por mi)
-        SELECT 
-            'my_req_' || hr.id AS id,
-            'Mi Solicitud' AS type,
-            COALESCE(hr.folio, 'Borrador') || ' - ' || hr.job_position_name AS title,
-            'Contrato: ' || hr.contract_name AS subtitle,
-            hr.status AS status_code,
-            CASE hr.status 
-                WHEN 'pending_area_manager' THEN 'En Aprobación'
-                WHEN 'pending_contracts_control' THEN 'En Aprobación'
-                WHEN 'approved' THEN 'Aprobada (En Selección)'
-                WHEN 'rejected' THEN 'Rechazada'
-                WHEN 'cerrada' THEN 'Cerrada'
-                ELSE hr.status 
-            END AS status_label,
-            'Normal' AS priority,
-            hr.created_at
-        FROM public.hiring_requests hr
-        WHERE hr.requester_id = p_user_id
-          AND hr.status IN ('pending_area_manager', 'pending_contracts_control', 'approved')
-          
-        ORDER BY priority DESC, created_at ASC
+        ORDER BY 
+            CASE priority 
+                WHEN 'Crítica' THEN 1 
+                WHEN 'Alta' THEN 2 
+                WHEN 'Normal' THEN 3 
+                ELSE 4 
+            END ASC,
+            created_at ASC
         LIMIT 20
     ) t;
     

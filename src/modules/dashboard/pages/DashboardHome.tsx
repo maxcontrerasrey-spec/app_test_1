@@ -32,7 +32,7 @@ export function DashboardHome() {
       if (data) {
         setSelectedApprovalData(data);
       } else {
-        console.error(error);
+        alert("No se pudo cargar el detalle del folio. " + (error || ""));
       }
     }
   };
