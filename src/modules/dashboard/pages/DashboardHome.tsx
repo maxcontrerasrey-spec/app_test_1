@@ -1,20 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { DashboardGrid } from "../components/DashboardGrid";
-import {
-  ApprovalModal,
-  type ApprovalModalData
-} from "../../recruitment/components/ApprovalModal";
-import { getHiringApprovalDetails } from "../../recruitment/services/hiringWorkflow";
 import "../styles/dashboard.css";
 
 export function DashboardHome() {
-  const { user, appRoles, displayName } = useAuth();
+  const { appRoles, displayName } = useAuth();
   const { widgets, isLoading, tasksData, alertsData, kpisData, refresh } = useDashboard();
-
-  const [selectedApprovalData, setSelectedApprovalData] =
-    useState<ApprovalModalData | null>(null);
 
   // Map backend roles to readable department names for greeting
   const roleDisplayNames: Record<string, string> = {
@@ -29,21 +21,10 @@ export function DashboardHome() {
   const primaryRole = appRoles[0] || "invitado";
   const departmentName = roleDisplayNames[primaryRole] || "Staff";
 
-  const handleAction = async (actionType: string, payload: string) => {
-    if (actionType === "OPEN_APPROVAL") {
-      const approvalId = Number(payload);
-      const { data, error } = await getHiringApprovalDetails(approvalId);
-      if (data) {
-        setSelectedApprovalData(data as ApprovalModalData);
-      } else {
-        alert("No se pudo cargar el detalle del folio. " + (error || ""));
-      }
+  const handleAction = async (actionType: string) => {
+    if (actionType === "REFRESH_DATA") {
+      void refresh();
     }
-  };
-
-  const handleApprovalSuccess = () => {
-    setSelectedApprovalData(null);
-    void refresh();
   };
 
   return (
@@ -67,15 +48,6 @@ export function DashboardHome() {
           onAction={handleAction}
         />
       </main>
-
-      <ApprovalModal
-        isOpen={!!selectedApprovalData}
-        approvalData={selectedApprovalData}
-        currentUserId={user?.id}
-        isAdmin={appRoles.includes("admin")}
-        onClose={() => setSelectedApprovalData(null)}
-        onSuccess={handleApprovalSuccess}
-      />
     </div>
   );
 }
