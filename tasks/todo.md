@@ -79,6 +79,14 @@
 - `Indicadores Clave` reaparece en el dashboard como columna par de `Acciones Rápidas`.
 - La tabla expandible de tareas quedó alineada a un contrato tipado y sin depender de estilos inline para el bloque de aprobación.
 
+## Ajuste ERP de foco operativo del dashboard
+
+- [x] Retirar `Indicadores Clave` del dashboard actual por falta de utilidad inmediata
+
+## Resultado de ajuste ERP de foco operativo del dashboard
+
+- El dashboard queda concentrado en `Tareas Pendientes` y `Acciones Rápidas`, sin reservar espacio para KPIs que hoy no soportan una decisión operativa directa.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
