@@ -5,21 +5,8 @@ import { DashboardGrid } from "../components/DashboardGrid";
 import "../styles/dashboard.css";
 
 export function DashboardHome() {
-  const { appRoles, displayName } = useAuth();
+  const { displayName } = useAuth();
   const { widgets, isLoading, tasksData, alertsData, kpisData, refresh } = useDashboard();
-
-  // Map backend roles to readable department names for greeting
-  const roleDisplayNames: Record<string, string> = {
-    admin: "Administrador de Sistema",
-    reclutamiento: "Reclutamiento y Selección",
-    control_contratos: "Control de Contratos",
-    operaciones: "Planificación Operacional",
-    certificaciones: "Control Documental",
-    gerencia: "Gerencia General"
-  };
-
-  const primaryRole = appRoles[0] || "invitado";
-  const departmentName = roleDisplayNames[primaryRole] || "Staff";
 
   const handleAction = async (actionType: string) => {
     if (actionType === "REFRESH_DATA") {
@@ -31,7 +18,6 @@ export function DashboardHome() {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="dashboard-greeting">
-          <p className="eyebrow">Centro Operacional • {departmentName}</p>
           <h2>Bienvenido(a), {displayName}</h2>
           <p className="helper-copy">Aquí tienes tu resumen operativo y tareas pendientes de hoy.</p>
         </div>

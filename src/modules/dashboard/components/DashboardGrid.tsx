@@ -1,6 +1,5 @@
 import React from "react";
 import type { DashboardDataBundle, ResolvedWidget } from "../types";
-import { AlertsWidget } from "./widgets/AlertsWidget";
 import { TasksWidget } from "./widgets/TasksWidget";
 import { KPIWidget } from "./widgets/KPIWidget";
 import { QuickActionsWidget } from "./widgets/QuickActionsWidget";
@@ -12,7 +11,6 @@ type WidgetComponentProps = {
 };
 
 const WidgetRegistry: Record<string, React.FC<WidgetComponentProps>> = {
-  AlertsWidget,
   TasksWidget,
   KPIWidget,
   QuickActionsWidget,
@@ -47,7 +45,6 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
     );
   }
 
-  const alerts = visibleWidgets.filter((w) => w.component_key === "AlertsWidget");
   const tasks = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
   const others = visibleWidgets.filter(
     (w) => !["AlertsWidget", "TasksWidget", "KPIWidget"].includes(w.component_key)
@@ -55,17 +52,6 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
 
   return (
     <div className="dashboard-grid">
-      {alerts.length > 0 && (
-        <div className="dashboard-zone dashboard-zone-full">
-          <div className="dashboard-zone-column">
-            {alerts.map((w) => {
-              const Component = WidgetRegistry[w.component_key];
-              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
-            })}
-          </div>
-        </div>
-      )}
-
       {tasks.length > 0 && (
         <div className="dashboard-zone dashboard-zone-full">
           <div className="dashboard-zone-column">

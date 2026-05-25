@@ -57,6 +57,16 @@
 - La distancia vertical entre la bandeja principal y los widgets secundarios aumentó para reforzar jerarquía visual.
 - `Indicadores Clave` y `Acciones Rápidas` se renderizan con una altura base equivalente para evitar desequilibrio visual.
 
+## Ajuste ERP del inicio del dashboard
+
+- [x] Eliminar el bloque superior `Centro Operacional • ...`
+- [x] Remover `Alertas Operacionales` del inicio del dashboard
+
+## Resultado de ajuste ERP del inicio del dashboard
+
+- El dashboard abre con un encabezado más limpio, centrado en el saludo y el resumen operativo.
+- `Alertas Operacionales` deja de ocupar espacio en el inicio, manteniendo el foco visual en `Tareas Pendientes`, `Indicadores Clave` y `Acciones Rápidas`.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
