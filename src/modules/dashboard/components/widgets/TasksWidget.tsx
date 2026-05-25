@@ -19,12 +19,13 @@ export function TasksWidget({ widget, dashboardData, onAction }: { widget: Resol
               <th>Elemento ({tasks.length})</th>
               <th>Estado</th>
               <th className="nx-td-numeric">Prioridad</th>
+              <th>Acción</th>
             </tr>
           </thead>
           <tbody>
             {tasks.length === 0 ? (
               <tr>
-                <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                   Excelente, no tienes tareas pendientes.
                 </td>
               </tr>
@@ -38,12 +39,14 @@ export function TasksWidget({ widget, dashboardData, onAction }: { widget: Resol
                 const dotClass = task.status_code === 'pending' ? 'pending' : 
                                  task.status_code === 'sourcing' ? 'running' : 'healthy';
 
+                const isApproval = task.id.startsWith("approval_");
+
                 return (
                   <tr 
                     key={task.id} 
-                    style={onAction && task.id.startsWith("approval_") ? { cursor: "pointer" } : undefined}
+                    style={onAction && isApproval ? { cursor: "pointer" } : undefined}
                     onClick={() => {
-                      if (onAction && task.id.startsWith("approval_")) {
+                      if (onAction && isApproval) {
                         onAction("OPEN_APPROVAL", task.id.replace("approval_", ""));
                       }
                     }}
@@ -60,6 +63,22 @@ export function TasksWidget({ widget, dashboardData, onAction }: { widget: Resol
                       </span>
                     </td>
                     <td className="nx-td-numeric" style={{ color: priorityColor }}>{task.priority}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {isApproval ? (
+                        <button 
+                          className="soft-primary-button" 
+                          style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-primary)', background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onAction) {
+                              onAction("OPEN_APPROVAL", task.id.replace("approval_", ""));
+                            }
+                          }}
+                        >
+                          Revisar
+                        </button>
+                      ) : null}
+                    </td>
                   </tr>
                 );
               })
