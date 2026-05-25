@@ -22,7 +22,7 @@ export function KPIWidget({
   const expiringDocsWidth = kpis.expiring_documents > 0 ? "100%" : "0%";
 
   return (
-    <DashboardWidgetFrame title={widget.name} className="widget-kpi">
+    <DashboardWidgetFrame title={widget.name} className="widget-kpi widget-secondary-equal">
       <div className="nx-kpi-grid">
         <div className="nx-kpi-box">
           <div className="nx-kpi-main">

@@ -9,7 +9,6 @@ export type ApprovalModalData = {
   hiring_requests: {
     folio?: string | null;
     requester_name?: string | null;
-    requester_email?: string | null;
     job_position_name?: string | null;
     contract_name?: string | null;
     vacancies?: number | null;
@@ -123,10 +122,6 @@ export function ApprovalModal({
           <div className="approval-detail-item approval-detail-item-tiny">
             <small>Solicitó</small>
             <strong>{hr?.requester_name ?? "No disponible"}</strong>
-          </div>
-          <div className="approval-detail-item approval-detail-item-wide">
-            <small>Correo solicitante</small>
-            <strong>{hr?.requester_email ?? "No disponible"}</strong>
           </div>
           <div className="approval-detail-item approval-detail-item-compact">
             <small>Cargo solicitado</small>

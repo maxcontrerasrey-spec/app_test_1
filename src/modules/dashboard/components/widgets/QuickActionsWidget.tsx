@@ -3,7 +3,7 @@ import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 
 export function QuickActionsWidget({ widget }: { widget: ResolvedWidget }) {
   return (
-    <DashboardWidgetFrame title={widget.name} className="widget-actions widget-fill-height">
+    <DashboardWidgetFrame title={widget.name} className="widget-actions widget-secondary-equal">
       <div className="nx-actions-grid">
         <button className="nx-action-btn">
           <div className="nx-action-icon">

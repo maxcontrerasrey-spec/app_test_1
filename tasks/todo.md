@@ -43,6 +43,20 @@
 - `Alertas Operacionales` deja de competir en la cabecera con la bandeja principal y baja a la columna secundaria junto a `Acciones Rápidas`.
 - `Actividad Reciente` sale del dashboard para evitar ruido visual y widgets sin valor operativo inmediato.
 
+## Ajuste ERP de legibilidad del dashboard operativo
+
+- [x] Eliminar scroll horizontal de `Tareas Pendientes` ajustando el reparto interno de columnas
+- [x] Limpiar el modal de aprobación removiendo el correo del solicitante
+- [x] Aumentar la separación entre la bandeja principal y los widgets secundarios
+- [x] Igualar visualmente la altura de `Indicadores Clave` y `Acciones Rápidas`
+
+## Resultado de ajuste ERP de legibilidad del dashboard operativo
+
+- `Tareas Pendientes` ahora distribuye mejor el espacio y muestra todo el contenido dentro del contenedor sin depender de scroll horizontal.
+- El modal flotante del folio quedó más limpio al remover el correo del solicitante del bloque visible.
+- La distancia vertical entre la bandeja principal y los widgets secundarios aumentó para reforzar jerarquía visual.
+- `Indicadores Clave` y `Acciones Rápidas` se renderizan con una altura base equivalente para evitar desequilibrio visual.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
