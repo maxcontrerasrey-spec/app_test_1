@@ -1,22 +1,24 @@
-import type { ResolvedWidget } from "../../types";
+import type { DashboardAlertItem, DashboardDataBundle, ResolvedWidget } from "../../types";
+import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 
-export function AlertsWidget({ widget, dashboardData }: { widget: ResolvedWidget, dashboardData?: any }) {
-  const alerts = dashboardData?.alertsData || [];
+export function AlertsWidget({
+  widget,
+  dashboardData
+}: {
+  widget: ResolvedWidget;
+  dashboardData?: DashboardDataBundle;
+}) {
+  const alerts = dashboardData?.alertsData ?? [];
 
   return (
-    <article className="widget-card widget-alert" style={{ width: '100%' }}>
-      <div className="widget-header">
-        <h3 className="widget-title">{widget.name}</h3>
-        <button className="widget-menu-btn" title="Options">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-        </button>
-      </div>
-      
+    <DashboardWidgetFrame title={widget.name} className="widget-alert widget-fill-width">
       <div className="nx-alerts-grid">
         {alerts.length === 0 ? (
-          <p className="helper-copy" style={{ padding: '16px' }}>No hay alertas activas en este momento.</p>
+          <p className="helper-copy widget-empty-copy">
+            No hay alertas activas en este momento.
+          </p>
         ) : (
-          alerts.map((alert: any) => (
+          alerts.map((alert: DashboardAlertItem) => (
             <div key={alert.id} className={`nx-alert-item ${alert.severity}`}>
               <p className="nx-alert-title">{alert.title}</p>
               <p className="nx-alert-desc">{alert.description}</p>
@@ -25,6 +27,6 @@ export function AlertsWidget({ widget, dashboardData }: { widget: ResolvedWidget
           ))
         )}
       </div>
-    </article>
+    </DashboardWidgetFrame>
   );
 }

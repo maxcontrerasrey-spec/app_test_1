@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import { dashboardService } from "../services/dashboardService";
-import type { ResolvedWidget, DashboardNotification } from "../types";
+import type {
+  DashboardAlertItem,
+  DashboardKpis,
+  DashboardNotification,
+  DashboardTaskItem,
+  ResolvedWidget
+} from "../types";
 
 export function useDashboard() {
   const { user, appRoles } = useAuth();
@@ -9,9 +15,9 @@ export function useDashboard() {
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   
   // Data stores for widgets
-  const [tasksData, setTasksData] = useState<any[]>([]);
-  const [alertsData, setAlertsData] = useState<any[]>([]);
-  const [kpisData, setKpisData] = useState<any>(null);
+  const [tasksData, setTasksData] = useState<DashboardTaskItem[]>([]);
+  const [alertsData, setAlertsData] = useState<DashboardAlertItem[]>([]);
+  const [kpisData, setKpisData] = useState<DashboardKpis | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
 

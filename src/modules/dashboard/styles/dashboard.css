@@ -48,6 +48,14 @@
   width: 100%;
 }
 
+.dashboard-zone-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
 /* Allow widgets in the top zone to grow properly */
 .dashboard-zone > * {
   flex: 1;
@@ -72,6 +80,10 @@
   gap: var(--spacing-6);
 }
 
+.dashboard-split-layout-spaced {
+  margin-top: var(--spacing-6);
+}
+
 /* Widget Base Card */
 .widget-card {
   background: var(--surface);
@@ -81,6 +93,14 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
   display: flex;
   flex-direction: column;
+}
+
+.widget-fill-height {
+  height: 100%;
+}
+
+.widget-fill-width {
+  width: 100%;
 }
 
 .widget-header {
@@ -261,6 +281,10 @@
 .nx-bar-fill.red { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
 .nx-bar-fill.green { background: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
 
+.nx-bar-fill-full {
+  width: 100%;
+}
+
 .nx-bar-value {
   font-size: 12px;
   font-weight: 600;
@@ -313,8 +337,22 @@
   font-size: 13px;
 }
 
+.nx-table-empty,
+.widget-empty-copy {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.widget-empty-copy {
+  padding: 16px;
+}
+
 .nx-table tr:last-child td {
   border-bottom: none;
+}
+
+.nx-table-row-actionable {
+  cursor: pointer;
 }
 
 .nx-td-primary {
@@ -325,9 +363,41 @@
   text-overflow: ellipsis;
 }
 
+.nx-td-secondary {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
 .nx-td-numeric {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
+}
+
+.nx-td-action {
+  text-align: right;
+}
+
+.nx-priority-warning {
+  color: var(--color-warning);
+}
+
+.nx-priority-critical {
+  color: var(--color-danger);
+}
+
+.nx-priority-normal {
+  color: var(--text-muted);
+}
+
+.nx-inline-action-button {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 /* Timeline Widget */
@@ -362,6 +432,18 @@
   z-index: 2;
   box-shadow: 0 0 0 4px var(--surface);
   flex-shrink: 0;
+}
+
+.nx-time-dot-success {
+  background: var(--color-success);
+}
+
+.nx-time-dot-accent {
+  background: var(--accent);
+}
+
+.nx-time-dot-warning {
+  background: var(--color-warning);
 }
 
 .nx-time-content {

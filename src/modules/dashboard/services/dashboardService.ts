@@ -1,5 +1,12 @@
 import { supabase } from "../../../shared/lib/supabase";
-import type { DashboardWidget, UserWidgetPreference, DashboardNotification, ResolvedWidget } from "../types";
+import type {
+  DashboardAlertItem,
+  DashboardKpis,
+  DashboardNotification,
+  DashboardTaskItem,
+  DashboardWidget,
+  UserWidgetPreference
+} from "../types";
 
 export const dashboardService = {
   /**
@@ -8,23 +15,16 @@ export const dashboardService = {
    */
   async getAvailableWidgets(userRoles: string[]): Promise<DashboardWidget[]> {
     if (!supabase) return [];
-    const { data, error } = await supabase
-      .from("dashboard_widgets")
-      .select("*")
-      .eq("is_active", true)
-      .order("default_position", { ascending: true });
+    const { data, error } = await supabase.rpc("get_dashboard_widgets_for_current_user");
 
     if (error) {
       console.error("Error fetching widgets:", error);
       return [];
     }
 
-    // Filter locally based on roles if array intersection is tricky in RPC right now
-    // In a fully zero-trust setup, this could also be handled by an RPC.
+    // Fallback defensivo mientras todos los ambientes convergen al nuevo RPC.
     return (data as DashboardWidget[]).filter((widget) => {
-      // If widget has no role restrictions, it's public
       if (!widget.allowed_roles || widget.allowed_roles.length === 0) return true;
-      // Check if user has at least one of the allowed roles
       return widget.allowed_roles.some((role) => userRoles.includes(role));
     });
   },
@@ -87,39 +87,39 @@ export const dashboardService = {
   /**
    * Fetches dynamic tasks for the TasksWidget via RPC
    */
-  async getDashboardTasks(userId: string): Promise<any[]> {
+  async getDashboardTasks(userId: string): Promise<DashboardTaskItem[]> {
     if (!supabase) return [];
     const { data, error } = await supabase.rpc("get_dashboard_tasks", { p_user_id: userId });
     if (error) {
       console.error("Error fetching dashboard tasks:", error);
       return [];
     }
-    return data || [];
+    return (data ?? []) as DashboardTaskItem[];
   },
 
   /**
    * Fetches dynamic alerts for the AlertsWidget via RPC
    */
-  async getDashboardAlerts(userId: string): Promise<any[]> {
+  async getDashboardAlerts(userId: string): Promise<DashboardAlertItem[]> {
     if (!supabase) return [];
     const { data, error } = await supabase.rpc("get_dashboard_alerts", { p_user_id: userId });
     if (error) {
       console.error("Error fetching dashboard alerts:", error);
       return [];
     }
-    return data || [];
+    return (data ?? []) as DashboardAlertItem[];
   },
 
   /**
    * Fetches dynamic KPIs for the KPIWidget via RPC
    */
-  async getDashboardKpis(userId: string): Promise<any> {
+  async getDashboardKpis(userId: string): Promise<DashboardKpis | null> {
     if (!supabase) return null;
     const { data, error } = await supabase.rpc("get_dashboard_kpis", { p_user_id: userId });
     if (error) {
       console.error("Error fetching dashboard KPIs:", error);
       return null;
     }
-    return data || null;
+    return (data ?? null) as DashboardKpis | null;
   }
 };

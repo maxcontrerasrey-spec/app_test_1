@@ -1,15 +1,9 @@
 import type { ResolvedWidget } from "../../types";
+import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 
 export function QuickActionsWidget({ widget }: { widget: ResolvedWidget }) {
   return (
-    <article className="widget-card widget-actions" style={{ height: '100%' }}>
-      <div className="widget-header">
-        <h3 className="widget-title">{widget.name}</h3>
-        <button className="widget-menu-btn" title="Options">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-        </button>
-      </div>
-      
+    <DashboardWidgetFrame title={widget.name} className="widget-actions widget-fill-height">
       <div className="nx-actions-grid">
         <button className="nx-action-btn">
           <div className="nx-action-icon">
@@ -36,6 +30,6 @@ export function QuickActionsWidget({ widget }: { widget: ResolvedWidget }) {
           <span className="nx-action-title">Planificar Turno</span>
         </button>
       </div>
-    </article>
+    </DashboardWidgetFrame>
   );
 }

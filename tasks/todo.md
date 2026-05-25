@@ -1,5 +1,26 @@
 # Tareas y Roadmap de Desarrollo
 
+## Reparación ERP de Dashboard, Roles y Gobernanza
+
+- [x] Alinear roles reales del frontend con los roles usados por dashboard y migraciones
+- [x] Endurecer RPCs del dashboard para que validen `auth.uid()` y no acepten consultas impersonadas
+- [x] Corregir el motor SQL del dashboard al esquema real de candidatos y documentos
+- [x] Reemplazar estilos inline críticos y tipados laxos en widgets del dashboard por componentes reutilizables
+- [x] Dejar migración versionada con grants y `notify pgrst` para convergencia segura entre ambientes
+
+## Resultado de reparación ERP de Dashboard, Roles y Gobernanza
+
+- `access.ts` ahora reconoce `operaciones` y `gerencia`, alineando el frontend con los roles ya usados por dashboard y por las migraciones.
+- Se creó [20260525_140000_harden_dashboard_engine_and_roles.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260525_140000_harden_dashboard_engine_and_roles.sql:1) para:
+  - publicar `get_dashboard_widgets_for_current_user()`
+  - blindar `get_dashboard_tasks(...)`, `get_dashboard_alerts(...)` y `get_dashboard_kpis(...)` con validación de `auth.uid()`
+  - corregir el uso de `candidate_profiles.full_name`
+  - reemplazar estados inexistentes como `closed`
+  - agregar grants explícitos y `notify pgrst, 'reload schema'`
+- El dashboard dejó de depender de estructuras `any` para tareas, alertas e indicadores, y ahora usa contratos tipados en `src/modules/dashboard/types/`.
+- Se extrajo `DashboardWidgetFrame` para reutilizar el contenedor y cabecera de widgets, reduciendo duplicación.
+- `DashboardGrid` y los widgets críticos dejaron de depender de estilos inline para layout base, vacíos, prioridad y acciones.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización

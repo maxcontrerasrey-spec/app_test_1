@@ -1,9 +1,31 @@
 import React, { useState } from "react";
 import { decideHiringApproval, type HiringApprovalDecision } from "../services/hiringWorkflow";
 
+export type ApprovalModalData = {
+  id: number;
+  step_name: string;
+  approver_user_id: string | null;
+  created_at: string | null;
+  hiring_requests: {
+    folio?: string | null;
+    requester_name?: string | null;
+    requester_email?: string | null;
+    job_position_name?: string | null;
+    contract_name?: string | null;
+    vacancies?: number | null;
+    requested_entry_date?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    shift_name?: string | null;
+    other_benefits?: string | null;
+    campamento?: boolean | null;
+    pasajes?: boolean | null;
+  } | null;
+};
+
 interface ApprovalModalProps {
   isOpen: boolean;
-  approvalData: any; // Ideally typed to HiringRequestApproval & { hiring_requests: HiringRequest }
+  approvalData: ApprovalModalData | null;
   currentUserId: string | undefined;
   isAdmin?: boolean;
   onClose: () => void;

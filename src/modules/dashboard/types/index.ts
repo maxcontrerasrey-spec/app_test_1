@@ -34,3 +34,37 @@ export interface ResolvedWidget extends DashboardWidget {
   hidden: boolean;
   size: WidgetSize;
 }
+
+export interface DashboardTaskItem {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string;
+  status_code: string;
+  status_label: string;
+  priority: string;
+  created_at: string;
+}
+
+export interface DashboardAlertItem {
+  id: string;
+  title: string;
+  description: string;
+  severity: "info" | "warning" | "critical";
+  source: string;
+  created_at: string;
+}
+
+export interface DashboardKpis {
+  total_vacancies: number;
+  active_cases: number;
+  pending_approvals: number;
+  ready_to_hire_cases: number;
+  expiring_documents: number;
+}
+
+export interface DashboardDataBundle {
+  tasksData: DashboardTaskItem[];
+  alertsData: DashboardAlertItem[];
+  kpisData: DashboardKpis | null;
+}

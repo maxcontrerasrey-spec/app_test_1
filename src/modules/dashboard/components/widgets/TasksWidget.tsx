@@ -1,17 +1,23 @@
-import type { ResolvedWidget } from "../../types";
+import type { DashboardDataBundle, DashboardTaskItem, ResolvedWidget } from "../../types";
+import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 
-export function TasksWidget({ widget, dashboardData, onAction }: { widget: ResolvedWidget, dashboardData?: any, onAction?: (actionType: string, payload: any) => void }) {
-  const tasks = dashboardData?.tasksData || [];
+type TasksWidgetProps = {
+  widget: ResolvedWidget;
+  dashboardData?: DashboardDataBundle;
+  onAction?: (actionType: string, payload: string) => void;
+};
+
+function getPriorityClass(priority: string) {
+  if (priority === "Crítica") return "nx-priority-critical";
+  if (priority === "Alta") return "nx-priority-warning";
+  return "nx-priority-normal";
+}
+
+export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProps) {
+  const tasks = dashboardData?.tasksData ?? [];
 
   return (
-    <article className="widget-card widget-tasks" style={{ height: '100%' }}>
-      <div className="widget-header">
-        <h3 className="widget-title">{widget.name}</h3>
-        <button className="widget-menu-btn" title="Options">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-        </button>
-      </div>
-      
+    <DashboardWidgetFrame title={widget.name} className="widget-tasks widget-fill-height">
       <div className="nx-table-wrapper">
         <table className="nx-table">
           <thead>
@@ -25,26 +31,20 @@ export function TasksWidget({ widget, dashboardData, onAction }: { widget: Resol
           <tbody>
             {tasks.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td colSpan={4} className="nx-table-empty">
                   Excelente, no tienes tareas pendientes.
                 </td>
               </tr>
             ) : (
-              tasks.map((task: any) => {
-                // Determine color based on priority
-                const priorityColor = task.priority === 'Alta' ? 'var(--color-warning)' : 
-                                      task.priority === 'Crítica' ? 'var(--color-danger)' : 'var(--text-muted)';
-                
-                // Determine dot class based on status
-                const dotClass = task.status_code === 'pending' ? 'pending' : 
-                                 task.status_code === 'sourcing' ? 'running' : 'healthy';
-
+              tasks.map((task: DashboardTaskItem) => {
+                const dotClass = task.status_code === "pending" ? "pending" :
+                  task.status_code === "sourcing" ? "running" : "healthy";
                 const isApproval = task.id.startsWith("approval_");
 
                 return (
                   <tr 
                     key={task.id} 
-                    style={onAction && isApproval ? { cursor: "pointer" } : undefined}
+                    className={onAction && isApproval ? "nx-table-row-actionable" : ""}
                     onClick={() => {
                       if (onAction && isApproval) {
                         onAction("OPEN_APPROVAL", task.id.replace("approval_", ""));
@@ -53,7 +53,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: { widget: Resol
                   >
                     <td className="nx-td-primary" title={task.title}>
                       {task.title}
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'normal', marginTop: '2px' }}>
+                      <div className="nx-td-secondary">
                         {task.subtitle}
                       </div>
                     </td>
@@ -62,12 +62,13 @@ export function TasksWidget({ widget, dashboardData, onAction }: { widget: Resol
                         <span className={`nx-dot ${dotClass}`}></span> {task.status_label}
                       </span>
                     </td>
-                    <td className="nx-td-numeric" style={{ color: priorityColor }}>{task.priority}</td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td className={`nx-td-numeric ${getPriorityClass(task.priority)}`}>
+                      {task.priority}
+                    </td>
+                    <td className="nx-td-action">
                       {isApproval ? (
                         <button 
-                          className="soft-primary-button" 
-                          style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-primary)', background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}
+                          className="soft-primary-button nx-inline-action-button"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onAction) {
@@ -86,6 +87,6 @@ export function TasksWidget({ widget, dashboardData, onAction }: { widget: Resol
           </tbody>
         </table>
       </div>
-    </article>
+    </DashboardWidgetFrame>
   );
 }
