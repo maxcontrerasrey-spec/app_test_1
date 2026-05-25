@@ -68,6 +68,7 @@ export function DashboardHome() {
         isOpen={!!selectedApprovalData}
         approvalData={selectedApprovalData}
         currentUserId={user?.id}
+        isAdmin={appRoles.includes("admin")}
         onClose={() => setSelectedApprovalData(null)}
         onSuccess={handleApprovalSuccess}
       />

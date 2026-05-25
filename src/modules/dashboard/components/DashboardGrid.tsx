@@ -56,41 +56,36 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
 
   return (
     <div className="dashboard-grid">
-      {/* Zone 1: Critical Priorities */}
-      {alerts.length > 0 && (
-        <div className="dashboard-zone dashboard-zone--alerts">
+      {/* Zone 1: Alerts and Tasks (Side by Side) */}
+      <div className="dashboard-zone" style={{ display: 'flex', gap: 'var(--spacing-6)' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
           {alerts.map((w) => {
-            const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} /> : null;
-          })}
-        </div>
-      )}
-
-      {/* Zone 3: KPIs Row */}
-      {kpis.length > 0 && (
-        <div className="dashboard-zone dashboard-zone--kpis">
-          {kpis.map((w) => {
             const Component = WidgetRegistry[w.component_key];
             return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
           })}
         </div>
-      )}
-
-      {/* Zone 2 & 4 & 5: My Work & Actions & Insights split layout */}
-      <div className="dashboard-split-layout">
-        <div className="dashboard-col dashboard-col--main">
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
           {mainCol.map((w) => {
             const Component = WidgetRegistry[w.component_key];
             return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
           })}
         </div>
-        <div className="dashboard-col dashboard-col--side">
-          {sideCol.map((w) => {
-            const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
-          })}
-        </div>
       </div>
+
+      {/* Zone 2: Other Widgets (Quick Actions, Timeline, etc) */}
+      {sideCol.length > 0 && (
+        <div className="dashboard-split-layout" style={{ marginTop: 'var(--spacing-6)' }}>
+          <div className="dashboard-col dashboard-col--main">
+            {/* Empty space or future widgets */}
+          </div>
+          <div className="dashboard-col dashboard-col--side">
+            {sideCol.map((w) => {
+              const Component = WidgetRegistry[w.component_key];
+              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -29,7 +29,7 @@ BEGIN
             hra.created_at
         FROM public.hiring_request_approvals hra
         JOIN public.hiring_requests hr ON hr.id = hra.hiring_request_id
-        WHERE hra.approver_user_id = p_user_id
+        WHERE (hra.approver_user_id = p_user_id OR public.user_is_admin(p_user_id))
           AND hra.status = 'pending'
           
         UNION ALL

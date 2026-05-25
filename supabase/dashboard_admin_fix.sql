@@ -1,27 +1,85 @@
-begin;
+-- 1. Actualizar get_dashboard_tasks para incluir administradores
+CREATE OR REPLACE FUNCTION public.get_dashboard_tasks(p_user_id UUID)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT COALESCE(json_agg(t), '[]'::json) INTO result
+    FROM (
+        -- Query 1: Pending Hiring Approvals
+        SELECT 
+            'approval_' || hra.id AS id,
+            'Aprobación Solicitud' AS type,
+            COALESCE(hr.folio, 'Borrador') || ' - ' || hr.job_position_name AS title,
+            'Paso: ' || hra.step_name AS subtitle,
+            'pending' AS status_code,
+            'En Revisión' AS status_label,
+            'Alta' AS priority,
+            hra.created_at
+        FROM public.hiring_request_approvals hra
+        JOIN public.hiring_requests hr ON hr.id = hra.hiring_request_id
+        WHERE (hra.approver_user_id = p_user_id OR public.user_is_admin(p_user_id))
+          AND hra.status = 'pending'
+          
+        UNION ALL
+        
+        -- Query 2: Active Recruitment Cases assigned to user
+        SELECT 
+            'case_' || rca.id AS id,
+            'Reclutamiento' AS type,
+            rc.job_position_name AS title,
+            'Vacantes: ' || rc.requested_vacancies AS subtitle,
+            rc.status AS status_code,
+            'En Proceso' AS status_label,
+            'Normal' AS priority,
+            rca.assigned_at AS created_at
+        FROM public.recruitment_case_assignments rca
+        JOIN public.recruitment_cases rc ON rc.id = rca.recruitment_case_id
+        WHERE rca.user_id = p_user_id
+          AND rc.status NOT IN ('closed', 'cancelled')
+          
+        ORDER BY 
+            CASE priority 
+                WHEN 'Crítica' THEN 1 
+                WHEN 'Alta' THEN 2 
+                WHEN 'Normal' THEN 3 
+                ELSE 4 
+            END ASC,
+            created_at ASC
+        LIMIT 20
+    ) t;
+    
+    RETURN result;
+END;
+$$;
 
-create or replace function public.decide_hiring_request_approval_v2(
+-- 2. Actualizar decide_hiring_request_approval_v2 para permitir admins
+CREATE OR REPLACE FUNCTION public.decide_hiring_request_approval_v2(
   p_approval_id bigint,
   p_decision text,
   p_comment text default null
 )
-returns table (
+RETURNS table (
   hiring_request_id uuid,
   request_status text,
   decided_step text
 )
-language plpgsql
-security definer
-set search_path = public
-as $function$
-declare
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+DECLARE
   current_user_id uuid := auth.uid();
   approval_record public.hiring_request_approvals%rowtype;
   request_record public.hiring_requests%rowtype;
   contracts_control_record public.workflow_approvers%rowtype;
   next_approval_id bigint;
   normalized_comment text := nullif(trim(coalesce(p_comment, '')), '');
-begin
+BEGIN
   if current_user_id is null then
     raise exception 'Usuario no autenticado';
   end if;
@@ -48,6 +106,7 @@ begin
     raise exception 'La etapa indicada no admite decision por esta via';
   end if;
 
+  -- AQUI ESTA LA MAGIA DEL ADMIN:
   if approval_record.approver_user_id is null or (approval_record.approver_user_id <> current_user_id and not public.user_is_admin(current_user_id)) then
     raise exception 'El usuario no esta autorizado para decidir esta aprobacion';
   end if;
@@ -298,8 +357,5 @@ begin
 end;
 $function$;
 
-grant execute on function public.decide_hiring_request_approval_v2(bigint, text, text) to authenticated;
-
-notify pgrst, 'reload schema';
-
-commit;
+GRANT EXECUTE ON FUNCTION public.decide_hiring_request_approval_v2(bigint, text, text) TO authenticated;
+NOTIFY pgrst, 'reload schema';

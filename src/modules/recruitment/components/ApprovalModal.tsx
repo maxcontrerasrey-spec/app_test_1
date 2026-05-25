@@ -5,6 +5,7 @@ interface ApprovalModalProps {
   isOpen: boolean;
   approvalData: any; // Ideally typed to HiringRequestApproval & { hiring_requests: HiringRequest }
   currentUserId: string | undefined;
+  isAdmin?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -13,6 +14,7 @@ export function ApprovalModal({
   isOpen,
   approvalData,
   currentUserId,
+  isAdmin = false,
   onClose,
   onSuccess
 }: ApprovalModalProps) {
@@ -156,7 +158,7 @@ export function ApprovalModal({
         {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
         {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
 
-        {approvalData.approver_user_id === currentUserId ? (
+        {approvalData.approver_user_id === currentUserId || isAdmin ? (
           <div className="approval-action-row approval-action-row-detail">
             <button
               type="button"
