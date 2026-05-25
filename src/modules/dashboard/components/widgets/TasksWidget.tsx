@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { DashboardDataBundle, ResolvedWidget } from "../../types";
+import type { DashboardDataBundle, DashboardTaskItem, ResolvedWidget } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import { decideHiringApproval } from "../../../recruitment/services/hiringWorkflow";
 
@@ -89,7 +89,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                   </td>
                 </tr>
               ) : (
-                tasks.map((task: any) => {
+                tasks.map((task: DashboardTaskItem) => {
                   const isExpanded = expandedTaskId === task.id;
                   
                   return (
@@ -204,68 +204,42 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                             </div>
 
                             {/* Acciones de Aprobación Inline */}
-                            {task.type === "approval" && task.status_code === "pending" && (
-                              <div style={{ marginTop: "1rem", padding: "1rem", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
-                                <h4 style={{ marginBottom: "0.5rem", fontSize: "0.875rem", color: "#111827" }}>Decisión de Aprobación</h4>
+                            {task.type === "approval" && task.status_code === "pending" && task.approval_id ? (
+                              <div className="task-decision-panel">
+                                <h4 className="task-decision-title">Decisión de Aprobación</h4>
                                 <textarea
                                   placeholder="Agrega comentarios o motivos (obligatorio si rechazas)..."
                                   value={comments}
                                   onChange={(e) => setComments(e.target.value)}
                                   disabled={isSubmitting}
-                                  style={{
-                                    width: "100%",
-                                    padding: "0.5rem",
-                                    borderRadius: "4px",
-                                    border: "1px solid #d1d5db",
-                                    marginBottom: "1rem",
-                                    resize: "vertical",
-                                    minHeight: "60px"
-                                  }}
+                                  className="task-decision-textarea"
                                 />
                                 
                                 {submitError && (
-                                  <div style={{ color: "#ef4444", marginBottom: "1rem", fontSize: "0.875rem" }}>
+                                  <div className="task-decision-error">
                                     {submitError}
                                   </div>
                                 )}
                                 
-                                <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+                                <div className="task-decision-actions">
                                   <button
-                                    onClick={() => handleDecision(task.id, task.approval_id, "rejected")}
+                                    onClick={() => handleDecision(task.id, task.approval_id as number, "rejected")}
                                     disabled={isSubmitting || !comments.trim()}
-                                    className="nx-btn"
-                                    style={{ 
-                                      backgroundColor: "white", 
-                                      color: "#ef4444", 
-                                      border: "1px solid #fca5a5",
-                                      padding: "0.5rem 1rem",
-                                      borderRadius: "6px",
-                                      cursor: isSubmitting || !comments.trim() ? "not-allowed" : "pointer",
-                                      opacity: isSubmitting || !comments.trim() ? 0.6 : 1
-                                    }}
+                                    className="task-decision-button task-decision-button-reject"
                                   >
                                     {isSubmitting ? "Procesando..." : "Rechazar Solicitud"}
                                   </button>
                                   
                                   <button
-                                    onClick={() => handleDecision(task.id, task.approval_id, "approved")}
+                                    onClick={() => handleDecision(task.id, task.approval_id as number, "approved")}
                                     disabled={isSubmitting}
-                                    className="nx-btn"
-                                    style={{ 
-                                      backgroundColor: "#10b981", 
-                                      color: "white",
-                                      border: "none",
-                                      padding: "0.5rem 1rem",
-                                      borderRadius: "6px",
-                                      cursor: isSubmitting ? "not-allowed" : "pointer",
-                                      opacity: isSubmitting ? 0.6 : 1
-                                    }}
+                                    className="task-decision-button task-decision-button-approve"
                                   >
                                     {isSubmitting ? "Procesando..." : "Aprobar Solicitud"}
                                   </button>
                                 </div>
                               </div>
-                            )}
+                            ) : null}
                           </td>
                         </tr>
                       )}

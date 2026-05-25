@@ -46,9 +46,8 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
   }
 
   const tasks = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
-  const others = visibleWidgets.filter(
-    (w) => !["AlertsWidget", "TasksWidget", "KPIWidget"].includes(w.component_key)
-  );
+  const kpis = visibleWidgets.filter((w) => w.component_key === "KPIWidget");
+  const quickActions = visibleWidgets.filter((w) => w.component_key === "QuickActionsWidget");
 
   return (
     <div className="dashboard-grid">
@@ -63,10 +62,16 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
         </div>
       )}
 
-      {others.length > 0 && (
-        <div className="dashboard-split-layout dashboard-split-layout-spaced">
-          <div className="dashboard-col dashboard-col--side">
-            {others.map((w) => {
+      {(kpis.length > 0 || quickActions.length > 0) && (
+        <div className="dashboard-secondary-row dashboard-split-layout-spaced">
+          <div className="dashboard-col">
+            {kpis.map((w) => {
+              const Component = WidgetRegistry[w.component_key];
+              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
+            })}
+          </div>
+          <div className="dashboard-col">
+            {quickActions.map((w) => {
               const Component = WidgetRegistry[w.component_key];
               return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
             })}

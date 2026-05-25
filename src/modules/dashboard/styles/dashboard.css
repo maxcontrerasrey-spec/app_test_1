@@ -52,6 +52,13 @@
   display: block;
 }
 
+.dashboard-secondary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--spacing-6);
+  align-items: stretch;
+}
+
 .dashboard-zone-column {
   flex: 1;
   min-width: 0;
@@ -75,6 +82,10 @@
 
 @media (max-width: 1024px) {
   .dashboard-split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-secondary-row {
     grid-template-columns: 1fr;
   }
 }
@@ -420,6 +431,65 @@
   background: var(--color-primary-soft);
   color: var(--color-primary);
   white-space: nowrap;
+}
+
+.task-decision-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.task-decision-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.task-decision-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  margin-bottom: 1rem;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.task-decision-error {
+  color: #ef4444;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.task-decision-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.task-decision-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.task-decision-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.task-decision-button-reject {
+  background-color: white;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+}
+
+.task-decision-button-approve {
+  background-color: #10b981;
+  color: white;
+  border: none;
 }
 
 /* Timeline Widget */

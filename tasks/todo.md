@@ -67,6 +67,18 @@
 - El dashboard abre con un encabezado más limpio, centrado en el saludo y el resumen operativo.
 - `Alertas Operacionales` deja de ocupar espacio en el inicio, manteniendo el foco visual en `Tareas Pendientes`, `Indicadores Clave` y `Acciones Rápidas`.
 
+## Reparación ERP de contrato de tareas del dashboard
+
+- [x] Alinear `get_dashboard_tasks(...)` con el payload real que consume la tabla expandible
+- [x] Restaurar `Indicadores Clave` en el layout secundario del dashboard
+- [x] Tipar la tabla expandible de tareas y sacar estilos inline de las acciones integradas
+
+## Resultado de reparación ERP de contrato de tareas del dashboard
+
+- La bandeja `Tareas Pendientes` vuelve a mostrar la solicitud completa porque la RPC entrega folio, cargo, contrato, solicitante, cupos y fechas reales.
+- `Indicadores Clave` reaparece en el dashboard como columna par de `Acciones Rápidas`.
+- La tabla expandible de tareas quedó alineada a un contrato tipado y sin depender de estilos inline para el bloque de aprobación.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
