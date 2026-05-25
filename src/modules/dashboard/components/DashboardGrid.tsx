@@ -4,7 +4,6 @@ import { AlertsWidget } from "./widgets/AlertsWidget";
 import { TasksWidget } from "./widgets/TasksWidget";
 import { KPIWidget } from "./widgets/KPIWidget";
 import { QuickActionsWidget } from "./widgets/QuickActionsWidget";
-import { TimelineWidget } from "./widgets/TimelineWidget";
 
 type WidgetComponentProps = {
   widget: ResolvedWidget;
@@ -17,7 +16,6 @@ const WidgetRegistry: Record<string, React.FC<WidgetComponentProps>> = {
   TasksWidget,
   KPIWidget,
   QuickActionsWidget,
-  TimelineWidget,
 };
 
 interface DashboardGridProps {
@@ -49,34 +47,40 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
     );
   }
 
-  // Z-Pattern Layout strategy
-  const alerts = visibleWidgets.filter((w) => w.component_key === "AlertsWidget");
-  const mainCol = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
-  const sideCol = visibleWidgets.filter((w) => ["QuickActionsWidget", "TimelineWidget"].includes(w.component_key));
+  const tasks = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
+  const mainSecondary = visibleWidgets.filter(
+    (w) => !["TasksWidget", "AlertsWidget", "QuickActionsWidget", "TimelineWidget"].includes(w.component_key)
+  );
+  const sideCol = visibleWidgets
+    .filter((w) => ["QuickActionsWidget", "AlertsWidget"].includes(w.component_key))
+    .sort((a, b) => {
+      const order: Record<string, number> = {
+        QuickActionsWidget: 1,
+        AlertsWidget: 2
+      };
+      return (order[a.component_key] ?? 99) - (order[b.component_key] ?? 99);
+    });
 
   return (
     <div className="dashboard-grid">
-      {/* Zone 1: Alerts and Tasks (Side by Side) */}
-      <div className="dashboard-zone">
-        <div className="dashboard-zone-column">
-          {alerts.map((w) => {
-            const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
-          })}
+      {tasks.length > 0 ? (
+        <div className="dashboard-zone dashboard-zone-full">
+          <div className="dashboard-zone-column">
+            {tasks.map((w) => {
+              const Component = WidgetRegistry[w.component_key];
+              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
+            })}
+          </div>
         </div>
-        <div className="dashboard-zone-column">
-          {mainCol.map((w) => {
-            const Component = WidgetRegistry[w.component_key];
-            return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
-          })}
-        </div>
-      </div>
+      ) : null}
 
-      {/* Zone 2: Other Widgets (Quick Actions, Timeline, etc) */}
-      {sideCol.length > 0 && (
+      {(mainSecondary.length > 0 || sideCol.length > 0) && (
         <div className="dashboard-split-layout dashboard-split-layout-spaced">
           <div className="dashboard-col dashboard-col--main">
-            {/* Empty space or future widgets */}
+            {mainSecondary.map((w) => {
+              const Component = WidgetRegistry[w.component_key];
+              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
+            })}
           </div>
           <div className="dashboard-col dashboard-col--side">
             {sideCol.map((w) => {

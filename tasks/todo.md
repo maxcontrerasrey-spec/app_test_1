@@ -31,6 +31,18 @@
 - Se creó [20260525_161159_add_get_hiring_approval_detail_rpc.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260525_161159_add_get_hiring_approval_detail_rpc.sql:1) para centralizar el detalle del folio en `get_hiring_approval_detail(...)`.
 - `getHiringApprovalDetails(...)` ya no consulta tablas operacionales directo desde el cliente; ahora usa la RPC y conserva el formato de error consistente.
 
+## Ajuste ERP de layout del dashboard operativo
+
+- [x] Expandir `Tareas Pendientes` a ancho completo para eliminar scroll horizontal innecesario
+- [x] Reubicar `Alertas Operacionales` debajo de `Acciones Rápidas`
+- [x] Eliminar `Actividad Reciente` del layout principal por falta de utilidad operacional directa
+
+## Resultado de ajuste ERP de layout del dashboard operativo
+
+- `Tareas Pendientes` pasa a ser la bandeja dominante del dashboard y usa todo el eje horizontal disponible.
+- `Alertas Operacionales` deja de competir en la cabecera con la bandeja principal y baja a la columna secundaria junto a `Acciones Rápidas`.
+- `Actividad Reciente` sale del dashboard para evitar ruido visual y widgets sin valor operativo inmediato.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
