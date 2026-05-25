@@ -123,96 +123,107 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const userId = nextSession.user.id;
+      try {
+        const userId = nextSession.user.id;
 
-      const [profileResponse, rolesResponse] = await Promise.all([
-        supabaseClient
-          .from("profiles")
-          .select(
-            "id, email, full_name, job_title, department, status, is_super_admin, must_reset_password"
-          )
-          .eq("id", userId)
-          .maybeSingle<ProfileRecord>(),
-        supabaseClient.from("user_roles").select("role_code").eq("user_id", userId)
-      ]);
-
-      if (!isMounted) {
-        return;
-      }
-
-      if (profileResponse.error || rolesResponse.error) {
-        setProfile(null);
-        setAppRoles([]);
-        setAccessibleModules([]);
-        setIsLoading(false);
-        return;
-      }
-
-      const nextProfile = profileResponse.data ?? null;
-      setProfile(nextProfile);
-
-      const nextRoles =
-        !rolesResponse.data
-          ? []
-          : rolesResponse.data
-              .map((row) => {
-                return normalizeRoleCode(typeof row.role_code === "string" ? row.role_code : null);
-              })
-              .filter((role): role is AppRole => role !== null);
-
-      setAppRoles(Array.from(new Set(nextRoles)));
-
-      const shouldLoadAllModules =
-        nextProfile?.is_super_admin === true || nextRoles.includes("admin");
-
-      if (shouldLoadAllModules) {
-        const moduleResponse = await supabaseClient
-          .from("app_modules")
-          .select("code")
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true });
+        const [profileResponse, rolesResponse] = await Promise.all([
+          supabaseClient
+            .from("profiles")
+            .select(
+              "id, email, full_name, job_title, department, status, is_super_admin, must_reset_password"
+            )
+            .eq("id", userId)
+            .maybeSingle<ProfileRecord>(),
+          supabaseClient.from("user_roles").select("role_code").eq("user_id", userId)
+        ]);
 
         if (!isMounted) {
           return;
         }
 
-        const moduleCodes =
-          moduleResponse.error || !moduleResponse.data
+        if (profileResponse.error || rolesResponse.error) {
+          console.error("Auth load error:", profileResponse.error, rolesResponse.error);
+          setProfile(null);
+          setAppRoles([]);
+          setAccessibleModules([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const nextProfile = profileResponse.data ?? null;
+        setProfile(nextProfile);
+
+        const nextRoles =
+          !rolesResponse.data
             ? []
-            : moduleResponse.data
-                .map((row) => normalizeModuleCode(row.code))
+            : rolesResponse.data
+                .map((row) => {
+                  return normalizeRoleCode(typeof row.role_code === "string" ? row.role_code : null);
+                })
+                .filter((role): role is AppRole => role !== null);
+
+        setAppRoles(Array.from(new Set(nextRoles)));
+
+        const shouldLoadAllModules =
+          nextProfile?.is_super_admin === true || nextRoles.includes("admin");
+
+        if (shouldLoadAllModules) {
+          const moduleResponse = await supabaseClient
+            .from("app_modules")
+            .select("code")
+            .eq("is_active", true)
+            .order("sort_order", { ascending: true });
+
+          if (!isMounted) {
+            return;
+          }
+
+          const moduleCodes =
+            moduleResponse.error || !moduleResponse.data
+              ? []
+              : moduleResponse.data
+                  .map((row) => normalizeModuleCode(row.code))
+                  .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
+
+          setAccessibleModules(Array.from(new Set(moduleCodes)));
+          setIsLoading(false);
+          return;
+        }
+
+        if (nextRoles.length === 0) {
+          setAccessibleModules([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const moduleAccessResponse = await supabaseClient
+          .from("role_module_access")
+          .select("module_code")
+          .in("role_code", nextRoles)
+          .eq("can_view", true);
+
+        if (!isMounted) {
+          return;
+        }
+
+        const nextModules =
+          moduleAccessResponse.error || !moduleAccessResponse.data
+            ? []
+            : moduleAccessResponse.data
+                .map((row) => normalizeModuleCode(row.module_code))
                 .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
 
-        setAccessibleModules(Array.from(new Set(moduleCodes)));
-        setIsLoading(false);
-        return;
-      }
-
-      if (nextRoles.length === 0) {
+        setAccessibleModules(Array.from(new Set(nextModules)));
+      } catch (err) {
+        console.error("AuthContext loadAuthorization failed:", err);
+        setProfile(null);
+        setAppRoles([]);
         setAccessibleModules([]);
-        setIsLoading(false);
-        return;
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-
-      const moduleAccessResponse = await supabaseClient
-        .from("role_module_access")
-        .select("module_code")
-        .in("role_code", nextRoles)
-        .eq("can_view", true);
-
-      if (!isMounted) {
-        return;
-      }
-
-      const nextModules =
-        moduleAccessResponse.error || !moduleAccessResponse.data
-          ? []
-          : moduleAccessResponse.data
-              .map((row) => normalizeModuleCode(row.module_code))
-              .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
-
-      setAccessibleModules(Array.from(new Set(nextModules)));
-      setIsLoading(false);
     };
 
     supabase.auth.getSession().then(({ data }) => {
