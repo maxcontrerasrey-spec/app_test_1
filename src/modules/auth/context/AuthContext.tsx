@@ -226,14 +226,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    // Safety timeout: if loading takes more than 10s, force exit loading state
+    const safetyTimer = window.setTimeout(() => {
+      if (isMounted) {
+        console.warn("AuthContext: safety timeout reached, forcing isLoading=false");
+        setIsLoading(false);
+      }
+    }, 10_000);
+
+    let initialLoadDone = false;
+
     supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
+      initialLoadDone = true;
       void loadAuthorization(data.session);
+    }).catch((err) => {
+      console.error("AuthContext: getSession failed", err);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     });
 
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!isMounted) {
+        return;
+      }
+
+      // Skip if this is the initial INITIAL_SESSION event and getSession already handled it
+      if (event === "INITIAL_SESSION" && initialLoadDone) {
         return;
       }
 
@@ -246,6 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+      window.clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, []);
