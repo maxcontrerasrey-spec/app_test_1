@@ -5,6 +5,7 @@ Plataforma web interna de automatización orientada a la gestión operativa, rec
 ## 🏗️ Arquitectura Técnica
 
 - **Frontend**: React + TypeScript + Vite
+- **Estado Remoto**: TanStack Query para fetching, caché e invalidación progresiva en módulos operativos.
 - **Estilos**: Vanilla CSS con Custom Properties (Design Tokens), arquitectura modular y mobile-first (sin frameworks externos como Tailwind, priorizando control absoluto).
 - **Backend/DB**: Supabase (PostgreSQL + Auth + Storage).
 - **Gobernanza de Datos**: Modelo estricto Zero Trust. Toda lógica de negocio transaccional sucede en el backend mediante RPCs (`SECURITY DEFINER`) con auditoría integrada.
@@ -45,6 +46,13 @@ La aplicación estará disponible en `http://localhost:5173`.
 - `npm run build`: Ejecuta la verificación de tipos de TypeScript y construye para producción en `dist/`.
 - `npm run preview`: Sirve los archivos construidos en modo local.
 - `npm run provision:hiring-approvers`: Script en Node para provisionar perfiles masivos desde un archivo base.
+
+## 📌 Estado Actual del ERP
+
+- El dashboard operativo ya distingue entre `Tareas Pendientes`, `Folios en curso` y `Acciones Rápidas`.
+- `Control de Contrataciones` ya opera con separación entre aprobaciones pendientes, casos activos y control transversal de candidatos.
+- Las mutaciones críticas de reclutamiento y aprobaciones se ejecutan mediante RPCs de Supabase con trazabilidad.
+- La migración hacia un estado remoto más robusto comenzó con TanStack Query en el dashboard, como base para extender luego el patrón a Reclutamiento, Operaciones y Certificados.
 
 ## 📂 Estructura del Código (`src/`)
 

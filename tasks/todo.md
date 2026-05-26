@@ -1,5 +1,19 @@
 # Tareas y Roadmap de Desarrollo
 
+## Fase ERP Core 1: Estado remoto del dashboard
+
+- [x] Instalar TanStack Query como base de estado asíncrono compartido
+- [x] Envolver la aplicación con `QueryClientProvider`
+- [x] Migrar `useDashboard` desde `useState + refresh()` manual a queries/mutations con invalidación
+- [ ] Dejar preparado el siguiente paso de permisos efectivos desde backend sin tocar todavía la lógica de acceso
+
+## Resultado de Fase ERP Core 1: Estado remoto del dashboard
+
+- El dashboard ya no depende de un ciclo manual de `useState + Promise.all + refresh()` para su carga principal.
+- `useDashboard` ahora usa TanStack Query para resolver widgets, tareas, folios activos y notificaciones en una sola query con caché.
+- Las preferencias de visibilidad de widgets ya usan mutation con update optimista e invalidación posterior.
+- `main.tsx` quedó preparado con `QueryClientProvider` para extender el patrón a Reclutamiento, Operaciones y Certificados.
+
 ## Reparación ERP de Dashboard, Roles y Gobernanza
 
 - [x] Alinear roles reales del frontend con los roles usados por dashboard y migraciones

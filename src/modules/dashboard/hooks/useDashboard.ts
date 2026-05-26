@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
 import { dashboardService } from "../services/dashboardService";
 import type {
@@ -10,83 +11,115 @@ import type {
   ResolvedWidget
 } from "../types";
 
+type DashboardQueryPayload = {
+  widgets: ResolvedWidget[];
+  notifications: DashboardNotification[];
+  tasksData: DashboardTaskItem[];
+  activeFoliosData: DashboardActiveFolioItem[];
+  alertsData: DashboardAlertItem[];
+  kpisData: DashboardKpis | null;
+};
+
+async function fetchDashboardPayload(userId: string, appRoles: string[]): Promise<DashboardQueryPayload> {
+  const [availableWidgets, userPrefs, unreadNotifications, tasks, activeFolios] = await Promise.all([
+    dashboardService.getAvailableWidgets(appRoles),
+    dashboardService.getUserPreferences(),
+    dashboardService.getUnreadNotifications(),
+    dashboardService.getDashboardTasks(userId),
+    dashboardService.getDashboardActiveFolios()
+  ]);
+
+  const resolvedWidgets: ResolvedWidget[] = availableWidgets
+    .map((widget) => {
+      const pref = userPrefs.find((item) => item.widget_id === widget.id);
+      return {
+        ...widget,
+        position: pref ? pref.position : widget.default_position,
+        hidden: pref ? pref.hidden : false,
+        size: pref ? pref.size : "medium"
+      };
+    })
+    .sort((a, b) => a.position - b.position);
+
+  return {
+    widgets: resolvedWidgets,
+    notifications: unreadNotifications,
+    tasksData: tasks,
+    activeFoliosData: activeFolios,
+    alertsData: [],
+    kpisData: null
+  };
+}
+
 export function useDashboard() {
   const { user, appRoles } = useAuth();
-  const [widgets, setWidgets] = useState<ResolvedWidget[]>([]);
-  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
-  
-  // Data stores for widgets
-  const [tasksData, setTasksData] = useState<DashboardTaskItem[]>([]);
-  const [activeFoliosData, setActiveFoliosData] = useState<DashboardActiveFolioItem[]>([]);
-  const [alertsData, setAlertsData] = useState<DashboardAlertItem[]>([]);
-  const [kpisData, setKpisData] = useState<DashboardKpis | null>(null);
+  const queryClient = useQueryClient();
+  const dashboardQueryKey = useMemo(
+    () => ["dashboard-home", user?.id ?? "anonymous", [...appRoles].sort().join("|")] as const,
+    [user?.id, appRoles]
+  );
 
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data,
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: dashboardQueryKey,
+    queryFn: () => fetchDashboardPayload(user!.id, appRoles),
+    enabled: Boolean(user?.id)
+  });
 
-  const loadDashboardData = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    
-    try {
-      const [availableWidgets, userPrefs, unreadNotifications, tasks, activeFolios] = await Promise.all([
-        dashboardService.getAvailableWidgets(appRoles),
-        dashboardService.getUserPreferences(),
-        dashboardService.getUnreadNotifications(),
-        dashboardService.getDashboardTasks(user.id),
-        dashboardService.getDashboardActiveFolios()
-      ]);
+  const preferenceMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      widgetId,
+      hidden
+    }: {
+      userId: string;
+      widgetId: string;
+      hidden: boolean;
+    }) => {
+      await dashboardService.saveUserPreference(userId, { widget_id: widgetId, hidden });
+    },
+    onMutate: async ({ widgetId, hidden }) => {
+      await queryClient.cancelQueries({ queryKey: dashboardQueryKey });
+      const previous = queryClient.getQueryData<DashboardQueryPayload>(dashboardQueryKey);
 
-      // Merge base widgets with user preferences
-      const resolvedWidgets: ResolvedWidget[] = availableWidgets.map(widget => {
-        const pref = userPrefs.find(p => p.widget_id === widget.id);
-        return {
-          ...widget,
-          position: pref ? pref.position : widget.default_position,
-          hidden: pref ? pref.hidden : false,
-          size: pref ? pref.size : 'medium'
-        };
-      });
+      if (previous) {
+        queryClient.setQueryData<DashboardQueryPayload>(dashboardQueryKey, {
+          ...previous,
+          widgets: previous.widgets.map((widget) =>
+            widget.id === widgetId ? { ...widget, hidden } : widget
+          )
+        });
+      }
 
-      // Sort by position
-      resolvedWidgets.sort((a, b) => a.position - b.position);
-
-      setWidgets(resolvedWidgets);
-      setNotifications(unreadNotifications);
-      setTasksData(tasks);
-      setActiveFoliosData(activeFolios);
-      setAlertsData([]);
-      setKpisData(null);
-    } catch (error) {
-      console.error("Failed to load dashboard data", error);
-    } finally {
-      setIsLoading(false);
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(dashboardQueryKey, context.previous);
+      }
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
     }
-  }, [user, appRoles]);
-
-  useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+  });
 
   const toggleWidgetVisibility = async (widgetId: string, hidden: boolean) => {
-    if (!user) return;
-    
-    // Optimistic UI update
-    setWidgets(current => 
-      current.map(w => w.id === widgetId ? { ...w, hidden } : w)
-    );
-
-    await dashboardService.saveUserPreference(user.id, { widget_id: widgetId, hidden });
+    if (!user?.id) return;
+    await preferenceMutation.mutateAsync({ userId: user.id, widgetId, hidden });
   };
 
   return {
-    widgets,
-    notifications,
-    tasksData,
-    activeFoliosData,
-    alertsData,
-    kpisData,
+    widgets: data?.widgets ?? [],
+    notifications: data?.notifications ?? [],
+    tasksData: data?.tasksData ?? [],
+    activeFoliosData: data?.activeFoliosData ?? [],
+    alertsData: data?.alertsData ?? [],
+    kpisData: data?.kpisData ?? null,
     isLoading,
     toggleWidgetVisibility,
-    refresh: loadDashboardData
+    refresh: refetch
   };
 }
