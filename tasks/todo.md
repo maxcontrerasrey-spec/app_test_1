@@ -160,6 +160,14 @@
 
 - Los tres bloques principales del dashboard ahora comparten la misma regla explícita de separación, en vez de depender de comportamiento implícito del grid.
 
+## Corrección final de separación uniforme entre módulos principales
+
+- [x] Reemplazar la separación basada en márgenes por `row-gap` explícito en el contenedor principal del dashboard
+
+## Resultado de corrección final de separación uniforme entre módulos principales
+
+- La distancia entre `Tareas Pendientes`, `Folios en curso` y `Acciones Rápidas` ahora la controla una sola regla de `row-gap`, evitando diferencias visuales entre bloques.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización

@@ -37,13 +37,9 @@
 
 /* Grid Layout Engine */
 .dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.dashboard-module-section + .dashboard-module-section {
-  margin-top: 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 64px;
 }
 
 .dashboard-zone {
