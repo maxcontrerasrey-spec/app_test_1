@@ -144,6 +144,14 @@
 
 - El dashboard deja más aire entre bandejas operativas para que cada módulo se lea como bloque independiente y no como una sola masa continua.
 
+## Corrección de separación visible entre módulos del dashboard
+
+- [x] Reemplazar el espaciado sutil basado en variables por una separación explícita y mayor entre módulos principales
+
+## Resultado de corrección de separación visible entre módulos del dashboard
+
+- La separación entre `Tareas Pendientes`, `Folios en curso` y `Acciones Rápidas` ahora depende de un margen explícito entre bloques, para que la distancia se perciba claramente en pantalla.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización

@@ -39,7 +39,11 @@
 .dashboard-grid {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-8);
+  gap: 0;
+}
+
+.dashboard-grid > * + * {
+  margin-top: 48px;
 }
 
 .dashboard-zone {
@@ -105,7 +109,7 @@
 }
 
 .dashboard-split-layout-spaced {
-  margin-top: var(--spacing-10);
+  margin-top: 0;
 }
 
 /* Widget Base Card */
