@@ -56,6 +56,7 @@ export interface DashboardTaskItem {
   salary_liquid?: number | null;
   camp_required?: boolean | null;
   flight_tickets_required?: boolean | null;
+  travel_methodology?: string | null;
   other_benefits?: string | null;
   title?: string;
   subtitle?: string;

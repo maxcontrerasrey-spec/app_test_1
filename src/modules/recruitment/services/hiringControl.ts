@@ -55,6 +55,7 @@ export type HiringControlApproval = {
     salary_offer: number | null;
     campamento: boolean | null;
     pasajes: boolean | null;
+    travel_methodology?: string | null;
     other_benefits: string | null;
   } | null;
 };
@@ -212,6 +213,7 @@ export type RecruitmentCaseDetail = {
       salary_offer: number | null;
       campamento: boolean | null;
       pasajes: boolean | null;
+      travel_methodology?: string | null;
       other_benefits: string | null;
       approval_summary?: {
         step_name: string | null;

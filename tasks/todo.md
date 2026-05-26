@@ -4,7 +4,7 @@
 
 - [x] Contrastar el plan externo con la arquitectura real del repo
 - [x] Versionar un plan técnico corregido en [docs/reclutamiento-operaciones-fase2-plan.md](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/reclutamiento-operaciones-fase2-plan.md:1)
-- [ ] Ejecutar Fase 2A: metodología de pasajes en aprobación final
+- [x] Ejecutar Fase 2A: metodología de pasajes en aprobación final
 - [ ] Ejecutar Fase 2B: nuevo pipeline de candidatos con aprobación `Who`
 - [ ] Ejecutar Fase 2C: tercera pestaña `Ficha del Trabajador`
 
@@ -14,6 +14,14 @@
 - No se implementarán componentes paralelos inexistentes como `CandidateBoard.tsx` o `CandidateDetailModal.tsx`; los cambios se montarán sobre `TasksWidget`, `ApprovalModal`, `HiringCandidatesView` y `CandidateDetailSidebar`.
 - Se definió que `ready_for_hire` y `hired` siguen existiendo como etapas terminales, y que la aprobación `Who` debe llevar trazabilidad formal en backend.
 - La `Ficha del Trabajador` quedó separada conceptualmente entre datos persistentes de persona y datos específicos de la postulación o ingreso actual.
+
+## Resultado de Fase 2A: metodología de pasajes
+
+- Se creó la migración [20260525_233500_add_travel_methodology_to_hiring_approval.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260525_233500_add_travel_methodology_to_hiring_approval.sql:1).
+- `hiring_requests` ahora soporta `travel_methodology` con códigos estables de negocio.
+- `decide_hiring_request_approval_v2(...)` exige metodología de pasajes cuando Control de Contratos aprueba un folio con `pasajes = true`.
+- La exigencia quedó reflejada tanto en `ApprovalModal` como en `TasksWidget`, evitando bypass entre superficies de aprobación.
+- La metodología también quedó expuesta en el detalle de aprobación y en el payload de tareas pendientes.
 
 ## Fase ERP Core 2: Permisos efectivos desde backend
 

@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import type { DashboardDataBundle, DashboardTaskItem, ResolvedWidget } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
-import { decideHiringApproval } from "../../../recruitment/services/hiringWorkflow";
+import { SelectField } from "../../../../shared/ui";
+import {
+  decideHiringApproval,
+  toTravelMethodologyLabel,
+  travelMethodologyOptions,
+  type TravelMethodology
+} from "../../../recruitment/services/hiringWorkflow";
 
 type TasksWidgetProps = {
   widget: ResolvedWidget;
@@ -32,25 +38,40 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [comments, setComments] = useState("");
+  const [travelMethodology, setTravelMethodology] = useState<TravelMethodology | "">("");
 
-  const handleRowClick = (taskId: string) => {
-    if (expandedTaskId === taskId) {
+  const handleRowClick = (task: DashboardTaskItem) => {
+    const initialTravelMethodology =
+      task.travel_methodology === "travel_allowance" || task.travel_methodology === "company_purchase"
+        ? task.travel_methodology
+        : "";
+
+    if (expandedTaskId === task.id) {
       setExpandedTaskId(null);
     } else {
-      setExpandedTaskId(taskId);
+      setExpandedTaskId(task.id);
       setSubmitError(null);
       setComments("");
+      setTravelMethodology(initialTravelMethodology);
     }
   };
 
   const handleDecision = async (taskId: string, approvalId: number, decision: "approved" | "rejected") => {
+    const targetTask = tasks.find((task) => task.id === taskId) ?? null;
+
+    if (decision === "approved" && targetTask?.flight_tickets_required && !travelMethodology) {
+      setSubmitError("Debes definir la metodología de pasajes antes de aprobar.");
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
     const { error } = await decideHiringApproval({
       approvalId,
       decision,
-      comment: comments.trim() || undefined
+      comment: comments.trim() || undefined,
+      travelMethodology: decision === "approved" ? travelMethodology || null : null
     });
 
     setIsSubmitting(false);
@@ -95,7 +116,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                     <React.Fragment key={task.id}>
                       <tr 
                         className={`tracking-table-row-clickable ${isExpanded ? "tracking-table-row-expanded" : ""}`}
-                        onClick={() => handleRowClick(task.id)}
+                        onClick={() => handleRowClick(task)}
                       >
                         <td>
                           <span className="case-code-toggle">
@@ -183,6 +204,14 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                                     <strong>{task.flight_tickets_required ? "Sí" : "No"}</strong>
                                   </div>
                                   <div>
+                                    <small>Metodología de pasajes</small>
+                                    <strong>
+                                      {task.flight_tickets_required
+                                        ? toTravelMethodologyLabel(task.travel_methodology)
+                                        : "No aplica"}
+                                    </strong>
+                                  </div>
+                                  <div>
                                     <small>Otros beneficios</small>
                                     <strong>{task.other_benefits ?? "—"}</strong>
                                   </div>
@@ -194,6 +223,19 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                             {task.type === "approval" && task.status_code === "pending" && task.approval_id ? (
                               <div className="task-decision-panel">
                                 <h4 className="task-decision-title">Decisión de Aprobación</h4>
+                                {task.flight_tickets_required ? (
+                                  <SelectField
+                                    id={`task-travel-methodology-${task.id}`}
+                                    label="Metodología de pasajes"
+                                    value={travelMethodology}
+                                    onChange={(event) =>
+                                      setTravelMethodology(event.target.value as TravelMethodology | "")
+                                    }
+                                    options={[...travelMethodologyOptions]}
+                                    placeholder="Selecciona una metodología"
+                                    disabled={isSubmitting}
+                                  />
+                                ) : null}
                                 <textarea
                                   placeholder="Agrega comentarios o motivos (obligatorio si rechazas)..."
                                   value={comments}

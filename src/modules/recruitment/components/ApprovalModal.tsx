@@ -1,5 +1,12 @@
-import React, { useState } from "react";
-import { decideHiringApproval, type HiringApprovalDecision } from "../services/hiringWorkflow";
+import React, { useEffect, useState } from "react";
+import { SelectField } from "../../../shared/ui";
+import {
+  decideHiringApproval,
+  toTravelMethodologyLabel,
+  travelMethodologyOptions,
+  type HiringApprovalDecision,
+  type TravelMethodology
+} from "../services/hiringWorkflow";
 
 export type ApprovalModalData = {
   id: number;
@@ -19,6 +26,7 @@ export type ApprovalModalData = {
     other_benefits?: string | null;
     campamento?: boolean | null;
     pasajes?: boolean | null;
+    travel_methodology?: string | null;
   } | null;
 };
 
@@ -42,6 +50,25 @@ export function ApprovalModal({
   const [isDecisionLoading, setIsDecisionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [decisionMessage, setDecisionMessage] = useState("");
+  const [travelMethodology, setTravelMethodology] = useState<TravelMethodology | "">("");
+
+  useEffect(() => {
+    if (!approvalData) {
+      setErrorMessage("");
+      setDecisionMessage("");
+      setTravelMethodology("");
+      return;
+    }
+
+    setErrorMessage("");
+    setDecisionMessage("");
+    setTravelMethodology(
+      approvalData.hiring_requests?.travel_methodology === "travel_allowance" ||
+      approvalData.hiring_requests?.travel_methodology === "company_purchase"
+        ? approvalData.hiring_requests.travel_methodology
+        : ""
+    );
+  }, [approvalData]);
 
   if (!isOpen || !approvalData) return null;
 
@@ -69,6 +96,12 @@ export function ApprovalModal({
 
   const handleApproval = async (decision: HiringApprovalDecision) => {
     if (!approvalData) return;
+
+    if (decision === "approved" && hr?.pasajes && !travelMethodology) {
+      setErrorMessage("Debes definir la metodología de pasajes antes de aprobar.");
+      return;
+    }
+
     setIsDecisionLoading(true);
     setErrorMessage("");
     setDecisionMessage("");
@@ -77,6 +110,7 @@ export function ApprovalModal({
       approvalId: approvalData.id,
       decision,
       comment: null,
+      travelMethodology: decision === "approved" ? travelMethodology || null : null
     });
 
     if (result.error) {
@@ -171,6 +205,29 @@ export function ApprovalModal({
               : "Sin beneficios adicionales registrados"}
           </strong>
         </div>
+
+        <div className="approval-detail-note">
+          <small>Metodología de pasajes</small>
+          <strong>
+            {hr?.pasajes
+              ? toTravelMethodologyLabel(hr?.travel_methodology)
+              : "No aplica"}
+          </strong>
+        </div>
+
+        {hr?.pasajes ? (
+          <SelectField
+            id="approval-travel-methodology"
+            label="Metodología de pasajes"
+            value={travelMethodology}
+            onChange={(event) =>
+              setTravelMethodology(event.target.value as TravelMethodology | "")
+            }
+            options={[...travelMethodologyOptions]}
+            placeholder="Selecciona una metodología"
+            disabled={isDecisionLoading}
+          />
+        ) : null}
 
         {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
         {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
