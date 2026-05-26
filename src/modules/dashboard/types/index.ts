@@ -39,6 +39,8 @@ export interface DashboardTaskItem {
   id: string;
   type: string;
   approval_id?: number | null;
+  step_code?: string | null;
+  step_name?: string | null;
   hiring_request_id?: string | null;
   folio?: string | null;
   job_position_name?: string | null;
@@ -63,6 +65,35 @@ export interface DashboardTaskItem {
   status_code: string;
   status_label: string;
   priority: string;
+  created_at: string;
+}
+
+export interface DashboardApprovalTrackingItem {
+  id: string;
+  approval_id?: number | null;
+  hiring_request_id?: string | null;
+  folio?: string | null;
+  job_position_name?: string | null;
+  contract_name?: string | null;
+  cost_center_code?: string | null;
+  requested_vacancies?: number | null;
+  requester_name?: string | null;
+  requester_email?: string | null;
+  requested_income_date?: string | null;
+  contract_start_date?: string | null;
+  contract_end_date?: string | null;
+  shift_code?: string | null;
+  salary_liquid?: number | null;
+  camp_required?: boolean | null;
+  flight_tickets_required?: boolean | null;
+  travel_methodology?: string | null;
+  other_benefits?: string | null;
+  current_step_code?: string | null;
+  current_step_name?: string | null;
+  current_approver_name?: string | null;
+  current_approver_email?: string | null;
+  status_code: string;
+  status_label: string;
   created_at: string;
 }
 
@@ -108,6 +139,7 @@ export interface DashboardKpis {
 
 export interface DashboardDataBundle {
   tasksData: DashboardTaskItem[];
+  approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   alertsData: DashboardAlertItem[];
   kpisData: DashboardKpis | null;

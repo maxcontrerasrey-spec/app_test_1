@@ -10,6 +10,7 @@ import {
 
 export type ApprovalModalData = {
   id: number;
+  step_code?: string | null;
   step_name: string;
   approver_user_id: string | null;
   created_at: string | null;
@@ -97,7 +98,7 @@ export function ApprovalModal({
   const handleApproval = async (decision: HiringApprovalDecision) => {
     if (!approvalData) return;
 
-    if (decision === "approved" && hr?.pasajes && !travelMethodology) {
+    if (decision === "approved" && requiresTravelMethodology && !travelMethodology) {
       setErrorMessage("Debes definir la metodología de pasajes antes de aprobar.");
       return;
     }
@@ -110,7 +111,10 @@ export function ApprovalModal({
       approvalId: approvalData.id,
       decision,
       comment: null,
-      travelMethodology: decision === "approved" ? travelMethodology || null : null
+      travelMethodology:
+        decision === "approved" && approvalData.step_code === "contracts_control"
+          ? travelMethodology || null
+          : null
     });
 
     if (result.error) {
@@ -126,6 +130,8 @@ export function ApprovalModal({
   };
 
   const hr = approvalData.hiring_requests;
+  const requiresTravelMethodology =
+    approvalData.step_code === "contracts_control" && hr?.pasajes === true;
 
   return (
     <div className="approval-modal-backdrop" role="presentation" onClick={onClose}>
@@ -215,7 +221,7 @@ export function ApprovalModal({
           </strong>
         </div>
 
-        {hr?.pasajes ? (
+        {requiresTravelMethodology ? (
           <SelectField
             id="approval-travel-methodology"
             label="Metodología de pasajes"

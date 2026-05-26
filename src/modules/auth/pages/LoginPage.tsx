@@ -64,7 +64,7 @@ export function LoginPage() {
     setIsSubmitting(false);
 
     if (error) {
-      setErrorMessage("No fue posible enviar el correo de recuperación.");
+      setErrorMessage(error);
       return;
     }
 

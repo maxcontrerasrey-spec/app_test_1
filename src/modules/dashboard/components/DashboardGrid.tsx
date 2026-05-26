@@ -1,6 +1,7 @@
 import React from "react";
 import type { DashboardDataBundle, ResolvedWidget } from "../types";
 import { ActiveFoliosWidget } from "./widgets/ActiveFoliosWidget";
+import { ApprovalTrackingWidget } from "./widgets/ApprovalTrackingWidget";
 import { TasksWidget } from "./widgets/TasksWidget";
 import { QuickActionsWidget } from "./widgets/QuickActionsWidget";
 
@@ -11,6 +12,7 @@ type WidgetComponentProps = {
 };
 
 const WidgetRegistry: Record<string, React.FC<WidgetComponentProps>> = {
+  ApprovalTrackingWidget,
   TasksWidget,
   QuickActionsWidget,
 };
@@ -46,6 +48,15 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
 
   const tasks = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
   const quickActions = visibleWidgets.filter((w) => w.component_key === "QuickActionsWidget");
+  const approvalTrackingWidget: ResolvedWidget | null =
+    tasks[0]
+      ? {
+          ...tasks[0],
+          id: "dashboard-approval-tracking",
+          name: "Seguimiento de aprobaciones",
+          component_key: "ApprovalTrackingWidget"
+        }
+      : null;
   const activeFoliosWidget: ResolvedWidget | null =
     tasks[0]
       ? {
@@ -68,6 +79,14 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
           </div>
         </div>
       )}
+
+      {approvalTrackingWidget ? (
+        <div className="dashboard-zone dashboard-zone-full dashboard-module-section">
+          <div className="dashboard-zone-column">
+            <ApprovalTrackingWidget widget={approvalTrackingWidget} dashboardData={dashboardData} />
+          </div>
+        </div>
+      ) : null}
 
       {activeFoliosWidget ? (
         <div className="dashboard-zone dashboard-zone-full dashboard-module-section">

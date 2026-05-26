@@ -1,5 +1,6 @@
 import { supabase } from "../../../shared/lib/supabase";
 import type {
+  DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardAlertItem,
   DashboardKpis,
@@ -91,6 +92,16 @@ export const dashboardService = {
       return [];
     }
     return (data ?? []) as DashboardTaskItem[];
+  },
+
+  async getDashboardApprovalTracking(): Promise<DashboardApprovalTrackingItem[]> {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc("get_dashboard_approval_tracking");
+    if (error) {
+      console.error("Error fetching dashboard approval tracking:", error);
+      return [];
+    }
+    return (data ?? []) as DashboardApprovalTrackingItem[];
   },
 
   async getDashboardActiveFolios(): Promise<DashboardActiveFolioItem[]> {

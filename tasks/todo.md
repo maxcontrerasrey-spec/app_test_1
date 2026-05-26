@@ -1,5 +1,31 @@
 # Tareas y Roadmap de Desarrollo
 
+## Exposición de error real en recuperación de contraseña
+
+- [x] Revisar por qué la pantalla de login oculta el mensaje real de fallo al pedir recuperación
+- [x] Mostrar el error devuelto por `sendPasswordReset` en vez de un mensaje genérico
+- [x] Validar compilación y documentar la regla en lecciones
+
+## Corrección de metodología de pasajes por etapa de aprobación
+
+- [x] Revisar por qué el selector de metodología de pasajes aparece también en aprobaciones de área
+- [x] Corregir el contrato de tareas y detalle de aprobación para exponer la etapa real (`step_code`)
+- [x] Restringir la UI de metodología de pasajes solo a `contracts_control`
+- [x] Validar compilación y documentar la regla en lecciones
+
+## Seguimiento global de aprobaciones en dashboard
+
+- [x] Diseñar una sección separada para folios pendientes de aprobación, ubicada entre `Tareas Pendientes` y `Folios en curso`
+- [x] Publicar una RPC de seguimiento global de aprobaciones con acceso controlado desde backend
+- [x] Integrar el nuevo bloque en el dashboard, con búsqueda y estado visible del folio en aprobación
+- [x] Validar compilación y dejar la regla documentada en lecciones
+
+## Corrección de bandeja personal de aprobaciones en dashboard
+
+- [x] Revisar por qué un folio aprobado sigue visible en `Tareas Pendientes` para el administrador
+- [x] Corregir `get_dashboard_tasks(...)` para que la bandeja muestre solo aprobaciones asignadas al usuario autenticado
+- [x] Validar que el dashboard siga compilando y documentar la regla en lecciones
+
 ## Corrección de recuperación de contraseña en producción
 
 - [x] Revisar el flujo de recuperación y descartar hardcodes a `localhost` en el repo
@@ -11,6 +37,29 @@
 - `sendPasswordReset` ahora prioriza `VITE_PUBLIC_APP_URL` para construir la URL de recuperación.
 - Se documentó el despliegue con la variable `VITE_PUBLIC_APP_URL` y la validación de `Authentication > URL Configuration` en Supabase.
 - El problema observado con `localhost:3000` queda identificado como desalineación de ambiente y no como una ruta hardcodeada activa en el repo.
+
+## Resultado de corrección de bandeja personal de aprobaciones en dashboard
+
+- La causa raíz identificada fue semántica: `get_dashboard_tasks(...)` mezclaba la bandeja personal con el bypass administrativo, por lo que un admin seguía viendo en pendientes el siguiente paso del mismo folio después de aprobar.
+- La corrección mueve `Tareas Pendientes` a un contrato explícitamente personal: solo devuelve aprobaciones con `approver_user_id = p_user_id`.
+- El bypass administrativo se mantiene para otras lecturas/acciones seguras, pero deja de contaminar la bandeja diaria del usuario.
+
+## Resultado de seguimiento global de aprobaciones en dashboard
+
+- El dashboard ahora separa explícitamente tres dominios: trabajo personal pendiente, seguimiento global de aprobaciones y folios ya abiertos en reclutamiento.
+- `Seguimiento de aprobaciones` queda entre `Tareas Pendientes` y `Folios en curso`, con búsqueda propia y estado visible del paso actual.
+- La nueva vista global no reusa la RPC personal de tareas; usa un contrato backend específico para evitar volver a mezclar bandeja personal con seguimiento transversal.
+
+## Resultado de corrección de metodología de pasajes por etapa de aprobación
+
+- La causa raíz fue un contrato incompleto: la UI solo recibía `pasajes = true`, pero no la etapa real de aprobación.
+- `step_code` ahora queda expuesto en tareas y en el detalle de aprobación para que el frontend pueda distinguir `area_manager` de `contracts_control`.
+- La selección de `metodología de pasajes` solo se muestra y exige en la etapa `contracts_control`, que es el comportamiento de negocio correcto.
+
+## Resultado de exposición de error real en recuperación de contraseña
+
+- La pantalla de login dejaba ciego el diagnóstico al reemplazar cualquier error de Supabase por un texto fijo.
+- Ahora el flujo muestra el mensaje real devuelto por `sendPasswordReset`, lo que permite distinguir entre problemas de configuración de URLs, templates, correo o límites del proveedor.
 
 ## Ajuste puntual de acceso administrativo
 

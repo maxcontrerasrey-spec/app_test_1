@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
 import { dashboardService } from "../services/dashboardService";
 import type {
+  DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardAlertItem,
   DashboardKpis,
@@ -15,17 +16,19 @@ type DashboardQueryPayload = {
   widgets: ResolvedWidget[];
   notifications: DashboardNotification[];
   tasksData: DashboardTaskItem[];
+  approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   alertsData: DashboardAlertItem[];
   kpisData: DashboardKpis | null;
 };
 
 async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayload> {
-  const [availableWidgets, userPrefs, unreadNotifications, tasks, activeFolios] = await Promise.all([
+  const [availableWidgets, userPrefs, unreadNotifications, tasks, approvalTracking, activeFolios] = await Promise.all([
     dashboardService.getAvailableWidgets(),
     dashboardService.getUserPreferences(),
     dashboardService.getUnreadNotifications(),
     dashboardService.getDashboardTasks(userId),
+    dashboardService.getDashboardApprovalTracking(),
     dashboardService.getDashboardActiveFolios()
   ]);
 
@@ -45,6 +48,7 @@ async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayl
     widgets: resolvedWidgets,
     notifications: unreadNotifications,
     tasksData: tasks,
+    approvalTrackingData: approvalTracking,
     activeFoliosData: activeFolios,
     alertsData: [],
     kpisData: null
@@ -115,6 +119,7 @@ export function useDashboard() {
     widgets: data?.widgets ?? [],
     notifications: data?.notifications ?? [],
     tasksData: data?.tasksData ?? [],
+    approvalTrackingData: data?.approvalTrackingData ?? [],
     activeFoliosData: data?.activeFoliosData ?? [],
     alertsData: data?.alertsData ?? [],
     kpisData: data?.kpisData ?? null,

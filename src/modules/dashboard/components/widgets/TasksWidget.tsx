@@ -58,8 +58,10 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
 
   const handleDecision = async (taskId: string, approvalId: number, decision: "approved" | "rejected") => {
     const targetTask = tasks.find((task) => task.id === taskId) ?? null;
+    const requiresTravelMethodology =
+      targetTask?.step_code === "contracts_control" && targetTask?.flight_tickets_required === true;
 
-    if (decision === "approved" && targetTask?.flight_tickets_required && !travelMethodology) {
+    if (decision === "approved" && requiresTravelMethodology && !travelMethodology) {
       setSubmitError("Debes definir la metodología de pasajes antes de aprobar.");
       return;
     }
@@ -71,7 +73,10 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
       approvalId,
       decision,
       comment: comments.trim() || undefined,
-      travelMethodology: decision === "approved" ? travelMethodology || null : null
+      travelMethodology:
+        decision === "approved" && targetTask?.step_code === "contracts_control"
+          ? travelMethodology || null
+          : null
     });
 
     setIsSubmitting(false);
@@ -111,6 +116,8 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
               ) : (
                 tasks.map((task: DashboardTaskItem) => {
                   const isExpanded = expandedTaskId === task.id;
+                  const requiresTravelMethodology =
+                    task.step_code === "contracts_control" && task.flight_tickets_required === true;
                   
                   return (
                     <React.Fragment key={task.id}>
@@ -223,7 +230,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                             {task.type === "approval" && task.status_code === "pending" && task.approval_id ? (
                               <div className="task-decision-panel">
                                 <h4 className="task-decision-title">Decisión de Aprobación</h4>
-                                {task.flight_tickets_required ? (
+                                {requiresTravelMethodology ? (
                                   <SelectField
                                     id={`task-travel-methodology-${task.id}`}
                                     label="Metodología de pasajes"
