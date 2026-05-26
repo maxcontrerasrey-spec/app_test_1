@@ -2,9 +2,6 @@ import { supabase } from "../../../shared/lib/supabase";
 import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
-  DashboardAlertItem,
-  DashboardKpis,
-  DashboardNotification,
   DashboardTaskItem,
   DashboardWidget,
   UserWidgetPreference
@@ -62,26 +59,6 @@ export const dashboardService = {
   },
 
   /**
-   * Fetches unread notifications for the user.
-   */
-  async getUnreadNotifications(): Promise<DashboardNotification[]> {
-    if (!supabase) return [];
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("is_read", false)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (error) {
-      console.error("Error fetching notifications:", error);
-      return [];
-    }
-
-    return data as DashboardNotification[];
-  },
-
-  /**
    * Fetches dynamic tasks for the TasksWidget via RPC
    */
   async getDashboardTasks(userId: string): Promise<DashboardTaskItem[]> {
@@ -117,31 +94,5 @@ export const dashboardService = {
     };
 
     return payload.active_cases ?? [];
-  },
-
-  /**
-   * Fetches dynamic alerts for the AlertsWidget via RPC
-   */
-  async getDashboardAlerts(userId: string): Promise<DashboardAlertItem[]> {
-    if (!supabase) return [];
-    const { data, error } = await supabase.rpc("get_dashboard_alerts", { p_user_id: userId });
-    if (error) {
-      console.error("Error fetching dashboard alerts:", error);
-      return [];
-    }
-    return (data ?? []) as DashboardAlertItem[];
-  },
-
-  /**
-   * Fetches dynamic KPIs for the KPIWidget via RPC
-   */
-  async getDashboardKpis(userId: string): Promise<DashboardKpis | null> {
-    if (!supabase) return null;
-    const { data, error } = await supabase.rpc("get_dashboard_kpis", { p_user_id: userId });
-    if (error) {
-      console.error("Error fetching dashboard KPIs:", error);
-      return null;
-    }
-    return (data ?? null) as DashboardKpis | null;
   }
 };

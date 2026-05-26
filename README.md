@@ -49,11 +49,12 @@ La aplicación estará disponible en `http://localhost:5173`.
 
 ## 📌 Estado Actual del ERP
 
-- El dashboard operativo ya distingue entre `Tareas Pendientes`, `Folios en curso` y `Acciones Rápidas`.
+- El dashboard operativo ya distingue entre `Tareas Pendientes`, `Seguimiento de aprobaciones`, `Folios en curso` y `Acciones Rápidas`.
 - `Control de Contrataciones` ya opera con separación entre aprobaciones pendientes, casos activos y control transversal de candidatos.
 - Las mutaciones críticas de reclutamiento y aprobaciones se ejecutan mediante RPCs de Supabase con trazabilidad.
 - La migración hacia un estado remoto más robusto comenzó con TanStack Query en el dashboard, como base para extender luego el patrón a Reclutamiento, Operaciones y Certificados.
 - La autorización efectiva del usuario ya no se arma con lecturas separadas en cliente: `AuthContext` consume una RPC de permisos efectivos basada en `auth.uid()`, dejando roles y módulos resueltos en backend.
+- El saneamiento ERP actual elimina fetches y widgets sin uso operativo inmediato, y consolida la limpieza de datos canónicos en migraciones controladas sobre Supabase.
 
 ## 📂 Estructura del Código (`src/`)
 

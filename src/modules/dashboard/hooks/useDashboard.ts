@@ -5,28 +5,21 @@ import { dashboardService } from "../services/dashboardService";
 import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
-  DashboardAlertItem,
-  DashboardKpis,
-  DashboardNotification,
   DashboardTaskItem,
   ResolvedWidget
 } from "../types";
 
 type DashboardQueryPayload = {
   widgets: ResolvedWidget[];
-  notifications: DashboardNotification[];
   tasksData: DashboardTaskItem[];
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
-  alertsData: DashboardAlertItem[];
-  kpisData: DashboardKpis | null;
 };
 
 async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayload> {
-  const [availableWidgets, userPrefs, unreadNotifications, tasks, approvalTracking, activeFolios] = await Promise.all([
+  const [availableWidgets, userPrefs, tasks, approvalTracking, activeFolios] = await Promise.all([
     dashboardService.getAvailableWidgets(),
     dashboardService.getUserPreferences(),
-    dashboardService.getUnreadNotifications(),
     dashboardService.getDashboardTasks(userId),
     dashboardService.getDashboardApprovalTracking(),
     dashboardService.getDashboardActiveFolios()
@@ -46,12 +39,9 @@ async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayl
 
   return {
     widgets: resolvedWidgets,
-    notifications: unreadNotifications,
     tasksData: tasks,
     approvalTrackingData: approvalTracking,
-    activeFoliosData: activeFolios,
-    alertsData: [],
-    kpisData: null
+    activeFoliosData: activeFolios
   };
 }
 
@@ -117,12 +107,9 @@ export function useDashboard() {
 
   return {
     widgets: data?.widgets ?? [],
-    notifications: data?.notifications ?? [],
     tasksData: data?.tasksData ?? [],
     approvalTrackingData: data?.approvalTrackingData ?? [],
     activeFoliosData: data?.activeFoliosData ?? [],
-    alertsData: data?.alertsData ?? [],
-    kpisData: data?.kpisData ?? null,
     isLoading,
     toggleWidgetVisibility,
     refresh: refetch

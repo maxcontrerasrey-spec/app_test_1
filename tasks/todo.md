@@ -1,5 +1,19 @@
 # Tareas y Roadmap de Desarrollo
 
+## Paquete de saneamiento ERP: datos útiles y rendimiento
+
+- [x] Auditar desalineaciones reales entre código, esquema y datos vivos de contrataciones/reclutamiento
+- [x] Crear una migración de saneamiento segura para normalizar requester data, recuperar `travel_methodology` desde auditoría cuando exista y agregar índices útiles
+- [x] Reducir trabajo inútil del dashboard eliminando fetches no usados y código muerto asociado
+- [x] Validar con consultas reales, TypeScript y build; dejar reglas permanentes en lecciones
+
+## Resultado de paquete de saneamiento ERP: datos útiles y rendimiento
+
+- La base viva se auditó contra el código y se confirmó que la suciedad real actual es acotada: un `requester_name` no canónico (`folio 0005`) y un histórico aprobado con `pasajes=true` pero sin `travel_methodology` (`folio 0007`).
+- La migración `20260526_140000_erp_data_hygiene_and_dashboard_perf.sql` normaliza `requester_name/requester_email` desde `profiles`, intenta recuperar `travel_methodology` solo desde auditoría real, agrega índices útiles para aprobaciones y casos, y desactiva widgets operativos que ya no se usan (`AlertsWidget`, `KPIWidget`, `TimelineWidget`) limpiando además sus preferencias huérfanas.
+- El dashboard dejó de arrastrar contrato y código muerto para notificaciones, alertas y KPIs no renderizados. Se simplificó `DashboardDataBundle`, se removieron fetches sin consumidor y se eliminaron componentes frontend sin uso.
+- La validación quedó cerrada con consulta real a Supabase, `git diff --check`, `npx tsc -b` y `npm run build`.
+
 ## Exposición de error real en recuperación de contraseña
 
 - [x] Revisar por qué la pantalla de login oculta el mensaje real de fallo al pedir recuperación
@@ -60,6 +74,13 @@
 
 - La pantalla de login dejaba ciego el diagnóstico al reemplazar cualquier error de Supabase por un texto fijo.
 - Ahora el flujo muestra el mensaje real devuelto por `sendPasswordReset`, lo que permite distinguir entre problemas de configuración de URLs, templates, correo o límites del proveedor.
+
+## Resultado de paquete de saneamiento ERP: datos útiles y rendimiento
+
+- Se normaliza `requester_name` y `requester_email` desde `profiles` cuando existe un vínculo real por `requester_id` o `submitted_by`, eliminando valores inconsistentes de baja calidad.
+- `travel_methodology` solo se backfillea cuando ya existe en auditoría; no se inventan valores de negocio para históricos.
+- Se agregan índices para las consultas críticas del flujo de aprobaciones y casos de reclutamiento, reduciendo scans evitables.
+- El dashboard deja de consultar notificaciones que hoy no se muestran, reduciendo carga remota y líneas sin valor operativo.
 
 ## Ajuste puntual de acceso administrativo
 

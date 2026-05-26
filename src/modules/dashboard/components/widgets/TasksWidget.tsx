@@ -24,12 +24,6 @@ function formatDateValue(dateStr: string | null | undefined) {
   });
 }
 
-function getPriorityClass(priority: string) {
-  if (priority === "Crítica") return "nx-priority-critical";
-  if (priority === "Alta") return "nx-priority-warning";
-  return "nx-priority-normal";
-}
-
 export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProps) {
   const tasks = dashboardData?.tasksData ?? [];
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);

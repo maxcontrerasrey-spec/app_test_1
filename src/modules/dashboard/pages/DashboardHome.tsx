@@ -6,7 +6,7 @@ import "../styles/dashboard.css";
 
 export function DashboardHome() {
   const { displayName } = useAuth();
-  const { widgets, isLoading, tasksData, approvalTrackingData, activeFoliosData, alertsData, kpisData, refresh } =
+  const { widgets, isLoading, tasksData, approvalTrackingData, activeFoliosData, refresh } =
     useDashboard();
 
   const handleAction = async (actionType: string) => {
@@ -28,10 +28,10 @@ export function DashboardHome() {
       </header>
 
       <main className="dashboard-main">
-        <DashboardGrid 
-          widgets={widgets} 
-          isLoading={isLoading} 
-          dashboardData={{ tasksData, approvalTrackingData, activeFoliosData, alertsData, kpisData }}
+        <DashboardGrid
+          widgets={widgets}
+          isLoading={isLoading}
+          dashboardData={{ tasksData, approvalTrackingData, activeFoliosData }}
           onAction={handleAction}
         />
       </main>
