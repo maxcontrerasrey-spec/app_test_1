@@ -152,6 +152,14 @@
 
 - La separación entre `Tareas Pendientes`, `Folios en curso` y `Acciones Rápidas` ahora depende de un margen explícito entre bloques, para que la distancia se perciba claramente en pantalla.
 
+## Corrección de consistencia de separación entre todos los módulos
+
+- [x] Aplicar la misma clase de separación a `Tareas Pendientes`, `Folios en curso` y `Acciones Rápidas`
+
+## Resultado de corrección de consistencia de separación entre todos los módulos
+
+- Los tres bloques principales del dashboard ahora comparten la misma regla explícita de separación, en vez de depender de comportamiento implícito del grid.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización

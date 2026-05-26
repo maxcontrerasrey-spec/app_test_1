@@ -59,7 +59,7 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
   return (
     <div className="dashboard-grid">
       {tasks.length > 0 && (
-        <div className="dashboard-zone dashboard-zone-full">
+        <div className="dashboard-zone dashboard-zone-full dashboard-module-section">
           <div className="dashboard-zone-column">
             {tasks.map((w) => {
               const Component = WidgetRegistry[w.component_key];
@@ -70,7 +70,7 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
       )}
 
       {activeFoliosWidget ? (
-        <div className="dashboard-zone dashboard-zone-full">
+        <div className="dashboard-zone dashboard-zone-full dashboard-module-section">
           <div className="dashboard-zone-column">
             <ActiveFoliosWidget widget={activeFoliosWidget} dashboardData={dashboardData} />
           </div>
@@ -78,7 +78,7 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
       ) : null}
 
       {quickActions.length > 0 && (
-        <div className="dashboard-secondary-row dashboard-split-layout-spaced">
+        <div className="dashboard-secondary-row dashboard-split-layout-spaced dashboard-module-section">
           <div className="dashboard-col">
             {quickActions.map((w) => {
               const Component = WidgetRegistry[w.component_key];

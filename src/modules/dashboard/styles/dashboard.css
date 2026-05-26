@@ -42,8 +42,8 @@
   gap: 0;
 }
 
-.dashboard-grid > * + * {
-  margin-top: 48px;
+.dashboard-module-section + .dashboard-module-section {
+  margin-top: 64px;
 }
 
 .dashboard-zone {
