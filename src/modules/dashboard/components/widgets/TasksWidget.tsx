@@ -69,7 +69,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
     <DashboardWidgetFrame title={widget.name} className="widget-tasks widget-fill-height">
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
-          <table className="tracking-table" style={{ width: "100%" }}>
+          <table className="tracking-table dashboard-pending-approvals-table">
             <thead>
               <tr>
                 <th>Caso</th>
@@ -77,14 +77,13 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                 <th>Cargo</th>
                 <th>Contrato / CC</th>
                 <th>Cupos</th>
-                <th>Candidatos activos</th>
                 <th>Solicitó</th>
               </tr>
             </thead>
             <tbody>
               {tasks.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="nx-table-empty" style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}>
+                  <td colSpan={6} className="nx-table-empty dashboard-pending-approvals-empty">
                     Excelente, no tienes tareas pendientes.
                   </td>
                 </tr>
@@ -111,30 +110,18 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                         </td>
                         <td>{task.job_position_name}</td>
                         <td>
-                          <div style={{ display: "flex", flexDirection: "column" }}>
-                            <span>{task.contract_name || "—"}</span>
-                            {task.cost_center_code && <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>({task.cost_center_code})</span>}
-                          </div>
+                          <span className="dashboard-contract-inline">
+                            {task.contract_name || "—"}
+                            {task.cost_center_code ? ` (${task.cost_center_code})` : ""}
+                          </span>
                         </td>
                         <td>{task.requested_vacancies ?? "—"}</td>
-                        <td>
-                          <div className="candidate-count-indicator">
-                            <span className="candidate-circle candidate-circle-neutral" title="Activos">
-                              {task.candidate_count ?? 0}
-                            </span>
-                            <span className="candidate-circle-label">Activos</span>
-                            <span className="candidate-circle candidate-circle-success" title="Listos">
-                              {task.ready_candidates ?? 0}
-                            </span>
-                            <span className="candidate-circle-label">Listos</span>
-                          </div>
-                        </td>
                         <td>{task.requester_name ?? "—"}</td>
                       </tr>
                       
                       {isExpanded && (
                         <tr className="tracking-table-expanded-row">
-                          <td colSpan={7}>
+                          <td colSpan={6}>
                             <div className="expanded-case-detail-grid">
                               <div className="expanded-detail-section">
                                 <h4>Solicitud original</h4>

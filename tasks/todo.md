@@ -109,6 +109,17 @@
 - `Folios en curso` ya no queda escondido debajo de widgets secundarios.
 - El dashboard presenta primero trabajo pendiente de decisión y luego seguimiento de folios activos, que es la secuencia operacional correcta.
 
+## Ajuste ERP de utilidad en bandeja de aprobaciones
+
+- [x] Eliminar métricas de candidatos desde `Tareas Pendientes` porque una solicitud no aprobada aún no entra al funnel operativo
+- [x] Compactar `Contrato / CC` en una sola línea para mejorar legibilidad de la bandeja
+- [x] Exponer en el detalle de `Folios en curso` el comentario y trazabilidad de la decisión de aprobación
+
+## Resultado de ajuste ERP de utilidad en bandeja de aprobaciones
+
+- `Tareas Pendientes` ahora muestra solo información relevante para decidir la aprobación.
+- El comentario ingresado al aprobar o rechazar deja de ser un dato oculto: queda visible luego en el detalle del folio activo junto con quién resolvió y cuándo.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización

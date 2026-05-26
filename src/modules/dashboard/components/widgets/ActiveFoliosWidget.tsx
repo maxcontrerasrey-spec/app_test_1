@@ -22,6 +22,17 @@ function formatDateValue(dateStr: string | null | undefined) {
   });
 }
 
+function formatDateTimeValue(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidgetProps) {
   const folios = dashboardData?.activeFoliosData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,6 +112,7 @@ export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidget
                   const isExpanded = expandedCaseId === folio.id;
                   const detail = caseDetailsCache[folio.id] ?? null;
                   const hr = detail?.case?.hiring_request;
+                  const approvalSummary = hr?.approval_summary;
 
                   return (
                     <React.Fragment key={folio.id}>
@@ -199,6 +211,31 @@ export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidget
                                     <div>
                                       <small>Otros beneficios</small>
                                       <strong>{hr?.other_benefits ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Decisión de aprobación</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Etapa</small>
+                                      <strong>{approvalSummary?.step_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Resolución</small>
+                                      <strong>{approvalSummary?.status === "approved" ? "Aprobada" : approvalSummary?.status === "rejected" ? "Rechazada" : "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Resuelto por</small>
+                                      <strong>{approvalSummary?.decided_by_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Fecha decisión</small>
+                                      <strong>{formatDateTimeValue(approvalSummary?.decided_at)}</strong>
+                                    </div>
+                                    <div className="expanded-detail-field-full">
+                                      <small>Comentario</small>
+                                      <strong>{approvalSummary?.decision_comment?.trim() || "Sin comentario registrado"}</strong>
                                     </div>
                                   </div>
                                 </div>

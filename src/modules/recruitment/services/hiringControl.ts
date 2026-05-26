@@ -213,6 +213,13 @@ export type RecruitmentCaseDetail = {
       campamento: boolean | null;
       pasajes: boolean | null;
       other_benefits: string | null;
+      approval_summary?: {
+        step_name: string | null;
+        status: string | null;
+        decision_comment: string | null;
+        decided_at: string | null;
+        decided_by_name: string | null;
+      } | null;
     };
   };
   assignments: RecruitmentCaseAssignment[];

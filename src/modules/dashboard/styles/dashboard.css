@@ -500,6 +500,25 @@
   border: none;
 }
 
+.dashboard-pending-approvals-table {
+  width: 100%;
+}
+
+.dashboard-pending-approvals-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.dashboard-contract-inline {
+  display: block;
+  white-space: nowrap;
+}
+
+.expanded-detail-field-full {
+  grid-column: 1 / -1;
+}
+
 /* Timeline Widget */
 .nx-timeline {
   display: flex;
