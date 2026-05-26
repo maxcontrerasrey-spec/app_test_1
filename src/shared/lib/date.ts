@@ -95,3 +95,19 @@ export function buildCalendarDays(viewDate: Date) {
 
   return calendarDays;
 }
+
+export function getDaysSince(dateValue: string | null | undefined) {
+  if (!dateValue) return null;
+
+  const sourceDate = new Date(dateValue);
+  if (Number.isNaN(sourceDate.getTime())) {
+    return null;
+  }
+
+  const today = new Date();
+  const sourceDay = new Date(sourceDate.getFullYear(), sourceDate.getMonth(), sourceDate.getDate());
+  const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diffMs = todayDay.getTime() - sourceDay.getTime();
+
+  return Math.max(0, Math.floor(diffMs / 86400000));
+}

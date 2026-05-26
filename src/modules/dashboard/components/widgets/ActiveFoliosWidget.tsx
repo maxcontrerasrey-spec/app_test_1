@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { TextField } from "../../../../shared/ui";
+import { getDaysSince } from "../../../../shared/lib/date";
 import {
   fetchRecruitmentCaseDetail,
   toRecruitmentCaseStatusLabel,
@@ -87,7 +88,7 @@ export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidget
           label="Buscar folio en curso"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Caso, contrato, centro de costo o solicitante"
+          placeholder="Caso, contrato o centro de costo"
           className="dashboard-folios-search"
         />
       </div>
@@ -103,7 +104,7 @@ export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidget
                 <th>Contrato / CC</th>
                 <th>Cupos</th>
                 <th>Candidatos activos</th>
-                <th>Solicitó</th>
+                <th>Días Abierto</th>
               </tr>
             </thead>
             <tbody>
@@ -142,7 +143,7 @@ export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidget
                             <span className="candidate-circle-label">Listos</span>
                           </div>
                         </td>
-                        <td>{folio.requester_name ?? "—"}</td>
+                        <td>{getDaysSince(folio.opened_at) ?? "—"}</td>
                       </tr>
                       {isExpanded ? (
                         <tr className="tracking-table-expanded-row">

@@ -128,6 +128,14 @@
 
 - Reclutamiento puede ver en `Control de Contrataciones > Resumen de procesos de contratación` la etapa aprobada, la resolución, quién la tomó, cuándo y el comentario asociado, sin salir del flujo operativo.
 
+## Ajuste ERP de aging para folios activos
+
+- [x] Reemplazar la columna de solicitante por `Días Abierto` en `Folios en curso`
+
+## Resultado de ajuste ERP de aging para folios activos
+
+- `Folios en curso` ahora expone cuántos días lleva abierto cada folio desde la aprobación de Control de Contratos, usando `opened_at` como base operativa.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
