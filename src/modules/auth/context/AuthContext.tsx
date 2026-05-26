@@ -28,6 +28,13 @@ type ProfileRecord = {
   must_reset_password: boolean;
 };
 
+type EffectivePermissionsPayload = {
+  profile: ProfileRecord | null;
+  app_roles?: unknown;
+  accessible_modules?: unknown;
+  is_super_admin?: boolean;
+};
+
 type AuthContextValue = {
   isConfigured: boolean;
   isLoading: boolean;
@@ -89,6 +96,49 @@ function detectRecoveryMode() {
   );
 }
 
+function normalizeStringArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+function normalizeProfileRecord(value: unknown): ProfileRecord | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (
+    typeof record.id !== "string" ||
+    typeof record.email !== "string" ||
+    typeof record.status !== "string" ||
+    typeof record.is_super_admin !== "boolean" ||
+    typeof record.must_reset_password !== "boolean"
+  ) {
+    return null;
+  }
+
+  return {
+    id: record.id,
+    email: record.email,
+    full_name: typeof record.full_name === "string" ? record.full_name : null,
+    job_title: typeof record.job_title === "string" ? record.job_title : null,
+    department: typeof record.department === "string" ? record.department : null,
+    status:
+      record.status === "pending" ||
+      record.status === "active" ||
+      record.status === "suspended" ||
+      record.status === "inactive"
+        ? record.status
+        : "pending",
+    is_super_admin: record.is_super_admin,
+    must_reset_password: record.must_reset_password
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,25 +174,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const userId = nextSession.user.id;
-
-        const [profileResponse, rolesResponse] = await Promise.all([
-          supabaseClient
-            .from("profiles")
-            .select(
-              "id, email, full_name, job_title, department, status, is_super_admin, must_reset_password"
-            )
-            .eq("id", userId)
-            .maybeSingle<ProfileRecord>(),
-          supabaseClient.from("user_roles").select("role_code").eq("user_id", userId)
-        ]);
+        const { data, error } = await supabaseClient.rpc("get_my_effective_permissions");
 
         if (!isMounted) {
           return;
         }
 
-        if (profileResponse.error || rolesResponse.error) {
-          console.error("Auth load error:", profileResponse.error, rolesResponse.error);
+        if (error) {
+          console.error("Auth load error:", error);
           setProfile(null);
           setAppRoles([]);
           setAccessibleModules([]);
@@ -150,68 +189,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const nextProfile = profileResponse.data ?? null;
+        const payload = (data ?? null) as EffectivePermissionsPayload | null;
+        const nextProfile = normalizeProfileRecord(payload?.profile ?? null);
         setProfile(nextProfile);
 
-        const nextRoles =
-          !rolesResponse.data
-            ? []
-            : rolesResponse.data
-                .map((row) => {
-                  return normalizeRoleCode(typeof row.role_code === "string" ? row.role_code : null);
-                })
-                .filter((role): role is AppRole => role !== null);
+        const nextRoles = normalizeStringArray(payload?.app_roles)
+          .map((roleCode) => normalizeRoleCode(roleCode))
+          .filter((role): role is AppRole => role !== null);
 
         setAppRoles(Array.from(new Set(nextRoles)));
 
-        const shouldLoadAllModules =
-          nextProfile?.is_super_admin === true || nextRoles.includes("admin");
-
-        if (shouldLoadAllModules) {
-          const moduleResponse = await supabaseClient
-            .from("app_modules")
-            .select("code")
-            .eq("is_active", true)
-            .order("sort_order", { ascending: true });
-
-          if (!isMounted) {
-            return;
-          }
-
-          const moduleCodes =
-            moduleResponse.error || !moduleResponse.data
-              ? []
-              : moduleResponse.data
-                  .map((row) => normalizeModuleCode(row.code))
-                  .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
-
-          setAccessibleModules(Array.from(new Set(moduleCodes)));
-          setIsLoading(false);
-          return;
-        }
-
-        if (nextRoles.length === 0) {
-          setAccessibleModules([]);
-          setIsLoading(false);
-          return;
-        }
-
-        const moduleAccessResponse = await supabaseClient
-          .from("role_module_access")
-          .select("module_code")
-          .in("role_code", nextRoles)
-          .eq("can_view", true);
-
-        if (!isMounted) {
-          return;
-        }
-
-        const nextModules =
-          moduleAccessResponse.error || !moduleAccessResponse.data
-            ? []
-            : moduleAccessResponse.data
-                .map((row) => normalizeModuleCode(row.module_code))
-                .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
+        const nextModules = normalizeStringArray(payload?.accessible_modules)
+          .map((moduleCode) => normalizeModuleCode(moduleCode))
+          .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
 
         setAccessibleModules(Array.from(new Set(nextModules)));
       } catch (err) {

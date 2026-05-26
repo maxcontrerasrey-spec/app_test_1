@@ -11,10 +11,9 @@ import type {
 
 export const dashboardService = {
   /**
-   * Fetches all active widgets allowed for the current user's roles.
-   * Supabase RLS is configured to only allow reads, but we also filter locally for safety if needed.
+   * Fetches all active widgets already resolved by backend for the current user.
    */
-  async getAvailableWidgets(userRoles: string[]): Promise<DashboardWidget[]> {
+  async getAvailableWidgets(): Promise<DashboardWidget[]> {
     if (!supabase) return [];
     const { data, error } = await supabase.rpc("get_dashboard_widgets_for_current_user");
 
@@ -23,11 +22,7 @@ export const dashboardService = {
       return [];
     }
 
-    // Fallback defensivo mientras todos los ambientes convergen al nuevo RPC.
-    return (data as DashboardWidget[]).filter((widget) => {
-      if (!widget.allowed_roles || widget.allowed_roles.length === 0) return true;
-      return widget.allowed_roles.some((role) => userRoles.includes(role));
-    });
+    return (data ?? []) as DashboardWidget[];
   },
 
   /**

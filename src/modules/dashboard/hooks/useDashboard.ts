@@ -20,9 +20,9 @@ type DashboardQueryPayload = {
   kpisData: DashboardKpis | null;
 };
 
-async function fetchDashboardPayload(userId: string, appRoles: string[]): Promise<DashboardQueryPayload> {
+async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayload> {
   const [availableWidgets, userPrefs, unreadNotifications, tasks, activeFolios] = await Promise.all([
-    dashboardService.getAvailableWidgets(appRoles),
+    dashboardService.getAvailableWidgets(),
     dashboardService.getUserPreferences(),
     dashboardService.getUnreadNotifications(),
     dashboardService.getDashboardTasks(userId),
@@ -52,11 +52,11 @@ async function fetchDashboardPayload(userId: string, appRoles: string[]): Promis
 }
 
 export function useDashboard() {
-  const { user, appRoles } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const dashboardQueryKey = useMemo(
-    () => ["dashboard-home", user?.id ?? "anonymous", [...appRoles].sort().join("|")] as const,
-    [user?.id, appRoles]
+    () => ["dashboard-home", user?.id ?? "anonymous"] as const,
+    [user?.id]
   );
 
   const {
@@ -65,7 +65,7 @@ export function useDashboard() {
     refetch
   } = useQuery({
     queryKey: dashboardQueryKey,
-    queryFn: () => fetchDashboardPayload(user!.id, appRoles),
+    queryFn: () => fetchDashboardPayload(user!.id),
     enabled: Boolean(user?.id)
   });
 

@@ -53,6 +53,7 @@ La aplicación estará disponible en `http://localhost:5173`.
 - `Control de Contrataciones` ya opera con separación entre aprobaciones pendientes, casos activos y control transversal de candidatos.
 - Las mutaciones críticas de reclutamiento y aprobaciones se ejecutan mediante RPCs de Supabase con trazabilidad.
 - La migración hacia un estado remoto más robusto comenzó con TanStack Query en el dashboard, como base para extender luego el patrón a Reclutamiento, Operaciones y Certificados.
+- La autorización efectiva del usuario ya no se arma con lecturas separadas en cliente: `AuthContext` consume una RPC de permisos efectivos basada en `auth.uid()`, dejando roles y módulos resueltos en backend.
 
 ## 📂 Estructura del Código (`src/`)
 

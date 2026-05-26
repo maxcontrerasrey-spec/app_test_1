@@ -1,11 +1,25 @@
 # Tareas y Roadmap de Desarrollo
 
+## Fase ERP Core 2: Permisos efectivos desde backend
+
+- [x] Diseñar un contrato único de permisos efectivos basado en `auth.uid()`
+- [x] Publicar una RPC que devuelva perfil, roles y módulos accesibles en una sola respuesta
+- [x] Migrar `AuthContext` para consumir la RPC y dejar de reconstruir permisos con lecturas separadas
+- [x] Remover derivaciones redundantes de permisos en el dashboard donde el backend ya resuelve acceso
+
+## Resultado de Fase ERP Core 2: Permisos efectivos desde backend
+
+- `AuthContext` ya no consulta `profiles`, `user_roles`, `app_modules` y `role_module_access` por separado para armar acceso.
+- La nueva RPC [20260525_231500_get_my_effective_permissions.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260525_231500_get_my_effective_permissions.sql:1) devuelve el contrato efectivo de autorización para el usuario autenticado, usando `auth.uid()` como única identidad válida.
+- El frontend conserva `access.ts` como capa de tipado y normalización, pero la autoridad operativa de roles y módulos queda centralizada en backend.
+- El dashboard dejó de filtrar widgets por roles en cliente cuando la RPC ya entrega el catálogo resuelto para el usuario actual.
+
 ## Fase ERP Core 1: Estado remoto del dashboard
 
 - [x] Instalar TanStack Query como base de estado asíncrono compartido
 - [x] Envolver la aplicación con `QueryClientProvider`
 - [x] Migrar `useDashboard` desde `useState + refresh()` manual a queries/mutations con invalidación
-- [ ] Dejar preparado el siguiente paso de permisos efectivos desde backend sin tocar todavía la lógica de acceso
+- [x] Dejar preparado el siguiente paso de permisos efectivos desde backend sin tocar todavía la lógica de acceso
 
 ## Resultado de Fase ERP Core 1: Estado remoto del dashboard
 
