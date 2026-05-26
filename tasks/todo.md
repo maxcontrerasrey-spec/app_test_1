@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Ajuste puntual de acceso administrativo
+
+- [x] Revisar el modelo actual de acceso administrativo (`profiles.is_super_admin` + `user_roles`)
+- [x] Crear una migración de datos para equiparar el acceso de Maria Jesus con el administrador del sistema
+
+## Resultado del ajuste puntual de acceso administrativo
+
+- Se creó la migración [20260526_000100_grant_maria_jesus_admin_parity.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260526_000100_grant_maria_jesus_admin_parity.sql:1).
+- La migración busca el perfil fuente de `Maximiliano Contreras Rey`, localiza el perfil destino de `Maria Jesus Lagos` o `Maria Jesus Lagos Minardi`, activa su perfil y replica sus roles activos.
+- También iguala el flag `is_super_admin` para que el acceso efectivo quede en paridad con el administrador del sistema.
+
 ## Plan de trabajo vigente: Reclutamiento y Operaciones Fase 2
 
 - [x] Contrastar el plan externo con la arquitectura real del repo
