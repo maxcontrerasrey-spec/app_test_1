@@ -1,5 +1,17 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección de recuperación de contraseña en producción
+
+- [x] Revisar el flujo de recuperación y descartar hardcodes a `localhost` en el repo
+- [x] Hacer explícita la URL pública de la app mediante `VITE_PUBLIC_APP_URL`
+- [x] Documentar la dependencia entre recuperación de contraseña, Cloudflare Pages y configuración de Supabase Auth
+
+## Resultado de corrección de recuperación de contraseña en producción
+
+- `sendPasswordReset` ahora prioriza `VITE_PUBLIC_APP_URL` para construir la URL de recuperación.
+- Se documentó el despliegue con la variable `VITE_PUBLIC_APP_URL` y la validación de `Authentication > URL Configuration` en Supabase.
+- El problema observado con `localhost:3000` queda identificado como desalineación de ambiente y no como una ruta hardcodeada activa en el repo.
+
 ## Ajuste puntual de acceso administrativo
 
 - [x] Revisar el modelo actual de acceso administrativo (`profiles.is_super_admin` + `user_roles`)

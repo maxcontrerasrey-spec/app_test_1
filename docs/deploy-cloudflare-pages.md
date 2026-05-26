@@ -45,8 +45,10 @@ Definir en Cloudflare Pages:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `VITE_PUBLIC_APP_URL`
 
 Sin esas variables, la app puede cargar visualmente pero login, catálogos y permisos no funcionarán.
+Sin `VITE_PUBLIC_APP_URL`, los correos de recuperación dependen del `window.location.origin` desde donde se dispare la solicitud, lo que puede inducir redirecciones erróneas entre ambientes.
 
 ## Routing SPA
 
@@ -78,12 +80,14 @@ resuelvan correctamente en un despliegue estático.
 4. Cargar variables:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_PUBLIC_APP_URL`
 5. Guardar y lanzar deploy.
 6. Validar:
    - carga de `/login`
    - login real contra Supabase
    - navegación a rutas internas
    - lectura de módulos autorizados
+   - recuperación de contraseña aterrizando en `https://app-test-1-2ao.pages.dev/reset-password`
 
 ## Qué revisar si vuelve a fallar
 
@@ -101,6 +105,9 @@ Revisar primero:
 
 - variables `VITE_SUPABASE_URL`
 - variables `VITE_SUPABASE_ANON_KEY`
+- variable `VITE_PUBLIC_APP_URL`
+- configuración de `Authentication > URL Configuration` en Supabase
+- template de correo de recuperación usando `{{ .ConfirmationURL }}` sin hardcodes a `localhost`
 
 ### Si las rutas internas dan 404
 

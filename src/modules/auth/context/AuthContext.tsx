@@ -57,6 +57,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+const publicAppUrl = import.meta.env.VITE_PUBLIC_APP_URL?.trim() ?? "";
 
 function buildDisplayName(user: User | null, profile: ProfileRecord | null) {
   if (profile?.full_name?.trim()) {
@@ -94,6 +95,18 @@ function detectRecoveryMode() {
     hashParams.get("type") === "recovery" ||
     hashParams.get("recovery") === "1"
   );
+}
+
+function buildResetPasswordRedirectUrl() {
+  if (publicAppUrl) {
+    return `${publicAppUrl.replace(/\/$/, "")}/reset-password`;
+  }
+
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return `${window.location.origin}/reset-password`;
 }
 
 function normalizeStringArray(value: unknown) {
@@ -350,13 +363,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: "Supabase no está configurado en este entorno." };
         }
 
-        const redirectTo =
-          typeof window === "undefined"
-            ? undefined
-            : `${window.location.origin}/reset-password`;
-
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo
+          redirectTo: buildResetPasswordRedirectUrl()
         });
 
         return { error: error?.message ?? null };
