@@ -120,6 +120,14 @@
 - `Tareas Pendientes` ahora muestra solo información relevante para decidir la aprobación.
 - El comentario ingresado al aprobar o rechazar deja de ser un dato oculto: queda visible luego en el detalle del folio activo junto con quién resolvió y cuándo.
 
+## Ajuste ERP de continuidad entre aprobación y selección
+
+- [x] Exponer la decisión de aprobación dentro del detalle de `Resumen de procesos de contratación`
+
+## Resultado de ajuste ERP de continuidad entre aprobación y selección
+
+- Reclutamiento puede ver en `Control de Contrataciones > Resumen de procesos de contratación` la etapa aprobada, la resolución, quién la tomó, cuándo y el comentario asociado, sin salir del flujo operativo.
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización

@@ -181,6 +181,7 @@ export function HiringProcessesView({
                   const isExpanded = expandedCaseId === caseRow.id;
                   const detail = caseDetailsCache[caseRow.id] ?? null;
                   const hr = detail?.case?.hiring_request;
+                  const approvalSummary = hr?.approval_summary;
 
                   return (
                     <>
@@ -286,6 +287,37 @@ export function HiringProcessesView({
                                     <div>
                                       <small>Otros beneficios</small>
                                       <strong>{hr?.other_benefits?.trim() || "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Decisión de aprobación</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Etapa</small>
+                                      <strong>{approvalSummary?.step_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Resolución</small>
+                                      <strong>
+                                        {approvalSummary?.status === "approved"
+                                          ? "Aprobada"
+                                          : approvalSummary?.status === "rejected"
+                                            ? "Rechazada"
+                                            : "—"}
+                                      </strong>
+                                    </div>
+                                    <div>
+                                      <small>Resuelto por</small>
+                                      <strong>{approvalSummary?.decided_by_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Fecha decisión</small>
+                                      <strong>{formatDateTimeValue(approvalSummary?.decided_at)}</strong>
+                                    </div>
+                                    <div className="expanded-detail-field-full">
+                                      <small>Comentario</small>
+                                      <strong>{approvalSummary?.decision_comment?.trim() || "Sin comentario registrado"}</strong>
                                     </div>
                                   </div>
                                 </div>
