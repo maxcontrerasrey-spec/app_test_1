@@ -1,5 +1,20 @@
 # Tareas y Roadmap de Desarrollo
 
+## Plan de trabajo vigente: Reclutamiento y Operaciones Fase 2
+
+- [x] Contrastar el plan externo con la arquitectura real del repo
+- [x] Versionar un plan técnico corregido en [docs/reclutamiento-operaciones-fase2-plan.md](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/reclutamiento-operaciones-fase2-plan.md:1)
+- [ ] Ejecutar Fase 2A: metodología de pasajes en aprobación final
+- [ ] Ejecutar Fase 2B: nuevo pipeline de candidatos con aprobación `Who`
+- [ ] Ejecutar Fase 2C: tercera pestaña `Ficha del Trabajador`
+
+## Resultado de alineación del plan Fase 2
+
+- El plan externo se mantuvo como intención funcional, pero se corrigió para aterrizarlo sobre la arquitectura real del sistema.
+- No se implementarán componentes paralelos inexistentes como `CandidateBoard.tsx` o `CandidateDetailModal.tsx`; los cambios se montarán sobre `TasksWidget`, `ApprovalModal`, `HiringCandidatesView` y `CandidateDetailSidebar`.
+- Se definió que `ready_for_hire` y `hired` siguen existiendo como etapas terminales, y que la aprobación `Who` debe llevar trazabilidad formal en backend.
+- La `Ficha del Trabajador` quedó separada conceptualmente entre datos persistentes de persona y datos específicos de la postulación o ingreso actual.
+
 ## Fase ERP Core 2: Permisos efectivos desde backend
 
 - [x] Diseñar un contrato único de permisos efectivos basado en `auth.uid()`
