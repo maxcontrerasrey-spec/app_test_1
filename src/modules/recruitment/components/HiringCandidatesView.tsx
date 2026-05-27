@@ -36,6 +36,7 @@ type HiringCandidatesViewProps = {
   onWhoApprovalRegistered: () => Promise<void>;
   onLicenseUpdated: () => Promise<void>;
   onInterviewNotesUpdated: () => Promise<void>;
+  onCandidateFileUpdated: () => Promise<void>;
 };
 
 export function HiringCandidatesView({
@@ -56,7 +57,8 @@ export function HiringCandidatesView({
   onAdvanceStage,
   onWhoApprovalRegistered,
   onLicenseUpdated,
-  onInterviewNotesUpdated
+  onInterviewNotesUpdated,
+  onCandidateFileUpdated
 }: HiringCandidatesViewProps) {
   const [showCandidateForm, setShowCandidateForm] = useState(false);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
@@ -248,6 +250,7 @@ export function HiringCandidatesView({
           onWhoApprovalRegistered={onWhoApprovalRegistered}
           onLicenseUpdated={onLicenseUpdated}
           onInterviewNotesUpdated={onInterviewNotesUpdated}
+          onCandidateFileUpdated={onCandidateFileUpdated}
         />
       </div>
     </>

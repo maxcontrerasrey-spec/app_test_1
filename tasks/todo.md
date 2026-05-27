@@ -204,6 +204,23 @@
 - La migración busca el perfil fuente de `Maximiliano Contreras Rey`, localiza el perfil destino de `Maria Jesus Lagos` o `Maria Jesus Lagos Minardi`, activa su perfil y replica sus roles activos.
 - También iguala el flag `is_super_admin` para que el acceso efectivo quede en paridad con el administrador del sistema.
 
+## Fase 2C: Ficha del Trabajador
+
+- [x] Extender `candidate_profiles` solo con datos permanentes útiles para operación y pago
+- [x] Crear `candidate_worker_files` ligada a `recruitment_case_candidates` para datos del ingreso actual
+- [x] Publicar RPCs separadas para actualizar datos permanentes y ficha transaccional con validación por caso
+- [x] Extender `get_recruitment_case_detail(...)` para devolver la ficha completa del candidato seleccionado
+- [x] Agregar tercera pestaña `Ficha del candidato` en `CandidateDetailSidebar`
+- [x] Validar compilación, build y dejar lecciones registradas
+
+## Resultado de Fase 2C: Ficha del candidato
+
+- La ficha quedó separada en dos capas útiles: datos personales persistentes en `candidate_profiles` y datos del ingreso actual en `candidate_worker_files`.
+- La escritura se hace por dos RPCs seguras (`upsert_candidate_person_profile(...)` y `upsert_candidate_worker_file(...)`) usando `p_case_candidate_id` para validar acceso real al caso.
+- El detalle del caso ahora devuelve toda la ficha del candidato dentro del mismo `get_recruitment_case_detail(...)`, evitando una segunda fuente de verdad para el sidebar.
+- `CandidateDetailSidebar` ahora tiene una tercera pestaña `Ficha del candidato`, con guardado independiente para ficha personal y ficha del ingreso actual.
+- La parte transaccional no crea filas vacías: si el bloque del ingreso actual se guarda completamente en blanco, la ficha asociada no persiste basura en `candidate_worker_files`.
+
 ## Plan de trabajo vigente: Reclutamiento y Operaciones Fase 2
 
 - [x] Contrastar el plan externo con la arquitectura real del repo

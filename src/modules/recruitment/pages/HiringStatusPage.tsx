@@ -205,6 +205,13 @@ export function HiringStatusPage() {
     }
   };
 
+  const handleCandidateFileUpdated = async () => {
+    if (selectedCaseId && selectedCandidateId) {
+      await loadDashboard(selectedCaseId);
+      await loadCaseDetail(selectedCaseId, selectedCandidateId);
+    }
+  };
+
   const handleWhoApprovalRegistered = async () => {
     const selectedCandidate =
       selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
@@ -308,11 +315,12 @@ export function HiringStatusPage() {
             onStageDraftChange={setStageDraft}
             onStageCommentChange={setStageComment}
             onAdvanceStage={handleAdvanceStage}
-            onWhoApprovalRegistered={handleWhoApprovalRegistered}
-            onLicenseUpdated={handleLicenseUpdated}
-            onInterviewNotesUpdated={handleLicenseUpdated}
-          />
-        )}
+          onWhoApprovalRegistered={handleWhoApprovalRegistered}
+          onLicenseUpdated={handleLicenseUpdated}
+          onInterviewNotesUpdated={handleLicenseUpdated}
+          onCandidateFileUpdated={handleCandidateFileUpdated}
+        />
+      )}
       </section>
     </PageShell>
   );

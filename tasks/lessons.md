@@ -212,3 +212,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si un panel flotante convive con tablas, tarjetas y headers con sombras, su z-index no puede quedar implícito**. Hay que definir explícitamente la jerarquía del contenedor, el trigger y el panel para evitar que el overlay quede “detrás” visualmente aunque esté abierto.
 - **La diferenciación visual de un overlay no se resuelve solo con blur**. Si debe sentirse como otra capa del sistema, necesita además un matiz cromático propio y más transparencia que las tarjetas base.
+
+## 40. La ficha del candidato no debe mezclar identidad persistente con datos del ingreso actual
+
+- **Si un dato acompaña a la persona en cualquier proceso futuro, vive en `candidate_profiles`; si depende del caso actual, vive en una tabla transaccional ligada a `recruitment_case_candidates`**. Mezclar ambos en una sola bolsa vuelve opaca la trazabilidad y dificulta reutilizar el candidato en otro proceso.
+- **La escritura de la ficha debe pasar por `p_case_candidate_id` y no por `candidate_profile_id` expuesto directamente**. Así la autorización se valida contra el caso operativo y la auditoría queda amarrada al flujo real de reclutamiento.
+- **Las tablas satélite transaccionales no deben persistir filas vacías por defecto**. Si un bloque como la ficha del ingreso actual se guarda completamente en blanco, el sistema debe evitar crear o mantener registros sin valor operativo.

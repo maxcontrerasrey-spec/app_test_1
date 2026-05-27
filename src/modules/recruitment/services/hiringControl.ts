@@ -156,6 +156,17 @@ export type CandidateWhoApprovalSummary = {
   causes?: WhoApprovalCause[] | null;
 };
 
+export type CandidateWorkerFile = {
+  id: string;
+  project_name: string | null;
+  company_entry_date: string | null;
+  shift_name: string | null;
+  advance_amount: number | null;
+  contract_notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type RecruitmentCaseCandidateRow = {
   id: string;
   candidate_profile_id: string;
@@ -163,6 +174,26 @@ export type RecruitmentCaseCandidateRow = {
   full_name: string;
   email: string | null;
   phone: string | null;
+  birth_date: string | null;
+  nationality: string | null;
+  marital_status: string | null;
+  address_line: string | null;
+  district_or_commune: string | null;
+  current_city: string | null;
+  region: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relationship: string | null;
+  inclusion_notes: string | null;
+  firefighter_status: string | null;
+  shirt_size: string | null;
+  pants_size: string | null;
+  shoe_size: string | null;
+  bank_name: string | null;
+  bank_account_type: string | null;
+  bank_account_number: string | null;
+  afp_name: string | null;
+  health_provider: string | null;
   driver_license_number: string | null;
   driver_license_class: string | null;
   driver_license_expiry: string | null;
@@ -174,6 +205,7 @@ export type RecruitmentCaseCandidateRow = {
   created_at: string;
   stage_history: RecruitmentCaseCandidateHistoryRow[];
   interview_notes: string | null;
+  worker_file?: CandidateWorkerFile | null;
   who_approval?: CandidateWhoApprovalSummary | null;
 };
 
@@ -595,6 +627,114 @@ export async function updateCandidateInterviewNotes(input: {
 
   if (error) {
     return { error: error.message || "No fue posible actualizar las notas de entrevista." };
+  }
+
+  return { error: null };
+}
+
+export async function updateCandidatePersonProfile(input: {
+  caseCandidateId: string;
+  birthDate?: string | null;
+  nationality?: string | null;
+  maritalStatus?: string | null;
+  addressLine?: string | null;
+  districtOrCommune?: string | null;
+  currentCity?: string | null;
+  region?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  emergencyContactRelationship?: string | null;
+  inclusionNotes?: string | null;
+  firefighterStatus?: string | null;
+  shirtSize?: string | null;
+  pantsSize?: string | null;
+  shoeSize?: string | null;
+  bankName?: string | null;
+  bankAccountType?: string | null;
+  bankAccountNumber?: string | null;
+  afpName?: string | null;
+  healthProvider?: string | null;
+}) {
+  if (!supabase) {
+    return {
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { error } = await supabase.rpc("upsert_candidate_person_profile", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_birth_date: input.birthDate || null,
+    p_nationality: input.nationality?.trim() ? input.nationality.trim() : null,
+    p_marital_status: input.maritalStatus?.trim() ? input.maritalStatus.trim() : null,
+    p_address_line: input.addressLine?.trim() ? input.addressLine.trim() : null,
+    p_district_or_commune: input.districtOrCommune?.trim()
+      ? input.districtOrCommune.trim()
+      : null,
+    p_current_city: input.currentCity?.trim() ? input.currentCity.trim() : null,
+    p_region: input.region?.trim() ? input.region.trim() : null,
+    p_emergency_contact_name: input.emergencyContactName?.trim()
+      ? input.emergencyContactName.trim()
+      : null,
+    p_emergency_contact_phone: input.emergencyContactPhone?.trim()
+      ? input.emergencyContactPhone.trim()
+      : null,
+    p_emergency_contact_relationship: input.emergencyContactRelationship?.trim()
+      ? input.emergencyContactRelationship.trim()
+      : null,
+    p_inclusion_notes: input.inclusionNotes?.trim() ? input.inclusionNotes.trim() : null,
+    p_firefighter_status: input.firefighterStatus?.trim()
+      ? input.firefighterStatus.trim()
+      : null,
+    p_shirt_size: input.shirtSize?.trim() ? input.shirtSize.trim() : null,
+    p_pants_size: input.pantsSize?.trim() ? input.pantsSize.trim() : null,
+    p_shoe_size: input.shoeSize?.trim() ? input.shoeSize.trim() : null,
+    p_bank_name: input.bankName?.trim() ? input.bankName.trim() : null,
+    p_bank_account_type: input.bankAccountType?.trim()
+      ? input.bankAccountType.trim()
+      : null,
+    p_bank_account_number: input.bankAccountNumber?.trim()
+      ? input.bankAccountNumber.trim()
+      : null,
+    p_afp_name: input.afpName?.trim() ? input.afpName.trim() : null,
+    p_health_provider: input.healthProvider?.trim() ? input.healthProvider.trim() : null
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible actualizar la ficha personal del candidato."
+    };
+  }
+
+  return { error: null };
+}
+
+export async function updateCandidateWorkerFile(input: {
+  caseCandidateId: string;
+  projectName?: string | null;
+  companyEntryDate?: string | null;
+  shiftName?: string | null;
+  advanceAmount?: number | null;
+  contractNotes?: string | null;
+}) {
+  if (!supabase) {
+    return {
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { error } = await supabase.rpc("upsert_candidate_worker_file", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_project_name: input.projectName?.trim() ? input.projectName.trim() : null,
+    p_company_entry_date: input.companyEntryDate || null,
+    p_shift_name: input.shiftName?.trim() ? input.shiftName.trim() : null,
+    p_advance_amount: input.advanceAmount ?? null,
+    p_contract_notes: input.contractNotes?.trim() ? input.contractNotes.trim() : null
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible actualizar la ficha del ingreso actual."
+    };
   }
 
   return { error: null };

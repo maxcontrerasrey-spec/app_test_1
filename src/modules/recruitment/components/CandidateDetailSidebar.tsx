@@ -21,6 +21,7 @@ import {
   getNextStageOptions
 } from "./hiringControlViewUtils";
 import { CandidateDocumentChecklist } from "./CandidateDocumentChecklist";
+import { CandidateWorkerFileForm } from "./CandidateWorkerFileForm";
 
 type CandidateDetailSidebarProps = {
   isLoading: boolean;
@@ -37,6 +38,7 @@ type CandidateDetailSidebarProps = {
   onWhoApprovalRegistered?: () => Promise<void>;
   onLicenseUpdated?: () => Promise<void>;
   onInterviewNotesUpdated?: () => Promise<void>;
+  onCandidateFileUpdated?: () => Promise<void>;
 };
 
 type WhoCauseDraft = {
@@ -66,10 +68,11 @@ export function CandidateDetailSidebar({
   onAdvanceStage,
   onWhoApprovalRegistered,
   onLicenseUpdated,
-  onInterviewNotesUpdated
+  onInterviewNotesUpdated,
+  onCandidateFileUpdated
 }: CandidateDetailSidebarProps) {
   const { hasCapability } = useAuth();
-  const [activeTab, setActiveTab] = useState<"pipeline" | "documents">("pipeline");
+  const [activeTab, setActiveTab] = useState<"pipeline" | "documents" | "worker">("pipeline");
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
   const [isEditingLicense, setIsEditingLicense] = useState(false);
@@ -224,6 +227,13 @@ export function CandidateDetailSidebar({
           onClick={() => setActiveTab("documents")}
         >
           Control Documental
+        </button>
+        <button
+          type="button"
+          className={`control-tab ${activeTab === "worker" ? "active" : ""}`}
+          onClick={() => setActiveTab("worker")}
+        >
+          Ficha del candidato
         </button>
       </div>
 
@@ -681,6 +691,14 @@ export function CandidateDetailSidebar({
 
       {activeTab === "documents" && (
         <CandidateDocumentChecklist caseCandidateId={selectedCandidate.id} />
+      )}
+
+      {activeTab === "worker" && (
+        <CandidateWorkerFileForm
+          candidate={selectedCandidate}
+          caseDetail={selectedCaseDetail}
+          onSaved={onCandidateFileUpdated}
+        />
       )}
     </aside>
   );
