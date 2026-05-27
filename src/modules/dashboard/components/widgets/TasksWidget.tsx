@@ -8,6 +8,7 @@ import {
   travelMethodologyOptions,
   type TravelMethodology
 } from "../../../recruitment/services/hiringWorkflow";
+import { approveCandidateStageWho } from "../../../recruitment/services/hiringControl";
 
 type TasksWidgetProps = {
   widget: ResolvedWidget;
@@ -81,6 +82,27 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
       setExpandedTaskId(null);
       if (onAction) {
         onAction("REFRESH_DATA", ""); // Refrescar el dashboard
+      }
+    }
+  };
+
+  const handleWhoApproval = async (taskId: string, caseCandidateId: string) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const { error } = await approveCandidateStageWho({
+      caseCandidateId,
+      comment: comments.trim() || undefined
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setSubmitError(error);
+    } else {
+      setExpandedTaskId(null);
+      if (onAction) {
+        onAction("REFRESH_DATA", "");
       }
     }
   };
@@ -219,6 +241,65 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                                 </div>
                               </div>
                             </div>
+
+                            {task.type === "who_approval" ? (
+                              <>
+                                <div className="expanded-case-detail-grid">
+                                  <div className="expanded-detail-section">
+                                    <h4>Aprobación Who</h4>
+                                    <div className="expanded-detail-fields">
+                                      <div>
+                                        <small>Candidato</small>
+                                        <strong>{task.candidate_name ?? "—"}</strong>
+                                      </div>
+                                      <div>
+                                        <small>Caso</small>
+                                        <strong>{task.folio ?? "—"}</strong>
+                                      </div>
+                                      <div>
+                                        <small>Solicitado por</small>
+                                        <strong>{task.requested_by_name ?? "—"}</strong>
+                                      </div>
+                                      <div>
+                                        <small>Fecha solicitud</small>
+                                        <strong>{formatDateValue(task.created_at)}</strong>
+                                      </div>
+                                      <div>
+                                        <small>Comentario de solicitud</small>
+                                        <strong>{task.approval_comment ?? "—"}</strong>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="task-decision-panel">
+                                  <h4 className="task-decision-title">Decisión de Aprobación Who</h4>
+                                  <textarea
+                                    placeholder="Agrega un comentario para dejar trazabilidad de la aprobación..."
+                                    value={comments}
+                                    onChange={(e) => setComments(e.target.value)}
+                                    disabled={isSubmitting}
+                                    className="task-decision-textarea"
+                                  />
+
+                                  {submitError && (
+                                    <div className="task-decision-error">
+                                      {submitError}
+                                    </div>
+                                  )}
+
+                                  <div className="task-decision-actions">
+                                    <button
+                                      onClick={() => handleWhoApproval(task.id, task.case_candidate_id as string)}
+                                      disabled={isSubmitting || !task.case_candidate_id}
+                                      className="task-decision-button task-decision-button-approve"
+                                    >
+                                      {isSubmitting ? "Procesando..." : "Aprobar antecedentes"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            ) : null}
 
                             {/* Acciones de Aprobación Inline */}
                             {task.type === "approval" && task.status_code === "pending" && task.approval_id ? (

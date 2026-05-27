@@ -45,6 +45,21 @@
 - Con este orden, la misma migración puede correr sobre datos vivos sin romperse por estados intermedios incompatibles.
 - Se detectó además un segundo constraint legacy activo en algunos ambientes, `recruitment_case_candidates_stage_check`, que también debe eliminarse antes del backfill porque rechaza etapas nuevas como `who_pending`.
 
+## Integración de aprobaciones Who en dashboard
+
+- [x] Confirmar si `Tareas Pendientes` y `Seguimiento de aprobaciones` estaban leyendo `candidate_stage_approvals`
+- [x] Extender `get_dashboard_tasks(...)` para incluir aprobaciones `Who` pendientes cuando el usuario tenga la capability correspondiente
+- [x] Extender `get_dashboard_approval_tracking()` para incluir `Who` pendiente como parte del seguimiento global
+- [x] Ajustar los widgets del dashboard para mostrar y aprobar `Who` desde Inicio
+- [x] Validar compilación y build
+
+## Resultado de integración de aprobaciones Who en dashboard
+
+- El dashboard ya no trata `Who` como un detalle escondido solo dentro de Reclutamiento.
+- `Tareas Pendientes` ahora incluye `candidate_stage_approvals` en estado `pending` para usuarios con `can_approve_who_stage`.
+- `Seguimiento de aprobaciones` también muestra las solicitudes `Who` pendientes junto con las aprobaciones de folio.
+- La aprobación `Who` ya se puede resolver desde el propio Inicio, sin obligar al usuario a navegar a otra pantalla para una tarea que ya apareció como pendiente.
+
 ## Aterrizaje de plan externo Fase 2B y 2C
 
 - [x] Revisar `implementation_plan.md` contra la arquitectura real del repo y del backend activo

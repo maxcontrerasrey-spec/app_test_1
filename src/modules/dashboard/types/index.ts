@@ -28,10 +28,12 @@ export interface DashboardTaskItem {
   id: string;
   type: string;
   approval_id?: number | null;
+  case_candidate_id?: string | null;
   step_code?: string | null;
   step_name?: string | null;
   hiring_request_id?: string | null;
   folio?: string | null;
+  candidate_name?: string | null;
   job_position_name?: string | null;
   contract_name?: string | null;
   cost_center_code?: string | null;
@@ -49,6 +51,8 @@ export interface DashboardTaskItem {
   flight_tickets_required?: boolean | null;
   travel_methodology?: string | null;
   other_benefits?: string | null;
+  approval_comment?: string | null;
+  requested_by_name?: string | null;
   title?: string;
   subtitle?: string;
   status_code: string;
@@ -59,9 +63,12 @@ export interface DashboardTaskItem {
 
 export interface DashboardApprovalTrackingItem {
   id: string;
+  type?: string;
   approval_id?: number | null;
   hiring_request_id?: string | null;
   folio?: string | null;
+  case_candidate_id?: string | null;
+  candidate_name?: string | null;
   job_position_name?: string | null;
   contract_name?: string | null;
   cost_center_code?: string | null;
@@ -77,6 +84,8 @@ export interface DashboardApprovalTrackingItem {
   flight_tickets_required?: boolean | null;
   travel_methodology?: string | null;
   other_benefits?: string | null;
+  approval_comment?: string | null;
+  requested_by_name?: string | null;
   current_step_code?: string | null;
   current_step_name?: string | null;
   current_approver_name?: string | null;

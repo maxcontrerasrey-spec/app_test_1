@@ -121,6 +121,10 @@ export function ApprovalTrackingWidget({ widget, dashboardData }: ApprovalTracki
                                     <strong>{approval.folio ?? "—"}</strong>
                                   </div>
                                   <div>
+                                    <small>Candidato</small>
+                                    <strong>{approval.candidate_name ?? "—"}</strong>
+                                  </div>
+                                  <div>
                                     <small>Centro de costo</small>
                                     <strong>{approval.contract_name ?? "—"} {approval.cost_center_code ? `(${approval.cost_center_code})` : ""}</strong>
                                   </div>
@@ -197,6 +201,14 @@ export function ApprovalTrackingWidget({ widget, dashboardData }: ApprovalTracki
                                   <div>
                                     <small>Correo aprobador</small>
                                     <strong>{approval.current_approver_email ?? "—"}</strong>
+                                  </div>
+                                  <div>
+                                    <small>Solicitado por</small>
+                                    <strong>{approval.requested_by_name ?? "—"}</strong>
+                                  </div>
+                                  <div>
+                                    <small>Comentario</small>
+                                    <strong>{approval.approval_comment ?? "—"}</strong>
                                   </div>
                                 </div>
                               </div>
