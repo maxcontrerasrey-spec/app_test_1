@@ -88,6 +88,17 @@
 - `Acciones Rápidas` salió del layout principal y las opciones futuras quedaron consolidadas en un único menú flotante colapsable en la esquina superior derecha.
 - Las opciones del menú quedaron visibles como backlog operativo, pero no ejecutables, evitando nuevas falsas expectativas en QA mientras se programa su lógica real.
 
+## Refinamiento visual del launcher de acciones rápidas
+
+- [x] Reemplazar el botón flotante textual por un launcher compacto tipo asistente flotante
+- [x] Hacer que el menú se abra por hover o clic, anclado al icono en la esquina superior derecha
+- [ ] Validar visualmente en Cloudflare que el launcher no compita con el encabezado ni tape navegación
+
+## Resultado de refinamiento visual del launcher de acciones rápidas
+
+- El dashboard ya no muestra un botón textual de backlog en la cabecera; ahora usa un launcher compacto de icono único.
+- El panel de acciones rápidas se despliega al pasar el cursor o hacer clic sobre el icono, alineándose mejor con la referencia visual pedida por el usuario.
+
 ## Aterrizaje de plan externo Fase 2B y 2C
 
 - [x] Revisar `implementation_plan.md` contra la arquitectura real del repo y del backend activo

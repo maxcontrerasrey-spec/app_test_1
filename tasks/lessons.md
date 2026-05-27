@@ -197,3 +197,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si una acción todavía no tiene comportamiento implementado, no debe quedar renderizada como botón clickeable en superficies operativas**. QA y usuarios lo interpretan correctamente como error del sistema, no como “función futura”.
 - **La forma correcta de preservar opciones futuras es separarlas del flujo principal y marcarlas como backlog no operativo**. Un único menú colapsable o un placeholder explícito es aceptable; varios botones muertos repartidos por el dashboard no lo son.
+
+## 37. Un launcher secundario debe descansar como icono, no competir como CTA principal
+
+- **Si un menú solo agrupa acciones futuras o secundarias, en reposo debe ocupar el mínimo espacio visual posible**. Un chip textual en cabecera compite con el trabajo principal del dashboard y ensucia la jerarquía.
+- **Para accesos rápidos tipo asistente, el patrón correcto es icono en reposo y despliegue contextual por hover o clic**. El usuario ve disponibilidad sin sentir que hay una tarea primaria pendiente en ese control.
