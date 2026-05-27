@@ -207,3 +207,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si fondo y tarjetas comparten casi el mismo blanco, el usuario percibe todo como una sola capa y pierde jerarquía**. En ese caso conviene usar un tinte frío sutil, borde más legible y sombra amplia de baja opacidad para despegar módulos del lienzo.
 - **Los paneles flotantes necesitan un tratamiento visual más expresivo que las tarjetas base**. Para overlays tipo launcher, funciona mejor un glass acuoso/translúcido con gradientes suaves y blur que un bloque blanco plano, porque mejora contraste sin endurecer el UI.
+
+## 39. Un overlay flotante debe ganar siempre la guerra de stacking
+
+- **Si un panel flotante convive con tablas, tarjetas y headers con sombras, su z-index no puede quedar implícito**. Hay que definir explícitamente la jerarquía del contenedor, el trigger y el panel para evitar que el overlay quede “detrás” visualmente aunque esté abierto.
+- **La diferenciación visual de un overlay no se resuelve solo con blur**. Si debe sentirse como otra capa del sistema, necesita además un matiz cromático propio y más transparencia que las tarjetas base.
