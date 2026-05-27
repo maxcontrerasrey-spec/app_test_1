@@ -42,6 +42,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Nunca endurecer un `CHECK` de etapa antes de migrar los datos vivos**. Si una migración reemplaza estados legacy (`contacted`, `screening`, etc.) por un pipeline nuevo, el orden correcto es: soltar el constraint viejo, remapear datos, crear registros derivados y recién al final agregar el nuevo constraint.
 - **La señal de falla típica es `23514` durante `ALTER TABLE ... ADD CONSTRAINT`**. No es un problema de sintaxis; es una violación creada por la propia migración al validar contra filas que todavía no han sido saneadas.
+- **No asumir un solo nombre de constraint legacy**. En ambientes que crecieron por migraciones parciales o DDL inline pueden coexistir nombres como `recruitment_case_candidates_stage_code_check` y `recruitment_case_candidates_stage_check`. Antes de introducir etapas nuevas, hay que limpiar ambos.
 
 ## 8. Dashboard ERP: La bandeja principal manda
 

@@ -58,6 +58,16 @@ begin
     alter table public.recruitment_case_candidates
       drop constraint recruitment_case_candidates_stage_code_check;
   end if;
+
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'recruitment_case_candidates_stage_check'
+      and conrelid = 'public.recruitment_case_candidates'::regclass
+  ) then
+    alter table public.recruitment_case_candidates
+      drop constraint recruitment_case_candidates_stage_check;
+  end if;
 end $$;
 
 update public.recruitment_case_candidates
