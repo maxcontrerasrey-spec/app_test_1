@@ -58,22 +58,6 @@ begin
     alter table public.recruitment_case_candidates
       drop constraint recruitment_case_candidates_stage_code_check;
   end if;
-
-  alter table public.recruitment_case_candidates
-    add constraint recruitment_case_candidates_stage_code_check
-    check (
-      stage_code in (
-        'lead',
-        'who_pending',
-        'who_approved',
-        'medical_exams',
-        'document_review',
-        'ready_for_hire',
-        'hired',
-        'rejected',
-        'withdrawn'
-      )
-    );
 end $$;
 
 update public.recruitment_case_candidates
@@ -133,6 +117,22 @@ left join public.candidate_stage_approvals csa
  and csa.status = 'pending'
 where rcc.stage_code = 'who_pending'
   and csa.id is null;
+
+alter table public.recruitment_case_candidates
+  add constraint recruitment_case_candidates_stage_code_check
+  check (
+    stage_code in (
+      'lead',
+      'who_pending',
+      'who_approved',
+      'medical_exams',
+      'document_review',
+      'ready_for_hire',
+      'hired',
+      'rejected',
+      'withdrawn'
+    )
+  );
 
 do $$
 begin

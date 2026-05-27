@@ -32,6 +32,18 @@
 - La aprobación `Who` ya se puede ejecutar desde el sidebar del candidato por un usuario que tenga la capability efectiva correspondiente.
 - El detalle del candidato ahora muestra el resumen de la aprobación `Who`, evitando que el estado quede opaco dentro del flujo.
 
+## Corrección de migración Fase 2B.2: orden de endurecimiento del pipeline
+
+- [x] Corregir la migración `20260526_160000_add_candidate_who_approval_pipeline.sql` para no endurecer `stage_code` antes del backfill
+- [x] Verificar que el orden seguro sea: liberar constraint antiguo, migrar datos vivos, insertar aprobaciones pendientes y recién entonces agregar el nuevo check
+- [x] Validar consistencia del repo y dejar la lección registrada
+
+## Resultado de corrección de migración Fase 2B.2
+
+- La falla `23514` venía de endurecer el `CHECK` de `recruitment_case_candidates.stage_code` antes de remapear filas históricas con etapas antiguas (`contacted`, `screening`, `shortlisted`, `documents_pending`).
+- La migración ahora sigue el orden correcto: primero elimina el constraint anterior, luego hace el backfill de datos y al final crea el nuevo `recruitment_case_candidates_stage_code_check`.
+- Con este orden, la misma migración puede correr sobre datos vivos sin romperse por estados intermedios incompatibles.
+
 ## Aterrizaje de plan externo Fase 2B y 2C
 
 - [x] Revisar `implementation_plan.md` contra la arquitectura real del repo y del backend activo
