@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { DashboardGrid } from "../components/DashboardGrid";
+import { FloatingActionMenu } from "../components/FloatingActionMenu";
 import "../styles/dashboard.css";
 
 export function DashboardHome() {
@@ -23,7 +24,7 @@ export function DashboardHome() {
           <p className="helper-copy">Aquí tienes tu resumen operativo y tareas pendientes de hoy.</p>
         </div>
         <div className="dashboard-header-actions">
-          {/* Future Search and Notifications bell goes here */}
+          <FloatingActionMenu />
         </div>
       </header>
 

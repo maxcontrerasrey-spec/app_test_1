@@ -192,3 +192,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si se renombran o eliminan etapas operativas, primero hay que medir qué estados existen realmente en producción y diseñar el mapeo contra esos datos**. Cambiar enums sin revisar la base deja registros inválidos o interfaces que ya no pueden leer su propio historial.
 - **El backend debe impedir saltos arbitrarios entre etapas nuevas desde el primer día**. No basta con actualizar labels; la RPC de transición tiene que volverse explícita sobre qué etapa puede seguir a cuál.
+
+## 36. Un botón visible en producción sin contrato operativo es un bug, no una promesa
+
+- **Si una acción todavía no tiene comportamiento implementado, no debe quedar renderizada como botón clickeable en superficies operativas**. QA y usuarios lo interpretan correctamente como error del sistema, no como “función futura”.
+- **La forma correcta de preservar opciones futuras es separarlas del flujo principal y marcarlas como backlog no operativo**. Un único menú colapsable o un placeholder explícito es aceptable; varios botones muertos repartidos por el dashboard no lo son.

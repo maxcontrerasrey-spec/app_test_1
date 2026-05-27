@@ -74,6 +74,20 @@
 - La captura de esas causas vive pegada a la acción de mover a `Who Pendiente`, en un cuadro compacto y colapsable para no ensuciar el sidebar.
 - El detalle expandido en `Inicio` ahora diferencia correctamente entre aprobaciones de folio y aprobaciones `Who`: mantiene la fila resumen arriba, pero al desplegar `Who` muestra el resumen de causas y la observación general, no la solicitud contractual completa.
 
+## Deuda visible del dashboard: affordances muertas
+
+- [x] Auditar los botones sin función visibles en `Inicio` (`Acciones Rápidas`, kebab de widgets y affordances equivalentes)
+- [x] Retirar del layout principal cualquier botón o menú que hoy no tenga contrato operativo real
+- [x] Reemplazar esas entradas por un único botón flotante colapsable en la esquina superior derecha del dashboard
+- [x] Dejar las opciones futuras visibles como backlog no operativo, sin clicks rotos
+- [ ] Validar en Cloudflare el layout final antes de retomar Fase 2C
+
+## Resultado de deuda visible del dashboard: affordances muertas
+
+- El dashboard dejó de exponer botones clickeables sin comportamiento, que los testers venían reportando como fallas del sistema.
+- `Acciones Rápidas` salió del layout principal y las opciones futuras quedaron consolidadas en un único menú flotante colapsable en la esquina superior derecha.
+- Las opciones del menú quedaron visibles como backlog operativo, pero no ejecutables, evitando nuevas falsas expectativas en QA mientras se programa su lógica real.
+
 ## Aterrizaje de plan externo Fase 2B y 2C
 
 - [x] Revisar `implementation_plan.md` contra la arquitectura real del repo y del backend activo

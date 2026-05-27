@@ -3,7 +3,6 @@ import type { DashboardDataBundle, ResolvedWidget } from "../types";
 import { ActiveFoliosWidget } from "./widgets/ActiveFoliosWidget";
 import { ApprovalTrackingWidget } from "./widgets/ApprovalTrackingWidget";
 import { TasksWidget } from "./widgets/TasksWidget";
-import { QuickActionsWidget } from "./widgets/QuickActionsWidget";
 
 type WidgetComponentProps = {
   widget: ResolvedWidget;
@@ -13,8 +12,7 @@ type WidgetComponentProps = {
 
 const WidgetRegistry: Record<string, React.FC<WidgetComponentProps>> = {
   ApprovalTrackingWidget,
-  TasksWidget,
-  QuickActionsWidget,
+  TasksWidget
 };
 
 interface DashboardGridProps {
@@ -34,8 +32,9 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
   }
 
   const visibleWidgets = widgets.filter((w) => !w.hidden);
+  const renderableWidgets = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
 
-  if (visibleWidgets.length === 0) {
+  if (renderableWidgets.length === 0) {
     return (
       <article className="reference-card">
         <div className="section-head">
@@ -46,8 +45,7 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
     );
   }
 
-  const tasks = visibleWidgets.filter((w) => w.component_key === "TasksWidget");
-  const quickActions = visibleWidgets.filter((w) => w.component_key === "QuickActionsWidget");
+  const tasks = renderableWidgets;
   const approvalTrackingWidget: ResolvedWidget | null =
     tasks[0]
       ? {
@@ -95,17 +93,6 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
           </div>
         </div>
       ) : null}
-
-      {quickActions.length > 0 && (
-        <div className="dashboard-secondary-row dashboard-split-layout-spaced dashboard-module-section">
-          <div className="dashboard-col">
-            {quickActions.map((w) => {
-              const Component = WidgetRegistry[w.component_key];
-              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

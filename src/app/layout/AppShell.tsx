@@ -291,9 +291,6 @@ export function AppShell() {
                   <small>{jobTitle}</small>
                 </div>
 
-                <button type="button" className="user-menu-action">
-                  Mi perfil
-                </button>
                 <button
                   type="button"
                   className="user-menu-action"
