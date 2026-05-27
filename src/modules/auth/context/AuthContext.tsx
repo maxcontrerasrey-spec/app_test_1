@@ -9,9 +9,11 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import {
+  normalizeCapabilityCode,
   normalizeModuleCode,
   normalizeRoleCode,
   resolvePrimaryRole,
+  type AppCapability,
   type AppModuleCode,
   type AppRole
 } from "../config/access";
@@ -32,6 +34,7 @@ type EffectivePermissionsPayload = {
   profile: ProfileRecord | null;
   app_roles?: unknown;
   accessible_modules?: unknown;
+  capabilities?: unknown;
   is_super_admin?: boolean;
 };
 
@@ -45,6 +48,8 @@ type AuthContextValue = {
   appRoles: AppRole[];
   appRole: AppRole;
   accessibleModules: AppModuleCode[];
+  capabilities: AppCapability[];
+  hasCapability: (capability: AppCapability) => boolean;
   isSuperAdmin: boolean;
   displayName: string;
   jobTitle: string;
@@ -159,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
   const [appRoles, setAppRoles] = useState<AppRole[]>([]);
   const [accessibleModules, setAccessibleModules] = useState<AppModuleCode[]>([]);
+  const [capabilities, setCapabilities] = useState<AppCapability[]>([]);
   const inactivityTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -182,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setAppRoles([]);
         setAccessibleModules([]);
+        setCapabilities([]);
         setIsLoading(false);
         return;
       }
@@ -198,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setAppRoles([]);
           setAccessibleModules([]);
+          setCapabilities([]);
           setIsLoading(false);
           return;
         }
@@ -217,11 +225,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
 
         setAccessibleModules(Array.from(new Set(nextModules)));
+
+        const nextCapabilities = normalizeStringArray(payload?.capabilities)
+          .map((capabilityCode) => normalizeCapabilityCode(capabilityCode))
+          .filter((capability): capability is AppCapability => capability !== null);
+
+        setCapabilities(Array.from(new Set(nextCapabilities)));
       } catch (err) {
         console.error("AuthContext loadAuthorization failed:", err);
         setProfile(null);
         setAppRoles([]);
         setAccessibleModules([]);
+        setCapabilities([]);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -342,6 +357,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       appRoles,
       appRole,
       accessibleModules,
+      capabilities,
+      hasCapability: (capability) => capabilities.includes(capability),
       isSuperAdmin,
       displayName: buildDisplayName(user, profile),
       jobTitle: buildJobTitle(profile),
@@ -415,7 +432,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsRecoveryMode(false);
       }
     };
-  }, [accessibleModules, appRoles, isLoading, isRecoveryMode, profile, session]);
+  }, [accessibleModules, appRoles, capabilities, isLoading, isRecoveryMode, profile, session]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

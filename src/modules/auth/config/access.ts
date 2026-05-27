@@ -9,6 +9,8 @@ export type AppRole =
   | "instructor"
   | "guest";
 
+export type AppCapability = "can_approve_who_stage";
+
 export type AppModuleCode =
   | "solicitud_contrataciones"
   | "control_contrataciones"
@@ -28,6 +30,8 @@ const KNOWN_ROLE_CODES = new Set<AppRole>([
   "instructor",
   "guest"
 ]);
+
+const KNOWN_CAPABILITY_CODES = new Set<AppCapability>(["can_approve_who_stage"]);
 
 const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "solicitud_contrataciones",
@@ -56,6 +60,17 @@ export function normalizeModuleCode(
 
   const normalized = value.trim().toLowerCase() as AppModuleCode;
   return KNOWN_MODULE_CODES.has(normalized) ? normalized : null;
+}
+
+export function normalizeCapabilityCode(
+  value: string | null | undefined
+): AppCapability | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase() as AppCapability;
+  return KNOWN_CAPABILITY_CODES.has(normalized) ? normalized : null;
 }
 
 export function resolvePrimaryRole(roles: AppRole[], isSuperAdmin: boolean) {

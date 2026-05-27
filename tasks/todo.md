@@ -1,5 +1,31 @@
 # Tareas y Roadmap de Desarrollo
 
+## Fase 2B.1: capacidades efectivas backend para `Who`
+
+- [x] Diseñar una fuente backend de capacidades sin amarrar la UI a roles duros
+- [x] Crear catálogo de capacidades y asignación por rol en Supabase
+- [x] Extender `get_my_effective_permissions()` para devolver `capabilities`
+- [x] Consumir `capabilities` desde `AuthContext` y exponer helper `hasCapability(...)`
+- [x] Validar compilación y dejar el patrón documentado
+
+## Resultado de Fase 2B.1: capacidades efectivas backend para `Who`
+
+- El sistema ya no necesita inferir futuras autorizaciones de `Who` desde nombres de rol en React.
+- La base ahora soporta `app_capabilities` y `role_capabilities`, y `get_my_effective_permissions()` devuelve `capabilities` junto con roles y módulos.
+- `AuthContext` expone `capabilities` y `hasCapability(...)`, dejando listo el terreno para la aprobación `Who` en el pipeline de candidatos.
+
+## Aterrizaje de plan externo Fase 2B y 2C
+
+- [x] Revisar `implementation_plan.md` contra la arquitectura real del repo y del backend activo
+- [x] Corregir supuestos falsos del plan externo (`Kanban`, modal inexistente, permisos por rol duro)
+- [x] Dejar un plan implementable en `docs/reclutamiento-operaciones-fase2-plan.md`
+
+## Resultado de aterrizaje de plan externo Fase 2B y 2C
+
+- El plan de `Who` y `Ficha del Trabajador` quedó reescrito sobre las piezas reales del sistema: `HiringCandidatesView`, `CandidateDetailSidebar`, `advance_recruitment_candidate_stage(...)` y `get_my_effective_permissions()`.
+- Se descartó explícitamente construir superficies paralelas que hoy no existen, como un Kanban nuevo o un modal de detalle alternativo.
+- El aterrizaje fija una secuencia técnica realista: primero capabilities backend, luego aprobación `Who`, luego ficha del trabajador.
+
 ## Paquete de saneamiento ERP: datos útiles y rendimiento
 
 - [x] Auditar desalineaciones reales entre código, esquema y datos vivos de contrataciones/reclutamiento

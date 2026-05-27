@@ -9,6 +9,7 @@ Plataforma web interna de automatización orientada a la gestión operativa, rec
 - **Estilos**: Vanilla CSS con Custom Properties (Design Tokens), arquitectura modular y mobile-first (sin frameworks externos como Tailwind, priorizando control absoluto).
 - **Backend/DB**: Supabase (PostgreSQL + Auth + Storage).
 - **Gobernanza de Datos**: Modelo estricto Zero Trust. Toda lógica de negocio transaccional sucede en el backend mediante RPCs (`SECURITY DEFINER`) con auditoría integrada.
+- **Permisos efectivos**: El acceso no se resuelve solo por roles o módulos; el backend ya expone también capacidades efectivas para workflows sensibles.
 
 ## 📖 Documentación Principal
 
@@ -54,6 +55,7 @@ La aplicación estará disponible en `http://localhost:5173`.
 - Las mutaciones críticas de reclutamiento y aprobaciones se ejecutan mediante RPCs de Supabase con trazabilidad.
 - La migración hacia un estado remoto más robusto comenzó con TanStack Query en el dashboard, como base para extender luego el patrón a Reclutamiento, Operaciones y Certificados.
 - La autorización efectiva del usuario ya no se arma con lecturas separadas en cliente: `AuthContext` consume una RPC de permisos efectivos basada en `auth.uid()`, dejando roles y módulos resueltos en backend.
+- El contrato de permisos efectivos ya soporta `capabilities`, preparando flujos futuros como la aprobación `Who` sin hardcodear roles en React.
 - El saneamiento ERP actual elimina fetches y widgets sin uso operativo inmediato, y consolida la limpieza de datos canónicos en migraciones controladas sobre Supabase.
 
 ## 📂 Estructura del Código (`src/`)

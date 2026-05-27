@@ -1,82 +1,91 @@
-# Plan Corregido Fase 2: Reclutamiento y Operaciones
+# Plan Aterrizado Fase 2B y 2C: Pipeline Who y Ficha del Trabajador
 
-Este documento aterriza el plan funcional de mejoras de Reclutamiento y Operaciones sobre la arquitectura **real** del repositorio. No reemplaza el objetivo de negocio; corrige la forma de implementarlo para no introducir una segunda arquitectura paralela.
+Este documento aterriza [implementation_plan.md](</Users/maximilianocontrerasrey/Downloads/implementation_plan.md>) sobre la arquitectura **real** del repositorio y del backend activo en Supabase.
 
-## Objetivo
+No reemplaza las decisiones de negocio ya confirmadas. Corrige la forma de implementarlas para que:
 
-Implementar tres mejoras operativas:
-
-1. Metodología de pasajes definida por Control de Contratos al aprobar.
-2. Nuevo pipeline de candidatos con etapa `Who` bloqueada por aprobación.
-3. Nueva `Ficha del Trabajador` como tercera pestaña del detalle del candidato.
-
-## Principio de implementación
-
-Los cambios se implementarán sobre las piezas actuales del sistema:
-
-- Aprobaciones: `TasksWidget.tsx`, `ApprovalModal.tsx`, `hiringWorkflow.ts`, `decide_hiring_request_approval_v2(...)`
-- Control de candidatos: `HiringCandidatesView.tsx`, `CandidateDetailSidebar.tsx`, `hiringControl.ts`, `advance_recruitment_candidate_stage(...)`
-- Detalle de caso/candidato: `get_recruitment_case_detail(...)`, `get_recruitment_control_dashboard_v2(...)`
-
-No se crearán componentes paralelos que hoy no existen, como `CandidateBoard.tsx` o `CandidateDetailModal.tsx`, salvo que más adelante se decida una reescritura explícita del módulo.
+- no nazca una segunda arquitectura paralela,
+- no se rompan contratos vigentes de RPC/RLS,
+- y el resultado siga el estándar ERP que hoy tiene el proyecto.
 
 ---
 
-## 1. Metodología de Pasajes
+## 1. Estado real desde el que partimos
 
-### Decisión técnica
+### Flujo de aprobaciones actual
 
-No se guardará el texto visible como valor de negocio. Se usarán códigos estables:
+- La aprobación de folios vive en:
+  - `TasksWidget.tsx`
+  - `ApprovalModal.tsx`
+  - `hiringWorkflow.ts`
+  - `decide_hiring_request_approval_v2(...)`
+- `travel_methodology` ya existe y hoy solo aplica en `contracts_control`.
 
-- `travel_allowance`
-- `company_purchase`
+### Flujo de reclutamiento actual
 
-El frontend seguirá mostrando los labels:
+- El control de candidatos vive en:
+  - `HiringCandidatesView.tsx`
+  - `CandidateDetailSidebar.tsx`
+  - `hiringControl.ts`
+  - `advance_recruitment_candidate_stage(...)`
+- Las etapas vigentes hoy siguen siendo:
+  - `lead`
+  - `contacted`
+  - `screening`
+  - `shortlisted`
+  - `documents_pending`
+  - `ready_for_hire`
+  - `hired`
+  - `rejected`
+  - `withdrawn`
 
-- `Bono de traslado`
-- `Compra Empresa`
+### Gobierno de permisos actual
 
-### Base de datos
+- Los permisos efectivos se resuelven con `get_my_effective_permissions()`.
+- Hoy la RPC devuelve:
+  - `profile`
+  - `app_roles`
+  - `accessible_modules`
+  - `is_super_admin`
+- No existe todavía un bloque formal de `capabilities`.
 
-Modificar `public.hiring_requests`:
+### Componentes que el plan externo asume, pero hoy no existen
 
-- agregar columna `travel_methodology text null`
-- agregar `CHECK (travel_methodology in ('travel_allowance', 'company_purchase'))`
+No existen en esta arquitectura actual:
 
-Modificar RPC `decide_hiring_request_approval_v2(...)`:
+- `CandidateBoard.tsx`
+- `CandidateDetailModal.tsx`
 
-- agregar parámetro opcional `p_travel_methodology text default null`
-- exigirlo solo cuando:
-  - el paso sea `contracts_control`
-  - `pasajes = true`
-  - la decisión sea `approved`
-- guardar el valor en `hiring_requests`
-- registrar el valor en `hiring_request_audit_log`
+Por lo tanto:
 
-### Frontend
-
-No se dejará como campo aislado en una tabla si requiere lógica condicional. La decisión debe vivir en el detalle de aprobación:
-
-- `ApprovalModal.tsx`
-- o, si se mantiene la decisión inline de `TasksWidget.tsx`, ambos puntos deben compartir el mismo contrato de validación
-
-### Verificación
-
-1. Si `pasajes = false`, aprobar sin metodología debe ser válido.
-2. Si `pasajes = true`, aprobar sin metodología debe fallar en backend.
-3. Si `pasajes = true`, aprobar con metodología debe persistir valor y auditoría.
+- no se implementará un Kanban nuevo,
+- no se implementará un modal nuevo para ficha,
+- y todo se montará sobre el sidebar vigente.
 
 ---
 
-## 2. Nuevo Pipeline con Aprobación `Who`
+## 2. Decisiones de aterrizaje
 
-### Decisión técnica
+### 2.1 Aprobación Who
 
-No se eliminarán las etapas terminales actuales `ready_for_hire` y `hired`. El nuevo flujo debe desembocar en ellas.
+La decisión del documento externo de usar un permiso general y no amarrarlo a un solo rol es correcta para este ERP.
 
-### Flujo propuesto
+**Implementación aterrizada**
 
-Etapas visibles de reclutamiento:
+- se agregará una noción de `capabilities` al contrato de permisos efectivos,
+- en vez de fijar el comportamiento solo por rol duro en frontend.
+
+Recomendación concreta:
+
+- capability: `can_approve_who_stage`
+
+La UI preguntará por esa capability, no por el nombre del rol.
+
+### 2.2 Pipeline nuevo
+
+El flujo de negocio confirmado es válido, pero no vamos a borrar `ready_for_hire` ni `hired`.
+
+Flujo aterrizado:
 
 1. `lead`
 2. `who_pending`
@@ -88,139 +97,270 @@ Etapas visibles de reclutamiento:
 8. `rejected`
 9. `withdrawn`
 
-### Aprobación de etapa `Who`
+Las etapas actuales intermedias (`contacted`, `screening`, `shortlisted`, `documents_pending`) deben retirarse del contrato de etapa **solo cuando migremos también datos y UI**. No antes.
 
-No se resolverá solo con un `stage_code`. Debe existir trazabilidad formal.
+### 2.3 Ficha del Trabajador
 
-#### Base de datos
+La división del documento externo es correcta:
 
-Crear tabla `public.candidate_stage_approvals`:
+- datos permanentes de persona
+- datos transaccionales del caso actual
 
-- `id bigint identity`
-- `recruitment_case_candidate_id uuid`
-- `stage_code text`
-- `status text`
-- `requested_by uuid`
-- `requested_at timestamptz`
-- `approved_by uuid null`
-- `approved_at timestamptz null`
-- `comment text null`
+Implementación aterrizada:
 
-Restricciones mínimas:
+- mantener datos permanentes en `candidate_profiles` o tabla satélite de persona
+- crear tabla transaccional `candidate_worker_files` ligada a `recruitment_case_candidates.id`
 
-- solo una aprobación activa para `who_pending` por candidato
-- `status in ('pending', 'approved', 'rejected', 'cancelled')`
-
-#### RPCs nuevas o modificadas
-
-- modificar `advance_recruitment_candidate_stage(...)`
-  - mover a `who_pending` crea o actualiza solicitud de aprobación
-  - bloquear avance desde `who_pending` si no existe aprobación `approved`
-- crear `approve_candidate_stage_who(...)`
-  - usa `auth.uid()`
-  - valida capacidad del aprobador
-  - cambia la aprobación a `approved`
-  - mueve al candidato a `who_approved`
-  - deja auditoría
-
-### Roles y permisos
-
-No reutilizaría `operaciones` o `gerencia` de forma ambigua. Para ERP hay dos caminos válidos:
-
-1. crear rol explícito `director_operaciones`
-2. crear una capacidad backend específica para aprobar `Who`
-
-Recomendación:
-
-- crear rol `director_operaciones`
-- revisar `app_roles`, `role_module_access` y el nuevo contrato de permisos efectivos
-
-### Frontend
-
-No se construirá un Kanban nuevo en esta fase. El flujo se implementará sobre la vista vigente:
-
-- `HiringCandidatesView.tsx`
-- `CandidateDetailSidebar.tsx`
-
-Cambios esperados:
-
-- nuevas etiquetas y filtros de etapa
-- bloqueo visible para `who_pending`
-- botón de aprobación visible solo al aprobador autorizado
-- transición a `medical_exams` solo después de `who_approved`
-
-### Verificación
-
-1. Reclutamiento mueve a `who_pending`.
-2. El candidato no puede avanzar a `medical_exams`.
-3. Director de Operaciones aprueba `Who`.
-4. El candidato puede avanzar a `medical_exams`.
-5. Auditoría y detalle del caso muestran solicitud y aprobación.
+La ficha se agregará como tercera pestaña del `CandidateDetailSidebar.tsx`.
 
 ---
 
-## 3. Ficha del Trabajador
+## 3. Fase 2B: Pipeline Who
 
-### Decisión técnica clave
+## 3.1 Objetivo
 
-La ficha no debe ser una sola bolsa de datos ligada solo al candidato, porque mezcla:
+Insertar una aprobación formal de antecedentes (`Who`) dentro del pipeline de reclutamiento, con bloqueo backend real y trazabilidad.
 
-- datos persistentes de persona
-- datos específicos de la oferta / contratación actual
+## 3.2 Base de datos
 
-### Modelo propuesto
+### 3.2.1 Nueva tabla
 
-#### A. Datos reutilizables del candidato
+Crear `public.candidate_stage_approvals`:
 
-Mantener en perfil o tabla satélite de persona:
+- `id bigint generated by default as identity primary key`
+- `recruitment_case_candidate_id uuid not null references public.recruitment_case_candidates(id) on delete cascade`
+- `stage_code text not null`
+- `status text not null`
+- `requested_by uuid not null references public.profiles(id) on delete restrict`
+- `requested_at timestamptz not null default timezone('utc', now())`
+- `approved_by uuid null references public.profiles(id) on delete set null`
+- `approved_at timestamptz null`
+- `comment text null`
+- `created_at timestamptz not null default timezone('utc', now())`
+- `updated_at timestamptz not null default timezone('utc', now())`
 
-- nacionalidad
+Restricciones mínimas:
+
+- `stage_code in ('who_pending')`
+- `status in ('pending', 'approved', 'rejected', 'cancelled')`
+- índice único parcial para una aprobación activa por candidato en `who_pending`
+
+### 3.2.2 Ajuste de etapas
+
+Actualizar constraints y contratos para `recruitment_case_candidates.stage_code`:
+
+- agregar:
+  - `who_pending`
+  - `who_approved`
+  - `medical_exams`
+  - `document_review`
+- retirar:
+  - `contacted`
+  - `screening`
+  - `shortlisted`
+  - `documents_pending`
+
+Esto requiere migración de datos previa sobre registros existentes.
+
+### 3.2.3 Migración de datos de etapas
+
+No se dejarán candidatos históricos en etapas inválidas.
+
+Mapeo propuesto:
+
+- `contacted` -> `lead`
+- `screening` -> `who_pending`
+- `shortlisted` -> `who_approved`
+- `documents_pending` -> `document_review`
+
+**Advertencia**
+
+Este mapeo es técnico y no perfecto semánticamente. Antes de aplicarlo en producción debe revisarse si hay casos activos que requieran reasignación manual.
+
+## 3.3 Permisos y seguridad
+
+### 3.3.1 Contrato de permisos efectivos
+
+Ampliar `get_my_effective_permissions()` para devolver:
+
+- `capabilities`
+
+Ejemplo:
+
+```json
+{
+  "capabilities": ["can_approve_who_stage"]
+}
+```
+
+La source of truth de esa capability debe vivir en backend.
+
+### 3.3.2 Modelo recomendado
+
+No crear lógica dura en React tipo:
+
+- `if role === 'gerencia'`
+- `if role === 'operaciones'`
+
+Recomendación de implementación:
+
+1. agregar tabla `role_capabilities`
+2. poblarla con `can_approve_who_stage`
+3. resolver capabilities dentro de `get_my_effective_permissions()`
+
+Si quieres una versión más simple de primera iteración:
+
+1. crear capability por función SQL
+2. mapearla temporalmente a roles desde backend
+3. mover luego a tabla dedicada
+
+### 3.3.3 RPCs
+
+#### Nueva RPC
+
+`approve_candidate_stage_who(...)`
+
+Responsabilidades:
+
+- usar `auth.uid()`
+- validar acceso al caso
+- validar capability `can_approve_who_stage`
+- validar que exista aprobación pendiente para el candidato
+- marcar la aprobación como `approved`
+- mover al candidato a `who_approved`
+- dejar auditoría en:
+  - `candidate_stage_approvals`
+  - `recruitment_case_candidate_stage_history`
+  - `recruitment_case_audit_log`
+
+#### RPC existente a modificar
+
+`advance_recruitment_candidate_stage(...)`
+
+Cambios:
+
+- permitir mover a `who_pending`
+- al mover a `who_pending`, crear o reciclar solicitud pendiente en `candidate_stage_approvals`
+- bloquear cualquier avance desde `who_pending` a otra etapa si no existe aprobación `approved`
+- permitir `who_approved -> medical_exams`
+
+## 3.4 Frontend
+
+### 3.4.1 `hiringControl.ts`
+
+- actualizar el union type de etapas
+- actualizar labels
+- actualizar validaciones de transición
+
+### 3.4.2 `hiringControlViewUtils.ts`
+
+- reemplazar filtros y agrupaciones por las nuevas etapas
+- redefinir transiciones válidas
+
+### 3.4.3 `HiringCandidatesView.tsx`
+
+- no construir Kanban nuevo
+- seguir con la tabla/lista operativa actual
+- actualizar filtros de etapa y contadores
+
+### 3.4.4 `CandidateDetailSidebar.tsx`
+
+- en `who_pending`, el cambio de etapa debe quedar bloqueado visualmente
+- si el usuario tiene `can_approve_who_stage`, mostrar botón:
+  - `Aprobar antecedentes`
+- mostrar historial de solicitud/aprobación Who
+
+## 3.5 Verificación
+
+1. Reclutamiento mueve candidato a `who_pending`.
+2. Se crea registro pendiente en `candidate_stage_approvals`.
+3. Un usuario sin capability no puede aprobar ni avanzar.
+4. Un usuario con `can_approve_who_stage` aprueba.
+5. El candidato pasa a `who_approved`.
+6. El candidato ya puede avanzar a `medical_exams`.
+7. La auditoría queda visible en detalle.
+
+---
+
+## 4. Fase 2C: Ficha del Trabajador
+
+## 4.1 Objetivo
+
+Persistir información del trabajador sin mezclar datos permanentes de persona con datos específicos del ingreso actual.
+
+## 4.2 Modelo de datos
+
+### 4.2.1 Datos permanentes
+
+Mantener en `public.candidate_profiles` o en tabla satélite de persona:
+
 - fecha de nacimiento
+- nacionalidad
 - estado civil
-- dirección, región, comuna, ciudad
+- dirección / comuna / ciudad / región
 - contacto de emergencia
+- relación contacto emergencia
 - inclusión / discapacidad / etnia
 - bomberos
-- tallas
-- AFP / salud base
-- banco / tipo cuenta / número de cuenta
+- talla polera / pantalón / calzado
+- banco / tipo cuenta / número cuenta
+- AFP / salud
 
-#### B. Datos específicos del ingreso actual
+### 4.2.2 Datos del ingreso actual
 
-Crear tabla `public.candidate_worker_files` ligada a `recruitment_case_candidates`:
+Crear `public.candidate_worker_files`:
 
-- `recruitment_case_candidate_id uuid unique`
-- `project_name text`
-- `company_entry_date date`
-- `shift_name text`
-- `advance_amount numeric`
-- `contract_notes text`
-- campos específicos del ingreso actual que dependan del folio o proyecto
+- `id uuid default gen_random_uuid() primary key`
+- `recruitment_case_candidate_id uuid not null unique references public.recruitment_case_candidates(id) on delete cascade`
+- `project_name text null`
+- `company_entry_date date null`
+- `shift_name text null`
+- `advance_amount numeric null`
+- `contract_notes text null`
+- `created_at timestamptz not null default timezone('utc', now())`
+- `updated_at timestamptz not null default timezone('utc', now())`
 
-### RPC
+## 4.3 RPCs
 
-Crear `upsert_candidate_worker_file(...)`:
+### Opción recomendada
 
-- `SECURITY DEFINER`
-- validación con `auth.uid()`
-- acceso restringido a reclutamiento / perfiles autorizados
-- auditoría de cambios
+Crear dos RPCs, no una sola bolsa opaca:
 
-Si se decide separar también la ficha personal en backend:
+1. `upsert_candidate_person_profile(...)`
+2. `upsert_candidate_worker_file(...)`
 
-- crear `upsert_candidate_person_profile(...)`
+Razón:
 
-### Frontend
+- baja acoplamiento
+- mejora trazabilidad
+- evita mezclar permisos sobre datos permanentes y datos del caso actual
 
-La tercera pestaña debe agregarse a `CandidateDetailSidebar.tsx`, no a un modal inexistente.
+### Opción alternativa
 
-Tabs finales:
+Si quieres una sola operación transaccional:
+
+- `upsert_candidate_worker_data(...)`
+
+Pero internamente igual debe separar:
+
+- update en `candidate_profiles`
+- upsert en `candidate_worker_files`
+
+## 4.4 Frontend
+
+### `CandidateDetailSidebar.tsx`
+
+Agregar tercera pestaña:
 
 1. `Pipeline Operativo`
 2. `Control Documental`
 3. `Ficha del Trabajador`
 
-La ficha debe dividirse por secciones:
+### Nuevo componente
+
+`CandidateWorkerFileForm.tsx`
+
+Secciones:
 
 - Información personal
 - Emergencia
@@ -229,57 +369,94 @@ La ficha debe dividirse por secciones:
 - Pago y previsión
 - Ingreso actual
 
-### Verificación
+## 4.5 Seguridad
 
-1. Guardar datos personales persistentes.
-2. Guardar datos propios del ingreso actual.
-3. Reabrir candidato y verificar persistencia.
-4. Validar que otro proceso futuro del mismo candidato no herede de forma incorrecta los datos específicos del ingreso anterior.
+Las RPCs deben:
 
----
+- usar `auth.uid()`
+- validar acceso por caso
+- restringirse a reclutamiento o perfiles expresamente autorizados
+- dejar auditoría de cambios relevantes
 
-## Decisiones pendientes antes de programar
+## 4.6 Verificación
 
-Estas definiciones siguen abiertas y deben cerrarse antes de implementar negocio:
-
-1. `Pasajes`
-   - confirmar si solo existen dos metodologías
-2. `Who`
-   - confirmar si se creará rol `director_operaciones`
-3. `Pipeline`
-   - confirmar que `ready_for_hire` y `hired` siguen existiendo como cierre operativo
-4. `Ficha del trabajador`
-   - confirmar qué campos son persistentes de persona y cuáles son del ingreso actual
+1. Guardar datos de persona.
+2. Guardar datos del ingreso actual.
+3. Reabrir y verificar persistencia.
+4. Confirmar que otro proceso futuro del mismo candidato no arrastre datos del ingreso anterior donde no corresponde.
 
 ---
 
-## Orden de ejecución recomendado
+## 5. Ajustes al plan externo
 
-### Fase 2A
+Cambios respecto a `implementation_plan.md`:
 
-- metodología de pasajes en aprobación final
-
-### Fase 2B
-
-- nuevo pipeline con aprobación `Who`
-
-### Fase 2C
-
-- ficha del trabajador
-
-Este orden reduce riesgo porque:
-
-- primero se ajusta la aprobación del folio
-- luego el pipeline operativo
-- finalmente la ficha extensa, que depende del flujo ya estabilizado
+- no se implementará un Kanban porque hoy no existe esa superficie
+- no se implementará un modal de detalle nuevo
+- no se amarrará `Who` directamente a un rol fijo en frontend
+- primero se ampliará el contrato de permisos efectivos
+- la transición de etapas incluye migración explícita de datos existentes
+- `ready_for_hire` y `hired` se mantienen
 
 ---
 
-## Criterios de aceptación
+## 6. Orden de ejecución recomendado
 
-No se considerará cerrada esta fase si ocurre cualquiera de estos puntos:
+### Fase 2B.1
 
-- la lógica crítica depende solo del frontend
-- se crean componentes paralelos sin utilidad real
-- el nuevo flujo no queda respaldado por RPCs y auditoría
-- se mezclan datos personales reutilizables con datos específicos de una postulación sin separación clara
+- capabilities backend para `can_approve_who_stage`
+- ampliación de `get_my_effective_permissions()`
+
+### Fase 2B.2
+
+- tabla `candidate_stage_approvals`
+- migración de etapas
+- modificación de `advance_recruitment_candidate_stage(...)`
+- nueva RPC `approve_candidate_stage_who(...)`
+
+### Fase 2B.3
+
+- adaptación de `hiringControl.ts`
+- adaptación de `hiringControlViewUtils.ts`
+- adaptación de `HiringCandidatesView.tsx`
+- adaptación de `CandidateDetailSidebar.tsx`
+
+### Fase 2C.1
+
+- columnas permanentes en `candidate_profiles`
+- tabla `candidate_worker_files`
+
+### Fase 2C.2
+
+- RPCs de persistencia
+
+### Fase 2C.3
+
+- pestaña nueva en `CandidateDetailSidebar.tsx`
+- nuevo `CandidateWorkerFileForm.tsx`
+
+---
+
+## 7. Riesgos reales a controlar
+
+### Riesgo 1: migración de etapas históricas
+
+Si hay candidatos activos en `screening`, `shortlisted` o `documents_pending`, el cambio no puede salir sin mapa de migración validado.
+
+### Riesgo 2: capability sin source of truth
+
+Si `can_approve_who_stage` se resuelve solo en frontend, se rompe el modelo Zero Trust.
+
+### Riesgo 3: ficha de trabajador sobredimensionada
+
+No conviene abrir 40 campos de una vez si todavía no está claro cuáles se usarán operativamente. La ficha debe salir en bloques útiles, no como formulario infinito por completitud teórica.
+
+---
+
+## 8. Siguiente paso correcto
+
+El siguiente paso implementable sobre el repo actual es:
+
+1. ampliar permisos efectivos con `capabilities`
+2. definir la fuente backend de `can_approve_who_stage`
+3. recién después abrir la Fase 2B de etapas y aprobaciones
