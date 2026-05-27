@@ -8,7 +8,7 @@ import {
   travelMethodologyOptions,
   type TravelMethodology
 } from "../../../recruitment/services/hiringWorkflow";
-import { approveCandidateStageWho } from "../../../recruitment/services/hiringControl";
+import { approveCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 
 type TasksWidgetProps = {
   widget: ResolvedWidget;
@@ -166,6 +166,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                       {isExpanded && (
                         <tr className="tracking-table-expanded-row">
                           <td colSpan={6}>
+                            {task.type === "approval" ? (
                             <div className="expanded-case-detail-grid">
                               <div className="expanded-detail-section">
                                 <h4>Solicitud original</h4>
@@ -241,35 +242,50 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
                                 </div>
                               </div>
                             </div>
+                            ) : null}
 
                             {task.type === "who_approval" ? (
                               <>
-                                <div className="expanded-case-detail-grid">
-                                  <div className="expanded-detail-section">
-                                    <h4>Aprobación Who</h4>
-                                    <div className="expanded-detail-fields">
-                                      <div>
-                                        <small>Candidato</small>
-                                        <strong>{task.candidate_name ?? "—"}</strong>
-                                      </div>
-                                      <div>
-                                        <small>Caso</small>
-                                        <strong>{task.folio ?? "—"}</strong>
-                                      </div>
-                                      <div>
-                                        <small>Solicitado por</small>
-                                        <strong>{task.requested_by_name ?? "—"}</strong>
-                                      </div>
-                                      <div>
-                                        <small>Fecha solicitud</small>
-                                        <strong>{formatDateValue(task.created_at)}</strong>
-                                      </div>
-                                      <div>
-                                        <small>Comentario de solicitud</small>
-                                        <strong>{task.approval_comment ?? "—"}</strong>
-                                      </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Resumen de causas Who</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Candidato</small>
+                                      <strong>{task.candidate_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Solicitado por</small>
+                                      <strong>{task.requested_by_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Fecha solicitud</small>
+                                      <strong>{formatDateValue(task.created_at)}</strong>
                                     </div>
                                   </div>
+
+                                  {task.who_causes?.length ? (
+                                    <div className="who-causes-summary-list">
+                                      {task.who_causes.map((cause, index) => (
+                                        <div key={`${task.id}-cause-${index}`} className="who-causes-summary-item">
+                                          <span className="who-causes-summary-title">Causa {index + 1}</span>
+                                          <span>{toWhoCauseTypeLabel(cause.type)}</span>
+                                          <span>{cause.year}</span>
+                                          <p>{cause.comment}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="who-causes-summary-empty">
+                                      No se registraron causas estructuradas en esta solicitud.
+                                    </p>
+                                  )}
+
+                                  {task.approval_comment ? (
+                                    <div className="who-causes-summary-note">
+                                      <small>Observación general</small>
+                                      <strong>{task.approval_comment}</strong>
+                                    </div>
+                                  ) : null}
                                 </div>
 
                                 <div className="task-decision-panel">

@@ -519,6 +519,14 @@
   grid-column: 1 / -1;
 }
 
+.who-causes-summary-list {
+  margin-top: 0.9rem;
+}
+
+.who-causes-summary-note {
+  margin-top: 0.9rem;
+}
+
 /* Timeline Widget */
 .nx-timeline {
   display: flex;

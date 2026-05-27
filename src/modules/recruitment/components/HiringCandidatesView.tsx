@@ -6,7 +6,8 @@ import {
   type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
   type RecruitmentCaseDetail,
-  type RecruitmentCaseListRow
+  type RecruitmentCaseListRow,
+  type WhoApprovalCause
 } from "../services/hiringControl";
 import {
   candidateStageFilterOptions,
@@ -31,7 +32,7 @@ type HiringCandidatesViewProps = {
   onCandidateAdded: (caseId: string, candidateId: string) => Promise<void>;
   onStageDraftChange: (value: RecruitmentCandidateStage | "") => void;
   onStageCommentChange: (value: string) => void;
-  onAdvanceStage: () => Promise<void>;
+  onAdvanceStage: (whoCauses?: WhoApprovalCause[]) => Promise<void>;
   onWhoApprovalRegistered: () => Promise<void>;
   onLicenseUpdated: () => Promise<void>;
   onInterviewNotesUpdated: () => Promise<void>;

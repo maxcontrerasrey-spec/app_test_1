@@ -3,6 +3,7 @@ import { TextField } from "../../../../shared/ui";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import type { DashboardApprovalTrackingItem, DashboardDataBundle, ResolvedWidget } from "../../types";
 import { toTravelMethodologyLabel } from "../../../recruitment/services/hiringWorkflow";
+import { toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 
 type ApprovalTrackingWidgetProps = {
   widget: ResolvedWidget;
@@ -104,6 +105,7 @@ export function ApprovalTrackingWidget({ widget, dashboardData }: ApprovalTracki
                       {isExpanded ? (
                         <tr className="tracking-table-expanded-row">
                           <td colSpan={6}>
+                            {approval.type === "approval" ? (
                             <div className="expanded-case-detail-grid">
                               <div className="expanded-detail-section">
                                 <h4>Solicitud original</h4>
@@ -213,6 +215,55 @@ export function ApprovalTrackingWidget({ widget, dashboardData }: ApprovalTracki
                                 </div>
                               </div>
                             </div>
+                            ) : null}
+
+                            {approval.type === "who_approval" ? (
+                              <div className="expanded-detail-section">
+                                <h4>Resumen de causas Who</h4>
+                                <div className="expanded-detail-fields">
+                                  <div>
+                                    <small>Candidato</small>
+                                    <strong>{approval.candidate_name ?? "—"}</strong>
+                                  </div>
+                                  <div>
+                                    <small>Solicitado por</small>
+                                    <strong>{approval.requested_by_name ?? "—"}</strong>
+                                  </div>
+                                  <div>
+                                    <small>Fecha solicitud</small>
+                                    <strong>{formatDateValue(approval.created_at)}</strong>
+                                  </div>
+                                  <div>
+                                    <small>Etapa actual</small>
+                                    <strong>{approval.current_step_name ?? "—"}</strong>
+                                  </div>
+                                </div>
+
+                                {approval.who_causes?.length ? (
+                                  <div className="who-causes-summary-list">
+                                    {approval.who_causes.map((cause, index) => (
+                                      <div key={`${approval.id}-cause-${index}`} className="who-causes-summary-item">
+                                        <span className="who-causes-summary-title">Causa {index + 1}</span>
+                                        <span>{toWhoCauseTypeLabel(cause.type)}</span>
+                                        <span>{cause.year}</span>
+                                        <p>{cause.comment}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="who-causes-summary-empty">
+                                    No se registraron causas estructuradas en esta solicitud.
+                                  </p>
+                                )}
+
+                                {approval.approval_comment ? (
+                                  <div className="who-causes-summary-note">
+                                    <small>Observación general</small>
+                                    <strong>{approval.approval_comment}</strong>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       ) : null}

@@ -4,12 +4,15 @@ import { useAuth } from "../../auth/context/AuthContext";
 import {
   formatRut,
   toRecruitmentCandidateStageLabel,
+  toWhoCauseTypeLabel,
   updateCandidateDriverLicense,
   updateCandidateInterviewNotes,
   type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
   type RecruitmentCaseCandidateRow,
-  type RecruitmentCaseDetail
+  type RecruitmentCaseDetail,
+  type WhoApprovalCause,
+  type WhoCauseType
 } from "../services/hiringControl";
 import {
   formatDateTimeValue,
@@ -30,11 +33,24 @@ type CandidateDetailSidebarProps = {
   decisionMessage: string;
   onStageDraftChange: (value: RecruitmentCandidateStage | "") => void;
   onStageCommentChange: (value: string) => void;
-  onAdvanceStage: () => Promise<void>;
+  onAdvanceStage: (whoCauses?: WhoApprovalCause[]) => Promise<void>;
   onWhoApprovalRegistered?: () => Promise<void>;
   onLicenseUpdated?: () => Promise<void>;
   onInterviewNotesUpdated?: () => Promise<void>;
 };
+
+type WhoCauseDraft = {
+  type: WhoCauseType | "";
+  year: string;
+  comment: string;
+};
+
+const buildEmptyWhoCauseDrafts = (): WhoCauseDraft[] =>
+  Array.from({ length: 4 }, () => ({
+    type: "",
+    year: "",
+    comment: ""
+  }));
 
 export function CandidateDetailSidebar({
   isLoading,
@@ -66,6 +82,8 @@ export function CandidateDetailSidebar({
   const [interviewNotesText, setInterviewNotesText] = useState("");
   const [isInterviewSaving, setIsInterviewSaving] = useState(false);
   const [interviewError, setInterviewError] = useState("");
+  const [isWhoCausesExpanded, setIsWhoCausesExpanded] = useState(false);
+  const [whoCauseDrafts, setWhoCauseDrafts] = useState<WhoCauseDraft[]>(buildEmptyWhoCauseDrafts);
 
   useEffect(() => {
     setIsHistoryExpanded(false);
@@ -75,7 +93,15 @@ export function CandidateDetailSidebar({
     setIsEditingInterview(false);
     setInterviewNotesText(selectedCandidate?.interview_notes || "");
     setInterviewError("");
+    setIsWhoCausesExpanded(false);
+    setWhoCauseDrafts(buildEmptyWhoCauseDrafts());
   }, [selectedCandidate?.id]);
+
+  useEffect(() => {
+    if (stageDraft === "who_pending") {
+      setIsWhoCausesExpanded(true);
+    }
+  }, [stageDraft]);
 
   const handleSaveLicense = async () => {
     if (!selectedCandidate) return;
@@ -146,6 +172,34 @@ export function CandidateDetailSidebar({
   const isWhoPending = selectedCandidate.stage_code === "who_pending";
   const canApproveWho = hasCapability("can_approve_who_stage");
   const latestWhoApproval = selectedCandidate.who_approval ?? null;
+  const completedWhoCauseCount = whoCauseDrafts.filter(
+    (cause) => cause.type && cause.year.trim() && cause.comment.trim()
+  ).length;
+
+  const handleWhoCauseDraftChange = (
+    index: number,
+    field: keyof WhoCauseDraft,
+    value: string
+  ) => {
+    setWhoCauseDrafts((current) =>
+      current.map((cause, causeIndex) =>
+        causeIndex === index
+          ? {
+              ...cause,
+              [field]: field === "year" ? value.replace(/[^\d]/g, "").slice(0, 4) : value
+            }
+          : cause
+      )
+    );
+  };
+
+  const normalizedWhoCauses: WhoApprovalCause[] = whoCauseDrafts
+    .filter((cause) => cause.type && cause.year.trim() && cause.comment.trim())
+    .map((cause) => ({
+      type: cause.type as WhoCauseType,
+      year: Number(cause.year),
+      comment: cause.comment.trim()
+    }));
 
   return (
     <aside className="control-detail-panel">
@@ -345,6 +399,18 @@ export function CandidateDetailSidebar({
                   <strong>{formatDateTimeValue(latestWhoApproval.approved_at)}</strong>
                 </div>
               </div>
+              {latestWhoApproval.causes?.length ? (
+                <div className="who-causes-summary-list" style={{ marginTop: "0.75rem" }}>
+                  {latestWhoApproval.causes.map((cause, index) => (
+                    <div key={`${latestWhoApproval.id}-sidebar-cause-${index}`} className="who-causes-summary-item">
+                      <span className="who-causes-summary-title">Causa {index + 1}</span>
+                      <span>{toWhoCauseTypeLabel(cause.type)}</span>
+                      <span>{cause.year}</span>
+                      <p>{cause.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               {latestWhoApproval.comment ? (
                 <p style={{ marginTop: "0.75rem", fontSize: "0.88rem", color: "#555" }}>
                   {latestWhoApproval.comment}
@@ -374,12 +440,81 @@ export function CandidateDetailSidebar({
               onChange={(event) => onStageCommentChange(event.target.value)}
             />
 
+            {stageDraft === "who_pending" ? (
+              <div className="control-span-full">
+                <div className="approval-detail-note who-causes-configurator">
+                  <div className="who-causes-configurator-header">
+                    <div>
+                      <small>Resumen para aprobación Who</small>
+                      <strong>{completedWhoCauseCount} / 4 causas completas</strong>
+                    </div>
+                    <button
+                      type="button"
+                      className="who-causes-toggle"
+                      onClick={() => setIsWhoCausesExpanded((current) => !current)}
+                    >
+                      {isWhoCausesExpanded ? "Contraer ▲" : "Configurar causas ▼"}
+                    </button>
+                  </div>
+
+                  {isWhoCausesExpanded ? (
+                    <div className="who-causes-editor-list">
+                      {whoCauseDrafts.map((cause, index) => (
+                        <div key={`who-cause-${index}`} className="who-cause-editor-row">
+                          <div className="who-cause-editor-title">Causa {index + 1}</div>
+                          <div className="who-cause-editor-fields">
+                            <SelectField
+                              id={`who-cause-type-${index}`}
+                              label="Tipo de causa"
+                              value={cause.type}
+                              onChange={(event) =>
+                                handleWhoCauseDraftChange(index, "type", event.target.value)
+                              }
+                              options={[
+                                { value: "laboral", label: "Laboral" },
+                                { value: "penal", label: "Penal" },
+                                { value: "civil", label: "Civil" }
+                              ]}
+                              placeholder="Selecciona tipo"
+                              disabled={isStageSaving}
+                            />
+                            <TextField
+                              id={`who-cause-year-${index}`}
+                              label="Año"
+                              value={cause.year}
+                              placeholder="Ej: 2023"
+                              onChange={(event) =>
+                                handleWhoCauseDraftChange(index, "year", event.target.value)
+                              }
+                              disabled={isStageSaving}
+                            />
+                            <TextField
+                              id={`who-cause-comment-${index}`}
+                              label="Comentario"
+                              value={cause.comment}
+                              placeholder="Resumen breve de la causa"
+                              onChange={(event) =>
+                                handleWhoCauseDraftChange(index, "comment", event.target.value)
+                              }
+                              disabled={isStageSaving}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
             <div className="control-span-full">
               <button
                 type="button"
                 className="soft-primary-button approval-button-approve"
                 disabled={isStageSaving || isWhoPending || !stageDraft}
-                onClick={() => void onAdvanceStage()}
+                onClick={() =>
+                  void onAdvanceStage(stageDraft === "who_pending" ? normalizedWhoCauses : undefined)
+                }
               >
                 Mover candidato de etapa
               </button>

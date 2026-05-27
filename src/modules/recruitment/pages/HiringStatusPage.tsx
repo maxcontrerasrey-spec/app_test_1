@@ -7,12 +7,14 @@ import {
   advanceRecruitmentCandidateStage,
   fetchRecruitmentCaseDetail,
   fetchRecruitmentControlDashboard,
+  requestCandidateStageWho,
   type HiringControlApproval,
   type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
   type RecruitmentCaseDetail,
   type RecruitmentCaseListRow,
-  type RecruitmentDashboardSummary
+  type RecruitmentDashboardSummary,
+  type WhoApprovalCause
 } from "../services/hiringControl";
 import { HiringCandidatesView } from "../components/HiringCandidatesView";
 import { HiringProcessesView } from "../components/HiringProcessesView";
@@ -153,7 +155,7 @@ export function HiringStatusPage() {
     await loadCaseDetail(caseId, candidateId);
   };
 
-  const handleAdvanceStage = async () => {
+  const handleAdvanceStage = async (whoCauses?: WhoApprovalCause[]) => {
     const selectedCandidate =
       selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
       selectedCaseDetail?.candidates[0] ??
@@ -166,11 +168,18 @@ export function HiringStatusPage() {
     setIsStageSaving(true);
     setDecisionMessage("");
 
-    const { error } = await advanceRecruitmentCandidateStage({
-      caseCandidateId: selectedCandidate.id,
-      toStage: stageDraft,
-      comment: stageComment
-    });
+    const { error } =
+      stageDraft === "who_pending"
+        ? await requestCandidateStageWho({
+            caseCandidateId: selectedCandidate.id,
+            comment: stageComment,
+            causes: whoCauses ?? []
+          })
+        : await advanceRecruitmentCandidateStage({
+            caseCandidateId: selectedCandidate.id,
+            toStage: stageDraft,
+            comment: stageComment
+          });
 
     if (error) {
       setDecisionMessage(error);

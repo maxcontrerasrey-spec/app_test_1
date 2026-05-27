@@ -49,6 +49,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con crear una tabla de aprobaciones nueva**. Si el flujo introduce una nueva fuente de trabajo operativo como `candidate_stage_approvals`, hay que conectarla explícitamente a las bandejas del dashboard (`Tareas Pendientes` y seguimiento global). Si no, el usuario dispara una tarea que existe en base pero queda invisible en la operación diaria.
 - **La regla práctica es simple**: cualquier aprobación pendiente que pueda bloquear operación debe tener representación en Inicio y no quedar escondida solo en el detalle de otro módulo.
 
+## 10. Who no es un comentario libre; es un resumen estructurado de causas
+
+- **Una aprobación Who no debe modelarse como texto suelto**. Si la decisión depende de causas judiciales concretas, el backend debe guardarlas en estructura estable para que luego puedan revisarse, auditarse y mostrarse en el dashboard sin arrastrar detalles irrelevantes del folio.
+- **En Inicio, la información expandida debe corresponder al tipo de tarea**. Una aprobación de folio necesita detalle contractual; una aprobación `Who` necesita el resumen de causas y observaciones. Reusar el mismo bloque expandido para ambos tipos degrada la utilidad operativa.
+
 ## 8. Dashboard ERP: La bandeja principal manda
 
 - **La tarea operativa principal debe ocupar el ancho dominante del dashboard**. Si una tabla crítica obliga a scrollear horizontalmente mientras hay widgets secundarios arriba o al lado, la jerarquía visual está mal resuelta.

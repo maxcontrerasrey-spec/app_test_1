@@ -1,3 +1,5 @@
+import type { WhoApprovalCause } from "../../recruitment/services/hiringControl";
+
 export type WidgetSize = 'small' | 'medium' | 'large' | 'full';
 
 export interface DashboardWidget {
@@ -53,6 +55,7 @@ export interface DashboardTaskItem {
   other_benefits?: string | null;
   approval_comment?: string | null;
   requested_by_name?: string | null;
+  who_causes?: WhoApprovalCause[] | null;
   title?: string;
   subtitle?: string;
   status_code: string;
@@ -86,6 +89,7 @@ export interface DashboardApprovalTrackingItem {
   other_benefits?: string | null;
   approval_comment?: string | null;
   requested_by_name?: string | null;
+  who_causes?: WhoApprovalCause[] | null;
   current_step_code?: string | null;
   current_step_name?: string | null;
   current_approver_name?: string | null;

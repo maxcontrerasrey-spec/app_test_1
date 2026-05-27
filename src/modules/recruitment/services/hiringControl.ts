@@ -22,6 +22,14 @@ export type RecruitmentCandidateStage =
   | "rejected"
   | "withdrawn";
 
+export type WhoCauseType = "laboral" | "penal" | "civil";
+
+export type WhoApprovalCause = {
+  type: WhoCauseType;
+  year: number;
+  comment: string;
+};
+
 export type RecruitmentDashboardSummary = {
   pending_contracts_control: number;
   active_cases: number;
@@ -145,6 +153,7 @@ export type CandidateWhoApprovalSummary = {
   approved_by_name: string | null;
   approved_at: string | null;
   comment: string | null;
+  causes?: WhoApprovalCause[] | null;
 };
 
 export type RecruitmentCaseCandidateRow = {
@@ -417,6 +426,36 @@ export async function advanceRecruitmentCandidateStage(input: {
   return { error: null };
 }
 
+export async function requestCandidateStageWho(input: {
+  caseCandidateId: string;
+  comment?: string;
+  causes: WhoApprovalCause[];
+}) {
+  if (!supabase) {
+    return {
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { error } = await supabase.rpc("request_candidate_stage_who", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_comment: input.comment?.trim() ? input.comment.trim() : null,
+    p_causes: input.causes.map((cause) => ({
+      type: cause.type,
+      year: cause.year,
+      comment: cause.comment.trim()
+    }))
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible enviar la aprobación Who."
+    };
+  }
+
+  return { error: null };
+}
+
 export async function approveCandidateStageWho(input: {
   caseCandidateId: string;
   comment?: string;
@@ -439,6 +478,13 @@ export async function approveCandidateStageWho(input: {
   }
 
   return { error: null };
+}
+
+export function toWhoCauseTypeLabel(value: WhoCauseType | string | null | undefined) {
+  if (value === "laboral") return "Laboral";
+  if (value === "penal") return "Penal";
+  if (value === "civil") return "Civil";
+  return "Sin definir";
 }
 
 export async function fetchCandidateChecklist(caseCandidateId: string) {
