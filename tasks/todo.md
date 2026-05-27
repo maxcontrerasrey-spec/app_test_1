@@ -14,6 +14,24 @@
 - La base ahora soporta `app_capabilities` y `role_capabilities`, y `get_my_effective_permissions()` devuelve `capabilities` junto con roles y módulos.
 - `AuthContext` expone `capabilities` y `hasCapability(...)`, dejando listo el terreno para la aprobación `Who` en el pipeline de candidatos.
 
+## Fase 2B.2: aprobación Who y nuevo pipeline de candidatos
+
+- [x] Confirmar el estado real de candidatos en producción antes de definir el mapeo de etapas
+- [x] Crear tabla `candidate_stage_approvals` con trazabilidad y RLS
+- [x] Migrar etapas antiguas al nuevo pipeline y crear solicitudes `Who` pendientes donde corresponda
+- [x] Modificar `advance_recruitment_candidate_stage(...)` para bloquear saltos no válidos y exigir aprobación `Who`
+- [x] Crear `approve_candidate_stage_who(...)`
+- [x] Exponer el resumen `Who` en `get_recruitment_case_detail(...)`
+- [x] Ajustar frontend mínimo para nuevas etapas y aprobación `Who` desde el sidebar
+- [x] Validar compilación y build
+
+## Resultado de Fase 2B.2: aprobación Who y nuevo pipeline de candidatos
+
+- El pipeline de candidatos ya soporta `who_pending`, `who_approved`, `medical_exams` y `document_review` con bloqueo backend real, no solo visual.
+- La tabla `candidate_stage_approvals` deja trazabilidad formal de solicitud y aprobación `Who`.
+- La aprobación `Who` ya se puede ejecutar desde el sidebar del candidato por un usuario que tenga la capability efectiva correspondiente.
+- El detalle del candidato ahora muestra el resumen de la aprobación `Who`, evitando que el estado quede opaco dentro del flujo.
+
 ## Aterrizaje de plan externo Fase 2B y 2C
 
 - [x] Revisar `implementation_plan.md` contra la arquitectura real del repo y del backend activo

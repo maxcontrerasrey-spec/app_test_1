@@ -11,8 +11,9 @@ export const caseFilterOptions = [
 export const candidateStageFilterOptions = [
   { key: "active", label: "Activos en Proceso" },
   { key: "lead", label: "Lead" },
-  { key: "screening", label: "Screening" },
-  { key: "documents_pending", label: "Docs pendientes" },
+  { key: "who_pending", label: "Who Pendiente" },
+  { key: "medical_exams", label: "Exámenes Médicos" },
+  { key: "document_review", label: "Revisión Documental" },
   { key: "ready_for_hire", label: "Listos para contratar" },
   { key: "hired", label: "Contratados" },
   { key: "discarded", label: "Descartados" }
@@ -59,20 +60,20 @@ export function getNextStageOptions(
 ): RecruitmentCandidateStage[] {
   switch (currentStage) {
     case "lead":
-      return ["contacted", "screening", "rejected", "withdrawn"];
-    case "contacted":
-      return ["screening", "shortlisted", "rejected", "withdrawn"];
-    case "screening":
-      return ["shortlisted", "documents_pending", "rejected", "withdrawn"];
-    case "shortlisted":
-      return ["documents_pending", "rejected", "withdrawn"];
-    case "documents_pending":
+      return ["who_pending", "rejected", "withdrawn"];
+    case "who_pending":
+      return [];
+    case "who_approved":
+      return ["medical_exams", "rejected", "withdrawn"];
+    case "medical_exams":
+      return ["document_review", "rejected", "withdrawn"];
+    case "document_review":
       return ["ready_for_hire", "rejected", "withdrawn"];
     case "ready_for_hire":
       return ["hired", "rejected", "withdrawn"];
     case "rejected":
     case "withdrawn":
-      return ["contacted", "screening"];
+      return [];
     default:
       return [];
   }

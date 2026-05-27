@@ -32,6 +32,7 @@ type HiringCandidatesViewProps = {
   onStageDraftChange: (value: RecruitmentCandidateStage | "") => void;
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: () => Promise<void>;
+  onWhoApprovalRegistered: () => Promise<void>;
   onLicenseUpdated: () => Promise<void>;
   onInterviewNotesUpdated: () => Promise<void>;
 };
@@ -52,6 +53,7 @@ export function HiringCandidatesView({
   onStageDraftChange,
   onStageCommentChange,
   onAdvanceStage,
+  onWhoApprovalRegistered,
   onLicenseUpdated,
   onInterviewNotesUpdated
 }: HiringCandidatesViewProps) {
@@ -242,6 +244,7 @@ export function HiringCandidatesView({
           onStageDraftChange={onStageDraftChange}
           onStageCommentChange={onStageCommentChange}
           onAdvanceStage={onAdvanceStage}
+          onWhoApprovalRegistered={onWhoApprovalRegistered}
           onLicenseUpdated={onLicenseUpdated}
           onInterviewNotesUpdated={onInterviewNotesUpdated}
         />

@@ -13,10 +13,10 @@ export type RecruitmentCaseStatus =
 
 export type RecruitmentCandidateStage =
   | "lead"
-  | "contacted"
-  | "screening"
-  | "shortlisted"
-  | "documents_pending"
+  | "who_pending"
+  | "who_approved"
+  | "medical_exams"
+  | "document_review"
   | "ready_for_hire"
   | "hired"
   | "rejected"
@@ -135,6 +135,18 @@ export type RecruitmentCaseCandidateHistoryRow = {
   created_at: string;
 };
 
+export type CandidateWhoApprovalSummary = {
+  id: number;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  requested_by: string;
+  requested_by_name: string | null;
+  requested_at: string;
+  approved_by: string | null;
+  approved_by_name: string | null;
+  approved_at: string | null;
+  comment: string | null;
+};
+
 export type RecruitmentCaseCandidateRow = {
   id: string;
   candidate_profile_id: string;
@@ -153,6 +165,7 @@ export type RecruitmentCaseCandidateRow = {
   created_at: string;
   stage_history: RecruitmentCaseCandidateHistoryRow[];
   interview_notes: string | null;
+  who_approval?: CandidateWhoApprovalSummary | null;
 };
 
 export type RecruitmentCaseAuditRow = {
@@ -268,10 +281,10 @@ export function toRecruitmentCandidateStageLabel(
   value: RecruitmentCandidateStage | string | null | undefined
 ) {
   if (value === "lead") return "Lead";
-  if (value === "contacted") return "Contactado";
-  if (value === "screening") return "Screening";
-  if (value === "shortlisted") return "Shortlist";
-  if (value === "documents_pending") return "Docs pendientes";
+  if (value === "who_pending") return "Who Pendiente";
+  if (value === "who_approved") return "Who Aprobado";
+  if (value === "medical_exams") return "Exámenes Médicos";
+  if (value === "document_review") return "Revisión Documental";
   if (value === "ready_for_hire") return "Listo para contratar";
   if (value === "hired") return "Contratado";
   if (value === "rejected") return "Rechazado";
@@ -398,6 +411,30 @@ export async function advanceRecruitmentCandidateStage(input: {
   if (error) {
     return {
       error: formatRpcError(error) || "No fue posible mover la etapa del candidato."
+    };
+  }
+
+  return { error: null };
+}
+
+export async function approveCandidateStageWho(input: {
+  caseCandidateId: string;
+  comment?: string;
+}) {
+  if (!supabase) {
+    return {
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { error } = await supabase.rpc("approve_candidate_stage_who", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_comment: input.comment?.trim() ? input.comment.trim() : null
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible aprobar la etapa Who."
     };
   }
 

@@ -3,6 +3,7 @@ import { PageShell } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
 import { decideHiringApproval } from "../services/hiringWorkflow";
 import {
+  approveCandidateStageWho,
   advanceRecruitmentCandidateStage,
   fetchRecruitmentCaseDetail,
   fetchRecruitmentControlDashboard,
@@ -195,6 +196,39 @@ export function HiringStatusPage() {
     }
   };
 
+  const handleWhoApprovalRegistered = async () => {
+    const selectedCandidate =
+      selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
+      selectedCaseDetail?.candidates[0] ??
+      null;
+
+    if (!selectedCandidate || !selectedCaseDetail) {
+      return;
+    }
+
+    setIsStageSaving(true);
+    setDecisionMessage("");
+
+    const { error } = await approveCandidateStageWho({
+      caseCandidateId: selectedCandidate.id,
+      comment: stageComment
+    });
+
+    if (error) {
+      setDecisionMessage(error);
+      setIsStageSaving(false);
+      return;
+    }
+
+    setDecisionMessage("Aprobación Who registrada.");
+    setStageDraft("");
+    setStageComment("");
+    setIsStageSaving(false);
+
+    await loadDashboard(selectedCaseDetail.case.id);
+    await loadCaseDetail(selectedCaseDetail.case.id, selectedCandidate.id);
+  };
+
   return (
     <PageShell>
       <div className="minimal-page-header">
@@ -265,6 +299,7 @@ export function HiringStatusPage() {
             onStageDraftChange={setStageDraft}
             onStageCommentChange={setStageComment}
             onAdvanceStage={handleAdvanceStage}
+            onWhoApprovalRegistered={handleWhoApprovalRegistered}
             onLicenseUpdated={handleLicenseUpdated}
             onInterviewNotesUpdated={handleLicenseUpdated}
           />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SelectField, TextField } from "../../../shared/ui";
+import { useAuth } from "../../auth/context/AuthContext";
 import {
   formatRut,
   toRecruitmentCandidateStageLabel,
@@ -30,6 +31,7 @@ type CandidateDetailSidebarProps = {
   onStageDraftChange: (value: RecruitmentCandidateStage | "") => void;
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: () => Promise<void>;
+  onWhoApprovalRegistered?: () => Promise<void>;
   onLicenseUpdated?: () => Promise<void>;
   onInterviewNotesUpdated?: () => Promise<void>;
 };
@@ -46,9 +48,11 @@ export function CandidateDetailSidebar({
   onStageDraftChange,
   onStageCommentChange,
   onAdvanceStage,
+  onWhoApprovalRegistered,
   onLicenseUpdated,
   onInterviewNotesUpdated
 }: CandidateDetailSidebarProps) {
+  const { hasCapability } = useAuth();
   const [activeTab, setActiveTab] = useState<"pipeline" | "documents">("pipeline");
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
@@ -139,6 +143,9 @@ export function CandidateDetailSidebar({
     value: stage,
     label: toRecruitmentCandidateStageLabel(stage)
   }));
+  const isWhoPending = selectedCandidate.stage_code === "who_pending";
+  const canApproveWho = hasCapability("can_approve_who_stage");
+  const latestWhoApproval = selectedCandidate.who_approval ?? null;
 
   return (
     <aside className="control-detail-panel">
@@ -308,11 +315,50 @@ export function CandidateDetailSidebar({
             </div>
           ) : null}
 
+          {latestWhoApproval ? (
+            <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
+              <small>Aprobación Who</small>
+              <strong>
+                {latestWhoApproval.status === "approved"
+                  ? "Aprobada"
+                  : latestWhoApproval.status === "pending"
+                    ? "Pendiente"
+                    : latestWhoApproval.status === "rejected"
+                      ? "Rechazada"
+                      : "Cancelada"}
+              </strong>
+              <div className="control-readonly-grid" style={{ marginTop: "0.75rem" }}>
+                <div>
+                  <small>Solicitado por</small>
+                  <strong>{latestWhoApproval.requested_by_name ?? "No disponible"}</strong>
+                </div>
+                <div>
+                  <small>Fecha solicitud</small>
+                  <strong>{formatDateTimeValue(latestWhoApproval.requested_at)}</strong>
+                </div>
+                <div>
+                  <small>Aprobado por</small>
+                  <strong>{latestWhoApproval.approved_by_name ?? "Pendiente"}</strong>
+                </div>
+                <div>
+                  <small>Fecha aprobación</small>
+                  <strong>{formatDateTimeValue(latestWhoApproval.approved_at)}</strong>
+                </div>
+              </div>
+              {latestWhoApproval.comment ? (
+                <p style={{ marginTop: "0.75rem", fontSize: "0.88rem", color: "#555" }}>
+                  {latestWhoApproval.comment}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="control-edit-grid" style={{ marginTop: "1.5rem" }}>
             <SelectField
               id="candidate-next-stage"
               label="Siguiente etapa"
               value={stageDraft}
+              disabled={isWhoPending || isStageSaving}
               onChange={(event) =>
                 onStageDraftChange(event.target.value as RecruitmentCandidateStage | "")
               }
@@ -324,6 +370,7 @@ export function CandidateDetailSidebar({
               id="candidate-stage-comment"
               label="Comentario"
               value={stageComment}
+              disabled={isStageSaving}
               onChange={(event) => onStageCommentChange(event.target.value)}
             />
 
@@ -331,13 +378,34 @@ export function CandidateDetailSidebar({
               <button
                 type="button"
                 className="soft-primary-button approval-button-approve"
-                disabled={isStageSaving || !stageDraft}
+                disabled={isStageSaving || isWhoPending || !stageDraft}
                 onClick={() => void onAdvanceStage()}
               >
                 Mover candidato de etapa
               </button>
             </div>
           </div>
+
+          {isWhoPending ? (
+            <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
+              <small>Control de aprobación Who</small>
+              <strong>
+                Este candidato no puede avanzar mientras la aprobación de antecedentes siga pendiente.
+              </strong>
+              {canApproveWho ? (
+                <div style={{ marginTop: "0.9rem", display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    className="soft-primary-button approval-button-approve"
+                    disabled={isStageSaving}
+                    onClick={() => void onWhoApprovalRegistered?.()}
+                  >
+                    {isStageSaving ? "Aprobando..." : "Aprobar antecedentes"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Resumen de Entrevista / Puntos Clave */}
           <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
