@@ -41,7 +41,7 @@ export function DashboardNewsWidget() {
     void loadNews();
   }, []);
 
-  // Rotación automática cada 6 segundos
+  // Rotación automática cada 12 segundos
   useEffect(() => {
     if (!data) return;
 
@@ -52,7 +52,7 @@ export function DashboardNewsWidget() {
       if (data.mineria.length > 1) {
         setMineriaIndex((current) => (current + 1) % data.mineria.length);
       }
-    }, 6000);
+    }, 12000);
 
     return () => window.clearInterval(timer);
   }, [data]);
