@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { logger } from "../../../shared/lib/logger";
 import { supabase } from "../../../shared/lib/supabase";
 
 type NewsItem = {
@@ -32,7 +33,7 @@ export function DashboardNewsWidget() {
         
         setData(response as NewsData);
       } catch (err) {
-        console.error("Error cargando noticias:", err);
+        logger.error("DashboardNewsWidget loadNews", err);
       } finally {
         setIsLoading(false);
       }

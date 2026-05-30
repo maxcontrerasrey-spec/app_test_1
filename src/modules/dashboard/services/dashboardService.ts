@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase";
+import { logger } from "../../../shared/lib/logger";
 import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
@@ -17,7 +18,7 @@ export const dashboardService = {
     const { data, error } = await supabase.rpc("get_dashboard_widgets_for_current_user");
 
     if (error) {
-      console.error("Error fetching widgets:", error);
+      logger.error("DashboardService getAvailableWidgets", error);
       return [];
     }
 
@@ -34,7 +35,7 @@ export const dashboardService = {
       .select("*");
 
     if (error) {
-      console.error("Error fetching user preferences:", error);
+      logger.error("DashboardService getUserPreferences", error);
       return [];
     }
 
@@ -55,7 +56,7 @@ export const dashboardService = {
       }, { onConflict: 'user_id,widget_id' });
 
     if (error) {
-      console.error("Error saving user preference:", error);
+      logger.error("DashboardService saveUserPreference", error);
     }
   },
 
@@ -66,7 +67,7 @@ export const dashboardService = {
     if (!supabase) return [];
     const { data, error } = await supabase.rpc("get_dashboard_tasks", { p_user_id: userId });
     if (error) {
-      console.error("Error fetching dashboard tasks:", error);
+      logger.error("DashboardService getDashboardTasks", error);
       return [];
     }
     return (data ?? []) as DashboardTaskItem[];
@@ -76,7 +77,7 @@ export const dashboardService = {
     if (!supabase) return [];
     const { data, error } = await supabase.rpc("get_dashboard_approval_tracking");
     if (error) {
-      console.error("Error fetching dashboard approval tracking:", error);
+      logger.error("DashboardService getDashboardApprovalTracking", error);
       return [];
     }
     return (data ?? []) as DashboardApprovalTrackingItem[];
@@ -86,7 +87,7 @@ export const dashboardService = {
     if (!supabase) return [];
     const { data, error } = await supabase.rpc("get_recruitment_control_dashboard_v2");
     if (error) {
-      console.error("Error fetching active folios:", error);
+      logger.error("DashboardService getDashboardActiveFolios", error);
       return [];
     }
 
@@ -101,7 +102,7 @@ export const dashboardService = {
     if (!supabase) return [];
     const { data, error } = await supabase.rpc("get_upcoming_birthdays", { p_limit: limit });
     if (error) {
-      console.error("Error fetching upcoming birthdays:", error);
+      logger.error("DashboardService getUpcomingBirthdays", error);
       return [];
     }
 

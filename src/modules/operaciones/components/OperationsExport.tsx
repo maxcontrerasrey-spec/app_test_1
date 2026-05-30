@@ -1,4 +1,5 @@
 import { DatePickerField } from "../../../shared/ui";
+import type { ExportEntryRow } from "../types";
 
 interface OperationsExportProps {
   exportContract: string;
@@ -8,7 +9,7 @@ interface OperationsExportProps {
   setExportDateFrom: (value: string) => void;
   exportDateTo: string;
   setExportDateTo: (value: string) => void;
-  exportRows: any[];
+  exportRows: ExportEntryRow[];
   exportLoading: boolean;
   exportError: string;
   exportSearched: boolean;

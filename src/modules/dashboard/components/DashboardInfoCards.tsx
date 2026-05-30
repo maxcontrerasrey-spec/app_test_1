@@ -409,12 +409,12 @@ export function DashboardInfoCards({
       <DashboardNewsWidget />
 
       <article className="dashboard-info-card dashboard-info-card-birthday">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div className="dashboard-birthday-card-header">
           <div className="dashboard-info-head">
             <span className="dashboard-info-kicker">BUK</span>
             <strong>Cumpleaños próximos</strong>
           </div>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "rgba(234, 137, 28, 0.72)" }}>
+          <svg className="dashboard-birthday-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
             <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
             <path d="M2 21h20" />

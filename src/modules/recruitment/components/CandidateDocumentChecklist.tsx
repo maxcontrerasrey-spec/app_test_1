@@ -95,8 +95,8 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
       if (rpcError) throw new Error(`Error en base de datos: ${rpcError}`);
 
       await loadChecklist();
-    } catch (err: any) {
-      setUploadError(err.message || "Error desconocido al subir");
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Error desconocido al subir");
     } finally {
       setIsUploading(false);
       setSelectedDocForUpload(null);

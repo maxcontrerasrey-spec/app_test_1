@@ -1217,6 +1217,155 @@ textarea {
   gap: 0.55rem;
 }
 
+.control-block-top {
+  margin-top: 1rem;
+}
+
+.control-block-top-lg {
+  margin-top: 1.5rem;
+}
+
+.control-inline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.control-inline-button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent, #0052cc);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.control-form-stack {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.control-form-grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.control-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.control-actions-row-top {
+  margin-top: 0.9rem;
+}
+
+.control-compact-button {
+  min-height: 2rem;
+  min-width: 4.5rem;
+  padding: 0 0.5rem;
+  font-size: 0.82rem;
+}
+
+.control-compact-button-primary {
+  color: #fff;
+  background: var(--accent, #0052cc);
+}
+
+.control-inline-error {
+  margin: 0.25rem 0 0;
+  color: var(--error, #e53e3e);
+  font-size: 0.8rem;
+}
+
+.control-readonly-grid-spaced,
+.who-causes-summary-list-spaced {
+  margin-top: 0.75rem;
+}
+
+.control-comment-text {
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: #555;
+}
+
+.control-edit-grid-spaced {
+  margin-top: 1.5rem;
+}
+
+.control-summary-text {
+  margin: 0;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  color: #333;
+  font-style: normal;
+}
+
+.control-summary-text.is-empty {
+  color: #777;
+  font-style: italic;
+}
+
+.control-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.5rem;
+  border: 1px solid #d2d2d4;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.control-history-scroll {
+  max-height: 150px;
+  margin-top: 0.5rem;
+  overflow-y: auto;
+}
+
+.control-history-entry {
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.control-history-entry.has-divider {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.control-history-entry-title {
+  display: block;
+  color: #333;
+}
+
+.control-history-entry-meta {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.control-history-entry-comment {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #555;
+  font-style: italic;
+}
+
+.control-history-empty {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.form-status-spaced {
+  margin-top: 1rem;
+}
+
 .approval-chip {
   display: inline-flex;
   align-items: center;

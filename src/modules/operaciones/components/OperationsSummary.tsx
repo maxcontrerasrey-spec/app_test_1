@@ -1,5 +1,5 @@
 import { DatePickerField } from "../../../shared/ui";
-import type { DashboardSummary } from "../pages/OperacionesDashboard";
+import type { DashboardSummary } from "../types";
 
 interface OperationsSummaryProps {
   dashboardContract: string;

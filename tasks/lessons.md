@@ -266,3 +266,23 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Márgenes y gaps deben ser exactos, no aproximados.** Si el contenedor superior tiene `margin-bottom: 18px` pero el contenedor inferior usa `row-gap: 64px`, la cuadrícula se rompe visualmente. La elegancia de un ERP se logra respetando los tokens de espaciado estrictamente entre todos los módulos.
 - **Los títulos grandes y gruesos deben limitarse a "Heros" o portadas.** En cabeceras de formularios o secciones internas operativas, usar un `h2` enorme con font-weight pesado distrae y rompe la sobriedad. Ajustar `clamp` a proporciones más discretas (`1.75rem`) con pesos medianos (`600`) es crucial para la legibilidad elegante.
+
+## 51. Una auditoría externa no se aplica literal; primero se contrasta con el estado vivo del repo
+
+- **Antes de corregir hallazgos de una auditoría, hay que verificar si el problema sigue existiendo en el código actual.** En este repo, la crítica al dashboard por falta de caché global ya estaba desfasada porque `useDashboard` ya usa TanStack Query; implementar esa recomendación otra vez solo habría creado ruido.
+- **La forma correcta de trabajar con auditorías es separar hallazgos vigentes de hallazgos históricos.** Los primeros se corrigen; los segundos se registran como deuda ya resuelta o evidencia de evolución, no como trabajo nuevo.
+
+## 52. Los errores del navegador en producción deben salir sanitizados
+
+- **`console.error` crudo en Auth o Dashboard filtra demasiada información operacional cuando algo falla en producción.** Los errores deben pasar por un logger compartido que muestre detalle solo en desarrollo y mensajes genéricos en producción.
+- **El patrón recomendado es centralizar el logging antes de tocar más superficies.** Corregir un archivo aislado sirve poco si otros módulos siguen imprimiendo objetos completos de Supabase o stack traces en el navegador.
+
+## 53. Las relaciones de Supabase no deben tiparse por intuición
+
+- **Cuando un `select` anidado de Supabase devuelve una relación, hay que confirmar si el payload viene como arreglo u objeto antes de tiparlo.** En Operaciones, relaciones como `contracts:contract_id (...)` llegan como arreglo, y asumir objeto rompe tipos o fuerza casts defectuosos.
+- **La solución correcta es tipar las filas de query explícitamente y encapsular su transformación en helpers reutilizables.** Eso reduce `any`, baja la complejidad del componente contenedor y evita repetir casts inconsistentes.
+
+## 54. Si un patrón de estilos inline ya se repitió, dejó de ser excepción
+
+- **Los estilos inline solo son tolerables para casos realmente aislados.** Cuando un bloque operativo empieza a repetir grids, acciones, helpers de texto o estados vacíos, hay que extraer clases reutilizables y consolidarlas en el CSS del módulo o en estilos globales del patrón.
+- **El objetivo no es “quitar inline por estética”, sino bajar fricción de mantenimiento.** Componentes como `CandidateDetailSidebar` y tarjetas del dashboard se vuelven más legibles y menos propensos a divergencias visuales cuando la materialidad compartida vive fuera del JSX.

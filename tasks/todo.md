@@ -1,5 +1,22 @@
 # Tareas y Roadmap de Desarrollo
 
+## Saneamiento guiado por auditoría: logs, tipos y encapsulamiento UI
+
+- [x] Contrastar la auditoría externa con el estado real del repo y descartar hallazgos ya resueltos
+- [x] Introducir un logger seguro compartido y reemplazar logs crudos en Auth y Dashboard
+- [x] Extraer tipos y transformadores de Operaciones para reducir `any` en la página principal
+- [x] Reemplazar el bloque más repetitivo de estilos inline en `CandidateDetailSidebar.tsx` por clases CSS reutilizables
+- [x] Validar con `git diff --check`, `npx tsc -b` y `npm run build`
+
+## Resultado de saneamiento guiado por auditoría
+
+- La auditoría externa estaba parcialmente desfasada: el riesgo original de múltiples `useEffect` sin caché global en dashboard ya no aplica como estaba descrito, porque `useDashboard` ya opera sobre TanStack Query.
+- Se agregó `src/shared/lib/logger.ts` y se reemplazaron logs crudos en `AuthContext`, `dashboardService`, `DashboardNewsRow` y `CandidateIntakeForm`, evitando exponer objetos de error completos en producción.
+- Operaciones ahora tiene contratos explícitos en `src/modules/operaciones/types/index.ts` y transformadores reutilizables en `src/modules/operaciones/lib/transformers.ts`, reduciendo `any` en `OperacionesDashboard.tsx`, `OperationsSummary.tsx`, `OperationsExport.tsx` y `OperationsBaseRegister.tsx`.
+- `validateServiceEntryPayload(...)` dejó de aceptar `any` y ahora trabaja sobre `unknown` + narrowing explícito.
+- `CandidateDetailSidebar.tsx` dejó de concentrar el bloque más repetitivo de estilos inline: edición de licencia, entrevista e historial ahora usan clases reutilizables en `src/styles/global.css`.
+- `DashboardInfoCards.tsx` también dejó de usar estilos inline residuales en la tarjeta de cumpleaños; el patrón de layout ahora queda centralizado en `dashboard.css`.
+
 ## Fila superior del Dashboard: tarjetas informativas útiles
 
 - [x] Auditar la integración actual con BUK y formalizar el contrato local de `employees` para próximos cumpleaños

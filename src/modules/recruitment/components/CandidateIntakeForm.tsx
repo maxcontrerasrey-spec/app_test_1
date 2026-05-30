@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { logger } from "../../../shared/lib/logger";
 import {
   addCandidateToRecruitmentCase,
   formatRut,
@@ -16,6 +17,13 @@ type CandidateIntakeFormProps = {
   candidateIntakeCases: RecruitmentCaseListRow[];
   selectedCaseDetail: RecruitmentCaseDetail | null;
   onCandidateAdded: (caseId: string, candidateId: string) => Promise<void>;
+};
+
+type CandidateLookupProfile = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
 };
 
 export function CandidateIntakeForm({
@@ -38,7 +46,7 @@ export function CandidateIntakeForm({
 
   // States for candidate lookup
   const [isSearchingCandidate, setIsSearchingCandidate] = useState(false);
-  const [foundCandidateProfile, setFoundCandidateProfile] = useState<any>(null);
+  const [foundCandidateProfile, setFoundCandidateProfile] = useState<CandidateLookupProfile | null>(null);
   const [lastSearchedRut, setLastSearchedRut] = useState("");
 
   useEffect(() => {
@@ -98,18 +106,18 @@ export function CandidateIntakeForm({
     setIsSearchingCandidate(false);
 
     if (error) {
-      console.error("Lookup error:", error);
+      logger.error("CandidateIntakeForm performCandidateLookup", error);
       setCandidateFormStatus("");
       return;
     }
 
     if (data) {
-      setFoundCandidateProfile(data);
+      setFoundCandidateProfile(data as CandidateLookupProfile);
       setCandidateForm((current) => ({
         ...current,
-        fullName: data.full_name,
-        email: data.email || "",
-        phone: data.phone || ""
+        fullName: (data as CandidateLookupProfile).full_name,
+        email: (data as CandidateLookupProfile).email || "",
+        phone: (data as CandidateLookupProfile).phone || ""
       }));
       setCandidateFormStatus("✓ Candidato registrado en el sistema. Datos autocompletados.");
     } else {

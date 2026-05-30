@@ -17,6 +17,7 @@ import {
   type AppModuleCode,
   type AppRole
 } from "../config/access";
+import { logger } from "../../../shared/lib/logger";
 import { isSupabaseConfigured, supabase } from "../../../shared/lib/supabase";
 
 type ProfileRecord = {
@@ -201,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (error) {
-          console.error("Auth load error:", error);
+          logger.error("AuthContext loadAuthorization", error);
           setProfile(null);
           setAppRoles([]);
           setAccessibleModules([]);
@@ -232,7 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setCapabilities(Array.from(new Set(nextCapabilities)));
       } catch (err) {
-        console.error("AuthContext loadAuthorization failed:", err);
+        logger.error("AuthContext loadAuthorization catch", err);
         setProfile(null);
         setAppRoles([]);
         setAccessibleModules([]);
@@ -247,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Safety timeout: if loading takes more than 10s, force exit loading state
     const safetyTimer = window.setTimeout(() => {
       if (isMounted) {
-        console.warn("AuthContext: safety timeout reached, forcing isLoading=false");
+        logger.warn("AuthContext safety timeout");
         setIsLoading(false);
       }
     }, 10_000);
@@ -259,7 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initialLoadDone = true;
       void loadAuthorization(data.session);
     }).catch((err) => {
-      console.error("AuthContext: getSession failed", err);
+      logger.error("AuthContext getSession", err);
       if (isMounted) {
         setIsLoading(false);
       }

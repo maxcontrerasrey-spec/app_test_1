@@ -98,6 +98,17 @@
     linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(250, 245, 238, 0.9));
 }
 
+.dashboard-birthday-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.dashboard-birthday-card-icon {
+  color: rgba(234, 137, 28, 0.72);
+}
+
 .dashboard-info-head {
   display: grid;
   gap: 4px;

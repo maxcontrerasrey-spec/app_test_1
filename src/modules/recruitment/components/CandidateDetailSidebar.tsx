@@ -282,14 +282,14 @@ export function CandidateDetailSidebar({
             </div>
           </div>
 
-          <div className="approval-chip-row" style={{ marginTop: "1rem" }}>
+          <div className="approval-chip-row control-block-top">
             <span className="approval-chip">
               Owner: {selectedCandidateBoardRow?.owner_name ?? "No asignado"}
             </span>
           </div>
 
-          <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+          <div className="approval-detail-note control-block-top">
+            <div className="control-inline-header">
               <small>Licencia de Conducir</small>
               {!isEditingLicense ? (
                 <button
@@ -300,15 +300,7 @@ export function CandidateDetailSidebar({
                     setIsEditingLicense(true);
                     setLicenseError("");
                   }}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--accent, #0052cc)",
-                    cursor: "pointer",
-                    fontSize: "0.8rem",
-                    padding: 0,
-                    fontWeight: "medium"
-                  }}
+                  className="control-inline-button"
                 >
                   [Editar]
                 </button>
@@ -322,8 +314,8 @@ export function CandidateDetailSidebar({
                   : "No registrada"}
               </strong>
             ) : (
-              <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.5rem" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+              <div className="control-form-stack">
+                <div className="control-form-grid-two">
                   <TextField
                     id="license-class-input"
                     label="Clase de Licencia"
@@ -339,11 +331,10 @@ export function CandidateDetailSidebar({
                     onChange={(e) => setLicenseExpiry(e.target.value)}
                   />
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "end" }}>
+                <div className="control-actions-row">
                   <button
                     type="button"
-                    className="soft-primary-button"
-                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem" }}
+                    className="soft-primary-button control-compact-button"
                     onClick={() => setIsEditingLicense(false)}
                     disabled={isLicenseSaving}
                   >
@@ -351,8 +342,7 @@ export function CandidateDetailSidebar({
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button approval-button-approve"
-                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem", color: "#fff", background: "var(--accent, #0052cc)" }}
+                    className="soft-primary-button approval-button-approve control-compact-button control-compact-button-primary"
                     onClick={handleSaveLicense}
                     disabled={isLicenseSaving}
                   >
@@ -360,14 +350,14 @@ export function CandidateDetailSidebar({
                   </button>
                 </div>
                 {licenseError ? (
-                  <p style={{ margin: "0.25rem 0 0", color: "var(--error, #e53e3e)", fontSize: "0.8rem" }}>{licenseError}</p>
+                  <p className="control-inline-error">{licenseError}</p>
                 ) : null}
               </div>
             )}
           </div>
 
           {selectedCandidateBoardRow?.is_contract_path_blocked ? (
-            <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
+            <div className="approval-detail-note control-block-top">
               <small>Bloqueo operacional</small>
               <strong>
                 El candidato ya sostiene una ruta contractual en{" "}
@@ -380,7 +370,7 @@ export function CandidateDetailSidebar({
           ) : null}
 
           {latestWhoApproval ? (
-            <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
+            <div className="approval-detail-note control-block-top">
               <small>Aprobación Who</small>
               <strong>
                 {latestWhoApproval.status === "approved"
@@ -391,7 +381,7 @@ export function CandidateDetailSidebar({
                       ? "Rechazada"
                       : "Cancelada"}
               </strong>
-              <div className="control-readonly-grid" style={{ marginTop: "0.75rem" }}>
+              <div className="control-readonly-grid control-readonly-grid-spaced">
                 <div>
                   <small>Solicitado por</small>
                   <strong>{latestWhoApproval.requested_by_name ?? "No disponible"}</strong>
@@ -410,7 +400,7 @@ export function CandidateDetailSidebar({
                 </div>
               </div>
               {latestWhoApproval.causes?.length ? (
-                <div className="who-causes-summary-list" style={{ marginTop: "0.75rem" }}>
+                <div className="who-causes-summary-list who-causes-summary-list-spaced">
                   {latestWhoApproval.causes.map((cause, index) => (
                     <div key={`${latestWhoApproval.id}-sidebar-cause-${index}`} className="who-causes-summary-item">
                       <span className="who-causes-summary-title">Causa {index + 1}</span>
@@ -422,14 +412,14 @@ export function CandidateDetailSidebar({
                 </div>
               ) : null}
               {latestWhoApproval.comment ? (
-                <p style={{ marginTop: "0.75rem", fontSize: "0.88rem", color: "#555" }}>
+                <p className="control-comment-text">
                   {latestWhoApproval.comment}
                 </p>
               ) : null}
             </div>
           ) : null}
 
-          <div className="control-edit-grid" style={{ marginTop: "1.5rem" }}>
+          <div className="control-edit-grid control-edit-grid-spaced">
             <SelectField
               id="candidate-next-stage"
               label="Siguiente etapa"
@@ -532,13 +522,13 @@ export function CandidateDetailSidebar({
           </div>
 
           {isWhoPending ? (
-            <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
+            <div className="approval-detail-note control-block-top">
               <small>Control de aprobación Who</small>
               <strong>
                 Este candidato no puede avanzar mientras la aprobación de antecedentes siga pendiente.
               </strong>
               {canApproveWho ? (
-                <div style={{ marginTop: "0.9rem", display: "flex", justifyContent: "flex-end" }}>
+                <div className="control-actions-row control-actions-row-top">
                   <button
                     type="button"
                     className="soft-primary-button approval-button-approve"
@@ -553,8 +543,8 @@ export function CandidateDetailSidebar({
           ) : null}
 
           {/* Resumen de Entrevista / Puntos Clave */}
-          <div className="approval-detail-note" style={{ marginTop: "1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+          <div className="approval-detail-note control-block-top">
+            <div className="control-inline-header">
               <small>Puntos Clave de la Entrevista</small>
               {!isEditingInterview ? (
                 <button
@@ -564,15 +554,7 @@ export function CandidateDetailSidebar({
                     setIsEditingInterview(true);
                     setInterviewError("");
                   }}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--accent, #0052cc)",
-                    cursor: "pointer",
-                    fontSize: "0.8rem",
-                    padding: 0,
-                    fontWeight: "medium"
-                  }}
+                  className="control-inline-button"
                 >
                   [Editar]
                 </button>
@@ -580,34 +562,22 @@ export function CandidateDetailSidebar({
             </div>
 
             {!isEditingInterview ? (
-              <p style={{ margin: 0, fontSize: "0.88rem", whiteSpace: "pre-wrap", color: selectedCandidate.interview_notes ? "#333" : "#777", fontStyle: selectedCandidate.interview_notes ? "normal" : "italic" }}>
+              <p className={`control-summary-text${selectedCandidate.interview_notes ? "" : " is-empty"}`}>
                 {selectedCandidate.interview_notes || "Sin observaciones de entrevista registradas."}
               </p>
             ) : (
-              <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <div className="control-form-stack">
                 <textarea
                   id="interview-notes-input"
-                  style={{
-                    width: "100%",
-                    minHeight: "100px",
-                    padding: "0.5rem",
-                    fontSize: "0.88rem",
-                    border: "1px solid #d2d2d4",
-                    borderRadius: "4px",
-                    fontFamily: "inherit",
-                    resize: "vertical",
-                    outline: "none",
-                    boxSizing: "border-box"
-                  }}
+                  className="control-textarea"
                   placeholder="Escribe aquí los puntos clave, fortalezas y debilidades identificadas en la entrevista..."
                   value={interviewNotesText}
                   onChange={(e) => setInterviewNotesText(e.target.value)}
                 />
-                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "end" }}>
+                <div className="control-actions-row">
                   <button
                     type="button"
-                    className="soft-primary-button"
-                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem" }}
+                    className="soft-primary-button control-compact-button"
                     onClick={() => setIsEditingInterview(false)}
                     disabled={isInterviewSaving}
                   >
@@ -615,8 +585,7 @@ export function CandidateDetailSidebar({
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button approval-button-approve"
-                    style={{ minHeight: "2rem", minWidth: "4.5rem", fontSize: "0.82rem", padding: "0 0.5rem", color: "#fff", background: "var(--accent, #0052cc)" }}
+                    className="soft-primary-button approval-button-approve control-compact-button control-compact-button-primary"
                     onClick={handleSaveInterviewNotes}
                     disabled={isInterviewSaving}
                   >
@@ -624,60 +593,47 @@ export function CandidateDetailSidebar({
                   </button>
                 </div>
                 {interviewError ? (
-                  <p style={{ margin: "0.25rem 0 0", color: "var(--error, #e53e3e)", fontSize: "0.8rem" }}>{interviewError}</p>
+                  <p className="control-inline-error">{interviewError}</p>
                 ) : null}
               </div>
             )}
           </div>
 
-          <div className="approval-detail-note" style={{ marginTop: "1.5rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div className="approval-detail-note control-block-top-lg">
+            <div className="control-inline-header">
               <small>Historial de etapa</small>
               <button
                 type="button"
                 onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--accent, #0052cc)",
-                  cursor: "pointer",
-                  fontSize: "0.8rem",
-                  padding: 0,
-                  fontWeight: "medium"
-                }}
+                className="control-inline-button"
               >
                 {isHistoryExpanded ? "Contraer ▲" : `Ver historial (${selectedCandidate.stage_history.length}) ▼`}
               </button>
             </div>
 
             {isHistoryExpanded ? (
-              <div style={{ marginTop: "0.5rem", maxHeight: "150px", overflowY: "auto" }}>
+              <div className="control-history-scroll">
                 {selectedCandidate.stage_history.length > 0 ? (
                   selectedCandidate.stage_history.map((entry, index) => (
                     <div
                       key={index}
-                      style={{
-                        padding: "0.35rem 0",
-                        borderBottom: index < selectedCandidate.stage_history.length - 1 ? "1px solid #f0f0f0" : "none",
-                        fontSize: "0.85rem",
-                        lineHeight: "1.3"
-                      }}
+                      className={`control-history-entry${index < selectedCandidate.stage_history.length - 1 ? " has-divider" : ""}`}
                     >
-                      <strong style={{ display: "block", color: "#333" }}>
+                      <strong className="control-history-entry-title">
                         {toRecruitmentCandidateStageLabel(entry.to_stage)}
                       </strong>
-                      <span style={{ fontSize: "0.78rem", color: "#666" }}>
+                      <span className="control-history-entry-meta">
                         {formatDateTimeValue(entry.created_at)}
                       </span>
                       {entry.comment ? (
-                        <p style={{ margin: "0.25rem 0 0", fontSize: "0.82rem", color: "#555", fontStyle: "italic" }}>
+                        <p className="control-history-entry-comment">
                           "{entry.comment}"
                         </p>
                       ) : null}
                     </div>
                   ))
                 ) : (
-                  <span style={{ fontSize: "0.85rem", color: "#777" }}>Sin historial adicional</span>
+                  <span className="control-history-empty">Sin historial adicional</span>
                 )}
               </div>
             ) : null}
@@ -685,7 +641,7 @@ export function CandidateDetailSidebar({
 
 
 
-          {decisionMessage ? <p className="form-status" style={{ marginTop: "1rem" }}>{decisionMessage}</p> : null}
+          {decisionMessage ? <p className="form-status form-status-spaced">{decisionMessage}</p> : null}
         </div>
       )}
 

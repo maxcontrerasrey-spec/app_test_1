@@ -45,7 +45,7 @@ function isValidDate(value: string): boolean {
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
 
-export function validateServiceEntryPayload(payload: any): ServiceEntryValidationResult {
+export function validateServiceEntryPayload(payload: unknown): ServiceEntryValidationResult {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     return {
       isValid: false,
@@ -56,16 +56,18 @@ export function validateServiceEntryPayload(payload: any): ServiceEntryValidatio
     };
   }
 
+  const record = payload as ServiceEntryPayload;
+
   const cleaned: CleanedServiceEntryPayload = {
-    contractCode: sanitizeText(payload?.contractCode),
-    shift: sanitizeText(payload?.shift).toLowerCase(),
-    serviceDate: sanitizeText(payload?.serviceDate),
-    serviceExternalKey: Number(payload?.serviceExternalKey),
-    driverName: sanitizeText(payload?.driverName),
-    driverDocument: sanitizeText(payload?.driverDocument),
-    driverArea: sanitizeText(payload?.driverArea),
-    driverShiftStatus: sanitizeText(payload?.driverShiftStatus).toLowerCase(),
-    equipmentCode: sanitizeText(payload?.equipmentCode).toUpperCase(),
+    contractCode: sanitizeText(record.contractCode),
+    shift: sanitizeText(record.shift).toLowerCase(),
+    serviceDate: sanitizeText(record.serviceDate),
+    serviceExternalKey: Number(record.serviceExternalKey),
+    driverName: sanitizeText(record.driverName),
+    driverDocument: sanitizeText(record.driverDocument),
+    driverArea: sanitizeText(record.driverArea),
+    driverShiftStatus: sanitizeText(record.driverShiftStatus).toLowerCase(),
+    equipmentCode: sanitizeText(record.equipmentCode).toUpperCase(),
   };
 
   const errors: Record<string, string> = {};

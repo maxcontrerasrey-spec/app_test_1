@@ -2,14 +2,36 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
+import {
+  buildDashboardSummary,
+  buildDriverDirectory,
+  buildEquipmentDirectory,
+  enumerateDateRange,
+  fetchAllPagedRows,
+  matchesSchedule,
+  normalizeText
+} from "../lib/transformers";
 import { submitServiceEntry } from "../services/operacionesApi";
-import { SERVICE_DATA, type ServiceDataRecord } from "../data/services-data";
+import { SERVICE_DATA } from "../data/services-data";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
-  formatDateValue,
   parseDateValue,
   toTodayDateValue,
 } from "../../../shared/lib/date";
+import type {
+  BaseServiceQueryRow,
+  DashboardEntryRow,
+  DashboardSummary,
+  Driver,
+  EmployeeActiveRow,
+  Equipment,
+  EquipmentDirectoryRow,
+  ExportEntryRow,
+  OperationsServiceRecord,
+  PendingServiceSubmission,
+  ServiceDraft,
+  UserContractQueryRow
+} from "../types";
 
 import { OperationsSummary } from "../components/OperationsSummary";
 import { OperationsBaseRegister } from "../components/OperationsBaseRegister";
@@ -18,54 +40,6 @@ import { OperationsSpecialRegister } from "../components/OperationsSpecialRegist
 import "../styles/operaciones.css";
 
 const PILOT_CONTRACTS = ["CODELCO DRT", "SERVICIO CODELCO DMH"];
-const WEEKDAY_NAMES = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-
-export interface Driver {
-  id: string;
-  fullName: string;
-  documentNumber: string;
-  areaName: string;
-  areaCode: string;
-  isActive: boolean;
-}
-
-export interface Equipment {
-  code: string;
-  plate: string;
-  type: string;
-  currentClient: string;
-  brand?: string;
-  model?: string;
-  year?: string;
-  isActive?: boolean;
-}
-
-export interface ServiceDraft {
-  driverId: string;
-  driverShiftStatus: string;
-  equipmentCode: string;
-}
-
-export interface ContractSummary {
-  contractCode: string;
-  plannedServices: number;
-  expectedServices: number;
-  inTurnWorkers: number;
-  outOfTurnWorkers: number;
-  completionRate: number;
-}
-
-export interface DashboardSummary {
-  byContract: ContractSummary[];
-  totalPlanned: number;
-  totalExpected: number;
-  totalInTurn: number;
-  totalOutOfTurn: number;
-}
-
-export interface OperationsServiceRecord extends ServiceDataRecord {
-  normalizedSchedule: string;
-}
 
 const SAMPLE_DRIVERS: Driver[] = ["Carlos Rojas", "Juan Araya", "Luis Muñoz", "Pedro Cortés", "Marco Silva", "Héctor Díaz"].map((fullName, index) => ({
   id: `sample-${index + 1}`,
@@ -90,218 +64,6 @@ const DASHBOARD_ENTRY_SELECT = "contract_code, service_date, shift, driver_name,
 const EXPORT_ENTRY_SELECT =
   "service_date, shift, contract_code, service_operational_name, service_contractual_name, service_category, service_company, driver_name, driver_document, driver_area, driver_shift_status, equipment_code, equipment_plate, equipment_type, equipment_client, created_at";
 
-function normalizeText(value: string | null | undefined): string {
-  return (value ?? "")
-    .toString()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-function matchesSchedule(normalizedSchedule: string, date: Date | null): boolean {
-  if (!date || !normalizedSchedule) return true;
-  const weekday = date.getDay();
-  if (normalizedSchedule === "lunes a domingo") return true;
-  if (normalizedSchedule === "lunes a jueves") return weekday >= 1 && weekday <= 4;
-  if (normalizedSchedule === "lunes a viernes") return weekday >= 1 && weekday <= 5;
-  return normalizedSchedule.includes(WEEKDAY_NAMES[weekday]);
-}
-
-function enumerateDateRange(startValue: string, endValue: string): string[] {
-  if (!startValue || !endValue || startValue > endValue) return [];
-
-  const startDate = parseDateValue(startValue);
-  const endDate = parseDateValue(endValue);
-
-  if (!startDate || !endDate || startDate > endDate) return [];
-
-  const dates: string[] = [];
-  const cursor = new Date(startDate);
-
-  while (cursor <= endDate && dates.length < 400) {
-    dates.push(formatDateValue(cursor));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return dates;
-}
-
-async function fetchAllPagedRows({ pageSize, buildQuery }: { pageSize: number; buildQuery: (from: number, to: number) => any }) {
-  const rows: any[] = [];
-  let from = 0;
-
-  while (true) {
-    const { data, error } = await buildQuery(from, from + pageSize - 1);
-
-    if (error) {
-      throw error;
-    }
-
-    if (!data?.length) {
-      break;
-    }
-
-    rows.push(...data);
-
-    if (data.length < pageSize) {
-      break;
-    }
-
-    from += pageSize;
-  }
-
-  return rows;
-}
-
-function buildDriverDirectory(rows: any[]): Driver[] {
-  const grouped = new Map<string, Driver>();
-
-  for (const employee of rows ?? []) {
-    if (!employee?.full_name) continue;
-
-    const key = `${employee.document_number || "sin-documento"}::${normalizeText(employee.full_name)}`;
-    const current = grouped.get(key);
-    const candidate: Driver = {
-      id: employee.buk_employee_id,
-      fullName: employee.full_name,
-      documentNumber: employee.document_number ?? "",
-      areaName: employee.area_name ?? "",
-      areaCode: employee.area_code ?? "",
-      isActive: employee.is_active !== false,
-    };
-
-    if (!current) {
-      grouped.set(key, candidate);
-      continue;
-    }
-
-    const currentScore =
-      (current.isActive ? 100 : 0) +
-      (current.areaName ? 10 : 0) +
-      (current.documentNumber ? 5 : 0);
-    const candidateScore =
-      (candidate.isActive ? 100 : 0) +
-      (candidate.areaName ? 10 : 0) +
-      (candidate.documentNumber ? 5 : 0);
-
-    if (candidateScore > currentScore) {
-      grouped.set(key, candidate);
-    }
-  }
-
-  return [...grouped.values()].sort((left, right) => left.fullName.localeCompare(right.fullName, "es"));
-}
-
-function buildEquipmentDirectory(rows: any[]): Equipment[] {
-  const grouped = new Map<string, Equipment>();
-
-  for (const row of rows ?? []) {
-    const code = (row?.equipment_code ?? "").toString().trim();
-    if (!code) continue;
-
-    const candidate: Equipment = {
-      code,
-      plate: (row?.plate ?? "").toString().trim(),
-      type: (row?.equipment_type ?? "").toString().trim(),
-      currentClient: (row?.current_client ?? "").toString().trim(),
-      brand: (row?.brand ?? "").toString().trim(),
-      model: (row?.model ?? "").toString().trim(),
-      year: row?.year ? String(row.year).trim() : "",
-      isActive: row?.is_active !== false,
-    };
-
-    const current = grouped.get(code);
-    if (!current) {
-      grouped.set(code, candidate);
-      continue;
-    }
-
-    const currentScore =
-      (current.isActive ? 100 : 0) +
-      (current.plate ? 10 : 0) +
-      (current.type ? 5 : 0);
-    const candidateScore =
-      (candidate.isActive ? 100 : 0) +
-      (candidate.plate ? 10 : 0) +
-      (candidate.type ? 5 : 0);
-
-    if (candidateScore > currentScore) {
-      grouped.set(code, candidate);
-    }
-  }
-
-  return [...grouped.values()].sort((left, right) => left.code.localeCompare(right.code, "es"));
-}
-
-function buildDashboardSummary({
-  entries,
-  servicesData,
-  contracts,
-  dateRangeValues,
-  selectedContract,
-}: {
-  entries: any[];
-  servicesData: OperationsServiceRecord[];
-  contracts: string[];
-  dateRangeValues: string[];
-  selectedContract: string;
-}): DashboardSummary {
-  const contractScope = (selectedContract ? [selectedContract] : contracts).filter(Boolean);
-
-  const byContract = contractScope.map((contractCode) => {
-    const contractEntries = entries.filter((entry) => entry.contract_code === contractCode);
-    const expectedServices = dateRangeValues.reduce((total, dateValue) => {
-      const date = dateValue ? parseDateValue(dateValue) : null;
-      return (
-        total +
-        servicesData.filter((service) => service.contract === contractCode && matchesSchedule(service.normalizedSchedule, date)).length
-      );
-    }, 0);
-
-    const plannedServices = contractEntries.length;
-    const inTurnWorkers = new Set(
-      contractEntries
-        .filter((entry) => entry.driver_shift_status === "en_turno")
-        .map((entry) => normalizeText(entry.driver_name))
-        .filter(Boolean),
-    ).size;
-    const outOfTurnWorkers = new Set(
-      contractEntries
-        .filter((entry) => entry.driver_shift_status === "fuera_de_turno")
-        .map((entry) => normalizeText(entry.driver_name))
-        .filter(Boolean),
-    ).size;
-
-    return {
-      contractCode,
-      plannedServices,
-      expectedServices,
-      inTurnWorkers,
-      outOfTurnWorkers,
-      completionRate: expectedServices > 0 ? Math.round((plannedServices / expectedServices) * 100) : 0,
-    };
-  });
-
-  return byContract.reduce(
-    (summary: DashboardSummary, contractSummary) => {
-      summary.byContract.push(contractSummary);
-      summary.totalPlanned += contractSummary.plannedServices;
-      summary.totalExpected += contractSummary.expectedServices;
-      summary.totalInTurn += contractSummary.inTurnWorkers;
-      summary.totalOutOfTurn += contractSummary.outOfTurnWorkers;
-      return summary;
-    },
-    {
-      byContract: [],
-      totalPlanned: 0,
-      totalExpected: 0,
-      totalInTurn: 0,
-      totalOutOfTurn: 0,
-    },
-  );
-}
-
 const LOCAL_NORMALIZED_DATA: OperationsServiceRecord[] = SERVICE_DATA.map((item) => ({
   ...item,
   normalizedSchedule: normalizeText(item.schedule),
@@ -321,14 +83,14 @@ export function OperacionesDashboard() {
   const [dashboardContract, setDashboardContract] = useState("");
   const [dashboardDateFrom, setDashboardDateFrom] = useState(todayStr);
   const [dashboardDateTo, setDashboardDateTo] = useState(todayStr);
-  const [dashboardEntries, setDashboardEntries] = useState<any[]>([]);
+  const [dashboardEntries, setDashboardEntries] = useState<DashboardEntryRow[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState("");
 
   const [exportContract, setExportContract] = useState("");
   const [exportDateFrom, setExportDateFrom] = useState(todayStr);
   const [exportDateTo, setExportDateTo] = useState(todayStr);
-  const [exportRows, setExportRows] = useState<any[]>([]);
+  const [exportRows, setExportRows] = useState<ExportEntryRow[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState("");
   const [exportSearched, setExportSearched] = useState(false);
@@ -462,7 +224,7 @@ export function OperacionesDashboard() {
 
     async function fetchAllActiveEmployees() {
       if (!client) return [];
-      return fetchAllPagedRows({
+      return fetchAllPagedRows<EmployeeActiveRow>({
         pageSize: EMPLOYEES_PAGE_SIZE,
         buildQuery: (from, to) =>
           client
@@ -518,14 +280,14 @@ export function OperacionesDashboard() {
           return;
         }
 
-        const normalizedRemoteData: OperationsServiceRecord[] = (rows ?? []).map((row: any) => ({
+        const normalizedRemoteData: OperationsServiceRecord[] = ((rows ?? []) as BaseServiceQueryRow[]).map((row) => ({
           id: Number(row.external_key),
           service: row.operational_name,
           company: row.company_name,
           type: row.service_type,
           contractName: row.contractual_name,
           category: row.contractual_category,
-          contract: row.contracts?.code ?? "",
+          contract: row.contracts?.[0]?.code ?? "",
           schedule: row.schedule_label,
           normalizedSchedule: normalizeText(row.schedule_label),
         }));
@@ -535,18 +297,18 @@ export function OperacionesDashboard() {
         }
 
         setUserContracts(
-          (contractRows ?? [])
-            .map((row: any) => row.contracts)
-            .filter(Boolean)
-            .map((contract: any) => contract.display_name || contract.code),
+          ((contractRows ?? []) as UserContractQueryRow[])
+            .flatMap((row) => row.contracts ?? [])
+            .map((contract) => contract.display_name || contract.code || "")
+            .filter(Boolean),
         );
 
         if ((employeeRows ?? []).length > 0) {
-          setDriversData(buildDriverDirectory(employeeRows));
+          setDriversData(buildDriverDirectory(employeeRows as EmployeeActiveRow[]));
         }
 
         if (!equipmentError && (equipmentRows ?? []).length > 0) {
-          setEquipmentData(buildEquipmentDirectory(equipmentRows));
+          setEquipmentData(buildEquipmentDirectory(equipmentRows as EquipmentDirectoryRow[]));
         }
       } catch {
         if (active) {
@@ -582,7 +344,7 @@ export function OperacionesDashboard() {
       setDashboardError("");
 
       try {
-        const rows = await fetchAllPagedRows({
+        const rows = await fetchAllPagedRows<DashboardEntryRow>({
           pageSize: DASHBOARD_PAGE_SIZE,
           buildQuery: (from, to) => {
             let query = client
@@ -671,7 +433,7 @@ export function OperacionesDashboard() {
     }
 
     const fieldErrorsByService: Record<number, Record<string, string>> = {};
-    const entriesToSubmit: Array<{ serviceId: number; payload: any }> = [];
+    const entriesToSubmit: PendingServiceSubmission[] = [];
 
     for (const service of eligibleServices) {
       const draft = getDraft(service.id);
@@ -798,7 +560,7 @@ export function OperacionesDashboard() {
     setExportSearched(true);
 
     try {
-      const rows = await fetchAllPagedRows({
+        const rows = await fetchAllPagedRows<ExportEntryRow>({
         pageSize: EXPORT_PAGE_SIZE,
         buildQuery: (from, to) => {
           let query = client

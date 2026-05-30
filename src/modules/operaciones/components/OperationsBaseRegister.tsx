@@ -1,7 +1,7 @@
 import { DatePickerField } from "../../../shared/ui";
 import { parseDateValue } from "../../../shared/lib/date";
 import type { ServiceDataRecord } from "../data/services-data";
-import type { Driver, Equipment, ServiceDraft } from "../pages/OperacionesDashboard";
+import type { Driver, Equipment, ServiceDraft } from "../types";
 
 interface OperationsBaseRegisterProps {
   selectedDateValue: string;
