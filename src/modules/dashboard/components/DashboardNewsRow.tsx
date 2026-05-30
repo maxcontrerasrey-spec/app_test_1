@@ -47,6 +47,12 @@ export function DashboardNewsRow() {
             <strong>Cargando...</strong>
           </div>
         </article>
+        <article className="dashboard-news-card is-loading">
+          <div className="dashboard-news-head">
+            <span className="dashboard-info-kicker">Noticias</span>
+            <strong>Cargando...</strong>
+          </div>
+        </article>
       </section>
     );
   }

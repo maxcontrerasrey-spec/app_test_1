@@ -93,16 +93,32 @@ async function fetchAndSync() {
         throw keepError;
       }
 
-      if (keepData && keepData.length > 0) {
+      if (keepData && keepData.length === 20) {
+        // Only attempt cleanup if we actually have 20 rows (meaning there could be extras)
         const keepIds = keepData.map(d => d.id);
-        const { error: deleteError } = await supabase
+        // Use a sub-select approach: delete rows older than the 20th newest
+        const { data: allRows } = await supabase
           .from('global_news')
-          .delete()
-          .eq('categoria', item.key)
-          .not('id', 'in', `(${keepIds.join(',')})`);
-          
-        if (deleteError) {
-          console.error(`Error al limpiar antiguas noticias de ${item.key}:`, deleteError.message);
+          .select('id')
+          .eq('categoria', item.key);
+
+        if (allRows && allRows.length > 20) {
+          const idsToDelete = allRows
+            .filter(row => !keepIds.includes(row.id))
+            .map(row => row.id);
+
+          if (idsToDelete.length > 0) {
+            const { error: deleteError } = await supabase
+              .from('global_news')
+              .delete()
+              .in('id', idsToDelete);
+              
+            if (deleteError) {
+              console.error(`Error al limpiar antiguas noticias de ${item.key}:`, deleteError.message);
+            } else {
+              console.log(`Limpieza: ${idsToDelete.length} noticias antiguas eliminadas de ${item.key}.`);
+            }
+          }
         }
       }
 

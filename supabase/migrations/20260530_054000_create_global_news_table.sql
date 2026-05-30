@@ -3,8 +3,10 @@
 -- PURPOSE: Store GNews items (Minería, Economía) to avoid frontend direct calls
 -- ==============================================================================
 
+begin;
+
 -- 1. Create the table
-CREATE TABLE public.global_news (
+CREATE TABLE IF NOT EXISTS public.global_news (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   categoria text NOT NULL CHECK (categoria IN ('mineria', 'economia')),
   titulo text NOT NULL,
@@ -18,14 +20,14 @@ CREATE TABLE public.global_news (
 );
 
 -- 2. Indexes for efficient querying by category and date
-CREATE INDEX global_news_categoria_idx ON public.global_news(categoria);
-CREATE INDEX global_news_fecha_publicacion_idx ON public.global_news(fecha_publicacion DESC);
+CREATE INDEX IF NOT EXISTS global_news_categoria_idx ON public.global_news(categoria);
+CREATE INDEX IF NOT EXISTS global_news_fecha_publicacion_idx ON public.global_news(fecha_publicacion DESC);
 
 -- 3. Enable RLS
 ALTER TABLE public.global_news ENABLE ROW LEVEL SECURITY;
 
 -- 4. RLS Policies
--- Service Role can do everything (insert/update/delete)
+-- Service Role can do everything (insert/update/delete) — implicit via service_role bypass
 -- Authenticated users can only read
 CREATE POLICY "Allow read access to all authenticated users for global_news"
   ON public.global_news
@@ -41,10 +43,16 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  current_user_id uuid := auth.uid();
   mineria_news jsonb;
   economia_news jsonb;
   last_updated timestamptz;
 BEGIN
+  -- Validate authentication
+  IF current_user_id IS NULL THEN
+    RAISE EXCEPTION 'Usuario no autenticado';
+  END IF;
+
   -- Get top 2 mineria
   SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb)
   INTO mineria_news
@@ -79,3 +87,12 @@ BEGIN
   );
 END;
 $$;
+
+-- 6. Security grants — follow established project pattern (Lesson 6)
+REVOKE ALL ON FUNCTION public.get_home_news() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.get_home_news() TO authenticated;
+
+-- 7. Reload PostgREST schema cache
+NOTIFY pgrst, 'reload schema';
+
+commit;
