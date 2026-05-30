@@ -223,38 +223,102 @@ async function fetchWithRetry(url, options, retries = 3) {
   throw lastError instanceof Error ? lastError : new Error("Buk fetch failed.");
 }
 
+function getEmployeesBaseUrl(env) {
+  return env.BUK_EMPLOYEES_URL ?? "https://busesjm.buk.cl/api/v1/chile/employees";
+}
+
 function getAreasBaseUrl(env) {
-  const url = new URL(env.BUK_EMPLOYEES_URL);
+  const url = new URL(getEmployeesBaseUrl(env));
   url.pathname = url.pathname.replace(/\/employees$/, "/organization/areas");
   url.search = "";
   return url.toString();
 }
 
+async function fetchBukEmployeesPage(env, page = 1) {
+  const authToken = env.BUK_AUTH_TOKEN;
+
+  if (!authToken) {
+    throw new Error("BUK_AUTH_TOKEN is missing.");
+  }
+
+  const url = new URL(getEmployeesBaseUrl(env));
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("page_size", "100");
+
+  const response = await fetchWithRetry(url, {
+    headers: {
+      auth_token: authToken,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  const payload = await response.json();
+  const data = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  const meta = payload?.meta ?? {};
+  const pagination = payload?.pagination ?? {};
+  const nextPageUrl = pagination.next ?? null;
+  const nextPage =
+    nextPageUrl && typeof nextPageUrl === "string"
+      ? Number(new URL(nextPageUrl).searchParams.get("page"))
+      : meta.next_page ?? null;
+  const totalPages = Number(pagination.total_pages ?? meta.total_pages ?? 0);
+
+  return {
+    rawEmployees: data,
+    nextPage: nextPage || null,
+    totalPages,
+    page,
+    rawCount: data.length,
+  };
+}
+
+async function fetchBukAreasPage(env, page = 1) {
+  const authToken = env.BUK_AUTH_TOKEN;
+
+  if (!authToken) {
+    throw new Error("BUK_AUTH_TOKEN is missing.");
+  }
+
+  const url = new URL(env.BUK_AREAS_URL ?? getAreasBaseUrl(env));
+  url.searchParams.set("status", "both");
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("page_size", "100");
+
+  const response = await fetchWithRetry(url, {
+    headers: {
+      auth_token: authToken,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  const payload = await response.json();
+  const data = Array.isArray(payload?.data) ? payload.data : [];
+  const pagination = payload?.pagination ?? {};
+  const nextPageUrl = pagination.next ?? null;
+  const nextPage = nextPageUrl && typeof nextPageUrl === "string" ? Number(new URL(nextPageUrl).searchParams.get("page")) : null;
+  const totalPages = Number(pagination.total_pages ?? 0);
+
+  return {
+    areas: data,
+    nextPage: nextPage || null,
+    totalPages,
+    rawCount: data.length,
+  };
+}
+
 async function fetchBukAreas(env) {
   const areaLookup = new Map();
   let page = 1;
-  let totalPages = 1;
+  let hasMore = true;
 
-  while (page <= totalPages) {
-    const url = new URL(env.BUK_AREAS_URL ?? getAreasBaseUrl(env));
-    url.searchParams.set("status", "both");
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("page_size", "100");
+  while (hasMore) {
+    const result = await fetchBukAreasPage(env, page);
 
-    const response = await fetchWithRetry(url, {
-      headers: {
-        auth_token: env.BUK_AUTH_TOKEN,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    const payload = await response.json();
-    const data = Array.isArray(payload?.data) ? payload.data : [];
-    totalPages = Number(payload?.pagination?.total_pages ?? totalPages ?? 1);
-
-    for (const area of data) {
+    for (const area of result.areas) {
       if (!area?.id) continue;
       const humanName = area.second_level_name ?? area.parent_area?.name ?? area.name ?? null;
       const displayName = humanName && area.name && humanName !== area.name ? `${humanName} (${area.name})` : humanName;
@@ -265,7 +329,18 @@ async function fetchBukAreas(env) {
       });
     }
 
-    page += 1;
+    if (result.nextPage) {
+      page = result.nextPage;
+      hasMore = result.rawCount > 0;
+    } else if (result.totalPages > 0 && page < result.totalPages) {
+      page += 1;
+      hasMore = true;
+    } else if (result.rawCount === 100) {
+      page += 1;
+      hasMore = true;
+    } else {
+      hasMore = false;
+    }
   }
 
   return areaLookup;
@@ -273,33 +348,24 @@ async function fetchBukAreas(env) {
 
 async function main() {
   const env = readEnvFile();
-  const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  const supabaseUrl = env.VITE_SUPABASE_URL ?? env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL ?? null;
+
+  if (!supabaseUrl) {
+    throw new Error("Missing Supabase URL. Expected VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL.");
+  }
+
+  const supabase = createClient(supabaseUrl, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const areaLookup = await fetchBukAreas(env);
 
   let page = 1;
-  let totalPages = 1;
+  let hasMore = true;
   let synced = 0;
 
-  while (page <= totalPages) {
-    const url = new URL(env.BUK_EMPLOYEES_URL);
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("page_size", "100");
-
-    const response = await fetchWithRetry(url, {
-      headers: {
-        auth_token: env.BUK_AUTH_TOKEN,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    const payload = await response.json();
-    const data = Array.isArray(payload?.data) ? payload.data : [];
-    totalPages = Number(payload?.pagination?.total_pages ?? totalPages ?? 1);
-    const employees = data.map((employee) => normalizeBukEmployee(employee, areaLookup)).filter(Boolean);
+  while (hasMore) {
+    const result = await fetchBukEmployeesPage(env, page);
+    const employees = result.rawEmployees.map((employee) => normalizeBukEmployee(employee, areaLookup)).filter(Boolean);
 
     if (employees.length > 0) {
       const { error } = await supabase.from("employees").upsert(employees, {
@@ -313,8 +379,20 @@ async function main() {
       synced += employees.length;
     }
 
-    console.log(`Page ${page}/${totalPages}: synced ${employees.length} employees`);
-    page += 1;
+    console.log(`Page ${page}/${result.totalPages || "?"}: synced ${employees.length} employees`);
+
+    if (result.nextPage) {
+      page = result.nextPage;
+      hasMore = result.rawCount > 0;
+    } else if (result.totalPages > 0 && page < result.totalPages) {
+      page += 1;
+      hasMore = true;
+    } else if (result.rawCount === 100) {
+      page += 1;
+      hasMore = true;
+    } else {
+      hasMore = false;
+    }
   }
 
   const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true });
