@@ -392,8 +392,8 @@ export function DashboardInfoCards({
       </article>
 
       <article className="dashboard-info-card dashboard-info-card-birthday">
-        <div className="dashboard-info-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div className="dashboard-info-head">
             <span className="dashboard-info-kicker">BUK</span>
             <strong>Cumpleaños próximos</strong>
           </div>
