@@ -240,5 +240,5 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 45. Si una tarjeta depende de una zona operativa, primero se resuelve la zona real y luego el clima
 
-- **La zona del usuario no debe inferirse desde texto fijo del dashboard**. Si ya existe una fuente operativa canónica como `employees_active_current`, la tarjeta debe leer la zona desde ahí y recién después decidir si hay un mapeo climático conocido.
+- **La zona del usuario no debe inferirse desde texto fijo del dashboard ni desde un SaaS ajeno al problema**. Si el ERP ya tiene `user_contracts -> contracts`, la tarjeta de clima debe leer la zona desde esa fuente propia y no acoplarse a BUK.
 - **Cuando el catálogo geográfico no está completo, el fallback debe ser explícito**. Es preferible mostrar la zona operativa real y mantener `Santiago` como clima por defecto antes que inventar coordenadas para contratos o áreas no mapeadas.

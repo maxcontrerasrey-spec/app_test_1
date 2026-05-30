@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DashboardBirthdayItem, DashboardOperatorContext } from "../types";
+import type { DashboardBirthdayItem, DashboardWeatherContext } from "../types";
 
 type DashboardInfoCardsProps = {
   pendingTasksCount: number;
   approvalTrackingCount: number;
   birthdays: DashboardBirthdayItem[];
-  operatorContext: DashboardOperatorContext | null;
+  weatherContext: DashboardWeatherContext | null;
 };
 
 type WeatherState = {
@@ -41,10 +41,10 @@ function normalizeText(value: string | null | undefined) {
     .toLowerCase();
 }
 
-function resolveWeatherContext(operatorContext: DashboardOperatorContext | null): WeatherContext {
-  const areaName = normalizeText(operatorContext?.area_name);
-  const contractCode = normalizeText(operatorContext?.contract_code);
-  const source = `${areaName} ${contractCode}`.trim();
+function resolveWeatherContext(weatherContext: DashboardWeatherContext | null): WeatherContext {
+  const zoneName = normalizeText(weatherContext?.zone_name);
+  const contractName = normalizeText(weatherContext?.primary_contract_name);
+  const source = `${zoneName} ${contractName}`.trim();
 
   if (!source) {
     return DEFAULT_WEATHER_CONTEXT;
@@ -53,7 +53,7 @@ function resolveWeatherContext(operatorContext: DashboardOperatorContext | null)
   if (source.includes("drt") || source.includes("radomiro tomic")) {
     return {
       label: "Calama, CL",
-      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "DRT",
+      zoneLabel: weatherContext?.zone_name ?? weatherContext?.primary_contract_name ?? "DRT",
       latitude: -22.4567,
       longitude: -68.9237
     };
@@ -62,7 +62,7 @@ function resolveWeatherContext(operatorContext: DashboardOperatorContext | null)
   if (source.includes("dmh") || source.includes("ministro hales")) {
     return {
       label: "Calama, CL",
-      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "DMH",
+      zoneLabel: weatherContext?.zone_name ?? weatherContext?.primary_contract_name ?? "DMH",
       latitude: -22.4567,
       longitude: -68.9237
     };
@@ -71,7 +71,7 @@ function resolveWeatherContext(operatorContext: DashboardOperatorContext | null)
   if (source.includes("el abra")) {
     return {
       label: "El Abra, CL",
-      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "El Abra",
+      zoneLabel: weatherContext?.zone_name ?? weatherContext?.primary_contract_name ?? "El Abra",
       latitude: -22.6053,
       longitude: -68.8013
     };
@@ -80,15 +80,33 @@ function resolveWeatherContext(operatorContext: DashboardOperatorContext | null)
   if (source.includes("zona ii")) {
     return {
       label: "Calama, CL",
-      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "Zona II",
+      zoneLabel: weatherContext?.zone_name ?? weatherContext?.primary_contract_name ?? "Zona II",
       latitude: -22.4567,
       longitude: -68.9237
     };
   }
 
+  if (source.includes("zona iii") || source.includes("norte costa")) {
+    return {
+      label: "Antofagasta, CL",
+      zoneLabel: weatherContext?.zone_name ?? weatherContext?.primary_contract_name ?? "Zona III",
+      latitude: -23.6509,
+      longitude: -70.3975
+    };
+  }
+
+  if (source.includes("zona i") || source.includes("centro") || source.includes("andina") || source.includes("valparaiso") || source.includes("santiago")) {
+    return {
+      label: "Santiago, CL",
+      zoneLabel: weatherContext?.zone_name ?? weatherContext?.primary_contract_name ?? "Zona I",
+      latitude: -33.4489,
+      longitude: -70.6693
+    };
+  }
+
   return {
     ...DEFAULT_WEATHER_CONTEXT,
-    zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? DEFAULT_WEATHER_CONTEXT.zoneLabel
+    zoneLabel: weatherContext?.zone_name ?? weatherContext?.primary_contract_name ?? DEFAULT_WEATHER_CONTEXT.zoneLabel
   };
 }
 
@@ -126,12 +144,12 @@ export function DashboardInfoCards({
   pendingTasksCount,
   approvalTrackingCount,
   birthdays,
-  operatorContext
+  weatherContext
 }: DashboardInfoCardsProps) {
   const [birthdayIndex, setBirthdayIndex] = useState(0);
-  const weatherContext = useMemo(
-    () => resolveWeatherContext(operatorContext),
-    [operatorContext]
+  const resolvedWeatherContext = useMemo(
+    () => resolveWeatherContext(weatherContext),
+    [weatherContext]
   );
   const [weather, setWeather] = useState<WeatherState>({
     temperature: null,
@@ -146,7 +164,7 @@ export function DashboardInfoCards({
 
     async function loadWeather() {
       try {
-        const response = await fetch(buildWeatherUrl(weatherContext.latitude, weatherContext.longitude), {
+        const response = await fetch(buildWeatherUrl(resolvedWeatherContext.latitude, resolvedWeatherContext.longitude), {
           signal: controller.signal
         });
         const payload = await response.json();
@@ -177,7 +195,7 @@ export function DashboardInfoCards({
     void loadWeather();
 
     return () => controller.abort();
-  }, [weatherContext]);
+  }, [resolvedWeatherContext]);
 
   useEffect(() => {
     if (birthdays.length <= 1) {
@@ -226,7 +244,7 @@ export function DashboardInfoCards({
       <article className="dashboard-info-card dashboard-info-card-weather">
         <div className="dashboard-info-head">
           <span className="dashboard-info-kicker">{formatTodayLabel()}</span>
-          <strong>{weatherContext.label}</strong>
+          <strong>{resolvedWeatherContext.label}</strong>
         </div>
         <div className="dashboard-info-weather-body">
           <div>
@@ -244,7 +262,7 @@ export function DashboardInfoCards({
                 : `Máx ${Math.round(weather.temperatureMax)}° · Mín ${Math.round(weather.temperatureMin)}°`}
             </span>
             <span className="dashboard-info-weather-zone">
-              {weatherContext.zoneLabel}
+              {resolvedWeatherContext.zoneLabel}
             </span>
           </div>
           <span className="dashboard-info-weather-icon" aria-hidden="true">

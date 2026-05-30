@@ -15,7 +15,7 @@ export function DashboardHome() {
     approvalTrackingData,
     activeFoliosData,
     birthdaysData,
-    operatorContext,
+    weatherContext,
     refresh
   } =
     useDashboard();
@@ -43,12 +43,12 @@ export function DashboardHome() {
           pendingTasksCount={tasksData.length}
           approvalTrackingCount={approvalTrackingData.length}
           birthdays={birthdaysData}
-          operatorContext={operatorContext}
+          weatherContext={weatherContext}
         />
         <DashboardGrid
           widgets={widgets}
           isLoading={isLoading}
-          dashboardData={{ tasksData, approvalTrackingData, activeFoliosData, birthdaysData, operatorContext }}
+          dashboardData={{ tasksData, approvalTrackingData, activeFoliosData, birthdaysData, weatherContext }}
           onAction={handleAction}
         />
       </main>

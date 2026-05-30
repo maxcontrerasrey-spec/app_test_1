@@ -41,8 +41,8 @@
 ## Resultado de mejora de tarjeta de clima: extremos térmicos y zona operativa
 
 - La tarjeta de clima ahora muestra temperatura actual, máxima y mínima diaria.
-- La zona operativa del usuario se obtiene desde `employees_active_current` por correo corporativo, sin crear otra fuente maestra paralela.
-- Si la zona operativa coincide con nodos conocidos (`DRT`, `DMH`, `El Abra`, `Zona II`), el clima se resuelve para esa ubicación; si no, el sistema mantiene `Santiago, CL` como fallback explícito y sigue mostrando la zona operativa real como contexto.
+- La zona operativa del usuario ya no depende de BUK; se obtiene desde el propio ERP vía `user_contracts -> contracts.cost_center_name`.
+- Si la zona operativa coincide con nodos conocidos (`Zona I`, `Zona II`, `Zona III`, `DRT`, `DMH`, `El Abra`), el clima se resuelve para esa ubicación; si no, el sistema mantiene `Santiago, CL` como fallback explícito y sigue mostrando la zona operativa real como contexto.
 
 ## Fase 2B.1: capacidades efectivas backend para `Who`
 

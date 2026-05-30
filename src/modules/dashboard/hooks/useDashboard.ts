@@ -6,7 +6,7 @@ import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardBirthdayItem,
-  DashboardOperatorContext,
+  DashboardWeatherContext,
   DashboardTaskItem,
   ResolvedWidget
 } from "../types";
@@ -17,18 +17,18 @@ type DashboardQueryPayload = {
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   birthdaysData: DashboardBirthdayItem[];
-  operatorContext: DashboardOperatorContext | null;
+  weatherContext: DashboardWeatherContext | null;
 };
 
-async function fetchDashboardPayload(userId: string, userEmail: string | null | undefined): Promise<DashboardQueryPayload> {
-  const [availableWidgets, userPrefs, tasks, approvalTracking, activeFolios, birthdays, operatorContext] = await Promise.all([
+async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayload> {
+  const [availableWidgets, userPrefs, tasks, approvalTracking, activeFolios, birthdays, weatherContext] = await Promise.all([
     dashboardService.getAvailableWidgets(),
     dashboardService.getUserPreferences(),
     dashboardService.getDashboardTasks(userId),
     dashboardService.getDashboardApprovalTracking(),
     dashboardService.getDashboardActiveFolios(),
     dashboardService.getUpcomingBirthdays(6),
-    dashboardService.getOperatorContext(userEmail)
+    dashboardService.getWeatherContext(userId)
   ]);
 
   const resolvedWidgets: ResolvedWidget[] = availableWidgets
@@ -49,7 +49,7 @@ async function fetchDashboardPayload(userId: string, userEmail: string | null | 
     approvalTrackingData: approvalTracking,
     activeFoliosData: activeFolios,
     birthdaysData: birthdays,
-    operatorContext
+    weatherContext
   };
 }
 
@@ -67,7 +67,7 @@ export function useDashboard() {
     refetch
   } = useQuery({
     queryKey: dashboardQueryKey,
-    queryFn: () => fetchDashboardPayload(user!.id, user?.email),
+    queryFn: () => fetchDashboardPayload(user!.id),
     enabled: Boolean(user?.id)
   });
 
@@ -119,7 +119,7 @@ export function useDashboard() {
     approvalTrackingData: data?.approvalTrackingData ?? [],
     activeFoliosData: data?.activeFoliosData ?? [],
     birthdaysData: data?.birthdaysData ?? [],
-    operatorContext: data?.operatorContext ?? null,
+    weatherContext: data?.weatherContext ?? null,
     isLoading,
     toggleWidgetVisibility,
     refresh: refetch
