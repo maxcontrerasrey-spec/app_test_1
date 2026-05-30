@@ -3,6 +3,7 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { DashboardGrid } from "../components/DashboardGrid";
 import { DashboardInfoCards } from "../components/DashboardInfoCards";
+import { DashboardNewsRow } from "../components/DashboardNewsRow";
 import { FloatingActionMenu } from "../components/FloatingActionMenu";
 import "../styles/dashboard.css";
 
@@ -43,6 +44,7 @@ export function DashboardHome() {
           approvalTrackingCount={approvalTrackingData.length}
           birthdays={birthdaysData}
         />
+        <DashboardNewsRow />
         <DashboardGrid
           widgets={widgets}
           isLoading={isLoading}

@@ -1,0 +1,28 @@
+name: Sync GNews
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Ejecutar al minuto 0 de cada hora
+  workflow_dispatch: # Permite ejecución manual desde GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Run GNews Sync Script
+        env:
+          GNEWS_API_KEY: ${{ secrets.GNEWS_API_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/sync-gnews.mjs
