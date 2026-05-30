@@ -1,5 +1,21 @@
 # Tareas y Roadmap de Desarrollo
 
+## Fila superior del Dashboard: tarjetas informativas útiles
+
+- [x] Auditar la integración actual con BUK y formalizar el contrato local de `employees` para próximos cumpleaños
+- [x] Extender la sincronización BUK para persistir fecha de nacimiento cuando exista en el payload
+- [x] Crear una RPC `get_upcoming_birthdays(...)` basada en la tabla local `employees`
+- [x] Implementar una fila superior de 4 tarjetas reales en Inicio, sin placeholders
+- [x] Validar build, revisar contraste/responsive y documentar el patrón
+
+## Resultado de fila superior del Dashboard: tarjetas informativas útiles
+
+- El inicio ahora tiene una fila superior compacta con cuatro tarjetas reales: clima operativo, tareas personales pendientes, aprobaciones en curso y cumpleaños próximos.
+- Los cumpleaños no salen directo de BUK desde el navegador; se leen desde la tabla local `employees`, que ahora queda formalizada en el repo y alimentada por la sincronización existente.
+- `scripts/sync-buk-employees.mjs` se extendió para capturar `birth_date` desde el payload de BUK cuando esté disponible, evitando crear una integración paralela solo para cumpleaños.
+- La RPC `get_upcoming_birthdays(...)` centraliza permisos y cálculo de próximos cumpleaños en backend, manteniendo el dashboard liviano y sin lógica duplicada en React.
+- La validación técnica quedó cerrada con `git diff --check`, `npx tsc -b` y `npm run build`; la validación funcional final depende de aplicar la migración y volver a correr la sincronización de BUK en el ambiente real.
+
 ## Fase 2B.1: capacidades efectivas backend para `Who`
 
 - [x] Diseñar una fuente backend de capacidades sin amarrar la UI a roles duros

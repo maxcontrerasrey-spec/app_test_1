@@ -81,6 +81,38 @@ function getStatus(employee) {
   return employee.status ?? employee.employee_status ?? employee.current_state ?? null;
 }
 
+function parseDateValue(value) {
+  if (!value) return null;
+  const raw = value.toString().trim();
+  if (!raw) return null;
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const slashMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (slashMatch) {
+    return `${slashMatch[3]}-${slashMatch[2]}-${slashMatch[1]}`;
+  }
+
+  return null;
+}
+
+function getBirthDate(employee) {
+  return parseDateValue(
+    employee.birthday ??
+      employee.birth_date ??
+      employee.birthdate ??
+      employee.date_of_birth ??
+      employee.personal_information?.birthday ??
+      employee.personal_information?.birth_date ??
+      employee.personal_information?.date_of_birth ??
+      employee.document?.birthday ??
+      null,
+  );
+}
+
 function getContractCode(employee) {
   const currentJob = getCurrentJob(employee);
   return (
@@ -162,6 +194,7 @@ function normalizeBukEmployee(employee, areaLookup = new Map()) {
     area_code: getAreaCode(employee, areaLookup),
     document_number: getDocumentNumber(employee),
     document_type: getDocumentType(employee),
+    birth_date: getBirthDate(employee),
     status,
     is_active: inferActive(status),
     raw_payload: employee,

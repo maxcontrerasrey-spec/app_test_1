@@ -122,8 +122,19 @@ export interface DashboardActiveFolioItem {
   hired_candidates: number;
 }
 
+export interface DashboardBirthdayItem {
+  id: string;
+  buk_employee_id: string;
+  full_name: string;
+  job_title: string | null;
+  birth_date: string;
+  birthday_label: string;
+  days_until: number;
+}
+
 export interface DashboardDataBundle {
   tasksData: DashboardTaskItem[];
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
+  birthdaysData?: DashboardBirthdayItem[];
 }

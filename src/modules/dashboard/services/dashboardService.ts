@@ -2,6 +2,7 @@ import { supabase } from "../../../shared/lib/supabase";
 import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
+  DashboardBirthdayItem,
   DashboardTaskItem,
   DashboardWidget,
   UserWidgetPreference
@@ -94,5 +95,16 @@ export const dashboardService = {
     };
 
     return payload.active_cases ?? [];
+  },
+
+  async getUpcomingBirthdays(limit = 3): Promise<DashboardBirthdayItem[]> {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc("get_upcoming_birthdays", { p_limit: limit });
+    if (error) {
+      console.error("Error fetching upcoming birthdays:", error);
+      return [];
+    }
+
+    return (data ?? []) as DashboardBirthdayItem[];
   }
 };
