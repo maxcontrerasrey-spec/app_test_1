@@ -607,13 +607,17 @@ textarea {
 }
 
 .form-hero h2 {
-  font-size: clamp(2rem, 3vw, 2.85rem);
-  line-height: 1.02;
+  font-size: clamp(1.4rem, 2vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--title);
+  line-height: 1.2;
 }
 
 .form-hero .hero-copy {
-  max-width: 54ch;
-  font-size: 0.95rem;
+  max-width: 65ch;
+  font-size: 0.92rem;
+  color: var(--text-muted);
 }
 
 .hero-panel-meta {
