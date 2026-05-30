@@ -44,6 +44,19 @@
 - La ubicación del clima ya no depende de BUK ni de tablas del ERP; se resuelve desde `navigator.geolocation` en el navegador del usuario.
 - Si el permiso de ubicación está disponible, la tarjeta muestra la ciudad real detectada y consulta el clima para esas coordenadas. Si el permiso falla o no existe, el sistema cae de forma explícita a `Santiago, CL`.
 
+## Refinamiento de tarjeta de clima: geocodificación inversa y feedback visual
+
+- [x] Reemplazar la geocodificación inversa de Open-Meteo por BigDataCloud para asegurar la resolución confiable de ciudad y código de país
+- [x] Exponer la ciudad real detectada en la cabecera del widget, reservando "Santiago, CL" solo para fallbacks de permiso
+- [x] Incorporar temas visuales dinámicos sutiles (cálido, frío, lluvioso) basados en la temperatura y código de condición
+- [x] Ajustar la respiración visual de la tarjeta elevando el contenedor inferior
+
+## Resultado del refinamiento de tarjeta de clima
+
+- El frontend ahora resuelve la ubicación sin errores de API mediante BigDataCloud.
+- El título del widget refleja la ciudad detectada en lugar de quedar estático.
+- La tarjeta cambia sutilmente de temperatura visual (frío, calor, lluvia) manteniendo la paleta de colores del ERP.
+
 ## Fase 2B.1: capacidades efectivas backend para `Who`
 
 - [x] Diseñar una fuente backend de capacidades sin amarrar la UI a roles duros

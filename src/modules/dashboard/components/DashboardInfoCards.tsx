@@ -51,14 +51,89 @@ function toWeatherLabel(code: number | null) {
 }
 
 function toWeatherIcon(code: number | null) {
-  if (code == null) return "○";
-  if ([0].includes(code)) return "☀";
-  if ([1, 2, 3].includes(code)) return "☁";
-  if ([45, 48].includes(code)) return "◌";
-  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "☂";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "❄";
-  if ([95, 96, 99].includes(code)) return "⚡";
-  return "◔";
+  const defaultProps = {
+    width: "30",
+    height: "30",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  if (code == null) return <svg {...defaultProps}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+  
+  if ([0].includes(code)) {
+    return (
+      <svg {...defaultProps}>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2" />
+        <path d="M12 20v2" />
+        <path d="m4.93 4.93 1.41 1.41" />
+        <path d="m17.66 17.66 1.41 1.41" />
+        <path d="M2 12h2" />
+        <path d="M20 12h2" />
+        <path d="m6.34 17.66-1.41 1.41" />
+        <path d="m19.07 4.93-1.41 1.41" />
+      </svg>
+    );
+  }
+  
+  if ([1, 2, 3].includes(code)) {
+    return (
+      <svg {...defaultProps}>
+        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+      </svg>
+    );
+  }
+  
+  if ([45, 48].includes(code)) {
+    return (
+      <svg {...defaultProps}>
+        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+        <path d="M8 22h8" />
+        <path d="M10 22v-4" />
+        <path d="M14 22v-4" />
+      </svg>
+    );
+  }
+  
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
+    return (
+      <svg {...defaultProps}>
+        <path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9" />
+        <path d="M16 14v6" />
+        <path d="M8 14v6" />
+        <path d="M12 16v6" />
+      </svg>
+    );
+  }
+  
+  if ([71, 73, 75, 77, 85, 86].includes(code)) {
+    return (
+      <svg {...defaultProps}>
+        <path d="m8 15 4-4 4 4" />
+        <path d="m16 9-4 4-4-4" />
+        <path d="M12 3v18" />
+      </svg>
+    );
+  }
+  
+  if ([95, 96, 99].includes(code)) {
+    return (
+      <svg {...defaultProps}>
+        <path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9" />
+        <polyline points="13 11 9 17 15 17 11 23" />
+      </svg>
+    );
+  }
+  
+  return (
+    <svg {...defaultProps}>
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+    </svg>
+  );
 }
 
 function formatTodayLabel() {
@@ -317,9 +392,22 @@ export function DashboardInfoCards({
       </article>
 
       <article className="dashboard-info-card dashboard-info-card-birthday">
-        <div className="dashboard-info-head">
-          <span className="dashboard-info-kicker">BUK</span>
-          <strong>Cumpleaños próximos</strong>
+        <div className="dashboard-info-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <span className="dashboard-info-kicker">BUK</span>
+            <strong>Cumpleaños próximos</strong>
+          </div>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "rgba(234, 137, 28, 0.72)" }}>
+            <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+            <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
+            <path d="M2 21h20" />
+            <path d="M7 8v3" />
+            <path d="M12 8v3" />
+            <path d="M17 8v3" />
+            <path d="M7 4h.01" />
+            <path d="M12 4h.01" />
+            <path d="M17 4h.01" />
+          </svg>
         </div>
         {nextBirthday ? (
           <div className="dashboard-birthday-sheet">
