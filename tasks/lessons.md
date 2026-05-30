@@ -250,3 +250,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ## 47. Los cambios ambientales deben ser visuales pero respetando la estética ERP
 
 - **Si un widget reporta condiciones externas (como el clima), su materialidad puede reaccionar para dar contexto inmediato (temas fríos, cálidos, lluviosos)**. Sin embargo, las variaciones deben ser gradientes sutiles y pálidos. En un ERP, ningún módulo informativo debe saturar colores ni perjudicar visualmente el peso de las tareas operativas críticas.
+
+## 48. Toda migración SQL nueva debe seguir el contrato transaccional y de grants del proyecto
+
+- **Las migraciones deben envolverse en `BEGIN`/`COMMIT`**. Si una sentencia intermedia falla (CREATE INDEX, ALTER, etc.), la transacción asegura que la base no quede en estado parcial.
+- **Toda RPC `SECURITY DEFINER` necesita validar `auth.uid() IS NOT NULL`** como primera línea. Sin esto, una exposición accidental de grants permite lectura anónima de datos internos.
+- **Las funciones RPC deben cerrar con `REVOKE ALL FROM public, anon` + `GRANT EXECUTE TO authenticated` + `NOTIFY pgrst, 'reload schema'`**. Omitir cualquiera de estas tres puede dejar la función invisible para PostgREST o accesible para roles no deseados. Este patrón ya estaba documentado en la Lección 6, pero debe verificarse en cada nueva migración sin excepción.
