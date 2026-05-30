@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { DashboardNewsWidget } from "./DashboardNewsRow";
 import type { DashboardBirthdayItem } from "../types";
 
 type DashboardInfoCardsProps = {
@@ -405,8 +404,6 @@ export function DashboardInfoCards({
           </div>
         )}
       </article>
-
-      <DashboardNewsWidget />
 
       <article className="dashboard-info-card dashboard-info-card-birthday">
         <div className="dashboard-birthday-card-header">
