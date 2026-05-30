@@ -20,6 +20,9 @@ export function DashboardNewsWidget() {
   const [data, setData] = useState<NewsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [economiaIndex, setEconomiaIndex] = useState(0);
+  const [mineriaIndex, setMineriaIndex] = useState(0);
+
   useEffect(() => {
     async function loadNews() {
       try {
@@ -38,6 +41,22 @@ export function DashboardNewsWidget() {
     void loadNews();
   }, []);
 
+  // Rotación automática cada 6 segundos
+  useEffect(() => {
+    if (!data) return;
+
+    const timer = window.setInterval(() => {
+      if (data.economia.length > 1) {
+        setEconomiaIndex((current) => (current + 1) % data.economia.length);
+      }
+      if (data.mineria.length > 1) {
+        setMineriaIndex((current) => (current + 1) % data.mineria.length);
+      }
+    }, 6000);
+
+    return () => window.clearInterval(timer);
+  }, [data]);
+
   if (isLoading || !data) {
     return (
       <div className="dashboard-news-widget" aria-label="Noticias globales">
@@ -51,7 +70,37 @@ export function DashboardNewsWidget() {
     );
   }
 
-  const renderCapsule = (categoryLabel: string, items: NewsItem[]) => {
+  const moveIndex = (
+    category: "economia" | "mineria", 
+    direction: "prev" | "next", 
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (category === "economia") {
+      setEconomiaIndex((current) => {
+        if (direction === "prev") {
+          return current === 0 ? data.economia.length - 1 : current - 1;
+        }
+        return (current + 1) % data.economia.length;
+      });
+    } else {
+      setMineriaIndex((current) => {
+        if (direction === "prev") {
+          return current === 0 ? data.mineria.length - 1 : current - 1;
+        }
+        return (current + 1) % data.mineria.length;
+      });
+    }
+  };
+
+  const renderCapsule = (
+    categoryLabel: string, 
+    items: NewsItem[], 
+    currentIndex: number, 
+    categoryKey: "economia" | "mineria"
+  ) => {
     if (items.length === 0) {
       return (
         <article className="dashboard-news-capsule">
@@ -60,8 +109,7 @@ export function DashboardNewsWidget() {
       );
     }
     
-    // Solo mostramos 1 noticia por cápsula (la más reciente)
-    const item = items[0];
+    const item = items[currentIndex];
     const categoryPrefix = categoryLabel.charAt(0);
 
     return (
@@ -92,14 +140,35 @@ export function DashboardNewsWidget() {
           <h4 className="dashboard-news-capsule-title" title={item.titulo}>{item.titulo}</h4>
           <p className="dashboard-news-capsule-summary">{item.resumen}</p>
         </div>
+
+        {items.length > 1 && (
+          <div className="dashboard-news-capsule-controls" aria-label="Navegación de noticias">
+            <button
+              type="button"
+              className="dashboard-news-capsule-control"
+              onClick={(e) => moveIndex(categoryKey, "prev", e)}
+              aria-label="Noticia anterior"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className="dashboard-news-capsule-control"
+              onClick={(e) => moveIndex(categoryKey, "next", e)}
+              aria-label="Siguiente noticia"
+            >
+              ›
+            </button>
+          </div>
+        )}
       </a>
     );
   };
 
   return (
     <div className="dashboard-news-widget" aria-label="Noticias globales">
-      {renderCapsule("Economía", data.economia)}
-      {renderCapsule("Minería", data.mineria)}
+      {renderCapsule("Economía", data.economia, economiaIndex, "economia")}
+      {renderCapsule("Minería", data.mineria, mineriaIndex, "mineria")}
     </div>
   );
 }
