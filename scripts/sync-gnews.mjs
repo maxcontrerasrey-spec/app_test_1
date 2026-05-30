@@ -44,6 +44,9 @@ async function fetchAndSync() {
       url.searchParams.append('max', '10'); // Max articles per category
       url.searchParams.append('apikey', GNEWS_API_KEY);
 
+      // Free tier: max 1 request per second. We pause 2s just to be safe.
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error(`GNews API error: ${response.status} ${response.statusText}`);
