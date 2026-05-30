@@ -2,29 +2,45 @@ name: Sync BUK Employees
 
 on:
   schedule:
-    - cron: '0 4 * * *' # Corre a las 04:00 AM UTC todos los días
+    - cron: '0 23 * * *' # ventana posible para 20:00 Chile en horario de verano
+    - cron: '0 0 * * *' # ventana posible para 20:00 Chile en horario estándar
   workflow_dispatch: # Permite ejecución manual desde GitHub
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Santiago execution window
+        id: local_window
+        run: |
+          LOCAL_HOUR=$(TZ=America/Santiago date +%H)
+          echo "local_hour=$LOCAL_HOUR" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$LOCAL_HOUR" = "20" ]; then
+            echo "run_sync=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_sync=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout Repository
+        if: steps.local_window.outputs.run_sync == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: steps.local_window.outputs.run_sync == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Install Dependencies
+        if: steps.local_window.outputs.run_sync == 'true'
         run: npm install @supabase/supabase-js
 
       - name: Run BUK Sync Script
+        if: steps.local_window.outputs.run_sync == 'true'
         env:
           BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
           BUK_AREAS_URL: ${{ secrets.BUK_AREAS_URL }}
           BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/sync-buk-employees.mjs

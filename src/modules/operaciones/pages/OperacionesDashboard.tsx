@@ -466,9 +466,8 @@ export function OperacionesDashboard() {
         pageSize: EMPLOYEES_PAGE_SIZE,
         buildQuery: (from, to) =>
           client
-            .from("employees")
+            .from("employees_active_current")
             .select("buk_employee_id, full_name, document_number, document_type, area_name, area_code, is_active, status, updated_at")
-            .eq("is_active", true)
             .order("full_name", { ascending: true })
             .range(from, to),
       });

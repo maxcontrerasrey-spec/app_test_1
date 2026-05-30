@@ -51,6 +51,7 @@ export function DashboardInfoCards({
   approvalTrackingCount,
   birthdays
 }: DashboardInfoCardsProps) {
+  const [birthdayIndex, setBirthdayIndex] = useState(0);
   const [weather, setWeather] = useState<WeatherState>({
     temperature: null,
     code: null,
@@ -88,7 +89,20 @@ export function DashboardInfoCards({
     return () => controller.abort();
   }, []);
 
-  const nextBirthday = birthdays[0] ?? null;
+  useEffect(() => {
+    if (birthdays.length <= 1) {
+      setBirthdayIndex(0);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setBirthdayIndex((current) => (current + 1) % birthdays.length);
+    }, 4500);
+
+    return () => window.clearInterval(timer);
+  }, [birthdays]);
+
+  const nextBirthday = birthdays[birthdayIndex] ?? null;
   const birthdaySummary = useMemo(() => {
     if (!nextBirthday) {
       return "Sin cumpleaños próximos";
@@ -104,6 +118,18 @@ export function DashboardInfoCards({
 
     return `${nextBirthday.days_until} días`;
   }, [nextBirthday]);
+
+  function moveBirthday(direction: "prev" | "next") {
+    if (birthdays.length <= 1) return;
+
+    setBirthdayIndex((current) => {
+      if (direction === "prev") {
+        return current === 0 ? birthdays.length - 1 : current - 1;
+      }
+
+      return (current + 1) % birthdays.length;
+    });
+  }
 
   return (
     <section className="dashboard-info-row" aria-label="Tarjetas informativas">
@@ -160,13 +186,50 @@ export function DashboardInfoCards({
         </div>
         {nextBirthday ? (
           <>
-            <span className="dashboard-info-primary">{birthdays.length}</span>
-            <div className="dashboard-birthday-summary">
-              <strong>{nextBirthday.full_name}</strong>
-              <span>{nextBirthday.job_title || "Colaborador activo"}</span>
-              <small>
-                {nextBirthday.birthday_label} · {birthdaySummary}
-              </small>
+            <div className="dashboard-birthday-sheet">
+              <div className="dashboard-birthday-sheet-header">
+                <span className="dashboard-info-primary">{birthdays.length}</span>
+                {birthdays.length > 1 ? (
+                  <div className="dashboard-birthday-controls" aria-label="Navegación de cumpleaños">
+                    <button
+                      type="button"
+                      className="dashboard-birthday-control"
+                      onClick={() => moveBirthday("prev")}
+                      aria-label="Cumpleañero anterior"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      className="dashboard-birthday-control"
+                      onClick={() => moveBirthday("next")}
+                      aria-label="Siguiente cumpleañero"
+                    >
+                      ›
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+              <div className="dashboard-birthday-summary">
+                <strong>{nextBirthday.full_name}</strong>
+                <span>{nextBirthday.job_title || "Colaborador activo"}</span>
+                <small>
+                  {nextBirthday.birthday_label} · {birthdaySummary}
+                </small>
+              </div>
+              {birthdays.length > 1 ? (
+                <div className="dashboard-birthday-pagination" aria-label="Posición del cumpleañero">
+                  {birthdays.map((birthday, index) => (
+                    <button
+                      key={birthday.id}
+                      type="button"
+                      className={`dashboard-birthday-dot${index === birthdayIndex ? " is-active" : ""}`}
+                      onClick={() => setBirthdayIndex(index)}
+                      aria-label={`Ver cumpleañero ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
           </>
         ) : (

@@ -16,6 +16,21 @@
 - La RPC `get_upcoming_birthdays(...)` centraliza permisos y cálculo de próximos cumpleaños en backend, manteniendo el dashboard liviano y sin lógica duplicada en React.
 - La validación técnica quedó cerrada con `git diff --check`, `npx tsc -b` y `npm run build`; la validación funcional final depende de aplicar la migración y volver a correr la sincronización de BUK en el ambiente real.
 
+## Endurecimiento BUK: ficha activa, sincronización diaria y paginación de cumpleaños
+
+- [x] Formalizar una fuente canónica de empleados activos para evitar duplicidad por múltiples fichas
+- [x] Hacer que cumpleaños y otros consumos operativos lean solo la ficha activa vigente
+- [x] Ajustar la automatización BUK para ejecutarse diariamente a las 20:00 hora Chile
+- [x] Convertir la tarjeta de cumpleaños en una tarjeta paginable por persona dentro del mismo módulo
+- [x] Validar build y dejar el contrato registrado en lecciones
+
+## Resultado de endurecimiento BUK: ficha activa, sincronización diaria y paginación de cumpleaños
+
+- Se formalizó `employees_active_current` como fuente canónica de ficha activa, deduplicando por identidad documental y conservando solo la ficha activa más vigente.
+- `get_upcoming_birthdays(...)` y el consumo operativo de conductores en Operaciones ya no leen la tabla cruda `employees`, sino la fuente canónica activa.
+- La automatización de BUK existente en GitHub Actions se ajustó para dispararse diariamente a las 20:00 hora Chile, resolviendo explícitamente la diferencia entre UTC y `America/Santiago`.
+- La tarjeta de cumpleaños dejó de estar fija en una sola persona: ahora rota automáticamente y permite navegar manualmente entre cumpleañeros dentro de la misma tarjeta.
+
 ## Fase 2B.1: capacidades efectivas backend para `Who`
 
 - [x] Diseñar una fuente backend de capacidades sin amarrar la UI a roles duros
