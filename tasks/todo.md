@@ -516,12 +516,27 @@
 
 ## Refinamientos estéticos y UX en el Dashboard
 
-- [x] Implementar límite dinámico de 5 noticias globales en vez de 2 para el carrusel
-- [x] Crear un sistema de carrusel automático para Economía y Minería (12 segundos por rotación)
-- [x] Añadir controles manuales sutiles (hover) para avanzar y retroceder noticias
 - [x] Ajustar estética de la tarjeta de Solicitud de Contrataciones reduciendo tamaño y grosor
 - [x] Uniformar separación vertical (row-gap y margin-bottom a 18px) entre todos los módulos del Dashboard
 - [x] Validar que no hay estilos inline y que CSS es elegante y consistente
+
+## Eliminación completa del módulo de noticias externas
+
+- [x] Eliminar componente frontend `DashboardNewsRow.tsx`
+- [x] Eliminar import y uso de `DashboardNewsWidget` en `DashboardInfoCards.tsx`
+- [x] Eliminar bloque CSS completo de `.dashboard-news-*` en `dashboard.css`
+- [x] Eliminar script de sincronización `scripts/sync-gnews.mjs`
+- [x] Eliminar flujo de GitHub Actions `.github/workflows/sync-gnews.yml`
+- [x] Crear migración SQL para eliminar tabla `global_news`, función `get_home_news()`, policies e índices
+- [x] Validar compilación y build sin vestigios de noticias
+
+## Resultado de eliminación del módulo de noticias externas
+
+- El ERP dejó de depender de una fuente externa (GNews API) para poblar el dashboard, alineándose con la directiva de mostrar solo información operativa interna.
+- Se eliminaron los 3 archivos principales del módulo: componente React, script de sincronización y workflow de GitHub Actions.
+- Se eliminaron ~145 líneas de CSS exclusivas del widget de noticias.
+- La migración `20260530_110500_drop_global_news.sql` elimina la función `get_home_news()`, la policy de lectura, los índices y la tabla `global_news` de Supabase.
+- La fila superior del dashboard queda con 2 tarjetas operativas (Clima y Cumpleaños) y espacio libre para futuras tarjetas internas.
 
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 

@@ -257,10 +257,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Toda RPC `SECURITY DEFINER` necesita validar `auth.uid() IS NOT NULL`** como primera línea. Sin esto, una exposición accidental de grants permite lectura anónima de datos internos.
 - **Las funciones RPC deben cerrar con `REVOKE ALL FROM public, anon` + `GRANT EXECUTE TO authenticated` + `NOTIFY pgrst, 'reload schema'`**. Omitir cualquiera de estas tres puede dejar la función invisible para PostgREST o accesible para roles no deseados. Este patrón ya estaba documentado en la Lección 6, pero debe verificarse en cada nueva migración sin excepción.
 
-## 49. Módulo de noticias: Paginación y control de límites
+## 49. Eliminación de módulos: no dejar vestigios
 
-- **El backend define los límites máximos, el frontend maneja la paginación.** Si la interfaz necesita mostrar más noticias en un carrusel, el límite global de la función Supabase (`get_latest_news`) debe aumentarse (por ejemplo, a 5). El frontend no debe asumir límites que no están definidos en la fuente de datos.
-- **La interacción manual debe pausar o limpiar los timers.** Cuando se implementa un carrusel automático con `setInterval`, incluir botones de navegación manual requiere cuidado: un clic manual cambia la vista, pero el timer sigue corriendo. Mantener el timer de forma declarativa con `useEffect` evita fugas de memoria y saltos dobles.
+- **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
+- **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 
 ## 50. Simetría y consistencia de layout
 
@@ -285,4 +285,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ## 54. Si un patrón de estilos inline ya se repitió, dejó de ser excepción
 
 - **Los estilos inline solo son tolerables para casos realmente aislados.** Cuando un bloque operativo empieza a repetir grids, acciones, helpers de texto o estados vacíos, hay que extraer clases reutilizables y consolidarlas en el CSS del módulo o en estilos globales del patrón.
-- **El objetivo no es “quitar inline por estética”, sino bajar fricción de mantenimiento.** Componentes como `CandidateDetailSidebar` y tarjetas del dashboard se vuelven más legibles y menos propensos a divergencias visuales cuando la materialidad compartida vive fuera del JSX.
+- **El objetivo no es "quitar inline por estética", sino bajar fricción de mantenimiento.** Componentes como `CandidateDetailSidebar` y tarjetas del dashboard se vuelven más legibles y menos propensos a divergencias visuales cuando la materialidad compartida vive fuera del JSX.
+
+## 55. Migraciones destructivas: la firma del DROP debe coincidir con la del CREATE
+
+- **`DROP FUNCTION IF EXISTS` solo funciona si la firma (nombre + tipos de parámetros) coincide exactamente con la función creada.** Si la función original se llama `get_home_news()` sin parámetros y el DROP apunta a `get_latest_news(text, integer)`, la sentencia pasa sin error pero no destruye nada. Siempre verificar la firma real en la migración de creación antes de escribir el DROP.
+- **Una migración de eliminación debe limpiar en orden inverso al de creación:** primero grants y policies, luego funciones, luego índices, y finalmente la tabla. Aunque `CASCADE` manejaría dependencias, ser explícito evita sorpresas y deja trazabilidad legible.
+- **El ERP debe contener solo datos internos operativos.** Fuentes externas (APIs de noticias, feeds RSS, etc.) no pertenecen al dashboard si no alimentan una decisión operativa directa. Si se incorporan y luego se retiran, el proceso de limpieza debe ser completo: frontend, backend, CI/CD y base de datos.
