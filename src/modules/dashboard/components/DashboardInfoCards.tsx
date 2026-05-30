@@ -36,7 +36,7 @@ function buildWeatherUrl(latitude: number, longitude: number) {
 }
 
 function buildReverseGeocodingUrl(latitude: number, longitude: number) {
-  return `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}&longitude=${longitude}&language=es&format=json`;
+  return `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=es`;
 }
 
 function toWeatherLabel(code: number | null) {
@@ -70,23 +70,18 @@ function formatTodayLabel() {
 }
 
 function formatLocationLabel(payload: unknown) {
-  const firstResult = Array.isArray((payload as { results?: unknown[] } | null)?.results)
-    ? ((payload as { results: Array<Record<string, unknown>> }).results[0] ?? null)
-    : null;
-
-  if (!firstResult) {
-    return null;
-  }
+  const data = payload as { city?: string; locality?: string; principalSubdivision?: string; countryCode?: string } | null;
+  if (!data) return null;
 
   const city =
-    (typeof firstResult.city === "string" && firstResult.city.trim()) ||
-    (typeof firstResult.town === "string" && firstResult.town.trim()) ||
-    (typeof firstResult.village === "string" && firstResult.village.trim()) ||
-    (typeof firstResult.locality === "string" && firstResult.locality.trim()) ||
+    (typeof data.city === "string" && data.city.trim()) ||
+    (typeof data.locality === "string" && data.locality.trim()) ||
+    (typeof data.principalSubdivision === "string" && data.principalSubdivision.trim()) ||
     null;
+
   const countryCode =
-    typeof firstResult.country_code === "string" && firstResult.country_code.trim()
-      ? firstResult.country_code.trim().toUpperCase()
+    typeof data.countryCode === "string" && data.countryCode.trim()
+      ? data.countryCode.trim().toUpperCase()
       : "CL";
 
   return city ? `${city}, ${countryCode}` : null;
@@ -254,9 +249,20 @@ export function DashboardInfoCards({
     });
   }
 
+  let weatherThemeClass = "";
+  if (!weather.isLoading && weather.temperature !== null) {
+    if (weather.temperature >= 26) {
+      weatherThemeClass = " is-warm";
+    } else if (weather.temperature <= 12) {
+      weatherThemeClass = " is-cold";
+    } else if (weather.code !== null && [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(weather.code)) {
+      weatherThemeClass = " is-rainy";
+    }
+  }
+
   return (
     <section className="dashboard-info-row" aria-label="Tarjetas informativas">
-      <article className="dashboard-info-card dashboard-info-card-weather">
+      <article className={`dashboard-info-card dashboard-info-card-weather${weatherThemeClass}`}>
         <div className="dashboard-info-head">
           <span className="dashboard-info-kicker">{formatTodayLabel()}</span>
           <strong>{location.label}</strong>

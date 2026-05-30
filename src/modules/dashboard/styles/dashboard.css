@@ -71,6 +71,25 @@
   background:
     radial-gradient(circle at 80% 24%, rgba(190, 221, 255, 0.32), transparent 30%),
     linear-gradient(180deg, rgba(248, 252, 255, 0.96), rgba(240, 247, 255, 0.9));
+  transition: background 0.8s ease;
+}
+
+.dashboard-info-card-weather.is-warm {
+  background:
+    radial-gradient(circle at 80% 24%, rgba(255, 178, 122, 0.18), transparent 35%),
+    linear-gradient(180deg, rgba(255, 251, 248, 0.96), rgba(255, 246, 240, 0.9));
+}
+
+.dashboard-info-card-weather.is-cold {
+  background:
+    radial-gradient(circle at 80% 24%, rgba(130, 190, 255, 0.22), transparent 35%),
+    linear-gradient(180deg, rgba(246, 250, 255, 0.96), rgba(238, 246, 255, 0.9));
+}
+
+.dashboard-info-card-weather.is-rainy {
+  background:
+    radial-gradient(circle at 80% 24%, rgba(150, 165, 185, 0.22), transparent 35%),
+    linear-gradient(180deg, rgba(248, 249, 252, 0.96), rgba(242, 245, 248, 0.9));
 }
 
 .dashboard-info-card-birthday {
@@ -131,6 +150,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-top: auto;
+  margin-bottom: 6px;
 }
 
 .dashboard-info-weather-icon {
