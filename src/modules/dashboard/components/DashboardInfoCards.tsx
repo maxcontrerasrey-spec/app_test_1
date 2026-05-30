@@ -32,7 +32,7 @@ const DEFAULT_LOCATION: LiveLocationState = {
 };
 
 function buildWeatherUrl(latitude: number, longitude: number) {
-  return `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=America%2FSantiago`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&forecast_days=2&timeformat=unixtime&timezone=America%2FSantiago`;
 }
 
 function buildReverseGeocodingUrl(latitude: number, longitude: number) {
@@ -50,14 +50,14 @@ function toWeatherLabel(code: number | null) {
   return "Variable";
 }
 
-function toWeatherIcon(code: number | null) {
+function toWeatherIcon(code: number | null, size: number = 30, strokeWidth: number = 1.8) {
   const defaultProps = {
-    width: "30",
-    height: "30",
+    width: size.toString(),
+    height: size.toString(),
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: "1.8",
+    strokeWidth: strokeWidth.toString(),
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };
@@ -169,12 +169,13 @@ export function DashboardInfoCards({
 }: DashboardInfoCardsProps) {
   const [birthdayIndex, setBirthdayIndex] = useState(0);
   const [location, setLocation] = useState<LiveLocationState>(DEFAULT_LOCATION);
-  const [weather, setWeather] = useState<WeatherState>({
+  const [weather, setWeather] = useState<WeatherState & { hourlyForecast: { time: number; temperature: number; code: number }[] }>({
     temperature: null,
     temperatureMax: null,
     temperatureMin: null,
     code: null,
-    isLoading: true
+    isLoading: true,
+    hourlyForecast: []
   });
 
   useEffect(() => {
@@ -251,6 +252,23 @@ export function DashboardInfoCards({
         const payload = await response.json();
         const current = payload?.current ?? null;
         const daily = payload?.daily ?? null;
+        const hourly = payload?.hourly ?? null;
+
+        const nextHours: { time: number; temperature: number; code: number }[] = [];
+        if (hourly?.time && hourly?.temperature_2m && hourly?.weather_code) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          for (let i = 0; i < hourly.time.length; i++) {
+            const timeSec = hourly.time[i];
+            if (timeSec + 3600 > nowSec) {
+              nextHours.push({
+                time: timeSec,
+                temperature: hourly.temperature_2m[i],
+                code: hourly.weather_code[i]
+              });
+              if (nextHours.length === 5) break;
+            }
+          }
+        }
 
         setWeather({
           temperature:
@@ -260,7 +278,8 @@ export function DashboardInfoCards({
           temperatureMin:
             typeof daily?.temperature_2m_min?.[0] === "number" ? daily.temperature_2m_min[0] : null,
           code: typeof current?.weather_code === "number" ? current.weather_code : null,
-          isLoading: false
+          isLoading: false,
+          hourlyForecast: nextHours
         });
       } catch (_error) {
         setWeather({
@@ -268,7 +287,8 @@ export function DashboardInfoCards({
           temperatureMax: null,
           temperatureMin: null,
           code: null,
-          isLoading: false
+          isLoading: false,
+          hourlyForecast: []
         });
       }
     }
@@ -365,6 +385,24 @@ export function DashboardInfoCards({
             {toWeatherIcon(weather.code)}
           </span>
         </div>
+        
+        {weather.hourlyForecast.length > 0 && (
+          <div className="dashboard-info-weather-hourly">
+            {weather.hourlyForecast.map((h, i) => {
+              const date = new Date(h.time * 1000);
+              const hoursStr = date.getHours().toString().padStart(2, "0") + ":00";
+              return (
+                <div key={i} className="dashboard-weather-hour-item">
+                  <span className="dashboard-weather-hour-time">{hoursStr}</span>
+                  <span className="dashboard-weather-hour-icon">
+                    {toWeatherIcon(h.code, 16, 1.8)}
+                  </span>
+                  <span className="dashboard-weather-hour-temp">{Math.round(h.temperature)}°</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </article>
 
       <article className="dashboard-info-card">
