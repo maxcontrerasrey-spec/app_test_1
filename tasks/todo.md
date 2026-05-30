@@ -31,18 +31,18 @@
 - La automatización de BUK existente en GitHub Actions se ajustó para dispararse diariamente a las 20:00 hora Chile, resolviendo explícitamente la diferencia entre UTC y `America/Santiago`.
 - La tarjeta de cumpleaños dejó de estar fija en una sola persona: ahora rota automáticamente y permite navegar manualmente entre cumpleañeros dentro de la misma tarjeta.
 
-## Mejora de tarjeta de clima: extremos térmicos y zona operativa
+## Mejora de tarjeta de clima: extremos térmicos y ubicación real
 
-- [x] Auditar una fuente real para la zona operativa del usuario sin crear otro maestro paralelo
+- [x] Replantear la fuente de ubicación del clima para que use geolocalización real del navegador y no datos maestros del ERP
 - [x] Extender la tarjeta de clima para mostrar máxima y mínima diaria
-- [x] Mostrar la zona operativa vigente del usuario y usarla como contexto de clima cuando exista mapeo conocido
+- [x] Mostrar la ubicación física detectada en tiempo real y definir fallback explícito si el permiso falla
 - [x] Validar build y registrar el contrato operativo del fallback
 
-## Resultado de mejora de tarjeta de clima: extremos térmicos y zona operativa
+## Resultado de mejora de tarjeta de clima: extremos térmicos y ubicación real
 
 - La tarjeta de clima ahora muestra temperatura actual, máxima y mínima diaria.
-- La zona operativa del usuario ya no depende de BUK; se obtiene desde el propio ERP vía `user_contracts -> contracts.cost_center_name`.
-- Si la zona operativa coincide con nodos conocidos (`Zona I`, `Zona II`, `Zona III`, `DRT`, `DMH`, `El Abra`), el clima se resuelve para esa ubicación; si no, el sistema mantiene `Santiago, CL` como fallback explícito y sigue mostrando la zona operativa real como contexto.
+- La ubicación del clima ya no depende de BUK ni de tablas del ERP; se resuelve desde `navigator.geolocation` en el navegador del usuario.
+- Si el permiso de ubicación está disponible, la tarjeta muestra la ciudad real detectada y consulta el clima para esas coordenadas. Si el permiso falla o no existe, el sistema cae de forma explícita a `Santiago, CL`.
 
 ## Fase 2B.1: capacidades efectivas backend para `Who`
 

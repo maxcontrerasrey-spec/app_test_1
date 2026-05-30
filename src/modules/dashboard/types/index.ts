@@ -132,17 +132,9 @@ export interface DashboardBirthdayItem {
   days_until: number;
 }
 
-export interface DashboardWeatherContext {
-  zone_name: string | null;
-  primary_contract_code: string | null;
-  primary_contract_name: string | null;
-  contract_count: number;
-}
-
 export interface DashboardDataBundle {
   tasksData: DashboardTaskItem[];
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   birthdaysData?: DashboardBirthdayItem[];
-  weatherContext?: DashboardWeatherContext | null;
 }

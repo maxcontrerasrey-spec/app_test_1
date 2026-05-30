@@ -238,7 +238,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **GitHub Actions agenda en UTC, no en `America/Santiago`**. Si el negocio pide una corrida diaria a las 20:00 hora Chile, no basta con fijar un único cron UTC porque se desalineará con horario de verano/invierno.
 - **El patrón seguro es abrir las dos ventanas UTC posibles y validar la hora local dentro del job**. Así la sincronización se ejecuta una sola vez cuando en Chile realmente sean las 20:00.
 
-## 45. Si una tarjeta depende de una zona operativa, primero se resuelve la zona real y luego el clima
+## 45. Ubicación física real y zona operativa son conceptos distintos
 
-- **La zona del usuario no debe inferirse desde texto fijo del dashboard ni desde un SaaS ajeno al problema**. Si el ERP ya tiene `user_contracts -> contracts`, la tarjeta de clima debe leer la zona desde esa fuente propia y no acoplarse a BUK.
-- **Cuando el catálogo geográfico no está completo, el fallback debe ser explícito**. Es preferible mostrar la zona operativa real y mantener `Santiago` como clima por defecto antes que inventar coordenadas para contratos o áreas no mapeadas.
+- **Si el usuario pide ubicación real en tiempo real, la fuente correcta es el navegador y no una base de datos**. Ni BUK ni tablas del ERP representan presencia física actual; solo describen relaciones administrativas u operativas.
+- **La tarjeta de clima debe resolver coordenadas con `navigator.geolocation` y dejar un fallback explícito si el permiso falla**. Cualquier uso de maestros internos para “adivinar” la ubicación física repite el error de modelar presencia con datos administrativos.

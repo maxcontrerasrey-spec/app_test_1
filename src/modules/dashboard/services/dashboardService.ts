@@ -3,7 +3,6 @@ import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardBirthdayItem,
-  DashboardWeatherContext,
   DashboardTaskItem,
   DashboardWidget,
   UserWidgetPreference
@@ -107,56 +106,5 @@ export const dashboardService = {
     }
 
     return (data ?? []) as DashboardBirthdayItem[];
-  },
-
-  async getWeatherContext(userId: string | null | undefined): Promise<DashboardWeatherContext | null> {
-    if (!supabase || !userId) return null;
-
-    const { data, error } = await supabase
-      .from("user_contracts")
-      .select("contracts:contract_id (code, contract_name, cost_center_name, is_active)")
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("Error fetching weather context:", error);
-      return null;
-    }
-
-    const rows = Array.isArray(data) ? data : [];
-    const contracts = rows
-      .map((row) => row.contracts as {
-        code?: string | null;
-        contract_name?: string | null;
-        cost_center_name?: string | null;
-        is_active?: boolean | null;
-      } | null)
-      .filter((contract): contract is {
-        code?: string | null;
-        contract_name?: string | null;
-        cost_center_name?: string | null;
-        is_active?: boolean | null;
-      } => Boolean(contract && contract.is_active !== false));
-
-    if (contracts.length === 0) {
-      return null;
-    }
-
-    const zoneCounts = new Map<string, number>();
-    for (const contract of contracts) {
-      const zone = contract.cost_center_name?.trim();
-      if (!zone) continue;
-      zoneCounts.set(zone, (zoneCounts.get(zone) ?? 0) + 1);
-    }
-
-    const primaryZone =
-      [...zoneCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? null;
-    const primaryContract = contracts[0] ?? null;
-
-    return {
-      zone_name: primaryZone,
-      primary_contract_code: primaryContract?.code ?? null,
-      primary_contract_name: primaryContract?.contract_name ?? null,
-      contract_count: contracts.length
-    };
   }
 };

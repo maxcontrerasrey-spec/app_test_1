@@ -6,7 +6,6 @@ import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardBirthdayItem,
-  DashboardWeatherContext,
   DashboardTaskItem,
   ResolvedWidget
 } from "../types";
@@ -17,18 +16,16 @@ type DashboardQueryPayload = {
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   birthdaysData: DashboardBirthdayItem[];
-  weatherContext: DashboardWeatherContext | null;
 };
 
 async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayload> {
-  const [availableWidgets, userPrefs, tasks, approvalTracking, activeFolios, birthdays, weatherContext] = await Promise.all([
+  const [availableWidgets, userPrefs, tasks, approvalTracking, activeFolios, birthdays] = await Promise.all([
     dashboardService.getAvailableWidgets(),
     dashboardService.getUserPreferences(),
     dashboardService.getDashboardTasks(userId),
     dashboardService.getDashboardApprovalTracking(),
     dashboardService.getDashboardActiveFolios(),
-    dashboardService.getUpcomingBirthdays(6),
-    dashboardService.getWeatherContext(userId)
+    dashboardService.getUpcomingBirthdays(6)
   ]);
 
   const resolvedWidgets: ResolvedWidget[] = availableWidgets
@@ -48,8 +45,7 @@ async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayl
     tasksData: tasks,
     approvalTrackingData: approvalTracking,
     activeFoliosData: activeFolios,
-    birthdaysData: birthdays,
-    weatherContext
+    birthdaysData: birthdays
   };
 }
 
@@ -119,7 +115,6 @@ export function useDashboard() {
     approvalTrackingData: data?.approvalTrackingData ?? [],
     activeFoliosData: data?.activeFoliosData ?? [],
     birthdaysData: data?.birthdaysData ?? [],
-    weatherContext: data?.weatherContext ?? null,
     isLoading,
     toggleWidgetVisibility,
     refresh: refetch
