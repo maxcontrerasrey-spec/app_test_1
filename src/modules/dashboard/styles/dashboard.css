@@ -33,7 +33,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
 
 .dashboard-info-card {
@@ -313,7 +313,7 @@
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: 64px;
+  row-gap: 18px;
 }
 
 .dashboard-zone {
