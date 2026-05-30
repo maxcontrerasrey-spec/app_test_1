@@ -1,5 +1,22 @@
 # Tareas y Roadmap de Desarrollo
 
+> **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
+
+## Revisión y consolidación de documentación post-auditoría
+
+- [x] Verificar que `todo.md` refleje todos los cambios aplicados por la auditoría de otro modelo
+- [x] Verificar que `lessons.md` tenga las lecciones correctas sin duplicados ni corrupción
+- [x] Confirmar que los archivos creados por la auditoría (`logger.ts`, `transformers.ts`, `types/index.ts`) existen en el repo
+- [x] Registrar la Lección 56 como regla fundacional permanente: revisar ambos documentos antes de cualquier acción
+- [x] Validar compilación y build
+
+## Resultado de revisión y consolidación post-auditoría
+
+- Los cambios aplicados por el otro modelo son coherentes con el estado del repo: `logger.ts` existe en `src/shared/lib/`, los tipos de Operaciones están en `src/modules/operaciones/types/index.ts` y los transformadores en `src/modules/operaciones/lib/transformers.ts`.
+- `lessons.md` quedó limpio: 56 lecciones numeradas sin duplicados, sin líneas corruptas y sin referencias rotas.
+- `todo.md` tiene una referencia histórica a `DashboardNewsRow` en el resultado de saneamiento (línea 14); es válida como registro de lo que se hizo en ese momento, aunque el archivo ya no exista.
+- La Lección 56 queda como regla fundacional: todo agente, modelo o sesión debe leer ambos documentos antes de tocar cualquier parte del repositorio.
+
 ## Saneamiento guiado por auditoría: logs, tipos y encapsulamiento UI
 
 - [x] Contrastar la auditoría externa con el estado real del repo y descartar hallazgos ya resueltos
