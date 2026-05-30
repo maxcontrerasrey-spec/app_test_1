@@ -31,6 +31,19 @@
 - La automatización de BUK existente en GitHub Actions se ajustó para dispararse diariamente a las 20:00 hora Chile, resolviendo explícitamente la diferencia entre UTC y `America/Santiago`.
 - La tarjeta de cumpleaños dejó de estar fija en una sola persona: ahora rota automáticamente y permite navegar manualmente entre cumpleañeros dentro de la misma tarjeta.
 
+## Mejora de tarjeta de clima: extremos térmicos y zona operativa
+
+- [x] Auditar una fuente real para la zona operativa del usuario sin crear otro maestro paralelo
+- [x] Extender la tarjeta de clima para mostrar máxima y mínima diaria
+- [x] Mostrar la zona operativa vigente del usuario y usarla como contexto de clima cuando exista mapeo conocido
+- [x] Validar build y registrar el contrato operativo del fallback
+
+## Resultado de mejora de tarjeta de clima: extremos térmicos y zona operativa
+
+- La tarjeta de clima ahora muestra temperatura actual, máxima y mínima diaria.
+- La zona operativa del usuario se obtiene desde `employees_active_current` por correo corporativo, sin crear otra fuente maestra paralela.
+- Si la zona operativa coincide con nodos conocidos (`DRT`, `DMH`, `El Abra`, `Zona II`), el clima se resuelve para esa ubicación; si no, el sistema mantiene `Santiago, CL` como fallback explícito y sigue mostrando la zona operativa real como contexto.
+
 ## Fase 2B.1: capacidades efectivas backend para `Who`
 
 - [x] Diseñar una fuente backend de capacidades sin amarrar la UI a roles duros

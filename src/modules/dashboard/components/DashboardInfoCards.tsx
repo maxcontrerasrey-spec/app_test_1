@@ -1,20 +1,96 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DashboardBirthdayItem } from "../types";
+import type { DashboardBirthdayItem, DashboardOperatorContext } from "../types";
 
 type DashboardInfoCardsProps = {
   pendingTasksCount: number;
   approvalTrackingCount: number;
   birthdays: DashboardBirthdayItem[];
+  operatorContext: DashboardOperatorContext | null;
 };
 
 type WeatherState = {
   temperature: number | null;
+  temperatureMax: number | null;
+  temperatureMin: number | null;
   code: number | null;
   isLoading: boolean;
 };
 
-const WEATHER_URL =
-  "https://api.open-meteo.com/v1/forecast?latitude=-33.4489&longitude=-70.6693&current=temperature_2m,weather_code&timezone=America%2FSantiago";
+type WeatherContext = {
+  label: string;
+  zoneLabel: string;
+  latitude: number;
+  longitude: number;
+};
+
+const DEFAULT_WEATHER_CONTEXT: WeatherContext = {
+  label: "Santiago, CL",
+  zoneLabel: "Zona no identificada",
+  latitude: -33.4489,
+  longitude: -70.6693
+};
+
+function buildWeatherUrl(latitude: number, longitude: number) {
+  return `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=America%2FSantiago`;
+}
+
+function normalizeText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function resolveWeatherContext(operatorContext: DashboardOperatorContext | null): WeatherContext {
+  const areaName = normalizeText(operatorContext?.area_name);
+  const contractCode = normalizeText(operatorContext?.contract_code);
+  const source = `${areaName} ${contractCode}`.trim();
+
+  if (!source) {
+    return DEFAULT_WEATHER_CONTEXT;
+  }
+
+  if (source.includes("drt") || source.includes("radomiro tomic")) {
+    return {
+      label: "Calama, CL",
+      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "DRT",
+      latitude: -22.4567,
+      longitude: -68.9237
+    };
+  }
+
+  if (source.includes("dmh") || source.includes("ministro hales")) {
+    return {
+      label: "Calama, CL",
+      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "DMH",
+      latitude: -22.4567,
+      longitude: -68.9237
+    };
+  }
+
+  if (source.includes("el abra")) {
+    return {
+      label: "El Abra, CL",
+      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "El Abra",
+      latitude: -22.6053,
+      longitude: -68.8013
+    };
+  }
+
+  if (source.includes("zona ii")) {
+    return {
+      label: "Calama, CL",
+      zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? "Zona II",
+      latitude: -22.4567,
+      longitude: -68.9237
+    };
+  }
+
+  return {
+    ...DEFAULT_WEATHER_CONTEXT,
+    zoneLabel: operatorContext?.area_name ?? operatorContext?.contract_code ?? DEFAULT_WEATHER_CONTEXT.zoneLabel
+  };
+}
 
 function toWeatherLabel(code: number | null) {
   if (code == null) return "Sin dato";
@@ -49,11 +125,18 @@ function formatTodayLabel() {
 export function DashboardInfoCards({
   pendingTasksCount,
   approvalTrackingCount,
-  birthdays
+  birthdays,
+  operatorContext
 }: DashboardInfoCardsProps) {
   const [birthdayIndex, setBirthdayIndex] = useState(0);
+  const weatherContext = useMemo(
+    () => resolveWeatherContext(operatorContext),
+    [operatorContext]
+  );
   const [weather, setWeather] = useState<WeatherState>({
     temperature: null,
+    temperatureMax: null,
+    temperatureMin: null,
     code: null,
     isLoading: true
   });
@@ -63,21 +146,28 @@ export function DashboardInfoCards({
 
     async function loadWeather() {
       try {
-        const response = await fetch(WEATHER_URL, {
+        const response = await fetch(buildWeatherUrl(weatherContext.latitude, weatherContext.longitude), {
           signal: controller.signal
         });
         const payload = await response.json();
         const current = payload?.current ?? null;
+        const daily = payload?.daily ?? null;
 
         setWeather({
           temperature:
             typeof current?.temperature_2m === "number" ? current.temperature_2m : null,
+          temperatureMax:
+            typeof daily?.temperature_2m_max?.[0] === "number" ? daily.temperature_2m_max[0] : null,
+          temperatureMin:
+            typeof daily?.temperature_2m_min?.[0] === "number" ? daily.temperature_2m_min[0] : null,
           code: typeof current?.weather_code === "number" ? current.weather_code : null,
           isLoading: false
         });
       } catch (_error) {
         setWeather({
           temperature: null,
+          temperatureMax: null,
+          temperatureMin: null,
           code: null,
           isLoading: false
         });
@@ -87,7 +177,7 @@ export function DashboardInfoCards({
     void loadWeather();
 
     return () => controller.abort();
-  }, []);
+  }, [weatherContext]);
 
   useEffect(() => {
     if (birthdays.length <= 1) {
@@ -136,7 +226,7 @@ export function DashboardInfoCards({
       <article className="dashboard-info-card dashboard-info-card-weather">
         <div className="dashboard-info-head">
           <span className="dashboard-info-kicker">{formatTodayLabel()}</span>
-          <strong>Santiago, CL</strong>
+          <strong>{weatherContext.label}</strong>
         </div>
         <div className="dashboard-info-weather-body">
           <div>
@@ -147,6 +237,14 @@ export function DashboardInfoCards({
             </span>
             <span className="dashboard-info-secondary">
               {weather.isLoading ? "Cargando clima..." : toWeatherLabel(weather.code)}
+            </span>
+            <span className="dashboard-info-weather-range">
+              {weather.isLoading || weather.temperatureMax == null || weather.temperatureMin == null
+                ? "Máx --° · Mín --°"
+                : `Máx ${Math.round(weather.temperatureMax)}° · Mín ${Math.round(weather.temperatureMin)}°`}
+            </span>
+            <span className="dashboard-info-weather-zone">
+              {weatherContext.zoneLabel}
             </span>
           </div>
           <span className="dashboard-info-weather-icon" aria-hidden="true">

@@ -6,6 +6,7 @@ import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardBirthdayItem,
+  DashboardOperatorContext,
   DashboardTaskItem,
   ResolvedWidget
 } from "../types";
@@ -16,16 +17,18 @@ type DashboardQueryPayload = {
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   birthdaysData: DashboardBirthdayItem[];
+  operatorContext: DashboardOperatorContext | null;
 };
 
-async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayload> {
-  const [availableWidgets, userPrefs, tasks, approvalTracking, activeFolios, birthdays] = await Promise.all([
+async function fetchDashboardPayload(userId: string, userEmail: string | null | undefined): Promise<DashboardQueryPayload> {
+  const [availableWidgets, userPrefs, tasks, approvalTracking, activeFolios, birthdays, operatorContext] = await Promise.all([
     dashboardService.getAvailableWidgets(),
     dashboardService.getUserPreferences(),
     dashboardService.getDashboardTasks(userId),
     dashboardService.getDashboardApprovalTracking(),
     dashboardService.getDashboardActiveFolios(),
-    dashboardService.getUpcomingBirthdays(3)
+    dashboardService.getUpcomingBirthdays(6),
+    dashboardService.getOperatorContext(userEmail)
   ]);
 
   const resolvedWidgets: ResolvedWidget[] = availableWidgets
@@ -45,7 +48,8 @@ async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayl
     tasksData: tasks,
     approvalTrackingData: approvalTracking,
     activeFoliosData: activeFolios,
-    birthdaysData: birthdays
+    birthdaysData: birthdays,
+    operatorContext
   };
 }
 
@@ -63,7 +67,7 @@ export function useDashboard() {
     refetch
   } = useQuery({
     queryKey: dashboardQueryKey,
-    queryFn: () => fetchDashboardPayload(user!.id),
+    queryFn: () => fetchDashboardPayload(user!.id, user?.email),
     enabled: Boolean(user?.id)
   });
 
@@ -115,6 +119,7 @@ export function useDashboard() {
     approvalTrackingData: data?.approvalTrackingData ?? [],
     activeFoliosData: data?.activeFoliosData ?? [],
     birthdaysData: data?.birthdaysData ?? [],
+    operatorContext: data?.operatorContext ?? null,
     isLoading,
     toggleWidgetVisibility,
     refresh: refetch

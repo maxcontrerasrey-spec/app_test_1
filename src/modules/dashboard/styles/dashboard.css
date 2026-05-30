@@ -111,6 +111,20 @@
   line-height: 1.4;
 }
 
+.dashboard-info-weather-range,
+.dashboard-info-weather-zone {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  color: rgba(27, 37, 59, 0.72);
+}
+
+.dashboard-info-weather-zone {
+  font-weight: 600;
+  color: rgba(31, 56, 106, 0.78);
+}
+
 .dashboard-info-weather-body {
   display: flex;
   align-items: flex-end;

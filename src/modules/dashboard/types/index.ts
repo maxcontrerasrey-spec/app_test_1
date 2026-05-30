@@ -132,9 +132,17 @@ export interface DashboardBirthdayItem {
   days_until: number;
 }
 
+export interface DashboardOperatorContext {
+  full_name: string;
+  email: string | null;
+  area_name: string | null;
+  contract_code: string | null;
+}
+
 export interface DashboardDataBundle {
   tasksData: DashboardTaskItem[];
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   birthdaysData?: DashboardBirthdayItem[];
+  operatorContext?: DashboardOperatorContext | null;
 }

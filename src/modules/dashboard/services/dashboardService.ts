@@ -3,6 +3,7 @@ import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardBirthdayItem,
+  DashboardOperatorContext,
   DashboardTaskItem,
   DashboardWidget,
   UserWidgetPreference
@@ -106,5 +107,23 @@ export const dashboardService = {
     }
 
     return (data ?? []) as DashboardBirthdayItem[];
+  },
+
+  async getOperatorContext(userEmail: string | null | undefined): Promise<DashboardOperatorContext | null> {
+    if (!supabase || !userEmail?.trim()) return null;
+
+    const { data, error } = await supabase
+      .from("employees_active_current")
+      .select("full_name, email, area_name, contract_code")
+      .ilike("email", userEmail.trim())
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching operator context:", error);
+      return null;
+    }
+
+    return (data ?? null) as DashboardOperatorContext | null;
   }
 };
