@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { DashboardNewsWidget } from "./DashboardNewsRow";
 import type { DashboardBirthdayItem } from "../types";
 
 type DashboardInfoCardsProps = {
@@ -405,29 +406,7 @@ export function DashboardInfoCards({
         )}
       </article>
 
-      <article className="dashboard-info-card">
-        <div className="dashboard-info-head">
-          <span className="dashboard-info-kicker">Trabajo personal</span>
-          <strong>Tareas pendientes</strong>
-        </div>
-        <span className="dashboard-info-primary">{pendingTasksCount}</span>
-        <span className="dashboard-info-secondary">
-          {pendingTasksCount === 1 ? "1 tarea por resolver" : `${pendingTasksCount} tareas por resolver`}
-        </span>
-      </article>
-
-      <article className="dashboard-info-card">
-        <div className="dashboard-info-head">
-          <span className="dashboard-info-kicker">Visión global</span>
-          <strong>Aprobaciones en curso</strong>
-        </div>
-        <span className="dashboard-info-primary">{approvalTrackingCount}</span>
-        <span className="dashboard-info-secondary">
-          {approvalTrackingCount === 1
-            ? "1 flujo esperando resolución"
-            : `${approvalTrackingCount} flujos activos`}
-        </span>
-      </article>
+      <DashboardNewsWidget />
 
       <article className="dashboard-info-card dashboard-info-card-birthday">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>

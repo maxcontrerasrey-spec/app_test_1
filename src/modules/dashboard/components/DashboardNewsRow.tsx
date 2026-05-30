@@ -16,7 +16,7 @@ type NewsData = {
   ultima_actualizacion: string | null;
 };
 
-export function DashboardNewsRow() {
+export function DashboardNewsWidget() {
   const [data, setData] = useState<NewsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,84 +40,66 @@ export function DashboardNewsRow() {
 
   if (isLoading || !data) {
     return (
-      <section className="dashboard-news-row" aria-label="Noticias globales">
-        <article className="dashboard-news-card is-loading">
-          <div className="dashboard-news-head">
-            <span className="dashboard-info-kicker">Noticias</span>
-            <strong>Cargando...</strong>
-          </div>
+      <div className="dashboard-news-widget" aria-label="Noticias globales">
+        <article className="dashboard-news-capsule is-loading">
+          <strong>Cargando...</strong>
         </article>
-        <article className="dashboard-news-card is-loading">
-          <div className="dashboard-news-head">
-            <span className="dashboard-info-kicker">Noticias</span>
-            <strong>Cargando...</strong>
-          </div>
+        <article className="dashboard-news-capsule is-loading">
+          <strong>Cargando...</strong>
         </article>
-      </section>
+      </div>
     );
   }
 
-  const renderNewsCard = (title: string, items: NewsItem[], categoryPrefix: string) => {
+  const renderCapsule = (categoryLabel: string, items: NewsItem[]) => {
+    if (items.length === 0) {
+      return (
+        <article className="dashboard-news-capsule">
+          <div className="dashboard-news-empty">No hay noticias de {categoryLabel}</div>
+        </article>
+      );
+    }
+    
+    // Solo mostramos 1 noticia por cápsula (la más reciente)
+    const item = items[0];
+    const categoryPrefix = categoryLabel.charAt(0);
+
     return (
-      <article className="dashboard-news-card">
-        <div className="dashboard-news-head">
-          <span className="dashboard-info-kicker">Noticias</span>
-          <strong>{title}</strong>
+      <a 
+        href={item.url} 
+        target="_blank" 
+        rel="noreferrer" 
+        className="dashboard-news-capsule"
+      >
+        {item.imagen_url ? (
+          <img 
+            src={item.imagen_url} 
+            alt={item.fuente} 
+            className="dashboard-news-capsule-thumb" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('is-hidden');
+            }} 
+          />
+        ) : null}
+        <div className={`dashboard-news-capsule-fallback ${item.imagen_url ? 'is-hidden' : ''}`}>
+          {categoryPrefix}
         </div>
-        
-        {items.length === 0 ? (
-          <div className="dashboard-news-empty">No hay noticias recientes en esta categoría.</div>
-        ) : (
-          <div className="dashboard-news-list">
-            {items.map((item, index) => (
-              <a 
-                key={index} 
-                href={item.url} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="dashboard-news-item"
-              >
-                {item.imagen_url ? (
-                  <img 
-                    src={item.imagen_url} 
-                    alt={item.fuente} 
-                    className="dashboard-news-thumb" 
-                    onError={(e) => {
-                     (e.target as HTMLImageElement).style.display = 'none';
-                     (e.target as HTMLImageElement).nextElementSibling?.classList.remove('is-hidden');
-                    }} 
-                  />
-                ) : null}
-                <div className={`dashboard-news-thumb-fallback ${item.imagen_url ? 'is-hidden' : ''}`}>
-                  {categoryPrefix}
-                </div>
-                <div className="dashboard-news-content">
-                  <h4 className="dashboard-news-title" title={item.titulo}>{item.titulo}</h4>
-                  <p className="dashboard-news-summary">{item.resumen}</p>
-                  <div className="dashboard-news-meta">
-                    <span className="dashboard-news-source">{item.fuente}</span>
-                    <span className="dashboard-news-date">
-                      {new Date(item.fecha_publicacion).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </div>
-                </div>
-              </a>
-            ))}
+        <div className="dashboard-news-capsule-content">
+          <div className="dashboard-news-capsule-meta">
+            {categoryLabel} · {item.fuente}
           </div>
-        )}
-        {data.ultima_actualizacion && (
-          <div className="dashboard-news-footer">
-            Actualizado hoy a las {new Date(data.ultima_actualizacion).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        )}
-      </article>
+          <h4 className="dashboard-news-capsule-title" title={item.titulo}>{item.titulo}</h4>
+          <p className="dashboard-news-capsule-summary">{item.resumen}</p>
+        </div>
+      </a>
     );
   };
 
   return (
-    <section className="dashboard-news-row" aria-label="Noticias globales">
-      {renderNewsCard("Minería Chile", data.mineria, "M")}
-      {renderNewsCard("Economía Chile", data.economia, "E")}
-    </section>
+    <div className="dashboard-news-widget" aria-label="Noticias globales">
+      {renderCapsule("Economía", data.economia)}
+      {renderCapsule("Minería", data.mineria)}
+    </div>
   );
 }
