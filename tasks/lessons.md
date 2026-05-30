@@ -256,3 +256,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Las migraciones deben envolverse en `BEGIN`/`COMMIT`**. Si una sentencia intermedia falla (CREATE INDEX, ALTER, etc.), la transacción asegura que la base no quede en estado parcial.
 - **Toda RPC `SECURITY DEFINER` necesita validar `auth.uid() IS NOT NULL`** como primera línea. Sin esto, una exposición accidental de grants permite lectura anónima de datos internos.
 - **Las funciones RPC deben cerrar con `REVOKE ALL FROM public, anon` + `GRANT EXECUTE TO authenticated` + `NOTIFY pgrst, 'reload schema'`**. Omitir cualquiera de estas tres puede dejar la función invisible para PostgREST o accesible para roles no deseados. Este patrón ya estaba documentado en la Lección 6, pero debe verificarse en cada nueva migración sin excepción.
+
+## 49. Módulo de noticias: Paginación y control de límites
+
+- **El backend define los límites máximos, el frontend maneja la paginación.** Si la interfaz necesita mostrar más noticias en un carrusel, el límite global de la función Supabase (`get_latest_news`) debe aumentarse (por ejemplo, a 5). El frontend no debe asumir límites que no están definidos en la fuente de datos.
+- **La interacción manual debe pausar o limpiar los timers.** Cuando se implementa un carrusel automático con `setInterval`, incluir botones de navegación manual requiere cuidado: un clic manual cambia la vista, pero el timer sigue corriendo. Mantener el timer de forma declarativa con `useEffect` evita fugas de memoria y saltos dobles.
+
+## 50. Simetría y consistencia de layout
+
+- **Márgenes y gaps deben ser exactos, no aproximados.** Si el contenedor superior tiene `margin-bottom: 18px` pero el contenedor inferior usa `row-gap: 64px`, la cuadrícula se rompe visualmente. La elegancia de un ERP se logra respetando los tokens de espaciado estrictamente entre todos los módulos.
+- **Los títulos grandes y gruesos deben limitarse a "Heros" o portadas.** En cabeceras de formularios o secciones internas operativas, usar un `h2` enorme con font-weight pesado distrae y rompe la sobriedad. Ajustar `clamp` a proporciones más discretas (`1.75rem`) con pesos medianos (`600`) es crucial para la legibilidad elegante.

@@ -497,6 +497,15 @@
 
 - La distancia entre `Tareas Pendientes`, `Folios en curso` y `Acciones Rápidas` ahora la controla una sola regla de `row-gap`, evitando diferencias visuales entre bloques.
 
+## Refinamientos estéticos y UX en el Dashboard
+
+- [x] Implementar límite dinámico de 5 noticias globales en vez de 2 para el carrusel
+- [x] Crear un sistema de carrusel automático para Economía y Minería (12 segundos por rotación)
+- [x] Añadir controles manuales sutiles (hover) para avanzar y retroceder noticias
+- [x] Ajustar estética de la tarjeta de Solicitud de Contrataciones reduciendo tamaño y grosor
+- [x] Uniformar separación vertical (row-gap y margin-bottom a 18px) entre todos los módulos del Dashboard
+- [x] Validar que no hay estilos inline y que CSS es elegante y consistente
+
 Este documento lleva el control de las tareas técnicas orientadas a construir la plataforma según el **Mapa Operacional Maestro**.
 
 ## Roadmap Actual: Gobernanza y Estabilización
