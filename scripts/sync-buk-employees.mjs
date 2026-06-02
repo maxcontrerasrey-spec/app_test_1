@@ -28,6 +28,16 @@ function readEnvFile() {
   }
 }
 
+function requireEnv(value, label) {
+  const normalized = (value ?? "").toString().trim();
+
+  if (!normalized) {
+    throw new Error(`${label} is missing.`);
+  }
+
+  return normalized;
+}
+
 function getFullName(employee) {
   const parts = [
     employee.full_name,
@@ -348,13 +358,13 @@ async function fetchBukAreas(env) {
 
 async function main() {
   const env = readEnvFile();
-  const supabaseUrl = env.VITE_SUPABASE_URL ?? env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL ?? null;
+  const supabaseUrl = requireEnv(
+    env.VITE_SUPABASE_URL ?? env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+    "Missing Supabase URL. Expected VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL",
+  );
+  const serviceRoleKey = requireEnv(env.SUPABASE_SERVICE_ROLE_KEY ?? null, "SUPABASE_SERVICE_ROLE_KEY");
 
-  if (!supabaseUrl) {
-    throw new Error("Missing Supabase URL. Expected VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL.");
-  }
-
-  const supabase = createClient(supabaseUrl, env.SUPABASE_SERVICE_ROLE_KEY, {
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const areaLookup = await fetchBukAreas(env);
@@ -362,10 +372,12 @@ async function main() {
   let page = 1;
   let hasMore = true;
   let synced = 0;
+  let pagesProcessed = 0;
 
   while (hasMore) {
     const result = await fetchBukEmployeesPage(env, page);
     const employees = result.rawEmployees.map((employee) => normalizeBukEmployee(employee, areaLookup)).filter(Boolean);
+    pagesProcessed += 1;
 
     if (employees.length > 0) {
       const { error } = await supabase.from("employees").upsert(employees, {
@@ -400,7 +412,16 @@ async function main() {
     throw error;
   }
 
-  console.log(JSON.stringify({ ok: true, synced, finalCount: count }, null, 2));
+  const { count: activeCount, error: activeCountError } = await supabase
+    .from("employees")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
+
+  if (activeCountError) {
+    throw activeCountError;
+  }
+
+  console.log(JSON.stringify({ ok: true, pagesProcessed, synced, finalCount: count, activeCount }, null, 2));
 }
 
 main().catch((error) => {

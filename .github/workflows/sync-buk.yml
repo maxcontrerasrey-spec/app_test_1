@@ -30,10 +30,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       - name: Install Dependencies
         if: steps.local_window.outputs.run_sync == 'true'
-        run: npm install @supabase/supabase-js
+        run: npm ci --omit=dev
+
+      - name: Validate required sync variables
+        if: steps.local_window.outputs.run_sync == 'true'
+        env:
+          BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
+          BUK_AREAS_URL: ${{ secrets.BUK_AREAS_URL }}
+          BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$BUK_AUTH_TOKEN" || { echo "Missing BUK_AUTH_TOKEN"; exit 1; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
+          test -n "${VITE_SUPABASE_URL:-$SUPABASE_URL}" || { echo "Missing VITE_SUPABASE_URL or SUPABASE_URL"; exit 1; }
 
       - name: Run BUK Sync Script
         if: steps.local_window.outputs.run_sync == 'true'
@@ -42,5 +57,6 @@ jobs:
           BUK_AREAS_URL: ${{ secrets.BUK_AREAS_URL }}
           BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/sync-buk-employees.mjs

@@ -299,3 +299,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No se acepta ninguna recomendación, plan o corrección que contradiga o ignore lo registrado en estos documentos.** Si una auditoría externa o un hallazgo nuevo entra en conflicto con una lección existente, primero se contrasta y se registra la diferencia; no se aplica a ciegas.
 - **Toda acción completada debe reflejarse en `todo.md` (tarea y resultado) y, si genera conocimiento reutilizable, en `lessons.md`.** Un cambio que no queda documentado es un cambio que se pierde o se repite.
 - **Esta regla aplica sin excepción a cualquier modelo, sesión o agente que trabaje sobre este repositorio.** Es la primera lectura obligatoria antes de tocar código, SQL, CI/CD o documentación.
+
+## 57. Las sincronizaciones programadas deben fallar temprano y dejar resumen operativo
+
+- **Un workflow programado no debe depender de fallos tardíos para revelar variables faltantes.** Si una sincronización usa secretos y variables críticas (`BUK_AUTH_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_URL`/`SUPABASE_URL`), el job debe validarlas explícitamente antes de ejecutar el script principal.
+- **Para jobs periódicos, la instalación de dependencias debe ser determinista y alineada con el lockfile.** En este repo, `npm ci --omit=dev` es preferible a instalar una sola dependencia suelta porque reduce drift entre el runtime programado y el contrato real del proyecto.
+- **El script de sincronización debe emitir un resumen auditable al terminar.** Contadores como `pagesProcessed`, `synced`, `finalCount` y `activeCount` hacen que una alerta de actualización fallida sea diagnóstica en vez de ambigua.
