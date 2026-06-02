@@ -10,16 +10,30 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Check Santiago execution window
+      - name: Resolve scheduled Santiago window
         id: local_window
         run: |
-          LOCAL_HOUR=$(TZ=America/Santiago date +%H)
-          echo "local_hour=$LOCAL_HOUR" >> "$GITHUB_OUTPUT"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$LOCAL_HOUR" = "20" ]; then
+          LOCAL_OFFSET=$(TZ=America/Santiago date +%z)
+          CRON_TRIGGER="${{ github.event.schedule }}"
+          echo "local_offset=$LOCAL_OFFSET" >> "$GITHUB_OUTPUT"
+          echo "cron_trigger=$CRON_TRIGGER" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_sync=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LOCAL_OFFSET" = "-0300" ] && [ "$CRON_TRIGGER" = "0 23 * * *" ]; then
+            echo "run_sync=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LOCAL_OFFSET" = "-0400" ] && [ "$CRON_TRIGGER" = "0 0 * * *" ]; then
             echo "run_sync=true" >> "$GITHUB_OUTPUT"
           else
             echo "run_sync=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Report sync window decision
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "cron_trigger=${{ steps.local_window.outputs.cron_trigger }}"
+          echo "local_offset=${{ steps.local_window.outputs.local_offset }}"
+          echo "run_sync=${{ steps.local_window.outputs.run_sync }}"
 
       - name: Checkout Repository
         if: steps.local_window.outputs.run_sync == 'true'
