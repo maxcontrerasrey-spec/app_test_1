@@ -301,6 +301,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Separar estado pendiente de fallback explícito evita ubicaciones falsas.** El flujo correcto es: estado inicial sin coordenadas, ubicación real si el navegador responde, y fallback solo si hay error, falta de soporte o timeout propio.
 - **No publicar estados intermedios que reinicien el efecto que aún está resolviendo el nombre humano.** Si `setLocation` cambia dependencias antes de terminar el reverse geocoding, React puede limpiar el efecto y abortar la petición que debería entregar la ciudad.
 
+## 65. La geocodificación inversa debe soportar payloads anidados, no solo campos planos
+
+- **No asumir que un proveedor siempre expondrá `city` o `locality` en el primer nivel del JSON.** Algunos payloads útiles entregan la ciudad real solo dentro de estructuras anidadas como `localityInfo.administrative`.
+- **Antes de degradar a coordenadas, el parser debe agotar las fuentes semánticas del payload.** En un widget operativo, mostrar coordenadas cuando la ciudad sí venía en el JSON es una regresión de parsing, no un fallo inevitable del proveedor.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 

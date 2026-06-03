@@ -59,6 +59,18 @@
 - `Santiago, CL` queda reservado para error real, falta de soporte de geolocalización o timeout explícito de la app.
 - Se agregó un timeout propio de 12 segundos para que la UI no quede indefinidamente en `Resolviendo ubicación...` si el navegador no llama ni éxito ni error.
 
+## Endurecimiento de parser de ciudad para clima
+
+- [x] Verificar si la regresión restante venía del parser del payload de geocodificación inversa
+- [x] Extraer ciudad también desde `localityInfo.administrative` cuando el proveedor no entregue `city` o `locality` planos
+- [x] Validar compilación y build
+
+## Resultado de endurecimiento de parser de ciudad para clima
+
+- BigDataCloud sí entrega ciudad para Los Andes, pero la app estaba preparada solo para campos planos (`city`, `locality`, `principalSubdivision`).
+- El parser ahora también revisa `localityInfo.administrative` y toma la localidad administrativa más específica disponible antes de degradar a región o coordenadas.
+- Con esto, el widget deja de caer innecesariamente a coordenadas cuando el proveedor entregue la ciudad en estructura anidada.
+
 ## Reparación de build roto por dependencia de TanStack Query
 
 - [x] Reproducir el fallo real de `vite build`

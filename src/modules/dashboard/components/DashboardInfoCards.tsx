@@ -159,13 +159,52 @@ function formatTodayLabel() {
   }).format(new Date());
 }
 
+type ReverseGeocodingAdministrativeArea = {
+  name?: string;
+  adminLevel?: number;
+};
+
+type ReverseGeocodingPayload = {
+  city?: string;
+  locality?: string;
+  principalSubdivision?: string;
+  countryCode?: string;
+  localityInfo?: {
+    administrative?: ReverseGeocodingAdministrativeArea[];
+  };
+};
+
+function findAdministrativeLocality(areas: ReverseGeocodingAdministrativeArea[] | undefined) {
+  if (!Array.isArray(areas) || areas.length === 0) {
+    return null;
+  }
+
+  const normalizedAreas = areas
+    .map((area) => ({
+      name: typeof area.name === "string" ? area.name.trim() : "",
+      adminLevel: typeof area.adminLevel === "number" ? area.adminLevel : -1
+    }))
+    .filter((area) => area.name);
+
+  if (normalizedAreas.length === 0) {
+    return null;
+  }
+
+  const bestMatch = normalizedAreas
+    .filter((area) => area.adminLevel >= 6)
+    .sort((left, right) => right.adminLevel - left.adminLevel)[0];
+
+  return bestMatch?.name ?? normalizedAreas[normalizedAreas.length - 1]?.name ?? null;
+}
+
 function formatLocationLabel(payload: unknown) {
-  const data = payload as { city?: string; locality?: string; principalSubdivision?: string; countryCode?: string } | null;
+  const data = payload as ReverseGeocodingPayload | null;
   if (!data) return null;
 
   const city =
     (typeof data.city === "string" && data.city.trim()) ||
     (typeof data.locality === "string" && data.locality.trim()) ||
+    findAdministrativeLocality(data.localityInfo?.administrative) ||
     (typeof data.principalSubdivision === "string" && data.principalSubdivision.trim()) ||
     null;
 
