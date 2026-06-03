@@ -38,6 +38,11 @@ function requireEnv(value, label) {
   return normalized;
 }
 
+function optionalEnv(value) {
+  const normalized = (value ?? "").toString().trim();
+  return normalized || null;
+}
+
 function getFullName(employee) {
   const parts = [
     employee.full_name,
@@ -234,7 +239,7 @@ async function fetchWithRetry(url, options, retries = 3) {
 }
 
 function getEmployeesBaseUrl(env) {
-  return env.BUK_EMPLOYEES_URL ?? "https://busesjm.buk.cl/api/v1/chile/employees";
+  return optionalEnv(env.BUK_EMPLOYEES_URL) ?? "https://busesjm.buk.cl/api/v1/chile/employees";
 }
 
 function getAreasBaseUrl(env) {
@@ -291,7 +296,7 @@ async function fetchBukAreasPage(env, page = 1) {
     throw new Error("BUK_AUTH_TOKEN is missing.");
   }
 
-  const url = new URL(env.BUK_AREAS_URL ?? getAreasBaseUrl(env));
+  const url = new URL(optionalEnv(env.BUK_AREAS_URL) ?? getAreasBaseUrl(env));
   url.searchParams.set("status", "both");
   url.searchParams.set("page", String(page));
   url.searchParams.set("page_size", "100");

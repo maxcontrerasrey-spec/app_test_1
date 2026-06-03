@@ -269,6 +269,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No endurecer un GitHub Actions rompiendo nombres de variables que el script aún soporta**. Si `sync-buk-employees.mjs` acepta `NEXT_PUBLIC_SUPABASE_URL`, pero el workflow solo exporta `VITE_SUPABASE_URL`/`SUPABASE_URL`, el job puede fallar en GitHub aunque la lógica local siga siendo correcta.
 - **En transiciones de naming de entorno, primero se agrega compatibilidad múltiple y recién después se elimina el nombre viejo cuando el ambiente ya fue migrado**. Cambiar el workflow antes que la configuración real del repo genera regresiones silenciosas.
 
+## 59. En workflows con secrets opcionales, string vacío y valor ausente no son lo mismo
+
+- **No usar `??` como único criterio de fallback para URLs opcionales provenientes de GitHub Actions**. Un secret o variable vacía llega como `\"\"`, no como `undefined`, y puede romper `new URL(\"\")` antes de que el script empiece a trabajar.
+- **Toda variable opcional de entorno que alimente una URL debe normalizarse (`trim`) y tratar string vacío como `null`**. Recién después se decide el fallback seguro.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 
