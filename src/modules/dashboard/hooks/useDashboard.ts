@@ -64,7 +64,11 @@ export function useDashboard() {
   } = useQuery({
     queryKey: dashboardQueryKey,
     queryFn: () => fetchDashboardPayload(user!.id),
-    enabled: Boolean(user?.id)
+    enabled: Boolean(user?.id),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true
   });
 
   const preferenceMutation = useMutation({

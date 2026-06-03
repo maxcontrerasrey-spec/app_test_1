@@ -2,6 +2,19 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Refresh automático del dashboard operativo
+
+- [x] Verificar si `Inicio` refresca solo o depende de `F5` / recarga manual
+- [x] Corregir `useDashboard` para que el estado operativo se actualice automáticamente sin intervención del usuario
+- [x] Validar compilación y documentar la regla
+
+## Resultado de refresh automático del dashboard operativo
+
+- El dashboard no era realmente vivo: usaba TanStack Query, pero sin `refetchInterval`, con `refetchOnWindowFocus: false` heredado por defecto y sin ninguna suscripción en tiempo real.
+- En la práctica, una solicitud de aprobación nueva podía no aparecer hasta refrescar la página o remount de la vista.
+- `useDashboard` ahora fuerza un contrato operativo más correcto: `staleTime: 15s`, `refetchInterval: 30s`, `refetchOnWindowFocus: true` y `refetchOnReconnect: true`.
+- Con esto, `Tareas Pendientes`, `Seguimiento de aprobaciones`, `Folios en curso` y `Cumpleaños` dejan de depender de `F5`, aunque no son instantáneos al segundo. Para inmediatez absoluta, el siguiente salto sería suscripción en tiempo real.
+
 ## Verificación de sync BUK y corrección de layout en Solicitud de Contrataciones
 
 - [x] Verificar en Supabase si la sincronización BUK realmente actualizó `employees` después del fix del workflow
