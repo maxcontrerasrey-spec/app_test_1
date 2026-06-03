@@ -302,11 +302,10 @@
 
 .operations-panel {
   margin-bottom: 0;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   position: relative;
 }
 
@@ -331,9 +330,8 @@
 .operations-panel select,
 .operations-panel textarea,
 .operations-panel .input-like-button {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--surface);
+  border-color: var(--border);
 }
 
 .operations-metrics-panel {
@@ -714,8 +712,8 @@
 
 .input-like-button {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: var(--text-base);
   text-align: left;
   padding: 0 16px;
@@ -930,9 +928,9 @@
 }
 
 .dashboard-hero__copy {
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
