@@ -15,6 +15,20 @@
 - `useDashboard` ahora fuerza un contrato operativo más correcto: `staleTime: 15s`, `refetchInterval: 30s`, `refetchOnWindowFocus: true` y `refetchOnReconnect: true`.
 - Con esto, `Tareas Pendientes`, `Seguimiento de aprobaciones`, `Folios en curso` y `Cumpleaños` dejan de depender de `F5`, aunque no son instantáneos al segundo. Para inmediatez absoluta, el siguiente salto sería suscripción en tiempo real.
 
+## Limpieza estructural de dashboard y vestigios muertos
+
+- [x] Detectar widgets del dashboard sin uso real ni futuro operativo inmediato
+- [x] Eliminar abstracciones genéricas del dashboard que solo encubrían un único caso real
+- [x] Reducir comentarios y vestigios de transición que ya no agregan valor
+- [x] Validar compilación y build después de la limpieza
+
+## Resultado de limpieza estructural de dashboard y vestigios muertos
+
+- Se eliminaron los componentes muertos `QuickActionsWidget.tsx` y `TimelineWidget.tsx`; no tenían referencias activas ni contrato operativo vigente.
+- `DashboardGrid` dejó de usar un bus genérico `onAction(actionType, payload)` para un solo caso real; ahora recibe un `onRefresh()` explícito, más simple y menos acoplado.
+- `TasksWidget` ya no dispara strings de comando (`REFRESH_DATA`) para refrescar el dashboard; invoca un callback directo y tipado.
+- Se retiró ruido residual en `HomePage.tsx`, manteniendo el módulo como un contenedor limpio hacia `DashboardHome`.
+
 ## Reparación de build roto por dependencia de TanStack Query
 
 - [x] Reproducir el fallo real de `vite build`

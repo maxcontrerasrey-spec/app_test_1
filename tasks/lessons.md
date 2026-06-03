@@ -285,6 +285,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La prueba rápida es intentar `import("paquete")` fuera de Vite.** Si también falla ahí con `ERR_MODULE_NOT_FOUND`, el problema es de la dependencia instalada o de su versión publicada, no de la app.
 - **Cuando la regresión viene de un paquete defectuoso, la corrección elegante es pinnear una versión estable conocida, no parchear el bundler alrededor del síntoma.**
 
+## 62. Un ERP modular no necesita buses genéricos cuando solo existe una intención real
+
+- **Si un componente recibe `onAction(type, payload)` pero en la práctica solo existe una acción válida, esa abstracción está sobrando.** En el dashboard, un callback directo `onRefresh()` es más claro, más seguro y más fácil de mantener que un mini-protocolo de strings.
+- **Los widgets muertos deben salir del repo, no solo del layout.** Si un componente como `QuickActionsWidget` o `TimelineWidget` ya no participa del producto y no tiene contrato futuro aprobado, mantener el archivo solo agrega ruido y falsa superficie de mantenimiento.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 

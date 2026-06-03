@@ -7,7 +7,7 @@ import { TasksWidget } from "./widgets/TasksWidget";
 type WidgetComponentProps = {
   widget: ResolvedWidget;
   dashboardData?: DashboardDataBundle;
-  onAction?: (actionType: string, payload: string) => void;
+  onRefresh?: () => void;
 };
 
 const WidgetRegistry: Record<string, React.FC<WidgetComponentProps>> = {
@@ -19,10 +19,19 @@ interface DashboardGridProps {
   widgets: ResolvedWidget[];
   isLoading: boolean;
   dashboardData?: DashboardDataBundle;
-  onAction?: (actionType: string, payload: string) => void;
+  onRefresh?: () => void;
 }
 
-export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: DashboardGridProps) {
+function buildDerivedWidget(source: ResolvedWidget, id: string, name: string, componentKey: string): ResolvedWidget {
+  return {
+    ...source,
+    id,
+    name,
+    component_key: componentKey
+  };
+}
+
+export function DashboardGrid({ widgets, isLoading, dashboardData, onRefresh }: DashboardGridProps) {
   if (isLoading) {
     return (
       <div className="dashboard-loading">
@@ -46,24 +55,23 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
   }
 
   const tasks = renderableWidgets;
-  const approvalTrackingWidget: ResolvedWidget | null =
-    tasks[0]
-      ? {
-          ...tasks[0],
-          id: "dashboard-approval-tracking",
-          name: "Seguimiento de aprobaciones",
-          component_key: "ApprovalTrackingWidget"
-        }
-      : null;
-  const activeFoliosWidget: ResolvedWidget | null =
-    tasks[0]
-      ? {
-          ...tasks[0],
-          id: "dashboard-active-folios",
-          name: "Folios en curso",
-          component_key: "ActiveFoliosWidget"
-        }
-      : null;
+  const sourceWidget = tasks[0] ?? null;
+  const approvalTrackingWidget = sourceWidget
+    ? buildDerivedWidget(
+        sourceWidget,
+        "dashboard-approval-tracking",
+        "Seguimiento de aprobaciones",
+        "ApprovalTrackingWidget"
+      )
+    : null;
+  const activeFoliosWidget = sourceWidget
+    ? buildDerivedWidget(
+        sourceWidget,
+        "dashboard-active-folios",
+        "Folios en curso",
+        "ActiveFoliosWidget"
+      )
+    : null;
 
   return (
     <div className="dashboard-grid">
@@ -72,7 +80,7 @@ export function DashboardGrid({ widgets, isLoading, dashboardData, onAction }: D
           <div className="dashboard-zone-column">
             {tasks.map((w) => {
               const Component = WidgetRegistry[w.component_key];
-              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onAction={onAction} /> : null;
+              return Component ? <Component key={w.id} widget={w} dashboardData={dashboardData} onRefresh={onRefresh} /> : null;
             })}
           </div>
         </div>

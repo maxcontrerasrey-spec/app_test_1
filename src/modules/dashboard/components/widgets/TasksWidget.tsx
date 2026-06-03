@@ -13,7 +13,7 @@ import { approveCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitm
 type TasksWidgetProps = {
   widget: ResolvedWidget;
   dashboardData?: DashboardDataBundle;
-  onAction?: (actionType: string, payload: string) => void;
+  onRefresh?: () => void;
 };
 
 function formatDateValue(dateStr: string | null | undefined) {
@@ -25,7 +25,7 @@ function formatDateValue(dateStr: string | null | undefined) {
   });
 }
 
-export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProps) {
+export function TasksWidget({ widget, dashboardData, onRefresh }: TasksWidgetProps) {
   const tasks = dashboardData?.tasksData ?? [];
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
@@ -80,9 +80,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
       setSubmitError(error);
     } else {
       setExpandedTaskId(null);
-      if (onAction) {
-        onAction("REFRESH_DATA", ""); // Refrescar el dashboard
-      }
+      onRefresh?.();
     }
   };
 
@@ -101,9 +99,7 @@ export function TasksWidget({ widget, dashboardData, onAction }: TasksWidgetProp
       setSubmitError(error);
     } else {
       setExpandedTaskId(null);
-      if (onAction) {
-        onAction("REFRESH_DATA", "");
-      }
+      onRefresh?.();
     }
   };
 

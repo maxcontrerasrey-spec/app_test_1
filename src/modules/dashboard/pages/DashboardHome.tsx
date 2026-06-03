@@ -1,4 +1,3 @@
-import React from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { DashboardGrid } from "../components/DashboardGrid";
@@ -16,14 +15,7 @@ export function DashboardHome() {
     activeFoliosData,
     birthdaysData,
     refresh
-  } =
-    useDashboard();
-
-  const handleAction = async (actionType: string) => {
-    if (actionType === "REFRESH_DATA") {
-      void refresh();
-    }
-  };
+  } = useDashboard();
 
   return (
     <div className="dashboard-container">
@@ -47,7 +39,9 @@ export function DashboardHome() {
           widgets={widgets}
           isLoading={isLoading}
           dashboardData={{ tasksData, approvalTrackingData, activeFoliosData, birthdaysData }}
-          onAction={handleAction}
+          onRefresh={() => {
+            void refresh();
+          }}
         />
       </main>
     </div>
