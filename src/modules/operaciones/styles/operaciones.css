@@ -602,6 +602,11 @@
   align-content: start;
 }
 
+.operations-theme .field-group label.field-label {
+  display: block;
+  margin-bottom: 0;
+}
+
 .operations-theme label:last-child {
   margin-bottom: 0;
 }
