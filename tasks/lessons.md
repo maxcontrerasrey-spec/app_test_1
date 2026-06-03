@@ -259,6 +259,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 49. Eliminación de módulos: no dejar vestigios
 
+## 57. En layouts operativos con sidebar sticky, el breakpoint debe responder a la holgura real, no al mínimo teórico
+
+- **Si un formulario principal comparte fila con un resumen sticky, el colapso a una sola columna debe ocurrir antes de que la composición entre en compresión visual**. Esperar hasta que “todavía cabe técnicamente” produce páginas montadas, grids apretados y sensación de layout roto en anchos intermedios.
+- **Para flujos como `Solicitud de Contrataciones`, primero se protege la legibilidad del formulario y luego se decide si el resumen puede seguir sticky**. Cuando el ancho ya no da holgura, el resumen pasa a flujo normal (`position: static`) y el layout colapsa completo.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 

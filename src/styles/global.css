@@ -2924,6 +2924,17 @@ textarea {
   }
 }
 
+@media (max-width: 1320px) {
+  .hiring-layout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-panel {
+    position: static;
+    top: auto;
+  }
+}
+
 @media (max-width: 900px) {
   .top-shell-bar {
     grid-template-columns: 1fr;

@@ -2,6 +2,20 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Verificación de sync BUK y corrección de layout en Solicitud de Contrataciones
+
+- [x] Verificar en Supabase si la sincronización BUK realmente actualizó `employees` después del fix del workflow
+- [x] Revisar la estructura y estilos de `HiringRequestPage` para aislar la causa del solapamiento reportado
+- [x] Aplicar un ajuste de layout defensivo para evitar compresión horizontal entre formulario y resumen sticky
+- [x] Validar con `git diff --check`, `npx tsc -b` y `npm run build`
+
+## Resultado de verificación de sync BUK y corrección de layout en Solicitud de Contrataciones
+
+- La base confirma que la sync BUK no quedó al día: `employees.updated_at` y `employees_active_current` siguen congelados en `2026-05-30T03:54:02.283802+00:00`, por lo que todavía no hubo actualización efectiva posterior al arreglo del workflow.
+- El problema del workflow ya no es de código local sino de ejecución: hace falta disparar una corrida manual o esperar la próxima ventana programada y luego volver a verificar la base.
+- En `Solicitud de Contrataciones`, el riesgo más alto estaba en la compresión horizontal del layout: el formulario seguía compartiendo ancho con el resumen sticky hasta un breakpoint demasiado bajo.
+- Se endureció el comportamiento responsivo para que `hiring-layout-grid` colapse a una sola columna desde `1320px` y `summary-panel` deje de ser sticky en ese rango, evitando montajes entre bloques cuando el ancho intermedio ya no sostiene ambos paneles con holgura.
+
 ## Revisión de alerta en integración BUK
 
 - [x] Revisar el estado documentado de la integración BUK y el contrato actual de sincronización
