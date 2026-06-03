@@ -42,6 +42,23 @@
 - Ahora el flujo es más robusto: primero se guardan y usan las coordenadas reales, luego se intenta traducirlas a ciudad; si esa traducción falla, el widget conserva una etiqueta basada en coordenadas reales en vez de mentir con Santiago.
 - También se expuso un estado más preciso para errores de geolocalización (`permiso denegado`, `ubicación no disponible`, `timeout`) y se reintenta al recuperar foco mientras la ubicación siga sin resolverse.
 
+## Corrección de fallback inicial falso en clima
+
+- [x] Verificar por qué el widget seguía mostrando `Santiago, CL` y clima de Santiago mientras declaraba `Resolviendo ubicación...`
+- [x] Separar estado inicial pendiente de estado fallback real
+- [x] Evitar que Open-Meteo consulte coordenadas de Santiago antes de recibir ubicación o error explícito
+- [x] Evitar que el estado intermedio de coordenadas aborte la resolución del nombre de ciudad
+- [x] Agregar timeout propio de aplicación para salir de estados pendientes colgados
+- [x] Validar `tsc` y build de Vite
+
+## Resultado de corrección de fallback inicial falso en clima
+
+- El estado inicial del widget usaba `DEFAULT_LOCATION`, que ya contenía coordenadas de Santiago. Eso hacía que la tarjeta consultara clima de Santiago aunque la geolocalización siguiera pendiente.
+- Ahora existe `INITIAL_LOCATION` sin coordenadas; mientras el navegador resuelve ubicación, no se consulta clima con fallback falso.
+- La ubicación real se confirma después de resolver la etiqueta humana; si esa resolución falla, se muestran coordenadas reales, no Santiago.
+- `Santiago, CL` queda reservado para error real, falta de soporte de geolocalización o timeout explícito de la app.
+- Se agregó un timeout propio de 12 segundos para que la UI no quede indefinidamente en `Resolviendo ubicación...` si el navegador no llama ni éxito ni error.
+
 ## Reparación de build roto por dependencia de TanStack Query
 
 - [x] Reproducir el fallo real de `vite build`

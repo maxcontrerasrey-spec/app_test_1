@@ -18,9 +18,19 @@ type WeatherState = {
 type LiveLocationState = {
   label: string;
   statusLabel: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   isResolved: boolean;
+  isFallback: boolean;
+};
+
+const INITIAL_LOCATION: LiveLocationState = {
+  label: "Detectando ubicación",
+  statusLabel: "Resolviendo ubicación...",
+  latitude: null,
+  longitude: null,
+  isResolved: false,
+  isFallback: false
 };
 
 const DEFAULT_LOCATION: LiveLocationState = {
@@ -28,7 +38,8 @@ const DEFAULT_LOCATION: LiveLocationState = {
   statusLabel: "Ubicación no disponible",
   latitude: -33.4489,
   longitude: -70.6693,
-  isResolved: false
+  isResolved: true,
+  isFallback: true
 };
 
 function buildWeatherUrl(latitude: number, longitude: number) {
@@ -192,7 +203,7 @@ export function DashboardInfoCards({
   birthdays
 }: DashboardInfoCardsProps) {
   const [birthdayIndex, setBirthdayIndex] = useState(0);
-  const [location, setLocation] = useState<LiveLocationState>(DEFAULT_LOCATION);
+  const [location, setLocation] = useState<LiveLocationState>(INITIAL_LOCATION);
   const [weather, setWeather] = useState<WeatherState & { hourlyForecast: { time: number; temperature: number; code: number }[] }>({
     temperature: null,
     temperatureMax: null,
@@ -205,6 +216,8 @@ export function DashboardInfoCards({
   useEffect(() => {
     let cancelled = false;
     let reverseController: AbortController | null = null;
+    let geolocationSettled = false;
+    let timeoutId: number | null = null;
 
     async function resolveLocationLabel(latitude: number, longitude: number, statusLabel: string) {
       reverseController?.abort();
@@ -223,7 +236,8 @@ export function DashboardInfoCards({
             statusLabel,
             latitude,
             longitude,
-            isResolved: true
+            isResolved: true,
+            isFallback: false
           });
         }
       } catch (_error) {
@@ -233,7 +247,8 @@ export function DashboardInfoCards({
             statusLabel,
             latitude,
             longitude,
-            isResolved: true
+            isResolved: true,
+            isFallback: false
           });
         }
       }
@@ -245,27 +260,39 @@ export function DashboardInfoCards({
         return;
       }
 
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+
+      geolocationSettled = false;
+      timeoutId = window.setTimeout(() => {
+        if (!cancelled && !geolocationSettled) {
+          setLocation({
+            ...DEFAULT_LOCATION,
+            statusLabel: "Tiempo de ubicación agotado"
+          });
+        }
+      }, 12000);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const nextLocation = {
-            label: formatCoordinateLabel(position.coords.latitude, position.coords.longitude),
-            statusLabel: "Ubicación actual",
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            isResolved: true
-          };
-
-          if (!cancelled) {
-            setLocation(nextLocation);
+          geolocationSettled = true;
+          if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
           }
 
           void resolveLocationLabel(
             position.coords.latitude,
             position.coords.longitude,
-            nextLocation.statusLabel
+            "Ubicación actual"
           );
         },
         (error) => {
+          geolocationSettled = true;
+          if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
+          }
+
           if (!cancelled) {
             setLocation({
               ...DEFAULT_LOCATION,
@@ -281,12 +308,12 @@ export function DashboardInfoCards({
       );
     }
 
-    if (!location.isResolved) {
+    if (!location.isResolved || location.isFallback) {
       requestBrowserLocation();
     }
 
     const retryOnFocus = () => {
-      if (!cancelled && !location.isResolved) {
+      if (!cancelled && (!location.isResolved || location.isFallback)) {
         requestBrowserLocation();
       }
     };
@@ -295,15 +322,26 @@ export function DashboardInfoCards({
 
     return () => {
       cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
       reverseController?.abort();
       window.removeEventListener("focus", retryOnFocus);
     };
-  }, [location.isResolved]);
+  }, [location.isFallback, location.isResolved]);
 
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadWeather() {
+      if (location.latitude == null || location.longitude == null) {
+        setWeather((current) => ({
+          ...current,
+          isLoading: true
+        }));
+        return;
+      }
+
       try {
         const response = await fetch(buildWeatherUrl(location.latitude, location.longitude), {
           signal: controller.signal
