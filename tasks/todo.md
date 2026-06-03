@@ -250,6 +250,18 @@
 - Se eliminaron scripts SQL sueltos no versionados en [supabase](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase): `check_approvals.sql`, `dashboard_admin_fix.sql` y `fix_approval_data.sql`.
 - La limpieza fue validada con `git diff --check`, `tsc -b` y `vite build`.
 
+## Corrección de security definer en view de empleados activos
+
+- [x] Corregir `public.employees_active_current` para que use `security_invoker = true`
+- [x] Dejar migración versionada sin alterar el contrato funcional de cumpleaños ni Operaciones
+- [x] Validar consistencia del cambio
+
+## Resultado de corrección de security definer en view de empleados activos
+
+- El warning de Supabase es válido: `employees_active_current` había quedado como view con semántica de `security definer`, lo que hace que evalúe permisos con el contexto del creador en vez del usuario que consulta.
+- Se creó la migración [20260603_175500_fix_employees_active_current_security.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260603_175500_fix_employees_active_current_security.sql:1), que recrea la view con `with (security_invoker = true)` manteniendo exactamente el mismo `SELECT` y el mismo `grant select`.
+- Este cambio no altera el contrato funcional del inicio ni de Operaciones: la app sigue consultando `employees_active_current`, solo que ahora la view queda alineada con el modelo de seguridad esperado por Supabase.
+
 - [x] Diseñar una fuente backend de capacidades sin amarrar la UI a roles duros
 - [x] Crear catálogo de capacidades y asignación por rol en Supabase
 - [x] Extender `get_my_effective_permissions()` para devolver `capabilities`
