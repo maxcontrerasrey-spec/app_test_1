@@ -264,6 +264,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si un formulario principal comparte fila con un resumen sticky, el colapso a una sola columna debe ocurrir antes de que la composición entre en compresión visual**. Esperar hasta que “todavía cabe técnicamente” produce páginas montadas, grids apretados y sensación de layout roto en anchos intermedios.
 - **Para flujos como `Solicitud de Contrataciones`, primero se protege la legibilidad del formulario y luego se decide si el resumen puede seguir sticky**. Cuando el ancho ya no da holgura, el resumen pasa a flujo normal (`position: static`) y el layout colapsa completo.
 
+## 58. Si un script conserva retrocompatibilidad de variables, el workflow debe conservarla también
+
+- **No endurecer un GitHub Actions rompiendo nombres de variables que el script aún soporta**. Si `sync-buk-employees.mjs` acepta `NEXT_PUBLIC_SUPABASE_URL`, pero el workflow solo exporta `VITE_SUPABASE_URL`/`SUPABASE_URL`, el job puede fallar en GitHub aunque la lógica local siga siendo correcta.
+- **En transiciones de naming de entorno, primero se agrega compatibilidad múltiple y recién después se elimina el nombre viejo cuando el ambiente ya fue migrado**. Cambiar el workflow antes que la configuración real del repo genera regresiones silenciosas.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 
