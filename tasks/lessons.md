@@ -306,6 +306,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No asumir que un proveedor siempre expondrá `city` o `locality` en el primer nivel del JSON.** Algunos payloads útiles entregan la ciudad real solo dentro de estructuras anidadas como `localityInfo.administrative`.
 - **Antes de degradar a coordenadas, el parser debe agotar las fuentes semánticas del payload.** En un widget operativo, mostrar coordenadas cuando la ciudad sí venía en el JSON es una regresión de parsing, no un fallo inevitable del proveedor.
 
+## 66. Cuando el dashboard deja de ser configurable, el catálogo SQL también debe desaparecer
+
+- **No mantener tablas y RPCs de configuración de widgets si la UI ya opera con layout estático.** `dashboard_widgets`, `user_dashboard_preferences` y sus funciones asociadas agregan consultas, políticas y deuda de mantenimiento sin entregar valor cuando el inicio ya no expone personalización real.
+- **La limpieza correcta no es solo borrar tablas en Supabase; primero hay que retirar el acoplamiento del frontend.** Si el código sigue pidiendo el catálogo aunque solo renderice un widget fijo, el problema es arquitectónico antes que de base de datos.
+- **Los scripts SQL sueltos fuera de `supabase/migrations` son deuda, no infraestructura.** Si un ajuste fue temporal y no forma parte del historial oficial, debe salir del repo para no competir con la verdad versionada.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 

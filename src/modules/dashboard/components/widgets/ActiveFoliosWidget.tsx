@@ -6,11 +6,11 @@ import {
   toRecruitmentCaseStatusLabel,
   type RecruitmentCaseDetail
 } from "../../../recruitment/services/hiringControl";
-import type { DashboardActiveFolioItem, DashboardDataBundle, ResolvedWidget } from "../../types";
+import type { DashboardActiveFolioItem, DashboardDataBundle } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 
 type ActiveFoliosWidgetProps = {
-  widget: ResolvedWidget;
+  title: string;
   dashboardData?: DashboardDataBundle;
 };
 
@@ -34,7 +34,7 @@ function formatDateTimeValue(dateStr: string | null | undefined) {
   });
 }
 
-export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidgetProps) {
+export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetProps) {
   const folios = dashboardData?.activeFoliosData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
@@ -81,7 +81,7 @@ export function ActiveFoliosWidget({ widget, dashboardData }: ActiveFoliosWidget
   };
 
   return (
-    <DashboardWidgetFrame title={widget.name} className="widget-tasks widget-fill-height">
+    <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
       <div className="dashboard-folios-toolbar">
         <TextField
           id="dashboard-folios-search"

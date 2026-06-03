@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { TextField } from "../../../../shared/ui";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
-import type { DashboardApprovalTrackingItem, DashboardDataBundle, ResolvedWidget } from "../../types";
+import type { DashboardApprovalTrackingItem, DashboardDataBundle } from "../../types";
 import { toTravelMethodologyLabel } from "../../../recruitment/services/hiringWorkflow";
 import { toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 
 type ApprovalTrackingWidgetProps = {
-  widget: ResolvedWidget;
+  title: string;
   dashboardData?: DashboardDataBundle;
 };
 
@@ -19,7 +19,7 @@ function formatDateValue(dateStr: string | null | undefined) {
   });
 }
 
-export function ApprovalTrackingWidget({ widget, dashboardData }: ApprovalTrackingWidgetProps) {
+export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackingWidgetProps) {
   const approvals = dashboardData?.approvalTrackingData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export function ApprovalTrackingWidget({ widget, dashboardData }: ApprovalTracki
   }, [approvals, searchTerm]);
 
   return (
-    <DashboardWidgetFrame title={widget.name} className="widget-tasks widget-fill-height">
+    <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
       <div className="dashboard-folios-toolbar">
         <TextField
           id="dashboard-approval-tracking-search"

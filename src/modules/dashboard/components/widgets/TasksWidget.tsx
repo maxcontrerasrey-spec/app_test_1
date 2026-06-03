@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { DashboardDataBundle, DashboardTaskItem, ResolvedWidget } from "../../types";
+import type { DashboardDataBundle, DashboardTaskItem } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import { SelectField } from "../../../../shared/ui";
 import {
@@ -11,7 +11,7 @@ import {
 import { approveCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 
 type TasksWidgetProps = {
-  widget: ResolvedWidget;
+  title: string;
   dashboardData?: DashboardDataBundle;
   onRefresh?: () => void;
 };
@@ -25,7 +25,7 @@ function formatDateValue(dateStr: string | null | undefined) {
   });
 }
 
-export function TasksWidget({ widget, dashboardData, onRefresh }: TasksWidgetProps) {
+export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProps) {
   const tasks = dashboardData?.tasksData ?? [];
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
@@ -104,7 +104,7 @@ export function TasksWidget({ widget, dashboardData, onRefresh }: TasksWidgetPro
   };
 
   return (
-    <DashboardWidgetFrame title={widget.name} className="widget-tasks widget-fill-height">
+    <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
           <table className="tracking-table dashboard-pending-approvals-table">

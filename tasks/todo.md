@@ -231,6 +231,25 @@
 
 ## Fase 2B.1: capacidades efectivas backend para `Who`
 
+## Limpieza estructural completa de SQL y Supabase
+
+- [x] Inventariar objetos SQL versionados en `supabase/migrations` y scripts sueltos fuera del historial
+- [x] Contrastar el consumo real de tablas, vistas, buckets, RPCs y permisos desde el frontend actual
+- [x] Inspeccionar el estado vivo de Supabase para detectar objetos huérfanos, redundantes o ya desligados del producto
+- [x] Diseñar una limpieza segura que preserve solo el contrato usado por la app actual
+- [x] Ejecutar la limpieza en código versionado: migración destructiva para objetos muertos y poda de archivos SQL locales no vigentes
+- [x] Validar que el frontend siga compilando y que las RPCs/contratos críticos permanezcan alineados
+- [x] Documentar resultado y lecciones nuevas
+
+## Resultado de limpieza estructural completa de SQL y Supabase
+
+- Se auditó el consumo real del frontend y se confirmó que el dashboard ya no usa el catálogo SQL de widgets ni preferencias por usuario; solo mantenía esa dependencia por inercia.
+- En Supabase seguían vivos `dashboard_widgets` (5 filas), `user_dashboard_preferences` (0 filas), `notifications` (0 filas) y RPCs no consumidas como `get_dashboard_widgets_for_current_user`, `get_dashboard_alerts`, `get_dashboard_kpis`, `get_home_dashboard_summary` y `get_hiring_control_dashboard`.
+- Se simplificó el frontend del inicio para operar con layout estático real, eliminando la lectura de `dashboard_widgets` y `user_dashboard_preferences`.
+- Se creó la migración [20260603_170000_drop_unused_dashboard_catalog.sql](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260603_170000_drop_unused_dashboard_catalog.sql:1) para borrar el circuito SQL muerto del dashboard.
+- Se eliminaron scripts SQL sueltos no versionados en [supabase](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase): `check_approvals.sql`, `dashboard_admin_fix.sql` y `fix_approval_data.sql`.
+- La limpieza fue validada con `git diff --check`, `tsc -b` y `vite build`.
+
 - [x] Diseñar una fuente backend de capacidades sin amarrar la UI a roles duros
 - [x] Crear catálogo de capacidades y asignación por rol en Supabase
 - [x] Extender `get_my_effective_permissions()` para devolver `capabilities`

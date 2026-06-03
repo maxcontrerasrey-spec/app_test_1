@@ -8,7 +8,6 @@ import "../styles/dashboard.css";
 export function DashboardHome() {
   const { displayName } = useAuth();
   const {
-    widgets,
     isLoading,
     tasksData,
     approvalTrackingData,
@@ -36,7 +35,6 @@ export function DashboardHome() {
           birthdays={birthdaysData}
         />
         <DashboardGrid
-          widgets={widgets}
           isLoading={isLoading}
           dashboardData={{ tasksData, approvalTrackingData, activeFoliosData, birthdaysData }}
           onRefresh={() => {

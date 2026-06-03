@@ -1,31 +1,5 @@
 import type { WhoApprovalCause } from "../../recruitment/services/hiringControl";
 
-export type WidgetSize = 'small' | 'medium' | 'large' | 'full';
-
-export interface DashboardWidget {
-  id: string;
-  name: string;
-  component_key: string;
-  allowed_roles: string[];
-  default_position: number;
-  is_active: boolean;
-}
-
-export interface UserWidgetPreference {
-  user_id: string;
-  widget_id: string;
-  position: number;
-  hidden: boolean;
-  size: WidgetSize;
-}
-
-// Interfaz combinada para el frontend
-export interface ResolvedWidget extends DashboardWidget {
-  position: number;
-  hidden: boolean;
-  size: WidgetSize;
-}
-
 export interface DashboardTaskItem {
   id: string;
   type: string;
