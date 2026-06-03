@@ -39,6 +39,10 @@ function buildReverseGeocodingUrl(latitude: number, longitude: number) {
   return `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=es`;
 }
 
+function formatCoordinateLabel(latitude: number, longitude: number) {
+  return `${Math.abs(latitude).toFixed(2)}°${latitude >= 0 ? "N" : "S"} · ${Math.abs(longitude).toFixed(2)}°${longitude >= 0 ? "E" : "O"}`;
+}
+
 function toWeatherLabel(code: number | null) {
   if (code == null) return "Sin dato";
   if ([0].includes(code)) return "Despejado";
@@ -162,6 +166,26 @@ function formatLocationLabel(payload: unknown) {
   return city ? `${city}, ${countryCode}` : null;
 }
 
+function toGeolocationStatusLabel(error?: GeolocationPositionError | null) {
+  if (!error) {
+    return "Ubicación actual";
+  }
+
+  if (error.code === error.PERMISSION_DENIED) {
+    return "Permiso de ubicación denegado";
+  }
+
+  if (error.code === error.POSITION_UNAVAILABLE) {
+    return "Ubicación no disponible";
+  }
+
+  if (error.code === error.TIMEOUT) {
+    return "Tiempo de ubicación agotado";
+  }
+
+  return DEFAULT_LOCATION.statusLabel;
+}
+
 export function DashboardInfoCards({
   pendingTasksCount,
   approvalTrackingCount,
@@ -180,12 +204,18 @@ export function DashboardInfoCards({
 
   useEffect(() => {
     let cancelled = false;
+    let reverseController: AbortController | null = null;
 
-    async function resolveLocation(latitude: number, longitude: number, statusLabel: string) {
+    async function resolveLocationLabel(latitude: number, longitude: number, statusLabel: string) {
+      reverseController?.abort();
+      reverseController = new AbortController();
+
       try {
-        const response = await fetch(buildReverseGeocodingUrl(latitude, longitude));
+        const response = await fetch(buildReverseGeocodingUrl(latitude, longitude), {
+          signal: reverseController.signal
+        });
         const payload = await response.json();
-        const label = formatLocationLabel(payload) ?? DEFAULT_LOCATION.label;
+        const label = formatLocationLabel(payload) ?? formatCoordinateLabel(latitude, longitude);
 
         if (!cancelled) {
           setLocation({
@@ -199,7 +229,7 @@ export function DashboardInfoCards({
       } catch (_error) {
         if (!cancelled) {
           setLocation({
-            label: DEFAULT_LOCATION.label,
+            label: formatCoordinateLabel(latitude, longitude),
             statusLabel,
             latitude,
             longitude,
@@ -209,37 +239,66 @@ export function DashboardInfoCards({
       }
     }
 
-    if (!navigator.geolocation) {
-      setLocation(DEFAULT_LOCATION);
-      return () => {
-        cancelled = true;
-      };
+    function requestBrowserLocation() {
+      if (!navigator.geolocation) {
+        setLocation(DEFAULT_LOCATION);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const nextLocation = {
+            label: formatCoordinateLabel(position.coords.latitude, position.coords.longitude),
+            statusLabel: "Ubicación actual",
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            isResolved: true
+          };
+
+          if (!cancelled) {
+            setLocation(nextLocation);
+          }
+
+          void resolveLocationLabel(
+            position.coords.latitude,
+            position.coords.longitude,
+            nextLocation.statusLabel
+          );
+        },
+        (error) => {
+          if (!cancelled) {
+            setLocation({
+              ...DEFAULT_LOCATION,
+              statusLabel: toGeolocationStatusLabel(error)
+            });
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 300000
+        }
+      );
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        void resolveLocation(
-          position.coords.latitude,
-          position.coords.longitude,
-          "Ubicación actual"
-        );
-      },
-      () => {
-        if (!cancelled) {
-          setLocation(DEFAULT_LOCATION);
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 300000
+    if (!location.isResolved) {
+      requestBrowserLocation();
+    }
+
+    const retryOnFocus = () => {
+      if (!cancelled && !location.isResolved) {
+        requestBrowserLocation();
       }
-    );
+    };
+
+    window.addEventListener("focus", retryOnFocus);
 
     return () => {
       cancelled = true;
+      reverseController?.abort();
+      window.removeEventListener("focus", retryOnFocus);
     };
-  }, []);
+  }, [location.isResolved]);
 
   useEffect(() => {
     const controller = new AbortController();

@@ -290,6 +290,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si un componente recibe `onAction(type, payload)` pero en la práctica solo existe una acción válida, esa abstracción está sobrando.** En el dashboard, un callback directo `onRefresh()` es más claro, más seguro y más fácil de mantener que un mini-protocolo de strings.
 - **Los widgets muertos deben salir del repo, no solo del layout.** Si un componente como `QuickActionsWidget` o `TimelineWidget` ya no participa del producto y no tiene contrato futuro aprobado, mantener el archivo solo agrega ruido y falsa superficie de mantenimiento.
 
+## 63. En geolocalización, perder el nombre de ciudad no es lo mismo que perder la ubicación
+
+- **Si el navegador ya entregó coordenadas reales, el widget no debe volver a un fallback administrativo como `Santiago, CL` solo porque falle el reverse geocoding.** Eso degrada una ubicación válida a una ubicación falsa y produce diagnósticos erróneos de “no resolvió ubicación”.
+- **El orden correcto es: primero persistir coordenadas reales, luego intentar resolver la etiqueta humana.** Si la traducción a ciudad falla, la UI debe conservar una representación honesta de la ubicación real (por ejemplo coordenadas) y un estado operativo claro del error.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 
