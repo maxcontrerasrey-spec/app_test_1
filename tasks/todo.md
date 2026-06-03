@@ -15,6 +15,20 @@
 - `useDashboard` ahora fuerza un contrato operativo más correcto: `staleTime: 15s`, `refetchInterval: 30s`, `refetchOnWindowFocus: true` y `refetchOnReconnect: true`.
 - Con esto, `Tareas Pendientes`, `Seguimiento de aprobaciones`, `Folios en curso` y `Cumpleaños` dejan de depender de `F5`, aunque no son instantáneos al segundo. Para inmediatez absoluta, el siguiente salto sería suscripción en tiempo real.
 
+## Reparación de build roto por dependencia de TanStack Query
+
+- [x] Reproducir el fallo real de `vite build`
+- [x] Aislar si el problema venía del código del dashboard o de una dependencia publicada defectuosa
+- [x] Fijar `@tanstack/react-query` y `@tanstack/query-core` a una versión estable que exponga correctamente su entrypoint
+- [x] Validar con `git diff --check`, `tsc -b` y `vite build`
+
+## Resultado de reparación de build roto por dependencia de TanStack Query
+
+- El error de Vite no venía del cambio de auto-refresh ni de la app: la versión `5.100.14` de `@tanstack/react-query` instalada en este entorno quedó con `exports` apuntando a `build/modern/index.js`, pero ese archivo no existía en `node_modules`.
+- La señal definitiva fue reproducible fuera de Vite: `import("@tanstack/react-query")` fallaba con `ERR_MODULE_NOT_FOUND` porque faltaba el entrypoint moderno del paquete.
+- Se fijaron `@tanstack/react-query` y `@tanstack/query-core` en `5.90.20`, versión estable que vuelve a exponer correctamente el entrypoint ESM esperado por Vite.
+- Tras el ajuste, `tsc -b` y `vite build` vuelven a pasar y el build quedó restablecido.
+
 ## Verificación de sync BUK y corrección de layout en Solicitud de Contrataciones
 
 - [x] Verificar en Supabase si la sincronización BUK realmente actualizó `employees` después del fix del workflow

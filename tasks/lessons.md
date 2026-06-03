@@ -279,6 +279,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Usar TanStack Query no vuelve “viva” una pantalla por sí solo**. Si no hay `refetchInterval`, ni refetch al volver al foco, ni invalidaciones externas, una bandeja operativa puede quedarse congelada indefinidamente aunque existan datos nuevos en backend.
 - **Para tableros de trabajo como `Inicio`, el contrato mínimo es polling razonable + refetch al recuperar foco/conectividad**. La inmediatez total puede venir después con realtime, pero depender de recarga manual es un bug operativo.
 
+## 61. Un fallo de resolución en Vite puede venir de una dependencia publicada defectuosa, no del código tocado
+
+- **Si `vite build` rompe resolviendo el entrypoint de un paquete, hay que verificar el paquete instalado antes de tocar imports o config.** En este repo, `@tanstack/react-query@5.100.14` declaraba `build/modern/index.js` en `exports`, pero ese archivo no existía físicamente en `node_modules`.
+- **La prueba rápida es intentar `import("paquete")` fuera de Vite.** Si también falla ahí con `ERR_MODULE_NOT_FOUND`, el problema es de la dependencia instalada o de su versión publicada, no de la app.
+- **Cuando la regresión viene de un paquete defectuoso, la corrección elegante es pinnear una versión estable conocida, no parchear el bundler alrededor del síntoma.**
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 
