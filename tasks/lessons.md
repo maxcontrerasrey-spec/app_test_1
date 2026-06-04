@@ -374,3 +374,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Para jobs periódicos, la instalación de dependencias debe ser determinista y alineada con el lockfile.** En este repo, `npm ci --omit=dev` es preferible a instalar una sola dependencia suelta porque reduce drift entre el runtime programado y el contrato real del proyecto.
 - **El script de sincronización debe emitir un resumen auditable al terminar.** Contadores como `pagesProcessed`, `synced`, `finalCount` y `activeCount` hacen que una alerta de actualización fallida sea diagnóstica en vez de ambigua.
 - **Si un workflow programa dos cron UTC para cubrir horario de verano e invierno, no debe decidir la ejecución mirando la hora real de arranque del runner.** GitHub puede disparar el run con retraso; eso produce éxitos falsos si la sync se salta por comparar `date +%H`. La decisión correcta debe basarse en `github.event.schedule` más el offset actual de `America/Santiago`.
+
+## 70. Las plantillas externas de onboarding no se injertan en el payload general del caso
+
+- **Si una ficha operativa crece para alinearse con una plantilla externa grande como BUK, no hay que inflar la RPC general del detalle del caso con todos esos campos.** El patrón correcto es una lectura dedicada para la ficha (`get_candidate_buk_profile`) y una UI que la consuma de forma aislada.
+- **Los catálogos desplegables del negocio deben vivir como artefacto versionado, no como listas hardcodeadas en JSX.** Si el origen real está en un Excel o maestro operativo, se extrae a un módulo de datos estable y luego se reutiliza desde la UI.
+- **Separar datos persistentes del candidato de datos transaccionales del ingreso evita contaminar futuras reutilizaciones del perfil.** Identidad, contacto y atributos personales pertenecen a `candidate_profiles`; payroll y condiciones del ingreso vigente pertenecen a `candidate_worker_files`.

@@ -167,6 +167,87 @@ export type CandidateWorkerFile = {
   updated_at: string;
 };
 
+export type CandidateBukProfileDetails = {
+  case_candidate_id: string;
+  candidate_profile_id: string;
+  document_type: string | null;
+  document_number: string;
+  first_name: string | null;
+  last_name: string | null;
+  second_last_name: string | null;
+  full_name: string;
+  gender: string | null;
+  birth_date: string | null;
+  nationality: string | null;
+  marital_status: string | null;
+  email: string | null;
+  personal_email: string | null;
+  phone: string | null;
+  office_phone: string | null;
+  country: string | null;
+  address_line: string | null;
+  region: string | null;
+  district_or_commune: string | null;
+  current_city: string | null;
+  street_name: string | null;
+  street_number: string | null;
+  apartment_or_office: string | null;
+  education_title: string | null;
+  education_institution: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relationship: string | null;
+  disability_status: string | null;
+  disability_notice_date: string | null;
+  invalidity_status: string | null;
+  invalidity_notice_date: string | null;
+  inclusion_notes: string | null;
+  labor_inclusion: string | null;
+  firefighter_status: string | null;
+  foreign_worker: string | null;
+  shirt_size: string | null;
+  pants_size: string | null;
+  shoe_size: string | null;
+  worker_file: {
+    id: string | null;
+    employee_code: string | null;
+    project_name: string | null;
+    company_entry_date: string | null;
+    shift_name: string | null;
+    advance_amount: number | null;
+    contract_notes: string | null;
+    private_role: string | null;
+    afc_start_date: string | null;
+    seniority_recognition_date: string | null;
+    progressive_vacation_start_date: string | null;
+    payment_method: string | null;
+    bank_name: string | null;
+    bank_account_type: string | null;
+    bank_account_number: string | null;
+    bank_branch_code: string | null;
+    vale_vista_type: string | null;
+    pension_regime: string | null;
+    contribution_fund: string | null;
+    afp_collection_entity: string | null;
+    increase_quote_one_percent: string | null;
+    health_provider: string | null;
+    health_plan_uf: number | null;
+    health_plan_pesos: number | null;
+    health_plan_percentage: number | null;
+    afc_regime: string | null;
+    retired_status: string | null;
+    retirement_regime: string | null;
+    account_two_fund: string | null;
+    account_two_plan: string | null;
+    currency: string | null;
+    simple_load_count: number | null;
+    maternal_load_count: number | null;
+    invalid_load_count: number | null;
+    family_allowance_section: string | null;
+    personal_data_update_date: string | null;
+  };
+};
+
 export type RecruitmentCaseCandidateRow = {
   id: string;
   candidate_profile_id: string;
@@ -632,28 +713,73 @@ export async function updateCandidateInterviewNotes(input: {
   return { error: null };
 }
 
+export async function fetchCandidateBukProfile(caseCandidateId: string): Promise<{
+  data: CandidateBukProfileDetails | null;
+  error: string | null;
+}> {
+  if (!supabase) {
+    return {
+      data: null,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_candidate_buk_profile", {
+    p_case_candidate_id: caseCandidateId
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: formatRpcError(error) || "No fue posible cargar la ficha BUK del candidato."
+    };
+  }
+
+  return {
+    data: (data ?? null) as CandidateBukProfileDetails | null,
+    error: null
+  };
+}
+
 export async function updateCandidatePersonProfile(input: {
   caseCandidateId: string;
+  documentType?: string | null;
+  documentNumber?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  secondLastName?: string | null;
+  gender?: string | null;
   birthDate?: string | null;
   nationality?: string | null;
   maritalStatus?: string | null;
+  companyEmail?: string | null;
+  personalEmail?: string | null;
+  privatePhone?: string | null;
+  officePhone?: string | null;
+  country?: string | null;
   addressLine?: string | null;
   districtOrCommune?: string | null;
   currentCity?: string | null;
   region?: string | null;
+  streetName?: string | null;
+  streetNumber?: string | null;
+  apartmentOrOffice?: string | null;
+  educationTitle?: string | null;
+  educationInstitution?: string | null;
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   emergencyContactRelationship?: string | null;
+  disabilityStatus?: string | null;
+  disabilityNoticeDate?: string | null;
+  invalidityStatus?: string | null;
+  invalidityNoticeDate?: string | null;
   inclusionNotes?: string | null;
+  laborInclusion?: string | null;
   firefighterStatus?: string | null;
+  foreignWorker?: string | null;
   shirtSize?: string | null;
   pantsSize?: string | null;
   shoeSize?: string | null;
-  bankName?: string | null;
-  bankAccountType?: string | null;
-  bankAccountNumber?: string | null;
-  afpName?: string | null;
-  healthProvider?: string | null;
 }) {
   if (!supabase) {
     return {
@@ -663,15 +789,35 @@ export async function updateCandidatePersonProfile(input: {
 
   const { error } = await supabase.rpc("upsert_candidate_person_profile", {
     p_case_candidate_id: input.caseCandidateId,
+    p_document_type: input.documentType?.trim() ? input.documentType.trim() : null,
+    p_document_number: input.documentNumber?.trim() ? input.documentNumber.trim() : null,
+    p_first_name: input.firstName?.trim() ? input.firstName.trim() : null,
+    p_last_name: input.lastName?.trim() ? input.lastName.trim() : null,
+    p_second_last_name: input.secondLastName?.trim() ? input.secondLastName.trim() : null,
+    p_gender: input.gender?.trim() ? input.gender.trim() : null,
     p_birth_date: input.birthDate || null,
     p_nationality: input.nationality?.trim() ? input.nationality.trim() : null,
     p_marital_status: input.maritalStatus?.trim() ? input.maritalStatus.trim() : null,
+    p_company_email: input.companyEmail?.trim() ? input.companyEmail.trim() : null,
+    p_personal_email: input.personalEmail?.trim() ? input.personalEmail.trim() : null,
+    p_private_phone: input.privatePhone?.trim() ? input.privatePhone.trim() : null,
+    p_office_phone: input.officePhone?.trim() ? input.officePhone.trim() : null,
+    p_country: input.country?.trim() ? input.country.trim() : null,
     p_address_line: input.addressLine?.trim() ? input.addressLine.trim() : null,
     p_district_or_commune: input.districtOrCommune?.trim()
       ? input.districtOrCommune.trim()
       : null,
     p_current_city: input.currentCity?.trim() ? input.currentCity.trim() : null,
     p_region: input.region?.trim() ? input.region.trim() : null,
+    p_street_name: input.streetName?.trim() ? input.streetName.trim() : null,
+    p_street_number: input.streetNumber?.trim() ? input.streetNumber.trim() : null,
+    p_apartment_or_office: input.apartmentOrOffice?.trim()
+      ? input.apartmentOrOffice.trim()
+      : null,
+    p_education_title: input.educationTitle?.trim() ? input.educationTitle.trim() : null,
+    p_education_institution: input.educationInstitution?.trim()
+      ? input.educationInstitution.trim()
+      : null,
     p_emergency_contact_name: input.emergencyContactName?.trim()
       ? input.emergencyContactName.trim()
       : null,
@@ -681,22 +827,23 @@ export async function updateCandidatePersonProfile(input: {
     p_emergency_contact_relationship: input.emergencyContactRelationship?.trim()
       ? input.emergencyContactRelationship.trim()
       : null,
+    p_disability_status: input.disabilityStatus?.trim()
+      ? input.disabilityStatus.trim()
+      : null,
+    p_disability_notice_date: input.disabilityNoticeDate || null,
+    p_invalidity_status: input.invalidityStatus?.trim()
+      ? input.invalidityStatus.trim()
+      : null,
+    p_invalidity_notice_date: input.invalidityNoticeDate || null,
     p_inclusion_notes: input.inclusionNotes?.trim() ? input.inclusionNotes.trim() : null,
+    p_labor_inclusion: input.laborInclusion?.trim() ? input.laborInclusion.trim() : null,
     p_firefighter_status: input.firefighterStatus?.trim()
       ? input.firefighterStatus.trim()
       : null,
+    p_foreign_worker: input.foreignWorker?.trim() ? input.foreignWorker.trim() : null,
     p_shirt_size: input.shirtSize?.trim() ? input.shirtSize.trim() : null,
     p_pants_size: input.pantsSize?.trim() ? input.pantsSize.trim() : null,
-    p_shoe_size: input.shoeSize?.trim() ? input.shoeSize.trim() : null,
-    p_bank_name: input.bankName?.trim() ? input.bankName.trim() : null,
-    p_bank_account_type: input.bankAccountType?.trim()
-      ? input.bankAccountType.trim()
-      : null,
-    p_bank_account_number: input.bankAccountNumber?.trim()
-      ? input.bankAccountNumber.trim()
-      : null,
-    p_afp_name: input.afpName?.trim() ? input.afpName.trim() : null,
-    p_health_provider: input.healthProvider?.trim() ? input.healthProvider.trim() : null
+    p_shoe_size: input.shoeSize?.trim() ? input.shoeSize.trim() : null
   });
 
   if (error) {
@@ -710,11 +857,41 @@ export async function updateCandidatePersonProfile(input: {
 
 export async function updateCandidateWorkerFile(input: {
   caseCandidateId: string;
+  employeeCode?: string | null;
   projectName?: string | null;
   companyEntryDate?: string | null;
   shiftName?: string | null;
   advanceAmount?: number | null;
   contractNotes?: string | null;
+  privateRole?: string | null;
+  afcStartDate?: string | null;
+  seniorityRecognitionDate?: string | null;
+  progressiveVacationStartDate?: string | null;
+  paymentMethod?: string | null;
+  bankName?: string | null;
+  bankAccountType?: string | null;
+  bankAccountNumber?: string | null;
+  bankBranchCode?: string | null;
+  valeVistaType?: string | null;
+  pensionRegime?: string | null;
+  contributionFund?: string | null;
+  afpCollectionEntity?: string | null;
+  increaseQuoteOnePercent?: string | null;
+  healthProvider?: string | null;
+  healthPlanUf?: number | null;
+  healthPlanPesos?: number | null;
+  healthPlanPercentage?: number | null;
+  afcRegime?: string | null;
+  retiredStatus?: string | null;
+  retirementRegime?: string | null;
+  accountTwoFund?: string | null;
+  accountTwoPlan?: string | null;
+  currency?: string | null;
+  simpleLoadCount?: number | null;
+  maternalLoadCount?: number | null;
+  invalidLoadCount?: number | null;
+  familyAllowanceSection?: string | null;
+  personalDataUpdateDate?: string | null;
 }) {
   if (!supabase) {
     return {
@@ -724,11 +901,55 @@ export async function updateCandidateWorkerFile(input: {
 
   const { error } = await supabase.rpc("upsert_candidate_worker_file", {
     p_case_candidate_id: input.caseCandidateId,
+    p_employee_code: input.employeeCode?.trim() ? input.employeeCode.trim() : null,
     p_project_name: input.projectName?.trim() ? input.projectName.trim() : null,
     p_company_entry_date: input.companyEntryDate || null,
     p_shift_name: input.shiftName?.trim() ? input.shiftName.trim() : null,
     p_advance_amount: input.advanceAmount ?? null,
-    p_contract_notes: input.contractNotes?.trim() ? input.contractNotes.trim() : null
+    p_contract_notes: input.contractNotes?.trim() ? input.contractNotes.trim() : null,
+    p_private_role: input.privateRole?.trim() ? input.privateRole.trim() : null,
+    p_afc_start_date: input.afcStartDate || null,
+    p_seniority_recognition_date: input.seniorityRecognitionDate || null,
+    p_progressive_vacation_start_date: input.progressiveVacationStartDate || null,
+    p_payment_method: input.paymentMethod?.trim() ? input.paymentMethod.trim() : null,
+    p_bank_name: input.bankName?.trim() ? input.bankName.trim() : null,
+    p_bank_account_type: input.bankAccountType?.trim()
+      ? input.bankAccountType.trim()
+      : null,
+    p_bank_account_number: input.bankAccountNumber?.trim()
+      ? input.bankAccountNumber.trim()
+      : null,
+    p_bank_branch_code: input.bankBranchCode?.trim() ? input.bankBranchCode.trim() : null,
+    p_vale_vista_type: input.valeVistaType?.trim() ? input.valeVistaType.trim() : null,
+    p_pension_regime: input.pensionRegime?.trim() ? input.pensionRegime.trim() : null,
+    p_contribution_fund: input.contributionFund?.trim()
+      ? input.contributionFund.trim()
+      : null,
+    p_afp_collection_entity: input.afpCollectionEntity?.trim()
+      ? input.afpCollectionEntity.trim()
+      : null,
+    p_increase_quote_one_percent: input.increaseQuoteOnePercent?.trim()
+      ? input.increaseQuoteOnePercent.trim()
+      : null,
+    p_health_provider: input.healthProvider?.trim() ? input.healthProvider.trim() : null,
+    p_health_plan_uf: input.healthPlanUf ?? null,
+    p_health_plan_pesos: input.healthPlanPesos ?? null,
+    p_health_plan_percentage: input.healthPlanPercentage ?? null,
+    p_afc_regime: input.afcRegime?.trim() ? input.afcRegime.trim() : null,
+    p_retired_status: input.retiredStatus?.trim() ? input.retiredStatus.trim() : null,
+    p_retirement_regime: input.retirementRegime?.trim()
+      ? input.retirementRegime.trim()
+      : null,
+    p_account_two_fund: input.accountTwoFund?.trim() ? input.accountTwoFund.trim() : null,
+    p_account_two_plan: input.accountTwoPlan?.trim() ? input.accountTwoPlan.trim() : null,
+    p_currency: input.currency?.trim() ? input.currency.trim() : null,
+    p_simple_load_count: input.simpleLoadCount ?? null,
+    p_maternal_load_count: input.maternalLoadCount ?? null,
+    p_invalid_load_count: input.invalidLoadCount ?? null,
+    p_family_allowance_section: input.familyAllowanceSection?.trim()
+      ? input.familyAllowanceSection.trim()
+      : null,
+    p_personal_data_update_date: input.personalDataUpdateDate || null
   });
 
   if (error) {
