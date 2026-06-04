@@ -317,6 +317,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una view solo consolida filas ya gobernadas por RLS o grants de lectura, debe marcarse como `security_invoker = true`.** Dejarla con el comportamiento por defecto expone permisos del creador y genera alertas válidas del advisor de Supabase.
 - **La corrección correcta no es mover lógica a otra RPC si el problema es solo la propiedad de la view.** Basta con recrearla preservando el mismo `SELECT`, los mismos grants y cambiando explícitamente la semántica de seguridad.
 
+## 68. En Supabase, recrear funciones sin re-revocar grants reabre exposición accidental
+
+- **`CREATE OR REPLACE FUNCTION` puede dejar vigente o reintroducir `EXECUTE` heredado para `public` y `anon` si no se cierra explícitamente después.** En este ERP, varios warnings no venían de una decisión de diseño, sino de recreaciones sucesivas de funciones que nunca reaplicaron el endurecimiento de grants.
+- **La regla segura es: después de cualquier lote de RPCs o helpers nuevos, re-revocar `public` y `anon` en todo el schema expuesto y luego regrant solo lo que la app autenticada sí necesita.** Si no se hace, las funciones internas quedan publicadas por accidente vía `/rest/v1/rpc/...`.
+
+## 69. Una tabla fuente detrás de una view `security_invoker` necesita política explícita, no solo grants
+
+- **Si una view autenticada pasa a `security_invoker = true`, la tabla base debe tener un contrato RLS explícito compatible con ese consumo.** Dejar RLS habilitado sin políticas hace que el advisor marque un problema real y vuelve ambiguo quién puede leer la fuente.
+- **El endurecimiento correcto combina tres capas: policy mínima de `SELECT`, revocación de escrituras innecesarias y eliminación total de permisos para `anon`.** Eso mantiene operativas las vistas legítimas como `employees_active_current` sin dejar abierta la tabla cruda más allá de lo necesario.
+
 - **Un módulo eliminado no está eliminado hasta que se limpian todas sus capas.** Borrar el componente React no basta; hay que quitar también: imports en archivos consumidores, bloque CSS completo, scripts de sincronización, workflows de CI/CD, migraciones de creación de tabla/función, y crear una migración destructiva explícita.
 - **Las migraciones de creación no se borran del historial.** Aunque el módulo ya no exista, las migraciones que lo crearon deben permanecer en el repositorio porque representan la historia real de la base de datos. Lo que se agrega es una migración nueva que destruye los objetos de forma limpia.
 
