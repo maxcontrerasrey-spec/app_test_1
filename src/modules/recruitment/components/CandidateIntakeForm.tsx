@@ -5,9 +5,11 @@ import {
   formatRut,
   normalizeRut,
   findCandidateProfileByRut,
+  checkCandidateInBukLive,
   toRecruitmentCandidateStageLabel,
   type RecruitmentCaseListRow,
-  type RecruitmentCaseDetail
+  type RecruitmentCaseDetail,
+  type BukCandidateStatus
 } from "../services/hiringControl";
 import { validateRut } from "../../../shared/lib/rut";
 import { SelectField, TextField } from "../../../shared/ui";
@@ -48,6 +50,10 @@ export function CandidateIntakeForm({
   const [isSearchingCandidate, setIsSearchingCandidate] = useState(false);
   const [foundCandidateProfile, setFoundCandidateProfile] = useState<CandidateLookupProfile | null>(null);
   const [lastSearchedRut, setLastSearchedRut] = useState("");
+  
+  // States for Buk lookup
+  const [isSearchingBuk, setIsSearchingBuk] = useState(false);
+  const [foundBukStatus, setFoundBukStatus] = useState<BukCandidateStatus | null>(null);
 
   useEffect(() => {
     if (!candidateForm.caseId && initialCaseId) {
@@ -82,8 +88,9 @@ export function CandidateIntakeForm({
       }
     } else {
       // If the RUT is cleared or becomes invalid, reset lookup states
-      if (!rut && foundCandidateProfile) {
+      if (!rut && (foundCandidateProfile || foundBukStatus)) {
         setFoundCandidateProfile(null);
+        setFoundBukStatus(null);
         setLastSearchedRut("");
         setCandidateForm((current) => ({
           ...current,
@@ -94,35 +101,47 @@ export function CandidateIntakeForm({
         setCandidateFormStatus("");
       }
     }
-  }, [candidateForm.nationalId, lastSearchedRut, foundCandidateProfile]);
+  }, [candidateForm.nationalId, lastSearchedRut, foundCandidateProfile, foundBukStatus]);
 
   const performCandidateLookup = async (rut: string) => {
     setIsSearchingCandidate(true);
+    setIsSearchingBuk(true);
     setCandidateFormError("");
-    setCandidateFormStatus("🔍 Buscando candidato en el sistema...");
+    setFoundBukStatus(null);
+    setCandidateFormStatus("🔍 Buscando candidato en el sistema y en BUK...");
 
-    const { data, error } = await findCandidateProfileByRut(rut);
+    const [localResponse, bukResponse] = await Promise.all([
+      findCandidateProfileByRut(rut),
+      checkCandidateInBukLive(rut)
+    ]);
 
     setIsSearchingCandidate(false);
+    setIsSearchingBuk(false);
 
-    if (error) {
-      logger.error("CandidateIntakeForm performCandidateLookup", error);
-      setCandidateFormStatus("");
-      return;
+    if (localResponse.error) {
+      logger.error("CandidateIntakeForm performCandidateLookup local", localResponse.error);
+    }
+    
+    if (bukResponse.error) {
+      logger.error("CandidateIntakeForm performCandidateLookup buk", bukResponse.error);
     }
 
-    if (data) {
-      setFoundCandidateProfile(data as CandidateLookupProfile);
+    if (localResponse.data) {
+      setFoundCandidateProfile(localResponse.data as CandidateLookupProfile);
       setCandidateForm((current) => ({
         ...current,
-        fullName: (data as CandidateLookupProfile).full_name,
-        email: (data as CandidateLookupProfile).email || "",
-        phone: (data as CandidateLookupProfile).phone || ""
+        fullName: (localResponse.data as CandidateLookupProfile).full_name,
+        email: (localResponse.data as CandidateLookupProfile).email || "",
+        phone: (localResponse.data as CandidateLookupProfile).phone || ""
       }));
-      setCandidateFormStatus("✓ Candidato registrado en el sistema. Datos autocompletados.");
+      setCandidateFormStatus("✓ Candidato registrado en el sistema local. Datos autocompletados.");
     } else {
       setFoundCandidateProfile(null);
       setCandidateFormStatus("");
+    }
+
+    if (bukResponse.data?.exists) {
+      setFoundBukStatus(bukResponse.data);
     }
   };
 
@@ -337,12 +356,37 @@ export function CandidateIntakeForm({
           {candidateFormError}
         </p>
       ) : null}
+
+      {foundBukStatus?.exists && !candidateInSelectedCase ? (
+        <div 
+          className="control-span-full" 
+          style={{ 
+            marginTop: "0.5rem", 
+            padding: "8px 12px", 
+            borderRadius: "6px", 
+            backgroundColor: foundBukStatus.status?.toLowerCase() === "activo" ? "#fff1f0" : "#fffbe6",
+            border: `1px solid ${foundBukStatus.status?.toLowerCase() === "activo" ? "#ffccc7" : "#ffe58f"}`
+          }}
+        >
+          <p 
+            style={{ 
+              fontSize: "0.88rem", 
+              fontWeight: 500, 
+              color: foundBukStatus.status?.toLowerCase() === "activo" ? "#cf1322" : "#d48806",
+              margin: 0
+            }}
+          >
+            {foundBukStatus.status?.toLowerCase() === "activo" ? "🔴" : "🟡"} Atención: El RUT ingresado ya cuenta con historial en BUK (Estado: {foundBukStatus.status?.toUpperCase()}).
+          </p>
+        </div>
+      ) : null}
+
       {candidateFormStatus ? (
         <p
           className="form-status"
           style={{
             marginTop: "0.5rem",
-            color: foundCandidateProfile ? "#027a48" : isSearchingCandidate ? "var(--accent)" : "var(--text-muted)",
+            color: foundCandidateProfile ? "#027a48" : (isSearchingCandidate || isSearchingBuk) ? "var(--accent)" : "var(--text-muted)",
             fontWeight: foundCandidateProfile ? 500 : "normal"
           }}
         >

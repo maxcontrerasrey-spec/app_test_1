@@ -400,3 +400,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **`create or replace function` no alcanza cuando el ambiente remoto arrastra una firma efectiva distinta en los parámetros OUT o en `RETURNS TABLE`.** Aunque el nombre y los tipos de entrada coincidan, Postgres rechaza el reemplazo con `42P13` si cambió el row type derivado del retorno.
 - **Para endurecimientos sobre RPCs vivos, primero se inspecciona la firma remota y luego se usa `drop function if exists ...` antes del `create`.** Eso hace la migración resistente al drift entre el historial local del repo y el estado real de producción.
+
+## 73. Seguridad en integraciones: No exponer APIs de terceros en el Frontend
+
+- **El frontend jamás debe hacer solicitudes HTTP directas a servicios de terceros (como BUK) si eso requiere incrustar un Token o API Key privada.** Exponer algo como `VITE_BUK_AUTH_TOKEN` permite que cualquier persona robe las credenciales inspeccionando la red o el código fuente.
+- **Patrón correcto (Edge Functions)**: La aplicación web debe llamar a una Supabase Edge Function enviando solo el payload (ej. RUT). El backend inyecta el token de seguridad desde las variables de entorno (`Deno.env.get`), hace la llamada a BUK, y devuelve solo el resultado procesado al frontend.

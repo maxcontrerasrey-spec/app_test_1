@@ -1007,3 +1007,37 @@ export async function findCandidateProfileByRut(rut: string): Promise<{
     error: null
   };
 }
+
+export interface BukCandidateStatus {
+  exists: boolean;
+  status?: string;
+  name?: string;
+}
+
+export async function checkCandidateInBukLive(rut: string): Promise<{
+  data: BukCandidateStatus | null;
+  error: string | null;
+}> {
+  if (!supabase) {
+    return { data: null, error: "Supabase no está configurado." };
+  }
+
+  const normalizedNationalId = normalizeRut(rut);
+  
+  // Asumimos que normalizeRut retorna algo como "12345678-9", que es el formato que espera BUK
+  const { data, error } = await supabase.functions.invoke("check_buk_candidate", {
+    body: { rut: normalizedNationalId }
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: error.message || "No fue posible verificar el estado en BUK."
+    };
+  }
+
+  return {
+    data: data as BukCandidateStatus,
+    error: null
+  };
+}
