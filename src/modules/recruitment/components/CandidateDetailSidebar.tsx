@@ -37,6 +37,7 @@ type CandidateDetailSidebarProps = {
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: (whoCauses?: WhoApprovalCause[]) => Promise<void>;
   onWhoApprovalRegistered?: () => Promise<void>;
+  onWhoApprovalRejected?: () => Promise<void>;
   onLicenseUpdated?: () => Promise<void>;
   onInterviewNotesUpdated?: () => Promise<void>;
   onCandidateFileUpdated?: () => Promise<void>;
@@ -69,6 +70,7 @@ export function CandidateDetailSidebar({
   onStageCommentChange,
   onAdvanceStage,
   onWhoApprovalRegistered,
+  onWhoApprovalRejected,
   onLicenseUpdated,
   onInterviewNotesUpdated,
   onCandidateFileUpdated
@@ -518,7 +520,12 @@ export function CandidateDetailSidebar({
                   <button
                     type="button"
                     className="soft-primary-button approval-button-approve"
-                    disabled={isStageSaving || isWhoPending || !stageDraft}
+                    disabled={
+                      isStageSaving || 
+                      isWhoPending || 
+                      !stageDraft || 
+                      ((stageDraft === "rejected" || stageDraft === "withdrawn") && !stageComment.trim())
+                    }
                     onClick={() =>
                       void onAdvanceStage(
                         stageDraft === "who_pending" ? normalizedWhoCauses : undefined
@@ -527,6 +534,11 @@ export function CandidateDetailSidebar({
                   >
                     Mover candidato de etapa
                   </button>
+                  {(stageDraft === "rejected" || stageDraft === "withdrawn") && !stageComment.trim() ? (
+                    <p className="control-inline-error" style={{ marginTop: "6px", fontSize: "0.85rem", color: "#cf1322" }}>
+                      * El comentario es obligatorio para descartar.
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -538,6 +550,15 @@ export function CandidateDetailSidebar({
                   </strong>
                   {canApproveWho ? (
                     <div className="control-actions-row control-actions-row-top">
+                      <button
+                        type="button"
+                        className="soft-primary-button"
+                        style={{ backgroundColor: "#fff1f0", color: "#cf1322", borderColor: "#ffa39e" }}
+                        disabled={isStageSaving}
+                        onClick={() => void onWhoApprovalRejected?.()}
+                      >
+                        {isStageSaving ? "Procesando..." : "Rechazar antecedentes"}
+                      </button>
                       <button
                         type="button"
                         className="soft-primary-button approval-button-approve"

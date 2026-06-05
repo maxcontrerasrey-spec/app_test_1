@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { decideHiringApproval } from "../services/hiringWorkflow";
 import {
   approveCandidateStageWho,
+  rejectCandidateStageWho,
   advanceRecruitmentCandidateStage,
   fetchRecruitmentCaseDetail,
   fetchRecruitmentControlDashboard,
@@ -269,6 +270,39 @@ export function HiringStatusPage() {
     await loadCaseDetail(selectedCaseDetail.case.id, selectedCandidate.id);
   };
 
+  const handleWhoApprovalRejected = async () => {
+    const selectedCandidate =
+      selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
+      selectedCaseDetail?.candidates[0] ??
+      null;
+
+    if (!selectedCandidate || !selectedCaseDetail) {
+      return;
+    }
+
+    setIsStageSaving(true);
+    setDecisionMessage("");
+
+    const { error } = await rejectCandidateStageWho({
+      caseCandidateId: selectedCandidate.id,
+      comment: stageComment
+    });
+
+    if (error) {
+      setDecisionMessage(error);
+      setIsStageSaving(false);
+      return;
+    }
+
+    setDecisionMessage("Antecedentes rechazados. Candidato descartado.");
+    setStageDraft("");
+    setStageComment("");
+    setIsStageSaving(false);
+
+    await loadDashboard(selectedCaseDetail.case.id);
+    await loadCaseDetail(selectedCaseDetail.case.id, selectedCandidate.id);
+  };
+
   return (
     <PageShell>
       <div className="minimal-page-header">
@@ -351,6 +385,7 @@ export function HiringStatusPage() {
             onStageCommentChange={setStageComment}
             onAdvanceStage={handleAdvanceStage}
             onWhoApprovalRegistered={handleWhoApprovalRegistered}
+            onWhoApprovalRejected={handleWhoApprovalRejected}
             onLicenseUpdated={handleLicenseUpdated}
             onInterviewNotesUpdated={handleLicenseUpdated}
             onCandidateFileUpdated={handleCandidateFileUpdated}

@@ -598,6 +598,28 @@ export async function approveCandidateStageWho(input: {
   return { error: null };
 }
 
+export async function rejectCandidateStageWho(input: {
+  caseCandidateId: string;
+  comment?: string;
+}): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase no está configurado." };
+  }
+
+  const { error } = await supabase.rpc("reject_candidate_stage_who", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_comment: input.comment || null
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible rechazar la aprobación Who."
+    };
+  }
+
+  return { error: null };
+}
+
 export function toWhoCauseTypeLabel(value: WhoCauseType | string | null | undefined) {
   if (value === "laboral") return "Laboral";
   if (value === "penal") return "Penal";
@@ -972,12 +994,21 @@ export async function updateCandidateWorkerFile(input: {
 }
 
 
+export interface CandidateHistoricalRejection {
+  case_code: string;
+  job_position: string;
+  stage_code: string;
+  rejection_reason: string | null;
+  date: string;
+}
+
 export interface CandidateProfileSearchResult {
   id: string;
   national_id: string;
   full_name: string;
   email: string | null;
   phone: string | null;
+  historical_rejections?: CandidateHistoricalRejection[];
 }
 
 export async function findCandidateProfileByRut(rut: string): Promise<{
@@ -990,7 +1021,7 @@ export async function findCandidateProfileByRut(rut: string): Promise<{
 
   const normalizedNationalId = normalizeRut(rut);
 
-  const { data, error } = await supabase.rpc("find_candidate_profile_by_rut", {
+  const { data, error } = await supabase.rpc("find_candidate_profile_with_history_by_rut", {
     p_national_id: normalizedNationalId
   });
 

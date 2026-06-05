@@ -403,5 +403,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 73. Seguridad en integraciones: No exponer APIs de terceros en el Frontend
 
-- **El frontend jamás debe hacer solicitudes HTTP directas a servicios de terceros (como BUK) si eso requiere incrustar un Token o API Key privada.** Exponer algo como `VITE_BUK_AUTH_TOKEN` permite que cualquier persona robe las credenciales inspeccionando la red o el código fuente.
-- **Patrón correcto (Edge Functions)**: La aplicación web debe llamar a una Supabase Edge Function enviando solo el payload (ej. RUT). El backend inyecta el token de seguridad desde las variables de entorno (`Deno.env.get`), hace la llamada a BUK, y devuelve solo el resultado procesado al frontend.
+- **El frontend jamás debe hacer solicitudes HTTP directas a APIs privadas** (como BUK o servicios que exijan un Token de Autorización Privado) ya que las credenciales quedarán expuestas en el navegador.
+- En Supabase, la arquitectura exige que estas integraciones **siempre** ocurran del lado del servidor utilizando **Edge Functions**.
+- El frontend llama a la Edge Function usando `supabase.functions.invoke()`, la cual, dentro del entorno seguro, usa un secreto (ej. `BUK_AUTH_TOKEN`) almacenado de forma segura en `npx supabase secrets`.
+
+## 74. Historial persistente e Identidad del Candidato
+
+- Un candidato se mantiene único en el sistema de acuerdo a su `national_id` (RUT) en la tabla `candidate_profiles`.
+- El historial de sus postulaciones, incluyendo descartes o retiros, siempre debe obtenerse consultando la tabla pivot `recruitment_case_candidates` cruzada con la tabla de perfil maestro.
+- **Regla de negocio:** Un candidato descartado en un proceso debe poder volver a postular a un nuevo proceso, pero el sistema está obligado a recuperar y mostrarle al reclutador su historial de descartes (alertas de retención/descarte) de casos anteriores para proteger los estándares de ingreso.

@@ -34,6 +34,7 @@ type HiringCandidatesViewProps = {
   onStageCommentChange: (value: string) => void;
   onAdvanceStage: (whoCauses?: WhoApprovalCause[]) => Promise<void>;
   onWhoApprovalRegistered: () => Promise<void>;
+  onWhoApprovalRejected?: () => Promise<void>;
   onLicenseUpdated: () => Promise<void>;
   onInterviewNotesUpdated: () => Promise<void>;
   onCandidateFileUpdated: () => Promise<void>;
@@ -56,6 +57,7 @@ export function HiringCandidatesView({
   onStageCommentChange,
   onAdvanceStage,
   onWhoApprovalRegistered,
+  onWhoApprovalRejected,
   onLicenseUpdated,
   onInterviewNotesUpdated,
   onCandidateFileUpdated
@@ -248,6 +250,7 @@ export function HiringCandidatesView({
           onStageCommentChange={onStageCommentChange}
           onAdvanceStage={onAdvanceStage}
           onWhoApprovalRegistered={onWhoApprovalRegistered}
+          onWhoApprovalRejected={onWhoApprovalRejected}
           onLicenseUpdated={onLicenseUpdated}
           onInterviewNotesUpdated={onInterviewNotesUpdated}
           onCandidateFileUpdated={onCandidateFileUpdated}

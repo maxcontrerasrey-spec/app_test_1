@@ -8,7 +8,7 @@ import {
   travelMethodologyOptions,
   type TravelMethodology
 } from "../../../recruitment/services/hiringWorkflow";
-import { approveCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
+import { approveCandidateStageWho, rejectCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 
 type TasksWidgetProps = {
   title: string;
@@ -89,6 +89,25 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
     setSubmitError(null);
 
     const { error } = await approveCandidateStageWho({
+      caseCandidateId,
+      comment: comments.trim() || undefined
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setSubmitError(error);
+    } else {
+      setExpandedTaskId(null);
+      onRefresh?.();
+    }
+  };
+
+  const handleWhoRejection = async (taskId: string, caseCandidateId: string) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const { error } = await rejectCandidateStageWho({
       caseCandidateId,
       comment: comments.trim() || undefined
     });
@@ -301,6 +320,14 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                                   )}
 
                                   <div className="task-decision-actions">
+                                    <button
+                                      onClick={() => handleWhoRejection(task.id, task.case_candidate_id as string)}
+                                      disabled={isSubmitting || !task.case_candidate_id}
+                                      className="task-decision-button task-decision-button-reject"
+                                    >
+                                      {isSubmitting ? "Procesando..." : "Rechazar antecedentes"}
+                                    </button>
+
                                     <button
                                       onClick={() => handleWhoApproval(task.id, task.case_candidate_id as string)}
                                       disabled={isSubmitting || !task.case_candidate_id}

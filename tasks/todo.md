@@ -521,6 +521,18 @@
 - [x] Agregar tercera pestaña `Ficha del candidato` en `CandidateDetailSidebar`
 - [x] Validar compilación, build y dejar lecciones registradas
 
+## Validación en vivo de historial de candidatos en BUK
+
+- [x] Crear Supabase Edge Function `check_buk_candidate` para proteger `BUK_AUTH_TOKEN`.
+- [x] Ajustar Frontend para consumir Edge Function y parsear respuestas correctamente.
+- [x] Mostrar alerta visual automática 🔴/🟡 según estado del candidato en BUK.
+
+## Mejoras de Rechazo e Historial en Control de Candidatos
+
+- [x] **Alerta Histórica:** Crear función `find_candidate_profile_with_history_by_rut` para mostrar descartes previos en `CandidateIntakeForm`.
+- [x] **Comentario Obligatorio:** Bloquear transición de base de datos y UI hacia etapa "Descartado" sin proveer un motivo claro en `HiringCandidatesView`.
+- [x] **Rechazo Who Activo:** Crear `reject_candidate_stage_who` para permitir a gerencia rechazar antecedentes y descartar automáticamente con "Rechazado por Gerencia por antecedentes Who" en `TasksWidget` y el Sidebar de Detalle.
+
 ## Resultado de Fase 2C: Ficha del candidato
 
 - La ficha quedó separada en dos capas útiles: datos personales persistentes en `candidate_profiles` y datos del ingreso actual en `candidate_worker_files`.

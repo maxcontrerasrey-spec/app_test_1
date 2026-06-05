@@ -9,7 +9,8 @@ import {
   toRecruitmentCandidateStageLabel,
   type RecruitmentCaseListRow,
   type RecruitmentCaseDetail,
-  type BukCandidateStatus
+  type BukCandidateStatus,
+  type CandidateHistoricalRejection
 } from "../services/hiringControl";
 import { validateRut } from "../../../shared/lib/rut";
 import { SelectField, TextField } from "../../../shared/ui";
@@ -26,6 +27,7 @@ type CandidateLookupProfile = {
   full_name: string;
   email: string | null;
   phone: string | null;
+  historical_rejections?: CandidateHistoricalRejection[];
 };
 
 export function CandidateIntakeForm({
@@ -378,6 +380,39 @@ export function CandidateIntakeForm({
           >
             {foundBukStatus.status?.toLowerCase() === "activo" ? "🔴" : "🟡"} Atención: El RUT ingresado ya cuenta con historial en BUK (Estado: {foundBukStatus.status?.toUpperCase()}).
           </p>
+        </div>
+      ) : null}
+
+      {foundCandidateProfile?.historical_rejections && foundCandidateProfile.historical_rejections.length > 0 && !candidateInSelectedCase ? (
+        <div 
+          className="control-span-full" 
+          style={{ 
+            marginTop: "0.5rem", 
+            padding: "8px 12px", 
+            borderRadius: "6px", 
+            backgroundColor: "#fff7e6",
+            border: "1px solid #ffd591"
+          }}
+        >
+          <p 
+            style={{ 
+              fontSize: "0.88rem", 
+              fontWeight: 500, 
+              color: "#d46b08",
+              margin: 0,
+              marginBottom: "4px"
+            }}
+          >
+            🟠 Atención: Este candidato tiene historial de descartes previos en la empresa:
+          </p>
+          <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.85rem", color: "#d46b08" }}>
+            {foundCandidateProfile.historical_rejections.map((rej, idx) => (
+              <li key={idx}>
+                <strong>{rej.case_code}</strong> ({rej.job_position}) - {new Date(rej.date).toLocaleDateString()}: 
+                Descartado con motivo: <em>"{rej.rejection_reason || "Sin especificar"}"</em>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
