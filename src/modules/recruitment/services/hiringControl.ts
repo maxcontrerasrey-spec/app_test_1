@@ -121,7 +121,10 @@ export type RecruitmentCandidateControlRow = {
   contract_locked_stage_code: RecruitmentCandidateStage | null;
   is_contract_path_blocked: boolean;
   interview_notes: string | null;
+  hired_at?: string | null;
 };
+
+export type RecruitmentPersonnelToHireRow = RecruitmentCandidateControlRow;
 
 export type RecruitmentCaseAssignment = {
   id: number;
@@ -369,6 +372,7 @@ type RecruitmentControlDashboardPayload = {
   pending_approvals?: HiringControlApproval[] | null;
   active_cases?: RecruitmentCaseListRow[] | null;
   candidate_control?: RecruitmentCandidateControlRow[] | null;
+  personnel_to_hire?: RecruitmentPersonnelToHireRow[] | null;
 };
 
 function formatRpcError(error: {
@@ -444,7 +448,8 @@ export async function fetchRecruitmentControlDashboard() {
       },
       pendingApprovals: payload.pending_approvals ?? [],
       activeCases: payload.active_cases ?? [],
-      candidateControl: payload.candidate_control ?? []
+      candidateControl: payload.candidate_control ?? [],
+      personnelToHire: payload.personnel_to_hire ?? []
     },
     error: null
   };

@@ -15,7 +15,6 @@ export const candidateStageFilterOptions = [
   { key: "medical_exams", label: "Exámenes Médicos" },
   { key: "document_review", label: "Revisión Documental" },
   { key: "ready_for_hire", label: "Listos para contratar" },
-  { key: "hired", label: "Contratados" },
   { key: "discarded", label: "Descartados" }
 ] as const;
 

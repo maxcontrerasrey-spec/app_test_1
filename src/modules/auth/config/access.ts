@@ -9,7 +9,7 @@ export type AppRole =
   | "instructor"
   | "guest";
 
-export type AppCapability = "can_approve_who_stage";
+export type AppCapability = "can_approve_who_stage" | "candidate_control_access";
 
 export type AppModuleCode =
   | "solicitud_contrataciones"
@@ -31,7 +31,10 @@ const KNOWN_ROLE_CODES = new Set<AppRole>([
   "guest"
 ]);
 
-const KNOWN_CAPABILITY_CODES = new Set<AppCapability>(["can_approve_who_stage"]);
+const KNOWN_CAPABILITY_CODES = new Set<AppCapability>([
+  "can_approve_who_stage",
+  "candidate_control_access"
+]);
 
 const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "solicitud_contrataciones",

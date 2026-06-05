@@ -14,12 +14,14 @@ import {
   type RecruitmentCaseDetail,
   type RecruitmentCaseListRow,
   type RecruitmentDashboardSummary,
+  type RecruitmentPersonnelToHireRow,
   type WhoApprovalCause
 } from "../services/hiringControl";
 import { HiringCandidatesView } from "../components/HiringCandidatesView";
+import { HiringPersonnelToHireView } from "../components/HiringPersonnelToHireView";
 import { HiringProcessesView } from "../components/HiringProcessesView";
 
-type RecruitmentInternalView = "processes" | "candidates";
+type RecruitmentInternalView = "processes" | "candidates" | "personnel_to_hire";
 
 const emptySummary: RecruitmentDashboardSummary = {
   pending_contracts_control: 0,
@@ -30,12 +32,13 @@ const emptySummary: RecruitmentDashboardSummary = {
 };
 
 export function HiringStatusPage() {
-  const { user } = useAuth();
+  const { user, hasCapability } = useAuth();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [summary, setSummary] = useState<RecruitmentDashboardSummary>(emptySummary);
   const [pendingApprovals, setPendingApprovals] = useState<HiringControlApproval[]>([]);
   const [activeCases, setActiveCases] = useState<RecruitmentCaseListRow[]>([]);
   const [candidateControl, setCandidateControl] = useState<RecruitmentCandidateControlRow[]>([]);
+  const [personnelToHire, setPersonnelToHire] = useState<RecruitmentPersonnelToHireRow[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
   const [selectedCaseDetail, setSelectedCaseDetail] = useState<RecruitmentCaseDetail | null>(null);
@@ -46,6 +49,7 @@ export function HiringStatusPage() {
   const [decisionMessage, setDecisionMessage] = useState("");
   const [stageDraft, setStageDraft] = useState<RecruitmentCandidateStage | "">("");
   const [stageComment, setStageComment] = useState("");
+  const canAccessCandidateControl = hasCapability("candidate_control_access");
 
   const loadDashboard = async (preferredCaseId?: string) => {
     setIsLoading(true);
@@ -58,6 +62,7 @@ export function HiringStatusPage() {
       setPendingApprovals([]);
       setActiveCases([]);
       setCandidateControl([]);
+      setPersonnelToHire([]);
       setErrorMessage(result.error ?? "No fue posible cargar el tablero.");
       setIsLoading(false);
       return;
@@ -67,11 +72,20 @@ export function HiringStatusPage() {
     setPendingApprovals(result.data.pendingApprovals);
     setActiveCases(result.data.activeCases);
     setCandidateControl(result.data.candidateControl);
+    setPersonnelToHire(result.data.personnelToHire);
 
     const nextCaseId =
-      preferredCaseId && result.data.activeCases.some((item) => item.id === preferredCaseId)
+      preferredCaseId &&
+      (
+        result.data.activeCases.some((item) => item.id === preferredCaseId) ||
+        result.data.candidateControl.some((item) => item.recruitment_case_id === preferredCaseId) ||
+        result.data.personnelToHire.some((item) => item.recruitment_case_id === preferredCaseId)
+      )
         ? preferredCaseId
-        : result.data.activeCases[0]?.id ?? result.data.candidateControl[0]?.recruitment_case_id ?? "";
+        : result.data.activeCases[0]?.id ??
+          result.data.candidateControl[0]?.recruitment_case_id ??
+          result.data.personnelToHire[0]?.recruitment_case_id ??
+          "";
 
     setSelectedCaseId(nextCaseId);
     setIsLoading(false);
@@ -109,7 +123,7 @@ export function HiringStatusPage() {
   }, []);
 
   useEffect(() => {
-    if (activeView !== "candidates") {
+    if (activeView !== "candidates" && activeView !== "personnel_to_hire") {
       return;
     }
 
@@ -120,6 +134,16 @@ export function HiringStatusPage() {
 
     void loadCaseDetail(selectedCaseId, selectedCandidateId);
   }, [activeView, selectedCaseId, selectedCandidateId]);
+
+  useEffect(() => {
+    if (!canAccessCandidateControl && activeView !== "processes") {
+      setActiveView("processes");
+      setSelectedCaseDetail(null);
+      setSelectedCandidateId("");
+      setStageDraft("");
+      setStageComment("");
+    }
+  }, [activeView, canAccessCandidateControl]);
 
   const handleApprovalDecision = async (
     approvalId: number,
@@ -275,16 +299,27 @@ export function HiringStatusPage() {
           >
             Resumen de procesos de contratación
           </button>
-          <button
-            type="button"
-            className={`approval-chip ${activeView === "candidates" ? "tracking-kpi-card-active" : ""}`}
-            onClick={() => setActiveView("candidates")}
-          >
-            Control de candidatos
-          </button>
+          {canAccessCandidateControl ? (
+            <button
+              type="button"
+              className={`approval-chip ${activeView === "candidates" ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => setActiveView("candidates")}
+            >
+              Control de candidatos
+            </button>
+          ) : null}
+          {canAccessCandidateControl ? (
+            <button
+              type="button"
+              className={`approval-chip ${activeView === "personnel_to_hire" ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => setActiveView("personnel_to_hire")}
+            >
+              Personal a Contratar
+            </button>
+          ) : null}
         </div>
 
-        {activeView === "processes" ? (
+        {activeView === "processes" || !canAccessCandidateControl ? (
           <HiringProcessesView
             isLoading={isLoading}
             pendingApprovals={pendingApprovals}
@@ -295,7 +330,7 @@ export function HiringStatusPage() {
             errorMessage={errorMessage}
             onApprovalSuccess={() => void loadDashboard(selectedCaseId)}
           />
-        ) : (
+        ) : activeView === "candidates" ? (
           <HiringCandidatesView
             isLoading={isLoading}
             errorMessage={errorMessage}
@@ -315,12 +350,27 @@ export function HiringStatusPage() {
             onStageDraftChange={setStageDraft}
             onStageCommentChange={setStageComment}
             onAdvanceStage={handleAdvanceStage}
-          onWhoApprovalRegistered={handleWhoApprovalRegistered}
-          onLicenseUpdated={handleLicenseUpdated}
-          onInterviewNotesUpdated={handleLicenseUpdated}
-          onCandidateFileUpdated={handleCandidateFileUpdated}
-        />
-      )}
+            onWhoApprovalRegistered={handleWhoApprovalRegistered}
+            onLicenseUpdated={handleLicenseUpdated}
+            onInterviewNotesUpdated={handleLicenseUpdated}
+            onCandidateFileUpdated={handleCandidateFileUpdated}
+          />
+        ) : (
+          <HiringPersonnelToHireView
+            isLoading={isLoading}
+            errorMessage={errorMessage}
+            personnelToHire={personnelToHire}
+            selectedCandidateId={selectedCandidateId}
+            selectedCaseDetail={selectedCaseDetail}
+            onSelectCandidate={(candidateId, caseId) => {
+              setSelectedCandidateId(candidateId);
+              setSelectedCaseId(caseId);
+            }}
+            onLicenseUpdated={handleLicenseUpdated}
+            onInterviewNotesUpdated={handleLicenseUpdated}
+            onCandidateFileUpdated={handleCandidateFileUpdated}
+          />
+        )}
       </section>
     </PageShell>
   );

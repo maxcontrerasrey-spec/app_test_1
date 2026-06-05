@@ -8,6 +8,36 @@
 - [x] Corregir `useDashboard` para que el estado operativo se actualice automáticamente sin intervención del usuario
 - [x] Validar compilación y documentar la regla
 
+## Restricción de Control de candidatos por capacidad documental
+
+- [x] Separar `Control de candidatos` con una capability exclusiva para Reclutamiento y `system_admin`
+- [x] Ocultar la vista y navegación del subflujo para usuarios sin esa capability
+- [x] Endurecer los RPCs del subflujo candidato/documental para bloquear acceso forzado desde cliente
+- [x] Validar compilación y dejar resultado documentado
+
+## Separación de "Control de candidatos" y "Personal a Contratar"
+
+- [x] Ajustar `get_recruitment_control_dashboard_v2()` para que los candidatos `hired` salgan de `candidate_control` y entren a una bandeja propia
+- [x] Crear la vista `Personal a Contratar` junto a `Control de candidatos`, reutilizando ficha y documentos ya cargados
+- [x] Ocultar acciones de avance de etapa en la nueva bandeja y validar build + migración aplicada
+
+## Resultado de separación de "Control de candidatos" y "Personal a Contratar"
+
+- `Control de candidatos` ya no mezcla el estado terminal `hired`; la bandeja quedó enfocada solo en pipeline operativo previo a contratación.
+- Se creó la nueva vista `Personal a Contratar` dentro de `Control de Contrataciones`, al lado de `Control de candidatos`, reutilizando el mismo detalle lateral para revisar trazabilidad, checklist documental y ficha del candidato.
+- En la nueva bandeja se ocultaron explícitamente los controles de avance de etapa y aprobación Who; queda como superficie de revisión y preparación contractual, no como pipeline de reclutamiento.
+- Supabase quedó alineado con una migración nueva que reescribe `get_recruitment_control_dashboard_v2()` para exponer `candidate_control` sin `hired` y un nuevo payload `personnel_to_hire` solo con candidatos contratados.
+- La validación técnica cerró con `git diff --check`, `npm run build`, migración aplicada en Supabase y verificación del cuerpo de la función remota mediante `pg_get_functiondef(...)`.
+
+## Resultado de restricción de Control de candidatos por capacidad documental
+
+- `Control de candidatos` dejó de depender solo del acceso al módulo `control_contrataciones`; ahora usa la capability explícita `candidate_control_access`.
+- El frontend ya no renderiza la pestaña ni permite permanecer en la vista de candidatos si el usuario no tiene esa capability.
+- `get_recruitment_control_dashboard_v2()` ya no entrega el payload `candidate_control` a usuarios sin permiso, reduciendo exposición de datos sensibles incluso si inspeccionan la respuesta de red.
+- Se agregó una migración de endurecimiento que asigna `candidate_control_access` a `reclutamiento` y bloquea por backend los RPCs del subflujo candidato/documental para cualquier usuario sin esa capacidad, manteniendo bypass administrativo por `user_is_admin(...)`.
+- Al aplicar el endurecimiento sobre Supabase apareció drift real de firmas en funciones remotas; la migración se ajustó con `drop function if exists ...` explícitos antes de recrear las funciones sensibles, evitando fallos por cambio de `RETURNS TABLE`.
+- La validación técnica quedó cerrada con `git diff --check` y `npm run build`.
+
 ## Resultado de refresh automático del dashboard operativo
 
 - El dashboard no era realmente vivo: usaba TanStack Query, pero sin `refetchInterval`, con `refetchOnWindowFocus: false` heredado por defecto y sin ninguna suscripción en tiempo real.

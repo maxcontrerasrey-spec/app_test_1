@@ -219,35 +219,45 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La escritura de la ficha debe pasar por `p_case_candidate_id` y no por `candidate_profile_id` expuesto directamente**. Así la autorización se valida contra el caso operativo y la auditoría queda amarrada al flujo real de reclutamiento.
 - **Las tablas satélite transaccionales no deben persistir filas vacías por defecto**. Si un bloque como la ficha del ingreso actual se guarda completamente en blanco, el sistema debe evitar crear o mantener registros sin valor operativo.
 
-## 41. Si una tarjeta del dashboard depende de un SaaS externo, el frontend no debe leerlo directo
+## 41. Un subflujo sensible dentro de un módulo compartido necesita capability propia
+
+- **No basta con proteger el módulo padre cuando una subsección expone datos sensibles o mutaciones operativas adicionales**. Si `Control de candidatos` vive dentro de `Control de Contrataciones`, debe tener capability explícita y no heredar visibilidad por defecto de todos los roles del módulo.
+- **La restricción debe aplicarse tanto al render del frontend como al payload del backend**. Ocultar una pestaña sin recortar la respuesta RPC deja la data expuesta en la red; el backend debe devolver `[]` o bloquear el detalle cuando el usuario no tenga la capability específica.
+
+## 42. Si una tarjeta del dashboard depende de un SaaS externo, el frontend no debe leerlo directo
 
 - **Para datos de soporte como cumpleaños desde BUK, el patrón correcto es sincronizar primero a una tabla local y luego leer desde una RPC propia**. Eso permite controlar permisos, normalizar esquema y evitar que el dashboard dependa de credenciales o formatos cambiantes del proveedor externo.
 - **Las filas informativas del inicio no se completan con placeholders para “llenar” diseño**. Si una tarjeta entra al dashboard, debe tener una fuente real y un contrato local explícito antes de publicarse.
 
-## 42. Los scripts operativos del repo deben aceptar el contrato de variables vigente, no uno heredado
+## 43. Los scripts operativos del repo deben aceptar el contrato de variables vigente, no uno heredado
 
 - **Si el frontend ya estandarizó `VITE_SUPABASE_URL`, un script de soporte no puede seguir exigiendo `NEXT_PUBLIC_SUPABASE_URL` como única fuente**. Los scripts compartidos deben tolerar el contrato actual del repo o fallan en producción aunque las credenciales estén presentes.
 
-## 43. En BUK, la identidad operativa debe colapsarse a la ficha activa canónica
+## 44. En BUK, la identidad operativa debe colapsarse a la ficha activa canónica
 
 - **Si un trabajador puede existir con varias fichas en BUK, los consumos operativos no deben leer la tabla cruda sin criterio canónico**. Para efectos futuros, la fuente correcta es una vista o contrato que conserve solo la ficha activa vigente por identidad documental.
 - **Las tarjetas y listas derivadas de `employees` deben apoyarse en esa fuente canónica, no replicar filtros locales distintos en cada módulo**. Si no, reaparecen duplicados o fichas históricas fuera de contexto.
 
-## 44. Si una sincronización depende de cron UTC pero el negocio habla en hora Chile, hay que resolver explícitamente el desfase horario
+## 45. Un estado terminal de funnel debe salir de la bandeja operativa y pasar a una bandeja de handoff
+
+- **Si un registro deja de ser “candidato” y pasa a “contratado”, no debe seguir apareciendo en la misma vista de control del pipeline**. Los estados terminales requieren una superficie distinta orientada a handoff y preparación contractual.
+- **Cuando la siguiente etapa reutiliza la misma ficha y documentación, se reutiliza el detalle; no se duplica el componente**. Lo correcto es cambiar el origen de datos y ocultar acciones que ya no aplican, manteniendo una sola fuente visual de trazabilidad.
+
+## 46. Si una sincronización depende de cron UTC pero el negocio habla en hora Chile, hay que resolver explícitamente el desfase horario
 
 - **GitHub Actions agenda en UTC, no en `America/Santiago`**. Si el negocio pide una corrida diaria a las 20:00 hora Chile, no basta con fijar un único cron UTC porque se desalineará con horario de verano/invierno.
 - **El patrón seguro es abrir las dos ventanas UTC posibles y validar la hora local dentro del job**. Así la sincronización se ejecuta una sola vez cuando en Chile realmente sean las 20:00.
 
-## 45. Ubicación física real y zona operativa son conceptos distintos
+## 47. Ubicación física real y zona operativa son conceptos distintos
 
 - **Si el usuario pide ubicación real en tiempo real, la fuente correcta es el navegador y no una base de datos**. Ni BUK ni tablas del ERP representan presencia física actual; solo describen relaciones administrativas u operativas.
 - **La tarjeta de clima debe resolver coordenadas con `navigator.geolocation` y dejar un fallback explícito si el permiso falla**. Cualquier uso de maestros internos para “adivinar” la ubicación física repite el error de modelar presencia con datos administrativos.
 
-## 46. Las APIs de servicios gratuitos requieren alternativas confiables sin llaves
+## 50. Las APIs de servicios gratuitos requieren alternativas confiables sin llaves
 
 - **La resolución de coordenadas a ciudad (reverse geocoding) no debe fallar silenciosamente en el navegador**. En integraciones frontend, servicios de reverse geocoding como BigDataCloud son preferibles a otros que restringen CORS o no tienen endpoints gratuitos (como Open-Meteo geocoding-api reverse), asegurando que la ubicación real siempre pueda pintarse en la UI.
 
-## 47. Los cambios ambientales deben ser visuales pero respetando la estética ERP
+## 51. Los cambios ambientales deben ser visuales pero respetando la estética ERP
 
 - **Si un widget reporta condiciones externas (como el clima), su materialidad puede reaccionar para dar contexto inmediato (temas fríos, cálidos, lluviosos)**. Sin embargo, las variaciones deben ser gradientes sutiles y pálidos. En un ERP, ningún módulo informativo debe saturar colores ni perjudicar visualmente el peso de las tareas operativas críticas.
 
@@ -385,3 +395,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si una ficha reutiliza datos ya capturados en otra etapa, no basta con copiarlos como texto crudo.** Para RUT e identificadores equivalentes, el valor inicial debe reconstruirse usando los helpers compartidos del sistema (`normalizeRut` / `formatRut`) para que el usuario vea el mismo formato en todo el flujo.
 - **La persistencia también debe respetar ese contrato.** Si el tipo de documento es `RUT`, el frontend debe guardar el valor normalizado aunque lo muestre formateado en pantalla; así se evita drift entre captura inicial, ficha extendida y búsquedas posteriores.
+
+## 72. En Supabase productivo, recrear funciones no es seguro si el retorno pudo derivar del historial real
+
+- **`create or replace function` no alcanza cuando el ambiente remoto arrastra una firma efectiva distinta en los parámetros OUT o en `RETURNS TABLE`.** Aunque el nombre y los tipos de entrada coincidan, Postgres rechaza el reemplazo con `42P13` si cambió el row type derivado del retorno.
+- **Para endurecimientos sobre RPCs vivos, primero se inspecciona la firma remota y luego se usa `drop function if exists ...` antes del `create`.** Eso hace la migración resistente al drift entre el historial local del repo y el estado real de producción.
