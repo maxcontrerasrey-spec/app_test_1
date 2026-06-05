@@ -380,3 +380,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una ficha operativa crece para alinearse con una plantilla externa grande como BUK, no hay que inflar la RPC general del detalle del caso con todos esos campos.** El patrón correcto es una lectura dedicada para la ficha (`get_candidate_buk_profile`) y una UI que la consuma de forma aislada.
 - **Los catálogos desplegables del negocio deben vivir como artefacto versionado, no como listas hardcodeadas en JSX.** Si el origen real está en un Excel o maestro operativo, se extrae a un módulo de datos estable y luego se reutiliza desde la UI.
 - **Separar datos persistentes del candidato de datos transaccionales del ingreso evita contaminar futuras reutilizaciones del perfil.** Identidad, contacto y atributos personales pertenecen a `candidate_profiles`; payroll y condiciones del ingreso vigente pertenecen a `candidate_worker_files`.
+
+## 71. Los identificadores heredados deben respetar el formateo canónico del sistema
+
+- **Si una ficha reutiliza datos ya capturados en otra etapa, no basta con copiarlos como texto crudo.** Para RUT e identificadores equivalentes, el valor inicial debe reconstruirse usando los helpers compartidos del sistema (`normalizeRut` / `formatRut`) para que el usuario vea el mismo formato en todo el flujo.
+- **La persistencia también debe respetar ese contrato.** Si el tipo de documento es `RUT`, el frontend debe guardar el valor normalizado aunque lo muestre formateado en pantalla; así se evita drift entre captura inicial, ficha extendida y búsquedas posteriores.

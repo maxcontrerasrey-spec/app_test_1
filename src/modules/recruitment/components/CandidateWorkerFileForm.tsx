@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SelectField, TextField } from "../../../shared/ui";
+import { formatRut, normalizeRut } from "../../../shared/lib/rut";
 import { bukEmployeeFieldOptions } from "../lib/bukEmployeeTemplate";
 import {
   fetchCandidateBukProfile,
@@ -105,6 +106,30 @@ const yesNoBukOptions = [
   { value: "No", label: "No" }
 ];
 
+function looksLikeRut(value: string | null | undefined) {
+  const normalized = normalizeRut(value);
+  return normalized.length >= 7 && normalized.length <= 9;
+}
+
+function resolveDocumentType(
+  bukProfile: CandidateBukProfileDetails | null,
+  candidate: RecruitmentCaseCandidateRow
+) {
+  if (bukProfile?.document_type?.trim()) {
+    return bukProfile.document_type.trim();
+  }
+
+  return looksLikeRut(bukProfile?.document_number ?? candidate.national_id) ? "RUT" : "";
+}
+
+function resolveDocumentNumber(
+  bukProfile: CandidateBukProfileDetails | null,
+  candidate: RecruitmentCaseCandidateRow
+) {
+  const sourceValue = bukProfile?.document_number ?? candidate.national_id ?? "";
+  return looksLikeRut(sourceValue) ? formatRut(sourceValue) : sourceValue;
+}
+
 const requiredPersonFields: Array<{ key: keyof PersonDraft; label: string }> = [
   { key: "documentType", label: "Tipo de documento" },
   { key: "documentNumber", label: "Número de documento" },
@@ -186,8 +211,8 @@ function buildPersonDraft(
   const fallbackName = splitFullName(candidate.full_name);
 
   return {
-    documentType: bukProfile?.document_type ?? "",
-    documentNumber: bukProfile?.document_number ?? candidate.national_id ?? "",
+    documentType: resolveDocumentType(bukProfile, candidate),
+    documentNumber: resolveDocumentNumber(bukProfile, candidate),
     firstName: bukProfile?.first_name ?? fallbackName.firstName,
     lastName: bukProfile?.last_name ?? fallbackName.lastName,
     secondLastName: bukProfile?.second_last_name ?? fallbackName.secondLastName,
@@ -555,7 +580,13 @@ export function CandidateWorkerFileForm({
             label="Número de documento"
             value={personDraft.documentNumber}
             onChange={(event) =>
-              setPersonDraft((current) => ({ ...current, documentNumber: event.target.value }))
+              setPersonDraft((current) => ({
+                ...current,
+                documentNumber:
+                  current.documentType === "RUT" || looksLikeRut(event.target.value)
+                    ? formatRut(event.target.value)
+                    : event.target.value
+              }))
             }
           />
           <TextField

@@ -787,10 +787,15 @@ export async function updateCandidatePersonProfile(input: {
     };
   }
 
+  const normalizedDocumentNumber =
+    input.documentType?.trim() === "RUT"
+      ? normalizeRut(input.documentNumber)
+      : input.documentNumber?.trim() ?? null;
+
   const { error } = await supabase.rpc("upsert_candidate_person_profile", {
     p_case_candidate_id: input.caseCandidateId,
     p_document_type: input.documentType?.trim() ? input.documentType.trim() : null,
-    p_document_number: input.documentNumber?.trim() ? input.documentNumber.trim() : null,
+    p_document_number: normalizedDocumentNumber?.trim() ? normalizedDocumentNumber.trim() : null,
     p_first_name: input.firstName?.trim() ? input.firstName.trim() : null,
     p_last_name: input.lastName?.trim() ? input.lastName.trim() : null,
     p_second_last_name: input.secondLastName?.trim() ? input.secondLastName.trim() : null,
