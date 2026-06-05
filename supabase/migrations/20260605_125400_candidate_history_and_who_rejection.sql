@@ -309,6 +309,7 @@ begin
     raise exception 'No existe una aprobación Who pendiente para este candidato';
   end if;
 
+  -- 3a. Marcar la solicitud de aprobación como rechazada
   update public.candidate_stage_approvals csa
      set status = 'rejected',
          approved_by = current_user_id,
@@ -317,6 +318,33 @@ begin
          updated_at = timezone('utc', now())
    where csa.id = approval_record.id;
 
+  -- 3b. Mover al candidato a etapa terminal 'rejected' directamente
+  update public.recruitment_case_candidates rcc
+     set stage_code = 'rejected',
+         stage_entered_at = timezone('utc', now()),
+         rejection_reason = normalized_comment,
+         updated_at = timezone('utc', now())
+   where rcc.id = candidate_record.id;
+
+  -- 3c. Registrar en historial de etapas
+  insert into public.recruitment_case_candidate_stage_history (
+    recruitment_case_candidate_id,
+    from_stage,
+    to_stage,
+    changed_by,
+    reason_code,
+    comment
+  )
+  values (
+    candidate_record.id,
+    'who_pending',
+    'rejected',
+    current_user_id,
+    'who_rejected',
+    normalized_comment
+  );
+
+  -- 3d. Audit log de la decisión de rechazo Who
   insert into public.recruitment_case_audit_log (
     recruitment_case_id,
     recruitment_case_candidate_id,
@@ -330,7 +358,7 @@ begin
     candidate_record.recruitment_case_id,
     candidate_record.id,
     current_user_id,
-    'candidate_stage_approval_approved', -- Reusing this action type since we don't have candidate_stage_approval_rejected
+    'candidate_stage_approval_rejected',
     jsonb_build_object(
       'approval_id', approval_record.id,
       'status', 'pending',
@@ -339,14 +367,17 @@ begin
     jsonb_build_object(
       'approval_id', approval_record.id,
       'status', 'rejected',
-      'stage_code', 'who_pending',
+      'stage_code', 'rejected',
       'approved_at', timezone('utc', now())
     ),
     jsonb_build_object('comment', normalized_comment)
   );
 
+  -- 3e. Sincronizar estado del caso
+  next_case_status := public.sync_recruitment_case_status(candidate_record.recruitment_case_id, current_user_id);
+
   return query
-  select * from public.advance_recruitment_candidate_stage(p_case_candidate_id, 'rejected', normalized_comment);
+  select candidate_record.recruitment_case_id, 'rejected'::text, next_case_status;
 end;
 $function$;
 
