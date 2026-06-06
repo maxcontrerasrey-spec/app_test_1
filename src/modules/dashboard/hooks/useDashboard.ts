@@ -1,6 +1,6 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { dashboardService } from "../services/dashboardService";
 import type {
   DashboardApprovalTrackingItem,
@@ -34,17 +34,13 @@ async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayl
 
 export function useDashboard() {
   const { user } = useAuth();
-  const dashboardQueryKey = useMemo(
-    () => ["dashboard-home", user?.id ?? "anonymous"] as const,
-    [user?.id]
-  );
 
   const {
     data,
     isLoading,
     refetch
   } = useQuery({
-    queryKey: dashboardQueryKey,
+    queryKey: queryKeys.dashboard.home(user?.id ?? "anonymous"),
     queryFn: () => fetchDashboardPayload(user!.id),
     enabled: Boolean(user?.id),
     staleTime: 15_000,

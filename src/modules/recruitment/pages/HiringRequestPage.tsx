@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
-  fetchHiringCatalogs,
   type ContractCatalogItem,
   type HiringRole,
   type ShiftCatalogItem
 } from "../services/hiringCatalogs";
+import { useHiringCatalogs } from "../hooks/useRecruitmentQueries";
 import { createHiringRequest } from "../services/hiringRequests";
 import {
   toTodayDateValue,
@@ -50,7 +50,6 @@ type GeneratedHiringRequest = {
 
 const yesNoOptions = ["Si", "No"];
 
-
 function normalizeCurrencyInput(rawValue: string) {
   const digits = rawValue.replace(/\D/g, "");
   return digits ? String(Number(digits)) : "";
@@ -68,11 +67,6 @@ export function HiringRequestPage() {
   const { displayName, jobTitle, email } = useAuth();
   const todayValue = toTodayDateValue();
   const currentYear = new Date().getFullYear();
-  const [hiringRoles, setHiringRoles] = useState<HiringRole[]>([]);
-  const [contractCatalog, setContractCatalog] = useState<ContractCatalogItem[]>([]);
-  const [shiftCatalog, setShiftCatalog] = useState<ShiftCatalogItem[]>([]);
-  const [isCatalogsLoading, setIsCatalogsLoading] = useState(true);
-  const [catalogsError, setCatalogsError] = useState("");
   const [fechaSolicitadaIngreso, setFechaSolicitadaIngreso] = useState("");
   const [cargoSolicitado, setCargoSolicitado] = useState("");
   const [numeroVacantes, setNumeroVacantes] = useState("1");
@@ -94,31 +88,16 @@ export function HiringRequestPage() {
   const [startDateView, setStartDateView] = useState(() => parseDateValue(todayValue));
   const [generatedRequest, setGeneratedRequest] =
     useState<GeneratedHiringRequest | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadCatalogs = async () => {
-      setIsCatalogsLoading(true);
-      const result = await fetchHiringCatalogs();
-
-      if (!isMounted) {
-        return;
-      }
-
-      setHiringRoles(result.hiringRoles);
-      setContractCatalog(result.contractCatalog);
-      setShiftCatalog(result.shiftCatalog);
-      setCatalogsError(result.error ?? "");
-      setIsCatalogsLoading(false);
-    };
-
-    void loadCatalogs();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const {
+    data: catalogsData,
+    isLoading: isCatalogsLoading,
+    error: catalogsQueryError
+  } = useHiringCatalogs();
+  const hiringRoles = (catalogsData?.hiringRoles ?? []) as HiringRole[];
+  const contractCatalog = (catalogsData?.contractCatalog ?? []) as ContractCatalogItem[];
+  const shiftCatalog = (catalogsData?.shiftCatalog ?? []) as ShiftCatalogItem[];
+  const catalogsError =
+    catalogsQueryError instanceof Error ? catalogsQueryError.message : "";
 
   const contractOptions = useMemo(
     () =>

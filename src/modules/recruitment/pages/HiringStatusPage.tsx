@@ -1,21 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { useAuth } from "../../auth/context/AuthContext";
-import { decideHiringApproval } from "../services/hiringWorkflow";
+import {
+  getRecruitmentCaseDetailQueryOptions,
+  useRecruitmentCaseDetail,
+  useRecruitmentControlDashboard
+} from "../hooks/useRecruitmentQueries";
 import {
   approveCandidateStageWho,
   rejectCandidateStageWho,
   advanceRecruitmentCandidateStage,
-  fetchRecruitmentCaseDetail,
-  fetchRecruitmentControlDashboard,
   requestCandidateStageWho,
-  type HiringControlApproval,
-  type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
-  type RecruitmentCaseDetail,
-  type RecruitmentCaseListRow,
   type RecruitmentDashboardSummary,
-  type RecruitmentPersonnelToHireRow,
   type WhoApprovalCause
 } from "../services/hiringControl";
 import { HiringCandidatesView } from "../components/HiringCandidatesView";
@@ -34,150 +33,113 @@ const emptySummary: RecruitmentDashboardSummary = {
 
 export function HiringStatusPage() {
   const { user, hasCapability } = useAuth();
+  const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
-  const [summary, setSummary] = useState<RecruitmentDashboardSummary>(emptySummary);
-  const [pendingApprovals, setPendingApprovals] = useState<HiringControlApproval[]>([]);
-  const [activeCases, setActiveCases] = useState<RecruitmentCaseListRow[]>([]);
-  const [candidateControl, setCandidateControl] = useState<RecruitmentCandidateControlRow[]>([]);
-  const [personnelToHire, setPersonnelToHire] = useState<RecruitmentPersonnelToHireRow[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
-  const [selectedCaseDetail, setSelectedCaseDetail] = useState<RecruitmentCaseDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
   const [isStageSaving, setIsStageSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [decisionMessage, setDecisionMessage] = useState("");
   const [stageDraft, setStageDraft] = useState<RecruitmentCandidateStage | "">("");
   const [stageComment, setStageComment] = useState("");
   const canAccessCandidateControl = hasCapability("candidate_control_access");
+  const dashboardQuery = useRecruitmentControlDashboard();
+  const dashboardData = dashboardQuery.data;
+  const summary = dashboardData?.summary ?? emptySummary;
+  const pendingApprovals = dashboardData?.pendingApprovals ?? [];
+  const activeCases = dashboardData?.activeCases ?? [];
+  const candidateControl = dashboardData?.candidateControl ?? [];
+  const personnelToHire = dashboardData?.personnelToHire ?? [];
+  const shouldLoadCaseDetail =
+    canAccessCandidateControl &&
+    (activeView === "candidates" || activeView === "personnel_to_hire") &&
+    Boolean(selectedCaseId);
+  const caseDetailQuery = useRecruitmentCaseDetail(selectedCaseId, shouldLoadCaseDetail);
+  const selectedCaseDetail = caseDetailQuery.data ?? null;
+  const dashboardError =
+    dashboardQuery.error instanceof Error ? dashboardQuery.error.message : "";
+  const caseDetailError =
+    caseDetailQuery.error instanceof Error ? caseDetailQuery.error.message : "";
+  const errorMessage = dashboardError || caseDetailError;
+  const isLoading = Boolean(
+    dashboardQuery.isLoading || (shouldLoadCaseDetail && caseDetailQuery.isLoading)
+  );
 
-  const loadDashboard = async (preferredCaseId?: string) => {
-    setIsLoading(true);
-    setErrorMessage("");
+  const preferredCaseIds = useMemo(
+    () => [
+      ...activeCases.map((item) => item.id),
+      ...candidateControl.map((item) => item.recruitment_case_id),
+      ...personnelToHire.map((item) => item.recruitment_case_id)
+    ],
+    [activeCases, candidateControl, personnelToHire]
+  );
 
-    const result = await fetchRecruitmentControlDashboard();
+  const invalidateRecruitmentCache = async (caseId?: string) => {
+    const targetCaseId = caseId || selectedCaseId;
 
-    if (result.error || !result.data) {
-      setSummary(emptySummary);
-      setPendingApprovals([]);
-      setActiveCases([]);
-      setCandidateControl([]);
-      setPersonnelToHire([]);
-      setErrorMessage(result.error ?? "No fue posible cargar el tablero.");
-      setIsLoading(false);
-      return;
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.recruitment.controlDashboard()
+    });
+
+    if (targetCaseId) {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.recruitment.caseDetail(targetCaseId)
+      });
     }
-
-    setSummary(result.data.summary);
-    setPendingApprovals(result.data.pendingApprovals);
-    setActiveCases(result.data.activeCases);
-    setCandidateControl(result.data.candidateControl);
-    setPersonnelToHire(result.data.personnelToHire);
-
-    const nextCaseId =
-      preferredCaseId &&
-      (
-        result.data.activeCases.some((item) => item.id === preferredCaseId) ||
-        result.data.candidateControl.some((item) => item.recruitment_case_id === preferredCaseId) ||
-        result.data.personnelToHire.some((item) => item.recruitment_case_id === preferredCaseId)
-      )
-        ? preferredCaseId
-        : result.data.activeCases[0]?.id ??
-          result.data.candidateControl[0]?.recruitment_case_id ??
-          result.data.personnelToHire[0]?.recruitment_case_id ??
-          "";
-
-    setSelectedCaseId(nextCaseId);
-    setIsLoading(false);
   };
 
-  const loadCaseDetail = async (caseId: string, preferredCandidateId?: string) => {
-    if (!caseId) {
-      setSelectedCaseDetail(null);
+  useEffect(() => {
+    const nextCaseId =
+      selectedCaseId && preferredCaseIds.includes(selectedCaseId)
+        ? selectedCaseId
+        : preferredCaseIds[0] ?? "";
+
+    if (nextCaseId !== selectedCaseId) {
+      setSelectedCaseId(nextCaseId);
+    }
+  }, [preferredCaseIds, selectedCaseId]);
+
+  useEffect(() => {
+    if (!selectedCaseDetail) {
+      if (selectedCandidateId) {
+        setSelectedCandidateId("");
+      }
       return;
     }
 
-    const result = await fetchRecruitmentCaseDetail(caseId);
+    const nextCandidateId = selectedCaseDetail.candidates.some(
+      (candidate) => candidate.id === selectedCandidateId
+    )
+      ? selectedCandidateId
+      : selectedCaseDetail.candidates[0]?.id ?? "";
 
-    if (result.error || !result.data) {
-      setSelectedCaseDetail(null);
-      setErrorMessage(result.error ?? "No fue posible cargar el detalle del caso.");
-      return;
+    if (nextCandidateId !== selectedCandidateId) {
+      setSelectedCandidateId(nextCandidateId);
     }
+  }, [selectedCandidateId, selectedCaseDetail]);
 
-    setSelectedCaseDetail(result.data);
-
-    const nextCandidateId =
-      preferredCandidateId &&
-      result.data.candidates.some((candidate) => candidate.id === preferredCandidateId)
-        ? preferredCandidateId
-        : result.data.candidates[0]?.id ?? "";
-
-    setSelectedCandidateId(nextCandidateId);
+  useEffect(() => {
     setStageDraft("");
     setStageComment("");
-  };
-
-  useEffect(() => {
-    void loadDashboard();
-  }, []);
-
-  useEffect(() => {
-    if (activeView !== "candidates" && activeView !== "personnel_to_hire") {
-      return;
-    }
-
-    if (!selectedCaseId) {
-      setSelectedCaseDetail(null);
-      return;
-    }
-
-    void loadCaseDetail(selectedCaseId, selectedCandidateId);
-  }, [activeView, selectedCaseId, selectedCandidateId]);
+  }, [selectedCaseId, selectedCandidateId]);
 
   useEffect(() => {
     if (!canAccessCandidateControl && activeView !== "processes") {
       setActiveView("processes");
-      setSelectedCaseDetail(null);
       setSelectedCandidateId("");
       setStageDraft("");
       setStageComment("");
     }
   }, [activeView, canAccessCandidateControl]);
 
-  const handleApprovalDecision = async (
-    approvalId: number,
-    decision: "approved" | "rejected"
-  ) => {
-    setIsDecisionLoading(approvalId);
-    setDecisionMessage("");
-
-    const { error } = await decideHiringApproval({
-      approvalId,
-      decision,
-      comment: null
-    });
-
-    if (error) {
-      setDecisionMessage(error);
-      setIsDecisionLoading(null);
-      return false;
-    }
-
-    setDecisionMessage(
-      decision === "approved" ? "Aprobación registrada." : "Rechazo registrado."
-    );
-    setIsDecisionLoading(null);
-    await loadDashboard(selectedCaseId);
-    return true;
-  };
-
   const handleCandidateAdded = async (caseId: string, candidateId: string) => {
     setSelectedCaseId(caseId);
     setSelectedCandidateId(candidateId);
-    await loadDashboard(caseId);
-    await loadCaseDetail(caseId, candidateId);
+
+    await Promise.all([
+      invalidateRecruitmentCache(caseId),
+      queryClient.prefetchQuery(getRecruitmentCaseDetailQueryOptions(caseId))
+    ]);
   };
 
   const handleAdvanceStage = async (whoCauses?: WhoApprovalCause[]) => {
@@ -218,22 +180,19 @@ export function HiringStatusPage() {
     setIsStageSaving(false);
 
     if (selectedCaseDetail) {
-      await loadDashboard(selectedCaseDetail.case.id);
-      await loadCaseDetail(selectedCaseDetail.case.id, selectedCandidate.id);
+      await invalidateRecruitmentCache(selectedCaseDetail.case.id);
     }
   };
 
   const handleLicenseUpdated = async () => {
     if (selectedCaseId && selectedCandidateId) {
-      await loadDashboard(selectedCaseId);
-      await loadCaseDetail(selectedCaseId, selectedCandidateId);
+      await invalidateRecruitmentCache(selectedCaseId);
     }
   };
 
   const handleCandidateFileUpdated = async () => {
     if (selectedCaseId && selectedCandidateId) {
-      await loadDashboard(selectedCaseId);
-      await loadCaseDetail(selectedCaseId, selectedCandidateId);
+      await invalidateRecruitmentCache(selectedCaseId);
     }
   };
 
@@ -266,8 +225,7 @@ export function HiringStatusPage() {
     setStageComment("");
     setIsStageSaving(false);
 
-    await loadDashboard(selectedCaseDetail.case.id);
-    await loadCaseDetail(selectedCaseDetail.case.id, selectedCandidate.id);
+    await invalidateRecruitmentCache(selectedCaseDetail.case.id);
   };
 
   const handleWhoApprovalRejected = async () => {
@@ -299,8 +257,7 @@ export function HiringStatusPage() {
     setStageComment("");
     setIsStageSaving(false);
 
-    await loadDashboard(selectedCaseDetail.case.id);
-    await loadCaseDetail(selectedCaseDetail.case.id, selectedCandidate.id);
+    await invalidateRecruitmentCache(selectedCaseDetail.case.id);
   };
 
   return (
@@ -362,7 +319,7 @@ export function HiringStatusPage() {
             isDecisionLoading={isDecisionLoading}
             decisionMessage={decisionMessage}
             errorMessage={errorMessage}
-            onApprovalSuccess={() => void loadDashboard(selectedCaseId)}
+            onApprovalSuccess={() => void invalidateRecruitmentCache()}
           />
         ) : activeView === "candidates" ? (
           <HiringCandidatesView

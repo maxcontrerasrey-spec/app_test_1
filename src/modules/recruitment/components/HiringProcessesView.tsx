@@ -1,12 +1,11 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
   toRecruitmentCaseStatusLabel,
-  fetchRecruitmentCaseDetail,
   type HiringControlApproval,
   type RecruitmentCaseListRow,
-  type RecruitmentCaseDetail
 } from "../services/hiringControl";
+import { useRecruitmentCaseDetail } from "../hooks/useRecruitmentQueries";
 import {
   caseFilterOptions,
   formatDateValue,
@@ -40,26 +39,16 @@ export function HiringProcessesView({
     useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [selectedApprovalId, setSelectedApprovalId] = useState<number | null>(null);
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
-  const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail>>({});
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const expandedCaseDetailQuery = useRecruitmentCaseDetail(expandedCaseId ?? "", Boolean(expandedCaseId));
 
-  const handleRowClick = useCallback(async (caseId: string) => {
+  const handleRowClick = (caseId: string) => {
     if (expandedCaseId === caseId) {
       setExpandedCaseId(null);
       return;
     }
 
     setExpandedCaseId(caseId);
-
-    if (caseDetailsCache[caseId]) return;
-
-    setIsLoadingDetail(true);
-    const { data } = await fetchRecruitmentCaseDetail(caseId);
-    if (data) {
-      setCaseDetailsCache((prev) => ({ ...prev, [caseId]: data }));
-    }
-    setIsLoadingDetail(false);
-  }, [expandedCaseId, caseDetailsCache]);
+  };
 
   const filteredCases = useMemo(() => {
     const normalizedSearch = caseSearchTerm.trim().toLowerCase();
@@ -179,7 +168,7 @@ export function HiringProcessesView({
               {filteredCases.length > 0 ? (
                 filteredCases.map((caseRow) => {
                   const isExpanded = expandedCaseId === caseRow.id;
-                  const detail = caseDetailsCache[caseRow.id] ?? null;
+                  const detail = isExpanded ? expandedCaseDetailQuery.data ?? null : null;
                   const hr = detail?.case?.hiring_request;
                   const approvalSummary = hr?.approval_summary;
 
@@ -223,7 +212,7 @@ export function HiringProcessesView({
                       {isExpanded ? (
                         <tr key={`${caseRow.id}-detail`} className="tracking-table-expanded-row">
                           <td colSpan={7}>
-                            {isLoadingDetail && !detail ? (
+                            {expandedCaseDetailQuery.isLoading && !detail ? (
                               <div className="expanded-case-loading">Cargando detalle del caso...</div>
                             ) : detail ? (
                               <div className="expanded-case-detail-grid">

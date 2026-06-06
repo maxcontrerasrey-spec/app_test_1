@@ -412,3 +412,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Un candidato se mantiene único en el sistema de acuerdo a su `national_id` (RUT) en la tabla `candidate_profiles`.
 - El historial de sus postulaciones, incluyendo descartes o retiros, siempre debe obtenerse consultando la tabla pivot `recruitment_case_candidates` cruzada con la tabla de perfil maestro.
 - **Regla de negocio:** Un candidato descartado en un proceso debe poder volver a postular a un nuevo proceso, pero el sistema está obligado a recuperar y mostrarle al reclutador su historial de descartes (alertas de retención/descarte) de casos anteriores para proteger los estándares de ingreso.
+
+## 75. Un rechazo especializado no debe delegar a una RPC genérica con otro dominio de permisos
+
+- **Si una decisión vive en una capability distinta, la RPC especializada debe cerrar el flujo completo por sí misma.** En este caso, `reject_candidate_stage_who(...)` no debía delegar el descarte a `advance_recruitment_candidate_stage(...)` porque esa transición valida permisos de gestión del caso, no permisos de aprobación `Who`.
+- **La auditoría debe nombrar la acción real, no reciclar el action type del camino opuesto.** Un rechazo `Who` debe persistir algo como `candidate_stage_approval_rejected`; reutilizar `..._approved` destruye trazabilidad y complica cualquier dashboard o investigación posterior.
+
+## 76. El polling no reemplaza la invalidación; cada mutación debe refrescar solo su dominio
+
+- **Si un módulo ya usa TanStack Query, volver a `loadX()` imperativo después de cada acción reintroduce inconsistencia y fetch redundante.** El patrón correcto es centralizar `queryKey`s, dejar queries compartidas por dominio y luego invalidar solo el tablero o detalle realmente afectados por la mutación.
+- **Los datos maestros de baja volatilidad no deben recargarse en cada montaje.** Catálogos como cargos, contratos y turnos deben vivir en queries con `staleTime` largo y `gcTime` amplio; así se reduce latencia percibida y ruido de red sin sacrificar consistencia operativa.
