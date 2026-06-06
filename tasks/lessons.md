@@ -422,3 +422,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si un módulo ya usa TanStack Query, volver a `loadX()` imperativo después de cada acción reintroduce inconsistencia y fetch redundante.** El patrón correcto es centralizar `queryKey`s, dejar queries compartidas por dominio y luego invalidar solo el tablero o detalle realmente afectados por la mutación.
 - **Los datos maestros de baja volatilidad no deben recargarse en cada montaje.** Catálogos como cargos, contratos y turnos deben vivir en queries con `staleTime` largo y `gcTime` amplio; así se reduce latencia percibida y ruido de red sin sacrificar consistencia operativa.
+
+## 77. Si una tarjeta productiva deriva fechas, la fórmula SQL debe verificarse con casos reales de borde
+
+- **No basta con que una función de fechas “parezca correcta” al leerla.** En producción hay que validarla con ejemplos concretos del mismo mes, especialmente cuando usa `make_date`, `date_trunc`, `least` o ajustes para febrero.
+- **Para widgets de agenda o cumpleaños, la fuente real es el ranking resultante, no solo el conteo base.** Una sync puede estar perfecta y aun así el widget mentir si la función que ordena próximos eventos desplaza días al `1` del mes o calcula mal el siguiente aniversario.
