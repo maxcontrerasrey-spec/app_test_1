@@ -6,7 +6,6 @@ import {
   PublicOnlyRoute,
   RoleProtectedRoute
 } from "../../modules/auth/components/RouteGuards";
-import { ModulePlaceholderPage } from "../../shared/ui/ModulePlaceholderPage";
 
 const HomePage = lazy(async () => ({
   default: (await import("../../modules/home/pages/HomePage")).HomePage
@@ -44,6 +43,12 @@ const AccessDeniedPage = lazy(async () => ({
 
 const OperacionesDashboard = lazy(async () => ({
   default: (await import("../../modules/operaciones/pages/OperacionesDashboard")).OperacionesDashboard
+}));
+
+const HumanResourcesDashboard = lazy(async () => ({
+  default: (
+    await import("../../modules/incentives/pages/HumanResourcesDashboard")
+  ).HumanResourcesDashboard
 }));
 
 function RouteLoadingScreen() {
@@ -118,12 +123,13 @@ export function AppRouter() {
             />
             <Route
               path="/recursos-humanos"
+              element={<Navigate to="/recursos-humanos/incentivos" replace />}
+            />
+            <Route
+              path="/recursos-humanos/:view"
               element={
                 <RoleProtectedRoute moduleCode="recursos_humanos">
-                  <ModulePlaceholderPage
-                    title="Recursos Humanos"
-                    description="Espacio reservado para procesos internos y herramientas de personas."
-                  />
+                  <HumanResourcesDashboard />
                 </RoleProtectedRoute>
               }
             />

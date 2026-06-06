@@ -1,0 +1,259 @@
+import { useMemo, useState } from "react";
+import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import { SelectField, TextField } from "../../../shared/ui";
+import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
+import { formatRut } from "../../../shared/lib/rut";
+import { queryKeys } from "../../../shared/lib/queryKeys";
+import { cancelHrIncentiveRequest } from "../services/incentivesApi";
+import { useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
+import type { HrIncentiveRequest, HrIncentiveSetupCatalogs } from "../types";
+
+type IncentiveRequestsViewProps = {
+  setupCatalogsQuery: UseQueryResult<HrIncentiveSetupCatalogs, Error>;
+};
+
+function getIncentiveStatusLabel(status: HrIncentiveRequest["status"]) {
+  switch (status) {
+    case "P":
+      return "Pendiente";
+    case "E":
+      return "En revisión";
+    case "R":
+      return "Rechazado";
+    case "F":
+      return "Pagado";
+    case "C":
+      return "Anulado";
+    default:
+      return status;
+  }
+}
+
+export function IncentiveRequestsView({
+  setupCatalogsQuery
+}: IncentiveRequestsViewProps) {
+  const queryClient = useQueryClient();
+  const [workerSearch, setWorkerSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("A");
+  const [typeIdFilter, setTypeIdFilter] = useState("");
+  const [periodCodeFilter, setPeriodCodeFilter] = useState("");
+  const [contractCodeFilter, setContractCodeFilter] = useState("");
+  const [serviceDateUntil, setServiceDateUntil] = useState("");
+  const [mutationError, setMutationError] = useState("");
+
+  const requestsQuery = useHrIncentiveRequests({
+    workerSearch,
+    status: statusFilter,
+    typeId: typeIdFilter || undefined,
+    periodCode: periodCodeFilter || undefined,
+    contractCode: contractCodeFilter || undefined,
+    serviceDateUntil: serviceDateUntil || undefined
+  });
+
+  const incentiveTypeOptions = useMemo(
+    () =>
+      (setupCatalogsQuery.data?.incentiveTypes ?? []).map((item) => ({
+        value: item.id,
+        label: item.name
+      })),
+    [setupCatalogsQuery.data?.incentiveTypes]
+  );
+
+  const contractOptions = useMemo(() => {
+    const uniqueContracts = new Set(
+      (requestsQuery.data ?? []).map((item) => item.selectedContractCode).filter(Boolean)
+    );
+
+    return Array.from(uniqueContracts).map((contractCode) => ({
+      value: contractCode,
+      label: contractCode
+    }));
+  }, [requestsQuery.data]);
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ requestId, comment }: { requestId: string; comment?: string }) =>
+      cancelHrIncentiveRequest(requestId, comment),
+    onSuccess: async () => {
+      setMutationError("");
+      await queryClient.invalidateQueries({ queryKey: ["incentives", "requests"] });
+    },
+    onError: (error: Error) => {
+      setMutationError(error.message);
+    }
+  });
+
+  return (
+    <section className="hr-incentives-card">
+      <div className="tracking-toolbar">
+        <div className="tracking-toolbar-copy">
+          <h3>Historial de incentivos</h3>
+          <span className="tracking-filter-caption">
+            Consulta solicitudes registradas y anula solo cuando corresponda.
+          </span>
+        </div>
+      </div>
+
+      <div className="tracking-filters hr-incentives-filters">
+        <TextField
+          id="incentive-filter-worker"
+          label="Buscar"
+          value={workerSearch}
+          onChange={(event) => setWorkerSearch(event.target.value)}
+          placeholder="Trabajador, reemplazo, tipo o contrato"
+        />
+        <SelectField
+          id="incentive-filter-status"
+          label="Estado"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          options={[
+            { value: "A", label: "Todos" },
+            { value: "P", label: "Pendiente" },
+            { value: "E", label: "En revisión" },
+            { value: "R", label: "Rechazado" },
+            { value: "F", label: "Pagado" },
+            { value: "C", label: "Anulado" }
+          ]}
+        />
+        <SelectField
+          id="incentive-filter-type"
+          label="Tipo"
+          value={typeIdFilter}
+          onChange={(event) => setTypeIdFilter(event.target.value)}
+          options={incentiveTypeOptions}
+          placeholder="Todos los tipos"
+        />
+        <TextField
+          id="incentive-filter-period"
+          label="Periodo"
+          value={periodCodeFilter}
+          onChange={(event) => setPeriodCodeFilter(event.target.value)}
+          placeholder="YYYYMM"
+          inputMode="numeric"
+        />
+        <SelectField
+          id="incentive-filter-contract"
+          label="Contrato"
+          value={contractCodeFilter}
+          onChange={(event) => setContractCodeFilter(event.target.value)}
+          options={contractOptions}
+          placeholder="Todos los contratos"
+        />
+        <TextField
+          id="incentive-filter-service-date"
+          label="Servicio hasta"
+          value={serviceDateUntil}
+          onChange={(event) => setServiceDateUntil(event.target.value)}
+          type="date"
+        />
+      </div>
+
+      {mutationError ? <p className="form-status form-status-error">{mutationError}</p> : null}
+
+      <div className="tracking-table-wrap tracking-table-wrap-full">
+        <div className="tracking-table-scroll tracking-table-scroll-wide">
+          <table className="tracking-table">
+            <thead>
+              <tr>
+                <th>Folio</th>
+                <th>Trabajador</th>
+                <th>Tipo</th>
+                <th>Contrato</th>
+                <th>Fecha servicio</th>
+                <th>Monto</th>
+                <th>Solicitó</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(requestsQuery.data ?? []).length > 0
+                ? requestsQuery.data?.map((request) => (
+                    <tr key={request.id}>
+                      <td>
+                        <strong>{request.folio}</strong>
+                        <div className="tracking-filter-caption">{request.periodCode}</div>
+                      </td>
+                      <td>
+                        <strong>{request.employeeFullName}</strong>
+                        <div className="tracking-filter-caption">
+                          {formatRut(request.employeeDocumentNumber)}
+                        </div>
+                        {request.replacementFullName ? (
+                          <div className="tracking-filter-caption">
+                            Reemplaza a {request.replacementFullName}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td>{request.incentiveTypeName}</td>
+                      <td>
+                        <strong>{request.selectedAreaName}</strong>
+                        <div className="tracking-filter-caption">
+                          {request.selectedContractCode}
+                        </div>
+                      </td>
+                      <td>{formatRequestDate(request.serviceDate)}</td>
+                      <td>{formatCurrencyValue(request.calculatedAmount)}</td>
+                      <td>{request.requesterName}</td>
+                      <td>
+                        <span className="tracking-status-pill">
+                          {getIncentiveStatusLabel(request.status)}
+                        </span>
+                        {request.cancellationComment ? (
+                          <div className="tracking-filter-caption">
+                            {request.cancellationComment}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td>
+                        {request.status !== "C" ? (
+                          <button
+                            type="button"
+                            className="soft-primary-button soft-primary-button-danger hr-incentives-inline-button"
+                            disabled={cancelMutation.isPending}
+                            onClick={() => {
+                              const confirmed = window.confirm(
+                                `¿Anular incentivo ${request.folio}?`
+                              );
+
+                              if (!confirmed) {
+                                return;
+                              }
+
+                              cancelMutation.mutate({
+                                requestId: request.id
+                              });
+                            }}
+                          >
+                            Anular
+                          </button>
+                        ) : (
+                          <span className="tracking-filter-caption">Sin acción</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                : null}
+
+              {!requestsQuery.isLoading && (requestsQuery.data ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="tracking-empty-state">
+                    No hay incentivos para el filtro actual.
+                  </td>
+                </tr>
+              ) : null}
+
+              {requestsQuery.isLoading ? (
+                <tr>
+                  <td colSpan={9} className="tracking-empty-state">
+                    Cargando incentivos...
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}

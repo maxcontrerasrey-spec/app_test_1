@@ -418,6 +418,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una decisión vive en una capability distinta, la RPC especializada debe cerrar el flujo completo por sí misma.** En este caso, `reject_candidate_stage_who(...)` no debía delegar el descarte a `advance_recruitment_candidate_stage(...)` porque esa transición valida permisos de gestión del caso, no permisos de aprobación `Who`.
 - **La auditoría debe nombrar la acción real, no reciclar el action type del camino opuesto.** Un rechazo `Who` debe persistir algo como `candidate_stage_approval_rejected`; reutilizar `..._approved` destruye trazabilidad y complica cualquier dashboard o investigación posterior.
 
+## 76. Un formulario gobernado por reglas no sale a producción sin su superficie de maestros
+
+- **Si una pantalla operativa depende de catálogos o reglas que determinan quién aparece y cuánto se calcula, esos maestros deben tener UI de mantenimiento desde el primer release.** En `RRHH > Incentivos`, publicar solo el formulario habría dejado una pantalla técnicamente viva pero operativamente bloqueada, porque sin cargos elegibles ni reglas activas la búsqueda y el cálculo quedan vacíos.
+- **La validación del monto y de elegibilidad debe vivir en backend, pero el mantenimiento de esos criterios no puede depender de SQL manual.** El patrón correcto es lanzar juntos: tablas maestras, RPCs seguras y una pestaña de configuración base para que la operación no dependa del equipo técnico.
+
 ## 76. El polling no reemplaza la invalidación; cada mutación debe refrescar solo su dominio
 
 - **Si un módulo ya usa TanStack Query, volver a `loadX()` imperativo después de cada acción reintroduce inconsistencia y fetch redundante.** El patrón correcto es centralizar `queryKey`s, dejar queries compartidas por dominio y luego invalidar solo el tablero o detalle realmente afectados por la mutación.

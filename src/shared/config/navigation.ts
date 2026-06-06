@@ -90,6 +90,6 @@ export const navigationModules: NavigationModule[] = [
   {
     label: "Recursos Humanos",
     moduleCode: "recursos_humanos",
-    to: "/recursos-humanos"
+    to: "/recursos-humanos/incentivos"
   }
 ];
