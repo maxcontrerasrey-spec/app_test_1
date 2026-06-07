@@ -53,7 +53,7 @@ export function HumanResourcesDashboard() {
         <p>Recursos Humanos / {activeViewMeta.description}</p>
       </header>
 
-      <section className="tracking-hero">
+      <section className="tracking-panel">
         <div className="approval-chip-row">
           {HUMAN_RESOURCES_VIEWS.map((item) => (
             <button
