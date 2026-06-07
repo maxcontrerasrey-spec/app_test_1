@@ -9,7 +9,7 @@
     "Helvetica Neue",
     Arial,
     sans-serif;
-  color: #111827;
+  color: var(--title);
   background: #f7f8fa;
   line-height: 1.5;
   font-weight: 400;
@@ -230,7 +230,7 @@ textarea {
   text-transform: none;
   letter-spacing: -0.01em;
   text-align: center;
-  color: #475467;
+  color: var(--text-muted);
   font-size: 0.84rem;
   font-weight: 500;
 }
@@ -262,7 +262,7 @@ textarea {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #4b5563;
+  color: var(--text-muted);
   font-size: 0.94rem;
   font-weight: 500;
   white-space: nowrap;
@@ -696,7 +696,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-soft);
-  color: #475467;
+  color: var(--text-muted);
   font-size: 0.84rem;
   font-weight: 500;
   white-space: nowrap;
@@ -823,13 +823,13 @@ textarea {
 
 .field-label {
   font-size: 0.8rem;
-  color: #374151;
+  color: var(--text-muted);
   font-weight: 500;
   white-space: nowrap;
 }
 
 .field-label-optional {
-  color: #7a7a7a;
+  color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 400;
 }
@@ -930,7 +930,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  color: #374151;
+  color: var(--text-muted);
   font-family: var(--font-text);
   font-size: 0.92rem;
   appearance: none;
@@ -948,7 +948,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  color: #4b5563;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
@@ -965,7 +965,7 @@ textarea {
 .calendar-weekdays span {
   text-align: center;
   font-size: 0.72rem;
-  color: #7a7a7a;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-family: var(--font-text);
@@ -982,7 +982,7 @@ textarea {
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: var(--surface);
-  color: #374151;
+  color: var(--text-muted);
   cursor: pointer;
   font-family: var(--font-text);
   font-size: 0.88rem;
@@ -1023,7 +1023,7 @@ textarea {
 .text-field:disabled,
 .text-field-readonly {
   background: var(--surface-soft);
-  color: #4b5563;
+  color: var(--text-muted);
   font-size: 0.92rem;
   letter-spacing: -0.01em;
 }
@@ -1135,7 +1135,7 @@ textarea {
   gap: 0.42rem;
   align-items: center;
   line-height: 1.4;
-  color: #4b5563;
+  color: var(--text-muted);
 }
 
 .approval-queue-copy strong {
@@ -1367,7 +1367,7 @@ textarea {
 }
 
 .control-summary-text.is-empty {
-  color: #777;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -1419,7 +1419,7 @@ textarea {
 
 .control-history-empty {
   font-size: 0.85rem;
-  color: #777;
+  color: var(--text-muted);
 }
 
 .form-status-spaced {
@@ -1434,7 +1434,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-soft);
-  color: #4b5563;
+  color: var(--title);
   font-size: 0.84rem;
   white-space: nowrap;
 }
@@ -1446,7 +1446,7 @@ textarea {
 .approval-button-detail:not(:disabled) {
   background: var(--surface-muted);
   border-color: var(--border);
-  color: #475467;
+  color: var(--text-muted);
 }
 
 .approval-button-approve:not(:disabled) {
@@ -1677,7 +1677,7 @@ textarea {
   grid-template-columns: 18px 1fr;
   gap: 0.8rem;
   align-items: start;
-  color: #374151;
+  color: var(--text-muted);
   font-size: 0.92rem;
   cursor: pointer;
 }
@@ -1794,7 +1794,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-soft);
-  color: #374151;
+  color: var(--text-muted);
   font-family: var(--font-text);
   font-size: 0.88rem;
   font-weight: 500;
@@ -1893,6 +1893,21 @@ textarea {
 .tracking-kpi-card-error {
   background: #fff2f2;
   border-color: #f0d2d2;
+}
+
+[data-theme="dark"] .tracking-kpi-card-en-proceso {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.28);
+}
+
+[data-theme="dark"] .tracking-kpi-card-generado {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+[data-theme="dark"] .tracking-kpi-card-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
 }
 
 .tracking-kpi-card strong {
@@ -2019,7 +2034,7 @@ textarea {
   padding: 0 0.7rem;
   border-radius: 999px;
   background: var(--surface-soft);
-  color: #4b5563;
+  color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -2182,7 +2197,7 @@ textarea {
   padding: 1.4rem;
   border: 1px solid var(--border-subtle);
   border-radius: 22px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .control-detail-panel-inline {
@@ -2345,14 +2360,14 @@ textarea {
 
 .control-readonly-grid small {
   font-size: 0.78rem;
-  color: #7a7a7a;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .control-readonly-grid strong {
   font-size: 0.95rem;
-  color: #2f2f2f;
+  color: var(--title);
 }
 
 .control-edit-grid {
@@ -2477,7 +2492,7 @@ textarea {
 .who-cause-editor-title {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #4b5563;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -2517,7 +2532,7 @@ textarea {
 .who-causes-summary-item p {
   font-family: var(--font-text);
   font-size: 0.9rem;
-  color: #2f2f2f;
+  color: var(--title);
   margin: 0;
 }
 
