@@ -1125,8 +1125,8 @@ textarea {
 }
 
 .approval-queue-item-button:hover {
-  border-color: #d7dbe1;
-  background: #fbfcfd;
+  border-color: var(--border-subtle);
+  background: var(--surface-soft);
 }
 
 .approval-queue-copy {
@@ -1866,8 +1866,8 @@ textarea {
 }
 
 .tracking-kpi-card:hover {
-  border-color: #d7dbe1;
-  background: #fbfcfd;
+  border-color: var(--border-subtle);
+  background: var(--surface-soft);
 }
 
 .tracking-kpi-card-active {
