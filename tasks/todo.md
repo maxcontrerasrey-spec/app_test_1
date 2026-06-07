@@ -27,14 +27,27 @@
 ## Corrección de búsqueda de trabajador en incentivos
 
 - [x] Identificar la causa del error `column reference "job_title" is ambiguous`
-- [ ] Reemplazar la función RPC afectada y validar búsqueda de trabajadores elegibles
+- [x] Reemplazar la función RPC afectada y validar búsqueda de trabajadores elegibles
+
+## Sindicato nominal BUK como variable real de montos
+
+- [x] Verificar si el nombre específico del sindicato existe en la sync BUK
+- [x] Sustituir el uso de estado sindical genérico por sindicato nominal en reglas, contexto y cálculo
+- [x] Aplicar migración, validar y documentar resultado
+
+## Resultado de sindicato nominal BUK como variable real de montos
+
+- Se confirmó que el dato correcto para la lógica de montos no era el proxy binario de sindicalización, sino `raw_payload.current_job.union`.
+- La sync activa trae `1571` trabajadores con sindicato nominal y `18` valores distintos, incluyendo casos reales como `No Sindicalizados`, `Sindicato Codelco DMH` y `Sindicato Interempresa de trabajadores de transporte buses JM, Minardi S.A. (Inter calama)`.
+- El módulo ahora expone `buk_unions` en configuración base, permite crear reglas por sindicato específico y muestra ese valor exacto en la ficha operativa del trabajador.
+- Las nuevas columnas `hr_incentive_rate_rules.union_name` y `hr_incentive_requests.employee_union_name` quedaron aplicadas en Supabase mediante la migración `20260606_223500_use_exact_buk_union_name_for_incentives.sql`.
 
 ## Resultado de compactación de configuración base y sindicato BUK en incentivos
 
 - La separación vertical exagerada de `Cargos elegibles BUK` no venía del selector, sino del comportamiento por defecto del grid de dos columnas: la tarjeta izquierda se estiraba a la altura de la derecha. Se corrigió estructuralmente con `align-items: start` y densidad más compacta en la tarjeta/lista.
-- Se confirmó en la data BUK sincronizada que la variable útil para sindicato proviene de `Afecto a convenio Colectivo` y, como respaldo, `Fecha incorporación al sindicato`.
-- El módulo ahora normaliza ese dato a un código estable (`unionized`, `non_unionized`, `unknown`) y lo reutiliza en catálogo de configuración, contexto del trabajador, matching de reglas y registro de solicitudes.
-- `Reglas de monto` ya permite condicionar por `Sindicato BUK (opcional)` y el formulario operativo muestra el estado sindical del trabajador en modo solo lectura.
+- En esa etapa se incorporó una primera capa de estado sindical derivado (`unionized`, `non_unionized`, `unknown`) usando atributos sincronizados desde BUK.
+- Ese criterio quedó posteriormente reemplazado por sindicato nominal exacto (`raw_payload.current_job.union`) como variable principal de cálculo, manteniendo el estado derivado solo como respaldo técnico.
+- `Reglas de monto` ya permite condicionar por `Sindicato BUK (opcional)` y el formulario operativo muestra el sindicato exacto del trabajador en modo solo lectura.
 - La migración `20260606_220000_add_union_status_to_hr_incentives.sql` quedó aplicada en Supabase. La verificación remota confirmó `121` cargos BUK disponibles, los tres estados sindicales en catálogo y las columnas nuevas persistidas en `hr_incentive_rate_rules` y `hr_incentive_requests`.
 
 ## Resultado de enlace BUK en Configuración base de Incentivos

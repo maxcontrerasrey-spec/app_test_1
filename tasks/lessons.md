@@ -133,6 +133,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una RPC de Postgres devuelve columnas como `job_title`, no reutilices ese nombre sin calificar dentro del cuerpo PL/pgSQL**. Puede colisionar con columnas reales y disparar errores de ambigüedad en runtime.
 - **La regla defensiva es simple**: en CTEs y joins internos, usar alias explícitos como `jt.job_title` o renombrar a `normalized_job_title` cuando el nombre coincide con la firma de salida.
 
+## 47. Si el negocio discrimina por sindicato, el campo correcto no es un proxy binario
+
+- **No reemplazar sindicato específico por `sí/no sindicalizado` si BUK ya trae el nombre nominal del sindicato**. Ese proxy pierde la variable real de cálculo y degrada el modelo.
+- **Cuando exista un campo canónico como `current_job.union`, ese debe gobernar catálogo, matching de reglas, visualización y persistencia**. Los derivados binarios pueden quedar como apoyo, pero no como criterio principal.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

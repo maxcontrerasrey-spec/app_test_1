@@ -6,6 +6,11 @@ export type HrIncentiveUnionStatusOption = {
   label: string;
 };
 
+export type HrIncentiveUnionOption = {
+  value: string;
+  label: string;
+};
+
 export type IncentiveRequestStatus = "P" | "E" | "R" | "F" | "C";
 
 export type HrIncentiveAllowedJobTitle = {
@@ -31,6 +36,7 @@ export type HrIncentiveRateRule = {
   incentiveTypeName: string;
   contractCode: string | null;
   jobTitle: string | null;
+  unionName: string | null;
   unionStatus: HrIncentiveUnionStatus | null;
   amount: number;
   priority: number;
@@ -42,6 +48,7 @@ export type HrIncentiveRateRule = {
 
 export type HrIncentiveSetupCatalogs = {
   bukJobTitles: string[];
+  bukUnions: HrIncentiveUnionOption[];
   bukUnionStatuses: HrIncentiveUnionStatusOption[];
   allowedJobTitles: HrIncentiveAllowedJobTitle[];
   incentiveTypes: HrIncentiveType[];
@@ -73,6 +80,7 @@ export type HrIncentiveWorkerContext = {
     documentNumber: string;
     documentType: string;
     jobTitle: string;
+    unionName: string | null;
     unionStatus: HrIncentiveUnionStatus;
     unionStatusLabel: string;
     unionJoinedAt: string | null;
@@ -94,6 +102,7 @@ export type HrIncentivePreview = {
     rateRuleAmount: number;
     matchedContractCode: string | null;
     matchedJobTitle: string | null;
+    matchedUnionName: string | null;
     matchedUnionStatus: HrIncentiveUnionStatus | null;
     priority: number;
   };

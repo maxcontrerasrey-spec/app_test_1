@@ -27,7 +27,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   const [ruleAmountDraft, setRuleAmountDraft] = useState("");
   const [ruleContractCodeDraft, setRuleContractCodeDraft] = useState("");
   const [ruleJobTitleDraft, setRuleJobTitleDraft] = useState("");
-  const [ruleUnionStatusDraft, setRuleUnionStatusDraft] = useState("");
+  const [ruleUnionNameDraft, setRuleUnionNameDraft] = useState("");
   const [rulePriorityDraft, setRulePriorityDraft] = useState("100");
   const [ruleValidFromDraft, setRuleValidFromDraft] = useState("");
   const [ruleValidToDraft, setRuleValidToDraft] = useState("");
@@ -41,13 +41,13 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       })),
     [setupCatalogsQuery.data?.bukJobTitles]
   );
-  const bukUnionStatusOptions = useMemo(
+  const bukUnionOptions = useMemo(
     () =>
-      (setupCatalogsQuery.data?.bukUnionStatuses ?? []).map((item) => ({
+      (setupCatalogsQuery.data?.bukUnions ?? []).map((item) => ({
         value: item.value,
         label: item.label
       })),
-    [setupCatalogsQuery.data?.bukUnionStatuses]
+    [setupCatalogsQuery.data?.bukUnions]
   );
 
   const refreshSetupCatalogs = () =>
@@ -90,7 +90,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       setRuleAmountDraft("");
       setRuleContractCodeDraft("");
       setRuleJobTitleDraft("");
-      setRuleUnionStatusDraft("");
+      setRuleUnionNameDraft("");
       setRulePriorityDraft("100");
       setRuleValidFromDraft("");
       setRuleValidToDraft("");
@@ -282,7 +282,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           <h3>Reglas de monto</h3>
           <span className="tracking-filter-caption">
             El formulario usará automáticamente la regla más específica y vigente según contrato,
-            cargo y sindicato BUK.
+            cargo y sindicato BUK específico.
           </span>
         </div>
 
@@ -323,12 +323,12 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             placeholder="Todos los cargos"
           />
           <SelectField
-            id="setup-rule-union-status"
+            id="setup-rule-union-name"
             label="Sindicato BUK (opcional)"
-            value={ruleUnionStatusDraft}
-            onChange={(event) => setRuleUnionStatusDraft(event.target.value)}
-            options={bukUnionStatusOptions}
-            placeholder="Cualquier condición sindical"
+            value={ruleUnionNameDraft}
+            onChange={(event) => setRuleUnionNameDraft(event.target.value)}
+            options={bukUnionOptions}
+            placeholder="Cualquier sindicato"
           />
           <TextField
             id="setup-rule-priority"
@@ -372,7 +372,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                 amount: Number(ruleAmountDraft),
                 contractCode: ruleContractCodeDraft || null,
                 jobTitle: ruleJobTitleDraft || null,
-                unionStatus: ruleUnionStatusDraft ? (ruleUnionStatusDraft as "unionized" | "non_unionized" | "unknown") : null,
+                unionName: ruleUnionNameDraft || null,
                 priority: Number(rulePriorityDraft || "100"),
                 validFrom: ruleValidFromDraft || null,
                 validTo: ruleValidToDraft || null
@@ -408,13 +408,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                     <td>{item.contractCode || "Todos"}</td>
                     <td>{item.jobTitle || "Todos"}</td>
                     <td>
-                      {item.unionStatus === "unionized"
-                        ? "Sindicalizado"
-                        : item.unionStatus === "non_unionized"
-                          ? "No sindicalizado"
-                          : item.unionStatus === "unknown"
-                            ? "Sin información"
-                            : "Todos"}
+                      {item.unionName || "Todos"}
                     </td>
                     <td>{new Intl.NumberFormat("es-CL").format(item.amount)}</td>
                     <td>{item.priority}</td>
