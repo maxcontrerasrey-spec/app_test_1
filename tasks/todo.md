@@ -24,6 +24,11 @@
 - [x] Extender reglas de incentivo para considerar sindicato y exponerlo en frontend/backend
 - [x] Aplicar migración, validar build y documentar resultado
 
+## Corrección de búsqueda de trabajador en incentivos
+
+- [x] Identificar la causa del error `column reference "job_title" is ambiguous`
+- [ ] Reemplazar la función RPC afectada y validar búsqueda de trabajadores elegibles
+
 ## Resultado de compactación de configuración base y sindicato BUK en incentivos
 
 - La separación vertical exagerada de `Cargos elegibles BUK` no venía del selector, sino del comportamiento por defecto del grid de dos columnas: la tarjeta izquierda se estiraba a la altura de la derecha. Se corrigió estructuralmente con `align-items: start` y densidad más compacta en la tarjeta/lista.

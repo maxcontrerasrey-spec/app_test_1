@@ -128,6 +128,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No mezclar labels libres de BUK dentro del motor de reglas**. Si `sindicato` afecta montos, primero se normaliza a un código estable y luego se usa en catálogos, contexto de trabajador, matching de reglas y trazabilidad.
 - **La misma derivación debe alimentar setup, preview y registro final**. Si cada superficie infiere el estado sindical por su cuenta, el módulo termina calculando con contratos distintos para el mismo trabajador.
 
+## 46. En funciones `RETURNS TABLE`, los nombres de salida también ocupan el scope
+
+- **Si una RPC de Postgres devuelve columnas como `job_title`, no reutilices ese nombre sin calificar dentro del cuerpo PL/pgSQL**. Puede colisionar con columnas reales y disparar errores de ambigüedad en runtime.
+- **La regla defensiva es simple**: en CTEs y joins internos, usar alias explícitos como `jt.job_title` o renombrar a `normalized_job_title` cuando el nombre coincide con la firma de salida.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.
