@@ -467,3 +467,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **No basta con que una función de fechas “parezca correcta” al leerla.** En producción hay que validarla con ejemplos concretos del mismo mes, especialmente cuando usa `make_date`, `date_trunc`, `least` o ajustes para febrero.
 - **Para widgets de agenda o cumpleaños, la fuente real es el ranking resultante, no solo el conteo base.** Una sync puede estar perfecta y aun así el widget mentir si la función que ordena próximos eventos desplaza días al `1` del mes o calcula mal el siguiente aniversario.
+
+## 78. La arquitectura de color del ERP no soporta colores "quemados" (hardcoded) en un entorno de Modo Oscuro
+
+- **El contraste de fondos y fuentes no puede depender de hexadecimáles fijos en la declaración de un componente.** Utilizar `#f5f7fb` o `#4b5563` en hojas de estilo locales o inline destruye la adaptabilidad del diseño cuando se inyecta un modo nocturno.
+- **La solución estructural es el uso intensivo de CSS Variables Semánticas.** Al reemplazar un gris específico por `var(--text-muted)` o un blanco humo por `var(--surface-soft)`, el sistema responde instantáneamente al cambio de tema, reduciendo código, disminuyendo el riesgo de textos invisibles y centralizando el rediseño en `global.css`.
+- **Los efectos de opacidad se logran inyectando RGBs desestructurados, no opacando un hexadecimal puro.** Reemplazar blancos transparentes con `rgba(var(--surface-soft-rgb), 0.88)` garantiza que los brillos, superposiciones y gradientes se adapten a la oscuridad como un reflejo nocturno y no como "flashes blancos".

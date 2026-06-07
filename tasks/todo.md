@@ -2,6 +2,14 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+
+## Segunda pasada controlada sobre RLS
+
+- [ ] Auditar warnings vigentes de security/performance advisors enfocados en funciones y políticas que afectan flujos activos de la app
+- [ ] Seleccionar solo correcciones RLS/grants/search_path no destructivas y con verificación directa
+- [ ] Aplicar una migración nueva, separada y reversible, sin mezclar limpieza de índices/constraints destructivos
+- [ ] Verificar con consultas remotas, advisors y build; dejar resultado y lecciones documentadas
+
 ## Endurecimiento productivo sobre Supabase Pro
 
 - [x] Reintroducir un RPC resumido del dashboard para reducir roundtrips del inicio a una sola llamada
@@ -937,3 +945,20 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - `CandidateWorkerFileForm.tsx` ahora captura identidad, contacto, domicilio, estudios, inclusión, previsión, pagos y datos del ingreso actual en dos bloques claros: perfil persistente del candidato e ingreso transaccional del caso.
 - Se versionó la migración `20260604_121500_align_candidate_buk_profile.sql` para extender `candidate_profiles`, `candidate_worker_files` y las RPCs `upsert_candidate_person_profile(...)` / `upsert_candidate_worker_file(...)` con el set BUK priorizado.
 - La validación técnica local quedó cerrada con `git diff --check`, `npx tsc -b` y `npm run build`.
+
+
+## Implementación de Modo Oscuro Premium y Refinamiento de UI
+
+- [x] Agregar capacidad de alternar entre modo claro y oscuro desde la barra de navegación superior, persistiendo la preferencia en `localStorage`.
+- [x] Sustituir colores duros globales (blancos puros y negros sólidos) por variables dinámicas semánticas (`--surface`, `--surface-soft`, `--text-muted`, `--title`).
+- [x] Corregir la persistencia de widgets "brillantes" (blancos con opacidad o colores fijos) reemplazándolos con reglas de `[data-theme="dark"]` y variables RGB.
+- [x] Resolver contrastes de tipografía en el módulo de Reclutamiento (widgets de seguimiento, detalles de fichas, chips de aprobación) que quedaban invisibles bajo fondo nocturno.
+- [x] Corregir fallos de "flashes blancos" en efectos de `hover` y ajustar opacidades de componentes anidados.
+- [x] Validar que el layout no se desarme por inserción de nuevos controles (solucionado grid layout de `top-shell-right`).
+
+## Resultado de la Implementación de Modo Oscuro Premium
+
+- La plataforma cuenta ahora con un interruptor orgánico para Modo Oscuro, que tiñe toda la interfaz con tonos azules de medianoche y no negro sólido (mejorando la legibilidad en ERP).
+- Se auditaron y eliminaron decenas de colores estáticos (`#ffffff`, `#475467`, `rgba(31, 56, 106)`) dispersos en `global.css` y `dashboard.css`, asegurando que cada componente se ilumine o sombree automáticamente según la paleta elegida.
+- La pantalla de "Control de Contrataciones" (tarjetas de KPI, panel lateral del candidato y grilla) soporta el tema oscuro manteniendo la estética de los "brillos" y "alertas semafóricas".
+- Se documentó como lección que la legibilidad en modo oscuro no debe solucionarse parcheando componentes individuales, sino atacando la raíz de las variables CSS.
