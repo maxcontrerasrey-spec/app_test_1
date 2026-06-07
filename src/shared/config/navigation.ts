@@ -89,7 +89,14 @@ export const navigationModules: NavigationModule[] = [
   },
   {
     label: "Recursos Humanos",
-    moduleCode: "recursos_humanos",
-    to: "/recursos-humanos/incentivos"
+    items: [
+      {
+        moduleCode: "recursos_humanos",
+        to: "/recursos-humanos/incentivos",
+        label: "Incentivos",
+        description: "Registro y control de incentivos operativos.",
+        iconKey: "document"
+      }
+    ]
   }
 ];

@@ -159,7 +159,7 @@ export function IncentiveRegistrationForm({
 
   return (
     <section className="hr-incentives-layout">
-      <section className="hr-incentives-card">
+      <section className="info-card">
         <div className="tracking-toolbar">
           <div className="tracking-toolbar-copy">
             <h3>Registrar incentivo</h3>
@@ -363,7 +363,7 @@ export function IncentiveRegistrationForm({
         </div>
       </section>
 
-      <aside className="hr-incentives-card hr-incentives-summary">
+      <aside className="info-card hr-incentives-summary">
         <div className="hr-incentives-summary-block">
           <span className="eyebrow">Resumen de cálculo</span>
           <h3>Monto estimado</h3>

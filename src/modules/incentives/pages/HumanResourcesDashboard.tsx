@@ -47,39 +47,38 @@ export function HumanResourcesDashboard() {
   }
 
   return (
-    <PageShell className="hr-incentives-page">
-      <section className="hr-incentives-hero">
-        <div className="hr-incentives-hero-copy">
-          <span className="eyebrow">Recursos Humanos</span>
-          <h2>Incentivos operativos</h2>
-          <p>{activeViewMeta.description}</p>
+    <PageShell>
+      <header className="tracking-header">
+        <h2>Incentivos operativos</h2>
+        <p>Recursos Humanos / {activeViewMeta.description}</p>
+      </header>
+
+      <section className="tracking-hero">
+        <div className="approval-chip-row">
+          {HUMAN_RESOURCES_VIEWS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`approval-chip ${activeView === item.key ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => navigate(`/recursos-humanos/${item.key}`)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
+
+        {activeView === "incentivos" ? (
+          <IncentiveRegistrationForm setupCatalogsQuery={setupCatalogsQuery} />
+        ) : null}
+
+        {activeView === "solicitudes" ? (
+          <IncentiveRequestsView setupCatalogsQuery={setupCatalogsQuery} />
+        ) : null}
+
+        {activeView === "configuracion" ? (
+          <IncentiveSetupView setupCatalogsQuery={setupCatalogsQuery} />
+        ) : null}
       </section>
-
-      <div className="control-tabs-row hr-incentives-tabs">
-        {HUMAN_RESOURCES_VIEWS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className={`control-tab ${activeView === item.key ? "active" : ""}`}
-            onClick={() => navigate(`/recursos-humanos/${item.key}`)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {activeView === "incentivos" ? (
-        <IncentiveRegistrationForm setupCatalogsQuery={setupCatalogsQuery} />
-      ) : null}
-
-      {activeView === "solicitudes" ? (
-        <IncentiveRequestsView setupCatalogsQuery={setupCatalogsQuery} />
-      ) : null}
-
-      {activeView === "configuracion" ? (
-        <IncentiveSetupView setupCatalogsQuery={setupCatalogsQuery} />
-      ) : null}
     </PageShell>
   );
 }

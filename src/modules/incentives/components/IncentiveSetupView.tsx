@@ -106,7 +106,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
 
   return (
     <section className="hr-incentives-setup-grid">
-      <section className="hr-incentives-card">
+      <section className="info-card">
         <div className="tracking-toolbar-copy">
           <h3>Cargos elegibles BUK</h3>
           <span className="tracking-filter-caption">
@@ -157,7 +157,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
         </div>
       </section>
 
-      <section className="hr-incentives-card">
+      <section className="info-card">
         <div className="tracking-toolbar-copy">
           <h3>Tipos de incentivo</h3>
           <span className="tracking-filter-caption">
@@ -252,7 +252,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
         </div>
       </section>
 
-      <section className="hr-incentives-card hr-incentives-setup-rule-card">
+      <section className="info-card hr-incentives-setup-rule-card">
         <div className="tracking-toolbar-copy">
           <h3>Reglas de monto</h3>
           <span className="tracking-filter-caption">

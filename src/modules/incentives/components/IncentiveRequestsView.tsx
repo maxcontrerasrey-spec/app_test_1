@@ -83,7 +83,7 @@ export function IncentiveRequestsView({
   });
 
   return (
-    <section className="hr-incentives-card">
+    <section className="info-card">
       <div className="tracking-toolbar">
         <div className="tracking-toolbar-copy">
           <h3>Historial de incentivos</h3>
