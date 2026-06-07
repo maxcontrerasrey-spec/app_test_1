@@ -5,10 +5,20 @@
 
 ## Segunda pasada controlada sobre RLS
 
-- [ ] Auditar warnings vigentes de security/performance advisors enfocados en funciones y políticas que afectan flujos activos de la app
-- [ ] Seleccionar solo correcciones RLS/grants/search_path no destructivas y con verificación directa
-- [ ] Aplicar una migración nueva, separada y reversible, sin mezclar limpieza de índices/constraints destructivos
-- [ ] Verificar con consultas remotas, advisors y build; dejar resultado y lecciones documentadas
+- [x] Auditar warnings vigentes de security/performance advisors enfocados en funciones y políticas que afectan flujos activos de la app
+- [x] Seleccionar solo correcciones RLS/grants/search_path no destructivas y con verificación directa
+- [x] Aplicar una migración nueva, separada y reversible, sin mezclar limpieza de índices/constraints destructivos
+- [x] Verificar con consultas remotas, advisors y build; dejar resultado y lecciones documentadas
+
+## Resultado de segunda pasada controlada sobre RLS
+
+- La primera propuesta amplia fue rechazada por el conector de Supabase por riesgo productivo. En vez de forzarla, la pasada se degradó a un corte seguro sobre auth/config compartido y performance de claves foráneas.
+- Se aplicó en producción la migración `20260607_075617_controlled_rls_second_pass.sql`, registrada remotamente como `20260607120109 controlled_rls_second_pass`.
+- La migración corrigió policies RLS compartidas de `profiles`, `user_roles`, `document_types`, `cost_center_approvers` y `workflow_approvers`, reemplazando el patrón directo `auth.uid()` por `(select auth.uid())` donde correspondía y separando policies `ALL` en policies por operación para evitar evaluación redundante.
+- También creó siete índices faltantes sobre claves foráneas activas: `candidate_profiles.created_by`, `hiring_request_audit_log.approval_id`, `hiring_request_snapshots.created_by`, `hiring_requests.final_decided_by`, `role_module_access.module_code`, `user_roles.assigned_by` y `workflow_approvers.approver_user_id`.
+- La verificación posterior confirmó que desaparecieron las alertas `auth_rls_initplan` para `profiles`, `user_roles`, `cost_center_approvers` y `workflow_approvers`, y también las alertas `multiple_permissive_policies` sobre `document_types` y `user_roles`.
+- Los warnings de RLS más pesados ligados a reclutamiento, solicitudes y documentos siguen pendientes y no se tocaron en esta iteración para no reescribir políticas operativas masivas sobre tablas vivas.
+- La validación local cerró con `git diff --check` y `npm run build`.
 
 ## Endurecimiento productivo sobre Supabase Pro
 

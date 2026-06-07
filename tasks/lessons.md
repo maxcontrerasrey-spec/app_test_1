@@ -259,6 +259,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con proteger el módulo padre cuando una subsección expone datos sensibles o mutaciones operativas adicionales**. Si `Control de candidatos` vive dentro de `Control de Contrataciones`, debe tener capability explícita y no heredar visibilidad por defecto de todos los roles del módulo.
 - **La restricción debe aplicarse tanto al render del frontend como al payload del backend**. Ocultar una pestaña sin recortar la respuesta RPC deja la data expuesta en la red; el backend debe devolver `[]` o bloquear el detalle cuando el usuario no tenga la capability específica.
 
+## 50. En producción, una segunda pasada de RLS debe entrar por el núcleo compartido antes que por las tablas operativas grandes
+
+- **Si el conector rechaza una reescritura masiva de policies, el siguiente movimiento correcto es recortar al bloque auth/config compartido y a índices faltantes, no insistir con toda la cirugía a la vez**. Ese corte sigue generando mejora real y mantiene el riesgo acotado.
+- **Las policies `FOR ALL` suelen esconder dos problemas distintos: `multiple_permissive_policies` y `auth_rls_initplan`**. Separarlas por operación (`INSERT`/`UPDATE`/`DELETE`) en tablas maestras pequeñas es una forma segura de reducir ruido del advisor antes de tocar workflows críticos.
+
 ## 42. Si una tarjeta del dashboard depende de un SaaS externo, el frontend no debe leerlo directo
 
 - **Para datos de soporte como cumpleaños desde BUK, el patrón correcto es sincronizar primero a una tabla local y luego leer desde una RPC propia**. Eso permite controlar permisos, normalizar esquema y evitar que el dashboard dependa de credenciales o formatos cambiantes del proveedor externo.
