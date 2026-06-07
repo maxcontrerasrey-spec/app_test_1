@@ -268,7 +268,8 @@ export function AppShell() {
             </nav>
           </div>
 
-          <div className="top-nav-actions">
+          <div className="top-shell-right">
+            <div className="top-nav-actions">
             <button
               type="button"
               className="theme-toggle"
@@ -334,6 +335,7 @@ export function AppShell() {
               </div>
             ) : null}
           </div>
+        </div>
         </div>
 
         {openModule?.items?.length ? (
