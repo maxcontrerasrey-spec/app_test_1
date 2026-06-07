@@ -276,24 +276,11 @@ export function HiringRequestPage() {
 
   return (
     <PageShell useFormShell>
+      <div className="minimal-page-header">
+        <h1>Solicitud de Contrataciones</h1>
+      </div>
       <div className="hiring-layout-grid">
         <div className="hiring-main-column">
-          <div className="hero-panel hero-panel-compact form-copy form-hero">
-            <div className="hero-panel-meta">
-              <span className="eyebrow">Reclutamiento</span>
-              <span className="hero-copy-status">
-                {isCatalogsLoading
-                  ? "Cargando catalogos"
-                  : catalogsError
-                    ? "Catalogos con incidencia"
-                    : "Catalogos sincronizados"}
-              </span>
-            </div>
-            <h2>Solicitud de Contrataciones</h2>
-            <p className="hero-copy">
-              Registra una nueva contratación y déjala lista para aprobación.
-            </p>
-          </div>
 
           <div className="form-card">
             <div className="requester-grid">
