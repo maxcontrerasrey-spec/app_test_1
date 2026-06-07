@@ -34,6 +34,7 @@ export type HrIncentiveRateRule = {
 };
 
 export type HrIncentiveSetupCatalogs = {
+  bukJobTitles: string[];
   allowedJobTitles: HrIncentiveAllowedJobTitle[];
   incentiveTypes: HrIncentiveType[];
   rateRules: HrIncentiveRateRule[];

@@ -219,6 +219,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La escritura de la ficha debe pasar por `p_case_candidate_id` y no por `candidate_profile_id` expuesto directamente**. Así la autorización se valida contra el caso operativo y la auditoría queda amarrada al flujo real de reclutamiento.
 - **Las tablas satélite transaccionales no deben persistir filas vacías por defecto**. Si un bloque como la ficha del ingreso actual se guarda completamente en blanco, el sistema debe evitar crear o mantener registros sin valor operativo.
 
+## 43. Si una configuración depende de maestros sincronizados, la UI debe consumir ese maestro real
+
+- **No basta con que el backend use BUK en el flujo transaccional si la pantalla administrativa sigue pidiendo texto libre**. Eso crea drift entre configuración y operación.
+- **La regla es única**: cuando un selector gobierna cargos, contratos u otros maestros provenientes de una sync externa, `Configuración base` debe leer exactamente el mismo catálogo canónico que usa el resto del módulo.
+
 ## 41. Un subflujo sensible dentro de un módulo compartido necesita capability propia
 
 - **No basta con proteger el módulo padre cuando una subsección expone datos sensibles o mutaciones operativas adicionales**. Si `Control de candidatos` vive dentro de `Control de Contrataciones`, debe tener capability explícita y no heredar visibilidad por defecto de todos los roles del módulo.

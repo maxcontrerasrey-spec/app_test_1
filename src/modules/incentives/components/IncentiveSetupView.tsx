@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { SelectField, TextField } from "../../../shared/ui";
 import { queryKeys } from "../../../shared/lib/queryKeys";
@@ -32,6 +32,14 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   const [ruleValidToDraft, setRuleValidToDraft] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const bukJobTitleOptions = useMemo(
+    () =>
+      (setupCatalogsQuery.data?.bukJobTitles ?? []).map((jobTitle) => ({
+        value: jobTitle,
+        label: jobTitle
+      })),
+    [setupCatalogsQuery.data?.bukJobTitles]
+  );
 
   const refreshSetupCatalogs = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() });
@@ -111,21 +119,28 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           <h3>Cargos elegibles BUK</h3>
           <span className="tracking-filter-caption">
             Solo estos cargos aparecerán al buscar trabajadores para incentivos.
+            {bukJobTitleOptions.length
+              ? ` Catálogo activo BUK: ${bukJobTitleOptions.length} cargos detectados.`
+              : " No hay cargos BUK disponibles aún en la sync activa."}
           </span>
         </div>
 
         <div className="hr-incentives-inline-form">
-          <TextField
+          <SelectField
             id="setup-job-title"
             label="Cargo BUK"
             value={jobTitleDraft}
             onChange={(event) => setJobTitleDraft(event.target.value)}
-            placeholder="Ej.: CONDUCTOR DE BUS"
+            options={bukJobTitleOptions}
+            placeholder="Selecciona un cargo sincronizado desde BUK"
+            disabled={jobTitleMutation.isPending || bukJobTitleOptions.length === 0}
           />
           <button
             type="button"
             className="soft-primary-button soft-primary-button-success"
-            disabled={jobTitleMutation.isPending || !jobTitleDraft.trim()}
+            disabled={
+              jobTitleMutation.isPending || !jobTitleDraft.trim() || bukJobTitleOptions.length === 0
+            }
             onClick={() => jobTitleMutation.mutate(jobTitleDraft)}
           >
             Guardar cargo
@@ -288,12 +303,13 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             onChange={(event) => setRuleContractCodeDraft(event.target.value)}
             placeholder="Código contrato"
           />
-          <TextField
+          <SelectField
             id="setup-rule-job-title"
             label="Cargo BUK (opcional)"
             value={ruleJobTitleDraft}
             onChange={(event) => setRuleJobTitleDraft(event.target.value)}
-            placeholder="Cargo exacto"
+            options={bukJobTitleOptions}
+            placeholder="Todos los cargos"
           />
           <TextField
             id="setup-rule-priority"

@@ -10,6 +10,20 @@
 - [x] Implementar frontend con tres superficies iniciales: listado, registro con cálculo automático y configuración base
 - [x] Aplicar migración en Supabase, validar build y registrar resultado/lecciones
 
+## Enlace BUK en Configuración base de Incentivos
+
+- [x] Revisar por qué `Configuración base` no exponía cargos sincronizados desde BUK
+- [x] Exponer en backend el catálogo real de cargos BUK activos dentro de `get_hr_incentive_setup_catalogs()`
+- [x] Reemplazar inputs manuales de cargo en `Configuración base` por selectores alimentados desde BUK
+- [x] Aplicar migración en Supabase, validar build y registrar resultado
+
+## Resultado de enlace BUK en Configuración base de Incentivos
+
+- `Configuración base` dejó de depender de texto libre para cargos BUK y ahora consume el catálogo real de cargos activos sincronizados en `employees_active_current`.
+- `get_hr_incentive_setup_catalogs()` fue extendida para devolver `buk_job_titles`, reusando la misma lógica de resolución de cargo que ya ocupaba la búsqueda de trabajadores elegibles.
+- La UI administrativa ahora muestra un selector de cargos sincronizados tanto para `Cargos elegibles BUK` como para la restricción opcional por cargo en `Reglas de monto`.
+- La migración `20260606_130000_link_hr_incentive_setup_to_buk_job_titles.sql` fue aplicada en Supabase y la validación técnica local cerró con `npm run build`.
+
 ## Resultado de submódulo RRHH: Incentivos operativos
 
 - `Recursos Humanos` dejó de ser placeholder y ahora expone un módulo real en `/recursos-humanos/incentivos`, con navegación interna para `Registrar incentivo`, `Historial` y `Configuración base`.

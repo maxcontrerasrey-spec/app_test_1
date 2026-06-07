@@ -26,6 +26,9 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
   const source = (payload ?? {}) as Record<string, unknown>;
 
   return {
+    bukJobTitles: asArray<unknown>(source.buk_job_titles)
+      .map((item) => String(item ?? "").trim())
+      .filter(Boolean),
     allowedJobTitles: asArray<Record<string, unknown>>(source.allowed_job_titles).map((item) => ({
       id: String(item.id ?? ""),
       jobTitle: String(item.job_title ?? ""),
