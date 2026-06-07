@@ -109,11 +109,14 @@
 .hr-incentives-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 1rem 1.1rem;
 }
 
 .hr-incentives-form-grid-compact {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
 }
 
 .hr-incentives-grid-span-2 {
