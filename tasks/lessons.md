@@ -379,6 +379,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 67. Una view derivada para consumo autenticado no debe quedar con semántica de security definer
 
+## 68. Si una refactorización del widget empeora la resolución real, se vuelve al flujo simple
+
+- **No insistir con orquestadores de geolocalización “más robustos” cuando el comportamiento real en navegador empeora.** Si la UI se cuelga o termina en una ciudad falsa, la complejidad adicional no está ayudando.
+- **Para este widget, el contrato confiable es una sola lectura del navegador seguida de reverse geocoding.** Cualquier estrategia multiintento solo debe reintroducirse con evidencia real de que mejora la precisión sin degradar tiempos ni estabilidad.
+
 - **Si una view solo consolida filas ya gobernadas por RLS o grants de lectura, debe marcarse como `security_invoker = true`.** Dejarla con el comportamiento por defecto expone permisos del creador y genera alertas válidas del advisor de Supabase.
 - **La corrección correcta no es mover lógica a otra RPC si el problema es solo la propiedad de la view.** Basta con recrearla preservando el mismo `SELECT`, los mismos grants y cambiando explícitamente la semántica de seguridad.
 

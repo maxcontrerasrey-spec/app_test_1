@@ -11,10 +11,9 @@
 ## Resultado de corrección de bloqueo del widget de clima
 
 - El segundo problema no estaba en la API de ciudad ni en Open-Meteo, sino en la orquestación local del navegador.
-- El flujo anterior era secuencial: primero una lectura estricta, luego otra relajada. Eso acumulaba tiempos muertos y podía dejar la tarjeta en `Detectando ubicación` demasiado tiempo.
-- Peor aún, el fallback a `Santiago, CL` podía dispararse antes de que terminara la segunda estrategia, dejando una ciudad falsa aunque todavía existiera una lectura real recuperable.
-- Se reemplazó ese modelo por dos intentos en paralelo: una lectura rápida basada en caché/menor precisión para entregar ciudad pronto y una lectura de alta precisión para refinar después.
-- El fallback fijo ahora solo ocurre si ambas lecturas fallan o si el navegador niega permiso explícitamente.
+- El experimento con múltiples lecturas de geolocalización terminó siendo inestable en uso real: primero dejó la tarjeta colgada y luego siguió cayendo a `Santiago, CL`.
+- Se retiró esa complejidad y se volvió al contrato simple y verificable: una sola lectura real del navegador con `getCurrentPosition(...)` y reverse geocoding posterior para traducir las coordenadas reales.
+- El fallback fijo vuelve a quedar reservado solo al error real del navegador (`permiso denegado`, `posición no disponible`, `timeout`), no a carreras internas del componente.
 - La validación técnica cerró con `npm run build`.
 
 ## Corrección de regresión en resolución real del clima

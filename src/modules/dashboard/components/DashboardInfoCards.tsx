@@ -236,20 +236,6 @@ function toGeolocationStatusLabel(error?: GeolocationPositionError | null) {
   return DEFAULT_LOCATION.statusLabel;
 }
 
-function getBrowserPosition(options: PositionOptions) {
-  return new Promise<GeolocationPosition>((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, options);
-  });
-}
-
-function asGeolocationError(error: unknown): GeolocationPositionError | null {
-  if (!error || typeof error !== "object" || !("code" in error)) {
-    return null;
-  }
-
-  return error as GeolocationPositionError;
-}
-
 export function DashboardInfoCards({
   pendingTasksCount,
   approvalTrackingCount,
@@ -269,8 +255,6 @@ export function DashboardInfoCards({
   useEffect(() => {
     let cancelled = false;
     let reverseController: AbortController | null = null;
-    let successfulResolution = false;
-    let failedAttempts = 0;
 
     async function resolveLocationLabel(latitude: number, longitude: number, statusLabel: string) {
       reverseController?.abort();
@@ -284,7 +268,6 @@ export function DashboardInfoCards({
         const label = formatLocationLabel(payload) ?? formatCoordinateLabel(latitude, longitude);
 
         if (!cancelled) {
-          successfulResolution = true;
           setLocation({
             label,
             statusLabel,
@@ -296,7 +279,6 @@ export function DashboardInfoCards({
         }
       } catch (_error) {
         if (!cancelled) {
-          successfulResolution = true;
           setLocation({
             label: formatCoordinateLabel(latitude, longitude),
             statusLabel,
@@ -304,22 +286,6 @@ export function DashboardInfoCards({
             longitude,
             isResolved: true,
             isFallback: false
-          });
-        }
-      }
-    }
-
-    function handleGeolocationFailure(error: unknown) {
-      failedAttempts += 1;
-
-      const geolocationError = asGeolocationError(error);
-      const isPermissionDenied = geolocationError?.code === 1;
-
-      if (isPermissionDenied || failedAttempts >= 2) {
-        if (!cancelled && !successfulResolution) {
-          setLocation({
-            ...DEFAULT_LOCATION,
-            statusLabel: toGeolocationStatusLabel(geolocationError)
           });
         }
       }
@@ -336,12 +302,8 @@ export function DashboardInfoCards({
         statusLabel: "Resolviendo ubicación..."
       }));
 
-      getBrowserPosition({
-        enableHighAccuracy: false,
-        timeout: 4500,
-        maximumAge: 900000
-      })
-        .then((position) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
           if (!cancelled) {
             void resolveLocationLabel(
               position.coords.latitude,
@@ -349,28 +311,21 @@ export function DashboardInfoCards({
               "Ubicación actual"
             );
           }
-        })
-        .catch((error) => {
-          handleGeolocationFailure(error);
-        });
-
-      getBrowserPosition({
+        },
+        (error) => {
+          if (!cancelled) {
+            setLocation({
+              ...DEFAULT_LOCATION,
+              statusLabel: toGeolocationStatusLabel(error)
+            });
+          }
+        },
+        {
           enableHighAccuracy: true,
-          timeout: 9000,
-          maximumAge: 0
-        })
-          .then((position) => {
-            if (!cancelled) {
-              void resolveLocationLabel(
-                position.coords.latitude,
-                position.coords.longitude,
-                "Ubicación actual"
-              );
-            }
-          })
-          .catch((error) => {
-            handleGeolocationFailure(error);
-          });
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      );
     }
 
     if (!location.isResolved || location.isFallback) {
