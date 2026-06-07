@@ -214,6 +214,13 @@ export function IncentiveRegistrationForm({
             readOnly
           />
 
+          <TextField
+            id="incentive-worker-union-status"
+            label="Sindicato BUK"
+            value={workerContextQuery.data?.worker.unionStatusLabel ?? ""}
+            readOnly
+          />
+
           <SelectField
             id="incentive-worker-area"
             label="Área / contrato"

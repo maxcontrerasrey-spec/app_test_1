@@ -27,6 +27,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   const [ruleAmountDraft, setRuleAmountDraft] = useState("");
   const [ruleContractCodeDraft, setRuleContractCodeDraft] = useState("");
   const [ruleJobTitleDraft, setRuleJobTitleDraft] = useState("");
+  const [ruleUnionStatusDraft, setRuleUnionStatusDraft] = useState("");
   const [rulePriorityDraft, setRulePriorityDraft] = useState("100");
   const [ruleValidFromDraft, setRuleValidFromDraft] = useState("");
   const [ruleValidToDraft, setRuleValidToDraft] = useState("");
@@ -39,6 +40,14 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
         label: jobTitle
       })),
     [setupCatalogsQuery.data?.bukJobTitles]
+  );
+  const bukUnionStatusOptions = useMemo(
+    () =>
+      (setupCatalogsQuery.data?.bukUnionStatuses ?? []).map((item) => ({
+        value: item.value,
+        label: item.label
+      })),
+    [setupCatalogsQuery.data?.bukUnionStatuses]
   );
 
   const refreshSetupCatalogs = () =>
@@ -81,6 +90,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       setRuleAmountDraft("");
       setRuleContractCodeDraft("");
       setRuleJobTitleDraft("");
+      setRuleUnionStatusDraft("");
       setRulePriorityDraft("100");
       setRuleValidFromDraft("");
       setRuleValidToDraft("");
@@ -114,7 +124,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
 
   return (
     <section className="hr-incentives-setup-grid">
-      <section className="info-card">
+      <section className="info-card hr-incentives-setup-card hr-incentives-setup-card-compact">
         <div className="tracking-toolbar-copy">
           <h3>Cargos elegibles BUK</h3>
           <span className="tracking-filter-caption">
@@ -147,7 +157,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           </button>
         </div>
 
-        <div className="hr-incentives-list">
+        <div className="hr-incentives-list hr-incentives-list-compact">
           {(setupCatalogsQuery.data?.allowedJobTitles ?? []).map((item) => (
             <div key={item.id} className="hr-incentives-list-item">
               <div>
@@ -172,7 +182,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
         </div>
       </section>
 
-      <section className="info-card">
+      <section className="info-card hr-incentives-setup-card">
         <div className="tracking-toolbar-copy">
           <h3>Tipos de incentivo</h3>
           <span className="tracking-filter-caption">
@@ -271,7 +281,8 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
         <div className="tracking-toolbar-copy">
           <h3>Reglas de monto</h3>
           <span className="tracking-filter-caption">
-            El formulario usará automáticamente la regla más específica y vigente.
+            El formulario usará automáticamente la regla más específica y vigente según contrato,
+            cargo y sindicato BUK.
           </span>
         </div>
 
@@ -310,6 +321,14 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             onChange={(event) => setRuleJobTitleDraft(event.target.value)}
             options={bukJobTitleOptions}
             placeholder="Todos los cargos"
+          />
+          <SelectField
+            id="setup-rule-union-status"
+            label="Sindicato BUK (opcional)"
+            value={ruleUnionStatusDraft}
+            onChange={(event) => setRuleUnionStatusDraft(event.target.value)}
+            options={bukUnionStatusOptions}
+            placeholder="Cualquier condición sindical"
           />
           <TextField
             id="setup-rule-priority"
@@ -353,6 +372,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                 amount: Number(ruleAmountDraft),
                 contractCode: ruleContractCodeDraft || null,
                 jobTitle: ruleJobTitleDraft || null,
+                unionStatus: ruleUnionStatusDraft ? (ruleUnionStatusDraft as "unionized" | "non_unionized" | "unknown") : null,
                 priority: Number(rulePriorityDraft || "100"),
                 validFrom: ruleValidFromDraft || null,
                 validTo: ruleValidToDraft || null
@@ -374,6 +394,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                   <th>Tipo</th>
                   <th>Contrato</th>
                   <th>Cargo</th>
+                  <th>Sindicato</th>
                   <th>Monto</th>
                   <th>Prioridad</th>
                   <th>Vigencia</th>
@@ -386,6 +407,15 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                     <td>{item.incentiveTypeName}</td>
                     <td>{item.contractCode || "Todos"}</td>
                     <td>{item.jobTitle || "Todos"}</td>
+                    <td>
+                      {item.unionStatus === "unionized"
+                        ? "Sindicalizado"
+                        : item.unionStatus === "non_unionized"
+                          ? "No sindicalizado"
+                          : item.unionStatus === "unknown"
+                            ? "Sin información"
+                            : "Todos"}
+                    </td>
                     <td>{new Intl.NumberFormat("es-CL").format(item.amount)}</td>
                     <td>{item.priority}</td>
                     <td>

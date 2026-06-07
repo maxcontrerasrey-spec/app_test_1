@@ -7,6 +7,7 @@ import type {
   HrIncentiveRequest,
   HrIncentiveRequestsFilters,
   HrIncentiveSetupCatalogs,
+  HrIncentiveUnionStatus,
   HrIncentiveWorkerContext
 } from "../types";
 
@@ -22,6 +23,10 @@ function asArray<T>(value: unknown) {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function mapUnionStatus(value: unknown): HrIncentiveUnionStatus {
+  return value === "unionized" || value === "non_unionized" ? value : "unknown";
+}
+
 function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
   const source = (payload ?? {}) as Record<string, unknown>;
 
@@ -29,6 +34,10 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
     bukJobTitles: asArray<unknown>(source.buk_job_titles)
       .map((item) => String(item ?? "").trim())
       .filter(Boolean),
+    bukUnionStatuses: asArray<Record<string, unknown>>(source.buk_union_statuses).map((item) => ({
+      value: mapUnionStatus(item.value),
+      label: String(item.label ?? "")
+    })),
     allowedJobTitles: asArray<Record<string, unknown>>(source.allowed_job_titles).map((item) => ({
       id: String(item.id ?? ""),
       jobTitle: String(item.job_title ?? ""),
@@ -54,6 +63,10 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
           : null,
       jobTitle:
         typeof item.job_title === "string" && item.job_title.trim() ? item.job_title : null,
+      unionStatus:
+        typeof item.union_status === "string" && item.union_status.trim()
+          ? mapUnionStatus(item.union_status)
+          : null,
       amount: Number(item.amount ?? 0),
       priority: Number(item.priority ?? 100),
       validFrom: typeof item.valid_from === "string" ? item.valid_from : null,
@@ -75,6 +88,12 @@ function mapWorkerContext(payload: unknown): HrIncentiveWorkerContext {
       documentNumber: String(worker.document_number ?? ""),
       documentType: String(worker.document_type ?? "rut"),
       jobTitle: String(worker.job_title ?? ""),
+      unionStatus: mapUnionStatus(worker.union_status),
+      unionStatusLabel: String(worker.union_status_label ?? ""),
+      unionJoinedAt:
+        typeof worker.union_joined_at === "string" && worker.union_joined_at.trim()
+          ? worker.union_joined_at
+          : null,
       primaryContractCode:
         typeof worker.primary_contract_code === "string" && worker.primary_contract_code.trim()
           ? worker.primary_contract_code
@@ -113,6 +132,12 @@ function mapPreview(payload: unknown): HrIncentivePreview {
       documentNumber: String(worker.document_number ?? ""),
       documentType: String(worker.document_type ?? "rut"),
       jobTitle: String(worker.job_title ?? ""),
+      unionStatus: mapUnionStatus(worker.union_status),
+      unionStatusLabel: String(worker.union_status_label ?? ""),
+      unionJoinedAt:
+        typeof worker.union_joined_at === "string" && worker.union_joined_at.trim()
+          ? worker.union_joined_at
+          : null,
       primaryContractCode:
         typeof worker.primary_contract_code === "string" && worker.primary_contract_code.trim()
           ? worker.primary_contract_code
@@ -140,6 +165,10 @@ function mapPreview(payload: unknown): HrIncentivePreview {
       matchedJobTitle:
         typeof rule.matched_job_title === "string" && rule.matched_job_title.trim()
           ? rule.matched_job_title
+          : null,
+      matchedUnionStatus:
+        typeof rule.matched_union_status === "string" && rule.matched_union_status.trim()
+          ? mapUnionStatus(rule.matched_union_status)
           : null,
       priority: Number(rule.priority ?? 0)
     },
@@ -394,6 +423,7 @@ export async function addHrIncentiveRateRule(input: {
   amount: number;
   contractCode?: string | null;
   jobTitle?: string | null;
+  unionStatus?: HrIncentiveUnionStatus | null;
   priority?: number;
   validFrom?: string | null;
   validTo?: string | null;
@@ -404,6 +434,7 @@ export async function addHrIncentiveRateRule(input: {
     p_amount: input.amount,
     p_contract_code: input.contractCode?.trim() || null,
     p_job_title: input.jobTitle?.trim() || null,
+    p_union_status: input.unionStatus?.trim() || null,
     p_priority: input.priority ?? 100,
     p_valid_from: input.validFrom?.trim() || null,
     p_valid_to: input.validTo?.trim() || null

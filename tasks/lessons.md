@@ -118,6 +118,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si solo uno de los espacios cambia visualmente, el layout sigue estando mal**. Los módulos principales deben compartir la misma clase o contrato de separación.
 - **No confiar en que un selector genérico del contenedor va a afectar todos los casos por igual**. Cuando el usuario exige uniformidad, conviene etiquetar explícitamente cada bloque principal.
 
+## 44. En grids administrativos de dos columnas, las tarjetas no deben heredar altura de la vecina
+
+- **Si una tarjeta queda gigantesca con un formulario pegado abajo, el problema suele ser `stretch` del grid, no el campo en sí**. Para vistas de configuración, el contenedor debe usar `align-items: start`.
+- **La densidad administrativa se resuelve desde layout antes que desde padding local**. Primero se evita el estiramiento estructural; después se afinan gaps y listas compactas.
+
+## 45. Si una regla de negocio depende de un dato HR externo, se normaliza una vez y se reutiliza en todo el módulo
+
+- **No mezclar labels libres de BUK dentro del motor de reglas**. Si `sindicato` afecta montos, primero se normaliza a un código estable y luego se usa en catálogos, contexto de trabajador, matching de reglas y trazabilidad.
+- **La misma derivación debe alimentar setup, preview y registro final**. Si cada superficie infiere el estado sindical por su cuenta, el módulo termina calculando con contratos distintos para el mismo trabajador.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

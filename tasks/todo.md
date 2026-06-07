@@ -17,6 +17,21 @@
 - [x] Reemplazar inputs manuales de cargo en `Configuración base` por selectores alimentados desde BUK
 - [x] Aplicar migración en Supabase, validar build y registrar resultado
 
+## Compactación de configuración base y sindicato BUK en incentivos
+
+- [x] Revisar por qué la tarjeta de cargos elegibles quedaba estirada y no compacta
+- [x] Identificar el dato real de sindicato disponible en BUK sincronizado
+- [x] Extender reglas de incentivo para considerar sindicato y exponerlo en frontend/backend
+- [x] Aplicar migración, validar build y documentar resultado
+
+## Resultado de compactación de configuración base y sindicato BUK en incentivos
+
+- La separación vertical exagerada de `Cargos elegibles BUK` no venía del selector, sino del comportamiento por defecto del grid de dos columnas: la tarjeta izquierda se estiraba a la altura de la derecha. Se corrigió estructuralmente con `align-items: start` y densidad más compacta en la tarjeta/lista.
+- Se confirmó en la data BUK sincronizada que la variable útil para sindicato proviene de `Afecto a convenio Colectivo` y, como respaldo, `Fecha incorporación al sindicato`.
+- El módulo ahora normaliza ese dato a un código estable (`unionized`, `non_unionized`, `unknown`) y lo reutiliza en catálogo de configuración, contexto del trabajador, matching de reglas y registro de solicitudes.
+- `Reglas de monto` ya permite condicionar por `Sindicato BUK (opcional)` y el formulario operativo muestra el estado sindical del trabajador en modo solo lectura.
+- La migración `20260606_220000_add_union_status_to_hr_incentives.sql` quedó aplicada en Supabase. La verificación remota confirmó `121` cargos BUK disponibles, los tres estados sindicales en catálogo y las columnas nuevas persistidas en `hr_incentive_rate_rules` y `hr_incentive_requests`.
+
 ## Resultado de enlace BUK en Configuración base de Incentivos
 
 - `Configuración base` dejó de depender de texto libre para cargos BUK y ahora consume el catálogo real de cargos activos sincronizados en `employees_active_current`.
