@@ -1,4 +1,7 @@
+import { useMemo } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
+import { queryKeys } from "../../../shared/lib/queryKeys";
+import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { useDashboard } from "../hooks/useDashboard";
 import { DashboardGrid } from "../components/DashboardGrid";
 import { DashboardInfoCards } from "../components/DashboardInfoCards";
@@ -6,7 +9,7 @@ import { FloatingActionMenu } from "../components/FloatingActionMenu";
 import "../styles/dashboard.css";
 
 export function DashboardHome() {
-  const { displayName } = useAuth();
+  const { displayName, user } = useAuth();
   const {
     isLoading,
     tasksData,
@@ -15,6 +18,28 @@ export function DashboardHome() {
     birthdaysData,
     refresh
   } = useDashboard();
+  const dashboardQueryKey = useMemo(
+    () => queryKeys.dashboard.home(user?.id ?? "anonymous"),
+    [user?.id]
+  );
+  const dashboardRealtimeSubscriptions = useMemo(
+    () => [
+      { table: "hiring_requests" },
+      { table: "hiring_request_approvals" },
+      { table: "recruitment_cases" },
+      { table: "recruitment_case_candidates" },
+      { table: "candidate_stage_approvals" },
+      { table: "employees" }
+    ],
+    []
+  );
+
+  useRealtimeQueryInvalidation({
+    channelName: `dashboard-home:${user?.id ?? "anonymous"}`,
+    enabled: Boolean(user?.id),
+    queryKeys: [dashboardQueryKey],
+    subscriptions: dashboardRealtimeSubscriptions
+  });
 
   return (
     <div className="dashboard-container">

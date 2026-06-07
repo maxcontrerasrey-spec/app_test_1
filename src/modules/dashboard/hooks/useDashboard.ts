@@ -16,22 +16,6 @@ type DashboardQueryPayload = {
   birthdaysData: DashboardBirthdayItem[];
 };
 
-async function fetchDashboardPayload(userId: string): Promise<DashboardQueryPayload> {
-  const [tasks, approvalTracking, activeFolios, birthdays] = await Promise.all([
-    dashboardService.getDashboardTasks(userId),
-    dashboardService.getDashboardApprovalTracking(),
-    dashboardService.getDashboardActiveFolios(),
-    dashboardService.getUpcomingBirthdays(6)
-  ]);
-
-  return {
-    tasksData: tasks,
-    approvalTrackingData: approvalTracking,
-    activeFoliosData: activeFolios,
-    birthdaysData: birthdays
-  };
-}
-
 export function useDashboard() {
   const { user } = useAuth();
 
@@ -41,10 +25,10 @@ export function useDashboard() {
     refetch
   } = useQuery({
     queryKey: queryKeys.dashboard.home(user?.id ?? "anonymous"),
-    queryFn: () => fetchDashboardPayload(user!.id),
+    queryFn: () => dashboardService.getDashboardHomeBundle(6),
     enabled: Boolean(user?.id),
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: 180_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true
   });

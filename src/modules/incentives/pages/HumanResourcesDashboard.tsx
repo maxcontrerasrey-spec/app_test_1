@@ -1,6 +1,9 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
+import { queryKeys } from "../../../shared/lib/queryKeys";
+import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { useHrIncentiveSetupCatalogs } from "../hooks/useIncentivesQueries";
 import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationForm";
 import { IncentiveRequestsView } from "../components/IncentiveRequestsView";
@@ -33,6 +36,7 @@ function isHumanResourcesView(value: string | undefined): value is HumanResource
 
 export function HumanResourcesDashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { view } = useParams();
   const activeView = isHumanResourcesView(view) ? view : "incentivos";
   const setupCatalogsQuery = useHrIncentiveSetupCatalogs();
@@ -41,6 +45,30 @@ export function HumanResourcesDashboard() {
     () => HUMAN_RESOURCES_VIEWS.find((item) => item.key === activeView) ?? HUMAN_RESOURCES_VIEWS[0],
     [activeView]
   );
+  const incentivesRealtimeSubscriptions = useMemo(
+    () => [
+      { table: "hr_incentive_allowed_job_titles" },
+      { table: "hr_incentive_types" },
+      { table: "hr_incentive_rate_rules" },
+      { table: "hr_incentive_requests" },
+      { table: "hr_incentive_request_history" },
+      { table: "employees" }
+    ],
+    []
+  );
+
+  const invalidateIncentives = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() }),
+      queryClient.invalidateQueries({ queryKey: ["incentives", "requests"] })
+    ]);
+  }, [queryClient]);
+
+  useRealtimeQueryInvalidation({
+    channelName: `hr-incentives:${activeView}`,
+    invalidate: invalidateIncentives,
+    subscriptions: incentivesRealtimeSubscriptions
+  });
 
   if (view && !isHumanResourcesView(view)) {
     return <Navigate to="/recursos-humanos/incentivos" replace />;

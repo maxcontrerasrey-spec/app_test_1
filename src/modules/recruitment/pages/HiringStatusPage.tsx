@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
 import { queryKeys } from "../../../shared/lib/queryKeys";
+import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   getRecruitmentCaseDetailQueryOptions,
@@ -73,6 +74,43 @@ export function HiringStatusPage() {
     ],
     [activeCases, candidateControl, personnelToHire]
   );
+  const recruitmentRealtimeSubscriptions = useMemo(
+    () => [
+      { table: "recruitment_cases" },
+      { table: "recruitment_case_assignments" },
+      { table: "recruitment_case_candidates" },
+      { table: "recruitment_case_audit_log" },
+      { table: "candidate_stage_approvals" },
+      { table: "candidate_profiles" },
+      { table: "candidate_worker_files" },
+      { table: "candidate_documents" },
+      { table: "hiring_requests" },
+      { table: "hiring_request_approvals" }
+    ],
+    []
+  );
+
+  const invalidateRealtimeRecruitment = useCallback(
+    async (client: QueryClient) => {
+      await client.invalidateQueries({
+        queryKey: queryKeys.recruitment.controlDashboard()
+      });
+
+      if (selectedCaseId) {
+        await client.invalidateQueries({
+          queryKey: queryKeys.recruitment.caseDetail(selectedCaseId)
+        });
+      }
+    },
+    [selectedCaseId]
+  );
+
+  useRealtimeQueryInvalidation({
+    channelName: `recruitment-control:${user?.id ?? "anonymous"}:${selectedCaseId || "none"}`,
+    enabled: Boolean(user?.id),
+    subscriptions: recruitmentRealtimeSubscriptions,
+    invalidate: invalidateRealtimeRecruitment
+  });
 
   const invalidateRecruitmentCache = async (caseId?: string) => {
     const targetCaseId = caseId || selectedCaseId;

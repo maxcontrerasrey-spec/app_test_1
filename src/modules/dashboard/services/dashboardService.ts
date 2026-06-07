@@ -8,52 +8,47 @@ import type {
 } from "../types";
 
 export const dashboardService = {
-  /**
-   * Fetches dynamic tasks for the TasksWidget via RPC
-   */
-  async getDashboardTasks(userId: string): Promise<DashboardTaskItem[]> {
-    if (!supabase) return [];
-    const { data, error } = await supabase.rpc("get_dashboard_tasks", { p_user_id: userId });
-    if (error) {
-      logger.error("DashboardService getDashboardTasks", error);
-      return [];
+  async getDashboardHomeBundle(limit = 6): Promise<{
+    tasksData: DashboardTaskItem[];
+    approvalTrackingData: DashboardApprovalTrackingItem[];
+    activeFoliosData: DashboardActiveFolioItem[];
+    birthdaysData: DashboardBirthdayItem[];
+  }> {
+    if (!supabase) {
+      return {
+        tasksData: [],
+        approvalTrackingData: [],
+        activeFoliosData: [],
+        birthdaysData: []
+      };
     }
-    return (data ?? []) as DashboardTaskItem[];
-  },
 
-  async getDashboardApprovalTracking(): Promise<DashboardApprovalTrackingItem[]> {
-    if (!supabase) return [];
-    const { data, error } = await supabase.rpc("get_dashboard_approval_tracking");
-    if (error) {
-      logger.error("DashboardService getDashboardApprovalTracking", error);
-      return [];
-    }
-    return (data ?? []) as DashboardApprovalTrackingItem[];
-  },
+    const { data, error } = await supabase.rpc("get_dashboard_home_bundle", {
+      p_birthdays_limit: limit
+    });
 
-  async getDashboardActiveFolios(): Promise<DashboardActiveFolioItem[]> {
-    if (!supabase) return [];
-    const { data, error } = await supabase.rpc("get_recruitment_control_dashboard_v2");
     if (error) {
-      logger.error("DashboardService getDashboardActiveFolios", error);
-      return [];
+      logger.error("DashboardService getDashboardHomeBundle", error);
+      return {
+        tasksData: [],
+        approvalTrackingData: [],
+        activeFoliosData: [],
+        birthdaysData: []
+      };
     }
 
     const payload = (data ?? {}) as {
-      active_cases?: DashboardActiveFolioItem[] | null;
+      tasks_data?: DashboardTaskItem[] | null;
+      approval_tracking_data?: DashboardApprovalTrackingItem[] | null;
+      active_folios_data?: DashboardActiveFolioItem[] | null;
+      birthdays_data?: DashboardBirthdayItem[] | null;
     };
 
-    return payload.active_cases ?? [];
-  },
-
-  async getUpcomingBirthdays(limit = 3): Promise<DashboardBirthdayItem[]> {
-    if (!supabase) return [];
-    const { data, error } = await supabase.rpc("get_upcoming_birthdays", { p_limit: limit });
-    if (error) {
-      logger.error("DashboardService getUpcomingBirthdays", error);
-      return [];
-    }
-
-    return (data ?? []) as DashboardBirthdayItem[];
+    return {
+      tasksData: payload.tasks_data ?? [],
+      approvalTrackingData: payload.approval_tracking_data ?? [],
+      activeFoliosData: payload.active_folios_data ?? [],
+      birthdaysData: payload.birthdays_data ?? []
+    };
   }
 };

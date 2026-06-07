@@ -138,6 +138,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No reemplazar sindicato específico por `sí/no sindicalizado` si BUK ya trae el nombre nominal del sindicato**. Ese proxy pierde la variable real de cálculo y degrada el modelo.
 - **Cuando exista un campo canónico como `current_job.union`, ese debe gobernar catálogo, matching de reglas, visualización y persistencia**. Los derivados binarios pueden quedar como apoyo, pero no como criterio principal.
 
+## 48. En Supabase Pro, el primer salto de performance visible no es “más polling”, sino menos roundtrips y Realtime bien acotado
+
+- **Si una vista operativa arma su payload con varias RPCs separadas, consolidarla en un bundle backend suele dar más valor inmediato que subir frecuencias de refresh**. Primero se reduce latencia estructural; después se decide el fallback.
+- **Realtime debe invalidar queries críticas, no reemplazar a ciegas toda la estrategia de caché**. El patrón correcto es `Realtime + invalidateQueries + polling largo de respaldo`, no suscripciones desordenadas con refetch agresivo.
+
+## 49. En producción, no mezclar mejoras seguras con cirugía RLS destructiva en la misma migración
+
+- **Si una migración combina índices, grants y un RPC nuevo con `drop constraint`, `drop index` y reescritura masiva de policies, el riesgo operacional sube demasiado**. Es mejor separar una pasada segura aplicable hoy de una segunda pasada de gobernanza más delicada.
+- **Cuando el conector o el entorno rechaza una migración por riesgo, la salida correcta no es forzarla**. Se degrada el alcance a cambios no destructivos y se deja trazado explícito qué quedó pendiente por revisión más controlada.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

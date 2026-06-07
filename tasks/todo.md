@@ -2,6 +2,23 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Endurecimiento productivo sobre Supabase Pro
+
+- [x] Reintroducir un RPC resumido del dashboard para reducir roundtrips del inicio a una sola llamada
+- [x] Incorporar invalidación por Realtime en Inicio, Reclutamiento e Incentivos para reducir dependencia de polling y `F5`
+- [x] Corregir avisos críticos/útiles del advisor de Supabase en seguridad y performance que sí impactan la app actual
+- [x] Validar build, advisors y documentar el resultado operativo
+
+## Resultado de endurecimiento productivo sobre Supabase Pro
+
+- El inicio dejó de depender de cuatro RPCs separadas y ahora consume un bundle único desde `public.get_dashboard_home_bundle(...)`, reduciendo roundtrips del dashboard principal.
+- Se agregó invalidación por Realtime en tres superficies operativas: `Inicio`, `Control de Contrataciones` e `Incentivos`. Con esto, la app deja de descansar principalmente en polling corto y gana refresco reactivo ante cambios reales en base.
+- En frontend se subió el intervalo de respaldo del dashboard a `180s`; la actualización principal ahora la hace Realtime y el polling queda como fallback de resiliencia, no como motor principal.
+- En Supabase productivo quedó aplicada la migración `20260606_234500_supabase_pro_hardening_dashboard_and_rls.sql`, que añadió el RPC bundle, fijó `search_path` en helpers de sindicato, cerró exposición `anon` en RPCs sensibles y creó índices faltantes sobre tablas activas del flujo.
+- La verificación remota confirmó que `advance_recruitment_candidate_stage`, `reject_candidate_stage_who` y `find_candidate_profile_with_history_by_rut` ya no exponen `EXECUTE` a `anon`, y que `get_dashboard_home_bundle(...)` quedó publicado para `authenticated`.
+- El `build` local cerró correctamente con `npm run build`.
+- Se intentó además una pasada más agresiva sobre RLS y limpieza destructiva de duplicados, pero el conector de Supabase la rechazó por riesgo productivo. Ese recorte quedó deliberadamente fuera de esta entrega para no introducir regresiones de acceso en vivo.
+
 ## Submódulo RRHH: Incentivos operativos
 
 - [x] Reemplazar el placeholder de `Recursos Humanos` por un módulo real con ruta interna `/recursos-humanos/incentivos`
