@@ -76,10 +76,9 @@ export function HumanResourcesDashboard() {
 
   return (
     <PageShell>
-      <header className="tracking-header">
-        <h2>Incentivos operativos</h2>
-        <p>Recursos Humanos / {activeViewMeta.description}</p>
-      </header>
+      <div className="minimal-page-header">
+        <h1>Incentivos Extraordinarios</h1>
+      </div>
 
       <section className="tracking-panel">
         <div className="approval-chip-row">

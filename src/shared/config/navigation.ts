@@ -94,7 +94,7 @@ export const navigationModules: NavigationModule[] = [
         moduleCode: "recursos_humanos",
         to: "/recursos-humanos/incentivos",
         label: "Incentivos",
-        description: "Registro y control de incentivos operativos.",
+        description: "Registro y control de incentivos extraordinarios.",
         iconKey: "document"
       }
     ]
