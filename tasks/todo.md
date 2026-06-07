@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección de bloqueo del widget de clima
+
+- [x] Reemplazar el flujo secuencial de geolocalización por una estrategia que entregue ubicación rápida sin quedarse colgada
+- [x] Evitar que el fallback a Santiago se dispare antes de agotar una lectura rápida y una refinada
+- [x] Validar build y documentar la corrección
+
+## Resultado de corrección de bloqueo del widget de clima
+
+- El segundo problema no estaba en la API de ciudad ni en Open-Meteo, sino en la orquestación local del navegador.
+- El flujo anterior era secuencial: primero una lectura estricta, luego otra relajada. Eso acumulaba tiempos muertos y podía dejar la tarjeta en `Detectando ubicación` demasiado tiempo.
+- Peor aún, el fallback a `Santiago, CL` podía dispararse antes de que terminara la segunda estrategia, dejando una ciudad falsa aunque todavía existiera una lectura real recuperable.
+- Se reemplazó ese modelo por dos intentos en paralelo: una lectura rápida basada en caché/menor precisión para entregar ciudad pronto y una lectura de alta precisión para refinar después.
+- El fallback fijo ahora solo ocurre si ambas lecturas fallan o si el navegador niega permiso explícitamente.
+- La validación técnica cerró con `npm run build`.
+
 ## Corrección de regresión en resolución real del clima
 
 - [x] Reproducir por código por qué el widget vuelve a `Santiago, CL` aunque el usuario esté fuera de Santiago

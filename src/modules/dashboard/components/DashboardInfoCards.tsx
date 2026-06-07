@@ -269,7 +269,8 @@ export function DashboardInfoCards({
   useEffect(() => {
     let cancelled = false;
     let reverseController: AbortController | null = null;
-    let timeoutId: number | null = null;
+    let successfulResolution = false;
+    let failedAttempts = 0;
 
     async function resolveLocationLabel(latitude: number, longitude: number, statusLabel: string) {
       reverseController?.abort();
@@ -283,6 +284,7 @@ export function DashboardInfoCards({
         const label = formatLocationLabel(payload) ?? formatCoordinateLabel(latitude, longitude);
 
         if (!cancelled) {
+          successfulResolution = true;
           setLocation({
             label,
             statusLabel,
@@ -294,6 +296,7 @@ export function DashboardInfoCards({
         }
       } catch (_error) {
         if (!cancelled) {
+          successfulResolution = true;
           setLocation({
             label: formatCoordinateLabel(latitude, longitude),
             statusLabel,
@@ -306,88 +309,14 @@ export function DashboardInfoCards({
       }
     }
 
-    async function requestBrowserLocation() {
-      if (!navigator.geolocation) {
-        setLocation(DEFAULT_LOCATION);
-        return;
-      }
+    function handleGeolocationFailure(error: unknown) {
+      failedAttempts += 1;
 
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
+      const geolocationError = asGeolocationError(error);
+      const isPermissionDenied = geolocationError?.code === 1;
 
-      timeoutId = window.setTimeout(() => {
-        if (!cancelled) {
-          setLocation({
-            ...DEFAULT_LOCATION,
-            statusLabel: "Tiempo de ubicación agotado"
-          });
-        }
-      }, 12000);
-
-      try {
-        const precisePosition = await getBrowserPosition({
-          enableHighAccuracy: true,
-          timeout: 8000,
-          maximumAge: 300000
-        });
-
-        if (timeoutId !== null) {
-          window.clearTimeout(timeoutId);
-        }
-
-        if (!cancelled) {
-          await resolveLocationLabel(
-            precisePosition.coords.latitude,
-            precisePosition.coords.longitude,
-            "Ubicación actual"
-          );
-        }
-        return;
-      } catch (preciseError) {
-        const geolocationError = asGeolocationError(preciseError);
-
-        if (geolocationError?.code === 1) {
-          if (timeoutId !== null) {
-            window.clearTimeout(timeoutId);
-          }
-
-          if (!cancelled) {
-            setLocation({
-              ...DEFAULT_LOCATION,
-              statusLabel: toGeolocationStatusLabel(geolocationError)
-            });
-          }
-          return;
-        }
-      }
-
-      try {
-        const relaxedPosition = await getBrowserPosition({
-          enableHighAccuracy: false,
-          timeout: 15000,
-          maximumAge: 900000
-        });
-
-        if (timeoutId !== null) {
-          window.clearTimeout(timeoutId);
-        }
-
-        if (!cancelled) {
-          await resolveLocationLabel(
-            relaxedPosition.coords.latitude,
-            relaxedPosition.coords.longitude,
-            "Ubicación actual"
-          );
-        }
-      } catch (relaxedError) {
-        if (timeoutId !== null) {
-          window.clearTimeout(timeoutId);
-        }
-
-        const geolocationError = asGeolocationError(relaxedError);
-
-        if (!cancelled) {
+      if (isPermissionDenied || failedAttempts >= 2) {
+        if (!cancelled && !successfulResolution) {
           setLocation({
             ...DEFAULT_LOCATION,
             statusLabel: toGeolocationStatusLabel(geolocationError)
@@ -396,13 +325,61 @@ export function DashboardInfoCards({
       }
     }
 
+    function requestBrowserLocation() {
+      if (!navigator.geolocation) {
+        setLocation(DEFAULT_LOCATION);
+        return;
+      }
+
+      setLocation((current) => ({
+        ...current,
+        statusLabel: "Resolviendo ubicación..."
+      }));
+
+      getBrowserPosition({
+        enableHighAccuracy: false,
+        timeout: 4500,
+        maximumAge: 900000
+      })
+        .then((position) => {
+          if (!cancelled) {
+            void resolveLocationLabel(
+              position.coords.latitude,
+              position.coords.longitude,
+              "Ubicación actual"
+            );
+          }
+        })
+        .catch((error) => {
+          handleGeolocationFailure(error);
+        });
+
+      getBrowserPosition({
+          enableHighAccuracy: true,
+          timeout: 9000,
+          maximumAge: 0
+        })
+          .then((position) => {
+            if (!cancelled) {
+              void resolveLocationLabel(
+                position.coords.latitude,
+                position.coords.longitude,
+                "Ubicación actual"
+              );
+            }
+          })
+          .catch((error) => {
+            handleGeolocationFailure(error);
+          });
+    }
+
     if (!location.isResolved || location.isFallback) {
-      void requestBrowserLocation();
+      requestBrowserLocation();
     }
 
     const retryOnFocus = () => {
       if (!cancelled && (!location.isResolved || location.isFallback)) {
-        void requestBrowserLocation();
+        requestBrowserLocation();
       }
     };
 
@@ -410,9 +387,6 @@ export function DashboardInfoCards({
 
     return () => {
       cancelled = true;
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
       reverseController?.abort();
       window.removeEventListener("focus", retryOnFocus);
     };

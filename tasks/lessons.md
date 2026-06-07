@@ -228,6 +228,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No se debe caer a un fallback fijo de ciudad solo porque la lectura `enableHighAccuracy: true` falló o agotó tiempo**. En escritorio y Safari eso puede romper ubicaciones reales que sí son recuperables con una lectura más tolerante.
 - **La secuencia correcta es degradar**: primero intento preciso, luego intento relajado, y solo después fallback fijo. Si no, el widget parece “estable” pero devuelve una ciudad falsa.
 
+## 59. En widgets de ubicación, dos timeouts en serie también son una regresión
+
+- **No encadenar dos llamadas `getCurrentPosition()` una detrás de la otra si la UI depende de respuesta rápida**. Aunque la lógica sea “más robusta”, el usuario solo percibe un widget colgado.
+- **La estrategia operativa correcta es paralelizar una lectura rápida y una precisa**. La primera da ubicación usable pronto; la segunda puede mejorarla. El fallback fijo entra únicamente cuando ambas fallan.
+
 ## 35. Un cambio de pipeline no sale sin migración de datos viva
 
 - **Si se renombran o eliminan etapas operativas, primero hay que medir qué estados existen realmente en producción y diseñar el mapeo contra esos datos**. Cambiar enums sin revisar la base deja registros inválidos o interfaces que ya no pueden leer su propio historial.
