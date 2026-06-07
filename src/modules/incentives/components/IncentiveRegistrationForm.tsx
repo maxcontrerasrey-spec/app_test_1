@@ -374,61 +374,6 @@ export function IncentiveRegistrationForm({
         </div>
       </section>
 
-      <aside className="info-card hr-incentives-summary">
-        <div className="hr-incentives-summary-block">
-          <span className="eyebrow">Resumen de cálculo</span>
-          <h3>Monto estimado</h3>
-          {previewQuery.isLoading ? <p className="form-status">Calculando incentivo...</p> : null}
-          {previewQuery.error ? (
-            <p className="form-status form-status-error">{previewQuery.error.message}</p>
-          ) : null}
-          {!previewQuery.isLoading && !previewQuery.error && previewQuery.data ? (
-            <>
-              <div className="hr-incentives-amount">
-                {formatCurrencyValue(previewQuery.data.calculatedAmount)}
-              </div>
-              <dl className="hr-incentives-summary-list">
-                <div>
-                  <dt>Trabajador</dt>
-                  <dd>{previewQuery.data.worker.fullName}</dd>
-                </div>
-                <div>
-                  <dt>RUT</dt>
-                  <dd>{formatRut(previewQuery.data.worker.documentNumber)}</dd>
-                </div>
-                <div>
-                  <dt>Tipo</dt>
-                  <dd>{previewQuery.data.rule.incentiveTypeName}</dd>
-                </div>
-                <div>
-                  <dt>Contrato aplicado</dt>
-                  <dd>{selectedArea?.areaName || selectedArea?.contractCode || "Pendiente"}</dd>
-                </div>
-                <div>
-                  <dt>Base de cálculo</dt>
-                  <dd>
-                    {previewQuery.data.rule.calculationBasis === "per_hour"
-                      ? `${formatCurrencyValue(previewQuery.data.rule.rateRuleAmount)} por hora`
-                      : "Monto fijo"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Regla activa</dt>
-                  <dd>
-                    {previewQuery.data.rule.matchedJobTitle || "Todos los cargos"} ·{" "}
-                    {previewQuery.data.rule.matchedContractCode || "Todos los contratos"}
-                  </dd>
-                </div>
-              </dl>
-            </>
-          ) : null}
-          {!previewQuery.isLoading && !previewQuery.error && !previewQuery.data ? (
-            <p className="form-status">
-              Selecciona trabajador, incentivo y contrato para calcular el monto.
-            </p>
-          ) : null}
-        </div>
-      </aside>
     </section>
   );
 }

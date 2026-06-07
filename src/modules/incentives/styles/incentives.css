@@ -38,10 +38,9 @@
 }
 
 .hr-incentives-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
-  align-items: start;
 }
 
 .hr-incentives-card {
@@ -53,57 +52,6 @@
   background:
     linear-gradient(180deg, rgba(var(--surface-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.98));
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.05);
-}
-
-.hr-incentives-summary {
-  position: sticky;
-  top: 5.5rem;
-}
-
-.hr-incentives-summary-block {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.hr-incentives-summary-block h3 {
-  margin: 0;
-  font-size: 1.4rem;
-  letter-spacing: -0.03em;
-}
-
-.hr-incentives-amount {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 3vw, 2.7rem);
-  font-weight: 700;
-  letter-spacing: -0.05em;
-  color: #183153;
-}
-
-.hr-incentives-summary-list {
-  display: grid;
-  gap: 0.85rem;
-  margin: 0;
-}
-
-.hr-incentives-summary-list div {
-  display: grid;
-  gap: 0.18rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid rgba(228, 231, 236, 0.8);
-}
-
-.hr-incentives-summary-list dt {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 700;
-}
-
-.hr-incentives-summary-list dd {
-  margin: 0;
-  color: var(--title);
-  font-weight: 600;
 }
 
 .hr-incentives-form-grid {
@@ -267,14 +215,8 @@
 }
 
 @media (max-width: 1180px) {
-  .hr-incentives-layout,
   .hr-incentives-setup-grid {
     grid-template-columns: 1fr;
-  }
-
-  .hr-incentives-summary {
-    position: static;
-    top: auto;
   }
 }
 
