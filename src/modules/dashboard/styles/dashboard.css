@@ -46,7 +46,7 @@
   border-radius: 24px;
   border: 1px solid rgba(188, 200, 221, 0.42);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.88));
+    linear-gradient(180deg, rgba(var(--surface-rgb), 0.94), rgba(var(--surface-soft-rgb), 0.88));
   box-shadow:
     0 22px 44px -34px rgba(70, 90, 128, 0.28),
     0 8px 18px -18px rgba(70, 90, 128, 0.18);
@@ -58,7 +58,7 @@
   inset: 0 auto auto 0;
   width: 100%;
   height: 74px;
-  background: linear-gradient(180deg, rgba(236, 244, 255, 0.78), rgba(236, 244, 255, 0));
+  background: linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.78), rgba(var(--surface-soft-rgb), 0));
   pointer-events: none;
 }
 
@@ -70,32 +70,32 @@
 .dashboard-info-card-weather {
   background:
     radial-gradient(circle at 80% 24%, rgba(190, 221, 255, 0.32), transparent 30%),
-    linear-gradient(180deg, rgba(248, 252, 255, 0.96), rgba(240, 247, 255, 0.9));
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
   transition: background 0.8s ease;
 }
 
 .dashboard-info-card-weather.is-warm {
   background:
     radial-gradient(circle at 80% 24%, rgba(255, 178, 122, 0.18), transparent 35%),
-    linear-gradient(180deg, rgba(255, 251, 248, 0.96), rgba(255, 246, 240, 0.9));
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
 }
 
 .dashboard-info-card-weather.is-cold {
   background:
     radial-gradient(circle at 80% 24%, rgba(130, 190, 255, 0.22), transparent 35%),
-    linear-gradient(180deg, rgba(246, 250, 255, 0.96), rgba(238, 246, 255, 0.9));
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
 }
 
 .dashboard-info-card-weather.is-rainy {
   background:
     radial-gradient(circle at 80% 24%, rgba(150, 165, 185, 0.22), transparent 35%),
-    linear-gradient(180deg, rgba(248, 249, 252, 0.96), rgba(242, 245, 248, 0.9));
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
 }
 
 .dashboard-info-card-birthday {
   background:
     radial-gradient(circle at 18% 24%, rgba(255, 238, 211, 0.38), transparent 28%),
-    linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(250, 245, 238, 0.9));
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
 }
 
 .dashboard-birthday-card-header {
@@ -171,10 +171,10 @@
   width: 58px;
   height: 58px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(var(--surface-rgb), 0.62);
   color: #3b82f6;
   font-size: 1.8rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
+  box-shadow: inset 0 1px 0 rgba(var(--surface-rgb), 0.56);
 }
 
 .dashboard-info-weather-hourly {
@@ -268,7 +268,7 @@
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(var(--surface-rgb), 0.58);
   color: rgba(25, 41, 71, 0.9);
   font-size: 1.15rem;
   line-height: 1;
@@ -420,7 +420,7 @@
   border: 1px solid rgba(88, 191, 255, 0.26);
   background:
     radial-gradient(circle at 32% 28%, rgba(181, 243, 255, 0.52), transparent 48%),
-    linear-gradient(160deg, rgba(245, 252, 255, 0.72), rgba(215, 241, 255, 0.48));
+    linear-gradient(160deg, rgba(var(--surface-soft-rgb), 0.72), rgba(215, 241, 255, 0.48));
   border-radius: 999px;
   width: 56px;
   height: 56px;
@@ -429,7 +429,7 @@
   -webkit-backdrop-filter: blur(18px) saturate(1.15);
   box-shadow:
     0 24px 42px -28px rgba(45, 99, 255, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    inset 0 1px 0 rgba(var(--surface-rgb), 0.72);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
@@ -439,7 +439,7 @@
   border-color: rgba(88, 191, 255, 0.42);
   box-shadow:
     0 28px 48px -28px rgba(45, 99, 255, 0.48),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    inset 0 1px 0 rgba(var(--surface-rgb), 0.8);
 }
 
 .dashboard-floating-menu-trigger-badge {
@@ -452,7 +452,7 @@
   background:
     radial-gradient(circle at 30% 30%, rgba(126, 224, 255, 0.38), transparent 55%),
     linear-gradient(140deg, rgba(45, 99, 255, 0.14), rgba(126, 224, 255, 0.22));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(var(--surface-rgb), 0.7);
 }
 
 .dashboard-floating-menu-panel {
@@ -467,12 +467,12 @@
     radial-gradient(circle at 18% 16%, rgba(118, 226, 255, 0.26), transparent 30%),
     radial-gradient(circle at 80% 14%, rgba(91, 160, 255, 0.24), transparent 28%),
     radial-gradient(circle at 55% 72%, rgba(181, 243, 255, 0.18), transparent 36%),
-    linear-gradient(155deg, rgba(238, 250, 255, 0.66), rgba(206, 233, 255, 0.44));
+    linear-gradient(155deg, rgba(var(--surface-soft-rgb), 0.66), rgba(206, 233, 255, 0.44));
   backdrop-filter: blur(28px) saturate(1.22);
   -webkit-backdrop-filter: blur(28px) saturate(1.22);
   box-shadow:
     0 36px 68px -34px rgba(19, 58, 108, 0.36),
-    inset 0 1px 0 rgba(255, 255, 255, 0.64);
+    inset 0 1px 0 rgba(var(--surface-rgb), 0.64);
   padding: 18px;
   overflow: hidden;
   isolation: isolate;
@@ -484,7 +484,7 @@
   inset: 1px;
   border-radius: calc(var(--radius-lg) + 5px);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.04));
+    linear-gradient(180deg, rgba(var(--surface-rgb), 0.3), rgba(var(--surface-rgb), 0.04));
   pointer-events: none;
   z-index: 0;
 }
@@ -502,7 +502,7 @@
   display: block;
   color: var(--title);
   margin-bottom: 6px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  text-shadow: 0 1px 0 rgba(var(--surface-rgb), 0.45);
 }
 
 .dashboard-floating-menu-list {
@@ -523,8 +523,8 @@
   border-radius: var(--radius-md);
   border: 1px solid rgba(151, 189, 226, 0.28);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(243, 249, 255, 0.48));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    linear-gradient(180deg, rgba(var(--surface-rgb), 0.62), rgba(var(--surface-soft-rgb), 0.48));
+  box-shadow: inset 0 1px 0 rgba(var(--surface-rgb), 0.45);
 }
 
 .dashboard-floating-menu-item-title {
@@ -546,7 +546,7 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 255, 0.92));
+  background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.92));
   border: 1px solid rgba(183, 198, 223, 0.42);
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -564,7 +564,7 @@
   position: absolute;
   inset: 0 0 auto 0;
   height: 88px;
-  background: linear-gradient(180deg, rgba(234, 244, 255, 0.7), rgba(234, 244, 255, 0));
+  background: linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.7), rgba(var(--surface-soft-rgb), 0));
   pointer-events: none;
   z-index: 0;
 }
