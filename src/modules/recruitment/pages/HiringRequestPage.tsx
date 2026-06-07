@@ -296,13 +296,6 @@ export function HiringRequestPage() {
                 value={jobTitle}
                 readOnly
               />
-              <TextField
-                id="solicitante-correo"
-                label="Correo solicitante"
-                value={email}
-                type="email"
-                readOnly
-              />
             </div>
 
             <div className="request-primary-grid">
