@@ -3,6 +3,22 @@
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
 
+## Corrección crítica del bundle del Inicio
+
+- [x] Confirmar la causa real del dashboard vacío revisando RPC `get_dashboard_home_bundle(...)` y logs productivos
+- [x] Corregir la función SQL defectuosa sin alterar permisos ni payloads válidos del resto del inicio
+- [x] Validar el bundle autenticado, compilar frontend y dejar resultado/lección documentados
+
+## Resultado de corrección crítica del bundle del Inicio
+
+- El problema no era caché ni falta de datos: el RPC `public.get_dashboard_home_bundle(...)` estaba rompiendo completo el Inicio con error SQL `column b.days_until does not exist`.
+- La causa raíz fue una regresión en la agregación del widget de cumpleaños. `get_dashboard_home_bundle(...)` trataba `public.get_upcoming_birthdays(...)` como si devolviera filas (`from ... b`), pero esa función devuelve `jsonb`.
+- Se corrigió el bundle para consumir directamente el `jsonb` de `get_upcoming_birthdays(...)`, manteniendo intactos los demás payloads (`tasks_data`, `approval_tracking_data`, `active_folios_data`).
+- La corrección quedó aplicada en producción y además registrada en el repo con la migración `20260607_081211_fix_dashboard_home_bundle_birthdays_payload.sql`.
+- La validación autenticada sobre Supabase cerró con datos reales: `approval_tracking_data = 2`, `active_folios_data = 3`, `birthdays_data = 6`. En esa muestra `tasks_data = 0`, por lo que el vacío de tareas no era fallo técnico sino estado actual del flujo.
+- La validación local cerró con `npm run build`.
+
+
 ## Segunda pasada controlada sobre RLS
 
 - [x] Auditar warnings vigentes de security/performance advisors enfocados en funciones y políticas que afectan flujos activos de la app

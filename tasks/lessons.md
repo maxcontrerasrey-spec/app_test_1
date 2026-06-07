@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una decisión de negocio sensible depende de una autorización específica, esa autorización debe llegar resuelta desde backend como capability efectiva**. El frontend solo consume `hasCapability(...)`; no decide si un rol “equivale” o no a permiso operativo.
 - **Primero se crea la fuente de verdad (`app_capabilities`, `role_capabilities`, RPC de permisos efectivos) y recién después se monta la UI del flujo**. Saltarse ese orden termina mezclando diseño de pantalla con gobierno de seguridad.
 
+## 57. Un RPC agregador no puede reinterpretar el contrato de retorno de sus fuentes
+
+- **Si una función base devuelve `jsonb`, el agregador no debe tratarla luego como `setof` o tabla derivada**. Ese tipo de desalineación no degrada solo un widget: puede tumbar completo un bundle crítico como el Inicio.
+- **Antes de cerrar una optimización por consolidación de RPCs, hay que probar el bundle final autenticado y no solo las funciones hijas por separado**. El error real apareció en la composición, no en `get_upcoming_birthdays(...)` aislada.
+
 ## 35. Un cambio de pipeline no sale sin migración de datos viva
 
 - **Si se renombran o eliminan etapas operativas, primero hay que medir qué estados existen realmente en producción y diseñar el mapeo contra esos datos**. Cambiar enums sin revisar la base deja registros inválidos o interfaces que ya no pueden leer su propio historial.
