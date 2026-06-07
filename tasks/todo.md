@@ -2,6 +2,20 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección de regresión en resolución real del clima
+
+- [x] Reproducir por código por qué el widget vuelve a `Santiago, CL` aunque el usuario esté fuera de Santiago
+- [x] Endurecer el flujo de geolocalización para que no caiga prematuramente al fallback fijo cuando aún exista una lectura real recuperable
+- [x] Validar build y documentar la corrección sin tocar otros widgets del Inicio
+
+## Resultado de corrección de regresión en resolución real del clima
+
+- La API de reverse geocoding no era la culpable: para coordenadas de Los Andes (`-32.83`, `-70.59`) devuelve correctamente `Los Andes, CL`.
+- La regresión estaba en el flujo del navegador. El widget pedía una lectura de alta precisión y, si esa llamada fallaba por timeout o disponibilidad, caía directo al fallback fijo `Santiago, CL`.
+- Se corrigió el flujo para degradar en dos pasos: primero intenta geolocalización de alta precisión y, si eso falla sin denegación explícita, reintenta con una lectura más tolerante (`enableHighAccuracy: false`, timeout mayor y caché más amplia) antes de declarar fallback.
+- El fallback fijo a Santiago ahora queda reservado a casos reales de permiso denegado, falta de soporte o doble fallo de geolocalización, no como salida prematura de un solo intento estricto.
+- La validación técnica cerró con `npm run build` y `git diff --check`.
+
 
 ## Corrección crítica del bundle del Inicio
 

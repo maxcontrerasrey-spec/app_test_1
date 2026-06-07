@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una función base devuelve `jsonb`, el agregador no debe tratarla luego como `setof` o tabla derivada**. Ese tipo de desalineación no degrada solo un widget: puede tumbar completo un bundle crítico como el Inicio.
 - **Antes de cerrar una optimización por consolidación de RPCs, hay que probar el bundle final autenticado y no solo las funciones hijas por separado**. El error real apareció en la composición, no en `get_upcoming_birthdays(...)` aislada.
 
+## 58. En geolocalización de navegador, un único intento de alta precisión no es un contrato operativo suficiente
+
+- **No se debe caer a un fallback fijo de ciudad solo porque la lectura `enableHighAccuracy: true` falló o agotó tiempo**. En escritorio y Safari eso puede romper ubicaciones reales que sí son recuperables con una lectura más tolerante.
+- **La secuencia correcta es degradar**: primero intento preciso, luego intento relajado, y solo después fallback fijo. Si no, el widget parece “estable” pero devuelve una ciudad falsa.
+
 ## 35. Un cambio de pipeline no sale sin migración de datos viva
 
 - **Si se renombran o eliminan etapas operativas, primero hay que medir qué estados existen realmente en producción y diseñar el mapeo contra esos datos**. Cambiar enums sin revisar la base deja registros inválidos o interfaces que ya no pueden leer su propio historial.

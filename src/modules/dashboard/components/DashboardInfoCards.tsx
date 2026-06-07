@@ -236,6 +236,20 @@ function toGeolocationStatusLabel(error?: GeolocationPositionError | null) {
   return DEFAULT_LOCATION.statusLabel;
 }
 
+function getBrowserPosition(options: PositionOptions) {
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+function asGeolocationError(error: unknown): GeolocationPositionError | null {
+  if (!error || typeof error !== "object" || !("code" in error)) {
+    return null;
+  }
+
+  return error as GeolocationPositionError;
+}
+
 export function DashboardInfoCards({
   pendingTasksCount,
   approvalTrackingCount,
@@ -255,7 +269,6 @@ export function DashboardInfoCards({
   useEffect(() => {
     let cancelled = false;
     let reverseController: AbortController | null = null;
-    let geolocationSettled = false;
     let timeoutId: number | null = null;
 
     async function resolveLocationLabel(latitude: number, longitude: number, statusLabel: string) {
@@ -293,7 +306,7 @@ export function DashboardInfoCards({
       }
     }
 
-    function requestBrowserLocation() {
+    async function requestBrowserLocation() {
       if (!navigator.geolocation) {
         setLocation(DEFAULT_LOCATION);
         return;
@@ -303,9 +316,8 @@ export function DashboardInfoCards({
         window.clearTimeout(timeoutId);
       }
 
-      geolocationSettled = false;
       timeoutId = window.setTimeout(() => {
-        if (!cancelled && !geolocationSettled) {
+        if (!cancelled) {
           setLocation({
             ...DEFAULT_LOCATION,
             statusLabel: "Tiempo de ubicación agotado"
@@ -313,21 +325,29 @@ export function DashboardInfoCards({
         }
       }, 12000);
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          geolocationSettled = true;
-          if (timeoutId !== null) {
-            window.clearTimeout(timeoutId);
-          }
+      try {
+        const precisePosition = await getBrowserPosition({
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 300000
+        });
 
-          void resolveLocationLabel(
-            position.coords.latitude,
-            position.coords.longitude,
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId);
+        }
+
+        if (!cancelled) {
+          await resolveLocationLabel(
+            precisePosition.coords.latitude,
+            precisePosition.coords.longitude,
             "Ubicación actual"
           );
-        },
-        (error) => {
-          geolocationSettled = true;
+        }
+        return;
+      } catch (preciseError) {
+        const geolocationError = asGeolocationError(preciseError);
+
+        if (geolocationError?.code === 1) {
           if (timeoutId !== null) {
             window.clearTimeout(timeoutId);
           }
@@ -335,25 +355,54 @@ export function DashboardInfoCards({
           if (!cancelled) {
             setLocation({
               ...DEFAULT_LOCATION,
-              statusLabel: toGeolocationStatusLabel(error)
+              statusLabel: toGeolocationStatusLabel(geolocationError)
             });
           }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 8000,
-          maximumAge: 300000
+          return;
         }
-      );
+      }
+
+      try {
+        const relaxedPosition = await getBrowserPosition({
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 900000
+        });
+
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId);
+        }
+
+        if (!cancelled) {
+          await resolveLocationLabel(
+            relaxedPosition.coords.latitude,
+            relaxedPosition.coords.longitude,
+            "Ubicación actual"
+          );
+        }
+      } catch (relaxedError) {
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId);
+        }
+
+        const geolocationError = asGeolocationError(relaxedError);
+
+        if (!cancelled) {
+          setLocation({
+            ...DEFAULT_LOCATION,
+            statusLabel: toGeolocationStatusLabel(geolocationError)
+          });
+        }
+      }
     }
 
     if (!location.isResolved || location.isFallback) {
-      requestBrowserLocation();
+      void requestBrowserLocation();
     }
 
     const retryOnFocus = () => {
       if (!cancelled && (!location.isResolved || location.isFallback)) {
-        requestBrowserLocation();
+        void requestBrowserLocation();
       }
     };
 
