@@ -153,6 +153,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No conviertas el paso Who en aprobación obligatoria por defecto**. Si el candidato no tiene causas registradas, pedir autorización solo agrega ruido operacional y crea tareas pendientes falsas.
 - **La trazabilidad no exige una bandeja pendiente**. El patrón correcto es dejar registro backend del paso Who autoaprobado sin hallazgos y reservar `candidate_stage_approvals` pendientes únicamente para casos con causas efectivas.
 
+## 51. Si el conector de base bloquea una aplicación productiva, no se sustituye con un bypass improvisado
+
+- **Cuando la ejecución remota falla por límite o restricción del conector, el problema ya no es SQL sino de plataforma**. En ese caso se deja la migración lista en repo, se valida localmente y se documenta el bloqueo; no se fuerza un camino lateral contra la misma base.
+- **La salida correcta es separar “cambio preparado” de “cambio aplicado”**. Producción solo se considera corregida cuando la migración realmente corre en Supabase y los advisors o queries posteriores lo confirman.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

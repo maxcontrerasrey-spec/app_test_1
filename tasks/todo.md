@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección de advisors Supabase sobre reclutamiento y permisos
+
+- [x] Fijar `search_path` mutable y limpiar grants expuestos solo en helpers internos no usados por frontend
+- [x] Reescribir policies RLS activas de reclutamiento/solicitudes/documentos para usar `(select auth.uid())` y eliminar duplicidad de `hiring_request_approvals`
+- [x] Eliminar duplicados seguros de índices/constraints detectados por advisors sin tocar piezas inciertas de producción
+- [ ] Aplicar migración en Supabase, reconsultar advisors, validar `build` y documentar resultado
+
+## Resultado parcial de corrección de advisors Supabase sobre reclutamiento y permisos
+
+- Quedó creada en repo la migración [`supabase/migrations/20260608_180000_fix_advisors_rls_and_helper_exposure.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_180000_fix_advisors_rls_and_helper_exposure.sql:1), enfocada solo en cambios seguros: `search_path`, RLS `initplan`, `drop policy` redundante, revocación de helpers no expuestos por UI y limpieza puntual de duplicados claros.
+- La migración reescribe las policies activas que hoy impactan reclutamiento, solicitudes, Who, documentos y `employees` para usar `(select auth.uid())`, que es exactamente la recomendación del advisor de performance.
+- También deja listo el saneamiento de duplicados remotos más evidentes: `hiring_request_approvals_select_app`, `idx_hiring_request_approvals_approver_status`, `idx_recruitment_case_candidates_profile` y la constraint legacy `recruitment_case_candidates_recruitment_case_id_candidate_p_key`.
+- La validación local cerró correctamente con `npm run build` y `git diff --check`.
+- La única parte pendiente no es del SQL sino del entorno: la ejecución remota vía conector Supabase fue rechazada por límite de uso del propio conector, por lo que la migración aún no quedó aplicada en la base ni fue posible reconsultar advisors post-cambio desde esta sesión.
+
 ## Corrección de bloqueo del widget de clima
 
 - [x] Reemplazar el flujo secuencial de geolocalización por una estrategia que entregue ubicación rápida sin quedarse colgada
