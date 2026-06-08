@@ -2,9 +2,11 @@ import { useCallback, useMemo } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
-import { queryKeys } from "../../../shared/lib/queryKeys";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
-import { useHrIncentiveSetupCatalogs } from "../hooks/useIncentivesQueries";
+import {
+  invalidateHrIncentiveQueries,
+  useHrIncentiveSetupCatalogs
+} from "../hooks/useIncentivesQueries";
 import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationForm";
 import { IncentiveRequestsView } from "../components/IncentiveRequestsView";
 import { IncentiveSetupView } from "../components/IncentiveSetupView";
@@ -58,10 +60,7 @@ export function HumanResourcesDashboard() {
   );
 
   const invalidateIncentives = useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() }),
-      queryClient.invalidateQueries({ queryKey: ["incentives", "requests"] })
-    ]);
+    await invalidateHrIncentiveQueries(queryClient);
   }, [queryClient]);
 
   useRealtimeQueryInvalidation({

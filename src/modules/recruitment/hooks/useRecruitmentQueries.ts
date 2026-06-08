@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchRecruitmentCaseDetail,
@@ -81,4 +81,19 @@ export function useRecruitmentCaseDetail(caseId: string, enabled = true) {
 
 export function useHiringCatalogs() {
   return useQuery(getHiringCatalogsQueryOptions());
+}
+
+export async function invalidateRecruitmentControlQueries(
+  queryClient: QueryClient,
+  caseId?: string
+) {
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.recruitment.controlDashboard()
+  });
+
+  if (caseId) {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.recruitment.caseDetail(caseId)
+    });
+  }
 }

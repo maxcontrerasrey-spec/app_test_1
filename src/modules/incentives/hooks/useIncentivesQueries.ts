@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchHrIncentivePreview,
@@ -99,4 +99,11 @@ export function useHrIncentivePreview(params: {
       Boolean(selectedContractCode) &&
       Boolean(serviceDate)
   });
+}
+
+export async function invalidateHrIncentiveQueries(queryClient: QueryClient) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestsRoot() })
+  ]);
 }

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
-import { queryKeys } from "../../../shared/lib/queryKeys";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   getRecruitmentCaseDetailQueryOptions,
+  invalidateRecruitmentControlQueries,
   useRecruitmentCaseDetail,
   useRecruitmentControlDashboard
 } from "../hooks/useRecruitmentQueries";
@@ -93,15 +93,7 @@ export function HiringStatusPage() {
 
   const invalidateRealtimeRecruitment = useCallback(
     async (client: QueryClient) => {
-      await client.invalidateQueries({
-        queryKey: queryKeys.recruitment.controlDashboard()
-      });
-
-      if (selectedCaseId) {
-        await client.invalidateQueries({
-          queryKey: queryKeys.recruitment.caseDetail(selectedCaseId)
-        });
-      }
+      await invalidateRecruitmentControlQueries(client, selectedCaseId || undefined);
     },
     [selectedCaseId]
   );
@@ -114,17 +106,7 @@ export function HiringStatusPage() {
   });
 
   const invalidateRecruitmentCache = async (caseId?: string) => {
-    const targetCaseId = caseId || selectedCaseId;
-
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.recruitment.controlDashboard()
-    });
-
-    if (targetCaseId) {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.recruitment.caseDetail(targetCaseId)
-      });
-    }
+    await invalidateRecruitmentControlQueries(queryClient, caseId || selectedCaseId || undefined);
   };
 
   useEffect(() => {

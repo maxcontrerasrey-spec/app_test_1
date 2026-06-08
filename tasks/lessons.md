@@ -270,6 +270,21 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No promociones migraciones que referencien columnas imaginarias o no desplegadas**. El caso típico es `rcc.is_contracted`: aunque la función se vea coherente a nivel de negocio, si la columna no existe en el esquema real, el dashboard completo cae en runtime.
 - **Cerrar un proceso no siempre significa sacar de todas las bandejas sus entidades derivadas**. Si un candidato ya está `hired`, ocultarlo de `Personal a Contratar` por cancelar el caso de origen rompe la continuidad operativa de ficha y documentos. Los tableros deben distinguir entre cierre del folio y vida útil posterior del contratado.
 
+## 64. Los scripts de diagnóstico no viven en la raíz del ERP
+
+- **Un archivo suelto tipo `test_*.mjs`, `check_*.mjs` o `run_test.mjs` en la raíz no es neutral**. Ensucia `git status`, confunde qué forma parte del producto y degrada la mantenibilidad del repo.
+- **Si hace falta instrumentación temporal, debe ir en un espacio explícito y descartable**. En este repo, lo correcto es usar herramientas versionadas reales o un directorio de scratch ignorado; no dejar pruebas operativas mezcladas con el código productivo.
+
+## 65. La URL pública de la app debe resolverse desde una única capa de runtime
+
+- **Si el sistema puede vivir detrás de un subdominio empresarial y seguir desplegando en Cloudflare, no conviene repartir lógica de host entre componentes**. Los redirects sensibles como recuperación de contraseña deben construirse desde una sola fuente configurada.
+- **La variable pública y el fallback del navegador deben compartir el mismo saneamiento**. Si no, aparecen mezclas de `pages.dev`, subdominio corporativo y `window.location.origin` difíciles de auditar.
+
+## 66. La invalidación de caché repetida es deuda de arquitectura, no detalle de UI
+
+- **Cuando varias vistas invalidan las mismas queries con arrays literales repetidos, el contrato de caché ya está disperso**. Eso aumenta el riesgo de drift cuando se renombra una key o se agrega una query derivada.
+- **Las invalidaciones operativas deben encapsularse igual que las query options**. Si `reclutamiento` o `incentivos` ya tienen hooks propios, también deben exponer helpers únicos para refrescar su estado compartido.
+
 ## 35. Un cambio de pipeline no sale sin migración de datos viva
 
 - **Si se renombran o eliminan etapas operativas, primero hay que medir qué estados existen realmente en producción y diseñar el mapeo contra esos datos**. Cambiar enums sin revisar la base deja registros inválidos o interfaces que ya no pueden leer su propio historial.

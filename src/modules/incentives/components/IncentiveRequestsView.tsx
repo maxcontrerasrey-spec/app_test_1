@@ -3,9 +3,11 @@ import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/reac
 import { SelectField, TextField } from "../../../shared/ui";
 import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
 import { formatRut } from "../../../shared/lib/rut";
-import { queryKeys } from "../../../shared/lib/queryKeys";
 import { cancelHrIncentiveRequest } from "../services/incentivesApi";
-import { useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
+import {
+  invalidateHrIncentiveQueries,
+  useHrIncentiveRequests
+} from "../hooks/useIncentivesQueries";
 import type { HrIncentiveRequest, HrIncentiveSetupCatalogs } from "../types";
 
 type IncentiveRequestsViewProps = {
@@ -75,7 +77,7 @@ export function IncentiveRequestsView({
       cancelHrIncentiveRequest(requestId, comment),
     onSuccess: async () => {
       setMutationError("");
-      await queryClient.invalidateQueries({ queryKey: ["incentives", "requests"] });
+      await invalidateHrIncentiveQueries(queryClient);
     },
     onError: (error: Error) => {
       setMutationError(error.message);

@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Limpieza profunda de repo y compactación de arquitectura base
+
+- [x] Auditar archivos sueltos, hotspots del repo y referencias rígidas al dominio antiguo
+- [x] Eliminar scripts/test ad-hoc sin valor productivo en la raíz del proyecto
+- [x] Compactar contratos repetidos de runtime y caché en módulos operativos activos
+- [x] Validar build, documentar limpieza y dejar `main` listo para deploy
+
+## Resultado de limpieza profunda de repo y compactación de arquitectura base
+
+- Se limpió la raíz del repo eliminando la batería de archivos ad-hoc de prueba/debug que no pertenecían a la arquitectura del ERP. Salieron `check_maria.mjs`, `run_test.mjs`, `test_0008.*`, `test_approvers.mjs`, `test_dashboard_rpc.mjs`, `test_fetch_rpc.mjs`, `test_function_def.mjs`, `test_get_dashboard_tasks*`, `test_get_detail.mjs`, `test_maria_rpc.mjs`, `test_profiles.mjs`, `test_rls.mjs`, `test_tasks_rpc*` y también el archivo trackeado [`test_db.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/test_db.mjs:1), que era un stub incompleto sin uso real.
+- Se centralizó la resolución de la URL pública de la app en [`src/shared/config/runtime.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/runtime.ts:1), eliminando lógica dispersa de host en auth. `AuthContext` ahora construye redirects como `/reset-password` desde una única fuente y el ejemplo de entorno ya apunta al subdominio real [`gestion.busesjm.cl`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.env.example:4).
+- Se compactó la invalidación de caché en módulos operativos activos: reclutamiento ahora reutiliza `invalidateRecruitmentControlQueries(...)` desde [`src/modules/recruitment/hooks/useRecruitmentQueries.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/hooks/useRecruitmentQueries.ts:86) e incentivos reutiliza `invalidateHrIncentiveQueries(...)` desde [`src/modules/incentives/hooks/useIncentivesQueries.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/hooks/useIncentivesQueries.ts:104). Con esto se eliminó duplicación entre vistas, mutaciones y realtime invalidation.
+- También quedó normalizada la raíz de query keys para incentivos en [`src/shared/lib/queryKeys.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/queryKeys.ts:10), evitando arrays literales repetidos como `['incentives', 'requests']` en varios componentes.
+- La limpieza cerró con `npm run build` y `git diff --check`.
+
 ## Reparación del dashboard de Control de Contrataciones tras regresión SQL
 
 - [x] Revisar `tasks/lessons.md`, migraciones recientes y logs productivos para aislar la causa raíz de los errores en `folios` y `control de candidatos`

@@ -17,6 +17,7 @@ import {
   type AppModuleCode,
   type AppRole
 } from "../config/access";
+import { buildPublicAppUrl } from "../../../shared/config/runtime";
 import { logger } from "../../../shared/lib/logger";
 import { isSupabaseConfigured, supabase } from "../../../shared/lib/supabase";
 
@@ -63,7 +64,6 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
-const publicAppUrl = import.meta.env.VITE_PUBLIC_APP_URL?.trim() ?? "";
 
 function buildDisplayName(user: User | null, profile: ProfileRecord | null) {
   if (profile?.full_name?.trim()) {
@@ -104,15 +104,7 @@ function detectRecoveryMode() {
 }
 
 function buildResetPasswordRedirectUrl() {
-  if (publicAppUrl) {
-    return `${publicAppUrl.replace(/\/$/, "")}/reset-password`;
-  }
-
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-
-  return `${window.location.origin}/reset-password`;
+  return buildPublicAppUrl("/reset-password");
 }
 
 function normalizeStringArray(value: unknown) {

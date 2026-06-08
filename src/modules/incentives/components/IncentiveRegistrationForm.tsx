@@ -4,11 +4,11 @@ import { DatePickerField, SelectField, TextField } from "../../../shared/ui";
 import { formatCurrencyValue } from "../../../shared/lib/format";
 import { formatRut } from "../../../shared/lib/rut";
 import { toTodayDateValue } from "../../../shared/lib/date";
-import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   createHrIncentiveRequest
 } from "../services/incentivesApi";
 import {
+  invalidateHrIncentiveQueries,
   useHrIncentivePreview,
   useHrIncentiveWorkerContext
 } from "../hooks/useIncentivesQueries";
@@ -134,10 +134,7 @@ export function IncentiveRegistrationForm({
       setMotive("");
       setDescription("");
       setReplacementWorker(null);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["incentives", "requests"] }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() })
-      ]);
+      await invalidateHrIncentiveQueries(queryClient);
     },
     onError: (error: Error) => {
       setFormMessage("");

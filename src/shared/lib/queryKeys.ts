@@ -9,6 +9,7 @@ export const queryKeys = {
   },
   incentives: {
     setupCatalogs: () => ["incentives", "setup-catalogs"] as const,
+    requestsRoot: () => ["incentives", "requests"] as const,
     requests: (filters: Record<string, unknown>) => ["incentives", "requests", filters] as const,
     workerSearch: (search: string) => ["incentives", "worker-search", search] as const,
     workerContext: (bukEmployeeId: string) =>
