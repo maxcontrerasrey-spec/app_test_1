@@ -58,23 +58,13 @@ export function HiringPersonnelToHireView({
 
   const selectedCandidateBoardRow =
     personnelToHire.find((candidate) => candidate.id === selectedCandidateId) ??
-    filteredPersonnel[0] ??
     null;
 
   const selectedCandidate =
     selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
-    selectedCaseDetail?.candidates.find((candidate) => candidate.stage_code === "hired") ??
-    selectedCaseDetail?.candidates[0] ??
     null;
 
-  useEffect(() => {
-    if (selectedCandidateBoardRow || filteredPersonnel.length === 0) {
-      return;
-    }
-
-    const nextCandidate = filteredPersonnel[0];
-    onSelectCandidate(nextCandidate.id, nextCandidate.recruitment_case_id);
-  }, [filteredPersonnel, onSelectCandidate, selectedCandidateBoardRow]);
+  // Comportamiento actualizado: no autoseleccionar candidato.
 
   return (
     <>
@@ -97,7 +87,15 @@ export function HiringPersonnelToHireView({
         </div>
       </div>
 
-      <div className="control-layout">
+      <div 
+        className="control-layout"
+        style={!selectedCandidateBoardRow ? { gridTemplateColumns: "1fr" } : undefined}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onSelectCandidate("", "");
+          }
+        }}
+      >
         <div className="tracking-table-wrap">
           <div className="tracking-table-scroll">
             <table className="tracking-table">

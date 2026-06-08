@@ -159,21 +159,8 @@ export function CandidateDetailSidebar({
     }
   };
 
-  if (!selectedCaseDetail || !selectedCandidate) {
-    return (
-      <aside className="control-detail-panel">
-        <div className="control-detail-header">
-          <h3>Sin candidato seleccionado</h3>
-          <span className="tracking-filter-caption">
-            {isLoading
-              ? "Cargando candidatos..."
-              : mode === "personnel_to_hire"
-                ? "Selecciona una persona contratada para revisar ficha, documentos y trazabilidad final."
-                : "Selecciona una participación activa para revisar su detalle y mover etapa."}
-          </span>
-        </div>
-      </aside>
-    );
+  if (!selectedCaseDetail || !selectedCandidate || !selectedCandidateBoardRow) {
+    return null;
   }
 
   const stageOptions = getNextStageOptions(selectedCandidate.stage_code).map((stage) => ({

@@ -104,22 +104,14 @@ export function HiringCandidatesView({
 
   const selectedCandidateBoardRow =
     candidateControl.find((candidate) => candidate.id === selectedCandidateId) ??
-    filteredCandidateControl[0] ??
     null;
 
   const selectedCandidate =
     selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
-    selectedCaseDetail?.candidates[0] ??
     null;
 
-  useEffect(() => {
-    if (selectedCandidateBoardRow || filteredCandidateControl.length === 0) {
-      return;
-    }
-
-    const nextCandidate = filteredCandidateControl[0];
-    onSelectCandidate(nextCandidate.id, nextCandidate.recruitment_case_id);
-  }, [filteredCandidateControl, onSelectCandidate, selectedCandidateBoardRow]);
+  // Comportamiento actualizado: no autoseleccionar un candidato al cambiar la lista o rechazar.
+  // Esto permite que el panel se cierre y no se quede "pegado".
 
   return (
     <>
@@ -166,7 +158,16 @@ export function HiringCandidatesView({
         ))}
       </div>
 
-      <div className="control-layout">
+      <div 
+        className="control-layout" 
+        style={!selectedCandidateBoardRow ? { gridTemplateColumns: "1fr" } : undefined}
+        onClick={(e) => {
+          // Si el usuario hace clic exactamente en el fondo de este layout (fuera de la tabla y sidebar), cerramos
+          if (e.target === e.currentTarget) {
+            onSelectCandidate("", "");
+          }
+        }}
+      >
         <div className="tracking-table-wrap">
           {showCandidateForm ? (
             <CandidateIntakeForm
