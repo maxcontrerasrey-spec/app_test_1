@@ -14,6 +14,22 @@
 - [x] Permitir que un candidato sin hallazgos avance por Who sin crear tarea pendiente de autorización
 - [x] Ajustar la UI para explicar el comportamiento sin hallazgos, validar build y documentar el resultado
 
+## Sincronización de usuarios, roles y módulos desde matriz Excel
+
+- [x] Normalizar la matriz `usuarios_busesjm.xlsx` a códigos canónicos de rol y módulos vigentes en la app
+- [x] Sincronizar roles, capacidades, módulos visibles y perfiles en Supabase preservando a Maximiliano como `admin` total
+- [x] Crear en Auth las cuentas faltantes con clave inicial controlada sin alterar claves existentes
+- [x] Verificar resultado real en base, compilar frontend y documentar el cierre
+
+## Resultado de sincronización de usuarios, roles y módulos desde matriz Excel
+
+- La matriz `usuarios_busesjm.xlsx` quedó aterrizada a códigos canónicos de la app. Se incorporaron al frontend los roles `director_eje`, `director_op`, `gerente_general`, `operaciones_l_1`, `operaciones_l_2` y `administrativo` para evitar que Auth los degradara a `guest`.
+- Se aplicó en Supabase la migración `sync_users_roles_modules_from_excel`, que además aseguró la existencia del catálogo mínimo de `app_modules` y `app_capabilities` antes de sincronizar accesos.
+- Maximiliano Contreras Rey quedó como único `admin` total con `is_super_admin = true`. Maria Jesus Lagos dejó de heredar permisos de admin y quedó solo con `control_contratos`, tal como define la matriz.
+- Se creó el script reutilizable `scripts/provision-users-from-matrix.mjs` y con él se dieron de alta `21` cuentas faltantes en Supabase Auth con contraseña inicial `Bjm2026*`, sin modificar contraseñas de las `13` cuentas ya existentes.
+- Luego del alta, se reejecutó el bloque de sincronización de perfiles y `user_roles` para que las nuevas fichas heredaran su rol efectivo inmediatamente. La verificación final confirmó `34/34` usuarios presentes, `0` faltantes, y módulos/capacidades alineados con la hoja `modulos` y la parte de aprobaciones que hoy sí gobierna por rol (`Who` y acceso documental).
+- La validación técnica cerró con `npm run build`, `git diff --check` y consultas directas sobre Supabase.
+
 ## Resultado de ajuste de aprobación Who sin hallazgos
 
 - La rigidez estaba en backend: `normalize_candidate_who_causes(...)` rechazaba listas vacías y `request_candidate_stage_who(...)` siempre abría una aprobación pendiente.

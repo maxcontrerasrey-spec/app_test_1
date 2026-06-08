@@ -238,6 +238,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No encadenar dos llamadas `getCurrentPosition()` una detrás de la otra si la UI depende de respuesta rápida**. Aunque la lógica sea “más robusta”, el usuario solo percibe un widget colgado.
 - **La estrategia operativa correcta es paralelizar una lectura rápida y una precisa**. La primera da ubicación usable pronto; la segunda puede mejorarla. El fallback fijo entra únicamente cuando ambas fallan.
 
+## 60. La matriz de usuarios es una fuente de negocio; Auth y autorización no se sincronizan igual
+
+- **No mezclar alta de cuentas con reasignación de permisos en una sola operación opaca**. Crear usuarios faltantes en Supabase Auth y sincronizar `profiles`/`user_roles` son pasos distintos y deben poder reejecutarse por separado.
+- **Si la matriz de negocio usa labels humanos, primero se normaliza a códigos canónicos de la app**. Roles como `control de contratos` o `operaciones_L_1` no deben llegar crudos al frontend ni a `user_roles`; se mapean una vez a `control_contratos` y `operaciones_l_1` para evitar drift.
+- **Cuando el requerimiento explícito es “no tocar claves existentes”, el aprovisionamiento debe crear solo cuentas faltantes**. Actualizar contraseñas por conveniencia rompe el contrato operativo y genera incidentes evitables.
+
 ## 35. Un cambio de pipeline no sale sin migración de datos viva
 
 - **Si se renombran o eliminan etapas operativas, primero hay que medir qué estados existen realmente en producción y diseñar el mapeo contra esos datos**. Cambiar enums sin revisar la base deja registros inválidos o interfaces que ya no pueden leer su propio historial.

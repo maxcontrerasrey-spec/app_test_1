@@ -5,6 +5,12 @@ export type AppRole =
   | "control_contratos"
   | "operaciones"
   | "gerencia"
+  | "director_eje"
+  | "director_op"
+  | "gerente_general"
+  | "operaciones_l_1"
+  | "operaciones_l_2"
+  | "administrativo"
   | "certificaciones"
   | "instructor"
   | "guest";
@@ -26,6 +32,12 @@ const KNOWN_ROLE_CODES = new Set<AppRole>([
   "control_contratos",
   "operaciones",
   "gerencia",
+  "director_eje",
+  "director_op",
+  "gerente_general",
+  "operaciones_l_1",
+  "operaciones_l_2",
+  "administrativo",
   "certificaciones",
   "instructor",
   "guest"

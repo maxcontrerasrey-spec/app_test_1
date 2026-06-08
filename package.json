@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "provision:hiring-approvers": "node scripts/provision-hiring-approvers.mjs"
+    "provision:hiring-approvers": "node scripts/provision-hiring-approvers.mjs",
+    "provision:users-matrix": "node scripts/provision-users-from-matrix.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
