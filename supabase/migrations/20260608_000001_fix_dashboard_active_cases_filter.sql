@@ -1,5 +1,144 @@
 begin;
 
+-- ============================================================
+-- 1. CORREGIR close_hiring_request
+--    Bug: bloqueaba folios en estado 'approved', impidiendo
+--    cerrar solicitudes que ya tenían caso de reclutamiento activo.
+--    Fix: solo bloquea 'rejected' y 'closed' (estados realmente terminales).
+-- ============================================================
+
+create or replace function public.close_hiring_request(
+  p_request_id uuid,
+  p_comment text default null
+)
+returns table (
+  hiring_request_id uuid,
+  request_status text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  request_record public.hiring_requests%rowtype;
+  area_manager_record public.cost_center_approvers%rowtype;
+  normalized_comment text := nullif(trim(coalesce(p_comment, '')), '');
+  has_permission boolean := false;
+begin
+  if current_user_id is null then
+    raise exception 'Usuario no autenticado';
+  end if;
+
+  select *
+    into request_record
+    from public.hiring_requests
+   where id = p_request_id
+   for update;
+
+  if request_record.id is null then
+    raise exception 'No existe la solicitud';
+  end if;
+
+  -- Solo bloquear estados realmente terminales (rejected, closed).
+  -- 'approved' se permite cerrar porque puede tener un caso de reclutamiento activo.
+  if request_record.status in ('rejected', 'closed') then
+    raise exception 'La solicitud ya se encuentra en un estado final';
+  end if;
+
+  -- Permisos:
+  -- 1. Es el solicitante original
+  if request_record.requester_id = current_user_id then
+    has_permission := true;
+  end if;
+
+  -- 2. Es admin o reclutamiento (can_access_module 'control_contrataciones')
+  if not has_permission and public.user_can_access_module(current_user_id, 'control_contrataciones') then
+    has_permission := true;
+  end if;
+
+  -- 3. Es el gerente de área correspondiente
+  if not has_permission then
+    select *
+      into area_manager_record
+      from public.cost_center_approvers
+     where cost_center_code = request_record.cost_center_code
+       and approver_user_id = current_user_id
+       and is_active = true;
+
+    if area_manager_record.id is not null then
+      has_permission := true;
+    end if;
+  end if;
+
+  if not has_permission then
+    raise exception 'El usuario no esta autorizado para cerrar esta solicitud';
+  end if;
+
+  -- Actualizar estado de la solicitud
+  update public.hiring_requests hr
+     set status = 'closed',
+         current_step_code = null,
+         rejected_at = timezone('utc', now()),
+         final_decided_by = current_user_id,
+         updated_at = timezone('utc', now())
+   where hr.id = p_request_id;
+
+  -- Cancelar aprobaciones pendientes (si las hay)
+  update public.hiring_request_approvals
+     set status = 'rejected',
+         decision_by = current_user_id,
+         decision_comment = coalesce(normalized_comment, 'Folio cerrado manualmente'),
+         decided_at = timezone('utc', now()),
+         locked_at = timezone('utc', now()),
+         updated_at = timezone('utc', now())
+   where hiring_request_id = p_request_id
+     and status = 'pending';
+
+  -- Cancelar casos de reclutamiento activos vinculados
+  update public.recruitment_cases
+     set status = 'cancelled',
+         close_reason = coalesce(normalized_comment, 'Folio de origen cerrado manualmente'),
+         closed_at = timezone('utc', now()),
+         closed_by = current_user_id,
+         target_close_date = timezone('utc', now())::date,
+         updated_at = timezone('utc', now())
+   where hiring_request_id = p_request_id
+     and status not in ('filled', 'closed_unfilled', 'cancelled');
+
+  -- Registrar en auditoría
+  insert into public.hiring_request_audit_log (
+    hiring_request_id,
+    actor_user_id,
+    action_type,
+    metadata
+  ) values (
+    p_request_id,
+    current_user_id,
+    'closed',
+    jsonb_build_object(
+      'action', 'close_request',
+      'comment', normalized_comment,
+      'previous_status', request_record.status,
+      'status_changed_to', 'closed'
+    )
+  );
+
+  return query select request_record.id, 'closed'::text;
+end;
+$$;
+
+revoke all on function public.close_hiring_request(uuid, text) from public, anon;
+grant execute on function public.close_hiring_request(uuid, text) to authenticated;
+
+-- ============================================================
+-- 2. ACTUALIZAR get_recruitment_control_dashboard_v2
+--    - Agrega 'hiring_request_status' al JSON de active_cases
+--      para que el frontend distinga Rechazado vs Cerrado.
+--    - Sin filtro de status en active_cases (el frontend filtra
+--      por pestaña, igual que ya lo hace con "Cubiertos").
+-- ============================================================
+
 create or replace function public.get_recruitment_control_dashboard_v2()
 returns jsonb
 language plpgsql
@@ -25,6 +164,7 @@ begin
 
   can_access_candidate_control := public.user_can_access_candidate_control(current_user_id);
 
+  -- Summary: los contadores de active_cases siguen excluyendo terminales
   select jsonb_build_object(
     'pending_contracts_control', count(*) filter (where hra.step_code = 'contracts_control' and hra.status = 'pending'),
     'active_cases', count(*) filter (where rc.status not in ('filled', 'closed_unfilled', 'cancelled')),
@@ -40,6 +180,7 @@ begin
    and hra.status = 'pending'
   where public.user_can_access_recruitment_case(current_user_id, rc.id);
 
+  -- Pending approvals (sin cambios)
   select coalesce(
     jsonb_agg(queue_row.payload order by queue_row.sort_created_at asc, queue_row.sort_id asc),
     '[]'::jsonb
@@ -91,6 +232,8 @@ begin
     limit 20
   ) as queue_row;
 
+  -- Active cases: retorna TODOS los casos (el frontend filtra por pestaña).
+  -- Nuevo campo: hiring_request_status para distinguir Rechazado vs Cerrado.
   select coalesce(
     jsonb_agg(case_row.payload order by case_row.sort_opened_at desc),
     '[]'::jsonb
@@ -145,9 +288,10 @@ begin
     ) as candidate_stats on true
     where public.user_can_access_recruitment_case(current_user_id, rc.id)
     order by rc.opened_at desc
-    limit 40
+    limit 50
   ) as case_row;
 
+  -- Candidate control (sin cambios)
   if can_access_candidate_control then
     select coalesce(
       jsonb_agg(candidate_row.payload order by candidate_row.sort_stage_entered_at desc, candidate_row.sort_created_at desc),
@@ -227,6 +371,7 @@ begin
       limit 120
     ) as candidate_row;
 
+    -- Personnel to hire (sin cambios)
     select coalesce(
       jsonb_agg(person_row.payload order by person_row.sort_hired_at desc, person_row.sort_created_at desc),
       '[]'::jsonb
