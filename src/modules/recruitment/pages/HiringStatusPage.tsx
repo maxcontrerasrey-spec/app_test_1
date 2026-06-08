@@ -193,18 +193,25 @@ export function HiringStatusPage() {
     setIsStageSaving(true);
     setDecisionMessage("");
 
-    const { error } =
-      stageDraft === "who_pending"
-        ? await requestCandidateStageWho({
-            caseCandidateId: selectedCandidate.id,
-            comment: stageComment,
-            causes: whoCauses ?? []
-          })
-        : await advanceRecruitmentCandidateStage({
-            caseCandidateId: selectedCandidate.id,
-            toStage: stageDraft,
-            comment: stageComment
-          });
+    let error: string | null = null;
+    let stageCode: string | null = null;
+
+    if (stageDraft === "who_pending") {
+      const result = await requestCandidateStageWho({
+        caseCandidateId: selectedCandidate.id,
+        comment: stageComment,
+        causes: whoCauses ?? []
+      });
+      error = result.error;
+      stageCode = result.stageCode;
+    } else {
+      const result = await advanceRecruitmentCandidateStage({
+        caseCandidateId: selectedCandidate.id,
+        toStage: stageDraft,
+        comment: stageComment
+      });
+      error = result.error;
+    }
 
     if (error) {
       setDecisionMessage(error);
@@ -212,7 +219,15 @@ export function HiringStatusPage() {
       return;
     }
 
-    setDecisionMessage("Etapa del candidato actualizada.");
+    if (stageDraft === "who_pending") {
+      setDecisionMessage(
+        stageCode === "who_approved"
+          ? "Sin hallazgos: validación Who aprobada automáticamente."
+          : "Solicitud Who enviada a aprobación."
+      );
+    } else {
+      setDecisionMessage("Etapa del candidato actualizada.");
+    }
     setStageDraft("");
     setStageComment("");
     setIsStageSaving(false);

@@ -466,6 +466,11 @@ export function CandidateDetailSidebar({
                         </button>
                       </div>
 
+                      <p className="who-causes-summary-note">
+                        Si no registras hallazgos, la validación Who se aprobará automáticamente y
+                        no generará una tarea pendiente.
+                      </p>
+
                       {isWhoCausesExpanded ? (
                         <div className="who-causes-editor-list">
                           {whoCauseDrafts.map((cause, index) => (

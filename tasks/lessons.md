@@ -148,6 +148,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una migración combina índices, grants y un RPC nuevo con `drop constraint`, `drop index` y reescritura masiva de policies, el riesgo operacional sube demasiado**. Es mejor separar una pasada segura aplicable hoy de una segunda pasada de gobernanza más delicada.
 - **Cuando el conector o el entorno rechaza una migración por riesgo, la salida correcta no es forzarla**. Se degrada el alcance a cambios no destructivos y se deja trazado explícito qué quedó pendiente por revisión más controlada.
 
+## 50. Who solo debe escalar cuando existen hallazgos reales
+
+- **No conviertas el paso Who en aprobación obligatoria por defecto**. Si el candidato no tiene causas registradas, pedir autorización solo agrega ruido operacional y crea tareas pendientes falsas.
+- **La trazabilidad no exige una bandeja pendiente**. El patrón correcto es dejar registro backend del paso Who autoaprobado sin hallazgos y reservar `candidate_stage_approvals` pendientes únicamente para casos con causas efectivas.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

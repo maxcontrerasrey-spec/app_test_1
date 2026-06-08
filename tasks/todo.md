@@ -8,6 +8,22 @@
 - [x] Evitar que el fallback a Santiago se dispare antes de agotar una lectura rápida y una refinada
 - [x] Validar build y documentar la corrección
 
+## Ajuste de aprobación Who sin hallazgos
+
+- [x] Revisar el flujo actual `Lead -> Who` para identificar dónde nace la aprobación pendiente
+- [x] Permitir que un candidato sin hallazgos avance por Who sin crear tarea pendiente de autorización
+- [x] Ajustar la UI para explicar el comportamiento sin hallazgos, validar build y documentar el resultado
+
+## Resultado de ajuste de aprobación Who sin hallazgos
+
+- La rigidez estaba en backend: `normalize_candidate_who_causes(...)` rechazaba listas vacías y `request_candidate_stage_who(...)` siempre abría una aprobación pendiente.
+- La lógica quedó alineada al negocio: si el reclutador no registra hallazgos, la validación Who se autoaprueba internamente, el candidato pasa a `who_approved` y no aparece ninguna tarea pendiente de autorización.
+- Si existen hallazgos, el flujo sigue igual: se crea registro en `candidate_stage_approvals`, el candidato queda en `who_pending` y la aprobación aparece en las bandejas correspondientes.
+- Para no romper la trazabilidad posterior, incluso el caso sin hallazgos deja registro estructurado: se inserta una fila Who ya aprobada, sin causas y con metadata `auto_approved = true`.
+- La UI ahora lo explica en la ficha del candidato y muestra mensaje distinto según el resultado real: `Solicitud Who enviada a aprobación` o `Sin hallazgos: validación Who aprobada automáticamente`.
+- La migración quedó aplicada en Supabase como `20260608004750 autoapprove_who_without_findings`.
+- La validación técnica cerró con `npm run build` y `git diff --check`.
+
 ## Resultado de corrección de bloqueo del widget de clima
 
 - El segundo problema no estaba en la API de ciudad ni en Open-Meteo, sino en la orquestación local del navegador.

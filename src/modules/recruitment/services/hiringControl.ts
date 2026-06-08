@@ -548,14 +548,15 @@ export async function requestCandidateStageWho(input: {
   caseCandidateId: string;
   comment?: string;
   causes: WhoApprovalCause[];
-}) {
+}): Promise<{ error: string | null; stageCode: string | null }> {
   if (!supabase) {
     return {
-      error: "Supabase no está configurado en este entorno."
+      error: "Supabase no está configurado en este entorno.",
+      stageCode: null
     };
   }
 
-  const { error } = await supabase.rpc("request_candidate_stage_who", {
+  const { data, error } = await supabase.rpc("request_candidate_stage_who", {
     p_case_candidate_id: input.caseCandidateId,
     p_comment: input.comment?.trim() ? input.comment.trim() : null,
     p_causes: input.causes.map((cause) => ({
@@ -567,11 +568,15 @@ export async function requestCandidateStageWho(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible enviar la aprobación Who."
+      error: formatRpcError(error) || "No fue posible enviar la aprobación Who.",
+      stageCode: null
     };
   }
 
-  return { error: null };
+  return {
+    error: null,
+    stageCode: Array.isArray(data) && data[0]?.stage_code ? String(data[0].stage_code) : null
+  };
 }
 
 export async function approveCandidateStageWho(input: {
