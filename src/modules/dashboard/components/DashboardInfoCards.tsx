@@ -291,9 +291,37 @@ export function DashboardInfoCards({
       }
     }
 
+    async function fetchIpFallback(reasonLabel: string) {
+      try {
+        const response = await fetch("https://ipwho.is/");
+        const data = await response.json();
+        if (data && data.success && typeof data.latitude === "number") {
+          if (!cancelled) {
+            setLocation({
+              label: `${data.city || data.region}, ${data.country_code}`,
+              statusLabel: `Aproximada por red (${reasonLabel})`,
+              latitude: data.latitude,
+              longitude: data.longitude,
+              isResolved: true,
+              isFallback: false
+            });
+          }
+        } else {
+          throw new Error("Invalid IP location data");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setLocation({
+            ...DEFAULT_LOCATION,
+            statusLabel: reasonLabel
+          });
+        }
+      }
+    }
+
     function requestBrowserLocation() {
-      if (!navigator.geolocation) {
-        setLocation(DEFAULT_LOCATION);
+      if (!navigator.geolocation || window.location.protocol !== "https:") {
+        void fetchIpFallback("Navegador sin geolocalización segura");
         return;
       }
 
@@ -314,10 +342,7 @@ export function DashboardInfoCards({
         },
         (error) => {
           if (!cancelled) {
-            setLocation({
-              ...DEFAULT_LOCATION,
-              statusLabel: toGeolocationStatusLabel(error)
-            });
+            void fetchIpFallback(toGeolocationStatusLabel(error));
           }
         },
         {

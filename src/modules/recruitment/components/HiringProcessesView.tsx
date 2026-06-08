@@ -58,11 +58,14 @@ export function HiringProcessesView({
     return activeCases.filter((caseRow) => {
       let matchesFilter = false;
       if (caseFilter === null) {
-        matchesFilter = caseRow.status !== "cancelled";
+        matchesFilter = ["open", "screening", "ready_to_hire"].includes(caseRow.status);
+      } else if (caseFilter === "cancelled") {
+        matchesFilter = ["cancelled", "closed_unfilled"].includes(caseRow.status);
       } else {
         matchesFilter = caseRow.status === caseFilter;
       }
 
+      if (!matchesFilter) return false;
       const matchesSearch =
         !normalizedSearch ||
         caseRow.case_code.toLowerCase().includes(normalizedSearch) ||
