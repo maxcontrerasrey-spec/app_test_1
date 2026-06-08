@@ -104,7 +104,7 @@ begin
          decided_at = timezone('utc', now()),
          locked_at = timezone('utc', now()),
          updated_at = timezone('utc', now())
-   where hiring_request_id = p_request_id
+   where hiring_request_approvals.hiring_request_id = p_request_id
      and status = 'pending';
 
   -- Cancelar casos de reclutamiento activos vinculados
@@ -115,7 +115,7 @@ begin
          closed_by = current_user_id,
          target_close_date = timezone('utc', now())::date,
          updated_at = timezone('utc', now())
-   where hiring_request_id = p_request_id
+   where recruitment_cases.hiring_request_id = p_request_id
      and status not in ('filled', 'closed_unfilled', 'cancelled');
 
   -- Registrar en auditoría
