@@ -40,7 +40,7 @@ export type RecruitmentDashboardSummary = {
 
 export type HiringControlApproval = {
   id: number;
-  step_code: "contracts_control";
+  step_code: "contracts_control" | "area_manager";
   step_name: string;
   hiring_request_id: string;
   approver_user_id: string | null;

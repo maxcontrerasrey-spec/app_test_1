@@ -95,7 +95,7 @@ export function HiringProcessesView({
               <p>
                 {isLoading
                   ? "Cargando aprobaciones..."
-                  : `${pendingApprovals.length} folios pendientes de Control de Contratos`}
+                  : `${pendingApprovals.length} aprobaciones pendientes visibles en la cola`}
               </p>
             </div>
           </div>

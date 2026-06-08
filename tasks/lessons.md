@@ -258,6 +258,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si una acción sensible como cerrar un folio depende de reglas mixtas de rol y estructura operativa, el frontend no debe reconstruirlas con módulos o roles parciales**. La autorización debe resolverse en backend y viajar en el payload como una señal explícita por registro, por ejemplo `can_close_request`.
 - **En PL/pgSQL, los nombres definidos en `RETURNS TABLE` también ocupan scope interno**. Si coinciden con columnas reales como `hiring_request_id`, aparecen ambigüedades difíciles de detectar después. La salida debe renombrarse o todo uso interno debe quedar completamente calificado.
+
+## 62. Renombrar claves no autoriza romper el contrato del payload
+
+- **Una migración de “normalización” (`camelCase` -> `snake_case`) no puede adelgazar ni reinterpretar la estructura que ya consumen las pantallas vivas**. Si `Control de candidatos` espera `recruitment_case_id`, `contract_name`, `owner_name` o locks contractuales, esos campos siguen siendo obligatorios aunque cambie el estilo de nombres en el nivel superior del JSON.
+- **Si el objetivo es solo renombrar claves, la validación mínima no es que la función compile, sino que la UI siga pudiendo leer el mismo dominio operativo completo**. Cambiar shape y naming en el mismo paso vuelve opaco el rollback y rompe producción con facilidad.
+
+## 63. Las migraciones SQL locales deben ser secuenciales y ejecutables sobre esquema real
+
+- **No dejes dos archivos de migración con el mismo timestamp**. Aunque Git los acepte, el orden real queda ambiguo y un entorno nuevo puede aplicar una secuencia distinta a la que se probó manualmente.
+- **No promociones migraciones que referencien columnas imaginarias o no desplegadas**. El caso típico es `rcc.is_contracted`: aunque la función se vea coherente a nivel de negocio, si la columna no existe en el esquema real, el dashboard completo cae en runtime.
 - **Cerrar un proceso no siempre significa sacar de todas las bandejas sus entidades derivadas**. Si un candidato ya está `hired`, ocultarlo de `Personal a Contratar` por cancelar el caso de origen rompe la continuidad operativa de ficha y documentos. Los tableros deben distinguir entre cierre del folio y vida útil posterior del contratado.
 
 ## 35. Un cambio de pipeline no sale sin migración de datos viva

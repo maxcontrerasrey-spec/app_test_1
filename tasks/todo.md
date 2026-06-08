@@ -2,6 +2,22 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Reparación del dashboard de Control de Contrataciones tras regresión SQL
+
+- [x] Revisar `tasks/lessons.md`, migraciones recientes y logs productivos para aislar la causa raíz de los errores en `folios` y `control de candidatos`
+- [x] Restaurar el contrato real de `get_recruitment_control_dashboard_v2()` y eliminar referencias a columnas inexistentes
+- [x] Corregir el orden local de migraciones para evitar replay roto en entornos nuevos
+- [x] Aplicar la corrección en Supabase productivo, validar el RPC autenticado y compilar frontend
+
+## Resultado de reparación del dashboard de Control de Contrataciones tras regresión SQL
+
+- La causa raíz no estaba en React sino en SQL: `public.get_recruitment_control_dashboard_v2()` había quedado con dos regresiones simultáneas. Primero, referenciaba `rcc.is_contracted`, columna que no existe en `public.recruitment_case_candidates`. Segundo, al “normalizar” claves a snake_case se redujo el payload y se rompió el contrato que consumen `Control de candidatos`, `Personal a Contratar` y `Resumen de procesos de contratación`.
+- En repo quedó restaurada la versión final del RPC en [`supabase/migrations/20260608_181000_fix_dashboard_snake_case_keys.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_181000_fix_dashboard_snake_case_keys.sql:1), manteniendo claves snake_case pero devolviendo nuevamente todos los campos que espera el frontend (`recruitment_case_id`, `folio`, `contract_name`, `owner_name`, conteos, locks contractuales, etc.).
+- Se corrigió además una deriva de historial local: había dos archivos con timestamp `20260608_180000`. El de dashboard quedó renombrado a [`supabase/migrations/20260608_180100_fix_dashboard_closed_cases.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_180100_fix_dashboard_closed_cases.sql:1) y convertido en no-op controlado para no reintroducir un estado intermedio inválido.
+- Para reparar el estado vivo sin depender del replay completo de migraciones locales, se agregó además [`supabase/migrations/20260608_191500_repair_recruitment_control_dashboard_payload.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_191500_repair_recruitment_control_dashboard_payload.sql:1) y se aplicó en Supabase productivo mediante el conector.
+- La verificación remota autenticada volvió a responder correctamente el tablero: `pending_approvals_count = 1`, `active_cases_count = 3`, `candidate_control_count = 5`, `personnel_to_hire_count = 0`, sin error SQL.
+- La validación local cerró con `npm run build` y `git diff --check`.
+
 ## Corrección de advisors Supabase sobre reclutamiento y permisos
 
 - [x] Fijar `search_path` mutable y limpiar grants expuestos solo en helpers internos no usados por frontend
