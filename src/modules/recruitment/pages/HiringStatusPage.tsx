@@ -324,11 +324,13 @@ export function HiringStatusPage() {
     });
 
     if (error) {
+      window.alert(error);
       setDecisionMessage(error);
       setIsStageSaving(false);
       return;
     }
 
+    window.alert("Folio cerrado exitosamente.");
     setDecisionMessage("Folio cerrado exitosamente.");
     setIsStageSaving(false);
     await invalidateRecruitmentCache();
