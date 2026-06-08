@@ -259,7 +259,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una acción sensible como cerrar un folio depende de reglas mixtas de rol y estructura operativa, el frontend no debe reconstruirlas con módulos o roles parciales**. La autorización debe resolverse en backend y viajar en el payload como una señal explícita por registro, por ejemplo `can_close_request`.
 - **En PL/pgSQL, los nombres definidos en `RETURNS TABLE` también ocupan scope interno**. Si coinciden con columnas reales como `hiring_request_id`, aparecen ambigüedades difíciles de detectar después. La salida debe renombrarse o todo uso interno debe quedar completamente calificado.
 
-## 62. Renombrar claves no autoriza romper el contrato del payload
+## 62. Limpieza estructural de base: “sin uso hoy” no equivale a “sin contrato”
+
+- **No se deben borrar tablas, índices o RPCs solo porque hoy tengan `0` filas o `0` usos en el advisor**. En un ERP vivo, una tabla vacía puede seguir siendo parte del contrato runtime de un módulo recién desplegado o de un flujo estacional.
+- **La limpieza segura de producción parte cruzando consumidores reales del código con objetos vivos de la base**. Primero se eliminan duplicados exactos, sobrecargas legacy y objetos reemplazados explícitamente; después, y en otra pasada, se cuestiona la superficie que aún tiene contrato.
+- **No mezclar en una sola migración limpieza estructural con recorte de grants o rediseño de seguridad**. Borrar legacy técnico es una operación; cambiar exposición de funciones productivas es otra y requiere validación específica de runtime.
+
+## 63. Renombrar claves no autoriza romper el contrato del payload
 
 - **Una migración de “normalización” (`camelCase` -> `snake_case`) no puede adelgazar ni reinterpretar la estructura que ya consumen las pantallas vivas**. Si `Control de candidatos` espera `recruitment_case_id`, `contract_name`, `owner_name` o locks contractuales, esos campos siguen siendo obligatorios aunque cambie el estilo de nombres en el nivel superior del JSON.
 - **Si el objetivo es solo renombrar claves, la validación mínima no es que la función compile, sino que la UI siga pudiendo leer el mismo dominio operativo completo**. Cambiar shape y naming en el mismo paso vuelve opaco el rollback y rompe producción con facilidad.

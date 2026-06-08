@@ -218,6 +218,23 @@
 - [x] Identificar la causa del error `column reference "job_title" is ambiguous`
 - [x] Reemplazar la función RPC afectada y validar búsqueda de trabajadores elegibles
 
+## Limpieza estructural profunda de Supabase
+
+- [x] Auditar base productiva contra código vivo para distinguir objetos operativos de superficie legacy o sin contrato actual
+- [x] Cerrar deuda estructural segura: helpers/RPCs expuestos de más, sobrecargas legacy y duplicados exactos verificables
+- [x] Aplicar la limpieza en Supabase y dejar migración espejo en repo con validación posterior
+- [x] Verificar consultas críticas, `build`, y documentar hallazgos/resultados en `tasks/lessons.md`
+
+## Resultado de limpieza estructural profunda de Supabase
+
+- La revisión se hizo contra la base productiva real y no solo contra migraciones locales. Se contrastaron tablas, funciones y grants vivos con los consumidores efectivos del código (`src/`, `scripts/`) para separar objetos con contrato actual de superficie legacy.
+- Se aplicó en Supabase la migración espejo [`supabase/migrations/20260608_230500_structural_supabase_cleanup.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_230500_structural_supabase_cleanup.sql:1), con un alcance deliberadamente seguro: `unaccent` salió del esquema `public`, se eliminaron sobrecargas obsoletas de `add_hr_incentive_rate_rule(...)` y `resolve_hr_incentive_rate_rule(...)`, y se borraron duplicados exactos de índices (`idx_profiles_email`, `idx_candidate_profiles_national_id`, `idx_job_positions_name`, `idx_shifts_name`).
+- También quedó aplicado y versionado [`supabase/migrations/20260608_231500_drop_unused_find_candidate_profile_by_rut.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_231500_drop_unused_find_candidate_profile_by_rut.sql:1), retirando el RPC legacy `find_candidate_profile_by_rut(text)` ya reemplazado por `find_candidate_profile_with_history_by_rut(text)`.
+- La verificación remota confirmó el estado final esperado: `find_candidate_profile_by_rut` ya no existe, solo queda una sobrecarga vigente para `add_hr_incentive_rate_rule(...)`, solo una para `resolve_hr_incentive_rate_rule(...)`, y no queda ninguno de los cuatro índices duplicados exactos.
+- Se auditó además el inventario real de tablas `public`. No se eliminaron tablas con `0` filas como `candidate_documents`, `candidate_worker_files` o `hr_incentive_requests`, porque sí tienen contrato funcional vigente en la app y removerlas habría roto módulos vivos aunque hoy no tengan volumen.
+- Los advisors siguen marcando funciones `SECURITY DEFINER` ejecutables por `authenticated`, pero en este sistema eso no es basura residual sino el patrón operativo actual de RPCs protegidas por validación interna y RLS. Esa superficie no se tocó en esta pasada porque mezclar limpieza estructural con recontratación de permisos productivos aumenta riesgo de regresión.
+- La validación técnica cerró con `npm run build`. El estado remoto de migraciones ya refleja `structural_supabase_cleanup_safe_pass` y `drop_unused_find_candidate_profile_by_rut`.
+
 ## Sindicato nominal BUK como variable real de montos
 
 - [x] Verificar si el nombre específico del sindicato existe en la sync BUK
