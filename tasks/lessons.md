@@ -514,3 +514,17 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El contraste de fondos y fuentes no puede depender de hexadecimáles fijos en la declaración de un componente.** Utilizar `#f5f7fb` o `#4b5563` en hojas de estilo locales o inline destruye la adaptabilidad del diseño cuando se inyecta un modo nocturno.
 - **La solución estructural es el uso intensivo de CSS Variables Semánticas.** Al reemplazar un gris específico por `var(--text-muted)` o un blanco humo por `var(--surface-soft)`, el sistema responde instantáneamente al cambio de tema, reduciendo código, disminuyendo el riesgo de textos invisibles y centralizando el rediseño en `global.css`.
 - **Los efectos de opacidad se logran inyectando RGBs desestructurados, no opacando un hexadecimal puro.** Reemplazar blancos transparentes con `rgba(var(--surface-soft-rgb), 0.88)` garantiza que los brillos, superposiciones y gradientes se adapten a la oscuridad como un reflejo nocturno y no como "flashes blancos".
+
+## 79. Los CHECK constraints del audit log deben ampliarse con cada nuevo tipo de acción
+
+- **Toda migración que introduce RPCs con inserts al `recruitment_case_audit_log` debe, como primer paso, ampliar el `CHECK` constraint `action_type`.** Si se omite y el constraint del historial no incluye el nuevo valor, la RPC falla en runtime con error de violación de constraint, aunque todo lo demás del SQL sea correcto.
+- **El constraint debe reconstruirse de forma acumulativa**: incluir todos los `action_type` de migraciones previas más los nuevos. La forma segura es `DROP CONSTRAINT IF EXISTS` + `ADD CONSTRAINT` con la lista completa.
+- **Antes de proponer valores nuevos de `action_type`, auditar el constraint vigente** buscando en las migraciones anteriores el último `add constraint recruitment_case_audit_log_action_type_check`.
+
+## 80. El traslado de candidatos entre folios es atómico y debe protegerse en múltiples capas
+
+- **La RPC de traslado debe validar en orden:** (1) candidato existe y no está en etapa terminal, (2) permisos sobre folio origen, (3) folio destino existe y no está cerrado, (4) permisos sobre folio destino, (5) candidato no duplicado en destino, (6) documentos sin conflicto de unicidad.
+- **La migración de documentos debe hacerse antes de mover al candidato:** así, si el `UPDATE` de documentos falla por conflicto de unicidad, el candidato no queda en un estado inconsistente.
+- **La ficha del trabajador (`candidate_worker_files`) no requiere migración explícita** porque está enlazada por `recruitment_case_candidate_id`, que no cambia en el traslado. Viaja automáticamente con el candidato.
+- **`auth.uid()` no debe usarse en el bloque `DECLARE` de una función PL/pgSQL.** Aunque en PostgreSQL funciona técnicamente, es más correcto y predecible inicializarlo en el bloque `BEGIN` para garantizar que se evalúa en el contexto de la transacción activa.
+

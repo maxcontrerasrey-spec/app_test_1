@@ -1080,3 +1080,41 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se auditaron y eliminaron decenas de colores estáticos (`#ffffff`, `#475467`, `rgba(31, 56, 106)`) dispersos en `global.css` y `dashboard.css`, asegurando que cada componente se ilumine o sombree automáticamente según la paleta elegida.
 - La pantalla de "Control de Contrataciones" (tarjetas de KPI, panel lateral del candidato y grilla) soporta el tema oscuro manteniendo la estética de los "brillos" y "alertas semafóricas".
 - Se documentó como lección que la legibilidad en modo oscuro no debe solucionarse parcheando componentes individuales, sino atacando la raíz de las variables CSS.
+
+## Tab "Rechazados / Cerrados" en Resumen de Procesos
+
+- [x] Identificar por qué folios rechazados y cerrados aparecían mezclados con folios activos en el resumen
+- [x] Añadir el filtro "Rechazados / Cerrados" en `caseFilterOptions` de `hiringControlViewUtils.ts`
+- [x] Exponer `hiring_request_status` en el payload de `get_recruitment_control_dashboard_v2` para poder filtrar por status en el frontend
+- [x] Actualizar `filteredCases` y el rendering de etiquetas de estado en `HiringProcessesView.tsx`
+- [x] Crear migración `20260608_000001_fix_dashboard_active_cases_filter.sql` con los cambios SQL correspondientes
+
+## Resultado de Tab "Rechazados / Cerrados"
+
+- El resumen de procesos ahora muestra los folios correctamente separados: activos en sus respectivas columnas y cerrados/rechazados solo en la nueva pestaña "Rechazados / Cerrados".
+- La RPC `get_recruitment_control_dashboard_v2` fue actualizada para incluir el campo `hiring_request_status` y permitir que el frontend filtre por él.
+- Los folios en estado `closed` o `rejected` solo aparecen en la nueva sección dedicada, y el estado mostrado refleja correctamente si es un rechazo del aprobador o un cierre.
+- Migración aplicable en Supabase: `20260608_000001_fix_dashboard_active_cases_filter.sql`.
+
+## Restricción estricta de cierre de folio con candidatos activos + Módulo de Traslado
+
+- [x] Añadir bloqueo en `close_hiring_request` para impedir cerrar un folio que tenga candidatos activos (no contratados, no rechazados, no desistidos)
+- [x] Crear RPC `transfer_candidate_to_case(p_case_candidate_id, p_target_case_id, p_comment)` para trasladar candidatos entre folios
+- [x] Incluir en el traslado la migración de documentos (`candidate_documents`) y el registro de auditoría en ambos folios
+- [x] Ampliar el `CHECK` constraint de `recruitment_case_audit_log.action_type` para incluir todos los tipos de acción del sistema
+- [x] Añadir validaciones de seguridad: permisos sobre ambos casos, candidato no en etapa terminal, candidato no duplicado en destino, documentos sin conflicto de unicidad
+- [x] Crear servicio frontend `transferCandidateToCase` en `hiringControl.ts`
+- [x] Crear componente `TransferCandidateModal.tsx` con selector de folio destino y motivo opcional
+- [x] Integrar el modal y el botón "Trasladar" en `HiringCandidatesView.tsx` y `CandidateDetailSidebar.tsx`
+- [x] Corregir errores de la migración original antes de aplicar
+- [x] Validar `npx tsc --noEmit` sin errores
+
+## Resultado de Módulo de Traslado de Candidatos
+
+- El sistema ahora bloquea a nivel de base de datos el cierre de un folio si existen candidatos activos, retornando un mensaje explícito que exige trasladarlos o descartarlos primero.
+- La RPC `transfer_candidate_to_case(...)` mueve al candidato de un folio a otro de forma completamente atómica: cambia el `recruitment_case_id` en `recruitment_case_candidates` y en todos sus `candidate_documents`, preservando revisiones y aprobaciones documentales.
+- La ficha del trabajador (`candidate_worker_files`) viaja automáticamente porque está enlazada por `recruitment_case_candidate_id`, sin requerir código adicional.
+- Se registra trazabilidad completa: `candidate_transferred_out` en el folio origen y `candidate_transferred_in` en el folio destino.
+- En la UI, el botón "Trasladar" aparece en el panel derecho del candidato siempre que este no esté en etapa terminal (contratado, rechazado, desistido).
+- Las migraciones aplicables son `20260608_000001_fix_dashboard_active_cases_filter.sql` y `20260608_000002_add_transfer_candidate_rpc.sql`, en ese orden.
+- Error crítico corregido antes de aplicar: el `CHECK` constraint de `action_type` no incluía los nuevos valores `candidate_transferred_out/in` ni los valores de migraciones anteriores como `document_uploaded`, `candidate_person_profile_updated`, etc.
