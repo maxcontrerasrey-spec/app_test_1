@@ -235,6 +235,21 @@
 - Los advisors siguen marcando funciones `SECURITY DEFINER` ejecutables por `authenticated`, pero en este sistema eso no es basura residual sino el patrón operativo actual de RPCs protegidas por validación interna y RLS. Esa superficie no se tocó en esta pasada porque mezclar limpieza estructural con recontratación de permisos productivos aumenta riesgo de regresión.
 - La validación técnica cerró con `npm run build`. El estado remoto de migraciones ya refleja `structural_supabase_cleanup_safe_pass` y `drop_unused_find_candidate_profile_by_rut`.
 
+## Reparación del widget de clima tras cambio de subdominio
+
+- [x] Confirmar si el problema venía del subdominio/headers o de una regresión en la estrategia de geolocalización
+- [x] Restaurar una resolución robusta de ubicación real antes del fallback por IP/Santiago
+- [x] Validar build y documentar el criterio para cambios de origen (`pages.dev` -> subdominio propio)
+
+## Resultado de reparación del widget de clima tras cambio de subdominio
+
+- Se descartó un bloqueo por headers del subdominio. `https://gestion.busesjm.cl` y `https://app-test-1-2ao.pages.dev` responden sobre `https` y no exponen `Permissions-Policy` que deshabilite geolocalización.
+- La causa real estaba en frontend: el widget había vuelto a una versión degradada que hacía un solo `getCurrentPosition(...)` con `enableHighAccuracy: true` y, ante cualquier fallo, caía directo al fallback por IP o `Santiago, CL`.
+- Eso explicaba el síntoma observado tras el cambio de dominio: al cambiar de `pages.dev` a `gestion.busesjm.cl`, el navegador trata la geolocalización como permiso por origen nuevo. Si ese primer intento preciso falla o todavía no se resuelve bien el permiso, el widget se iba demasiado rápido a ubicación aproximada.
+- Se corrigió [`src/modules/dashboard/components/DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:1) para lanzar dos lecturas reales del navegador en paralelo (rápida/coarse y precisa), aceptar la mejor precisión disponible, y solo usar IP/Santiago cuando ambas fallen de verdad.
+- Además, la última ubicación real válida del navegador queda cacheada localmente por 12 horas. Si el permiso tarda o falla temporalmente, la tarjeta ya no salta directo a Santiago; reutiliza primero la última ubicación conocida y vuelve a intentar al enfocar la app.
+- La validación técnica cerró con `npm run build`.
+
 ## Sindicato nominal BUK como variable real de montos
 
 - [x] Verificar si el nombre específico del sindicato existe en la sync BUK

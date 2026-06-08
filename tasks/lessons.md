@@ -569,3 +569,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La migración de documentos debe hacerse antes de mover al candidato:** así, si el `UPDATE` de documentos falla por conflicto de unicidad, el candidato no queda en un estado inconsistente.
 - **La ficha del trabajador (`candidate_worker_files`) no requiere migración explícita** porque está enlazada por `recruitment_case_candidate_id`, que no cambia en el traslado. Viaja automáticamente con el candidato.
 - **`auth.uid()` no debe usarse en el bloque `DECLARE` de una función PL/pgSQL.** Aunque en PostgreSQL funciona técnicamente, es más correcto y predecible inicializarlo en el bloque `BEGIN` para garantizar que se evalúa en el contexto de la transacción activa.
+
+## 81. En geolocalización, cambiar de subdominio cambia el origen y puede invalidar el permiso previo
+
+- **Mover la app de `pages.dev` a un subdominio propio no rompe geolocalización por sí mismo, pero sí crea un origen nuevo para el navegador.** Eso significa que el permiso concedido antes no necesariamente aplica al nuevo host.
+- **Si el widget reintenta solo una vez con `enableHighAccuracy: true`, el cambio de origen amplifica el fallo.** Un timeout o una lectura no disponible en ese primer intento termina enviando al usuario a IP o a una ciudad fija aunque el dispositivo sí pueda entregar coordenadas reales segundos después.
+- **El patrón correcto para producción es**: lanzar un intento rápido y otro preciso, aceptar la mejor coordenada real disponible, cachear la última ubicación válida del navegador y reservar el fallback por IP únicamente para el doble fallo real.

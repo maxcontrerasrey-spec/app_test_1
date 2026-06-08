@@ -33,6 +33,9 @@ const INITIAL_LOCATION: LiveLocationState = {
   isFallback: false
 };
 
+const LOCATION_CACHE_KEY = "dashboard:weather:last-browser-location";
+const LOCATION_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
+
 const DEFAULT_LOCATION: LiveLocationState = {
   label: "Santiago, CL",
   statusLabel: "Ubicación no disponible",
@@ -52,6 +55,71 @@ function buildReverseGeocodingUrl(latitude: number, longitude: number) {
 
 function formatCoordinateLabel(latitude: number, longitude: number) {
   return `${Math.abs(latitude).toFixed(2)}°${latitude >= 0 ? "N" : "S"} · ${Math.abs(longitude).toFixed(2)}°${longitude >= 0 ? "E" : "O"}`;
+}
+
+type CachedLocationPayload = {
+  label: string;
+  latitude: number;
+  longitude: number;
+  savedAt: number;
+};
+
+function readCachedBrowserLocation(): LiveLocationState | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(LOCATION_CACHE_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawValue) as Partial<CachedLocationPayload>;
+    if (
+      typeof parsed?.label !== "string" ||
+      typeof parsed?.latitude !== "number" ||
+      typeof parsed?.longitude !== "number" ||
+      typeof parsed?.savedAt !== "number"
+    ) {
+      return null;
+    }
+
+    if (Date.now() - parsed.savedAt > LOCATION_CACHE_TTL_MS) {
+      return null;
+    }
+
+    return {
+      label: parsed.label,
+      statusLabel: "Última ubicación conocida",
+      latitude: parsed.latitude,
+      longitude: parsed.longitude,
+      isResolved: true,
+      isFallback: false
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistBrowserLocation(label: string, latitude: number, longitude: number) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      LOCATION_CACHE_KEY,
+      JSON.stringify({
+        label,
+        latitude,
+        longitude,
+        savedAt: Date.now()
+      } satisfies CachedLocationPayload)
+    );
+  } catch {
+    // Best effort cache only.
+  }
 }
 
 function toWeatherLabel(code: number | null) {
@@ -236,6 +304,19 @@ function toGeolocationStatusLabel(error?: GeolocationPositionError | null) {
   return DEFAULT_LOCATION.statusLabel;
 }
 
+function pickFallbackGeolocationError(errors: GeolocationPositionError[]) {
+  if (errors.length === 0) {
+    return null;
+  }
+
+  return (
+    errors.find((error) => error.code === error.PERMISSION_DENIED) ??
+    errors.find((error) => error.code === error.POSITION_UNAVAILABLE) ??
+    errors.find((error) => error.code === error.TIMEOUT) ??
+    errors[0]
+  );
+}
+
 export function DashboardInfoCards({
   pendingTasksCount,
   approvalTrackingCount,
@@ -255,8 +336,14 @@ export function DashboardInfoCards({
   useEffect(() => {
     let cancelled = false;
     let reverseController: AbortController | null = null;
+    let activeLocationRequestId = 0;
+    let resolvedByBrowser = false;
+    let bestAccuracy = Number.POSITIVE_INFINITY;
+    let attemptsFinished = 0;
+    const geolocationErrors: GeolocationPositionError[] = [];
 
     async function resolveLocationLabel(latitude: number, longitude: number, statusLabel: string) {
+      const requestId = ++activeLocationRequestId;
       reverseController?.abort();
       reverseController = new AbortController();
 
@@ -267,7 +354,8 @@ export function DashboardInfoCards({
         const payload = await response.json();
         const label = formatLocationLabel(payload) ?? formatCoordinateLabel(latitude, longitude);
 
-        if (!cancelled) {
+        if (!cancelled && requestId === activeLocationRequestId) {
+          persistBrowserLocation(label, latitude, longitude);
           setLocation({
             label,
             statusLabel,
@@ -278,9 +366,11 @@ export function DashboardInfoCards({
           });
         }
       } catch (_error) {
-        if (!cancelled) {
+        if (!cancelled && requestId === activeLocationRequestId) {
+          const label = formatCoordinateLabel(latitude, longitude);
+          persistBrowserLocation(label, latitude, longitude);
           setLocation({
-            label: formatCoordinateLabel(latitude, longitude),
+            label,
             statusLabel,
             latitude,
             longitude,
@@ -292,6 +382,15 @@ export function DashboardInfoCards({
     }
 
     async function fetchIpFallback(reasonLabel: string) {
+      const cachedLocation = readCachedBrowserLocation();
+      if (cachedLocation && !cancelled) {
+        setLocation({
+          ...cachedLocation,
+          statusLabel: `${cachedLocation.statusLabel} (${reasonLabel})`
+        });
+        return;
+      }
+
       try {
         const response = await fetch("https://ipwho.is/");
         const data = await response.json();
@@ -319,8 +418,52 @@ export function DashboardInfoCards({
       }
     }
 
+    function finishBrowserAttempt() {
+      attemptsFinished += 1;
+      if (!resolvedByBrowser && attemptsFinished >= 2) {
+        void fetchIpFallback(toGeolocationStatusLabel(pickFallbackGeolocationError(geolocationErrors)));
+      }
+    }
+
+    function acceptBrowserPosition(position: GeolocationPosition, statusLabel: string) {
+      const accuracy =
+        typeof position.coords.accuracy === "number"
+          ? position.coords.accuracy
+          : Number.POSITIVE_INFINITY;
+
+      const shouldUsePosition =
+        !resolvedByBrowser || accuracy + 25 < bestAccuracy;
+
+      resolvedByBrowser = true;
+
+      if (!shouldUsePosition || cancelled) {
+        return;
+      }
+
+      bestAccuracy = accuracy;
+      void resolveLocationLabel(
+        position.coords.latitude,
+        position.coords.longitude,
+        statusLabel
+      );
+    }
+
+    function requestPosition(options: PositionOptions, statusLabel: string) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          acceptBrowserPosition(position, statusLabel);
+          finishBrowserAttempt();
+        },
+        (error) => {
+          geolocationErrors.push(error);
+          finishBrowserAttempt();
+        },
+        options
+      );
+    }
+
     function requestBrowserLocation() {
-      if (!navigator.geolocation || window.location.protocol !== "https:") {
+      if (!navigator.geolocation || !window.isSecureContext) {
         void fetchIpFallback("Navegador sin geolocalización segura");
         return;
       }
@@ -330,35 +473,46 @@ export function DashboardInfoCards({
         statusLabel: "Resolviendo ubicación..."
       }));
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          if (!cancelled) {
-            void resolveLocationLabel(
-              position.coords.latitude,
-              position.coords.longitude,
-              "Ubicación actual"
-            );
-          }
+      attemptsFinished = 0;
+      resolvedByBrowser = false;
+      bestAccuracy = Number.POSITIVE_INFINITY;
+      geolocationErrors.length = 0;
+
+      requestPosition(
+        {
+          enableHighAccuracy: false,
+          timeout: 4000,
+          maximumAge: 900000
         },
-        (error) => {
-          if (!cancelled) {
-            void fetchIpFallback(toGeolocationStatusLabel(error));
-          }
-        },
+        "Ubicación actual"
+      );
+
+      requestPosition(
         {
           enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 300000
-        }
+        },
+        "Ubicación actual"
       );
     }
 
-    if (!location.isResolved || location.isFallback) {
+    const cachedLocation = readCachedBrowserLocation();
+    if (cachedLocation && !location.isResolved) {
+      setLocation(cachedLocation);
+    }
+
+    if (!location.isResolved || location.isFallback || location.statusLabel === "Última ubicación conocida") {
       requestBrowserLocation();
     }
 
     const retryOnFocus = () => {
-      if (!cancelled && (!location.isResolved || location.isFallback)) {
+      if (
+        !cancelled &&
+        (!location.isResolved ||
+          location.isFallback ||
+          location.statusLabel.startsWith("Última ubicación conocida"))
+      ) {
         requestBrowserLocation();
       }
     };
@@ -370,7 +524,7 @@ export function DashboardInfoCards({
       reverseController?.abort();
       window.removeEventListener("focus", retryOnFocus);
     };
-  }, [location.isFallback, location.isResolved]);
+  }, [location.isFallback, location.isResolved, location.statusLabel]);
 
   useEffect(() => {
     const controller = new AbortController();
