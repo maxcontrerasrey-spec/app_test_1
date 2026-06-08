@@ -258,6 +258,7 @@ textarea {
   justify-content: center;
   gap: 0.45rem;
   min-height: 4.25rem;
+  min-width: 160px;
   padding: 0 0.05rem;
   border: 0;
   border-radius: 0;
