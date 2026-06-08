@@ -211,7 +211,7 @@ export function CandidateIntakeForm({
     }
 
     const savedCaseId = candidateForm.caseId;
-    const savedCandidateId = data?.case_candidate_id ?? "";
+    const savedCandidateId = data?.out_case_candidate_id ?? data?.case_candidate_id ?? "";
 
     setCandidateForm({
       caseId: savedCaseId,
