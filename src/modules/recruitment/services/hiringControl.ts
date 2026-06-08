@@ -518,6 +518,32 @@ export async function addCandidateToRecruitmentCase(input: {
 }
 
 export { formatRut, normalizeRut };
+export async function transferCandidateToCase(input: {
+  caseCandidateId: string;
+  targetCaseId: string;
+  comment?: string;
+}) {
+  if (!supabase) {
+    return {
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { error } = await supabase.rpc("transfer_candidate_to_case", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_target_case_id: input.targetCaseId,
+    p_comment: input.comment?.trim() ? input.comment.trim() : null
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible trasladar al candidato."
+    };
+  }
+
+  return { error: null };
+}
+
 
 export async function advanceRecruitmentCandidateStage(input: {
   caseCandidateId: string;

@@ -41,6 +41,7 @@ type CandidateDetailSidebarProps = {
   onLicenseUpdated?: () => Promise<void>;
   onInterviewNotesUpdated?: () => Promise<void>;
   onCandidateFileUpdated?: () => Promise<void>;
+  onTransferCandidateRequested?: () => void;
 };
 
 type WhoCauseDraft = {
@@ -73,7 +74,8 @@ export function CandidateDetailSidebar({
   onWhoApprovalRejected,
   onLicenseUpdated,
   onInterviewNotesUpdated,
-  onCandidateFileUpdated
+  onCandidateFileUpdated,
+  onTransferCandidateRequested
 }: CandidateDetailSidebarProps) {
   const { hasCapability } = useAuth();
   const [activeTab, setActiveTab] = useState<"pipeline" | "documents" | "worker">("pipeline");
@@ -213,11 +215,23 @@ export function CandidateDetailSidebar({
 
   return (
     <aside className="control-detail-panel">
-      <div className="control-detail-header">
-        <h3>{selectedCandidate.full_name}</h3>
-        <span className="tracking-status-pill">
-          {toRecruitmentCandidateStageLabel(selectedCandidate.stage_code)}
-        </span>
+      <div className="control-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h3>{selectedCandidate.full_name}</h3>
+          <span className="tracking-status-pill">
+            {toRecruitmentCandidateStageLabel(selectedCandidate.stage_code)}
+          </span>
+        </div>
+        {onTransferCandidateRequested && selectedCandidate.stage_code !== "hired" && selectedCandidate.stage_code !== "rejected" && selectedCandidate.stage_code !== "withdrawn" && (
+          <button
+            type="button"
+            className="soft-primary-button control-compact-button"
+            title="Trasladar a otro folio"
+            onClick={onTransferCandidateRequested}
+          >
+            Trasladar
+          </button>
+        )}
       </div>
 
       <div className="control-tabs-row">

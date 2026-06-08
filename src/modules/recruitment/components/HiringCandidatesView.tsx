@@ -16,6 +16,7 @@ import {
 } from "./hiringControlViewUtils";
 import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
 import { CandidateIntakeForm } from "./CandidateIntakeForm";
+import { TransferCandidateModal } from "./TransferCandidateModal";
 
 type HiringCandidatesViewProps = {
   isLoading: boolean;
@@ -63,6 +64,7 @@ export function HiringCandidatesView({
   onCandidateFileUpdated
 }: HiringCandidatesViewProps) {
   const [showCandidateForm, setShowCandidateForm] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
   const [candidateStageFilter, setCandidateStageFilter] =
     useState<(typeof candidateStageFilterOptions)[number]["key"]>("active");
@@ -254,8 +256,23 @@ export function HiringCandidatesView({
           onLicenseUpdated={onLicenseUpdated}
           onInterviewNotesUpdated={onInterviewNotesUpdated}
           onCandidateFileUpdated={onCandidateFileUpdated}
+          onTransferCandidateRequested={() => setIsTransferModalOpen(true)}
         />
       </div>
+
+      <TransferCandidateModal
+        isOpen={isTransferModalOpen}
+        candidate={selectedCandidateBoardRow}
+        activeCases={activeCases}
+        onClose={() => setIsTransferModalOpen(false)}
+        onSuccess={() => {
+          setIsTransferModalOpen(false);
+          // trigger a refresh of the dashboard
+          // Since there is no onRefresh passed to HiringCandidatesView directly,
+          // the parent handles polling/refresh via queries, but we might want to force it.
+          // For now, the user can change candidate or the polling will pick it up.
+        }}
+      />
     </>
   );
 }
