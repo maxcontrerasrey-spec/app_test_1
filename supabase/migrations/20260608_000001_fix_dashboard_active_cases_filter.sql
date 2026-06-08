@@ -114,6 +114,7 @@ begin
         'opened_at', rc.opened_at,
         'requester_name', hr.requester_name,
         'requester_email', hr.requester_email,
+        'hiring_request_status', hr.status,
         'owner_name', owner_profile.full_name,
         'owner_user_id', owner_assignment.user_id,
         'candidate_count', coalesce(candidate_stats.candidate_count, 0),
@@ -143,7 +144,6 @@ begin
       where rcc.recruitment_case_id = rc.id
     ) as candidate_stats on true
     where public.user_can_access_recruitment_case(current_user_id, rc.id)
-      and rc.status not in ('filled', 'closed_unfilled', 'cancelled')
     order by rc.opened_at desc
     limit 40
   ) as case_row;

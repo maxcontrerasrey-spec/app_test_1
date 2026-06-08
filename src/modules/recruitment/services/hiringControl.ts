@@ -77,6 +77,7 @@ export type RecruitmentCaseListRow = {
   title: string;
   contract_name: string;
   job_position_name: string;
+  hiring_request_status?: string;
   cost_center_code: string;
   cost_center_name: string;
   requested_entry_date: string | null;

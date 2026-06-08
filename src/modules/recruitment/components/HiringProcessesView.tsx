@@ -56,7 +56,13 @@ export function HiringProcessesView({
     const normalizedSearch = caseSearchTerm.trim().toLowerCase();
 
     return activeCases.filter((caseRow) => {
-      const matchesFilter = !caseFilter || caseRow.status === caseFilter;
+      let matchesFilter = false;
+      if (caseFilter === null) {
+        matchesFilter = caseRow.status !== "cancelled";
+      } else {
+        matchesFilter = caseRow.status === caseFilter;
+      }
+
       const matchesSearch =
         !normalizedSearch ||
         caseRow.case_code.toLowerCase().includes(normalizedSearch) ||
@@ -189,7 +195,9 @@ export function HiringProcessesView({
                         </td>
                         <td>
                           <span className="tracking-status-pill">
-                            {toRecruitmentCaseStatusLabel(caseRow.status)}
+                            {caseRow.status === "cancelled" 
+                              ? (caseRow.hiring_request_status === "rejected" ? "Rechazado" : "Cerrado") 
+                              : toRecruitmentCaseStatusLabel(caseRow.status)}
                           </span>
                         </td>
                         <td>{caseRow.job_position_name}</td>

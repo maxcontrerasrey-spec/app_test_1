@@ -1,11 +1,12 @@
 import type { RecruitmentCandidateControlRow, RecruitmentCandidateStage } from "../services/hiringControl";
 
 export const caseFilterOptions = [
-  { key: null, label: "Todos" },
+  { key: null, label: "Activos (Todos)" },
   { key: "open", label: "Abiertos" },
   { key: "screening", label: "Screening" },
   { key: "ready_to_hire", label: "Listos para contratar" },
-  { key: "filled", label: "Cubiertos" }
+  { key: "filled", label: "Cubiertos" },
+  { key: "cancelled", label: "Rechazados / Cerrados" }
 ] as const;
 
 export const candidateStageFilterOptions = [
