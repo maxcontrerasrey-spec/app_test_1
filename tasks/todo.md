@@ -258,6 +258,22 @@
 - [x] Crear la vista `Personal a Contratar` junto a `Control de candidatos`, reutilizando ficha y documentos ya cargados
 - [x] Ocultar acciones de avance de etapa en la nueva bandeja y validar build + migración aplicada
 
+## Corrección de cierre de folios y visibilidad operativa
+
+- [x] Corregir backend para que `close_hiring_request` permita cierre solo a `admin`, `reclutamiento` y gerente de área
+- [x] Eliminar la ambigüedad de nombres dentro de `close_hiring_request` evitando colisión entre columnas de salida y columnas reales
+- [x] Exponer en el payload de procesos si el usuario actual puede cerrar cada folio y usar esa señal para ocultar el botón en frontend
+- [x] Validar build y documentar el comportamiento final de candidatos al cerrar un folio
+
+## Resultado de corrección de cierre de folios y visibilidad operativa
+
+- Se agregó la migración [`supabase/migrations/20260608_130000_harden_close_hiring_request_permissions.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_130000_harden_close_hiring_request_permissions.sql:1), que introduce `public.user_can_close_hiring_request(...)` como fuente única de autorización para cierres.
+- `close_hiring_request(...)` dejó de permitir cierre por simple acceso al módulo o por ser solicitante original. Ahora solo cierra `admin`, `reclutamiento` y el aprobador activo del centro de costo.
+- La colisión de nombres dentro de la RPC quedó eliminada al renombrar las columnas de salida a `request_id` y `request_status`, evitando ambigüedad con columnas reales de tablas operativas.
+- El dashboard de `Control de Contrataciones` ahora recibe `can_close_request` por cada caso, por lo que el botón `Cerrar Folio` solo se renderiza cuando el backend confirma que el usuario actual sí puede cerrar ese folio.
+- Se corrigió además el efecto colateral sobre `Personal a Contratar`: los candidatos `hired` de folios cerrados manualmente siguen visibles en esa bandeja para permitir completar ficha y documentación posterior al cierre del folio.
+- La validación local cerró con `npm run build` y `git diff --check`.
+
 ## Resultado de separación de "Control de candidatos" y "Personal a Contratar"
 
 - `Control de candidatos` ya no mezcla el estado terminal `hired`; la bandeja quedó enfocada solo en pipeline operativo previo a contratación.

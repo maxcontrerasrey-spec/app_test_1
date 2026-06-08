@@ -249,6 +249,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si la matriz de negocio usa labels humanos, primero se normaliza a códigos canónicos de la app**. Roles como `control de contratos` o `operaciones_L_1` no deben llegar crudos al frontend ni a `user_roles`; se mapean una vez a `control_contratos` y `operaciones_l_1` para evitar drift.
 - **Cuando el requerimiento explícito es “no tocar claves existentes”, el aprovisionamiento debe crear solo cuentas faltantes**. Actualizar contraseñas por conveniencia rompe el contrato operativo y genera incidentes evitables.
 
+## 61. La UI no debe adivinar permisos sensibles ni esconder estados terminales útiles
+
+- **Si una acción sensible como cerrar un folio depende de reglas mixtas de rol y estructura operativa, el frontend no debe reconstruirlas con módulos o roles parciales**. La autorización debe resolverse en backend y viajar en el payload como una señal explícita por registro, por ejemplo `can_close_request`.
+- **En PL/pgSQL, los nombres definidos en `RETURNS TABLE` también ocupan scope interno**. Si coinciden con columnas reales como `hiring_request_id`, aparecen ambigüedades difíciles de detectar después. La salida debe renombrarse o todo uso interno debe quedar completamente calificado.
+- **Cerrar un proceso no siempre significa sacar de todas las bandejas sus entidades derivadas**. Si un candidato ya está `hired`, ocultarlo de `Personal a Contratar` por cancelar el caso de origen rompe la continuidad operativa de ficha y documentos. Los tableros deben distinguir entre cierre del folio y vida útil posterior del contratado.
+
 ## 35. Un cambio de pipeline no sale sin migración de datos viva
 
 - **Si se renombran o eliminan etapas operativas, primero hay que medir qué estados existen realmente en producción y diseñar el mapeo contra esos datos**. Cambiar enums sin revisar la base deja registros inválidos o interfaces que ya no pueden leer su propio historial.
@@ -527,4 +533,3 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La migración de documentos debe hacerse antes de mover al candidato:** así, si el `UPDATE` de documentos falla por conflicto de unicidad, el candidato no queda en un estado inconsistente.
 - **La ficha del trabajador (`candidate_worker_files`) no requiere migración explícita** porque está enlazada por `recruitment_case_candidate_id`, que no cambia en el traslado. Viaja automáticamente con el candidato.
 - **`auth.uid()` no debe usarse en el bloque `DECLARE` de una función PL/pgSQL.** Aunque en PostgreSQL funciona técnicamente, es más correcto y predecible inicializarlo en el bloque `BEGIN` para garantizar que se evalúa en el contexto de la transacción activa.
-

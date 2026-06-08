@@ -320,7 +320,10 @@ export function HiringProcessesView({
                                       </div>
                                     </div>
                                   </div>
-                                  {!["filled", "closed_unfilled", "cancelled"].includes(caseRow.status) && onCloseRequest && hr && (
+                                  {!["filled", "closed_unfilled", "cancelled"].includes(caseRow.status) &&
+                                  caseRow.can_close_request &&
+                                  onCloseRequest &&
+                                  hr && (
                                     <div className="expanded-detail-actions" style={{ padding: "1.25rem 1.5rem", gridColumn: "3", display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
                                       <button
                                         type="button"
