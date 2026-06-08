@@ -238,6 +238,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No encadenar dos llamadas `getCurrentPosition()` una detrás de la otra si la UI depende de respuesta rápida**. Aunque la lógica sea “más robusta”, el usuario solo percibe un widget colgado.
 - **La estrategia operativa correcta es paralelizar una lectura rápida y una precisa**. La primera da ubicación usable pronto; la segunda puede mejorarla. El fallback fijo entra únicamente cuando ambas fallan.
 
+## 60. Un Excel de conciliación no puede ser la fuente runtime del ERP
+
+- **Si una matriz externa solo sirve para definir equivalencias de negocio, esa lógica debe terminar persistida en backend como catálogo curado**. Consultar `employees.area_name` libre o rehacer el match en frontend deja el sistema expuesto a drift y ambigüedad.
+- **La regla práctica es 1:1 o no entra como fuente operativa**. Para selectores críticos como `Nombre de contrato` o `Área / contrato`, solo deben exponerse áreas BUK que ya estén conciliadas de forma exacta con contabilidad y versionadas dentro de Supabase.
+
 ## 60. La matriz de usuarios es una fuente de negocio; Auth y autorización no se sincronizan igual
 
 - **No mezclar alta de cuentas con reasignación de permisos en una sola operación opaca**. Crear usuarios faltantes en Supabase Auth y sincronizar `profiles`/`user_roles` son pasos distintos y deben poder reejecutarse por separado.

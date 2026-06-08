@@ -21,6 +21,38 @@
 - [x] Crear en Auth las cuentas faltantes con clave inicial controlada sin alterar claves existentes
 - [x] Verificar resultado real en base, compilar frontend y documentar el cierre
 
+## Análisis de enlace contable entre contratos/cecos y BUK
+
+- [x] Inspeccionar `bbdd-cecos.xlsx`, identificar la nueva columna `Proyecto BUK` y medir cobertura/calidad del dato
+- [x] Contrastar la matriz con `public.contracts` y con los campos de proyecto/área presentes en la sync BUK
+- [x] Definir el modelo de enlace recomendado entre visión contable y visión BUK, con riesgos y siguiente implementación sugerida
+
+## Catálogo backend BUK -> contabilidad para contratación e incentivos
+
+- [x] Persistir en repo una migración que crea el catálogo backend `buk_contract_mappings` y sincroniza contratos faltantes/actualizados desde la matriz maestra
+- [x] Reamarrar `Solicitud de contrataciones` para mostrar como fuente visible el área BUK, manteniendo el `contract_id` contable como llave operativa
+- [x] Reemplazar en SQL de incentivos la dependencia de áreas libres de `employees` por el catálogo backend curado y 1:1
+- [ ] Aplicar la migración en Supabase productivo y verificar consultas reales
+
+## Resultado de análisis de enlace contable entre contratos/cecos y BUK
+
+- `bbdd-cecos.xlsx` en `Hoja2` trae `95` filas y `9` columnas. La nueva columna `Area_Buk` viene completa en `95/95` filas y no presenta ambigüedad interna: cada fila sigue siendo 1:1 entre `Proyecto`, `Descripcion Proyecto`, `Centro de Costo` y `Area_Buk`.
+- Contra `public.contracts`, la cobertura es alta: `92/95` proyectos del Excel ya existen en Supabase por `contract_number` y además `92/95` descripciones contables siguen calzando exactamente con `contract_name`.
+- Los `3` proyectos nuevos que todavía no están en `public.contracts` son: `SERCOING - DRT` (`7606991001:0001`), `CODELCO - DSAL` (`6170400011:0001`) y `ARAMARK - DCH` (`7611769636:0001`).
+- La nueva columna no replica simplemente el nombre contable. Hay `29` filas donde `Area_Buk` difiere de `Descripcion Proyecto`; varios son renombres menores (`JM SERV ESPECIALES` -> `JM SERVICIOS ESPECIALES`, `TESORERIA` -> `TESORERIA JM`), pero otros son equivalencias de negocio reales (`INDIRECTOS ZONA II` -> `ADMINISTRACION CALAMA`, `CODELCO DMH` -> `SERVICIO CODELCO DMH`, `INTERURBANO VALPARAISO` -> `VALPARAISO`).
+- En la sync viva de BUK, `employees_active_current.area_name` no viene limpio: llega como `Area BUK (Proyecto_BUK_versionado)`, por ejemplo `SERVICIO CODELCO DMH (6170400006:0004)` o `VALPARAISO (7850277002:0001)`. Por eso no conviene usar coincidencia textual directa contra el string completo.
+- Si se limpia el nombre del área y se ignora el sufijo versionado del proyecto, el cruce mejora bastante: `73/95` filas del Excel encuentran correspondencia en el histórico completo `public.employees`. El cruce contra solo empleados activos sube menos porque varias áreas no tienen dotación activa hoy.
+- La diferencia clave es el sufijo del `Proyecto BUK`: en BUK muchas áreas operan con el mismo prefijo del proyecto pero con versiones distintas (`:0004`, `:0005`, etc.). Eso hace que `Proyecto` contable y `Proyecto BUK` no deban tratarse como igualdad rígida de string completo.
+- Conclusión operativa: el Excel ya puede actuar como tabla puente maestra entre la visión contable (`contracts`, cecos, unidades de costo) y la visión operativa BUK (`area_name`, `project code`). Pero debe persistirse explícitamente; inferir este enlace desde `employees_active_current` o desde `area_name` libre no es suficientemente estable para producción.
+
+## Resultado parcial de catálogo backend BUK -> contabilidad
+
+- Quedó creada en repo la migración [`supabase/migrations/20260607_230000_add_buk_contract_mapping_catalog.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260607_230000_add_buk_contract_mapping_catalog.sql:1), que introduce `public.buk_contract_mappings`, normaliza nombres de área BUK, sincroniza contratos contables faltantes y reescribe las RPCs críticas de incentivos para usar esta fuente curada.
+- La migración también ajusta `submit_hiring_request(...)` para que los nuevos folios guarden como `contract_name` el nombre BUK visible, no la descripción contable interna, manteniendo intacta la llave `contract_id`.
+- En frontend, [`src/modules/recruitment/services/hiringCatalogs.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringCatalogs.ts:1) ya dejó de leer `public.contracts` como fuente visible y ahora apunta al catálogo puente backend.
+- La validación local cerró con `npm run build` y `git diff --check`.
+- La única parte pendiente no es técnica del repo sino operativa del conector: la aplicación remota en Supabase fue rechazada por límite de uso del connector, por lo que todavía falta ejecutar la migración en la base productiva y luego verificar conteos/consultas reales antes de enviar esto a `main`.
+
 ## Resultado de sincronización de usuarios, roles y módulos desde matriz Excel
 
 - La matriz `usuarios_busesjm.xlsx` quedó aterrizada a códigos canónicos de la app. Se incorporaron al frontend los roles `director_eje`, `director_op`, `gerente_general`, `operaciones_l_1`, `operaciones_l_2` y `administrativo` para evitar que Auth los degradara a `guest`.

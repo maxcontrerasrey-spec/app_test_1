@@ -33,16 +33,22 @@ type JobPositionRow = {
   is_active: boolean;
 };
 
-type ContractRow = {
-  id: number;
-  code: string;
+type ContractMappingRow = {
+  contract_id: number | null;
   contract_number: string;
-  contract_name: string;
+  buk_area_name: string;
   cost_unit: string;
   cost_unit_name: string;
   cost_center_code: string;
   cost_center_name: string;
-  is_active: boolean;
+  contracts:
+    | {
+        code: string;
+      }
+    | Array<{
+        code: string;
+      }>
+    | null;
 };
 
 type ShiftRow = {
@@ -69,12 +75,14 @@ export async function fetchHiringCatalogs() {
       .eq("is_active", true)
       .order("name", { ascending: true }),
     supabase
-      .from("contracts")
+      .from("buk_contract_mappings")
       .select(
-        "id, code, contract_number, contract_name, cost_unit, cost_unit_name, cost_center_code, cost_center_name, is_active"
+        "contract_id, contract_number, buk_area_name, cost_unit, cost_unit_name, cost_center_code, cost_center_name, contracts!inner(code)"
       )
-      .eq("is_active", true)
-      .order("contract_name", { ascending: true }),
+      .eq("is_operational", true)
+      .eq("is_one_to_one", true)
+      .not("contract_id", "is", null)
+      .order("buk_area_name", { ascending: true }),
     supabase
       .from("shifts")
       .select("id, code, name, is_active")
@@ -99,17 +107,29 @@ export async function fetchHiringCatalogs() {
   })) ?? [];
 
   const contractCatalog =
-    (contractsResponse.data as ContractRow[] | null)?.map((row) => ({
-      id: row.id,
-      code: row.code,
-      contractNumber: row.contract_number,
-      contractName: row.contract_name,
-      costUnit: row.cost_unit,
-      costUnitName: row.cost_unit_name,
-      costCenterCode: row.cost_center_code,
-      costCenterName: row.cost_center_name,
-      active: row.is_active
-    })) ?? [];
+    (contractsResponse.data as ContractMappingRow[] | null)?.flatMap((row) => {
+      if (!row.contract_id) {
+        return [];
+      }
+
+      const relation = Array.isArray(row.contracts) ? row.contracts[0] : row.contracts;
+
+      if (!relation?.code) {
+        return [];
+      }
+
+      return [{
+        id: row.contract_id,
+        code: relation.code,
+        contractNumber: row.contract_number,
+        contractName: row.buk_area_name,
+        costUnit: row.cost_unit,
+        costUnitName: row.cost_unit_name,
+        costCenterCode: row.cost_center_code,
+        costCenterName: row.cost_center_name,
+        active: true
+      }];
+    }) ?? [];
 
   const shiftCatalog =
     (shiftsResponse.data as ShiftRow[] | null)?.map((row) => ({
