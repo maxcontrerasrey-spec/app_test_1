@@ -75,6 +75,18 @@ begin
     raise exception 'El usuario no esta autorizado para cerrar esta solicitud';
   end if;
 
+  -- NUEVA REGLA: Obligar a mover o rechazar candidatos activos antes de cerrar
+  if exists (
+    select 1
+    from public.recruitment_cases rc
+    join public.recruitment_case_candidates rcc on rcc.recruitment_case_id = rc.id
+    where rc.hiring_request_id = p_request_id
+      and rc.status not in ('filled', 'closed_unfilled', 'cancelled')
+      and rcc.stage_code not in ('hired', 'rejected', 'withdrawn')
+  ) then
+    raise exception 'No se puede cerrar: Existen candidatos activos en este folio. Debes trasladarlos a otro proceso o descartarlos antes de poder cerrar el folio.';
+  end if;
+
   -- Actualizar estado de la solicitud
   update public.hiring_requests hr
      set status = 'closed',
