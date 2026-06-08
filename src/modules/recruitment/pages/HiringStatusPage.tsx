@@ -18,6 +18,7 @@ import {
   type RecruitmentDashboardSummary,
   type WhoApprovalCause
 } from "../services/hiringControl";
+import { closeHiringRequest } from "../services/hiringWorkflow";
 import { HiringCandidatesView } from "../components/HiringCandidatesView";
 import { HiringPersonnelToHireView } from "../components/HiringPersonnelToHireView";
 import { HiringProcessesView } from "../components/HiringProcessesView";
@@ -313,6 +314,26 @@ export function HiringStatusPage() {
     await invalidateRecruitmentCache(selectedCaseDetail.case.id);
   };
 
+  const handleCloseHiringRequest = async (requestId: string, comment?: string) => {
+    setIsStageSaving(true);
+    setDecisionMessage("");
+
+    const { error } = await closeHiringRequest({
+      requestId,
+      comment
+    });
+
+    if (error) {
+      setDecisionMessage(error);
+      setIsStageSaving(false);
+      return;
+    }
+
+    setDecisionMessage("Folio cerrado exitosamente.");
+    setIsStageSaving(false);
+    await invalidateRecruitmentCache();
+  };
+
   return (
     <PageShell>
       <div className="minimal-page-header">
@@ -373,6 +394,7 @@ export function HiringStatusPage() {
             decisionMessage={decisionMessage}
             errorMessage={errorMessage}
             onApprovalSuccess={() => void invalidateRecruitmentCache()}
+            onCloseRequest={handleCloseHiringRequest}
           />
         ) : activeView === "candidates" ? (
           <HiringCandidatesView

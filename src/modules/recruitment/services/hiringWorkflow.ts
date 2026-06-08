@@ -4,7 +4,8 @@ export type HiringWorkflowStatus =
   | "pending_area_manager"
   | "pending_contracts_control"
   | "approved"
-  | "rejected";
+  | "rejected"
+  | "closed";
 
 export type HiringApprovalDecision = "approved" | "rejected";
 export type TravelMethodology = "travel_allowance" | "company_purchase";
@@ -39,6 +40,7 @@ function formatRpcError(error: {
 export function toHiringStatusLabel(value: HiringWorkflowStatus | string | null | undefined) {
   if (value === "approved") return "Aprobada";
   if (value === "rejected") return "Rechazada";
+  if (value === "closed") return "Cerrada";
   if (value === "pending_contracts_control") return "Pendiente control contratos";
   if (value === "pending_area_manager") return "Pendiente gerente de area";
   return "Pendiente";
@@ -90,3 +92,24 @@ export async function getHiringApprovalDetails(approvalId: number) {
 
   return { data, error: null };
 }
+
+export async function closeHiringRequest(params: {
+  requestId: string;
+  comment?: string | null;
+}) {
+  if (!supabase) return { error: "Supabase no está configurado." };
+
+  const { error } = await supabase.rpc("close_hiring_request", {
+    p_request_id: params.requestId,
+    p_comment: params.comment?.trim() ? params.comment.trim() : null
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible cerrar la solicitud."
+    };
+  }
+
+  return { error: null };
+}
+

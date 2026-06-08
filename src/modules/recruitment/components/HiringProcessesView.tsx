@@ -22,6 +22,7 @@ type HiringProcessesViewProps = {
   decisionMessage: string;
   errorMessage: string;
   onApprovalSuccess: () => void;
+  onCloseRequest?: (requestId: string, comment?: string) => Promise<void>;
 };
 
 export function HiringProcessesView({
@@ -32,7 +33,8 @@ export function HiringProcessesView({
   isDecisionLoading,
   decisionMessage,
   errorMessage,
-  onApprovalSuccess
+  onApprovalSuccess,
+  onCloseRequest
 }: HiringProcessesViewProps) {
   const [caseSearchTerm, setCaseSearchTerm] = useState("");
   const [caseFilter, setCaseFilter] =
@@ -307,11 +309,28 @@ export function HiringProcessesView({
                                     <div className="expanded-detail-field-full">
                                       <small>Comentario</small>
                                       <strong>{approvalSummary?.decision_comment?.trim() || "Sin comentario registrado"}</strong>
+                                      </div>
                                     </div>
                                   </div>
+                                  {!["filled", "closed_unfilled", "cancelled"].includes(caseRow.status) && onCloseRequest && (
+                                    <div className="expanded-detail-actions" style={{ marginTop: "1rem", borderTop: "1px solid var(--border-color)", paddingTop: "1rem", gridColumn: "1 / -1" }}>
+                                      <button
+                                        type="button"
+                                        className="soft-secondary-button"
+                                        style={{ color: "var(--danger-color)", borderColor: "var(--danger-color)" }}
+                                        onClick={() => {
+                                          if (window.confirm("¿Estás seguro de que deseas cerrar este folio? Esta acción cancelará las aprobaciones pendientes y el caso activo. Es irreversible.")) {
+                                            const comment = window.prompt("Motivo de cierre (opcional):") ?? undefined;
+                                            void onCloseRequest(hr?.id ?? "", comment);
+                                          }
+                                        }}
+                                      >
+                                        Cerrar Folio
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            ) : (
+                              ) : (
                               <div className="expanded-case-loading">No se pudo cargar el detalle.</div>
                             )}
                           </td>
