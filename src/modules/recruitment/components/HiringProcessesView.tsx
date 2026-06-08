@@ -313,11 +313,10 @@ export function HiringProcessesView({
                                     </div>
                                   </div>
                                   {!["filled", "closed_unfilled", "cancelled"].includes(caseRow.status) && onCloseRequest && (
-                                    <div className="expanded-detail-actions" style={{ marginTop: "1rem", borderTop: "1px solid var(--border-color)", paddingTop: "1rem", gridColumn: "1 / -1" }}>
+                                    <div className="expanded-detail-actions" style={{ marginTop: "1.5rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem", gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}>
                                       <button
                                         type="button"
-                                        className="soft-secondary-button"
-                                        style={{ color: "var(--danger-color)", borderColor: "var(--danger-color)" }}
+                                        className="soft-primary-button soft-primary-button-danger"
                                         onClick={() => {
                                           if (window.confirm("¿Estás seguro de que deseas cerrar este folio? Esta acción cancelará las aprobaciones pendientes y el caso activo. Es irreversible.")) {
                                             const comment = window.prompt("Motivo de cierre (opcional):") ?? undefined;
