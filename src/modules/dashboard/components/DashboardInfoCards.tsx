@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DashboardBirthdayItem } from "../types";
+import { DashboardEconomicCard } from "./DashboardEconomicCard";
 
 type DashboardInfoCardsProps = {
   pendingTasksCount: number;
@@ -930,6 +931,8 @@ export function DashboardInfoCards({
           </span>
         )}
       </article>
+
+      <DashboardEconomicCard />
     </section>
   );
 }
