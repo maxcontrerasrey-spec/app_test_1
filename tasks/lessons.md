@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 53. Un módulo experimental no puede saltarse el contrato de acceso de la app
+
+- **Si una funcionalidad todavía no está en producción, no basta con “no publicitarla”**. Debe quedar cerrada por visibilidad de navegación, widget y ruta, o cualquier usuario con URL directa termina entrando igual.
+- **Los accesos experimentales no se hardcodean por fuera del sistema de guardas**. Si un link superior o widget global vive fuera de `navigationModules` o `RoleProtectedRoute`, hay que envolverlo explícitamente en una guarda equivalente antes de considerar el módulo controlado.
+
 ## 52. En RPCs que consumen funciones `RETURNS TABLE`, el nombre exacto de las columnas es parte del contrato productivo
 
 - **No renombres ni inventes aliases de salida al consumir un helper tabla sin ejecutar la RPC completa contra una sesión autenticada**. Un cambio mínimo como usar `contract_lock.case_id` en vez de `contract_lock.recruitment_case_id` no degrada datos: derriba completo el dashboard en runtime.

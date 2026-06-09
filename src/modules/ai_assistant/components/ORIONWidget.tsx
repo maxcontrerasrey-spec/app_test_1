@@ -1,32 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import orionLogo from "../../../assets/orion-logo.png";
+import { useORION } from "../context/ORIONContext";
 import "../styles/ai-assistant.css";
 import "../styles/orion-widget.css";
 
-type Message = {
-  id: string;
-  text: string;
-  sender: "user" | "ai";
-};
-
-type AgentStep = {
-  id: string;
-  text: string;
-  status: "pending" | "loading" | "done";
-};
-
 export function ORIONWidget() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hola, soy ORION. Estoy aquí para ayudarte rápido. ¿Qué necesitas?",
-      sender: "ai",
-    },
-  ]);
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
+  const {
+    agentSteps,
+    closeWidget,
+    isTyping,
+    isWidgetOpen,
+    messages,
+    openWidget,
+    sendMessage
+  } = useORION();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -34,43 +22,15 @@ export function ORIONWidget() {
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isWidgetOpen) {
       scrollToBottom();
     }
-  }, [messages, isTyping, agentSteps, isOpen]);
+  }, [agentSteps, isTyping, isWidgetOpen, messages]);
 
   const handleSend = () => {
     if (!inputValue.trim()) return;
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: "user",
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    sendMessage(inputValue, "widget");
     setInputValue("");
-    setIsTyping(true);
-
-    const steps: AgentStep[] = [
-      { id: "ws1", text: "Procesando consulta rápida...", status: "pending" },
-    ];
-    setAgentSteps(steps);
-
-    setTimeout(() => {
-      setAgentSteps([{ id: "ws1", text: "Procesando consulta rápida...", status: "loading" }]);
-    }, 200);
-
-    setTimeout(() => {
-      setAgentSteps([]);
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Respuesta rápida de ORION desde el Widget. (En Fase 2 compartiremos la memoria con la pantalla principal).",
-        sender: "ai",
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -81,9 +41,9 @@ export function ORIONWidget() {
   };
 
   return (
-    <div className={`orion-widget-container ${isOpen ? "open" : ""}`}>
+    <div className={`orion-widget-container ${isWidgetOpen ? "open" : ""}`}>
       {/* Ventana de Chat */}
-      <div className={`orion-widget-window ${isOpen ? "visible" : "hidden"}`}>
+      <div className={`orion-widget-window ${isWidgetOpen ? "visible" : "hidden"}`}>
         <header className="orion-widget-header">
           <div className="orion-widget-header-title">
             <img src={orionLogo} alt="ORION Logo" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
@@ -92,7 +52,7 @@ export function ORIONWidget() {
               <p>Asistente Rápido</p>
             </div>
           </div>
-          <button className="orion-widget-close" onClick={() => setIsOpen(false)} aria-label="Cerrar widget">
+          <button className="orion-widget-close" onClick={closeWidget} aria-label="Cerrar widget">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -153,8 +113,8 @@ export function ORIONWidget() {
 
       {/* Botón Flotante (FAB) */}
       <button 
-        className={`orion-widget-fab ${isOpen ? "hidden" : ""}`}
-        onClick={() => setIsOpen(true)}
+        className={`orion-widget-fab ${isWidgetOpen ? "hidden" : ""}`}
+        onClick={openWidget}
         aria-label="Abrir ORION"
       >
         <img src={orionLogo} alt="ORION" />

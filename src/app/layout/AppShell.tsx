@@ -211,16 +211,18 @@ export function AppShell() {
                 <span>{homeNavigationItem.label}</span>
               </NavLink>
 
-              <NavLink
-                to="/copiloto-ia"
-                className={({ isActive }) =>
-                  isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
-                }
-                style={{ display: "flex", gap: "6px", alignItems: "center" }}
-              >
-                <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} className="orion-nav-icon" />
-                <span>ORION</span>
-              </NavLink>
+              {isSuperAdmin ? (
+                <NavLink
+                  to="/copiloto-ia"
+                  className={({ isActive }) =>
+                    isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
+                  }
+                  style={{ display: "flex", gap: "6px", alignItems: "center" }}
+                >
+                  <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} className="orion-nav-icon" />
+                  <span>ORION</span>
+                </NavLink>
+              ) : null}
 
               {visibleModules.map((module) => {
                 const hasChildren = Boolean(module.items?.length);
@@ -388,7 +390,7 @@ export function AppShell() {
         <Outlet />
       </main>
 
-      <ORIONWidget />
+      {isSuperAdmin ? <ORIONWidget /> : null}
     </div>
   );
 }

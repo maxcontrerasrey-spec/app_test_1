@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./app/App";
+import { ORIONProvider } from "./modules/ai_assistant/context/ORIONContext";
 import { AuthProvider } from "./modules/auth/context/AuthContext";
 import { ThemeProvider } from "./shared/context/ThemeContext";
 import { queryClient } from "./shared/lib/queryClient";
@@ -15,9 +16,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <AppErrorBoundary>
         <ThemeProvider>
           <AuthProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
+            <ORIONProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </ORIONProvider>
           </AuthProvider>
         </ThemeProvider>
       </AppErrorBoundary>

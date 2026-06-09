@@ -21,6 +21,23 @@
 - [x] Renombrar labels operativos de documentos en `document_types` para reflejar el vocabulario final de negocio
 - [x] Aplicar migración en Supabase y validar build
 
+## Orion: restricción temporal y arranque de Etapa 2 aterrizada
+
+- [x] Restringir visibilidad del módulo ORION y su widget exclusivamente a `admin`
+- [x] Aterrizar `implementation_plan.md` a la arquitectura real del repo y elegir la primera fase implementable sin credenciales externas
+- [x] Implementar la sincronización global de estado entre widget y pantalla completa mediante `ORIONProvider`
+- [x] Validar build, documentar resultado y dejar `main` listo para deploy
+
+## Resultado de Orion: restricción temporal y arranque de Etapa 2 aterrizada
+
+- ORION quedó oculto para cualquier cuenta no `admin`. El link superior ya no aparece salvo para `isSuperAdmin`, el widget global ya no se monta salvo para `admin`, y la ruta [`/copiloto-ia`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:87) ahora está protegida por `AdminProtectedRoute`.
+- No fue necesario tocar `role_module_access` porque `ai_assistant` ni siquiera está registrado hoy en `public.app_modules`; el problema real era de frontend: el acceso estaba hardcodeado fuera del sistema normal de módulos.
+- El `implementation_plan.md` se aterrizó al estado real del repo. La primera fase elegida fue la única que agrega valor inmediato sin depender de secretos, Edge Functions ni Groq: sincronizar estado entre widget y pantalla completa.
+- Para eso se creó [`src/modules/ai_assistant/context/ORIONContext.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/context/ORIONContext.tsx:1) y se integró en [`src/main.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/main.tsx:1).
+- `AIChatWindow`, `ORIONWidget` y `AIChatHistory` ya no operan con estados mock separados. Ahora comparten sesión activa, mensajes, pasos de procesamiento, apertura del widget y creación/cambio de conversaciones.
+- El efecto práctico de esta primera implementación es que una conversación iniciada en el widget continúa exactamente igual en la pantalla completa, que era la deuda estructural principal de la Etapa 1 frente al plan.
+- La validación técnica cerró con `npm run build` y `git diff --check`.
+
 ## Resultado de ajuste fino de texto y labels en control documental
 
 - El warning de ficha incompleta en [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:243) quedó resumido a un único mensaje operativo: `Es necesario completar la ficha del candidato y cargar la documentación`.

@@ -1,29 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import orionLogo from "../../../assets/orion-logo.png";
-
-type Message = {
-  id: string;
-  text: string;
-  sender: "user" | "ai";
-};
-
-type AgentStep = {
-  id: string;
-  text: string;
-  status: "pending" | "loading" | "done";
-};
+import { useORION } from "../context/ORIONContext";
 
 export function AIChatWindow() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hola, soy ORION, el asistente de inteligencia artificial de Buses JM. He leído todos nuestros manuales y protocolos. ¿En qué te puedo ayudar hoy?",
-      sender: "ai",
-    },
-  ]);
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
+  const { agentSteps, isTyping, messages, sendMessage } = useORION();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -36,58 +16,8 @@ export function AIChatWindow() {
 
   const handleSend = () => {
     if (!inputValue.trim()) return;
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: "user",
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    sendMessage(inputValue, "full");
     setInputValue("");
-    setIsTyping(true);
-
-    // Mock Agentic Thinking Sequence
-    const steps: AgentStep[] = [
-      { id: "s1", text: "Analizando intención del usuario...", status: "pending" },
-      { id: "s2", text: "Buscando en Base de Conocimiento (Supabase)...", status: "pending" },
-      { id: "s3", text: "Procesando vectores con pgvector...", status: "pending" },
-      { id: "s4", text: "Generando respuesta con Llama 3...", status: "pending" }
-    ];
-    
-    setAgentSteps(steps);
-
-    // Step 1
-    setTimeout(() => {
-      setAgentSteps(prev => prev.map((s, i) => i === 0 ? { ...s, status: "loading" } : s));
-    }, 300);
-
-    // Step 2
-    setTimeout(() => {
-      setAgentSteps(prev => prev.map((s, i) => i === 0 ? { ...s, status: "done" } : i === 1 ? { ...s, status: "loading" } : s));
-    }, 1200);
-
-    // Step 3
-    setTimeout(() => {
-      setAgentSteps(prev => prev.map((s, i) => i === 1 ? { ...s, status: "done" } : i === 2 ? { ...s, status: "loading" } : s));
-    }, 2400);
-
-    // Step 4
-    setTimeout(() => {
-      setAgentSteps(prev => prev.map((s, i) => i === 2 ? { ...s, status: "done" } : i === 3 ? { ...s, status: "loading" } : s));
-    }, 3200);
-
-    // Final Response
-    setTimeout(() => {
-      setAgentSteps([]); // Clear steps
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Esta es una respuesta simulada de ORION, generada tras analizar los documentos. En la Fase 2, aquí es donde conectaremos la IA real.",
-        sender: "ai",
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 4500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

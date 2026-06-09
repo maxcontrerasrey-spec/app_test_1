@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../layout/AppShell";
 import { lazyWithRetry } from "../../shared/lib/lazyWithRetry";
 import {
+  AdminProtectedRoute,
   ProtectedRoute,
   PublicOnlyRoute,
   RoleProtectedRoute
@@ -84,7 +85,11 @@ export function AppRouter() {
             />
             <Route
               path="/copiloto-ia"
-              element={<AIAssistantHome />}
+              element={
+                <AdminProtectedRoute>
+                  <AIAssistantHome />
+                </AdminProtectedRoute>
+              }
             />
             <Route
               path="/solicitud-contrataciones"
