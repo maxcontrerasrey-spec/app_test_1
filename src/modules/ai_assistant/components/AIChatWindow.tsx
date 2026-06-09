@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import orionLogo from "../../../assets/orion-logo.png";
 
 type Message = {
   id: string;
@@ -61,11 +62,8 @@ export function AIChatWindow() {
   return (
     <div className="orion-main">
       <header className="orion-header">
-        <div className="orion-header-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
-            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
-          </svg>
+        <div className="orion-header-icon" style={{ background: "transparent", boxShadow: "none" }}>
+          <img src={orionLogo} alt="ORION Logo" style={{ width: "32px", height: "32px", objectFit: "contain" }} />
         </div>
         <div className="orion-header-text">
           <h2>ORION</h2>
@@ -76,8 +74,12 @@ export function AIChatWindow() {
       <div className="orion-chat-area">
         {messages.map((msg) => (
           <div key={msg.id} className={`orion-message ${msg.sender}`}>
-            <div className="orion-message-avatar">
-              {msg.sender === "user" ? "Tú" : "O"}
+            <div className="orion-message-avatar" style={msg.sender === "ai" ? { background: "transparent", boxShadow: "none" } : {}}>
+              {msg.sender === "user" ? (
+                "Tú"
+              ) : (
+                <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+              )}
             </div>
             <div className="orion-message-content">
               {msg.text}
@@ -86,7 +88,9 @@ export function AIChatWindow() {
         ))}
         {isTyping && (
           <div className="orion-message ai">
-            <div className="orion-message-avatar">O</div>
+            <div className="orion-message-avatar" style={{ background: "transparent", boxShadow: "none" }}>
+              <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+            </div>
             <div className="orion-message-content">
               <div className="orion-typing">
                 <span className="orion-typing-dot"></span>
