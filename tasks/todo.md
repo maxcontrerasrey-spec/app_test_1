@@ -15,6 +15,20 @@
 - [x] Corregir la referencia rota a `contract_lock.recruitment_case_id` en una migración de hotfix
 - [x] Aplicar la migración en Supabase, validar el RPC autenticado y compilar antes de empujar a `main`
 
+## Ajuste fino de texto y labels en control documental
+
+- [x] Simplificar el mensaje de bloqueo de ficha incompleta en `Control Documental`
+- [x] Renombrar labels operativos de documentos en `document_types` para reflejar el vocabulario final de negocio
+- [x] Aplicar migración en Supabase y validar build
+
+## Resultado de ajuste fino de texto y labels en control documental
+
+- El warning de ficha incompleta en [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:243) quedó resumido a un único mensaje operativo: `Es necesario completar la ficha del candidato y cargar la documentación`.
+- Se eliminó el detalle largo de campos faltantes en esa vista, sin tocar la lógica que sigue bloqueando la aprobación final mientras la ficha o el checklist no estén completos.
+- Se agregó la migración [`20260609_141500_rename_candidate_document_labels.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609_141500_rename_candidate_document_labels.sql:1) y ya fue aplicada en Supabase productivo.
+- Los labels actualizados en base quedaron así: `Certificado de Antecedentes`, `Cédula de identidad`, `Certificado de estudios` y `Licencia de conducir`.
+- La validación técnica cerró con `npm run build` y `git diff --check`.
+
 ## Resultado parcial del hotfix de regresión en Control de Contrataciones
 
 - La regresión no estaba en React ni en permisos. La RPC `public.get_recruitment_control_dashboard_v2()` estaba fallando en runtime con `ERROR: column contract_lock.case_id does not exist`.

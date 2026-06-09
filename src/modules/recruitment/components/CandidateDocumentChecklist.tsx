@@ -202,10 +202,6 @@ export function CandidateDocumentChecklist({
   }[checklist.semaphore];
   const documentValidation = checklist.document_validation;
   const documentValidationApproved = documentValidation.status === "approved";
-  const workerMissingLabels = [
-    ...checklist.missing_person_fields,
-    ...checklist.missing_worker_fields
-  ];
 
   return (
     <div className="control-detail-body document-checklist-container">
@@ -246,8 +242,7 @@ export function CandidateDocumentChecklist({
           <>
             {!checklist.worker_file_complete ? (
               <p className="document-validation-warning">
-                Completa la ficha del candidato antes de aprobar. Pendientes:{" "}
-                {workerMissingLabels.join(", ")}.
+                Es necesario completar la ficha del candidato y cargar la documentación.
               </p>
             ) : null}
 
