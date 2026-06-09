@@ -21,6 +21,20 @@
 - La migración fue aplicada directamente en Supabase productivo con nombre `fix_candidate_visibility_and_buk_rut_lookup`.
 - La validación técnica cerró con `npm run build`, arranque local de Vite en `127.0.0.1:5173` y respuesta `HTTP/1.1 200 OK` del servidor local.
 
+## Corrección definitiva de ciclo de geolocalización del widget de clima
+
+- [x] Aislar por qué el widget seguía colgándose en `Resolviendo ubicación...` o degradando a Santiago bajo `gestion.busesjm.cl`
+- [x] Reescribir el ciclo del widget para evitar auto-reintentos provocados por el mismo `statusLabel`
+- [x] Validar build y dejar la corrección documentada
+
+## Resultado de corrección definitiva de ciclo de geolocalización del widget de clima
+
+- La nueva causa raíz no era Cloudflare ni reverse geocoding. El propio `useEffect` del widget dependía de `location.statusLabel`, `location.isResolved` y `location.isFallback`, pero dentro del mismo flujo hacía `setLocation(... statusLabel: "Resolviendo ubicación...")`. Eso disparaba otra vez el efecto y abría ciclos de geolocalización solapados.
+- El widget quedó reestructurado en [`src/modules/dashboard/components/DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:328): ahora inicializa desde caché si existe, mantiene refs para evitar requests concurrentes, consulta permisos cuando el navegador lo soporta y ejecuta un solo ciclo de resolución por intento.
+- También se endureció la degradación: primero intenta alta precisión sin caché, luego un intento tolerante, y solo después usa fallback por red o el fallback fijo. Si ya existe última ubicación válida, la conserva como respaldo en vez de reiniciar el estado de forma agresiva.
+- Se verificó además que el origen `https://gestion.busesjm.cl` no está enviando `Permissions-Policy` que bloquee geolocalización; por lo tanto el problema corregido era interno del widget.
+- La validación cerró con `npm run build`.
+
 ## Limpieza profunda de repo y compactación de arquitectura base
 
 - [x] Auditar archivos sueltos, hotspots del repo y referencias rígidas al dominio antiguo

@@ -228,6 +228,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una validación crítica del flujo vive en una Edge Function no versionada junto al código principal, el frontend queda ciego ante fallas o drift**. Para señales operativas como “este RUT ya estuvo en la empresa”, la fuente debe ser una RPC controlada dentro del mismo repositorio o una tabla sincronizada auditable.
 - **Cuando existe una sync local confiable de BUK, se consulta primero esa réplica**. Así el warning sigue funcionando aunque la integración en vivo cambie, y además se pueden enriquecer mensajes con estado histórico y fecha de salida.
 
+## 35. Un efecto de geolocalización no puede depender del mismo estado que muta durante la resolución
+
+- **Si el `useEffect` que inicia la ubicación depende de `statusLabel`, `isResolved` o flags que la propia rutina modifica, se crean ciclos de reentrada y requests solapados**. El síntoma típico es quedarse en `Resolviendo ubicación...` o caer de forma errática a un fallback fijo.
+- **La estructura estable es `effect único + refs de control + request in flight`**. La geolocalización se dispara una vez por ciclo, los reintentos se gobiernan explícitamente y el fallback solo corre cuando realmente se agotaron los intentos válidos.
+
 ## 33. Un widget descartado operativamente también debe apagarse en la base
 
 - **Si una sección ya no forma parte del dashboard real, no basta con sacarla del layout**. También hay que desactivarla en `dashboard_widgets` y limpiar preferencias huérfanas para que el catálogo no siga prometiendo piezas que el frontend ya no usa.
