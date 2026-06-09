@@ -62,9 +62,6 @@ export function AIChatWindow() {
   return (
     <div className="orion-main">
       <header className="orion-header">
-        <div className="orion-header-icon" style={{ background: "transparent", boxShadow: "none" }}>
-          <img src={orionLogo} alt="ORION Logo" style={{ width: "32px", height: "32px", objectFit: "contain" }} />
-        </div>
         <div className="orion-header-text">
           <h2>ORION</h2>
           <p>Cerebro Llama 3 · Listo para ayudarte</p>
