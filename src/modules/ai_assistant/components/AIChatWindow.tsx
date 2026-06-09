@@ -113,7 +113,7 @@ export function AIChatWindow() {
               {msg.sender === "user" ? (
                 "Tú"
               ) : (
-                <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+                <img src={orionLogo} alt="ORION" style={{ width: "36px", height: "36px", objectFit: "contain", transform: "scale(2.2)", margin: "0 -4px" }} />
               )}
             </div>
             <div className="orion-message-content">
