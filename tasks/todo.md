@@ -9,6 +9,21 @@
 - [x] Incorporar una validación documental formal antes de `Listo para contratar`, con trazabilidad de aprobador de reclutamiento
 - [x] Validar build, actualizar lecciones y dejar `main` listo para deploy
 
+## Hotfix de regresión en Control de Contrataciones
+
+- [x] Reproducir la falla real de `get_recruitment_control_dashboard_v2()` con contexto autenticado
+- [x] Corregir la referencia rota a `contract_lock.recruitment_case_id` en una migración de hotfix
+- [x] Aplicar la migración en Supabase, validar el RPC autenticado y compilar antes de empujar a `main`
+
+## Resultado parcial del hotfix de regresión en Control de Contrataciones
+
+- La regresión no estaba en React ni en permisos. La RPC `public.get_recruitment_control_dashboard_v2()` estaba fallando en runtime con `ERROR: column contract_lock.case_id does not exist`.
+- El quiebre fue introducido en la migración [`20260609_121500_expand_hiring_summary_and_document_validation.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609_121500_expand_hiring_summary_and_document_validation.sql:1417), donde se renombró por error la salida del helper `find_active_candidate_contract_lock(...)`.
+- Ya quedó preparado el hotfix productivo en [`20260609_131500_fix_recruitment_dashboard_contract_lock_column.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609_131500_fix_recruitment_dashboard_contract_lock_column.sql:1), restaurando el contrato correcto `contract_lock.recruitment_case_id`.
+- El hotfix ya quedó aplicado en Supabase productivo como `fix_recruitment_dashboard_contract_lock_column`.
+- La verificación autenticada volvió a responder datos reales: para `admin` y para `reclutamiento`, la RPC entrega `active_cases_count = 4`, `candidate_control_count = 6` y `personnel_to_hire_count = 0`, sin error SQL.
+- La validación local cerró con `npm run build` y `git diff --check`.
+
 ## Resultado de ajuste de visibilidad y gobernanza documental en Control de Contrataciones
 
 - La visibilidad quedó separada por contrato de negocio y no por “vista completa”. La nueva helper backend `user_can_view_recruitment_process_summary(...)` abre únicamente `Resumen de procesos de contratación` para `director_eje`, `gerente_general`, `director_op`, `gerencia`, `operaciones_l_1`, `administrativo`, `control_contratos`, además de `reclutamiento` y `admin`.

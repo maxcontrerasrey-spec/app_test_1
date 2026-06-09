@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 52. En RPCs que consumen funciones `RETURNS TABLE`, el nombre exacto de las columnas es parte del contrato productivo
+
+- **No renombres ni inventes aliases de salida al consumir un helper tabla sin ejecutar la RPC completa contra una sesión autenticada**. Un cambio mínimo como usar `contract_lock.case_id` en vez de `contract_lock.recruitment_case_id` no degrada datos: derriba completo el dashboard en runtime.
+- **La verificación correcta no es “compila la migración” sino “la RPC responde”**. Cada cambio sobre `get_recruitment_control_dashboard_v2()` o funciones similares debe cerrarse con una ejecución autenticada real del RPC, no solo con lectura estática del SQL.
+
 ## 52. Ver resumen operativo no es lo mismo que abrir el subflujo sensible
 
 - **No mezclar permiso de seguimiento con permiso de edición documental**. Si un rol solo debe ver `Resumen de procesos de contratación`, ese contrato se expresa con una helper backend separada y no relajando `candidate_control_access`.
