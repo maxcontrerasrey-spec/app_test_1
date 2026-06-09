@@ -218,8 +218,8 @@ export function AppShell() {
                 }
                 style={{ display: "flex", gap: "6px", alignItems: "center" }}
               >
-                <div style={{ width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-                  <img src={orionLogo} alt="ORION" style={{ width: "48px", height: "48px", objectFit: "contain", position: "absolute", maxWidth: "none" }} className="orion-nav-icon" />
+                <div style={{ width: "24px", height: "24px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, borderRadius: "4px" }}>
+                  <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain", transform: "scale(1.8)" }} />
                 </div>
                 <span>ORION</span>
               </NavLink>
