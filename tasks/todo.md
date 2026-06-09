@@ -2,6 +2,24 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Orion: reducción de contexto sensible y revalidación de proveedor externo
+
+- [x] Auditar la implementación actual de `orion-chat` y del cliente ORION para identificar el punto exacto de salida de contexto sensible
+- [x] Endurecer la Edge Function con redacción server-side, ventana de contexto reducida y payload mínimo hacia el proveedor externo
+- [x] Adaptar el cliente ORION para tolerar respuesta JSON segura además de SSE, evitando depender de streaming largo
+- [x] Validar `npm run build`, intentar despliegue productivo y comprobar si la política del entorno acepta el nuevo contrato
+- [x] Documentar en `todo.md` y `lessons.md` qué quedó resuelto y qué bloqueo externo persiste, si aplica
+
+## Resultado de Orion: reducción de contexto sensible y revalidación de proveedor externo
+
+- La ruta Groq seguía bloqueada por política del entorno incluso después de sanitizar el payload, por lo que la autorización explícita del usuario no bastó para permitir un deploy productivo que enviara contexto del ERP a un tercero.
+- Para no dejar ORION roto, [`supabase/functions/orion-chat/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/index.ts:1) quedó rediseñada como backend seguro local: valida JWT por `sub`, usa `service_role` para resolver la sesión, persiste conversación en Supabase y responde en JSON sin streaming largo ni llamadas a proveedores externos.
+- La función ahora sanea texto sensible con redacción de correo, URL, UUID, RUT, teléfono y secuencias numéricas largas antes de cualquier tratamiento interno de contexto, además de recortar la ventana a `8` mensajes y `600` caracteres por mensaje para no arrastrar payload excesivo.
+- [`src/modules/ai_assistant/services/orionChat.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/services/orionChat.ts:1) quedó compatible con doble contrato: consume `application/json` seguro y conserva compatibilidad con `text/event-stream` por si en una etapa futura reaparece un proveedor aprobado.
+- Se desplegó exitosamente `orion-chat` versión `5` en Supabase productivo. La validación viva cerró con smoke test autenticado real contra la función activa: `POST 200`, `content-type: application/json`, persistencia correcta en `orion_sessions` y `orion_messages`.
+- Los logs de Supabase confirmaron la recuperación operativa: la versión `4` anterior terminaba en `504` a ~151s; la versión `5` respondió `200` en `3357 ms`.
+- Estado funcional actual de ORION: operativo y estable en `modo seguro local`, con persistencia real y respuestas determinísticas orientadas al ERP. La integración con un LLM externo sigue pendiente de un proveedor explícitamente permitido por la política del entorno.
+
 ## Ajuste de visibilidad y gobernanza documental en Control de Contrataciones
 
 - [x] Ampliar la visibilidad de `Resumen de procesos de contratación` a los roles ejecutivos/operativos definidos sin abrir `Control de candidatos` ni `Personal a Contratar`

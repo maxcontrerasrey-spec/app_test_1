@@ -111,11 +111,17 @@ export const orionChatService = {
       throw new Error("No existe una sesión autenticada para ORION.");
     }
 
+    handlers.onStatus?.({
+      id: "secure-request",
+      order: 1,
+      text: "Validando sesión segura"
+    });
+
     const response = await fetch(buildFunctionUrl(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "text/event-stream",
+        Accept: "application/json, text/event-stream",
         Authorization: `Bearer ${accessToken}`,
         apikey: import.meta.env.VITE_SUPABASE_ANON_KEY
       },
@@ -123,8 +129,25 @@ export const orionChatService = {
       signal: handlers.signal
     });
 
-    if (!response.ok || !response.body) {
+    if (!response.ok) {
       throw new Error(await readEdgeError(response));
+    }
+
+    const responseType = response.headers.get("content-type")?.toLowerCase() ?? "";
+    if (responseType.includes("application/json")) {
+      handlers.onStatus?.({
+        id: "secure-response",
+        order: 2,
+        text: "Respuesta segura recibida"
+      });
+
+      const payload = (await response.json()) as ORIONStreamDonePayload;
+      handlers.onDone?.(payload);
+      return;
+    }
+
+    if (!response.body) {
+      throw new Error("ORION no devolvió un cuerpo de respuesta utilizable.");
     }
 
     const reader = response.body.getReader();
