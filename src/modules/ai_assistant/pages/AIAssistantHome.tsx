@@ -5,7 +5,7 @@ import "../styles/ai-assistant.css";
 
 export function AIAssistantHome() {
   return (
-    <div className="dashboard-container" style={{ padding: 0 }}>
+    <div className="dashboard-container">
       <main className="orion-layout">
         <AIChatHistory />
         <div className="orion-center">

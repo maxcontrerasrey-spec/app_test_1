@@ -37,38 +37,40 @@ export function AIChatWindow() {
       </header>
 
       <div className="orion-chat-area">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`orion-message ${msg.sender}`}>
-            <div className="orion-message-content">
-              {msg.text}
+        <div className="orion-chat-content">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`orion-message ${msg.sender}`}>
+              <div className="orion-message-content">
+                {msg.text}
+              </div>
             </div>
-          </div>
-        ))}
-        
-        {/* Agentic Thinking UI */}
-        {isTyping && (
-          <div className="orion-agent-steps">
-            {agentSteps.map((step) => {
-              if (step.status === "pending") return null;
-              return (
-                <div key={step.id} className={`orion-agent-step ${step.status}`}>
-                  <div className="orion-step-icon">
-                    {step.status === "loading" ? (
-                      <div className="orion-spinner"></div>
-                    ) : (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    )}
+          ))}
+          
+          {/* Agentic Thinking UI */}
+          {isTyping && (
+            <div className="orion-agent-steps">
+              {agentSteps.map((step) => {
+                if (step.status === "pending") return null;
+                return (
+                  <div key={step.id} className={`orion-agent-step ${step.status}`}>
+                    <div className="orion-step-icon">
+                      {step.status === "loading" ? (
+                        <div className="orion-spinner"></div>
+                      ) : (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="orion-step-text">{step.text}</span>
                   </div>
-                  <span className="orion-step-text">{step.text}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
 
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       <div className="orion-input-area">

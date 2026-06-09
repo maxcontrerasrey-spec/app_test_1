@@ -164,11 +164,17 @@
 
 .orion-chat-area {
   flex: 1;
-  padding: 20px;
+  padding: 24px;
   overflow-y: auto;
+}
+
+.orion-chat-content {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .orion-message {
@@ -258,6 +264,9 @@
   padding: 6px 10px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
   transition: border-color 0.2s, box-shadow 0.2s;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .orion-input-wrapper:focus-within {
