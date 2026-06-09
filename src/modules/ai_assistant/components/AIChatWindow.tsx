@@ -63,7 +63,7 @@ export function AIChatWindow() {
     <div className="orion-main">
       <header className="orion-header">
         <div className="orion-header-icon" style={{ background: "transparent", boxShadow: "none" }}>
-          <img src={orionLogo} alt="ORION Logo" style={{ width: "32px", height: "32px", objectFit: "contain" }} />
+          <img src={orionLogo} alt="ORION Logo" style={{ width: "40px", height: "40px", objectFit: "contain", transform: "scale(1.5)" }} />
         </div>
         <div className="orion-header-text">
           <h2>ORION</h2>
@@ -78,7 +78,7 @@ export function AIChatWindow() {
               {msg.sender === "user" ? (
                 "Tú"
               ) : (
-                <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+                <img src={orionLogo} alt="ORION" style={{ width: "32px", height: "32px", objectFit: "contain", transform: "scale(1.8)" }} />
               )}
             </div>
             <div className="orion-message-content">
@@ -89,7 +89,7 @@ export function AIChatWindow() {
         {isTyping && (
           <div className="orion-message ai">
             <div className="orion-message-avatar" style={{ background: "transparent", boxShadow: "none" }}>
-              <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+              <img src={orionLogo} alt="ORION" style={{ width: "32px", height: "32px", objectFit: "contain", transform: "scale(1.8)" }} />
             </div>
             <div className="orion-message-content">
               <div className="orion-typing">
