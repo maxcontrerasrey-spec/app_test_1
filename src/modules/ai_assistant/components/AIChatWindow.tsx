@@ -4,10 +4,15 @@ import { useORION } from "../context/ORIONContext";
 export function AIChatWindow() {
   const [inputValue, setInputValue] = useState("");
   const { agentSteps, isTyping, messages, sendMessage } = useORION();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatAreaRef.current) {
+      chatAreaRef.current.scrollTo({
+        top: chatAreaRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   };
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export function AIChatWindow() {
         </div>
       </header>
 
-      <div className="orion-chat-area">
+      <div className="orion-chat-area" ref={chatAreaRef}>
         <div className="orion-chat-content">
           {messages.map((msg) => (
             <div key={msg.id} className={`orion-message ${msg.sender}`}>
@@ -69,7 +74,6 @@ export function AIChatWindow() {
             </div>
           )}
 
-          <div ref={messagesEndRef} />
         </div>
       </div>
 

@@ -15,10 +15,15 @@ export function ORIONWidget() {
     openWidget,
     sendMessage
   } = useORION();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatAreaRef.current) {
+      chatAreaRef.current.scrollTo({
+        top: chatAreaRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   };
 
   useEffect(() => {
@@ -60,7 +65,7 @@ export function ORIONWidget() {
           </button>
         </header>
 
-        <div className="orion-widget-chat-area">
+        <div className="orion-widget-chat-area" ref={chatAreaRef}>
           {messages.map((msg) => (
             <div key={msg.id} className={`orion-message ${msg.sender}`}>
               <div className="orion-message-content">
@@ -84,7 +89,6 @@ export function ORIONWidget() {
               })}
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         <div className="orion-widget-input-area">
