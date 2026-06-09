@@ -225,9 +225,14 @@
 }
 
 .orion-message.user .orion-message-content {
-  background: var(--accent);
-  color: white;
+  background: #f0f2f5;
+  color: #1e293b;
   border-top-right-radius: 4px;
+}
+
+[data-theme="dark"] .orion-message.user .orion-message-content {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
 }
 
 .orion-message.ai .orion-message-content {
