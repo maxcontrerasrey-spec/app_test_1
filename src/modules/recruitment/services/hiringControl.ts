@@ -172,6 +172,14 @@ export type CandidateWorkerFile = {
   updated_at: string;
 };
 
+export type CandidateDocumentValidationSummary = {
+  status: "pending" | "approved";
+  validated_by: string | null;
+  validated_by_name: string | null;
+  validated_at: string | null;
+  comment: string | null;
+};
+
 export type CandidateBukProfileDetails = {
   case_candidate_id: string;
   candidate_profile_id: string;
@@ -293,6 +301,11 @@ export type RecruitmentCaseCandidateRow = {
   interview_notes: string | null;
   worker_file?: CandidateWorkerFile | null;
   who_approval?: CandidateWhoApprovalSummary | null;
+  document_validation_status?: "pending" | "approved" | null;
+  document_validated_by?: string | null;
+  document_validated_by_name?: string | null;
+  document_validated_at?: string | null;
+  document_validation_comment?: string | null;
 };
 
 export type RecruitmentCaseAuditRow = {
@@ -313,6 +326,7 @@ export type CandidateDocumentRow = {
   document_type_id: string;
   name: string;
   is_critical: boolean;
+  is_required: boolean;
   requires_expiry_date: boolean;
   status: CandidateDocumentStatus;
   file_path: string | null;
@@ -323,6 +337,13 @@ export type CandidateDocumentRow = {
 
 export type CandidateChecklistResult = {
   semaphore: "green" | "yellow" | "red" | "gray";
+  candidate_group: "conductor" | "otros";
+  worker_file_complete: boolean;
+  missing_person_fields: string[];
+  missing_worker_fields: string[];
+  required_documents_total: number;
+  required_documents_approved: number;
+  document_validation: CandidateDocumentValidationSummary;
   documents: CandidateDocumentRow[];
 };
 
@@ -726,6 +747,30 @@ export async function reviewCandidateDocument(input: {
 
   if (error) {
     return { error: formatRpcError(error) || "No fue posible revisar el documento." };
+  }
+
+  return { error: null };
+}
+
+export async function approveCandidateDocumentation(input: {
+  caseCandidateId: string;
+  comment?: string;
+}) {
+  if (!supabase) {
+    return { error: "Supabase no está configurado." };
+  }
+
+  const { error } = await supabase.rpc("approve_candidate_documentation", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_comment: input.comment?.trim() ? input.comment.trim() : null
+  });
+
+  if (error) {
+    return {
+      error:
+        formatRpcError(error) ||
+        "No fue posible aprobar la revisión documental del candidato."
+    };
   }
 
   return { error: null };

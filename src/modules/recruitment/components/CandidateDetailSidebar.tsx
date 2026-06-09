@@ -174,6 +174,8 @@ export function CandidateDetailSidebar({
   const completedWhoCauseCount = whoCauseDrafts.filter(
     (cause) => cause.type && cause.year.trim() && cause.comment.trim()
   ).length;
+  const isDocumentValidationApproved =
+    selectedCandidate.document_validation_status === "approved";
 
   const handleWhoCauseDraftChange = (
     index: number,
@@ -427,6 +429,37 @@ export function CandidateDetailSidebar({
             </div>
           ) : null}
 
+          <div className="approval-detail-note control-block-top">
+            <small>Revisión documental previa</small>
+            <strong>
+              {isDocumentValidationApproved
+                ? "Aprobada para contratación"
+                : "Pendiente de validación final"}
+            </strong>
+            <div className="control-readonly-grid control-readonly-grid-spaced">
+              <div>
+                <small>Validado por</small>
+                <strong>{selectedCandidate.document_validated_by_name ?? "Pendiente"}</strong>
+              </div>
+              <div>
+                <small>Fecha validación</small>
+                <strong>{formatDateTimeValue(selectedCandidate.document_validated_at)}</strong>
+              </div>
+            </div>
+            {selectedCandidate.document_validation_comment ? (
+              <p className="control-comment-text">
+                {selectedCandidate.document_validation_comment}
+              </p>
+            ) : null}
+            {!isDocumentValidationApproved && selectedCandidate.stage_code === "document_review" ? (
+              <p className="who-causes-summary-note">
+                La aprobación final de documentos y ficha se registra desde la pestaña
+                <strong> Control Documental </strong>
+                antes de mover al candidato a contratación.
+              </p>
+            ) : null}
+          </div>
+
           {showStageControls ? (
             <>
               <div className="control-edit-grid control-edit-grid-spaced">
@@ -530,7 +563,8 @@ export function CandidateDetailSidebar({
                       isStageSaving || 
                       isWhoPending || 
                       !stageDraft || 
-                      ((stageDraft === "rejected" || stageDraft === "withdrawn") && !stageComment.trim())
+                      ((stageDraft === "rejected" || stageDraft === "withdrawn") && !stageComment.trim()) ||
+                      (stageDraft === "ready_for_hire" && !isDocumentValidationApproved)
                     }
                     onClick={() =>
                       void onAdvanceStage(
@@ -543,6 +577,11 @@ export function CandidateDetailSidebar({
                   {(stageDraft === "rejected" || stageDraft === "withdrawn") && !stageComment.trim() ? (
                     <p className="control-inline-error" style={{ marginTop: "6px", fontSize: "0.85rem", color: "#cf1322" }}>
                       * El comentario es obligatorio para descartar.
+                    </p>
+                  ) : null}
+                  {stageDraft === "ready_for_hire" && !isDocumentValidationApproved ? (
+                    <p className="control-inline-error" style={{ marginTop: "6px", fontSize: "0.85rem", color: "#cf1322" }}>
+                      * Debes aprobar la revisión documental en la pestaña de Control Documental antes de dejarlo listo para contratar.
                     </p>
                   ) : null}
                 </div>
@@ -684,7 +723,10 @@ export function CandidateDetailSidebar({
       )}
 
       {activeTab === "documents" && (
-        <CandidateDocumentChecklist caseCandidateId={selectedCandidate.id} />
+        <CandidateDocumentChecklist
+          caseCandidateId={selectedCandidate.id}
+          onChecklistUpdated={onCandidateFileUpdated}
+        />
       )}
 
       {activeTab === "worker" && (

@@ -218,6 +218,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 52. Ver resumen operativo no es lo mismo que abrir el subflujo sensible
+
+- **No mezclar permiso de seguimiento con permiso de edición documental**. Si un rol solo debe ver `Resumen de procesos de contratación`, ese contrato se expresa con una helper backend separada y no relajando `candidate_control_access`.
+- **Cuando una misma página tiene superficies con distinta sensibilidad, el backend debe devolver payloads distintos según el nivel de acceso**. El resumen del caso puede abrirse a roles ejecutivos; candidatos, auditoría y documentos siguen gobernados por la capacidad específica.
+
+## 53. La validación documental final debe ser una instancia independiente del semáforo
+
+- **Un semáforo verde no reemplaza una aprobación trazable**. Si el negocio exige verificar datos y documentos antes de contratar, la base debe registrar explícitamente estado, aprobador, fecha y comentario de esa validación final.
+- **Toda aprobación derivada de datos editables debe invalidarse sola cuando cambian sus insumos**. Si se modifica un documento o la ficha del candidato después de aprobar la revisión documental, la autorización anterior deja de ser válida y debe resetearse automáticamente.
+
 ## 57. En geolocalización productiva, fallback visual no puede significar ubicación falsa
 
 - **Nunca uses una ciudad fija como fallback “válido” para un widget de ubicación real**. Si el navegador no entregó coordenadas confiables, mostrar `Santiago, CL` degrada el dato y genera un error operativo más grave que mostrar ausencia o aproximación.

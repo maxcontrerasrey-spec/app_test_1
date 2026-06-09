@@ -2,6 +2,22 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste de visibilidad y gobernanza documental en Control de Contrataciones
+
+- [x] Ampliar la visibilidad de `Resumen de procesos de contratación` a los roles ejecutivos/operativos definidos sin abrir `Control de candidatos` ni `Personal a Contratar`
+- [x] Sustituir el catálogo documental legacy por la matriz vigente `Otros` vs `Conductor`, manteniendo la lógica de obligatoriedad por tipo de cargo
+- [x] Incorporar una validación documental formal antes de `Listo para contratar`, con trazabilidad de aprobador de reclutamiento
+- [x] Validar build, actualizar lecciones y dejar `main` listo para deploy
+
+## Resultado de ajuste de visibilidad y gobernanza documental en Control de Contrataciones
+
+- La visibilidad quedó separada por contrato de negocio y no por “vista completa”. La nueva helper backend `user_can_view_recruitment_process_summary(...)` abre únicamente `Resumen de procesos de contratación` para `director_eje`, `gerente_general`, `director_op`, `gerencia`, `operaciones_l_1`, `administrativo`, `control_contratos`, además de `reclutamiento` y `admin`.
+- `Control de candidatos` y `Personal a Contratar` se mantuvieron exclusivos para `reclutamiento` porque la capacidad `candidate_control_access` no se amplió. La verificación directa en Supabase confirmó que esa capability sigue asignada solo a ese rol.
+- El catálogo documental dejó de ser genérico: `document_types` ahora distingue aplicabilidad y obligatoriedad por `Otros` vs `Conductor`, y el checklist filtra automáticamente según el cargo del caso.
+- Se agregó una aprobación documental formal previa a `ready_for_hire`. La base registra `document_validation_status`, aprobador, fecha y comentario; además, cualquier cambio posterior en documentos, ficha personal o ficha contractual resetea esa aprobación para no dejar una validación obsoleta.
+- La UI ahora expone esta instancia en `Control Documental`, muestra el estado de revisión previa y bloquea visualmente el salto a `Listo para contratar` hasta que la validación final exista.
+- La migración quedó aplicada en Supabase productivo como `expand_hiring_summary_and_document_validation`, y la validación técnica cerró con `npm run build` y consultas directas sobre módulos, capabilities y catálogo documental.
+
 ## Corrección de regresión por timeout en detección de ubicación del clima
 
 - [x] Revisar el historial reciente del widget para identificar qué cambio volvió a dejarlo colgado en `Detectando ubicación`

@@ -2330,6 +2330,24 @@ textarea {
   font-weight: 600;
 }
 
+.required-badge,
+.optional-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.required-badge {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.optional-badge {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1D4ED8;
+}
+
 .document-meta {
   font-family: var(--font-text);
   font-size: 0.8rem;
@@ -2339,6 +2357,30 @@ textarea {
 .document-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.document-validation-metrics,
+.document-validation-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+  font-family: var(--font-text);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.document-validation-warning {
+  margin-top: 0.75rem;
+  font-family: var(--font-text);
+  font-size: 0.85rem;
+  color: #B91C1C;
+}
+
+.document-validation-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.9rem;
 }
 
 .control-readonly-grid {

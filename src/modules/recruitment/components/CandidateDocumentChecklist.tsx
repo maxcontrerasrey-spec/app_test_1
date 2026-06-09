@@ -3,6 +3,7 @@ import {
   fetchCandidateChecklist,
   uploadCandidateDocument,
   reviewCandidateDocument,
+  approveCandidateDocumentation,
   type CandidateChecklistResult,
   type CandidateDocumentRow
 } from "../services/hiringControl";
@@ -11,14 +12,19 @@ import { supabase } from "../../../shared/lib/supabase";
 
 type CandidateDocumentChecklistProps = {
   caseCandidateId: string;
+  onChecklistUpdated?: () => Promise<void>;
 };
 
-export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumentChecklistProps) {
+export function CandidateDocumentChecklist({
+  caseCandidateId,
+  onChecklistUpdated
+}: CandidateDocumentChecklistProps) {
   const [checklist, setChecklist] = useState<CandidateChecklistResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [isApprovingValidation, setIsApprovingValidation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDocForUpload, setSelectedDocForUpload] = useState<CandidateDocumentRow | null>(null);
 
@@ -95,6 +101,7 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
       if (rpcError) throw new Error(`Error en base de datos: ${rpcError}`);
 
       await loadChecklist();
+      await onChecklistUpdated?.();
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : "Error desconocido al subir");
     } finally {
@@ -135,6 +142,42 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
       alert(error);
     } else {
       await loadChecklist();
+      await onChecklistUpdated?.();
+    }
+  }
+
+  async function handleApproveValidation() {
+    if (!checklist) return;
+
+    const notes = window.prompt(
+      "Ingresa un comentario breve para registrar la validación documental:"
+    );
+
+    if (notes === null) return;
+
+    setIsApprovingValidation(true);
+    setUploadError("");
+
+    try {
+      const { error } = await approveCandidateDocumentation({
+        caseCandidateId,
+        comment: notes
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      await loadChecklist();
+      await onChecklistUpdated?.();
+    } catch (err: unknown) {
+      setUploadError(
+        err instanceof Error
+          ? err.message
+          : "No fue posible aprobar la revisión documental."
+      );
+    } finally {
+      setIsApprovingValidation(false);
     }
   }
 
@@ -157,12 +200,82 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
     red: "Bloqueado (Faltan Críticos o Vencidos)",
     gray: "Sin Iniciar"
   }[checklist.semaphore];
+  const documentValidation = checklist.document_validation;
+  const documentValidationApproved = documentValidation.status === "approved";
+  const workerMissingLabels = [
+    ...checklist.missing_person_fields,
+    ...checklist.missing_worker_fields
+  ];
 
   return (
     <div className="control-detail-body document-checklist-container">
       <div className="document-semaphore-banner">
         <div className={semaphoreClass}></div>
         <span><strong>Estado Documental:</strong> {semaphoreText}</span>
+      </div>
+
+      <div className="approval-detail-note">
+        <small>Revisión documental previa a contratación</small>
+        <strong>
+          {documentValidationApproved
+            ? "Aprobada para pasar a contratación"
+            : "Pendiente de aprobación final"}
+        </strong>
+
+        <div className="document-validation-metrics">
+          <span>
+            Documentos obligatorios aprobados: {checklist.required_documents_approved}/
+            {checklist.required_documents_total}
+          </span>
+          <span>Perfil evaluado como: {checklist.candidate_group === "conductor" ? "Conductor" : "Otros"}</span>
+        </div>
+
+        {documentValidationApproved ? (
+          <div className="document-validation-summary">
+            <span>
+              Validado por: {documentValidation.validated_by_name ?? "No disponible"}
+            </span>
+            <span>
+              Fecha: {formatDateValue(documentValidation.validated_at)}
+            </span>
+            {documentValidation.comment ? (
+              <p className="control-comment-text">{documentValidation.comment}</p>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            {!checklist.worker_file_complete ? (
+              <p className="document-validation-warning">
+                Completa la ficha del candidato antes de aprobar. Pendientes:{" "}
+                {workerMissingLabels.join(", ")}.
+              </p>
+            ) : null}
+
+            {checklist.required_documents_approved < checklist.required_documents_total ? (
+              <p className="document-validation-warning">
+                Aún faltan documentos obligatorios aprobados para habilitar la contratación.
+              </p>
+            ) : null}
+
+            <div className="document-validation-actions">
+              <button
+                type="button"
+                className="soft-primary-button approval-button-approve"
+                disabled={
+                  isApprovingValidation ||
+                  !checklist.worker_file_complete ||
+                  checklist.required_documents_approved < checklist.required_documents_total ||
+                  checklist.semaphore !== "green"
+                }
+                onClick={() => void handleApproveValidation()}
+              >
+                {isApprovingValidation
+                  ? "Aprobando revisión..."
+                  : "Aprobar revisión documental"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {uploadError && <p className="form-status">{uploadError}</p>}
@@ -180,7 +293,10 @@ export function CandidateDocumentChecklist({ caseCandidateId }: CandidateDocumen
           <div key={doc.document_type_id} className={`document-row document-status-${doc.status}`}>
             <div className="document-info">
               <span className="document-name">
-                {doc.name} {doc.is_critical && <span className="critical-badge">*Crítico</span>}
+                {doc.name}{" "}
+                <span className={doc.is_required ? "required-badge" : "optional-badge"}>
+                  {doc.is_required ? "Obligatorio" : "Opcional"}
+                </span>
               </span>
               <span className="document-meta">
                 Estado: {doc.status} 
