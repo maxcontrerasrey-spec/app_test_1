@@ -40,7 +40,7 @@
 - [x] Diseñar el contrato seguro de ORION sobre Supabase Edge Functions y proveedor LLM compatible OpenAI
 - [x] Implementar la Edge Function `orion-chat` con autenticación JWT, lectura de contexto, streaming SSE y persistencia final de respuesta
 - [x] Conectar el frontend de ORION al stream real con degradación controlada si la función o el secret aún no están publicados
-- [ ] Aplicar en Supabase productivo el registro remoto del módulo `ai_assistant` y desplegar `orion-chat`
+- [x] Aplicar en Supabase productivo el registro remoto del módulo `ai_assistant` y desplegar `orion-chat`
 
 ## Resultado parcial de Orion: Etapa 2B backend seguro y streaming real
 
@@ -51,7 +51,7 @@
 - [`src/modules/ai_assistant/context/ORIONContext.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/context/ORIONContext.tsx:1) ya no simula por timers. Ahora intenta backend real, renderiza la respuesta token a token y reconcilia los mensajes persistidos contra la sesión local.
 - Para no degradar el entorno actual mientras la parte remota no quede publicada, ORION entra en `modo contingencia` si la Edge Function no existe todavía o si falta el secret del modelo; así el módulo no queda roto.
 - La validación local cerró con `npm run build` y `git diff --check`.
-- La aplicación remota en Supabase no pudo completarse en esta sesión: el conector rechazó acciones productivas por límite de uso antes de aplicar la migración `register_orion_module` o desplegar `orion-chat`.
+- Cierre remoto completado el 9 de junio: la migración `register_orion_module` quedó aplicada en Supabase productivo y la Edge Function `orion-chat` quedó desplegada en estado `ACTIVE` con `verify_jwt = true`.
 
 ## Resultado de Orion: Etapa 2A de persistencia real
 
