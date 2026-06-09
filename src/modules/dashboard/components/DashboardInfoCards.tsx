@@ -37,10 +37,10 @@ const LOCATION_CACHE_KEY = "dashboard:weather:last-browser-location";
 const LOCATION_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 
 const UNAVAILABLE_LOCATION: LiveLocationState = {
-  label: "Santiago, CL",
+  label: "Los Andes, CL",
   statusLabel: "Ubicación por defecto",
-  latitude: -33.4489,
-  longitude: -70.6693,
+  latitude: -32.8338,
+  longitude: -70.5972,
   isResolved: true,
   isFallback: true
 };
