@@ -9,6 +9,8 @@ import {
   type ReactNode
 } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
+import { logger } from "../../../shared/lib/logger";
+import { orionChatService, type ORIONStreamDonePayload, type ORIONStreamStatus } from "../services/orionChat";
 import {
   orionService,
   type ORIONMessageRecord,
@@ -90,6 +92,155 @@ function appendSessionMessage(
   );
 }
 
+function appendTemporaryMessage(
+  sessions: ORIONSession[],
+  sessionId: string,
+  message: ORIONMessage,
+  title?: string
+) {
+  return sessions.map((session) =>
+    session.id === sessionId
+      ? {
+          ...session,
+          title: title ?? session.title,
+          updatedAt: message.createdAt ?? session.updatedAt,
+          messages: [...session.messages, message]
+        }
+      : session
+  );
+}
+
+function upsertStreamingAssistantMessage(
+  sessions: ORIONSession[],
+  sessionId: string,
+  assistantTempId: string,
+  token: string
+) {
+  return sessions.map((session) => {
+    if (session.id !== sessionId) {
+      return session;
+    }
+
+    const currentMessages = [...session.messages];
+    const assistantIndex = currentMessages.findIndex((message) => message.id === assistantTempId);
+
+    if (assistantIndex === -1) {
+      currentMessages.push({
+        id: assistantTempId,
+        sender: "ai",
+        text: token,
+        createdAt: new Date().toISOString()
+      });
+    } else {
+      const assistantMessage = currentMessages[assistantIndex];
+      currentMessages[assistantIndex] = {
+        ...assistantMessage,
+        text: `${assistantMessage.text}${token}`
+      };
+    }
+
+    return {
+      ...session,
+      messages: currentMessages
+    };
+  });
+}
+
+function reconcileStreamedMessages(
+  sessions: ORIONSession[],
+  sessionId: string,
+  optimisticUserId: string,
+  assistantTempId: string,
+  payload: ORIONStreamDonePayload
+) {
+  return sessions.map((session) => {
+    if (session.id !== sessionId) {
+      return session;
+    }
+
+    const messages = session.messages.map((message) => {
+      if (message.id === optimisticUserId) {
+        return payload.userMessage;
+      }
+
+      if (message.id === assistantTempId) {
+        return payload.assistantMessage;
+      }
+
+      return message;
+    });
+
+    if (!messages.some((message) => message.id === payload.assistantMessage.id)) {
+      messages.push(payload.assistantMessage);
+    }
+
+    return {
+      ...session,
+      title: payload.session.title,
+      updatedAt: payload.session.updatedAt,
+      messages
+    };
+  });
+}
+
+function applyStreamError(
+  sessions: ORIONSession[],
+  sessionId: string,
+  assistantTempId: string,
+  errorMessage: string
+) {
+  return sessions.map((session) => {
+    if (session.id !== sessionId) {
+      return session;
+    }
+
+    const currentMessages = [...session.messages];
+    const assistantIndex = currentMessages.findIndex((message) => message.id === assistantTempId);
+
+    if (assistantIndex === -1) {
+      currentMessages.push({
+        id: assistantTempId,
+        sender: "ai",
+        text: errorMessage,
+        createdAt: new Date().toISOString()
+      });
+    } else {
+      currentMessages[assistantIndex] = {
+        ...currentMessages[assistantIndex],
+        text: errorMessage
+      };
+    }
+
+    return {
+      ...session,
+      messages: currentMessages
+    };
+  });
+}
+
+function buildAgentSteps(nextStatus: ORIONStreamStatus, currentSteps: ORIONAgentStep[]) {
+  const previousSteps = currentSteps
+    .filter((step) => step.id !== nextStatus.id)
+    .map((step) => ({ ...step, status: "done" as const }));
+
+  const currentStep: ORIONAgentStep = {
+    id: nextStatus.id,
+    text: nextStatus.text,
+    status: "loading"
+  };
+
+  return [...previousSteps, currentStep];
+}
+
+function buildFallbackAssistantText(source: "full" | "widget", errorMessage: string) {
+  const fallbackCore =
+    source === "widget"
+      ? "Modo contingencia activo: la conversación sigue sincronizada entre widget y pantalla completa, pero este ambiente todavía no está resolviendo el backend seguro de ORION."
+      : "Modo contingencia activo: la persistencia ya está operativa, pero este ambiente todavía no está resolviendo la Edge Function segura o el secreto del modelo.";
+
+  return `${fallbackCore} Detalle técnico: ${errorMessage}`;
+}
+
 export function ORIONProvider({ children }: { children: ReactNode }) {
   const { isLoading: isAuthLoading, user } = useAuth();
   const [sessions, setSessions] = useState<ORIONSession[]>([]);
@@ -97,19 +248,14 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
   const [isTyping, setIsTyping] = useState(false);
   const [agentSteps, setAgentSteps] = useState<ORIONAgentStep[]>([]);
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
-  const timeoutIdsRef = useRef<number[]>([]);
   const requestTokenRef = useRef(0);
-
-  const clearPendingTimers = useCallback(() => {
-    timeoutIdsRef.current.forEach((timerId) => window.clearTimeout(timerId));
-    timeoutIdsRef.current = [];
-  }, []);
+  const streamAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     return () => {
-      clearPendingTimers();
+      streamAbortRef.current?.abort();
     };
-  }, [clearPendingTimers]);
+  }, []);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -118,7 +264,8 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       requestTokenRef.current += 1;
-      clearPendingTimers();
+      streamAbortRef.current?.abort();
+      streamAbortRef.current = null;
       setSessions([]);
       setActiveSessionId("");
       setIsTyping(false);
@@ -149,7 +296,7 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
     };
 
     void loadSessions();
-  }, [clearPendingTimers, isAuthLoading, user]);
+  }, [isAuthLoading, user]);
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? null,
@@ -157,7 +304,6 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
   );
 
   const createSession = useCallback(async () => {
-    clearPendingTimers();
     setIsTyping(false);
     setAgentSteps([]);
 
@@ -169,7 +315,7 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
     const normalizedSession = normalizeSession(session);
     setSessions((current) => [normalizedSession, ...current]);
     setActiveSessionId(normalizedSession.id);
-  }, [clearPendingTimers]);
+  }, []);
 
   const selectSession = useCallback((sessionId: string) => {
     setActiveSessionId(sessionId);
@@ -190,88 +336,101 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      clearPendingTimers();
+      streamAbortRef.current?.abort();
 
+      const optimisticUserId = `orion-user-${Date.now()}`;
+      const assistantTempId = `orion-ai-stream-${Date.now()}`;
+      const createdAt = new Date().toISOString();
       const nextTitle =
         activeSession.messages.length <= 1 ? buildSessionTitle(normalized) : activeSession.title;
 
-      const userMessage = await orionService.appendMessage(activeSession.id, "user", normalized);
-      if (!userMessage) {
-        return;
-      }
-
-      setSessions((current) => appendSessionMessage(current, activeSession.id, userMessage, nextTitle));
-      void orionService.touchSession(activeSession.id, nextTitle);
+      setSessions((current) =>
+        appendTemporaryMessage(current, activeSession.id, {
+          id: optimisticUserId,
+          text: normalized,
+          sender: "user",
+          createdAt
+        }, nextTitle)
+      );
 
       setIsTyping(true);
+      setAgentSteps([
+        {
+          id: "bootstrap-stream",
+          text: "Conectando ORION seguro",
+          status: "loading"
+        }
+      ]);
 
-      const steps: ORIONAgentStep[] =
-        source === "widget"
-          ? [
-              { id: "widget-step-1", text: "Procesando consulta rápida...", status: "pending" },
-              { id: "widget-step-2", text: "Sincronizando contexto ORION...", status: "pending" }
-            ]
-          : [
-              { id: "full-step-1", text: "Analizando intención del usuario...", status: "pending" },
-              { id: "full-step-2", text: "Sincronizando sesión compartida...", status: "pending" },
-              { id: "full-step-3", text: "Preparando backend seguro de Etapa 2...", status: "pending" }
-            ];
+      const controller = new AbortController();
+      streamAbortRef.current = controller;
 
-      setAgentSteps(steps);
-
-      const schedule = (callback: () => void, delayMs: number) => {
-        const timerId = window.setTimeout(callback, delayMs);
-        timeoutIdsRef.current.push(timerId);
-      };
-
-      schedule(() => {
-        setAgentSteps((current) =>
-          current.map((step, index) => (index === 0 ? { ...step, status: "loading" } : step))
-        );
-      }, 180);
-
-      schedule(() => {
-        setAgentSteps((current) =>
-          current.map((step, index) => {
-            if (index === 0) return { ...step, status: "done" };
-            if (index === 1) return { ...step, status: "loading" };
-            return step;
-          })
-        );
-      }, 900);
-
-      if (steps.length > 2) {
-        schedule(() => {
-          setAgentSteps((current) =>
-            current.map((step, index) => {
-              if (index === 1) return { ...step, status: "done" };
-              if (index === 2) return { ...step, status: "loading" };
-              return step;
-            })
-          );
-        }, 1750);
-      }
-
-      schedule(() => {
-        void (async () => {
-          const responseText =
-            source === "widget"
-              ? "ORION ya comparte la misma conversación entre el widget y la pantalla completa. La siguiente etapa es conectar backend seguro, sesiones persistentes y streaming real."
-              : "La Etapa 2 ya quedó aterrizada al repo real: primero sincronizamos sesión global entre widget y pantalla completa; después conectaremos persistencia en Supabase y recién ahí el backend LLM seguro.";
-
-          const aiMessage = await orionService.appendMessage(activeSession.id, "ai", responseText);
-          if (aiMessage) {
-            setSessions((current) => appendSessionMessage(current, activeSession.id, aiMessage));
-            void orionService.touchSession(activeSession.id, nextTitle);
+      try {
+        await orionChatService.streamChat(
+          {
+            sessionId: activeSession.id,
+            message: normalized,
+            source
+          },
+          {
+            signal: controller.signal,
+            onStatus: (status) => {
+              setAgentSteps((current) => buildAgentSteps(status, current));
+            },
+            onToken: (token) => {
+              setSessions((current) =>
+                upsertStreamingAssistantMessage(current, activeSession.id, assistantTempId, token)
+              );
+            },
+            onDone: (payload) => {
+              setSessions((current) =>
+                reconcileStreamedMessages(
+                  current,
+                  activeSession.id,
+                  optimisticUserId,
+                  assistantTempId,
+                  payload
+                )
+              );
+              setAgentSteps((current) =>
+                current.map((step) => ({ ...step, status: "done" as const }))
+              );
+            },
+            onError: (message) => {
+              setSessions((current) =>
+                applyStreamError(
+                  current,
+                  activeSession.id,
+                  assistantTempId,
+                  buildFallbackAssistantText(source, message)
+                )
+              );
+            }
           }
-
-          setAgentSteps([]);
-          setIsTyping(false);
-          clearPendingTimers();
-        })();
-      }, steps.length > 2 ? 3000 : 1800);
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "No fue posible conectar ORION con el backend seguro.";
+        logger.error("ORIONContext sendMessage", error);
+        setSessions((current) =>
+          applyStreamError(
+            current,
+            activeSession.id,
+            assistantTempId,
+            buildFallbackAssistantText(source, message)
+          )
+        );
+      } finally {
+        if (streamAbortRef.current === controller) {
+          streamAbortRef.current = null;
+        }
+        setIsTyping(false);
+        setAgentSteps((current) =>
+          current.map((step) => ({ ...step, status: "done" as const }))
+        );
+      }
     },
-    [activeSession, clearPendingTimers, isTyping]
+    [activeSession, isTyping]
   );
 
   const value = useMemo<ORIONContextValue>(

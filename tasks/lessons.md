@@ -253,6 +253,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Sin persistencia real, un widget y una vista completa solo “parecen” integrados**. Si ambos comparten contexto pero la sesión desaparece al refrescar, la etapa arquitectónica sigue incompleta para un ERP.
 - **La base mínima correcta es `sessions + messages + RLS por dueño` antes de conectar IA real**. Primero se consolida trazabilidad y continuidad por usuario; después se conecta Edge Functions, streaming o modelos externos.
 
+## 60. Un frontend que apunta a una Edge Function aún no publicada debe degradar sin romper la conversación
+
+- **No reemplaces una respuesta operativa existente por una dependencia remota no desplegada sin plan de contingencia**. Si la función o el secret del modelo no están publicados todavía, el módulo no puede quedar en error duro.
+- **La integración correcta de una IA experimental en producción es `backend real cuando existe` + `degradación explícita cuando falta infraestructura`**. Así se gana arquitectura sin introducir una regresión de uso.
+
 ## 33. Un panel seleccionable no debe reabrirse por “ayuda” del contenedor padre
 
 - **Si la UI permite cerrar manualmente un resumen lateral, el componente padre no puede volver a autoseleccionar el primer registro al siguiente render**. Eso transforma el cierre en una ilusión y deja la vista “pegada”.

@@ -35,6 +35,24 @@
 - [x] Reemplazar el estado efímero del `ORIONContext` por carga y escritura reales en Supabase
 - [x] Aplicar migración en Supabase productivo, validar build y dejar `main` listo para deploy
 
+## Orion: Etapa 2B backend seguro y streaming real
+
+- [x] Diseñar el contrato seguro de ORION sobre Supabase Edge Functions y proveedor LLM compatible OpenAI
+- [x] Implementar la Edge Function `orion-chat` con autenticación JWT, lectura de contexto, streaming SSE y persistencia final de respuesta
+- [x] Conectar el frontend de ORION al stream real con degradación controlada si la función o el secret aún no están publicados
+- [ ] Aplicar en Supabase productivo el registro remoto del módulo `ai_assistant` y desplegar `orion-chat`
+
+## Resultado parcial de Orion: Etapa 2B backend seguro y streaming real
+
+- Quedó creada en repo la Edge Function [`supabase/functions/orion-chat/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/index.ts:1). La función valida JWT, verifica que la sesión ORION pertenezca al usuario, recupera contexto reciente desde `orion_messages`, consulta un proveedor LLM OpenAI-compatible por streaming y persiste la respuesta final en Supabase.
+- El proveedor quedó configurable por secrets de Supabase: `ORION_LLM_API_KEY`, `ORION_LLM_BASE_URL` y `ORION_LLM_MODEL`. Por defecto el código apunta a Groq OpenAI-compatible (`https://api.groq.com/openai/v1`) con modelo `llama-3.1-8b-instant`.
+- También quedó creada la migración [`20260609_180000_register_orion_module.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609_180000_register_orion_module.sql:1) para formalizar `ai_assistant` en `app_modules` y dejarlo visible solo para `admin` en `role_module_access`.
+- En frontend se agregó [`src/modules/ai_assistant/services/orionChat.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/services/orionChat.ts:1), que consume `text/event-stream` desde la Edge Function y emite eventos `status`, `token`, `done` y `error`.
+- [`src/modules/ai_assistant/context/ORIONContext.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/context/ORIONContext.tsx:1) ya no simula por timers. Ahora intenta backend real, renderiza la respuesta token a token y reconcilia los mensajes persistidos contra la sesión local.
+- Para no degradar el entorno actual mientras la parte remota no quede publicada, ORION entra en `modo contingencia` si la Edge Function no existe todavía o si falta el secret del modelo; así el módulo no queda roto.
+- La validación local cerró con `npm run build` y `git diff --check`.
+- La aplicación remota en Supabase no pudo completarse en esta sesión: el conector rechazó acciones productivas por límite de uso antes de aplicar la migración `register_orion_module` o desplegar `orion-chat`.
+
 ## Resultado de Orion: Etapa 2A de persistencia real
 
 - Se agregó la migración [`20260609_130000_add_orion_session_persistence.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609_130000_add_orion_session_persistence.sql:1), que crea `public.orion_sessions` y `public.orion_messages`, con índices, grants mínimos y RLS estricta por `created_by = auth.uid()`.
