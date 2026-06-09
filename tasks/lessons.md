@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Nunca uses una ciudad fija como fallback “válido” para un widget de ubicación real**. Si el navegador no entregó coordenadas confiables, mostrar `Santiago, CL` degrada el dato y genera un error operativo más grave que mostrar ausencia o aproximación.
 - **La traducción de coordenadas a ciudad no debe depender de un solo proveedor externo**. Si el caso de uso es crítico para el inicio del ERP, el widget debe intentar al menos una segunda fuente o caer explícitamente a coordenadas/aproximación, no fingir una ciudad exacta.
 
+## 58. En Safari, el timeout nativo de geolocalización no basta como contrato operativo
+
+- **No asumas que `getCurrentPosition(..., { timeout })` va a cortar siempre cuando la app lo necesita**. En producción real, Safari puede demorarse demasiado o comportarse de forma inconsistente, dejando la UI colgada en estado de resolución.
+- **Si la tarjeta del dashboard depende de geolocalización para mostrarse operativa, el frontend debe envolver esa llamada con un hard-timeout propio**. El navegador sigue intentando resolver, pero la UI no puede quedar esperando indefinidamente a un contrato externo poco confiable.
+
 ## 33. Un panel seleccionable no debe reabrirse por “ayuda” del contenedor padre
 
 - **Si la UI permite cerrar manualmente un resumen lateral, el componente padre no puede volver a autoseleccionar el primer registro al siguiente render**. Eso transforma el cierre en una ilusión y deja la vista “pegada”.

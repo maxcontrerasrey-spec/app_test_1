@@ -2,6 +2,20 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección de regresión por timeout en detección de ubicación del clima
+
+- [x] Revisar el historial reciente del widget para identificar qué cambio volvió a dejarlo colgado en `Detectando ubicación`
+- [x] Corregir la regresión con timeouts propios de la app en vez de depender solo del timeout nativo del navegador
+- [x] Validar build y documentar la causa raíz
+
+## Resultado de corrección de regresión por timeout en detección de ubicación del clima
+
+- La regresión sí fue introducida por un cambio reciente del widget. En [`e63588c`](https://github.com/maxcontrerasrey-spec/app_test_1/commit/e63588c) se endureció la resolución de ubicación, pero también se alargaron los intentos de geolocalización a `20s` y `30s`, manteniendo dependencia del timeout interno de `navigator.geolocation.getCurrentPosition(...)`.
+- Ese contrato no es confiable en Safari ni en algunos navegadores móviles: si el engine no resuelve o no corta a tiempo, el componente queda demasiado rato en `Resolviendo ubicación...` e incluso puede parecer bloqueado.
+- [`src/modules/dashboard/components/DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:338) ahora envuelve la geolocalización con un hard-timeout propio de frontend, por lo que el flujo deja de depender ciegamente del navegador para salir del estado pendiente.
+- También se reordenó la estrategia: primero intenta una lectura rápida no precisa, luego una precisa y recién después una lectura relajada; cada etapa tiene corte local verificable (`8s`, `12s`, `14s`) para no congelar la tarjeta.
+- La validación técnica cerró con `npm run build` y el cambio quedó acotado al widget, sin tocar otros módulos del Inicio.
+
 ## Corrección estructural del widget de clima para ubicación real
 
 - [x] Auditar el flujo actual del widget y confirmar por qué seguía degradando a Santiago o quedando sin ciudad válida

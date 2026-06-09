@@ -338,9 +338,53 @@ function pickFallbackGeolocationError(errors: GeolocationPositionError[]) {
   );
 }
 
-function requestBrowserPosition(options: PositionOptions) {
+function createGeolocationTimeoutError(timeoutMs: number) {
+  return {
+    code: 3,
+    message: `Geolocation timed out after ${timeoutMs}ms`,
+    PERMISSION_DENIED: 1,
+    POSITION_UNAVAILABLE: 2,
+    TIMEOUT: 3
+  } as GeolocationPositionError;
+}
+
+function requestBrowserPositionWithHardTimeout(
+  options: PositionOptions,
+  timeoutMs: number
+) {
   return new Promise<GeolocationPosition>((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    let settled = false;
+
+    const timer = window.setTimeout(() => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      reject(createGeolocationTimeoutError(timeoutMs));
+    }, timeoutMs);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(position);
+      },
+      (error) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        window.clearTimeout(timer);
+        reject(error);
+      },
+      options
+    );
   });
 }
 
@@ -530,15 +574,18 @@ export function DashboardInfoCards({
       const geolocationErrors: GeolocationPositionError[] = [];
 
       try {
-        const highAccuracyPosition = await requestBrowserPosition({
-          enableHighAccuracy: true,
-          timeout: 20000,
-          maximumAge: 0
-        });
+        const fastPosition = await requestBrowserPositionWithHardTimeout(
+          {
+            enableHighAccuracy: false,
+            timeout: 7000,
+            maximumAge: 300000
+          },
+          8000
+        );
 
         await resolveLocationLabel(
-          highAccuracyPosition.coords.latitude,
-          highAccuracyPosition.coords.longitude,
+          fastPosition.coords.latitude,
+          fastPosition.coords.longitude,
           "Ubicación actual"
         );
         return;
@@ -553,11 +600,40 @@ export function DashboardInfoCards({
       }
 
       try {
-        const relaxedPosition = await requestBrowserPosition({
+        const precisePosition = await requestBrowserPositionWithHardTimeout(
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          },
+          12000
+        );
+
+        await resolveLocationLabel(
+          precisePosition.coords.latitude,
+          precisePosition.coords.longitude,
+          "Ubicación actual"
+        );
+        return;
+      } catch (error) {
+        if (isGeolocationError(error)) {
+          geolocationErrors.push(error);
+          if (error.code === error.PERMISSION_DENIED) {
+            await fetchIpFallback(toGeolocationStatusLabel(error));
+            return;
+          }
+        }
+      }
+
+      try {
+        const relaxedPosition = await requestBrowserPositionWithHardTimeout(
+          {
           enableHighAccuracy: false,
-          timeout: 30000,
+          timeout: 12000,
           maximumAge: 1800000
-        });
+        },
+        14000
+        );
 
         await resolveLocationLabel(
           relaxedPosition.coords.latitude,
