@@ -1,0 +1,351 @@
+/* ==========================================================================
+   ORION - AI ASSISTANT STYLES
+   ========================================================================== */
+
+.orion-container {
+  display: flex;
+  gap: var(--spacing-6);
+  height: calc(100vh - 120px); /* Fill available space minus header */
+  width: 100%;
+  padding-bottom: var(--spacing-6);
+}
+
+.orion-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.92));
+  border: 1px solid rgba(183, 198, 223, 0.42);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 24px 44px -34px rgba(69, 88, 125, 0.24),
+    0 8px 18px -16px rgba(69, 88, 125, 0.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.orion-header {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(27, 37, 59, 0.06);
+  background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.6), rgba(var(--surface-rgb), 0));
+}
+
+.orion-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 30%, rgba(138, 180, 248, 0.2), transparent 60%);
+  color: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.orion-header-text h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--title);
+  margin: 0;
+}
+
+.orion-header-text p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.orion-chat-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.orion-message {
+  display: flex;
+  gap: 12px;
+  max-width: 80%;
+  animation: messageSlideIn 0.3s ease forwards;
+}
+
+@keyframes messageSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.orion-message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.orion-message.ai {
+  align-self: flex-start;
+}
+
+.orion-message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.orion-message.user .orion-message-avatar {
+  background: var(--surface-muted);
+  color: var(--text-base);
+  border: 1px solid rgba(27, 37, 59, 0.1);
+}
+
+.orion-message.ai .orion-message-avatar {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 12px rgba(45, 99, 255, 0.3);
+}
+
+.orion-message-content {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.orion-message.user .orion-message-content {
+  background: var(--accent);
+  color: white;
+  border-top-right-radius: 4px;
+}
+
+.orion-message.ai .orion-message-content {
+  background: var(--surface-default);
+  color: var(--text-base);
+  border: 1px solid rgba(27, 37, 59, 0.08);
+  border-top-left-radius: 4px;
+}
+
+.orion-input-area {
+  padding: 16px 24px;
+  background: rgba(var(--surface-rgb), 0.5);
+  border-top: 1px solid rgba(27, 37, 59, 0.06);
+}
+
+.orion-input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  background: var(--surface-default);
+  border: 1px solid rgba(27, 37, 59, 0.12);
+  border-radius: 20px;
+  padding: 8px 12px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.orion-input-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45, 99, 255, 0.15);
+}
+
+.orion-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 4px;
+  font-size: 0.95rem;
+  color: var(--text-base);
+  resize: none;
+  min-height: 24px;
+  max-height: 120px;
+  outline: none;
+  font-family: inherit;
+}
+
+.orion-input::placeholder {
+  color: var(--text-muted);
+}
+
+.orion-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.orion-send-btn:hover {
+  background: #2556af;
+  transform: translateY(-1px);
+}
+
+.orion-send-btn:disabled {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Typing Indicator */
+.orion-typing {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.orion-typing-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.orion-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.orion-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* Knowledge Panel */
+.orion-knowledge-panel {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.92));
+  border: 1px solid rgba(183, 198, 223, 0.42);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 24px 44px -34px rgba(69, 88, 125, 0.24),
+    0 8px 18px -16px rgba(69, 88, 125, 0.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.orion-knowledge-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(27, 37, 59, 0.06);
+}
+
+.orion-knowledge-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--title);
+  margin: 0 0 4px 0;
+}
+
+.orion-knowledge-header p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.orion-doc-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.orion-doc-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(27, 37, 59, 0.06);
+  background: rgba(var(--surface-default), 0.5);
+  transition: background 0.2s;
+}
+
+.orion-doc-item:hover {
+  background: rgba(var(--surface-default), 0.9);
+}
+
+.orion-doc-icon {
+  color: #e53e3e; /* PDF redish */
+}
+
+.orion-doc-icon.docx {
+  color: #2b6cb0; /* Word blueish */
+}
+
+.orion-doc-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.orion-doc-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.orion-doc-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.orion-upload-zone {
+  margin: 16px;
+  border: 2px dashed rgba(45, 99, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  background: rgba(45, 99, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.orion-upload-zone:hover {
+  border-color: rgba(45, 99, 255, 0.4);
+  background: rgba(45, 99, 255, 0.05);
+}
+
+.orion-upload-icon {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.orion-upload-text {
+  font-size: 0.85rem;
+  color: var(--title);
+  font-weight: 500;
+}
+
+.orion-upload-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

@@ -52,6 +52,10 @@ const HumanResourcesDashboard = lazyWithRetry("human-resources-dashboard", async
   ).HumanResourcesDashboard
 }));
 
+const AIAssistantHome = lazyWithRetry("ai-assistant-page", async () => ({
+  default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
+}));
+
 function RouteLoadingScreen() {
   return (
     <section className="auth-loading-screen">
@@ -77,6 +81,10 @@ export function AppRouter() {
             <Route
               path="/sin-acceso"
               element={<AccessDeniedPage />}
+            />
+            <Route
+              path="/copiloto-ia"
+              element={<AIAssistantHome />}
             />
             <Route
               path="/solicitud-contrataciones"
