@@ -248,6 +248,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No asumas que `getCurrentPosition(..., { timeout })` va a cortar siempre cuando la app lo necesita**. En producción real, Safari puede demorarse demasiado o comportarse de forma inconsistente, dejando la UI colgada en estado de resolución.
 - **Si la tarjeta del dashboard depende de geolocalización para mostrarse operativa, el frontend debe envolver esa llamada con un hard-timeout propio**. El navegador sigue intentando resolver, pero la UI no puede quedar esperando indefinidamente a un contrato externo poco confiable.
 
+## 59. Un módulo conversacional no puede nacer con estado compartido si no persiste por usuario
+
+- **Sin persistencia real, un widget y una vista completa solo “parecen” integrados**. Si ambos comparten contexto pero la sesión desaparece al refrescar, la etapa arquitectónica sigue incompleta para un ERP.
+- **La base mínima correcta es `sessions + messages + RLS por dueño` antes de conectar IA real**. Primero se consolida trazabilidad y continuidad por usuario; después se conecta Edge Functions, streaming o modelos externos.
+
 ## 33. Un panel seleccionable no debe reabrirse por “ayuda” del contenedor padre
 
 - **Si la UI permite cerrar manualmente un resumen lateral, el componente padre no puede volver a autoseleccionar el primer registro al siguiente render**. Eso transforma el cierre en una ilusión y deja la vista “pegada”.

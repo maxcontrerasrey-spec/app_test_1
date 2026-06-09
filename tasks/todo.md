@@ -28,6 +28,22 @@
 - [x] Implementar la sincronización global de estado entre widget y pantalla completa mediante `ORIONProvider`
 - [x] Validar build, documentar resultado y dejar `main` listo para deploy
 
+## Orion: Etapa 2A de persistencia real
+
+- [x] Crear persistencia base de ORION en Supabase (`orion_sessions` y `orion_messages`) con RLS por usuario
+- [x] Implementar servicio frontend para listar, crear y anexar mensajes de sesiones ORION
+- [x] Reemplazar el estado efímero del `ORIONContext` por carga y escritura reales en Supabase
+- [x] Aplicar migración en Supabase productivo, validar build y dejar `main` listo para deploy
+
+## Resultado de Orion: Etapa 2A de persistencia real
+
+- Se agregó la migración [`20260609_130000_add_orion_session_persistence.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609_130000_add_orion_session_persistence.sql:1), que crea `public.orion_sessions` y `public.orion_messages`, con índices, grants mínimos y RLS estricta por `created_by = auth.uid()`.
+- La migración ya quedó aplicada en Supabase productivo como `add_orion_session_persistence`, por lo que la persistencia no depende de deploy posterior de base.
+- Se creó [`src/modules/ai_assistant/services/orion.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/services/orion.ts:1) para centralizar el acceso a Supabase: bootstrap de sesión inicial, listado de conversaciones, creación de sesión y append de mensajes.
+- [`src/modules/ai_assistant/context/ORIONContext.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/context/ORIONContext.tsx:1) ya no trabaja solo con mocks en memoria. Ahora hidrata sesiones reales del usuario autenticado y persiste tanto el mensaje del usuario como la respuesta simulada de ORION.
+- El efecto práctico de esta pasada es que el widget y la pantalla completa ya comparten una conversación persistente entre recargas de la app, que era la base necesaria antes de conectar Edge Function, streaming o backend LLM seguro.
+- La validación técnica cerró con `npm run build`, `git diff --check` y verificación remota de migraciones en Supabase.
+
 ## Resultado de Orion: restricción temporal y arranque de Etapa 2 aterrizada
 
 - ORION quedó oculto para cualquier cuenta no `admin`. El link superior ya no aparece salvo para `isSuperAdmin`, el widget global ya no se monta salvo para `admin`, y la ruta [`/copiloto-ia`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:87) ahora está protegida por `AdminProtectedRoute`.
