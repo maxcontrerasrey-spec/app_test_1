@@ -5,7 +5,7 @@
 .orion-layout {
   display: flex;
   gap: var(--spacing-4);
-  height: calc(100vh - 100px); /* Fill available space minus header */
+  height: calc(100vh - 180px); /* Fill available space but account for all dashboard paddings */
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
