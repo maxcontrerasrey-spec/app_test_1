@@ -355,6 +355,60 @@
   40% { transform: scale(1); }
 }
 
+/* Agentic Thinking Steps */
+.orion-agent-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-left: 36px;
+  max-width: 80%;
+}
+
+.orion-agent-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  animation: stepFadeIn 0.3s ease forwards;
+}
+
+@keyframes stepFadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.orion-agent-step.done {
+  color: var(--text-base);
+}
+
+.orion-agent-step.done .orion-step-icon {
+  color: #10b981; /* Success green */
+}
+
+.orion-step-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.orion-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(27, 37, 59, 0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Knowledge Panel */
 .orion-knowledge-panel {
   width: 260px;

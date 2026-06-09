@@ -7,6 +7,12 @@ type Message = {
   sender: "user" | "ai";
 };
 
+type AgentStep = {
+  id: string;
+  text: string;
+  status: "pending" | "loading" | "done";
+};
+
 export function AIChatWindow() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -17,6 +23,7 @@ export function AIChatWindow() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -25,7 +32,7 @@ export function AIChatWindow() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages, isTyping, agentSteps]);
 
   const handleSend = () => {
     if (!inputValue.trim()) return;
@@ -40,16 +47,47 @@ export function AIChatWindow() {
     setInputValue("");
     setIsTyping(true);
 
-    // Mock response delay
+    // Mock Agentic Thinking Sequence
+    const steps: AgentStep[] = [
+      { id: "s1", text: "Analizando intención del usuario...", status: "pending" },
+      { id: "s2", text: "Buscando en Base de Conocimiento (Supabase)...", status: "pending" },
+      { id: "s3", text: "Procesando vectores con pgvector...", status: "pending" },
+      { id: "s4", text: "Generando respuesta con Llama 3...", status: "pending" }
+    ];
+    
+    setAgentSteps(steps);
+
+    // Step 1
     setTimeout(() => {
+      setAgentSteps(prev => prev.map((s, i) => i === 0 ? { ...s, status: "loading" } : s));
+    }, 300);
+
+    // Step 2
+    setTimeout(() => {
+      setAgentSteps(prev => prev.map((s, i) => i === 0 ? { ...s, status: "done" } : i === 1 ? { ...s, status: "loading" } : s));
+    }, 1200);
+
+    // Step 3
+    setTimeout(() => {
+      setAgentSteps(prev => prev.map((s, i) => i === 1 ? { ...s, status: "done" } : i === 2 ? { ...s, status: "loading" } : s));
+    }, 2400);
+
+    // Step 4
+    setTimeout(() => {
+      setAgentSteps(prev => prev.map((s, i) => i === 2 ? { ...s, status: "done" } : i === 3 ? { ...s, status: "loading" } : s));
+    }, 3200);
+
+    // Final Response
+    setTimeout(() => {
+      setAgentSteps([]); // Clear steps
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Esta es una respuesta simulada de ORION. En el futuro, aquí es donde Llama 3 procesará tu consulta utilizando los documentos de la base de datos.",
+        text: "Esta es una respuesta simulada de ORION, generada tras analizar los documentos. En la Fase 2, aquí es donde conectaremos la IA real.",
         sender: "ai",
       };
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
-    }, 1500);
+    }, 4500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -83,20 +121,30 @@ export function AIChatWindow() {
             </div>
           </div>
         ))}
+        
+        {/* Agentic Thinking UI */}
         {isTyping && (
-          <div className="orion-message ai">
-            <div className="orion-message-avatar" style={{ background: "transparent", boxShadow: "none" }}>
-              <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
-            </div>
-            <div className="orion-message-content">
-              <div className="orion-typing">
-                <span className="orion-typing-dot"></span>
-                <span className="orion-typing-dot"></span>
-                <span className="orion-typing-dot"></span>
-              </div>
-            </div>
+          <div className="orion-agent-steps">
+            {agentSteps.map((step) => {
+              if (step.status === "pending") return null;
+              return (
+                <div key={step.id} className={`orion-agent-step ${step.status}`}>
+                  <div className="orion-step-icon">
+                    {step.status === "loading" ? (
+                      <div className="orion-spinner"></div>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    )}
+                  </div>
+                  <span className="orion-step-text">{step.text}</span>
+                </div>
+              );
+            })}
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
