@@ -7,7 +7,9 @@
   gap: var(--spacing-4);
   height: calc(100vh - 100px); /* Fill available space minus header */
   width: 100%;
-  padding-bottom: var(--spacing-4);
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px var(--spacing-4) 24px;
 }
 
 .orion-center {
