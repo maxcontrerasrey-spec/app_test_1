@@ -10,6 +10,7 @@ import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
 import { useTheme } from "../../shared/context/ThemeContext";
 import orionLogo from "../../assets/orion-logo.png";
+import { ORIONWidget } from "../../modules/ai_assistant/components/ORIONWidget";
 
 function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
   const commonProps = {
@@ -386,6 +387,8 @@ export function AppShell() {
       <main className="main-content main-content-topnav">
         <Outlet />
       </main>
+
+      <ORIONWidget />
     </div>
   );
 }
