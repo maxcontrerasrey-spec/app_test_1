@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
   formatRut,
@@ -68,6 +68,7 @@ export function HiringCandidatesView({
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
   const [candidateStageFilter, setCandidateStageFilter] =
     useState<(typeof candidateStageFilterOptions)[number]["key"]>("active");
+  const layoutRef = useRef<HTMLDivElement | null>(null);
 
   const candidateIntakeCases = useMemo(
     () =>
@@ -110,8 +111,29 @@ export function HiringCandidatesView({
     selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
 
-  // Comportamiento actualizado: no autoseleccionar un candidato al cambiar la lista o rechazar.
-  // Esto permite que el panel se cierre y no se quede "pegado".
+  useEffect(() => {
+    if (!selectedCandidateBoardRow) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const layoutNode = layoutRef.current;
+      if (!layoutNode) {
+        return;
+      }
+
+      if (layoutNode.contains(event.target as Node)) {
+        return;
+      }
+
+      onSelectCandidate("", "");
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [onSelectCandidate, selectedCandidateBoardRow]);
 
   return (
     <>
@@ -159,10 +181,10 @@ export function HiringCandidatesView({
       </div>
 
       <div 
+        ref={layoutRef}
         className="control-layout" 
         style={!selectedCandidateBoardRow ? { gridTemplateColumns: "1fr" } : undefined}
         onClick={(e) => {
-          // Si el usuario hace clic exactamente en el fondo de este layout (fuera de la tabla y sidebar), cerramos
           if (e.target === e.currentTarget) {
             onSelectCandidate("", "");
           }

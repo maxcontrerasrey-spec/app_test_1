@@ -30,6 +30,23 @@ type CandidateLookupProfile = {
   historical_rejections?: CandidateHistoricalRejection[];
 };
 
+function formatBukExitDate(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(parsedDate);
+}
+
 export function CandidateIntakeForm({
   initialCaseId,
   candidateIntakeCases,
@@ -144,6 +161,9 @@ export function CandidateIntakeForm({
 
     if (bukResponse.data?.exists) {
       setFoundBukStatus(bukResponse.data);
+      if (!localResponse.data) {
+        setCandidateFormStatus("⚠ RUT encontrado en BUK. Revisa el estado antes de registrar.");
+      }
     }
   };
 
@@ -378,8 +398,14 @@ export function CandidateIntakeForm({
               margin: 0
             }}
           >
-            {foundBukStatus.status?.toLowerCase() === "activo" ? "🔴" : "🟡"} Atención: El RUT ingresado ya cuenta con historial en BUK (Estado: {foundBukStatus.status?.toUpperCase()}).
+            {foundBukStatus.status?.toLowerCase() === "activo" ? "🔴" : "🟡"} Atención: El RUT ingresado ya cuenta con historial en BUK
+            {foundBukStatus.name ? ` para ${foundBukStatus.name}` : ""} (Estado: {foundBukStatus.status?.toUpperCase()}).
           </p>
+          {formatBukExitDate(foundBukStatus.exit_date) ? (
+            <p style={{ margin: "4px 0 0", fontSize: "0.84rem", color: "#8c6d1f" }}>
+              Fecha de salida registrada: <strong>{formatBukExitDate(foundBukStatus.exit_date)}</strong>
+            </p>
+          ) : null}
         </div>
       ) : null}
 

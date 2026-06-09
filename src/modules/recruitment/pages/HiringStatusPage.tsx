@@ -128,14 +128,11 @@ export function HiringStatusPage() {
       return;
     }
 
-    const nextCandidateId = selectedCaseDetail.candidates.some(
-      (candidate) => candidate.id === selectedCandidateId
-    )
-      ? selectedCandidateId
-      : selectedCaseDetail.candidates[0]?.id ?? "";
-
-    if (nextCandidateId !== selectedCandidateId) {
-      setSelectedCandidateId(nextCandidateId);
+    if (
+      selectedCandidateId &&
+      !selectedCaseDetail.candidates.some((candidate) => candidate.id === selectedCandidateId)
+    ) {
+      setSelectedCandidateId("");
     }
   }, [selectedCandidateId, selectedCaseDetail]);
 

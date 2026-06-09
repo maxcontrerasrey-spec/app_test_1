@@ -1076,6 +1076,8 @@ export interface BukCandidateStatus {
   exists: boolean;
   status?: string;
   name?: string;
+  is_active?: boolean;
+  exit_date?: string | null;
 }
 
 export async function checkCandidateInBukLive(rut: string): Promise<{
@@ -1087,21 +1089,38 @@ export async function checkCandidateInBukLive(rut: string): Promise<{
   }
 
   const normalizedNationalId = normalizeRut(rut);
-  
-  // Asumimos que normalizeRut retorna algo como "12345678-9", que es el formato que espera BUK
-  const { data, error } = await supabase.functions.invoke("check_buk_candidate", {
-    body: { rut: normalizedNationalId }
+
+  const { data, error } = await supabase.rpc("find_buk_employee_status_by_rut", {
+    p_national_id: normalizedNationalId
   });
 
   if (error) {
     return {
       data: null,
-      error: error.message || "No fue posible verificar el estado en BUK."
+      error: formatRpcError(error) || "No fue posible verificar el estado en BUK."
     };
   }
 
+  const results = data as unknown as Array<{
+    match_found: boolean;
+    name?: string;
+    status?: string;
+    is_active?: boolean;
+    exit_date?: string | null;
+  }> | null;
+
+  const firstResult = results && results.length > 0 ? results[0] : null;
+
   return {
-    data: data as BukCandidateStatus,
+    data: firstResult
+      ? {
+          exists: Boolean(firstResult.match_found),
+          status: firstResult.status,
+          name: firstResult.name,
+          is_active: firstResult.is_active,
+          exit_date: firstResult.exit_date ?? null
+        }
+      : { exists: false },
     error: null
   };
 }

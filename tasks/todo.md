@@ -2,6 +2,25 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección integral de clima, cierre de folios y warning BUK por RUT
+
+- [x] Confirmar la causa raíz de la geolocalización degradada y endurecer el widget para que no caiga prematuramente a Santiago
+- [x] Mantener visibles los candidatos descartados de folios cerrados dentro de `Control de candidatos`
+- [x] Corregir el cierre del resumen/pipeline de candidato para que no se reabra solo y cierre al hacer click afuera
+- [x] Reemplazar la verificación frágil contra Edge Function por una validación backend contra la sync BUK, incluyendo fecha de salida cuando exista
+- [x] Validar build, documentar resultados en `todo` y capturar lección nueva en `lessons`
+
+## Resultado de corrección integral de clima, cierre de folios y warning BUK por RUT
+
+- La persistencia del panel de candidato no estaba en `HiringCandidatesView`, sino en la auto-selección del primer candidato desde [`src/modules/recruitment/pages/HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:113). Esa lógica fue recortada para que un cierre manual no vuelva a abrir solo el pipeline.
+- Además del ajuste anterior, [`src/modules/recruitment/components/HiringCandidatesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringCandidatesView.tsx:65) ahora cierra el resumen al hacer click fuera del layout completo, no solo sobre un hueco exacto del grid.
+- Los candidatos descartados de folios cerrados desaparecían por backend: `get_recruitment_control_dashboard_v2()` filtraba `rc.status not in ('filled', 'closed_unfilled', 'cancelled')` y por eso expulsaba también descartados históricos. La migración [`20260608_235500_fix_candidate_visibility_and_buk_rut_lookup.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_235500_fix_candidate_visibility_and_buk_rut_lookup.sql:1) mantiene visibles en `candidate_control` los candidatos `rejected/withdrawn` de casos `cancelled` cuyo folio quedó `closed`.
+- El warning por RUT en BUK dejó de depender de una Edge Function opaca al repo. Ahora el frontend usa la RPC `find_buk_employee_status_by_rut(...)`, soportada por la sync local `public.employees`, con salida de estado, nombre y fecha de salida cuando la data existe en `raw_payload`.
+- La verificación de BUK quedó respaldada con datos reales de producción: la sync contiene `1586` activos y `3607` inactivos, y hay registros inactivos con fechas derivables desde `active_until` / `current_job.end_date`, lo que habilita mostrar salida histórica en la advertencia.
+- En clima, la regresión venía de aceptar lecturas de navegador demasiado permisivas o antiguas y degradar rápido a fallback. [`src/modules/dashboard/components/DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:315) volvió a un flujo secuencial verificable: intento preciso sin caché, luego intento tolerante, y solo después fallback.
+- La migración fue aplicada directamente en Supabase productivo con nombre `fix_candidate_visibility_and_buk_rut_lookup`.
+- La validación técnica cerró con `npm run build`, arranque local de Vite en `127.0.0.1:5173` y respuesta `HTTP/1.1 200 OK` del servidor local.
+
 ## Limpieza profunda de repo y compactación de arquitectura base
 
 - [x] Auditar archivos sueltos, hotspots del repo y referencias rígidas al dominio antiguo

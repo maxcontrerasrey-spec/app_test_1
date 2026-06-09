@@ -218,6 +218,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 33. Un panel seleccionable no debe reabrirse por “ayuda” del contenedor padre
+
+- **Si la UI permite cerrar manualmente un resumen lateral, el componente padre no puede volver a autoseleccionar el primer registro al siguiente render**. Eso transforma el cierre en una ilusión y deja la vista “pegada”.
+- **El criterio correcto es conservar selección solo si el registro sigue existiendo**. Si el usuario limpió la selección, se respeta hasta que vuelva a hacer click explícito en otra fila.
+
+## 34. Los warnings operativos no deben depender de integraciones backend fuera del repo
+
+- **Si una validación crítica del flujo vive en una Edge Function no versionada junto al código principal, el frontend queda ciego ante fallas o drift**. Para señales operativas como “este RUT ya estuvo en la empresa”, la fuente debe ser una RPC controlada dentro del mismo repositorio o una tabla sincronizada auditable.
+- **Cuando existe una sync local confiable de BUK, se consulta primero esa réplica**. Así el warning sigue funcionando aunque la integración en vivo cambie, y además se pueden enriquecer mensajes con estado histórico y fecha de salida.
+
 ## 33. Un widget descartado operativamente también debe apagarse en la base
 
 - **Si una sección ya no forma parte del dashboard real, no basta con sacarla del layout**. También hay que desactivarla en `dashboard_widgets` y limpiar preferencias huérfanas para que el catálogo no siga prometiendo piezas que el frontend ya no usa.
