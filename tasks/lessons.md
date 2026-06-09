@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 57. En geolocalización productiva, fallback visual no puede significar ubicación falsa
+
+- **Nunca uses una ciudad fija como fallback “válido” para un widget de ubicación real**. Si el navegador no entregó coordenadas confiables, mostrar `Santiago, CL` degrada el dato y genera un error operativo más grave que mostrar ausencia o aproximación.
+- **La traducción de coordenadas a ciudad no debe depender de un solo proveedor externo**. Si el caso de uso es crítico para el inicio del ERP, el widget debe intentar al menos una segunda fuente o caer explícitamente a coordenadas/aproximación, no fingir una ciudad exacta.
+
 ## 33. Un panel seleccionable no debe reabrirse por “ayuda” del contenedor padre
 
 - **Si la UI permite cerrar manualmente un resumen lateral, el componente padre no puede volver a autoseleccionar el primer registro al siguiente render**. Eso transforma el cierre en una ilusión y deja la vista “pegada”.

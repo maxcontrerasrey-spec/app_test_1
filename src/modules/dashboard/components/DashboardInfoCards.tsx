@@ -36,11 +36,11 @@ const INITIAL_LOCATION: LiveLocationState = {
 const LOCATION_CACHE_KEY = "dashboard:weather:last-browser-location";
 const LOCATION_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 
-const DEFAULT_LOCATION: LiveLocationState = {
-  label: "Santiago, CL",
+const UNAVAILABLE_LOCATION: LiveLocationState = {
+  label: "Ubicación no disponible",
   statusLabel: "Ubicación no disponible",
-  latitude: -33.4489,
-  longitude: -70.6693,
+  latitude: null,
+  longitude: null,
   isResolved: true,
   isFallback: true
 };
@@ -49,8 +49,12 @@ function buildWeatherUrl(latitude: number, longitude: number) {
   return `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&forecast_days=2&timeformat=unixtime&timezone=America%2FSantiago`;
 }
 
-function buildReverseGeocodingUrl(latitude: number, longitude: number) {
+function buildBigDataCloudReverseGeocodingUrl(latitude: number, longitude: number) {
   return `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=es`;
+}
+
+function buildNominatimReverseGeocodingUrl(latitude: number, longitude: number) {
+  return `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=es`;
 }
 
 function formatCoordinateLabel(latitude: number, longitude: number) {
@@ -237,6 +241,15 @@ type ReverseGeocodingPayload = {
   locality?: string;
   principalSubdivision?: string;
   countryCode?: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    country_code?: string;
+  };
   localityInfo?: {
     administrative?: ReverseGeocodingAdministrativeArea[];
   };
@@ -272,13 +285,21 @@ function formatLocationLabel(payload: unknown) {
   const city =
     (typeof data.city === "string" && data.city.trim()) ||
     (typeof data.locality === "string" && data.locality.trim()) ||
+    (typeof data.address?.city === "string" && data.address.city.trim()) ||
+    (typeof data.address?.town === "string" && data.address.town.trim()) ||
+    (typeof data.address?.village === "string" && data.address.village.trim()) ||
+    (typeof data.address?.municipality === "string" && data.address.municipality.trim()) ||
+    (typeof data.address?.county === "string" && data.address.county.trim()) ||
     findAdministrativeLocality(data.localityInfo?.administrative) ||
+    (typeof data.address?.state === "string" && data.address.state.trim()) ||
     (typeof data.principalSubdivision === "string" && data.principalSubdivision.trim()) ||
     null;
 
   const countryCode =
     typeof data.countryCode === "string" && data.countryCode.trim()
       ? data.countryCode.trim().toUpperCase()
+      : typeof data.address?.country_code === "string" && data.address.country_code.trim()
+        ? data.address.country_code.trim().toUpperCase()
       : "CL";
 
   return city ? `${city}, ${countryCode}` : null;
@@ -301,7 +322,7 @@ function toGeolocationStatusLabel(error?: GeolocationPositionError | null) {
     return "Tiempo de ubicación agotado";
   }
 
-  return DEFAULT_LOCATION.statusLabel;
+  return UNAVAILABLE_LOCATION.statusLabel;
 }
 
 function pickFallbackGeolocationError(errors: GeolocationPositionError[]) {
@@ -321,6 +342,36 @@ function requestBrowserPosition(options: PositionOptions) {
   return new Promise<GeolocationPosition>((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
+}
+
+async function fetchReverseGeocodingPayloads(
+  latitude: number,
+  longitude: number,
+  signal?: AbortSignal
+) {
+  const providers = [
+    buildBigDataCloudReverseGeocodingUrl(latitude, longitude),
+    buildNominatimReverseGeocodingUrl(latitude, longitude)
+  ];
+
+  for (const url of providers) {
+    try {
+      const response = await fetch(url, { signal });
+      if (!response.ok) {
+        continue;
+      }
+
+      const payload = await response.json();
+      const label = formatLocationLabel(payload);
+      if (label) {
+        return label;
+      }
+    } catch {
+      // Try next provider.
+    }
+  }
+
+  return null;
 }
 
 function isGeolocationError(error: unknown): error is GeolocationPositionError {
@@ -363,11 +414,9 @@ export function DashboardInfoCards({
     reverseControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch(buildReverseGeocodingUrl(latitude, longitude), {
-        signal: reverseControllerRef.current.signal
-      });
-      const payload = await response.json();
-      const label = formatLocationLabel(payload) ?? formatCoordinateLabel(latitude, longitude);
+      const label =
+        (await fetchReverseGeocodingPayloads(latitude, longitude, reverseControllerRef.current.signal)) ??
+        formatCoordinateLabel(latitude, longitude);
 
       if (requestId === activeLocationRequestIdRef.current) {
         persistBrowserLocation(label, latitude, longitude);
@@ -409,14 +458,19 @@ export function DashboardInfoCards({
     try {
       const response = await fetch("https://ipwho.is/");
       const data = await response.json();
-      if (data && data.success && typeof data.latitude === "number") {
+      if (
+        data &&
+        data.success &&
+        typeof data.latitude === "number" &&
+        typeof data.longitude === "number"
+      ) {
         setLocation({
           label: `${data.city || data.region}, ${data.country_code}`,
           statusLabel: `Aproximada por red (${reasonLabel})`,
           latitude: data.latitude,
           longitude: data.longitude,
           isResolved: true,
-          isFallback: false
+          isFallback: true
         });
         return;
       }
@@ -424,7 +478,7 @@ export function DashboardInfoCards({
       throw new Error("Invalid IP location data");
     } catch (_error) {
       setLocation({
-        ...DEFAULT_LOCATION,
+        ...UNAVAILABLE_LOCATION,
         statusLabel: reasonLabel
       });
     }
@@ -478,7 +532,7 @@ export function DashboardInfoCards({
       try {
         const highAccuracyPosition = await requestBrowserPosition({
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 20000,
           maximumAge: 0
         });
 
@@ -501,8 +555,8 @@ export function DashboardInfoCards({
       try {
         const relaxedPosition = await requestBrowserPosition({
           enableHighAccuracy: false,
-          timeout: 15000,
-          maximumAge: 900000
+          timeout: 30000,
+          maximumAge: 1800000
         });
 
         await resolveLocationLabel(
@@ -693,6 +747,17 @@ export function DashboardInfoCards({
             <span className="dashboard-info-weather-zone">
               {location.isResolved ? location.statusLabel : "Resolviendo ubicación..."}
             </span>
+            {(location.isFallback || !location.isResolved) ? (
+              <button
+                type="button"
+                className="dashboard-info-weather-action"
+                onClick={() => {
+                  void requestBrowserLocation();
+                }}
+              >
+                Reintentar ubicación exacta
+              </button>
+            ) : null}
           </div>
           <span className="dashboard-info-weather-icon" aria-hidden="true">
             {toWeatherIcon(weather.code)}

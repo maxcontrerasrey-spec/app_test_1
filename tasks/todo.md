@@ -2,6 +2,22 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección estructural del widget de clima para ubicación real
+
+- [x] Auditar el flujo actual del widget y confirmar por qué seguía degradando a Santiago o quedando sin ciudad válida
+- [x] Reescribir la degradación de ubicación para eliminar el fallback fijo engañoso y endurecer la resolución de ciudad
+- [x] Validar build, registrar resultado y capturar la lección nueva
+
+## Resultado de corrección estructural del widget de clima para ubicación real
+
+- La regresión ya no estaba en `getCurrentPosition(...)` solamente. El mayor problema era de contrato: el widget seguía considerando a `Santiago, CL` como fallback “válido”, por lo que cualquier timeout o error menor terminaba mostrando una ubicación falsa como si fuera real.
+- [`src/modules/dashboard/components/DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:36) dejó de usar coordenadas fijas para fallback. Ahora el estado degradado es realmente `Ubicación no disponible`, sin latitud/longitud inventadas; si no hay geolocalización real, el clima no se calcula con una ciudad falsa.
+- La resolución de nombre de ciudad quedó endurecida con dos proveedores secuenciales de reverse geocoding. Primero intenta `BigDataCloud` y, si no entrega ciudad usable, reintenta con `Nominatim` antes de caer al label por coordenadas.
+- La aproximación por red mediante `ipwho.is` ahora queda marcada correctamente como fallback (`isFallback = true`) y visible como `Aproximada por red (...)`, en vez de mezclarse con ubicación exacta.
+- También se amplió la tolerancia del navegador: el intento preciso subió a `20s` y el intento relajado a `30s`, con caché más amplia, para evitar degradaciones prematuras en Safari y navegadores más lentos con permisos.
+- En UI, cuando la ubicación siga aproximada o no resuelta, el card expone `Reintentar ubicación exacta` para disparar un nuevo intento explícito sin refrescar toda la app.
+- La validación técnica cerró con `npm run build` y `git diff --check`.
+
 ## Corrección integral de clima, cierre de folios y warning BUK por RUT
 
 - [x] Confirmar la causa raíz de la geolocalización degradada y endurecer el widget para que no caiga prematuramente a Santiago
