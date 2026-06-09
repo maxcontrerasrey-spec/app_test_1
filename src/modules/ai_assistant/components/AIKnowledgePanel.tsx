@@ -1,4 +1,7 @@
+import { useAuth } from "../../auth/context/AuthContext";
+
 export function AIKnowledgePanel() {
+  const { isSuperAdmin } = useAuth();
   const mockDocs = [
     { id: "1", name: "Manual de Operaciones 2024.pdf", type: "pdf", size: "2.4 MB" },
     { id: "2", name: "Protocolo_Contratacion.docx", type: "docx", size: "1.1 MB" },
@@ -12,15 +15,17 @@ export function AIKnowledgePanel() {
         <p>Documentos que alimentan a ORION.</p>
       </div>
 
-      <div className="orion-upload-zone" aria-label="Subir documento">
-        <svg className="orion-upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-        <span className="orion-upload-text">Subir Documento</span>
-        <span className="orion-upload-hint">Arrastra un PDF o Word aquí</span>
-      </div>
+      {isSuperAdmin && (
+        <div className="orion-upload-zone" aria-label="Subir documento">
+          <svg className="orion-upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <span className="orion-upload-text">Subir Documento</span>
+          <span className="orion-upload-hint">Solo Admins: Arrastra un PDF o Word</span>
+        </div>
+      )}
 
       <div className="orion-doc-list">
         {mockDocs.map((doc) => (

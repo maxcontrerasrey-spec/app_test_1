@@ -1,5 +1,6 @@
 import { AIChatWindow } from "../components/AIChatWindow";
 import { AIKnowledgePanel } from "../components/AIKnowledgePanel";
+import { AIChatHistory } from "../components/AIChatHistory";
 import "../styles/ai-assistant.css";
 
 export function AIAssistantHome() {
@@ -12,8 +13,11 @@ export function AIAssistantHome() {
         </div>
       </header>
 
-      <main className="orion-container">
-        <AIChatWindow />
+      <main className="orion-layout">
+        <AIChatHistory />
+        <div className="orion-center">
+          <AIChatWindow />
+        </div>
         <AIKnowledgePanel />
       </main>
     </div>
