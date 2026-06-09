@@ -250,6 +250,16 @@
   border-top-left-radius: 4px;
 }
 
+[data-theme="dark"] .orion-message.ai .orion-message-content {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Fix ORION Logo contrast in Dark Mode */
+[data-theme="dark"] img[src*="orion-logo"] {
+  filter: brightness(0) invert(1);
+}
+
 .orion-input-area {
   padding: 12px 20px;
   background: rgba(var(--surface-rgb), 0.5);
