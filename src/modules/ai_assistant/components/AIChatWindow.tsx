@@ -109,13 +109,6 @@ export function AIChatWindow() {
       <div className="orion-chat-area">
         {messages.map((msg) => (
           <div key={msg.id} className={`orion-message ${msg.sender}`}>
-            <div className="orion-message-avatar" style={msg.sender === "ai" ? { background: "transparent", boxShadow: "none" } : {}}>
-              {msg.sender === "user" ? (
-                "Tú"
-              ) : (
-                <img src={orionLogo} alt="ORION" style={{ width: "36px", height: "36px", objectFit: "contain", transform: "scale(2.2)", margin: "0 -4px" }} />
-              )}
-            </div>
             <div className="orion-message-content">
               {msg.text}
             </div>
