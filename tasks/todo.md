@@ -35,6 +35,21 @@
 - Se verificó además que el origen `https://gestion.busesjm.cl` no está enviando `Permissions-Policy` que bloquee geolocalización; por lo tanto el problema corregido era interno del widget.
 - La validación cerró con `npm run build`.
 
+## Corrección de pantallas en blanco al cambiar de módulo
+
+- [x] Revisar router, guards y estrategia de carga de páginas para aislar por qué la app quedaba completamente en blanco
+- [x] Implementar una defensa estructural para fallos de `lazy import` y excepciones de render de módulos
+- [x] Validar build y dejar la corrección lista para deploy
+
+## Resultado de corrección de pantallas en blanco al cambiar de módulo
+
+- El problema más probable no estaba en `ProtectedRoute` ni en `RoleProtectedRoute`: ambos muestran loading o redirect, pero no devuelven una pantalla vacía. El punto débil estaba en el router con `React.lazy(...)` puro y sin `ErrorBoundary` global.
+- Cuando un módulo lazy falla al cargar en producción, por ejemplo por `chunk` desactualizado después de un deploy o por excepción al montar una vista, React derriba el árbol si no existe un boundary de recuperación. Eso explica el síntoma de “todo en blanco hasta refrescar”.
+- Se agregó el helper [`src/shared/lib/lazyWithRetry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/lazyWithRetry.ts:1), que detecta errores típicos de chunks dinámicos y fuerza una sola recarga controlada antes de propagar el error.
+- Se incorporó además [`src/shared/ui/AppErrorBoundary.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/AppErrorBoundary.tsx:1) como boundary global en [`src/main.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/main.tsx:1), con acciones explícitas de `Recargar app` e `Ir al inicio` en vez de dejar la SPA muerta.
+- Finalmente, [`src/app/router/AppRouter.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1) dejó de usar `lazy(...)` directo y ahora carga todas las páginas de ruta mediante `lazyWithRetry(...)`.
+- La validación cerró con `npm run build`.
+
 ## Limpieza profunda de repo y compactación de arquitectura base
 
 - [x] Auditar archivos sueltos, hotspots del repo y referencias rígidas al dominio antiguo

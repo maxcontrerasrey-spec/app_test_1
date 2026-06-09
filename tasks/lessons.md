@@ -233,6 +233,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si el `useEffect` que inicia la ubicación depende de `statusLabel`, `isResolved` o flags que la propia rutina modifica, se crean ciclos de reentrada y requests solapados**. El síntoma típico es quedarse en `Resolviendo ubicación...` o caer de forma errática a un fallback fijo.
 - **La estructura estable es `effect único + refs de control + request in flight`**. La geolocalización se dispara una vez por ciclo, los reintentos se gobiernan explícitamente y el fallback solo corre cuando realmente se agotaron los intentos válidos.
 
+## 36. Una SPA productiva no puede depender de `lazy()` sin recuperación
+
+- **Si las rutas se cargan con `React.lazy()` puro y no existe `ErrorBoundary`, cualquier fallo de chunk o excepción al montar una página puede dejar la app completamente en blanco**. En producción esto aparece mucho después de deploys, cuando el shell antiguo intenta pedir un archivo con hash viejo.
+- **El patrón mínimo aceptable es `lazyWithRetry + ErrorBoundary global`**. Primero se intenta una recarga controlada para resincronizar chunks y, si el problema persiste, se muestra una vista de recuperación en vez de matar todo el árbol React.
+
 ## 33. Un widget descartado operativamente también debe apagarse en la base
 
 - **Si una sección ya no forma parte del dashboard real, no basta con sacarla del layout**. También hay que desactivarla en `dashboard_widgets` y limpiar preferencias huérfanas para que el catálogo no siga prometiendo piezas que el frontend ya no usa.

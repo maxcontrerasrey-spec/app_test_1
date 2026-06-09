@@ -1,51 +1,52 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../layout/AppShell";
+import { lazyWithRetry } from "../../shared/lib/lazyWithRetry";
 import {
   ProtectedRoute,
   PublicOnlyRoute,
   RoleProtectedRoute
 } from "../../modules/auth/components/RouteGuards";
 
-const HomePage = lazy(async () => ({
+const HomePage = lazyWithRetry("home-page", async () => ({
   default: (await import("../../modules/home/pages/HomePage")).HomePage
 }));
 
-const CertificatesPage = lazy(async () => ({
+const CertificatesPage = lazyWithRetry("certificates-page", async () => ({
   default: (await import("../../modules/certificates/pages/CertificatesPage")).CertificatesPage
 }));
 
-const CertificateTrackingPage = lazy(async () => ({
+const CertificateTrackingPage = lazyWithRetry("certificate-tracking-page", async () => ({
   default: (
     await import("../../modules/certificates/pages/CertificateTrackingPage")
   ).CertificateTrackingPage
 }));
 
-const HiringRequestPage = lazy(async () => ({
+const HiringRequestPage = lazyWithRetry("hiring-request-page", async () => ({
   default: (await import("../../modules/recruitment/pages/HiringRequestPage")).HiringRequestPage
 }));
 
-const HiringStatusPage = lazy(async () => ({
+const HiringStatusPage = lazyWithRetry("hiring-status-page", async () => ({
   default: (await import("../../modules/recruitment/pages/HiringStatusPage")).HiringStatusPage
 }));
 
-const LoginPage = lazy(async () => ({
+const LoginPage = lazyWithRetry("login-page", async () => ({
   default: (await import("../../modules/auth/pages/LoginPage")).LoginPage
 }));
 
-const ResetPasswordPage = lazy(async () => ({
+const ResetPasswordPage = lazyWithRetry("reset-password-page", async () => ({
   default: (await import("../../modules/auth/pages/ResetPasswordPage")).ResetPasswordPage
 }));
 
-const AccessDeniedPage = lazy(async () => ({
+const AccessDeniedPage = lazyWithRetry("access-denied-page", async () => ({
   default: (await import("../../modules/auth/pages/AccessDeniedPage")).AccessDeniedPage
 }));
 
-const OperacionesDashboard = lazy(async () => ({
+const OperacionesDashboard = lazyWithRetry("operaciones-dashboard", async () => ({
   default: (await import("../../modules/operaciones/pages/OperacionesDashboard")).OperacionesDashboard
 }));
 
-const HumanResourcesDashboard = lazy(async () => ({
+const HumanResourcesDashboard = lazyWithRetry("human-resources-dashboard", async () => ({
   default: (
     await import("../../modules/incentives/pages/HumanResourcesDashboard")
   ).HumanResourcesDashboard
