@@ -5,7 +5,6 @@ import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQ
 import { useDashboard } from "../hooks/useDashboard";
 import { DashboardGrid } from "../components/DashboardGrid";
 import { DashboardInfoCards } from "../components/DashboardInfoCards";
-import { FloatingActionMenu } from "../components/FloatingActionMenu";
 import "../styles/dashboard.css";
 
 export function DashboardHome() {
@@ -49,7 +48,6 @@ export function DashboardHome() {
           <p className="helper-copy">Aquí tienes tu resumen operativo y tareas pendientes de hoy.</p>
         </div>
         <div className="dashboard-header-actions">
-          <FloatingActionMenu />
         </div>
       </header>
 
