@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import orionLogo from "../../../assets/orion-logo.png";
+import "../styles/ai-assistant.css";
+import "../styles/orion-widget.css";
 
 type Message = {
   id: string;
