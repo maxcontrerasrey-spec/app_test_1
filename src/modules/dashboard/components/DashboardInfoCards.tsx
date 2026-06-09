@@ -37,10 +37,10 @@ const LOCATION_CACHE_KEY = "dashboard:weather:last-browser-location";
 const LOCATION_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 
 const UNAVAILABLE_LOCATION: LiveLocationState = {
-  label: "Ubicación no disponible",
-  statusLabel: "Ubicación no disponible",
-  latitude: null,
-  longitude: null,
+  label: "Santiago, CL",
+  statusLabel: "Ubicación por defecto",
+  latitude: -33.4489,
+  longitude: -70.6693,
   isResolved: true,
   isFallback: true
 };
@@ -500,19 +500,18 @@ export function DashboardInfoCards({
     }
 
     try {
-      const response = await fetch("https://ipwho.is/");
+      const response = await fetch("https://get.geojs.io/v1/ip/geo.json");
       const data = await response.json();
       if (
         data &&
-        data.success &&
-        typeof data.latitude === "number" &&
-        typeof data.longitude === "number"
+        data.latitude &&
+        data.longitude
       ) {
         setLocation({
           label: `${data.city || data.region}, ${data.country_code}`,
           statusLabel: `Aproximada por red (${reasonLabel})`,
-          latitude: data.latitude,
-          longitude: data.longitude,
+          latitude: parseFloat(data.latitude),
+          longitude: parseFloat(data.longitude),
           isResolved: true,
           isFallback: true
         });
