@@ -520,8 +520,10 @@ export function DashboardInfoCards({
 
       throw new Error("Invalid IP location data");
     } catch (_error) {
+      const errStr = _error instanceof Error ? _error.message : String(_error);
       setLocation({
         ...UNAVAILABLE_LOCATION,
+        label: "Error: " + errStr.substring(0, 30),
         statusLabel: reasonLabel
       });
     }
