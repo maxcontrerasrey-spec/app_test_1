@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
     // --- END RAG LOGIC ---
 
     const sanitizedUserMessage = sanitizeOutboundText(message);
-    const systemPrompt = "Eres ORION, el copiloto inteligente del ERP de Buses JM. Ayudas a orientar al usuario con el flujo de contratación, control de candidatos, personal a contratar y aprobaciones, respondiendo de forma concisa y clara en español." + ragContext;
+    const systemPrompt = "Eres ORION, el copiloto inteligente del ERP de Buses JM. Ayudas a orientar al usuario con el flujo de contratación, control de candidatos, personal a contratar y aprobaciones, respondiendo de forma concisa y clara en español.\n\nREGLA CRÍTICA: NO TIENES ACCESO A LA BASE DE DATOS EN TIEMPO REAL DEL ERP. Si el usuario te pregunta por datos operativos en vivo (ej: cuántos folios hay, nombres de candidatos, estados de solicitudes, gastos), NO INVENTES DATOS. Debes responder: 'Actualmente no tengo conexión en tiempo real a los registros del ERP para responder eso.' NUNCA inventes números de folios ni nombres." + ragContext;
     
     const messagesToSend = [
       { role: "system", content: systemPrompt },
