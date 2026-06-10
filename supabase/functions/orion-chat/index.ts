@@ -66,12 +66,7 @@ function getUserIdFromAuthHeader(authHeader: string | null) {
 
 function sanitizeOutboundText(value: string) {
   return value
-    .replace(/\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g, "[email]")
-    .replace(/\bhttps?:\/\/[^\s]+/gi, "[url]")
-    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi, "[id]")
     .replace(/\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/g, "[rut]")
-    .replace(/\+?\d[\d\s().-]{7,}\d/g, "[telefono]")
-    .replace(/\b\d{6,}\b/g, "[numero]")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, MAX_MESSAGE_CHARS);
@@ -141,6 +136,10 @@ Deno.serve(async (req) => {
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const authHeader = req.headers.get("Authorization");
   const userId = getUserIdFromAuthHeader(authHeader);
+
+  const orionLlmApiKey = Deno.env.get("ORION_LLM_API_KEY");
+  const orionLlmBaseUrl = Deno.env.get("ORION_LLM_BASE_URL") || "https://api.groq.com/openai/v1";
+  const orionLlmModel = Deno.env.get("ORION_LLM_MODEL") || "llama-3.1-8b-instant";
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     return new Response(JSON.stringify({ error: "Supabase runtime no configurado." }), {
@@ -236,7 +235,67 @@ Deno.serve(async (req) => {
     const outboundContextRows = ((contextRows ?? []) as MessageRow[])
       .map((row) => sanitizeOutboundText(row.content))
       .filter(Boolean);
-    const normalizedAssistantText = normalizeAssistantText(buildLocalSafeAssistantText(message));
+
+    // Prepare message history for LLM (oldest to newest)
+    const llmMessages = [...(contextRows ?? [])].reverse().map((row) => ({
+      role: row.sender === "user" ? "user" : "assistant",
+      content: sanitizeOutboundText(row.content)
+    }));
+
+    const sanitizedUserMessage = sanitizeOutboundText(message);
+    const messagesToSend = [
+      { role: "system", content: "Eres ORION, el copiloto inteligente del ERP de Buses JM. Ayudas a orientar al usuario con el flujo de contratación, control de candidatos, personal a contratar y aprobaciones, respondiendo de forma concisa y clara en español." },
+      ...llmMessages,
+      { role: "user", content: sanitizedUserMessage }
+    ];
+
+    let normalizedAssistantText = "";
+    let vendor = "local-safe";
+    let modelUsed: string | null = null;
+
+    if (orionLlmApiKey) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+        const groqResponse = await fetch(`${orionLlmBaseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${orionLlmApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: orionLlmModel,
+            messages: messagesToSend,
+            temperature: 0.3,
+            max_tokens: 1024
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!groqResponse.ok) {
+          const errText = await groqResponse.text();
+          throw new Error(`Groq API returned status ${groqResponse.status}: ${errText}`);
+        }
+
+        const responseData = await groqResponse.json();
+        const choiceText = responseData.choices?.[0]?.message?.content;
+        if (typeof choiceText === "string" && choiceText.trim()) {
+          normalizedAssistantText = choiceText.trim();
+          vendor = "groq";
+          modelUsed = orionLlmModel;
+        } else {
+          throw new Error("Groq API returned empty choice content.");
+        }
+      } catch (e) {
+        console.error("Failed to fetch from Groq, using fallback:", e);
+        normalizedAssistantText = normalizeAssistantText(buildLocalSafeAssistantText(message));
+      }
+    } else {
+      normalizedAssistantText = normalizeAssistantText(buildLocalSafeAssistantText(message));
+    }
 
     const assistantCreatedAt = new Date().toISOString();
     const { data: assistantMessageRow, error: assistantInsertError } = await supabase
@@ -289,8 +348,8 @@ Deno.serve(async (req) => {
           createdAt: assistantMessageRow.created_at
         },
         provider: {
-          vendor: "local-safe",
-          model: null
+          vendor,
+          model: modelUsed
         },
         privacy: {
           sanitized: true,
