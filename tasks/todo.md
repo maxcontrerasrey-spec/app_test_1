@@ -2,6 +2,25 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## ORION read-only global access + reparación del exportador XLS
+
+- [x] Reproducir y corregir el problema funcional real del exportador XLS de `Personal a Contratar`
+- [x] Aterrizar `implementation_plan.md` al contrato actual de ORION, Edge Functions y RLS del repo
+- [x] Implementar herramienta read-only global para ORION con esquema controlado, allowlist de tablas/columnas y sin capacidad de mutación
+- [x] Crear o ajustar las migraciones SQL necesarias en repo y, si la terminal lo permite, aplicarlas directamente en Supabase
+- [x] Validar `npm run build`, registrar resultados en `todo.md` y actualizar `lessons.md`
+
+## Resultado de ORION read-only global access + reparación del exportador XLS
+
+- El exportador XLS de `Personal a Contratar` quedó corregido en [`src/modules/recruitment/lib/bukEmployeeNomina.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/bukEmployeeNomina.ts:236): ahora usa carga dinámica segura de `xlsx` (`utils` + `writeFile`) en el mismo patrón que ya funcionaba en otros módulos y mantiene exportación real en formato `.xls` (`bookType: biff8`).
+- La vista [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) ya ejecuta la exportación como operación asíncrona controlada, con mensaje operativo de éxito o error y sin depender del panel lateral activo.
+- Se aterrizó el plan [`implementation_plan.md`](/Users/maximilianocontrerasrey/Downloads/implementation_plan.md:1) sobre la arquitectura real de ORION agregando un mapa de tablas legibles y una herramienta universal read-only dentro de la Edge Function.
+- Se creó [`supabase/functions/orion-chat/erpSchema.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/erpSchema.ts:1), que centraliza el contrato de lectura permitido para ORION: tablas, columnas visibles, columnas de búsqueda, columnas exact-match, orden por defecto y límites máximos.
+- [`supabase/functions/orion-chat/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/index.ts:1) ahora incorpora `orion_database_search`, una herramienta universal de solo lectura que opera exclusivamente sobre la allowlist declarada, reutiliza el cliente autenticado del usuario y por tanto sigue respetando RLS.
+- No fue necesario crear una migración SQL nueva para esta etapa, porque la lectura universal se resolvió en la Edge Function sobre PostgREST autenticado y tablas ya existentes. El cambio estructural real vive en código, no en esquema.
+- La validación local cerró con `npm run build` exitoso y smoke test de escritura XLS vía `xlsx` generando archivo `.xls` válido en directorio temporal.
+- El despliegue directo de `orion-chat` a Supabase no se pudo ejecutar desde este entorno porque la política del agente bloqueó el deploy productivo al detectar que la function conserva integración configurable con proveedor LLM externo (`ORION_LLM_*`). El repo quedó listo para que ese deploy lo ejecutes tú desde tu terminal autenticada.
+
 ## Revisión estructural de ORION y limpieza de arquitectura
 
 - [x] Auditar el estado actual de ORION en frontend, Edge Functions y migraciones para detectar drift respecto al contrato operativo vigente

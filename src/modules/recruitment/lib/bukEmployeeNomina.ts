@@ -234,12 +234,12 @@ function autoFitColumns(rows: Array<Array<string | number | Date>>) {
 }
 
 export async function exportBukNominaXls(sources: NominaSource[], fileName?: string) {
-  const XLSX = await import("xlsx");
-  const workbook = XLSX.utils.book_new();
+  const { utils, writeFile } = await import("xlsx");
+  const workbook = utils.book_new();
   const employeeRows = buildEmployeeSheetRows(sources);
-  const employeeSheet = XLSX.utils.aoa_to_sheet(employeeRows);
+  const employeeSheet = utils.aoa_to_sheet(employeeRows);
   const listsRows = buildListsSheetRows();
-  const listsSheet = XLSX.utils.aoa_to_sheet(listsRows);
+  const listsSheet = utils.aoa_to_sheet(listsRows);
 
   employeeSheet["!cols"] = autoFitColumns(employeeRows);
   listsSheet["!cols"] = Object.keys(optionLists).map((header) => ({
@@ -248,7 +248,7 @@ export async function exportBukNominaXls(sources: NominaSource[], fileName?: str
 
   for (let rowIndex = 1; rowIndex < employeeRows.length; rowIndex += 1) {
     employeeHeaders.forEach((header, columnIndex) => {
-      const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex });
+      const cellAddress = utils.encode_cell({ r: rowIndex, c: columnIndex });
       const cell = employeeSheet[cellAddress];
 
       if (!cell) {
@@ -274,11 +274,11 @@ export async function exportBukNominaXls(sources: NominaSource[], fileName?: str
     });
   }
 
-  XLSX.utils.book_append_sheet(workbook, employeeSheet, "Empleados");
-  XLSX.utils.book_append_sheet(workbook, listsSheet, "Listas");
+  utils.book_append_sheet(workbook, employeeSheet, "Empleados");
+  utils.book_append_sheet(workbook, listsSheet, "Listas");
 
   const timestamp = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(workbook, fileName ?? `nomina-buk-${timestamp}.xls`, {
+  writeFile(workbook, fileName ?? `nomina-buk-${timestamp}.xls`, {
     bookType: "biff8"
   });
 }

@@ -218,6 +218,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 52. `npm run build` no valida Edge Functions de Supabase
+
+- **Un build limpio de Vite/TypeScript no demuestra que una Edge Function esté lista para producción**. El frontend puede compilar perfecto mientras `supabase/functions/*` conserva errores de contrato, imports o despliegue.
+- **Cada cambio relevante en ORION debe cerrarse con dos validaciones separadas**: build del frontend y despliegue o verificación explícita de la function remota. Si la segunda no ocurre, la tarea no está operativamente cerrada.
+
+## 53. Si ORION conserva salida configurable hacia un LLM externo, el deploy puede bloquearse por política aunque el código sea correcto
+
+- **No asumir que “terminal autenticada” equivale a “despliegue permitido”**. Cuando la function puede enviar contexto del ERP a un proveedor externo mediante secrets como `ORION_LLM_*`, el bloqueo puede venir de política de entorno y no de credenciales ni de Supabase.
+- **El cierre correcto en esos casos es dejar el repo listo y separar explícitamente “implementación terminada” de “deploy autorizado”**. No se debe intentar forzar rutas indirectas para publicar la function.
+
 ## 57. Si una política bloquea el proveedor externo, la salida correcta es degradar ORION a modo seguro local
 
 - **La autorización del usuario no invalida una política de exportación del entorno**. Si el deploy a un tercero como Groq sigue rechazado por compliance, no se insiste con workarounds; se cambia el contrato técnico.

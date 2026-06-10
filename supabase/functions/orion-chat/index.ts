@@ -1,5 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  buildOrionSchemaPrompt,
+  ORION_READABLE_TABLES,
+  type OrionReadableTableName
+} from "./erpSchema.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +33,15 @@ type MessageRow = {
   sender: "user" | "ai";
   content: string;
   created_at: string;
+};
+
+type OrionDatabaseSearchArgs = {
+  table: string;
+  columns?: string[];
+  filter_column?: string;
+  filter_value?: string;
+  exact_match?: boolean;
+  limit?: number;
 };
 
 function buildSessionTitle(text: string) {
@@ -75,6 +89,84 @@ function sanitizeOutboundText(value: string) {
 function normalizeAssistantText(value: string) {
   const normalized = value.trim();
   return normalized || "ORION no generó contenido utilizable para esta solicitud.";
+}
+
+function isReadableTableName(value: string): value is OrionReadableTableName {
+  return value in ORION_READABLE_TABLES;
+}
+
+function clampResultLimit(requested: number | undefined, maxLimit: number | undefined) {
+  const safeMax = maxLimit ?? 20;
+  if (!requested || Number.isNaN(requested)) {
+    return Math.min(10, safeMax);
+  }
+
+  return Math.max(1, Math.min(Math.trunc(requested), safeMax));
+}
+
+function resolveSelectedColumns(
+  requestedColumns: string[] | undefined,
+  tableName: OrionReadableTableName
+) {
+  const config = ORION_READABLE_TABLES[tableName];
+  if (!requestedColumns?.length) {
+    return [...config.defaultColumns];
+  }
+
+  const uniqueColumns = Array.from(new Set(requestedColumns.map((column) => column.trim()).filter(Boolean)));
+  const validColumns = uniqueColumns.filter((column) => config.columns.includes(column));
+
+  return validColumns.length > 0 ? validColumns : [...config.defaultColumns];
+}
+
+async function executeOrionDatabaseSearch(
+  client: ReturnType<typeof createClient>,
+  args: OrionDatabaseSearchArgs
+) {
+  const tableName = args.table?.trim();
+  if (!tableName || !isReadableTableName(tableName)) {
+    throw new Error("La tabla solicitada no está habilitada para lectura desde ORION.");
+  }
+
+  const config = ORION_READABLE_TABLES[tableName];
+  const selectedColumns = resolveSelectedColumns(args.columns, tableName);
+  const limit = clampResultLimit(args.limit, config.maxLimit);
+
+  let query = client
+    .from(tableName)
+    .select(selectedColumns.join(", "))
+    .limit(limit);
+
+  if (config.orderBy) {
+    query = query.order(config.orderBy.column, { ascending: config.orderBy.ascending ?? true });
+  }
+
+  const filterColumn = args.filter_column?.trim();
+  const filterValue = args.filter_value?.trim();
+
+  if (filterColumn && filterValue) {
+    if (!config.columns.includes(filterColumn)) {
+      throw new Error(`La columna ${filterColumn} no está permitida en la tabla ${tableName}.`);
+    }
+
+    const exactMatch = Boolean(args.exact_match) || config.exactMatchColumns?.includes(filterColumn);
+    query = exactMatch
+      ? query.eq(filterColumn, filterValue)
+      : query.ilike(filterColumn, `%${filterValue}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return {
+    table: tableName,
+    columns: selectedColumns,
+    rows: data ?? [],
+    returned_rows: Array.isArray(data) ? data.length : 0,
+    limit
+  };
 }
 
 function buildLocalSafeAssistantText(message: string) {
@@ -288,7 +380,14 @@ Reglas obligatorias:
 9. Cuando analices información del ERP, limita tus conclusiones únicamente a los datos disponibles.
 10. Finaliza los análisis indicando un nivel de confianza: Alta, Media o Baja.
 
-IMPORTANTE: Tienes acceso a herramientas (Function Calling) para consultar la base de datos operativa. Utilízalas si el usuario pregunta por folios de contratación o candidatos.` + ragContext;
+IMPORTANTE:
+- Tienes acceso a herramientas read-only (Function Calling) para consultar la base de datos operativa.
+- Nunca inventes filas, estados ni relaciones si la consulta no devolvió datos.
+- Si necesitas leer datos tabulares, usa primero la herramienta más específica disponible.
+- Para preguntas generales del ERP, usa la herramienta universal orion_database_search pero solo con tablas/columnas del mapa permitido.
+
+MAPA DE TABLAS PERMITIDAS:
+${buildOrionSchemaPrompt()}` + ragContext;
     
     const messagesToSend = [
       { role: "system", content: systemPrompt },
@@ -322,6 +421,44 @@ IMPORTANTE: Tienes acceso a herramientas (Function Calling) para consultar la ba
                   query_text: { type: "string", description: "RUT o fragmento del nombre del candidato a buscar." }
                 },
                 required: ["query_text"]
+              }
+            }
+          },
+          {
+            type: "function",
+            function: {
+              name: "orion_database_search",
+              description: "Lee datos del ERP en modo solo lectura sobre tablas permitidas. Úsala para consultar módulos completos sin modificar información.",
+              parameters: {
+                type: "object",
+                properties: {
+                  table: {
+                    type: "string",
+                    description: "Nombre exacto de la tabla permitida según el mapa del sistema."
+                  },
+                  columns: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Lista de columnas a devolver. Si se omite, ORION usará columnas por defecto."
+                  },
+                  filter_column: {
+                    type: "string",
+                    description: "Columna sobre la cual filtrar."
+                  },
+                  filter_value: {
+                    type: "string",
+                    description: "Valor de filtro para buscar registros."
+                  },
+                  exact_match: {
+                    type: "boolean",
+                    description: "Usa true para igualdad exacta cuando filtres por identificadores, códigos o RUT."
+                  },
+                  limit: {
+                    type: "integer",
+                    description: "Máximo de filas a devolver."
+                  }
+                },
+                required: ["table"]
               }
             }
           }
@@ -383,6 +520,9 @@ IMPORTANTE: Tienes acceso a herramientas (Function Calling) para consultar la ba
                 } else if (funcName === "orion_search_candidate") {
                   const { data, error } = await supabaseUserClient.rpc("orion_search_candidate", { query_text: args.query_text });
                   if (error) throw error;
+                  funcResult = JSON.stringify(data);
+                } else if (funcName === "orion_database_search") {
+                  const data = await executeOrionDatabaseSearch(supabaseUserClient, args as OrionDatabaseSearchArgs);
                   funcResult = JSON.stringify(data);
                 } else {
                   funcResult = JSON.stringify({ error: "Herramienta desconocida" });
