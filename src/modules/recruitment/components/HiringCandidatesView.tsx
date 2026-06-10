@@ -112,7 +112,7 @@ export function HiringCandidatesView({
     null;
 
   useEffect(() => {
-    if (!selectedCandidateBoardRow) {
+    if (!selectedCandidateBoardRow || isTransferModalOpen) {
       return;
     }
 
@@ -133,7 +133,7 @@ export function HiringCandidatesView({
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
     };
-  }, [onSelectCandidate, selectedCandidateBoardRow]);
+  }, [onSelectCandidate, selectedCandidateBoardRow, isTransferModalOpen]);
 
   return (
     <>
