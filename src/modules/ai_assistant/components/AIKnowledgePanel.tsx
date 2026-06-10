@@ -18,6 +18,7 @@ export function AIKnowledgePanel() {
 
   useEffect(() => {
     async function loadDocs() {
+      if (!supabase) return;
       const { data, error } = await supabase.storage.from("orion_knowledge").list();
       if (data && !error) {
         const loadedDocs = data
@@ -26,7 +27,7 @@ export function AIKnowledgePanel() {
             id: f.id || f.name,
             name: f.name.replace(/^\d+_/, ""), // Remove timestamp prefix
             type: f.name.toLowerCase().endsWith(".pdf") ? "pdf" : "docx",
-            size: `${(f.metadata?.size / 1024 / 1024).toFixed(1)} MB`,
+            size: `${((f.metadata?.size || 0) / 1024 / 1024).toFixed(1)} MB`,
             status: "Procesado"
           }));
         setDocs(loadedDocs);
@@ -54,6 +55,11 @@ export function AIKnowledgePanel() {
       },
       ...prev
     ]);
+
+    if (!supabase) {
+      setIsUploading(false);
+      return;
+    }
 
     const { data, error } = await supabase.storage
       .from("orion_knowledge")
