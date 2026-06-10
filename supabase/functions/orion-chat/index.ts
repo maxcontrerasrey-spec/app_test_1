@@ -259,12 +259,12 @@ Deno.serve(async (req) => {
 
       const { data: ragDocs, error: ragError } = await supabase.rpc("match_knowledge_documents", {
         query_embedding: queryEmbedding,
-        match_threshold: 0.5,
-        match_count: 3
+        match_threshold: 0.2,
+        match_count: 4
       });
 
       if (!ragError && ragDocs && ragDocs.length > 0) {
-        ragContext = "\n\nCONTEXTO DE LA EMPRESA (Reglamentos y Manuales):\n" + ragDocs.map((d: any) => `- [${d.document_name}]: ${d.content}`).join("\n\n");
+        ragContext = "\n\n=== EVIDENCIA DOCUMENTAL RECUPERADA ===\nBasado en los reglamentos y manuales internos de la empresa, ten en cuenta la siguiente información para tu respuesta:\n" + ragDocs.map((d: any) => `- [Archivo: ${d.document_name}]: ${d.content}`).join("\n\n") + "\n=======================================\n";
       }
     } catch (e) {
       console.error("Error en RAG:", e);

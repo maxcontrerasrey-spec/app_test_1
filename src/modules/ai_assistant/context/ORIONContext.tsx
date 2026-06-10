@@ -51,6 +51,8 @@ type ORIONContextValue = {
   createSession: () => Promise<void>;
   selectSession: (sessionId: string) => void;
   sendMessage: (text: string, source: "full" | "widget") => Promise<void>;
+  deleteSession: (sessionId: string) => Promise<void>;
+  renameSession: (sessionId: string, newTitle: string) => Promise<void>;
 };
 
 const ORIONContext = createContext<ORIONContextValue | null>(null);
@@ -298,6 +300,21 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
     void loadSessions();
   }, [isAuthLoading, user]);
 
+  const deleteSession = useCallback(async (sessionId: string) => {
+    const success = await orionService.deleteSession(sessionId);
+    if (success) {
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      setActiveSessionId((current) => (current === sessionId ? "" : current));
+    }
+  }, []);
+
+  const renameSession = useCallback(async (sessionId: string, newTitle: string) => {
+    const success = await orionService.renameSession(sessionId, newTitle);
+    if (success) {
+      setSessions((prev) => prev.map((s) => s.id === sessionId ? { ...s, title: newTitle } : s));
+    }
+  }, []);
+
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? null,
     [activeSessionId, sessions]
@@ -446,20 +463,25 @@ export function ORIONProvider({ children }: { children: ReactNode }) {
       closeWidget,
       createSession,
       selectSession,
-      sendMessage
+      sendMessage,
+      deleteSession,
+      renameSession
     }),
     [
-      activeSession,
+      sessions,
       activeSessionId,
-      agentSteps,
-      closeWidget,
-      createSession,
+      activeSession,
+      activeSession?.messages,
       isTyping,
+      agentSteps,
       isWidgetOpen,
       openWidget,
+      closeWidget,
+      createSession,
       selectSession,
       sendMessage,
-      sessions
+      deleteSession,
+      renameSession
     ]
   );
 

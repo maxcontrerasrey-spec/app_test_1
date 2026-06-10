@@ -205,5 +205,25 @@ export const orionService = {
 
     const created = await this.createSession();
     return created ? [created] : [];
+  },
+
+  async deleteSession(sessionId: string) {
+    if (!supabase) return false;
+    const { error } = await supabase.from("orion_sessions").delete().eq("id", sessionId);
+    if (error) {
+      logger.error("ORION deleteSession", error);
+      return false;
+    }
+    return true;
+  },
+
+  async renameSession(sessionId: string, newTitle: string) {
+    if (!supabase) return false;
+    const { error } = await supabase.from("orion_sessions").update({ title: newTitle }).eq("id", sessionId);
+    if (error) {
+      logger.error("ORION renameSession", error);
+      return false;
+    }
+    return true;
   }
 };
