@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import orionLogo from "../../../assets/orion-logo.png";
 import { useORION } from "../context/ORIONContext";
+import { orionChatService } from "../services/orionChat";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "../styles/ai-assistant.css";
 import "../styles/orion-widget.css";
 
@@ -29,6 +32,7 @@ export function ORIONWidget() {
   useEffect(() => {
     if (isWidgetOpen) {
       scrollToBottom();
+      orionChatService.pingEdgeFunction();
     }
   }, [agentSteps, isTyping, isWidgetOpen, messages]);
 
@@ -68,8 +72,10 @@ export function ORIONWidget() {
         <div className="orion-widget-chat-area" ref={chatAreaRef}>
           {messages.map((msg) => (
             <div key={msg.id} className={`orion-message ${msg.sender}`}>
-              <div className="orion-message-content">
-                {msg.text}
+              <div className="orion-message-content orion-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.text}
+                </ReactMarkdown>
               </div>
             </div>
           ))}

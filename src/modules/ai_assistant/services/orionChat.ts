@@ -200,5 +200,10 @@ export const orionChatService = {
         break;
       }
     }
+  },
+  pingEdgeFunction() {
+    fetch(buildFunctionUrl(), {
+      method: "OPTIONS"
+    }).catch(() => {});
   }
 };

@@ -232,6 +232,30 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
+.orion-markdown p {
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+}
+
+.orion-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.orion-markdown strong {
+  font-weight: 600;
+  color: inherit;
+}
+
+.orion-markdown ul,
+.orion-markdown ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.orion-markdown li {
+  margin-bottom: 0.25rem;
+}
+
 .orion-message.user .orion-message-content {
   background: #f0f2f5;
   color: #1e293b;
