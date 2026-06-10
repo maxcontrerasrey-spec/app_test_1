@@ -404,22 +404,31 @@ Deno.serve(async (req) => {
     }
     // --- END RAG LOGIC ---
 
-    const sanitizedUserMessage = sanitizeOutboundText(message);
-    const systemPrompt = `Eres un analista senior de excelencia operacional, finanzas y contratos para una empresa de transporte de pasajeros del sector minero.
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userId)
+      .single();
+    
+    const userFullName = profileRow?.full_name || "Usuario";
 
-Tu función es evaluar información operacional, financiera y contractual de manera objetiva y crítica.
+    const sanitizedUserMessage = sanitizeOutboundText(message);
+    const systemPrompt = `Eres ORION, el asistente de inteligencia artificial exclusivo de JM (empresa de transporte de pasajeros del sector minero).
+Estás conversando con: ${userFullName}. Si el usuario te saluda o hace una pregunta cordial, respóndele de manera empática, humana y amigable usando su nombre. Actúa como un compañero de trabajo de JM.
+
+Sin embargo, cuando se trate de evaluar información operacional, financiera o contractual, tu función es ser objetivo y crítico.
 
 Reglas obligatorias:
 1. Nunca inventes datos, registros, fechas, KPI, contratos, trabajadores, resultados financieros ni conclusiones no respaldadas por evidencia.
-2. Si la información disponible es insuficiente, responde explícitamente: "No dispongo de información suficiente para responder con certeza."
-3. No seas complaciente. No asumas que el usuario tiene razón. Analiza críticamente cada afirmación y señala errores, inconsistencias, riesgos o debilidades cuando existan.
+2. Si la información solicitada no existe o es insuficiente en el contexto, responde explícitamente: "No dispongo de información suficiente para responder con certeza." (NOTA: Aplica esto SOLO para consultas analíticas o de negocio, NO para saludos o charla general).
+3. No seas complaciente en temas operativos. No asumas que el usuario tiene razón. Analiza críticamente cada afirmación y señala errores, inconsistencias, riesgos o debilidades cuando existan.
 4. Prioriza precisión, lógica y evidencia por sobre rapidez.
 5. Diferencia siempre entre: Hechos observados, Análisis, Hipótesis, Recomendaciones.
 6. Cuando realices análisis financieros u operacionales, identifica: Riesgos, Desviaciones, Causas probables, Impacto económico, Nivel de criticidad.
 7. Si existen varias interpretaciones posibles, preséntalas indicando el nivel de probabilidad de cada una.
 8. No afirmes conclusiones con certeza cuando existan dudas relevantes.
 9. Cuando analices información del ERP, limita tus conclusiones únicamente a los datos disponibles.
-10. Finaliza los análisis indicando un nivel de confianza: Alta, Media o Baja.
+10. Finaliza los análisis complejos indicando un nivel de confianza: Alta, Media o Baja.
 
 IMPORTANTE:
 - Tienes acceso a herramientas read-only (Function Calling) para consultar la base de datos operativa.
@@ -440,6 +449,7 @@ ${buildOrionSchemaPrompt()}` + ragContext;
     let vendor = "local-safe";
     let modelUsed: string | null = null;
 
+    let fallbackReason = "unknown";
     if (orionLlmApiKey) {
       try {
         const tools = [
@@ -595,12 +605,18 @@ ${buildOrionSchemaPrompt()}` + ragContext;
           vendor = "groq";
           modelUsed = orionLlmModel;
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Failed to fetch from Groq, using fallback:", e);
-        normalizedAssistantText = normalizeAssistantText(buildLocalSafeAssistantText(message));
+        fallbackReason = e instanceof Error ? e.message : String(e);
+        normalizedAssistantText = `[MODO SEGURO] Error de Groq: ${fallbackReason}. ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
       }
     } else {
-      normalizedAssistantText = normalizeAssistantText(buildLocalSafeAssistantText(message));
+      fallbackReason = "no_api_key";
+      normalizedAssistantText = `[MODO SEGURO] Error: Falta ORION_LLM_API_KEY. ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
+    }
+
+    if (vendor === "local-safe") {
+      vendor = `local-safe: ${fallbackReason}`;
     }
 
     const assistantCreatedAt = new Date().toISOString();
