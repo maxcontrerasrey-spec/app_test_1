@@ -1924,6 +1924,7 @@ textarea {
   align-items: end;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .tracking-toolbar-copy {
@@ -1954,11 +1955,13 @@ textarea {
   align-items: end;
   gap: 0.75rem;
   width: auto;
-  min-width: min(100%, 520px);
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .tracking-search-field {
-  width: 100%;
+  flex: 1;
+  min-width: 250px;
 }
 
 .tracking-search-field .field-label {
