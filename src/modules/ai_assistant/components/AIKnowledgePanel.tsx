@@ -67,7 +67,9 @@ export function AIKnowledgePanel() {
 
     if (error || !data) {
       console.error("Upload error", error);
-      setDocs((prev) => prev.filter((d) => d.id !== tempId));
+      setDocs((prev) =>
+        prev.map((d) => (d.id === tempId ? { ...d, status: "Error de Subida: " + (error?.message || "Storage falló") } : d))
+      );
       setIsUploading(false);
       return;
     }
