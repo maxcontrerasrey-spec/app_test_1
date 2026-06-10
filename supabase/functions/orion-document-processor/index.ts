@@ -1,7 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import pdf from "npm:pdf-parse";
-import { Buffer } from "node:buffer";
+import { extractText, getDocumentProxy } from "npm:unpdf";
 
 // Function to split text into smaller chunks
 function chunkText(text: string, chunkSize = 1000, overlap = 200) {
@@ -64,9 +63,10 @@ Deno.serve(async (req) => {
     // 2. Extraer texto del PDF
     let extractedText = "";
     if (filePath.toLowerCase().endsWith(".pdf")) {
-      const buffer = Buffer.from(arrayBuffer);
-      const pdfData = await pdf(buffer);
-      extractedText = pdfData.text;
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const pdfProxy = await getDocumentProxy(uint8Array);
+      const { text } = await extractText(pdfProxy, { mergePages: true });
+      extractedText = text;
     } else {
       // Basic text extraction for non-PDF (assuming raw text for now if it's not a PDF)
       // Note: docx parsing in edge runtime requires a different library like mammoth, we skip for now 
