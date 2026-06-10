@@ -162,6 +162,12 @@ Deno.serve(async (req) => {
     }
   });
 
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader || "" } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+
   const body = (await req.json()) as OrionChatRequest;
   const sessionId = body.sessionId?.trim();
   const message = body.message?.trim();
@@ -266,7 +272,23 @@ Deno.serve(async (req) => {
     // --- END RAG LOGIC ---
 
     const sanitizedUserMessage = sanitizeOutboundText(message);
-    const systemPrompt = "Eres ORION, el copiloto inteligente del ERP de Buses JM. Ayudas a orientar al usuario con el flujo de contratación, control de candidatos, personal a contratar y aprobaciones, respondiendo de forma concisa y clara en español.\n\nREGLA CRÍTICA: NO TIENES ACCESO A LA BASE DE DATOS EN TIEMPO REAL DEL ERP. Si el usuario te pregunta por datos operativos en vivo (ej: cuántos folios hay, nombres de candidatos, estados de solicitudes, gastos), NO INVENTES DATOS. Debes responder: 'Actualmente no tengo conexión en tiempo real a los registros del ERP para responder eso.' NUNCA inventes números de folios ni nombres." + ragContext;
+    const systemPrompt = `Eres un analista senior de excelencia operacional, finanzas y contratos para una empresa de transporte de pasajeros del sector minero.
+
+Tu función es evaluar información operacional, financiera y contractual de manera objetiva y crítica.
+
+Reglas obligatorias:
+1. Nunca inventes datos, registros, fechas, KPI, contratos, trabajadores, resultados financieros ni conclusiones no respaldadas por evidencia.
+2. Si la información disponible es insuficiente, responde explícitamente: "No dispongo de información suficiente para responder con certeza."
+3. No seas complaciente. No asumas que el usuario tiene razón. Analiza críticamente cada afirmación y señala errores, inconsistencias, riesgos o debilidades cuando existan.
+4. Prioriza precisión, lógica y evidencia por sobre rapidez.
+5. Diferencia siempre entre: Hechos observados, Análisis, Hipótesis, Recomendaciones.
+6. Cuando realices análisis financieros u operacionales, identifica: Riesgos, Desviaciones, Causas probables, Impacto económico, Nivel de criticidad.
+7. Si existen varias interpretaciones posibles, preséntalas indicando el nivel de probabilidad de cada una.
+8. No afirmes conclusiones con certeza cuando existan dudas relevantes.
+9. Cuando analices información del ERP, limita tus conclusiones únicamente a los datos disponibles.
+10. Finaliza los análisis indicando un nivel de confianza: Alta, Media o Baja.
+
+IMPORTANTE: Tienes acceso a herramientas (Function Calling) para consultar la base de datos operativa. Utilízalas si el usuario pregunta por folios de contratación o candidatos.` + ragContext;
     
     const messagesToSend = [
       { role: "system", content: systemPrompt },
@@ -280,39 +302,109 @@ Deno.serve(async (req) => {
 
     if (orionLlmApiKey) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-        const groqResponse = await fetch(`${orionLlmBaseUrl}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${orionLlmApiKey}`,
-            "Content-Type": "application/json"
+        const tools = [
+          {
+            type: "function",
+            function: {
+              name: "orion_get_hiring_summary",
+              description: "Obtiene un resumen cuantitativo de los folios de contratación activos, agrupados por cargo y estado.",
+              parameters: { type: "object", properties: {}, required: [] }
+            }
           },
-          body: JSON.stringify({
-            model: orionLlmModel,
-            messages: messagesToSend,
-            temperature: 0.3,
-            max_tokens: 1024
-          }),
-          signal: controller.signal
-        });
+          {
+            type: "function",
+            function: {
+              name: "orion_search_candidate",
+              description: "Busca a un candidato por RUT o Nombre y devuelve en qué casos de contratación participa y su etapa actual.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query_text: { type: "string", description: "RUT o fragmento del nombre del candidato a buscar." }
+                },
+                required: ["query_text"]
+              }
+            }
+          }
+        ];
 
-        clearTimeout(timeoutId);
+        let currentMessages = [...messagesToSend] as any[];
+        let iterations = 0;
+        const MAX_ITERATIONS = 3;
 
-        if (!groqResponse.ok) {
-          const errText = await groqResponse.text();
-          throw new Error(`Groq API returned status ${groqResponse.status}: ${errText}`);
-        }
+        while (iterations < MAX_ITERATIONS) {
+          iterations++;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        const responseData = await groqResponse.json();
-        const choiceText = responseData.choices?.[0]?.message?.content;
-        if (typeof choiceText === "string" && choiceText.trim()) {
-          normalizedAssistantText = choiceText.trim();
-          vendor = "groq";
-          modelUsed = orionLlmModel;
-        } else {
-          throw new Error("Groq API returned empty choice content.");
+          const groqResponse = await fetch(`${orionLlmBaseUrl}/chat/completions`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${orionLlmApiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: orionLlmModel,
+              messages: currentMessages,
+              tools: tools,
+              tool_choice: "auto",
+              temperature: 0.3,
+              max_tokens: 1024
+            }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!groqResponse.ok) {
+            const errText = await groqResponse.text();
+            throw new Error(`Groq API returned status ${groqResponse.status}: ${errText}`);
+          }
+
+          const responseData = await groqResponse.json();
+          const responseMessage = responseData.choices?.[0]?.message;
+
+          if (!responseMessage) {
+            throw new Error("Groq API returned empty choice content.");
+          }
+
+          if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+            currentMessages.push(responseMessage); // Add assistant message with tool_calls
+
+            for (const toolCall of responseMessage.tool_calls) {
+              const funcName = toolCall.function.name;
+              const args = JSON.parse(toolCall.function.arguments || "{}");
+              let funcResult = "";
+
+              try {
+                if (funcName === "orion_get_hiring_summary") {
+                  const { data, error } = await supabaseUserClient.rpc("orion_get_hiring_summary");
+                  if (error) throw error;
+                  funcResult = JSON.stringify(data);
+                } else if (funcName === "orion_search_candidate") {
+                  const { data, error } = await supabaseUserClient.rpc("orion_search_candidate", { query_text: args.query_text });
+                  if (error) throw error;
+                  funcResult = JSON.stringify(data);
+                } else {
+                  funcResult = JSON.stringify({ error: "Herramienta desconocida" });
+                }
+              } catch (err: any) {
+                console.error("Tool execution error:", err);
+                funcResult = JSON.stringify({ error: err.message });
+              }
+
+              currentMessages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                name: funcName,
+                content: funcResult
+              });
+            }
+          } else {
+            normalizedAssistantText = responseMessage.content?.trim() || "Análisis completado sin contenido adicional.";
+            vendor = "groq";
+            modelUsed = orionLlmModel;
+            break;
+          }
         }
       } catch (e) {
         console.error("Failed to fetch from Groq, using fallback:", e);
