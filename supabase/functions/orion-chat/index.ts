@@ -381,28 +381,8 @@ Deno.serve(async (req) => {
       content: sanitizeOutboundText(row.content)
     }));
 
-    // --- START RAG LOGIC ---
-    let ragContext = "";
-    try {
-      // @ts-ignore
-      const aiSession = new Supabase.ai.Session("gte-small");
-      // @ts-ignore
-      const queryEmbeddingArray = await aiSession.run(message, { mean_pool: true, normalize: true });
-      const queryEmbedding = Array.from(queryEmbeddingArray);
-
-      const { data: ragDocs, error: ragError } = await supabase.rpc("match_knowledge_documents", {
-        query_embedding: queryEmbedding,
-        match_threshold: 0.2,
-        match_count: 2
-      });
-
-      if (!ragError && ragDocs && ragDocs.length > 0) {
-        ragContext = "\n\n=== EVIDENCIA DOCUMENTAL RECUPERADA ===\nBasado en los reglamentos y manuales internos de la empresa, ten en cuenta la siguiente información para tu respuesta:\n" + ragDocs.map((d: any) => `- [Archivo: ${d.document_name}]: ${d.content}`).join("\n\n") + "\n=======================================\n";
-      }
-    } catch (e) {
-      console.error("Error en RAG:", e);
-    }
-    // --- END RAG LOGIC ---
+    // --- RAG IS NOW A TOOL, REMOVED INLINE RAG ---
+    const ragContext = "";
 
     const { data: profileRow } = await supabase
       .from("profiles")
@@ -432,12 +412,13 @@ Reglas obligatorias:
 
 IMPORTANTE:
 - Tienes acceso a herramientas read-only (Function Calling) para consultar la base de datos operativa.
+- Tienes acceso a la herramienta orion_search_documents para buscar en los documentos y manuales internos de la empresa. Úsala siempre que te pregunten sobre reglamentos, políticas, o procedimientos internos.
 - Nunca inventes filas, estados ni relaciones si la consulta no devolvió datos.
 - Si necesitas leer datos tabulares, usa primero la herramienta más específica disponible.
 - Para preguntas generales del ERP, usa la herramienta universal orion_database_search pero solo con tablas/columnas del mapa permitido.
 
 MAPA DE TABLAS PERMITIDAS:
-${buildOrionSchemaPrompt()}` + ragContext;
+${buildOrionSchemaPrompt()}`;
     
     const messagesToSend = [
       { role: "system", content: systemPrompt },
@@ -512,6 +493,23 @@ ${buildOrionSchemaPrompt()}` + ragContext;
                 required: ["table"]
               }
             }
+          },
+          {
+            type: "function",
+            function: {
+              name: "orion_search_documents",
+              description: "Busca en la base de conocimientos y manuales internos de la empresa mediante similitud semántica. Úsala para buscar reglamentos, políticas o procesos documentados.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: {
+                    type: "string",
+                    description: "Pregunta o término de búsqueda (ej: 'sanciones por exceso de velocidad')"
+                  }
+                },
+                required: ["query"]
+              }
+            }
           }
         ];
 
@@ -556,6 +554,21 @@ ${buildOrionSchemaPrompt()}` + ragContext;
                 } else if (funcName === "orion_database_search") {
                   const data = await executeOrionDatabaseSearch(supabaseUserClient, args as OrionDatabaseSearchArgs);
                   funcResult = JSON.stringify(data);
+                } else if (funcName === "orion_search_documents") {
+                  // --- RAG TOOL LOGIC ---
+                  // @ts-ignore
+                  const aiSession = new Supabase.ai.Session("gte-small");
+                  // @ts-ignore
+                  const queryEmbeddingArray = await aiSession.run(args.query || "", { mean_pool: true, normalize: true });
+                  const queryEmbedding = Array.from(queryEmbeddingArray);
+
+                  const { data: ragDocs, error: ragError } = await supabase.rpc("match_knowledge_documents", {
+                    query_embedding: queryEmbedding,
+                    match_threshold: 0.2,
+                    match_count: 4
+                  });
+                  if (ragError) throw ragError;
+                  funcResult = JSON.stringify(ragDocs || []);
                 } else {
                   funcResult = JSON.stringify({ error: "Herramienta desconocida" });
                 }
