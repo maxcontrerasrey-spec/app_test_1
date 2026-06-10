@@ -77,16 +77,20 @@ export function AIKnowledgePanel() {
     );
 
     try {
-      await supabase.functions.invoke("orion-document-processor", {
+      const { data: invokeData, error: invokeError } = await supabase.functions.invoke("orion-document-processor", {
         body: { filePath: data.path }
       });
+
+      if (invokeError) throw invokeError;
+      if (invokeData?.error) throw new Error(invokeData.error);
+
       setDocs((prev) =>
         prev.map((d) => (d.id === tempId ? { ...d, status: "Procesado" } : d))
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("Processing error", err);
       setDocs((prev) =>
-        prev.map((d) => (d.id === tempId ? { ...d, status: "Error al procesar" } : d))
+        prev.map((d) => (d.id === tempId ? { ...d, status: "Error: " + (err.message || "Fallo en procesamiento") } : d))
       );
     }
 
