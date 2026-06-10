@@ -138,65 +138,6 @@ export const orionService = {
     return normalizeSession(sessionData as SessionRow, [messageData as MessageRow]);
   },
 
-  async appendMessage(sessionId: string, sender: "user" | "ai", text: string) {
-    if (!supabase) {
-      return null;
-    }
-
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return null;
-    }
-
-    const createdAt = new Date().toISOString();
-    const { data, error } = await supabase
-      .from("orion_messages")
-      .insert({
-        session_id: sessionId,
-        sender,
-        content: text,
-        created_by: user.id,
-        created_at: createdAt
-      })
-      .select("id, session_id, sender, content, created_at")
-      .single();
-
-    if (error || !data) {
-      logger.error("ORION appendMessage", error);
-      return null;
-    }
-
-    return {
-      id: data.id,
-      text: data.content,
-      sender: data.sender,
-      createdAt: data.created_at
-    } satisfies ORIONMessageRecord;
-  },
-
-  async touchSession(sessionId: string, title: string) {
-    if (!supabase) {
-      return false;
-    }
-
-    const { error } = await supabase
-      .from("orion_sessions")
-      .update({
-        title,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", sessionId);
-
-    if (error) {
-      logger.error("ORION touchSession", error);
-      return false;
-    }
-
-    return true;
-  },
-
   async ensureBootstrapSession() {
     const existing = await this.listSessions();
     if (existing.length > 0) {

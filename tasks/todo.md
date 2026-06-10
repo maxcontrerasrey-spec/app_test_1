@@ -2,6 +2,23 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Revisión estructural de ORION y limpieza de arquitectura
+
+- [x] Auditar el estado actual de ORION en frontend, Edge Functions y migraciones para detectar drift respecto al contrato operativo vigente
+- [x] Endurecer permisos y migraciones de ORION para que queden idempotentes, coherentes con acceso `admin` y sin exposición innecesaria
+- [x] Encapsular la lógica de base de conocimiento de ORION, corregir inconsistencias reales y eliminar código/artefactos sobrantes
+- [x] Validar `npm run build`, revisar el resultado y documentar los cambios en `todo.md` y `lessons.md`
+
+## Resultado de revisión estructural de ORION y limpieza de arquitectura
+
+- Se detectó drift entre el contrato original seguro de ORION y la capa actual: el repo ya tenía Groq, RAG y function calling montados, pero las migraciones locales nuevas todavía no estaban aplicadas en Supabase remoto y nacían con permisos demasiado amplios e idempotencia débil.
+- Se corrigieron directamente las migraciones aún no aplicadas [`20260610_000000_orion_knowledge_base_rag.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260610_000000_orion_knowledge_base_rag.sql:1), [`20260610_000001_setup_orion_knowledge_bucket.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260610_000001_setup_orion_knowledge_bucket.sql:1) y [`20260610_000002_orion_function_calling_rpcs.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260610_000002_orion_function_calling_rpcs.sql:1) para dejarlas idempotentes, con `search_path` fijo, grants explícitos y acceso alineado al módulo `ai_assistant` / `admin`.
+- La base de conocimiento de ORION quedó encapsulada en [`src/modules/ai_assistant/services/orionKnowledge.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/services/orionKnowledge.ts:1), reduciendo lógica duplicada dentro del componente y corrigiendo el bug real de borrado por usar nombre visible en vez de `storagePath`.
+- [`src/modules/ai_assistant/components/AIKnowledgePanel.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/components/AIKnowledgePanel.tsx:1) ahora lista, sube, procesa y elimina documentos a través de un servicio único con contrato estable entre Storage y `orion_knowledge_base`.
+- Se eliminó código muerto en [`src/modules/ai_assistant/services/orion.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/services/orion.ts:1) y se borró el artefacto residual [`supabase/functions/orion-chat/index.ts.backup`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/index.ts.backup:1), además de ignorar `supabase/.temp/`.
+- La exportación XLS de `Personal a Contratar` ya no mete `xlsx` en el import estático general: [`src/modules/recruitment/lib/bukEmployeeNomina.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/bukEmployeeNomina.ts:1) ahora carga `xlsx` bajo demanda, y [`src/modules/recruitment/components/HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) quedó con manejo de error/finalización más sólido.
+- Validación cerrada con `npm run build` y `git diff --check`.
+
 ## Personal a Contratar: exportación de nómina XLS para RRHH
 
 - [x] Auditar la vista actual de `Personal a Contratar`, la ficha BUK del candidato y la plantilla `Empleados.xls`

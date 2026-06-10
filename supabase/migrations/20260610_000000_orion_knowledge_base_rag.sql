@@ -2,7 +2,7 @@
 create extension if not exists vector schema extensions;
 
 -- Crear la tabla principal de conocimiento
-create table public.orion_knowledge_base (
+create table if not exists public.orion_knowledge_base (
     id bigint primary key generated always as identity,
     document_name text not null,
     content text not null,
@@ -11,20 +11,41 @@ create table public.orion_knowledge_base (
 );
 
 -- Crear un índice HNSW para búsqueda súper rápida
-create index on public.orion_knowledge_base using hnsw (embedding extensions.vector_cosine_ops);
+create index if not exists orion_knowledge_base_embedding_hnsw_idx
+  on public.orion_knowledge_base using hnsw (embedding extensions.vector_cosine_ops);
+
+create index if not exists orion_knowledge_base_document_name_idx
+  on public.orion_knowledge_base (document_name);
 
 -- Habilitar RLS
 alter table public.orion_knowledge_base enable row level security;
 
--- Política de lectura: Cualquier usuario autenticado (empleado/admin) puede consultar la base de conocimiento
-create policy "Authenticated users can read knowledge base"
+revoke all on table public.orion_knowledge_base from public;
+revoke all on table public.orion_knowledge_base from anon;
+grant select, delete on public.orion_knowledge_base to authenticated;
+
+drop policy if exists "Authenticated users can read knowledge base" on public.orion_knowledge_base;
+drop policy if exists "Authenticated users can delete knowledge base" on public.orion_knowledge_base;
+drop policy if exists "orion_knowledge_base_select_ai_assistant" on public.orion_knowledge_base;
+drop policy if exists "orion_knowledge_base_delete_ai_assistant" on public.orion_knowledge_base;
+
+create policy "orion_knowledge_base_select_ai_assistant"
     on public.orion_knowledge_base
     for select
     to authenticated
-    using (true);
+    using (
+      public.user_is_admin((select auth.uid()))
+      or public.user_can_access_module((select auth.uid()), 'ai_assistant')
+    );
 
--- Solo el sistema (Edge Functions / Service Role) puede insertar, modificar o borrar.
--- No se requiere política para Service Role, ya que este bypasses RLS por defecto.
+create policy "orion_knowledge_base_delete_ai_assistant"
+    on public.orion_knowledge_base
+    for delete
+    to authenticated
+    using (
+      public.user_is_admin((select auth.uid()))
+      or public.user_can_access_module((select auth.uid()), 'ai_assistant')
+    );
 
 -- Función para buscar documentos relevantes (RAG)
 create or replace function public.match_knowledge_documents(
@@ -38,7 +59,9 @@ returns table (
     content text,
     similarity float
 )
-language sql stable
+language sql
+stable
+set search_path = public, extensions
 as $$
     select
         orion_knowledge_base.id,
@@ -50,3 +73,8 @@ as $$
     order by orion_knowledge_base.embedding <=> query_embedding
     limit match_count;
 $$;
+
+revoke all on function public.match_knowledge_documents(extensions.vector, float, int) from public;
+revoke all on function public.match_knowledge_documents(extensions.vector, float, int) from anon;
+revoke all on function public.match_knowledge_documents(extensions.vector, float, int) from authenticated;
+grant execute on function public.match_knowledge_documents(extensions.vector, float, int) to service_role;

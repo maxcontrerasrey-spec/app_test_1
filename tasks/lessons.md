@@ -229,6 +229,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si RRHH necesita exportar varias personas a la vez, la fuente de datos debe resolverse por candidato seleccionado y no por el `case detail` actualmente abierto**. De lo contrario, la exportación queda limitada a un solo caso o a la última selección visual.
 - **La plantilla de negocio debe vivir como contrato reutilizable, no como archivo manual oculto fuera del repo**. Si ya normalizamos headers y listas de `Empleados.xls`, la exportación debe reconstruir esa plantilla desde código para mantener trazabilidad y evitar dependencia de archivos locales ad-hoc.
 
+## 59. Si una migración nueva aún no está aplicada, se corrige en origen y no con un parche encima
+
+- **Cuando una capacidad nueva todavía vive solo en migraciones locales no ejecutadas en Supabase remoto, la forma correcta de estabilizarla es arreglar esa migración base**. Apilar una cuarta migración “hotfix” sobre tres archivos todavía no aplicados solo introduce ruido y drift innecesario.
+- **Esto aplica especialmente a RLS, grants y `search_path`**. Si la primera versión local ya viene abierta o no idempotente, se corrige ahí antes de llevarla a producción.
+
+## 60. En Storage y base relacional, el identificador operativo debe ser la ruta real, no el nombre visible
+
+- **Si un documento se guarda con prefijo técnico (`timestamp_nombre.ext`), ese `storagePath` es el identificador canónico para borrar, reprocesar o sincronizar vectores**. El nombre “bonito” sin prefijo es solo presentación.
+- **Cuando UI y backend se separan en ese punto, el sistema falla en silencio**. El síntoma típico es “el documento parece borrarse” o “queda procesado” pero Storage y la tabla de embeddings siguen desalineados.
+
 ## 53. Un módulo experimental no puede saltarse el contrato de acceso de la app
 
 - **Si una funcionalidad todavía no está en producción, no basta con “no publicitarla”**. Debe quedar cerrada por visibilidad de navegación, widget y ruta, o cualquier usuario con URL directa termina entrando igual.

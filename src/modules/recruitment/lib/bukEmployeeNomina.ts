@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import { formatRut, normalizeRut } from "../../../shared/lib/rut";
 import type {
   CandidateBukProfileDetails,
@@ -234,7 +233,8 @@ function autoFitColumns(rows: Array<Array<string | number | Date>>) {
   });
 }
 
-export function exportBukNominaXls(sources: NominaSource[], fileName?: string) {
+export async function exportBukNominaXls(sources: NominaSource[], fileName?: string) {
+  const XLSX = await import("xlsx");
   const workbook = XLSX.utils.book_new();
   const employeeRows = buildEmployeeSheetRows(sources);
   const employeeSheet = XLSX.utils.aoa_to_sheet(employeeRows);

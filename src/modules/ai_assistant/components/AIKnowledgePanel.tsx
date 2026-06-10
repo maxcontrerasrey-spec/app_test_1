@@ -1,37 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
-import { supabase } from "../../../shared/lib/supabase";
-
-type OrionDoc = {
-  id: string;
-  name: string;
-  type: string;
-  size: string;
-  status: string;
-};
+import {
+  orionKnowledgeService,
+  type OrionKnowledgeDocument
+} from "../services/orionKnowledge";
 
 export function AIKnowledgePanel() {
   const { isSuperAdmin } = useAuth();
-  const [docs, setDocs] = useState<OrionDoc[]>([]);
+  const [docs, setDocs] = useState<OrionKnowledgeDocument[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function loadDocs() {
-      if (!supabase) return;
-      const { data, error } = await supabase.storage.from("orion_knowledge").list();
-      if (data && !error) {
-        const loadedDocs = data
-          .filter((f) => f.name !== ".emptyFolderPlaceholder")
-          .map((f) => ({
-            id: f.id || f.name,
-            name: f.name.replace(/^\d+_/, ""), // Remove timestamp prefix
-            type: f.name.toLowerCase().endsWith(".pdf") ? "pdf" : "docx",
-            size: `${((f.metadata?.size || 0) / 1024 / 1024).toFixed(1)} MB`,
-            status: "Procesado"
-          }));
-        setDocs(loadedDocs);
-      }
+      const loadedDocs = await orionKnowledgeService.listDocuments();
+      setDocs(loadedDocs);
     }
     loadDocs();
   }, []);
@@ -48,80 +31,65 @@ export function AIKnowledgePanel() {
     setDocs((prev) => [
       {
         id: tempId,
+        storagePath: tempId,
         name: cleanName,
         type: cleanName.toLowerCase().endsWith(".pdf") ? "pdf" : "docx",
-        size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+        sizeLabel: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
         status: "Subiendo..."
       },
       ...prev
     ]);
 
-    if (!supabase) {
-      setIsUploading(false);
-      return;
-    }
-
-    const { data, error } = await supabase.storage
-      .from("orion_knowledge")
-      .upload(pathName, file);
-
-    if (error || !data) {
-      console.error("Upload error", error);
-      setDocs((prev) =>
-        prev.map((d) => (d.id === tempId ? { ...d, status: "Error de Subida: " + (error?.message || "Storage falló") } : d))
-      );
-      setIsUploading(false);
-      return;
-    }
-
-    setDocs((prev) =>
-      prev.map((d) => (d.id === tempId ? { ...d, status: "Procesando..." } : d))
-    );
-
     try {
-      const { data: invokeData, error: invokeError } = await supabase.functions.invoke("orion-document-processor", {
-        body: { filePath: data.path }
-      });
+      const uploadedDocument = await orionKnowledgeService.uploadDocument(file);
+      setDocs((prev) =>
+        prev.map((d) =>
+          d.id === tempId
+            ? { ...uploadedDocument, status: "Procesando..." }
+            : d
+        )
+      );
 
-      if (invokeError) throw invokeError;
-      if (invokeData?.error) throw new Error(invokeData.error);
+      await orionKnowledgeService.processDocument(uploadedDocument.storagePath);
 
       setDocs((prev) =>
-        prev.map((d) => (d.id === tempId ? { ...d, status: "Procesado" } : d))
+        prev.map((d) => (d.storagePath === uploadedDocument.storagePath ? { ...d, status: "Procesado" } : d))
       );
     } catch (err: any) {
-      console.error("Processing error", err);
       setDocs((prev) =>
-        prev.map((d) => (d.id === tempId ? { ...d, status: "Error: " + (err.message || "Fallo en procesamiento") } : d))
+        prev.map((d) =>
+          d.id === tempId || d.storagePath === pathName
+            ? { ...d, status: "Error: " + (err.message || "Fallo en procesamiento") }
+            : d
+        )
       );
-    }
-
-    setIsUploading(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
-  const handleDeleteDoc = async (fileName: string) => {
-    if (!supabase) return;
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar el documento "${fileName}"?`)) return;
+  const handleDeleteDoc = async (document: OrionKnowledgeDocument) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar el documento "${document.name}"?`)) return;
 
-    setDocs((prev) => prev.map(d => d.name === fileName ? { ...d, status: "Eliminando..." } : d));
+    setDocs((prev) =>
+      prev.map((item) =>
+        item.storagePath === document.storagePath ? { ...item, status: "Eliminando..." } : item
+      )
+    );
 
     try {
-      // Eliminar de Storage
-      const { error: storageError } = await supabase.storage.from("orion_knowledge").remove([fileName]);
-      if (storageError) throw storageError;
-
-      // Eliminar vectores de la base de datos
-      const { error: dbError } = await supabase.from("orion_knowledge_base").delete().eq("document_name", fileName);
-      if (dbError) throw dbError;
-
-      setDocs((prev) => prev.filter(d => d.name !== fileName));
+      await orionKnowledgeService.deleteDocument(document.storagePath);
+      setDocs((prev) => prev.filter((item) => item.storagePath !== document.storagePath));
     } catch (err: any) {
-      console.error("Error al eliminar documento:", err);
       alert(`Error al eliminar: ${err.message}`);
-      setDocs((prev) => prev.map(d => d.name === fileName ? { ...d, status: "Procesado" } : d));
+      setDocs((prev) =>
+        prev.map((item) =>
+          item.storagePath === document.storagePath ? { ...item, status: "Procesado" } : item
+        )
+      );
     }
   };
 
@@ -181,12 +149,12 @@ export function AIKnowledgePanel() {
             <div className="orion-doc-info">
               <span className="orion-doc-name" title={doc.name}>{doc.name}</span>
               <span className="orion-doc-meta" style={{ color: doc.status.includes("Error") ? "red" : "inherit" }}>
-                {doc.size} · {doc.status}
+                {doc.sizeLabel} · {doc.status}
               </span>
             </div>
             {isSuperAdmin && (
-              <button 
-                onClick={() => handleDeleteDoc(doc.name)} 
+              <button
+                onClick={() => handleDeleteDoc(doc)}
                 className="orion-doc-delete-btn"
                 title="Eliminar documento"
                 disabled={doc.status.includes("Procesando") || doc.status.includes("Eliminando")}

@@ -117,33 +117,40 @@ export function HiringPersonnelToHireView({
     setIsExporting(true);
     setExportMessage("");
 
-    const results = await Promise.all(
-      selectedPersonnel.map(async (candidate) => {
-        const profileResult = await fetchCandidateBukProfile(candidate.id);
+    try {
+      const results = await Promise.all(
+        selectedPersonnel.map(async (candidate) => {
+          const profileResult = await fetchCandidateBukProfile(candidate.id);
 
-        return {
+          return {
+            candidate,
+            bukProfile: profileResult.error ? null : profileResult.data,
+            error: profileResult.error
+          };
+        })
+      );
+
+      await exportBukNominaXls(
+        results.map(({ candidate, bukProfile }) => ({
           candidate,
-          bukProfile: profileResult.error ? null : profileResult.data,
-          error: profileResult.error
-        };
-      })
-    );
+          bukProfile
+        }))
+      );
 
-    exportBukNominaXls(
-      results.map(({ candidate, bukProfile }) => ({
-        candidate,
-        bukProfile
-      }))
-    );
+      const incompleteCount = results.filter((result) => result.error).length;
 
-    const incompleteCount = results.filter((result) => result.error).length;
-
-    setExportMessage(
-      incompleteCount > 0
-        ? `Nómina exportada. ${incompleteCount} ficha(s) se completaron parcialmente porque no se pudo cargar toda la ficha BUK.`
-        : `Nómina exportada correctamente con ${results.length} persona(s).`
-    );
-    setIsExporting(false);
+      setExportMessage(
+        incompleteCount > 0
+          ? `Nómina exportada. ${incompleteCount} ficha(s) se completaron parcialmente porque no se pudo cargar toda la ficha BUK.`
+          : `Nómina exportada correctamente con ${results.length} persona(s).`
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "No fue posible exportar la nómina.";
+      setExportMessage(`No fue posible exportar la nómina. ${message}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Comportamiento actualizado: no autoseleccionar candidato.

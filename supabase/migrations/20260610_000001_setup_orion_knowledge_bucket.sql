@@ -6,20 +6,42 @@ values ('orion_knowledge', 'orion_knowledge', false)
 on conflict (id) do nothing;
 
 -- 2. RLS policies for storage.objects
--- Allow 'authenticated' users to upload objects
-create policy "Authenticated users can upload knowledge docs"
+drop policy if exists "Authenticated users can upload knowledge docs" on storage.objects;
+drop policy if exists "Authenticated users can read knowledge docs" on storage.objects;
+drop policy if exists "Authenticated users can delete knowledge docs" on storage.objects;
+drop policy if exists "orion_knowledge_admin_upload" on storage.objects;
+drop policy if exists "orion_knowledge_admin_read" on storage.objects;
+drop policy if exists "orion_knowledge_admin_delete" on storage.objects;
+
+create policy "orion_knowledge_admin_upload"
   on storage.objects for insert
   to authenticated
-  with check ( bucket_id = 'orion_knowledge' );
+  with check (
+    bucket_id = 'orion_knowledge'
+    and (
+      public.user_is_admin((select auth.uid()))
+      or public.user_can_access_module((select auth.uid()), 'ai_assistant')
+    )
+  );
 
--- Allow 'authenticated' users to read objects
-create policy "Authenticated users can read knowledge docs"
+create policy "orion_knowledge_admin_read"
   on storage.objects for select
   to authenticated
-  using ( bucket_id = 'orion_knowledge' );
+  using (
+    bucket_id = 'orion_knowledge'
+    and (
+      public.user_is_admin((select auth.uid()))
+      or public.user_can_access_module((select auth.uid()), 'ai_assistant')
+    )
+  );
 
--- Allow 'authenticated' users to delete objects
-create policy "Authenticated users can delete knowledge docs"
+create policy "orion_knowledge_admin_delete"
   on storage.objects for delete
   to authenticated
-  using ( bucket_id = 'orion_knowledge' );
+  using (
+    bucket_id = 'orion_knowledge'
+    and (
+      public.user_is_admin((select auth.uid()))
+      or public.user_can_access_module((select auth.uid()), 'ai_assistant')
+    )
+  );
