@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Plantilla XLS de migración para reclutamiento en producción
+
+- [x] Auditar el contrato real de datos de reclutamiento para definir una plantilla de migración alineada al esquema vivo
+- [x] Diseñar una plantilla Excel reutilizable que preserve fecha original de solicitud y cubra folios, casos, candidatos, ficha laboral y estado documental
+- [x] Generar el archivo en repo, validarlo técnicamente y dejar instrucciones claras de llenado para la futura carga masiva
+
+## Resultado de plantilla XLS de migración para reclutamiento en producción
+
+- Se creó el generador reutilizable [`scripts/generate-recruitment-migration-template.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/generate-recruitment-migration-template.mjs:1), que arma la plantilla de migración directamente desde el contrato vivo del módulo y reutiliza la misma base de headers BUK ya ocupada por la nómina de `Personal a Contratar`.
+- El entregable quedó publicado en dos formatos dentro de [`docs/templates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates): [`plantilla_migracion_reclutamiento.xls`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.xls) y [`plantilla_migracion_reclutamiento.xlsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.xlsx).
+- La plantilla trae diez hojas: `Instrucciones`, `Diccionario`, `Folios`, `Casos`, `Candidatos`, `Ficha_BUK`, `Documentos`, `Matriz_Documental`, `Catalogos_Migracion` y `Listas_BUK`.
+- `fecha_solicitud_original` quedó explícitamente como columna obligatoria en `Folios`, para que la futura carga pueda respetar la fecha original de solicitud como pidió negocio.
+- `Ficha_BUK` replica la estructura real de RRHH/BUK ya usada por la app y `Documentos` migra estado y referencia documental, dejando claro en instrucciones que los archivos binarios no viajan dentro del Excel.
+- La validación técnica cerró con lectura efectiva del workbook generado y `npm run build` exitoso.
+
 ## ORION read-only global access + reparación del exportador XLS
 
 - [x] Reproducir y corregir el problema funcional real del exportador XLS de `Personal a Contratar`

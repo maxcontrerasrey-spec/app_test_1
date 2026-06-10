@@ -144,7 +144,7 @@ async function requestGroqChatCompletion(params: {
         ...(params.tools ? { tools: params.tools } : {}),
         ...(params.toolChoice ? { tool_choice: params.toolChoice } : {}),
         temperature: 0.3,
-        max_tokens: 1024
+        max_tokens: 512
       }),
       signal: controller.signal
     });
@@ -565,7 +565,7 @@ ${buildOrionSchemaPrompt()}`;
                   const { data: ragDocs, error: ragError } = await supabase.rpc("match_knowledge_documents", {
                     query_embedding: queryEmbedding,
                     match_threshold: 0.2,
-                    match_count: 4
+                    match_count: 2
                   });
                   if (ragError) throw ragError;
                   funcResult = JSON.stringify(ragDocs || []);
