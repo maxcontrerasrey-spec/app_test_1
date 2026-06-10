@@ -228,6 +228,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No asumir que “terminal autenticada” equivale a “despliegue permitido”**. Cuando la function puede enviar contexto del ERP a un proveedor externo mediante secrets como `ORION_LLM_*`, el bloqueo puede venir de política de entorno y no de credenciales ni de Supabase.
 - **El cierre correcto en esos casos es dejar el repo listo y separar explícitamente “implementación terminada” de “deploy autorizado”**. No se debe intentar forzar rutas indirectas para publicar la function.
 
+## 54. En ORION con tool-calling, “sin respuesta” puede ser un bug de cierre del loop, no del proveedor
+
+- **Si el modelo entra en `tool_calls` repetidos y el loop termina sin `message.content`, la conversación puede persistir una respuesta vacía aunque HTTP haya cerrado en `200`**. Ese síntoma no se arregla en frontend ni con otro fallback; se arregla forzando una respuesta final del modelo después de usar herramientas.
+- **La regla operativa es clara**: tras ejecutar herramientas, si no existe texto final, ORION debe hacer una última llamada sin tools (`tool_choice: none`) para sintetizar el resultado sobre la evidencia ya obtenida.
+
 ## 57. Si una política bloquea el proveedor externo, la salida correcta es degradar ORION a modo seguro local
 
 - **La autorización del usuario no invalida una política de exportación del entorno**. Si el deploy a un tercero como Groq sigue rechazado por compliance, no se insiste con workarounds; se cambia el contrato técnico.

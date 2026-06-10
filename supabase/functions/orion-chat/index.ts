@@ -119,6 +119,47 @@ function resolveSelectedColumns(
   return validColumns.length > 0 ? validColumns : [...config.defaultColumns];
 }
 
+async function requestGroqChatCompletion(params: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  messages: Array<Record<string, unknown>>;
+  tools?: Array<Record<string, unknown>>;
+  toolChoice?: "auto" | "none";
+  timeoutMs?: number;
+}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? 20000);
+
+  try {
+    const groqResponse = await fetch(`${params.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${params.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: params.model,
+        messages: params.messages,
+        ...(params.tools ? { tools: params.tools } : {}),
+        ...(params.toolChoice ? { tool_choice: params.toolChoice } : {}),
+        temperature: 0.3,
+        max_tokens: 1024
+      }),
+      signal: controller.signal
+    });
+
+    if (!groqResponse.ok) {
+      const errText = await groqResponse.text();
+      throw new Error(`Groq API returned status ${groqResponse.status}: ${errText}`);
+    }
+
+    return await groqResponse.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function executeOrionDatabaseSearch(
   client: ReturnType<typeof createClient>,
   args: OrionDatabaseSearchArgs
@@ -466,38 +507,19 @@ ${buildOrionSchemaPrompt()}` + ragContext;
 
         let currentMessages = [...messagesToSend] as any[];
         let iterations = 0;
-        const MAX_ITERATIONS = 3;
+        const MAX_ITERATIONS = 4;
 
         while (iterations < MAX_ITERATIONS) {
           iterations++;
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-          const groqResponse = await fetch(`${orionLlmBaseUrl}/chat/completions`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${orionLlmApiKey}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: orionLlmModel,
-              messages: currentMessages,
-              tools: tools,
-              tool_choice: "auto",
-              temperature: 0.3,
-              max_tokens: 1024
-            }),
-            signal: controller.signal
+          const responseData = await requestGroqChatCompletion({
+            apiKey: orionLlmApiKey,
+            baseUrl: orionLlmBaseUrl,
+            model: orionLlmModel,
+            messages: currentMessages,
+            tools,
+            toolChoice: "auto",
+            timeoutMs: 20000
           });
-
-          clearTimeout(timeoutId);
-
-          if (!groqResponse.ok) {
-            const errText = await groqResponse.text();
-            throw new Error(`Groq API returned status ${groqResponse.status}: ${errText}`);
-          }
-
-          const responseData = await groqResponse.json();
           const responseMessage = responseData.choices?.[0]?.message;
 
           if (!responseMessage) {
@@ -545,6 +567,33 @@ ${buildOrionSchemaPrompt()}` + ragContext;
             modelUsed = orionLlmModel;
             break;
           }
+        }
+
+        if (!normalizedAssistantText.trim()) {
+          const finalResponseData = await requestGroqChatCompletion({
+            apiKey: orionLlmApiKey,
+            baseUrl: orionLlmBaseUrl,
+            model: orionLlmModel,
+            messages: [
+              ...currentMessages,
+              {
+                role: "system",
+                content:
+                  "Ya ejecutaste las herramientas necesarias. Entrega ahora una respuesta final clara, basada solo en los datos obtenidos. No vuelvas a llamar herramientas."
+              }
+            ],
+            toolChoice: "none",
+            timeoutMs: 20000
+          });
+
+          const finalMessage = finalResponseData.choices?.[0]?.message?.content;
+          normalizedAssistantText = normalizeAssistantText(
+            typeof finalMessage === "string"
+              ? finalMessage
+              : "No fue posible cerrar el análisis con una respuesta final."
+          );
+          vendor = "groq";
+          modelUsed = orionLlmModel;
         }
       } catch (e) {
         console.error("Failed to fetch from Groq, using fallback:", e);

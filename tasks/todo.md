@@ -21,6 +21,20 @@
 - La validación local cerró con `npm run build` exitoso y smoke test de escritura XLS vía `xlsx` generando archivo `.xls` válido en directorio temporal.
 - El despliegue directo de `orion-chat` a Supabase no se pudo ejecutar desde este entorno porque la política del agente bloqueó el deploy productivo al detectar que la function conserva integración configurable con proveedor LLM externo (`ORION_LLM_*`). El repo quedó listo para que ese deploy lo ejecutes tú desde tu terminal autenticada.
 
+## ORION: restauración de respuesta final con LLM tras tool-calling
+
+- [x] Auditar la regresión real observada en producción después del deploy de `orion_database_search`
+- [x] Corregir el cierre del ciclo de tool-calling para que ORION no deje respuestas vacías cuando el LLM consume herramientas y no entrega contenido final en el primer loop
+- [x] Validar `npm run build` y dejar el fix listo para deploy manual desde terminal autenticada
+
+## Resultado de ORION: restauración de respuesta final con LLM tras tool-calling
+
+- La regresión no era un fallo del frontend ni del stream. La Edge Function [`orion-chat`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/index.ts:1) podía quedar atrapada en un ciclo de `tool_calls` y salir del loop sin `content` final del modelo, dejando una respuesta vacía para consultas como folios de contratación.
+- Se encapsuló la llamada a Groq en `requestGroqChatCompletion(...)`, se amplió el timeout operativo a `20s` y se subió `MAX_ITERATIONS` a `4`.
+- El cambio clave es estructural: si después de ejecutar herramientas ORION todavía no tiene respuesta textual, ahora fuerza una llamada final al modelo con `tool_choice: "none"` y una instrucción explícita de cerrar el análisis usando únicamente los datos ya obtenidos.
+- Con esto se preserva la arquitectura prevista de ORION enlazada al LLM; no se reemplazó por un parche local ni por un modo determinístico alternativo.
+- La validación local cerró con `npm run build`. El deploy desde este entorno volvió a quedar bloqueado por política externa del conector hacia Groq, por lo que el único paso restante es re-publicar `orion-chat` desde tu terminal autenticada.
+
 ## Revisión estructural de ORION y limpieza de arquitectura
 
 - [x] Auditar el estado actual de ORION en frontend, Edge Functions y migraciones para detectar drift respecto al contrato operativo vigente
