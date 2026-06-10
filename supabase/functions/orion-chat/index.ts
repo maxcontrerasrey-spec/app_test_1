@@ -242,9 +242,34 @@ Deno.serve(async (req) => {
       content: sanitizeOutboundText(row.content)
     }));
 
+    // --- START RAG LOGIC ---
+    let ragContext = "";
+    try {
+      // @ts-ignore
+      const aiSession = new Supabase.ai.Session("gte-small");
+      // @ts-ignore
+      const queryEmbeddingArray = await aiSession.run(message, { mean_pool: true, normalize: true });
+      const queryEmbedding = Array.from(queryEmbeddingArray);
+
+      const { data: ragDocs, error: ragError } = await supabase.rpc("match_knowledge_documents", {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.5,
+        match_count: 3
+      });
+
+      if (!ragError && ragDocs && ragDocs.length > 0) {
+        ragContext = "\n\nCONTEXTO DE LA EMPRESA (Reglamentos y Manuales):\n" + ragDocs.map((d: any) => `- [${d.document_name}]: ${d.content}`).join("\n\n");
+      }
+    } catch (e) {
+      console.error("Error en RAG:", e);
+    }
+    // --- END RAG LOGIC ---
+
     const sanitizedUserMessage = sanitizeOutboundText(message);
+    const systemPrompt = "Eres ORION, el copiloto inteligente del ERP de Buses JM. Ayudas a orientar al usuario con el flujo de contratación, control de candidatos, personal a contratar y aprobaciones, respondiendo de forma concisa y clara en español." + ragContext;
+    
     const messagesToSend = [
-      { role: "system", content: "Eres ORION, el copiloto inteligente del ERP de Buses JM. Ayudas a orientar al usuario con el flujo de contratación, control de candidatos, personal a contratar y aprobaciones, respondiendo de forma concisa y clara en español." },
+      { role: "system", content: systemPrompt },
       ...llmMessages,
       { role: "user", content: sanitizedUserMessage }
     ];
