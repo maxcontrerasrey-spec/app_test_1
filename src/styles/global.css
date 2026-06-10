@@ -2021,6 +2021,18 @@ textarea {
   color: var(--title);
 }
 
+.tracking-selection-cell {
+  width: 44px;
+  min-width: 44px;
+  text-align: center !important;
+}
+
+.tracking-selection-cell input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .tracking-empty-state {
   padding: 1.4rem 0.75rem;
   color: var(--text-muted);

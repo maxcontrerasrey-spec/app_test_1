@@ -224,6 +224,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El fallback correcto no es dejar ORION roto**. Se preserva persistencia, autenticación y contexto local en Supabase, pero la respuesta pasa a un modo determinístico seguro sin salir del perímetro.
 - **El cliente ORION debe tolerar ambos contratos**. Si hoy responde JSON local y mañana vuelve un proveedor aprobado por SSE, `orionChat.ts` debe aceptar ambos sin romper el módulo.
 
+## 58. Una exportación operativa masiva no puede depender del panel lateral seleccionado
+
+- **Si RRHH necesita exportar varias personas a la vez, la fuente de datos debe resolverse por candidato seleccionado y no por el `case detail` actualmente abierto**. De lo contrario, la exportación queda limitada a un solo caso o a la última selección visual.
+- **La plantilla de negocio debe vivir como contrato reutilizable, no como archivo manual oculto fuera del repo**. Si ya normalizamos headers y listas de `Empleados.xls`, la exportación debe reconstruir esa plantilla desde código para mantener trazabilidad y evitar dependencia de archivos locales ad-hoc.
+
 ## 53. Un módulo experimental no puede saltarse el contrato de acceso de la app
 
 - **Si una funcionalidad todavía no está en producción, no basta con “no publicitarla”**. Debe quedar cerrada por visibilidad de navegación, widget y ruta, o cualquier usuario con URL directa termina entrando igual.

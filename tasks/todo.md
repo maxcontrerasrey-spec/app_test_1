@@ -2,6 +2,24 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Personal a Contratar: exportación de nómina XLS para RRHH
+
+- [x] Auditar la vista actual de `Personal a Contratar`, la ficha BUK del candidato y la plantilla `Empleados.xls`
+- [x] Incorporar selección múltiple de candidatos listos para contratación dentro de la misma tabla
+- [x] Implementar exportación de nómina usando la estructura de `Empleados.xls`, rellenando una fila por cada candidato seleccionado
+- [x] Resolver carga de fichas BUK por candidato al exportar sin depender del panel lateral activo
+- [x] Validar `npm run build` y documentar el resultado en `todo.md` y `lessons.md`
+
+## Resultado de Personal a Contratar: exportación de nómina XLS para RRHH
+
+- [`src/modules/recruitment/components/HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) ahora permite selección múltiple dentro de la misma tabla, con checkbox por fila, selección masiva del filtro visible y contador de seleccionados para exportación.
+- La exportación no depende del panel lateral ni del `selectedCaseDetail` activo. Cada candidato seleccionado carga su propia ficha mediante `fetchCandidateBukProfile(...)` al momento de exportar.
+- Se agregó [`src/modules/recruitment/lib/bukEmployeeNomina.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/bukEmployeeNomina.ts:1), que reconstruye la plantilla `Empleados.xls` en dos hojas (`Empleados` y `Listas`) usando los headers y catálogos ya normalizados en `bukEmployeeTemplateData.json`.
+- La hoja `Empleados` se rellena con una fila por candidato seleccionado, mapeando datos personales y `worker_file` de la ficha BUK al formato de carga masiva que usará RRHH.
+- El archivo descargado se genera como `.xls` (`bookType: biff8`) para mantener compatibilidad con la lógica de la plantilla entregada por negocio.
+- Si alguna ficha BUK no se puede cargar completa, la nómina igual se exporta con fallback desde el row operativo disponible y la UI informa cuántas filas quedaron parciales.
+- La validación técnica cerró con `npm run build`.
+
 ## Orion: reducción de contexto sensible y revalidación de proveedor externo
 
 - [x] Auditar la implementación actual de `orion-chat` y del cliente ORION para identificar el punto exacto de salida de contexto sensible
