@@ -15,7 +15,7 @@ function AuthLoadingScreen() {
 }
 
 export function ProtectedRoute() {
-  const { isConfigured, isLoading, profile, user } = useAuth();
+  const { isConfigured, isLoading, isRecoveryMode, profile, user } = useAuth();
   const location = useLocation();
 
   if (!isConfigured) {
@@ -37,7 +37,7 @@ export function ProtectedRoute() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (profile?.must_reset_password) {
+  if (profile?.must_reset_password || isRecoveryMode) {
     return <Navigate to="/reset-password" replace />;
   }
 
