@@ -488,9 +488,7 @@ export type OrionReadableTableName = keyof typeof ORION_READABLE_TABLES;
 export function buildOrionSchemaPrompt() {
   return Object.entries(ORION_READABLE_TABLES)
     .map(([tableName, config]) => {
-      const columnList = config.columns.join(", ");
-      const searchList = config.searchableColumns.join(", ");
-      return `- ${tableName}: ${config.description} | columnas: ${columnList} | buscables: ${searchList}`;
+      return `- ${tableName}: ${config.description}`;
     })
     .join("\n");
 }

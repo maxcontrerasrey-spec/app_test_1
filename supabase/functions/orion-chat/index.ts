@@ -11,7 +11,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
-const MAX_CONTEXT_MESSAGES = 8;
+const MAX_CONTEXT_MESSAGES = 4;
 const MAX_MESSAGE_CHARS = 600;
 
 type OrionChatRequest = {
@@ -393,7 +393,7 @@ Deno.serve(async (req) => {
       const { data: ragDocs, error: ragError } = await supabase.rpc("match_knowledge_documents", {
         query_embedding: queryEmbedding,
         match_threshold: 0.2,
-        match_count: 4
+        match_count: 2
       });
 
       if (!ragError && ragDocs && ragDocs.length > 0) {
