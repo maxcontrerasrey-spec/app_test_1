@@ -2852,18 +2852,6 @@ textarea {
   text-align: center;
 }
 
-.login-caption-link {
-  color: var(--accent);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.login-caption-link:hover,
-.login-caption-link:focus-visible {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 0.16rem;
-}
 
 .login-error {
   margin: 0;
@@ -2885,29 +2873,6 @@ textarea {
   font-size: 0.92rem;
 }
 
-.login-inline-link {
-  width: fit-content;
-  padding: 0;
-  margin: 0 auto;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  font-weight: 600;
-  font: inherit;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.login-inline-link:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.login-inline-link:hover,
-.login-inline-link:focus-visible {
-  color: var(--accent);
-  text-decoration: underline;
-}
 
 .login-brand-top-centered {
   justify-content: center;
