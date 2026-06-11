@@ -482,7 +482,7 @@
   background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.92));
   border: 1px solid rgba(183, 198, 223, 0.42);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 16px 20px;
   box-shadow:
     0 24px 44px -34px rgba(69, 88, 125, 0.24),
     0 8px 18px -16px rgba(69, 88, 125, 0.16);
@@ -496,7 +496,7 @@
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 88px;
+  height: 64px;
   background: linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.7), rgba(var(--surface-soft-rgb), 0));
   pointer-events: none;
   z-index: 0;
@@ -531,11 +531,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center; /* Center instead of flex-start */
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .widget-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--title);
   letter-spacing: -0.01em;
@@ -715,7 +715,7 @@
 }
 
 .nx-table th, .nx-table td {
-  padding: 12px 10px;
+  padding: 10px 10px;
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
 }
