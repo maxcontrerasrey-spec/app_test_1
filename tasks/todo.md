@@ -55,6 +55,12 @@
 - También se ajustó [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:126) para mostrar el error de la query en vez de aparentar un tablero vacío si la RPC vuelve a fallar.
 - Validación local cerrada con `git diff --check` y `npm run build`.
 
+## Análisis de factibilidad para nuevo módulo Movilidad Interna
+
+- [ ] Auditar la arquitectura actual de `Solicitud de Contratación`, BUK, permisos y aprobaciones para identificar reutilización real
+- [ ] Definir el diseño mínimo viable de `Movilidad Interna` evitando duplicación entre frontend, servicios y SQL
+- [ ] Documentar factibilidad, riesgos, dependencias y propuesta de implementación incremental
+
 ## Resultado de ajuste urgente de visibilidad y cerrados en folios de contratación
 
 - Se creó la migración [`20260611_103000_scope_recruitment_process_visibility_and_closed_requests.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_103000_scope_recruitment_process_visibility_and_closed_requests.sql:1), que redefine la visibilidad de resumen sobre `hiring_requests`: acceso total para `reclutamiento`, `control_contratos`, `director_eje`, `gerente_general` y `director_op`; acceso por centro de costo aprobado para `gerencia`; acceso solo a solicitudes propias para el resto.
