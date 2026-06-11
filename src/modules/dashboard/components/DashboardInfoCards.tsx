@@ -796,28 +796,28 @@ export function DashboardInfoCards({
 
   return (
     <section className="dashboard-info-row" aria-label="Tarjetas informativas">
-      <article className={`dashboard-info-card dashboard-info-card-weather${weatherThemeClass}`} style={{ display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center' }}>
+      <article className={`dashboard-info-card dashboard-info-card-weather${weatherThemeClass}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '3.5rem', lineHeight: 1, color: '#3b82f6', display: 'flex' }}>
-              {toWeatherIcon(weather.code, 64, 1.5)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '2.8rem', lineHeight: 1, color: '#3b82f6', display: 'flex' }}>
+              {toWeatherIcon(weather.code, 48, 1.5)}
             </span>
-            <span style={{ fontSize: '3.6rem', fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--title)' }}>
+            <span style={{ fontSize: '2.8rem', fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--title)' }}>
               {weather.isLoading || weather.temperature == null ? "--" : Math.round(weather.temperature)}°
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
-            <strong style={{ fontSize: '1rem', letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--title)' }}>
+            <strong style={{ fontSize: '0.85rem', letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--title)', fontWeight: 600 }}>
               {location.label ? location.label.split(',')[0] : "UBICACIÓN"}
             </strong>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', lineHeight: 1.2 }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', lineHeight: 1.2, marginTop: '2px' }}>
               {weather.isLoading ? "CARGANDO..." : toWeatherLabel(weather.code)}
             </span>
             {(location.isFallback || !location.isResolved) ? (
               <button
                 type="button"
                 className="dashboard-info-weather-action"
-                style={{ fontSize: '0.7rem', marginTop: '4px', padding: 0 }}
+                style={{ fontSize: '0.65rem', marginTop: '2px', padding: 0 }}
                 onClick={() => void requestBrowserLocation()}
               >
                 Reintentar
@@ -827,17 +827,17 @@ export function DashboardInfoCards({
         </div>
         
         {weather.dailyForecast.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', marginTop: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', marginTop: 'auto' }}>
             {weather.dailyForecast.map((d, i) => {
               const date = new Date((d.time + 14400) * 1000); // offset to local timezone roughly
               const dayName = new Intl.DateTimeFormat("es-CL", { weekday: "short" }).format(date).toUpperCase();
               return (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--title)' }}>{dayName}</span>
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--title)' }}>{dayName}</span>
                   <span style={{ color: 'var(--text-muted)', display: 'flex' }}>
-                    {toWeatherIcon(d.code, 28, 1.8)}
+                    {toWeatherIcon(d.code, 22, 1.8)}
                   </span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-muted)' }}>
                     <span style={{ color: 'var(--title)' }}>{Math.round(d.temperatureMax)}°</span>/{Math.round(d.temperatureMin)}°
                   </span>
                 </div>
@@ -847,11 +847,11 @@ export function DashboardInfoCards({
         )}
       </article>
 
-      <article className="dashboard-info-card dashboard-info-card-birthday" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <article className="dashboard-info-card dashboard-info-card-birthday" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {nextBirthday ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <svg className="dashboard-birthday-card-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="dashboard-birthday-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
                 <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
                 <path d="M2 21h20" />
@@ -870,13 +870,13 @@ export function DashboardInfoCards({
               ) : null}
             </div>
             <div className="dashboard-birthday-summary" style={{ marginTop: 'auto' }}>
-              <strong style={{ fontSize: '1.2rem', lineHeight: 1.2 }}>{nextBirthday.full_name}</strong>
-              <small style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              <strong style={{ fontSize: '1rem', lineHeight: 1.2, fontWeight: 500 }}>{nextBirthday.full_name}</strong>
+              <small style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
                 {nextBirthday.birthday_label} · <span style={{ color: 'var(--title)', fontWeight: 500 }}>{birthdaySummary}</span>
               </small>
             </div>
             {birthdays.length > 1 ? (
-              <div className="dashboard-birthday-pagination" aria-label="Posición del cumpleañero" style={{ marginTop: '8px' }}>
+              <div className="dashboard-birthday-pagination" aria-label="Posición del cumpleañero" style={{ marginTop: '6px' }}>
                 {birthdays.map((birthday, index) => (
                   <button
                     key={birthday.id}
