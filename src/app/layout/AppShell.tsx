@@ -320,13 +320,20 @@ export function AppShell() {
               aria-expanded={isUserMenuOpen}
               aria-haspopup="menu"
             >
-              <div className="user-avatar" aria-hidden="true">
+              <div className="user-avatar avatar-pulse" aria-hidden="true">
                 {userInitials}
               </div>
-              <div className="top-user-meta">
-                <strong>{displayName}</strong>
-                <span>{jobTitle}</span>
-              </div>
+              <style>{`
+                @keyframes siriPulse {
+                  0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.6); }
+                  70% { box-shadow: 0 0 0 12px rgba(14, 165, 233, 0); }
+                  100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+                }
+                .avatar-pulse {
+                  animation: siriPulse 2.5s infinite cubic-bezier(0.66, 0, 0, 1);
+                  border: 2px solid rgba(14, 165, 233, 0.3);
+                }
+              `}</style>
             </button>
 
             {isUserMenuOpen ? (
