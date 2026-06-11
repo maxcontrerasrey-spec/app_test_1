@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark" | "system" | "e-ink";
 
 type ThemeContextType = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  resolvedTheme: "light" | "dark";
+  resolvedTheme: "light" | "dark" | "e-ink";
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,7 +16,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return (saved as Theme) || "system";
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark" | "e-ink">("light");
 
   const setTheme = (newTheme: Theme) => {
     localStorage.setItem("ui-theme", newTheme);
@@ -36,7 +36,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
 
       root.setAttribute("data-theme", effectiveTheme);
-      setResolvedTheme(effectiveTheme as "light" | "dark");
+      setResolvedTheme(effectiveTheme as "light" | "dark" | "e-ink");
     };
 
     applyTheme(theme);

@@ -88,6 +88,74 @@
   --top-shell-bg: rgba(30, 41, 59, 0.96);
 }
 
+[data-theme="e-ink"] {
+  color-scheme: light;
+  color: #111111;
+  background: #f4f1e8;
+  --surface: #fbfaf5;
+  --surface-rgb: 251, 250, 245;
+  --surface-soft: #f4f1e8;
+  --surface-soft-rgb: 244, 241, 232;
+  --surface-muted: #e8e5dc;
+  --border: #1d1d1d;
+  --border-subtle: #4a4a4a;
+  --accent: #111111;
+  --accent-soft: #e8e5dc;
+  --accent-border: #1d1d1d;
+  --text-muted: #4a4a4a;
+  --title: #111111;
+  --accent-deep: #000000;
+  --sidebar-surface: #f4f1e8;
+  --page-glow: #f4f1e8;
+  --shadow-soft: none;
+  --shadow-popover: 4px 4px 0px #1d1d1d;
+  --focus-ring: 0 0 0 2px #111111;
+  --top-shell-bg: #f4f1e8;
+  --radius-xl: 2px;
+  --radius-lg: 2px;
+  --radius-md: 2px;
+  --radius-sm: 2px;
+  font-family: Georgia, "Times New Roman", serif;
+  --font-text: Georgia, "Times New Roman", serif;
+  --font-display: Georgia, "Times New Roman", serif;
+}
+
+body[data-theme="e-ink"] {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0,0,0,0.035), transparent 24%),
+    radial-gradient(circle at 80% 10%, rgba(0,0,0,0.025), transparent 20%),
+    linear-gradient(#f4f1e8, #f4f1e8);
+  filter: contrast(1.08); /* No grayscale, keep it color-capable but muted */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-shadow: 0.25px 0 #111, -0.25px 0 rgba(0,0,0,0.35);
+  letter-spacing: 0.01em;
+}
+
+body[data-theme="e-ink"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+/* Exceptions where we want brutalist hard shadows */
+[data-theme="e-ink"] .top-user-menu,
+[data-theme="e-ink"] .top-nav-mega-panel,
+[data-theme="e-ink"] .white-panel,
+[data-theme="e-ink"] .card {
+  border: 1.5px solid #1d1d1d !important;
+  box-shadow: 4px 4px 0px #1d1d1d !important;
+}
+
+[data-theme="e-ink"] .tracking-kpi-card-aprobado, [data-theme="e-ink"] .tracking-kpi-card-generado { background: #4a634e !important; color: #fbfaf5 !important; border-color: #4a634e !important; }
+[data-theme="e-ink"] .tracking-kpi-card-rechazado, [data-theme="e-ink"] .tracking-kpi-card-error { background: #8a3a3a !important; color: #fbfaf5 !important; border-color: #8a3a3a !important; }
+[data-theme="e-ink"] .tracking-kpi-card-pendiente, [data-theme="e-ink"] .tracking-kpi-card-en-proceso { background: #8a6a2a !important; color: #fbfaf5 !important; border-color: #8a6a2a !important; }
+
 * {
   box-sizing: border-box;
 }

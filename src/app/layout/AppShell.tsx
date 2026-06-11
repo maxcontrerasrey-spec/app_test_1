@@ -301,9 +301,12 @@ export function AppShell() {
             <button
               type="button"
               className="theme-toggle"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label="Alternar tema oscuro"
-              title="Cambiar a modo oscuro o claro"
+              onClick={() => {
+                const nextTheme = theme === "light" ? "dark" : theme === "dark" ? "e-ink" : "light";
+                setTheme(nextTheme);
+              }}
+              aria-label="Alternar tema"
+              title="Cambiar entre Claro, Oscuro y Tinta Electrónica"
             >
               {theme === "dark" ? (
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -316,6 +319,11 @@ export function AppShell() {
                   <line x1="21" y1="12" x2="23" y2="12"></line>
                   <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+              ) : theme === "e-ink" ? (
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                 </svg>
               ) : (
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
