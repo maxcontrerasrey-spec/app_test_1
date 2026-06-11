@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { TextField } from "../../../../shared/ui";
 import { getDaysSince } from "../../../../shared/lib/date";
 import {
@@ -41,23 +41,62 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail | null>>({});
 
-  const filteredFolios = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return folios;
+  const [page, setPage] = useState(0);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const pageSize = 7;
 
-    return folios.filter((folio) =>
-      [
-        folio.case_code,
-        folio.job_position_name,
-        folio.contract_name,
-        folio.cost_center_code,
-        folio.cost_center_name,
-        folio.requester_name
-      ]
-        .filter(Boolean)
-        .some((value) => value?.toLowerCase().includes(normalizedSearch))
-    );
-  }, [folios, searchTerm]);
+  const filteredAndSortedFolios = useMemo(() => {
+    let result = folios;
+    
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (normalizedSearch) {
+      result = result.filter((folio) =>
+        [
+          folio.case_code,
+          folio.job_position_name,
+          folio.contract_name,
+          folio.cost_center_code,
+          folio.cost_center_name,
+          folio.requester_name
+        ]
+          .filter(Boolean)
+          .some((value) => value?.toLowerCase().includes(normalizedSearch))
+      );
+    }
+
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        const aVal = a[sortConfig.key as keyof DashboardActiveFolioItem] ?? "";
+        const bVal = b[sortConfig.key as keyof DashboardActiveFolioItem] ?? "";
+        
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [folios, searchTerm, sortConfig]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm, sortConfig]);
+
+  const totalPages = Math.ceil(filteredAndSortedFolios.length / pageSize);
+  const paginatedFolios = filteredAndSortedFolios.slice(page * pageSize, (page + 1) * pageSize);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: string) => {
+    if (sortConfig?.key !== key) return <span style={{ opacity: 0.3 }}> ↕</span>;
+    return sortConfig.direction === 'asc' ? <span> ↑</span> : <span> ↓</span>;
+  };
 
   const handleRowClick = async (caseId: string) => {
     if (expandedCaseId === caseId) {
@@ -98,18 +137,18 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
           <table className="tracking-table">
             <thead>
               <tr>
-                <th>Caso</th>
-                <th>Estado</th>
-                <th>Cargo</th>
-                <th>Contrato / CC</th>
-                <th>Cupos</th>
-                <th>Candidatos activos</th>
-                <th>Días Abierto</th>
+                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("case_code")}>Caso{getSortIcon("case_code")}</th>
+                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("status")}>Estado{getSortIcon("status")}</th>
+                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("job_position_name")}>Cargo{getSortIcon("job_position_name")}</th>
+                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("contract_name")}>Contrato / CC{getSortIcon("contract_name")}</th>
+                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("requested_vacancies")}>Cupos{getSortIcon("requested_vacancies")}</th>
+                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("candidate_count")}>Candidatos activos{getSortIcon("candidate_count")}</th>
+                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("opened_at")}>Días Abierto{getSortIcon("opened_at")}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredFolios.length > 0 ? (
-                filteredFolios.map((folio: DashboardActiveFolioItem) => {
+              {paginatedFolios.length > 0 ? (
+                paginatedFolios.map((folio: DashboardActiveFolioItem) => {
                   const isExpanded = expandedCaseId === folio.id;
                   const detail = caseDetailsCache[folio.id] ?? null;
                   const hr = detail?.case?.hiring_request;
@@ -260,6 +299,29 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderTop: '1px solid var(--border-light)' }}>
+            <button 
+              type="button"
+              className="soft-primary-button" 
+              disabled={page === 0} 
+              onClick={() => setPage(p => p - 1)}
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+            >
+              &lt; Anterior
+            </button>
+            <span className="tracking-filter-caption" style={{ margin: 0 }}>Página {page + 1} de {totalPages}</span>
+            <button 
+              type="button"
+              className="soft-primary-button" 
+              disabled={page >= totalPages - 1} 
+              onClick={() => setPage(p => p + 1)}
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+            >
+              Siguiente &gt;
+            </button>
+          </div>
+        )}
       </div>
     </DashboardWidgetFrame>
   );
