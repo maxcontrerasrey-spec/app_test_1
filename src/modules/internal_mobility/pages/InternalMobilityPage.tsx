@@ -220,6 +220,7 @@ export function InternalMobilityPage() {
               <TextField id="mobility-requester-job" label="Cargo solicitante" value={jobTitle} readOnly />
             </div>
 
+            <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>Trabajador a movilizar</h3>
             <div className="contract-grid">
               <InternalMobilityWorkerLookup
                 id="mobility-worker-search"
@@ -229,13 +230,16 @@ export function InternalMobilityPage() {
                 onSelect={setSelectedWorker}
                 disabled={setupCatalogsQuery.isLoading}
               />
-
               <TextField
                 id="mobility-worker-rut"
                 label="RUT"
                 value={workerContext ? formatRut(workerContext.documentNumber) : ""}
                 readOnly
               />
+            </div>
+
+            <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>Condiciones actuales</h3>
+            <div className="contract-grid">
               <TextField
                 id="mobility-current-job"
                 label="Cargo actual"
@@ -248,13 +252,18 @@ export function InternalMobilityPage() {
                 value={workerContext?.currentAreaName ?? ""}
                 readOnly
               />
+            </div>
+            <div className="field-group" style={{ marginTop: "1rem" }}>
               <TextField
                 id="mobility-current-company"
                 label="Empresa actual"
                 value={workerContext?.currentCompanyName ?? ""}
                 readOnly
               />
+            </div>
 
+            <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>Condiciones destino</h3>
+            <div className="contract-grid">
               <SelectField
                 id="mobility-destination-job"
                 label="Cargo nuevo"
@@ -264,7 +273,6 @@ export function InternalMobilityPage() {
                 options={jobTitleOptions.map((item) => ({ value: item, label: item }))}
                 placeholder="Selecciona el cargo destino"
               />
-
               <SelectField
                 id="mobility-destination-area"
                 label="Contrato / Área nuevo"
@@ -277,7 +285,8 @@ export function InternalMobilityPage() {
                 }))}
                 placeholder="Selecciona el destino"
               />
-
+            </div>
+            <div className="field-group" style={{ marginTop: "1rem" }}>
               <TextField
                 id="mobility-destination-company"
                 label="Empresa destino"

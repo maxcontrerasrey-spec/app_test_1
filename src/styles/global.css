@@ -3348,6 +3348,7 @@ textarea {
 
 .hr-worker-lookup {
   position: relative;
+  z-index: 50;
 }
 
 .hr-worker-lookup-shell {
