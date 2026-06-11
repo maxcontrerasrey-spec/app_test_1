@@ -4,154 +4,220 @@ export function LabsPage() {
   return (
     <PageShell>
       <style>{`
-        /* FLAT PRINT E-INK STYLES */
+        /* USER PROVIDED E-INK CSS */
         .labs-paper-wrapper {
-          --background: #f4f1e8;
-          --foreground: #111111;
-          --card: #fbfaf5;
-          --border: #111111;
-          --muted: #5a5a5a;
+          --ink-bg: #f4f1e8;
+          --ink-surface: #fbfaf5;
+          --ink-text: #111111;
+          --ink-muted: #4a4a4a;
+          --ink-border: #1d1d1d;
 
-          position: relative;
+          background:
+            radial-gradient(circle at 20% 20%, rgba(0,0,0,0.035), transparent 24%),
+            radial-gradient(circle at 80% 10%, rgba(0,0,0,0.025), transparent 20%),
+            linear-gradient(var(--ink-bg), var(--ink-bg));
+          color: var(--ink-text);
+          font-family: Georgia, "Times New Roman", serif;
+          filter: contrast(1.08) grayscale(1);
+          
           min-height: calc(100vh - 100px);
-          background-color: var(--background);
-          color: var(--foreground);
-          font-family: Georgia, serif; 
-          
-          /* Typography antialiasing to simulate ink spread */
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          text-shadow: 0 0 1px rgba(17, 17, 17, 0.1); /* Very subtle ink bleed */
-          
-          overflow: hidden;
           padding-bottom: 4rem;
         }
 
-        /* SVG Noise Filter Overlay - MULTIPLE LAYERS for realistic fiber/cardboard feel */
-        /* Layer 1: Fine high-frequency grain */
-        .labs-paper-wrapper::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          z-index: 9998;
-          opacity: 0.35;
-          mix-blend-mode: multiply;
-          background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise1"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise1)" opacity="0.2"/%3E%3C/svg%3E');
-        }
-
-        /* Layer 2: Low-frequency cloudy fibers / imperfections */
-        .labs-paper-wrapper::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          z-index: 9999;
-          opacity: 0.15;
-          mix-blend-mode: color-burn;
-          background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise2"%3E%3CfeTurbulence type="turbulence" baseFrequency="0.05" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise2)" opacity="0.3"/%3E%3C/svg%3E');
-        }
-
-        .paper-content-panel {
+        .ink-paper {
+          background-color: var(--ink-surface);
+          border: 1.5px solid var(--ink-border);
+          box-shadow: none;
           position: relative;
-          z-index: 10;
+          overflow: hidden;
+          
           max-width: 800px;
           margin: 0 auto;
           padding: 3rem 4rem;
-          background-color: var(--card);
-          border: 1px solid var(--border);
-          box-shadow: 4px 4px 0px var(--border) !important; /* Brutalist shadow */
-          border-radius: 0px; /* Sharp edges like cut paper */
         }
 
-        .minimal-page-header {
-          border-bottom: 1px solid var(--border);
-          margin-bottom: 3rem;
-          padding-bottom: 1rem;
+        .ink-paper::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0.18;
+          mix-blend-mode: multiply;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
         }
 
-        .minimal-page-header h1 {
-          color: var(--foreground);
-          font-weight: 800;
-        }
-
-        .paper-content-panel h1, 
-        .paper-content-panel h2, 
-        .paper-content-panel h3 {
+        /* Essential text styling */
+        .ink-paper h1, .ink-paper h2, .ink-paper h3 {
+          color: var(--ink-text);
           font-weight: 700;
           letter-spacing: -0.02em;
-          color: var(--foreground);
-        }
-
-        .paper-content-panel p {
-          font-size: 1.15rem;
-          line-height: 1.8;
           margin-bottom: 1.5rem;
-          color: var(--foreground);
+          position: relative; /* Ensure it stays above the SVG noise */
+          z-index: 10;
         }
 
-        .paper-callout {
+        .ink-text {
+          color: var(--ink-text);
+          text-shadow:
+            0.25px 0 #111,
+            -0.25px 0 rgba(0,0,0,0.35);
+          letter-spacing: 0.01em;
+          position: relative;
+          z-index: 10;
+          line-height: 1.8;
+          margin-bottom: 1.2rem;
+          font-size: 1.15rem;
+        }
+
+        .ink-card {
+          background: var(--ink-surface);
+          border: 2px solid var(--ink-border);
+          border-radius: 2px;
           padding: 1.5rem;
-          border: 1px dashed var(--muted);
-          background-color: var(--background);
-          margin: 2rem 0;
-          border-radius: 0px;
+          position: relative;
+          z-index: 10;
+          margin-bottom: 1.5rem;
         }
 
-        .paper-callout strong {
-          color: var(--foreground);
+        .ink-button {
+          background: var(--ink-border);
+          color: #f8f6ee;
+          border: 2px solid var(--ink-border);
+          border-radius: 2px;
           font-weight: 700;
+          padding: 0.6rem 1.2rem;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 1rem;
+          transition: all 0.1s;
+        }
+        
+        .ink-button:hover {
+          background: #000;
         }
 
-        .muted-text {
-          color: var(--muted);
-          font-size: 0.9rem;
+        .ink-button.secondary {
+          background: transparent;
+          color: var(--ink-text);
+        }
+        
+        .ink-button.secondary:hover {
+          background: rgba(0,0,0,0.05);
+        }
+
+        .ink-input {
+          background: transparent;
+          border: 1px solid var(--ink-muted);
+          border-radius: 2px;
+          padding: 0.6rem 1rem;
+          font-family: inherit;
+          font-size: 1rem;
+          color: var(--ink-text);
+          width: 100%;
+          margin-bottom: 1rem;
+        }
+
+        .ink-input:focus {
+          outline: none;
+          border-color: var(--ink-text);
+          border-width: 2px;
+          padding: calc(0.6rem - 1px) calc(1rem - 1px);
+        }
+
+        .ink-badge {
+          display: inline-block;
+          border: 1px solid var(--ink-text);
+          padding: 0.2rem 0.6rem;
+          font-size: 0.85rem;
+          border-radius: 20px;
+          font-weight: bold;
+          margin-right: 0.5rem;
+        }
+
+        .ink-header {
+          border-bottom: 2px solid var(--ink-border);
+          padding-bottom: 1rem;
+          margin-bottom: 2rem;
+        }
+        
+        /* Grid layout for playground */
+        .playground-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2rem;
+          position: relative;
+          z-index: 10;
         }
       `}</style>
 
       <div className="labs-paper-wrapper">
-        <div className="minimal-page-header">
-          <h1>Laboratorio de Pruebas: Efecto NXTPAPER</h1>
-        </div>
-
-        <section className="paper-content-panel">
-          <h2 style={{ marginBottom: '1.5rem', fontSize: '2rem' }}>La evolución de la tinta electrónica y el confort visual</h2>
-          
-          <p>
-            En la era digital actual, pasamos una media de 8 a 10 horas diarias frente a pantallas retroiluminadas. Este nivel de exposición a emisiones de luz directa y ondas de luz azul de alta frecuencia ha desencadenado una pandemia silenciosa de fatiga visual digital, también conocida como síndrome visual informático. Los síntomas incluyen sequedad ocular, visión borrosa, dolores de cabeza tensionales y disrupción severa de los ritmos circadianos, lo que afecta directamente la calidad del sueño.
-          </p>
-
-          <p>
-            Para combatir estos efectos nocivos, empresas líderes en tecnología de visualización han estado investigando alternativas a las pantallas LCD y OLED tradicionales. El santo grial siempre ha sido la tecnología E-Ink (Tinta Electrónica), que en lugar de emitir luz desde atrás hacia los ojos del usuario, refleja la luz ambiental mediante microcápsulas llenas de pigmentos magnéticos. El resultado es un material visualmente idéntico al papel impreso, que no cansa la vista bajo el sol directo y consume una cantidad minúscula de energía, limitándose a gastar batería únicamente durante el refresco de la imagen.
-          </p>
-
-          <p>
-            Sin embargo, la tinta electrónica tradicional tiene tres debilidades críticas que han limitado su adopción masiva fuera de los lectores de libros electrónicos: su tasa de refresco (frecuencia de actualización) es abismalmente lenta, generando un efecto fantasma ("ghosting") insoportable para video o navegación interactiva rápida; la reproducción de color ha sido históricamente precaria, limitada a paletas deslavadas de unos pocos miles de colores; y su legibilidad en entornos nocturnos requiere de luz frontal ("frontlight"), que rompe parcialmente el propósito de no emitir luz artificial.
-          </p>
-
-          <h3 style={{ marginTop: '2.5rem', marginBottom: '1rem', fontSize: '1.6rem' }}>El nacimiento de las pantallas híbridas: TCL NXTPAPER</h3>
-
-          <p>
-            Buscando lo mejor de ambos mundos, ingenieros optoelectrónicos desarrollaron tecnologías híbridas como NXTPAPER (TCL) o X-Paper (XPPen). A diferencia de E-Ink, estas tecnologías no utilizan microcápsulas magnéticas, sino que retienen la arquitectura base de las pantallas IPS LCD o AMOLED, que garantizan tasas de refresco fluidas (hasta 120Hz) y una reproducción de color del 100% sRGB. 
-          </p>
-
-          <p>
-            El secreto de su efecto "papel" no está en los píxeles, sino en las capas que los recubren. La tecnología NXTPAPER aplica un grabado químico multicapa a escala nanométrica sobre la cubierta de cristal. Esta superficie mate anti-reflejo (AG Glass) cumple una función vital: dispersa y difumina cualquier fuente de luz externa (como el sol o una lámpara) e impide los reflejos especulares ("glare") que obligan al ojo a reenfocar constantemente, una de las principales causas de fatiga visual oculta.
-          </p>
-
-          <div className="paper-callout">
-            <strong style={{ display: 'block', marginBottom: '0.5rem', fontSize: '1.2rem' }}>¿Sabías qué?</strong>
-            Además del grabado físico, estas pantallas incorporan polarizadores de luz circulares (CPL) que transforman la luz artificial emitida por los LEDs traseros en ondas que imitan matemáticamente la dispersión de la luz solar natural, engañando al cerebro para que la perciba como luz rebotada.
+        <section className="ink-paper">
+          <div className="ink-header">
+            <h1 style={{ margin: 0 }}>Laboratorio: UI Tinta Electrónica</h1>
           </div>
-
-          <p>
-            A nivel de software y filtrado de hardware, la luz azul (la longitud de onda más energética y dañina del espectro visible) es atenuada directamente en el diodo emisor sin distorsionar artificialmente la temperatura del color a un amarillo agresivo. Adicionalmente, el software del dispositivo ajusta la colorimetría para aplanar el contraste excesivo, imitando la reducida profundidad dinámica de la tinta CMYK real sobre celulosa.
+          
+          <p className="ink-text">
+            Este es un entorno de pruebas utilizando el CSS de impresión plana optimizado. Observa cómo el filtro global <code>grayscale(1)</code> asegura que ningún elemento rompa la inmersión monocromática, y cómo el <code>text-shadow</code> subpíxel simula el sangrado orgánico de la tinta en el papel.
           </p>
 
-          <p>
-            En este experimento CSS, estamos probando metodologías para emular estas complejas alteraciones físicas y ópticas utilizando únicamente estándares web (W3C), aplicando ruido SVG como nanotextura y mix-blend-modes complejos para achatar el rango dinámico de las tarjetas y fuentes. Todo ello con el fin de acercar la ergonomía visual del E-Ink a pantallas estándar.
-          </p>
+          <h2 style={{ marginTop: '3rem' }}>Catálogo de Componentes</h2>
 
+          <div className="playground-grid">
+            {/* Botones */}
+            <div className="ink-card">
+              <h3 style={{ fontSize: '1.2rem', marginTop: 0 }}>Acciones (Botones)</h3>
+              <p className="ink-text" style={{ fontSize: '0.95rem', color: 'var(--ink-muted)' }}>
+                Diferenciación jerárquica sin depender de colores vivos.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button className="ink-button">Acción Principal</button>
+                <button className="ink-button secondary">Acción Secundaria</button>
+              </div>
+            </div>
+
+            {/* Entradas de Texto */}
+            <div className="ink-card">
+              <h3 style={{ fontSize: '1.2rem', marginTop: 0 }}>Formularios</h3>
+              <label className="ink-text" style={{ display: 'block', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                Nombre completo
+              </label>
+              <input type="text" className="ink-input" placeholder="Ej. Juan Pérez" />
+              
+              <label className="ink-text" style={{ display: 'block', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                Comentarios
+              </label>
+              <textarea className="ink-input" rows={3} placeholder="Escribe aquí..."></textarea>
+            </div>
+
+            {/* Badges / Estados */}
+            <div className="ink-card">
+              <h3 style={{ fontSize: '1.2rem', marginTop: 0 }}>Etiquetas de Estado</h3>
+              <p className="ink-text" style={{ fontSize: '0.95rem', color: 'var(--ink-muted)' }}>
+                Estados representados por grosor y patrón, no por color (rojo/verde).
+              </p>
+              <div style={{ marginTop: '1rem' }}>
+                <span className="ink-badge" style={{ backgroundColor: 'var(--ink-text)', color: 'var(--ink-surface)' }}>
+                  Aprobado
+                </span>
+                <span className="ink-badge" style={{ borderStyle: 'dashed' }}>
+                  Pendiente
+                </span>
+                <span className="ink-badge" style={{ color: 'var(--ink-muted)', borderColor: 'var(--ink-muted)' }}>
+                  Rechazado
+                </span>
+              </div>
+            </div>
+
+            {/* Tarjeta de Contenido */}
+            <div className="ink-card" style={{ borderStyle: 'dashed' }}>
+              <h3 style={{ fontSize: '1.2rem', marginTop: 0 }}>Sub-Tarjeta (Wireframe)</h3>
+              <p className="ink-text" style={{ fontSize: '0.95rem' }}>
+                Al anidar tarjetas, usar bordes punteados o discontinuos ayuda a separar contenido sin usar sombras.
+              </p>
+              <button className="ink-button secondary" style={{ width: '100%' }}>Ver más detalles</button>
+            </div>
+          </div>
+          
         </section>
       </div>
     </PageShell>
