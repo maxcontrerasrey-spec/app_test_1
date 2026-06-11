@@ -119,14 +119,9 @@ export function LoginPage() {
           </div>
 
           <div className="login-actions">
-            <button
-              className="login-inline-link"
-              type="button"
-              onClick={() => void handlePasswordReset()}
-              disabled={isSubmitting}
-            >
-              Recuperar contraseña
-            </button>
+            <span className="login-caption">
+              Conexión segura. Usa tus credenciales autorizadas.
+            </span>
           </div>
 
           {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
@@ -141,9 +136,16 @@ export function LoginPage() {
           </button>
         </form>
 
-        <p className="login-caption">
-          Plataforma diseñada por <a className="login-caption-link" href="mailto:max.contrerasrey@icolud.com">Maximiliano Contreras</a>
-        </p>
+        <div className="login-caption">
+          <button
+            className="login-inline-link"
+            type="button"
+            onClick={() => void handlePasswordReset()}
+            disabled={isSubmitting}
+          >
+            ¿Olvidaste tu contraseña? Recuperar acceso
+          </button>
+        </div>
       </div>
     </section>
   );
