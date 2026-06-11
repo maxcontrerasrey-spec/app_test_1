@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   homeNavigationItem,
   navigationModules,
@@ -61,6 +61,7 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
 
 export function AppShell() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { accessibleModules, displayName, email, isSuperAdmin, jobTitle, signOut } =
     useAuth();
   const { theme, setTheme } = useTheme();
@@ -338,10 +339,20 @@ export function AppShell() {
                   className="user-menu-action"
                   onClick={() => {
                     setIsUserMenuOpen(false);
+                    navigate("/reset-password", { state: { voluntaryChange: true } });
+                  }}
+                >
+                  Cambiar contraseña
+                </button>
+                <button
+                  type="button"
+                  className="user-menu-action"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
                     void signOut();
                   }}
                 >
-                  Cerrar sesion
+                  Cerrar sesión
                 </button>
               </div>
             ) : null}

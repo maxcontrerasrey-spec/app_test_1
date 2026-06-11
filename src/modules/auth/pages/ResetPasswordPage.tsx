@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../../assets/app-logo.png";
 import { useAuth } from "../context/AuthContext";
 
@@ -19,8 +19,10 @@ export function ResetPasswordPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const location = useLocation();
+  const isVoluntaryChange = Boolean(location.state?.voluntaryChange);
   const isForcedPasswordChange = Boolean(user && profile?.must_reset_password);
-  const canUsePage = isRecoveryMode || isForcedPasswordChange;
+  const canUsePage = isRecoveryMode || isForcedPasswordChange || isVoluntaryChange;
 
   const canSubmit =
     password.trim().length >= 8 &&
@@ -33,7 +35,8 @@ export function ResetPasswordPage() {
     !isLoading &&
     user &&
     !isRecoveryMode &&
-    !profile?.must_reset_password
+    !profile?.must_reset_password &&
+    !isVoluntaryChange
   ) {
     return <Navigate to="/" replace />;
   }
