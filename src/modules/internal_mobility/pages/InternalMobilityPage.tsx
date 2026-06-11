@@ -409,7 +409,7 @@ export function InternalMobilityPage() {
               </div>
               <div>
                 <small>Área actual</small>
-                <strong>{workerContext?.currentAreaName ?? PENDING_LABEL}</strong>
+                <strong>{workerContext?.currentAreaName ? workerContext.currentAreaName.replace(/\s*\([\d:]+\)\s*$/, "") : PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Área destino</small>
