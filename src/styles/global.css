@@ -1838,31 +1838,37 @@ textarea {
 }
 
 .mobility-section-title {
-  margin: 0.5rem 0 0.85rem;
+  margin: 0.5rem 0 0.15rem;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--title);
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .mobility-divider {
   border: 0;
   border-top: 1px solid var(--border-subtle);
-  margin: 1.25rem 0 0.75rem;
+  margin: 0.5rem 0;
   width: 100%;
+}
+
+.mobility-form-card {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.35rem !important;
 }
 
 .mobility-compact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem 1.25rem;
+  gap: 0.4rem 0.75rem;
   align-items: start;
 }
 
 .mobility-block-spaced {
-  margin-top: 0.5rem;
+  margin-top: 0;
 }
 
 .mobility-textarea {

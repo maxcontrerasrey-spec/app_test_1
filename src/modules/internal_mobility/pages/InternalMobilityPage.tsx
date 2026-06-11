@@ -236,7 +236,7 @@ export function InternalMobilityPage() {
       </div>
 
       <div className="mobility-layout-single">
-          <div className="form-card">
+          <div className="form-card mobility-form-card">
             <div className="requester-grid">
               <TextField id="mobility-requester-name" label="Nombre solicitante" value={displayName} readOnly />
               <TextField id="mobility-requester-job" label="Cargo solicitante" value={jobTitle} readOnly />
