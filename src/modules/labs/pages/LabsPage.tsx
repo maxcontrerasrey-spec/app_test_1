@@ -4,21 +4,24 @@ export function LabsPage() {
   return (
     <PageShell>
       <style>{`
-        /* AGGRESSIVE PAPER MODE STYLES */
+        /* FLAT PRINT E-INK STYLES */
         .labs-paper-wrapper {
+          --background: #f4f1e8;
+          --foreground: #111111;
+          --card: #fbfaf5;
+          --border: #111111;
+          --muted: #5a5a5a;
+
           position: relative;
           min-height: calc(100vh - 100px);
-          background-color: #F8F7F3; /* Much softer, barely off-white paper */
-          color: #2C2820; /* Deep brown/grey ink, never pure black */
-          font-family: Georgia, serif; /* Serifs look more like printed text */
-          
-          /* Optical filters to simulate hardware e-ink limitations */
-          filter: sepia(0.08) contrast(0.92) saturate(0.85) brightness(0.94);
+          background-color: var(--background);
+          color: var(--foreground);
+          font-family: Georgia, serif; 
           
           /* Typography antialiasing to simulate ink spread */
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
-          text-shadow: 0 0 1px rgba(44, 40, 32, 0.2);
+          text-shadow: 0 0 1px rgba(17, 17, 17, 0.1); /* Very subtle ink bleed */
           
           overflow: hidden;
           padding-bottom: 4rem;
@@ -29,9 +32,9 @@ export function LabsPage() {
           content: "";
           position: absolute;
           inset: 0;
-          pointer-events: none; /* Don't block clicks */
+          pointer-events: none;
           z-index: 9999;
-          opacity: 0.35; /* Noticeable but less dirty texture */
+          opacity: 0.25; /* Softer texture for the clean palette */
           mix-blend-mode: multiply;
           background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.15"/%3E%3C/svg%3E');
         }
@@ -42,11 +45,21 @@ export function LabsPage() {
           max-width: 800px;
           margin: 0 auto;
           padding: 3rem 4rem;
-          background-color: transparent;
-          border: 1px solid rgba(0,0,0,0.05);
-          /* Remove all shadows to mimic physical paper */
-          box-shadow: none !important;
-          border-radius: 4px;
+          background-color: var(--card);
+          border: 1px solid var(--border);
+          box-shadow: 4px 4px 0px var(--border) !important; /* Brutalist shadow */
+          border-radius: 0px; /* Sharp edges like cut paper */
+        }
+
+        .minimal-page-header {
+          border-bottom: 1px solid var(--border);
+          margin-bottom: 3rem;
+          padding-bottom: 1rem;
+        }
+
+        .minimal-page-header h1 {
+          color: var(--foreground);
+          font-weight: 800;
         }
 
         .paper-content-panel h1, 
@@ -54,28 +67,38 @@ export function LabsPage() {
         .paper-content-panel h3 {
           font-weight: 700;
           letter-spacing: -0.02em;
-          color: #1A1813;
+          color: var(--foreground);
         }
 
         .paper-content-panel p {
           font-size: 1.15rem;
           line-height: 1.8;
           margin-bottom: 1.5rem;
-          color: #2C2820;
+          color: var(--foreground);
         }
 
         .paper-callout {
           padding: 1.5rem;
-          border: 2px dashed rgba(44, 40, 32, 0.4); /* Sketch style border */
-          background-color: rgba(0,0,0,0.03);
+          border: 1px dashed var(--muted);
+          background-color: var(--background);
           margin: 2rem 0;
-          border-radius: 2px;
+          border-radius: 0px;
+        }
+
+        .paper-callout strong {
+          color: var(--foreground);
+          font-weight: 700;
+        }
+
+        .muted-text {
+          color: var(--muted);
+          font-size: 0.9rem;
         }
       `}</style>
 
       <div className="labs-paper-wrapper">
-        <div className="minimal-page-header" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-          <h1 style={{ color: '#1A1813' }}>Laboratorio de Pruebas: Efecto NXTPAPER</h1>
+        <div className="minimal-page-header">
+          <h1>Laboratorio de Pruebas: Efecto NXTPAPER</h1>
         </div>
 
         <section className="paper-content-panel">
