@@ -143,7 +143,7 @@ textarea {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 1.25rem;
-  min-height: 4.25rem;
+  min-height: 3.5rem;
   width: min(100%, 1480px);
   margin: 0 auto;
   padding: 0 1.5rem 0 0.55rem;
@@ -257,7 +257,7 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  min-height: 4.25rem;
+  min-height: 3.5rem;
   min-width: 160px;
   padding: 0 0.05rem;
   border: 0;
