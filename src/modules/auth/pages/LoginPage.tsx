@@ -1,10 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import logo from "../../../assets/app-logo.png";
-import recruitingIcon from "../../../assets/recruiting-icon.png";
-import certificationIcon from "../../../assets/certification-icon.png";
-import operationsIcon from "../../../assets/operacion.png";
-import hrCommercialIcon from "../../../assets/recursos-humanos.png";
 import { useAuth } from "../context/AuthContext";
 
 export function LoginPage() {
@@ -75,135 +71,79 @@ export function LoginPage() {
 
   return (
     <section className="login-shell">
-      <div className="login-frame">
-        <div className="login-brand-panel">
-          <div className="login-brand-top">
-            <img alt="Logo JM" className="app-logo app-logo-login" src={logo} />
-          </div>
-
-          <div className="login-brand-copy">
-            <h1>Plataforma de Control</h1>
-            <div className="login-brand-copy-spacer" aria-hidden="true" />
-          </div>
-
-          <ul className="login-benefits">
-            <li className="login-benefit-with-image">
-              <span className="login-benefit-icon-wrap" aria-hidden="true">
-                <img
-                  alt=""
-                  className="login-benefit-icon-image"
-                  src={recruitingIcon}
-                />
-              </span>
-              Solicitud, control y seguimiento de procesos de reclutamiento y
-              selección de personal
-            </li>
-            <li className="login-benefit-with-image">
-              <span className="login-benefit-icon-wrap" aria-hidden="true">
-                <img
-                  alt=""
-                  className="login-benefit-icon-image"
-                  src={certificationIcon}
-                />
-              </span>
-              Gestión, control y seguimiento del proceso de certificación por
-              competencias
-            </li>
-            <li className="login-benefit-with-image">
-              <span className="login-benefit-icon-wrap" aria-hidden="true">
-                <img
-                  alt=""
-                  className="login-benefit-icon-image login-benefit-icon-image-wide"
-                  src={operationsIcon}
-                />
-              </span>
-              Control y gestion de servicios y asignacion de recursos operativos.
-            </li>
-            <li className="login-benefit-with-image">
-              <span className="login-benefit-icon-wrap" aria-hidden="true">
-                <img
-                  alt=""
-                  className="login-benefit-icon-image login-benefit-icon-image-wide"
-                  src={hrCommercialIcon}
-                />
-              </span>
-              Control y gestion de alcances contractuales y comerciales.
-            </li>
-          </ul>
-
-
+      <div className="login-glass-card">
+        <div className="login-brand-top">
+          <img alt="Logo JM" className="app-logo-login" src={logo} />
+        </div>
+        
+        <div className="login-header-copy">
+          <h2>Iniciar sesión</h2>
+          <p>Bienvenido a la Plataforma de Control</p>
         </div>
 
-        <div className="login-form-panel">
-          <form className="login-card" onSubmit={handleSubmit}>
-            <div className="login-card-copy">
-              <h2>Iniciar sesion</h2>
-              <div className="login-card-copy-spacer" aria-hidden="true" />
-            </div>
+        <form className="login-form-content" onSubmit={handleSubmit}>
+          <div className="glass-input-group">
+            <span className="glass-input-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <input
+              className="glass-input-field"
+              id="login-email"
+              placeholder="Correo electrónico corporativo"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+            />
+          </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="login-email">
-                Correo corporativo
-              </label>
-              <input
-                className="text-field"
-                id="login-email"
-                placeholder="nombre.apellido@empresa.com"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-              />
-            </div>
+          <div className="glass-input-group">
+            <span className="glass-input-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </span>
+            <input
+              className="glass-input-field"
+              id="login-password"
+              placeholder="Contraseña"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="login-password">
-                Contrasena
-              </label>
-              <input
-                className="text-field"
-                id="login-password"
-                placeholder="••••••••"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-              />
-            </div>
-
-            {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
-            {infoMessage ? <p className="login-success">{infoMessage}</p> : null}
-
+          <div className="login-actions">
             <button
               className="login-inline-link"
               type="button"
               onClick={() => void handlePasswordReset()}
               disabled={isSubmitting}
             >
-              Recuperar o reiniciar contraseña
+              Recuperar contraseña
             </button>
+          </div>
 
-            <button
-              className="soft-primary-button login-button"
-              type="submit"
-              disabled={!isSubmitEnabled || isSubmitting}
-            >
-              {isSubmitting ? "Ingresando..." : "Continuar"}
-            </button>
+          {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
+          {infoMessage ? <p className="login-success">{infoMessage}</p> : null}
 
-            <p className="login-helper-text">
-              Conexion segura. Usa tus credenciales autorizadas.
-            </p>
-          </form>
+          <button
+            className="soft-primary-button glass-submit-button"
+            type="submit"
+            disabled={!isSubmitEnabled || isSubmitting}
+          >
+            {isSubmitting ? "Ingresando..." : "Continuar"}
+          </button>
+        </form>
 
-          <p className="login-caption">
-            Plataforma diseñada por{" "}
-            <a className="login-caption-link" href="mailto:max.contrerasrey@icolud.com">
-              Maximiliano Contreras
-            </a>
-            .
-          </p>
-        </div>
+        <p className="login-caption">
+          Plataforma diseñada por <a className="login-caption-link" href="mailto:max.contrerasrey@icolud.com">Maximiliano Contreras</a>
+        </p>
       </div>
     </section>
   );
