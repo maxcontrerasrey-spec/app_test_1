@@ -175,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setSession(nextSession);
-      setIsRecoveryMode(detectRecoveryMode());
+      setIsRecoveryMode((prev) => prev || detectRecoveryMode());
 
       if (!nextSession?.user) {
         setProfile(null);
