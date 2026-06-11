@@ -70,6 +70,9 @@ export type HiringControlApproval = {
 
 export type RecruitmentCaseListRow = {
   id: string;
+  source_type?: "case" | "request";
+  hiring_request_id?: string;
+  folio?: string | null;
   case_code: string;
   status: RecruitmentCaseStatus;
   requested_vacancies: number;
@@ -91,6 +94,21 @@ export type RecruitmentCaseListRow = {
   candidate_count: number;
   ready_candidates: number;
   hired_candidates: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  shift_name?: string | null;
+  salary_offer?: number | null;
+  campamento?: boolean | null;
+  pasajes?: boolean | null;
+  travel_methodology?: string | null;
+  other_benefits?: string | null;
+  approval_summary?: {
+    step_name: string | null;
+    status: string | null;
+    decision_comment: string | null;
+    decided_at: string | null;
+    decided_by_name: string | null;
+  } | null;
 };
 
 export type RecruitmentCandidateControlRow = {

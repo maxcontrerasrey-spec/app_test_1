@@ -2,6 +2,68 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste urgente de visibilidad y cerrados en folios de contratación
+
+- [x] Auditar y corregir la fuente real de `Resumen de procesos de contratación` para que los folios rechazados/cerrados también aparezcan en la sección `Rechazados / Cerrados`, incluso cuando no exista un `recruitment_case` operativo
+- [x] Reemplazar la lógica de visibilidad de folios abiertos en `Inicio` y `Control de Contrataciones` según la nueva matriz: visibilidad total para `reclutamiento`, `control_contratos`, `director_eje`, `gerente_general`, `director_op`; visibilidad por gerencia para `gerencia`; visibilidad solo de solicitudes propias para el resto
+- [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
+- [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
+
+## Notificaciones transaccionales por correo en aprobaciones de contratación
+
+- [x] Diseñar el flujo backend para disparar correos exactamente cuando un folio cambia de aprobador o entra a reclutamiento
+- [x] Crear una Edge Function nueva para envío transaccional con `Resend`, usando secrets de Supabase y validación por secret interno
+- [x] Crear una migración SQL que dispare el correo al gerente de área al enviar el requerimiento, a Control de Contratos al aprobar gerencia y al pool activo de `reclutamiento` al aprobar Control de Contratos
+- [x] Dejar el flujo idempotente y con trazabilidad mínima para evitar correos duplicados por reintentos
+- [x] Validar `npm run build`, revisar diffs y documentar resultado final en `todo.md` y `lessons.md`
+
+## Resultado de notificaciones transaccionales por correo en aprobaciones de contratación
+
+- Se agregó la Edge Function [`hiring-transactional-email`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/hiring-transactional-email/index.ts:1), preparada para enviar correos vía `Resend` y protegida por un secret interno (`INTERNAL_EMAIL_WEBHOOK_SECRET`) para que no quede expuesta a llamados arbitrarios.
+- Se creó la migración [`20260611_170000_add_hiring_transactional_email_notifications.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_170000_add_hiring_transactional_email_notifications.sql:1), que incorpora configuración `transactional_email_settings`, log idempotente `transactional_email_dispatches`, helpers de encolado y triggers backend sobre `hiring_request_approvals` y `recruitment_cases`.
+- El correo al gerente de área se dispara cuando nace la aprobación `area_manager`; el correo a Control de Contratos se dispara cuando nace la aprobación `contracts_control`; y el correo a Reclutamiento se dispara cuando se inserta el `recruitment_case` al aprobar Control de Contratos.
+- El destinatario de Reclutamiento quedó resuelto contra el pool activo del rol `reclutamiento`, porque el flujo actual no asigna un `recruiter` automático al abrir el caso.
+- El envío quedó deshabilitado por defecto (`transactional_email_settings.is_enabled = false`) para evitar disparos accidentales antes del deploy manual y de que cargues la URL final de la Edge Function en Supabase.
+- Validación local cerrada con `git diff --check` y `npm run build` exitosos.
+
+## Hotfix de regresión de visibilidad para control_contratos en Control de Contrataciones
+
+- [x] Auditar qué SQL dejó desalineado `Inicio` vs `Control de Contrataciones` para el rol `control_contratos`
+- [x] Preparar un hotfix backend mínimo para restaurar acceso al resumen de procesos sin tocar el resto del flujo
+- [x] Verificar consistencia local del parche y documentar el origen de la regresión
+
+## Resultado de hotfix de regresión de visibilidad para control_contratos en Control de Contrataciones
+
+- La regresión apunta al contrato revertido en [`20260608_155500_revert_control_contratos_module_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608_155500_revert_control_contratos_module_access.sql:1), que explícitamente quitaba a `control_contratos` del módulo `control_contrataciones` y de la visibilidad operacional de casos.
+- Para restaurar el comportamiento esperado se agregó la migración de reparación [`20260611_182500_restore_control_contratos_summary_visibility.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_182500_restore_control_contratos_summary_visibility.sql:1), que vuelve a otorgar `role_module_access` al módulo y recompone las helpers `user_can_view_hiring_request_process_summary(...)` y `user_can_view_recruitment_process_summary(...)`.
+- El hotfix no toca frontend. El quiebre está en SQL y la UI de `Control de Contrataciones` solo estaba reflejando ese drift.
+- Validación local cerrada con `git diff --check`.
+
+## Hotfix de regresión por alias roto en get_recruitment_control_dashboard_v2
+
+- [x] Auditar la RPC activa y contrastarla contra el estado remoto real de casos, roles y helpers
+- [x] Corregir la referencia rota de `contract_lock.case_id` dentro del bloque de `candidate_control`
+- [x] Evitar que la vista de procesos vuelva a ocultar errores mostrando un falso cero silencioso
+- [x] Validar build local y documentar el hallazgo
+
+## Resultado de hotfix de regresión por alias roto en get_recruitment_control_dashboard_v2
+
+- La causa raíz más probable no era la visibilidad base: en remoto sí existen `29` casos abiertos, `control_contratos` sí volvió a tener acceso al módulo y las helpers `user_can_view_*` responden `true` para el usuario admin inspeccionado.
+- El quiebre estaba reintroducido en la versión actual de [`get_recruitment_control_dashboard_v2()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_184500_fix_recruitment_dashboard_contract_lock_alias_regression.sql:1): el bloque `candidate_control` volvió a leer `contract_lock.case_id`, pero el helper `find_active_candidate_contract_lock(...)` expone `recruitment_case_id`.
+- Eso hace que cualquier sesión con `candidate_control_access` pueda romper toda la RPC y el frontend termine mostrando resúmenes en cero aunque sí existan folios/casos.
+- Se agregó la migración de reparación [`20260611_184500_fix_recruitment_dashboard_contract_lock_alias_regression.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_184500_fix_recruitment_dashboard_contract_lock_alias_regression.sql:1), que restaura `contract_lock.recruitment_case_id`.
+- También se ajustó [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:126) para mostrar el error de la query en vez de aparentar un tablero vacío si la RPC vuelve a fallar.
+- Validación local cerrada con `git diff --check` y `npm run build`.
+
+## Resultado de ajuste urgente de visibilidad y cerrados en folios de contratación
+
+- Se creó la migración [`20260611_103000_scope_recruitment_process_visibility_and_closed_requests.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_103000_scope_recruitment_process_visibility_and_closed_requests.sql:1), que redefine la visibilidad de resumen sobre `hiring_requests`: acceso total para `reclutamiento`, `control_contratos`, `director_eje`, `gerente_general` y `director_op`; acceso por centro de costo aprobado para `gerencia`; acceso solo a solicitudes propias para el resto.
+- La misma migración corrige el hueco funcional de `Rechazados / Cerrados`: ahora `get_recruitment_control_dashboard_v2()` incorpora también folios `rejected/closed` que nunca alcanzaron a abrir un `recruitment_case`, evitando que desaparezcan de la pestaña de cerrados.
+- [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1) quedó preparado para expandir tanto casos operativos reales como filas de solicitud cerrada sin caso, mostrando resumen contractual y trazabilidad de la decisión en ambos escenarios.
+- [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1) y [`dashboard.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/styles/dashboard.css:523) absorbieron una mejora puntual de la auditoría: se retiraron estilos inline repetidos del widget y se movieron a clases reutilizables con ajuste responsivo.
+- La auditoría adjunta se consideró parcialmente vigente: el hallazgo sobre inline styles sí seguía aplicando en `ActiveFoliosWidget`, pero la parte sobre `DashboardInfoCards.tsx` quedó desfasada frente al estado actual del repo.
+- Validación local cerrada con `git diff --check` y `npm run build` exitosos.
+
 ## Plantilla XLS de migración para reclutamiento en producción
 
 - [x] Auditar el contrato real de datos de reclutamiento para definir una plantilla de migración alineada al esquema vivo

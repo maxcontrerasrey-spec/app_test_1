@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
   toRecruitmentCaseStatusLabel,
@@ -41,7 +41,12 @@ export function HiringProcessesView({
     useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [selectedApprovalId, setSelectedApprovalId] = useState<number | null>(null);
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
-  const expandedCaseDetailQuery = useRecruitmentCaseDetail(expandedCaseId ?? "", Boolean(expandedCaseId));
+  const expandedCaseRow =
+    activeCases.find((caseRow) => caseRow.id === expandedCaseId) ?? null;
+  const expandedCaseDetailQuery = useRecruitmentCaseDetail(
+    expandedCaseRow?.source_type === "request" ? "" : expandedCaseId ?? "",
+    Boolean(expandedCaseId) && expandedCaseRow?.source_type !== "request"
+  );
 
   const handleRowClick = (caseId: string) => {
     if (expandedCaseId === caseId) {
@@ -148,6 +153,8 @@ export function HiringProcessesView({
         </div>
       </div>
 
+      {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
+
       <div className="approval-chip-row">
         {caseFilterOptions.map((option) => (
           <button
@@ -181,12 +188,26 @@ export function HiringProcessesView({
                   const isExpanded = expandedCaseId === caseRow.id;
                   const detail = isExpanded ? expandedCaseDetailQuery.data ?? null : null;
                   const hr = detail?.case?.hiring_request;
-                  const approvalSummary = hr?.approval_summary;
+                  const approvalSummary = hr?.approval_summary ?? caseRow.approval_summary;
+                  const isRequestOnlyRow = caseRow.source_type === "request";
+                  const summaryRequesterName = hr?.requester_name ?? caseRow.requester_name ?? "—";
+                  const summaryRequesterEmail = hr?.requester_email ?? caseRow.requester_email ?? "—";
+                  const summaryFolio = hr?.folio ?? caseRow.folio ?? "—";
+                  const summaryCostCenter = detail
+                    ? `${detail.case.cost_center_name} (${detail.case.cost_center_code})`
+                    : `${caseRow.cost_center_name} (${caseRow.cost_center_code})`;
+                  const summaryRequestedEntryDate = detail?.case.requested_entry_date ?? caseRow.requested_entry_date;
+                  const summaryStartDate = hr?.start_date ?? caseRow.start_date;
+                  const summaryEndDate = hr?.end_date ?? caseRow.end_date;
+                  const summaryShiftName = hr?.shift_name ?? caseRow.shift_name;
+                  const summarySalaryOffer = hr?.salary_offer ?? caseRow.salary_offer;
+                  const summaryCampamento = hr?.campamento ?? caseRow.campamento;
+                  const summaryPasajes = hr?.pasajes ?? caseRow.pasajes;
+                  const summaryBenefits = hr?.other_benefits ?? caseRow.other_benefits;
 
                   return (
-                    <>
+                    <Fragment key={caseRow.id}>
                       <tr
-                        key={caseRow.id}
                         className={`tracking-table-row-clickable ${isExpanded ? "tracking-table-row-expanded" : ""}`}
                         onClick={() => void handleRowClick(caseRow.id)}
                       >
@@ -223,30 +244,28 @@ export function HiringProcessesView({
                         <td>{caseRow.requester_name ?? "No disponible"}</td>
                       </tr>
                       {isExpanded ? (
-                        <tr key={`${caseRow.id}-detail`} className="tracking-table-expanded-row">
+                        <tr className="tracking-table-expanded-row">
                           <td colSpan={7}>
-                            {expandedCaseDetailQuery.isLoading && !detail ? (
-                              <div className="expanded-case-loading">Cargando detalle del caso...</div>
-                            ) : detail ? (
+                            {isRequestOnlyRow ? (
                               <div className="expanded-case-detail-grid">
                                 <div className="expanded-detail-section">
                                   <h4>Solicitud original</h4>
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Solicitante</small>
-                                      <strong>{hr?.requester_name ?? caseRow.requester_name ?? "—"}</strong>
+                                      <strong>{summaryRequesterName}</strong>
                                     </div>
                                     <div>
                                       <small>Correo</small>
-                                      <strong>{hr?.requester_email ?? caseRow.requester_email ?? "—"}</strong>
+                                      <strong>{summaryRequesterEmail}</strong>
                                     </div>
                                     <div>
                                       <small>Folio</small>
-                                      <strong>{hr?.folio ?? "—"}</strong>
+                                      <strong>{summaryFolio}</strong>
                                     </div>
                                     <div>
                                       <small>Centro de costo</small>
-                                      <strong>{detail.case.cost_center_name} ({detail.case.cost_center_code})</strong>
+                                      <strong>{summaryCostCenter}</strong>
                                     </div>
                                   </div>
                                 </div>
@@ -255,19 +274,19 @@ export function HiringProcessesView({
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Ingreso solicitado</small>
-                                      <strong>{formatDateValue(detail.case.requested_entry_date)}</strong>
+                                      <strong>{formatDateValue(summaryRequestedEntryDate)}</strong>
                                     </div>
                                     <div>
                                       <small>Inicio contrato</small>
-                                      <strong>{formatDateValue(hr?.start_date)}</strong>
+                                      <strong>{formatDateValue(summaryStartDate)}</strong>
                                     </div>
                                     <div>
                                       <small>Fin contrato</small>
-                                      <strong>{formatDateValue(hr?.end_date)}</strong>
+                                      <strong>{formatDateValue(summaryEndDate)}</strong>
                                     </div>
                                     <div>
                                       <small>Turno</small>
-                                      <strong>{hr?.shift_name ?? "—"}</strong>
+                                      <strong>{summaryShiftName ?? "—"}</strong>
                                     </div>
                                   </div>
                                 </div>
@@ -276,19 +295,120 @@ export function HiringProcessesView({
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Renta líquida ofrecida</small>
-                                      <strong>{hr?.salary_offer ? `$${hr.salary_offer.toLocaleString("es-CL")}` : "—"}</strong>
+                                      <strong>{summarySalaryOffer ? `$${summarySalaryOffer.toLocaleString("es-CL")}` : "—"}</strong>
                                     </div>
                                     <div>
                                       <small>Campamento</small>
-                                      <strong>{hr?.campamento ? "Sí" : "No"}</strong>
+                                      <strong>{summaryCampamento ? "Sí" : "No"}</strong>
                                     </div>
                                     <div>
                                       <small>Pasajes</small>
-                                      <strong>{hr?.pasajes ? "Sí" : "No"}</strong>
+                                      <strong>{summaryPasajes ? "Sí" : "No"}</strong>
                                     </div>
                                     <div>
                                       <small>Otros beneficios</small>
-                                      <strong>{hr?.other_benefits?.trim() || "—"}</strong>
+                                      <strong>{summaryBenefits?.trim() || "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Decisión de aprobación</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Etapa</small>
+                                      <strong>{approvalSummary?.step_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Resolución</small>
+                                      <strong>
+                                        {approvalSummary?.status === "approved"
+                                          ? "Aprobada"
+                                          : approvalSummary?.status === "rejected"
+                                            ? "Rechazada"
+                                            : caseRow.hiring_request_status === "closed"
+                                              ? "Cerrada"
+                                              : "—"}
+                                      </strong>
+                                    </div>
+                                    <div>
+                                      <small>Resuelto por</small>
+                                      <strong>{approvalSummary?.decided_by_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Fecha decisión</small>
+                                      <strong>{formatDateTimeValue(approvalSummary?.decided_at)}</strong>
+                                    </div>
+                                    <div className="expanded-detail-field-full">
+                                      <small>Comentario</small>
+                                      <strong>{approvalSummary?.decision_comment?.trim() || "Sin comentario registrado"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : expandedCaseDetailQuery.isLoading && !detail ? (
+                              <div className="expanded-case-loading">Cargando detalle del caso...</div>
+                            ) : detail ? (
+                              <div className="expanded-case-detail-grid">
+                                <div className="expanded-detail-section">
+                                  <h4>Solicitud original</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Solicitante</small>
+                                      <strong>{summaryRequesterName}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Correo</small>
+                                      <strong>{summaryRequesterEmail}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Folio</small>
+                                      <strong>{summaryFolio}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Centro de costo</small>
+                                      <strong>{summaryCostCenter}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Fechas y operación</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Ingreso solicitado</small>
+                                      <strong>{formatDateValue(summaryRequestedEntryDate)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Inicio contrato</small>
+                                      <strong>{formatDateValue(summaryStartDate)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Fin contrato</small>
+                                      <strong>{formatDateValue(summaryEndDate)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Turno</small>
+                                      <strong>{summaryShiftName ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="expanded-detail-section">
+                                  <h4>Compensación y beneficios</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Renta líquida ofrecida</small>
+                                      <strong>{summarySalaryOffer ? `$${summarySalaryOffer.toLocaleString("es-CL")}` : "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Campamento</small>
+                                      <strong>{summaryCampamento ? "Sí" : "No"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Pasajes</small>
+                                      <strong>{summaryPasajes ? "Sí" : "No"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Otros beneficios</small>
+                                      <strong>{summaryBenefits?.trim() || "—"}</strong>
                                     </div>
                                   </div>
                                 </div>
@@ -351,13 +471,13 @@ export function HiringProcessesView({
                           </td>
                         </tr>
                       ) : null}
-                    </>
+                    </Fragment>
                   );
                 })
               ) : (
                 <tr>
                   <td className="tracking-empty-state" colSpan={7}>
-                    {isLoading ? "Cargando casos..." : "No hay folios activos para el filtro actual."}
+                    {isLoading ? "Cargando casos..." : "No hay folios para el filtro actual."}
                   </td>
                 </tr>
               )}

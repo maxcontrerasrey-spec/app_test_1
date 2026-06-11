@@ -523,8 +523,32 @@
   margin-bottom: 1rem;
 }
 
+.dashboard-folios-toolbar-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: nowrap;
+}
+
+.dashboard-folios-toolbar-search {
+  flex: 1;
+}
+
 .dashboard-folios-search {
   max-width: 420px;
+}
+
+.dashboard-folios-kpis {
+  margin-top: 0;
+  gap: 1rem;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.dashboard-folios-kpi-card {
+  min-width: 160px;
+  padding: 0.75rem 1rem;
 }
 
 .widget-header {
@@ -540,6 +564,18 @@
   color: var(--title);
   letter-spacing: -0.01em;
   margin: 0;
+}
+
+@media (max-width: 760px) {
+  .dashboard-folios-toolbar-split {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .dashboard-folios-kpis {
+    width: 100%;
+  }
 }
 
 /* Status Indicators */
@@ -890,6 +926,8 @@
 
 .expanded-detail-field-full {
   grid-column: 1 / -1;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .who-causes-summary-list {

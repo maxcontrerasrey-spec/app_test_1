@@ -239,6 +239,22 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El fallback correcto no es dejar ORION roto**. Se preserva persistencia, autenticación y contexto local en Supabase, pero la respuesta pasa a un modo determinístico seguro sin salir del perímetro.
 - **El cliente ORION debe tolerar ambos contratos**. Si hoy responde JSON local y mañana vuelve un proveedor aprobado por SSE, `orionChat.ts` debe aceptar ambos sin romper el módulo.
 
+## 58. Las notificaciones de workflow deben engancharse al evento backend que crea la tarea, no a una pantalla concreta
+
+- **Si un correo depende de quién quedó responsable del siguiente paso, el disparador correcto es la inserción real de la aprobación o del caso, no la acción visual del frontend**. Así el aviso sale igual aunque mañana cambie la UI o aparezca otra superficie que ejecute la misma RPC.
+- **Para evitar duplicados, la idempotencia debe vivir junto al dispatcher**. Un `event_key` único por aprobación pendiente o por apertura de caso evita reenviar correos cuando existan reintentos o llamadas repetidas del flujo.
+
+## 59. No mezclar en producción una reversión temporal de visibilidad con un contrato nuevo sin reassert explícito
+
+- **Si una migración intermedia quita a un rol de `role_module_access` o de una helper de visibilidad, no basta con asumir que otra RPC posterior lo corrige indirectamente**. Hay que volver a afirmar el acceso final en la base o el home y la vista dedicada pueden quedar desalineados.
+- **Cuando `Inicio` y `Control de Contrataciones` muestran realidades distintas para el mismo rol, la causa raíz suele ser drift entre RPCs SQL, no React**. Primero se revisan las últimas migraciones que tocaron `role_module_access`, `user_can_view_*` y `get_recruitment_control_dashboard_v2()`.
+
+## 60. Un “dashboard en cero” puede ser una RPC rota, no ausencia real de datos
+
+- **Si la vista muestra contadores en `0` pero la base sí tiene casos abiertos, no asumas visibilidad incorrecta de inmediato**. Una excepción en una sección lateral de la RPC puede vaciar todo el payload útil y el frontend puede degradar a defaults.
+- **En este dashboard, `candidate_control` no puede referenciar columnas inventadas del lock helper**. Si `find_active_candidate_contract_lock(...)` expone `recruitment_case_id`, volver a usar `case_id` rompe la RPC completa para sesiones con `candidate_control_access`.
+- **La vista principal debe renderizar el error de query explícitamente**. Si no, un fallo backend se disfraza como “no hay folios”, que es operativamente engañoso.
+
 ## 58. Una exportación operativa masiva no puede depender del panel lateral seleccionado
 
 - **Si RRHH necesita exportar varias personas a la vez, la fuente de datos debe resolverse por candidato seleccionado y no por el `case detail` actualmente abierto**. De lo contrario, la exportación queda limitada a un solo caso o a la última selección visual.
@@ -671,3 +687,22 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Mover la app de `pages.dev` a un subdominio propio no rompe geolocalización por sí mismo, pero sí crea un origen nuevo para el navegador.** Eso significa que el permiso concedido antes no necesariamente aplica al nuevo host.
 - **Si el widget reintenta solo una vez con `enableHighAccuracy: true`, el cambio de origen amplifica el fallo.** Un timeout o una lectura no disponible en ese primer intento termina enviando al usuario a IP o a una ciudad fija aunque el dispositivo sí pueda entregar coordenadas reales segundos después.
 - **El patrón correcto para producción es**: lanzar un intento rápido y otro preciso, aceptar la mejor coordenada real disponible, cachear la última ubicación válida del navegador y reservar el fallback por IP únicamente para el doble fallo real.
+
+## 82. Supabase Auth: Sesiones Atrapadas en Recovery Mode
+- **No confíes en que el evento `PASSWORD_RECOVERY` se limpia solo tras cambiar la contraseña.** Si un usuario recupera su cuenta, el flujo de Supabase Auth puede dejar tokens en memoria que atan la sesión activa al estado de recuperación, causando bloqueos o refrescos infinitos en pantallas protegidas.
+- **La solución radical pero necesaria**: Tras una mutación de contraseña exitosa, el frontend debe forzar un `signOut()` completo, limpiar estados locales e invocar una navegación dura a la raíz (`window.location.href = '/'`). Esto garantiza la destrucción de cualquier fragmento de la sesión de recuperación.
+
+## 83. Renderizado de Temas Globales y Estética Brutalista "E-Ink"
+- **El brutalismo de software (modo papel) es extremadamente performante si se estructura correctamente.** En lugar de aplicar pesados filtros CSS (`filter: sepia() grayscale()`) en el root, reescribir las variables semánticas de color hacia versiones mate/acuarela y eliminar `box-shadow` globalmente ahorra muchísimos ciclos de CPU de la GPU.
+- **Las texturas SVG ganan la guerra de rendimiento:** Aplicar un SVG con `feTurbulence` inyectado mediante `background-image` en el pseudo-elemento `body::after` con `mix-blend-mode: multiply` logra un efecto de textura de papel fotorrealista a un costo de memoria muy bajo.
+
+## 84. Control de Navegación Basado en Permisos (UI Level)
+- **Ocultar módulos experimentales desde el root:** En lugar de ensuciar los componentes de `AppShell` con lógica condicional dura, la propiedad `adminOnly` en la definición estructural del menú (`navigation.ts`) permite filtrar los menús centralizadamente, evitando la exposición de zonas de pruebas (como `/labs`) a usuarios estándar, incluso sin depender de RLS para el ruteo.
+
+## 85. La visibilidad del resumen de folios se gobierna desde `hiring_requests`, no desde el caso ni desde la asignación
+- **Si la regla de negocio habla de "quién solicitó" o "qué gerencia pertenece", el permiso del resumen debe resolverse contra la solicitud original.** Basarlo solo en `recruitment_case_assignments` o en acceso amplio al caso termina mostrando procesos abiertos a roles que no corresponden.
+- **La matriz correcta debe tener precedencia explícita por rol.** En este flujo: `reclutamiento`, `control_contratos`, `director_eje`, `gerente_general` y `director_op` ven todo; `gerencia` ve solo centros de costo donde figura como aprobador activo; el resto ve únicamente sus propias solicitudes.
+
+## 86. Un folio rechazado o cerrado puede existir sin `recruitment_case`, y el resumen debe contemplarlo
+- **No asumas que todo folio visible en `Resumen de procesos` tiene un caso operativo asociado.** Si la solicitud fue rechazada antes de abrir reclutamiento, vive solo en `hiring_requests` y desaparecerá del frontend si el payload nace exclusivamente desde `recruitment_cases`.
+- **La solución segura es un payload híbrido para la pestaña de cerrados.** Los casos reales siguen entrando desde `recruitment_cases`, pero los folios finales sin caso deben agregarse como filas de solicitud con detalle expandible propio y sin intentar cargar un `case_detail` inexistente.

@@ -129,8 +129,8 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
 
   return (
     <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
-      <div className="dashboard-folios-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '2rem', flexWrap: 'nowrap' }}>
-        <div style={{ flex: 1 }}>
+      <div className="dashboard-folios-toolbar dashboard-folios-toolbar-split">
+        <div className="dashboard-folios-toolbar-search">
           <TextField
             id="dashboard-folios-search"
             label="Buscar folio en curso"
@@ -141,16 +141,16 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
           />
         </div>
 
-        <div className="tracking-kpi-row" style={{ marginTop: 0, gap: '1rem', width: 'auto', flexShrink: 0 }}>
-          <article className="tracking-kpi-card tracking-kpi-card-pendiente" style={{ minWidth: '160px', padding: '0.75rem 1rem' }}>
+        <div className="tracking-kpi-row dashboard-folios-kpis">
+          <article className="tracking-kpi-card tracking-kpi-card-pendiente dashboard-folios-kpi-card">
             <span className="micro-label">Folios activos en búsqueda</span>
             <strong>{summary.active_cases}</strong>
           </article>
-          <article className="tracking-kpi-card tracking-kpi-card-en-proceso" style={{ minWidth: '160px', padding: '0.75rem 1rem' }}>
+          <article className="tracking-kpi-card tracking-kpi-card-en-proceso dashboard-folios-kpi-card">
             <span className="micro-label">Con candidato listo</span>
             <strong>{summary.ready_to_hire_cases}</strong>
           </article>
-          <article className="tracking-kpi-card tracking-kpi-card-generado" style={{ minWidth: '160px', padding: '0.75rem 1rem' }}>
+          <article className="tracking-kpi-card tracking-kpi-card-generado dashboard-folios-kpi-card">
             <span className="micro-label">Casos cubiertos</span>
             <strong>{summary.filled_cases}</strong>
           </article>
