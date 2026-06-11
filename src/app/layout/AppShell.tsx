@@ -21,7 +21,15 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
     strokeLinejoin: "round" as const
   };
 
-  switch (iconKey) {
+  switch (iconKey as any) {
+    case "flask":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a2.5 2.5 0 0 0 2.227 3.45h10.106a2.5 2.5 0 0 0 2.227-3.45l-5.068-10.127A2 2 0 0 1 14 9.527V2" />
+          <path {...commonProps} d="M8.5 2h7" />
+          <path {...commonProps} d="M14 16H5.3" />
+        </svg>
+      );
     case "timeline":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -121,6 +129,10 @@ export function AppShell() {
     () =>
       navigationModules
         .map((module) => {
+          if (module.adminOnly && !isSuperAdmin) {
+            return null;
+          }
+          
           if (module.items?.length) {
             const visibleItems = module.items.filter(
               (item) => isSuperAdmin || hasModuleAccess(accessibleModules, item.moduleCode)

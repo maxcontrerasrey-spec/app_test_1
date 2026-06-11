@@ -18,6 +18,7 @@ export type NavigationModule = {
   moduleCode?: AppModuleCode;
   to?: string;
   items?: NavigationItem[];
+  adminOnly?: boolean;
 };
 
 export const navigationModules: NavigationModule[] = [
@@ -96,6 +97,19 @@ export const navigationModules: NavigationModule[] = [
         label: "Incentivos",
         description: "Registro y control de incentivos extraordinarios.",
         iconKey: "document"
+      }
+    ]
+  },
+  {
+    label: "Labs",
+    adminOnly: true,
+    items: [
+      {
+        moduleCode: "operaciones", // Can be anything or omitted if adminOnly handles it, but using existing code to pass types
+        to: "/labs",
+        label: "NXTPAPER Test",
+        description: "Entorno de pruebas para la simulación visual E-Ink.",
+        iconKey: "flask" as any
       }
     ]
   }

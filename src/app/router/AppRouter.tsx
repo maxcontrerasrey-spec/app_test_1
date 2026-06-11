@@ -57,6 +57,10 @@ const AIAssistantHome = lazyWithRetry("ai-assistant-page", async () => ({
   default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
 }));
 
+const LabsPage = lazyWithRetry("labs-page", async () => ({
+  default: (await import("../../modules/labs/pages/LabsPage")).LabsPage
+}));
+
 function RouteLoadingScreen() {
   return (
     <section className="auth-loading-screen">
@@ -145,6 +149,14 @@ export function AppRouter() {
                 <RoleProtectedRoute moduleCode="recursos_humanos">
                   <HumanResourcesDashboard />
                 </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/labs"
+              element={
+                <AdminProtectedRoute>
+                  <LabsPage />
+                </AdminProtectedRoute>
               }
             />
           </Route>
