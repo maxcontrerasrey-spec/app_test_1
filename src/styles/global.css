@@ -2656,7 +2656,7 @@ textarea {
   place-items: center;
   padding: 2rem;
   /* Fondo corporativo con overlay usando la imagen de buses */
-  background-image: linear-gradient(rgba(10, 25, 47, 0.75), rgba(10, 25, 47, 0.85)), url('/fondo.png');
+  background-image: linear-gradient(rgba(10, 25, 47, 0.75), rgba(10, 25, 47, 0.85)), url('../assets/fondo.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
