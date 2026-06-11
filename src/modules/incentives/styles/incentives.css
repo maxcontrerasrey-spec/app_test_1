@@ -85,66 +85,6 @@
   flex-wrap: wrap;
 }
 
-.hr-worker-lookup {
-  position: relative;
-}
-
-.hr-worker-lookup-shell {
-  position: relative;
-}
-
-.hr-worker-lookup-clear {
-  position: absolute;
-  top: 50%;
-  right: 0.85rem;
-  transform: translateY(-50%);
-  border: none;
-  background: transparent;
-  color: var(--accent);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.hr-worker-lookup-results {
-  position: absolute;
-  z-index: 30;
-  left: 0;
-  right: 0;
-  top: calc(100% + 0.4rem);
-  display: grid;
-  gap: 0.35rem;
-  max-height: 18rem;
-  overflow-y: auto;
-  padding: 0.6rem;
-  border: 1px solid rgba(203, 213, 225, 0.9);
-  border-radius: var(--radius-lg);
-  background: rgba(var(--surface-rgb), 0.98);
-  box-shadow: var(--shadow-popover);
-  backdrop-filter: blur(16px);
-}
-
-.hr-worker-lookup-option {
-  display: grid;
-  gap: 0.14rem;
-  width: 100%;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: rgba(var(--surface-soft-rgb), 0.9);
-  text-align: left;
-  cursor: pointer;
-}
-
-.hr-worker-lookup-option:hover {
-  border-color: rgba(191, 205, 234, 0.95);
-  background: rgba(var(--surface-soft-rgb), 0.96);
-}
-
-.hr-worker-lookup-option span,
-.hr-worker-lookup-empty {
-  color: #52607a;
-  font-size: 0.83rem;
-}
 
 .hr-incentives-filters {
   width: 100%;

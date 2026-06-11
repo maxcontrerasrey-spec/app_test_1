@@ -220,7 +220,7 @@ export function InternalMobilityPage() {
               <TextField id="mobility-requester-job" label="Cargo solicitante" value={jobTitle} readOnly />
             </div>
 
-            <div className="mobility-form-grid">
+            <div className="contract-grid">
               <InternalMobilityWorkerLookup
                 id="mobility-worker-search"
                 label="Trabajador"
@@ -342,13 +342,14 @@ export function InternalMobilityPage() {
                 {isSubmitting ? "Enviando..." : "Enviar por proceso"}
               </button>
             </div>
+            </div>
           </div>
         </div>
 
-        <aside className="summary-panel mobility-preview-card">
-          <div className="form-card">
+        <aside className="hiring-sidebar">
+          <div className="form-card hiring-summary-card">
             <h3>Resumen de movilidad</h3>
-            <div className="mobility-preview-grid">
+            <div className="summary-grid">
               <div>
                 <small>Trabajador</small>
                 <strong>{workerContext?.fullName ?? "Pendiente"}</strong>
