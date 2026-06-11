@@ -8,6 +8,7 @@ import {
 } from "../../../recruitment/services/hiringControl";
 import type { DashboardActiveFolioItem, DashboardDataBundle } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
+import { useRecruitmentControlDashboard } from "../../../recruitment/hooks/useRecruitmentQueries";
 
 type ActiveFoliosWidgetProps = {
   title: string;
@@ -40,6 +41,13 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail | null>>({});
+
+  const dashboardQuery = useRecruitmentControlDashboard();
+  const summary = dashboardQuery.data?.summary ?? {
+    active_cases: 0,
+    ready_to_hire_cases: 0,
+    filled_cases: 0
+  };
 
   const [page, setPage] = useState(0);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
@@ -121,7 +129,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
 
   return (
     <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
-      <div className="dashboard-folios-toolbar">
+      <div className="dashboard-folios-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <TextField
           id="dashboard-folios-search"
           label="Buscar folio en curso"
@@ -130,6 +138,21 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
           placeholder="Caso, contrato o centro de costo"
           className="dashboard-folios-search"
         />
+
+        <div className="tracking-kpi-row" style={{ marginTop: 0, gap: '0.75rem', transform: 'scale(0.85)', transformOrigin: 'top right', minWidth: 'max-content' }}>
+          <article className="tracking-kpi-card tracking-kpi-card-pendiente" style={{ minWidth: '160px', padding: '0.75rem 1rem' }}>
+            <span className="micro-label">Folios activos en búsqueda</span>
+            <strong>{summary.active_cases}</strong>
+          </article>
+          <article className="tracking-kpi-card tracking-kpi-card-en-proceso" style={{ minWidth: '160px', padding: '0.75rem 1rem' }}>
+            <span className="micro-label">Con candidato listo</span>
+            <strong>{summary.ready_to_hire_cases}</strong>
+          </article>
+          <article className="tracking-kpi-card tracking-kpi-card-generado" style={{ minWidth: '160px', padding: '0.75rem 1rem' }}>
+            <span className="micro-label">Casos cubiertos</span>
+            <strong>{summary.filled_cases}</strong>
+          </article>
+        </div>
       </div>
 
       <div className="tracking-table-wrap tracking-table-wrap-full">
