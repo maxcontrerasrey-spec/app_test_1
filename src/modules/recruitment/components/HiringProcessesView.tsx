@@ -40,6 +40,7 @@ export function HiringProcessesView({
   const [caseFilter, setCaseFilter] =
     useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [selectedApprovalId, setSelectedApprovalId] = useState<number | null>(null);
+  const [isApprovalQueueExpanded, setIsApprovalQueueExpanded] = useState(false);
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
   const expandedCaseRow =
     activeCases.find((caseRow) => caseRow.id === expandedCaseId) ?? null;
@@ -92,19 +93,38 @@ export function HiringProcessesView({
 
   return (
     <>
-      {pendingApprovals.length > 0 ? (
-        <article className="info-card approval-panel-card approval-panel-primary">
-          <div className="home-section-header">
-            <div>
+      <article className="info-card approval-panel-card approval-panel-primary">
+        <div
+          className="home-section-header approval-queue-header"
+          onClick={() => setIsApprovalQueueExpanded(!isApprovalQueueExpanded)}
+        >
+          <div>
+            <div className="approval-queue-title-row">
               <h3>Cola de aprobación final</h3>
-              <p>
-                {isLoading
-                  ? "Cargando aprobaciones..."
-                  : `${pendingApprovals.length} aprobaciones pendientes visibles en la cola`}
-              </p>
+              <span
+                className={`approval-count-badge ${
+                  pendingApprovals.length === 0
+                    ? "badge-green"
+                    : pendingApprovals.length <= 3
+                    ? "badge-yellow"
+                    : "badge-red"
+                }`}
+              >
+                {pendingApprovals.length}
+              </span>
             </div>
+            <p>
+              {isLoading
+                ? "Cargando aprobaciones..."
+                : `${pendingApprovals.length} aprobaciones pendientes visibles en la cola`}
+            </p>
           </div>
+          <span className="approval-queue-toggle">
+            {isApprovalQueueExpanded ? "▲" : "▼"}
+          </span>
+        </div>
 
+        {isApprovalQueueExpanded && pendingApprovals.length > 0 && (
           <ul className="approval-queue">
             {pendingApprovals.map((approval) => (
               <li key={approval.id}>
@@ -128,10 +148,13 @@ export function HiringProcessesView({
               </li>
             ))}
           </ul>
+        )}
+        {isApprovalQueueExpanded && pendingApprovals.length === 0 && (
+          <p className="approval-empty-state">No hay aprobaciones pendientes en este momento.</p>
+        )}
 
-          {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
-        </article>
-      ) : null}
+        {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
+      </article>
 
       <div className="tracking-toolbar">
         <div className="tracking-toolbar-copy">
