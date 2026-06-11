@@ -63,7 +63,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
 
 function buildDisplayName(user: User | null, profile: ProfileRecord | null) {
   if (profile?.full_name?.trim()) {
@@ -270,10 +270,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setIsLoading(true);
+      // Evitamos unmount completo (reset de state) durante refrescos de token o updates menores
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        setIsLoading(true);
+      }
+      
       if (event === "PASSWORD_RECOVERY") {
         setIsRecoveryMode(true);
       }
+      
       void loadAuthorization(nextSession);
     });
 
