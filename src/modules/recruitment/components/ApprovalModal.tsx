@@ -163,11 +163,11 @@ export function ApprovalModal({
             <small>Solicitó</small>
             <strong>{hr?.requester_name ?? "No disponible"}</strong>
           </div>
-          <div className="approval-detail-item approval-detail-item-wide">
+          <div className="approval-detail-item approval-detail-item-xwide">
             <small>Cargo solicitado</small>
             <strong>{hr?.job_position_name ?? "No disponible"}</strong>
           </div>
-          <div className="approval-detail-item approval-detail-item-regular">
+          <div className="approval-detail-item approval-detail-item-wide">
             <small>Contrato</small>
             <strong>{hr?.contract_name ?? "No disponible"}</strong>
           </div>
@@ -175,7 +175,7 @@ export function ApprovalModal({
             <small>Vacantes</small>
             <strong>{hr?.vacancies ?? 0}</strong>
           </div>
-          <div className="approval-detail-item approval-detail-item-compact">
+          <div className="approval-detail-item approval-detail-item-wide">
             <small>Ingreso solicitado</small>
             <strong>{formatDateValue(hr?.requested_entry_date)}</strong>
           </div>

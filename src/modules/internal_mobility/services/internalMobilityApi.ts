@@ -182,15 +182,19 @@ function mapRequestDetail(payload: unknown): InternalMobilityRequestDetail {
       currentAreaCode: readNullableText(request.current_area_code),
       currentCompanyName: readNullableText(request.current_company_name),
       currentShiftName: readNullableText(request.current_shift_name),
+      recruitmentCaseId: readNullableText(request.recruitment_case_id),
+      hiringRequestId: readNullableText(request.hiring_request_id),
+      recruitmentCaseCode: readNullableText(request.recruitment_case_code),
+      sourceFolio: readNullableText(request.source_folio),
       destinationJobTitle: readText(request.destination_job_title),
-      destinationContractId: Number(request.destination_contract_id ?? 0),
+      destinationContractId: readNullableNumber(request.destination_contract_id),
       destinationContractCode: readNullableText(request.destination_contract_code),
       destinationContractNumber: readNullableText(request.destination_contract_number),
       destinationAreaName: readText(request.destination_area_name),
       destinationAreaCode: readNullableText(request.destination_area_code),
       destinationCostCenterCode: readNullableText(request.destination_cost_center_code),
       destinationCostCenterName: readNullableText(request.destination_cost_center_name),
-      destinationCompanyName: readText(request.destination_company_name),
+      destinationCompanyName: readNullableText(request.destination_company_name),
       destinationShiftId: readNullableNumber(request.destination_shift_id),
       destinationShiftName: readNullableText(request.destination_shift_name),
       requiresTermination: Boolean(request.requires_termination),
@@ -340,7 +344,7 @@ export async function createInternalMobilityRequest(input: CreateInternalMobilit
     status: String(row.status ?? "pending_area_manager") as CreateInternalMobilityRequestResult["status"],
     requiresTermination: Boolean(row.requires_termination),
     currentCompanyName: readNullableText(row.current_company_name),
-    destinationCompanyName: readText(row.destination_company_name)
+    destinationCompanyName: readNullableText(row.destination_company_name)
   } satisfies CreateInternalMobilityRequestResult;
 }
 

@@ -57,7 +57,7 @@ function toAuditLabel(value: string | null | undefined) {
 
 export function InternalMobilityPage() {
   const queryClient = useQueryClient();
-  const { displayName, jobTitle, email, user } = useAuth();
+  const { displayName, jobTitle, user } = useAuth();
   const [selectedWorker, setSelectedWorker] = useState<InternalMobilityEligibleWorker | null>(null);
   const [selectedFolioId, setSelectedFolioId] = useState("");
   const [motive, setMotive] = useState("");
@@ -647,7 +647,7 @@ export function InternalMobilityPage() {
                     </div>
                     <div>
                       <small>Correo</small>
-                      <strong>{requestDetailQuery.data.request.requesterEmail ?? email}</strong>
+                      <strong>{requestDetailQuery.data.request.requesterEmail ?? "—"}</strong>
                     </div>
                     <div>
                       <small>Enviada</small>

@@ -152,15 +152,19 @@ export type InternalMobilityRequestDetail = {
     currentAreaCode: string | null;
     currentCompanyName: string | null;
     currentShiftName: string | null;
+    recruitmentCaseId: string | null;
+    hiringRequestId: string | null;
+    recruitmentCaseCode: string | null;
+    sourceFolio: string | null;
     destinationJobTitle: string;
-    destinationContractId: number;
+    destinationContractId: number | null;
     destinationContractCode: string | null;
     destinationContractNumber: string | null;
     destinationAreaName: string;
     destinationAreaCode: string | null;
     destinationCostCenterCode: string | null;
     destinationCostCenterName: string | null;
-    destinationCompanyName: string;
+    destinationCompanyName: string | null;
     destinationShiftId: number | null;
     destinationShiftName: string | null;
     requiresTermination: boolean;
@@ -189,5 +193,5 @@ export type CreateInternalMobilityRequestResult = {
   status: InternalMobilityRequestStatus;
   requiresTermination: boolean;
   currentCompanyName: string | null;
-  destinationCompanyName: string;
+  destinationCompanyName: string | null;
 };
