@@ -3526,7 +3526,7 @@ textarea {
 
 .summary-grid-horizontal {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1.25rem 1.5rem;
   width: 100%;
 }
@@ -3537,7 +3537,8 @@ textarea {
 }
 
 .summary-grid-horizontal strong {
-  white-space: normal;
-  overflow: visible;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   display: block;
 }
