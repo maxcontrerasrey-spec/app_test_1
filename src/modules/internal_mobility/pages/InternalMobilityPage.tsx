@@ -242,6 +242,7 @@ export function InternalMobilityPage() {
               <TextField id="mobility-requester-job" label="Cargo solicitante" value={jobTitle} readOnly />
             </div>
 
+            <hr className="mobility-divider" />
             <h3 className="mobility-section-title">Trabajador a movilizar</h3>
             <div className="contract-grid">
               <InternalMobilityWorkerLookup
@@ -266,6 +267,7 @@ export function InternalMobilityPage() {
               </div>
             ) : null}
 
+            <hr className="mobility-divider" />
             <h3 className="mobility-section-title">Condiciones actuales</h3>
             <div className="contract-grid">
               <TextField
@@ -298,6 +300,7 @@ export function InternalMobilityPage() {
               />
             </div>
 
+            <hr className="mobility-divider" />
             <h3 className="mobility-section-title">Condiciones destino</h3>
             <div className="contract-grid">
               <SelectField
@@ -352,6 +355,7 @@ export function InternalMobilityPage() {
               </div>
             ) : null}
 
+            <hr className="mobility-divider" />
             <div className="field-group">
               <label className="field-label" htmlFor="mobility-motive">
                 Motivo del cambio
