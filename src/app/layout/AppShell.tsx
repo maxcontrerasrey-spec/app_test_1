@@ -320,18 +320,29 @@ export function AppShell() {
               aria-expanded={isUserMenuOpen}
               aria-haspopup="menu"
             >
-              <div className="user-avatar avatar-pulse" aria-hidden="true">
-                {userInitials}
+              <div className="avatar-spin-wrapper">
+                <div className="avatar-spin-ring"></div>
+                <div className="user-avatar" aria-hidden="true">
+                  {userInitials}
+                </div>
               </div>
               <style>{`
-                @keyframes siriPulse {
-                  0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.6); }
-                  70% { box-shadow: 0 0 0 12px rgba(14, 165, 233, 0); }
-                  100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+                .avatar-spin-wrapper {
+                  position: relative;
+                  display: inline-flex;
+                  border-radius: 50%;
+                  padding: 2px;
                 }
-                .avatar-pulse {
-                  animation: siriPulse 2.5s infinite cubic-bezier(0.66, 0, 0, 1);
-                  border: 2px solid rgba(14, 165, 233, 0.3);
+                .avatar-spin-ring {
+                  position: absolute;
+                  inset: 0;
+                  border-radius: 50%;
+                  border: 2px solid rgba(14, 165, 233, 0.15);
+                  border-top-color: #0ea5e9;
+                  animation: avatarSpin 1.5s linear infinite;
+                }
+                @keyframes avatarSpin {
+                  to { transform: rotate(360deg); }
                 }
               `}</style>
             </button>
