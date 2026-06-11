@@ -13,7 +13,8 @@ import {
   type CandidateHistoricalRejection
 } from "../services/hiringControl";
 import { validateRut } from "../../../shared/lib/rut";
-import { SelectField, TextField } from "../../../shared/ui";
+import { TextField } from "../../../shared/ui/forms/TextField";
+import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 
 type CandidateIntakeFormProps = {
   initialCaseId: string;

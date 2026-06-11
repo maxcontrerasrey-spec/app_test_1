@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { SelectField, TextField } from "../../../shared/ui";
+import { TextField } from "../../../shared/ui/forms/TextField";
+import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import {
   transferCandidateToCase,
   type RecruitmentCandidateControlRow,

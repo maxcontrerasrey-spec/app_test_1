@@ -18,9 +18,9 @@ import {
 import {
   PageShell,
   TextField,
-  SelectField,
   DatePickerField
 } from "../../../shared/ui";
+import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 
 type GeneratedHiringRequest = {
   folio: string;

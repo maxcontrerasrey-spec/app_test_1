@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { SelectField, TextField } from "../../../shared/ui";
+import { TextField } from "../../../shared/ui/forms/TextField";
+import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import { formatRut, normalizeRut } from "../../../shared/lib/rut";
 import { bukEmployeeFieldOptions } from "../lib/bukEmployeeTemplate";
 import {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { SelectField } from "../../../shared/ui";
+import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import {
   decideHiringApproval,
   toTravelMethodologyLabel,
