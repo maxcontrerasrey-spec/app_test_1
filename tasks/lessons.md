@@ -218,6 +218,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 33. En BUK, el cargo operativo no necesariamente vive en la columna derivada del view
+
+- **No asumas que `employees_active_current.job_title` trae el cargo real**. En este proyecto quedó vacío para toda la dotación activa, mientras el dato correcto venía en `raw_payload.current_job.role.name` y `raw_payload.jobs[*].role.name`.
+- **Si una búsqueda operativa depende de BUK, el mismo helper debe gobernar setup, search, contexto y persistencia**. Si el cargo se resuelve distinto en cada RPC, la UI queda con dropdown vacío, búsqueda rota y solicitudes guardadas con `Sin cargo`.
+
+## 34. Los códigos de empresa no siempre coinciden entre `company_id` y el sufijo contractual BUK
+
+- **No mezcles `company_id` con el sufijo `:000X` del contrato como si fueran la misma llave**. En este ambiente, `Servicios Industriales Minardi S.A.` usa `company_id = 3`, pero sus contratos BUK terminan en `:0002`.
+- **La resolución de empresa debe contemplar equivalencias explícitas por fuente**. Una tabla o helper único debe mapear por `company_id` y por código contractual; si no, el catálogo destino queda incompleto aunque el dato exista.
+
 ## 57. Si BUK cambia de label textual a identificador numérico, el módulo no puede colapsar por una sola dimensión no resuelta
 
 - **No bloquees todo el contexto de un trabajador solo porque la empresa no llegó como texto**. Si BUK entrega `company_id`, primero intenta resolver por catálogo, por otras filas históricas o por el área mapeada; si aun así no aparece el nombre, la UI debe cargar el resto de los datos y marcar la empresa como no resuelta.

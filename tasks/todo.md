@@ -9,6 +9,20 @@
 - [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
 - [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
 
+## Hotfix crítico de Movilidad Interna: cargo, empresa y catálogos BUK
+
+- [x] Auditar en Supabase vivo por qué `Movilidad Interna` no resolvía cargo actual, empresa actual ni destinos operativos
+- [x] Corregir la resolución backend de cargo y empresa desde `raw_payload` de BUK y completar el catálogo `buk_contract_mappings.company_name`
+- [x] Revalidar las RPCs de setup, búsqueda y contexto de trabajador contra datos reales y documentar el resultado
+
+## Resultado de hotfix crítico de Movilidad Interna: cargo, empresa y catálogos BUK
+
+- La causa raíz no estaba en React sino en el contrato vivo de datos: [`employees_active_current`](</Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_231500_fix_internal_mobility_worker_resolution.sql:1>) traía `job_title` vacío para `1575/1575` trabajadores activos, por lo que `Movilidad Interna` jamás podía mostrar cargo actual ni poblar correctamente el dropdown de cargos destino.
+- El segundo quiebre estaba en [`buk_contract_mappings`](</Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_231500_fix_internal_mobility_worker_resolution.sql:1>): `company_name` estaba vacío en `107/107` mappings, dejando inutilizable la empresa destino y degradando el selector de contrato/área nuevo.
+- Se agregó la migración [`20260611_231500_fix_internal_mobility_worker_resolution.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_231500_fix_internal_mobility_worker_resolution.sql:1), que incorpora helpers para extraer cargo real desde `raw_payload.current_job.role.name` / `jobs[*].role.name`, resolver empresa por `company_id` y por sufijo de contrato/área BUK, ampliar el fallback de turnos y redefinir las RPCs `get_internal_mobility_setup_catalogs`, `search_internal_mobility_workers`, `get_internal_mobility_worker_context` y `submit_internal_mobility_request`.
+- El hotfix se aplicó también en Supabase remoto durante esta sesión. Validación viva: `1575/1575` trabajadores ahora resuelven cargo, `1575/1575` resuelven empresa, `95` destinos operativos ya salen con empresa visible y el contexto del trabajador `20652` ya devuelve `CONDUCTOR DE BUS`, `Buses JM Pullman S.A.` y `matched_destination_contract_id = 81`.
+- También se corrigió el desalineamiento entre `company_id` y sufijo contractual de Minardi: `company_id = 3` pero contratos `:0002`, por lo que la equivalencia quedó explicitada para no volver a dejar `INDIRECTO ZONA II SIMSA` sin empresa.
+
 ## Ajuste integral de etapas, permisos Who y movilidad interna
 
 - [x] Agregar nuevos turnos de contratación y reutilizarlos también en Movilidad Interna
