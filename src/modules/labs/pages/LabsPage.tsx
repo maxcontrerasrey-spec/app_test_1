@@ -8,17 +8,17 @@ export function LabsPage() {
         .labs-paper-wrapper {
           position: relative;
           min-height: calc(100vh - 100px);
-          background-color: #E6E1D1; /* Base bone/kraft paper color */
+          background-color: #F8F7F3; /* Much softer, barely off-white paper */
           color: #2C2820; /* Deep brown/grey ink, never pure black */
           font-family: Georgia, serif; /* Serifs look more like printed text */
           
           /* Optical filters to simulate hardware e-ink limitations */
-          filter: sepia(0.2) contrast(0.85) saturate(0.7) brightness(0.85);
+          filter: sepia(0.08) contrast(0.92) saturate(0.85) brightness(0.94);
           
           /* Typography antialiasing to simulate ink spread */
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
-          text-shadow: 0 0 1px rgba(44, 40, 32, 0.3);
+          text-shadow: 0 0 1px rgba(44, 40, 32, 0.2);
           
           overflow: hidden;
           padding-bottom: 4rem;
@@ -31,7 +31,7 @@ export function LabsPage() {
           inset: 0;
           pointer-events: none; /* Don't block clicks */
           z-index: 9999;
-          opacity: 0.5; /* Aggressive texture */
+          opacity: 0.35; /* Noticeable but less dirty texture */
           mix-blend-mode: multiply;
           background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.15"/%3E%3C/svg%3E');
         }
