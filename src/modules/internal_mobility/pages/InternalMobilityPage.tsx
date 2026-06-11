@@ -342,7 +342,6 @@ export function InternalMobilityPage() {
                 {isSubmitting ? "Enviando..." : "Enviar por proceso"}
               </button>
             </div>
-            </div>
           </div>
         </div>
 
