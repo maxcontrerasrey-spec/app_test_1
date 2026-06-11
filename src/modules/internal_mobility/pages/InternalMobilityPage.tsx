@@ -54,6 +54,7 @@ export function InternalMobilityPage() {
   const [selectedWorker, setSelectedWorker] = useState<InternalMobilityEligibleWorker | null>(null);
   const [destinationJobTitle, setDestinationJobTitle] = useState("");
   const [destinationContractId, setDestinationContractId] = useState("");
+  const [destinationShiftId, setDestinationShiftId] = useState("");
   const [motive, setMotive] = useState("");
   const [requesterSigned, setRequesterSigned] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,13 +95,14 @@ export function InternalMobilityPage() {
   const workerContext = workerContextQuery.data?.worker ?? null;
   const destinationOptions = setupCatalogs?.destinations ?? [];
   const jobTitleOptions = setupCatalogs?.bukJobTitles ?? [];
+  const shiftOptions = setupCatalogs?.shiftCatalog ?? [];
 
   const selectedDestination =
     destinationOptions.find((destination) => String(destination.contractId) === destinationContractId) ??
     null;
 
   const requiresTermination =
-    workerContext && selectedDestination
+    workerContext && selectedDestination && workerContext.currentCompanyName
       ? workerContext.currentCompanyName !== selectedDestination.companyName
       : false;
 
@@ -108,6 +110,7 @@ export function InternalMobilityPage() {
     if (!selectedWorker) {
       setDestinationJobTitle("");
       setDestinationContractId("");
+      setDestinationShiftId("");
       setMotive("");
       setRequesterSigned(false);
       return;
@@ -117,6 +120,7 @@ export function InternalMobilityPage() {
     setSubmitMessage(null);
     setDestinationJobTitle("");
     setDestinationContractId("");
+    setDestinationShiftId("");
     setMotive("");
     setRequesterSigned(false);
   }, [selectedWorker?.bukEmployeeId]);
@@ -130,7 +134,24 @@ export function InternalMobilityPage() {
     setDestinationContractId((current) =>
       current || (workerContext.matchedDestinationContractId ? String(workerContext.matchedDestinationContractId) : "")
     );
-  }, [workerContext]);
+    setDestinationShiftId((current) => {
+      if (current) {
+        return current;
+      }
+
+      if (!workerContext.currentShiftName) {
+        return "";
+      }
+
+      const matchedShift = shiftOptions.find(
+        (shift) =>
+          shift.name.trim().toLowerCase() === workerContext.currentShiftName?.trim().toLowerCase() ||
+          shift.code.trim().toLowerCase() === workerContext.currentShiftName?.trim().toLowerCase()
+      );
+
+      return matchedShift ? String(matchedShift.id) : "";
+    });
+  }, [shiftOptions, workerContext]);
 
   const filteredRequests = useMemo(() => {
     const rows = requestsQuery.data ?? [];
@@ -161,6 +182,7 @@ export function InternalMobilityPage() {
     Boolean(workerContext) &&
     Boolean(destinationJobTitle.trim()) &&
     Boolean(destinationContractId) &&
+    Boolean(destinationShiftId) &&
     Boolean(motive.trim()) &&
     requesterSigned &&
     !isSubmitting;
@@ -181,6 +203,7 @@ export function InternalMobilityPage() {
         bukEmployeeId: selectedWorker.bukEmployeeId,
         destinationContractId: Number(destinationContractId),
         destinationJobTitle: destinationJobTitle.trim(),
+        destinationShiftId: Number(destinationShiftId),
         motive: motive.trim(),
         requesterSigned
       });
@@ -192,6 +215,7 @@ export function InternalMobilityPage() {
       setSelectedWorker(null);
       setDestinationJobTitle("");
       setDestinationContractId("");
+      setDestinationShiftId("");
       setMotive("");
       setRequesterSigned(false);
 
@@ -263,7 +287,15 @@ export function InternalMobilityPage() {
               <TextField
                 id="mobility-current-company"
                 label="Empresa actual"
-                value={workerContext?.currentCompanyName ?? ""}
+                value={selectedWorker ? workerContext?.currentCompanyName ?? "No resuelta" : ""}
+                readOnly
+              />
+            </div>
+            <div className="field-group" style={{ marginTop: "1rem" }}>
+              <TextField
+                id="mobility-current-shift"
+                label="Turno actual"
+                value={selectedWorker ? workerContext?.currentShiftName ?? "No resuelto" : ""}
                 readOnly
               />
             </div>
@@ -290,6 +322,20 @@ export function InternalMobilityPage() {
                   label: item.label
                 }))}
                 placeholder="Selecciona el destino"
+              />
+            </div>
+            <div className="field-group" style={{ marginTop: "1rem" }}>
+              <SelectField
+                id="mobility-destination-shift"
+                label="Turno nuevo"
+                value={destinationShiftId}
+                onChange={(event) => setDestinationShiftId(event.target.value)}
+                disabled={!selectedWorker || setupCatalogsQuery.isLoading}
+                options={shiftOptions.map((item) => ({
+                  value: String(item.id),
+                  label: item.name
+                }))}
+                placeholder="Selecciona el turno destino"
               />
             </div>
             <div className="field-group" style={{ marginTop: "1rem" }}>
@@ -364,7 +410,7 @@ export function InternalMobilityPage() {
               </div>
               <div>
                 <small>Empresa actual</small>
-                <strong>{workerContext?.currentCompanyName ?? "Pendiente"}</strong>
+                <strong>{workerContext?.currentCompanyName ?? "No resuelta"}</strong>
               </div>
               <div>
                 <small>Empresa destino</small>
@@ -373,7 +419,9 @@ export function InternalMobilityPage() {
               <div>
                 <small>Requiere finiquito</small>
                 <strong>
-                  {workerContext && selectedDestination ? (requiresTermination ? "Sí" : "No") : "Pendiente"}
+                  {workerContext && selectedDestination && workerContext.currentCompanyName
+                    ? (requiresTermination ? "Sí" : "No")
+                    : "Pendiente"}
                 </strong>
               </div>
               <div>
@@ -391,6 +439,16 @@ export function InternalMobilityPage() {
               <div>
                 <small>Área destino</small>
                 <strong>{selectedDestination?.areaName ?? "Pendiente"}</strong>
+              </div>
+              <div>
+                <small>Turno actual</small>
+                <strong>{workerContext?.currentShiftName ?? "No resuelto"}</strong>
+              </div>
+              <div>
+                <small>Turno destino</small>
+                <strong>
+                  {shiftOptions.find((item) => String(item.id) === destinationShiftId)?.name || "Pendiente"}
+                </strong>
               </div>
             </div>
             <p className="helper-copy">
@@ -480,7 +538,9 @@ export function InternalMobilityPage() {
                             <span className="dashboard-contract-inline">
                               {request.currentAreaName || "—"}
                               <br />
-                              {request.currentCompanyName}
+                              {request.currentCompanyName ?? "No resuelta"}
+                              <br />
+                              {request.currentShiftName ?? "Sin turno"}
                             </span>
                           </td>
                           <td>
@@ -488,6 +548,8 @@ export function InternalMobilityPage() {
                               {request.destinationAreaName}
                               <br />
                               {request.destinationCompanyName}
+                              <br />
+                              {request.destinationShiftName ?? "Sin turno"}
                             </span>
                           </td>
                           <td>{request.requiresTermination ? "Sí" : "No"}</td>
@@ -548,7 +610,11 @@ export function InternalMobilityPage() {
                     </div>
                     <div>
                       <small>Empresa actual</small>
-                      <strong>{requestDetailQuery.data.request.currentCompanyName}</strong>
+                      <strong>{requestDetailQuery.data.request.currentCompanyName ?? "No resuelta"}</strong>
+                    </div>
+                    <div>
+                      <small>Turno actual</small>
+                      <strong>{requestDetailQuery.data.request.currentShiftName ?? "No resuelto"}</strong>
                     </div>
                   </div>
                 </div>
@@ -576,6 +642,10 @@ export function InternalMobilityPage() {
                     <div>
                       <small>Empresa destino</small>
                       <strong>{requestDetailQuery.data.request.destinationCompanyName}</strong>
+                    </div>
+                    <div>
+                      <small>Turno destino</small>
+                      <strong>{requestDetailQuery.data.request.destinationShiftName ?? "—"}</strong>
                     </div>
                     <div>
                       <small>Requiere finiquito</small>

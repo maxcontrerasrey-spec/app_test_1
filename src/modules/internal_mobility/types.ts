@@ -19,7 +19,8 @@ export type InternalMobilityWorkerContext = {
     currentContractCode: string | null;
     currentAreaName: string | null;
     currentAreaCode: string | null;
-    currentCompanyName: string;
+    currentCompanyName: string | null;
+    currentShiftName: string | null;
     matchedDestinationContractId: number | null;
     matchedDestinationContractCode: string | null;
     matchedDestinationAreaName: string | null;
@@ -41,6 +42,12 @@ export type InternalMobilityDestination = {
 
 export type InternalMobilitySetupCatalogs = {
   bukJobTitles: string[];
+  shiftCatalog: Array<{
+    id: number;
+    code: string;
+    name: string;
+    active: boolean;
+  }>;
   destinations: InternalMobilityDestination[];
 };
 
@@ -61,9 +68,11 @@ export type InternalMobilityRequestSummary = {
   employeeDocumentNumber: string | null;
   currentJobTitle: string | null;
   currentAreaName: string | null;
-  currentCompanyName: string;
+  currentCompanyName: string | null;
+  currentShiftName: string | null;
   destinationJobTitle: string;
   destinationAreaName: string;
+  destinationShiftName: string | null;
   destinationCostCenterCode: string | null;
   destinationCostCenterName: string | null;
   destinationCompanyName: string;
@@ -118,7 +127,8 @@ export type InternalMobilityRequestDetail = {
     currentContractCode: string | null;
     currentAreaName: string | null;
     currentAreaCode: string | null;
-    currentCompanyName: string;
+    currentCompanyName: string | null;
+    currentShiftName: string | null;
     destinationJobTitle: string;
     destinationContractId: number;
     destinationContractCode: string | null;
@@ -128,6 +138,8 @@ export type InternalMobilityRequestDetail = {
     destinationCostCenterCode: string | null;
     destinationCostCenterName: string | null;
     destinationCompanyName: string;
+    destinationShiftId: number | null;
+    destinationShiftName: string | null;
     requiresTermination: boolean;
     motive: string;
     currentStepCode: string | null;
@@ -145,6 +157,7 @@ export type CreateInternalMobilityRequestInput = {
   bukEmployeeId: string;
   destinationContractId: number;
   destinationJobTitle: string;
+  destinationShiftId: number;
   motive: string;
   requesterSigned: boolean;
 };

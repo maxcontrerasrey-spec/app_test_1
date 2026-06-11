@@ -15,6 +15,7 @@ export type RecruitmentCandidateStage =
   | "lead"
   | "who_pending"
   | "who_approved"
+  | "in_process"
   | "medical_exams"
   | "document_review"
   | "ready_for_hire"
@@ -450,6 +451,7 @@ export function toRecruitmentCandidateStageLabel(
   if (value === "lead") return "Lead";
   if (value === "who_pending") return "Who Pendiente";
   if (value === "who_approved") return "Who Aprobado";
+  if (value === "in_process") return "En Proceso";
   if (value === "medical_exams") return "Exámenes Médicos";
   if (value === "document_review") return "Revisión Documental";
   if (value === "ready_for_hire") return "Listo para contratar";

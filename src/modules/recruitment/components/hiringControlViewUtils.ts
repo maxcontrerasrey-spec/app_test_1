@@ -13,6 +13,7 @@ export const candidateStageFilterOptions = [
   { key: "active", label: "Activos en Proceso" },
   { key: "lead", label: "Lead" },
   { key: "who_pending", label: "Who Pendiente" },
+  { key: "in_process", label: "En Proceso" },
   { key: "medical_exams", label: "Exámenes Médicos" },
   { key: "document_review", label: "Revisión Documental" },
   { key: "ready_for_hire", label: "Listos para contratar" },
@@ -64,6 +65,8 @@ export function getNextStageOptions(
     case "who_pending":
       return [];
     case "who_approved":
+      return ["in_process", "rejected", "withdrawn"];
+    case "in_process":
       return ["medical_exams", "rejected", "withdrawn"];
     case "medical_exams":
       return ["document_review", "rejected", "withdrawn"];

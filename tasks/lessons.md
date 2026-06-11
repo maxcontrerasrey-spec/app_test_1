@@ -218,6 +218,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 57. Si BUK cambia de label textual a identificador numérico, el módulo no puede colapsar por una sola dimensión no resuelta
+
+- **No bloquees todo el contexto de un trabajador solo porque la empresa no llegó como texto**. Si BUK entrega `company_id`, primero intenta resolver por catálogo, por otras filas históricas o por el área mapeada; si aun así no aparece el nombre, la UI debe cargar el resto de los datos y marcar la empresa como no resuelta.
+- **Los campos derivados por lookup externo deben degradar con gracia y no endurecer `NOT NULL` antes de comprobar la fuente real**. En movilidad interna, empresa actual y `requiere finiquito` dependen de una resolución secundaria; por eso el guard correcto es seguir operando con fallback visible, no levantar excepción temprana.
+
+## 58. Una etapa nueva en pipeline no se cierra tocando solo labels
+
+- **Cada etapa adicional exige barrer frontend, constraints y RPCs de transición juntos**. Si agregas `En Proceso` entre `Who` y `Exámenes Médicos`, hay que actualizar unions TypeScript, filtros, labels, opciones siguientes, `CHECK` de base y validaciones de `advance_recruitment_candidate_stage(...)`.
+- **Los permisos de una bandeja especializada deben seguir el caso visible, no una capability global suelta**. Dar `candidate_control_access` al aprobador Who sin acotar `user_can_view_recruitment_case(...)` o la policy de `candidate_stage_approvals` termina filtrando casos ajenos.
+
 ## 52. `npm run build` no valida Edge Functions de Supabase
 
 - **Un build limpio de Vite/TypeScript no demuestra que una Edge Function esté lista para producción**. El frontend puede compilar perfecto mientras `supabase/functions/*` conserva errores de contrato, imports o despliegue.

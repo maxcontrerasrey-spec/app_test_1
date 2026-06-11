@@ -44,6 +44,12 @@ function mapSetupCatalogs(payload: unknown): InternalMobilitySetupCatalogs {
     bukJobTitles: asArray<unknown>(source.buk_job_titles)
       .map((item) => String(item ?? "").trim())
       .filter(Boolean),
+    shiftCatalog: asArray<Record<string, unknown>>(source.shift_catalog).map((item) => ({
+      id: Number(item.id ?? 0),
+      code: String(item.code ?? ""),
+      name: String(item.name ?? ""),
+      active: Boolean(item.active)
+    })),
     destinations: asArray<Record<string, unknown>>(source.destinations).map((item) => ({
       contractId: Number(item.contract_id ?? 0),
       contractCode: String(item.contract_code ?? ""),
@@ -82,7 +88,14 @@ function mapWorkerContext(payload: unknown): InternalMobilityWorkerContext {
         typeof worker.current_area_code === "string" && worker.current_area_code.trim()
           ? worker.current_area_code
           : null,
-      currentCompanyName: String(worker.current_company_name ?? ""),
+      currentCompanyName:
+        typeof worker.current_company_name === "string" && worker.current_company_name.trim()
+          ? worker.current_company_name
+          : null,
+      currentShiftName:
+        typeof worker.current_shift_name === "string" && worker.current_shift_name.trim()
+          ? worker.current_shift_name
+          : null,
       matchedDestinationContractId:
         worker.matched_destination_contract_id === null ||
         worker.matched_destination_contract_id === undefined
@@ -130,9 +143,20 @@ function mapRequestSummary(row: Record<string, unknown>): InternalMobilityReques
       typeof row.current_area_name === "string" && row.current_area_name.trim()
         ? row.current_area_name
         : null,
-    currentCompanyName: String(row.current_company_name ?? ""),
+    currentCompanyName:
+      typeof row.current_company_name === "string" && row.current_company_name.trim()
+        ? row.current_company_name
+        : null,
+    currentShiftName:
+      typeof row.current_shift_name === "string" && row.current_shift_name.trim()
+        ? row.current_shift_name
+        : null,
     destinationJobTitle: String(row.destination_job_title ?? ""),
     destinationAreaName: String(row.destination_area_name ?? ""),
+    destinationShiftName:
+      typeof row.destination_shift_name === "string" && row.destination_shift_name.trim()
+        ? row.destination_shift_name
+        : null,
     destinationCostCenterCode:
       typeof row.destination_cost_center_code === "string" &&
       row.destination_cost_center_code.trim()
@@ -208,7 +232,14 @@ function mapRequestDetail(payload: unknown): InternalMobilityRequestDetail {
         typeof request.current_area_code === "string" && request.current_area_code.trim()
           ? request.current_area_code
           : null,
-      currentCompanyName: String(request.current_company_name ?? ""),
+      currentCompanyName:
+        typeof request.current_company_name === "string" && request.current_company_name.trim()
+          ? request.current_company_name
+          : null,
+      currentShiftName:
+        typeof request.current_shift_name === "string" && request.current_shift_name.trim()
+          ? request.current_shift_name
+          : null,
       destinationJobTitle: String(request.destination_job_title ?? ""),
       destinationContractId: Number(request.destination_contract_id ?? 0),
       destinationContractCode:
@@ -237,6 +268,15 @@ function mapRequestDetail(payload: unknown): InternalMobilityRequestDetail {
           ? request.destination_cost_center_name
           : null,
       destinationCompanyName: String(request.destination_company_name ?? ""),
+      destinationShiftId:
+        request.destination_shift_id === null || request.destination_shift_id === undefined
+          ? null
+          : Number(request.destination_shift_id),
+      destinationShiftName:
+        typeof request.destination_shift_name === "string" &&
+        request.destination_shift_name.trim()
+          ? request.destination_shift_name
+          : null,
       requiresTermination: Boolean(request.requires_termination),
       motive: String(request.motive ?? ""),
       currentStepCode:
@@ -365,6 +405,7 @@ export async function createInternalMobilityRequest(input: CreateInternalMobilit
     p_buk_employee_id: input.bukEmployeeId,
     p_destination_contract_id: input.destinationContractId,
     p_destination_job_title: input.destinationJobTitle,
+    p_destination_shift_id: input.destinationShiftId,
     p_motive: input.motive,
     p_requester_signed: input.requesterSigned
   });

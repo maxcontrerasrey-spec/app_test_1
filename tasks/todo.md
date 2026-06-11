@@ -9,6 +9,23 @@
 - [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
 - [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
 
+## Ajuste integral de etapas, permisos Who y movilidad interna
+
+- [x] Agregar nuevos turnos de contratación y reutilizarlos también en Movilidad Interna
+- [x] Insertar la nueva etapa `En Proceso` entre `Who` y `Exámenes Médicos`, ajustando frontend y RPCs
+- [x] Corregir la carga de trabajador en Movilidad Interna para tolerar `company_id` numérico y no bloquear si la empresa no se resuelve
+- [x] Persistir `turno actual` y `turno nuevo` en Movilidad Interna y exponerlos en detalle/listados
+- [x] Reparar permisos de `gerente_general` para Who sin abrir acceso global y corregir auditoría `23514`
+- [x] Validar build, consistencia de diffs y documentar hallazgos/riesgos
+
+## Resultado de ajuste integral de etapas, permisos Who y movilidad interna
+
+- Se agregó la migración [`20260611_220000_expand_internal_mobility_and_recruitment_stage_controls.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_220000_expand_internal_mobility_and_recruitment_stage_controls.sql:1), que incorpora los turnos `10X5+5`, `6X3+1` y `6X1`, amplía el `CHECK` de `recruitment_case_audit_log`, habilita la etapa `in_process`, agrega `candidate_control_access` a `gerente_general`, y endurece la visibilidad Who para que dependa del caso realmente pendiente de aprobación.
+- La misma migración también expande `Movilidad Interna`: `current_company_name` deja de bloquear si no se resuelve, se agregan `current_shift_name`, `destination_shift_id` y `destination_shift_name`, y se redefinen las RPCs de setup, búsqueda, contexto y creación de solicitud para soportar `company_id` numérico y fallback por área/worker file.
+- En frontend se actualizaron [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) y [`hiringControlViewUtils.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/hiringControlViewUtils.ts:1) para reflejar la nueva etapa visible `En Proceso` y su transición `Who Aprobado -> En Proceso -> Exámenes Médicos`.
+- [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1), [`internalMobilityApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/services/internalMobilityApi.ts:1) y [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/types.ts:1) ahora exponen turno actual/destino, permiten empresa actual no resuelta sin romper el formulario y muestran esos datos en resumen, tabla y detalle.
+- La corrección del error `23514` no se resolvió renombrando acciones: se alineó el constraint con los `action_type` ya usados por el código (`candidate_stage_approval_requested`, `candidate_stage_approval_approved`, `candidate_stage_approval_rejected`, entre otros) para preservar trazabilidad consistente.
+
 ## Notificaciones transaccionales por correo en aprobaciones de contratación
 
 - [x] Diseñar el flujo backend para disparar correos exactamente cuando un folio cambia de aprobador o entra a reclutamiento
