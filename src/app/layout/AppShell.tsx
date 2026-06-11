@@ -320,31 +320,9 @@ export function AppShell() {
               aria-expanded={isUserMenuOpen}
               aria-haspopup="menu"
             >
-              <div className="avatar-spin-wrapper">
-                <div className="avatar-spin-ring"></div>
-                <div className="user-avatar" aria-hidden="true">
-                  {userInitials}
-                </div>
+              <div className="user-avatar" aria-hidden="true">
+                {userInitials}
               </div>
-              <style>{`
-                .avatar-spin-wrapper {
-                  position: relative;
-                  display: inline-flex;
-                  border-radius: 50%;
-                  padding: 2px;
-                }
-                .avatar-spin-ring {
-                  position: absolute;
-                  inset: 0;
-                  border-radius: 50%;
-                  border: 2px solid rgba(14, 165, 233, 0.15);
-                  border-top-color: #0ea5e9;
-                  animation: avatarSpin 1.5s linear infinite;
-                }
-                @keyframes avatarSpin {
-                  to { transform: rotate(360deg); }
-                }
-              `}</style>
             </button>
 
             {isUserMenuOpen ? (
