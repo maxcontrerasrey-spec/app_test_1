@@ -63,7 +63,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
 
 function buildDisplayName(user: User | null, profile: ProfileRecord | null) {
   if (profile?.full_name?.trim()) {
