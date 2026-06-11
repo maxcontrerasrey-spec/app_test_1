@@ -269,7 +269,7 @@ export function InternalMobilityPage() {
 
             <hr className="mobility-divider" />
             <h3 className="mobility-section-title">Condiciones actuales</h3>
-            <div className="contract-grid">
+            <div className="mobility-compact-grid">
               <TextField
                 id="mobility-current-job"
                 label="Cargo actual"
@@ -282,16 +282,12 @@ export function InternalMobilityPage() {
                 value={workerContext?.currentAreaName ?? ""}
                 readOnly
               />
-            </div>
-            <div className="field-group mobility-block-spaced">
               <TextField
                 id="mobility-current-company"
                 label="Empresa actual"
                 value={selectedWorker ? resolveWorkerCompanyLabel(workerContext?.currentCompanyName) : ""}
                 readOnly
               />
-            </div>
-            <div className="field-group mobility-block-spaced">
               <TextField
                 id="mobility-current-shift"
                 label="Turno actual"
@@ -300,9 +296,10 @@ export function InternalMobilityPage() {
               />
             </div>
 
+
             <hr className="mobility-divider" />
             <h3 className="mobility-section-title">Condiciones destino</h3>
-            <div className="contract-grid">
+            <div className="mobility-compact-grid">
               <SelectField
                 id="mobility-destination-job"
                 label="Cargo nuevo"
@@ -324,8 +321,6 @@ export function InternalMobilityPage() {
                 }))}
                 placeholder="Selecciona el destino"
               />
-            </div>
-            <div className="field-group mobility-block-spaced">
               <SelectField
                 id="mobility-destination-shift"
                 label="Turno nuevo"
@@ -338,8 +333,6 @@ export function InternalMobilityPage() {
                 }))}
                 placeholder="Selecciona el turno destino"
               />
-            </div>
-            <div className="field-group mobility-block-spaced">
               <TextField
                 id="mobility-destination-company"
                 label="Empresa destino"
@@ -347,6 +340,7 @@ export function InternalMobilityPage() {
                 readOnly
               />
             </div>
+
 
             {workerContext && selectedDestination && requiresTermination ? (
               <div className="mobility-company-alert">

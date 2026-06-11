@@ -1850,12 +1850,19 @@ textarea {
 .mobility-divider {
   border: 0;
   border-top: 1px solid var(--border-subtle);
-  margin: 1.85rem 0 1.25rem;
+  margin: 1.25rem 0 0.75rem;
   width: 100%;
 }
 
+.mobility-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: start;
+}
+
 .mobility-block-spaced {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .mobility-textarea {
