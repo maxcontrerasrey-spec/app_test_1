@@ -214,7 +214,7 @@ export function InternalMobilityPage() {
               <InternalMobilityWorkerLookup
                 id="mobility-worker-search"
                 label="Trabajador"
-                placeholder="Buscar trabajador activo..."
+                placeholder="Busca por nombre, RUT, contrato o cargo BUK. Solo se muestran trabajadores activos."
                 selectedWorker={selectedWorker}
                 onSelect={setSelectedWorker}
                 disabled={setupCatalogsQuery.isLoading}

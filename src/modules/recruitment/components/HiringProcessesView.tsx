@@ -113,11 +113,6 @@ export function HiringProcessesView({
                 {pendingApprovals.length}
               </span>
             </div>
-            <p>
-              {isLoading
-                ? "Cargando aprobaciones..."
-                : `${pendingApprovals.length} aprobaciones pendientes visibles en la cola`}
-            </p>
           </div>
           <span className="approval-queue-toggle">
             {isApprovalQueueExpanded ? "▲" : "▼"}
