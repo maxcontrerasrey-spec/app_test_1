@@ -108,16 +108,16 @@
   --sidebar-surface: #f4f1e8;
   --page-glow: #f4f1e8;
   --shadow-soft: none;
-  --shadow-popover: 4px 4px 0px #1d1d1d;
+  --shadow-popover: none;
   --focus-ring: 0 0 0 2px #111111;
   --top-shell-bg: #f4f1e8;
   --radius-xl: 2px;
   --radius-lg: 2px;
   --radius-md: 2px;
   --radius-sm: 2px;
-  font-family: Georgia, "Times New Roman", serif;
-  --font-text: Georgia, "Times New Roman", serif;
-  --font-display: Georgia, "Times New Roman", serif;
+  font-family: "Bookerly", Georgia, "Times New Roman", serif;
+  --font-text: "Bookerly", Georgia, "Times New Roman", serif;
+  --font-display: "Bookerly", Georgia, "Times New Roman", serif;
 }
 
 body[data-theme="e-ink"] {
@@ -148,8 +148,8 @@ body[data-theme="e-ink"]::after {
 [data-theme="e-ink"] .top-nav-mega-panel,
 [data-theme="e-ink"] .white-panel,
 [data-theme="e-ink"] .card {
-  border: 1.5px solid #1d1d1d !important;
-  box-shadow: 4px 4px 0px #1d1d1d !important;
+  border: 1px solid #1d1d1d !important;
+  box-shadow: none !important;
 }
 
 [data-theme="e-ink"] .tracking-kpi-card-aprobado, [data-theme="e-ink"] .tracking-kpi-card-generado { background: #4a634e !important; color: #fbfaf5 !important; border-color: #4a634e !important; }

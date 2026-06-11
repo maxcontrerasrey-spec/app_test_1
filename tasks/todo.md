@@ -57,9 +57,23 @@
 
 ## Análisis de factibilidad para nuevo módulo Movilidad Interna
 
-- [ ] Auditar la arquitectura actual de `Solicitud de Contratación`, BUK, permisos y aprobaciones para identificar reutilización real
-- [ ] Definir el diseño mínimo viable de `Movilidad Interna` evitando duplicación entre frontend, servicios y SQL
-- [ ] Documentar factibilidad, riesgos, dependencias y propuesta de implementación incremental
+- [x] Auditar la arquitectura actual de `Solicitud de Contratación`, BUK, permisos y aprobaciones para identificar reutilización real
+- [x] Definir el diseño mínimo viable de `Movilidad Interna` evitando duplicación entre frontend, servicios y SQL
+- [x] Documentar factibilidad, riesgos, dependencias y propuesta de implementación incremental
+
+## Resultado de análisis de factibilidad para nuevo módulo Movilidad Interna
+
+- Se documentó la evaluación completa en [`docs/movilidad-interna-factibilidad.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/movilidad-interna-factibilidad.md:1), aterrizada contra la arquitectura viva del repo y no contra una propuesta genérica.
+- La conclusión técnica es que `Movilidad Interna` sí es factible con alta reutilización, pero no debe montarse sobre `hiring_requests`; ese dominio está acoplado a vacantes y apertura de reclutamiento, mientras que movilidad parte de un trabajador activo ya existente.
+- La mejor estrategia es crear un módulo hermano con tablas y RPCs propias, reutilizando navegación, guards, lookup BUK, resolución de aprobadores, auditoría y notificaciones transaccionales ya construidas para contratación.
+- El principal gap detectado no está en React sino en datos: hoy el repo puede obtener `empresa actual` desde BUK, pero `buk_contract_mappings` no guarda de forma explícita la `empresa destino`, por lo que se recomienda extender ese catálogo con una columna de empresa legal antes de implementar la regla definitiva de `requiere_finiquito`.
+- Se dejó además una propuesta incremental por etapas para evitar un refactor excesivo en la primera pasada y reducir riesgo de regresión sobre el flujo productivo de contratación.
+
+## Implementación completa de Movilidad Interna
+
+- [ ] Crear el backend de `Movilidad Interna` en Supabase: módulo autorizado, tablas, RPCs, helpers de visibilidad, auditoría, aprobaciones y notificaciones
+- [ ] Implementar el frontend del módulo reutilizando patrones de `Solicitud de Contratación`, con formulario, lookup BUK, alerta de cambio de empresa y detalle operativo
+- [ ] Integrar las aprobaciones de movilidad en Inicio y validar el flujo end-to-end con build y revisión final
 
 ## Resultado de ajuste urgente de visibilidad y cerrados en folios de contratación
 
