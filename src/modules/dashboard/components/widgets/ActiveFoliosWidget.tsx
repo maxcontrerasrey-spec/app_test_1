@@ -129,17 +129,19 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
 
   return (
     <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
-      <div className="dashboard-folios-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <TextField
-          id="dashboard-folios-search"
-          label="Buscar folio en curso"
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Caso, contrato o centro de costo"
-          className="dashboard-folios-search"
-        />
+      <div className="dashboard-folios-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '2rem', flexWrap: 'nowrap' }}>
+        <div style={{ flex: 1 }}>
+          <TextField
+            id="dashboard-folios-search"
+            label="Buscar folio en curso"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Caso, contrato o centro de costo"
+            className="dashboard-folios-search"
+          />
+        </div>
 
-        <div className="tracking-kpi-row" style={{ marginTop: 0, gap: '0.75rem', transform: 'scale(0.85)', transformOrigin: 'top right', minWidth: 'max-content' }}>
+        <div className="tracking-kpi-row" style={{ marginTop: 0, gap: '1rem', width: 'auto', flexShrink: 0 }}>
           <article className="tracking-kpi-card tracking-kpi-card-pendiente" style={{ minWidth: '160px', padding: '0.75rem 1rem' }}>
             <span className="micro-label">Folios activos en búsqueda</span>
             <strong>{summary.active_cases}</strong>
