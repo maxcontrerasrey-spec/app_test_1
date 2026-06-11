@@ -168,12 +168,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const supabaseClient = supabase;
     let isMounted = true;
+    let currentSession: Session | null = null;
 
     const loadAuthorization = async (nextSession: Session | null) => {
       if (!isMounted) {
         return;
       }
 
+      currentSession = nextSession;
       setSession(nextSession);
       setIsRecoveryMode((prev) => prev || detectRecoveryMode());
 
@@ -270,8 +272,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Evitamos unmount completo (reset de state) durante refrescos de token o updates menores
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+      // Evitamos unmount completo (reset de state) durante refrescos de token o cross-tab events
+      const isActuallySigningIn = event === "SIGNED_IN" && !currentSession;
+      if (isActuallySigningIn || event === "SIGNED_OUT") {
         setIsLoading(true);
       }
       
