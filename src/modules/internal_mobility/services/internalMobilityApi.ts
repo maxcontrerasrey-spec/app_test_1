@@ -21,6 +21,18 @@ function asArray<T>(value: unknown) {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function readText(value: unknown, fallback = "") {
+  return String(value ?? fallback);
+}
+
+function readNullableText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function readNullableNumber(value: unknown) {
+  return value === null || value === undefined ? null : Number(value);
+}
+
 function formatRpcError(error: {
   message?: string;
   details?: string;
@@ -42,25 +54,24 @@ function mapSetupCatalogs(payload: unknown): InternalMobilitySetupCatalogs {
 
   return {
     bukJobTitles: asArray<unknown>(source.buk_job_titles)
-      .map((item) => String(item ?? "").trim())
+      .map((item) => readText(item).trim())
       .filter(Boolean),
     shiftCatalog: asArray<Record<string, unknown>>(source.shift_catalog).map((item) => ({
       id: Number(item.id ?? 0),
-      code: String(item.code ?? ""),
-      name: String(item.name ?? ""),
+      code: readText(item.code),
+      name: readText(item.name),
       active: Boolean(item.active)
     })),
     destinations: asArray<Record<string, unknown>>(source.destinations).map((item) => ({
       contractId: Number(item.contract_id ?? 0),
-      contractCode: String(item.contract_code ?? ""),
-      contractNumber: String(item.contract_number ?? ""),
-      areaName: String(item.area_name ?? ""),
-      areaCode:
-        typeof item.area_code === "string" && item.area_code.trim() ? item.area_code : null,
-      costCenterCode: String(item.cost_center_code ?? ""),
-      costCenterName: String(item.cost_center_name ?? ""),
-      companyName: String(item.company_name ?? ""),
-      label: String(item.label ?? "")
+      contractCode: readText(item.contract_code),
+      contractNumber: readText(item.contract_number),
+      areaName: readText(item.area_name),
+      areaCode: readNullableText(item.area_code),
+      costCenterCode: readText(item.cost_center_code),
+      costCenterName: readText(item.cost_center_name),
+      companyName: readText(item.company_name),
+      label: readText(item.label)
     }))
   };
 }
@@ -71,103 +82,43 @@ function mapWorkerContext(payload: unknown): InternalMobilityWorkerContext {
 
   return {
     worker: {
-      bukEmployeeId: String(worker.buk_employee_id ?? ""),
-      fullName: String(worker.full_name ?? ""),
-      documentNumber: String(worker.document_number ?? ""),
-      documentType: String(worker.document_type ?? "rut"),
-      currentJobTitle: String(worker.current_job_title ?? ""),
-      currentContractCode:
-        typeof worker.current_contract_code === "string" && worker.current_contract_code.trim()
-          ? worker.current_contract_code
-          : null,
-      currentAreaName:
-        typeof worker.current_area_name === "string" && worker.current_area_name.trim()
-          ? worker.current_area_name
-          : null,
-      currentAreaCode:
-        typeof worker.current_area_code === "string" && worker.current_area_code.trim()
-          ? worker.current_area_code
-          : null,
-      currentCompanyName:
-        typeof worker.current_company_name === "string" && worker.current_company_name.trim()
-          ? worker.current_company_name
-          : null,
-      currentShiftName:
-        typeof worker.current_shift_name === "string" && worker.current_shift_name.trim()
-          ? worker.current_shift_name
-          : null,
-      matchedDestinationContractId:
-        worker.matched_destination_contract_id === null ||
-        worker.matched_destination_contract_id === undefined
-          ? null
-          : Number(worker.matched_destination_contract_id),
-      matchedDestinationContractCode:
-        typeof worker.matched_destination_contract_code === "string" &&
-        worker.matched_destination_contract_code.trim()
-          ? worker.matched_destination_contract_code
-          : null,
-      matchedDestinationAreaName:
-        typeof worker.matched_destination_area_name === "string" &&
-        worker.matched_destination_area_name.trim()
-          ? worker.matched_destination_area_name
-          : null,
-      matchedDestinationCompanyName:
-        typeof worker.matched_destination_company_name === "string" &&
-        worker.matched_destination_company_name.trim()
-          ? worker.matched_destination_company_name
-          : null
+      bukEmployeeId: readText(worker.buk_employee_id),
+      fullName: readText(worker.full_name),
+      documentNumber: readText(worker.document_number),
+      documentType: readText(worker.document_type, "rut"),
+      currentJobTitle: readText(worker.current_job_title),
+      currentContractCode: readNullableText(worker.current_contract_code),
+      currentAreaName: readNullableText(worker.current_area_name),
+      currentAreaCode: readNullableText(worker.current_area_code),
+      currentCompanyName: readNullableText(worker.current_company_name),
+      currentShiftName: readNullableText(worker.current_shift_name),
+      matchedDestinationContractId: readNullableNumber(worker.matched_destination_contract_id),
+      matchedDestinationContractCode: readNullableText(worker.matched_destination_contract_code),
+      matchedDestinationAreaName: readNullableText(worker.matched_destination_area_name),
+      matchedDestinationCompanyName: readNullableText(worker.matched_destination_company_name)
     }
   };
 }
 
 function mapRequestSummary(row: Record<string, unknown>): InternalMobilityRequestSummary {
   return {
-    requestId: String(row.request_id ?? ""),
-    folio: String(row.folio ?? ""),
+    requestId: readText(row.request_id),
+    folio: readText(row.folio),
     status: String(row.status ?? "pending_area_manager") as InternalMobilityRequestSummary["status"],
-    requesterName: String(row.requester_name ?? ""),
-    requesterEmail:
-      typeof row.requester_email === "string" && row.requester_email.trim()
-        ? row.requester_email
-        : null,
-    employeeFullName: String(row.employee_full_name ?? ""),
-    employeeDocumentNumber:
-      typeof row.employee_document_number === "string" && row.employee_document_number.trim()
-        ? row.employee_document_number
-        : null,
-    currentJobTitle:
-      typeof row.current_job_title === "string" && row.current_job_title.trim()
-        ? row.current_job_title
-        : null,
-    currentAreaName:
-      typeof row.current_area_name === "string" && row.current_area_name.trim()
-        ? row.current_area_name
-        : null,
-    currentCompanyName:
-      typeof row.current_company_name === "string" && row.current_company_name.trim()
-        ? row.current_company_name
-        : null,
-    currentShiftName:
-      typeof row.current_shift_name === "string" && row.current_shift_name.trim()
-        ? row.current_shift_name
-        : null,
-    destinationJobTitle: String(row.destination_job_title ?? ""),
-    destinationAreaName: String(row.destination_area_name ?? ""),
-    destinationShiftName:
-      typeof row.destination_shift_name === "string" && row.destination_shift_name.trim()
-        ? row.destination_shift_name
-        : null,
-    destinationCostCenterCode:
-      typeof row.destination_cost_center_code === "string" &&
-      row.destination_cost_center_code.trim()
-        ? row.destination_cost_center_code
-        : null,
-    destinationCostCenterName:
-      typeof row.destination_cost_center_name === "string" &&
-      row.destination_cost_center_name.trim()
-        ? row.destination_cost_center_name
-        : null,
-    destinationCompanyName: String(row.destination_company_name ?? ""),
+    requesterName: readText(row.requester_name),
+    requesterEmail: readNullableText(row.requester_email),
+    employeeFullName: readText(row.employee_full_name),
+    employeeDocumentNumber: readNullableText(row.employee_document_number),
+    currentJobTitle: readNullableText(row.current_job_title),
+    currentAreaName: readNullableText(row.current_area_name),
+    currentCompanyName: readNullableText(row.current_company_name),
+    currentShiftName: readNullableText(row.current_shift_name),
+    destinationJobTitle: readText(row.destination_job_title),
+    destinationAreaName: readText(row.destination_area_name),
+    destinationShiftName: readNullableText(row.destination_shift_name),
+    destinationCostCenterCode: readNullableText(row.destination_cost_center_code),
+    destinationCostCenterName: readNullableText(row.destination_cost_center_name),
+    destinationCompanyName: readText(row.destination_company_name),
     requiresTermination: Boolean(row.requires_termination),
     motive: String(row.motive ?? ""),
     currentStepName:
@@ -193,90 +144,33 @@ function mapRequestDetail(payload: unknown): InternalMobilityRequestDetail {
 
   return {
     request: {
-      id: String(request.id ?? ""),
-      folio: String(request.folio ?? ""),
+      id: readText(request.id),
+      folio: readText(request.folio),
       status: String(request.status ?? "pending_area_manager") as InternalMobilityRequestDetail["request"]["status"],
-      requesterName: String(request.requester_name ?? ""),
-      requesterJobTitle:
-        typeof request.requester_job_title === "string" && request.requester_job_title.trim()
-          ? request.requester_job_title
-          : null,
-      requesterEmail:
-        typeof request.requester_email === "string" && request.requester_email.trim()
-          ? request.requester_email
-          : null,
-      employeeBukEmployeeId: String(request.employee_buk_employee_id ?? ""),
-      employeeDocumentNumber:
-        typeof request.employee_document_number === "string" &&
-        request.employee_document_number.trim()
-          ? request.employee_document_number
-          : null,
-      employeeDocumentType:
-        typeof request.employee_document_type === "string" && request.employee_document_type.trim()
-          ? request.employee_document_type
-          : null,
-      employeeFullName: String(request.employee_full_name ?? ""),
-      currentJobTitle:
-        typeof request.current_job_title === "string" && request.current_job_title.trim()
-          ? request.current_job_title
-          : null,
-      currentContractCode:
-        typeof request.current_contract_code === "string" && request.current_contract_code.trim()
-          ? request.current_contract_code
-          : null,
-      currentAreaName:
-        typeof request.current_area_name === "string" && request.current_area_name.trim()
-          ? request.current_area_name
-          : null,
-      currentAreaCode:
-        typeof request.current_area_code === "string" && request.current_area_code.trim()
-          ? request.current_area_code
-          : null,
-      currentCompanyName:
-        typeof request.current_company_name === "string" && request.current_company_name.trim()
-          ? request.current_company_name
-          : null,
-      currentShiftName:
-        typeof request.current_shift_name === "string" && request.current_shift_name.trim()
-          ? request.current_shift_name
-          : null,
-      destinationJobTitle: String(request.destination_job_title ?? ""),
+      requesterName: readText(request.requester_name),
+      requesterJobTitle: readNullableText(request.requester_job_title),
+      requesterEmail: readNullableText(request.requester_email),
+      employeeBukEmployeeId: readText(request.employee_buk_employee_id),
+      employeeDocumentNumber: readNullableText(request.employee_document_number),
+      employeeDocumentType: readNullableText(request.employee_document_type),
+      employeeFullName: readText(request.employee_full_name),
+      currentJobTitle: readNullableText(request.current_job_title),
+      currentContractCode: readNullableText(request.current_contract_code),
+      currentAreaName: readNullableText(request.current_area_name),
+      currentAreaCode: readNullableText(request.current_area_code),
+      currentCompanyName: readNullableText(request.current_company_name),
+      currentShiftName: readNullableText(request.current_shift_name),
+      destinationJobTitle: readText(request.destination_job_title),
       destinationContractId: Number(request.destination_contract_id ?? 0),
-      destinationContractCode:
-        typeof request.destination_contract_code === "string" &&
-        request.destination_contract_code.trim()
-          ? request.destination_contract_code
-          : null,
-      destinationContractNumber:
-        typeof request.destination_contract_number === "string" &&
-        request.destination_contract_number.trim()
-          ? request.destination_contract_number
-          : null,
-      destinationAreaName: String(request.destination_area_name ?? ""),
-      destinationAreaCode:
-        typeof request.destination_area_code === "string" && request.destination_area_code.trim()
-          ? request.destination_area_code
-          : null,
-      destinationCostCenterCode:
-        typeof request.destination_cost_center_code === "string" &&
-        request.destination_cost_center_code.trim()
-          ? request.destination_cost_center_code
-          : null,
-      destinationCostCenterName:
-        typeof request.destination_cost_center_name === "string" &&
-        request.destination_cost_center_name.trim()
-          ? request.destination_cost_center_name
-          : null,
-      destinationCompanyName: String(request.destination_company_name ?? ""),
-      destinationShiftId:
-        request.destination_shift_id === null || request.destination_shift_id === undefined
-          ? null
-          : Number(request.destination_shift_id),
-      destinationShiftName:
-        typeof request.destination_shift_name === "string" &&
-        request.destination_shift_name.trim()
-          ? request.destination_shift_name
-          : null,
+      destinationContractCode: readNullableText(request.destination_contract_code),
+      destinationContractNumber: readNullableText(request.destination_contract_number),
+      destinationAreaName: readText(request.destination_area_name),
+      destinationAreaCode: readNullableText(request.destination_area_code),
+      destinationCostCenterCode: readNullableText(request.destination_cost_center_code),
+      destinationCostCenterName: readNullableText(request.destination_cost_center_name),
+      destinationCompanyName: readText(request.destination_company_name),
+      destinationShiftId: readNullableNumber(request.destination_shift_id),
+      destinationShiftName: readNullableText(request.destination_shift_name),
       requiresTermination: Boolean(request.requires_termination),
       motive: String(request.motive ?? ""),
       currentStepCode:
@@ -292,8 +186,8 @@ function mapRequestDetail(payload: unknown): InternalMobilityRequestDetail {
         typeof request.rejected_at === "string" && request.rejected_at.trim()
           ? request.rejected_at
           : null,
-      createdAt: String(request.created_at ?? ""),
-      updatedAt: String(request.updated_at ?? "")
+      createdAt: readText(request.created_at),
+      updatedAt: readText(request.updated_at)
     },
     approvals: asArray<Record<string, unknown>>(source.approvals).map((item) => ({
       id: Number(item.id ?? 0),
@@ -425,8 +319,8 @@ export async function createInternalMobilityRequest(input: CreateInternalMobilit
     folio: String(row.folio ?? ""),
     status: String(row.status ?? "pending_area_manager") as CreateInternalMobilityRequestResult["status"],
     requiresTermination: Boolean(row.requires_termination),
-    currentCompanyName: String(row.current_company_name ?? ""),
-    destinationCompanyName: String(row.destination_company_name ?? "")
+    currentCompanyName: readNullableText(row.current_company_name),
+    destinationCompanyName: readText(row.destination_company_name)
   } satisfies CreateInternalMobilityRequestResult;
 }
 

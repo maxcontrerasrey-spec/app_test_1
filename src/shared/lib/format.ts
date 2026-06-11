@@ -21,6 +21,23 @@ export function formatRequestDate(value: string | null | undefined): string {
 }
 
 /**
+ * Formats an ISO date-time string to a readable locale-aware label.
+ * Returns the provided fallback when the value is missing or invalid.
+ */
+export function formatDateTimeLabel(
+  value: string | null | undefined,
+  fallback = "No disponible"
+): string {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return new Intl.DateTimeFormat("es-CL", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+/**
  * Calculates and formats the number of days elapsed since a given ISO date.
  * Returns "Hoy" for same-day, "1 dia" for yesterday, "N dias" otherwise.
  */

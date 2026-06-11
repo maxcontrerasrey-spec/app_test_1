@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
+import { formatDateTimeLabel } from "../../../shared/lib/format";
 import { formatRut } from "../../../shared/lib/rut";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { PageShell, TextField } from "../../../shared/ui";
@@ -17,18 +18,16 @@ import {
 import { createInternalMobilityRequest } from "../services/internalMobilityApi";
 import type { InternalMobilityEligibleWorker } from "../types";
 
-function formatDateTime(value: string | null | undefined) {
-  if (!value) return "—";
+const UNRESOLVED_COMPANY_LABEL = "No resuelta";
+const UNRESOLVED_SHIFT_LABEL = "No resuelto";
+const PENDING_LABEL = "Pendiente";
 
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
+function resolveWorkerCompanyLabel(value: string | null | undefined) {
+  return value ?? UNRESOLVED_COMPANY_LABEL;
+}
 
-  return new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(parsed);
+function resolveWorkerShiftLabel(value: string | null | undefined) {
+  return value ?? UNRESOLVED_SHIFT_LABEL;
 }
 
 function toStatusLabel(value: string | null | undefined) {
@@ -236,15 +235,14 @@ export function InternalMobilityPage() {
         <h1>Movilidad Interna</h1>
       </div>
 
-      <div className="hiring-layout-grid">
-        <div className="hiring-main-column">
+      <div className="mobility-layout-single">
           <div className="form-card">
             <div className="requester-grid">
               <TextField id="mobility-requester-name" label="Nombre solicitante" value={displayName} readOnly />
               <TextField id="mobility-requester-job" label="Cargo solicitante" value={jobTitle} readOnly />
             </div>
 
-            <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>Trabajador a movilizar</h3>
+            <h3 className="mobility-section-title">Trabajador a movilizar</h3>
             <div className="contract-grid">
               <InternalMobilityWorkerLookup
                 id="mobility-worker-search"
@@ -263,12 +261,12 @@ export function InternalMobilityPage() {
             </div>
 
             {workerContextQuery.error ? (
-              <div className="form-status form-status-error" style={{ marginTop: "1rem" }}>
+              <div className="form-status form-status-error mobility-block-spaced">
                 {workerContextQuery.error.message}
               </div>
             ) : null}
 
-            <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>Condiciones actuales</h3>
+            <h3 className="mobility-section-title">Condiciones actuales</h3>
             <div className="contract-grid">
               <TextField
                 id="mobility-current-job"
@@ -283,24 +281,24 @@ export function InternalMobilityPage() {
                 readOnly
               />
             </div>
-            <div className="field-group" style={{ marginTop: "1rem" }}>
+            <div className="field-group mobility-block-spaced">
               <TextField
                 id="mobility-current-company"
                 label="Empresa actual"
-                value={selectedWorker ? workerContext?.currentCompanyName ?? "No resuelta" : ""}
+                value={selectedWorker ? resolveWorkerCompanyLabel(workerContext?.currentCompanyName) : ""}
                 readOnly
               />
             </div>
-            <div className="field-group" style={{ marginTop: "1rem" }}>
+            <div className="field-group mobility-block-spaced">
               <TextField
                 id="mobility-current-shift"
                 label="Turno actual"
-                value={selectedWorker ? workerContext?.currentShiftName ?? "No resuelto" : ""}
+                value={selectedWorker ? resolveWorkerShiftLabel(workerContext?.currentShiftName) : ""}
                 readOnly
               />
             </div>
 
-            <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>Condiciones destino</h3>
+            <h3 className="mobility-section-title">Condiciones destino</h3>
             <div className="contract-grid">
               <SelectField
                 id="mobility-destination-job"
@@ -324,7 +322,7 @@ export function InternalMobilityPage() {
                 placeholder="Selecciona el destino"
               />
             </div>
-            <div className="field-group" style={{ marginTop: "1rem" }}>
+            <div className="field-group mobility-block-spaced">
               <SelectField
                 id="mobility-destination-shift"
                 label="Turno nuevo"
@@ -338,7 +336,7 @@ export function InternalMobilityPage() {
                 placeholder="Selecciona el turno destino"
               />
             </div>
-            <div className="field-group" style={{ marginTop: "1rem" }}>
+            <div className="field-group mobility-block-spaced">
               <TextField
                 id="mobility-destination-company"
                 label="Empresa destino"
@@ -398,56 +396,53 @@ export function InternalMobilityPage() {
               </button>
             </div>
           </div>
-        </div>
-
-        <aside className="hiring-sidebar">
-          <div className="form-card hiring-summary-card">
+          <div className="form-card mobility-summary-card">
             <h3>Resumen de movilidad</h3>
-            <div className="summary-grid">
+            <div className="summary-grid summary-grid-horizontal">
               <div>
                 <small>Trabajador</small>
-                <strong>{workerContext?.fullName ?? "Pendiente"}</strong>
+                <strong>{workerContext?.fullName ?? PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Empresa actual</small>
-                <strong>{workerContext?.currentCompanyName ?? "No resuelta"}</strong>
+                <strong>{resolveWorkerCompanyLabel(workerContext?.currentCompanyName)}</strong>
               </div>
               <div>
                 <small>Empresa destino</small>
-                <strong>{selectedDestination?.companyName ?? "Pendiente"}</strong>
+                <strong>{selectedDestination?.companyName ?? PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Requiere finiquito</small>
                 <strong>
                   {workerContext && selectedDestination && workerContext.currentCompanyName
                     ? (requiresTermination ? "Sí" : "No")
-                    : "Pendiente"}
+                    : PENDING_LABEL}
                 </strong>
               </div>
               <div>
                 <small>Cargo actual</small>
-                <strong>{workerContext?.currentJobTitle ?? "Pendiente"}</strong>
+                <strong>{workerContext?.currentJobTitle ?? PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Cargo destino</small>
-                <strong>{destinationJobTitle || "Pendiente"}</strong>
+                <strong>{destinationJobTitle || PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Área actual</small>
-                <strong>{workerContext?.currentAreaName ?? "Pendiente"}</strong>
+                <strong>{workerContext?.currentAreaName ?? PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Área destino</small>
-                <strong>{selectedDestination?.areaName ?? "Pendiente"}</strong>
+                <strong>{selectedDestination?.areaName ?? PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Turno actual</small>
-                <strong>{workerContext?.currentShiftName ?? "No resuelto"}</strong>
+                <strong>{resolveWorkerShiftLabel(workerContext?.currentShiftName)}</strong>
               </div>
               <div>
                 <small>Turno destino</small>
                 <strong>
-                  {shiftOptions.find((item) => String(item.id) === destinationShiftId)?.name || "Pendiente"}
+                  {shiftOptions.find((item) => String(item.id) === destinationShiftId)?.name || PENDING_LABEL}
                 </strong>
               </div>
             </div>
@@ -455,7 +450,6 @@ export function InternalMobilityPage() {
               El cálculo de empresa y finiquito se validará nuevamente en backend al guardar.
             </p>
           </div>
-        </aside>
       </div>
 
       <div className="form-card mobility-requests-card">
@@ -538,7 +532,7 @@ export function InternalMobilityPage() {
                             <span className="dashboard-contract-inline">
                               {request.currentAreaName || "—"}
                               <br />
-                              {request.currentCompanyName ?? "No resuelta"}
+                              {resolveWorkerCompanyLabel(request.currentCompanyName)}
                               <br />
                               {request.currentShiftName ?? "Sin turno"}
                             </span>
@@ -610,11 +604,11 @@ export function InternalMobilityPage() {
                     </div>
                     <div>
                       <small>Empresa actual</small>
-                      <strong>{requestDetailQuery.data.request.currentCompanyName ?? "No resuelta"}</strong>
+                      <strong>{resolveWorkerCompanyLabel(requestDetailQuery.data.request.currentCompanyName)}</strong>
                     </div>
                     <div>
                       <small>Turno actual</small>
-                      <strong>{requestDetailQuery.data.request.currentShiftName ?? "No resuelto"}</strong>
+                      <strong>{resolveWorkerShiftLabel(requestDetailQuery.data.request.currentShiftName)}</strong>
                     </div>
                   </div>
                 </div>
@@ -667,15 +661,15 @@ export function InternalMobilityPage() {
                     </div>
                     <div>
                       <small>Enviada</small>
-                      <strong>{formatDateTime(requestDetailQuery.data.request.submittedAt)}</strong>
+                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.submittedAt, "—")}</strong>
                     </div>
                     <div>
                       <small>Aprobada</small>
-                      <strong>{formatDateTime(requestDetailQuery.data.request.approvedAt)}</strong>
+                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.approvedAt, "—")}</strong>
                     </div>
                     <div>
                       <small>Rechazada</small>
-                      <strong>{formatDateTime(requestDetailQuery.data.request.rejectedAt)}</strong>
+                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.rejectedAt, "—")}</strong>
                     </div>
                   </div>
                 </div>
@@ -697,8 +691,8 @@ export function InternalMobilityPage() {
                           <span className="tracking-status-pill">{toStatusLabel(approval.status)}</span>
                         </div>
                         <span>{approval.approverName ?? "Sin aprobador asignado"}</span>
-                        <span>Creada: {formatDateTime(approval.createdAt)}</span>
-                        <span>Resuelta: {formatDateTime(approval.decidedAt)}</span>
+                        <span>Creada: {formatDateTimeLabel(approval.createdAt, "—")}</span>
+                        <span>Resuelta: {formatDateTimeLabel(approval.decidedAt, "—")}</span>
                         {approval.decisionComment ? <p>{approval.decisionComment}</p> : null}
                       </div>
                     ))}
@@ -712,7 +706,7 @@ export function InternalMobilityPage() {
                       <div key={event.id} className="mobility-history-item">
                         <div className="mobility-history-item-head">
                           <strong>{toAuditLabel(event.actionType)}</strong>
-                          <span>{formatDateTime(event.createdAt)}</span>
+                          <span>{formatDateTimeLabel(event.createdAt, "—")}</span>
                         </div>
                         <span>{event.actorName ?? event.actorUserId}</span>
                       </div>

@@ -40,14 +40,16 @@ export type InternalMobilityDestination = {
   label: string;
 };
 
+export type InternalMobilityShiftCatalogItem = {
+  id: number;
+  code: string;
+  name: string;
+  active: boolean;
+};
+
 export type InternalMobilitySetupCatalogs = {
   bukJobTitles: string[];
-  shiftCatalog: Array<{
-    id: number;
-    code: string;
-    name: string;
-    active: boolean;
-  }>;
+  shiftCatalog: InternalMobilityShiftCatalogItem[];
   destinations: InternalMobilityDestination[];
 };
 
@@ -167,6 +169,6 @@ export type CreateInternalMobilityRequestResult = {
   folio: string;
   status: InternalMobilityRequestStatus;
   requiresTermination: boolean;
-  currentCompanyName: string;
+  currentCompanyName: string | null;
   destinationCompanyName: string;
 };
