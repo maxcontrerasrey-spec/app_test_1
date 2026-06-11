@@ -27,16 +27,29 @@ export function LabsPage() {
           padding-bottom: 4rem;
         }
 
-        /* SVG Noise Filter Overlay for raw paper texture */
+        /* SVG Noise Filter Overlay - MULTIPLE LAYERS for realistic fiber/cardboard feel */
+        /* Layer 1: Fine high-frequency grain */
         .labs-paper-wrapper::after {
           content: "";
           position: absolute;
           inset: 0;
           pointer-events: none;
-          z-index: 9999;
-          opacity: 0.25; /* Softer texture for the clean palette */
+          z-index: 9998;
+          opacity: 0.35;
           mix-blend-mode: multiply;
-          background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.15"/%3E%3C/svg%3E');
+          background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise1"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise1)" opacity="0.2"/%3E%3C/svg%3E');
+        }
+
+        /* Layer 2: Low-frequency cloudy fibers / imperfections */
+        .labs-paper-wrapper::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 9999;
+          opacity: 0.15;
+          mix-blend-mode: color-burn;
+          background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise2"%3E%3CfeTurbulence type="turbulence" baseFrequency="0.05" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise2)" opacity="0.3"/%3E%3C/svg%3E');
         }
 
         .paper-content-panel {
