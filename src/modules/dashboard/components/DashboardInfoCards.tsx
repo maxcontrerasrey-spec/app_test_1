@@ -14,6 +14,7 @@ type WeatherState = {
   temperatureMin: number | null;
   code: number | null;
   isLoading: boolean;
+  dailyForecast: { time: number; temperatureMax: number; temperatureMin: number; code: number }[];
 };
 
 type LiveLocationState = {
@@ -47,7 +48,7 @@ const UNAVAILABLE_LOCATION: LiveLocationState = {
 };
 
 function buildWeatherUrl(latitude: number, longitude: number) {
-  return `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&forecast_days=2&timeformat=unixtime&timezone=America%2FSantiago`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&forecast_days=5&timeformat=unixtime&timezone=America%2FSantiago`;
 }
 
 function buildBigDataCloudReverseGeocodingUrl(latitude: number, longitude: number) {
@@ -436,13 +437,13 @@ export function DashboardInfoCards({
 
     return readCachedBrowserLocation() ?? INITIAL_LOCATION;
   });
-  const [weather, setWeather] = useState<WeatherState & { hourlyForecast: { time: number; temperature: number; code: number }[] }>({
+  const [weather, setWeather] = useState<WeatherState>({
     temperature: null,
     temperatureMax: null,
     temperatureMin: null,
     code: null,
     isLoading: true,
-    hourlyForecast: []
+    dailyForecast: []
   });
   const locationRef = useRef(location);
   const locationRequestInFlightRef = useRef(false);
@@ -697,34 +698,27 @@ export function DashboardInfoCards({
         const payload = await response.json();
         const current = payload?.current ?? null;
         const daily = payload?.daily ?? null;
-        const hourly = payload?.hourly ?? null;
 
-        const nextHours: { time: number; temperature: number; code: number }[] = [];
-        if (hourly?.time && hourly?.temperature_2m && hourly?.weather_code) {
-          const nowSec = Math.floor(Date.now() / 1000);
-          for (let i = 0; i < hourly.time.length; i++) {
-            const timeSec = hourly.time[i];
-            if (timeSec + 3600 > nowSec) {
-              nextHours.push({
-                time: timeSec,
-                temperature: hourly.temperature_2m[i],
-                code: hourly.weather_code[i]
-              });
-              if (nextHours.length === 5) break;
-            }
+        const nextDays: { time: number; temperatureMax: number; temperatureMin: number; code: number }[] = [];
+        if (daily?.time && daily?.temperature_2m_max && daily?.temperature_2m_min && daily?.weather_code) {
+          for (let i = 1; i < daily.time.length; i++) {
+            nextDays.push({
+              time: daily.time[i],
+              temperatureMax: daily.temperature_2m_max[i],
+              temperatureMin: daily.temperature_2m_min[i],
+              code: daily.weather_code[i]
+            });
+            if (nextDays.length === 4) break;
           }
         }
 
         setWeather({
-          temperature:
-            typeof current?.temperature_2m === "number" ? current.temperature_2m : null,
-          temperatureMax:
-            typeof daily?.temperature_2m_max?.[0] === "number" ? daily.temperature_2m_max[0] : null,
-          temperatureMin:
-            typeof daily?.temperature_2m_min?.[0] === "number" ? daily.temperature_2m_min[0] : null,
+          temperature: typeof current?.temperature_2m === "number" ? current.temperature_2m : null,
+          temperatureMax: typeof daily?.temperature_2m_max?.[0] === "number" ? daily.temperature_2m_max[0] : null,
+          temperatureMin: typeof daily?.temperature_2m_min?.[0] === "number" ? daily.temperature_2m_min[0] : null,
           code: typeof current?.weather_code === "number" ? current.weather_code : null,
           isLoading: false,
-          hourlyForecast: nextHours
+          dailyForecast: nextDays
         });
       } catch (_error) {
         setWeather({
@@ -733,7 +727,7 @@ export function DashboardInfoCards({
           temperatureMin: null,
           code: null,
           isLoading: false,
-          hourlyForecast: []
+          dailyForecast: []
         });
       }
     }
@@ -802,58 +796,50 @@ export function DashboardInfoCards({
 
   return (
     <section className="dashboard-info-row" aria-label="Tarjetas informativas">
-      <article className={`dashboard-info-card dashboard-info-card-weather${weatherThemeClass}`}>
-        <div className="dashboard-info-head">
-          <span className="dashboard-info-kicker">{formatTodayLabel()}</span>
-          <strong>{location.label}</strong>
-        </div>
-        <div className="dashboard-info-weather-body">
-          <div>
-            <span className="dashboard-info-primary">
-              {weather.isLoading || weather.temperature == null
-                ? "--°"
-                : `${Math.round(weather.temperature)}°`}
+      <article className={`dashboard-info-card dashboard-info-card-weather${weatherThemeClass}`} style={{ display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '3.5rem', lineHeight: 1, color: '#3b82f6', display: 'flex' }}>
+              {toWeatherIcon(weather.code, 64, 1.5)}
             </span>
-            <span className="dashboard-info-secondary">
-              {weather.isLoading ? "Cargando clima..." : toWeatherLabel(weather.code)}
+            <span style={{ fontSize: '3.6rem', fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--title)' }}>
+              {weather.isLoading || weather.temperature == null ? "--" : Math.round(weather.temperature)}°
             </span>
-            <span className="dashboard-info-weather-range">
-              {weather.isLoading || weather.temperatureMax == null || weather.temperatureMin == null
-                ? "Máx --° · Mín --°"
-                : `Máx ${Math.round(weather.temperatureMax)}° · Mín ${Math.round(weather.temperatureMin)}°`}
-            </span>
-            <span className="dashboard-info-weather-zone">
-              {location.isResolved ? location.statusLabel : "Resolviendo ubicación..."}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
+            <strong style={{ fontSize: '1rem', letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--title)' }}>
+              {location.label ? location.label.split(',')[0] : "UBICACIÓN"}
+            </strong>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', lineHeight: 1.2 }}>
+              {weather.isLoading ? "CARGANDO..." : toWeatherLabel(weather.code)}
             </span>
             {(location.isFallback || !location.isResolved) ? (
               <button
                 type="button"
                 className="dashboard-info-weather-action"
-                onClick={() => {
-                  void requestBrowserLocation();
-                }}
+                style={{ fontSize: '0.7rem', marginTop: '4px', padding: 0 }}
+                onClick={() => void requestBrowserLocation()}
               >
-                Reintentar ubicación exacta
+                Reintentar
               </button>
             ) : null}
           </div>
-          <span className="dashboard-info-weather-icon" aria-hidden="true">
-            {toWeatherIcon(weather.code)}
-          </span>
         </div>
         
-        {weather.hourlyForecast.length > 0 && (
-          <div className="dashboard-info-weather-hourly">
-            {weather.hourlyForecast.map((h, i) => {
-              const date = new Date(h.time * 1000);
-              const hoursStr = date.getHours().toString().padStart(2, "0") + ":00";
+        {weather.dailyForecast.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', marginTop: 'auto' }}>
+            {weather.dailyForecast.map((d, i) => {
+              const date = new Date((d.time + 14400) * 1000); // offset to local timezone roughly
+              const dayName = new Intl.DateTimeFormat("es-CL", { weekday: "short" }).format(date).toUpperCase();
               return (
-                <div key={i} className="dashboard-weather-hour-item">
-                  <span className="dashboard-weather-hour-time">{hoursStr}</span>
-                  <span className="dashboard-weather-hour-icon">
-                    {toWeatherIcon(h.code, 16, 1.8)}
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--title)' }}>{dayName}</span>
+                  <span style={{ color: 'var(--text-muted)', display: 'flex' }}>
+                    {toWeatherIcon(d.code, 28, 1.8)}
                   </span>
-                  <span className="dashboard-weather-hour-temp">{Math.round(h.temperature)}°</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--title)' }}>{Math.round(d.temperatureMax)}°</span>/{Math.round(d.temperatureMin)}°
+                  </span>
                 </div>
               );
             })}
@@ -861,58 +847,36 @@ export function DashboardInfoCards({
         )}
       </article>
 
-      <article className="dashboard-info-card dashboard-info-card-birthday">
-        <div className="dashboard-birthday-card-header">
-          <div className="dashboard-info-head">
-            <span className="dashboard-info-kicker">BUK</span>
-            <strong>Cumpleaños próximos</strong>
-          </div>
-          <svg className="dashboard-birthday-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
-            <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
-            <path d="M2 21h20" />
-            <path d="M7 8v3" />
-            <path d="M12 8v3" />
-            <path d="M17 8v3" />
-            <path d="M7 4h.01" />
-            <path d="M12 4h.01" />
-            <path d="M17 4h.01" />
-          </svg>
-        </div>
+      <article className="dashboard-info-card dashboard-info-card-birthday" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {nextBirthday ? (
-          <div className="dashboard-birthday-sheet">
-            <div className="dashboard-birthday-sheet-header">
-              <span className="dashboard-info-primary">{birthdays.length}</span>
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <svg className="dashboard-birthday-card-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+                <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
+                <path d="M2 21h20" />
+                <path d="M7 8v3" />
+                <path d="M12 8v3" />
+                <path d="M17 8v3" />
+                <path d="M7 4h.01" />
+                <path d="M12 4h.01" />
+                <path d="M17 4h.01" />
+              </svg>
               {birthdays.length > 1 ? (
                 <div className="dashboard-birthday-controls" aria-label="Navegación de cumpleaños">
-                  <button
-                    type="button"
-                    className="dashboard-birthday-control"
-                    onClick={() => moveBirthday("prev")}
-                    aria-label="Cumpleañero anterior"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    className="dashboard-birthday-control"
-                    onClick={() => moveBirthday("next")}
-                    aria-label="Siguiente cumpleañero"
-                  >
-                    ›
-                  </button>
+                  <button type="button" className="dashboard-birthday-control" onClick={() => moveBirthday("prev")} aria-label="Cumpleañero anterior">‹</button>
+                  <button type="button" className="dashboard-birthday-control" onClick={() => moveBirthday("next")} aria-label="Siguiente cumpleañero">›</button>
                 </div>
               ) : null}
             </div>
-            <div className="dashboard-birthday-summary">
-              <strong>{nextBirthday.full_name}</strong>
-              <span>{nextBirthday.job_title || "Colaborador activo"}</span>
-              <small>
-                {nextBirthday.birthday_label} · {birthdaySummary}
+            <div className="dashboard-birthday-summary" style={{ marginTop: 'auto' }}>
+              <strong style={{ fontSize: '1.2rem', lineHeight: 1.2 }}>{nextBirthday.full_name}</strong>
+              <small style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                {nextBirthday.birthday_label} · <span style={{ color: 'var(--title)', fontWeight: 500 }}>{birthdaySummary}</span>
               </small>
             </div>
             {birthdays.length > 1 ? (
-              <div className="dashboard-birthday-pagination" aria-label="Posición del cumpleañero">
+              <div className="dashboard-birthday-pagination" aria-label="Posición del cumpleañero" style={{ marginTop: '8px' }}>
                 {birthdays.map((birthday, index) => (
                   <button
                     key={birthday.id}
@@ -924,11 +888,16 @@ export function DashboardInfoCards({
                 ))}
               </div>
             ) : null}
-          </div>
+          </>
         ) : (
-          <span className="dashboard-info-secondary">
-            No hay cumpleaños con fecha válida cargada en BUK.
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '8px' }}>
+              <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+              <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
+              <path d="M2 21h20" />
+            </svg>
+            <span style={{ fontSize: '0.9rem' }}>No hay cumpleaños próximos</span>
+          </div>
         )}
       </article>
 

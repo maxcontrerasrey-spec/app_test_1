@@ -79,16 +79,7 @@ export function DashboardEconomicCard() {
 
   return (
     <article className="dashboard-info-card dashboard-info-card-economics">
-      <div className="dashboard-economic-card-header">
-        <div className="dashboard-info-head">
-          <span className="dashboard-info-kicker">Mindicador.cl</span>
-          <strong>Indicadores Oficiales</strong>
-        </div>
-        <svg className="dashboard-economic-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2v20" />
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-        </svg>
-      </div>
+
 
       <div className="dashboard-economics-grid">
         <div className="dashboard-economic-item">
