@@ -218,6 +218,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cada llamada remota del inicio debe justificar su presencia en pantalla**. Si hoy no existe un widget de notificaciones, alertas o KPIs en el layout activo, no se consultan en la carga principal.
 - **La limpieza de performance simple suele estar en la poda, no en la complejidad**. Antes de optimizar cachés o paralelismo, hay que eliminar fetches que no tienen consumidor.
 
+## 33. Si una movilidad depende de un folio, el folio es la fuente de verdad de destino y cupo
+
+- **No modelar movilidad interna con cargo, contrato o turno destino libres cuando la operación realmente depende de un caso abierto con vacantes**. Eso rompe consistencia entre aprobación, disponibilidad y seguimiento de cupos.
+- **El patrón correcto es seleccionar el folio y derivar desde ese caso el resto del destino**. El backend debe volver a validar disponibilidad y visibilidad del caso al guardar, aunque el frontend ya haya autocompletado.
+
+## 34. Los contadores operativos deben centralizar candidatos y movilidades en una sola métrica efectiva
+
+- **Si un folio puede cerrarse tanto por contratación externa como por movilidad interna, `filled_vacancies` no puede depender solo de candidatos `hired`**. La métrica debe incorporar también movilidades aprobadas.
+- **La misma regla aplica a activos**: si una movilidad en aprobación compite por el mismo cupo, debe reflejarse como volumen operativo en los resúmenes del folio. La forma estable de hacerlo es una helper única de métricas efectivas consumida por todas las RPCs del dashboard.
+
 ## 33. En BUK, el cargo operativo no necesariamente vive en la columna derivada del view
 
 - **No asumas que `employees_active_current.job_title` trae el cargo real**. En este proyecto quedó vacío para toda la dotación activa, mientras el dato correcto venía en `raw_payload.current_job.role.name` y `raw_payload.jobs[*].role.name`.

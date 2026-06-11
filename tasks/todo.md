@@ -15,6 +15,24 @@
 - [x] Corregir la resolución backend de cargo y empresa desde `raw_payload` de BUK y completar el catálogo `buk_contract_mappings.company_name`
 - [x] Revalidar las RPCs de setup, búsqueda y contexto de trabajador contra datos reales y documentar el resultado
 
+## Movilidad Interna ligada a folios con cupos y contadores operativos
+
+- [x] Rediseñar la creación de movilidad interna para que dependa de un folio/caso abierto con cupos disponibles y derive desde ahí cargo, contrato, turno y empresa destino
+- [x] Recalcular backend de casos para que movilidades pendientes cuenten como activos y movilidades aprobadas consuman cupos como contratación cerrada
+- [x] Ajustar `Inicio`, `Control de Contrataciones` y `Movilidad Interna` para exponer los nuevos contadores y el selector de folio destino
+- [x] Aplicar la migración en Supabase productivo, validar payloads vivos y registrar el resultado final
+
+## Resultado de Movilidad Interna ligada a folios con cupos y contadores operativos
+
+- Se agregó la migración [`20260612_003000_link_internal_mobility_to_recruitment_cases.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_003000_link_internal_mobility_to_recruitment_cases.sql:1), ya aplicada en Supabase remoto, para ligar cada movilidad interna a `recruitment_cases` y `hiring_requests`.
+- [`submit_internal_mobility_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_003000_link_internal_mobility_to_recruitment_cases.sql:252) ahora exige `recruitment_case_id`, rechaza folios sin cupos y persiste `recruitment_case_id`, `hiring_request_id`, `recruitment_case_code` y `source_folio` dentro de la solicitud.
+- [`get_internal_mobility_setup_catalogs()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_003000_link_internal_mobility_to_recruitment_cases.sql:149) ya no entrega destinos libres para este flujo: expone `eligible_folios` con cargo, contrato, turno, empresa y cupos disponibles derivados del caso real.
+- Se centralizó el cálculo en [`get_recruitment_case_effective_metrics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_003000_link_internal_mobility_to_recruitment_cases.sql:13) y [`sync_recruitment_case_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_003000_link_internal_mobility_to_recruitment_cases.sql:70): movilidad pendiente suma a activos, movilidad aprobada suma a vacantes cubiertas.
+- [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1), [`internalMobilityApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/services/internalMobilityApi.ts:1) y [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/types.ts:1) quedaron ajustados para seleccionar trabajador + folio, autocompletar destino desde el caso y mostrar el resumen con los datos operativos correctos.
+- [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1), [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1), [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) y [`src/styles/global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1) ahora muestran movilidades en amarillo dentro de los contadores activos del folio.
+- Validación viva en `pzblmbahnoyntrhistea`: `eligible_folios_count = 36`, `active_cases_count = 44`, `active_folios_count = 25`. El primer folio elegible ya sale como `0016 · CONDUCTOR DE BUS · ARAMARK GABY INTERNO · Cupos 1/1`, con empresa `Buses JM Pullman S.A.` y `available_vacancies = 1`.
+- Validación local cerrada con `npm run build` exitoso después de alinear tipos, detalle y resúmenes del nuevo contrato.
+
 ## Resultado de hotfix crítico de Movilidad Interna: cargo, empresa y catálogos BUK
 
 - La causa raíz no estaba en React sino en el contrato vivo de datos: [`employees_active_current`](</Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_231500_fix_internal_mobility_worker_resolution.sql:1>) traía `job_title` vacío para `1575/1575` trabajadores activos, por lo que `Movilidad Interna` jamás podía mostrar cargo actual ni poblar correctamente el dropdown de cargos destino.
