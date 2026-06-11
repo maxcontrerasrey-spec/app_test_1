@@ -33,6 +33,13 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "document"
       },
       {
+        moduleCode: "movilidad_interna",
+        to: "/movilidad-interna",
+        label: "Movilidad Interna",
+        description: "Solicita traslados internos de trabajadores activos.",
+        iconKey: "document"
+      },
+      {
         moduleCode: "control_contrataciones",
         to: "/control-contrataciones",
         label: "Control de Contrataciones",

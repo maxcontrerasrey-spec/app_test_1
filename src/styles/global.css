@@ -1812,6 +1812,130 @@ textarea {
   text-overflow: ellipsis;
 }
 
+.helper-copy {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.mobility-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.mobility-company-alert {
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  border-radius: var(--radius-lg);
+  background: rgba(254, 240, 138, 0.28);
+  color: #92400e;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.mobility-textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.mobility-preview-card {
+  width: 100%;
+}
+
+.mobility-preview-card .form-card {
+  width: 100%;
+}
+
+.mobility-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.mobility-preview-grid div {
+  display: grid;
+  gap: 0.15rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mobility-preview-grid div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.mobility-preview-grid small,
+.mobility-preview-grid strong {
+  font-family: var(--font-text);
+}
+
+.mobility-preview-grid small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.mobility-preview-grid strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.mobility-requests-card,
+.mobility-detail-card {
+  margin-top: 1.25rem;
+}
+
+.mobility-requests-toolbar,
+.mobility-detail-header,
+.mobility-history-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mobility-detail-copy {
+  margin: 0;
+  color: var(--title);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.mobility-history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.mobility-history-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mobility-history-item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+}
+
+.mobility-history-item span,
+.mobility-history-item p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.expanded-detail-full {
+  grid-column: 1 / -1;
+}
+
 .status-inline {
   display: inline-flex;
   align-items: center;
@@ -3095,6 +3219,11 @@ textarea {
   .summary-panel {
     position: static;
     top: auto;
+  }
+
+  .mobility-form-grid,
+  .mobility-history-grid {
+    grid-template-columns: 1fr;
   }
 }
 

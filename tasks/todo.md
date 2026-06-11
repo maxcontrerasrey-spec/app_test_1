@@ -71,9 +71,21 @@
 
 ## Implementación completa de Movilidad Interna
 
-- [ ] Crear el backend de `Movilidad Interna` en Supabase: módulo autorizado, tablas, RPCs, helpers de visibilidad, auditoría, aprobaciones y notificaciones
-- [ ] Implementar el frontend del módulo reutilizando patrones de `Solicitud de Contratación`, con formulario, lookup BUK, alerta de cambio de empresa y detalle operativo
-- [ ] Integrar las aprobaciones de movilidad en Inicio y validar el flujo end-to-end con build y revisión final
+- [x] Crear el backend de `Movilidad Interna` en Supabase: módulo autorizado, tablas, RPCs, helpers de visibilidad, auditoría, aprobaciones y notificaciones
+- [x] Implementar el frontend del módulo reutilizando patrones de `Solicitud de Contratación`, con formulario, lookup BUK, alerta de cambio de empresa y detalle operativo
+- [x] Integrar las aprobaciones de movilidad en Inicio y validar el flujo end-to-end con build y revisión final
+
+## Resultado de implementación completa de Movilidad Interna
+
+- Se creó la migración [`20260611184435_add_internal_mobility_module.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611184435_add_internal_mobility_module.sql:1), que registra el módulo `movilidad_interna`, amplía `buk_contract_mappings` con `company_name` y `buk_area_code`, y crea el dominio completo de backend: `internal_mobility_requests`, `internal_mobility_request_approvals`, `internal_mobility_request_snapshots`, `internal_mobility_request_audit_log`, helpers de visibilidad, búsqueda BUK, contexto de trabajador, envío de solicitud, detalle y decisión de aprobaciones.
+- La misma migración conecta el flujo al motor ya existente de notificaciones transaccionales: correos al gerente de área y a Control de Contratos al crearse sus aprobaciones pendientes, y correo de handoff a Reclutamiento cuando Control de Contratos aprueba la movilidad.
+- El módulo frontend quedó implementado en [`src/modules/internal_mobility`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility): página [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1), lookup de trabajadores activos BUK, hooks `react-query`, servicios RPC y detalle operativo con historial de aprobaciones y auditoría.
+- La UI reutiliza patrones existentes de `Solicitud de Contratación`, pero aterrizados al nuevo dominio: trabajador activo, origen/destino, empresa actual/destino, alerta amarilla por cambio de empresa y cálculo visible de `requiere finiquito`.
+- El módulo quedó registrado en [`AppRouter.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1), [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:1) y [`access.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/config/access.ts:1), usando el mismo sistema de autorización por `app_modules` / `role_module_access`.
+- `Inicio` ahora también contempla aprobaciones pendientes de movilidad interna: [`get_dashboard_tasks(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611184435_add_internal_mobility_module.sql:1680) incorpora la nueva fuente y [`TasksWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/TasksWidget.tsx:1) ya decide entre aprobación de contratación y aprobación de movilidad sin duplicar widget.
+- La Edge Function [`hiring-transactional-email`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/hiring-transactional-email/index.ts:1) se extendió para reconocer `request_context = internal_mobility` y renderizar correos con trabajador, empresas origen/destino y flag de finiquito, sin crear una segunda function paralela.
+- Validación local cerrada con `npm run build` y `git diff --check`.
+- Validación específica de Edge Function intentada pero no cerrada localmente: `deno` no está instalado en este entorno y `npx supabase functions serve` quedó bloqueado por Docker no disponible, por lo que el código de la function quedó compilando por consistencia TypeScript del repo pero sin smoke test local de runtime Supabase.
 
 ## Resultado de ajuste urgente de visibilidad y cerrados en folios de contratación
 

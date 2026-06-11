@@ -7,6 +7,16 @@ export const queryKeys = {
     caseDetail: (caseId: string) => ["recruitment", "case-detail", caseId] as const,
     hiringCatalogs: () => ["recruitment", "hiring-catalogs"] as const
   },
+  internalMobility: {
+    setupCatalogs: () => ["internal-mobility", "setup-catalogs"] as const,
+    workerSearch: (search: string) => ["internal-mobility", "worker-search", search] as const,
+    workerContext: (bukEmployeeId: string) =>
+      ["internal-mobility", "worker-context", bukEmployeeId] as const,
+    requestsRoot: () => ["internal-mobility", "requests"] as const,
+    requests: () => ["internal-mobility", "requests", "list"] as const,
+    requestDetail: (requestId: string) =>
+      ["internal-mobility", "request-detail", requestId] as const
+  },
   incentives: {
     setupCatalogs: () => ["incentives", "setup-catalogs"] as const,
     requestsRoot: () => ["incentives", "requests"] as const,

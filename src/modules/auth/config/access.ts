@@ -19,6 +19,7 @@ export type AppCapability = "can_approve_who_stage" | "candidate_control_access"
 
 export type AppModuleCode =
   | "solicitud_contrataciones"
+  | "movilidad_interna"
   | "control_contrataciones"
   | "certificados"
   | "seguimiento_certificados"
@@ -51,6 +52,7 @@ const KNOWN_CAPABILITY_CODES = new Set<AppCapability>([
 
 const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "solicitud_contrataciones",
+  "movilidad_interna",
   "control_contrataciones",
   "certificados",
   "seguimiento_certificados",

@@ -27,6 +27,10 @@ const HiringRequestPage = lazyWithRetry("hiring-request-page", async () => ({
   default: (await import("../../modules/recruitment/pages/HiringRequestPage")).HiringRequestPage
 }));
 
+const InternalMobilityPage = lazyWithRetry("internal-mobility-page", async () => ({
+  default: (await import("../../modules/internal_mobility/pages/InternalMobilityPage")).InternalMobilityPage
+}));
+
 const HiringStatusPage = lazyWithRetry("hiring-status-page", async () => ({
   default: (await import("../../modules/recruitment/pages/HiringStatusPage")).HiringStatusPage
 }));
@@ -100,6 +104,14 @@ export function AppRouter() {
               element={
                 <RoleProtectedRoute moduleCode="solicitud_contrataciones">
                   <HiringRequestPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/movilidad-interna"
+              element={
+                <RoleProtectedRoute moduleCode="movilidad_interna">
+                  <InternalMobilityPage />
                 </RoleProtectedRoute>
               }
             />

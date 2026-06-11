@@ -18,8 +18,11 @@ type PendingApprovalPayload = {
   request: {
     id: string;
     folio: string | number;
+    request_context?: "hiring" | "internal_mobility" | null;
+    module_label?: string | null;
     requester_name: string | null;
     requester_email: string | null;
+    employee_name?: string | null;
     contract_name: string | null;
     contract_number: string | null;
     job_position_name: string | null;
@@ -28,6 +31,10 @@ type PendingApprovalPayload = {
     requested_entry_date: string | null;
     start_date: string | null;
     vacancies: number | null;
+    current_company_name?: string | null;
+    destination_company_name?: string | null;
+    requires_termination?: boolean | null;
+    motive?: string | null;
   };
   route?: string | null;
 };
@@ -45,14 +52,21 @@ type RecruitmentHandoffPayload = {
   request: {
     id: string;
     folio: string | number;
+    request_context?: "hiring" | "internal_mobility" | null;
+    module_label?: string | null;
     requester_name: string | null;
     requester_email: string | null;
+    employee_name?: string | null;
     contract_name: string | null;
     job_position_name: string | null;
     cost_center_code: string | null;
     cost_center_name: string | null;
     requested_entry_date: string | null;
     start_date: string | null;
+    current_company_name?: string | null;
+    destination_company_name?: string | null;
+    requires_termination?: boolean | null;
+    motive?: string | null;
   };
   route?: string | null;
 };
@@ -122,18 +136,34 @@ function buildActionUrl(payload: EmailPayload, appBaseUrl: string | null): strin
 
 function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: string | null) {
   const stepLabel = payload.approval.step_name || payload.approval.step_code;
-  const subject = `Pendiente aprobación ${stepLabel}: folio ${payload.request.folio}`;
+  const isInternalMobility = payload.request.request_context === "internal_mobility";
+  const subject = isInternalMobility
+    ? `Pendiente aprobación ${payload.request.module_label || "Movilidad Interna"}: folio ${payload.request.folio}`
+    : `Pendiente aprobación ${stepLabel}: folio ${payload.request.folio}`;
 
-  const intro = `El folio ${payload.request.folio} quedó pendiente para ${stepLabel}.`;
-  const details = [
-    ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
-    ["Contrato", payload.request.contract_name || payload.request.contract_number || "No informado"],
-    ["Cargo", payload.request.job_position_name || "No informado"],
-    ["Centro de costo", payload.request.cost_center_name || payload.request.cost_center_code || "No informado"],
-    ["Vacantes", payload.request.vacancies ?? "No informado"],
-    ["Ingreso solicitado", formatDate(payload.request.requested_entry_date)],
-    ["Inicio de contrato", formatDate(payload.request.start_date)],
-  ];
+  const intro = isInternalMobility
+    ? `La solicitud ${payload.request.folio} de movilidad interna quedó pendiente para ${stepLabel}.`
+    : `El folio ${payload.request.folio} quedó pendiente para ${stepLabel}.`;
+  const details = isInternalMobility
+    ? [
+        ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
+        ["Trabajador", payload.request.employee_name || "No informado"],
+        ["Cargo destino", payload.request.job_position_name || "No informado"],
+        ["Área destino", payload.request.contract_name || "No informado"],
+        ["Empresa actual", payload.request.current_company_name || "No informado"],
+        ["Empresa destino", payload.request.destination_company_name || "No informado"],
+        ["Requiere finiquito", payload.request.requires_termination ? "Sí" : "No"],
+        ["Motivo", payload.request.motive || "No informado"],
+      ]
+    : [
+        ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
+        ["Contrato", payload.request.contract_name || payload.request.contract_number || "No informado"],
+        ["Cargo", payload.request.job_position_name || "No informado"],
+        ["Centro de costo", payload.request.cost_center_name || payload.request.cost_center_code || "No informado"],
+        ["Vacantes", payload.request.vacancies ?? "No informado"],
+        ["Ingreso solicitado", formatDate(payload.request.requested_entry_date)],
+        ["Inicio de contrato", formatDate(payload.request.start_date)],
+      ];
 
   const html = `
     <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
@@ -159,13 +189,26 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
 
   const text = [
     intro,
-    `Solicitante: ${payload.request.requester_name || payload.request.requester_email || "No informado"}`,
-    `Contrato: ${payload.request.contract_name || payload.request.contract_number || "No informado"}`,
-    `Cargo: ${payload.request.job_position_name || "No informado"}`,
-    `Centro de costo: ${payload.request.cost_center_name || payload.request.cost_center_code || "No informado"}`,
-    `Vacantes: ${payload.request.vacancies ?? "No informado"}`,
-    `Ingreso solicitado: ${formatDate(payload.request.requested_entry_date)}`,
-    `Inicio de contrato: ${formatDate(payload.request.start_date)}`,
+    ...(isInternalMobility
+      ? [
+          `Solicitante: ${payload.request.requester_name || payload.request.requester_email || "No informado"}`,
+          `Trabajador: ${payload.request.employee_name || "No informado"}`,
+          `Cargo destino: ${payload.request.job_position_name || "No informado"}`,
+          `Área destino: ${payload.request.contract_name || "No informado"}`,
+          `Empresa actual: ${payload.request.current_company_name || "No informado"}`,
+          `Empresa destino: ${payload.request.destination_company_name || "No informado"}`,
+          `Requiere finiquito: ${payload.request.requires_termination ? "Sí" : "No"}`,
+          `Motivo: ${payload.request.motive || "No informado"}`,
+        ]
+      : [
+          `Solicitante: ${payload.request.requester_name || payload.request.requester_email || "No informado"}`,
+          `Contrato: ${payload.request.contract_name || payload.request.contract_number || "No informado"}`,
+          `Cargo: ${payload.request.job_position_name || "No informado"}`,
+          `Centro de costo: ${payload.request.cost_center_name || payload.request.cost_center_code || "No informado"}`,
+          `Vacantes: ${payload.request.vacancies ?? "No informado"}`,
+          `Ingreso solicitado: ${formatDate(payload.request.requested_entry_date)}`,
+          `Inicio de contrato: ${formatDate(payload.request.start_date)}`,
+        ]),
     actionUrl ? `Abrir bandeja: ${actionUrl}` : null,
   ]
     .filter(Boolean)
@@ -175,18 +218,34 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
 }
 
 function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, actionUrl: string | null) {
-  const subject = `Nuevo folio para reclutamiento: ${payload.case.case_code || `folio ${payload.request.folio}`}`;
-  const intro = `El folio ${payload.request.folio} fue aprobado por Control de Contratos y ya quedó disponible para Reclutamiento.`;
-  const details = [
-    ["Caso", payload.case.case_code || "No informado"],
-    ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
-    ["Contrato", payload.request.contract_name || "No informado"],
-    ["Cargo", payload.request.job_position_name || "No informado"],
-    ["Centro de costo", payload.request.cost_center_name || payload.request.cost_center_code || "No informado"],
-    ["Vacantes", payload.case.requested_vacancies ?? "No informado"],
-    ["Ingreso solicitado", formatDate(payload.request.requested_entry_date)],
-    ["Inicio de contrato", formatDate(payload.request.start_date)],
-  ];
+  const isInternalMobility = payload.request.request_context === "internal_mobility";
+  const subject = isInternalMobility
+    ? `Nueva solicitud aprobada para ${payload.request.module_label || "Movilidad Interna"}: ${payload.request.folio}`
+    : `Nuevo folio para reclutamiento: ${payload.case.case_code || `folio ${payload.request.folio}`}`;
+  const intro = isInternalMobility
+    ? `La solicitud ${payload.request.folio} de movilidad interna fue aprobada por Control de Contratos y ya quedó disponible para Reclutamiento.`
+    : `El folio ${payload.request.folio} fue aprobado por Control de Contratos y ya quedó disponible para Reclutamiento.`;
+  const details = isInternalMobility
+    ? [
+        ["Folio", payload.request.folio],
+        ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
+        ["Trabajador", payload.request.employee_name || "No informado"],
+        ["Cargo destino", payload.request.job_position_name || "No informado"],
+        ["Área destino", payload.request.contract_name || "No informado"],
+        ["Empresa actual", payload.request.current_company_name || "No informado"],
+        ["Empresa destino", payload.request.destination_company_name || "No informado"],
+        ["Requiere finiquito", payload.request.requires_termination ? "Sí" : "No"],
+      ]
+    : [
+        ["Caso", payload.case.case_code || "No informado"],
+        ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
+        ["Contrato", payload.request.contract_name || "No informado"],
+        ["Cargo", payload.request.job_position_name || "No informado"],
+        ["Centro de costo", payload.request.cost_center_name || payload.request.cost_center_code || "No informado"],
+        ["Vacantes", payload.case.requested_vacancies ?? "No informado"],
+        ["Ingreso solicitado", formatDate(payload.request.requested_entry_date)],
+        ["Inicio de contrato", formatDate(payload.request.start_date)],
+      ];
 
   const html = `
     <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
@@ -212,14 +271,27 @@ function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, action
 
   const text = [
     intro,
-    `Caso: ${payload.case.case_code || "No informado"}`,
-    `Solicitante: ${payload.request.requester_name || payload.request.requester_email || "No informado"}`,
-    `Contrato: ${payload.request.contract_name || "No informado"}`,
-    `Cargo: ${payload.request.job_position_name || "No informado"}`,
-    `Centro de costo: ${payload.request.cost_center_name || payload.request.cost_center_code || "No informado"}`,
-    `Vacantes: ${payload.case.requested_vacancies ?? "No informado"}`,
-    `Ingreso solicitado: ${formatDate(payload.request.requested_entry_date)}`,
-    `Inicio de contrato: ${formatDate(payload.request.start_date)}`,
+    ...(isInternalMobility
+      ? [
+          `Folio: ${payload.request.folio}`,
+          `Solicitante: ${payload.request.requester_name || payload.request.requester_email || "No informado"}`,
+          `Trabajador: ${payload.request.employee_name || "No informado"}`,
+          `Cargo destino: ${payload.request.job_position_name || "No informado"}`,
+          `Área destino: ${payload.request.contract_name || "No informado"}`,
+          `Empresa actual: ${payload.request.current_company_name || "No informado"}`,
+          `Empresa destino: ${payload.request.destination_company_name || "No informado"}`,
+          `Requiere finiquito: ${payload.request.requires_termination ? "Sí" : "No"}`,
+        ]
+      : [
+          `Caso: ${payload.case.case_code || "No informado"}`,
+          `Solicitante: ${payload.request.requester_name || payload.request.requester_email || "No informado"}`,
+          `Contrato: ${payload.request.contract_name || "No informado"}`,
+          `Cargo: ${payload.request.job_position_name || "No informado"}`,
+          `Centro de costo: ${payload.request.cost_center_name || payload.request.cost_center_code || "No informado"}`,
+          `Vacantes: ${payload.case.requested_vacancies ?? "No informado"}`,
+          `Ingreso solicitado: ${formatDate(payload.request.requested_entry_date)}`,
+          `Inicio de contrato: ${formatDate(payload.request.start_date)}`,
+        ]),
     actionUrl ? `Abrir bandeja: ${actionUrl}` : null,
   ]
     .filter(Boolean)

@@ -25,6 +25,8 @@ export function DashboardHome() {
     () => [
       { table: "hiring_requests" },
       { table: "hiring_request_approvals" },
+      { table: "internal_mobility_requests" },
+      { table: "internal_mobility_request_approvals" },
       { table: "recruitment_cases" },
       { table: "recruitment_case_candidates" },
       { table: "candidate_stage_approvals" },

@@ -3,6 +3,7 @@ import type { WhoApprovalCause } from "../../recruitment/services/hiringControl"
 export interface DashboardTaskItem {
   id: string;
   type: string;
+  module_code?: string | null;
   approval_id?: number | null;
   case_candidate_id?: string | null;
   step_code?: string | null;
@@ -30,6 +31,14 @@ export interface DashboardTaskItem {
   approval_comment?: string | null;
   requested_by_name?: string | null;
   who_causes?: WhoApprovalCause[] | null;
+  employee_name?: string | null;
+  current_company_name?: string | null;
+  destination_company_name?: string | null;
+  source_job_title?: string | null;
+  source_area_name?: string | null;
+  destination_area_name?: string | null;
+  requires_termination?: boolean | null;
+  mobility_motive?: string | null;
   title?: string;
   subtitle?: string;
   status_code: string;
@@ -41,6 +50,7 @@ export interface DashboardTaskItem {
 export interface DashboardApprovalTrackingItem {
   id: string;
   type?: string;
+  module_code?: string | null;
   approval_id?: number | null;
   hiring_request_id?: string | null;
   folio?: string | null;
@@ -64,6 +74,14 @@ export interface DashboardApprovalTrackingItem {
   approval_comment?: string | null;
   requested_by_name?: string | null;
   who_causes?: WhoApprovalCause[] | null;
+  employee_name?: string | null;
+  current_company_name?: string | null;
+  destination_company_name?: string | null;
+  source_job_title?: string | null;
+  source_area_name?: string | null;
+  destination_area_name?: string | null;
+  requires_termination?: boolean | null;
+  mobility_motive?: string | null;
   current_step_code?: string | null;
   current_step_name?: string | null;
   current_approver_name?: string | null;

@@ -9,6 +9,7 @@ import {
   type TravelMethodology
 } from "../../../recruitment/services/hiringWorkflow";
 import { approveCandidateStageWho, rejectCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
+import { decideInternalMobilityApproval } from "../../../internal_mobility/services/internalMobilityApi";
 
 type TasksWidgetProps = {
   title: string;
@@ -64,15 +65,22 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
     setIsSubmitting(true);
     setSubmitError(null);
 
-    const { error } = await decideHiringApproval({
-      approvalId,
-      decision,
-      comment: comments.trim() || undefined,
-      travelMethodology:
-        decision === "approved" && targetTask?.step_code === "contracts_control"
-          ? travelMethodology || null
-          : null
-    });
+    const { error } =
+      targetTask?.module_code === "movilidad_interna"
+        ? await decideInternalMobilityApproval({
+            approvalId,
+            decision,
+            comment: comments.trim() || undefined
+          })
+        : await decideHiringApproval({
+            approvalId,
+            decision,
+            comment: comments.trim() || undefined,
+            travelMethodology:
+              decision === "approved" && targetTask?.step_code === "contracts_control"
+                ? travelMethodology || null
+                : null
+          });
 
     setIsSubmitting(false);
 
@@ -181,7 +189,7 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                       {isExpanded && (
                         <tr className="tracking-table-expanded-row">
                           <td colSpan={6}>
-                            {task.type === "approval" ? (
+                            {task.type === "approval" && task.module_code !== "movilidad_interna" ? (
                             <div className="expanded-case-detail-grid">
                               <div className="expanded-detail-section">
                                 <h4>Solicitud original</h4>
@@ -257,6 +265,82 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                                 </div>
                               </div>
                             </div>
+                            ) : null}
+
+                            {task.type === "approval" && task.module_code === "movilidad_interna" ? (
+                              <div className="expanded-case-detail-grid">
+                                <div className="expanded-detail-section">
+                                  <h4>Trabajador y solicitud</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Folio</small>
+                                      <strong>{task.folio ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Trabajador</small>
+                                      <strong>{task.employee_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Solicitó</small>
+                                      <strong>{task.requester_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Correo solicitante</small>
+                                      <strong>{task.requester_email ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="expanded-detail-section">
+                                  <h4>Origen</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Cargo actual</small>
+                                      <strong>{task.source_job_title ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Área actual</small>
+                                      <strong>{task.source_area_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Empresa actual</small>
+                                      <strong>{task.current_company_name ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="expanded-detail-section">
+                                  <h4>Destino</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Cargo destino</small>
+                                      <strong>{task.job_position_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Área destino</small>
+                                      <strong>{task.destination_area_name ?? task.contract_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Empresa destino</small>
+                                      <strong>{task.destination_company_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Requiere finiquito</small>
+                                      <strong>{task.requires_termination ? "Sí" : "No"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="expanded-detail-section">
+                                  <h4>Motivo</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div className="expanded-detail-full">
+                                      <small>Justificación</small>
+                                      <strong>{task.mobility_motive ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             ) : null}
 
                             {task.type === "who_approval" ? (
