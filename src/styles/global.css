@@ -2244,6 +2244,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 
 .expanded-detail-fields small {
@@ -2257,6 +2258,9 @@ textarea {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--title);
+  word-break: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 .expanded-case-loading {
