@@ -238,6 +238,12 @@ export function InternalMobilityPage() {
               />
             </div>
 
+            {workerContextQuery.error ? (
+              <div className="form-status form-status-error" style={{ marginTop: "1rem" }}>
+                {workerContextQuery.error.message}
+              </div>
+            ) : null}
+
             <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>Condiciones actuales</h3>
             <div className="contract-grid">
               <TextField
@@ -329,12 +335,6 @@ export function InternalMobilityPage() {
                 <span>Confirmo la solicitud y envío a aprobación.</span>
               </label>
             </div>
-
-            {workerContextQuery.error ? (
-              <div className="form-status form-status-error">
-                {workerContextQuery.error.message}
-              </div>
-            ) : null}
 
             {submitError ? <div className="form-status form-status-error">{submitError}</div> : null}
             {submitMessage ? <div className="form-status form-status-success">{submitMessage}</div> : null}
