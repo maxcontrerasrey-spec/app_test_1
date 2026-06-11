@@ -95,6 +95,8 @@ export type RecruitmentCaseListRow = {
   candidate_count: number;
   ready_candidates: number;
   hired_candidates: number;
+  mobility_active_count?: number;
+  mobility_approved_count?: number;
   start_date?: string | null;
   end_date?: string | null;
   shift_name?: string | null;

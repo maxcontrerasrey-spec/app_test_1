@@ -51,6 +51,27 @@ export type InternalMobilitySetupCatalogs = {
   bukJobTitles: string[];
   shiftCatalog: InternalMobilityShiftCatalogItem[];
   destinations: InternalMobilityDestination[];
+  eligibleFolios: InternalMobilityEligibleFolio[];
+};
+
+export type InternalMobilityEligibleFolio = {
+  recruitmentCaseId: string;
+  hiringRequestId: string;
+  folio: string | null;
+  caseCode: string;
+  jobPositionName: string;
+  contractName: string;
+  contractNumber: string | null;
+  shiftName: string | null;
+  costCenterCode: string;
+  costCenterName: string;
+  companyName: string | null;
+  requestedVacancies: number;
+  filledVacancies: number;
+  availableVacancies: number;
+  pendingMobilityCount: number;
+  approvedMobilityCount: number;
+  label: string;
 };
 
 export type InternalMobilityRequestStatus =
@@ -157,9 +178,7 @@ export type InternalMobilityRequestDetail = {
 
 export type CreateInternalMobilityRequestInput = {
   bukEmployeeId: string;
-  destinationContractId: number;
-  destinationJobTitle: string;
-  destinationShiftId: number;
+  recruitmentCaseId: string;
   motive: string;
   requesterSigned: boolean;
 };

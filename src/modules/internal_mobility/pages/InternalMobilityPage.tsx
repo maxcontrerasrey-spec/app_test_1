@@ -16,7 +16,7 @@ import {
   useInternalMobilityWorkerContext
 } from "../hooks/useInternalMobilityQueries";
 import { createInternalMobilityRequest } from "../services/internalMobilityApi";
-import type { InternalMobilityEligibleWorker } from "../types";
+import type { InternalMobilityEligibleFolio, InternalMobilityEligibleWorker } from "../types";
 
 const UNRESOLVED_COMPANY_LABEL = "No resuelta";
 const UNRESOLVED_SHIFT_LABEL = "No resuelto";
@@ -28,6 +28,14 @@ function resolveWorkerCompanyLabel(value: string | null | undefined) {
 
 function resolveWorkerShiftLabel(value: string | null | undefined) {
   return value ?? UNRESOLVED_SHIFT_LABEL;
+}
+
+function resolveFolioLabel(folio: InternalMobilityEligibleFolio | null) {
+  if (!folio) {
+    return PENDING_LABEL;
+  }
+
+  return folio.folio ?? folio.caseCode;
 }
 
 function toStatusLabel(value: string | null | undefined) {
@@ -51,9 +59,7 @@ export function InternalMobilityPage() {
   const queryClient = useQueryClient();
   const { displayName, jobTitle, email, user } = useAuth();
   const [selectedWorker, setSelectedWorker] = useState<InternalMobilityEligibleWorker | null>(null);
-  const [destinationJobTitle, setDestinationJobTitle] = useState("");
-  const [destinationContractId, setDestinationContractId] = useState("");
-  const [destinationShiftId, setDestinationShiftId] = useState("");
+  const [selectedFolioId, setSelectedFolioId] = useState("");
   const [motive, setMotive] = useState("");
   const [requesterSigned, setRequesterSigned] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,24 +98,20 @@ export function InternalMobilityPage() {
 
   const setupCatalogs = setupCatalogsQuery.data;
   const workerContext = workerContextQuery.data?.worker ?? null;
-  const destinationOptions = setupCatalogs?.destinations ?? [];
-  const jobTitleOptions = setupCatalogs?.bukJobTitles ?? [];
-  const shiftOptions = setupCatalogs?.shiftCatalog ?? [];
+  const eligibleFolios = setupCatalogs?.eligibleFolios ?? [];
 
-  const selectedDestination =
-    destinationOptions.find((destination) => String(destination.contractId) === destinationContractId) ??
+  const selectedFolio =
+    eligibleFolios.find((folio) => folio.recruitmentCaseId === selectedFolioId) ??
     null;
 
   const requiresTermination =
-    workerContext && selectedDestination && workerContext.currentCompanyName
-      ? workerContext.currentCompanyName !== selectedDestination.companyName
+    workerContext && selectedFolio && workerContext.currentCompanyName
+      ? workerContext.currentCompanyName !== selectedFolio.companyName
       : false;
 
   useEffect(() => {
     if (!selectedWorker) {
-      setDestinationJobTitle("");
-      setDestinationContractId("");
-      setDestinationShiftId("");
+      setSelectedFolioId("");
       setMotive("");
       setRequesterSigned(false);
       return;
@@ -117,40 +119,10 @@ export function InternalMobilityPage() {
 
     setSubmitError(null);
     setSubmitMessage(null);
-    setDestinationJobTitle("");
-    setDestinationContractId("");
-    setDestinationShiftId("");
+    setSelectedFolioId("");
     setMotive("");
     setRequesterSigned(false);
   }, [selectedWorker?.bukEmployeeId]);
-
-  useEffect(() => {
-    if (!workerContext) {
-      return;
-    }
-
-    setDestinationJobTitle((current) => current || workerContext.currentJobTitle);
-    setDestinationContractId((current) =>
-      current || (workerContext.matchedDestinationContractId ? String(workerContext.matchedDestinationContractId) : "")
-    );
-    setDestinationShiftId((current) => {
-      if (current) {
-        return current;
-      }
-
-      if (!workerContext.currentShiftName) {
-        return "";
-      }
-
-      const matchedShift = shiftOptions.find(
-        (shift) =>
-          shift.name.trim().toLowerCase() === workerContext.currentShiftName?.trim().toLowerCase() ||
-          shift.code.trim().toLowerCase() === workerContext.currentShiftName?.trim().toLowerCase()
-      );
-
-      return matchedShift ? String(matchedShift.id) : "";
-    });
-  }, [shiftOptions, workerContext]);
 
   const filteredRequests = useMemo(() => {
     const rows = requestsQuery.data ?? [];
@@ -179,9 +151,7 @@ export function InternalMobilityPage() {
   const isSubmitEnabled =
     Boolean(selectedWorker?.bukEmployeeId) &&
     Boolean(workerContext) &&
-    Boolean(destinationJobTitle.trim()) &&
-    Boolean(destinationContractId) &&
-    Boolean(destinationShiftId) &&
+    Boolean(selectedFolioId) &&
     Boolean(motive.trim()) &&
     requesterSigned &&
     !isSubmitting;
@@ -200,9 +170,7 @@ export function InternalMobilityPage() {
     try {
       const result = await createInternalMobilityRequest({
         bukEmployeeId: selectedWorker.bukEmployeeId,
-        destinationContractId: Number(destinationContractId),
-        destinationJobTitle: destinationJobTitle.trim(),
-        destinationShiftId: Number(destinationShiftId),
+        recruitmentCaseId: selectedFolioId,
         motive: motive.trim(),
         requesterSigned
       });
@@ -212,9 +180,7 @@ export function InternalMobilityPage() {
       );
       setSelectedRequestId(result.requestId);
       setSelectedWorker(null);
-      setDestinationJobTitle("");
-      setDestinationContractId("");
-      setDestinationShiftId("");
+      setSelectedFolioId("");
       setMotive("");
       setRequesterSigned(false);
 
@@ -260,10 +226,29 @@ export function InternalMobilityPage() {
                 readOnly
               />
             </div>
+            <div className="field-group mobility-block-spaced">
+              <SelectField
+                id="mobility-target-folio"
+                label="Folio destino"
+                value={selectedFolioId}
+                onChange={(event) => setSelectedFolioId(event.target.value)}
+                disabled={setupCatalogsQuery.isLoading || eligibleFolios.length === 0}
+                options={eligibleFolios.map((folio) => ({
+                  value: folio.recruitmentCaseId,
+                  label: folio.label
+                }))}
+                placeholder="Selecciona un folio abierto con cupos disponibles"
+              />
+            </div>
 
             {workerContextQuery.error ? (
               <div className="form-status form-status-error mobility-block-spaced">
                 {workerContextQuery.error.message}
+              </div>
+            ) : null}
+            {!setupCatalogsQuery.isLoading && !setupCatalogsQuery.error && eligibleFolios.length === 0 ? (
+              <div className="form-status form-status-error mobility-block-spaced">
+                No hay folios abiertos con cupos disponibles para generar una movilidad interna.
               </div>
             ) : null}
 
@@ -300,49 +285,50 @@ export function InternalMobilityPage() {
             <hr className="mobility-divider" />
             <h3 className="mobility-section-title">Condiciones destino</h3>
             <div className="mobility-compact-grid">
-              <SelectField
+              <TextField
+                id="mobility-destination-folio"
+                label="Folio seleccionado"
+                value={resolveFolioLabel(selectedFolio)}
+                readOnly
+              />
+              <TextField
                 id="mobility-destination-job"
-                label="Cargo nuevo"
-                value={destinationJobTitle}
-                onChange={(event) => setDestinationJobTitle(event.target.value)}
-                disabled={!selectedWorker || setupCatalogsQuery.isLoading}
-                options={jobTitleOptions.map((item) => ({ value: item, label: item }))}
-                placeholder="Selecciona el cargo destino"
+                label="Cargo destino"
+                value={selectedFolio?.jobPositionName ?? ""}
+                readOnly
               />
-              <SelectField
+              <TextField
                 id="mobility-destination-area"
-                label="Contrato / Área nuevo"
-                value={destinationContractId}
-                onChange={(event) => setDestinationContractId(event.target.value)}
-                disabled={!selectedWorker || setupCatalogsQuery.isLoading}
-                options={destinationOptions.map((item) => ({
-                  value: String(item.contractId),
-                  label: item.label
-                }))}
-                placeholder="Selecciona el destino"
+                label="Contrato / Área destino"
+                value={selectedFolio?.contractName ?? ""}
+                readOnly
               />
-              <SelectField
+              <TextField
                 id="mobility-destination-shift"
-                label="Turno nuevo"
-                value={destinationShiftId}
-                onChange={(event) => setDestinationShiftId(event.target.value)}
-                disabled={!selectedWorker || setupCatalogsQuery.isLoading}
-                options={shiftOptions.map((item) => ({
-                  value: String(item.id),
-                  label: item.name
-                }))}
-                placeholder="Selecciona el turno destino"
+                label="Turno destino"
+                value={selectedFolio?.shiftName ?? ""}
+                readOnly
               />
               <TextField
                 id="mobility-destination-company"
                 label="Empresa destino"
-                value={selectedDestination?.companyName ?? ""}
+                value={selectedFolio?.companyName ?? ""}
+                readOnly
+              />
+              <TextField
+                id="mobility-destination-vacancies"
+                label="Cupos disponibles"
+                value={
+                  selectedFolio
+                    ? `${selectedFolio.availableVacancies} de ${selectedFolio.requestedVacancies}`
+                    : ""
+                }
                 readOnly
               />
             </div>
 
 
-            {workerContext && selectedDestination && requiresTermination ? (
+            {workerContext && selectedFolio && requiresTermination ? (
               <div className="mobility-company-alert">
                 <strong>Atención:</strong> Esta movilidad implica un cambio de empresa. Será necesario
                 gestionar un finiquito especial antes de materializar el traslado.
@@ -407,23 +393,19 @@ export function InternalMobilityPage() {
               </div>
               <div>
                 <small>Empresa destino</small>
-                <strong>{selectedDestination?.companyName ?? PENDING_LABEL}</strong>
+                <strong>{selectedFolio?.companyName ?? PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Requiere finiquito</small>
-                <strong>
-                  {workerContext && selectedDestination && workerContext.currentCompanyName
-                    ? (requiresTermination ? "Sí" : "No")
-                    : PENDING_LABEL}
-                </strong>
+                <strong>{workerContext && selectedFolio && workerContext.currentCompanyName ? (requiresTermination ? "Sí" : "No") : PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Cargo actual</small>
                 <strong>{workerContext?.currentJobTitle ?? PENDING_LABEL}</strong>
               </div>
               <div>
-                <small>Cargo destino</small>
-                <strong>{destinationJobTitle || PENDING_LABEL}</strong>
+                <small>Folio destino</small>
+                <strong>{resolveFolioLabel(selectedFolio)}</strong>
               </div>
               <div>
                 <small>Área actual</small>
@@ -431,7 +413,7 @@ export function InternalMobilityPage() {
               </div>
               <div>
                 <small>Área destino</small>
-                <strong>{selectedDestination?.areaName ?? PENDING_LABEL}</strong>
+                <strong>{selectedFolio?.contractName ?? PENDING_LABEL}</strong>
               </div>
               <div>
                 <small>Turno actual</small>
@@ -439,13 +421,23 @@ export function InternalMobilityPage() {
               </div>
               <div>
                 <small>Turno destino</small>
+                <strong>{selectedFolio?.shiftName ?? PENDING_LABEL}</strong>
+              </div>
+              <div>
+                <small>Cargo destino</small>
+                <strong>{selectedFolio?.jobPositionName ?? PENDING_LABEL}</strong>
+              </div>
+              <div>
+                <small>Cupos disponibles</small>
                 <strong>
-                  {shiftOptions.find((item) => String(item.id) === destinationShiftId)?.name || PENDING_LABEL}
+                  {selectedFolio
+                    ? `${selectedFolio.availableVacancies} de ${selectedFolio.requestedVacancies}`
+                    : PENDING_LABEL}
                 </strong>
               </div>
             </div>
             <p className="helper-copy">
-              El cálculo de empresa y finiquito se validará nuevamente en backend al guardar.
+              El folio destino define cargo, contrato, turno y cupo disponible. Backend vuelve a validar todo al guardar.
             </p>
           </div>
       </div>

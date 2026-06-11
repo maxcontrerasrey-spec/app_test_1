@@ -112,6 +112,8 @@ export interface DashboardActiveFolioItem {
   candidate_count: number;
   ready_candidates: number;
   hired_candidates: number;
+  mobility_active_count?: number;
+  mobility_approved_count?: number;
 }
 
 export interface DashboardBirthdayItem {

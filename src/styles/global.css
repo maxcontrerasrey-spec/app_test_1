@@ -1350,7 +1350,7 @@ textarea {
 }
 
 .approval-detail-item-wide {
-  grid-column: span 5;
+  grid-column: span 4;
 }
 
 .approval-detail-item-xwide {
@@ -2370,6 +2370,11 @@ textarea {
 .candidate-circle-success {
   background: #dcfce7; /* Light green */
   color: #15803d;
+}
+
+.candidate-circle-warning {
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .candidate-circle-label {

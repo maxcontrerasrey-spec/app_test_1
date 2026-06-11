@@ -64,7 +64,7 @@ export function HiringProcessesView({
     return activeCases.filter((caseRow) => {
       let matchesFilter = false;
       if (caseFilter === null) {
-        matchesFilter = ["open", "screening", "ready_to_hire"].includes(caseRow.status);
+        matchesFilter = ["open", "sourcing", "screening", "ready_to_hire", "partially_filled"].includes(caseRow.status);
       } else if (caseFilter === "cancelled") {
         matchesFilter = ["cancelled", "closed_unfilled"].includes(caseRow.status);
       } else {
@@ -262,6 +262,14 @@ export function HiringProcessesView({
                               {caseRow.ready_candidates}
                             </span>
                             <span className="candidate-circle-label">Listos</span>
+                            {caseRow.mobility_active_count ? (
+                              <>
+                                <span className="candidate-circle candidate-circle-warning" title="Movilidades internas en aprobación asociadas al folio">
+                                  {caseRow.mobility_active_count}
+                                </span>
+                                <span className="candidate-circle-label">Movilidad</span>
+                              </>
+                            ) : null}
                           </div>
                         </td>
                         <td>{caseRow.requester_name ?? "No disponible"}</td>

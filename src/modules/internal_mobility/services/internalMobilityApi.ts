@@ -3,6 +3,7 @@ import type {
   CreateInternalMobilityRequestInput,
   CreateInternalMobilityRequestResult,
   InternalMobilityEligibleWorker,
+  InternalMobilityEligibleFolio,
   InternalMobilityRequestDetail,
   InternalMobilityRequestSummary,
   InternalMobilitySetupCatalogs,
@@ -72,7 +73,28 @@ function mapSetupCatalogs(payload: unknown): InternalMobilitySetupCatalogs {
       costCenterName: readText(item.cost_center_name),
       companyName: readText(item.company_name),
       label: readText(item.label)
-    }))
+    })),
+    eligibleFolios: asArray<Record<string, unknown>>(source.eligible_folios).map(
+      (item): InternalMobilityEligibleFolio => ({
+        recruitmentCaseId: readText(item.recruitment_case_id),
+        hiringRequestId: readText(item.hiring_request_id),
+        folio: readNullableText(item.folio),
+        caseCode: readText(item.case_code),
+        jobPositionName: readText(item.job_position_name),
+        contractName: readText(item.contract_name),
+        contractNumber: readNullableText(item.contract_number),
+        shiftName: readNullableText(item.shift_name),
+        costCenterCode: readText(item.cost_center_code),
+        costCenterName: readText(item.cost_center_name),
+        companyName: readNullableText(item.company_name),
+        requestedVacancies: Number(item.requested_vacancies ?? 0),
+        filledVacancies: Number(item.filled_vacancies ?? 0),
+        availableVacancies: Number(item.available_vacancies ?? 0),
+        pendingMobilityCount: Number(item.pending_mobility_count ?? 0),
+        approvedMobilityCount: Number(item.approved_mobility_count ?? 0),
+        label: readText(item.label)
+      })
+    )
   };
 }
 
@@ -297,9 +319,7 @@ export async function createInternalMobilityRequest(input: CreateInternalMobilit
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("submit_internal_mobility_request", {
     p_buk_employee_id: input.bukEmployeeId,
-    p_destination_contract_id: input.destinationContractId,
-    p_destination_job_title: input.destinationJobTitle,
-    p_destination_shift_id: input.destinationShiftId,
+    p_recruitment_case_id: input.recruitmentCaseId,
     p_motive: input.motive,
     p_requester_signed: input.requesterSigned
   });

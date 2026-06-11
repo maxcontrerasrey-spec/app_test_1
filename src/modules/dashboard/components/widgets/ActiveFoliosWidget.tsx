@@ -205,6 +205,14 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                             <span className="candidate-circle-label">Activos</span>
                             <span className="candidate-circle candidate-circle-success">{folio.ready_candidates}</span>
                             <span className="candidate-circle-label">Listos</span>
+                            {folio.mobility_active_count ? (
+                              <>
+                                <span className="candidate-circle candidate-circle-warning" title="Movilidades internas en aprobación asociadas al folio">
+                                  {folio.mobility_active_count}
+                                </span>
+                                <span className="candidate-circle-label">Movilidad</span>
+                              </>
+                            ) : null}
                           </div>
                         </td>
                         <td>{getDaysSince(folio.opened_at) ?? "—"}</td>

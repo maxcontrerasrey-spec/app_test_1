@@ -159,11 +159,11 @@ export function ApprovalModal({
         </div>
 
         <div className="approval-detail-grid">
-          <div className="approval-detail-item approval-detail-item-tiny">
+          <div className="approval-detail-item approval-detail-item-regular">
             <small>Solicitó</small>
             <strong>{hr?.requester_name ?? "No disponible"}</strong>
           </div>
-          <div className="approval-detail-item approval-detail-item-compact">
+          <div className="approval-detail-item approval-detail-item-wide">
             <small>Cargo solicitado</small>
             <strong>{hr?.job_position_name ?? "No disponible"}</strong>
           </div>
@@ -175,23 +175,15 @@ export function ApprovalModal({
             <small>Vacantes</small>
             <strong>{hr?.vacancies ?? 0}</strong>
           </div>
-          <div className="approval-detail-item approval-detail-item-tiny">
+          <div className="approval-detail-item approval-detail-item-compact">
             <small>Ingreso solicitado</small>
             <strong>{formatDateValue(hr?.requested_entry_date)}</strong>
           </div>
-          <div className="approval-detail-item approval-detail-item-tiny">
-            <small>Inicio contrato</small>
-            <strong>{formatDateValue(hr?.start_date)}</strong>
-          </div>
-          <div className="approval-detail-item approval-detail-item-tiny">
-            <small>Fin contrato</small>
-            <strong>{formatDateValue(hr?.end_date)}</strong>
-          </div>
-          <div className="approval-detail-item approval-detail-item-tiny">
+          <div className="approval-detail-item approval-detail-item-compact">
             <small>Turno</small>
             <strong>{hr?.shift_name ?? "No disponible"}</strong>
           </div>
-          <div className="approval-detail-item approval-detail-item-tiny">
+          <div className="approval-detail-item approval-detail-item-compact">
             <small>Creado</small>
             <strong>{formatDateTimeValue(approvalData.created_at)}</strong>
           </div>
