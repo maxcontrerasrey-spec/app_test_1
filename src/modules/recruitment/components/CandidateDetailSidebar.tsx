@@ -402,11 +402,11 @@ export function CandidateDetailSidebar({
                   <strong>{formatDateTimeValue(latestWhoApproval.requested_at)}</strong>
                 </div>
                 <div>
-                  <small>Aprobado por</small>
+                  <small>{latestWhoApproval.status === "rejected" ? "Rechazado por" : "Aprobado por"}</small>
                   <strong>{latestWhoApproval.approved_by_name ?? "Pendiente"}</strong>
                 </div>
                 <div>
-                  <small>Fecha aprobación</small>
+                  <small>{latestWhoApproval.status === "rejected" ? "Fecha rechazo" : "Fecha aprobación"}</small>
                   <strong>{formatDateTimeValue(latestWhoApproval.approved_at)}</strong>
                 </div>
               </div>

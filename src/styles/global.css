@@ -241,13 +241,14 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
   flex: 0 0 auto;
-  align-self: start;
+  align-self: center;
   justify-self: start;
   border-radius: 0;
   background: transparent;
 }
+
+
 
 .app-logo {
   display: block;
@@ -454,6 +455,7 @@ textarea {
   border-right: 0;
   border-radius: 0;
   background: rgba(var(--surface-rgb), 0.98);
+  position: relative;
 }
 
 .top-nav-mega-grid {
@@ -497,44 +499,52 @@ textarea {
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 260px;
+  right: 0;
   background: rgba(var(--surface-rgb), 0.98);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  flex-direction: column;
-  padding: 0.5rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding: 0.2rem 0;
   z-index: 50;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(10px);
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 .top-nav-mega-link:hover .top-nav-third-tray {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
 }
 
 .top-nav-third-link {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.9rem;
-  color: var(--text-muted);
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.5rem 1.25rem;
+  border-right: 1px solid var(--border-subtle);
+  background: transparent;
+  text-align: left;
   text-decoration: none;
-  transition: background 140ms ease, color 140ms ease;
+  color: var(--text-secondary);
+}
+
+.top-nav-third-link:last-child {
+  border-right: 0;
 }
 
 .top-nav-third-link:hover {
-  background: var(--surface-hover);
+  background: transparent;
   color: var(--title);
 }
 
-.top-nav-mega-link-active {
+.top-nav-third-link-active {
+  color: var(--title);
   background: transparent;
 }
 
