@@ -98,7 +98,29 @@ type WhoApprovalPayload = {
   route?: string | null;
 };
 
-type EmailPayload = PendingApprovalPayload | RecruitmentHandoffPayload | WhoApprovalPayload;
+type RejectionPayload = {
+  kind: "rejection";
+  event_key: string;
+  to: Recipient[];
+  approval: {
+    id: number;
+    step_name: string;
+    comments: string | null;
+  };
+  request: {
+    id: string;
+    folio: string | number;
+    request_context?: "hiring" | "internal_mobility" | null;
+    module_label?: string | null;
+    requester_name: string | null;
+    requester_email: string | null;
+    contract_name: string | null;
+    job_position_name: string | null;
+  };
+  route?: string | null;
+};
+
+type EmailPayload = PendingApprovalPayload | RecruitmentHandoffPayload | WhoApprovalPayload | RejectionPayload;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -197,7 +219,7 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
       ];
 
   const html = `
-    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
       <h2 style="margin-bottom: 12px;">${payload.is_reminder ? "Recordatorio: " : ""}${isInternalMobility ? "Aprobación pendiente de movilidad interna" : "Aprobación pendiente de contratación"}</h2>
       <p>${escapeHtml(intro)}</p>
       <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
@@ -274,7 +296,7 @@ function buildWhoApprovalEmail(payload: WhoApprovalPayload, actionUrl: string | 
   ];
 
   const html = `
-    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
       <h2 style="margin-bottom: 12px;">${payload.is_reminder ? "Recordatorio: " : ""}Evaluación de Antecedentes (WHO)</h2>
       <p>${escapeHtml(intro)}</p>
       <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
@@ -302,6 +324,64 @@ function buildWhoApprovalEmail(payload: WhoApprovalPayload, actionUrl: string | 
     intro,
     ...details.map(([label, value]) => `${label}: ${value}`),
     actionUrl ? `Abrir bandeja: ${actionUrl}` : null,
+    "",
+    "---",
+    "Este correo es de generación automática y no se debe responder.",
+    "Atte.,",
+    "Equipo de Excelencia Operacional"
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return { subject, html, text };
+}
+
+function buildRejectionEmail(payload: RejectionPayload, actionUrl: string | null) {
+  const isInternalMobility = payload.request.request_context === "internal_mobility";
+  const moduleLabel = payload.request.module_label || (isInternalMobility ? "Movilidad Interna" : "Contratación");
+  const subject = `Rechazo solicitud de ${moduleLabel}: folio ${payload.request.folio}`;
+
+  const intro = isInternalMobility
+    ? `Lamentamos informarte que la solicitud ${payload.request.folio} de movilidad interna fue rechazada en la etapa "${payload.approval.step_name}".`
+    : `Lamentamos informarte que el folio ${payload.request.folio} fue rechazado en la etapa "${payload.approval.step_name}".`;
+
+  const details = [
+    ["Folio", payload.request.folio],
+    ["Etapa de rechazo", payload.approval.step_name],
+    ["Motivo/Comentario", payload.approval.comments || "Sin comentarios adicionales"],
+    ["Cargo", payload.request.job_position_name || "No informado"],
+    ["Área destino", payload.request.contract_name || "No informado"],
+  ];
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
+      <h2 style="margin-bottom: 12px; color: #b91c1c;">Solicitud rechazada</h2>
+      <p>${escapeHtml(intro)}</p>
+      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <tbody>
+          ${details
+            .map(
+              ([label, value]) => `
+                <tr>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: 600; width: 180px;">${escapeHtml(label)}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${escapeHtml(value)}</td>
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+      ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Ver detalle</a></p>` : ""}
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
+      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
+    </div>
+  `;
+
+  const text = [
+    intro,
+    ...details.map(([label, value]) => `${label}: ${value}`),
+    actionUrl ? `Ver detalle: ${actionUrl}` : null,
     "",
     "---",
     "Este correo es de generación automática y no se debe responder.",
@@ -345,7 +425,7 @@ function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, action
       ];
 
   const html = `
-    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
       <h2 style="margin-bottom: 12px;">${isInternalMobility ? "Nuevo caso de movilidad interna para Reclutamiento" : "Nuevo caso para Reclutamiento"}</h2>
       <p>${escapeHtml(intro)}</p>
       <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
@@ -416,6 +496,10 @@ function buildEmail(payload: EmailPayload, appBaseUrl: string | null) {
     return buildWhoApprovalEmail(payload, actionUrl);
   }
 
+  if (payload.kind === "rejection") {
+    return buildRejectionEmail(payload, actionUrl);
+  }
+
   return buildRecruitmentHandoffEmail(payload, actionUrl);
 }
 
@@ -460,7 +544,7 @@ Deno.serve(async (req) => {
     const payload = (await req.json()) as EmailPayload;
     const recipients = normalizeRecipients(payload.to);
 
-    if (!payload?.kind || (payload.kind !== "pending_approval" && payload.kind !== "recruitment_handoff" && payload.kind !== "who_approval")) {
+    if (!payload?.kind || (payload.kind !== "pending_approval" && payload.kind !== "recruitment_handoff" && payload.kind !== "who_approval" && payload.kind !== "rejection")) {
       return new Response(JSON.stringify({ error: "Payload invalido" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
