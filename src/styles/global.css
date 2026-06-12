@@ -440,9 +440,7 @@ textarea {
 }
 
 .top-nav-mega-shell {
-  width: min(100%, 1480px);
-  margin: 0 auto;
-  padding: 0 1.5rem;
+  width: 100%;
 }
 
 .top-nav-mega-panel {
@@ -458,6 +456,9 @@ textarea {
 }
 
 .top-nav-mega-grid {
+  width: min(100%, 1480px);
+  margin: 0 auto;
+  padding: 0 1.5rem;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;
@@ -504,17 +505,22 @@ textarea {
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   box-shadow: none;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 0.5rem 1.5rem;
   z-index: 50;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.top-nav-third-content {
+  width: min(100%, 1480px);
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 1.5rem;
   overflow-x: auto;
 }
 

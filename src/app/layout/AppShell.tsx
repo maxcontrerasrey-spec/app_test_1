@@ -454,22 +454,24 @@ export function AppShell() {
                     onMouseEnter={() => handleMouseEnterMegaItem(item.label)}
                     onMouseLeave={() => handleMouseLeaveMegaItem()}
                   >
-                    {item.items.map((subItem) => (
-                      <NavLink
-                        key={subItem.to}
-                        to={subItem.to}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          clearPinnedNavigation();
-                        }}
-                        className="top-nav-third-link"
-                      >
-                        <span className="top-nav-mega-icon" style={{ width: "1.5rem", height: "1.5rem" }}>
-                          <SubmenuIcon iconKey={subItem.iconKey} />
-                        </span>
-                        <strong>{subItem.label}</strong>
-                      </NavLink>
-                    ))}
+                    <div className="top-nav-third-content">
+                      {item.items.map((subItem) => (
+                        <NavLink
+                          key={subItem.to}
+                          to={subItem.to}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearPinnedNavigation();
+                          }}
+                          className="top-nav-third-link"
+                        >
+                          <span className="top-nav-mega-icon" style={{ width: "1.5rem", height: "1.5rem" }}>
+                            <SubmenuIcon iconKey={subItem.iconKey} />
+                          </span>
+                          <strong>{subItem.label}</strong>
+                        </NavLink>
+                      ))}
+                    </div>
                   </div>
                 );
               })}
