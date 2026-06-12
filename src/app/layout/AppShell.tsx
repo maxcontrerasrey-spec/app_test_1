@@ -389,34 +389,35 @@ export function AppShell() {
             <div className="top-nav-mega-panel">
               <div className="top-nav-mega-grid">
                 {openModule.items.map((item) => (
-                  <NavLink
-                    key={item.label}
-                    to={item.to || "#"}
-                    onClick={(e) => {
-                      if (item.items && item.items.length > 0) {
-                        e.preventDefault();
-                      } else {
-                        clearPinnedNavigation();
+                  <div key={item.label} className="top-nav-mega-item-wrapper" style={{ position: 'static' }}>
+                    <NavLink
+                      to={item.to || "#"}
+                      onClick={(e) => {
+                        if (item.items && item.items.length > 0) {
+                          e.preventDefault();
+                        } else {
+                          clearPinnedNavigation();
+                        }
+                      }}
+                      className={({ isActive }) =>
+                        isActive && !item.items
+                          ? "top-nav-mega-link top-nav-mega-link-active"
+                          : "top-nav-mega-link"
                       }
-                    }}
-                    className={({ isActive }) =>
-                      isActive && !item.items
-                        ? "top-nav-mega-link top-nav-mega-link-active"
-                        : "top-nav-mega-link"
-                    }
-                  >
-                    <span className="top-nav-mega-icon">
-                      <SubmenuIcon iconKey={item.iconKey} />
-                    </span>
-                    <span className="top-nav-mega-copy">
-                      <strong>{item.label}</strong>
-                    </span>
-
-                    {item.items && item.items.length > 0 && (
-                      <span className="top-nav-indicator" style={{ marginLeft: "auto", fontSize: "0.8rem" }}>
-                        ▾
+                    >
+                      <span className="top-nav-mega-icon">
+                        <SubmenuIcon iconKey={item.iconKey} />
                       </span>
-                    )}
+                      <span className="top-nav-mega-copy">
+                        <strong>{item.label}</strong>
+                      </span>
+
+                      {item.items && item.items.length > 0 && (
+                        <span className="top-nav-indicator" style={{ marginLeft: "auto", fontSize: "0.8rem" }}>
+                          ▾
+                        </span>
+                      )}
+                    </NavLink>
 
                     {item.items && item.items.length > 0 && (
                       <div className="top-nav-third-tray">
@@ -438,7 +439,7 @@ export function AppShell() {
                         ))}
                       </div>
                     )}
-                  </NavLink>
+                  </div>
                 ))}
               </div>
             </div>

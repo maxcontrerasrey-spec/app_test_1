@@ -515,7 +515,7 @@ textarea {
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.top-nav-mega-link:hover .top-nav-third-tray {
+.top-nav-mega-item-wrapper:hover .top-nav-third-tray {
   opacity: 1;
   visibility: visible;
 }
