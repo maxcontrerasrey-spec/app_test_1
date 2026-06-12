@@ -287,7 +287,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                     </div>
                                   </div>
                                 </div>
-                                <div className="expanded-detail-section">
+                                <div className="expanded-detail-section expanded-detail-section-full">
                                   <h4>Decisión de aprobación</h4>
                                   <div className="expanded-detail-fields">
                                     <div>

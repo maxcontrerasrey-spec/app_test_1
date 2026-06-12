@@ -2645,6 +2645,16 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   border-right: 1px solid var(--border-subtle);
 }
 
+.expanded-detail-section-full {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border-subtle);
+  border-right: none;
+}
+
+.expanded-detail-section-full .expanded-detail-fields {
+  grid-template-columns: repeat(4, 1fr);
+}
+
 .expanded-detail-section:last-child {
   border-right: none;
 }

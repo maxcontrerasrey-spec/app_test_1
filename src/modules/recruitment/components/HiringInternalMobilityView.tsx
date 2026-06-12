@@ -278,7 +278,7 @@ export function HiringInternalMobilityView({
                 </div>
               </div>
 
-              <div className="expanded-detail-section">
+              <div className="expanded-detail-section expanded-detail-section-full">
                 <h4>Motivo del cambio</h4>
                 <p className="mobility-detail-copy">{requestDetailQuery.data.request.motive}</p>
               </div>
