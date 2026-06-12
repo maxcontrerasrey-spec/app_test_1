@@ -569,7 +569,7 @@ export function InternalMobilityPage() {
       </div>
 
       {selectedRequestId ? (
-        <div className="approval-modal-backdrop" role="presentation" onClick={() => setSelectedRequestId(null)}>
+        <div className="approval-modal-backdrop" role="presentation" onClick={() => setSelectedRequestId("")}>
           <div
             className="approval-modal-card mobility-modal-override"
             role="dialog"
@@ -580,7 +580,7 @@ export function InternalMobilityPage() {
             <button
               type="button"
               className="modal-close-button"
-              onClick={() => setSelectedRequestId(null)}
+              onClick={() => setSelectedRequestId("")}
               aria-label="Cerrar detalle"
             >
               ✕
