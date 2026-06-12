@@ -109,6 +109,21 @@ export function InternalMobilityPage() {
       ? workerContext.currentCompanyName !== selectedFolio.companyName
       : false;
 
+  const requiresRoleChange =
+    workerContext && selectedFolio && workerContext.currentJobTitle
+      ? workerContext.currentJobTitle !== selectedFolio.jobPositionName
+      : false;
+
+  const requiresShiftChange =
+    workerContext && selectedFolio && workerContext.currentShiftName
+      ? workerContext.currentShiftName !== selectedFolio.shiftName
+      : false;
+
+  const changedElements: string[] = [];
+  if (requiresTermination) changedElements.push("empresa");
+  if (requiresRoleChange) changedElements.push("cargo");
+  if (requiresShiftChange) changedElements.push("turno");
+
   useEffect(() => {
     if (!selectedWorker) {
       setSelectedFolioId("");
@@ -328,10 +343,13 @@ export function InternalMobilityPage() {
             </div>
 
 
-            {workerContext && selectedFolio && requiresTermination ? (
+            {workerContext && selectedFolio && changedElements.length > 0 ? (
               <div className="mobility-company-alert">
-                <strong>Atención:</strong> Esta movilidad implica un cambio de empresa. Será necesario
-                gestionar un finiquito especial antes de materializar el traslado.
+                <strong>Atención:</strong> Esta movilidad implica cambios en:{" "}
+                <strong>{changedElements.join(", ")}</strong>.{" "}
+                {requiresTermination && "Será necesario gestionar un finiquito especial por el cambio de empresa antes de materializar el traslado. "}
+                {(requiresRoleChange || requiresShiftChange) &&
+                  "Se deberá generar un anexo de contrato por las nuevas condiciones."}
               </div>
             ) : null}
 
