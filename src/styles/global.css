@@ -2041,7 +2041,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .mobility-history-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 
@@ -2471,8 +2471,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-case-detail-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
+  grid-template-columns: 1fr;
   background: var(--surface);
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
@@ -2480,11 +2479,11 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-detail-section {
   padding: 1.25rem 1.5rem;
-  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .expanded-detail-section:last-child {
-  border-right: none;
+  border-bottom: none;
 }
 
 .expanded-detail-section h4 {
@@ -2499,8 +2498,8 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-detail-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
 }
 
 .expanded-detail-field-full {
