@@ -395,17 +395,27 @@ export function InternalMobilityPage() {
                 <small>Empresa destino</small>
                 <strong>{selectedFolio?.companyName ?? PENDING_LABEL}</strong>
               </div>
+              
               <div>
-                <small>Requiere finiquito</small>
-                <strong>{workerContext && selectedFolio && workerContext.currentCompanyName ? (requiresTermination ? "Sí" : "No") : PENDING_LABEL}</strong>
+                <small>Folio destino</small>
+                <strong>{resolveFolioLabel(selectedFolio)}</strong>
               </div>
               <div>
                 <small>Cargo actual</small>
                 <strong>{workerContext?.currentJobTitle ?? PENDING_LABEL}</strong>
               </div>
               <div>
-                <small>Folio destino</small>
-                <strong>{resolveFolioLabel(selectedFolio)}</strong>
+                <small>Cargo destino</small>
+                <strong>{selectedFolio?.jobPositionName ?? PENDING_LABEL}</strong>
+              </div>
+
+              <div>
+                <small>Cupos disponibles</small>
+                <strong>
+                  {selectedFolio
+                    ? `${selectedFolio.availableVacancies} de ${selectedFolio.requestedVacancies}`
+                    : PENDING_LABEL}
+                </strong>
               </div>
               <div>
                 <small>Área actual</small>
@@ -415,6 +425,11 @@ export function InternalMobilityPage() {
                 <small>Área destino</small>
                 <strong>{selectedFolio?.contractName ?? PENDING_LABEL}</strong>
               </div>
+
+              <div>
+                <small>Requiere finiquito</small>
+                <strong>{workerContext && selectedFolio && workerContext.currentCompanyName ? (requiresTermination ? "Sí" : "No") : PENDING_LABEL}</strong>
+              </div>
               <div>
                 <small>Turno actual</small>
                 <strong>{resolveWorkerShiftLabel(workerContext?.currentShiftName)}</strong>
@@ -422,18 +437,6 @@ export function InternalMobilityPage() {
               <div>
                 <small>Turno destino</small>
                 <strong>{selectedFolio?.shiftName ?? PENDING_LABEL}</strong>
-              </div>
-              <div>
-                <small>Cargo destino</small>
-                <strong>{selectedFolio?.jobPositionName ?? PENDING_LABEL}</strong>
-              </div>
-              <div>
-                <small>Cupos disponibles</small>
-                <strong>
-                  {selectedFolio
-                    ? `${selectedFolio.availableVacancies} de ${selectedFolio.requestedVacancies}`
-                    : PENDING_LABEL}
-                </strong>
               </div>
             </div>
             <p className="helper-copy">
