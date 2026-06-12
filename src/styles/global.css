@@ -1617,6 +1617,9 @@ textarea {
   border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow-soft);
+  overflow-y: auto;
+}
+
 .mobility-detail-summary {
   cursor: pointer;
   padding: 1rem 1.5rem;
