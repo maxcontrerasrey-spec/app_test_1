@@ -8,6 +8,7 @@ type Recipient = {
 type PendingApprovalPayload = {
   kind: "pending_approval";
   event_key: string;
+  is_reminder?: boolean;
   to: Recipient[];
   approval: {
     id: number;
@@ -71,7 +72,33 @@ type RecruitmentHandoffPayload = {
   route?: string | null;
 };
 
-type EmailPayload = PendingApprovalPayload | RecruitmentHandoffPayload;
+type WhoApprovalPayload = {
+  kind: "who_approval";
+  event_key: string;
+  is_reminder?: boolean;
+  to: Recipient[];
+  approval: {
+    id: number;
+    stage_code: string;
+    created_at: string | null;
+  };
+  candidate: {
+    id: string;
+    full_name: string | null;
+    rut: string | null;
+  };
+  request: {
+    id: string;
+    folio: string | number;
+    requester_name: string | null;
+    requester_email: string | null;
+    job_position_name: string | null;
+    contract_name: string | null;
+  };
+  route?: string | null;
+};
+
+type EmailPayload = PendingApprovalPayload | RecruitmentHandoffPayload | WhoApprovalPayload;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -137,13 +164,17 @@ function buildActionUrl(payload: EmailPayload, appBaseUrl: string | null): strin
 function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: string | null) {
   const stepLabel = payload.approval.step_name || payload.approval.step_code;
   const isInternalMobility = payload.request.request_context === "internal_mobility";
+  const subjectPrefix = payload.is_reminder ? "RECORDATORIO: Pendiente aprobación" : "Pendiente aprobación";
   const subject = isInternalMobility
-    ? `Pendiente aprobación ${payload.request.module_label || "Movilidad Interna"}: folio ${payload.request.folio}`
-    : `Pendiente aprobación ${stepLabel}: folio ${payload.request.folio}`;
+    ? `${subjectPrefix} ${payload.request.module_label || "Movilidad Interna"}: folio ${payload.request.folio}`
+    : `${subjectPrefix} ${stepLabel}: folio ${payload.request.folio}`;
 
+  const introPrefix = payload.is_reminder ? "Este es un recordatorio de que la" : "La";
+  const introPrefixEl = payload.is_reminder ? "Este es un recordatorio de que el" : "El";
+  const introSuffix = payload.is_reminder ? "sigue pendiente" : "quedó pendiente";
   const intro = isInternalMobility
-    ? `La solicitud ${payload.request.folio} de movilidad interna quedó pendiente para ${stepLabel}.`
-    : `El folio ${payload.request.folio} quedó pendiente para ${stepLabel}.`;
+    ? `${introPrefix} solicitud ${payload.request.folio} de movilidad interna ${introSuffix} para ${stepLabel}.`
+    : `${introPrefixEl} folio ${payload.request.folio} ${introSuffix} para ${stepLabel}.`;
   const details = isInternalMobility
     ? [
         ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
@@ -167,7 +198,7 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
 
   const html = `
     <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
-      <h2 style="margin-bottom: 12px;">${isInternalMobility ? "Aprobación pendiente de movilidad interna" : "Aprobación pendiente de contratación"}</h2>
+      <h2 style="margin-bottom: 12px;">${payload.is_reminder ? "Recordatorio: " : ""}${isInternalMobility ? "Aprobación pendiente de movilidad interna" : "Aprobación pendiente de contratación"}</h2>
       <p>${escapeHtml(intro)}</p>
       <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
         <tbody>
@@ -184,6 +215,9 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
         </tbody>
       </table>
       ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Abrir bandeja de aprobación</a></p>` : ""}
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
+      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
     </div>
   `;
 
@@ -210,6 +244,69 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
           `Inicio de contrato: ${formatDate(payload.request.start_date)}`,
         ]),
     actionUrl ? `Abrir bandeja: ${actionUrl}` : null,
+    "",
+    "---",
+    "Este correo es de generación automática y no se debe responder.",
+    "Atte.,",
+    "Equipo de Excelencia Operacional"
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return { subject, html, text };
+}
+
+function buildWhoApprovalEmail(payload: WhoApprovalPayload, actionUrl: string | null) {
+  const subjectPrefix = payload.is_reminder ? "RECORDATORIO: Pendiente evaluación" : "Pendiente evaluación";
+  const subject = `${subjectPrefix} antecedentes: candidato ${payload.candidate.full_name || payload.candidate.rut || "No informado"}`;
+
+  const introPrefix = payload.is_reminder ? "Este es un recordatorio de que el" : "El";
+  const introSuffix = payload.is_reminder ? "sigue pendiente" : "quedó pendiente";
+  const intro = `${introPrefix} candidato ${payload.candidate.full_name || payload.candidate.rut || "No informado"} ${introSuffix} de evaluación de antecedentes (WHO).`;
+
+  const details = [
+    ["Candidato", payload.candidate.full_name || "No informado"],
+    ["RUT", payload.candidate.rut || "No informado"],
+    ["Folio origen", payload.request.folio],
+    ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
+    ["Cargo al que postula", payload.request.job_position_name || "No informado"],
+    ["Área destino", payload.request.contract_name || "No informado"],
+  ];
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
+      <h2 style="margin-bottom: 12px;">${payload.is_reminder ? "Recordatorio: " : ""}Evaluación de Antecedentes (WHO)</h2>
+      <p>${escapeHtml(intro)}</p>
+      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <tbody>
+          ${details
+            .map(
+              ([label, value]) => `
+                <tr>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: 600; width: 180px;">${escapeHtml(label)}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${escapeHtml(value)}</td>
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+      ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Abrir control de contrataciones</a></p>` : ""}
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
+      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
+    </div>
+  `;
+
+  const text = [
+    intro,
+    ...details.map(([label, value]) => `${label}: ${value}`),
+    actionUrl ? `Abrir bandeja: ${actionUrl}` : null,
+    "",
+    "---",
+    "Este correo es de generación automática y no se debe responder.",
+    "Atte.,",
+    "Equipo de Excelencia Operacional"
   ]
     .filter(Boolean)
     .join("\n");
@@ -266,6 +363,9 @@ function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, action
         </tbody>
       </table>
       ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Abrir control de contrataciones</a></p>` : ""}
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
+      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
     </div>
   `;
 
@@ -293,6 +393,11 @@ function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, action
           `Inicio de contrato: ${formatDate(payload.request.start_date)}`,
         ]),
     actionUrl ? `Abrir bandeja: ${actionUrl}` : null,
+    "",
+    "---",
+    "Este correo es de generación automática y no se debe responder.",
+    "Atte.,",
+    "Equipo de Excelencia Operacional"
   ]
     .filter(Boolean)
     .join("\n");
@@ -305,6 +410,10 @@ function buildEmail(payload: EmailPayload, appBaseUrl: string | null) {
 
   if (payload.kind === "pending_approval") {
     return buildPendingApprovalEmail(payload, actionUrl);
+  }
+
+  if (payload.kind === "who_approval") {
+    return buildWhoApprovalEmail(payload, actionUrl);
   }
 
   return buildRecruitmentHandoffEmail(payload, actionUrl);
@@ -351,7 +460,7 @@ Deno.serve(async (req) => {
     const payload = (await req.json()) as EmailPayload;
     const recipients = normalizeRecipients(payload.to);
 
-    if (!payload?.kind || (payload.kind !== "pending_approval" && payload.kind !== "recruitment_handoff")) {
+    if (!payload?.kind || (payload.kind !== "pending_approval" && payload.kind !== "recruitment_handoff" && payload.kind !== "who_approval")) {
       return new Response(JSON.stringify({ error: "Payload invalido" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
