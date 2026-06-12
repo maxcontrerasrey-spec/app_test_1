@@ -9,6 +9,21 @@
 - [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
 - [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
 
+## Ajuste de permisos entre Movilidad Interna y Control de Contrataciones
+
+- [x] Auditar las RPCs y helpers de permisos que gobiernan la lectura de movilidad interna desde el módulo propio y desde `Control de Contrataciones`
+- [x] Unificar la visibilidad de solicitudes de movilidad con el mismo contrato de folios (`roles globales`, `gerencia por área`, `resto solo solicitudes propias`) y eliminar drift entre módulos/capabilities
+- [x] Verificar que la pestaña `Movilidad Interna` en `Control de Contrataciones` conserve exactamente el mismo gate e interacción de `Personal a Contratar` sin romper vistas existentes
+- [x] Validar build, revisar diffs y documentar el resultado final en `todo.md` y `lessons.md`
+
+## Resultado de ajuste de permisos entre Movilidad Interna y Control de Contrataciones
+
+- Se agregó la migración [`20260612_120000_align_internal_mobility_permission_contracts.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_120000_align_internal_mobility_permission_contracts.sql:1), que elimina el drift entre la visibilidad de folios y la visibilidad de solicitudes de movilidad interna.
+- [`user_can_view_internal_mobility_request_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_120000_align_internal_mobility_permission_contracts.sql:3) ahora delega directamente en [`user_can_view_hiring_request_process_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_182500_restore_control_contratos_summary_visibility.sql:8), de modo que movilidad interna hereda exactamente la misma matriz: roles globales ven todo, `gerencia` solo sus áreas y el resto solo solicitudes propias.
+- La nueva helper [`user_can_read_internal_mobility_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_120000_align_internal_mobility_permission_contracts.sql:19) permite leer la bandeja de movilidad tanto desde el módulo `movilidad_interna` como desde superficies de `Control de Contrataciones` gobernadas por `candidate_control_access`, evitando que la UI muestre una pestaña autorizada con backend todavía bloqueado.
+- La pestaña `Movilidad Interna` de [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:355) ya colgaba del mismo `canAccessCandidateControl` que `Personal a Contratar`; no fue necesario abrir más roles en frontend, solo alinear el contrato backend para que vista e interacción queden consistentes.
+- Validación local cerrada con `npm run build` y `git diff --check`.
+
 ## Hotfix de resolución de reglas en Incentivos Extraordinarios
 
 - [x] Auditar frontend, catálogos y RPCs del módulo para reconstruir el flujo real de resolución de monto por contrato, cargo y sindicato

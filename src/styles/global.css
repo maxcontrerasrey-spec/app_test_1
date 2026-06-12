@@ -1985,10 +1985,17 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 .mobility-divider {
-  border: 0;
+  border: none;
   border-top: 1px solid var(--border-subtle);
-  margin: 0.5rem 0;
-  width: 100%;
+  margin: 1.5rem 0;
+}
+
+.mobility-main-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 2rem 0;
+  opacity: 0.6;
 }
 
 .mobility-form-card {

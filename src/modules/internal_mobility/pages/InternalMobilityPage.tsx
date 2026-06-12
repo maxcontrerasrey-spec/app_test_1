@@ -457,11 +457,10 @@ export function InternalMobilityPage() {
                 <strong>{selectedFolio?.shiftName ?? PENDING_LABEL}</strong>
               </div>
             </div>
-            <p className="helper-copy">
-              El folio destino define cargo, contrato, turno y cupo disponible. Backend vuelve a validar todo al guardar.
-            </p>
           </div>
       </div>
+
+      <hr className="mobility-main-divider" />
 
       <div className="form-card mobility-requests-card">
         <div className="mobility-requests-toolbar">

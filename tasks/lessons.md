@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una integración externa falla, la primera necesidad es ver el error real**. Cubrirlo con un mensaje fijo ralentiza el diagnóstico y obliga a adivinar entre SMTP, URLs, templates o permisos.
 - **La UI puede mantener un tono limpio sin perder precisión**. Si el backend o Supabase entrega un mensaje útil, debe propagarse al menos en ambientes operativos de prueba.
 
+## 54. Si una vista compartida reutiliza el gate visual, también debe reutilizar el gate backend
+
+- **No basta con mostrar una pestaña porque el frontend comparte un capability como `candidate_control_access`**. Si la RPC subyacente sigue validando solo `user_can_access_module('movilidad_interna')`, el usuario queda en un estado incoherente: ve la vista autorizada pero el backend la rechaza o la vacía.
+- **La regla correcta en superficies ERP reutilizadas es alinear ambos contratos**. Si `Movilidad Interna` cuelga de `Personal a Contratar` dentro de `Control de Contrataciones`, la lectura backend debe aceptar exactamente ese mismo contexto operativo y la visibilidad de filas debe delegar en la helper canónica del dominio padre para evitar drift futuro.
+
 ## 31. Limpiar datos no es inventarlos
 
 - **Una migración de saneamiento solo puede completar valores cuando existe una fuente confiable dentro del sistema**. Si un histórico carece de `travel_methodology`, solo se backfillea desde auditoría real; no se asume un default para cerrar visualmente el dato.
