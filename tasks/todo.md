@@ -9,6 +9,19 @@
 - [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
 - [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
 
+## Saneamiento seguro del historial de migraciones Supabase
+
+- [x] Auditar el árbol local de `supabase/migrations` para distinguir naming legacy, migraciones válidas y ruido no SQL
+- [x] Ejecutar solo la limpieza segura que no altera SQL ni arriesga reconciliación falsa con producción
+- [x] Dejar documentado el plan de saneamiento posterior con criterio de no regresión
+
+## Resultado de saneamiento seguro del historial de migraciones Supabase
+
+- Se movió [`supabase/migrations/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/README.md:1) fuera del directorio de migraciones para eliminar el warning de `supabase migration list` sin tocar ninguna migración SQL real.
+- La auditoría dejó cuantificado el problema real en [`supabase/MIGRATIONS_AUDIT.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/MIGRATIONS_AUDIT.md:1): `119` archivos SQL revisados, `11` con formato CLI válido y `108` legacy en formato `YYYYMMDD_HHMMSS_nombre.sql`.
+- También quedó validado que convertir el naming legacy a `YYYYMMDDHHMMSS_nombre.sql` no genera colisiones de nombre en el árbol local, pero aún así no se ejecutó el renombre masivo porque el historial remoto está desalineado y varias migraciones fueron aplicadas manualmente.
+- La decisión segura en esta pasada fue limpiar ruido, fijar la convención futura en [`supabase/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/README.md:1) y documentar el orden correcto para una reconciliación posterior (`foto remota -> tabla de equivalencias -> rename controlado -> repair puntual -> validación final`).
+
 ## Bandeja de doble aprobación para Incentivos Extraordinarios
 
 - [x] Auditar el flujo actual de `Incentivos Extraordinarios` para detectar dónde debía injertarse la cadena de doble aprobación sin duplicar lógica

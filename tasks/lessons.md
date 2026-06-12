@@ -228,6 +228,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si un componente React corre en navegador, `NodeJS.Timeout` es un olor de tipado cruzado**. La forma estable es `ReturnType<typeof setTimeout>`, que compila tanto en browser como en entornos híbridos sin arrastrar el namespace de Node.
 - **Cuando un layout usa timeouts para hover o navegación**, el cleanup debe cubrir todos los refs de timer al desmontar, no solo uno, para evitar fugas y estados colgados.
 
+## 60. En Supabase, primero se limpia el ruido del árbol de migraciones y después se intenta reconciliar historial
+
+- **No mezclar archivos no SQL dentro de `supabase/migrations`**. Aunque no rompan la base, contaminan `supabase migration list` y vuelven ambiguo el diagnóstico operativo.
+- **Si el repo conserva migraciones legacy con formato `YYYYMMDD_HHMMSS_nombre.sql`, no las renombres en lote por prolijidad**. Antes hay que contrastar `schema_migrations` remoto, porque un rename local sin reconciliación puede empeorar el historial en vez de sanearlo.
+
 ## 54. En ERP con artefactos Excel heredados, no retires una librería de planillas sin mapear primero el contrato real de salida
 
 - **Si el sistema todavía exporta `.xlsx` y `.xls`, la decisión no puede basarse solo en `npm audit`**. Antes de reemplazar una dependencia hay que verificar qué superficies leen, escriben o generan formatos legacy, porque pasar a una librería incompleta rompe operación silenciosamente.

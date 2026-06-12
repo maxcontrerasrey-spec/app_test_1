@@ -1,14 +1,30 @@
-# Supabase Migrations
+# Supabase
 
-Este directorio contiene el historial completo de la base de datos de la plataforma, incluyendo estructura de tablas, Row Level Security (RLS) policies, Funciones (RPC) y Triggers.
+Este directorio contiene el historial completo de base de datos y runtime de Supabase del ERP: migraciones SQL, funciones Edge y documentación operativa.
 
-## 📌 Convención de Nomenclatura
+## Convención de nomenclatura de migraciones
 
-Todas las migraciones deben mantener un prefijo de timestamp para garantizar el orden estricto de ejecución. 
+Las migraciones SQL que deban ser reconocidas limpiamente por la CLI de Supabase deben vivir en [`supabase/migrations`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations) con este formato:
 
-Formato: `YYYYMMDD_HHMMSS_descripcion_corta.sql`
+`YYYYMMDDHHMMSS_descripcion_corta.sql`
 
-Ejemplo: `20260523_000025_harden_profiles_and_cleanup_rpc.sql`
+Ejemplo válido:
+
+`20260612133601_expose_hr_module_for_incentive_approvers.sql`
+
+No dejar archivos Markdown ni utilitarios dentro de `supabase/migrations`, porque `supabase migration list` los recorre y genera ruido operacional.
+
+## Estado actual del historial legacy
+
+El repositorio todavía conserva muchas migraciones históricas con formato legacy:
+
+`YYYYMMDD_HHMMSS_descripcion.sql`
+
+Ese formato no rompe el SQL, pero sí degrada el output de `supabase migration list`, colapsando versiones como `20260611` o `20260612`.
+
+La auditoría y el plan seguro de saneamiento quedaron documentados en:
+
+[`supabase/MIGRATIONS_AUDIT.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/MIGRATIONS_AUDIT.md:1)
 
 ## 🔒 Arquitectura Zero Trust
 
@@ -18,7 +34,7 @@ La plataforma opera bajo el principio de Confianza Cero en la capa de datos:
 2. **SECURITY DEFINER**: Todas las acciones sensibles deben ejecutarse llamando a Funciones RPC (`supabase.rpc()`). Estas funciones se ejecutan con privilegios de administrador temporalmente (`SECURITY DEFINER`) pero validan internamente (`request.jwt.claims`) si el usuario tiene permiso para esa acción.
 3. **Triggers Defensivos**: Tablas críticas como `profiles` poseen triggers en PostgreSQL (`BEFORE UPDATE`) que abortan cualquier transacción que intente modificar columnas sensibles (como `is_super_admin`) a menos que el usuario emisor sea legítimamente un superadmin.
 
-## 🚀 Ejecutar Migraciones Localmente
+## 🚀 Ejecutar migraciones localmente
 
 Si utilizas la CLI oficial de Supabase para desarrollo local:
 
