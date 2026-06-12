@@ -22,6 +22,22 @@
 - [x] Propagar el error real de la RPC en frontend para no ocultar regresiones operativas futuras
 - [x] Validar `npm run build`, `git diff --check` y documentar el cierre del hotfix
 
+## Hotfix de error residual en detalle de caso y campana de tareas pendientes
+
+- [x] Auditar por qué `Control de Contrataciones` sigue mostrando `No fue posible cargar el detalle del caso` aun con el tablero ya operativo
+- [x] Corregir el manejo del error de detalle para que no contamine la vista de procesos ni oculte el motivo real
+- [x] Implementar una campana en el topbar con contador de tareas pendientes y menú resumen con acceso directo
+- [x] Validar build y documentar el cierre sin romper navegación ni vistas existentes
+
+## Resultado de hotfix de error residual en detalle de caso y campana de tareas pendientes
+
+- La causa del mensaje rojo residual no era una nueva caída del tablero: [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:61) mezclaba `dashboardError` y `caseDetailError` aunque el usuario ya hubiera vuelto a `Resumen de procesos`, por lo que un fallo previo del expandible contaminaba la vista principal.
+- Se corrigió el gating para que el error de `get_recruitment_case_detail` solo se muestre cuando realmente corresponde cargar ese subflujo, y además [`fetchRecruitmentCaseDetail()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:505) ahora propaga `formatRpcError(error)` en vez de esconder la causa real.
+- [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:36) ahora guarda errores por `caseId`, de modo que el expandible del inicio puede mostrar el motivo exacto del fallo de detalle sin convertirlo en un “tablero roto”.
+- Se agregó una campana operativa en [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:1), al lado del avatar, reutilizando `tasksData` desde [`useDashboard()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/hooks/useDashboard.ts:19). Muestra badge rojo con conteo, resumen desplegable y navegación directa a la ruta relevante de cada tarea pendiente.
+- El soporte visual del dropdown quedó en [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:614), sin introducir otro backend, otra query key ni otro contrato paralelo para notificaciones.
+- Validación cerrada con `npm run build` exitoso y `git diff --check` limpio.
+
 ## Resultado de hotfix crítico del dashboard de Reclutamiento tras alias en active_cases
 
 - Se agregó la migración [`20260612161000_hotfix_restore_recruitment_dashboard_v2.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612161000_hotfix_restore_recruitment_dashboard_v2.sql:1), que restaura [`get_recruitment_control_dashboard_v2()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612161000_hotfix_restore_recruitment_dashboard_v2.sql:3) sobre la versión operativa real y reaplica solo los aliases `turno` y `salary` dentro de `active_cases`.

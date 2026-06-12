@@ -517,7 +517,7 @@ export async function fetchRecruitmentCaseDetail(caseId: string) {
   if (error) {
     return {
       data: null,
-      error: "No fue posible cargar el detalle del caso."
+      error: formatRpcError(error) || "No fue posible cargar el detalle del caso."
     };
   }
 

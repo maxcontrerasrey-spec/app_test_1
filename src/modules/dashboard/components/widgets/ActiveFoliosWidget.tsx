@@ -41,6 +41,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail | null>>({});
+  const [caseDetailErrors, setCaseDetailErrors] = useState<Record<string, string | null>>({});
 
   const dashboardQuery = useRecruitmentControlDashboard();
   const summary = dashboardQuery.data?.summary ?? {
@@ -119,10 +120,14 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     }
 
     setIsLoadingDetail(true);
-    const { data } = await fetchRecruitmentCaseDetail(caseId);
+    const { data, error } = await fetchRecruitmentCaseDetail(caseId);
     setCaseDetailsCache((current) => ({
       ...current,
       [caseId]: data
+    }));
+    setCaseDetailErrors((current) => ({
+      ...current,
+      [caseId]: error
     }));
     setIsLoadingDetail(false);
   };
@@ -176,6 +181,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                 paginatedFolios.map((folio: DashboardActiveFolioItem) => {
                   const isExpanded = expandedCaseId === folio.id;
                   const detail = caseDetailsCache[folio.id] ?? null;
+                  const detailError = caseDetailErrors[folio.id] ?? null;
                   const hr = detail?.case?.hiring_request;
                   const approvalSummary = hr?.approval_summary;
 
@@ -314,7 +320,9 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                 </div>
                               </div>
                             ) : (
-                              <div className="expanded-case-loading">No fue posible cargar el detalle del caso.</div>
+                              <div className="expanded-case-loading">
+                                {detailError ?? "No fue posible cargar el detalle del caso."}
+                              </div>
                             )}
                           </td>
                         </tr>

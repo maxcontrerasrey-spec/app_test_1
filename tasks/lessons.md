@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si el cambio pedido es solo agregar campos al JSON, la base obligatoria es la implementación viva exacta de la RPC, no una migración parecida encontrada en el historial**. En este repo, sustituir `get_recruitment_control_dashboard_v2()` desde una variante distinta rompió `candidate_control` y `personnel_to_hire` aunque el objetivo funcional era solo exponer `salary` y `turno`.
 - **La verificación correcta no termina en compilar o correr la migración**. Después de tocar una RPC operacional grande hay que contrastar el cuerpo final contra la última versión sana y ejecutar al menos una validación de humo sobre la propia bandeja afectada.
 
+## 55. Un error de detalle no debe contaminar vistas hermanas ni esconder la causa real
+
+- **Si una pantalla comparte varios subflujos, los errores deben estar condicionados al subflujo activo**. En `Control de Contrataciones`, un fallo al cargar `get_recruitment_case_detail` no debe seguir pintando error cuando el usuario vuelve a `Resumen de procesos`.
+- **Los RPC de detalle deben propagar el mensaje real y la UI debe diferenciar “detalle no cargado” de “tablero roto”**. El mensaje genérico retrasa el diagnóstico y hace parecer que toda la página falló cuando el problema era solo el expandible.
+
 ## 58. Una nueva cola operativa no sirve si sus aprobadores no pueden entrar al módulo
 
 - **No basta con crear la tabla de aprobaciones y la vista React**. Si la ruta está protegida por `accessible_modules`, hay que revisar al mismo tiempo `get_my_effective_permissions()` y la matriz `role_module_access`, o la cola queda viva en SQL pero invisible para quienes deben trabajarla.

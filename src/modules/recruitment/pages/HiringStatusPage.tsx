@@ -64,7 +64,7 @@ export function HiringStatusPage() {
     dashboardQuery.error instanceof Error ? dashboardQuery.error.message : "";
   const caseDetailError =
     caseDetailQuery.error instanceof Error ? caseDetailQuery.error.message : "";
-  const errorMessage = dashboardError || caseDetailError;
+  const errorMessage = dashboardError || (shouldLoadCaseDetail ? caseDetailError : "");
   const isLoading = Boolean(
     dashboardQuery.isLoading || (shouldLoadCaseDetail && caseDetailQuery.isLoading)
   );
