@@ -277,6 +277,12 @@ export function CandidateIntakeForm({
           }))}
           renderOption={(opt) => {
             const caseRow = opt.raw as import("../services/hiringControl").RecruitmentCaseListRow;
+            
+            const formatSalary = (val?: number | null) => {
+              if (val == null) return "No informada";
+              return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(val);
+            };
+
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <strong style={{ fontSize: '0.95rem', color: 'var(--title)' }}>
@@ -286,7 +292,7 @@ export function CandidateIntakeForm({
                   {caseRow.contract_name}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Solicitante: {caseRow.requester_name || 'No informado'}
+                  Renta: {formatSalary(caseRow.salary)} · Turno: {caseRow.turno || 'No informado'} · Solicitante: {caseRow.requester_name || 'No informado'}
                 </span>
               </div>
             );
