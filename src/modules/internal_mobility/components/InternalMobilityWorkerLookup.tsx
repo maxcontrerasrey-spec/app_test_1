@@ -52,7 +52,9 @@ export function InternalMobilityWorkerLookup({
           value={searchValue}
           placeholder={placeholder}
           disabled={disabled}
-          autoComplete="off"
+          autoComplete="nope"
+          spellCheck={false}
+          autoCorrect="off"
           onFocus={() => setIsOpen(true)}
           onBlur={() => {
             window.setTimeout(() => {
