@@ -569,15 +569,31 @@ export function InternalMobilityPage() {
       </div>
 
       {selectedRequestId ? (
-        <div className="form-card mobility-detail-card">
-          {requestDetailQuery.isLoading ? <p className="helper-copy">Cargando detalle de la solicitud...</p> : null}
-          {requestDetailQuery.error ? (
-            <p className="form-status form-status-error">{requestDetailQuery.error.message}</p>
-          ) : null}
+        <div className="approval-modal-backdrop" role="presentation" onClick={() => setSelectedFolioId("")}>
+          <div
+            className="approval-modal-card mobility-modal-override"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobility-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="modal-close-button"
+              onClick={() => setSelectedFolioId("")}
+              aria-label="Cerrar detalle"
+            >
+              ✕
+            </button>
 
-          {requestDetailQuery.data ? (
-            <>
-              <div className="mobility-detail-header">
+            {requestDetailQuery.isLoading ? <p className="helper-copy">Cargando detalle de la solicitud...</p> : null}
+            {requestDetailQuery.error ? (
+              <p className="form-status form-status-error">{requestDetailQuery.error.message}</p>
+            ) : null}
+
+            {requestDetailQuery.data ? (
+              <>
+                <div className="mobility-detail-header">
                 <div>
                   <h3>{requestDetailQuery.data.request.folio}</h3>
                   <p className="helper-copy">
@@ -727,6 +743,7 @@ export function InternalMobilityPage() {
               </div>
             </>
           ) : null}
+          </div>
         </div>
       ) : null}
     </PageShell>
