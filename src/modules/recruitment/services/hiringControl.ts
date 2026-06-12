@@ -100,7 +100,9 @@ export type RecruitmentCaseListRow = {
   start_date?: string | null;
   end_date?: string | null;
   shift_name?: string | null;
+  turno?: string | null;
   salary_offer?: number | null;
+  salary?: number | null;
   campamento?: boolean | null;
   pasajes?: boolean | null;
   travel_methodology?: string | null;

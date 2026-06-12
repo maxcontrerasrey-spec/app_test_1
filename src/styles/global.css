@@ -505,15 +505,18 @@ textarea {
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   box-shadow: none;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  padding: 0.2rem 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.5rem 1.5rem;
   z-index: 50;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0.2s ease;
+  overflow-x: auto;
 }
 
 .top-nav-third-tray.is-visible {
@@ -523,17 +526,18 @@ textarea {
 }
 
 .top-nav-third-link {
-  display: grid;
-  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.5rem;
   min-width: 0;
-  padding: 0.5rem 1.25rem;
-  border-right: 1px solid var(--border-subtle);
-  background: transparent;
-  text-align: left;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
   text-decoration: none;
-  color: var(--text-secondary);
+  font-family: var(--font-text);
+  font-size: 0.88rem;
+  white-space: nowrap;
+  transition: all 0.15s ease;
 }
 
 .top-nav-third-link:last-child {
@@ -541,13 +545,13 @@ textarea {
 }
 
 .top-nav-third-link:hover {
-  background: transparent;
+  background: var(--surface-muted);
   color: var(--title);
 }
 
 .top-nav-third-link-active {
   color: var(--title);
-  background: transparent;
+  background: var(--surface-muted);
 }
 
 .top-nav-mega-icon {

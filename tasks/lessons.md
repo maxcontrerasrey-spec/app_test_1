@@ -233,6 +233,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No mezclar archivos no SQL dentro de `supabase/migrations`**. Aunque no rompan la base, contaminan `supabase migration list` y vuelven ambiguo el diagnóstico operativo.
 - **Si el repo conserva migraciones legacy con formato `YYYYMMDD_HHMMSS_nombre.sql`, no las renombres en lote por prolijidad**. Antes hay que contrastar `schema_migrations` remoto, porque un rename local sin reconciliación puede empeorar el historial en vez de sanearlo.
 
+## 61. En endpoints ERP compartidos, agregar alias es más seguro que renombrar campos ya consumidos
+
+- **Si un payload JSON ya expone campos usados por pantallas vivas, no renombres `salary_offer` o `shift_name` solo por preferencia semántica**. La salida segura es agregar alias nuevos como `salary` o `turno` y conservar el contrato existente.
+- **Antes de tocar una RPC grande, primero verifica si el dato realmente ya existe en el JSON actual**. En este caso, el problema no era ausencia de join ni de dato fuente, sino exponer nombres alternativos sin romper consumidores existentes.
+
 ## 54. En ERP con artefactos Excel heredados, no retires una librería de planillas sin mapear primero el contrato real de salida
 
 - **Si el sistema todavía exporta `.xlsx` y `.xls`, la decisión no puede basarse solo en `npm audit`**. Antes de reemplazar una dependencia hay que verificar qué superficies leen, escriben o generan formatos legacy, porque pasar a una librería incompleta rompe operación silenciosamente.

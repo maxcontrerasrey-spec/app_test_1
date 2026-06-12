@@ -9,6 +9,18 @@
 - [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
 - [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
 
+## Alias de renta y turno en active_cases de Reclutamiento
+
+- [x] Auditar la versión vigente de `get_recruitment_control_dashboard_v2` para confirmar el contrato actual de `active_cases`
+- [x] Agregar alias adicionales para renta y turno sin romper los campos ya usados por el frontend actual
+- [x] Validar consistencia del diff y documentar el ajuste
+
+## Resultado de alias de renta y turno en active_cases de Reclutamiento
+
+- Se agregó la migración [`20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql:1), que redefine la RPC [`get_recruitment_control_dashboard_v2()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql:3).
+- La auditoría previa mostró que `active_cases` ya exponía `shift_name` y `salary_offer`; por eso el ajuste seguro no reemplaza ni renombra esos campos, sino que agrega alias nuevos `turno` y `salary` en ambas ramas del arreglo (`source_type = case` y `source_type = request`).
+- Así el payload conserva intactos los campos que hoy consume [`RecruitmentCaseListRow`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:72) y, al mismo tiempo, habilita consumidores nuevos que prefieran leer `salary` y `turno`.
+
 ## Saneamiento seguro del historial de migraciones Supabase
 
 - [x] Auditar el árbol local de `supabase/migrations` para distinguir naming legacy, migraciones válidas y ruido no SQL
