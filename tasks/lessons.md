@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con crear la tabla de aprobaciones y la vista React**. Si la ruta está protegida por `accessible_modules`, hay que revisar al mismo tiempo `get_my_effective_permissions()` y la matriz `role_module_access`, o la cola queda viva en SQL pero invisible para quienes deben trabajarla.
 - **Cuando el aprobador nace de datos operativos y no de un rol fijo**, la salida elegante no es abrir el módulo a toda la organización, sino exponerlo dinámicamente solo a usuarios con pendientes reales.
 
+## 59. En frontend web tipado con Vite, los timers no deben depender de `NodeJS.Timeout`
+
+- **Si un componente React corre en navegador, `NodeJS.Timeout` es un olor de tipado cruzado**. La forma estable es `ReturnType<typeof setTimeout>`, que compila tanto en browser como en entornos híbridos sin arrastrar el namespace de Node.
+- **Cuando un layout usa timeouts para hover o navegación**, el cleanup debe cubrir todos los refs de timer al desmontar, no solo uno, para evitar fugas y estados colgados.
+
 ## 54. En ERP con artefactos Excel heredados, no retires una librería de planillas sin mapear primero el contrato real de salida
 
 - **Si el sistema todavía exporta `.xlsx` y `.xls`, la decisión no puede basarse solo en `npm audit`**. Antes de reemplazar una dependencia hay que verificar qué superficies leen, escriben o generan formatos legacy, porque pasar a una librería incompleta rompe operación silenciosamente.

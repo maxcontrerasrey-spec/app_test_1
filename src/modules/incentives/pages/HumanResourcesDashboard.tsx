@@ -60,6 +60,7 @@ export function HumanResourcesDashboard() {
       { table: "hr_incentive_types" },
       { table: "hr_incentive_rate_rules" },
       { table: "hr_incentive_requests" },
+      { table: "hr_incentive_request_approvals" },
       { table: "hr_incentive_request_history" },
       { table: "employees" }
     ],

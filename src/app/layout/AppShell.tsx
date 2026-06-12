@@ -79,7 +79,7 @@ export function AppShell() {
   const [hoveredMegaItem, setHoveredMegaItem] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const megaMenuRef = useRef<HTMLDivElement>(null);
-  const thirdTrayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const thirdTrayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnterMegaItem = (label: string) => {
     if (thirdTrayTimerRef.current) clearTimeout(thirdTrayTimerRef.current);
@@ -92,7 +92,7 @@ export function AppShell() {
     }, 100);
   };
   const navMenuRef = useRef<HTMLDivElement | null>(null);
-  const timeoutRef = useRef<any>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnterModule = (label: string) => {
     if (timeoutRef.current) {
@@ -133,6 +133,9 @@ export function AppShell() {
 
   useEffect(() => {
     return () => {
+      if (thirdTrayTimerRef.current) {
+        clearTimeout(thirdTrayTimerRef.current);
+      }
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
