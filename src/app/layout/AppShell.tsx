@@ -388,24 +388,38 @@ export function AppShell() {
           >
             <div className="top-nav-mega-panel">
               <div className="top-nav-mega-grid">
-                {openModule.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={clearPinnedNavigation}
-                    className={({ isActive }) =>
-                      isActive
-                        ? "top-nav-mega-link top-nav-mega-link-active"
-                        : "top-nav-mega-link"
-                    }
-                  >
-                    <span className="top-nav-mega-icon">
-                      <SubmenuIcon iconKey={item.iconKey} />
-                    </span>
-                    <span className="top-nav-mega-copy">
-                      <strong>{item.label}</strong>
-                    </span>
-                  </NavLink>
+                {Object.entries(
+                  openModule.items.reduce((acc, item) => {
+                    const group = item.subgroup || "General";
+                    if (!acc[group]) acc[group] = [];
+                    acc[group].push(item);
+                    return acc;
+                  }, {} as Record<string, typeof openModule.items>)
+                ).map(([subgroup, items]) => (
+                  <div key={subgroup} className="top-nav-mega-column">
+                    {subgroup !== "General" && (
+                      <h4 className="top-nav-mega-subgroup-title">{subgroup}</h4>
+                    )}
+                    {items.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={clearPinnedNavigation}
+                        className={({ isActive }) =>
+                          isActive
+                            ? "top-nav-mega-link top-nav-mega-link-active"
+                            : "top-nav-mega-link"
+                        }
+                      >
+                        <span className="top-nav-mega-icon">
+                          <SubmenuIcon iconKey={item.iconKey} />
+                        </span>
+                        <span className="top-nav-mega-copy">
+                          <strong>{item.label}</strong>
+                        </span>
+                      </NavLink>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>

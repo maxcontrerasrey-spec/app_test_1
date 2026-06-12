@@ -10,6 +10,7 @@ export type NavigationItem = {
   to: string;
   label: string;
   description?: string;
+  subgroup?: string;
   iconKey?: "document" | "timeline" | "certificate" | "tracking";
 };
 
@@ -87,9 +88,10 @@ export const navigationModules: NavigationModule[] = [
       {
         moduleCode: "recursos_humanos",
         to: "/recursos-humanos/incentivos",
-        label: "Incentivos",
+        label: "Ingreso de Incentivos Extraordinarios",
         description: "Registro y control de incentivos extraordinarios.",
-        iconKey: "document"
+        iconKey: "document",
+        subgroup: "Gestión de Incentivos"
       }
     ]
   },
