@@ -259,6 +259,74 @@ textarea {
   width: 58px;
 }
 
+.echart-shell {
+  position: relative;
+  width: 100%;
+  min-height: 240px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.72));
+  overflow: hidden;
+}
+
+.echart-stage {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+}
+
+.echart-empty-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--spacing-6);
+  text-align: center;
+  color: var(--text-muted);
+  background: rgba(var(--surface-rgb), 0.86);
+  backdrop-filter: blur(4px);
+}
+
+.labs-chart-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.labs-chart-grid {
+  margin-top: 2rem;
+}
+
+.labs-chart-card-title {
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+  font-size: 1.2rem;
+}
+
+.labs-chart-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.labs-chart-caption {
+  font-size: 0.95rem !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 0;
+}
+
+.labs-chart-feedback {
+  margin-top: 1rem;
+}
+
+@media (max-width: 960px) {
+  .labs-chart-toolbar {
+    flex-direction: column;
+  }
+}
+
 .page h2,
 .info-card h3 {
   margin: 0;
@@ -2565,7 +2633,8 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-case-detail-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
   background: var(--surface);
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
@@ -2573,11 +2642,11 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-detail-section {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
 }
 
 .expanded-detail-section:last-child {
-  border-bottom: none;
+  border-right: none;
 }
 
 .expanded-detail-section h4 {
@@ -2592,6 +2661,25 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-detail-fields {
   display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.expanded-case-detail-grid-vertical {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.expanded-case-detail-grid-vertical .expanded-detail-section {
+  border-right: none;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.expanded-case-detail-grid-vertical .expanded-detail-section:last-child {
+  border-bottom: none;
+}
+
+.expanded-case-detail-grid-vertical .expanded-detail-fields {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
 }

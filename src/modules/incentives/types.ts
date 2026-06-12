@@ -13,6 +13,10 @@ export type HrIncentiveUnionOption = {
 
 export type IncentiveRequestStatus = "P" | "E" | "R" | "F" | "C";
 
+export type HrIncentiveApprovalDecision = "approved" | "rejected";
+
+export type HrIncentiveApprovalStatus = "pending" | "approved" | "rejected" | "cancelled";
+
 export type HrIncentiveAllowedJobTitle = {
   id: string;
   jobTitle: string;
@@ -135,6 +139,99 @@ export type HrIncentiveRequest = {
   cancellationComment: string | null;
 };
 
+export type HrIncentiveApprovalQueueItem = {
+  approvalId: number;
+  requestId: string;
+  folio: number;
+  stepCode: "contract_admin" | "area_manager";
+  stepName: string;
+  stepOrder: number;
+  approvalStatus: HrIncentiveApprovalStatus;
+  approverUserId: string | null;
+  approverName: string;
+  employeeFullName: string;
+  employeeDocumentNumber: string;
+  employeeJobTitle: string;
+  employeeUnionName: string | null;
+  selectedContractCode: string;
+  selectedAreaName: string;
+  incentiveTypeName: string;
+  serviceDate: string;
+  calculatedAmount: number;
+  requesterName: string;
+  createdAt: string;
+};
+
+export type HrIncentiveApprovalHistoryItem = {
+  id: number;
+  stepCode: "contract_admin" | "area_manager";
+  stepName: string;
+  stepOrder: number;
+  approverUserId: string | null;
+  approverName: string | null;
+  approverEmail: string | null;
+  status: HrIncentiveApprovalStatus;
+  decisionBy: string | null;
+  decisionComment: string | null;
+  decidedAt: string | null;
+  createdAt: string;
+};
+
+export type HrIncentiveRequestHistoryItem = {
+  id: number;
+  actionType: string;
+  actorUserId: string | null;
+  actorName: string | null;
+  comment: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+};
+
+export type HrIncentiveRequestDetail = {
+  request: {
+    id: string;
+    folio: number;
+    status: IncentiveRequestStatus;
+    employeeBukEmployeeId: string;
+    employeeDocumentType: string;
+    employeeDocumentNumber: string;
+    employeeFullName: string;
+    employeeJobTitle: string;
+    employeeUnionName: string | null;
+    employeeUnionStatus: HrIncentiveUnionStatus;
+    employeeUnionJoinedAt: string | null;
+    primaryContractCode: string | null;
+    primaryAreaName: string | null;
+    selectedContractCode: string;
+    selectedAreaName: string;
+    selectedAreaCode: string | null;
+    incentiveTypeName: string;
+    requiresReplacement: boolean;
+    replacementBukEmployeeId: string | null;
+    replacementDocumentNumber: string | null;
+    replacementFullName: string | null;
+    motive: string | null;
+    description: string | null;
+    serviceDate: string;
+    durationHours: number | null;
+    periodCode: string;
+    calculationBasis: IncentiveCalculationBasis;
+    rateRuleAmount: number;
+    calculatedAmount: number;
+    requesterName: string;
+    requesterEmail: string | null;
+    currentStepCode: "contract_admin" | "area_manager" | null;
+    currentStepName: string | null;
+    currentApproverName: string | null;
+    cancelledAt: string | null;
+    cancellationComment: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  approvals: HrIncentiveApprovalHistoryItem[];
+  history: HrIncentiveRequestHistoryItem[];
+};
+
 export type HrIncentiveRequestsFilters = {
   periodCode?: string;
   status?: string;
@@ -162,4 +259,12 @@ export type CreateHrIncentiveRequestResult = {
   folio: number;
   status: IncentiveRequestStatus;
   calculatedAmount: number;
+};
+
+export type BulkHrIncentiveApprovalDecisionResult = {
+  approvalId: number;
+  requestId: string | null;
+  success: boolean;
+  requestStatus: IncentiveRequestStatus | null;
+  error: string | null;
 };

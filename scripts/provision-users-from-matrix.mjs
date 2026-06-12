@@ -1,7 +1,7 @@
 import fs from "fs";
 
 import { createClient } from "@supabase/supabase-js";
-import XLSX from "xlsx";
+import XLSX from "@mylinkpi/xlsx";
 
 const DEFAULT_INPUT_PATH = "/Users/maximilianocontrerasrey/Documents/GitHub/usuarios_busesjm.xlsx";
 const DEFAULT_SHEET_NAME = "usuarios";

@@ -218,10 +218,55 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una integración externa falla, la primera necesidad es ver el error real**. Cubrirlo con un mensaje fijo ralentiza el diagnóstico y obliga a adivinar entre SMTP, URLs, templates o permisos.
 - **La UI puede mantener un tono limpio sin perder precisión**. Si el backend o Supabase entrega un mensaje útil, debe propagarse al menos en ambientes operativos de prueba.
 
+## 54. En ERP con artefactos Excel heredados, no retires una librería de planillas sin mapear primero el contrato real de salida
+
+- **Si el sistema todavía exporta `.xlsx` y `.xls`, la decisión no puede basarse solo en `npm audit`**. Antes de reemplazar una dependencia hay que verificar qué superficies leen, escriben o generan formatos legacy, porque pasar a una librería incompleta rompe operación silenciosamente.
+- **Cuando la API de negocio ya está extendida en frontend y scripts, un reemplazo compatible y acotado puede ser mejor que una reescritura total**. En esta pasada, la salida correcta fue retirar `@xenova/transformers` por estar muerto y cambiar `xlsx` por un fork mantenido con contrato equivalente, manteniendo exportaciones y utilidades operativas sin abrir refactor innecesario.
+
+## 55. La limpieza de dependencias no termina al instalar: debe cerrar con build, audit y prueba mínima del runtime reemplazado
+
+- **Que `npm install` termine no demuestra compatibilidad real**. Si la dependencia participa en imports dinámicos o scripts fuera del bundle principal, hay que validar al menos el build de Vite/TypeScript y una ejecución de humo del paquete nuevo.
+- **Los archivos de configuración también son superficie de regresión**. Al retirar una dependencia, hay que limpiar sus chunks/vendors y volver a validar la compatibilidad de `vite.config.ts`, o el ajuste queda técnicamente incompleto.
+
+## 56. En RRHH, el contrato primario del trabajador no siempre coincide con el contrato aplicable del incentivo
+
+- **No restringir el selector operacional al contexto laboral actual si el negocio permite imputar el incentivo a otro contrato activo**. El default debe venir del trabajador, pero el catálogo visible debe obedecer la gobernanza del ERP, no la última ficha BUK.
+- **La corrección correcta va en la RPC de contexto, no en un parche del formulario**. Si `available_areas` sale recortado desde backend, el frontend solo maquilla el problema; la fuente canónica debe devolver preselección más catálogo ampliado.
+
+## 57. En funciones `RETURNS TABLE`, no reutilices nombres de salida sin calificar en `RETURNING`
+
+- **Si la función devuelve `folio`, `status` u otro nombre común, `insert ... returning folio` puede colisionar con la variable OUT implícita**. PostgreSQL lo interpreta como referencia ambigua aunque la tabla tenga esa columna válida.
+- **La salida robusta es calificar siempre el `RETURNING` con alias de tabla o renombrar la variable de salida cuando el nombre es sensible**. En módulos ERP con folios y estados, esto no es opcional; es una medida defensiva básica.
+
+## 58. Si un flujo ERP gana aprobaciones secuenciales, el estado visible, la bandeja y la trazabilidad deben evolucionar juntos
+
+- **No basta con crear una tabla de aprobaciones nueva**. Si el registro pasa a depender de `Administrador de contrato -> Gerente de área`, la solicitud principal debe reflejar esa transición con estados visibles consistentes (`P`, `E`, `F`, `R`, `C`), la bandeja debe resolver al aprobador pendiente real y el historial debe conservar cada creación/decisión de etapa.
+- **La aprobación masiva no se resuelve bien desde loops ciegos en frontend**. Cuando el negocio pide aprobar o rechazar muchos ítems a la vez, la gobernanza correcta va en una RPC backend que procese cada aprobación, respete permisos, registre auditoría por fila y devuelva resultados parciales por item.
+
+## 58. En visibilidad operacional, “ser gerencia” no debe anular la propiedad del solicitante
+
+- **Si un usuario puede crear folios y además tiene rol `gerencia`, su visibilidad como solicitante no puede quedar subordinada al amarre de centro de costo**. La propiedad del folio es una regla basal; la visibilidad por gerencia es una capacidad adicional.
+- **La condición de “es el requester” debe evaluarse antes de ramas por rol**. Si se deja como excepción solo para “no gerencia”, los folios históricos o migrados quedan invisibles para sus propios dueños cuando el mapeo operativo no calza exactamente.
+
 ## 54. Si una vista compartida reutiliza el gate visual, también debe reutilizar el gate backend
 
 - **No basta con mostrar una pestaña porque el frontend comparte un capability como `candidate_control_access`**. Si la RPC subyacente sigue validando solo `user_can_access_module('movilidad_interna')`, el usuario queda en un estado incoherente: ve la vista autorizada pero el backend la rechaza o la vacía.
 - **La regla correcta en superficies ERP reutilizadas es alinear ambos contratos**. Si `Movilidad Interna` cuelga de `Personal a Contratar` dentro de `Control de Contrataciones`, la lectura backend debe aceptar exactamente ese mismo contexto operativo y la visibilidad de filas debe delegar en la helper canónica del dominio padre para evitar drift futuro.
+
+## 55. Librerías visuales pesadas entran al ERP solo con capa compartida y carga diferida
+
+- **No instales una librería como ECharts directo dentro de un módulo aislado**. Si el objetivo es reutilización ERP, la integración debe nacer en `src/shared` con wrapper propio, theming centralizado, resize, loading y API tipada; de lo contrario cada módulo termina reinventando lifecycle y configuración.
+- **Si una librería empuja chunks grandes, el showcase o laboratorio debe ir con `lazy()` desde el primer día**. La dependencia puede quedar instalada globalmente, pero la experiencia base de la app no debe pagar ese costo hasta que una ruta realmente necesite gráficos.
+
+## 56. Optimizar un vendor pesado no es repartirlo a la fuerza si crea ciclos de chunk
+
+- **Partir ECharts por subcarpetas internas puede bajar tamaño, pero si Rollup empieza a reportar `Circular chunk` la optimización quedó peor que antes**. En ese caso se vuelve a una partición más gruesa pero estable.
+- **La métrica correcta no es solo “bajar el chunk pesado”**. En un ERP modular, lo primero es sacar ese peso del bundle principal. Si `index` cae fuerte y el vendor gráfico queda aislado y lazy, la arquitectura ya mejoró aunque `echarts-vendor` siga siendo grande por naturaleza.
+
+## 57. Un `npm audit` no se “arregla” mezclando parches seguros con downgrades peligrosos
+
+- **Si el audit ofrece un parche compatible y acotado, se aplica**. Ejemplo: `react-router-dom` sí admitía una subida patch para cerrar un advisory moderado sin tocar arquitectura.
+- **Si el audit solo propone un downgrade mayor o no tiene `fixAvailable`, no se fuerza dentro de una pasada funcional**. Casos como `@xenova/transformers` o `xlsx` deben tratarse como decisión de stack o reemplazo de librería, no como parche oportunista en medio de otra entrega.
 
 ## 31. Limpiar datos no es inventarlos
 

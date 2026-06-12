@@ -191,9 +191,67 @@
   font-size: 0.82rem;
 }
 
+.hr-incentives-approvals-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(20rem, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.hr-incentives-inline-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.hr-incentives-approval-detail {
+  display: grid;
+  gap: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.hr-incentives-approval-history {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.hr-incentives-approval-history h4 {
+  margin: 0 0 0.65rem;
+  font-size: 0.98rem;
+}
+
+.hr-incentives-approval-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.hr-incentives-approval-list-item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(228, 231, 236, 0.95);
+  border-radius: var(--radius-lg);
+  background: rgba(var(--surface-soft-rgb), 0.96);
+}
+
+.hr-incentives-approval-list-item span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
 @media (max-width: 1180px) {
   .hr-incentives-setup-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hr-incentives-approvals-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hr-incentives-approval-detail {
+    position: static;
   }
 }
 
@@ -212,5 +270,13 @@
   .hr-incentives-list-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hr-incentives-approval-history {
+    grid-template-columns: 1fr;
+  }
+
+  .hr-incentives-inline-actions {
+    flex-direction: column;
   }
 }

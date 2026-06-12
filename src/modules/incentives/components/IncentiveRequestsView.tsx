@@ -17,13 +17,13 @@ type IncentiveRequestsViewProps = {
 function getIncentiveStatusLabel(status: HrIncentiveRequest["status"]) {
   switch (status) {
     case "P":
-      return "Pendiente";
+      return "Pendiente administrador contrato";
     case "E":
-      return "En revisión";
+      return "Pendiente gerente de area";
     case "R":
       return "Rechazado";
     case "F":
-      return "Pagado";
+      return "Aprobado";
     case "C":
       return "Anulado";
     default:
@@ -110,10 +110,10 @@ export function IncentiveRequestsView({
           onChange={(event) => setStatusFilter(event.target.value)}
           options={[
             { value: "A", label: "Todos" },
-            { value: "P", label: "Pendiente" },
-            { value: "E", label: "En revisión" },
+            { value: "P", label: "Pendiente administrador contrato" },
+            { value: "E", label: "Pendiente gerente de area" },
             { value: "R", label: "Rechazado" },
-            { value: "F", label: "Pagado" },
+            { value: "F", label: "Aprobado" },
             { value: "C", label: "Anulado" }
           ]}
         />
@@ -201,6 +201,11 @@ export function IncentiveRequestsView({
                         <span className="tracking-status-pill">
                           {getIncentiveStatusLabel(request.status)}
                         </span>
+                        {request.currentFlowUser ? (
+                          <div className="tracking-filter-caption">
+                            En flujo con {request.currentFlowUser}
+                          </div>
+                        ) : null}
                         {request.cancellationComment ? (
                           <div className="tracking-filter-caption">
                             {request.cancellationComment}

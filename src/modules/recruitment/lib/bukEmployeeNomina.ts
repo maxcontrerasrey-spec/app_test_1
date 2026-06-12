@@ -234,7 +234,7 @@ function autoFitColumns(rows: Array<Array<string | number | Date>>) {
 }
 
 export async function exportBukNominaXls(sources: NominaSource[], fileName?: string) {
-  const { utils, writeFile } = await import("xlsx");
+  const { utils, writeFile } = await import("@mylinkpi/xlsx");
   const workbook = utils.book_new();
   const employeeRows = buildEmployeeSheetRows(sources);
   const employeeSheet = utils.aoa_to_sheet(employeeRows);

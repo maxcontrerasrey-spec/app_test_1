@@ -604,7 +604,7 @@ export function InternalMobilityPage() {
                 </span>
               </div>
 
-              <div className="expanded-case-detail-grid">
+              <div className="expanded-case-detail-grid expanded-case-detail-grid-vertical">
                 <div className="expanded-detail-section">
                   <h4>Trabajador actual</h4>
                   <div className="expanded-detail-fields">

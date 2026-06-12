@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 import { createClient } from "@supabase/supabase-js";
-import XLSX from "xlsx";
+import XLSX from "@mylinkpi/xlsx";
 
 const DEFAULT_INPUT_PATH = "/Users/maximilianocontrerasrey/Desktop/bbdd-cecos.xlsx";
 const DEFAULT_SHEET_NAME = "Hoja1";

@@ -8,6 +8,7 @@ import {
   useHrIncentiveSetupCatalogs
 } from "../hooks/useIncentivesQueries";
 import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationForm";
+import { IncentiveApprovalsView } from "../components/IncentiveApprovalsView";
 import { IncentiveRequestsView } from "../components/IncentiveRequestsView";
 import { IncentiveSetupView } from "../components/IncentiveSetupView";
 import "../styles/incentives.css";
@@ -17,6 +18,12 @@ const HUMAN_RESOURCES_VIEWS = [
     key: "incentivos",
     label: "Registrar incentivo",
     description: "Genera incentivos sobre trabajadores elegibles y calcula el monto desde reglas."
+  },
+  {
+    key: "aprobaciones",
+    label: "Aprobaciones",
+    description:
+      "Resuelve la doble aprobación de incentivos pendientes por administrador de contrato y gerencia."
   },
   {
     key: "solicitudes",
@@ -96,6 +103,8 @@ export function HumanResourcesDashboard() {
         {activeView === "incentivos" ? (
           <IncentiveRegistrationForm setupCatalogsQuery={setupCatalogsQuery} />
         ) : null}
+
+        {activeView === "aprobaciones" ? <IncentiveApprovalsView /> : null}
 
         {activeView === "solicitudes" ? (
           <IncentiveRequestsView setupCatalogsQuery={setupCatalogsQuery} />

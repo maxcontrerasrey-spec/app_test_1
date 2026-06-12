@@ -1,7 +1,9 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  fetchHrIncentiveApprovalQueue,
   fetchHrIncentivePreview,
+  fetchHrIncentiveRequestDetail,
   fetchHrIncentiveRequests,
   fetchHrIncentiveSetupCatalogs,
   fetchHrIncentiveWorkerContext,
@@ -34,6 +36,28 @@ export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters) {
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true
+  });
+}
+
+export function useHrIncentiveApprovalQueue() {
+  return useQuery({
+    queryKey: queryKeys.incentives.approvalsQueue(),
+    queryFn: fetchHrIncentiveApprovalQueue,
+    staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
+    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
+    refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true
+  });
+}
+
+export function useHrIncentiveRequestDetail(requestId: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.incentives.requestDetail(requestId),
+    queryFn: () => fetchHrIncentiveRequestDetail(requestId),
+    staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
+    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
+    enabled: enabled && Boolean(requestId)
   });
 }
 
@@ -104,6 +128,7 @@ export function useHrIncentivePreview(params: {
 export async function invalidateHrIncentiveQueries(queryClient: QueryClient) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() }),
-    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestsRoot() })
+    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestsRoot() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.approvalsRoot() })
   ]);
 }

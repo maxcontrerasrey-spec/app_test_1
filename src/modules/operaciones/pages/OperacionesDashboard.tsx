@@ -592,7 +592,7 @@ export function OperacionesDashboard() {
   async function handleExportExcel() {
     if (exportRows.length === 0) return;
 
-    const { utils, writeFile } = await import("xlsx");
+    const { utils, writeFile } = await import("@mylinkpi/xlsx");
     const workbook = utils.book_new();
     const worksheetRows = exportRows.map((row) => ({
       Fecha: row.service_date,

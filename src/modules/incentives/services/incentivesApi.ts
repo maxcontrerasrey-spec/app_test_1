@@ -1,9 +1,12 @@
 import { supabase } from "../../../shared/lib/supabase";
 import type {
+  BulkHrIncentiveApprovalDecisionResult,
   CreateHrIncentiveRequestInput,
   CreateHrIncentiveRequestResult,
+  HrIncentiveApprovalQueueItem,
   HrIncentiveEligibleWorker,
   HrIncentivePreview,
+  HrIncentiveRequestDetail,
   HrIncentiveRequest,
   HrIncentiveRequestsFilters,
   HrIncentiveSetupCatalogs,
@@ -21,6 +24,21 @@ function getSupabaseClient() {
 
 function asArray<T>(value: unknown) {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function readNullableText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function formatRpcError(error: {
+  message?: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}) {
+  return [error.message, error.details, error.hint, error.code ? `Código: ${error.code}` : ""]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function mapUnionStatus(value: unknown): HrIncentiveUnionStatus {
@@ -237,6 +255,110 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
   };
 }
 
+function mapApprovalQueueRow(row: Record<string, unknown>): HrIncentiveApprovalQueueItem {
+  return {
+    approvalId: Number(row.approval_id ?? 0),
+    requestId: String(row.request_id ?? ""),
+    folio: Number(row.folio ?? 0),
+    stepCode: String(row.step_code ?? "contract_admin") as HrIncentiveApprovalQueueItem["stepCode"],
+    stepName: String(row.step_name ?? ""),
+    stepOrder: Number(row.step_order ?? 0),
+    approvalStatus: String(row.approval_status ?? "pending") as HrIncentiveApprovalQueueItem["approvalStatus"],
+    approverUserId: readNullableText(row.approver_user_id),
+    approverName: String(row.approver_name ?? ""),
+    employeeFullName: String(row.employee_full_name ?? ""),
+    employeeDocumentNumber: String(row.employee_document_number ?? ""),
+    employeeJobTitle: String(row.employee_job_title ?? ""),
+    employeeUnionName: readNullableText(row.employee_union_name),
+    selectedContractCode: String(row.selected_contract_code ?? ""),
+    selectedAreaName: String(row.selected_area_name ?? ""),
+    incentiveTypeName: String(row.incentive_type_name ?? ""),
+    serviceDate: String(row.service_date ?? ""),
+    calculatedAmount: Number(row.calculated_amount ?? 0),
+    requesterName: String(row.requester_name ?? ""),
+    createdAt: String(row.created_at ?? "")
+  };
+}
+
+function mapRequestDetail(payload: unknown): HrIncentiveRequestDetail {
+  const source = (payload ?? {}) as Record<string, unknown>;
+  const request = (source.request ?? {}) as Record<string, unknown>;
+
+  return {
+    request: {
+      id: String(request.id ?? ""),
+      folio: Number(request.folio ?? 0),
+      status: String(request.status ?? "P") as HrIncentiveRequestDetail["request"]["status"],
+      employeeBukEmployeeId: String(request.employee_buk_employee_id ?? ""),
+      employeeDocumentType: String(request.employee_document_type ?? "rut"),
+      employeeDocumentNumber: String(request.employee_document_number ?? ""),
+      employeeFullName: String(request.employee_full_name ?? ""),
+      employeeJobTitle: String(request.employee_job_title ?? ""),
+      employeeUnionName: readNullableText(request.employee_union_name),
+      employeeUnionStatus: mapUnionStatus(request.employee_union_status),
+      employeeUnionJoinedAt: readNullableText(request.employee_union_joined_at),
+      primaryContractCode: readNullableText(request.primary_contract_code),
+      primaryAreaName: readNullableText(request.primary_area_name),
+      selectedContractCode: String(request.selected_contract_code ?? ""),
+      selectedAreaName: String(request.selected_area_name ?? ""),
+      selectedAreaCode: readNullableText(request.selected_area_code),
+      incentiveTypeName: String(request.incentive_type_name ?? ""),
+      requiresReplacement: Boolean(request.requires_replacement),
+      replacementBukEmployeeId: readNullableText(request.replacement_buk_employee_id),
+      replacementDocumentNumber: readNullableText(request.replacement_document_number),
+      replacementFullName: readNullableText(request.replacement_full_name),
+      motive: readNullableText(request.motive),
+      description: readNullableText(request.description),
+      serviceDate: String(request.service_date ?? ""),
+      durationHours:
+        request.duration_hours === null || request.duration_hours === undefined
+          ? null
+          : Number(request.duration_hours),
+      periodCode: String(request.period_code ?? ""),
+      calculationBasis:
+        request.calculation_basis === "per_hour" ? "per_hour" : "fixed",
+      rateRuleAmount: Number(request.rate_rule_amount ?? 0),
+      calculatedAmount: Number(request.calculated_amount ?? 0),
+      requesterName: String(request.requester_name ?? ""),
+      requesterEmail: readNullableText(request.requester_email),
+      currentStepCode:
+        readNullableText(request.current_step_code) as HrIncentiveRequestDetail["request"]["currentStepCode"],
+      currentStepName: readNullableText(request.current_step_name),
+      currentApproverName: readNullableText(request.current_approver_name),
+      cancelledAt: readNullableText(request.cancelled_at),
+      cancellationComment: readNullableText(request.cancellation_comment),
+      createdAt: String(request.created_at ?? ""),
+      updatedAt: String(request.updated_at ?? "")
+    },
+    approvals: asArray<Record<string, unknown>>(source.approvals).map((item) => ({
+      id: Number(item.id ?? 0),
+      stepCode: String(item.step_code ?? "contract_admin") as HrIncentiveRequestDetail["approvals"][number]["stepCode"],
+      stepName: String(item.step_name ?? ""),
+      stepOrder: Number(item.step_order ?? 0),
+      approverUserId: readNullableText(item.approver_user_id),
+      approverName: readNullableText(item.approver_name),
+      approverEmail: readNullableText(item.approver_email),
+      status: String(item.status ?? "pending") as HrIncentiveRequestDetail["approvals"][number]["status"],
+      decisionBy: readNullableText(item.decision_by),
+      decisionComment: readNullableText(item.decision_comment),
+      decidedAt: readNullableText(item.decided_at),
+      createdAt: String(item.created_at ?? "")
+    })),
+    history: asArray<Record<string, unknown>>(source.history).map((item) => ({
+      id: Number(item.id ?? 0),
+      actionType: String(item.action_type ?? ""),
+      actorUserId: readNullableText(item.actor_user_id),
+      actorName: readNullableText(item.actor_name),
+      comment: readNullableText(item.comment),
+      metadata:
+        item.metadata && typeof item.metadata === "object"
+          ? (item.metadata as Record<string, unknown>)
+          : null,
+      createdAt: String(item.created_at ?? "")
+    }))
+  };
+}
+
 export async function fetchHrIncentiveSetupCatalogs() {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("get_hr_incentive_setup_catalogs");
@@ -372,6 +494,86 @@ export async function fetchHrIncentiveRequests(filters: HrIncentiveRequestsFilte
   }
 
   return asArray<Record<string, unknown>>(data).map(mapRequestRow);
+}
+
+export async function fetchHrIncentiveApprovalQueue() {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("get_hr_incentive_approval_queue");
+
+  if (error) {
+    throw new Error(
+      formatRpcError(error) || "No fue posible cargar la bandeja de aprobaciones de incentivos."
+    );
+  }
+
+  return asArray<Record<string, unknown>>(data).map(mapApprovalQueueRow);
+}
+
+export async function fetchHrIncentiveRequestDetail(requestId: string) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("get_hr_incentive_request_detail", {
+    p_request_id: requestId
+  });
+
+  if (error) {
+    throw new Error(
+      formatRpcError(error) || "No fue posible cargar el detalle del incentivo."
+    );
+  }
+
+  return mapRequestDetail(data);
+}
+
+export async function decideHrIncentiveApproval(params: {
+  approvalId: number;
+  decision: "approved" | "rejected";
+  comment?: string | null;
+}) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("decide_hr_incentive_request_approval", {
+    p_approval_id: params.approvalId,
+    p_decision: params.decision,
+    p_comment: params.comment?.trim() ? params.comment.trim() : null
+  });
+
+  if (error) {
+    throw new Error(formatRpcError(error) || "No fue posible registrar la decisión.");
+  }
+
+  const row = asArray<Record<string, unknown>>(data)[0];
+
+  return {
+    requestId: row ? String(row.request_id ?? "") : "",
+    requestStatus: row ? (String(row.request_status ?? "") as HrIncentiveRequest["status"]) : null,
+    decidedStep: row ? readNullableText(row.decided_step) : null
+  };
+}
+
+export async function bulkDecideHrIncentiveApprovals(params: {
+  approvalIds: number[];
+  decision: "approved" | "rejected";
+  comment?: string | null;
+}) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("bulk_decide_hr_incentive_request_approvals", {
+    p_approval_ids: params.approvalIds,
+    p_decision: params.decision,
+    p_comment: params.comment?.trim() ? params.comment.trim() : null
+  });
+
+  if (error) {
+    throw new Error(formatRpcError(error) || "No fue posible procesar las aprobaciones.");
+  }
+
+  return asArray<Record<string, unknown>>(data).map(
+    (item): BulkHrIncentiveApprovalDecisionResult => ({
+      approvalId: Number(item.approval_id ?? 0),
+      requestId: readNullableText(item.request_id),
+      success: Boolean(item.success),
+      requestStatus: readNullableText(item.request_status) as BulkHrIncentiveApprovalDecisionResult["requestStatus"],
+      error: readNullableText(item.error)
+    })
+  );
 }
 
 export async function addHrIncentiveAllowedJobTitle(jobTitle: string) {

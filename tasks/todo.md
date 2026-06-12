@@ -9,6 +9,76 @@
 - [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
 - [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
 
+## Bandeja de doble aprobación para Incentivos Extraordinarios
+
+- [x] Auditar el flujo actual de `Incentivos Extraordinarios` para detectar dónde debía injertarse la cadena de doble aprobación sin duplicar lógica
+- [x] Extender Supabase con aprobaciones secuenciales para incentivos: `Administrador de contrato` primero y `Gerente de área` segundo, incluyendo detalle y decisión masiva
+- [x] Agregar una nueva sección `Aprobaciones` en el dashboard de incentivos con selección múltiple, detalle expandido y acciones de aprobar/rechazar
+- [x] Validar `npm run build`, revisar consistencia del diff y documentar el resultado final
+
+## Higiene de dependencias y migraciones pendientes
+
+- [x] Auditar el uso real de `@xenova/transformers` y `xlsx` para distinguir deuda real de dependencias colgadas
+- [x] Reemplazar o retirar dependencias vulnerables sin romper exportaciones, scripts operativos ni artefactos ERP existentes
+- [x] Revisar la migración pendiente `20260612120000_align_internal_mobility_permission_contracts.sql` y eliminarla solo si realmente no pertenece al flujo vigente
+- [x] Validar `npm run build`, `npm audit` y documentar el resultado final en `todo.md` y `lessons.md`
+
+## Resultado de higiene de dependencias y migraciones pendientes
+
+- `@xenova/transformers` se retiró completamente del proyecto porque no tenía usos reales en `src/` ni en `scripts/`; también se limpió su chunk muerto en [`vite.config.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:1) y [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:1).
+- `xlsx` no estaba colgado: seguía gobernando exportaciones del frontend y varios scripts operativos. Para no romper esos flujos ni perder soporte `xlsx/xls`, se reemplazó por [`@mylinkpi/xlsx`](https://www.npmjs.com/package/@mylinkpi/xlsx), manteniendo la misma API de uso en [`OperacionesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/pages/OperacionesDashboard.tsx:595), [`bukEmployeeNomina.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/bukEmployeeNomina.ts:237) y scripts de provisión/migración.
+- La migración pendiente [`20260612120000_align_internal_mobility_permission_contracts.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612120000_align_internal_mobility_permission_contracts.sql:1) sí corresponde al ERP actual y no se eliminó: sigue siendo la pieza que alinea los permisos de `Movilidad Interna` con `Control de Contrataciones`.
+- Validación cerrada con `npm audit --omit=dev --json` en `0` vulnerabilidades, `npm run build` exitoso y smoke test Node del paquete de planillas leyendo/escribiendo workbook con la nueva dependencia.
+
+## Ajuste de contratos aplicables en registro de incentivos
+
+- [x] Auditar el flujo de `Registro de incentivos` para identificar dónde se limita el selector al contrato actual del trabajador
+- [x] Corregir el backend canónico para que el selector mantenga el contrato primario como default pero exponga todos los contratos activos del ERP
+- [x] Validar build y documentar el cambio sin romper la resolución automática de montos
+
+## Resultado de ajuste de contratos aplicables en registro de incentivos
+
+- Se agregó la migración [`20260612131500_expand_hr_incentive_contract_options.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612131500_expand_hr_incentive_contract_options.sql:1), que redefine la RPC canónica [`get_hr_incentive_worker_context(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612131500_expand_hr_incentive_contract_options.sql:1).
+- La causa raíz no estaba en el selector React sino en el payload backend: `available_areas` solo devolvía áreas/contratos históricamente asociadas al trabajador, por lo que el formulario jamás podía mostrar el resto de contratos activos del ERP.
+- El nuevo contrato mantiene el `primary_contract_code` y el área operativa del trabajador para la preselección y trazabilidad, pero agrega como opciones complementarias todos los registros activos de [`public.contracts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612131500_expand_hr_incentive_contract_options.sql:108).
+- La resolución de monto no se tocó: [`calculate_hr_incentive_preview(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612040714_consolidate_hr_incentive_rule_resolution.sql:392) y [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612040714_consolidate_hr_incentive_rule_resolution.sql:471) siguen calculando por `selected_contract_code`, así que el cambio amplía opciones sin alterar el matching de reglas ni el guardado del folio.
+- Validación cerrada con `npm run build` y `git diff --check`.
+
+## Hotfix de ambigüedad en registro de incentivos
+
+- [x] Auditar la RPC de creación para ubicar la referencia ambigua a `folio`
+- [x] Corregir la función de registro sin tocar el cálculo ni el payload funcional de incentivos
+- [x] Validar build y documentar el hotfix
+
+## Resultado de hotfix de ambigüedad en registro de incentivos
+
+- Se agregó la migración [`20260612133000_fix_hr_incentive_request_folio_ambiguity.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612133000_fix_hr_incentive_request_folio_ambiguity.sql:1), que redefine [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612133000_fix_hr_incentive_request_folio_ambiguity.sql:1).
+- La causa raíz era una colisión clásica de PL/pgSQL: la función expone `returns table (... folio bigint ...)` y luego hacía `insert ... returning id, folio`, dejando `folio` ambiguo entre la columna real de `hr_incentive_requests` y el nombre de salida de la propia función.
+- El hotfix califica explícitamente el `returning` como `hir.id, hir.folio`, eliminando la ambigüedad sin modificar preview, reglas, validaciones ni la estructura de la solicitud registrada.
+- Validación cerrada con `npm run build` y `git diff --check`.
+
+## Hotfix de visibilidad de folios propios para solicitantes con rol gerencia
+
+- [x] Auditar por qué folios históricos migrados como el 2101 no son visibles para su propio solicitante
+- [x] Corregir la helper de visibilidad para que el solicitante siempre vea sus propios folios, incluso si además tiene rol `gerencia`
+- [x] Validar build y documentar el ajuste sin abrir visibilidad global indebida
+
+## Resultado de hotfix de visibilidad de folios propios para solicitantes con rol gerencia
+
+- Se agregó la migración [`20260612140000_restore_requester_visibility_for_hiring_process_summary.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612140000_restore_requester_visibility_for_hiring_process_summary.sql:1), que redefine [`user_can_view_hiring_request_process_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612140000_restore_requester_visibility_for_hiring_process_summary.sql:1).
+- La causa raíz era lógica, no de UI ni de migración de datos: la helper vigente solo permitía “solicitudes propias” para usuarios que **no** tuvieran rol `gerencia`. Si el solicitante además era `gerencia`, quedaba obligado a pasar por el branch de `cost_center_approvers`, lo que podía ocultar folios propios históricos aunque `requester_id` sí estuviera bien grabado.
+- El ajuste mueve `requester_user_id = target_user_id` al nivel superior de la condición, de modo que el dueño del folio siempre lo vea; la visibilidad extra por rol (`gerencia` por centro de costo, roles globales, etc.) se mantiene intacta para terceros.
+- Validación cerrada con `npm run build` y `git diff --check`.
+
+## Resultado de bandeja de doble aprobación para Incentivos Extraordinarios
+
+- Se agregó la migración [`20260612130334_add_hr_incentive_double_approval_queue.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612130334_add_hr_incentive_double_approval_queue.sql:1), que crea [`hr_incentive_request_approvals`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612130334_add_hr_incentive_double_approval_queue.sql:3) y redefine las RPCs clave del flujo para soportar doble aprobación real.
+- La solicitud de incentivo ya no termina solo en `status = 'P'`: al registrarse crea la aprobación pendiente de `Administrador de contrato`, resolviendo el usuario desde [`buk_contract_mappings.contract_admin_name`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260607_230000_add_buk_contract_mapping_catalog.sql:36) y `profiles` activos; al aprobar esa etapa, se crea automáticamente la aprobación de `Gerente de área` desde [`cost_center_approvers`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520_000006_secure_hiring_requests_workflow.sql:15).
+- Se añadieron las RPCs [`get_hr_incentive_approval_queue()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612130334_add_hr_incentive_double_approval_queue.sql:458), [`get_hr_incentive_request_detail(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612130334_add_hr_incentive_double_approval_queue.sql:527), [`decide_hr_incentive_request_approval(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612130334_add_hr_incentive_double_approval_queue.sql:646) y [`bulk_decide_hr_incentive_request_approvals(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612130334_add_hr_incentive_double_approval_queue.sql:824), dejando la aprobación individual y masiva gobernada en backend y no por loops inseguros en React.
+- [`HumanResourcesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/pages/HumanResourcesDashboard.tsx:1) ahora expone la nueva pestaña `Aprobaciones`, e [`IncentiveApprovalsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveApprovalsView.tsx:1) entrega la bandeja con búsqueda, checkboxes, aprobación/rechazo masivo y detalle extendido del incentivo.
+- [`IncentiveRequestsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:1) dejó de tratar `F` como `Pagado`: ahora `P = Pendiente administrador contrato`, `E = Pendiente gerente de area` y `F = Aprobado`, además de mostrar el aprobador pendiente en historial mediante `current_flow_user`.
+- Validación local cerrada con `npm run build` y `git diff --check`. Queda pendiente aplicar la nueva migración en Supabase para que la bandeja funcione contra la base remota.
+
 ## Ajuste de permisos entre Movilidad Interna y Control de Contrataciones
 
 - [x] Auditar las RPCs y helpers de permisos que gobiernan la lectura de movilidad interna desde el módulo propio y desde `Control de Contrataciones`
@@ -16,11 +86,33 @@
 - [x] Verificar que la pestaña `Movilidad Interna` en `Control de Contrataciones` conserve exactamente el mismo gate e interacción de `Personal a Contratar` sin romper vistas existentes
 - [x] Validar build, revisar diffs y documentar el resultado final en `todo.md` y `lessons.md`
 
+## Integración base de Apache ECharts para módulos ERP
+
+- [x] Auditar el frontend actual y definir la integración de ECharts que minimice bundle extra y evite wrappers de terceros innecesarios
+- [x] Instalar Apache ECharts y crear una capa compartida reutilizable en `src/shared` con registro modular, theming y ciclo de vida React limpio
+- [x] Exponer un showcase mínimo dentro de la app para validar interacción, resize y consistencia visual con los temas existentes
+- [x] Validar build, revisar bundle/diff y documentar la integración final en `todo.md` y `lessons.md`
+
+## Resultado de integración base de Apache ECharts para módulos ERP
+
+- Se instaló [`echarts@^6.1.0`](https://www.npmjs.com/package/echarts) siguiendo la guía oficial de importación modular de Apache ECharts, evitando un wrapper React externo y dejando el control dentro del repositorio.
+- La integración compartida quedó en [`src/shared/lib/echarts/registry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/registry.ts:1), [`src/shared/lib/echarts/theme.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/theme.ts:1) y [`src/shared/ui/charts/EChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChart.tsx:1): registro modular, temas `light/dark/e-ink`, resize automático, loading, empty state, renderer `canvas/svg` y API tipada reutilizable.
+- El preset inicial quedó optimizado para tipos ERP comunes (`line`, `bar`, `pie`, `scatter`, `gauge`) y además expone [`registerERPChartModules(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/registry.ts:65) para que futuros módulos agreguen charts menos frecuentes sin ensuciar la base compartida.
+- [`src/shared/ui/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/index.ts:1) ya exporta la nueva capa de gráficos para que cualquier módulo la consuma desde el barrel estándar.
+- Se añadió un showcase mínimo en [`src/modules/labs/components/EChartsShowcase.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/components/EChartsShowcase.tsx:1) y [`LabsPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/pages/LabsPage.tsx:1), con cambio semanal/mensual, eventos de click, tooltip, zoom y exportación.
+- Para no inflar el arranque de `Labs`, el showcase quedó cargado con `lazy()`; así el chunk pesado de ECharts se separa del resto del laboratorio y solo se descarga cuando esa sección realmente se usa.
+- En la pasada correctiva posterior se endureció además la integración: [`EChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChart.tsx:1) ahora tolera ausencia de `ResizeObserver`, [`registry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/registry.ts:1) quedó con tipado real para extensiones adicionales y el showcase nuevo dejó de depender de estilos inline propios.
+- [`vite.config.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:1) y [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:1) ahora separan vendors base (`app-framework`, `supabase`, `markdown`, `xlsx`, `zrender`, `echarts`) para que el bundle principal del ERP baje de `602 KB` a `39.85 KB` y el peso de gráficos quede aislado fuera del arranque normal.
+- En la misma pasada se actualizó `react-router-dom` al parche compatible `^6.30.4`, eliminando la vulnerabilidad moderada de open redirect detectada por `npm audit` sin abrir un upgrade mayor del router.
+- Validación cerrada con `npm run build`, `git diff --check` y smoke test HTTP local usando el bundle ESM instalado en `node_modules` más captura automatizada con Playwright CLI.
+- Queda una advertencia esperable de Vite: `echarts-vendor` sigue sobre `500 KB` minificados, pero ya no contamina el bundle principal y solo se carga cuando una ruta o módulo realmente pide gráficos.
+- Queda deuda de dependencias que no se corrigió en esta pasada porque no existe un fix compatible inmediato en este stack actual: `xlsx` sigue con advisories abiertos sin `fixAvailable` y `@xenova/transformers` arrastra `protobufjs/onnxruntime-web`, donde `npm audit` solo propone una regresión mayor hacia `2.0.1`.
+
 ## Resultado de ajuste de permisos entre Movilidad Interna y Control de Contrataciones
 
-- Se agregó la migración [`20260612_120000_align_internal_mobility_permission_contracts.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_120000_align_internal_mobility_permission_contracts.sql:1), que elimina el drift entre la visibilidad de folios y la visibilidad de solicitudes de movilidad interna.
-- [`user_can_view_internal_mobility_request_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_120000_align_internal_mobility_permission_contracts.sql:3) ahora delega directamente en [`user_can_view_hiring_request_process_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_182500_restore_control_contratos_summary_visibility.sql:8), de modo que movilidad interna hereda exactamente la misma matriz: roles globales ven todo, `gerencia` solo sus áreas y el resto solo solicitudes propias.
-- La nueva helper [`user_can_read_internal_mobility_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612_120000_align_internal_mobility_permission_contracts.sql:19) permite leer la bandeja de movilidad tanto desde el módulo `movilidad_interna` como desde superficies de `Control de Contrataciones` gobernadas por `candidate_control_access`, evitando que la UI muestre una pestaña autorizada con backend todavía bloqueado.
+- Se agregó la migración [`20260612120000_align_internal_mobility_permission_contracts.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612120000_align_internal_mobility_permission_contracts.sql:1), que elimina el drift entre la visibilidad de folios y la visibilidad de solicitudes de movilidad interna.
+- [`user_can_view_internal_mobility_request_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612120000_align_internal_mobility_permission_contracts.sql:3) ahora delega directamente en [`user_can_view_hiring_request_process_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611_182500_restore_control_contratos_summary_visibility.sql:8), de modo que movilidad interna hereda exactamente la misma matriz: roles globales ven todo, `gerencia` solo sus áreas y el resto solo solicitudes propias.
+- La nueva helper [`user_can_read_internal_mobility_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612120000_align_internal_mobility_permission_contracts.sql:19) permite leer la bandeja de movilidad tanto desde el módulo `movilidad_interna` como desde superficies de `Control de Contrataciones` gobernadas por `candidate_control_access`, evitando que la UI muestre una pestaña autorizada con backend todavía bloqueado.
 - La pestaña `Movilidad Interna` de [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:355) ya colgaba del mismo `canAccessCandidateControl` que `Personal a Contratar`; no fue necesario abrir más roles en frontend, solo alinear el contrato backend para que vista e interacción queden consistentes.
 - Validación local cerrada con `npm run build` y `git diff --check`.
 
