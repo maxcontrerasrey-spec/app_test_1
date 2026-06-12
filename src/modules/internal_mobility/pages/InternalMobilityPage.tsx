@@ -569,11 +569,22 @@ export function InternalMobilityPage() {
       </div>
 
       {selectedRequestId ? (
-        <details className="form-card mobility-detail-card">
-          <summary className="mobility-detail-summary">
-            <strong>Ver detalle de solicitud:</strong> {requestDetailQuery.data?.request.folio ?? selectedRequestId}
-          </summary>
-          <div className="mobility-detail-content-wrap">
+        <div className="approval-modal-backdrop" role="presentation" onClick={() => setSelectedRequestId(null)}>
+          <div
+            className="approval-modal-card mobility-modal-override"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobility-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="modal-close-button"
+              onClick={() => setSelectedRequestId(null)}
+              aria-label="Cerrar detalle"
+            >
+              ✕
+            </button>
 
             {requestDetailQuery.isLoading ? <p className="helper-copy">Cargando detalle de la solicitud...</p> : null}
             {requestDetailQuery.error ? (
@@ -584,7 +595,7 @@ export function InternalMobilityPage() {
               <>
                 <div className="mobility-detail-header">
                 <div>
-                  <h3>{requestDetailQuery.data.request.folio}</h3>
+                  <h3 id="mobility-modal-title">{requestDetailQuery.data.request.folio}</h3>
                   <p className="helper-copy">
                     {toStatusLabel(requestDetailQuery.data.request.status)} · {requestDetailQuery.data.request.employeeFullName}
                   </p>
@@ -733,7 +744,7 @@ export function InternalMobilityPage() {
             </>
           ) : null}
           </div>
-        </details>
+        </div>
       ) : null}
     </PageShell>
   );
