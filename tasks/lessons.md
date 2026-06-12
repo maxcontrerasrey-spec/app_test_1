@@ -258,6 +258,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No bloquees todo el contexto de un trabajador solo porque la empresa no llegó como texto**. Si BUK entrega `company_id`, primero intenta resolver por catálogo, por otras filas históricas o por el área mapeada; si aun así no aparece el nombre, la UI debe cargar el resto de los datos y marcar la empresa como no resuelta.
 - **Los campos derivados por lookup externo deben degradar con gracia y no endurecer `NOT NULL` antes de comprobar la fuente real**. En movilidad interna, empresa actual y `requiere finiquito` dependen de una resolución secundaria; por eso el guard correcto es seguir operando con fallback visible, no levantar excepción temprana.
 
+## 58. En módulos con reglas parametrizadas, backend y pantalla deben exponer la misma resolución
+
+- **No basta con que el motor calcule internamente si la UI no muestra qué regla ganó**. Cuando un monto depende de contrato, cargo o sindicato, el usuario debe ver antes de guardar el monto final y los criterios aplicados.
+- **Si una familia de RPCs fue redefinida varias veces en migraciones sucesivas, se debe cerrar con una consolidación explícita**. Dejar overloads históricos en producción aumenta el riesgo de drift entre setup, preview y registro final.
+
 ## 58. Una etapa nueva en pipeline no se cierra tocando solo labels
 
 - **Cada etapa adicional exige barrer frontend, constraints y RPCs de transición juntos**. Si agregas `En Proceso` entre `Who` y `Exámenes Médicos`, hay que actualizar unions TypeScript, filtros, labels, opciones siguientes, `CHECK` de base y validaciones de `advance_recruitment_candidate_stage(...)`.

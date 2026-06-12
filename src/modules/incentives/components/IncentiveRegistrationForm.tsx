@@ -102,6 +102,12 @@ export function IncentiveRegistrationForm({
       ? Number(durationHours)
       : null;
 
+  const shouldShowPreview =
+    Boolean(selectedWorker) &&
+    Boolean(selectedIncentiveTypeId) &&
+    Boolean(selectedArea?.contractCode) &&
+    Boolean(serviceDate);
+
   const previewQuery = useHrIncentivePreview({
     bukEmployeeId: selectedWorker?.bukEmployeeId ?? "",
     incentiveTypeId: selectedIncentiveTypeId,
@@ -255,6 +261,62 @@ export function IncentiveRegistrationForm({
             value={serviceDate}
             onChange={setServiceDate}
           />
+
+          <div className="hr-incentives-grid-span-2 hr-incentives-preview-card">
+            <div className="hr-incentives-preview-header">
+              <strong>Monto resuelto por regla</strong>
+              <span className="tracking-filter-caption">
+                La solicitud se registrará con esta misma resolución.
+              </span>
+            </div>
+
+            {!shouldShowPreview ? (
+              <p className="tracking-filter-caption">
+                Selecciona trabajador, contrato, tipo de incentivo y fecha para calcular el monto.
+              </p>
+            ) : null}
+
+            {shouldShowPreview && previewQuery.isLoading ? (
+              <p className="tracking-filter-caption">Calculando monto según reglas activas...</p>
+            ) : null}
+
+            {shouldShowPreview && previewQuery.isError ? (
+              <p className="form-status form-status-error">
+                {previewQuery.error.message}
+              </p>
+            ) : null}
+
+            {previewQuery.data ? (
+              <div className="hr-incentives-preview-body">
+                <div>
+                  <span>Monto calculado</span>
+                  <strong>{formatCurrencyValue(previewQuery.data.calculatedAmount)}</strong>
+                </div>
+                <div>
+                  <span>Regla base</span>
+                  <strong>{formatCurrencyValue(previewQuery.data.rule.rateRuleAmount)}</strong>
+                </div>
+                <div>
+                  <span>Contrato aplicado</span>
+                  <strong>
+                    {previewQuery.data.rule.matchedContractCode ?? "Todos"}
+                  </strong>
+                </div>
+                <div>
+                  <span>Cargo aplicado</span>
+                  <strong>{previewQuery.data.rule.matchedJobTitle ?? "Todos"}</strong>
+                </div>
+                <div>
+                  <span>Sindicato aplicado</span>
+                  <strong>{previewQuery.data.rule.matchedUnionName ?? "Cualquiera"}</strong>
+                </div>
+                <div>
+                  <span>Prioridad</span>
+                  <strong>{previewQuery.data.rule.priority}</strong>
+                </div>
+              </div>
+            ) : null}
+          </div>
 
           {selectedIncentiveType?.calculationBasis === "per_hour" ? (
             <TextField

@@ -9,6 +9,22 @@
 - [x] Revisar la auditoría adjunta contra el estado vivo del repo y aplicar mejoras seguras e inmediatas donde el hallazgo siga vigente
 - [x] Validar build y documentar resultado final en `todo.md` y `lessons.md`
 
+## Hotfix de resolución de reglas en Incentivos Extraordinarios
+
+- [x] Auditar frontend, catálogos y RPCs del módulo para reconstruir el flujo real de resolución de monto por contrato, cargo y sindicato
+- [x] Consolidar las RPCs de incentivos en una única versión canónica que soporte sindicato nominal y contexto operativo de contrato
+- [x] Hacer visible en UI el preview del monto calculado y la regla aplicada para que el usuario vea el resultado real antes de registrar
+- [x] Validar build local, revisar consistencia del diff y dejar documentado el resultado final
+
+## Resultado de hotfix de resolución de reglas en Incentivos Extraordinarios
+
+- La regla de `90.000` para `Por Inasistencia del Trabajador` y `Sindicato Codelco DMH` sí estaba persistida en base, pero el módulo seguía expuesto a drift porque las RPCs de incentivos habían sido redefinidas varias veces con firmas distintas para sindicato.
+- Se agregó la migración [`20260612040714_consolidate_hr_incentive_rule_resolution.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612040714_consolidate_hr_incentive_rule_resolution.sql:1), que elimina overloads históricos y fija una versión canónica de `add_hr_incentive_rate_rule`, `get_hr_incentive_worker_context`, `resolve_hr_incentive_rate_rule`, `calculate_hr_incentive_preview`, `create_hr_incentive_request` y `get_hr_incentive_setup_catalogs`.
+- La consolidación deja el matching operativo por `contrato + cargo + union_name + union_status`, y además fuerza el contexto del trabajador a resolver contrato operativo desde `buk_contract_mappings`, evitando que setup, preview y registro final trabajen con contratos distintos.
+- En frontend, [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) ahora muestra explícitamente el preview del cálculo: monto final, monto base de regla, contrato aplicado, cargo aplicado, sindicato aplicado y prioridad; si falla la resolución, se ve el error real en pantalla.
+- Se añadió soporte visual en [`incentives.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/styles/incentives.css:1) para esa tarjeta de preview sin romper el layout responsive del módulo.
+- Validación cerrada con `npm run build`, `git diff --check` y aplicación remota exitosa en Supabase productivo (`20260612041403_consolidate_hr_incentive_rule_resolution` en `pzblmbahnoyntrhistea`).
+
 ## Hotfix crítico de Movilidad Interna: cargo, empresa y catálogos BUK
 
 - [x] Auditar en Supabase vivo por qué `Movilidad Interna` no resolvía cargo actual, empresa actual ni destinos operativos
