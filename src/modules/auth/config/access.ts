@@ -21,8 +21,7 @@ export type AppModuleCode =
   | "solicitud_contrataciones"
   | "movilidad_interna"
   | "control_contrataciones"
-  | "certificados"
-  | "seguimiento_certificados"
+
   | "operaciones"
   | "recursos_humanos"
   | "ai_assistant";
@@ -54,8 +53,7 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "solicitud_contrataciones",
   "movilidad_interna",
   "control_contrataciones",
-  "certificados",
-  "seguimiento_certificados",
+
   "operaciones",
   "recursos_humanos",
   "ai_assistant"

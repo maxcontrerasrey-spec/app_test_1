@@ -13,15 +13,6 @@ const HomePage = lazyWithRetry("home-page", async () => ({
   default: (await import("../../modules/home/pages/HomePage")).HomePage
 }));
 
-const CertificatesPage = lazyWithRetry("certificates-page", async () => ({
-  default: (await import("../../modules/certificates/pages/CertificatesPage")).CertificatesPage
-}));
-
-const CertificateTrackingPage = lazyWithRetry("certificate-tracking-page", async () => ({
-  default: (
-    await import("../../modules/certificates/pages/CertificateTrackingPage")
-  ).CertificateTrackingPage
-}));
 
 const HiringRequestPage = lazyWithRetry("hiring-request-page", async () => ({
   default: (await import("../../modules/recruitment/pages/HiringRequestPage")).HiringRequestPage
@@ -123,22 +114,7 @@ export function AppRouter() {
                 </RoleProtectedRoute>
               }
             />
-            <Route
-              path="/certificados"
-              element={
-                <RoleProtectedRoute moduleCode="certificados">
-                  <CertificatesPage />
-                </RoleProtectedRoute>
-              }
-            />
-            <Route
-              path="/seguimiento-certificados"
-              element={
-                <RoleProtectedRoute moduleCode="seguimiento_certificados">
-                  <CertificateTrackingPage />
-                </RoleProtectedRoute>
-              }
-            />
+
             <Route
               path="/operaciones"
               element={<Navigate to="/operaciones/resumen" replace />}

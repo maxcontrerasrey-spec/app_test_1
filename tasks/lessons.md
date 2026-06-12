@@ -736,3 +736,6 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ## 86. Un folio rechazado o cerrado puede existir sin `recruitment_case`, y el resumen debe contemplarlo
 - **No asumas que todo folio visible en `Resumen de procesos` tiene un caso operativo asociado.** Si la solicitud fue rechazada antes de abrir reclutamiento, vive solo en `hiring_requests` y desaparecerá del frontend si el payload nace exclusivamente desde `recruitment_cases`.
 - **La solución segura es un payload híbrido para la pestaña de cerrados.** Los casos reales siguen entrando desde `recruitment_cases`, pero los folios finales sin caso deben agregarse como filas de solicitud con detalle expandible propio y sin intentar cargar un `case_detail` inexistente.
+
+## 87. Arquitectura Ágil: Eliminación temprana de Módulos Mockeados
+- **Si un módulo "placeholder" o "mock" no tiene ruta de implementación a corto plazo, es mejor eliminarlo**. Mantener código 100% hardcodeado (como el Generador y Seguimiento de Certificados original) ensucia el enrutador (`AppRouter`), el sistema de menús (`navigation.ts`) y la matriz de permisos (`access.ts`), agregando carga cognitiva innecesaria. Cuando se requiera la funcionalidad, se debe construir desde cero con bases de datos reales.

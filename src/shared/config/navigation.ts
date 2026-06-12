@@ -45,20 +45,6 @@ export const navigationModules: NavigationModule[] = [
         label: "Control de Contrataciones",
         description: "Revisa y administra folios y seguimiento.",
         iconKey: "timeline"
-      },
-      {
-        moduleCode: "certificados",
-        to: "/certificados",
-        label: "Generador de Certificados - Competencias",
-        description: "Genera certificados operativos por competencias.",
-        iconKey: "certificate"
-      },
-      {
-        moduleCode: "seguimiento_certificados",
-        to: "/seguimiento-certificados",
-        label: "Seguimiento de Certificados",
-        description: "Consulta estados y trazabilidad de certificados.",
-        iconKey: "tracking"
       }
     ]
   },
