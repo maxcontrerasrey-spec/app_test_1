@@ -272,8 +272,25 @@ export function CandidateIntakeForm({
           }
           options={candidateIntakeCases.map((caseRow) => ({
             value: caseRow.id,
-            label: `${caseRow.case_code} · ${caseRow.contract_name} · ${caseRow.job_position_name}`
+            label: `${caseRow.case_code} · ${caseRow.contract_name} · ${caseRow.job_position_name}`,
+            raw: caseRow
           }))}
+          renderOption={(opt) => {
+            const caseRow = opt.raw as import("../services/hiringControl").RecruitmentCaseListRow;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <strong style={{ fontSize: '0.95rem', color: 'var(--title)' }}>
+                  {caseRow.case_code} · {caseRow.job_position_name}
+                </strong>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  {caseRow.contract_name}
+                </span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Solicitante: {caseRow.requester_name || 'No informado'}
+                </span>
+              </div>
+            );
+          }}
           placeholder="Selecciona un caso"
         />
 

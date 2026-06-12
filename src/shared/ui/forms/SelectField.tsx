@@ -3,6 +3,7 @@ import { ChangeEvent } from "react";
 export type SelectOption = {
   value: string;
   label: string;
+  raw?: any;
 };
 
 type SelectFieldProps = {

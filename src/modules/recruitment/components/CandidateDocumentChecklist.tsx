@@ -304,7 +304,7 @@ export function CandidateDocumentChecklist({
               {doc.file_path ? (
                 <button 
                   type="button" 
-                  className="soft-primary-button soft-primary-button-neutral"
+                  className="soft-primary-button soft-primary-button-sm soft-primary-button-neutral"
                   onClick={() => void handleDownload(doc)}
                 >
                   Ver
@@ -314,7 +314,7 @@ export function CandidateDocumentChecklist({
               {doc.status === "pending" || doc.status === "rejected" || doc.status === "expired" ? (
                 <button 
                   type="button" 
-                  className="soft-primary-button soft-primary-button-neutral"
+                  className="soft-primary-button soft-primary-button-sm soft-primary-button-neutral"
                   onClick={() => void handleRealUploadStart(doc)}
                   disabled={isUploading}
                 >
@@ -326,14 +326,14 @@ export function CandidateDocumentChecklist({
                 <>
                   <button 
                     type="button" 
-                    className="soft-primary-button soft-primary-button-success"
+                    className="soft-primary-button soft-primary-button-sm soft-primary-button-success"
                     onClick={() => void handleReview(doc.id, "approved")}
                   >
                     Aprobar
                   </button>
                   <button 
                     type="button" 
-                    className="soft-primary-button soft-primary-button-danger"
+                    className="soft-primary-button soft-primary-button-sm soft-primary-button-danger"
                     onClick={() => void handleReview(doc.id, "rejected")}
                   >
                     Rechazar

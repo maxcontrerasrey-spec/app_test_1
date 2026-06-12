@@ -1265,6 +1265,13 @@ textarea {
   white-space: nowrap;
 }
 
+.soft-primary-button-sm {
+  min-width: unset;
+  min-height: unset;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+}
+
 .soft-primary-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;

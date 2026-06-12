@@ -10,6 +10,7 @@ type SelectFieldProps = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  renderOption?: (opt: SelectOption) => React.ReactNode;
 };
 
 export function SearchableSelectField({
@@ -20,7 +21,8 @@ export function SearchableSelectField({
   options,
   placeholder = "Seleccione una opción",
   disabled = false,
-  className = ""
+  className = "",
+  renderOption
 }: SelectFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -133,7 +135,7 @@ export function SearchableSelectField({
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-soft)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = opt.value === value ? 'var(--surface-muted)' : 'transparent')}
               >
-                {opt.label}
+                {renderOption ? renderOption(opt) : opt.label}
               </li>
             ))
           )}
