@@ -350,6 +350,8 @@ begin
     rc.case_code,
     rc.status as recruitment_case_status,
     rc.requested_vacancies,
+    c.id as destination_contract_id,
+    c.code as destination_contract_code,
     rc.contract_name,
     rc.job_position_name,
     rc.cost_center_code,
@@ -362,7 +364,8 @@ begin
     coalesce(
       nullif(trim(coalesce(bcm.company_name, '')), ''),
       public.resolve_known_company_name(null, hr.contract_number)
-    ) as destination_company_name
+    ) as destination_company_name,
+    bcm.buk_area_code as destination_area_code
   into case_record
   from public.recruitment_cases rc
   join public.hiring_requests hr
@@ -389,6 +392,10 @@ begin
 
   if case_record.recruitment_case_status in ('filled', 'closed_unfilled', 'cancelled') then
     raise exception 'El folio seleccionado ya no admite movilidad interna';
+  end if;
+
+  if case_record.destination_contract_id is null then
+    raise exception 'El folio seleccionado no tiene contrato destino operativo resuelto';
   end if;
 
   select *
@@ -421,9 +428,9 @@ begin
 
   select *
     into area_manager_profile
-    from public.profiles
-   where id = area_manager_record.approver_user_id
-     and status = 'active'
+    from public.profiles area_manager_profile_row
+   where area_manager_profile_row.id = area_manager_record.approver_user_id
+     and area_manager_profile_row.status = 'active'
    for share;
 
   if area_manager_profile.id is null then
@@ -497,11 +504,11 @@ begin
     case_record.case_code,
     case_record.folio,
     case_record.job_position_name,
-    null,
-    null,
+    case_record.destination_contract_id,
+    case_record.destination_contract_code,
     case_record.contract_number,
     case_record.contract_name,
-    null,
+    case_record.destination_area_code,
     case_record.cost_center_code,
     case_record.cost_center_name,
     case_record.destination_company_name,

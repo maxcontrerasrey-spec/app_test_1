@@ -135,6 +135,8 @@ function mapRequestSummary(row: Record<string, unknown>): InternalMobilityReques
     currentAreaName: readNullableText(row.current_area_name),
     currentCompanyName: readNullableText(row.current_company_name),
     currentShiftName: readNullableText(row.current_shift_name),
+    recruitmentCaseCode: readNullableText(row.recruitment_case_code),
+    sourceFolio: readNullableText(row.source_folio),
     destinationJobTitle: readText(row.destination_job_title),
     destinationAreaName: readText(row.destination_area_name),
     destinationShiftName: readNullableText(row.destination_shift_name),

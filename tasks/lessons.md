@@ -158,6 +158,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cuando la ejecución remota falla por límite o restricción del conector, el problema ya no es SQL sino de plataforma**. En ese caso se deja la migración lista en repo, se valida localmente y se documenta el bloqueo; no se fuerza un camino lateral contra la misma base.
 - **La salida correcta es separar “cambio preparado” de “cambio aplicado”**. Producción solo se considera corregida cuando la migración realmente corre en Supabase y los advisors o queries posteriores lo confirman.
 
+## 52. Al refactorizar una RPC grande, no inventes firmas de helpers ya vivos en producción
+
+- **En este repo, clonar bloques SQL entre migraciones sin contrastar la firma real de los helpers rompe producción aunque el `create or replace function` compile**. `user_can_view_recruitment_process_summary(...)` y `find_active_candidate_contract_lock(...)` deben llamarse con su contrato vigente, no con supuestos heredados del diff que tengas abierto.
+- **La verificación mínima después de reescribir una RPC operacional no es solo `apply_migration = success`**. Hay que ejecutar la propia RPC o un query de humo sobre el bloque nuevo antes de darla por sana, porque los errores de firma o ambigüedad aparecen en runtime.
+
+## 53. En RPCs operacionales, no referenciar columnas inexistentes “por analogía” con otras etapas
+
+- **`recruitment_case_candidates` no tiene `documentation_completed_at` en este proyecto**. Si la bandeja necesita una fecha de preparación contractual, debe derivarse desde columnas reales como `document_validated_at`, `stage_entered_at`, `updated_at` o `hired_at`, según el dominio.
+- **Un `create or replace function` exitoso no prueba compatibilidad con el esquema vivo**. PostgreSQL valida nombres de columnas al ejecutar la sentencia interna relevante; por eso una RPC grande puede publicarse bien y romper recién en la primera llamada del usuario.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.
@@ -227,6 +237,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si un folio puede cerrarse tanto por contratación externa como por movilidad interna, `filled_vacancies` no puede depender solo de candidatos `hired`**. La métrica debe incorporar también movilidades aprobadas.
 - **La misma regla aplica a activos**: si una movilidad en aprobación compite por el mismo cupo, debe reflejarse como volumen operativo en los resúmenes del folio. La forma estable de hacerlo es una helper única de métricas efectivas consumida por todas las RPCs del dashboard.
+
+## 35. En RPCs de escritura, compilar no valida el camino real de inserción
+
+- **No des por cerrada una función `create` solo porque la migración aplicó y los payloads de lectura se ven bien**. Si la función inserta en tablas existentes, todavía puede romper por columnas `NOT NULL`, defaults ausentes o joins que ya no completan el contrato esperado.
+- **La validación mínima correcta es ejecutar la RPC dentro de una transacción con `ROLLBACK`**. Así afloran errores reales de escritura como ambigüedad por `RETURNS TABLE` o `destination_contract_id` nulo, sin ensuciar producción con registros de prueba.
 
 ## 33. En BUK, el cargo operativo no necesariamente vive en la columna derivada del view
 

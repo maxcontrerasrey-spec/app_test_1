@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
+import { invalidateInternalMobilityQueries } from "../../internal_mobility/hooks/useInternalMobilityQueries";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   getRecruitmentCaseDetailQueryOptions,
@@ -20,10 +21,11 @@ import {
 } from "../services/hiringControl";
 import { closeHiringRequest } from "../services/hiringWorkflow";
 import { HiringCandidatesView } from "../components/HiringCandidatesView";
+import { HiringInternalMobilityView } from "../components/HiringInternalMobilityView";
 import { HiringPersonnelToHireView } from "../components/HiringPersonnelToHireView";
 import { HiringProcessesView } from "../components/HiringProcessesView";
 
-type RecruitmentInternalView = "processes" | "candidates" | "personnel_to_hire";
+type RecruitmentInternalView = "processes" | "candidates" | "personnel_to_hire" | "internal_mobility";
 
 const emptySummary: RecruitmentDashboardSummary = {
   pending_contracts_control: 0,
@@ -86,14 +88,19 @@ export function HiringStatusPage() {
       { table: "candidate_worker_files" },
       { table: "candidate_documents" },
       { table: "hiring_requests" },
-      { table: "hiring_request_approvals" }
+      { table: "hiring_request_approvals" },
+      { table: "internal_mobility_requests" },
+      { table: "internal_mobility_request_approvals" }
     ],
     []
   );
 
   const invalidateRealtimeRecruitment = useCallback(
     async (client: QueryClient) => {
-      await invalidateRecruitmentControlQueries(client, selectedCaseId || undefined);
+      await Promise.all([
+        invalidateRecruitmentControlQueries(client, selectedCaseId || undefined),
+        invalidateInternalMobilityQueries(client)
+      ]);
     },
     [selectedCaseId]
   );
@@ -363,6 +370,15 @@ export function HiringStatusPage() {
               Personal a Contratar
             </button>
           ) : null}
+          {canAccessCandidateControl ? (
+            <button
+              type="button"
+              className={`approval-chip ${activeView === "internal_mobility" ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => setActiveView("internal_mobility")}
+            >
+              Movilidad Interna
+            </button>
+          ) : null}
         </div>
 
         {activeView === "processes" || !canAccessCandidateControl ? (
@@ -403,7 +419,7 @@ export function HiringStatusPage() {
             onInterviewNotesUpdated={handleLicenseUpdated}
             onCandidateFileUpdated={handleCandidateFileUpdated}
           />
-        ) : (
+        ) : activeView === "personnel_to_hire" ? (
           <HiringPersonnelToHireView
             isLoading={isLoading}
             errorMessage={errorMessage}
@@ -417,6 +433,11 @@ export function HiringStatusPage() {
             onLicenseUpdated={handleLicenseUpdated}
             onInterviewNotesUpdated={handleLicenseUpdated}
             onCandidateFileUpdated={handleCandidateFileUpdated}
+          />
+        ) : (
+          <HiringInternalMobilityView
+            isParentLoading={dashboardQuery.isLoading}
+            externalErrorMessage={dashboardError}
           />
         )}
       </section>

@@ -93,6 +93,8 @@ export type InternalMobilityRequestSummary = {
   currentAreaName: string | null;
   currentCompanyName: string | null;
   currentShiftName: string | null;
+  recruitmentCaseCode: string | null;
+  sourceFolio: string | null;
   destinationJobTitle: string;
   destinationAreaName: string;
   destinationShiftName: string | null;

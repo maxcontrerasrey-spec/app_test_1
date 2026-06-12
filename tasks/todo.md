@@ -15,6 +15,24 @@
 - [x] Corregir la resolución backend de cargo y empresa desde `raw_payload` de BUK y completar el catálogo `buk_contract_mappings.company_name`
 - [x] Revalidar las RPCs de setup, búsqueda y contexto de trabajador contra datos reales y documentar el resultado
 
+## Ajuste inmediato de contadores de movilidad, bandeja de movilidad y rechazados Who
+
+- [x] Separar el contador de movilidad interna en `Resumen de procesos de contratación` para que no infle `Activos`
+- [x] Agregar la pestaña `Movilidad Interna` dentro de `Control de Contrataciones`, reutilizando la lógica operacional de detalle
+- [x] Hacer visibles en `Control de candidatos` los rechazados y retirados por Who aunque el caso siga operativo
+- [x] Corregir el drift de firmas SQL introducido en `candidate_control` y publicar el hotfix en Supabase productivo
+- [x] Validar build local y registrar la limitación de verificación remota restante
+
+## Resultado de ajuste inmediato de contadores de movilidad, bandeja de movilidad y rechazados Who
+
+- Se agregó la migración [`20260612030732_refine_mobility_counters_and_rejected_candidate_visibility.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612030732_refine_mobility_counters_and_rejected_candidate_visibility.sql:1), que separa explícitamente `candidate_count = active_candidate_count` y mantiene `mobility_active_count` en paralelo para que una movilidad pendiente no se pinte además como candidato azul.
+- La misma pasada amplía [`get_internal_mobility_requests()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612030732_refine_mobility_counters_and_rejected_candidate_visibility.sql:5) con `recruitment_case_code`, `source_folio`, `current_shift_name` y `destination_shift_name`, contrato necesario para renderizar la nueva bandeja de movilidad desde Reclutamiento.
+- Se incorporó [`HiringInternalMobilityView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringInternalMobilityView.tsx:1) y [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1) ahora expone una pestaña `Movilidad Interna` junto a `Personal a Contratar`, con detalle expandible, búsqueda y refresco por Realtime compartido.
+- `candidate_control` quedó ajustado para incluir `rejected` y `withdrawn` aunque el caso no esté cancelado, corrigiendo el hueco funcional por el que los rechazados de Who desaparecían de la bandeja.
+- La primera publicación del cambio dejó un drift de firmas en `candidate_control` al llamar helpers con parámetros incompatibles con producción. Se corrigió con la migración incremental [`20260612032013_fix_recruitment_candidate_control_signature_drift.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612032013_fix_recruitment_candidate_control_signature_drift.sql:1), ya aplicada también en `pzblmbahnoyntrhistea`.
+- La siguiente regresión no fue de permisos sino de esquema: la RPC seguía intentando leer `rcc.documentation_completed_at`, columna inexistente en `recruitment_case_candidates`. Se corrigió con [`20260612033448_hotfix_recruitment_dashboard_personnel_columns.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612033448_hotfix_recruitment_dashboard_personnel_columns.sql:1), reemplazando esa referencia por `document_validated_at / stage_entered_at / updated_at` y retirando `candidate_number`, también inexistente en `candidate_profiles`.
+- Validación local cerrada con `npm run build` y `git diff --check`. La validación remota por `execute_sql` quedó bloqueada después por reautenticación del conector Supabase, pero ambas migraciones respondieron `success=true` al publicarse.
+
 ## Movilidad Interna ligada a folios con cupos y contadores operativos
 
 - [x] Rediseñar la creación de movilidad interna para que dependa de un folio/caso abierto con cupos disponibles y derive desde ahí cargo, contrato, turno y empresa destino
