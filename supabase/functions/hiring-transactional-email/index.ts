@@ -167,7 +167,7 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
 
   const html = `
     <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
-      <h2 style="margin-bottom: 12px;">Aprobación pendiente de contratación</h2>
+      <h2 style="margin-bottom: 12px;">${isInternalMobility ? "Aprobación pendiente de movilidad interna" : "Aprobación pendiente de contratación"}</h2>
       <p>${escapeHtml(intro)}</p>
       <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
         <tbody>
@@ -249,7 +249,7 @@ function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, action
 
   const html = `
     <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5;">
-      <h2 style="margin-bottom: 12px;">Nuevo caso para Reclutamiento</h2>
+      <h2 style="margin-bottom: 12px;">${isInternalMobility ? "Nuevo caso de movilidad interna para Reclutamiento" : "Nuevo caso para Reclutamiento"}</h2>
       <p>${escapeHtml(intro)}</p>
       <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
         <tbody>
