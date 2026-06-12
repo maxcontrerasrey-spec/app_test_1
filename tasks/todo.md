@@ -15,6 +15,20 @@
 - [x] Agregar alias adicionales para renta y turno sin romper los campos ya usados por el frontend actual
 - [x] Validar consistencia del diff y documentar el ajuste
 
+## Hotfix crítico del dashboard de Reclutamiento tras alias en active_cases
+
+- [x] Comparar la RPC rota publicada con la última implementación operativa real para aislar el drift introducido
+- [x] Restaurar `get_recruitment_control_dashboard_v2` sobre la base correcta y reaplicar solo los alias `salary` y `turno`
+- [x] Propagar el error real de la RPC en frontend para no ocultar regresiones operativas futuras
+- [x] Validar `npm run build`, `git diff --check` y documentar el cierre del hotfix
+
+## Resultado de hotfix crítico del dashboard de Reclutamiento tras alias en active_cases
+
+- Se agregó la migración [`20260612161000_hotfix_restore_recruitment_dashboard_v2.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612161000_hotfix_restore_recruitment_dashboard_v2.sql:1), que restaura [`get_recruitment_control_dashboard_v2()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612161000_hotfix_restore_recruitment_dashboard_v2.sql:3) sobre la versión operativa real y reaplica solo los aliases `turno` y `salary` dentro de `active_cases`.
+- La causa raíz fue drift de implementación: la migración [`20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql:1) no solo agregaba campos, también reemplazaba las ramas `candidate_control` y `personnel_to_hire` por una variante distinta de la RPC, alterando helpers, filtros y contrato runtime del tablero.
+- [`fetchRecruitmentControlDashboard()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:468) ahora propaga `formatRpcError(error)` en vez de ocultar el detalle con un texto fijo, lo que permitirá ver inmediatamente el fallo real si Supabase vuelve a rechazar el RPC.
+- Validación cerrada con `npm run build` exitoso, `git diff --check` limpio y diff estructural contra la última versión sana de la RPC mostrando solo dos adiciones funcionales: `turno` y `salary` en ambas ramas de `active_cases`.
+
 ## Resultado de alias de renta y turno en active_cases de Reclutamiento
 
 - Se agregó la migración [`20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql:1), que redefine la RPC [`get_recruitment_control_dashboard_v2()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612154500_add_salary_and_turno_to_active_cases_dashboard.sql:3).

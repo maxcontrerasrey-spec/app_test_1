@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una integración externa falla, la primera necesidad es ver el error real**. Cubrirlo con un mensaje fijo ralentiza el diagnóstico y obliga a adivinar entre SMTP, URLs, templates o permisos.
 - **La UI puede mantener un tono limpio sin perder precisión**. Si el backend o Supabase entrega un mensaje útil, debe propagarse al menos en ambientes operativos de prueba.
 
+## 54. Un alias sobre una RPC compartida nunca se implementa reescribiendo una variante vieja del motor
+
+- **Si el cambio pedido es solo agregar campos al JSON, la base obligatoria es la implementación viva exacta de la RPC, no una migración parecida encontrada en el historial**. En este repo, sustituir `get_recruitment_control_dashboard_v2()` desde una variante distinta rompió `candidate_control` y `personnel_to_hire` aunque el objetivo funcional era solo exponer `salary` y `turno`.
+- **La verificación correcta no termina en compilar o correr la migración**. Después de tocar una RPC operacional grande hay que contrastar el cuerpo final contra la última versión sana y ejecutar al menos una validación de humo sobre la propia bandeja afectada.
+
 ## 58. Una nueva cola operativa no sirve si sus aprobadores no pueden entrar al módulo
 
 - **No basta con crear la tabla de aprobaciones y la vista React**. Si la ruta está protegida por `accessible_modules`, hay que revisar al mismo tiempo `get_my_effective_permissions()` y la matriz `role_module_access`, o la cola queda viva en SQL pero invisible para quienes deben trabajarla.

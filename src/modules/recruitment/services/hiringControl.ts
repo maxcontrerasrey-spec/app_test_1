@@ -478,7 +478,7 @@ export async function fetchRecruitmentControlDashboard() {
   if (error) {
     return {
       data: null,
-      error: "No fue posible cargar el tablero de Control de Contrataciones."
+      error: formatRpcError(error) || "No fue posible cargar el tablero de Control de Contrataciones."
     };
   }
 
