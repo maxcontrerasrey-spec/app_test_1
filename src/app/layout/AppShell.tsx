@@ -76,7 +76,21 @@ export function AppShell() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [hoveredModule, setHoveredModule] = useState<string | null>(null);
   const [pinnedModule, setPinnedModule] = useState<string | null>(null);
+  const [hoveredMegaItem, setHoveredMegaItem] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const megaMenuRef = useRef<HTMLDivElement>(null);
+  const thirdTrayTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnterMegaItem = (label: string) => {
+    if (thirdTrayTimerRef.current) clearTimeout(thirdTrayTimerRef.current);
+    setHoveredMegaItem(label);
+  };
+
+  const handleMouseLeaveMegaItem = () => {
+    thirdTrayTimerRef.current = setTimeout(() => {
+      setHoveredMegaItem(null);
+    }, 100);
+  };
   const navMenuRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<any>(null);
 
@@ -389,7 +403,12 @@ export function AppShell() {
             <div className="top-nav-mega-panel">
               <div className="top-nav-mega-grid">
                 {openModule.items.map((item) => (
-                  <div key={item.label} className="top-nav-mega-item-wrapper" style={{ position: 'static' }}>
+                  <div 
+                    key={item.label} 
+                    className="top-nav-mega-item-wrapper"
+                    onMouseEnter={() => handleMouseEnterMegaItem(item.label)}
+                    onMouseLeave={() => handleMouseLeaveMegaItem()}
+                  >
                     <NavLink
                       to={item.to || "#"}
                       onClick={(e) => {
@@ -418,30 +437,39 @@ export function AppShell() {
                         </span>
                       )}
                     </NavLink>
-
-                    {item.items && item.items.length > 0 && (
-                      <div className="top-nav-third-tray">
-                        {item.items.map((subItem) => (
-                          <NavLink
-                            key={subItem.to}
-                            to={subItem.to}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearPinnedNavigation();
-                            }}
-                            className="top-nav-third-link"
-                          >
-                            <span className="top-nav-mega-icon" style={{ width: "1.5rem", height: "1.5rem" }}>
-                              <SubmenuIcon iconKey={subItem.iconKey} />
-                            </span>
-                            <strong>{subItem.label}</strong>
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
+
+              {/* Render third trays outside the grid to guarantee full width */}
+              {openModule.items.map((item) => {
+                if (!item.items || item.items.length === 0) return null;
+                return (
+                  <div
+                    key={`${item.label}-tray`}
+                    className={`top-nav-third-tray ${hoveredMegaItem === item.label ? 'is-visible' : ''}`}
+                    onMouseEnter={() => handleMouseEnterMegaItem(item.label)}
+                    onMouseLeave={() => handleMouseLeaveMegaItem()}
+                  >
+                    {item.items.map((subItem) => (
+                      <NavLink
+                        key={subItem.to}
+                        to={subItem.to}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearPinnedNavigation();
+                        }}
+                        className="top-nav-third-link"
+                      >
+                        <span className="top-nav-mega-icon" style={{ width: "1.5rem", height: "1.5rem" }}>
+                          <SubmenuIcon iconKey={subItem.iconKey} />
+                        </span>
+                        <strong>{subItem.label}</strong>
+                      </NavLink>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : null}

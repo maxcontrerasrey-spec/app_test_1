@@ -512,12 +512,14 @@ textarea {
   z-index: 50;
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.top-nav-mega-item-wrapper:hover .top-nav-third-tray {
+.top-nav-third-tray.is-visible {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 .top-nav-third-link {
