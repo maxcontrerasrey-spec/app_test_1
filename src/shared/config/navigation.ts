@@ -12,6 +12,7 @@ export type NavigationItem = {
   description?: string;
   subgroup?: string;
   iconKey?: "document" | "timeline" | "certificate" | "tracking";
+  items?: NavigationItem[];
 };
 
 export type NavigationModule = {
@@ -86,12 +87,19 @@ export const navigationModules: NavigationModule[] = [
     label: "Recursos Humanos",
     items: [
       {
+        label: "Gestión de Incentivos",
         moduleCode: "recursos_humanos",
-        to: "/recursos-humanos/incentivos",
-        label: "Ingreso de Incentivos Extraordinarios",
-        description: "Registro y control de incentivos extraordinarios.",
+        to: "#",
         iconKey: "document",
-        subgroup: "Gestión de Incentivos"
+        items: [
+          {
+            moduleCode: "recursos_humanos",
+            to: "/recursos-humanos/incentivos",
+            label: "Ingreso de Incentivos Extraordinarios",
+            description: "Registro y control de incentivos extraordinarios.",
+            iconKey: "document"
+          }
+        ]
       }
     ]
   },

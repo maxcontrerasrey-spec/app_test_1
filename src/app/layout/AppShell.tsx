@@ -388,38 +388,57 @@ export function AppShell() {
           >
             <div className="top-nav-mega-panel">
               <div className="top-nav-mega-grid">
-                {Object.entries(
-                  openModule.items.reduce((acc, item) => {
-                    const group = item.subgroup || "General";
-                    if (!acc[group]) acc[group] = [];
-                    acc[group].push(item);
-                    return acc;
-                  }, {} as Record<string, typeof openModule.items>)
-                ).map(([subgroup, items]) => (
-                  <div key={subgroup} className="top-nav-mega-column">
-                    {subgroup !== "General" && (
-                      <h4 className="top-nav-mega-subgroup-title">{subgroup}</h4>
+                {openModule.items.map((item) => (
+                  <NavLink
+                    key={item.label}
+                    to={item.to || "#"}
+                    onClick={(e) => {
+                      if (item.items && item.items.length > 0) {
+                        e.preventDefault();
+                      } else {
+                        clearPinnedNavigation();
+                      }
+                    }}
+                    className={({ isActive }) =>
+                      isActive && !item.items
+                        ? "top-nav-mega-link top-nav-mega-link-active"
+                        : "top-nav-mega-link"
+                    }
+                  >
+                    <span className="top-nav-mega-icon">
+                      <SubmenuIcon iconKey={item.iconKey} />
+                    </span>
+                    <span className="top-nav-mega-copy">
+                      <strong>{item.label}</strong>
+                    </span>
+
+                    {item.items && item.items.length > 0 && (
+                      <span className="top-nav-indicator" style={{ marginLeft: "auto", fontSize: "0.8rem" }}>
+                        ▾
+                      </span>
                     )}
-                    {items.map((item) => (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        onClick={clearPinnedNavigation}
-                        className={({ isActive }) =>
-                          isActive
-                            ? "top-nav-mega-link top-nav-mega-link-active"
-                            : "top-nav-mega-link"
-                        }
-                      >
-                        <span className="top-nav-mega-icon">
-                          <SubmenuIcon iconKey={item.iconKey} />
-                        </span>
-                        <span className="top-nav-mega-copy">
-                          <strong>{item.label}</strong>
-                        </span>
-                      </NavLink>
-                    ))}
-                  </div>
+
+                    {item.items && item.items.length > 0 && (
+                      <div className="top-nav-third-tray">
+                        {item.items.map((subItem) => (
+                          <NavLink
+                            key={subItem.to}
+                            to={subItem.to}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearPinnedNavigation();
+                            }}
+                            className="top-nav-third-link"
+                          >
+                            <span className="top-nav-mega-icon" style={{ width: "1.5rem", height: "1.5rem" }}>
+                              <SubmenuIcon iconKey={subItem.iconKey} />
+                            </span>
+                            <strong>{subItem.label}</strong>
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </NavLink>
                 ))}
               </div>
             </div>

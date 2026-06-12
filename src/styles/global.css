@@ -335,7 +335,7 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  min-height: 3.5rem;
+  min-height: 2.5rem;
   min-width: 160px;
   padding: 0 0.05rem;
   border: 0;
@@ -394,40 +394,76 @@ textarea {
   gap: 0;
 }
 
-.top-nav-mega-column {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--border-subtle);
-  padding: 0.5rem 0;
-}
-
-.top-nav-mega-column:last-child {
-  border-right: 0;
-}
-
-.top-nav-mega-subgroup-title {
-  margin: 0 1.25rem 0.5rem;
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-}
-
 .top-nav-mega-link {
   display: grid;
-  grid-template-columns: 2.2rem minmax(0, 1fr);
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.8rem;
   min-width: 0;
   padding: 0.5rem 1.25rem;
-  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 0;
+  border-left: 0;
+  border-top: 0;
+  border-radius: 0;
   transition: color 140ms ease;
+  background: transparent;
+  text-align: left;
+  position: relative;
+}
+
+.top-nav-mega-link:last-child {
+  border-right: 0;
 }
 
 .top-nav-mega-link:hover {
   background: transparent;
+}
+
+.top-nav-mega-link-active {
+  background: transparent;
+}
+
+/* Third-level Tray (Bandeja 3) */
+.top-nav-third-tray {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 260px;
+  background: rgba(var(--surface-rgb), 0.98);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+}
+
+.top-nav-mega-link:hover .top-nav-third-tray {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.top-nav-third-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.top-nav-third-link:hover {
+  background: var(--surface-hover);
+  color: var(--title);
 }
 
 .top-nav-mega-link-active {
