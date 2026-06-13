@@ -193,6 +193,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No relajes una validación operativa solo porque el usuario reporta confusión**. Si la restricción protege el proceso, el ajuste correcto puede ser exclusivamente de comunicación.
 - **Los bloqueos relevantes deben explicarse igual en backend y frontend**. Si el preview puede fallar por excepción o por validación visible, ambos textos deben converger en la misma causa de negocio para evitar diagnósticos contradictorios.
 
+## 59. Si un flujo aprobado cambia el calendario operativo, la mutación debe persistirse en la misma transacción de backend
+
+- **No delegues a la UI el marcado de estados operativos derivados**. Si registrar un incentivo válido implica convertir un descanso en turno adicional, esa marca debe nacer en la RPC de creación para que historial, calendario y auditoría no diverjan.
+- **Las automatizaciones de calendario no pueden pisar excepciones de mayor jerarquía**. Antes de grabar un `extra_shift`, hay que preservar vacaciones, licencias u otras excepciones activas ya registradas y dejar trazabilidad explícita del resultado.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

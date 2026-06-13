@@ -147,6 +147,21 @@
 - [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:353) ahora muestra el mismo criterio en frontend, evitando el mensaje ambiguo de “exige descanso” sin contexto de reemplazo.
 - Validación local cerrada con `npx tsc -b` y `git diff --check`.
 
+## Marcado automático de turno adicional desde Incentivos
+
+- [x] Auditar dónde convive hoy la lógica de pauta entre Incentivos y Roster
+- [x] Persistir automáticamente `extra_shift` cuando un incentivo se registra sobre un día de descanso permitido
+- [x] Evitar sobrescritura de vacaciones/licencias u otras excepciones activas al marcar el calendario
+- [x] Validar `npx tsc -b` y revisar el diff final
+
+## Resultado de marcado automático de turno adicional desde Incentivos
+
+- Se agregó la migración [`20260613200144_mark_hr_incentive_rest_day_as_extra_shift.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613200144_mark_hr_incentive_rest_day_as_extra_shift.sql:1), que redefine [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613200144_mark_hr_incentive_rest_day_as_extra_shift.sql:1) para que el calendario operativo se marque en la misma transacción del incentivo.
+- El marcado automático solo ocurre cuando la validación de pauta ya confirmó que el incentivo requiere descanso y el trabajador efectivamente estaba en descanso ese día. En ese caso se crea o refresca una excepción `extra_shift`.
+- La persistencia es defensiva: si ese día ya existe una excepción activa distinta de `extra_shift` como vacaciones o licencia, no se sobrescribe. En su lugar, se preserva la excepción preexistente.
+- Se agregó trazabilidad en [`hr_incentive_request_history`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613200144_mark_hr_incentive_rest_day_as_extra_shift.sql:236) mediante `calendar_marking`, para distinguir entre `extra_shift_created`, `extra_shift_refreshed`, `existing_exception_preserved` y `not_applicable`.
+- Validación local cerrada con `npx tsc -b` y `git diff --check`.
+
 ## Migración completa de motor gráfico a Recharts
 
 - [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico
