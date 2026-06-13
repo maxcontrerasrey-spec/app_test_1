@@ -8,6 +8,20 @@
 - [x] Centralizar la clasificación de tareas compartidas y eliminar tipado sintético/frágil en frontend
 - [x] Validar typecheck y consistencia de diff
 
+## Bloqueo de incentivos por vacaciones o licencia médica
+
+- [x] Auditar la fuente canónica de estado de calendario y cómo Incentivos consume hoy `roster_validation`
+- [x] Bloquear en backend el preview y el registro cuando el trabajador figure con `vacation` o `medical_leave`, incluso si la pauta está sin asignar
+- [x] Validar `npx tsc -b`, `git diff --check` y documentar la regla con su lección
+
+## Resultado de bloqueo de incentivos por vacaciones o licencia médica
+
+- Se agregó la migración [`20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:1), que redefine [`resolve_hr_roster_day_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:1) y [`calculate_hr_incentive_preview(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:118) para que vacaciones y licencia médica bloqueen el flujo de incentivos desde la fuente canónica de calendario.
+- El bloqueo ya no depende de que el trabajador tenga una pauta asignada. [`resolve_hr_roster_day_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:1) ahora primero revisa excepciones activas y, si no existe roster vigente, igual expone `effective_status` y `exception_label`. Con eso, una futura carga desde BUK podrá bloquear incentivos aunque no exista pauta local.
+- [`calculate_hr_incentive_preview(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:118) ahora rechaza explícitamente el preview cuando `effective_status` es `vacation` o `medical_leave`, devolviendo un mensaje rojo de negocio que impide también el registro final porque [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613200144_mark_hr_incentive_rest_day_as_extra_shift.sql:1) sigue dependiendo del preview canónico.
+- En frontend se endureció el contrato de [`HrIncentiveRosterValidation`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:38), el parseo en [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:160) y el bloqueo visual en [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:162), dejando preparada la UI para respetar `blockedByAbsence` aunque mañana BUK entregue la bandera sin lanzar excepción.
+- Validación cerrada con `npx tsc -b`, `git diff --check` y aplicación real de la migración en Supabase.
+
 ## Endurecimiento estructural de periodos y alertas operativas en Incentivos
 
 - [x] Reemplazar la lógica plana `YYYYMM` por la regla estructural de periodo `21 -> 20`, con persistencia y backfill seguro

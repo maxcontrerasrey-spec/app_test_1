@@ -37,9 +37,16 @@ export type HrIncentiveType = {
 
 export type HrIncentiveRosterValidation = {
   requiresRestDay: boolean;
+  baseStatus: "working" | "resting" | "unassigned" | null;
+  effectiveStatus: string | null;
+  exceptionType: string | null;
+  exceptionLabel: string | null;
+  patternName: string | null;
   scheduleStatus: string | null;
   scheduleLabel: string | null;
-  isRestDay: boolean;
+  isRestDay: boolean | null;
+  blockedByAbsence: boolean;
+  blockReason: string | null;
   matchedDate: string | null;
 };
 

@@ -358,6 +358,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 31. Limpiar datos no es inventarlos
 
+## 62. Si BUK gobierna ausencias, el bloqueo operativo debe vivir en la resolver canónica y no en un parche lateral de Incentivos
+
+- **No supongas que un trabajador con vacaciones o licencia médica tendrá siempre una pauta activa local.** Si la ausencia viene de BUK y manda sobre el calendario, la función canónica de estado diario debe revisar excepciones aunque no exista asignación de roster, o el bloqueo se vuelve dependiente de un dato secundario.
+- **Las restricciones de incentivos por ausencia no se modelan solo en frontend ni solo al guardar.** El preview backend debe rechazar el caso desde la misma fuente canónica que consume el registro final, para que alerta roja, botón deshabilitado y persistencia hablen exactamente el mismo idioma.
+
 - **Una migración de saneamiento solo puede completar valores cuando existe una fuente confiable dentro del sistema**. Si un histórico carece de `travel_methodology`, solo se backfillea desde auditoría real; no se asume un default para cerrar visualmente el dato.
 - **Los campos derivados de identidad deben converger al registro canónico**. Si `requester_name` y `requester_email` ya existen en `profiles`, mantener variantes como `maximiliano.contreras` solo agrega ruido operacional.
 

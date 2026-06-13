@@ -174,6 +174,7 @@ export function IncentiveRegistrationForm({
     !serviceDate ||
     previewQuery.isLoading ||
     !previewQuery.data ||
+    previewQuery.data.rosterValidation.blockedByAbsence ||
     (previewQuery.data?.rosterValidation.requiresRestDay &&
       !previewQuery.data.rosterValidation.isRestDay) ||
     !registrationWindow.isAllowed ||
@@ -343,7 +344,14 @@ export function IncentiveRegistrationForm({
                     <strong>{previewQuery.data.rule.priority}</strong>
                   </div>
                 </div>
-                {previewQuery.data.rosterValidation.requiresRestDay ? (
+                {previewQuery.data.rosterValidation.blockedByAbsence ? (
+                  <p className="form-status form-status-error">
+                    {previewQuery.data.rosterValidation.blockReason ??
+                      "No se puede registrar este incentivo porque el trabajador figura con vacaciones o licencia médica en la fecha seleccionada."}
+                  </p>
+                ) : null}
+                {previewQuery.data.rosterValidation.requiresRestDay &&
+                !previewQuery.data.rosterValidation.blockedByAbsence ? (
                   <p
                     className={
                       previewQuery.data.rosterValidation.isRestDay

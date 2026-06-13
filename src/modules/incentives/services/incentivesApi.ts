@@ -222,10 +222,30 @@ function mapPreview(payload: unknown): HrIncentivePreview {
     calculatedAmount: Number(source.calculated_amount ?? 0),
     rosterValidation: {
       requiresRestDay: Boolean(rosterValidation.requires_rest_day),
-      scheduleStatus: readNullableText(rosterValidation.schedule_status),
-      scheduleLabel: readNullableText(rosterValidation.schedule_label),
-      isRestDay: Boolean(rosterValidation.is_rest_day),
-      matchedDate: readNullableText(rosterValidation.matched_date)
+      baseStatus:
+        rosterValidation.base_status === "working" ||
+        rosterValidation.base_status === "resting" ||
+        rosterValidation.base_status === "unassigned"
+          ? rosterValidation.base_status
+          : null,
+      effectiveStatus: readNullableText(rosterValidation.effective_status),
+      exceptionType: readNullableText(rosterValidation.exception_type),
+      exceptionLabel: readNullableText(rosterValidation.exception_label),
+      patternName: readNullableText(rosterValidation.pattern_name),
+      scheduleStatus:
+        readNullableText(rosterValidation.schedule_status) ??
+        readNullableText(rosterValidation.effective_status),
+      scheduleLabel:
+        readNullableText(rosterValidation.schedule_label) ??
+        readNullableText(rosterValidation.exception_label),
+      isRestDay:
+        rosterValidation.is_rest_day === null || rosterValidation.is_rest_day === undefined
+          ? null
+          : Boolean(rosterValidation.is_rest_day),
+      blockedByAbsence: Boolean(rosterValidation.blocked_by_absence),
+      blockReason: readNullableText(rosterValidation.block_reason),
+      matchedDate:
+        readNullableText(rosterValidation.matched_date) ?? readNullableText(source.service_date)
     }
   };
 }
