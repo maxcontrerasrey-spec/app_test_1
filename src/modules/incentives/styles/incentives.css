@@ -286,6 +286,13 @@
   font-size: 0.82rem;
 }
 
+.hr-incentives-list-item-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .hr-incentives-approvals-layout {
   display: flex;
   flex-direction: column;

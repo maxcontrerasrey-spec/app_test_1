@@ -78,6 +78,7 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
       name: String(item.name ?? ""),
       calculationBasis: (item.calculation_basis === "per_hour" ? "per_hour" : "fixed"),
       requiresReplacement: Boolean(item.requires_replacement),
+      requiresRestDay: Boolean(item.requires_rest_day),
       isActive: Boolean(item.is_active),
       createdAt: String(item.created_at ?? "")
     })),
@@ -156,6 +157,7 @@ function mapPreview(payload: unknown): HrIncentivePreview {
   const source = (payload ?? {}) as Record<string, unknown>;
   const worker = (source.worker ?? {}) as Record<string, unknown>;
   const rule = (source.rule ?? {}) as Record<string, unknown>;
+  const rosterValidation = (source.roster_validation ?? {}) as Record<string, unknown>;
 
   return {
     worker: {
@@ -191,6 +193,7 @@ function mapPreview(payload: unknown): HrIncentivePreview {
       incentiveTypeName: String(rule.incentive_type_name ?? ""),
       calculationBasis: rule.calculation_basis === "per_hour" ? "per_hour" : "fixed",
       requiresReplacement: Boolean(rule.requires_replacement),
+      requiresRestDay: Boolean(rule.requires_rest_day),
       rateRuleAmount: Number(rule.rate_rule_amount ?? 0),
       matchedContractCode:
         typeof rule.matched_contract_code === "string" && rule.matched_contract_code.trim()
@@ -216,7 +219,14 @@ function mapPreview(payload: unknown): HrIncentivePreview {
         : Number(source.duration_hours),
     serviceDate: String(source.service_date ?? ""),
     selectedContractCode: String(source.selected_contract_code ?? ""),
-    calculatedAmount: Number(source.calculated_amount ?? 0)
+    calculatedAmount: Number(source.calculated_amount ?? 0),
+    rosterValidation: {
+      requiresRestDay: Boolean(rosterValidation.requires_rest_day),
+      scheduleStatus: readNullableText(rosterValidation.schedule_status),
+      scheduleLabel: readNullableText(rosterValidation.schedule_label),
+      isRestDay: Boolean(rosterValidation.is_rest_day),
+      matchedDate: readNullableText(rosterValidation.matched_date)
+    }
   };
 }
 
@@ -752,6 +762,23 @@ export async function setHrIncentiveTypeStatus(typeId: string, isActive: boolean
 
   if (error) {
     throw new Error(error.message || "No fue posible actualizar el tipo de incentivo.");
+  }
+}
+
+export async function setHrIncentiveTypeRosterRequirement(
+  typeId: string,
+  requiresRestDay: boolean
+) {
+  const client = getSupabaseClient();
+  const { error } = await client.rpc("set_hr_incentive_type_roster_requirement", {
+    p_type_id: typeId,
+    p_requires_rest_day: requiresRestDay
+  });
+
+  if (error) {
+    throw new Error(
+      error.message || "No fue posible actualizar la validación de descanso del incentivo."
+    );
   }
 }
 

@@ -30,8 +30,17 @@ export type HrIncentiveType = {
   name: string;
   calculationBasis: IncentiveCalculationBasis;
   requiresReplacement: boolean;
+  requiresRestDay: boolean;
   isActive: boolean;
   createdAt: string;
+};
+
+export type HrIncentiveRosterValidation = {
+  requiresRestDay: boolean;
+  scheduleStatus: string | null;
+  scheduleLabel: string | null;
+  isRestDay: boolean;
+  matchedDate: string | null;
 };
 
 export type HrIncentiveRateRule = {
@@ -103,6 +112,7 @@ export type HrIncentivePreview = {
     incentiveTypeName: string;
     calculationBasis: IncentiveCalculationBasis;
     requiresReplacement: boolean;
+    requiresRestDay: boolean;
     rateRuleAmount: number;
     matchedContractCode: string | null;
     matchedJobTitle: string | null;
@@ -114,6 +124,7 @@ export type HrIncentivePreview = {
   serviceDate: string;
   selectedContractCode: string;
   calculatedAmount: number;
+  rosterValidation: HrIncentiveRosterValidation;
 };
 
 export type HrIncentiveRequest = {

@@ -1,0 +1,234 @@
+.roster-module-shell {
+  display: grid;
+  gap: var(--spacing-6);
+}
+
+.roster-toolbar-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-4);
+  align-items: end;
+}
+
+.roster-kpi-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.roster-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(320px, 0.95fr);
+  gap: var(--spacing-5);
+  align-items: start;
+}
+
+.roster-calendar-card {
+  display: grid;
+  gap: var(--spacing-4);
+}
+
+.roster-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.roster-calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.roster-calendar-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.roster-calendar-dot--working {
+  background: #2563eb;
+}
+
+.roster-calendar-dot--resting {
+  background: #94a3b8;
+}
+
+.roster-calendar-dot--vacation {
+  background: #f97316;
+}
+
+.roster-calendar-dot--extra {
+  background: #0891b2;
+}
+
+.roster-calendar-weekdays {
+  margin-bottom: 0;
+}
+
+.roster-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.roster-calendar-day {
+  min-height: 118px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(var(--border-rgb), 0.92);
+  padding: 0.9rem 0.8rem;
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+  text-align: left;
+  background: rgba(var(--surface-soft-rgb), 0.72);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.roster-calendar-day strong {
+  font-size: 1rem;
+}
+
+.roster-calendar-day span,
+.roster-calendar-day small {
+  color: var(--text-muted);
+}
+
+.roster-calendar-day:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--primary-rgb), 0.42);
+  box-shadow: 0 12px 28px rgba(var(--shadow-rgb), 0.1);
+}
+
+.roster-calendar-day--selected {
+  border-color: rgba(var(--primary-rgb), 0.8);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.16);
+}
+
+.roster-calendar-day--working {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.14), rgba(var(--surface-rgb), 0.96));
+}
+
+.roster-calendar-day--resting {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.2), rgba(var(--surface-rgb), 0.96));
+}
+
+.roster-calendar-day--vacation {
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.22), rgba(var(--surface-rgb), 0.96));
+}
+
+.roster-calendar-day--absent {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.16), rgba(var(--surface-rgb), 0.96));
+}
+
+.roster-calendar-day--extra {
+  background: linear-gradient(180deg, rgba(8, 145, 178, 0.18), rgba(var(--surface-rgb), 0.96));
+}
+
+.roster-calendar-day--training {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.16), rgba(var(--surface-rgb), 0.96));
+}
+
+.roster-calendar-day--unassigned {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(var(--surface-soft-rgb), 0.88),
+    rgba(var(--surface-soft-rgb), 0.88) 8px,
+    rgba(var(--surface-rgb), 0.98) 8px,
+    rgba(var(--surface-rgb), 0.98) 16px
+  );
+}
+
+.roster-calendar-day--muted {
+  opacity: 0.52;
+}
+
+.roster-side-panel {
+  display: grid;
+  gap: var(--spacing-5);
+}
+
+.roster-day-detail {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.roster-day-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.roster-day-detail-row span {
+  color: var(--text-muted);
+}
+
+.roster-day-detail-notes {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(var(--surface-soft-rgb), 0.76);
+}
+
+.roster-day-detail-notes span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.roster-day-detail-notes p {
+  margin: 0;
+}
+
+.roster-pattern-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: var(--spacing-5);
+  align-items: start;
+}
+
+.roster-pattern-list-item strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.roster-pattern-list-item small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+}
+
+.roster-pattern-swatch {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.roster-assignment-dialog {
+  max-width: 720px;
+}
+
+@media (max-width: 1180px) {
+  .roster-toolbar-grid,
+  .roster-content-grid,
+  .roster-pattern-grid,
+  .roster-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .roster-calendar-grid {
+    gap: 0.45rem;
+  }
+
+  .roster-calendar-day {
+    min-height: 102px;
+    padding: 0.75rem 0.65rem;
+  }
+}

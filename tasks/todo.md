@@ -37,12 +37,21 @@
 
 ## Submódulo Jornadas y Turnos (Roster)
 
-- [ ] Aterrizar el plan externo a la arquitectura real del repo: módulo propio `src/modules/roster`, permiso dedicado y validación cruzada con incentivos sin inventar otra superficie HR paralela
-- [ ] Crear la migración Supabase del submódulo Roster: tablas maestras, asignaciones, excepciones, helpers matemáticos, RPCs públicas y registro en `app_modules` / `role_module_access`
-- [ ] Extender el contrato de incentivos para soportar validación de “día de descanso requerido” desde backend y configuración de tipos
-- [ ] Implementar frontend de Roster: rutas, navegación, servicios, React Query, calendario mensual, gestor de pautas y asignación de trabajadores
-- [ ] Incorporar gestión de excepciones operativas del trabajador dentro del flujo del calendario
-- [ ] Validar `npx tsc -b`, `npm run build`, `git diff --check`, documentar resultado y empujar a `main`
+- [x] Aterrizar el plan externo a la arquitectura real del repo: módulo propio `src/modules/roster`, permiso dedicado y validación cruzada con incentivos sin inventar otra superficie HR paralela
+- [x] Crear la migración Supabase del submódulo Roster: tablas maestras, asignaciones, excepciones, helpers matemáticos, RPCs públicas y registro en `app_modules` / `role_module_access`
+- [x] Extender el contrato de incentivos para soportar validación de “día de descanso requerido” desde backend y configuración de tipos
+- [x] Implementar frontend de Roster: rutas, navegación, servicios, React Query, calendario mensual, gestor de pautas y asignación de trabajadores
+- [x] Incorporar gestión de excepciones operativas del trabajador dentro del flujo del calendario
+- [x] Validar `npx tsc -b`, `npm run build`, `git diff --check`, documentar resultado y empujar a `main`
+
+## Resultado de Submódulo Jornadas y Turnos (Roster)
+
+- Se implementó el nuevo módulo [`src/modules/roster`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster:1) como superficie propia del ERP, con ruta [`/roster`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1), acceso gobernado por `jornadas_turnos` y entrada en navegación central sin abrir permisos ajenos al resto del sistema.
+- La base quedó formalizada en [`20260613193000_add_hr_roster_module.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613193000_add_hr_roster_module.sql:1): tablas `hr_shift_patterns`, `hr_worker_rosters`, `hr_roster_exceptions`, helpers matemáticos de ciclo, RPC `get_worker_schedule(...)`, catálogos, búsquedas, asignación, excepciones y registro del módulo en `app_modules` / `role_module_access`.
+- La UI quedó dividida entre calendario operativo, gestor de pautas y asignación de trabajadores. [`RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:1) concentra el flujo, [`RosterCalendar.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/components/RosterCalendar.tsx:1) pinta días de trabajo, descanso y excepción, y [`RosterPatternManager.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/components/RosterPatternManager.tsx:1) mantiene las pautas reutilizables.
+- La validación cruzada con Incentivos quedó bajada al backend, no al cliente: `hr_incentive_types` ahora soporta `requires_rest_day`, [`calculate_hr_incentive_preview(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613193000_add_hr_roster_module.sql:1183) devuelve `roster_validation` y [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613193000_add_hr_roster_module.sql:1290) bloquea el registro cuando el incentivo exige descanso y la pauta real no lo cumple.
+- En frontend, [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1) permite activar o quitar la exigencia de descanso por tipo, y [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) muestra la validación de pauta antes de enviar, evitando solicitudes inválidas aunque existan otras superficies futuras.
+- Cierre técnico validado con `npx tsc -b`, `npm run build` y `git diff --check`, y el cambio quedó empujado a `main`.
 
 ## Migración completa de motor gráfico a Recharts
 

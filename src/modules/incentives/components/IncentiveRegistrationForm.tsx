@@ -174,6 +174,8 @@ export function IncentiveRegistrationForm({
     !serviceDate ||
     previewQuery.isLoading ||
     !previewQuery.data ||
+    (previewQuery.data?.rosterValidation.requiresRestDay &&
+      !previewQuery.data.rosterValidation.isRestDay) ||
     !registrationWindow.isAllowed ||
     (selectedIncentiveType?.calculationBasis === "per_hour" &&
       !(typeof durationHoursNumber === "number" && durationHoursNumber > 0)) ||
@@ -341,6 +343,19 @@ export function IncentiveRegistrationForm({
                     <strong>{previewQuery.data.rule.priority}</strong>
                   </div>
                 </div>
+                {previewQuery.data.rosterValidation.requiresRestDay ? (
+                  <p
+                    className={
+                      previewQuery.data.rosterValidation.isRestDay
+                        ? "form-status form-status-success"
+                        : "form-status form-status-error"
+                    }
+                  >
+                    {previewQuery.data.rosterValidation.isRestDay
+                      ? `Validación de descanso OK: ${previewQuery.data.rosterValidation.scheduleLabel ?? "Descanso"}.`
+                      : `Este incentivo exige descanso y la pauta vigente indica ${previewQuery.data.rosterValidation.scheduleLabel ?? "trabajo"}.`}
+                  </p>
+                ) : null}
               </>
             ) : null}
 

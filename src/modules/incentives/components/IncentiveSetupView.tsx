@@ -8,6 +8,7 @@ import {
   addHrIncentiveType,
   setHrIncentiveAllowedJobTitleStatus,
   setHrIncentiveRateRuleStatus,
+  setHrIncentiveTypeRosterRequirement,
   setHrIncentiveTypeStatus
 } from "../services/incentivesApi";
 import type { HrIncentiveSetupCatalogs } from "../types";
@@ -113,6 +114,12 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   const toggleTypeMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       setHrIncentiveTypeStatus(id, isActive),
+    onSuccess: refreshSetupCatalogs
+  });
+
+  const toggleTypeRosterMutation = useMutation({
+    mutationFn: ({ id, requiresRestDay }: { id: string; requiresRestDay: boolean }) =>
+      setHrIncentiveTypeRosterRequirement(id, requiresRestDay),
     onSuccess: refreshSetupCatalogs
   });
 
@@ -256,22 +263,38 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                 <strong>{item.name}</strong>
                 <span>
                   {item.calculationBasis === "per_hour" ? "Por hora" : "Monto fijo"} ·{" "}
-                  {item.requiresReplacement ? "Con reemplazo" : "Sin reemplazo"}
+                  {item.requiresReplacement ? "Con reemplazo" : "Sin reemplazo"} ·{" "}
+                  {item.requiresRestDay ? "Exige descanso" : "Sin validación de descanso"}
                 </span>
               </div>
-              <button
-                type="button"
-                className="soft-primary-button hr-incentives-inline-button"
-                disabled={toggleTypeMutation.isPending}
-                onClick={() =>
-                  toggleTypeMutation.mutate({
-                    id: item.id,
-                    isActive: !item.isActive
-                  })
-                }
-              >
-                {item.isActive ? "Desactivar" : "Activar"}
-              </button>
+              <div className="hr-incentives-list-item-actions">
+                <button
+                  type="button"
+                  className="soft-primary-button hr-incentives-inline-button"
+                  disabled={toggleTypeRosterMutation.isPending}
+                  onClick={() =>
+                    toggleTypeRosterMutation.mutate({
+                      id: item.id,
+                      requiresRestDay: !item.requiresRestDay
+                    })
+                  }
+                >
+                  {item.requiresRestDay ? "Quitar descanso" : "Exigir descanso"}
+                </button>
+                <button
+                  type="button"
+                  className="soft-primary-button hr-incentives-inline-button"
+                  disabled={toggleTypeMutation.isPending}
+                  onClick={() =>
+                    toggleTypeMutation.mutate({
+                      id: item.id,
+                      isActive: !item.isActive
+                    })
+                  }
+                >
+                  {item.isActive ? "Desactivar" : "Activar"}
+                </button>
+              </div>
             </div>
           ))}
         </div>
