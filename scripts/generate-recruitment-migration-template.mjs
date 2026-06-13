@@ -110,7 +110,9 @@ const documentRows = [
   ["Informe Evaluacion Psicolaboral", "otros", "si"],
   ["Informe Evaluacion Psicolaboral", "conductor", "si"],
   ["Examen Preocupacional", "otros", "no"],
-  ["Examen Preocupacional", "conductor", "si"]
+  ["Examen Preocupacional", "conductor", "si"],
+  ["Psicosensotecnico", "otros", "no"],
+  ["Psicosensotecnico", "conductor", "si"]
 ];
 
 const documentSheetHeaders = [

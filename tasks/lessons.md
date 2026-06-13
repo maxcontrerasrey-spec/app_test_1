@@ -848,3 +848,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ## 89. Compartir fuente de datos no obliga a compartir la misma densidad visual
 - **Si una misma fuente (`tasksData`) alimenta dos superficies distintas, no asumas que ambas deben mostrar el mismo universo de filas.** La campana admite alta densidad porque es un resumen global; el widget principal del inicio no.
 - **Cuando un tipo de tarea satura una sola superficie pero sigue siendo útil en otra, filtra en el consumidor más estrecho, no en la fuente canónica.** En este caso, los incentivos pendientes deben seguir llegando a la campana, pero no al `TasksWidget` del inicio.
+
+## 90. Un modal intermedio no puede depender del `input[type=file]` como almacenamiento transaccional
+
+- **Si la subida requiere metadata adicional después de elegir el archivo, el `File` debe vivir en estado React propio hasta confirmar la operación.** Limpiar el `input` antes de cerrar la transacción rompe el flujo silenciosamente y deja al modal sin archivo real que persistir.
+- **Los modales de decisión no deben cerrarse por defecto cuando falla la mutación.** En flujos auditables, cerrar el modal tras un error obliga al usuario a rearmar contexto y borra evidencia operativa; primero se muestra el error, y solo se cierra en éxito confirmado.
+- **`window.prompt` y `window.confirm` son deuda operativa en módulos auditables.** No validan estructura, no dejan espacio para trazabilidad rica y no son reutilizables. El patrón correcto es un modal tipado con comentario obligatorio/opcional según la decisión.
+
+## 91. Las reglas de vencimiento documental viven en el catálogo, no en el componente
+
+- **Si un documento exige fecha de vencimiento, esa obligación debe resolverse desde `document_types.requires_expiry_date` y no mediante condicionales en React.** El checklist ya consume ese contrato y cualquier excepción hardcodeada solo introduce drift entre UI, migraciones y validaciones backend.
+- **Cuando el negocio agrega o reclasifica documentos, hay que sincronizar también las plantillas de migración o carga masiva.** Dejar el catálogo de base y la plantilla operativa con listas distintas termina generando importaciones inválidas y tickets evitables.

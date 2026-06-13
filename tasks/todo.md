@@ -8,6 +8,22 @@
 - [x] Centralizar la clasificación de tareas compartidas y eliminar tipado sintético/frágil en frontend
 - [x] Validar typecheck y consistencia de diff
 
+## Endurecimiento enterprise de flujos auditables y bordes ORION
+
+- [x] Extraer cortes seguros en frontend/servicios para reducir tamaño y acoplamiento en tareas compartidas y checklist documental
+- [x] Reemplazar interacciones bloqueantes del navegador en incentivos y checklist por modales auditables con validación explícita
+- [x] Eliminar `any` y `ts-ignore` evitables en edge functions ORION con contratos mínimos de runtime
+- [x] Validar `npx tsc -b`, `git diff --check` y documentar el cierre
+
+## Resultado de endurecimiento enterprise de flujos auditables y bordes ORION
+
+- [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:1) dejó de concentrar la lógica de la campana; el dropdown quedó desacoplado en [`TopNotificationsMenu.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/TopNotificationsMenu.tsx:1) y la clasificación compartida de tareas se centralizó en [`taskPresentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/lib/taskPresentation.ts:1). Esto reduce duplicación, elimina tipado sintético y baja el riesgo de drift entre campana e inicio.
+- El checklist documental salió parcialmente de [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) hacia [`documentChecklistApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/documentChecklistApi.ts:1), dejando un servicio más estrecho y trazable para carga, revisión y validación documental.
+- [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:1) ya no depende de `prompt/alert`; ahora usa [`DocumentChecklistActionModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/DocumentChecklistActionModal.tsx:1), preserva el archivo pendiente entre selección y metadata requerida, y solo cierra modales cuando la operación realmente fue exitosa.
+- El módulo de incentivos dejó de depender de `window.confirm` y `window.prompt`: [`IncentiveApprovalsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveApprovalsView.tsx:1) y [`IncentiveRequestsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:1) ahora usan [`IncentiveActionModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveActionModal.tsx:1), con comentario obligatorio para rechazos y comentario opcional para aprobaciones/anulaciones.
+- Las edge functions [`orion-document-processor`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-document-processor/index.ts:1) y [`orion-chat`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/index.ts:1) quedaron sin `ts-ignore` ni `any` evitables en sus puntos de embeddings y manejo de errores. Se introdujeron contratos mínimos explícitos para `Supabase.ai.Session`, mejorando mantenibilidad y reduciendo deuda silenciosa en un borde crítico de IA.
+- Validación final cerrada con `npx tsc -b` exitoso y `git diff --check` limpio.
+
 ## Resultado de limpieza enterprise de superficies compartidas de tareas y navegación
 
 - Se creó [`taskPresentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/lib/taskPresentation.ts:1) para centralizar la clasificación de tareas compartidas entre campana y widget de inicio. Antes, esa lógica estaba duplicada y dependía de strings dispersos (`module_code === 'recursos_humanos'`) en más de una superficie.
@@ -577,6 +593,19 @@
 - Se agregó la migración [`20260609_141500_rename_candidate_document_labels.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609_141500_rename_candidate_document_labels.sql:1) y ya fue aplicada en Supabase productivo.
 - Los labels actualizados en base quedaron así: `Certificado de Antecedentes`, `Cédula de identidad`, `Certificado de estudios` y `Licencia de conducir`.
 - La validación técnica cerró con `npm run build` y `git diff --check`.
+
+## Ajuste de vencimiento y nuevo documento en control documental
+
+- [x] Auditar la fuente canónica del checklist para aplicar la regla desde `document_types`
+- [x] Restringir `requires_expiry_date` solo a los documentos definidos por negocio y agregar `Psicosensotecnico`
+- [x] Alinear la plantilla de migración de reclutamiento y documentar el cierre
+
+## Resultado de ajuste de vencimiento y nuevo documento en control documental
+
+- Se agregó la migración [`20260612224500_update_candidate_document_expiry_rules.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612224500_update_candidate_document_expiry_rules.sql:1), que endurece la regla de vencimiento en la fuente canónica `public.document_types`.
+- Desde esta migración, `requires_expiry_date` queda en `true` únicamente para `Cédula de identidad`, `Licencia de conducir`, `Examen Preocupacional` y `Psicosensotecnico`; todos los demás documentos activos del checklist quedan sin exigencia de vencimiento.
+- El nuevo documento `Psicosensotecnico` se agrega como documento activo y crítico para `Conductor`, con vencimiento obligatorio, manteniendo el contrato diferencial `Conductor` vs `Otros` del catálogo documental.
+- También se actualizó [`scripts/generate-recruitment-migration-template.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/generate-recruitment-migration-template.mjs:80) para que la plantilla operativa de migración ya incluya `Psicosensotecnico` y no derive un catálogo distinto al de base.
 
 ## Resultado parcial del hotfix de regresión en Control de Contrataciones
 
