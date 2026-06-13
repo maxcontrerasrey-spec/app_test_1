@@ -468,17 +468,7 @@ export function IncentiveApprovalsView() {
                                           <small>Contrato del Servicio</small>
                                           <strong>{detailQuery.data.request.selectedAreaName}</strong>
                                         </div>
-                                        <div>
-                                          <small>Código contrato</small>
-                                          <strong>{detailQuery.data.request.selectedContractCode}</strong>
-                                        </div>
                                         <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
-                                          <IncentiveOperationalFlags
-                                            periodCode={detailQuery.data.request.periodCode}
-                                            entryLagDays={detailQuery.data.request.entryLagDays}
-                                            isOutOfDeadline={detailQuery.data.request.isOutOfDeadline}
-                                            isContractMismatch={detailQuery.data.request.isContractMismatch}
-                                          />
                                         </div>
                                       </div>
                                     </div>
@@ -494,9 +484,14 @@ export function IncentiveApprovalsView() {
                                           <small>Fecha servicio</small>
                                           <strong>{formatRequestDate(detailQuery.data.request.serviceDate)}</strong>
                                         </div>
-                                        <div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                           <small>Período pago</small>
-                                          <strong>{detailQuery.data.request.periodCode}</strong>
+                                          <IncentiveOperationalFlags
+                                            periodCode={detailQuery.data.request.periodCode}
+                                            entryLagDays={detailQuery.data.request.entryLagDays}
+                                            isOutOfDeadline={detailQuery.data.request.isOutOfDeadline}
+                                            isContractMismatch={detailQuery.data.request.isContractMismatch}
+                                          />
                                         </div>
                                         <div>
                                           <small>Monto</small>
