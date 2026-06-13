@@ -183,6 +183,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No asumas que `first_name = primer nombre`**. En la data real puede llegar como `Jorge Aníbal`, por lo que reutilizarlo completo en la clave de búsqueda reintroduce exactamente el mismo problema que se intentaba corregir.
 - **Para matching simplificado, el primer nombre debe reducirse al primer token antes de concatenar apellidos**. Si no, búsquedas como `jorge ara` siguen fallando aunque la helper ya use campos estructurados de BUK.
 
+## 57. Una sync nueva contra BUK no se diseña por intuición de producto; primero se valida permiso real por endpoint
+
+- **Que el token lea `employees` no implica que pueda leer `vacations` o `absences`**. En BUK los permisos son por módulo/endpoint, así que una integración puede estar parcialmente habilitada.
+- **Si la validación devuelve `401`, no corresponde implementar una sync “a medias”**. Lo correcto es dejar tooling de validación reutilizable, documentar el permiso faltante y retomar la sync solo cuando el token tenga el alcance requerido.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

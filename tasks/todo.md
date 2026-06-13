@@ -114,6 +114,20 @@
 - La helper [`build_buk_employee_name_search_key(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614133500_fix_buk_name_search_first_token.sql:1) ahora reduce `first_name` al primer token antes de construir la clave simplificada. Con eso, `jorge ara` vuelve a encontrar correctamente a `Jorge Aníbal Araya Cangana`.
 - La corrección fue aplicada también en la base activa de Supabase durante esta sesión y validada con un query de humo directo sobre `employees_active_current`, confirmando la clave `jorge araya cangana`.
 
+## Validación técnica de acceso BUK para ausencias en roster
+
+- [x] Auditar la infraestructura actual de sync BUK y el modelo vigente de excepciones en roster
+- [x] Validar si el token actual puede leer vacaciones/licencias/ausencias desde la API de BUK
+- [x] Si el token no alcanza, dejar trazabilidad y tooling reutilizable en vez de forzar una sync inválida
+
+## Resultado de validación técnica de acceso BUK para ausencias en roster
+
+- La validación real del token vigente mostró este contrato: `GET /employees` responde `200`, pero `GET /vacations` y `GET /absences` responden `401 Unauthorized`. Por tanto, hoy no existe permiso efectivo para implementar una segunda sync funcional de ausencias basada en ese token.
+- La fuente actual de `employees_active_current` tampoco resuelve el problema por sí sola: el `raw_payload` de empleados trae atributos maestros y laborales, pero no un rango operativo de vacaciones/licencias utilizable para poblar automáticamente [`hr_roster_exceptions`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613193000_add_hr_roster_module.sql:125).
+- Se agregó el validador [`validate-buk-absence-access.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/validate-buk-absence-access.mjs:1), que prueba de forma segura los endpoints `employees`, `vacations` y `absences` usando el mismo `BUK_AUTH_TOKEN` de la integración.
+- También se agregó el workflow manual [validate-buk-absence-access.yml](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/validate-buk-absence-access.yml:1), para que el equipo pueda revalidar permisos en GitHub Actions apenas BUK habilite `Vacaciones: Lectura` y el acceso necesario para ausencias/licencias.
+- La regla de negocio quedó definida para la siguiente fase: cuando el token tenga alcance, las fechas provenientes de BUK tendrán jerarquía superior y no podrán ser sobreescritas por excepciones manuales locales.
+
 ## Migración completa de motor gráfico a Recharts
 
 - [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico

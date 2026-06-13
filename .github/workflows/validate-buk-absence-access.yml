@@ -1,0 +1,33 @@
+name: Validate BUK Absence Access
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci --omit=dev
+
+      - name: Validate required variables
+        env:
+          BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
+          BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
+        run: |
+          test -n "$BUK_AUTH_TOKEN" || { echo "Missing BUK_AUTH_TOKEN"; exit 1; }
+
+      - name: Validate BUK vacations and absences access
+        env:
+          BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
+          BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
+        run: node scripts/validate-buk-absence-access.mjs
