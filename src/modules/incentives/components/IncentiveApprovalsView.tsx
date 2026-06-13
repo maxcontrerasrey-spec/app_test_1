@@ -337,12 +337,12 @@ export function IncentiveApprovalsView() {
                     />
                   </th>
 
+                  <th>Folio</th>
                   <th>Trabajador</th>
                   <th>Incentivo</th>
                   <th>Contrato</th>
                   <th>Fecha servicio</th>
                   <th>Monto</th>
-                  <th>Solicitó</th>
                   <th>Acción</th>
                 </tr>
               </thead>
@@ -370,28 +370,24 @@ export function IncentiveApprovalsView() {
                             />
                           </td>
                           <td>
-                            <div className="case-code-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
+                            <span className="case-code-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
                               <span className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`} style={{ display: 'inline-block', fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isActiveRow ? 'rotate(90deg)' : 'none' }}>▸</span>
-                              <span>{row.employeeFullName}</span>
+                              {String(row.folio).padStart(5, '0')}
+                            </span>
+                          </td>
+                          <td>
+                            <strong>{row.employeeFullName}</strong>
+                            <div className="tracking-filter-caption">
+                              {formatRut(row.employeeDocumentNumber)}
                             </div>
-                            <div className="tracking-filter-caption" style={{ marginLeft: '1.4rem' }}>
-                              {formatRut(row.employeeDocumentNumber)} · Creado: {formatDateTimeValue(row.createdAt)}
-                            </div>
-                            <div className="tracking-filter-caption" style={{ marginLeft: '1.4rem' }}>
-                              {row.employeeJobTitle}
-                            </div>
+                            <div className="tracking-filter-caption">{row.employeeJobTitle}</div>
                           </td>
                           <td>{row.incentiveTypeName}</td>
                           <td>
                             <strong>{row.selectedAreaName}</strong>
-                            <div className="tracking-filter-caption">{row.selectedContractCode}</div>
                           </td>
                           <td>{formatRequestDate(row.serviceDate)}</td>
                           <td>{formatCurrencyValue(row.calculatedAmount)}</td>
-                          <td>
-                            <strong>{row.requesterName}</strong>
-                            <div className="tracking-filter-caption">{row.approverName}</div>
-                          </td>
                           <td>
                             {canDecide ? (
                               <div className="hr-incentives-inline-actions">
