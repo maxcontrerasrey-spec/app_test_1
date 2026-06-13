@@ -81,20 +81,19 @@ export function IncentiveAnalyticsView() {
     }));
   }, [analyticsQuery.data?.countByIncentiveType]);
 
-  const deviationsData = useMemo(() => {
-    return (analyticsQuery.data?.deviationsByContract.slice(0, 8) ?? []).map((item) => ({
+  const amountByContractData = useMemo(() => {
+    return (analyticsQuery.data?.amountByContract.slice(0, 8) ?? []).map((item) => ({
       contractCode: item.contractCode,
       contractLabel: item.areaName || item.contractCode,
-      outOfDeadlineCount: Number(item.outOfDeadlineCount || 0),
-      contractMismatchCount: Number(item.contractMismatchCount || 0)
+      totalAmount: Number(item.totalAmount || 0)
     }));
-  }, [analyticsQuery.data?.deviationsByContract]);
+  }, [analyticsQuery.data?.amountByContract]);
 
-  const amountByDriverData = useMemo(() => {
-    const rawData = analyticsQuery.data?.amountByDriver.slice(0, 8) ?? [];
+  const amountByWorkerData = useMemo(() => {
+    const rawData = analyticsQuery.data?.amountByWorker.slice(0, 8) ?? [];
     return rawData.map((item) => {
       const flatItem: any = {
-        driverName: item.driverName || "Desconocido",
+        workerName: item.workerName || "Desconocido",
         totalAmount: item.totalAmount
       };
       item.contracts.forEach((c) => {
@@ -102,18 +101,18 @@ export function IncentiveAnalyticsView() {
       });
       return flatItem;
     });
-  }, [analyticsQuery.data?.amountByDriver]);
+  }, [analyticsQuery.data?.amountByWorker]);
 
-  const uniqueDriverContracts = useMemo(() => {
+  const uniqueWorkerContracts = useMemo(() => {
     const contractsSet = new Set<string>();
-    const rawData = analyticsQuery.data?.amountByDriver.slice(0, 8) ?? [];
+    const rawData = analyticsQuery.data?.amountByWorker.slice(0, 8) ?? [];
     rawData.forEach(item => {
       item.contracts.forEach(c => {
         contractsSet.add(c.contractLabel);
       });
     });
     return Array.from(contractsSet);
-  }, [analyticsQuery.data?.amountByDriver]);
+  }, [analyticsQuery.data?.amountByWorker]);
 
   const cards = analyticsQuery.data?.summaryCards;
   const contractOptions = analyticsQuery.data?.filterOptions.contracts ?? [];
@@ -326,80 +325,19 @@ export function IncentiveAnalyticsView() {
 
         <article className="hr-incentives-analytics-card">
           <div className="hr-incentives-analytics-card-header">
-            <h4>Top desviaciones por contrato</h4>
+            <h4>Inversión por contrato</h4>
             <span className="tracking-filter-caption">
-              Contratos con mayor concentración de fuera de plazo y contrato distinto
+              Top contratos con mayor volumen de incentivos
             </span>
           </div>
           <ChartSurface
             height={320}
             loading={analyticsQuery.isLoading}
-            empty={deviationsData.length === 0}
-            emptyMessage="No hay desviaciones para el filtro actual."
-          >
-            <BarChart
-              data={deviationsData}
-              layout="vertical"
-              margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
-              <XAxis 
-                type="number" 
-                stroke="var(--text-muted)" 
-                tickLine={false} 
-                axisLine={false} 
-                allowDecimals={false} 
-                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
-                tickMargin={12}
-              />
-              <YAxis
-                type="category"
-                dataKey="contractLabel"
-                width={96}
-                stroke="var(--text-muted)"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
-                tickMargin={12}
-                tickFormatter={(value) => truncateLabel(value, 12)}
-              />
-              <Tooltip
-                content={(props) => (
-                  <ChartTooltip {...props} chartValueFormatter={(value) => `${value ?? 0} solicitudes`} />
-                )}
-              />
-              <Legend 
-                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "8px" }}
-                iconType="circle"
-                iconSize={8}
-              />
-              <Bar dataKey="outOfDeadlineCount" name="Fuera de plazo" stackId="deviations" fill="#ef4444" radius={[0, 6, 6, 0]} />
-              <Bar
-                dataKey="contractMismatchCount"
-                name="Contrato distinto"
-                stackId="deviations"
-                fill="#57a6b2"
-                radius={[0, 6, 6, 0]}
-              />
-            </BarChart>
-          </ChartSurface>
-        </article>
-
-        <article className="hr-incentives-analytics-card">
-          <div className="hr-incentives-analytics-card-header">
-            <h4>Ranking de conductores</h4>
-            <span className="tracking-filter-caption">
-              Mayor monto ingresado, diferenciado por contrato
-            </span>
-          </div>
-          <ChartSurface
-            height={320}
-            loading={analyticsQuery.isLoading}
-            empty={amountByDriverData.length === 0}
+            empty={amountByContractData.length === 0}
             emptyMessage="No hay datos para el filtro actual."
           >
             <BarChart
-              data={amountByDriverData}
+              data={amountByContractData}
               layout="vertical"
               margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
             >
@@ -415,7 +353,7 @@ export function IncentiveAnalyticsView() {
               />
               <YAxis
                 type="category"
-                dataKey="driverName"
+                dataKey="contractLabel"
                 width={96}
                 stroke="var(--text-muted)"
                 tickLine={false}
@@ -437,12 +375,74 @@ export function IncentiveAnalyticsView() {
                 iconType="circle"
                 iconSize={8}
               />
-              {uniqueDriverContracts.map((contractLabel, index) => (
+              <Bar 
+                dataKey="totalAmount" 
+                name="Monto total" 
+                fill="#57a6b2" 
+                radius={[0, 6, 6, 0]} 
+              />
+            </BarChart>
+          </ChartSurface>
+        </article>
+
+        <article className="hr-incentives-analytics-card">
+          <div className="hr-incentives-analytics-card-header">
+            <h4>Ranking de trabajadores</h4>
+            <span className="tracking-filter-caption">
+              Trabajadores con mayor monto ingresado, diferenciado por contrato
+            </span>
+          </div>
+          <ChartSurface
+            height={320}
+            loading={analyticsQuery.isLoading}
+            empty={amountByWorkerData.length === 0}
+            emptyMessage="No hay datos para el filtro actual."
+          >
+            <BarChart
+              data={amountByWorkerData}
+              layout="vertical"
+              margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
+              <XAxis 
+                type="number" 
+                stroke="var(--text-muted)" 
+                tickLine={false} 
+                axisLine={false} 
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
+                tickFormatter={(value: number) => formatCompactCurrency(value)}
+              />
+              <YAxis
+                type="category"
+                dataKey="workerName"
+                width={96}
+                stroke="var(--text-muted)"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
+                tickFormatter={(value) => truncateLabel(value, 12)}
+              />
+              <Tooltip
+                content={(props) => (
+                  <ChartTooltip 
+                    {...props} 
+                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))} 
+                  />
+                )}
+              />
+              <Legend 
+                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "8px" }}
+                iconType="circle"
+                iconSize={8}
+              />
+              {uniqueWorkerContracts.map((contractLabel, index) => (
                 <Bar
                   key={contractLabel}
                   dataKey={contractLabel}
                   name={contractLabel}
-                  stackId="driverAmount"
+                  stackId="workerAmount"
                   fill={["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"][index % 8]}
                 />
               ))}

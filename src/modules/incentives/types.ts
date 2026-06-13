@@ -313,12 +313,10 @@ export type HrIncentiveAnalyticsCountByTypeItem = {
   totalAmount: number;
 };
 
-export type HrIncentiveAnalyticsDeviationByContractItem = {
+export interface HrIncentiveAnalyticsAmountByContractItem {
   contractCode: string;
   areaName: string | null;
-  outOfDeadlineCount: number;
-  contractMismatchCount: number;
-  totalDeviations: number;
+  totalAmount: number;
 };
 
 export type HrIncentiveAnalyticsFilterOption = {
@@ -332,24 +330,24 @@ export type HrIncentiveAnalyticsFilterOptions = {
   statuses: HrIncentiveAnalyticsFilterOption[];
 };
 
-export interface HrIncentiveAnalyticsAmountByDriverContract {
+export interface HrIncentiveAnalyticsAmountByWorkerContract {
   contractCode: string;
   contractLabel: string;
   amount: number;
 }
 
-export interface HrIncentiveAnalyticsAmountByDriverItem {
-  driverName: string;
+export interface HrIncentiveAnalyticsAmountByWorkerItem {
+  workerName: string;
   totalAmount: number;
-  contracts: HrIncentiveAnalyticsAmountByDriverContract[];
+  contracts: HrIncentiveAnalyticsAmountByWorkerContract[];
 }
 
 export type HrIncentiveAnalyticsPayload = {
   summaryCards: HrIncentiveAnalyticsSummaryCards;
   totalAmountByPeriod: HrIncentiveAnalyticsAmountByPeriodItem[];
   countByIncentiveType: HrIncentiveAnalyticsCountByTypeItem[];
-  deviationsByContract: HrIncentiveAnalyticsDeviationByContractItem[];
-  amountByDriver: HrIncentiveAnalyticsAmountByDriverItem[];
+  amountByContract: HrIncentiveAnalyticsAmountByContractItem[];
+  amountByWorker: HrIncentiveAnalyticsAmountByWorkerItem[];
   filterOptions: HrIncentiveAnalyticsFilterOptions;
 };
 

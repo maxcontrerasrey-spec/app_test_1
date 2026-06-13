@@ -324,15 +324,13 @@ function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
       requestCount: Number(item.request_count ?? 0),
       totalAmount: readNumber(item.total_amount)
     })),
-    deviationsByContract: asArray<Record<string, unknown>>(source.deviations_by_contract).map((item) => ({
+    amountByContract: asArray<Record<string, unknown>>(source.amount_by_contract).map((item) => ({
       contractCode: String(item.contract_code ?? ""),
       areaName: readNullableText(item.area_name),
-      outOfDeadlineCount: Number(item.out_of_deadline_count ?? 0),
-      contractMismatchCount: Number(item.contract_mismatch_count ?? 0),
-      totalDeviations: Number(item.total_deviations ?? 0)
+      totalAmount: Number(item.total_amount ?? 0)
     })),
-    amountByDriver: asArray<Record<string, unknown>>(source.amount_by_driver).map((item) => ({
-      driverName: String(item.driver_name ?? ""),
+    amountByWorker: asArray<Record<string, unknown>>(source.amount_by_worker).map((item) => ({
+      workerName: String(item.worker_name ?? ""),
       totalAmount: Number(item.total_amount ?? 0),
       contracts: asArray<Record<string, unknown>>(item.contracts).map((c) => ({
         contractCode: String(c.contract_code ?? ""),
