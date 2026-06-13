@@ -177,11 +177,16 @@ export function IncentiveRequestsView({
               {(requestsQuery.data ?? []).length > 0
                 ? requestsQuery.data?.map((request) => {
                     const isActiveRow = selectedRequestId === request.id;
-                    const isWarningRow = request.isContractMismatch || request.isOutOfDeadline;
+                    const warningClass = request.isOutOfDeadline 
+                      ? "hr-incentives-row-danger" 
+                      : request.isContractMismatch 
+                        ? "hr-incentives-row-warning" 
+                        : "";
+
                     return (
                       <Fragment key={request.id}>
                         <tr
-                          className={`${isActiveRow ? "tracking-row-selected" : ""} ${isWarningRow ? "hr-incentives-row-warning" : ""}`.trim()}
+                          className={`${isActiveRow ? "tracking-row-selected" : ""} ${warningClass}`.trim()}
                           onClick={() => setSelectedRequestId(isActiveRow ? "" : request.id)}
                         >
                           <td>

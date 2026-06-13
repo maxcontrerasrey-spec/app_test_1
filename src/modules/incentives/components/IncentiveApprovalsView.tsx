@@ -354,12 +354,16 @@ export function IncentiveApprovalsView() {
                     const isActiveRow = selectedRequestId === row.requestId;
                     const canDecide =
                       isSuperAdmin || !row.approverUserId || row.approverUserId === user?.id;
-                    const isWarningRow = row.isContractMismatch || row.isOutOfDeadline;
+                    const warningClass = row.isOutOfDeadline 
+                      ? "hr-incentives-row-danger" 
+                      : row.isContractMismatch 
+                        ? "hr-incentives-row-warning" 
+                        : "";
 
                     return (
                       <Fragment key={row.approvalId}>
                         <tr
-                          className={`${isActiveRow ? "tracking-row-selected" : ""} ${isWarningRow ? "hr-incentives-row-warning" : ""}`.trim()}
+                          className={`${isActiveRow ? "tracking-row-selected" : ""} ${warningClass}`.trim()}
                           onClick={() => setSelectedRequestId(isActiveRow ? "" : row.requestId)}
                         >
                           <td className="tracking-selection-cell">
