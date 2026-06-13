@@ -53,10 +53,10 @@ export function IncentiveAnalyticsView() {
         }
       },
       grid: {
-        left: 24,
-        right: 24,
-        top: 52,
-        bottom: 28,
+        left: 16,
+        right: 16,
+        top: 40,
+        bottom: 24,
         containLabel: true
       },
       xAxis: {
@@ -96,8 +96,8 @@ export function IncentiveAnalyticsView() {
         {
           name: "Tipo de incentivo",
           type: "pie",
-          radius: ["44%", "72%"],
-          center: ["50%", "46%"],
+          radius: ["50%", "70%"],
+          center: ["50%", "50%"],
           avoidLabelOverlap: true,
           label: {
             formatter: "{b}\n{d}%"
@@ -122,10 +122,10 @@ export function IncentiveAnalyticsView() {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
       legend: { top: 0 },
       grid: {
-        left: 24,
-        right: 24,
-        top: 52,
-        bottom: 28,
+        left: 16,
+        right: 16,
+        top: 40,
+        bottom: 24,
         containLabel: true
       },
       xAxis: {
@@ -141,12 +141,16 @@ export function IncentiveAnalyticsView() {
           name: "Fuera de plazo",
           type: "bar",
           stack: "desviaciones",
+          barMaxWidth: 32,
+          itemStyle: { borderRadius: [0, 4, 4, 0] },
           data: items.map((item) => item.outOfDeadlineCount)
         },
         {
           name: "Contrato distinto",
           type: "bar",
           stack: "desviaciones",
+          barMaxWidth: 32,
+          itemStyle: { borderRadius: [0, 4, 4, 0] },
           data: items.map((item) => item.contractMismatchCount)
         }
       ]
@@ -251,28 +255,28 @@ export function IncentiveAnalyticsView() {
       </div>
 
       <div className="hr-incentives-analytics-grid">
-        <article className="info-card hr-incentives-analytics-card">
+        <article className="hr-incentives-analytics-card">
           <div className="hr-incentives-analytics-card-header">
             <h4>Evolución del gasto</h4>
             <span className="tracking-filter-caption">Monto agregado por período</span>
           </div>
           <EChart
             option={lineOption}
-            height={340}
+            height={280}
             loading={analyticsQuery.isLoading}
             empty={(analyticsQuery.data?.totalAmountByPeriod.length ?? 0) === 0}
             emptyMessage="No hay períodos para el filtro actual."
           />
         </article>
 
-        <article className="info-card hr-incentives-analytics-card">
+        <article className="hr-incentives-analytics-card">
           <div className="hr-incentives-analytics-card-header">
             <h4>Distribución por tipo</h4>
             <span className="tracking-filter-caption">Participación del presupuesto por incentivo</span>
           </div>
           <EChart
             option={donutOption}
-            height={340}
+            height={280}
             renderer="svg"
             loading={analyticsQuery.isLoading}
             empty={(analyticsQuery.data?.countByIncentiveType.length ?? 0) === 0}
@@ -280,7 +284,7 @@ export function IncentiveAnalyticsView() {
           />
         </article>
 
-        <article className="info-card hr-incentives-analytics-card hr-incentives-analytics-card-wide">
+        <article className="hr-incentives-analytics-card hr-incentives-analytics-card-wide">
           <div className="hr-incentives-analytics-card-header">
             <h4>Top desviaciones operacionales</h4>
             <span className="tracking-filter-caption">
@@ -289,7 +293,7 @@ export function IncentiveAnalyticsView() {
           </div>
           <EChart
             option={deviationsOption}
-            height={380}
+            height={320}
             loading={analyticsQuery.isLoading}
             empty={(analyticsQuery.data?.deviationsByContract.length ?? 0) === 0}
             emptyMessage="No hay desviaciones para el filtro actual."
