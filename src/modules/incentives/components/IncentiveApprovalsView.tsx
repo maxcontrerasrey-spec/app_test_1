@@ -118,13 +118,8 @@ export function IncentiveApprovalsView() {
   }, [approvalQueueQuery.data]);
 
   useEffect(() => {
-    if (!selectedRequestId && filteredQueue[0]?.requestId) {
-      setSelectedRequestId(filteredQueue[0].requestId);
-      return;
-    }
-
     if (selectedRequestId && !filteredQueue.some((item) => item.requestId === selectedRequestId)) {
-      setSelectedRequestId(filteredQueue[0]?.requestId ?? "");
+      setSelectedRequestId("");
     }
   }, [filteredQueue, selectedRequestId]);
 
@@ -472,17 +467,13 @@ export function IncentiveApprovalsView() {
                                           <small>Sindicato</small>
                                           <strong>{detailQuery.data.request.employeeUnionName ?? "No informado"}</strong>
                                         </div>
-                                        <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
+                                        <div>
                                           <small>Cargo BUK</small>
                                           <strong>{detailQuery.data.request.employeeJobTitle}</strong>
                                         </div>
                                         <div>
-                                          <small>Contrato destino</small>
+                                          <small>Contrato del Servicio</small>
                                           <strong>{detailQuery.data.request.selectedAreaName}</strong>
-                                        </div>
-                                        <div>
-                                          <small>Código contrato</small>
-                                          <strong>{detailQuery.data.request.selectedContractCode}</strong>
                                         </div>
                                       </div>
                                     </div>
@@ -541,43 +532,7 @@ export function IncentiveApprovalsView() {
                                     </div>
                                   </div>
 
-                                  <div className="expanded-case-detail-grid-vertical">
-                                    <div className="expanded-detail-section">
-                                      <h4>HISTORIAL DE APROBACIÓN</h4>
-                                      <div className="expanded-detail-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                        <div>
-                                          <div style={{ marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-muted)' }}>CADENA DE APROBACIÓN</div>
-                                          <div className="hr-incentives-approval-list">
-                                            {detailQuery.data.approvals.map((approval) => (
-                                              <div key={approval.id} className="hr-incentives-approval-list-item">
-                                                <strong>{approval.stepName}</strong>
-                                                <span>
-                                                  {approval.approverName ?? "No asignado"} · {approval.status}
-                                                </span>
-                                                <span>{formatDateTimeValue(approval.decidedAt ?? approval.createdAt)}</span>
-                                                {approval.decisionComment ? <span>{approval.decisionComment}</span> : null}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-
-                                        <div>
-                                          <div style={{ marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-muted)' }}>HISTORIAL DE EVENTOS</div>
-                                          <div className="hr-incentives-approval-list">
-                                            {detailQuery.data.history.slice(0, 8).map((item) => (
-                                              <div key={item.id} className="hr-incentives-approval-list-item">
-                                                <strong>{item.actionType}</strong>
-                                                <span>{item.actorName ?? "Usuario no disponible"}</span>
-                                                <span>{formatDateTimeValue(item.createdAt)}</span>
-                                                {item.comment ? <span>{item.comment}</span> : null}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </>
+                                  
                               ) : null}
                             </td>
                           </tr>
