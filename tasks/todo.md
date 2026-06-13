@@ -2,11 +2,32 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste de densidad entre campana y widget de tareas del inicio
+
+- [x] Auditar dónde comparten hoy la misma fuente la campana y el widget de inicio
+- [x] Filtrar solo el widget de inicio para ocultar incentivos pendientes sin tocar la campana
+- [x] Validar tipos/diff y documentar ajuste final
+
+## Resultado de ajuste de densidad entre campana y widget de tareas del inicio
+
+- La fuente compartida sigue siendo `tasksData`; no se tocó la campana ni la RPC de backend. El ajuste quedó deliberadamente en el consumidor más estrecho: [`TasksWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/TasksWidget.tsx:42).
+- El widget `Tareas pendientes` del inicio ahora filtra localmente las tareas con `type = 'hr_incentive_approval'` o `module_code = 'recursos_humanos'`, de modo que los incentivos pendientes siguen contando y apareciendo en la campana superior, pero ya no saturan la tabla principal del inicio.
+- El resto del comportamiento no cambia: contratación, `Who` y movilidad interna siguen usando la misma fuente, el mismo refresh y la misma lógica de decisión inline.
+- Validación cerrada con `npx tsc -b` exitoso y `git diff --check` limpio.
+
 ## Notificación de incentivos pendientes en campana superior
 
-- [ ] Auditar la fuente canónica de la campana (`tasksData`) para extenderla sin duplicar otra query de notificaciones
-- [ ] Agregar incentivos pendientes de aprobación al contrato de `get_dashboard_tasks(...)` y al consumo frontend del resumen de tareas
-- [ ] Validar build y documentar el ajuste final
+- [x] Auditar la fuente canónica de la campana (`tasksData`) para extenderla sin duplicar otra query de notificaciones
+- [x] Agregar incentivos pendientes de aprobación al contrato de `get_dashboard_tasks(...)` y al consumo frontend del resumen de tareas
+- [x] Validar build y documentar el ajuste final
+
+## Resultado de notificación de incentivos pendientes en campana superior
+
+- La campana no necesitaba otra query: su fuente canónica ya era `tasksData` desde [`get_dashboard_home_bundle()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/services/dashboardService.ts:13), así que el ajuste correcto fue ampliar [`get_dashboard_tasks(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612211622_add_hr_incentive_tasks_to_dashboard_notifications.sql:3).
+- Se agregó la migración [`20260612211622_add_hr_incentive_tasks_to_dashboard_notifications.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612211622_add_hr_incentive_tasks_to_dashboard_notifications.sql:1), que incorpora a `tasksData` las aprobaciones pendientes de `hr_incentive_request_approvals` bajo `module_code = 'recursos_humanos'` y `type = 'hr_incentive_approval'`, incluyendo trabajador, tipo de incentivo, contrato, fecha de servicio y monto.
+- En frontend se ajustó el contrato de [`DashboardTaskItem`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/types/index.ts:3) para soportar `service_date` y `calculated_amount`, la campana en [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:84) ahora resume mejor los incentivos, y [`TasksWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/TasksWidget.tsx:1) ya distingue incentivos de contratación/movilidad para mostrar su detalle correcto y decidirlos usando `decideHrIncentiveApproval(...)`.
+- La migración fue aplicada también en Supabase productivo durante esta sesión, por lo que la campana ya puede contar y listar incentivos pendientes de aprobación sin esperar otro despliegue manual de base de datos.
+- Validación cerrada con `npx tsc -b` exitoso y `git diff --check` limpio. `npm run build` no devolvió error de compilación, pero el proceso `vite build` no terminó dentro de 120 segundos en este entorno, así que la validación dura quedó acotada a typecheck más revisión de diff.
 
 ## Hotfix de aprobaciones huérfanas en Incentivos Extraordinarios
 

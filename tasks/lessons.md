@@ -844,3 +844,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No des por cerrado un flujo de aprobaciones solo porque la solicitud quedó con `status = 'P'` o el historial la muestra como pendiente.** Si la tabla operativa de cola (`hr_incentive_request_approvals`) no tiene la fila correspondiente, la bandeja real quedará vacía aunque el registro principal parezca correcto.
 - **La verificación de cierre debe contrastar siempre las dos superficies:** el registro maestro (`hr_incentive_requests`) y la cola de trabajo (`hr_incentive_request_approvals`), idealmente con una consulta de huérfanos `status pendiente + count(approvals)=0`.
 - **Cuando aparezcan huérfanos productivos, la reparación segura es reconstruir la etapa faltante desde la fuente canónica de aprobadores** y dejar trazabilidad explícita en historial (`approval_created` con motivo de reparación), en vez de alterar manualmente el estado principal o “simular” la bandeja desde frontend.
+
+## 89. Compartir fuente de datos no obliga a compartir la misma densidad visual
+- **Si una misma fuente (`tasksData`) alimenta dos superficies distintas, no asumas que ambas deben mostrar el mismo universo de filas.** La campana admite alta densidad porque es un resumen global; el widget principal del inicio no.
+- **Cuando un tipo de tarea satura una sola superficie pero sigue siendo útil en otra, filtra en el consumidor más estrecho, no en la fuente canónica.** En este caso, los incentivos pendientes deben seguir llegando a la campana, pero no al `TasksWidget` del inicio.

@@ -40,7 +40,9 @@ function formatCurrencyValue(amount: number | null | undefined) {
 }
 
 export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProps) {
-  const tasks = dashboardData?.tasksData ?? [];
+  const tasks = (dashboardData?.tasksData ?? []).filter(
+    (task) => !(task.type === "hr_incentive_approval" || task.module_code === "recursos_humanos")
+  );
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
   // Estados para acciones integradas (Aprobar/Rechazar)
