@@ -44,6 +44,7 @@ export function IncentiveRequestsView({
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
   const [contractCodeFilter, setContractCodeFilter] = useState("");
   const [serviceDateUntil, setServiceDateUntil] = useState("");
+  const [mutationError, setMutationError] = useState("");
   const [requestToCancel, setRequestToCancel] = useState<HrIncentiveRequest | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const detailQuery = useHrIncentiveRequestDetail(selectedRequestId);
@@ -187,6 +188,13 @@ export function IncentiveRequestsView({
                               <span className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`} style={{ display: 'inline-block', fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isActiveRow ? 'rotate(90deg)' : 'none' }}>▸</span>
                               {String(request.folio).padStart(5, '0')}
                             </span>
+                            <IncentiveOperationalFlags
+                              periodCode={request.periodCode}
+                              entryLagDays={request.entryLagDays}
+                              isOutOfDeadline={request.isOutOfDeadline}
+                              isContractMismatch={request.isContractMismatch}
+                              compact
+                            />
                           </td>
                           <td>
                             <strong>{request.employeeFullName}</strong>
@@ -203,6 +211,7 @@ export function IncentiveRequestsView({
                           <td>{request.incentiveTypeName}</td>
                           <td>
                             <strong>{request.selectedAreaName}</strong>
+                            <div className="tracking-filter-caption">{request.selectedContractCode}</div>
                           </td>
                           <td>{formatRequestDate(request.serviceDate)}</td>
                           <td>{formatCurrencyValue(request.calculatedAmount)}</td>
@@ -280,7 +289,9 @@ export function IncentiveRequestsView({
                                           <small>Contrato del Servicio</small>
                                           <strong>{detailQuery.data.request.selectedAreaName}</strong>
                                         </div>
-                                        <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
+                                        <div>
+                                          <small>Código contrato</small>
+                                          <strong>{detailQuery.data.request.selectedContractCode}</strong>
                                         </div>
                                       </div>
                                     </div>
@@ -328,7 +339,7 @@ export function IncentiveRequestsView({
                                       <div className="expanded-detail-fields" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
                                         <div>
                                           <small>Estado actual</small>
-                                          <strong>{getRequestStatusLabel(detailQuery.data.request.status)}</strong>
+                                          <strong>{getIncentiveStatusLabel(detailQuery.data.request.status)}</strong>
                                         </div>
                                         <div>
                                           <small>Motivo operacional</small>

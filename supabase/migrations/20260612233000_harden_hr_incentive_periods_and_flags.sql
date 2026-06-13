@@ -90,6 +90,19 @@ set
       hir.selected_contract_code
     );
 
+drop function if exists public.create_hr_incentive_request(
+  text,
+  uuid,
+  text,
+  text,
+  text,
+  timestamptz,
+  numeric,
+  text,
+  text,
+  text
+);
+
 create or replace function public.create_hr_incentive_request(
   p_buk_employee_id text,
   p_incentive_type_id uuid,
@@ -346,6 +359,15 @@ begin
 end;
 $function$;
 
+drop function if exists public.get_hr_incentive_requests(
+  text,
+  text,
+  text,
+  text,
+  uuid,
+  date
+);
+
 create or replace function public.get_hr_incentive_requests(
   p_period_code text default null,
   p_status text default 'A',
@@ -456,6 +478,8 @@ begin
   order by hir.created_at desc, hir.folio desc;
 end;
 $function$;
+
+drop function if exists public.get_hr_incentive_approval_queue();
 
 create or replace function public.get_hr_incentive_approval_queue()
 returns table (
