@@ -5,6 +5,7 @@ type IncentiveOperationalFlagsProps = {
   entryLagDays?: number;
   isOutOfDeadline?: boolean;
   isContractMismatch?: boolean;
+  declaredRestDay?: boolean | null;
   compact?: boolean;
 };
 
@@ -13,6 +14,7 @@ export function IncentiveOperationalFlags({
   entryLagDays = 0,
   isOutOfDeadline = false,
   isContractMismatch = false,
+  declaredRestDay,
   compact = false
 }: IncentiveOperationalFlagsProps) {
   const periodLabel = resolveIncentivePeriodLabel(periodCode);
@@ -25,6 +27,11 @@ export function IncentiveOperationalFlags({
         <span className="hr-incentive-flag-pill hr-incentive-flag-pill-period">
           Período {periodCode}
           {periodLabel ? ` · ${periodLabel}` : ""}
+        </span>
+      ) : null}
+      {typeof declaredRestDay === "boolean" ? (
+        <span className={`hr-incentive-flag-pill ${declaredRestDay ? "hr-incentive-flag-pill-late" : "hr-incentive-flag-pill-contract"}`}>
+          {declaredRestDay ? "En descanso trabajado" : "En turno"}
         </span>
       ) : null}
       {isOutOfDeadline ? (

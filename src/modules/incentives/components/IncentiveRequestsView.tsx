@@ -686,6 +686,7 @@ export function IncentiveRequestsView({
                                           entryLagDays={detailQuery.data.request.entryLagDays}
                                           isOutOfDeadline={detailQuery.data.request.isOutOfDeadline}
                                           isContractMismatch={detailQuery.data.request.isContractMismatch}
+                                          declaredRestDay={detailQuery.data.request.declaredRestDay}
                                         />
                                       </div>
                                       <div>

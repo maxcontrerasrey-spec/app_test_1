@@ -53,6 +53,11 @@ function truncateLabel(value: string, maxLength: number = 14) {
 }
 
 export function IncentiveAnalyticsView() {
+  const [timeView, setTimeView] = useState<"period" | "date">("period");
+  const [typeTimeView, setTypeTimeView] = useState<"period" | "date">("date");
+  const [contractTimeView, setContractTimeView] = useState<"period" | "date">("date");
+  const [workerTimeView, setWorkerTimeView] = useState<"period" | "date">("date");
+
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
   const [contractCodeFilter, setContractCodeFilter] = useState("");
   const [typeIdFilter, setTypeIdFilter] = useState("");
@@ -65,14 +70,21 @@ export function IncentiveAnalyticsView() {
     status: statusFilter
   });
 
-  const [timeView, setTimeView] = useState<"period" | "date">("period");
+  const allPeriodsAnalyticsQuery = useHrIncentivesAnalytics({
+    periodCode: undefined,
+    contractCode: contractCodeFilter || undefined,
+    typeId: typeIdFilter || undefined,
+    status: statusFilter
+  });
 
   const periodTrendData = useMemo(() => {
-    return (analyticsQuery.data?.totalAmountByPeriod ?? []).map((item) => ({
-      periodCode: item.periodCode,
-      totalAmount: item.totalAmount
-    }));
-  }, [analyticsQuery.data?.totalAmountByPeriod]);
+    return (allPeriodsAnalyticsQuery.data?.totalAmountByPeriod ?? [])
+      .slice(-12)
+      .map((item) => ({
+        periodCode: item.periodCode,
+        totalAmount: item.totalAmount
+      }));
+  }, [allPeriodsAnalyticsQuery.data?.totalAmountByPeriod]);
 
   const actualPeriodCode = periodCodeFilter || (periodTrendData.length > 0 ? periodTrendData[periodTrendData.length - 1].periodCode : undefined);
 
@@ -108,24 +120,28 @@ export function IncentiveAnalyticsView() {
 
   const amountByTypeData = useMemo(() => {
     const palette = ["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"];
+    const sourceData = typeTimeView === "period" ? allPeriodsAnalyticsQuery.data?.countByIncentiveType : analyticsQuery.data?.countByIncentiveType;
 
-    return (analyticsQuery.data?.countByIncentiveType ?? []).map((item, index) => ({
+    return (sourceData ?? []).map((item, index) => ({
       name: item.incentiveTypeName,
       value: item.totalAmount,
-      color: palette[index % palette.length]
+      color: palette[index % palette.length],
+      typeId: item.incentiveTypeId
     }));
-  }, [analyticsQuery.data?.countByIncentiveType]);
+  }, [analyticsQuery.data?.countByIncentiveType, allPeriodsAnalyticsQuery.data?.countByIncentiveType, typeTimeView]);
 
   const amountByContractData = useMemo(() => {
-    return (analyticsQuery.data?.amountByContract.slice(0, 8) ?? []).map((item) => ({
+    const sourceData = contractTimeView === "period" ? allPeriodsAnalyticsQuery.data?.amountByContract : analyticsQuery.data?.amountByContract;
+    return (sourceData?.slice(0, 8) ?? []).map((item) => ({
       contractCode: item.contractCode,
       contractLabel: item.areaName || item.contractCode,
       totalAmount: Number(item.totalAmount || 0)
     }));
-  }, [analyticsQuery.data?.amountByContract]);
+  }, [analyticsQuery.data?.amountByContract, allPeriodsAnalyticsQuery.data?.amountByContract, contractTimeView]);
 
   const amountByWorkerData = useMemo(() => {
-    const rawData = analyticsQuery.data?.amountByWorker.slice(0, 8) ?? [];
+    const sourceData = workerTimeView === "period" ? allPeriodsAnalyticsQuery.data?.amountByWorker : analyticsQuery.data?.amountByWorker;
+    const rawData = sourceData?.slice(0, 8) ?? [];
     return rawData.map((item) => {
       const flatItem: any = {
         workerName: item.workerName || "Desconocido",
@@ -136,18 +152,19 @@ export function IncentiveAnalyticsView() {
       });
       return flatItem;
     });
-  }, [analyticsQuery.data?.amountByWorker]);
+  }, [analyticsQuery.data?.amountByWorker, allPeriodsAnalyticsQuery.data?.amountByWorker, workerTimeView]);
 
   const uniqueWorkerContracts = useMemo(() => {
     const contractsSet = new Set<string>();
-    const rawData = analyticsQuery.data?.amountByWorker.slice(0, 8) ?? [];
+    const sourceData = workerTimeView === "period" ? allPeriodsAnalyticsQuery.data?.amountByWorker : analyticsQuery.data?.amountByWorker;
+    const rawData = sourceData?.slice(0, 8) ?? [];
     rawData.forEach(item => {
       item.contracts.forEach(c => {
         contractsSet.add(c.contractLabel);
       });
     });
     return Array.from(contractsSet);
-  }, [analyticsQuery.data?.amountByWorker]);
+  }, [analyticsQuery.data?.amountByWorker, allPeriodsAnalyticsQuery.data?.amountByWorker, workerTimeView]);
 
   const cards = analyticsQuery.data?.summaryCards;
   const contractOptions = analyticsQuery.data?.filterOptions.contracts ?? [];
@@ -346,6 +363,13 @@ export function IncentiveAnalyticsView() {
                 stroke="#2563eb"
                 strokeWidth={2}
                 radius={[10, 10, 0, 0]}
+                onClick={(data: any) => {
+                  const payload = data.payload || data;
+                  if (payload && payload.periodCode) {
+                    setPeriodCodeFilter(prev => prev === payload.periodCode ? "" : payload.periodCode);
+                  }
+                }}
+                cursor="pointer"
               />
               <Line
                 type="monotone"
@@ -355,15 +379,46 @@ export function IncentiveAnalyticsView() {
                 strokeWidth={2.5}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
+                onClick={(data: any) => {
+                  const payload = data.payload || data;
+                  if (payload && payload.periodCode) {
+                    setPeriodCodeFilter(prev => prev === payload.periodCode ? "" : payload.periodCode);
+                  }
+                }}
+                cursor="pointer"
               />
             </ComposedChart>
           </ChartSurface>
         </article>
 
         <article className="hr-incentives-analytics-card">
-          <div className="hr-incentives-analytics-card-header">
-            <h4>Distribución por tipo</h4>
-            <span className="tracking-filter-caption">Participación del presupuesto por incentivo</span>
+          <div className="hr-incentives-analytics-card-header flex justify-between items-start">
+            <div>
+              <h4>Distribución por tipo</h4>
+              <span className="tracking-filter-caption">Participación del presupuesto por incentivo</span>
+            </div>
+            <div className="flex bg-[var(--surface-muted)] p-1 rounded-md self-end">
+              <button
+                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
+                  typeTimeView === "period"
+                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+                onClick={() => setTypeTimeView("period")}
+              >
+                Periodos
+              </button>
+              <button
+                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
+                  typeTimeView === "date"
+                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+                onClick={() => setTypeTimeView("date")}
+              >
+                Actual
+              </button>
+            </div>
           </div>
           <ChartSurface
             height={280}
@@ -379,6 +434,13 @@ export function IncentiveAnalyticsView() {
                 innerRadius={58}
                 outerRadius={94}
                 paddingAngle={2}
+                onClick={(data: any) => {
+                  const payload = data?.payload || data;
+                  if (payload && payload.typeId) {
+                    setTypeIdFilter(prev => prev === payload.typeId ? "" : payload.typeId);
+                  }
+                }}
+                cursor="pointer"
               >
                 {amountByTypeData.map((entry) => (
                   <Cell key={entry.name} fill={entry.color} />
@@ -402,11 +464,35 @@ export function IncentiveAnalyticsView() {
         </article>
 
         <article className="hr-incentives-analytics-card">
-          <div className="hr-incentives-analytics-card-header">
-            <h4>Inversión por contrato</h4>
-            <span className="tracking-filter-caption">
-              Top contratos con mayor volumen de incentivos
-            </span>
+          <div className="hr-incentives-analytics-card-header flex justify-between items-start">
+            <div>
+              <h4>Inversión por contrato</h4>
+              <span className="tracking-filter-caption">
+                Top contratos con mayor volumen de incentivos
+              </span>
+            </div>
+            <div className="flex bg-[var(--surface-muted)] p-1 rounded-md self-end">
+              <button
+                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
+                  contractTimeView === "period"
+                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+                onClick={() => setContractTimeView("period")}
+              >
+                Periodos
+              </button>
+              <button
+                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
+                  contractTimeView === "date"
+                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+                onClick={() => setContractTimeView("date")}
+              >
+                Actual
+              </button>
+            </div>
           </div>
           <ChartSurface
             height={320}
@@ -446,27 +532,53 @@ export function IncentiveAnalyticsView() {
                   />
                 )}
               />
-              <Legend 
-                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "8px" }}
-                iconType="circle"
-                iconSize={8}
-              />
               <Bar 
                 dataKey="totalAmount" 
                 name="Monto total" 
                 fill="#57a6b2" 
-                radius={[0, 6, 6, 0]} 
+                radius={[0, 6, 6, 0]}
+                onClick={(data: any) => {
+                  const payload = data.payload || data;
+                  if (payload && payload.contractCode) {
+                    setContractCodeFilter(prev => prev === payload.contractCode ? "" : payload.contractCode);
+                  }
+                }}
+                cursor="pointer"
               />
             </BarChart>
           </ChartSurface>
         </article>
 
         <article className="hr-incentives-analytics-card">
-          <div className="hr-incentives-analytics-card-header">
-            <h4>Ranking de trabajadores</h4>
-            <span className="tracking-filter-caption">
-              Trabajadores con mayor monto ingresado, diferenciado por contrato
-            </span>
+          <div className="hr-incentives-analytics-card-header flex justify-between items-start">
+            <div>
+              <h4>Ranking de trabajadores</h4>
+              <span className="tracking-filter-caption">
+                Trabajadores con mayor monto ingresado, diferenciado por contrato
+              </span>
+            </div>
+            <div className="flex bg-[var(--surface-muted)] p-1 rounded-md self-end">
+              <button
+                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
+                  workerTimeView === "period"
+                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+                onClick={() => setWorkerTimeView("period")}
+              >
+                Periodos
+              </button>
+              <button
+                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
+                  workerTimeView === "date"
+                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+                onClick={() => setWorkerTimeView("date")}
+              >
+                Actual
+              </button>
+            </div>
           </div>
           <ChartSurface
             height={320}
@@ -505,11 +617,6 @@ export function IncentiveAnalyticsView() {
                     chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))} 
                   />
                 )}
-              />
-              <Legend 
-                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "8px" }}
-                iconType="circle"
-                iconSize={8}
               />
               {uniqueWorkerContracts.map((contractLabel, index) => (
                 <Bar
