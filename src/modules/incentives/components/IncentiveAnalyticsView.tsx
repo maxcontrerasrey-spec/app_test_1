@@ -201,11 +201,20 @@ export function IncentiveAnalyticsView() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
-              <XAxis dataKey="periodCode" stroke="var(--text-muted)" tickLine={false} axisLine={false} />
+              <XAxis
+                dataKey="periodCode"
+                stroke="var(--text-muted)"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
+              />
               <YAxis
                 stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
                 tickFormatter={(value: number) => formatCompactCurrency(value)}
               />
               <Tooltip
@@ -217,7 +226,11 @@ export function IncentiveAnalyticsView() {
                   />
                 )}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "12px" }}
+                iconType="circle"
+                iconSize={8}
+              />
               <Bar
                 dataKey="totalAmount"
                 name="Gasto total"
@@ -271,7 +284,11 @@ export function IncentiveAnalyticsView() {
                   />
                 )}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "16px" }}
+                iconType="circle"
+                iconSize={8}
+              />
             </PieChart>
           </ChartSurface>
         </article>
@@ -295,7 +312,15 @@ export function IncentiveAnalyticsView() {
               margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
-              <XAxis type="number" stroke="var(--text-muted)" tickLine={false} axisLine={false} allowDecimals={false} />
+              <XAxis 
+                type="number" 
+                stroke="var(--text-muted)" 
+                tickLine={false} 
+                axisLine={false} 
+                allowDecimals={false} 
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
+              />
               <YAxis
                 type="category"
                 dataKey="contractCode"
@@ -303,13 +328,19 @@ export function IncentiveAnalyticsView() {
                 stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
               />
               <Tooltip
                 content={(props) => (
                   <ChartTooltip {...props} chartValueFormatter={(value) => `${value ?? 0} solicitudes`} />
                 )}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "8px" }}
+                iconType="circle"
+                iconSize={8}
+              />
               <Bar dataKey="outOfDeadlineCount" name="Fuera de plazo" stackId="deviations" fill="#ef4444" radius={[0, 6, 6, 0]} />
               <Bar
                 dataKey="contractMismatchCount"
