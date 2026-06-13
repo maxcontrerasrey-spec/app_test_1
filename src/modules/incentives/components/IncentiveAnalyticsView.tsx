@@ -79,10 +79,19 @@ export function IncentiveAnalyticsView() {
   const deviationsData = useMemo(() => {
     return (analyticsQuery.data?.deviationsByContract.slice(0, 8) ?? []).map((item) => ({
       contractCode: item.contractCode,
+      contractLabel: item.areaName || item.contractCode,
       outOfDeadlineCount: Number(item.outOfDeadlineCount || 0),
       contractMismatchCount: Number(item.contractMismatchCount || 0)
     }));
   }, [analyticsQuery.data?.deviationsByContract]);
+
+  const deviationsByDriverData = useMemo(() => {
+    return (analyticsQuery.data?.deviationsByDriver.slice(0, 8) ?? []).map((item) => ({
+      driverName: item.driverName || "Desconocido",
+      outOfDeadlineCount: Number(item.outOfDeadlineCount || 0),
+      contractMismatchCount: Number(item.contractMismatchCount || 0)
+    }));
+  }, [analyticsQuery.data?.deviationsByDriver]);
 
   const cards = analyticsQuery.data?.summaryCards;
   const contractOptions = analyticsQuery.data?.filterOptions.contracts ?? [];
@@ -293,9 +302,9 @@ export function IncentiveAnalyticsView() {
           </ChartSurface>
         </article>
 
-        <article className="hr-incentives-analytics-card hr-incentives-analytics-card-wide">
+        <article className="hr-incentives-analytics-card">
           <div className="hr-incentives-analytics-card-header">
-            <h4>Top desviaciones operacionales</h4>
+            <h4>Top desviaciones por contrato</h4>
             <span className="tracking-filter-caption">
               Contratos con mayor concentración de fuera de plazo y contrato distinto
             </span>
@@ -323,7 +332,67 @@ export function IncentiveAnalyticsView() {
               />
               <YAxis
                 type="category"
-                dataKey="contractCode"
+                dataKey="contractLabel"
+                width={96}
+                stroke="var(--text-muted)"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
+              />
+              <Tooltip
+                content={(props) => (
+                  <ChartTooltip {...props} chartValueFormatter={(value) => `${value ?? 0} solicitudes`} />
+                )}
+              />
+              <Legend 
+                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "8px" }}
+                iconType="circle"
+                iconSize={8}
+              />
+              <Bar dataKey="outOfDeadlineCount" name="Fuera de plazo" stackId="deviations" fill="#ef4444" radius={[0, 6, 6, 0]} />
+              <Bar
+                dataKey="contractMismatchCount"
+                name="Contrato distinto"
+                stackId="deviations"
+                fill="#57a6b2"
+                radius={[0, 6, 6, 0]}
+              />
+            </BarChart>
+          </ChartSurface>
+        </article>
+
+        <article className="hr-incentives-analytics-card">
+          <div className="hr-incentives-analytics-card-header">
+            <h4>Top desviaciones por conductor</h4>
+            <span className="tracking-filter-caption">
+              Usuarios con mayor concentración de fuera de plazo y contrato distinto
+            </span>
+          </div>
+          <ChartSurface
+            height={320}
+            loading={analyticsQuery.isLoading}
+            empty={deviationsByDriverData.length === 0}
+            emptyMessage="No hay desviaciones para el filtro actual."
+          >
+            <BarChart
+              data={deviationsByDriverData}
+              layout="vertical"
+              margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
+              <XAxis 
+                type="number" 
+                stroke="var(--text-muted)" 
+                tickLine={false} 
+                axisLine={false} 
+                allowDecimals={false} 
+                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
+                tickMargin={12}
+              />
+              <YAxis
+                type="category"
+                dataKey="driverName"
                 width={96}
                 stroke="var(--text-muted)"
                 tickLine={false}

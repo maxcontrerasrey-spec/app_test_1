@@ -35,6 +35,15 @@
 - [x] Implementar vista React con multifiltros, KPIs y gráficas dentro de `HumanResourcesDashboard`
 - [ ] Validar typecheck, diff y push a `main`
 
+## Submódulo Jornadas y Turnos (Roster)
+
+- [ ] Aterrizar el plan externo a la arquitectura real del repo: módulo propio `src/modules/roster`, permiso dedicado y validación cruzada con incentivos sin inventar otra superficie HR paralela
+- [ ] Crear la migración Supabase del submódulo Roster: tablas maestras, asignaciones, excepciones, helpers matemáticos, RPCs públicas y registro en `app_modules` / `role_module_access`
+- [ ] Extender el contrato de incentivos para soportar validación de “día de descanso requerido” desde backend y configuración de tipos
+- [ ] Implementar frontend de Roster: rutas, navegación, servicios, React Query, calendario mensual, gestor de pautas y asignación de trabajadores
+- [ ] Incorporar gestión de excepciones operativas del trabajador dentro del flujo del calendario
+- [ ] Validar `npx tsc -b`, `npm run build`, `git diff --check`, documentar resultado y empujar a `main`
+
 ## Migración completa de motor gráfico a Recharts
 
 - [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico
