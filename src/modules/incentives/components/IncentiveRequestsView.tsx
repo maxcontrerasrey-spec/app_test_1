@@ -177,10 +177,11 @@ export function IncentiveRequestsView({
               {(requestsQuery.data ?? []).length > 0
                 ? requestsQuery.data?.map((request) => {
                     const isActiveRow = selectedRequestId === request.id;
+                    const isWarningRow = request.isContractMismatch || request.isOutOfDeadline;
                     return (
                       <Fragment key={request.id}>
                         <tr
-                          className={isActiveRow ? "tracking-row-selected" : ""}
+                          className={`${isActiveRow ? "tracking-row-selected" : ""} ${isWarningRow ? "hr-incentives-row-warning" : ""}`.trim()}
                           onClick={() => setSelectedRequestId(isActiveRow ? "" : request.id)}
                         >
                           <td>
@@ -188,13 +189,6 @@ export function IncentiveRequestsView({
                               <span className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`} style={{ display: 'inline-block', fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isActiveRow ? 'rotate(90deg)' : 'none' }}>▸</span>
                               {String(request.folio).padStart(5, '0')}
                             </span>
-                            <IncentiveOperationalFlags
-                              periodCode={request.periodCode}
-                              entryLagDays={request.entryLagDays}
-                              isOutOfDeadline={request.isOutOfDeadline}
-                              isContractMismatch={request.isContractMismatch}
-                              compact
-                            />
                           </td>
                           <td>
                             <strong>{request.employeeFullName}</strong>

@@ -354,11 +354,12 @@ export function IncentiveApprovalsView() {
                     const isActiveRow = selectedRequestId === row.requestId;
                     const canDecide =
                       isSuperAdmin || !row.approverUserId || row.approverUserId === user?.id;
+                    const isWarningRow = row.isContractMismatch || row.isOutOfDeadline;
 
                     return (
                       <Fragment key={row.approvalId}>
                         <tr
-                          className={isActiveRow ? "tracking-row-selected" : ""}
+                          className={`${isActiveRow ? "tracking-row-selected" : ""} ${isWarningRow ? "hr-incentives-row-warning" : ""}`.trim()}
                           onClick={() => setSelectedRequestId(isActiveRow ? "" : row.requestId)}
                         >
                           <td className="tracking-selection-cell">
@@ -375,13 +376,6 @@ export function IncentiveApprovalsView() {
                               <span className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`} style={{ display: 'inline-block', fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isActiveRow ? 'rotate(90deg)' : 'none' }}>▸</span>
                               {String(row.folio).padStart(5, '0')}
                             </span>
-                            <IncentiveOperationalFlags
-                              periodCode={row.periodCode}
-                              entryLagDays={row.entryLagDays}
-                              isOutOfDeadline={row.isOutOfDeadline}
-                              isContractMismatch={row.isContractMismatch}
-                              compact
-                            />
                           </td>
                           <td>
                             <strong>{row.employeeFullName}</strong>
