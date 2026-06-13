@@ -48,6 +48,19 @@
 - El payload nuevo sale con la estructura anidada requerida: `driver_name`, `total_amount` y `contracts[]` con `contract_code`, `contract_label` y `amount`, ordenado por monto tanto a nivel de conductor como de contrato.
 - Se mantuvo intacto el bloque `deviations_by_contract` porque la vista actual de [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1) todavía lo renderiza en una tarjeta aparte. Así se corrigió el ranking de conductores sin romper el resto del dashboard.
 
+## Ajuste backend de inversión por contrato y trabajador en Analítica de Incentivos
+
+- [x] Auditar la vista actual para confirmar que el frontend ya consume `amount_by_contract` y `amount_by_worker`
+- [x] Crear una migración SQL nueva que reemplace la métrica de desviaciones por sumatorias de `calculated_amount`
+- [x] Mantener intactos los filtros, KPIs y el resto del payload analítico para evitar regresiones fuera de los gráficos inferiores
+
+## Resultado de ajuste backend de inversión por contrato y trabajador en Analítica de Incentivos
+
+- Se agregó la migración [`20260614104000_update_hr_incentive_analytics_amount_breakdowns.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614104000_update_hr_incentive_analytics_amount_breakdowns.sql:1), que redefine [`get_hr_incentives_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614104000_update_hr_incentive_analytics_amount_breakdowns.sql:1) sobre la versión reparada más reciente.
+- El bloque anterior `deviations_by_contract` fue reemplazado por `amount_by_contract`, que agrupa por `selected_contract_code`, conserva `area_name` y retorna `total_amount` como suma de `calculated_amount`, ordenado de mayor a menor y limitado a 12 contratos.
+- Se agregó `amount_by_worker`, esta vez agrupando por el trabajador receptor del incentivo mediante [`employee_full_name`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260606_090000_add_hr_incentives_module.sql:42), no por el `requester`. El payload sale anidado con `worker_name`, `total_amount` y `contracts[]` con `contract_code`, `contract_label` y `amount`.
+- El resto del contrato analítico se mantuvo estable: `summary_cards`, `total_amount_by_period`, `count_by_incentive_type` y `filter_options` no cambiaron, reduciendo el riesgo de romper otras tarjetas del dashboard.
+
 ## Submódulo Jornadas y Turnos (Roster)
 
 - [x] Aterrizar el plan externo a la arquitectura real del repo: módulo propio `src/modules/roster`, permiso dedicado y validación cruzada con incentivos sin inventar otra superficie HR paralela

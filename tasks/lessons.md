@@ -224,6 +224,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No reescribas la migración histórica para “corregirla” después.** Cuando el drift aparece más tarde, la salida enterprise es una nueva migración puntual que redefine la RPC y deja rastro claro del ajuste productivo.
 - **Si una vista vigente sigue usando parte del contrato anterior, no la rompas por purismo.** Mientras `IncentiveAnalyticsView.tsx` todavía renderice desviaciones por contrato, el backend puede sumar `amount_by_driver` sin retirar `deviations_by_contract`; primero se corrige el desacople, después se elimina la superficie vieja en otra pasada consciente.
 
+## 95. En analítica ERP, “quién solicita” y “quién recibe” son dimensiones distintas y no intercambiables
+
+- **No reutilices el agrupador por costumbre cuando la pregunta de negocio cambió.** Un ranking por `requester_name` responde quién carga incentivos; un ranking por `employee_full_name` responde quién recibe dinero. Son cortes distintos y el backend debe nombrarlos distinto (`amount_by_driver` vs `amount_by_worker`) para no inducir lecturas erróneas.
+- **Cuando una tarjeta deja de mostrar desvíos y pasa a mostrar dinero, el nodo JSON debe renombrarse también.** Mantener nombres legacy como `deviations_by_contract` para un gráfico monetario crea deuda semántica y vuelve frágiles tanto el frontend como futuras consultas ad hoc.
+- **Las migraciones de corrección analítica deben preservar los demás nodos estables del dashboard.** Si el cambio pedido es solo en los gráficos inferiores, no se tocan KPIs, filtros o series superiores salvo que el contrato realmente lo exija.
+
 ## 55. Si una acción es sensible, el mismo permiso debe cerrarse en UI y en RPC
 
 - **Ocultar un botón no equivale a gobernar la operación**. Si `Anular` cambia estado auditable de un incentivo, la restricción real debe vivir en la función `SECURITY DEFINER`; el frontend solo refleja ese contrato para no ofrecer acciones inválidas.
