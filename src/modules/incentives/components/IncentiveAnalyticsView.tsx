@@ -142,7 +142,6 @@ export function IncentiveAnalyticsView() {
           type: "bar",
           stack: "desviaciones",
           barMaxWidth: 32,
-          itemStyle: { borderRadius: [0, 4, 4, 0] },
           data: items.map((item) => item.outOfDeadlineCount)
         },
         {
@@ -150,7 +149,6 @@ export function IncentiveAnalyticsView() {
           type: "bar",
           stack: "desviaciones",
           barMaxWidth: 32,
-          itemStyle: { borderRadius: [0, 4, 4, 0] },
           data: items.map((item) => item.contractMismatchCount)
         }
       ]
@@ -194,7 +192,7 @@ export function IncentiveAnalyticsView() {
           </button>
         </div>
 
-        <div className="tracking-filters hr-incentives-analytics-filters">
+        <div className="hr-incentives-analytics-filters">
           <TextField
             id="hr-incentive-analytics-period"
             label="Período"
