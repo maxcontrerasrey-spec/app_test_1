@@ -1300,7 +1300,7 @@ textarea {
 .date-picker {
   position: relative;
   min-width: 0;
-  z-index: 12;
+  z-index: 120;
 }
 
 .date-trigger {
