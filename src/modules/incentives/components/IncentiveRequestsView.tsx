@@ -49,6 +49,27 @@ export function IncentiveRequestsView({
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const detailQuery = useHrIncentiveRequestDetail(selectedRequestId);
 
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") setSortDirection("desc");
+      else {
+        setSortColumn(null);
+        setSortDirection("asc");
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) return <span style={{ opacity: 0.3, marginLeft: '0.3rem' }}>↕</span>;
+    return <span style={{ marginLeft: '0.3rem' }}>{sortDirection === "asc" ? "↑" : "↓"}</span>;
+  };
+
   const requestsQuery = useHrIncentiveRequests({
     workerSearch,
     status: statusFilter,
@@ -57,6 +78,50 @@ export function IncentiveRequestsView({
     contractCode: contractCodeFilter || undefined,
     serviceDateUntil: serviceDateUntil || undefined
   });
+
+  const sortedRequests = useMemo(() => {
+    let result = [...(requestsQuery.data ?? [])];
+    
+    if (sortColumn) {
+      result.sort((a, b) => {
+        let aVal: any = 0;
+        let bVal: any = 0;
+        
+        switch (sortColumn) {
+          case "folio":
+            aVal = Number(a.folio);
+            bVal = Number(b.folio);
+            break;
+          case "trabajador":
+            aVal = a.employeeFullName.toLowerCase();
+            bVal = b.employeeFullName.toLowerCase();
+            break;
+          case "incentivo":
+            aVal = a.incentiveTypeName.toLowerCase();
+            bVal = b.incentiveTypeName.toLowerCase();
+            break;
+          case "contrato":
+            aVal = a.selectedAreaName.toLowerCase();
+            bVal = b.selectedAreaName.toLowerCase();
+            break;
+          case "fecha":
+            aVal = new Date(a.serviceDate).getTime();
+            bVal = new Date(b.serviceDate).getTime();
+            break;
+          case "monto":
+            aVal = a.calculatedAmount;
+            bVal = b.calculatedAmount;
+            break;
+        }
+
+        if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return result;
+  }, [requestsQuery.data, sortColumn, sortDirection]);
 
   const incentiveTypeOptions = useMemo(
     () =>
@@ -163,18 +228,18 @@ export function IncentiveRequestsView({
           <table className="tracking-table">
             <thead>
               <tr>
-                <th>Folio</th>
-                <th>Trabajador</th>
-                <th>Incentivo</th>
-                <th>Contrato</th>
-                <th>Fecha servicio</th>
-                <th>Monto</th>
+                <th onClick={() => handleSort('folio')} style={{ cursor: 'pointer', userSelect: 'none' }}>Folio <SortIcon column="folio" /></th>
+                <th onClick={() => handleSort('trabajador')} style={{ cursor: 'pointer', userSelect: 'none' }}>Trabajador <SortIcon column="trabajador" /></th>
+                <th onClick={() => handleSort('incentivo')} style={{ cursor: 'pointer', userSelect: 'none' }}>Incentivo <SortIcon column="incentivo" /></th>
+                <th onClick={() => handleSort('contrato')} style={{ cursor: 'pointer', userSelect: 'none' }}>Contrato <SortIcon column="contrato" /></th>
+                <th onClick={() => handleSort('fecha')} style={{ cursor: 'pointer', userSelect: 'none' }}>Fecha servicio <SortIcon column="fecha" /></th>
+                <th onClick={() => handleSort('monto')} style={{ cursor: 'pointer', userSelect: 'none' }}>Monto <SortIcon column="monto" /></th>
                 <th>Acción</th>
               </tr>
             </thead>
             <tbody>
-              {(requestsQuery.data ?? []).length > 0
-                ? requestsQuery.data?.map((request) => {
+              {sortedRequests.length > 0
+                ? sortedRequests.map((request) => {
                     const isActiveRow = selectedRequestId === request.id;
                     const warningClass = request.isOutOfDeadline 
                       ? "hr-incentives-row-danger" 
