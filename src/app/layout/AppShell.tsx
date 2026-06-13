@@ -75,7 +75,7 @@ function resolvePendingTaskPath(task: DashboardTaskItem) {
   }
 
   if (task.module_code === "recursos_humanos") {
-    return "/recursos-humanos/aprobaciones";
+    return "/recursos-humanos/incentivos";
   }
 
   return "/control-contrataciones";
@@ -229,8 +229,26 @@ export function AppShell() {
 
     return initials || "U";
   }, [displayName]);
-  const pendingTasksCount = tasksData.length;
-  const pendingTaskPreview = useMemo(() => tasksData.slice(0, 6), [tasksData]);
+  const pendingTasksCount = Array.isArray(tasksData) ? tasksData.length : 0;
+  const pendingTaskPreview = useMemo(() => {
+    if (!Array.isArray(tasksData)) return [];
+    const incentives = tasksData.filter((t) => t.module_code === "recursos_humanos");
+    const others = tasksData.filter((t) => t.module_code !== "recursos_humanos");
+
+    const preview = [];
+    if (incentives.length > 0) {
+      preview.push({
+        id: "grouped-incentives",
+        folio: "Incentivos Extraordinarios",
+        title: `${incentives.length} solicitudes pendientes de aprobar`,
+        status_label: "Requiere aprobación",
+        module_code: "recursos_humanos",
+      } as any);
+    }
+
+    preview.push(...others);
+    return preview;
+  }, [tasksData]);
 
 
 
