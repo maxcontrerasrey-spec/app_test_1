@@ -11,11 +11,8 @@ export default defineConfig({
             output: {
                 manualChunks: function (id) {
                     var has = function (segment) { return id.indexOf(segment) !== -1; };
-                    if (has("/node_modules/zrender/")) {
-                        return "zrender-vendor";
-                    }
-                    if (has("/node_modules/echarts/")) {
-                        return "echarts-vendor";
+                    if (has("/node_modules/recharts/")) {
+                        return "recharts-vendor";
                     }
                     if (has("/node_modules/@mylinkpi/xlsx/")) {
                         return "xlsx-vendor";

@@ -1,11 +1,31 @@
 import { useMemo, useState } from "react";
-import type { EChartsCoreOption } from "echarts/core";
-import { EChart, SelectField, TextField } from "../../../shared/ui";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  Pie,
+  PieChart,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
+import { ChartSurface, ChartTooltip, SelectField, TextField } from "../../../shared/ui";
 import { formatCurrencyValue } from "../../../shared/lib/format";
 import { useHrIncentivesAnalytics } from "../hooks/useIncentivesQueries";
 
 function formatPercent(value: number) {
   return `${value.toFixed(1)}%`;
+}
+
+function formatCompactCurrency(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    notation: "compact",
+    maximumFractionDigits: 1
+  }).format(value);
 }
 
 function getStatusLabel(status: string) {
@@ -39,122 +59,29 @@ export function IncentiveAnalyticsView() {
     status: statusFilter
   });
 
-  const lineOption = useMemo<EChartsCoreOption>(() => {
-    const periods = analyticsQuery.data?.totalAmountByPeriod ?? [];
-
-    return {
-      tooltip: { trigger: "axis" },
-      legend: { top: 0 },
-      toolbox: {
-        right: 8,
-        feature: {
-          saveAsImage: { title: "Exportar" },
-          restore: { title: "Restaurar" }
-        }
-      },
-      grid: {
-        left: 16,
-        right: 16,
-        top: 40,
-        bottom: 24,
-        containLabel: true
-      },
-      xAxis: {
-        type: "category",
-        data: periods.map((item) => item.periodCode)
-      },
-      yAxis: {
-        type: "value",
-        name: "Monto"
-      },
-      series: [
-        {
-          name: "Gasto total",
-          type: "line",
-          smooth: true,
-          areaStyle: {
-            opacity: 0.12
-          },
-          symbol: "circle",
-          symbolSize: 8,
-          data: periods.map((item) => item.totalAmount)
-        }
-      ]
-    };
+  const periodTrendData = useMemo(() => {
+    return (analyticsQuery.data?.totalAmountByPeriod ?? []).map((item) => ({
+      periodCode: item.periodCode,
+      totalAmount: item.totalAmount
+    }));
   }, [analyticsQuery.data?.totalAmountByPeriod]);
 
-  const donutOption = useMemo<EChartsCoreOption>(() => {
-    const items = analyticsQuery.data?.countByIncentiveType ?? [];
+  const amountByTypeData = useMemo(() => {
+    const palette = ["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"];
 
-    return {
-      tooltip: {
-        trigger: "item",
-        formatter: "{b}<br/>{c} monto agregado · {d}%"
-      },
-      legend: { bottom: 0 },
-      series: [
-        {
-          name: "Tipo de incentivo",
-          type: "pie",
-          radius: ["50%", "70%"],
-          center: ["50%", "50%"],
-          avoidLabelOverlap: true,
-          label: {
-            formatter: "{b}\n{d}%"
-          },
-          emphasis: {
-            scale: true,
-            scaleSize: 8
-          },
-          data: items.map((item) => ({
-            name: item.incentiveTypeName,
-            value: item.totalAmount
-          }))
-        }
-      ]
-    };
+    return (analyticsQuery.data?.countByIncentiveType ?? []).map((item, index) => ({
+      name: item.incentiveTypeName,
+      value: item.totalAmount,
+      color: palette[index % palette.length]
+    }));
   }, [analyticsQuery.data?.countByIncentiveType]);
 
-  const deviationsOption = useMemo<EChartsCoreOption>(() => {
-    const items = analyticsQuery.data?.deviationsByContract.slice(0, 8) ?? [];
-
-    return {
-      color: ["#ef4444", "#57a6b2"],
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-      legend: { top: 0 },
-      grid: {
-        left: 16,
-        right: 16,
-        top: 40,
-        bottom: 24,
-        containLabel: true
-      },
-      xAxis: {
-        type: "value",
-        name: "Solicitudes",
-        minInterval: 1
-      },
-      yAxis: {
-        type: "category",
-        data: items.map((item) => item.contractCode)
-      },
-      series: [
-        {
-          name: "Fuera de plazo",
-          type: "bar",
-          stack: "desviaciones",
-          barMaxWidth: 32,
-          data: items.map((item) => Number(item.outOfDeadlineCount || 0))
-        },
-        {
-          name: "Contrato distinto",
-          type: "bar",
-          stack: "desviaciones",
-          barMaxWidth: 32,
-          data: items.map((item) => Number(item.contractMismatchCount || 0))
-        }
-      ]
-    };
+  const deviationsData = useMemo(() => {
+    return (analyticsQuery.data?.deviationsByContract.slice(0, 8) ?? []).map((item) => ({
+      contractCode: item.contractCode,
+      outOfDeadlineCount: Number(item.outOfDeadlineCount || 0),
+      contractMismatchCount: Number(item.contractMismatchCount || 0)
+    }));
   }, [analyticsQuery.data?.deviationsByContract]);
 
   const cards = analyticsQuery.data?.summaryCards;
@@ -260,13 +187,56 @@ export function IncentiveAnalyticsView() {
             <h4>Evolución del gasto</h4>
             <span className="tracking-filter-caption">Monto agregado por período</span>
           </div>
-          <EChart
-            option={lineOption}
+          <ChartSurface
             height={280}
             loading={analyticsQuery.isLoading}
-            empty={(analyticsQuery.data?.totalAmountByPeriod.length ?? 0) === 0}
+            empty={periodTrendData.length === 0}
             emptyMessage="No hay períodos para el filtro actual."
-          />
+          >
+            <ComposedChart data={periodTrendData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+              <defs>
+                <linearGradient id="incentiveAmountFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.28} />
+                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0.04} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
+              <XAxis dataKey="periodCode" stroke="var(--text-muted)" tickLine={false} axisLine={false} />
+              <YAxis
+                stroke="var(--text-muted)"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value: number) => formatCompactCurrency(value)}
+              />
+              <Tooltip
+                content={(props) => (
+                  <ChartTooltip
+                    {...props}
+                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))}
+                    chartLabelFormatter={(label) => `Período ${label}`}
+                  />
+                )}
+              />
+              <Legend />
+              <Bar
+                dataKey="totalAmount"
+                name="Gasto total"
+                fill="url(#incentiveAmountFill)"
+                stroke="#2563eb"
+                strokeWidth={2}
+                radius={[10, 10, 0, 0]}
+              />
+              <Line
+                type="monotone"
+                dataKey="totalAmount"
+                name="Tendencia"
+                stroke="#0f172a"
+                strokeWidth={2.5}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </ComposedChart>
+          </ChartSurface>
         </article>
 
         <article className="hr-incentives-analytics-card">
@@ -274,14 +244,36 @@ export function IncentiveAnalyticsView() {
             <h4>Distribución por tipo</h4>
             <span className="tracking-filter-caption">Participación del presupuesto por incentivo</span>
           </div>
-          <EChart
-            option={donutOption}
+          <ChartSurface
             height={280}
-            renderer="svg"
             loading={analyticsQuery.isLoading}
-            empty={(analyticsQuery.data?.countByIncentiveType.length ?? 0) === 0}
+            empty={amountByTypeData.length === 0}
             emptyMessage="No hay tipos de incentivo para el filtro actual."
-          />
+          >
+            <PieChart>
+              <Pie
+                data={amountByTypeData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={58}
+                outerRadius={94}
+                paddingAngle={2}
+              >
+                {amountByTypeData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                content={(props) => (
+                  <ChartTooltip
+                    {...props}
+                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))}
+                  />
+                )}
+              />
+              <Legend />
+            </PieChart>
+          </ChartSurface>
         </article>
 
         <article className="hr-incentives-analytics-card hr-incentives-analytics-card-wide">
@@ -291,13 +283,43 @@ export function IncentiveAnalyticsView() {
               Contratos con mayor concentración de fuera de plazo y contrato distinto
             </span>
           </div>
-          <EChart
-            option={deviationsOption}
+          <ChartSurface
             height={320}
             loading={analyticsQuery.isLoading}
-            empty={(analyticsQuery.data?.deviationsByContract.length ?? 0) === 0}
+            empty={deviationsData.length === 0}
             emptyMessage="No hay desviaciones para el filtro actual."
-          />
+          >
+            <BarChart
+              data={deviationsData}
+              layout="vertical"
+              margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
+              <XAxis type="number" stroke="var(--text-muted)" tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis
+                type="category"
+                dataKey="contractCode"
+                width={96}
+                stroke="var(--text-muted)"
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                content={(props) => (
+                  <ChartTooltip {...props} chartValueFormatter={(value) => `${value ?? 0} solicitudes`} />
+                )}
+              />
+              <Legend />
+              <Bar dataKey="outOfDeadlineCount" name="Fuera de plazo" stackId="deviations" fill="#ef4444" radius={[0, 6, 6, 0]} />
+              <Bar
+                dataKey="contractMismatchCount"
+                name="Contrato distinto"
+                stackId="deviations"
+                fill="#57a6b2"
+                radius={[0, 6, 6, 0]}
+              />
+            </BarChart>
+          </ChartSurface>
         </article>
       </div>
     </section>

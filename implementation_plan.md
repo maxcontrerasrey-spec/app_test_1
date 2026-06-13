@@ -12,7 +12,7 @@
   - `gerencia`
   - `operaciones_l_1`
   - `control_contratos`
-- El wrapper de gráficos existente es [`EChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChart.tsx:1) y el registro modular ya soporta `LineChart`, `BarChart`, `PieChart`, `Tooltip`, `Legend`, `Grid`, `Toolbox`, `Graphic`, `Dataset`, `DataZoom`, `Mark*`, `CanvasRenderer` y `SVGRenderer` desde [`registry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/registry.ts:1).
+- La capa de gráficos compartida ahora vive en [`ChartSurface.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/ChartSurface.tsx:1) y [`ChartTooltip.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/ChartTooltip.tsx:1), dejando el consumo de Recharts encapsulado dentro de `src/shared/ui/charts`.
 - La base operativa ya expone en `hr_incentive_requests` los campos suficientes para analítica gerencial sin traer detalle masivo al cliente:
   - `period_code`
   - `incentive_type_id`
@@ -117,5 +117,5 @@
   - Control: helper backend específico + gating frontend por roles.
 - Riesgo: duplicar queries para poblar filtros.
   - Control: la RPC devuelve `filter_options` dentro del mismo payload.
-- Riesgo: bundle inflado por ECharts.
+- Riesgo: bundle gráfico inflado si se expande Recharts sin control a más rutas.
   - Control: reutilizar el registro modular ya existente; no incorporar otro wrapper ni librería.

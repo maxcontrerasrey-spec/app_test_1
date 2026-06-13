@@ -1,8 +1,8 @@
 import { Suspense, lazy } from "react";
 import { PageShell } from "../../../shared/ui";
 
-const EChartsShowcase = lazy(async () => ({
-  default: (await import("../components/EChartsShowcase")).EChartsShowcase
+const RechartsShowcase = lazy(async () => ({
+  default: (await import("../components/RechartsShowcase")).RechartsShowcase
 }));
 
 export function LabsPage() {
@@ -225,10 +225,10 @@ export function LabsPage() {
 
           <h2 style={{ marginTop: "3rem" }}>Showcase de gráficos ERP</h2>
           <p className="ink-text">
-            Esta sección valida la integración compartida de Apache ECharts dentro de la app. El objetivo no es solo visualizar un gráfico, sino confirmar resize, tooltip, exportación, cambio de renderer y adaptación al tema activo.
+            Esta sección valida la integración compartida de Recharts dentro de la app. El objetivo no es solo visualizar un gráfico, sino confirmar lectura, responsive y consistencia visual con la capa compartida actual.
           </p>
-          <Suspense fallback={<p className="ink-text">Cargando showcase de Apache ECharts...</p>}>
-            <EChartsShowcase />
+          <Suspense fallback={<p className="ink-text">Cargando showcase de Recharts...</p>}>
+            <RechartsShowcase />
           </Suspense>
           
         </section>

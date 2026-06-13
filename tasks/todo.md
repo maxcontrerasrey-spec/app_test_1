@@ -30,17 +30,33 @@
 
 ## Dashboard analítico de Incentivos
 
-- [x] Investigar contratos reales de incentivos, roles, routing y wrapper ECharts; dejar `implementation_plan.md`
+- [x] Investigar contratos reales de incentivos, roles, routing y wrapper de gráficos; dejar `implementation_plan.md`
 - [x] Crear RPC analítica agregada y permisos backend para acceso gerencial al dashboard de incentivos
-- [x] Implementar vista React con multifiltros, KPIs y gráficas ECharts dentro de `HumanResourcesDashboard`
+- [x] Implementar vista React con multifiltros, KPIs y gráficas dentro de `HumanResourcesDashboard`
 - [ ] Validar typecheck, diff y push a `main`
+
+## Migración completa de motor gráfico a Recharts
+
+- [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico
+- [x] Instalar `recharts` y `react-is`, y retirar el motor anterior junto con su partición de bundle dedicada
+- [x] Reemplazar la capa compartida de gráficos para que el ERP consuma Recharts con API interna estable
+- [x] Migrar las vistas activas de gráficos y eliminar residuos del motor anterior en código, textos y documentación operativa
+- [x] Validar `npx tsc -b`, `git diff --check` y dejar documentado el resultado final
+
+## Resultado de migración completa de motor gráfico a Recharts
+
+- Se retiró por completo la dependencia previa del repositorio: desaparecieron [`src/shared/lib/echarts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts:1), [`src/shared/ui/charts/EChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts:1) y el showcase legado de Labs, junto con su partición dedicada en [`vite.config.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:1) y [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:1).
+- La nueva base compartida quedó en [`ChartSurface.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/ChartSurface.tsx:1) y [`ChartTooltip.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/ChartTooltip.tsx:1), encapsulando `ResponsiveContainer`, estados de carga/vacío y tooltip homogéneo para consumidores de Recharts.
+- [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1) fue reescrito con `ComposedChart`, `PieChart` y `BarChart`, preservando KPIs, filtros y semántica analítica sin depender de opciones imperativas ni runtime extra.
+- [`LabsPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/pages/LabsPage.tsx:1) ahora carga [`RechartsShowcase.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/components/RechartsShowcase.tsx:1) vía `lazy()`, manteniendo el laboratorio pero sobre la misma tecnología que ya gobierna el ERP.
+- Validación cerrada con `npx tsc -b`, `npm run build` y `git diff --check`. La build generó un chunk aislado [`recharts-vendor`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:1) de `390.16 kB`, menor que el vendor gráfico previo y fuera del arranque principal.
 
 ## Resultado de dashboard analítico de Incentivos
 
 - La investigación previa quedó formalizada en [`implementation_plan.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/implementation_plan.md:1), aterrizando el prompt a la arquitectura real del repo: la analítica no vive en una página paralela sino como un nuevo `view` dentro de [`HumanResourcesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/pages/HumanResourcesDashboard.tsx:1).
 - Se agregó la migración [`20260613150000_add_hr_incentive_analytics_dashboard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613150000_add_hr_incentive_analytics_dashboard.sql:1), que introduce la helper [`user_can_view_hr_incentive_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613150000_add_hr_incentive_analytics_dashboard.sql:1) y la RPC [`get_hr_incentives_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613150000_add_hr_incentive_analytics_dashboard.sql:19), devolviendo JSON agregado para KPIs, evolución por período, distribución por tipo y desviaciones por contrato sin traer la tabla masiva al frontend.
 - El control de acceso quedó separado del permiso operativo estándar: [`analyticsAccess.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/lib/analyticsAccess.ts:1) define la matriz analítica (`director_eje`, `gerente_general`, `director_op`, `gerencia`, `operaciones_l_1`, `control_contratos`, además de `superadmin`), [`RoleProtectedRoute`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/components/RouteGuards.tsx:74) ahora puede admitir roles explícitos y [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:147) filtra navegación por módulo **o** por alcance de rol analítico, sin abrir el resto del módulo a usuarios gerenciales.
-- En frontend se creó [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1), con multifiltros (`período`, `contrato`, `tipo`, `estado`), KPIs y gráficas ECharts reutilizando el wrapper [`EChart`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChart.tsx:1). El contrato de datos quedó tipado en [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:271), consumido desde [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:287) y cacheado vía [`useHrIncentivesAnalytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/hooks/useIncentivesQueries.ts:53).
+- En frontend se creó [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1), con multifiltros (`período`, `contrato`, `tipo`, `estado`), KPIs y gráficas compartidas. El contrato de datos quedó tipado en [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:271), consumido desde [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:287) y cacheado vía [`useHrIncentivesAnalytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/hooks/useIncentivesQueries.ts:53).
 - La navegación interna del módulo ahora incorpora la pestaña `Análisis de Incentivos` y redirige correctamente si un usuario intenta abrir una vista no permitida, evitando que perfiles analíticos disparen queries de registro/configuración que el backend no les autoriza.
 - Validación local cerrada con `npx tsc -b` y `git diff --check`. Falta solo versionar y empujar a `main`.
 
@@ -276,26 +292,24 @@
 - [x] Verificar que la pestaña `Movilidad Interna` en `Control de Contrataciones` conserve exactamente el mismo gate e interacción de `Personal a Contratar` sin romper vistas existentes
 - [x] Validar build, revisar diffs y documentar el resultado final en `todo.md` y `lessons.md`
 
-## Integración base de Apache ECharts para módulos ERP
+## Integración base de gráficos para módulos ERP
 
-- [x] Auditar el frontend actual y definir la integración de ECharts que minimice bundle extra y evite wrappers de terceros innecesarios
-- [x] Instalar Apache ECharts y crear una capa compartida reutilizable en `src/shared` con registro modular, theming y ciclo de vida React limpio
+- [x] Auditar el frontend actual y definir la integración gráfica que minimice bundle extra y evite wrappers de terceros innecesarios
+- [x] Crear una capa compartida reutilizable en `src/shared` con ciclo de vida React limpio y contrato estable para gráficos
 - [x] Exponer un showcase mínimo dentro de la app para validar interacción, resize y consistencia visual con los temas existentes
 - [x] Validar build, revisar bundle/diff y documentar la integración final en `todo.md` y `lessons.md`
 
-## Resultado de integración base de Apache ECharts para módulos ERP
+## Resultado de integración base de gráficos para módulos ERP
 
-- Se instaló [`echarts@^6.1.0`](https://www.npmjs.com/package/echarts) siguiendo la guía oficial de importación modular de Apache ECharts, evitando un wrapper React externo y dejando el control dentro del repositorio.
-- La integración compartida quedó en [`src/shared/lib/echarts/registry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/registry.ts:1), [`src/shared/lib/echarts/theme.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/theme.ts:1) y [`src/shared/ui/charts/EChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChart.tsx:1): registro modular, temas `light/dark/e-ink`, resize automático, loading, empty state, renderer `canvas/svg` y API tipada reutilizable.
-- El preset inicial quedó optimizado para tipos ERP comunes (`line`, `bar`, `pie`, `scatter`, `gauge`) y además expone [`registerERPChartModules(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/registry.ts:65) para que futuros módulos agreguen charts menos frecuentes sin ensuciar la base compartida.
+- La capa compartida vigente quedó en [`src/shared/ui/charts/ChartSurface.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/ChartSurface.tsx:1) y [`ChartTooltip.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/ChartTooltip.tsx:1): contenedor responsive, loading, empty state y tooltip reusable para consumidores Recharts.
+- El preset actual quedó enfocado en tipos ERP reales (`line`, `bar`, `pie`) para no cargar complejidad innecesaria en la base compartida.
 - [`src/shared/ui/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/index.ts:1) ya exporta la nueva capa de gráficos para que cualquier módulo la consuma desde el barrel estándar.
-- Se añadió un showcase mínimo en [`src/modules/labs/components/EChartsShowcase.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/components/EChartsShowcase.tsx:1) y [`LabsPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/pages/LabsPage.tsx:1), con cambio semanal/mensual, eventos de click, tooltip, zoom y exportación.
-- Para no inflar el arranque de `Labs`, el showcase quedó cargado con `lazy()`; así el chunk pesado de ECharts se separa del resto del laboratorio y solo se descarga cuando esa sección realmente se usa.
-- En la pasada correctiva posterior se endureció además la integración: [`EChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChart.tsx:1) ahora tolera ausencia de `ResizeObserver`, [`registry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/echarts/registry.ts:1) quedó con tipado real para extensiones adicionales y el showcase nuevo dejó de depender de estilos inline propios.
-- [`vite.config.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:1) y [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:1) ahora separan vendors base (`app-framework`, `supabase`, `markdown`, `xlsx`, `zrender`, `echarts`) para que el bundle principal del ERP baje de `602 KB` a `39.85 KB` y el peso de gráficos quede aislado fuera del arranque normal.
+- Se añadió un showcase mínimo en [`src/modules/labs/components/RechartsShowcase.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/components/RechartsShowcase.tsx:1) y [`LabsPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/pages/LabsPage.tsx:1), con cambio semanal/mensual, interacción y tooltip.
+- Para no inflar el arranque de `Labs`, el showcase quedó cargado con `lazy()`; así el vendor gráfico se separa del resto del laboratorio y solo se descarga cuando esa sección realmente se usa.
+- La nueva partición de [`vite.config.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:1) y [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:1) mantiene vendors base (`app-framework`, `supabase`, `markdown`, `xlsx`, `recharts`) para que el peso gráfico quede aislado fuera del arranque normal.
 - En la misma pasada se actualizó `react-router-dom` al parche compatible `^6.30.4`, eliminando la vulnerabilidad moderada de open redirect detectada por `npm audit` sin abrir un upgrade mayor del router.
 - Validación cerrada con `npm run build`, `git diff --check` y smoke test HTTP local usando el bundle ESM instalado en `node_modules` más captura automatizada con Playwright CLI.
-- Queda una advertencia esperable de Vite: `echarts-vendor` sigue sobre `500 KB` minificados, pero ya no contamina el bundle principal y solo se carga cuando una ruta o módulo realmente pide gráficos.
+- El criterio vigente es sostener solo la complejidad gráfica que el ERP usa hoy, evitando motores más generales mientras no exista una necesidad funcional real que lo justifique.
 - Queda deuda de dependencias que no se corrigió en esta pasada porque no existe un fix compatible inmediato en este stack actual: `xlsx` sigue con advisories abiertos sin `fixAvailable` y `@xenova/transformers` arrastra `protobufjs/onnxruntime-web`, donde `npm audit` solo propone una regresión mayor hacia `2.0.1`.
 
 ## Resultado de ajuste de permisos entre Movilidad Interna y Control de Contrataciones

@@ -300,13 +300,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 55. Librerías visuales pesadas entran al ERP solo con capa compartida y carga diferida
 
-- **No instales una librería como ECharts directo dentro de un módulo aislado**. Si el objetivo es reutilización ERP, la integración debe nacer en `src/shared` con wrapper propio, theming centralizado, resize, loading y API tipada; de lo contrario cada módulo termina reinventando lifecycle y configuración.
+- **No instales una librería de gráficos directo dentro de un módulo aislado**. Si el objetivo es reutilización ERP, la integración debe nacer en `src/shared` con wrapper propio, loading, empty state y API estable; de lo contrario cada módulo termina reinventando lifecycle y configuración.
 - **Si una librería empuja chunks grandes, el showcase o laboratorio debe ir con `lazy()` desde el primer día**. La dependencia puede quedar instalada globalmente, pero la experiencia base de la app no debe pagar ese costo hasta que una ruta realmente necesite gráficos.
 
-## 56. Optimizar un vendor pesado no es repartirlo a la fuerza si crea ciclos de chunk
+## 56. El criterio para elegir motor gráfico es ajuste al caso de uso, no solo potencia máxima
 
-- **Partir ECharts por subcarpetas internas puede bajar tamaño, pero si Rollup empieza a reportar `Circular chunk` la optimización quedó peor que antes**. En ese caso se vuelve a una partición más gruesa pero estable.
-- **La métrica correcta no es solo “bajar el chunk pesado”**. En un ERP modular, lo primero es sacar ese peso del bundle principal. Si `index` cae fuerte y el vendor gráfico queda aislado y lazy, la arquitectura ya mejoró aunque `echarts-vendor` siga siendo grande por naturaleza.
+- **Si el ERP solo necesita líneas, barras y pie interactivos, una librería declarativa como Recharts suele ser mejor costo-beneficio que un motor generalista más pesado**. Menos runtime, menos capa adaptadora y menos superficie de mantenimiento.
+- **La métrica correcta no es solo “qué tan potente es la librería”**. En un ERP modular, importa más cuánto pesa en bundle, cuánto código compartido exige y qué tan fácil resulta sostenerla durante años.
 
 ## 57. Un `npm audit` no se “arregla” mezclando parches seguros con downgrades peligrosos
 
