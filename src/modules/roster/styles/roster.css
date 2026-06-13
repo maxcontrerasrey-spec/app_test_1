@@ -221,6 +221,11 @@
   overflow: visible !important;
 }
 
+.roster-filter-month {
+  max-width: 140px;
+  flex: none;
+}
+
 .roster-filter-contract {
   max-width: 110px;
   flex: none;

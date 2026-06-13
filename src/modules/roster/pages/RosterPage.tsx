@@ -191,7 +191,7 @@ export function RosterPage() {
                   }}
                 />
 
-                <div className="field-group">
+                <div className="field-group roster-filter-month">
                   <label className="field-label" htmlFor="roster-month">
                     Mes
                   </label>
@@ -207,9 +207,6 @@ export function RosterPage() {
                       setSelectedDate(`${nextMonth}-01`);
                     }}
                   />
-                  <p className="tracking-filter-caption">
-                    La proyección futura se limita hasta el mes {formatMonthCaption(rosterProjectionMaxMonth)}.
-                  </p>
                 </div>
 
                 <TextField
@@ -326,6 +323,11 @@ export function RosterPage() {
                             <p>{selectedDay.exceptionNotes}</p>
                           </div>
                         ) : null}
+                        
+                        <div style={{ marginTop: "1rem", padding: "0.6rem 0.75rem", backgroundColor: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "6px", fontSize: "0.76rem", color: "rgb(180, 83, 9)", lineHeight: "1.4" }}>
+                          <strong style={{ display: "block", marginBottom: "0.15rem", color: "rgb(146, 64, 14)", fontSize: "0.78rem" }}>Proyección de jornadas</strong>
+                          La proyección automática se calcula como máximo hasta el mes de {formatMonthCaption(rosterProjectionMaxMonth)}.
+                        </div>
                       </div>
                     ) : (
                       <p className="tracking-filter-caption">Selecciona un día para revisar su detalle.</p>
