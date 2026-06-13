@@ -44,6 +44,45 @@ type OrionDatabaseSearchArgs = {
   limit?: number;
 };
 
+type EmbeddingRunOptions = {
+  mean_pool: boolean;
+  normalize: boolean;
+};
+
+type SupabaseAiSession = {
+  run(input: string, options: EmbeddingRunOptions): Promise<ArrayLike<number>>;
+};
+
+type SupabaseAiRuntime = {
+  ai: {
+    Session: new (model: string) => SupabaseAiSession;
+  };
+};
+
+type GroqToolCall = {
+  id: string;
+  function: {
+    name: string;
+    arguments?: string;
+  };
+};
+
+type GroqChatMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content?: string;
+  tool_calls?: GroqToolCall[];
+  tool_call_id?: string;
+  name?: string;
+};
+
+function getSupabaseAiRuntime() {
+  return Supabase as unknown as SupabaseAiRuntime;
+}
+
+function toErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function buildSessionTitle(text: string) {
   const normalized = text.trim().replace(/\s+/g, " ");
   if (!normalized) {
@@ -382,8 +421,6 @@ Deno.serve(async (req) => {
     }));
 
     // --- RAG IS NOW A TOOL, REMOVED INLINE RAG ---
-    const ragContext = "";
-
     const { data: profileRow } = await supabase
       .from("profiles")
       .select("full_name")
@@ -513,7 +550,7 @@ ${buildOrionSchemaPrompt()}`;
           }
         ];
 
-        let currentMessages = [...messagesToSend] as any[];
+        let currentMessages: GroqChatMessage[] = [...messagesToSend];
         let iterations = 0;
         const MAX_ITERATIONS = 4;
 
@@ -528,7 +565,7 @@ ${buildOrionSchemaPrompt()}`;
             toolChoice: "auto",
             timeoutMs: 20000
           });
-          const responseMessage = responseData.choices?.[0]?.message;
+          const responseMessage = responseData.choices?.[0]?.message as GroqChatMessage | undefined;
 
           if (!responseMessage) {
             throw new Error("Groq API returned empty choice content.");
@@ -556,9 +593,7 @@ ${buildOrionSchemaPrompt()}`;
                   funcResult = JSON.stringify(data);
                 } else if (funcName === "orion_search_documents") {
                   // --- RAG TOOL LOGIC ---
-                  // @ts-ignore
-                  const aiSession = new Supabase.ai.Session("gte-small");
-                  // @ts-ignore
+                  const aiSession = new (getSupabaseAiRuntime().ai.Session)("gte-small");
                   const queryEmbeddingArray = await aiSession.run(args.query || "", { mean_pool: true, normalize: true });
                   const queryEmbedding = Array.from(queryEmbeddingArray);
 
@@ -572,9 +607,9 @@ ${buildOrionSchemaPrompt()}`;
                 } else {
                   funcResult = JSON.stringify({ error: "Herramienta desconocida" });
                 }
-              } catch (err: any) {
+              } catch (err: unknown) {
                 console.error("Tool execution error:", err);
-                funcResult = JSON.stringify({ error: err.message });
+                funcResult = JSON.stringify({ error: toErrorMessage(err) });
               }
 
               currentMessages.push({
@@ -618,9 +653,9 @@ ${buildOrionSchemaPrompt()}`;
           vendor = "groq";
           modelUsed = orionLlmModel;
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error("Failed to fetch from Groq, using fallback:", e);
-        fallbackReason = e instanceof Error ? e.message : String(e);
+        fallbackReason = toErrorMessage(e);
         normalizedAssistantText = `[MODO SEGURO] Error de Groq: ${fallbackReason}. ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
       }
     } else {

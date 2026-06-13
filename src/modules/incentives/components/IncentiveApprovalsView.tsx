@@ -14,6 +14,22 @@ import {
   useHrIncentiveRequestDetail
 } from "../hooks/useIncentivesQueries";
 import type { HrIncentiveApprovalQueueItem } from "../types";
+import { IncentiveActionModal } from "./IncentiveActionModal";
+
+type DecisionModalState =
+  | { mode: "closed" }
+  | {
+      mode: "single";
+      approvalIds: number[];
+      decision: "approved" | "rejected";
+      description: string;
+    }
+  | {
+      mode: "bulk";
+      approvalIds: number[];
+      decision: "approved" | "rejected";
+      description: string;
+    };
 
 function formatDateTimeValue(value: string | null) {
   if (!value) {
@@ -63,6 +79,7 @@ export function IncentiveApprovalsView() {
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
+  const [decisionModal, setDecisionModal] = useState<DecisionModalState>({ mode: "closed" });
 
   const approvalQueueQuery = useHrIncentiveApprovalQueue();
 
@@ -206,41 +223,17 @@ export function IncentiveApprovalsView() {
     });
   };
 
-  const resolveRejectComment = (isBulk: boolean) => {
-    const value = window.prompt(
-      isBulk
-        ? "Ingresa el motivo de rechazo para las aprobaciones seleccionadas."
-        : "Ingresa el motivo de rechazo."
-    );
-
-    if (value === null) {
-      return null;
-    }
-
-    const normalized = value.trim();
-    if (!normalized) {
-      setFeedbackMessage("");
-      setFeedbackError("El rechazo requiere un comentario.");
-      return null;
-    }
-
-    return normalized;
-  };
-
   const handleSingleDecision = (row: HrIncentiveApprovalQueueItem, decision: "approved" | "rejected") => {
     setFeedbackMessage("");
     setFeedbackError("");
-
-    const comment = decision === "rejected" ? resolveRejectComment(false) : null;
-
-    if (decision === "rejected" && !comment) {
-      return;
-    }
-
-    decisionMutation.mutate({
-      approvalId: row.approvalId,
+    setDecisionModal({
+      mode: "single",
+      approvalIds: [row.approvalId],
       decision,
-      comment
+      description:
+        decision === "approved"
+          ? `Confirma la aprobación del incentivo folio ${row.folio} para ${row.employeeFullName}.`
+          : `Registra el motivo de rechazo del incentivo folio ${row.folio} para ${row.employeeFullName}.`
     });
   };
 
@@ -253,21 +246,44 @@ export function IncentiveApprovalsView() {
 
     setFeedbackMessage("");
     setFeedbackError("");
-
-    const comment = decision === "rejected" ? resolveRejectComment(true) : null;
-
-    if (decision === "rejected" && !comment) {
-      return;
-    }
-
-    bulkDecisionMutation.mutate({
+    setDecisionModal({
+      mode: "bulk",
       approvalIds: selectedRows.map((item) => item.approvalId),
       decision,
-      comment
+      description:
+        decision === "approved"
+          ? `Confirma la aprobación masiva de ${selectedRows.length} incentivo(s) seleccionados.`
+          : `Registra el motivo de rechazo para ${selectedRows.length} incentivo(s) seleccionados.`
     });
   };
 
   const isMutating = decisionMutation.isPending || bulkDecisionMutation.isPending;
+
+  const handleDecisionConfirm = async (comment: string) => {
+    if (decisionModal.mode === "closed") {
+      return;
+    }
+
+    const normalizedComment = comment.trim();
+    const payloadComment = normalizedComment ? normalizedComment : null;
+
+    if (decisionModal.mode === "single") {
+      decisionMutation.mutate({
+        approvalId: decisionModal.approvalIds[0],
+        decision: decisionModal.decision,
+        comment: payloadComment
+      });
+      setDecisionModal({ mode: "closed" });
+      return;
+    }
+
+    bulkDecisionMutation.mutate({
+      approvalIds: decisionModal.approvalIds,
+      decision: decisionModal.decision,
+      comment: payloadComment
+    });
+    setDecisionModal({ mode: "closed" });
+  };
 
   return (
     <section className="info-card">
@@ -577,6 +593,43 @@ export function IncentiveApprovalsView() {
           {selectedRows.length} aprobación(es) seleccionadas · {filteredQueue.length} visibles en la bandeja
         </p>
       ) : null}
+
+      <IncentiveActionModal
+        isOpen={decisionModal.mode !== "closed"}
+        title={
+          decisionModal.mode === "closed"
+            ? ""
+            : decisionModal.decision === "approved"
+              ? "Confirmar aprobación"
+              : "Registrar rechazo"
+        }
+        description={decisionModal.mode === "closed" ? "" : decisionModal.description}
+        confirmLabel={
+          decisionModal.mode === "closed"
+            ? "Confirmar"
+            : decisionModal.decision === "approved"
+              ? "Confirmar aprobación"
+              : "Confirmar rechazo"
+        }
+        isSubmitting={isMutating}
+        requireComment={decisionModal.mode !== "closed" && decisionModal.decision === "rejected"}
+        commentLabel={
+          decisionModal.mode !== "closed" && decisionModal.decision === "rejected"
+            ? "Motivo de rechazo"
+            : "Comentario opcional"
+        }
+        commentPlaceholder={
+          decisionModal.mode !== "closed" && decisionModal.decision === "rejected"
+            ? "Explica por qué se rechaza esta solicitud."
+            : "Agrega un comentario si necesitas dejar contexto."
+        }
+        onClose={() => {
+          if (!isMutating) {
+            setDecisionModal({ mode: "closed" });
+          }
+        }}
+        onConfirm={handleDecisionConfirm}
+      />
     </section>
   );
 }

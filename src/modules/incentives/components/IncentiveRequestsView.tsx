@@ -9,6 +9,7 @@ import {
   useHrIncentiveRequests
 } from "../hooks/useIncentivesQueries";
 import type { HrIncentiveRequest, HrIncentiveSetupCatalogs } from "../types";
+import { IncentiveActionModal } from "./IncentiveActionModal";
 
 type IncentiveRequestsViewProps = {
   setupCatalogsQuery: UseQueryResult<HrIncentiveSetupCatalogs, Error>;
@@ -42,6 +43,7 @@ export function IncentiveRequestsView({
   const [contractCodeFilter, setContractCodeFilter] = useState("");
   const [serviceDateUntil, setServiceDateUntil] = useState("");
   const [mutationError, setMutationError] = useState("");
+  const [requestToCancel, setRequestToCancel] = useState<HrIncentiveRequest | null>(null);
 
   const requestsQuery = useHrIncentiveRequests({
     workerSearch,
@@ -218,19 +220,7 @@ export function IncentiveRequestsView({
                             type="button"
                             className="soft-primary-button soft-primary-button-danger hr-incentives-inline-button"
                             disabled={cancelMutation.isPending}
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                `¿Anular incentivo ${request.folio}?`
-                              );
-
-                              if (!confirmed) {
-                                return;
-                              }
-
-                              cancelMutation.mutate({
-                                requestId: request.id
-                              });
-                            }}
+                            onClick={() => setRequestToCancel(request)}
                           >
                             Anular
                           </button>
@@ -261,6 +251,36 @@ export function IncentiveRequestsView({
           </table>
         </div>
       </div>
+
+      <IncentiveActionModal
+        isOpen={Boolean(requestToCancel)}
+        title="Anular incentivo"
+        description={
+          requestToCancel
+            ? `Confirma la anulación del incentivo folio ${requestToCancel.folio} para ${requestToCancel.employeeFullName}.`
+            : ""
+        }
+        confirmLabel="Confirmar anulación"
+        isSubmitting={cancelMutation.isPending}
+        commentLabel="Comentario opcional"
+        commentPlaceholder="Agrega un comentario si necesitas justificar la anulación."
+        onClose={() => {
+          if (!cancelMutation.isPending) {
+            setRequestToCancel(null);
+          }
+        }}
+        onConfirm={async (comment) => {
+          if (!requestToCancel) {
+            return;
+          }
+
+          cancelMutation.mutate({
+            requestId: requestToCancel.id,
+            comment: comment.trim() || undefined
+          });
+          setRequestToCancel(null);
+        }}
+      />
     </section>
   );
 }

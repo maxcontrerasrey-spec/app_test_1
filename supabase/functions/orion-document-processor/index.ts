@@ -2,9 +2,31 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf";
 
-// Function to split text into smaller chunks
+type EmbeddingRunOptions = {
+  mean_pool: boolean;
+  normalize: boolean;
+};
+
+type SupabaseAiSession = {
+  run(input: string, options: EmbeddingRunOptions): Promise<ArrayLike<number>>;
+};
+
+type SupabaseAiRuntime = {
+  ai: {
+    Session: new (model: string) => SupabaseAiSession;
+  };
+};
+
+function getSupabaseAiRuntime() {
+  return Supabase as unknown as SupabaseAiRuntime;
+}
+
+function toErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function chunkText(text: string, chunkSize = 1000, overlap = 200) {
-  const chunks = [];
+  const chunks: string[] = [];
   let i = 0;
   while (i < text.length) {
     chunks.push(text.slice(i, i + chunkSize));
@@ -88,16 +110,11 @@ Deno.serve(async (req) => {
     console.log(`Se generaron ${chunks.length} fragmentos`);
 
     // 4. Generar Vectores (Embeddings) e insertar
-    // Usaremos el modelo Supabase.ai integrado en Deno Edge Runtime
-    // @ts-ignore
-    const aiSession = new Supabase.ai.Session("gte-small");
+    const aiSession = new (getSupabaseAiRuntime().ai.Session)("gte-small");
 
     let insertedCount = 0;
     for (const chunk of chunks) {
-      // Generate embedding vector
-      // @ts-ignore
       const embeddingArray = await aiSession.run(chunk, { mean_pool: true, normalize: true });
-      // The array comes back as a Float32Array or similar, convert to array for postgres
       const embedding = Array.from(embeddingArray);
 
       const { error: insertError } = await supabase
@@ -128,10 +145,10 @@ Deno.serve(async (req) => {
         }
       }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error procesando documento:", err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: toErrorMessage(err) }),
       {
         status: 500,
         headers: {

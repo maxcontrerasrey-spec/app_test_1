@@ -6,9 +6,16 @@ import {
   approveCandidateDocumentation,
   type CandidateChecklistResult,
   type CandidateDocumentRow
-} from "../services/hiringControl";
+} from "../services/documentChecklistApi";
 import { formatDateValue } from "./hiringControlViewUtils";
 import { supabase } from "../../../shared/lib/supabase";
+import { DocumentChecklistActionModal } from "./DocumentChecklistActionModal";
+
+type ChecklistModalState =
+  | { mode: "closed" }
+  | { mode: "upload"; document: CandidateDocumentRow }
+  | { mode: "review"; document: CandidateDocumentRow; status: "approved" | "rejected" }
+  | { mode: "approve_validation" };
 
 type CandidateDocumentChecklistProps = {
   caseCandidateId: string;
@@ -27,6 +34,8 @@ export function CandidateDocumentChecklist({
   const [isApprovingValidation, setIsApprovingValidation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDocForUpload, setSelectedDocForUpload] = useState<CandidateDocumentRow | null>(null);
+  const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
+  const [modalState, setModalState] = useState<ChecklistModalState>({ mode: "closed" });
 
   async function loadChecklist() {
     setIsLoading(true);
@@ -52,68 +61,70 @@ export function CandidateDocumentChecklist({
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !selectedDocForUpload) return;
-    
-    // Limpiar input
-    e.target.value = "";
 
     if (isUploading) return;
-    setIsUploading(true);
     setUploadError("");
-    
+    const requiresExpiryDate = selectedDocForUpload.requires_expiry_date;
+
     try {
-      let expiryToUse = null;
-      if (selectedDocForUpload.requires_expiry_date) {
-        const input = window.prompt("Ingresa la fecha de vencimiento (YYYY-MM-DD):");
-        if (!input) {
-          throw new Error("Fecha de vencimiento es obligatoria para este documento.");
-        }
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) {
-          throw new Error("Formato de fecha inválido. Usa YYYY-MM-DD.");
-        }
-        expiryToUse = input;
+      if (requiresExpiryDate) {
+        setPendingUploadFile(file);
+        setModalState({ mode: "upload", document: selectedDocForUpload });
+        return;
       }
 
-      // 1. Upload to Supabase Storage
-      if (!supabase) throw new Error("Cliente Supabase no configurado");
-      
-      const fileExt = file.name.split('.').pop() || "pdf";
-      const fileName = `${selectedDocForUpload.document_type_id}_${Date.now()}.${fileExt}`;
-      const storagePath = `${caseCandidateId}/${fileName}`;
-
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from('candidate-docs')
-        .upload(storagePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadErr) throw new Error(`Error subiendo archivo: ${uploadErr.message}`);
-      if (!uploadData) throw new Error("No se devolvió path de subida");
-
-      // 2. Call RPC
-      const { error: rpcError } = await uploadCandidateDocument({
-        caseCandidateId,
-        documentTypeId: selectedDocForUpload.document_type_id,
-        filePath: uploadData.path,
-        expiryDate: expiryToUse
-      });
-
-      if (rpcError) throw new Error(`Error en base de datos: ${rpcError}`);
-
-      await loadChecklist();
-      await onChecklistUpdated?.();
+      setIsUploading(true);
+      await persistUploadedDocument(selectedDocForUpload, file, null);
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : "Error desconocido al subir");
     } finally {
+      e.target.value = "";
       setIsUploading(false);
-      setSelectedDocForUpload(null);
+      if (!requiresExpiryDate) {
+        setPendingUploadFile(null);
+        setSelectedDocForUpload(null);
+      }
     }
+  }
+
+  async function persistUploadedDocument(
+    document: CandidateDocumentRow,
+    file: File,
+    expiryDate: string | null
+  ) {
+    if (!supabase) throw new Error("Cliente Supabase no configurado");
+
+    const fileExt = file.name.split(".").pop() || "pdf";
+    const fileName = `${document.document_type_id}_${Date.now()}.${fileExt}`;
+    const storagePath = `${caseCandidateId}/${fileName}`;
+
+    const { data: uploadData, error: uploadErr } = await supabase.storage
+      .from("candidate-docs")
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        upsert: true
+      });
+
+    if (uploadErr) throw new Error(`Error subiendo archivo: ${uploadErr.message}`);
+    if (!uploadData) throw new Error("No se devolvio path de subida");
+
+    const { error: rpcError } = await uploadCandidateDocument({
+      caseCandidateId,
+      documentTypeId: document.document_type_id,
+      filePath: uploadData.path,
+      expiryDate
+    });
+
+    if (rpcError) throw new Error(`Error en base de datos: ${rpcError}`);
+
+    await loadChecklist();
+    await onChecklistUpdated?.();
   }
 
   async function handleDownload(doc: CandidateDocumentRow) {
     if (!doc.file_path) return;
     if (!supabase) {
-      alert("Cliente Supabase no configurado");
+      setUploadError("Cliente Supabase no configurado");
       return;
     }
     
@@ -122,16 +133,17 @@ export function CandidateDocumentChecklist({
       .createSignedUrl(doc.file_path, 3600); // 1 hora de validez
 
     if (error) {
-      alert(`Error obteniendo enlace: ${error.message}`);
+      setUploadError(`Error obteniendo enlace: ${error.message}`);
     } else if (data) {
-      window.open(data.signedUrl, '_blank');
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
     }
   }
 
-  async function handleReview(docId: string, status: "approved" | "rejected") {
-    const notes = window.prompt(`Ingresa notas para la revisión (${status}):`);
-    if (notes === null) return; // Cancelled
-    
+  async function submitReview(
+    docId: string,
+    status: "approved" | "rejected",
+    notes: string
+  ) {
     const { error } = await reviewCandidateDocument({
       documentId: docId,
       status,
@@ -139,22 +151,16 @@ export function CandidateDocumentChecklist({
     });
 
     if (error) {
-      alert(error);
-    } else {
-      await loadChecklist();
-      await onChecklistUpdated?.();
+      setUploadError(error);
+      return false;
     }
+
+    await loadChecklist();
+    await onChecklistUpdated?.();
+    return true;
   }
 
-  async function handleApproveValidation() {
-    if (!checklist) return;
-
-    const notes = window.prompt(
-      "Ingresa un comentario breve para registrar la validación documental:"
-    );
-
-    if (notes === null) return;
-
+  async function submitApproveValidation(notes: string) {
     setIsApprovingValidation(true);
     setUploadError("");
 
@@ -170,12 +176,14 @@ export function CandidateDocumentChecklist({
 
       await loadChecklist();
       await onChecklistUpdated?.();
+      return true;
     } catch (err: unknown) {
       setUploadError(
         err instanceof Error
           ? err.message
           : "No fue posible aprobar la revisión documental."
       );
+      return false;
     } finally {
       setIsApprovingValidation(false);
     }
@@ -262,7 +270,7 @@ export function CandidateDocumentChecklist({
                   checklist.required_documents_approved < checklist.required_documents_total ||
                   checklist.semaphore !== "green"
                 }
-                onClick={() => void handleApproveValidation()}
+                onClick={() => setModalState({ mode: "approve_validation" })}
               >
                 {isApprovingValidation
                   ? "Aprobando revisión..."
@@ -327,14 +335,14 @@ export function CandidateDocumentChecklist({
                   <button 
                     type="button" 
                     className="soft-primary-button soft-primary-button-sm soft-primary-button-success"
-                    onClick={() => void handleReview(doc.id, "approved")}
+                    onClick={() => setModalState({ mode: "review", document: doc, status: "approved" })}
                   >
                     Aprobar
                   </button>
                   <button 
                     type="button" 
                     className="soft-primary-button soft-primary-button-sm soft-primary-button-danger"
-                    onClick={() => void handleReview(doc.id, "rejected")}
+                    onClick={() => setModalState({ mode: "review", document: doc, status: "rejected" })}
                   >
                     Rechazar
                   </button>
@@ -344,6 +352,94 @@ export function CandidateDocumentChecklist({
           </div>
         ))}
       </div>
+
+      <DocumentChecklistActionModal
+        isOpen={modalState.mode === "upload"}
+        mode="upload"
+        title="Completar carga documental"
+        description="Registra la metadata obligatoria antes de guardar el archivo."
+        confirmLabel="Guardar documento"
+        isSubmitting={isUploading}
+        document={modalState.mode === "upload" ? modalState.document : null}
+        requireExpiryDate={modalState.mode === "upload" ? modalState.document.requires_expiry_date : false}
+        onClose={() => {
+          if (!isUploading) {
+            setModalState({ mode: "closed" });
+            setPendingUploadFile(null);
+            setSelectedDocForUpload(null);
+          }
+        }}
+        onConfirm={async ({ expiryDate }) => {
+          const pendingFile = pendingUploadFile;
+          if (!pendingFile || !selectedDocForUpload) {
+            setUploadError("No hay un archivo pendiente para cargar.");
+            setModalState({ mode: "closed" });
+            return;
+          }
+
+          setIsUploading(true);
+          setUploadError("");
+
+          try {
+            await persistUploadedDocument(selectedDocForUpload, pendingFile, expiryDate);
+            setModalState({ mode: "closed" });
+          } catch (err: unknown) {
+            setUploadError(err instanceof Error ? err.message : "Error desconocido al subir");
+          } finally {
+            setIsUploading(false);
+            setPendingUploadFile(null);
+            setSelectedDocForUpload(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = "";
+            }
+          }
+        }}
+      />
+
+      <DocumentChecklistActionModal
+        isOpen={modalState.mode === "review"}
+        mode="review"
+        title={modalState.mode === "review" && modalState.status === "approved" ? "Aprobar documento" : "Rechazar documento"}
+        description="Registra observaciones de revision para dejar trazabilidad auditada."
+        confirmLabel={modalState.mode === "review" && modalState.status === "approved" ? "Confirmar aprobacion" : "Confirmar rechazo"}
+        document={modalState.mode === "review" ? modalState.document : null}
+        requireNotes
+        onClose={() => setModalState({ mode: "closed" })}
+        onConfirm={async ({ notes }) => {
+          if (modalState.mode !== "review") {
+            return;
+          }
+          const wasSuccessful = await submitReview(
+            modalState.document.id,
+            modalState.status,
+            notes
+          );
+          if (wasSuccessful) {
+            setModalState({ mode: "closed" });
+          }
+        }}
+      />
+
+      <DocumentChecklistActionModal
+        isOpen={modalState.mode === "approve_validation"}
+        mode="approve_validation"
+        title="Aprobar revision documental"
+        description="Registra un comentario de cierre antes de habilitar la contratacion."
+        confirmLabel="Aprobar revision"
+        isSubmitting={isApprovingValidation}
+        requireNotes
+        onClose={() => {
+          if (!isApprovingValidation) {
+            setModalState({ mode: "closed" });
+          }
+        }}
+        onConfirm={async ({ notes }) => {
+          const wasSuccessful = await submitApproveValidation(notes);
+          if (wasSuccessful) {
+            setModalState({ mode: "closed" });
+          }
+        }}
+      />
     </div>
   );
 }
