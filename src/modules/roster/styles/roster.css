@@ -107,7 +107,7 @@
 }
 
 .roster-calendar-day--working {
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.14), rgba(var(--surface-rgb), 0.96));
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.45), rgba(var(--surface-rgb), 0.90));
 }
 
 .roster-calendar-day--resting {
@@ -210,7 +210,8 @@
 }
 
 .roster-assignment-dialog {
-  max-width: 720px;
+  max-width: 800px;
+  overflow: visible !important;
 }
 
 @media (max-width: 1180px) {

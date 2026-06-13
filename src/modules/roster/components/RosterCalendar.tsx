@@ -43,7 +43,7 @@ function getDayTone(day: WorkerScheduleDay | null, inMonth: boolean) {
 
 function getDayLabel(day: WorkerScheduleDay | null) {
   if (!day) {
-    return "";
+    return "Sin pauta";
   }
 
   if (day.exceptionLabel) {
@@ -113,8 +113,7 @@ export function RosterCalendar({
               title={scheduleDay ? `${formatRequestDate(dayValue)} · ${getDayLabel(scheduleDay)}` : formatRequestDate(dayValue)}
             >
               <strong>{calendarDay.value.getDate()}</strong>
-              <span>{scheduleDay?.patternName ?? "Sin pauta"}</span>
-              <small>{getDayLabel(scheduleDay)}</small>
+              <span>{getDayLabel(scheduleDay)}</span>
             </button>
           );
         })}
