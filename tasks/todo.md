@@ -82,9 +82,17 @@
 
 ## Endurecimiento de horizonte y visibilidad activa en Jornadas y Turnos
 
-- [ ] Limitar la proyección del calendario de jornadas a un máximo de 6 meses desde la fecha actual en backend y frontend
-- [ ] Confirmar y reforzar, sin duplicaciones innecesarias, que el módulo solo opere con trabajadores activos provenientes de BUK
-- [ ] Validar `npx tsc -b`, revisar diff y documentar el resultado final junto con la lección aprendida
+- [x] Limitar la proyección del calendario de jornadas a un máximo de 6 meses desde la fecha actual en backend y frontend
+- [x] Confirmar y reforzar, sin duplicaciones innecesarias, que el módulo solo opere con trabajadores activos provenientes de BUK
+- [x] Validar `npx tsc -b`, revisar diff y documentar el resultado final junto con la lección aprendida
+
+## Resultado de endurecimiento de horizonte y visibilidad activa en Jornadas y Turnos
+
+- Se agregó la migración [`20260614113000_harden_hr_roster_projection_horizon.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614113000_harden_hr_roster_projection_horizon.sql:1), que redefine [`get_worker_schedule(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614113000_harden_hr_roster_projection_horizon.sql:1) para rechazar consultas que excedan el cierre del sexto mes proyectado. Con esto, el calendario deja de aceptar horizontes futuros indefinidos aunque las asignaciones sigan siendo abiertas a nivel lógico.
+- La exclusión de inactivos no se duplicó en React porque ya estaba bien modelada en la fuente canónica: el lookup y la RPC trabajan contra `employees_active_current`. Se reforzó la trazabilidad cambiando el error de carga a `Trabajador BUK no encontrado o sin ficha activa`, cubriendo también selecciones que queden obsoletas tras una sincronización de BUK.
+- [`RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:1) ahora expone el límite futuro directamente en el selector mensual mediante `max`, mostrando además el mes de cierre permitido. El ajuste no bloquea la revisión histórica, solo el avance más allá del horizonte gobernado.
+- Durante la validación apareció una regresión de tipado ajena a la nueva regla: el detalle del día comparaba `effectiveStatus === 'extra'` cuando el código real del dominio es `extra_shift`. Se corrigió en la misma pasada para dejar `npx tsc -b` nuevamente sano.
+- Cierre validado con `npx tsc -b` y `git diff --check`.
 
 ## Migración completa de motor gráfico a Recharts
 
