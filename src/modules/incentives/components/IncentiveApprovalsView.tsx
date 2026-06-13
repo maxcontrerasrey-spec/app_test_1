@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { TextField } from "../../../shared/ui";
 import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
@@ -92,7 +92,6 @@ export function IncentiveApprovalsView() {
       }
 
       return [
-        item.folio,
         item.employeeFullName,
         item.employeeDocumentNumber,
         item.employeeJobTitle,
@@ -342,7 +341,6 @@ export function IncentiveApprovalsView() {
                       onChange={toggleSelectAllFiltered}
                     />
                   </th>
-                  <th>Folio</th>
                   <th>Etapa</th>
                   <th>Trabajador</th>
                   <th>Incentivo</th>
@@ -362,86 +360,206 @@ export function IncentiveApprovalsView() {
                       isSuperAdmin || !row.approverUserId || row.approverUserId === user?.id;
 
                     return (
-                      <tr
-                        key={row.approvalId}
-                        className={isActiveRow ? "tracking-row-selected" : ""}
-                        onClick={() => setSelectedRequestId(row.requestId)}
-                      >
-                        <td className="tracking-selection-cell">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            aria-label={`Seleccionar aprobación ${row.folio}`}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={() => toggleApprovalSelection(row.approvalId)}
-                          />
-                        </td>
-                        <td>
-                          <strong>{row.folio}</strong>
-                          <div className="tracking-filter-caption">
-                            {formatDateTimeValue(row.createdAt)}
-                          </div>
-                        </td>
-                        <td>
-                          <strong>{row.stepName}</strong>
-                          <div className="tracking-filter-caption">
-                            {getRequestStatusLabel(row.stepCode === "contract_admin" ? "P" : "E")}
-                          </div>
-                        </td>
-                        <td>
-                          <strong>{row.employeeFullName}</strong>
-                          <div className="tracking-filter-caption">
-                            {formatRut(row.employeeDocumentNumber)}
-                          </div>
-                          <div className="tracking-filter-caption">{row.employeeJobTitle}</div>
-                        </td>
-                        <td>{row.incentiveTypeName}</td>
-                        <td>
-                          <strong>{row.selectedAreaName}</strong>
-                          <div className="tracking-filter-caption">{row.selectedContractCode}</div>
-                        </td>
-                        <td>{formatRequestDate(row.serviceDate)}</td>
-                        <td>{formatCurrencyValue(row.calculatedAmount)}</td>
-                        <td>
-                          <strong>{row.requesterName}</strong>
-                          <div className="tracking-filter-caption">{row.approverName}</div>
-                        </td>
-                        <td>
-                          {canDecide ? (
-                            <div className="hr-incentives-inline-actions">
-                              <button
-                                type="button"
-                                className="soft-primary-button approval-button-approve hr-incentives-inline-button"
-                                disabled={isMutating}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleSingleDecision(row, "approved");
-                                }}
-                              >
-                                Aprobar
-                              </button>
-                              <button
-                                type="button"
-                                className="soft-primary-button approval-button-reject hr-incentives-inline-button"
-                                disabled={isMutating}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleSingleDecision(row, "rejected");
-                                }}
-                              >
-                                Rechazar
-                              </button>
+                      <Fragment key={row.approvalId}>
+                        <tr
+                          className={isActiveRow ? "tracking-row-selected" : ""}
+                          onClick={() => setSelectedRequestId(isActiveRow ? "" : row.requestId)}
+                        >
+                          <td className="tracking-selection-cell">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              aria-label="Seleccionar aprobación"
+                              onClick={(event) => event.stopPropagation()}
+                              onChange={() => toggleApprovalSelection(row.approvalId)}
+                            />
+                          </td>
+                          <td>
+                            <strong>{row.stepName}</strong>
+                            <div className="tracking-filter-caption">
+                              {getRequestStatusLabel(row.stepCode === "contract_admin" ? "P" : "E")}
                             </div>
-                          ) : (
-                            <span className="tracking-filter-caption">Solo lectura</span>
-                          )}
-                        </td>
-                      </tr>
+                            <div className="tracking-filter-caption" style={{ marginTop: '0.2rem' }}>
+                              Creado: {formatDateTimeValue(row.createdAt)}
+                            </div>
+                          </td>
+                          <td>
+                            <strong>{row.employeeFullName}</strong>
+                            <div className="tracking-filter-caption">
+                              {formatRut(row.employeeDocumentNumber)}
+                            </div>
+                            <div className="tracking-filter-caption">{row.employeeJobTitle}</div>
+                          </td>
+                          <td>{row.incentiveTypeName}</td>
+                          <td>
+                            <strong>{row.selectedAreaName}</strong>
+                            <div className="tracking-filter-caption">{row.selectedContractCode}</div>
+                          </td>
+                          <td>{formatRequestDate(row.serviceDate)}</td>
+                          <td>{formatCurrencyValue(row.calculatedAmount)}</td>
+                          <td>
+                            <strong>{row.requesterName}</strong>
+                            <div className="tracking-filter-caption">{row.approverName}</div>
+                          </td>
+                          <td>
+                            {canDecide ? (
+                              <div className="hr-incentives-inline-actions">
+                                <button
+                                  type="button"
+                                  className="soft-primary-button approval-button-approve hr-incentives-inline-button"
+                                  disabled={isMutating}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleSingleDecision(row, "approved");
+                                  }}
+                                >
+                                  Aprobar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="soft-primary-button approval-button-reject hr-incentives-inline-button"
+                                  disabled={isMutating}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleSingleDecision(row, "rejected");
+                                  }}
+                                >
+                                  Rechazar
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="tracking-filter-caption">Solo lectura</span>
+                            )}
+                          </td>
+                        </tr>
+                        {isActiveRow ? (
+                          <tr className="tracking-table-expanded-row">
+                            <td colSpan={9} style={{ padding: 0 }}>
+                              <div className="expanded-detail-section-full" style={{ padding: '1.5rem', background: 'rgba(var(--surface-rgb), 0.98)', borderTop: '1px solid var(--border-subtle)' }}>
+                                {detailQuery.isLoading ? (
+                                  <p className="tracking-empty-state">Cargando detalle del incentivo...</p>
+                                ) : null}
+
+                                {detailQuery.isError ? (
+                                  <p className="form-status form-status-error">{detailQuery.error.message}</p>
+                                ) : null}
+
+                                {detailQuery.data ? (
+                                  <>
+                                    <div className="approval-detail-grid">
+                                      <div className="approval-detail-item approval-detail-item-wide">
+                                        <small>Estado</small>
+                                        <strong>{getRequestStatusLabel(detailQuery.data.request.status)}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-xwide">
+                                        <small>Trabajador</small>
+                                        <strong>{detailQuery.data.request.employeeFullName}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-compact">
+                                        <small>RUT</small>
+                                        <strong>{formatRut(detailQuery.data.request.employeeDocumentNumber)}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-wide">
+                                        <small>Cargo BUK</small>
+                                        <strong>{detailQuery.data.request.employeeJobTitle}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-regular">
+                                        <small>Sindicato</small>
+                                        <strong>{detailQuery.data.request.employeeUnionName ?? "No informado"}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-wide">
+                                        <small>Contrato destino</small>
+                                        <strong>{detailQuery.data.request.selectedAreaName}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-compact">
+                                        <small>Código contrato</small>
+                                        <strong>{detailQuery.data.request.selectedContractCode}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-regular">
+                                        <small>Tipo incentivo</small>
+                                        <strong>{detailQuery.data.request.incentiveTypeName}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-regular">
+                                        <small>Fecha servicio</small>
+                                        <strong>{formatRequestDate(detailQuery.data.request.serviceDate)}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-regular">
+                                        <small>Monto</small>
+                                        <strong>{formatCurrencyValue(detailQuery.data.request.calculatedAmount)}</strong>
+                                      </div>
+                                      <div className="approval-detail-item approval-detail-item-regular">
+                                        <small>Solicitó</small>
+                                        <strong>{detailQuery.data.request.requesterName}</strong>
+                                      </div>
+                                    </div>
+
+                                    <div className="approval-detail-note" style={{ marginTop: '1rem' }}>
+                                      <small>Motivo operacional</small>
+                                      <strong>{detailQuery.data.request.motive ?? "Sin motivo registrado"}</strong>
+                                    </div>
+
+                                    {detailQuery.data.request.description ? (
+                                      <div className="approval-detail-note">
+                                        <small>Observaciones</small>
+                                        <strong>{detailQuery.data.request.description}</strong>
+                                      </div>
+                                    ) : null}
+
+                                    {detailQuery.data.request.replacementFullName ? (
+                                      <div className="approval-detail-note">
+                                        <small>Trabajador reemplazado</small>
+                                        <strong>
+                                          {detailQuery.data.request.replacementFullName}
+                                          {detailQuery.data.request.replacementDocumentNumber
+                                            ? ` · ${formatRut(detailQuery.data.request.replacementDocumentNumber)}`
+                                            : ""}
+                                        </strong>
+                                      </div>
+                                    ) : null}
+
+                                    <div className="hr-incentives-approval-history" style={{ marginTop: '1.25rem' }}>
+                                      <div>
+                                        <h4>Cadena de aprobación</h4>
+                                        <div className="hr-incentives-approval-list">
+                                          {detailQuery.data.approvals.map((approval) => (
+                                            <div key={approval.id} className="hr-incentives-approval-list-item">
+                                              <strong>{approval.stepName}</strong>
+                                              <span>
+                                                {approval.approverName ?? "No asignado"} · {approval.status}
+                                              </span>
+                                              <span>{formatDateTimeValue(approval.decidedAt ?? approval.createdAt)}</span>
+                                              {approval.decisionComment ? <span>{approval.decisionComment}</span> : null}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <h4>Historial</h4>
+                                        <div className="hr-incentives-approval-list">
+                                          {detailQuery.data.history.slice(0, 8).map((item) => (
+                                            <div key={item.id} className="hr-incentives-approval-list-item">
+                                              <strong>{item.actionType}</strong>
+                                              <span>{item.actorName ?? "Usuario no disponible"}</span>
+                                              <span>{formatDateTimeValue(item.createdAt)}</span>
+                                              {item.comment ? <span>{item.comment}</span> : null}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
                     );
                   })
                 ) : (
                   <tr>
-                    <td className="tracking-empty-state" colSpan={10}>
+                    <td className="tracking-empty-state" colSpan={9}>
                       {approvalQueueQuery.isLoading
                         ? "Cargando aprobaciones..."
                         : "No hay aprobaciones pendientes para el filtro actual."}
@@ -453,139 +571,7 @@ export function IncentiveApprovalsView() {
           </div>
         </div>
 
-        <section className="info-card hr-incentives-approval-detail">
-          <div className="tracking-toolbar">
-            <div className="tracking-toolbar-copy">
-              <h3>Detalle de aprobación</h3>
-              <span className="tracking-filter-caption">
-                Resumen extendido de la solicitud y trazabilidad del flujo.
-              </span>
-            </div>
-          </div>
 
-          {!selectedRow ? (
-            <p className="tracking-empty-state">Selecciona una aprobación para ver el detalle.</p>
-          ) : null}
-
-          {selectedRow && detailQuery.isLoading ? (
-            <p className="tracking-empty-state">Cargando detalle del incentivo...</p>
-          ) : null}
-
-          {selectedRow && detailQuery.isError ? (
-            <p className="form-status form-status-error">{detailQuery.error.message}</p>
-          ) : null}
-
-          {detailQuery.data ? (
-            <>
-              <div className="approval-detail-grid">
-                <div className="approval-detail-item approval-detail-item-regular">
-                  <small>Folio</small>
-                  <strong>{detailQuery.data.request.folio}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-wide">
-                  <small>Estado</small>
-                  <strong>{getRequestStatusLabel(detailQuery.data.request.status)}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-xwide">
-                  <small>Trabajador</small>
-                  <strong>{detailQuery.data.request.employeeFullName}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-compact">
-                  <small>RUT</small>
-                  <strong>{formatRut(detailQuery.data.request.employeeDocumentNumber)}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-wide">
-                  <small>Cargo BUK</small>
-                  <strong>{detailQuery.data.request.employeeJobTitle}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-regular">
-                  <small>Sindicato</small>
-                  <strong>{detailQuery.data.request.employeeUnionName ?? "No informado"}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-wide">
-                  <small>Contrato destino</small>
-                  <strong>{detailQuery.data.request.selectedAreaName}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-compact">
-                  <small>Código contrato</small>
-                  <strong>{detailQuery.data.request.selectedContractCode}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-regular">
-                  <small>Tipo incentivo</small>
-                  <strong>{detailQuery.data.request.incentiveTypeName}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-regular">
-                  <small>Fecha servicio</small>
-                  <strong>{formatRequestDate(detailQuery.data.request.serviceDate)}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-regular">
-                  <small>Monto</small>
-                  <strong>{formatCurrencyValue(detailQuery.data.request.calculatedAmount)}</strong>
-                </div>
-                <div className="approval-detail-item approval-detail-item-regular">
-                  <small>Solicitó</small>
-                  <strong>{detailQuery.data.request.requesterName}</strong>
-                </div>
-              </div>
-
-              <div className="approval-detail-note">
-                <small>Motivo operacional</small>
-                <strong>{detailQuery.data.request.motive ?? "Sin motivo registrado"}</strong>
-              </div>
-
-              {detailQuery.data.request.description ? (
-                <div className="approval-detail-note">
-                  <small>Observaciones</small>
-                  <strong>{detailQuery.data.request.description}</strong>
-                </div>
-              ) : null}
-
-              {detailQuery.data.request.replacementFullName ? (
-                <div className="approval-detail-note">
-                  <small>Trabajador reemplazado</small>
-                  <strong>
-                    {detailQuery.data.request.replacementFullName}
-                    {detailQuery.data.request.replacementDocumentNumber
-                      ? ` · ${formatRut(detailQuery.data.request.replacementDocumentNumber)}`
-                      : ""}
-                  </strong>
-                </div>
-              ) : null}
-
-              <div className="hr-incentives-approval-history">
-                <div>
-                  <h4>Cadena de aprobación</h4>
-                  <div className="hr-incentives-approval-list">
-                    {detailQuery.data.approvals.map((approval) => (
-                      <div key={approval.id} className="hr-incentives-approval-list-item">
-                        <strong>{approval.stepName}</strong>
-                        <span>
-                          {approval.approverName ?? "No asignado"} · {approval.status}
-                        </span>
-                        <span>{formatDateTimeValue(approval.decidedAt ?? approval.createdAt)}</span>
-                        {approval.decisionComment ? <span>{approval.decisionComment}</span> : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4>Historial</h4>
-                  <div className="hr-incentives-approval-list">
-                    {detailQuery.data.history.slice(0, 8).map((item) => (
-                      <div key={item.id} className="hr-incentives-approval-list-item">
-                        <strong>{item.actionType}</strong>
-                        <span>{item.actorName ?? "Usuario no disponible"}</span>
-                        <span>{formatDateTimeValue(item.createdAt)}</span>
-                        {item.comment ? <span>{item.comment}</span> : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : null}
-        </section>
       </div>
 
       {filteredQueue.length > 0 ? (

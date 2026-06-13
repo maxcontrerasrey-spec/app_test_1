@@ -192,10 +192,9 @@
 }
 
 .hr-incentives-approvals-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(20rem, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 1.25rem;
-  align-items: start;
 }
 
 .hr-incentives-inline-actions {
