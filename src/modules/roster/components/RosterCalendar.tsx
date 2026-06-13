@@ -75,9 +75,6 @@ export function RosterCalendar({
     <section className="info-card roster-calendar-card">
       <div className="tracking-toolbar-copy">
         <h3>Calendario operativo</h3>
-        <span className="tracking-filter-caption">
-          La pauta matemática se calcula por ciclo y las excepciones rompen la regla base.
-        </span>
       </div>
 
       <div className="roster-calendar-legend">

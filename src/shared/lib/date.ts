@@ -27,21 +27,30 @@ export function formatDateForDisplay(dateValue: string) {
   return `${day}/${month}/${year}`;
 }
 
-export function addThreeMonths(dateValue: string) {
+export function addMonthsToDateValue(dateValue: string, monthsToAdd: number) {
   if (!dateValue) {
     return "";
   }
 
   const [year, month, day] = dateValue.split("-").map(Number);
-  const targetMonthIndex = month - 1 + 3;
+  const targetMonthIndex = month - 1 + monthsToAdd;
   const targetYear = year + Math.floor(targetMonthIndex / 12);
-  const targetMonth = targetMonthIndex % 12;
+  const normalizedMonthIndex = ((targetMonthIndex % 12) + 12) % 12;
+  const targetMonth = normalizedMonthIndex;
   const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
   const targetDay = Math.min(day, lastDayOfTargetMonth);
 
   return `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(
     targetDay
   ).padStart(2, "0")}`;
+}
+
+export function addThreeMonths(dateValue: string) {
+  return addMonthsToDateValue(dateValue, 3);
+}
+
+export function toMonthInputValue(dateValue: string) {
+  return dateValue.slice(0, 7);
 }
 
 export function parseDateValue(dateValue: string) {

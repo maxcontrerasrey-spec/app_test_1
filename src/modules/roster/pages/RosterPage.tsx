@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageShell, DatePickerField, SelectField, TextField } from "../../../shared/ui";
 import { formatRequestDate, formatPersonLabel } from "../../../shared/lib/format";
-import { getDaysSince, toTodayDateValue } from "../../../shared/lib/date";
+import { addMonthsToDateValue, getDaysSince, toMonthInputValue, toTodayDateValue } from "../../../shared/lib/date";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { invalidateRosterQueries, useRosterSetupCatalogs, useWorkerSchedule } from "../hooks/useRosterQueries";
@@ -28,7 +28,20 @@ function buildMonthRange(monthValue: string) {
 }
 
 function todayMonthValue() {
-  return toTodayDateValue().slice(0, 7);
+  return toMonthInputValue(toTodayDateValue());
+}
+
+function maxProjectionMonthValue() {
+  return toMonthInputValue(addMonthsToDateValue(toTodayDateValue(), 6));
+}
+
+function formatMonthCaption(monthValue: string) {
+  const [year, month] = monthValue.split("-");
+  if (!year || !month) {
+    return monthValue;
+  }
+
+  return `${month}/${year}`;
 }
 
 function resolveSelectedDay(days: WorkerScheduleDay[], selectedDate: string) {
@@ -49,6 +62,7 @@ export function RosterPage() {
   const [exceptionNotes, setExceptionNotes] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const rosterProjectionMaxMonth = maxProjectionMonthValue();
 
   const setupCatalogsQuery = useRosterSetupCatalogs();
   const monthRange = useMemo(() => buildMonthRange(monthValue), [monthValue]);
@@ -186,12 +200,16 @@ export function RosterPage() {
                     className="text-field"
                     type="month"
                     value={monthValue}
+                    max={rosterProjectionMaxMonth}
                     onChange={(event) => {
                       const nextMonth = event.target.value;
                       setMonthValue(nextMonth);
                       setSelectedDate(`${nextMonth}-01`);
                     }}
                   />
+                  <p className="tracking-filter-caption">
+                    La proyección futura se limita hasta el mes {formatMonthCaption(rosterProjectionMaxMonth)}.
+                  </p>
                 </div>
 
                 <TextField
@@ -199,12 +217,14 @@ export function RosterPage() {
                   label="Contrato"
                   value={selectedWorker?.contractCode ?? ""}
                   readOnly
+                  className="roster-filter-contract"
                 />
                 <TextField
                   id="roster-worker-area"
                   label="Área"
                   value={selectedWorker?.areaName ?? ""}
                   readOnly
+                  className="roster-filter-area"
                 />
               </div>
 
@@ -291,7 +311,7 @@ export function RosterPage() {
                               (selectedDay.effectiveStatus === "working" ? "En turno" :
                                selectedDay.effectiveStatus === "resting" ? "Descanso" :
                                selectedDay.effectiveStatus === "absent" ? "Ausente" :
-                               selectedDay.effectiveStatus === "extra" ? "Turno extra" :
+                               selectedDay.effectiveStatus === "extra_shift" ? "Turno extra" :
                                selectedDay.effectiveStatus === "vacation" ? "Vacación" :
                                selectedDay.effectiveStatus === "training" ? "Capacitación" : "Sin pauta")}
                           </strong>

@@ -80,6 +80,12 @@
 - En frontend, [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1) permite activar o quitar la exigencia de descanso por tipo, y [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) muestra la validación de pauta antes de enviar, evitando solicitudes inválidas aunque existan otras superficies futuras.
 - Cierre técnico validado con `npx tsc -b`, `npm run build` y `git diff --check`, y el cambio quedó empujado a `main`.
 
+## Endurecimiento de horizonte y visibilidad activa en Jornadas y Turnos
+
+- [ ] Limitar la proyección del calendario de jornadas a un máximo de 6 meses desde la fecha actual en backend y frontend
+- [ ] Confirmar y reforzar, sin duplicaciones innecesarias, que el módulo solo opere con trabajadores activos provenientes de BUK
+- [ ] Validar `npx tsc -b`, revisar diff y documentar el resultado final junto con la lección aprendida
+
 ## Migración completa de motor gráfico a Recharts
 
 - [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico

@@ -78,21 +78,23 @@
   border-radius: var(--radius-lg);
   border: 1px solid rgba(var(--border-rgb), 0.92);
   padding: 0.9rem 0.8rem;
-  display: grid;
-  align-content: start;
-  gap: 0.4rem;
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
   background: rgba(var(--surface-soft-rgb), 0.72);
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .roster-calendar-day strong {
   font-size: 1rem;
+  align-self: flex-start;
 }
 
-.roster-calendar-day span,
-.roster-calendar-day small {
+.roster-calendar-day span {
   color: var(--text-muted);
+  margin: auto 0;
 }
 
 .roster-calendar-day:hover {
@@ -217,6 +219,16 @@
 .roster-assignment-dialog {
   max-width: 800px;
   overflow: visible !important;
+}
+
+.roster-filter-contract {
+  max-width: 110px;
+  flex: none;
+}
+
+.roster-filter-area {
+  flex: 1;
+  min-width: 200px;
 }
 
 @media (max-width: 1180px) {
