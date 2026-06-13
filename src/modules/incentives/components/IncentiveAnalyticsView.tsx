@@ -119,6 +119,7 @@ export function IncentiveAnalyticsView() {
     const items = analyticsQuery.data?.deviationsByContract.slice(0, 8) ?? [];
 
     return {
+      color: ["#ef4444", "#57a6b2"],
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
       legend: { top: 0 },
       grid: {
@@ -130,7 +131,8 @@ export function IncentiveAnalyticsView() {
       },
       xAxis: {
         type: "value",
-        name: "Solicitudes"
+        name: "Solicitudes",
+        minInterval: 1
       },
       yAxis: {
         type: "category",
@@ -142,14 +144,14 @@ export function IncentiveAnalyticsView() {
           type: "bar",
           stack: "desviaciones",
           barMaxWidth: 32,
-          data: items.map((item) => item.outOfDeadlineCount)
+          data: items.map((item) => Number(item.outOfDeadlineCount || 0))
         },
         {
           name: "Contrato distinto",
           type: "bar",
           stack: "desviaciones",
           barMaxWidth: 32,
-          data: items.map((item) => item.contractMismatchCount)
+          data: items.map((item) => Number(item.contractMismatchCount || 0))
         }
       ]
     };
