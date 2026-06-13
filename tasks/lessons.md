@@ -198,6 +198,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No delegues a la UI el marcado de estados operativos derivados**. Si registrar un incentivo válido implica convertir un descanso en turno adicional, esa marca debe nacer en la RPC de creación para que historial, calendario y auditoría no diverjan.
 - **Las automatizaciones de calendario no pueden pisar excepciones de mayor jerarquía**. Antes de grabar un `extra_shift`, hay que preservar vacaciones, licencias u otras excepciones activas ya registradas y dejar trazabilidad explícita del resultado.
 
+## 60. Cuando la validación operativa debe reaccionar al seleccionar un trabajador, no se acopla al cálculo monetario
+
+- **El estado de turno/descanso/ausencia y el cálculo del monto no tienen el mismo ciclo de carga**. Si la UI necesita alertar apenas se elige trabajador y fecha, debe consultar la pauta con una lectura dedicada y no esperar a que el usuario complete tipo, contrato o duración.
+- **El preview financiero sigue siendo otra responsabilidad**. Reusar una RPC de monto para gobernar señalética operativa inmediata crea dependencia innecesaria y retrasa la validación visible.
+
+## 61. Si una fuente prioritaria como BUK puede sobreescribir estado operativo, el diseño también debe saber restaurar
+
+- **No basta con que BUK “gane” al escribir**. Si la ausencia oficial desaparece, el sistema debe poder reconstruir el estado manual o automático que existía antes; de lo contrario, la sync destruye trazabilidad y deja al calendario en un estado falso.
+- **La forma simple y robusta es persistir el estado supersedido en la misma fila canónica** cuando el modelo solo permite una excepción activa por trabajador/fecha.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

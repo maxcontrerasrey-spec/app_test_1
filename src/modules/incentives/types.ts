@@ -50,6 +50,19 @@ export type HrIncentiveRosterValidation = {
   matchedDate: string | null;
 };
 
+export type HrIncentiveRosterSnapshot = {
+  baseStatus: "working" | "resting" | "unassigned" | null;
+  effectiveStatus: string | null;
+  exceptionType: string | null;
+  exceptionLabel: string | null;
+  patternName: string | null;
+  scheduleStatus: string | null;
+  scheduleLabel: string | null;
+  isWorkingDay: boolean;
+  isRestDay: boolean;
+  blockedByAbsence: boolean;
+};
+
 export type HrIncentiveRateRule = {
   id: string;
   incentiveTypeId: string;
@@ -178,6 +191,7 @@ export type HrIncentiveRequest = {
   entryLagDays: number;
   isOutOfDeadline: boolean;
   isContractMismatch: boolean;
+  declaredRestDay: boolean | null;
 };
 
 export type HrIncentiveApprovalQueueItem = {
@@ -275,6 +289,7 @@ export type HrIncentiveRequestDetail = {
     cancellationComment: string | null;
     createdAt: string;
     updatedAt: string;
+    declaredRestDay: boolean | null;
   };
   approvals: HrIncentiveApprovalHistoryItem[];
   history: HrIncentiveRequestHistoryItem[];
@@ -369,6 +384,7 @@ export type CreateHrIncentiveRequestInput = {
   motive?: string | null;
   description?: string | null;
   replacementBukEmployeeId?: string | null;
+  declaredRestDay: boolean;
 };
 
 export type CreateHrIncentiveRequestResult = {

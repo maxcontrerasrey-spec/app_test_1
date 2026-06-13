@@ -8,6 +8,7 @@ import type {
   HrIncentiveApprovalQueueItem,
   HrIncentiveEligibleWorker,
   HrIncentivePreview,
+  HrIncentiveRosterSnapshot,
   HrIncentiveRequestDetail,
   HrIncentiveRequest,
   HrIncentiveRequestsFilters,
@@ -250,6 +251,50 @@ function mapPreview(payload: unknown): HrIncentivePreview {
   };
 }
 
+function mapRosterSnapshotRow(row: Record<string, unknown>): HrIncentiveRosterSnapshot {
+  const baseStatus =
+    row.base_status === "working" || row.base_status === "resting" || row.base_status === "unassigned"
+      ? row.base_status
+      : null;
+  const effectiveStatus = readNullableText(row.effective_status) ?? baseStatus;
+  const exceptionLabel = readNullableText(row.exception_label);
+
+  return {
+    baseStatus,
+    effectiveStatus,
+    exceptionType: readNullableText(row.exception_type),
+    exceptionLabel,
+    patternName: readNullableText(row.pattern_name),
+    scheduleStatus: effectiveStatus,
+    scheduleLabel:
+      exceptionLabel ??
+      (effectiveStatus === "resting"
+        ? "Descanso"
+        : effectiveStatus === "working"
+          ? "En turno"
+          : effectiveStatus === "extra_shift"
+            ? "Turno adicional"
+            : effectiveStatus === "training"
+              ? "Capacitación"
+              : effectiveStatus === "vacation"
+                ? "Vacaciones"
+                : effectiveStatus === "medical_leave"
+                  ? "Licencia médica"
+                  : effectiveStatus === "absent"
+                    ? "Ausencia"
+                    : effectiveStatus === "administrative_leave"
+                      ? "Permiso administrativo"
+                      : effectiveStatus === "union_leave"
+                        ? "Permiso sindical"
+                        : effectiveStatus === "unassigned"
+                          ? "Sin pauta"
+                          : null),
+    isWorkingDay: Boolean(row.is_working_day),
+    isRestDay: Boolean(row.is_rest_day),
+    blockedByAbsence: effectiveStatus === "vacation" || effectiveStatus === "medical_leave"
+  };
+}
+
 function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
   return {
     id: String(row.id ?? ""),
@@ -313,7 +358,11 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
     updatedAt: String(row.updated_at ?? ""),
     entryLagDays: Number(row.entry_lag_days ?? 0),
     isOutOfDeadline: Boolean(row.is_out_of_deadline),
-    isContractMismatch: Boolean(row.is_contract_mismatch)
+    isContractMismatch: Boolean(row.is_contract_mismatch),
+    declaredRestDay:
+      row.declared_rest_day === null || row.declared_rest_day === undefined
+        ? null
+        : Boolean(row.declared_rest_day)
   };
 }
 
@@ -455,7 +504,11 @@ function mapRequestDetail(payload: unknown): HrIncentiveRequestDetail {
       cancelledAt: readNullableText(request.cancelled_at),
       cancellationComment: readNullableText(request.cancellation_comment),
       createdAt: String(request.created_at ?? ""),
-      updatedAt: String(request.updated_at ?? "")
+      updatedAt: String(request.updated_at ?? ""),
+      declaredRestDay:
+        request.declared_rest_day === null || request.declared_rest_day === undefined
+          ? null
+          : Boolean(request.declared_rest_day)
     },
     approvals: asArray<Record<string, unknown>>(source.approvals).map((item) => ({
       id: Number(item.id ?? 0),
@@ -560,6 +613,40 @@ export async function fetchHrIncentivePreview(params: {
   return mapPreview(data);
 }
 
+export async function fetchHrIncentiveRosterSnapshot(params: {
+  bukEmployeeId: string;
+  serviceDate?: string | null;
+}) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("resolve_hr_roster_day_status", {
+    p_buk_employee_id: params.bukEmployeeId,
+    p_target_date: params.serviceDate ?? null
+  });
+
+  if (error) {
+    throw new Error(error.message || "No fue posible consultar el estado operativo del trabajador.");
+  }
+
+  const row = asArray<Record<string, unknown>>(data)[0];
+
+  if (!row) {
+    return {
+      baseStatus: "unassigned",
+      effectiveStatus: "unassigned",
+      exceptionType: null,
+      exceptionLabel: null,
+      patternName: null,
+      scheduleStatus: "unassigned",
+      scheduleLabel: "Sin pauta",
+      isWorkingDay: false,
+      isRestDay: false,
+      blockedByAbsence: false
+    } satisfies HrIncentiveRosterSnapshot;
+  }
+
+  return mapRosterSnapshotRow(row);
+}
+
 export async function createHrIncentiveRequest(input: CreateHrIncentiveRequestInput) {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("create_hr_incentive_request", {
@@ -572,7 +659,8 @@ export async function createHrIncentiveRequest(input: CreateHrIncentiveRequestIn
     p_duration_hours: input.durationHours ?? null,
     p_motive: input.motive ?? null,
     p_description: input.description ?? null,
-    p_replacement_buk_employee_id: input.replacementBukEmployeeId ?? null
+    p_replacement_buk_employee_id: input.replacementBukEmployeeId ?? null,
+    p_declared_rest_day: input.declaredRestDay
   });
 
   if (error) {

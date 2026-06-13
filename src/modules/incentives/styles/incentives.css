@@ -100,6 +100,54 @@
   gap: 0.2rem;
 }
 
+.hr-incentives-roster-status {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+}
+
+.hr-incentives-roster-status-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hr-incentives-roster-status strong {
+  font-size: 1rem;
+}
+
+.hr-incentives-roster-status p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.hr-incentives-roster-status-success {
+  background: rgba(220, 252, 231, 0.9);
+  border-color: rgba(34, 197, 94, 0.24);
+  color: #166534;
+}
+
+.hr-incentives-roster-status-warning {
+  background: rgba(254, 249, 195, 0.9);
+  border-color: rgba(234, 179, 8, 0.28);
+  color: #854d0e;
+}
+
+.hr-incentives-roster-status-danger {
+  background: rgba(254, 226, 226, 0.92);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #b91c1c;
+}
+
+.hr-incentives-roster-status-neutral {
+  background: rgba(226, 232, 240, 0.78);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #334155;
+}
+
 .hr-incentive-flag-list {
   display: flex;
   flex-wrap: wrap;

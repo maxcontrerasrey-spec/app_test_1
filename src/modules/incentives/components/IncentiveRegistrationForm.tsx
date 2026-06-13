@@ -10,10 +10,12 @@ import {
 import {
   invalidateHrIncentiveQueries,
   useHrIncentivePreview,
+  useHrIncentiveRosterSnapshot,
   useHrIncentiveWorkerContext
 } from "../hooks/useIncentivesQueries";
 import type {
   HrIncentiveEligibleWorker,
+  HrIncentiveRosterSnapshot,
   HrIncentiveSetupCatalogs
 } from "../types";
 import {
@@ -27,12 +29,58 @@ type IncentiveRegistrationFormProps = {
   setupCatalogsQuery: UseQueryResult<HrIncentiveSetupCatalogs, Error>;
 };
 
+type RestDeclarationValue = "" | "yes" | "no";
+
 function buildAreaOptionValue(
   contractCode: string | null,
   areaCode: string | null,
   areaName: string | null
 ) {
   return [contractCode ?? "", areaCode ?? "", areaName ?? ""].join("::");
+}
+
+function resolveRosterStatusAppearance(snapshot: HrIncentiveRosterSnapshot | null) {
+  if (!snapshot) {
+    return null;
+  }
+
+  if (snapshot.blockedByAbsence) {
+    return {
+      tone: "danger" as const,
+      title: snapshot.scheduleLabel ?? "Vacaciones o licencia médica",
+      description: "El sistema bloqueará el registro mientras este estado siga vigente."
+    };
+  }
+
+  if (snapshot.isRestDay) {
+    return {
+      tone: "warning" as const,
+      title: "En descanso",
+      description: "Si registras el incentivo, el calendario operativo quedará marcado como turno adicional."
+    };
+  }
+
+  if (snapshot.scheduleStatus === "working" || snapshot.scheduleStatus === "extra_shift") {
+    return {
+      tone: "success" as const,
+      title: snapshot.scheduleStatus === "extra_shift" ? "Turno adicional" : "En turno",
+      description: "El trabajador figura operativo para la fecha seleccionada."
+    };
+  }
+
+  if (snapshot.scheduleStatus === "training") {
+    return {
+      tone: "success" as const,
+      title: "Capacitación",
+      description: "El trabajador tiene una excepción operativa activa para esa fecha."
+    };
+  }
+
+  return {
+    tone: "neutral" as const,
+    title: snapshot.scheduleLabel ?? "Sin pauta",
+    description: "No existe una pauta operativa concluyente para la fecha seleccionada."
+  };
 }
 
 export function IncentiveRegistrationForm({
@@ -44,6 +92,7 @@ export function IncentiveRegistrationForm({
   const [selectedIncentiveTypeId, setSelectedIncentiveTypeId] = useState("");
   const [serviceDate, setServiceDate] = useState(toTodayDateValue());
   const [durationHours, setDurationHours] = useState("");
+  const [declaredRestDay, setDeclaredRestDay] = useState<RestDeclarationValue>("");
   const [motive, setMotive] = useState("");
   const [description, setDescription] = useState("");
   const [replacementWorker, setReplacementWorker] = useState<HrIncentiveEligibleWorker | null>(null);
@@ -54,6 +103,11 @@ export function IncentiveRegistrationForm({
     selectedWorker?.bukEmployeeId ?? "",
     Boolean(selectedWorker)
   );
+  const rosterSnapshotQuery = useHrIncentiveRosterSnapshot({
+    bukEmployeeId: selectedWorker?.bukEmployeeId ?? "",
+    serviceDate,
+    enabled: Boolean(selectedWorker) && Boolean(serviceDate)
+  });
 
   const incentiveTypes = useMemo(
     () => (setupCatalogsQuery.data?.incentiveTypes ?? []).filter((item) => item.isActive),
@@ -91,6 +145,10 @@ export function IncentiveRegistrationForm({
     }
   }, [selectedIncentiveType?.requiresReplacement]);
 
+  useEffect(() => {
+    setDeclaredRestDay("");
+  }, [selectedWorker?.bukEmployeeId, serviceDate]);
+
   const selectedArea = useMemo(() => {
     const source = workerContextQuery.data?.availableAreas ?? [];
     return (
@@ -106,6 +164,19 @@ export function IncentiveRegistrationForm({
     selectedIncentiveType?.calculationBasis === "per_hour" && durationHours.trim()
       ? Number(durationHours)
       : null;
+
+  const declaredRestDayBoolean =
+    declaredRestDay === "yes" ? true : declaredRestDay === "no" ? false : null;
+
+  const rosterStatusAppearance = useMemo(
+    () => resolveRosterStatusAppearance(rosterSnapshotQuery.data ?? null),
+    [rosterSnapshotQuery.data]
+  );
+
+  const restDeclarationMismatch =
+    typeof declaredRestDayBoolean === "boolean" &&
+    rosterSnapshotQuery.data !== undefined &&
+    declaredRestDayBoolean !== rosterSnapshotQuery.data.isRestDay;
 
   const registrationWindow = useMemo(
     () => resolveIncentiveRegistrationWindow(serviceDate),
@@ -156,6 +227,7 @@ export function IncentiveRegistrationForm({
       setSelectedIncentiveTypeId("");
       setServiceDate(toTodayDateValue());
       setDurationHours("");
+      setDeclaredRestDay("");
       setMotive("");
       setDescription("");
       setReplacementWorker(null);
@@ -172,6 +244,10 @@ export function IncentiveRegistrationForm({
     !selectedIncentiveTypeId ||
     !selectedArea ||
     !serviceDate ||
+    rosterSnapshotQuery.isLoading ||
+    !rosterSnapshotQuery.data ||
+    declaredRestDayBoolean === null ||
+    restDeclarationMismatch ||
     previewQuery.isLoading ||
     !previewQuery.data ||
     previewQuery.data.rosterValidation.blockedByAbsence ||
@@ -216,6 +292,7 @@ export function IncentiveRegistrationForm({
               setFormMessage("");
               setSelectedWorker(worker);
               setReplacementWorker(null);
+              setDeclaredRestDay("");
             }}
           />
 
@@ -284,6 +361,19 @@ export function IncentiveRegistrationForm({
             maxValue={registrationWindow.maximumDateValue}
           />
 
+          <SelectField
+            id="incentive-declared-rest-day"
+            label="En descanso"
+            value={declaredRestDay}
+            onChange={(event) => setDeclaredRestDay(event.target.value as RestDeclarationValue)}
+            options={[
+              { value: "yes", label: "Sí" },
+              { value: "no", label: "No" }
+            ]}
+            placeholder="Confirma el estado operativo"
+            disabled={!selectedWorker || rosterSnapshotQuery.isLoading}
+          />
+
           <div className="hr-incentives-grid-span-2 hr-incentives-preview-card">
             <div className="hr-incentives-preview-header">
               <strong>Monto resuelto por regla</strong>
@@ -291,6 +381,24 @@ export function IncentiveRegistrationForm({
                 La solicitud se registrará con esta misma resolución.
               </span>
             </div>
+
+            {selectedWorker && rosterSnapshotQuery.isLoading ? (
+              <p className="tracking-filter-caption">Verificando estado operativo del trabajador...</p>
+            ) : null}
+
+            {selectedWorker && rosterSnapshotQuery.isError ? (
+              <p className="form-status form-status-error">{rosterSnapshotQuery.error.message}</p>
+            ) : null}
+
+            {rosterStatusAppearance ? (
+              <div
+                className={`hr-incentives-roster-status hr-incentives-roster-status-${rosterStatusAppearance.tone}`}
+              >
+                <span className="hr-incentives-roster-status-label">Estado operativo detectado</span>
+                <strong>{rosterStatusAppearance.title}</strong>
+                <p>{rosterStatusAppearance.description}</p>
+              </div>
+            ) : null}
 
             {!shouldShowPreview ? (
               <p className="tracking-filter-caption">
@@ -362,6 +470,11 @@ export function IncentiveRegistrationForm({
                     {previewQuery.data.rosterValidation.isRestDay
                       ? `Validación de descanso OK: ${previewQuery.data.rosterValidation.scheduleLabel ?? "Descanso"}.`
                       : `No puedes usar a este trabajador como reemplazo en esta fecha porque su pauta vigente indica ${previewQuery.data.rosterValidation.scheduleLabel ?? "turno"}. Solo se permite reemplazo cuando el trabajador está en descanso.`}
+                  </p>
+                ) : null}
+                {restDeclarationMismatch ? (
+                  <p className="form-status form-status-error">
+                    La confirmación &quot;En descanso&quot; no coincide con la pauta detectada para la fecha seleccionada.
                   </p>
                 ) : null}
               </>
@@ -441,6 +554,7 @@ export function IncentiveRegistrationForm({
               setSelectedIncentiveTypeId("");
               setServiceDate(toTodayDateValue());
               setDurationHours("");
+              setDeclaredRestDay("");
               setMotive("");
               setDescription("");
               setReplacementWorker(null);
@@ -473,7 +587,8 @@ export function IncentiveRegistrationForm({
                 durationHours: durationHoursNumber,
                 motive,
                 description,
-                replacementBukEmployeeId: replacementWorker?.bukEmployeeId ?? null
+                replacementBukEmployeeId: replacementWorker?.bukEmployeeId ?? null,
+                declaredRestDay: declaredRestDayBoolean === true
               });
             }}
           >

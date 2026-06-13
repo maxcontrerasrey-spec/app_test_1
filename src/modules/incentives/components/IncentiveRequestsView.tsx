@@ -95,6 +95,7 @@ function buildIncentiveExportRows(requests: HrIncentiveRequest[]) {
     desfase_dias_ingreso: request.entryLagDays,
     fuera_de_plazo: request.isOutOfDeadline ? "Si" : "No",
     contrato_distinto: request.isContractMismatch ? "Si" : "No",
+    declarado_en_descanso: request.declaredRestDay === null ? "" : request.declaredRestDay ? "Si" : "No",
     rut_empleado: request.employeeDocumentNumber,
     trabajador: request.employeeFullName,
     cargo_empleado: request.employeeJobTitle,

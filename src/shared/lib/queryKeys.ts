@@ -29,6 +29,8 @@ export const queryKeys = {
     workerSearch: (search: string) => ["incentives", "worker-search", search] as const,
     workerContext: (bukEmployeeId: string) =>
       ["incentives", "worker-context", bukEmployeeId] as const,
+    rosterSnapshot: (params: Record<string, unknown>) =>
+      ["incentives", "roster-snapshot", params] as const,
     preview: (params: Record<string, unknown>) => ["incentives", "preview", params] as const
   },
   roster: {

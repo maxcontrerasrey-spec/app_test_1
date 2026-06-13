@@ -159,9 +159,27 @@
 
 ## Hotfix de preview de incentivos con roster_day_row sin asignar
 
-- [ ] Auditar la versión vigente de `calculate_hr_incentive_preview(...)` para aislar por qué falla aunque exista pauta en roster
-- [ ] Corregir la construcción de `roster_validation` para que no lea `roster_day_row` cuando el incentivo no exige descanso
-- [ ] Validar el query de preview en la base activa y documentar el cierre
+- [x] Auditar la versión vigente de `calculate_hr_incentive_preview(...)` para aislar por qué falla aunque exista pauta en roster
+- [x] Corregir la construcción de `roster_validation` para que no lea `roster_day_row` cuando el incentivo no exige descanso
+- [x] Validar el query de preview en la base activa y documentar el cierre
+
+## Endurecimiento integral entre sistema de turnos e incentivos extraordinarios
+
+- [x] Desacoplar la lectura inmediata de estado operativo del cálculo de monto para informar turno, descanso o ausencia apenas se selecciona el trabajador
+- [x] Agregar trazabilidad explícita `En descanso` en el registro de incentivos y persistirla en base, detalle y exportación XLS
+- [x] Corregir backend de interacción roster-incentivos: bloqueo robusto por ausencias, restauración de excepciones manuales tras override BUK y marcado automático de turno adicional en descansos reales
+- [x] Validar typecheck, advisors relevantes, aplicar migraciones en Supabase y dejar listo para push a `main`
+
+## Resultado de endurecimiento integral entre sistema de turnos e incentivos extraordinarios
+
+- Se agregó la migración [`20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql:1), ya aplicada también en Supabase, para persistir `declared_rest_day` en [`hr_incentive_requests`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql:1) y endurecer las RPC críticas del cruce entre Incentivos y Roster.
+- [`calculate_hr_incentive_preview(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql:24) dejó de depender de un `record` frágil, ahora clasifica correctamente `extra_shift` como estado no descansado para incentivos que exigen descanso y sigue bloqueando vacaciones/licencia médica con mensaje de negocio claro.
+- [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql:197) ahora exige la confirmación `En descanso`, compara la declaración humana contra la pauta real y marca `extra_shift` para cualquier incentivo registrado sobre un descanso efectivo, no solo para tipos que exigen reemplazo. Las excepciones automáticas quedaron trazadas con `exception_source = 'incentive_auto'`.
+- La sync [`sync_hr_roster_exception_from_buk(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql:575) dejó de borrar ciegamente estados manuales o automáticos: cuando BUK pisa una fecha, preserva el estado previo en columnas `superseded_*` y lo restaura cuando BUK retira la ausencia.
+- En frontend, [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) ahora consulta el estado operativo apenas se selecciona trabajador y fecha, pinta el resultado en verde/amarillo/rojo y no permite enviar la solicitud si la declaración `En descanso` contradice la pauta detectada.
+- Para mantener auditabilidad completa, [`get_hr_incentive_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql:704), [`get_hr_incentive_request_detail(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210505_harden_hr_incentive_roster_interaction_and_rest_declaration.sql:835) y la exportación XLS en [`IncentiveRequestsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:1) ya incluyen el dato `declarado_en_descanso`.
+- Se agregó además la migración [`20260613210649_add_hr_roster_exception_fk_indexes.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210649_add_hr_roster_exception_fk_indexes.sql:1), aplicada en Supabase, para indexar `created_by` y `superseded_created_by` en [`hr_roster_exceptions`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613210649_add_hr_roster_exception_fk_indexes.sql:1) y cerrar un hallazgo objetivo de performance en la tabla recién endurecida.
+- Validación cerrada con `npx tsc -b`, `git diff --check`, aplicación real de ambas migraciones en Supabase y query de humo sobre la base activa confirmando columna nueva, firma RPC nueva y respuesta válida de `calculate_hr_incentive_preview(...)`.
 
 ## Ajuste de mensaje para bloqueo de reemplazo por trabajador en turno
 

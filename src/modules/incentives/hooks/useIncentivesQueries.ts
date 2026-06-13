@@ -4,6 +4,7 @@ import {
   fetchHrIncentivesAnalytics,
   fetchHrIncentiveApprovalQueue,
   fetchHrIncentivePreview,
+  fetchHrIncentiveRosterSnapshot,
   fetchHrIncentiveRequestDetail,
   fetchHrIncentiveRequests,
   fetchHrIncentiveSetupCatalogs,
@@ -93,6 +94,29 @@ export function useHrIncentiveWorkerContext(bukEmployeeId: string, enabled = tru
     staleTime: INCENTIVES_WORKER_CONTEXT_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     enabled: enabled && Boolean(bukEmployeeId)
+  });
+}
+
+export function useHrIncentiveRosterSnapshot(params: {
+  bukEmployeeId: string;
+  serviceDate?: string | null;
+  enabled?: boolean;
+}) {
+  const { bukEmployeeId, serviceDate, enabled = true } = params;
+
+  return useQuery({
+    queryKey: queryKeys.incentives.rosterSnapshot({
+      bukEmployeeId,
+      serviceDate: serviceDate ?? null
+    }),
+    queryFn: () =>
+      fetchHrIncentiveRosterSnapshot({
+        bukEmployeeId,
+        serviceDate
+      }),
+    staleTime: 10_000,
+    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
+    enabled: enabled && Boolean(bukEmployeeId) && Boolean(serviceDate)
   });
 }
 
