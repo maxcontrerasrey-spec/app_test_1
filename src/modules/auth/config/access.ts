@@ -24,6 +24,7 @@ export type AppModuleCode =
 
   | "operaciones"
   | "recursos_humanos"
+  | "jornadas_turnos"
   | "ai_assistant";
 
 const KNOWN_ROLE_CODES = new Set<AppRole>([
@@ -56,6 +57,7 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
 
   "operaciones",
   "recursos_humanos",
+  "jornadas_turnos",
   "ai_assistant"
 ]);
 

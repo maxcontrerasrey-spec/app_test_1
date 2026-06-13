@@ -49,6 +49,10 @@ const HumanResourcesDashboard = lazyWithRetry("human-resources-dashboard", async
   ).HumanResourcesDashboard
 }));
 
+const RosterPage = lazyWithRetry("roster-page", async () => ({
+  default: (await import("../../modules/roster/pages/RosterPage")).RosterPage
+}));
+
 const AIAssistantHome = lazyWithRetry("ai-assistant-page", async () => ({
   default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
 }));
@@ -147,6 +151,22 @@ export function AppRouter() {
                   allowRoles={HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES}
                 >
                   <HumanResourcesDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/roster"
+              element={
+                <RoleProtectedRoute moduleCode="jornadas_turnos">
+                  <RosterPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/roster/patterns"
+              element={
+                <RoleProtectedRoute moduleCode="jornadas_turnos">
+                  <RosterPage />
                 </RoleProtectedRoute>
               }
             />

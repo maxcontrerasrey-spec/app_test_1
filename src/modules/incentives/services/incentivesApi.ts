@@ -321,11 +321,14 @@ function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
       contractMismatchCount: Number(item.contract_mismatch_count ?? 0),
       totalDeviations: Number(item.total_deviations ?? 0)
     })),
-    deviationsByDriver: asArray<Record<string, unknown>>(source.deviations_by_driver).map((item) => ({
+    amountByDriver: asArray<Record<string, unknown>>(source.amount_by_driver).map((item) => ({
       driverName: String(item.driver_name ?? ""),
-      outOfDeadlineCount: Number(item.out_of_deadline_count ?? 0),
-      contractMismatchCount: Number(item.contract_mismatch_count ?? 0),
-      totalDeviations: Number(item.total_deviations ?? 0)
+      totalAmount: Number(item.total_amount ?? 0),
+      contracts: asArray<Record<string, unknown>>(item.contracts).map((c) => ({
+        contractCode: String(c.contract_code ?? ""),
+        contractLabel: readNullableText(c.contract_label) || String(c.contract_code ?? ""),
+        amount: Number(c.amount ?? 0)
+      }))
     })),
     filterOptions: {
       contracts: asArray<Record<string, unknown>>(filterOptions.contracts).map((item) => ({

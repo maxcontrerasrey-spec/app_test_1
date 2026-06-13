@@ -321,11 +321,16 @@ export type HrIncentiveAnalyticsFilterOptions = {
   statuses: HrIncentiveAnalyticsFilterOption[];
 };
 
-export interface HrIncentiveAnalyticsDeviationByDriverItem {
+export interface HrIncentiveAnalyticsAmountByDriverContract {
+  contractCode: string;
+  contractLabel: string;
+  amount: number;
+}
+
+export interface HrIncentiveAnalyticsAmountByDriverItem {
   driverName: string;
-  outOfDeadlineCount: number;
-  contractMismatchCount: number;
-  totalDeviations: number;
+  totalAmount: number;
+  contracts: HrIncentiveAnalyticsAmountByDriverContract[];
 }
 
 export type HrIncentiveAnalyticsPayload = {
@@ -333,7 +338,7 @@ export type HrIncentiveAnalyticsPayload = {
   totalAmountByPeriod: HrIncentiveAnalyticsAmountByPeriodItem[];
   countByIncentiveType: HrIncentiveAnalyticsCountByTypeItem[];
   deviationsByContract: HrIncentiveAnalyticsDeviationByContractItem[];
-  deviationsByDriver: HrIncentiveAnalyticsDeviationByDriverItem[];
+  amountByDriver: HrIncentiveAnalyticsAmountByDriverItem[];
   filterOptions: HrIncentiveAnalyticsFilterOptions;
 };
 

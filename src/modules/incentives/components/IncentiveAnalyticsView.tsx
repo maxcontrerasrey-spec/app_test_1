@@ -85,13 +85,30 @@ export function IncentiveAnalyticsView() {
     }));
   }, [analyticsQuery.data?.deviationsByContract]);
 
-  const deviationsByDriverData = useMemo(() => {
-    return (analyticsQuery.data?.deviationsByDriver.slice(0, 8) ?? []).map((item) => ({
-      driverName: item.driverName || "Desconocido",
-      outOfDeadlineCount: Number(item.outOfDeadlineCount || 0),
-      contractMismatchCount: Number(item.contractMismatchCount || 0)
-    }));
-  }, [analyticsQuery.data?.deviationsByDriver]);
+  const amountByDriverData = useMemo(() => {
+    const rawData = analyticsQuery.data?.amountByDriver.slice(0, 8) ?? [];
+    return rawData.map((item) => {
+      const flatItem: any = {
+        driverName: item.driverName || "Desconocido",
+        totalAmount: item.totalAmount
+      };
+      item.contracts.forEach((c) => {
+        flatItem[c.contractLabel] = c.amount;
+      });
+      return flatItem;
+    });
+  }, [analyticsQuery.data?.amountByDriver]);
+
+  const uniqueDriverContracts = useMemo(() => {
+    const contractsSet = new Set<string>();
+    const rawData = analyticsQuery.data?.amountByDriver.slice(0, 8) ?? [];
+    rawData.forEach(item => {
+      item.contracts.forEach(c => {
+        contractsSet.add(c.contractLabel);
+      });
+    });
+    return Array.from(contractsSet);
+  }, [analyticsQuery.data?.amountByDriver]);
 
   const cards = analyticsQuery.data?.summaryCards;
   const contractOptions = analyticsQuery.data?.filterOptions.contracts ?? [];
@@ -364,19 +381,19 @@ export function IncentiveAnalyticsView() {
 
         <article className="hr-incentives-analytics-card">
           <div className="hr-incentives-analytics-card-header">
-            <h4>Top desviaciones por conductor</h4>
+            <h4>Ranking de conductores</h4>
             <span className="tracking-filter-caption">
-              Usuarios con mayor concentración de fuera de plazo y contrato distinto
+              Mayor monto ingresado, diferenciado por contrato
             </span>
           </div>
           <ChartSurface
             height={320}
             loading={analyticsQuery.isLoading}
-            empty={deviationsByDriverData.length === 0}
-            emptyMessage="No hay desviaciones para el filtro actual."
+            empty={amountByDriverData.length === 0}
+            emptyMessage="No hay datos para el filtro actual."
           >
             <BarChart
-              data={deviationsByDriverData}
+              data={amountByDriverData}
               layout="vertical"
               margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
             >
@@ -386,9 +403,9 @@ export function IncentiveAnalyticsView() {
                 stroke="var(--text-muted)" 
                 tickLine={false} 
                 axisLine={false} 
-                allowDecimals={false} 
                 tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
                 tickMargin={12}
+                tickFormatter={(value: number) => formatCompactCurrency(value)}
               />
               <YAxis
                 type="category"
@@ -402,7 +419,10 @@ export function IncentiveAnalyticsView() {
               />
               <Tooltip
                 content={(props) => (
-                  <ChartTooltip {...props} chartValueFormatter={(value) => `${value ?? 0} solicitudes`} />
+                  <ChartTooltip 
+                    {...props} 
+                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))} 
+                  />
                 )}
               />
               <Legend 
@@ -410,14 +430,15 @@ export function IncentiveAnalyticsView() {
                 iconType="circle"
                 iconSize={8}
               />
-              <Bar dataKey="outOfDeadlineCount" name="Fuera de plazo" stackId="deviations" fill="#ef4444" radius={[0, 6, 6, 0]} />
-              <Bar
-                dataKey="contractMismatchCount"
-                name="Contrato distinto"
-                stackId="deviations"
-                fill="#57a6b2"
-                radius={[0, 6, 6, 0]}
-              />
+              {uniqueDriverContracts.map((contractLabel, index) => (
+                <Bar
+                  key={contractLabel}
+                  dataKey={contractLabel}
+                  name={contractLabel}
+                  stackId="driverAmount"
+                  fill={["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"][index % 8]}
+                />
+              ))}
             </BarChart>
           </ChartSurface>
         </article>

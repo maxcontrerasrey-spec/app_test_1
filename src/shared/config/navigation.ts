@@ -89,6 +89,13 @@ export const navigationModules: NavigationModule[] = [
     label: "Recursos Humanos",
     items: [
       {
+        moduleCode: "jornadas_turnos",
+        to: "/roster",
+        label: "Jornadas y Turnos",
+        description: "Calendario operacional de pautas, descansos y excepciones por trabajador.",
+        iconKey: "timeline"
+      },
+      {
         label: "Gestión de Incentivos Extraordinarios",
         moduleCode: "recursos_humanos",
         to: "#",

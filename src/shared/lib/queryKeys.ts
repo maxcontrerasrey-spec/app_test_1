@@ -30,5 +30,11 @@ export const queryKeys = {
     workerContext: (bukEmployeeId: string) =>
       ["incentives", "worker-context", bukEmployeeId] as const,
     preview: (params: Record<string, unknown>) => ["incentives", "preview", params] as const
+  },
+  roster: {
+    setupCatalogs: () => ["roster", "setup-catalogs"] as const,
+    workerSearch: (search: string) => ["roster", "worker-search", search] as const,
+    workerSchedule: (params: Record<string, unknown>) => ["roster", "worker-schedule", params] as const,
+    assignmentsRoot: () => ["roster", "assignments"] as const
   }
 };
