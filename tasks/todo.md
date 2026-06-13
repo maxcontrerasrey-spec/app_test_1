@@ -61,6 +61,18 @@
 - Se agregó `amount_by_worker`, esta vez agrupando por el trabajador receptor del incentivo mediante [`employee_full_name`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260606_090000_add_hr_incentives_module.sql:42), no por el `requester`. El payload sale anidado con `worker_name`, `total_amount` y `contracts[]` con `contract_code`, `contract_label` y `amount`.
 - El resto del contrato analítico se mantuvo estable: `summary_cards`, `total_amount_by_period`, `count_by_incentive_type` y `filter_options` no cambiaron, reduciendo el riesgo de romper otras tarjetas del dashboard.
 
+## Restricción temporal a superadmin de RRHH Incentivos y Jornadas/Turnos
+
+- [x] Auditar cómo el sistema diferencia `superadmin` de `admin` y confirmar que los módulos seguían abiertos más allá del entorno de desarrollo
+- [x] Restringir navegación y rutas de `recursos_humanos` y `jornadas_turnos` para que solo `superadmin` pueda verlas
+- [x] Endurecer backend con una migración que cierre roster e incentivos extraordinarios exclusivamente a `profiles.is_super_admin = true`
+
+## Resultado de restricción temporal a superadmin de RRHH Incentivos y Jornadas/Turnos
+
+- [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:1), [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:1) y [`RouteGuards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/components/RouteGuards.tsx:1) ahora tratan `Jornadas y Turnos` y `Gestión de Incentivos Extraordinarios` como superficies `superAdminOnly`, ocultándolas del menú y bloqueando sus rutas aunque el usuario tenga rol `admin` o módulos asignados por herencia.
+- Las rutas [`/recursos-humanos/*`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1) y [`/roster*`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1) quedaron cerradas con `superAdminOnly`, para que la restricción no dependa solo de la visibilidad del menú.
+- Se agregó la migración [`20260614113000_restrict_hr_and_roster_to_superadmin_only.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614113000_restrict_hr_and_roster_to_superadmin_only.sql:1), que redefine [`user_can_manage_hr_incentives(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614113000_restrict_hr_and_roster_to_superadmin_only.sql:3), [`user_can_view_hr_incentive_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614113000_restrict_hr_and_roster_to_superadmin_only.sql:16) y [`user_can_manage_hr_roster(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614113000_restrict_hr_and_roster_to_superadmin_only.sql:29) para que solo acepten `profiles.is_super_admin = true`.
+
 ## Submódulo Jornadas y Turnos (Roster)
 
 - [x] Aterrizar el plan externo a la arquitectura real del repo: módulo propio `src/modules/roster`, permiso dedicado y validación cruzada con incentivos sin inventar otra superficie HR paralela

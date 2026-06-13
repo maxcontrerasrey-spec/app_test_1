@@ -148,6 +148,10 @@ export function AppShell() {
   }, []);
 
   const isItemVisible = (item: NavigationItem) => {
+    if (item.superAdminOnly && !isSuperAdmin) {
+      return false;
+    }
+
     const hasExplicitRoleScope = Boolean(item.visibleForRoles?.length);
     const roleAllowed =
       !hasExplicitRoleScope || item.visibleForRoles?.some((role) => appRoles.includes(role));

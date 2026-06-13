@@ -230,6 +230,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cuando una tarjeta deja de mostrar desvíos y pasa a mostrar dinero, el nodo JSON debe renombrarse también.** Mantener nombres legacy como `deviations_by_contract` para un gráfico monetario crea deuda semántica y vuelve frágiles tanto el frontend como futuras consultas ad hoc.
 - **Las migraciones de corrección analítica deben preservar los demás nodos estables del dashboard.** Si el cambio pedido es solo en los gráficos inferiores, no se tocan KPIs, filtros o series superiores salvo que el contrato realmente lo exija.
 
+## 96. En entornos de desarrollo controlado, “solo superadmin” no se logra quitando menú o quitando roles por separado
+
+- **Si `admin` hereda todos los módulos desde `get_my_effective_permissions()`, remover solo `role_module_access` no basta.** La restricción real debe cerrarse también en rutas y en las helpers backend que gobiernan las RPCs.
+- **Los módulos temporales de alto riesgo deben tener doble cerrojo:** una capa visual/routing (`superAdminOnly`) y otra capa de negocio en SQL (`profiles.is_super_admin = true`). Si una falta, un usuario puede seguir entrando por URL o consumiendo RPCs directas.
+- **Cuando la restricción es temporal “hasta nuevo aviso”, conviene aislarla en una migración propia y en flags explícitas de navegación.** Así luego se revierte de forma consciente, sin tener que deshacer cambios dispersos o recordar por qué se había cerrado.
+
 ## 55. Si una acción es sensible, el mismo permiso debe cerrarse en UI y en RPC
 
 - **Ocultar un botón no equivale a gobernar la operación**. Si `Anular` cambia estado auditable de un incentivo, la restricción real debe vivir en la función `SECURITY DEFINER`; el frontend solo refleja ese contrato para no ofrecer acciones inválidas.

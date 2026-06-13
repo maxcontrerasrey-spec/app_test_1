@@ -75,16 +75,22 @@ export function PublicOnlyRoute() {
 export function RoleProtectedRoute({
   moduleCode,
   allowRoles,
+  superAdminOnly = false,
   children
 }: {
   moduleCode: AppModuleCode;
   allowRoles?: AppRole[];
+  superAdminOnly?: boolean;
   children: ReactNode;
 }) {
   const { accessibleModules, appRoles, isLoading, isSuperAdmin } = useAuth();
 
   if (isLoading) {
     return <AuthLoadingScreen />;
+  }
+
+  if (superAdminOnly && !isSuperAdmin) {
+    return <Navigate to="/sin-acceso" replace />;
   }
 
   const hasAllowedRole = Boolean(allowRoles?.some((role) => appRoles.includes(role)));

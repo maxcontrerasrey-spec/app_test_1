@@ -153,9 +153,6 @@ export function RosterPage() {
               <div className="tracking-toolbar">
                 <div className="tracking-toolbar-copy">
                   <h3>Calendario por trabajador</h3>
-                  <span className="tracking-filter-caption">
-                    Consulta descansos, trabajo efectivo y excepciones sobre una pauta matemática viva.
-                  </span>
                 </div>
                 <button
                   type="button"
