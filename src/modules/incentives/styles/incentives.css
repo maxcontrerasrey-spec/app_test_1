@@ -178,6 +178,43 @@
   gap: 0.75rem;
 }
 
+.hr-incentives-analytics-layout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.hr-incentives-analytics-filters {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.hr-incentives-analytics-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.hr-incentives-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.hr-incentives-analytics-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.hr-incentives-analytics-card-wide {
+  grid-column: 1 / -1;
+}
+
+.hr-incentives-analytics-card-header {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.hr-incentives-analytics-card-header h4 {
+  margin: 0;
+}
+
 .hr-incentives-setup-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -308,6 +345,10 @@
     grid-template-columns: 1fr;
   }
 
+  .hr-incentives-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
   .hr-incentives-approvals-layout {
     grid-template-columns: 1fr;
   }
@@ -321,7 +362,12 @@
   .hr-incentives-form-grid,
   .hr-incentives-form-grid-compact,
   .hr-incentives-filters,
+  .hr-incentives-analytics-filters,
   .hr-incentives-inline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .hr-incentives-analytics-kpis {
     grid-template-columns: 1fr;
   }
 

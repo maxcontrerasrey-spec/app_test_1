@@ -3,11 +3,15 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
+import { hasModuleAccess } from "../../auth/config/access";
+import { useAuth } from "../../auth/context/AuthContext";
 import {
   invalidateHrIncentiveQueries,
   useHrIncentiveSetupCatalogs
 } from "../hooks/useIncentivesQueries";
+import { canViewHrIncentiveAnalytics } from "../lib/analyticsAccess";
 import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationForm";
+import { IncentiveAnalyticsView } from "../components/IncentiveAnalyticsView";
 import { IncentiveApprovalsView } from "../components/IncentiveApprovalsView";
 import { IncentiveRequestsView } from "../components/IncentiveRequestsView";
 import { IncentiveSetupView } from "../components/IncentiveSetupView";
@@ -34,6 +38,11 @@ const HUMAN_RESOURCES_VIEWS = [
     key: "configuracion",
     label: "Configuración base",
     description: "Administra cargos elegibles, tipos de incentivo y reglas de cálculo."
+  },
+  {
+    key: "analisis",
+    label: "Análisis de Incentivos",
+    description: "Visualiza el gasto agregado y las desviaciones operacionales por período, tipo y contrato."
   }
 ] as const;
 
@@ -47,12 +56,27 @@ export function HumanResourcesDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { view } = useParams();
+  const { accessibleModules, appRoles, isSuperAdmin } = useAuth();
   const activeView = isHumanResourcesView(view) ? view : "incentivos";
-  const setupCatalogsQuery = useHrIncentiveSetupCatalogs();
+  const canViewAnalytics = canViewHrIncentiveAnalytics({ appRoles, isSuperAdmin });
+  const canManageStandardViews =
+    isSuperAdmin || hasModuleAccess(accessibleModules, "recursos_humanos");
+  const visibleViews = useMemo(
+    () =>
+      HUMAN_RESOURCES_VIEWS.filter((item) =>
+        item.key === "analisis" ? canViewAnalytics : canManageStandardViews
+      ),
+    [canManageStandardViews, canViewAnalytics]
+  );
+  const fallbackView = canManageStandardViews ? "incentivos" : canViewAnalytics ? "analisis" : null;
+  const setupCatalogsQuery = useHrIncentiveSetupCatalogs(
+    canManageStandardViews &&
+      (activeView === "incentivos" || activeView === "solicitudes" || activeView === "configuracion")
+  );
 
   const activeViewMeta = useMemo(
-    () => HUMAN_RESOURCES_VIEWS.find((item) => item.key === activeView) ?? HUMAN_RESOURCES_VIEWS[0],
-    [activeView]
+    () => visibleViews.find((item) => item.key === activeView) ?? visibleViews[0] ?? HUMAN_RESOURCES_VIEWS[0],
+    [activeView, visibleViews]
   );
   const incentivesRealtimeSubscriptions = useMemo(
     () => [
@@ -81,6 +105,17 @@ export function HumanResourcesDashboard() {
     return <Navigate to="/recursos-humanos/incentivos" replace />;
   }
 
+  if (!fallbackView) {
+    return <Navigate to="/sin-acceso" replace />;
+  }
+
+  if (
+    (activeView === "analisis" && !canViewAnalytics) ||
+    (activeView !== "analisis" && !canManageStandardViews)
+  ) {
+    return <Navigate to={`/recursos-humanos/${fallbackView}`} replace />;
+  }
+
   return (
     <PageShell>
       <div className="minimal-page-header">
@@ -89,7 +124,7 @@ export function HumanResourcesDashboard() {
 
       <section className="tracking-panel">
         <div className="approval-chip-row">
-          {HUMAN_RESOURCES_VIEWS.map((item) => (
+          {visibleViews.map((item) => (
             <button
               key={item.key}
               type="button"
@@ -114,6 +149,8 @@ export function HumanResourcesDashboard() {
         {activeView === "configuracion" ? (
           <IncentiveSetupView setupCatalogsQuery={setupCatalogsQuery} />
         ) : null}
+
+        {activeView === "analisis" ? <IncentiveAnalyticsView /> : null}
       </section>
     </PageShell>
   );

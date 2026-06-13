@@ -271,6 +271,64 @@ export type HrIncentiveRequestsFilters = {
   serviceDateUntil?: string;
 };
 
+export type HrIncentiveAnalyticsFilters = {
+  periodCode?: string;
+  status?: string;
+  contractCode?: string;
+  typeId?: string;
+};
+
+export type HrIncentiveAnalyticsSummaryCards = {
+  totalAmount: number;
+  requestCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  approvalRate: number;
+  rejectionRate: number;
+};
+
+export type HrIncentiveAnalyticsAmountByPeriodItem = {
+  periodCode: string;
+  totalAmount: number;
+  requestCount: number;
+  approvedAmount: number;
+  rejectedAmount: number;
+};
+
+export type HrIncentiveAnalyticsCountByTypeItem = {
+  incentiveTypeId: string;
+  incentiveTypeName: string;
+  requestCount: number;
+  totalAmount: number;
+};
+
+export type HrIncentiveAnalyticsDeviationByContractItem = {
+  contractCode: string;
+  areaName: string | null;
+  outOfDeadlineCount: number;
+  contractMismatchCount: number;
+  totalDeviations: number;
+};
+
+export type HrIncentiveAnalyticsFilterOption = {
+  value: string;
+  label: string;
+};
+
+export type HrIncentiveAnalyticsFilterOptions = {
+  contracts: HrIncentiveAnalyticsFilterOption[];
+  incentiveTypes: HrIncentiveAnalyticsFilterOption[];
+  statuses: HrIncentiveAnalyticsFilterOption[];
+};
+
+export type HrIncentiveAnalyticsPayload = {
+  summaryCards: HrIncentiveAnalyticsSummaryCards;
+  totalAmountByPeriod: HrIncentiveAnalyticsAmountByPeriodItem[];
+  countByIncentiveType: HrIncentiveAnalyticsCountByTypeItem[];
+  deviationsByContract: HrIncentiveAnalyticsDeviationByContractItem[];
+  filterOptions: HrIncentiveAnalyticsFilterOptions;
+};
+
 export type CreateHrIncentiveRequestInput = {
   bukEmployeeId: string;
   incentiveTypeId: string;

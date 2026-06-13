@@ -28,6 +28,22 @@
 - [x] Aplicar formato de visualización por tipo de fecha (`dd-mm-yyyy` y `dd-mm-yyyy hh:mm`) sin romper análisis
 - [x] Validar typecheck y diff limpio
 
+## Dashboard analítico de Incentivos
+
+- [x] Investigar contratos reales de incentivos, roles, routing y wrapper ECharts; dejar `implementation_plan.md`
+- [x] Crear RPC analítica agregada y permisos backend para acceso gerencial al dashboard de incentivos
+- [x] Implementar vista React con multifiltros, KPIs y gráficas ECharts dentro de `HumanResourcesDashboard`
+- [ ] Validar typecheck, diff y push a `main`
+
+## Resultado de dashboard analítico de Incentivos
+
+- La investigación previa quedó formalizada en [`implementation_plan.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/implementation_plan.md:1), aterrizando el prompt a la arquitectura real del repo: la analítica no vive en una página paralela sino como un nuevo `view` dentro de [`HumanResourcesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/pages/HumanResourcesDashboard.tsx:1).
+- Se agregó la migración [`20260613150000_add_hr_incentive_analytics_dashboard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613150000_add_hr_incentive_analytics_dashboard.sql:1), que introduce la helper [`user_can_view_hr_incentive_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613150000_add_hr_incentive_analytics_dashboard.sql:1) y la RPC [`get_hr_incentives_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613150000_add_hr_incentive_analytics_dashboard.sql:19), devolviendo JSON agregado para KPIs, evolución por período, distribución por tipo y desviaciones por contrato sin traer la tabla masiva al frontend.
+- El control de acceso quedó separado del permiso operativo estándar: [`analyticsAccess.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/lib/analyticsAccess.ts:1) define la matriz analítica (`director_eje`, `gerente_general`, `director_op`, `gerencia`, `operaciones_l_1`, `control_contratos`, además de `superadmin`), [`RoleProtectedRoute`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/components/RouteGuards.tsx:74) ahora puede admitir roles explícitos y [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:147) filtra navegación por módulo **o** por alcance de rol analítico, sin abrir el resto del módulo a usuarios gerenciales.
+- En frontend se creó [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1), con multifiltros (`período`, `contrato`, `tipo`, `estado`), KPIs y gráficas ECharts reutilizando el wrapper [`EChart`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChart.tsx:1). El contrato de datos quedó tipado en [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:271), consumido desde [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:287) y cacheado vía [`useHrIncentivesAnalytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/hooks/useIncentivesQueries.ts:53).
+- La navegación interna del módulo ahora incorpora la pestaña `Análisis de Incentivos` y redirige correctamente si un usuario intenta abrir una vista no permitida, evitando que perfiles analíticos disparen queries de registro/configuración que el backend no les autoriza.
+- Validación local cerrada con `npx tsc -b` y `git diff --check`. Falta solo versionar y empujar a `main`.
+
 ## Resultado de ajuste analítico de fechas en exportación XLS de Incentivos
 
 - [`buildIncentiveExportRows(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:62) dejó de exportar fechas como strings ISO y ahora las transforma a objetos `Date` para que Excel las reciba como fechas reales.

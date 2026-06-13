@@ -8,6 +8,7 @@ import {
   PublicOnlyRoute,
   RoleProtectedRoute
 } from "../../modules/auth/components/RouteGuards";
+import { HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES } from "../../modules/incentives/lib/analyticsAccess";
 
 const HomePage = lazyWithRetry("home-page", async () => ({
   default: (await import("../../modules/home/pages/HomePage")).HomePage
@@ -129,12 +130,22 @@ export function AppRouter() {
             />
             <Route
               path="/recursos-humanos"
-              element={<Navigate to="/recursos-humanos/incentivos" replace />}
+              element={
+                <RoleProtectedRoute
+                  moduleCode="recursos_humanos"
+                  allowRoles={HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES}
+                >
+                  <Navigate to="/recursos-humanos/incentivos" replace />
+                </RoleProtectedRoute>
+              }
             />
             <Route
               path="/recursos-humanos/:view"
               element={
-                <RoleProtectedRoute moduleCode="recursos_humanos">
+                <RoleProtectedRoute
+                  moduleCode="recursos_humanos"
+                  allowRoles={HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES}
+                >
                   <HumanResourcesDashboard />
                 </RoleProtectedRoute>
               }

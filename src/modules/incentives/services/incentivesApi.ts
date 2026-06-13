@@ -3,6 +3,8 @@ import type {
   BulkHrIncentiveApprovalDecisionResult,
   CreateHrIncentiveRequestInput,
   CreateHrIncentiveRequestResult,
+  HrIncentiveAnalyticsPayload,
+  HrIncentiveAnalyticsFilters,
   HrIncentiveApprovalQueueItem,
   HrIncentiveEligibleWorker,
   HrIncentivePreview,
@@ -43,6 +45,10 @@ function formatRpcError(error: {
 
 function mapUnionStatus(value: unknown): HrIncentiveUnionStatus {
   return value === "unionized" || value === "non_unionized" ? value : "unknown";
+}
+
+function readNumber(value: unknown) {
+  return typeof value === "number" ? value : Number(value ?? 0);
 }
 
 function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
@@ -278,6 +284,57 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
     entryLagDays: Number(row.entry_lag_days ?? 0),
     isOutOfDeadline: Boolean(row.is_out_of_deadline),
     isContractMismatch: Boolean(row.is_contract_mismatch)
+  };
+}
+
+function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
+  const source = (payload ?? {}) as Record<string, unknown>;
+  const summaryCards = (source.summary_cards ?? {}) as Record<string, unknown>;
+  const filterOptions = (source.filter_options ?? {}) as Record<string, unknown>;
+
+  return {
+    summaryCards: {
+      totalAmount: readNumber(summaryCards.total_amount),
+      requestCount: Number(summaryCards.request_count ?? 0),
+      approvedCount: Number(summaryCards.approved_count ?? 0),
+      rejectedCount: Number(summaryCards.rejected_count ?? 0),
+      approvalRate: readNumber(summaryCards.approval_rate),
+      rejectionRate: readNumber(summaryCards.rejection_rate)
+    },
+    totalAmountByPeriod: asArray<Record<string, unknown>>(source.total_amount_by_period).map((item) => ({
+      periodCode: String(item.period_code ?? ""),
+      totalAmount: readNumber(item.total_amount),
+      requestCount: Number(item.request_count ?? 0),
+      approvedAmount: readNumber(item.approved_amount),
+      rejectedAmount: readNumber(item.rejected_amount)
+    })),
+    countByIncentiveType: asArray<Record<string, unknown>>(source.count_by_incentive_type).map((item) => ({
+      incentiveTypeId: String(item.incentive_type_id ?? ""),
+      incentiveTypeName: String(item.incentive_type_name ?? ""),
+      requestCount: Number(item.request_count ?? 0),
+      totalAmount: readNumber(item.total_amount)
+    })),
+    deviationsByContract: asArray<Record<string, unknown>>(source.deviations_by_contract).map((item) => ({
+      contractCode: String(item.contract_code ?? ""),
+      areaName: readNullableText(item.area_name),
+      outOfDeadlineCount: Number(item.out_of_deadline_count ?? 0),
+      contractMismatchCount: Number(item.contract_mismatch_count ?? 0),
+      totalDeviations: Number(item.total_deviations ?? 0)
+    })),
+    filterOptions: {
+      contracts: asArray<Record<string, unknown>>(filterOptions.contracts).map((item) => ({
+        value: String(item.value ?? ""),
+        label: String(item.label ?? "")
+      })),
+      incentiveTypes: asArray<Record<string, unknown>>(filterOptions.incentive_types).map((item) => ({
+        value: String(item.value ?? ""),
+        label: String(item.label ?? "")
+      })),
+      statuses: asArray<Record<string, unknown>>(filterOptions.statuses).map((item) => ({
+        value: String(item.value ?? ""),
+        label: String(item.label ?? "")
+      }))
+    }
   };
 }
 
@@ -531,6 +588,24 @@ export async function fetchHrIncentiveRequests(filters: HrIncentiveRequestsFilte
   }
 
   return asArray<Record<string, unknown>>(data).map(mapRequestRow);
+}
+
+export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFilters) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("get_hr_incentives_analytics", {
+    p_period_code: filters.periodCode?.trim() || null,
+    p_status: filters.status?.trim() || "A",
+    p_contract_code: filters.contractCode?.trim() || null,
+    p_incentive_type_id: filters.typeId?.trim() || null
+  });
+
+  if (error) {
+    throw new Error(
+      formatRpcError(error) || "No fue posible cargar el dashboard analítico de incentivos."
+    );
+  }
+
+  return mapAnalyticsPayload(data);
 }
 
 export async function fetchHrIncentiveApprovalQueue() {

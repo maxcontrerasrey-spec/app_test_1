@@ -1,4 +1,4 @@
-import type { AppModuleCode } from "../../modules/auth/config/access";
+import type { AppModuleCode, AppRole } from "../../modules/auth/config/access";
 
 export const homeNavigationItem = {
   to: "/",
@@ -12,6 +12,7 @@ export type NavigationItem = {
   description?: string;
   subgroup?: string;
   iconKey?: "document" | "timeline" | "certificate" | "tracking" | "flask";
+  visibleForRoles?: AppRole[];
   items?: NavigationItem[];
 };
 
@@ -21,6 +22,7 @@ export type NavigationModule = {
   to?: string;
   items?: NavigationItem[];
   adminOnly?: boolean;
+  visibleForRoles?: AppRole[];
 };
 
 export const navigationModules: NavigationModule[] = [
@@ -98,6 +100,21 @@ export const navigationModules: NavigationModule[] = [
             label: "Ingreso & Aprobación de Incentivos",
             description: "Registro y control de incentivos extraordinarios.",
             iconKey: "document"
+          },
+          {
+            moduleCode: "recursos_humanos",
+            to: "/recursos-humanos/analisis",
+            label: "Análisis de Incentivos",
+            description: "Control gerencial del gasto y desviaciones operacionales.",
+            iconKey: "tracking",
+            visibleForRoles: [
+              "director_eje",
+              "gerente_general",
+              "director_op",
+              "gerencia",
+              "operaciones_l_1",
+              "control_contratos"
+            ]
           }
         ]
       }

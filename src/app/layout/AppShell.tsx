@@ -9,6 +9,7 @@ import logo from "../../assets/app-logo.png";
 import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
 import { useDashboard } from "../../modules/dashboard/hooks/useDashboard";
+import { canViewHrIncentiveAnalytics } from "../../modules/incentives/lib/analyticsAccess";
 import { useTheme } from "../../shared/context/ThemeContext";
 import orionLogo from "../../assets/orion-logo.png";
 import { ORIONWidget } from "../../modules/ai_assistant/components/ORIONWidget";
@@ -72,7 +73,7 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { accessibleModules, displayName, email, isSuperAdmin, jobTitle, signOut } =
+  const { accessibleModules, appRoles, displayName, email, isSuperAdmin, jobTitle, signOut } =
     useAuth();
   const { tasksData } = useDashboard();
   const { theme, setTheme } = useTheme();
@@ -146,6 +147,24 @@ export function AppShell() {
     };
   }, []);
 
+  const isItemVisible = (item: NavigationItem) => {
+    const hasExplicitRoleScope = Boolean(item.visibleForRoles?.length);
+    const roleAllowed =
+      !hasExplicitRoleScope || item.visibleForRoles?.some((role) => appRoles.includes(role));
+    const moduleAllowed = isSuperAdmin || hasModuleAccess(accessibleModules, item.moduleCode);
+    const analyticsAllowed =
+      hasExplicitRoleScope &&
+      item.moduleCode === "recursos_humanos" &&
+      canViewHrIncentiveAnalytics({ appRoles, isSuperAdmin });
+
+    if (item.items?.length) {
+      const visibleChildren = item.items.filter(isItemVisible);
+      return roleAllowed && visibleChildren.length > 0;
+    }
+
+    return roleAllowed && (moduleAllowed || analyticsAllowed);
+  };
+
   const visibleModules = useMemo(
     () =>
       navigationModules
@@ -153,11 +172,30 @@ export function AppShell() {
           if (module.adminOnly && !isSuperAdmin) {
             return null;
           }
-          
+
+          const roleAllowed =
+            !module.visibleForRoles?.length ||
+            module.visibleForRoles.some((role) => appRoles.includes(role));
+
+          if (!roleAllowed) {
+            return null;
+          }
+
           if (module.items?.length) {
-            const visibleItems = module.items.filter(
-              (item) => isSuperAdmin || hasModuleAccess(accessibleModules, item.moduleCode)
-            );
+            const visibleItems = module.items
+              .map((item) => {
+                if (!isItemVisible(item)) {
+                  return null;
+                }
+
+                if (!item.items?.length) {
+                  return item;
+                }
+
+                const visibleSubItems = item.items.filter(isItemVisible);
+                return visibleSubItems.length > 0 ? { ...item, items: visibleSubItems } : null;
+              })
+              .filter((item): item is NonNullable<typeof item> => item !== null);
 
             return visibleItems.length > 0 ? { ...module, items: visibleItems } : null;
           }
@@ -171,7 +209,7 @@ export function AppShell() {
             : null;
         })
         .filter((module): module is NonNullable<typeof module> => module !== null),
-    [accessibleModules, isSuperAdmin]
+    [accessibleModules, appRoles, isSuperAdmin]
   );
 
   const openModuleLabel = pinnedModule ?? hoveredModule;

@@ -228,6 +228,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No reutilices helpers de presentación como `formatRequestDate(...)` para XLS analítico**. Eso produce texto legible, pero no una fecha nativa de Excel; después fallan ordenamientos, filtros, pivots y fórmulas.
 - **La regla correcta es separar semántica y visualización**. El exportador debe emitir objetos `Date` y recién allí aplicar formato Excel por columna (`dd-mm-yyyy` o `dd-mm-yyyy hh:mm`) según si el campo es fecha de negocio o timestamp auditable.
 
+## 57. No abras un módulo operativo completo cuando el requerimiento real es solo una superficie analítica
+
+- **Si un rol gerencial necesita ver dashboards pero no operar el flujo, no le des acceso global al módulo por `role_module_access` solo para que vea una pestaña**. En este repo eso habría abierto también RPCs de registro, historial y configuración porque `user_can_manage_hr_incentives(...)` depende del acceso al módulo.
+- **El patrón correcto es doble capa**: autorización backend específica para la RPC analítica y autorización frontend específica para ruta/navegación/tabs, permitiendo entrar solo a la vista analítica sin elevar permisos operativos sobre el resto del módulo.
+
 ## 54. Un alias sobre una RPC compartida nunca se implementa reescribiendo una variante vieja del motor
 
 - **Si el cambio pedido es solo agregar campos al JSON, la base obligatoria es la implementación viva exacta de la RPC, no una migración parecida encontrada en el historial**. En este repo, sustituir `get_recruitment_control_dashboard_v2()` desde una variante distinta rompió `candidate_control` y `personnel_to_hire` aunque el objetivo funcional era solo exponer `salary` y `turno`.
