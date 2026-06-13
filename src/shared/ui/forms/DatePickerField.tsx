@@ -15,6 +15,8 @@ type DatePickerFieldProps = {
   onChange: (dateValue: string) => void;
   placeholder?: string;
   className?: string;
+  minValue?: string;
+  maxValue?: string;
 };
 
 export function DatePickerField({
@@ -23,9 +25,13 @@ export function DatePickerField({
   value,
   onChange,
   placeholder = "Seleccione la fecha",
-  className = ""
+  className = "",
+  minValue,
+  maxValue
 }: DatePickerFieldProps) {
   const todayValue = toTodayDateValue();
+  const effectiveMinValue = minValue ?? todayValue;
+  const effectiveMaxValue = maxValue ?? "";
   const currentYear = new Date().getFullYear();
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() =>
@@ -162,7 +168,8 @@ export function DatePickerField({
                 const isSelected = selectedDate
                   ? dayValue === formatDateValue(selectedDate)
                   : false;
-                const isBeforeToday = dayValue < todayValue;
+                const isBeforeMin = effectiveMinValue ? dayValue < effectiveMinValue : false;
+                const isAfterMax = effectiveMaxValue ? dayValue > effectiveMaxValue : false;
 
                 return (
                   <button
@@ -175,7 +182,7 @@ export function DatePickerField({
                           ? "calendar-day"
                           : "calendar-day calendar-day-muted"
                     }
-                    disabled={isBeforeToday}
+                    disabled={isBeforeMin || isAfterMax}
                     onClick={() => {
                       onChange(dayValue);
                       setViewDate(

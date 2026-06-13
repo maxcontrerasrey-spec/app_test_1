@@ -220,6 +220,7 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
     folio: Number(row.folio ?? 0),
     employeeFullName: String(row.employee_full_name ?? ""),
     employeeDocumentNumber: String(row.employee_document_number ?? ""),
+    employeeJobTitle: String(row.employee_job_title ?? ""),
     replacementFullName:
       typeof row.replacement_full_name === "string" && row.replacement_full_name.trim()
         ? row.replacement_full_name
@@ -251,7 +252,10 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
     cancellationComment:
       typeof row.cancellation_comment === "string" && row.cancellation_comment.trim()
         ? row.cancellation_comment
-        : null
+        : null,
+    entryLagDays: Number(row.entry_lag_days ?? 0),
+    isOutOfDeadline: Boolean(row.is_out_of_deadline),
+    isContractMismatch: Boolean(row.is_contract_mismatch)
   };
 }
 
@@ -275,6 +279,10 @@ function mapApprovalQueueRow(row: Record<string, unknown>): HrIncentiveApprovalQ
     incentiveTypeName: String(row.incentive_type_name ?? ""),
     serviceDate: String(row.service_date ?? ""),
     calculatedAmount: Number(row.calculated_amount ?? 0),
+    periodCode: String(row.period_code ?? ""),
+    entryLagDays: Number(row.entry_lag_days ?? 0),
+    isOutOfDeadline: Boolean(row.is_out_of_deadline),
+    isContractMismatch: Boolean(row.is_contract_mismatch),
     requesterName: String(row.requester_name ?? ""),
     createdAt: String(row.created_at ?? "")
   };
@@ -315,6 +323,9 @@ function mapRequestDetail(payload: unknown): HrIncentiveRequestDetail {
           ? null
           : Number(request.duration_hours),
       periodCode: String(request.period_code ?? ""),
+      entryLagDays: Number(request.entry_lag_days ?? 0),
+      isOutOfDeadline: Boolean(request.is_out_of_deadline),
+      isContractMismatch: Boolean(request.is_contract_mismatch),
       calculationBasis:
         request.calculation_basis === "per_hour" ? "per_hour" : "fixed",
       rateRuleAmount: Number(request.rate_rule_amount ?? 0),
@@ -462,7 +473,11 @@ export async function createHrIncentiveRequest(input: CreateHrIncentiveRequestIn
     requestId: String(row.request_id ?? ""),
     folio: Number(row.folio ?? 0),
     status: String(row.status ?? "P") as CreateHrIncentiveRequestResult["status"],
-    calculatedAmount: Number(row.calculated_amount ?? 0)
+    calculatedAmount: Number(row.calculated_amount ?? 0),
+    periodCode: String(row.period_code ?? ""),
+    entryLagDays: Number(row.entry_lag_days ?? 0),
+    isOutOfDeadline: Boolean(row.is_out_of_deadline),
+    isContractMismatch: Boolean(row.is_contract_mismatch)
   } satisfies CreateHrIncentiveRequestResult;
 }
 

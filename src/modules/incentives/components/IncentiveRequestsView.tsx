@@ -10,6 +10,7 @@ import {
 } from "../hooks/useIncentivesQueries";
 import type { HrIncentiveRequest, HrIncentiveSetupCatalogs } from "../types";
 import { IncentiveActionModal } from "./IncentiveActionModal";
+import { IncentiveOperationalFlags } from "./IncentiveOperationalFlags";
 
 type IncentiveRequestsViewProps = {
   setupCatalogsQuery: UseQueryResult<HrIncentiveSetupCatalogs, Error>;
@@ -175,6 +176,13 @@ export function IncentiveRequestsView({
                     <tr key={request.id}>
                       <td>
                         <strong>{String(request.folio).padStart(5, '0')}</strong>
+                        <IncentiveOperationalFlags
+                          periodCode={request.periodCode}
+                          entryLagDays={request.entryLagDays}
+                          isOutOfDeadline={request.isOutOfDeadline}
+                          isContractMismatch={request.isContractMismatch}
+                          compact
+                        />
                       </td>
                       <td>
                         <strong>{request.employeeFullName}</strong>
@@ -191,6 +199,7 @@ export function IncentiveRequestsView({
                       <td>{request.incentiveTypeName}</td>
                       <td>
                         <strong>{request.selectedAreaName}</strong>
+                        <div className="tracking-filter-caption">{request.selectedContractCode}</div>
                       </td>
                       <td>{formatRequestDate(request.serviceDate)}</td>
                       <td>{formatCurrencyValue(request.calculatedAmount)}</td>

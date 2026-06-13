@@ -121,6 +121,7 @@ export type HrIncentiveRequest = {
   folio: number;
   employeeFullName: string;
   employeeDocumentNumber: string;
+  employeeJobTitle: string;
   replacementFullName: string | null;
   replacementDocumentNumber: string | null;
   motive: string | null;
@@ -137,6 +138,9 @@ export type HrIncentiveRequest = {
   status: IncentiveRequestStatus;
   currentFlowUser: string | null;
   cancellationComment: string | null;
+  entryLagDays: number;
+  isOutOfDeadline: boolean;
+  isContractMismatch: boolean;
 };
 
 export type HrIncentiveApprovalQueueItem = {
@@ -158,6 +162,10 @@ export type HrIncentiveApprovalQueueItem = {
   incentiveTypeName: string;
   serviceDate: string;
   calculatedAmount: number;
+  periodCode: string;
+  entryLagDays: number;
+  isOutOfDeadline: boolean;
+  isContractMismatch: boolean;
   requesterName: string;
   createdAt: string;
 };
@@ -215,6 +223,9 @@ export type HrIncentiveRequestDetail = {
     serviceDate: string;
     durationHours: number | null;
     periodCode: string;
+    entryLagDays: number;
+    isOutOfDeadline: boolean;
+    isContractMismatch: boolean;
     calculationBasis: IncentiveCalculationBasis;
     rateRuleAmount: number;
     calculatedAmount: number;
@@ -259,6 +270,10 @@ export type CreateHrIncentiveRequestResult = {
   folio: number;
   status: IncentiveRequestStatus;
   calculatedAmount: number;
+  periodCode: string;
+  entryLagDays: number;
+  isOutOfDeadline: boolean;
+  isContractMismatch: boolean;
 };
 
 export type BulkHrIncentiveApprovalDecisionResult = {

@@ -15,6 +15,7 @@ import {
 } from "../hooks/useIncentivesQueries";
 import type { HrIncentiveApprovalQueueItem } from "../types";
 import { IncentiveActionModal } from "./IncentiveActionModal";
+import { IncentiveOperationalFlags } from "./IncentiveOperationalFlags";
 
 type DecisionModalState =
   | { mode: "closed" }
@@ -374,6 +375,13 @@ export function IncentiveApprovalsView() {
                               <span className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`} style={{ display: 'inline-block', fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isActiveRow ? 'rotate(90deg)' : 'none' }}>▸</span>
                               {String(row.folio).padStart(5, '0')}
                             </span>
+                            <IncentiveOperationalFlags
+                              periodCode={row.periodCode}
+                              entryLagDays={row.entryLagDays}
+                              isOutOfDeadline={row.isOutOfDeadline}
+                              isContractMismatch={row.isContractMismatch}
+                              compact
+                            />
                           </td>
                           <td>
                             <strong>{row.employeeFullName}</strong>
@@ -460,6 +468,18 @@ export function IncentiveApprovalsView() {
                                           <small>Contrato del Servicio</small>
                                           <strong>{detailQuery.data.request.selectedAreaName}</strong>
                                         </div>
+                                        <div>
+                                          <small>Código contrato</small>
+                                          <strong>{detailQuery.data.request.selectedContractCode}</strong>
+                                        </div>
+                                        <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
+                                          <IncentiveOperationalFlags
+                                            periodCode={detailQuery.data.request.periodCode}
+                                            entryLagDays={detailQuery.data.request.entryLagDays}
+                                            isOutOfDeadline={detailQuery.data.request.isOutOfDeadline}
+                                            isContractMismatch={detailQuery.data.request.isContractMismatch}
+                                          />
+                                        </div>
                                       </div>
                                     </div>
 
@@ -473,6 +493,10 @@ export function IncentiveApprovalsView() {
                                         <div>
                                           <small>Fecha servicio</small>
                                           <strong>{formatRequestDate(detailQuery.data.request.serviceDate)}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Período pago</small>
+                                          <strong>{detailQuery.data.request.periodCode}</strong>
                                         </div>
                                         <div>
                                           <small>Monto</small>

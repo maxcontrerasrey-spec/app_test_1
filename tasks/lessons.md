@@ -859,3 +859,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si un documento exige fecha de vencimiento, esa obligación debe resolverse desde `document_types.requires_expiry_date` y no mediante condicionales en React.** El checklist ya consume ese contrato y cualquier excepción hardcodeada solo introduce drift entre UI, migraciones y validaciones backend.
 - **Cuando el negocio agrega o reclasifica documentos, hay que sincronizar también las plantillas de migración o carga masiva.** Dejar el catálogo de base y la plantilla operativa con listas distintas termina generando importaciones inválidas y tickets evitables.
+
+## 92. Los períodos de incentivos y sus alertas no pueden derivarse “en la vista” si deben sobrevivir auditoría
+
+- **Si el período de pago sigue una ventana no mensual estándar, como `21 -> 20`, debe existir una helper backend canónica y usarse tanto en el registro como en el backfill histórico.** Guardar `YYYYMM` directo desde la fecha del servicio sin esa regla genera clasificación contable incorrecta.
+- **Las alertas operativas que dependen del momento de ingreso deben persistirse o derivarse desde timestamps históricos estables, nunca desde `today` en la UI.** `Fuera de Plazo` no puede recalcularse según cuándo alguien abre el historial meses después.
+- **Cuando una regla de negocio exige un rango temporal acotado, la UX debe acompañar la validación backend pero no reemplazarla.** El selector de fecha puede recortar a `hoy - 7`, pero la autoridad final sigue siendo la RPC que registra el incentivo.

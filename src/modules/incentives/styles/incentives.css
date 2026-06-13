@@ -100,6 +100,42 @@
   gap: 0.2rem;
 }
 
+.hr-incentive-flag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.hr-incentive-flag-list-compact {
+  margin-top: 0.45rem;
+}
+
+.hr-incentive-flag-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0 0.72rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.hr-incentive-flag-pill-period {
+  background: rgba(227, 232, 240, 0.88);
+  color: #334155;
+}
+
+.hr-incentive-flag-pill-late {
+  background: rgba(254, 226, 226, 0.92);
+  color: #be123c;
+}
+
+.hr-incentive-flag-pill-contract {
+  background: rgba(224, 242, 254, 0.96);
+  color: #0369a1;
+}
+
 .hr-incentives-preview-body {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

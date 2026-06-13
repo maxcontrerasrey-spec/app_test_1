@@ -8,6 +8,23 @@
 - [x] Centralizar la clasificación de tareas compartidas y eliminar tipado sintético/frágil en frontend
 - [x] Validar typecheck y consistencia de diff
 
+## Endurecimiento estructural de periodos y alertas operativas en Incentivos
+
+- [x] Reemplazar la lógica plana `YYYYMM` por la regla estructural de periodo `21 -> 20`, con persistencia y backfill seguro
+- [x] Imponer la ventana operativa de registro de incentivos: hasta 7 días hacia atrás, marcando `Fuera de Plazo` todo lo que exceda 2 días
+- [x] Exponer y resaltar en historial/aprobaciones las banderas `Fuera de Plazo` y `Contrato distinto`, además del periodo calculado
+- [x] Validar build, revisar diff y empujar el cambio a `main`
+
+## Resultado de endurecimiento estructural de periodos y alertas operativas en Incentivos
+
+- Se agregó la migración [`20260612233000_harden_hr_incentive_periods_and_flags.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612233000_harden_hr_incentive_periods_and_flags.sql:1), que convierte la lógica de periodo en una regla backend explícita: del día `21` al `20` siguiente, donde el período corresponde al mes de cierre. Ejemplo: `21/05 -> 20/06 = 202606`.
+- La migración agrega helpers canónicos para periodo, desfase de ingreso y contrato distinto, además de backfill sobre [`hr_incentive_requests`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612233000_harden_hr_incentive_periods_and_flags.sql:57) para recalcular `period_code`, `entry_lag_days`, `is_out_of_deadline` e `is_contract_mismatch` en registros existentes.
+- [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612233000_harden_hr_incentive_periods_and_flags.sql:89) ahora rechaza incentivos con más de 7 días hacia atrás, guarda el período estructural correcto y persiste las banderas operativas que luego consume la UI.
+- [`get_hr_incentive_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612233000_harden_hr_incentive_periods_and_flags.sql:318), [`get_hr_incentive_approval_queue()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612233000_harden_hr_incentive_periods_and_flags.sql:419) y [`get_hr_incentive_request_detail(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612233000_harden_hr_incentive_periods_and_flags.sql:507) exponen ahora `period_code`, `entry_lag_days`, `is_out_of_deadline` e `is_contract_mismatch` para no recalcular la verdad del negocio en React.
+- En frontend, [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) muestra desde el preview el período de pago y las alertas operativas, y además limita el selector de fecha a la ventana `[hoy - 7, hoy]` sin romper el resto del ERP gracias al endurecimiento controlado de [`DatePickerField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/DatePickerField.tsx:1).
+- [`IncentiveRequestsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:1) e [`IncentiveApprovalsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveApprovalsView.tsx:1) ahora muestran badges operativos unificados mediante [`IncentiveOperationalFlags.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveOperationalFlags.tsx:1): `Fuera de Plazo` en rojo agua y `Contrato distinto` en azul agua, además del período calculado.
+- Validación local cerrada con `npx tsc -b` y `git diff --check`.
+
 ## Endurecimiento enterprise de flujos auditables y bordes ORION
 
 - [x] Extraer cortes seguros en frontend/servicios para reducir tamaño y acoplamiento en tareas compartidas y checklist documental

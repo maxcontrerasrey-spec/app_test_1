@@ -16,7 +16,12 @@ import type {
   HrIncentiveEligibleWorker,
   HrIncentiveSetupCatalogs
 } from "../types";
+import {
+  resolveIncentiveContractMismatch,
+  resolveIncentiveRegistrationWindow
+} from "../lib/incentiveRules";
 import { IncentiveWorkerLookup } from "./IncentiveWorkerLookup";
+import { IncentiveOperationalFlags } from "./IncentiveOperationalFlags";
 
 type IncentiveRegistrationFormProps = {
   setupCatalogsQuery: UseQueryResult<HrIncentiveSetupCatalogs, Error>;
@@ -102,6 +107,20 @@ export function IncentiveRegistrationForm({
       ? Number(durationHours)
       : null;
 
+  const registrationWindow = useMemo(
+    () => resolveIncentiveRegistrationWindow(serviceDate),
+    [serviceDate]
+  );
+
+  const selectedContractMismatch = useMemo(
+    () =>
+      resolveIncentiveContractMismatch(
+        workerContextQuery.data?.worker.primaryContractCode,
+        selectedArea?.contractCode
+      ),
+    [selectedArea?.contractCode, workerContextQuery.data?.worker.primaryContractCode]
+  );
+
   const shouldShowPreview =
     Boolean(selectedWorker) &&
     Boolean(selectedIncentiveTypeId) &&
@@ -130,7 +149,7 @@ export function IncentiveRegistrationForm({
       setFormMessage(
         `Incentivo ${result.folio} registrado correctamente por ${formatCurrencyValue(
           result.calculatedAmount
-        )}.`
+        )} en período ${result.periodCode}.`
       );
       setSelectedWorker(null);
       setSelectedAreaValue("");
@@ -155,6 +174,7 @@ export function IncentiveRegistrationForm({
     !serviceDate ||
     previewQuery.isLoading ||
     !previewQuery.data ||
+    !registrationWindow.isAllowed ||
     (selectedIncentiveType?.calculationBasis === "per_hour" &&
       !(typeof durationHoursNumber === "number" && durationHoursNumber > 0)) ||
     (selectedIncentiveType?.requiresReplacement && !replacementWorker) ||
@@ -257,6 +277,8 @@ export function IncentiveRegistrationForm({
             label="Fecha de servicio"
             value={serviceDate}
             onChange={setServiceDate}
+            minValue={registrationWindow.minimumDateValue}
+            maxValue={registrationWindow.maximumDateValue}
           />
 
           <div className="hr-incentives-grid-span-2 hr-incentives-preview-card">
@@ -284,34 +306,48 @@ export function IncentiveRegistrationForm({
             ) : null}
 
             {previewQuery.data ? (
-              <div className="hr-incentives-preview-body">
-                <div>
-                  <span>Monto calculado</span>
-                  <strong>{formatCurrencyValue(previewQuery.data.calculatedAmount)}</strong>
+              <>
+                <IncentiveOperationalFlags
+                  periodCode={registrationWindow.periodCode}
+                  entryLagDays={registrationWindow.entryLagDays}
+                  isOutOfDeadline={registrationWindow.isOutOfDeadline}
+                  isContractMismatch={selectedContractMismatch}
+                />
+                <div className="hr-incentives-preview-body">
+                  <div>
+                    <span>Monto calculado</span>
+                    <strong>{formatCurrencyValue(previewQuery.data.calculatedAmount)}</strong>
+                  </div>
+                  <div>
+                    <span>Regla base</span>
+                    <strong>{formatCurrencyValue(previewQuery.data.rule.rateRuleAmount)}</strong>
+                  </div>
+                  <div>
+                    <span>Contrato aplicado</span>
+                    <strong>
+                      {previewQuery.data.rule.matchedContractCode ?? "Todos"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Cargo aplicado</span>
+                    <strong>{previewQuery.data.rule.matchedJobTitle ?? "Todos"}</strong>
+                  </div>
+                  <div>
+                    <span>Sindicato aplicado</span>
+                    <strong>{previewQuery.data.rule.matchedUnionName ?? "Cualquiera"}</strong>
+                  </div>
+                  <div>
+                    <span>Prioridad</span>
+                    <strong>{previewQuery.data.rule.priority}</strong>
+                  </div>
                 </div>
-                <div>
-                  <span>Regla base</span>
-                  <strong>{formatCurrencyValue(previewQuery.data.rule.rateRuleAmount)}</strong>
-                </div>
-                <div>
-                  <span>Contrato aplicado</span>
-                  <strong>
-                    {previewQuery.data.rule.matchedContractCode ?? "Todos"}
-                  </strong>
-                </div>
-                <div>
-                  <span>Cargo aplicado</span>
-                  <strong>{previewQuery.data.rule.matchedJobTitle ?? "Todos"}</strong>
-                </div>
-                <div>
-                  <span>Sindicato aplicado</span>
-                  <strong>{previewQuery.data.rule.matchedUnionName ?? "Cualquiera"}</strong>
-                </div>
-                <div>
-                  <span>Prioridad</span>
-                  <strong>{previewQuery.data.rule.priority}</strong>
-                </div>
-              </div>
+              </>
+            ) : null}
+
+            {!registrationWindow.isAllowed ? (
+              <p className="form-status form-status-error">
+                Solo se permite registrar incentivos hasta 7 días hacia atrás desde hoy.
+              </p>
             ) : null}
           </div>
 
