@@ -94,6 +94,12 @@
 - Durante la validación apareció una regresión de tipado ajena a la nueva regla: el detalle del día comparaba `effectiveStatus === 'extra'` cuando el código real del dominio es `extra_shift`. Se corrigió en la misma pasada para dejar `npx tsc -b` nuevamente sano.
 - Cierre validado con `npx tsc -b` y `git diff --check`.
 
+## Simplificación transversal de búsqueda por nombre en lookups BUK
+
+- [ ] Auditar todas las búsquedas de personas alimentadas por `employees_active_current` o fuentes BUK equivalentes
+- [ ] Implementar matching simplificado por `primer nombre + primer apellido + segundo apellido opcional` sin cambiar la visualización del nombre
+- [ ] Alinear filtros locales restantes con la misma semántica y validar `npx tsc -b` más `git diff --check`
+
 ## Migración completa de motor gráfico a Recharts
 
 - [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico
