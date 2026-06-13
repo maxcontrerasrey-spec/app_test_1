@@ -84,7 +84,6 @@ function buildIncentiveExportRows(requests: HrIncentiveRequest[]) {
   };
 
   return requests.map((request) => ({
-    id: request.id,
     folio: request.folio,
     estado_codigo: request.status,
     estado: getIncentiveStatusLabel(request.status),
@@ -96,33 +95,21 @@ function buildIncentiveExportRows(requests: HrIncentiveRequest[]) {
     desfase_dias_ingreso: request.entryLagDays,
     fuera_de_plazo: request.isOutOfDeadline ? "Si" : "No",
     contrato_distinto: request.isContractMismatch ? "Si" : "No",
-    empleado_buk_id: request.employeeBukEmployeeId,
-    tipo_documento_empleado: request.employeeDocumentType,
     rut_empleado: request.employeeDocumentNumber,
     trabajador: request.employeeFullName,
     cargo_empleado: request.employeeJobTitle,
     sindicato_empleado: request.employeeUnionName ?? "",
-    estado_sindicato_empleado: request.employeeUnionStatus,
-    fecha_ingreso_sindicato: parseExcelDate(request.employeeUnionJoinedAt),
-    contrato_primario: request.primaryContractCode ?? "",
     area_primaria: request.primaryAreaName ?? "",
-    contrato_servicio: request.selectedContractCode,
     area_servicio: request.selectedAreaName,
-    codigo_area_servicio: request.selectedAreaCode ?? "",
-    incentivo_tipo_id: request.incentiveTypeId,
     incentivo_tipo: request.incentiveTypeName,
     requiere_reemplazo: request.requiresReplacement ? "Si" : "No",
-    reemplazo_buk_id: request.replacementBukEmployeeId ?? "",
     rut_reemplazo: request.replacementDocumentNumber ?? "",
     trabajador_reemplazado: request.replacementFullName ?? "",
     motivo: request.motive ?? "",
     descripcion: request.description ?? "",
-    base_calculo: request.calculationBasis,
-    rate_rule_id: request.rateRuleId ?? "",
     monto_regla: request.rateRuleAmount,
     monto_calculado: request.calculatedAmount,
     duracion_horas: request.durationHours ?? "",
-    creado_por_usuario_id: request.createdBy,
     solicito: request.requesterName,
     email_solicitante: request.requesterEmail ?? "",
     flujo_actual: request.currentFlowUser ?? "",
@@ -141,7 +128,7 @@ async function exportIncentiveRequestsToXlsx(params: {
   const rows = buildIncentiveExportRows(params.requests);
   const worksheet = utils.json_to_sheet(rows, { cellDates: true });
 
-  const dateOnlyColumns = new Set(["fecha_servicio", "fecha_ingreso_sindicato"]);
+  const dateOnlyColumns = new Set(["fecha_servicio"]);
   const dateTimeColumns = new Set(["fecha_creacion", "fecha_actualizacion", "fecha_anulacion"]);
   const headers = Object.keys(rows[0] ?? {});
 
