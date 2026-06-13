@@ -285,8 +285,16 @@ export function RosterPage() {
                         </div>
 
                         <div className="roster-day-detail-row">
-                          <span>Estado efectivo</span>
-                          <strong>{selectedDay.exceptionLabel ?? selectedDay.effectiveStatus}</strong>
+                          <span>Estado Actual</span>
+                          <strong>
+                            {selectedDay.exceptionLabel ?? 
+                              (selectedDay.effectiveStatus === "working" ? "En turno" :
+                               selectedDay.effectiveStatus === "resting" ? "Descanso" :
+                               selectedDay.effectiveStatus === "absent" ? "Ausente" :
+                               selectedDay.effectiveStatus === "extra" ? "Turno extra" :
+                               selectedDay.effectiveStatus === "vacation" ? "Vacación" :
+                               selectedDay.effectiveStatus === "training" ? "Capacitación" : "Sin pauta")}
+                          </strong>
                         </div>
                         <div className="roster-day-detail-row">
                           <span>Día del ciclo</span>

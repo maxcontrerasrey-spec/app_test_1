@@ -1,4 +1,4 @@
-import { buildCalendarDays, formatDateValue, parseDateValue } from "../../../shared/lib/date";
+import { buildCalendarDays, formatDateValue, parseDateValue, toTodayDateValue } from "../../../shared/lib/date";
 import { formatRequestDate } from "../../../shared/lib/format";
 import type { WorkerScheduleDay } from "../types";
 
@@ -68,6 +68,7 @@ export function RosterCalendar({
 }: RosterCalendarProps) {
   const viewDate = parseDateValue(`${monthValue}-01`);
   const calendarDays = buildCalendarDays(viewDate);
+  const todayValue = toTodayDateValue();
   const daysByDate = new Map(days.map((day) => [day.date, day]));
 
   return (
@@ -97,6 +98,7 @@ export function RosterCalendar({
           const dayValue = formatDateValue(calendarDay.value);
           const scheduleDay = daysByDate.get(dayValue) ?? null;
           const isSelected = dayValue === selectedDate;
+          const isToday = dayValue === todayValue;
 
           return (
             <button
@@ -105,7 +107,8 @@ export function RosterCalendar({
               className={[
                 "roster-calendar-day",
                 getDayTone(scheduleDay, calendarDay.inMonth),
-                isSelected ? "roster-calendar-day--selected" : ""
+                isSelected ? "roster-calendar-day--selected" : "",
+                isToday ? "roster-calendar-day--today" : ""
               ]
                 .filter(Boolean)
                 .join(" ")}
