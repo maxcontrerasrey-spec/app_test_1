@@ -95,7 +95,9 @@ function buildPendingTaskSummary(task: DashboardTaskItem) {
   }
 
   if (task.module_code === "recursos_humanos") {
-    return task.title ?? "Aprobación de incentivo pendiente";
+    return task.employee_name
+      ? `${task.employee_name} · ${task.title ?? task.job_position_name ?? "Incentivo pendiente"}`
+      : task.title ?? task.job_position_name ?? "Aprobación de incentivo pendiente";
   }
 
   return task.job_position_name ?? task.title ?? "Aprobación pendiente";

@@ -2,6 +2,25 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Notificación de incentivos pendientes en campana superior
+
+- [ ] Auditar la fuente canónica de la campana (`tasksData`) para extenderla sin duplicar otra query de notificaciones
+- [ ] Agregar incentivos pendientes de aprobación al contrato de `get_dashboard_tasks(...)` y al consumo frontend del resumen de tareas
+- [ ] Validar build y documentar el ajuste final
+
+## Hotfix de aprobaciones huérfanas en Incentivos Extraordinarios
+
+- [x] Auditar en producción por qué existen incentivos `P` visibles en historial sin filas asociadas en `hr_incentive_request_approvals`
+- [x] Reparar los incentivos pendientes huérfanos creando su aprobación inicial de `Administrador de contrato` y su trazabilidad mínima faltante
+- [x] Verificar en producción que la bandeja `Aprobaciones` vuelva a exponer los folios pendientes y documentar el cierre
+
+## Resultado de hotfix de aprobaciones huérfanas en Incentivos Extraordinarios
+
+- La causa real no estaba en la UI: en producción existía al menos un incentivo pendiente (`folio 1`, `status = 'P'`) en [`hr_incentive_requests`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612213000_backfill_missing_hr_incentive_contract_admin_approvals.sql:4) sin ninguna fila asociada en `hr_incentive_request_approvals`, por eso `Historial` lo mostraba como pendiente pero `Aprobaciones` quedaba vacía.
+- Se agregó la migración [`20260612213000_backfill_missing_hr_incentive_contract_admin_approvals.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612213000_backfill_missing_hr_incentive_contract_admin_approvals.sql:1), que detecta incentivos `P` sin cadena de aprobación, resuelve nuevamente el administrador de contrato y reconstruye tanto la fila pendiente inicial como el evento de historial `approval_created`.
+- La reparación fue aplicada también en Supabase productivo durante esta sesión. Después del backfill, el folio `1` quedó con aprobación `contract_admin` pendiente asignada a `Jose Orellana Paez`, restaurando la consistencia entre solicitud, historial y bandeja de aprobaciones.
+- La verificación remota se hizo consultando directamente `hr_incentive_request_approvals` e `hr_incentive_request_history`. La RPC `get_hr_incentive_approval_queue()` no pudo invocarse desde el conector SQL por depender de `auth.uid()`, así que la validación de bandeja quedó respaldada por el estado de datos corregido, no por una llamada RPC autenticada desde el MCP.
+
 ## Ajuste urgente de visibilidad y cerrados en folios de contratación
 
 - [x] Auditar y corregir la fuente real de `Resumen de procesos de contratación` para que los folios rechazados/cerrados también aparezcan en la sección `Rechazados / Cerrados`, incluso cuando no exista un `recruitment_case` operativo

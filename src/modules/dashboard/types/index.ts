@@ -41,6 +41,8 @@ export interface DashboardTaskItem {
   mobility_motive?: string | null;
   title?: string;
   subtitle?: string;
+  service_date?: string | null;
+  calculated_amount?: number | null;
   status_code: string;
   status_label: string;
   priority: string;

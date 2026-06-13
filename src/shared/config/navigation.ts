@@ -87,7 +87,7 @@ export const navigationModules: NavigationModule[] = [
     label: "Recursos Humanos",
     items: [
       {
-        label: "Gestión de Incentivos",
+        label: "Gestión de Incentivos Extraordinarios",
         moduleCode: "recursos_humanos",
         to: "#",
         iconKey: "document",
@@ -95,7 +95,7 @@ export const navigationModules: NavigationModule[] = [
           {
             moduleCode: "recursos_humanos",
             to: "/recursos-humanos/incentivos",
-            label: "Ingreso de Incentivos Extraordinarios",
+            label: "Ingreso & Aprobación de Incentivos",
             description: "Registro y control de incentivos extraordinarios.",
             iconKey: "document"
           }

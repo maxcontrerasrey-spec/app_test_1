@@ -839,3 +839,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 87. Arquitectura Ágil: Eliminación temprana de Módulos Mockeados
 - **Si un módulo "placeholder" o "mock" no tiene ruta de implementación a corto plazo, es mejor eliminarlo**. Mantener código 100% hardcodeado (como el Generador y Seguimiento de Certificados original) ensucia el enrutador (`AppRouter`), el sistema de menús (`navigation.ts`) y la matriz de permisos (`access.ts`), agregando carga cognitiva innecesaria. Cuando se requiera la funcionalidad, se debe construir desde cero con bases de datos reales.
+
+## 88. En flujos multi-etapa, un estado pendiente no prueba que la cola operativa exista
+- **No des por cerrado un flujo de aprobaciones solo porque la solicitud quedó con `status = 'P'` o el historial la muestra como pendiente.** Si la tabla operativa de cola (`hr_incentive_request_approvals`) no tiene la fila correspondiente, la bandeja real quedará vacía aunque el registro principal parezca correcto.
+- **La verificación de cierre debe contrastar siempre las dos superficies:** el registro maestro (`hr_incentive_requests`) y la cola de trabajo (`hr_incentive_request_approvals`), idealmente con una consulta de huérfanos `status pendiente + count(approvals)=0`.
+- **Cuando aparezcan huérfanos productivos, la reparación segura es reconstruir la etapa faltante desde la fuente canónica de aprobadores** y dejar trazabilidad explícita en historial (`approval_created` con motivo de reparación), en vez de alterar manualmente el estado principal o “simular” la bandeja desde frontend.

@@ -10,6 +10,7 @@ import {
 } from "../../../recruitment/services/hiringWorkflow";
 import { approveCandidateStageWho, rejectCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 import { decideInternalMobilityApproval } from "../../../internal_mobility/services/internalMobilityApi";
+import { decideHrIncentiveApproval } from "../../../incentives/services/incentivesApi";
 
 type TasksWidgetProps = {
   title: string;
@@ -24,6 +25,18 @@ function formatDateValue(dateStr: string | null | undefined) {
     month: "2-digit",
     year: "numeric"
   });
+}
+
+function formatCurrencyValue(amount: number | null | undefined) {
+  if (amount === null || amount === undefined || Number.isNaN(amount)) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0
+  }).format(amount);
 }
 
 export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProps) {
@@ -66,7 +79,21 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
     setSubmitError(null);
 
     const { error } =
-      targetTask?.module_code === "movilidad_interna"
+      targetTask?.module_code === "recursos_humanos"
+        ? await (async () => {
+            try {
+              await decideHrIncentiveApproval({
+                approvalId,
+                decision,
+                comment: comments.trim() || undefined
+              });
+
+              return { error: null };
+            } catch (error) {
+              return { error: error instanceof Error ? error.message : "No fue posible registrar la decisión." };
+            }
+          })()
+        : targetTask?.module_code === "movilidad_interna"
         ? await decideInternalMobilityApproval({
             approvalId,
             decision,
@@ -189,7 +216,89 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                       {isExpanded && (
                         <tr className="tracking-table-expanded-row">
                           <td colSpan={6}>
-                            {task.type === "approval" && task.module_code !== "movilidad_interna" ? (
+                            {task.type === "hr_incentive_approval" || task.module_code === "recursos_humanos" ? (
+                              <div className="expanded-case-detail-grid">
+                                <div className="expanded-detail-section">
+                                  <h4>Solicitud de incentivo</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Folio</small>
+                                      <strong>{task.folio ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Trabajador</small>
+                                      <strong>{task.employee_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Tipo incentivo</small>
+                                      <strong>{task.title ?? task.job_position_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Etapa</small>
+                                      <strong>{task.step_name ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="expanded-detail-section">
+                                  <h4>Contexto operacional</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Contrato / área</small>
+                                      <strong>{task.contract_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Código contrato</small>
+                                      <strong>{task.subtitle ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Fecha servicio</small>
+                                      <strong>{formatDateValue(task.service_date)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Monto</small>
+                                      <strong>{formatCurrencyValue(task.calculated_amount)}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="expanded-detail-section">
+                                  <h4>Solicitante</h4>
+                                  <div className="expanded-detail-fields">
+                                    <div>
+                                      <small>Solicitó</small>
+                                      <strong>{task.requester_name ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Correo</small>
+                                      <strong>{task.requester_email ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Creado</small>
+                                      <strong>{formatDateValue(task.created_at)}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Cargo trabajador</small>
+                                      <strong>{task.source_job_title ?? "—"}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {task.mobility_motive ? (
+                                  <div className="expanded-detail-section">
+                                    <h4>Motivo</h4>
+                                    <div className="expanded-detail-fields">
+                                      <div className="expanded-detail-full">
+                                        <small>Justificación</small>
+                                        <strong>{task.mobility_motive}</strong>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : null}
+
+                            {task.type === "approval" && task.module_code !== "movilidad_interna" && task.module_code !== "recursos_humanos" ? (
                             <div className="expanded-case-detail-grid">
                               <div className="expanded-detail-section">
                                 <h4>Solicitud original</h4>
