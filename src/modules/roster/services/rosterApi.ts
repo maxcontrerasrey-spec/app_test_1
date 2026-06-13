@@ -102,6 +102,8 @@ function mapWorkerSchedule(payload: unknown): WorkerSchedulePayload {
         exceptionDate: String(item.exception_date ?? ""),
         exceptionType: String(item.exception_type ?? "vacation") as RosterExceptionType,
         exceptionLabel: String(item.exception_label ?? ""),
+        exceptionSource:
+          item.exception_source === "buk" ? "buk" : "manual",
         notes: readNullableText(item.notes),
         isActive: Boolean(item.is_active),
         createdAt: String(item.created_at ?? "")
@@ -119,6 +121,8 @@ function mapWorkerSchedule(payload: unknown): WorkerSchedulePayload {
         effectiveStatus: String(item.effective_status ?? "unassigned") as WorkerScheduleDay["effectiveStatus"],
         exceptionType: readNullableText(item.exception_type) as RosterExceptionType | null,
         exceptionLabel: readNullableText(item.exception_label),
+        exceptionSource:
+          item.exception_source === "buk" ? "buk" : item.exception_source === "manual" ? "manual" : null,
         exceptionNotes: readNullableText(item.exception_notes),
         isWorkingDay: Boolean(item.is_working_day),
         isRestDay: Boolean(item.is_rest_day)

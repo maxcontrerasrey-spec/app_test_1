@@ -12,7 +12,12 @@ import {
   setRosterExceptionStatus,
   upsertRosterException
 } from "../services/rosterApi";
-import type { RosterExceptionType, RosterWorkerSearchItem, WorkerScheduleDay } from "../types";
+import type {
+  RosterExceptionSource,
+  RosterExceptionType,
+  RosterWorkerSearchItem,
+  WorkerScheduleDay
+} from "../types";
 import { RosterAssignmentDialog } from "../components/RosterAssignmentDialog";
 import { RosterCalendar } from "../components/RosterCalendar";
 import { RosterPatternManager } from "../components/RosterPatternManager";
@@ -48,6 +53,10 @@ function resolveSelectedDay(days: WorkerScheduleDay[], selectedDate: string) {
   return days.find((day) => day.date === selectedDate) ?? null;
 }
 
+function getExceptionSourceLabel(source: RosterExceptionSource | null) {
+  return source === "buk" ? "BUK" : source === "manual" ? "Manual" : "";
+}
+
 export function RosterPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,6 +84,13 @@ export function RosterPage() {
   const selectedDay = useMemo(
     () => resolveSelectedDay(workerScheduleQuery.data?.days ?? [], selectedDate),
     [selectedDate, workerScheduleQuery.data?.days]
+  );
+  const exceptionOnFormDate = useMemo(
+    () =>
+      (workerScheduleQuery.data?.exceptions ?? []).find(
+        (exception) => exception.exceptionDate === exceptionDate
+      ) ?? null,
+    [exceptionDate, workerScheduleQuery.data?.exceptions]
   );
 
   const refreshRoster = useCallback(async () => {
@@ -132,7 +148,15 @@ export function RosterPage() {
   const toggleExceptionMutation = useMutation({
     mutationFn: ({ exceptionId, isActive }: { exceptionId: string; isActive: boolean }) =>
       setRosterExceptionStatus(exceptionId, isActive),
-    onSuccess: refreshRoster
+    onSuccess: async () => {
+      setErrorMessage("");
+      setStatusMessage("Estado de excepción actualizado.");
+      await refreshRoster();
+    },
+    onError: (error: Error) => {
+      setStatusMessage("");
+      setErrorMessage(error.message);
+    }
   });
 
   return (
@@ -323,6 +347,12 @@ export function RosterPage() {
                             <p>{selectedDay.exceptionNotes}</p>
                           </div>
                         ) : null}
+                        {selectedDay.exceptionSource ? (
+                          <div className="roster-day-detail-notes">
+                            <span>Origen</span>
+                            <p>{getExceptionSourceLabel(selectedDay.exceptionSource)}</p>
+                          </div>
+                        ) : null}
                         
                         <div style={{ marginTop: "1rem", padding: "0.6rem 0.75rem", backgroundColor: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "6px", fontSize: "0.76rem", color: "rgb(180, 83, 9)", lineHeight: "1.4" }}>
                           <strong style={{ display: "block", marginBottom: "0.15rem", color: "rgb(146, 64, 14)", fontSize: "0.78rem" }}>Proyección de jornadas</strong>
@@ -339,6 +369,9 @@ export function RosterPage() {
                       <h3>Registrar excepción</h3>
                       <span className="tracking-filter-caption">
                         Vacaciones, licencias, turnos extra y permisos que rompen la pauta base.
+                      </span>
+                      <span className="tracking-filter-caption">
+                        Las vacaciones y licencias cargadas por BUK siguen siendo visibles aquí, pero no pueden modificarse manualmente y siempre tienen prioridad.
                       </span>
                     </div>
 
@@ -376,7 +409,8 @@ export function RosterPage() {
                           exceptionMutation.isPending ||
                           !selectedWorker ||
                           !exceptionDate ||
-                          !exceptionType
+                          !exceptionType ||
+                          exceptionOnFormDate?.exceptionSource === "buk"
                         }
                         onClick={() =>
                           exceptionMutation.mutate({
@@ -390,6 +424,11 @@ export function RosterPage() {
                         {exceptionMutation.isPending ? "Guardando..." : "Guardar excepción"}
                       </button>
                     </div>
+                    {exceptionOnFormDate?.exceptionSource === "buk" ? (
+                      <p className="form-status form-status-error">
+                        La fecha {formatRequestDate(exceptionOnFormDate.exceptionDate)} está gobernada por BUK y no puede reemplazarse manualmente.
+                      </p>
+                    ) : null}
                   </section>
 
                   <section className="info-card">
@@ -410,12 +449,16 @@ export function RosterPage() {
                               {formatRequestDate(exception.exceptionDate)} ·{" "}
                               {getDaysSince(exception.exceptionDate) === 0 ? "Hoy" : `${getDaysSince(exception.exceptionDate) ?? 0} días`}
                             </span>
+                            <span>{`Origen: ${getExceptionSourceLabel(exception.exceptionSource)}`}</span>
                             {exception.notes ? <small>{exception.notes}</small> : null}
                           </div>
                           <button
                             type="button"
                             className="soft-primary-button hr-incentives-inline-button"
-                            disabled={toggleExceptionMutation.isPending}
+                            disabled={
+                              toggleExceptionMutation.isPending ||
+                              exception.exceptionSource === "buk"
+                            }
                             onClick={() =>
                               toggleExceptionMutation.mutate({
                                 exceptionId: exception.id,
@@ -423,7 +466,11 @@ export function RosterPage() {
                               })
                             }
                           >
-                            {exception.isActive ? "Desactivar" : "Activar"}
+                            {exception.exceptionSource === "buk"
+                              ? "Gobernado por BUK"
+                              : exception.isActive
+                                ? "Desactivar"
+                                : "Activar"}
                           </button>
                         </div>
                       ))}

@@ -7,6 +7,8 @@ export type RosterExceptionType =
   | "administrative_leave"
   | "union_leave";
 
+export type RosterExceptionSource = "manual" | "buk";
+
 export type RosterDayBaseStatus = "working" | "resting" | "unassigned";
 
 export type RosterDayEffectiveStatus =
@@ -68,6 +70,7 @@ export type WorkerRosterException = {
   exceptionDate: string;
   exceptionType: RosterExceptionType;
   exceptionLabel: string;
+  exceptionSource: RosterExceptionSource;
   notes: string | null;
   isActive: boolean;
   createdAt: string;
@@ -83,6 +86,7 @@ export type WorkerScheduleDay = {
   effectiveStatus: RosterDayEffectiveStatus;
   exceptionType: RosterExceptionType | null;
   exceptionLabel: string | null;
+  exceptionSource: RosterExceptionSource | null;
   exceptionNotes: string | null;
   isWorkingDay: boolean;
   isRestDay: boolean;

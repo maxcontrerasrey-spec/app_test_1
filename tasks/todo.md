@@ -14,6 +14,21 @@
 - [x] Bloquear en backend el preview y el registro cuando el trabajador figure con `vacation` o `medical_leave`, incluso si la pauta está sin asignar
 - [x] Validar `npx tsc -b`, `git diff --check` y documentar la regla con su lección
 
+## Prioridad BUK sobre excepciones manuales de vacaciones y licencia
+
+- [x] Auditar el contrato actual de excepciones de roster para confirmar si distingue origen manual vs BUK
+- [x] Endurecer backend para permitir carga manual pero bloquear edición/desactivación manual de fechas gobernadas por BUK
+- [x] Dejar una RPC explícita de sync BUK que sobreescriba excepciones manuales cuando difieran y reflejar el origen en el panel
+- [x] Validar `npx tsc -b`, `git diff --check` y documentar el cierre aplicado en Supabase
+
+## Resultado de prioridad BUK sobre excepciones manuales de vacaciones y licencia
+
+- Se agregó la migración [`20260613203332_20260614160000_add_roster_exception_source_priority.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613203332_20260614160000_add_roster_exception_source_priority.sql:1), aplicada además en Supabase, para formalizar `exception_source` en [`hr_roster_exceptions`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613203332_20260614160000_add_roster_exception_source_priority.sql:1) con valores `manual` y `buk`.
+- La carga manual sigue existiendo, pero la RPC [`upsert_hr_roster_exception(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613203332_20260614160000_add_roster_exception_source_priority.sql:18) ahora bloquea cualquier intento de modificar o reemplazar manualmente una fecha ya gobernada por BUK. Del mismo modo, [`set_hr_roster_exception_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613203332_20260614160000_add_roster_exception_source_priority.sql:136) impide activar o desactivar esas filas desde el panel.
+- Se dejó lista la RPC [`sync_hr_roster_exception_from_buk(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613203332_20260614160000_add_roster_exception_source_priority.sql:172), pensada para la futura sync: cuando BUK entregue `vacation` o `medical_leave`, esa función sobreescribe la fila manual de ese trabajador/fecha y la convierte en `source='buk'`. Si BUK limpia la ausencia, también baja cualquier excepción manual o BUK de vacaciones/licencia para esa fecha, preservando la prioridad de la fuente oficial.
+- [`get_worker_schedule(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613203332_20260614160000_add_roster_exception_source_priority.sql:265) ahora expone `exception_source` en la lista de excepciones y en cada día del calendario. Eso permitió endurecer el panel en [`RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:1) y sus tipos/servicios asociados para mostrar `Origen: BUK/Manual`, bloquear botones inválidos y avisar antes de intentar guardar sobre una fecha gobernada por BUK.
+- Validación cerrada con `npx tsc -b`, `git diff --check` y aplicación real de la migración en la base activa.
+
 ## Resultado de bloqueo de incentivos por vacaciones o licencia médica
 
 - Se agregó la migración [`20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:1), que redefine [`resolve_hr_roster_day_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:1) y [`calculate_hr_incentive_preview(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613201122_20260613194500_block_hr_incentives_for_leave_status.sql:118) para que vacaciones y licencia médica bloqueen el flujo de incentivos desde la fuente canónica de calendario.
