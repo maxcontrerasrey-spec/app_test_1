@@ -283,10 +283,7 @@ export function RosterPage() {
                           <span>Pauta</span>
                           <strong>{selectedDay.patternName ?? "Sin asignación"}</strong>
                         </div>
-                        <div className="roster-day-detail-row">
-                          <span>Estado base</span>
-                          <strong>{selectedDay.baseStatus === "working" ? "Trabajo" : selectedDay.baseStatus === "resting" ? "Descanso" : "Sin pauta"}</strong>
-                        </div>
+
                         <div className="roster-day-detail-row">
                           <span>Estado efectivo</span>
                           <strong>{selectedDay.exceptionLabel ?? selectedDay.effectiveStatus}</strong>
