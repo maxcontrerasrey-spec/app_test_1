@@ -392,29 +392,45 @@ export function IncentiveAnalyticsView() {
         </article>
 
         <article className="hr-incentives-analytics-card">
-          <div className="hr-incentives-analytics-card-header flex justify-between items-start">
+          <div className="hr-incentives-analytics-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
             <div>
               <h4>Distribución por tipo</h4>
               <span className="tracking-filter-caption">Participación del presupuesto por incentivo</span>
             </div>
-            <div className="flex bg-[var(--surface-muted)] p-1 rounded-md self-end">
+            <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
               <button
-                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-                  typeTimeView === "period"
-                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                type="button"
                 onClick={() => setTypeTimeView("period")}
+                style={{
+                  border: "none",
+                  background: typeTimeView === "period" ? "var(--surface)" : "transparent",
+                  color: typeTimeView === "period" ? "var(--title)" : "var(--text-muted)",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.82rem",
+                  fontWeight: typeTimeView === "period" ? 600 : 500,
+                  borderRadius: "calc(var(--radius-md) - 2px)",
+                  boxShadow: typeTimeView === "period" ? "var(--shadow-soft)" : "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
               >
                 Periodos
               </button>
               <button
-                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-                  typeTimeView === "date"
-                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                type="button"
                 onClick={() => setTypeTimeView("date")}
+                style={{
+                  border: "none",
+                  background: typeTimeView === "date" ? "var(--surface)" : "transparent",
+                  color: typeTimeView === "date" ? "var(--title)" : "var(--text-muted)",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.82rem",
+                  fontWeight: typeTimeView === "date" ? 600 : 500,
+                  borderRadius: "calc(var(--radius-md) - 2px)",
+                  boxShadow: typeTimeView === "date" ? "var(--shadow-soft)" : "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
               >
                 Actual
               </button>
@@ -464,31 +480,47 @@ export function IncentiveAnalyticsView() {
         </article>
 
         <article className="hr-incentives-analytics-card">
-          <div className="hr-incentives-analytics-card-header flex justify-between items-start">
+          <div className="hr-incentives-analytics-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
             <div>
               <h4>Inversión por contrato</h4>
               <span className="tracking-filter-caption">
                 Top contratos con mayor volumen de incentivos
               </span>
             </div>
-            <div className="flex bg-[var(--surface-muted)] p-1 rounded-md self-end">
+            <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
               <button
-                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-                  contractTimeView === "period"
-                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                type="button"
                 onClick={() => setContractTimeView("period")}
+                style={{
+                  border: "none",
+                  background: contractTimeView === "period" ? "var(--surface)" : "transparent",
+                  color: contractTimeView === "period" ? "var(--title)" : "var(--text-muted)",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.82rem",
+                  fontWeight: contractTimeView === "period" ? 600 : 500,
+                  borderRadius: "calc(var(--radius-md) - 2px)",
+                  boxShadow: contractTimeView === "period" ? "var(--shadow-soft)" : "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
               >
                 Periodos
               </button>
               <button
-                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-                  contractTimeView === "date"
-                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                type="button"
                 onClick={() => setContractTimeView("date")}
+                style={{
+                  border: "none",
+                  background: contractTimeView === "date" ? "var(--surface)" : "transparent",
+                  color: contractTimeView === "date" ? "var(--title)" : "var(--text-muted)",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.82rem",
+                  fontWeight: contractTimeView === "date" ? 600 : 500,
+                  borderRadius: "calc(var(--radius-md) - 2px)",
+                  boxShadow: contractTimeView === "date" ? "var(--shadow-soft)" : "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
               >
                 Actual
               </button>
@@ -550,31 +582,47 @@ export function IncentiveAnalyticsView() {
         </article>
 
         <article className="hr-incentives-analytics-card">
-          <div className="hr-incentives-analytics-card-header flex justify-between items-start">
+          <div className="hr-incentives-analytics-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
             <div>
               <h4>Ranking de trabajadores</h4>
               <span className="tracking-filter-caption">
                 Trabajadores con mayor monto ingresado, diferenciado por contrato
               </span>
             </div>
-            <div className="flex bg-[var(--surface-muted)] p-1 rounded-md self-end">
+            <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
               <button
-                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-                  workerTimeView === "period"
-                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                type="button"
                 onClick={() => setWorkerTimeView("period")}
+                style={{
+                  border: "none",
+                  background: workerTimeView === "period" ? "var(--surface)" : "transparent",
+                  color: workerTimeView === "period" ? "var(--title)" : "var(--text-muted)",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.82rem",
+                  fontWeight: workerTimeView === "period" ? 600 : 500,
+                  borderRadius: "calc(var(--radius-md) - 2px)",
+                  boxShadow: workerTimeView === "period" ? "var(--shadow-soft)" : "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
               >
                 Periodos
               </button>
               <button
-                className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-                  workerTimeView === "date"
-                    ? "bg-[var(--surface)] text-[var(--title)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                type="button"
                 onClick={() => setWorkerTimeView("date")}
+                style={{
+                  border: "none",
+                  background: workerTimeView === "date" ? "var(--surface)" : "transparent",
+                  color: workerTimeView === "date" ? "var(--title)" : "var(--text-muted)",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.82rem",
+                  fontWeight: workerTimeView === "date" ? 600 : 500,
+                  borderRadius: "calc(var(--radius-md) - 2px)",
+                  boxShadow: workerTimeView === "date" ? "var(--shadow-soft)" : "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
               >
                 Actual
               </button>
