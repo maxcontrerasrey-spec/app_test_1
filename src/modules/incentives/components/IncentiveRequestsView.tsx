@@ -196,16 +196,10 @@ export function IncentiveRequestsView({
                               {formatRut(request.employeeDocumentNumber)}
                             </div>
                             <div className="tracking-filter-caption">{request.employeeJobTitle}</div>
-                            {request.replacementFullName ? (
-                              <div className="tracking-filter-caption" style={{ marginTop: '0.2rem' }}>
-                                Reemplaza a {request.replacementFullName}
-                              </div>
-                            ) : null}
                           </td>
                           <td>{request.incentiveTypeName}</td>
                           <td>
                             <strong>{request.selectedAreaName}</strong>
-                            <div className="tracking-filter-caption">{request.selectedContractCode}</div>
                           </td>
                           <td>{formatRequestDate(request.serviceDate)}</td>
                           <td>{formatCurrencyValue(request.calculatedAmount)}</td>
@@ -292,16 +286,22 @@ export function IncentiveRequestsView({
 
                                     <div className="expanded-detail-section">
                                       <h4>DETALLES INCENTIVO</h4>
-                                      <div className="expanded-detail-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                      <div className="expanded-detail-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'start' }}>
                                         <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
                                           <small>Tipo incentivo</small>
                                           <strong>{detailQuery.data.request.incentiveTypeName}</strong>
                                         </div>
-                                        <div>
-                                          <small>Fecha servicio</small>
-                                          <strong>{formatRequestDate(detailQuery.data.request.serviceDate)}</strong>
+                                        <div style={{ display: 'grid', gap: '1rem' }}>
+                                          <div>
+                                            <small>Fecha servicio</small>
+                                            <strong>{formatRequestDate(detailQuery.data.request.serviceDate)}</strong>
+                                          </div>
+                                          <div>
+                                            <small>Monto</small>
+                                            <strong>{formatCurrencyValue(detailQuery.data.request.calculatedAmount)}</strong>
+                                          </div>
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.4rem' }}>
                                           <small>Período pago</small>
                                           <IncentiveOperationalFlags
                                             periodCode={detailQuery.data.request.periodCode}
@@ -309,10 +309,6 @@ export function IncentiveRequestsView({
                                             isOutOfDeadline={detailQuery.data.request.isOutOfDeadline}
                                             isContractMismatch={detailQuery.data.request.isContractMismatch}
                                           />
-                                        </div>
-                                        <div>
-                                          <small>Monto</small>
-                                          <strong>{formatCurrencyValue(detailQuery.data.request.calculatedAmount)}</strong>
                                         </div>
                                         {detailQuery.data.request.replacementFullName ? (
                                           <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
