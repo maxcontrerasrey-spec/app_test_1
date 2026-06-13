@@ -531,8 +531,7 @@ export function IncentiveApprovalsView() {
                                       </div>
                                     </div>
                                   </div>
-
-                                  
+                                </>
                               ) : null}
                             </td>
                           </tr>
