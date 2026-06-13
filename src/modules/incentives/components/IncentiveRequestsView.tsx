@@ -162,7 +162,7 @@ export function IncentiveRequestsView({
               <tr>
                 <th>Folio</th>
                 <th>Trabajador</th>
-                <th>Tipo</th>
+                <th>Incentivo</th>
                 <th>Contrato</th>
                 <th>Fecha servicio</th>
                 <th>Monto</th>
@@ -175,14 +175,9 @@ export function IncentiveRequestsView({
                 ? requestsQuery.data?.map((request) => (
                     <tr key={request.id}>
                       <td>
-                        <strong>{String(request.folio).padStart(5, '0')}</strong>
-                        <IncentiveOperationalFlags
-                          periodCode={request.periodCode}
-                          entryLagDays={request.entryLagDays}
-                          isOutOfDeadline={request.isOutOfDeadline}
-                          isContractMismatch={request.isContractMismatch}
-                          compact
-                        />
+                        <span className="case-code-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
+                          {String(request.folio).padStart(5, '0')}
+                        </span>
                       </td>
                       <td>
                         <strong>{request.employeeFullName}</strong>
@@ -199,7 +194,6 @@ export function IncentiveRequestsView({
                       <td>{request.incentiveTypeName}</td>
                       <td>
                         <strong>{request.selectedAreaName}</strong>
-                        <div className="tracking-filter-caption">{request.selectedContractCode}</div>
                       </td>
                       <td>{formatRequestDate(request.serviceDate)}</td>
                       <td>{formatCurrencyValue(request.calculatedAmount)}</td>
