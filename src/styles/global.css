@@ -2274,19 +2274,18 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 .mobility-section-title {
-  margin: 0.5rem 0 0.15rem;
-  font-size: 1.05rem;
+  margin: 0.2rem 0 0.1rem;
   font-weight: 600;
   color: var(--title);
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .mobility-divider {
   border: none;
   border-top: 1px solid var(--border-subtle);
-  margin: 1.5rem 0;
+  margin: 0.6rem 0;
 }
 
 .mobility-main-divider {
@@ -2300,13 +2299,18 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 .mobility-form-card {
   display: flex !important;
   flex-direction: column;
-  gap: 0.35rem !important;
+  gap: 0.15rem !important;
+}
+
+.mobility-form-card .contract-grid,
+.mobility-form-card .requester-grid {
+  gap: 0.4rem 0.8rem;
 }
 
 .mobility-compact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.4rem 0.75rem;
+  gap: 0.4rem 0.8rem;
   align-items: start;
 }
 

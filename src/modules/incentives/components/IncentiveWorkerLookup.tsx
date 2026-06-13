@@ -140,10 +140,6 @@ export function IncentiveWorkerLookup({
             : null}
         </div>
       ) : null}
-
-      <span className="form-status">
-        Busca por nombre, RUT, contrato o cargo BUK. Solo aparecerán cargos elegibles.
-      </span>
     </div>
   );
 }

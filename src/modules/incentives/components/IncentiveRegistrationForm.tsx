@@ -166,9 +166,6 @@ export function IncentiveRegistrationForm({
         <div className="tracking-toolbar">
           <div className="tracking-toolbar-copy">
             <h3>Registrar incentivo</h3>
-            <span className="tracking-filter-caption">
-              La app calcula el monto automáticamente desde las reglas activas.
-            </span>
           </div>
         </div>
 
@@ -189,7 +186,7 @@ export function IncentiveRegistrationForm({
           <IncentiveWorkerLookup
             id="incentive-worker"
             label="Trabajador"
-            placeholder="Busca trabajador por nombre, RUT o contrato"
+            placeholder="Busca por nombre, RUT, contrato o cargo BUK. Solo aparecerán cargos elegibles."
             selectedWorker={selectedWorker}
             onSelect={(worker) => {
               setFormError("");
@@ -330,14 +327,7 @@ export function IncentiveRegistrationForm({
               onChange={(event) => setDurationHours(event.target.value)}
               hasError={Boolean(durationHours) && Number(durationHours) <= 0}
             />
-          ) : (
-            <TextField
-              id="incentive-duration-placeholder"
-              label="Base de cálculo"
-              value={selectedIncentiveType ? "Monto fijo por regla activa" : ""}
-              readOnly
-            />
-          )}
+          ) : null}
 
           {selectedIncentiveType?.requiresReplacement ? (
             <div className="hr-incentives-grid-span-2">
