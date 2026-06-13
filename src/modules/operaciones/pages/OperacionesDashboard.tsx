@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
 import {
+  buildSimplifiedBukNameSearchKey,
   buildDashboardSummary,
   buildDriverDirectory,
   buildEquipmentDirectory,
@@ -141,7 +142,7 @@ export function OperacionesDashboard() {
     const parts = query.split(" ").filter(Boolean);
 
     return driversData.filter((employee) => {
-      const haystack = normalizeText(employee.fullName);
+      const haystack = `${normalizeText(employee.fullName)} ${buildSimplifiedBukNameSearchKey(employee.fullName)}`.trim();
       return parts.every((part) => {
         if (haystack.includes(part)) {
           return true;

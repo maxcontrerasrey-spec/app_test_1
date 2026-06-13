@@ -25,6 +25,20 @@ export function normalizeText(value: string | null | undefined): string {
     .toLowerCase();
 }
 
+export function buildSimplifiedBukNameSearchKey(fullName: string | null | undefined): string {
+  const normalizedFullName = normalizeText(fullName);
+  if (!normalizedFullName) {
+    return "";
+  }
+
+  const parts = normalizedFullName.split(/\s+/).filter(Boolean);
+  if (parts.length <= 2) {
+    return normalizedFullName;
+  }
+
+  return [parts[0], parts[parts.length - 2], parts[parts.length - 1]].join(" ");
+}
+
 export function matchesSchedule(normalizedSchedule: string, date: Date | null): boolean {
   if (!date || !normalizedSchedule) return true;
   const weekday = date.getDay();

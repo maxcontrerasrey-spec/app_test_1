@@ -173,6 +173,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No limites solo el selector visual cuando una RPC puede seguir aceptando rangos más largos**. El tope de proyección debe vivir en la función backend y la UI solo debe reflejarlo para evitar consultas inconsistentes o bypass triviales.
 - **Cuando el módulo ya depende de una vista canónica de activos como `employees_active_current`, no replique filtros de “activo/inactivo” en React**. La mejora correcta es reforzar el contrato y los mensajes de error alrededor de esa fuente única, no duplicar lógica de estado laboral en el cliente.
 
+## 55. Las búsquedas BUK por nombre deben usar una clave simplificada estable, no depender del `full_name` textual
+
+- **Si el negocio busca por `primer nombre + apellido`, un `LIKE` directo sobre `full_name` es insuficiente**. Obliga a conocer el segundo nombre y genera falsos “no encontrado” aunque la ficha exista y esté activa.
+- **La corrección no debe duplicarse por input**. Se resuelve con una helper reusable de backend basada en campos estructurados de BUK cuando existan, con fallback defensivo desde `full_name`, y luego se alinea cualquier filtro local residual con la misma semántica.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

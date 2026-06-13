@@ -96,9 +96,17 @@
 
 ## Simplificación transversal de búsqueda por nombre en lookups BUK
 
-- [ ] Auditar todas las búsquedas de personas alimentadas por `employees_active_current` o fuentes BUK equivalentes
-- [ ] Implementar matching simplificado por `primer nombre + primer apellido + segundo apellido opcional` sin cambiar la visualización del nombre
-- [ ] Alinear filtros locales restantes con la misma semántica y validar `npx tsc -b` más `git diff --check`
+- [x] Auditar todas las búsquedas de personas alimentadas por `employees_active_current` o fuentes BUK equivalentes
+- [x] Implementar matching simplificado por `primer nombre + primer apellido + segundo apellido opcional` sin cambiar la visualización del nombre
+- [x] Alinear filtros locales restantes con la misma semántica y validar `npx tsc -b` más `git diff --check`
+
+## Resultado de simplificación transversal de búsqueda por nombre en lookups BUK
+
+- Se agregó la migración [`20260614130000_simplify_buk_name_searches.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614130000_simplify_buk_name_searches.sql:1), que introduce la helper [`build_buk_employee_name_search_key(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614130000_simplify_buk_name_searches.sql:1). Esa función prioriza campos estructurados de BUK (`first_name`, `last_name`, `second_last_name` y variantes) y, si no existen, cae a una derivación defensiva desde `full_name`.
+- Las RPCs activas [`search_hr_incentive_eligible_workers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614130000_simplify_buk_name_searches.sql:53), [`search_internal_mobility_workers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614130000_simplify_buk_name_searches.sql:143) y [`search_hr_roster_workers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614130000_simplify_buk_name_searches.sql:239) ahora incorporan esa clave simplificada al haystack de búsqueda y priorizan arriba los matches por prefijo sobre nombre simplificado. Con eso, `Jorge Araya` encuentra a `Jorge Alberto Araya Soto` sin exigir el segundo nombre.
+- La visualización no cambió: los lookups siguen mostrando `full_name`, RUT, cargo y área exactamente igual. El cambio vive solo en la semántica de matching y ranking de resultados.
+- Se alineó además el filtro local de conductores en [`OperacionesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/pages/OperacionesDashboard.tsx:134), apoyado por la helper [`buildSimplifiedBukNameSearchKey(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/lib/transformers.ts:28), para que Operaciones no quede con una lógica distinta al resto de los lookups BUK.
+- Cierre validado con `npx tsc -b` y `git diff --check`.
 
 ## Migración completa de motor gráfico a Recharts
 
