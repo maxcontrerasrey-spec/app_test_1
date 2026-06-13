@@ -46,6 +46,11 @@ function getStatusLabel(status: string) {
   }
 }
 
+function truncateLabel(value: string, maxLength: number = 14) {
+  if (!value) return "";
+  return value.length > maxLength ? value.substring(0, maxLength) + "…" : value;
+}
+
 export function IncentiveAnalyticsView() {
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
   const [contractCodeFilter, setContractCodeFilter] = useState("");
@@ -356,6 +361,7 @@ export function IncentiveAnalyticsView() {
                 axisLine={false}
                 tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
                 tickMargin={12}
+                tickFormatter={(value) => truncateLabel(value, 12)}
               />
               <Tooltip
                 content={(props) => (
@@ -416,6 +422,7 @@ export function IncentiveAnalyticsView() {
                 axisLine={false}
                 tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
                 tickMargin={12}
+                tickFormatter={(value) => truncateLabel(value, 12)}
               />
               <Tooltip
                 content={(props) => (
