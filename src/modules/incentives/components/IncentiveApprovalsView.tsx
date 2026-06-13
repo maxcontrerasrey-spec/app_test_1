@@ -336,8 +336,7 @@ export function IncentiveApprovalsView() {
                       onChange={toggleSelectAllFiltered}
                     />
                   </th>
-                  <th>Folio</th>
-                  <th>Etapa</th>
+
                   <th>Trabajador</th>
                   <th>Incentivo</th>
                   <th>Contrato</th>
@@ -371,26 +370,16 @@ export function IncentiveApprovalsView() {
                             />
                           </td>
                           <td>
-                            <span className="case-code-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
+                            <div className="case-code-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
                               <span className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`} style={{ display: 'inline-block', fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isActiveRow ? 'rotate(90deg)' : 'none' }}>▸</span>
-                              {row.folio}
-                            </span>
+                              <span>{row.employeeFullName}</span>
+                            </div>
                             <div className="tracking-filter-caption" style={{ marginLeft: '1.4rem' }}>
-                              {formatDateTimeValue(row.createdAt)}
+                              {formatRut(row.employeeDocumentNumber)} · Creado: {formatDateTimeValue(row.createdAt)}
                             </div>
-                          </td>
-                          <td>
-                            <strong>{row.stepName}</strong>
-                            <div className="tracking-filter-caption">
-                              {getRequestStatusLabel(row.stepCode === "contract_admin" ? "P" : "E")}
+                            <div className="tracking-filter-caption" style={{ marginLeft: '1.4rem' }}>
+                              {row.employeeJobTitle}
                             </div>
-                          </td>
-                          <td>
-                            <strong>{row.employeeFullName}</strong>
-                            <div className="tracking-filter-caption">
-                              {formatRut(row.employeeDocumentNumber)}
-                            </div>
-                            <div className="tracking-filter-caption">{row.employeeJobTitle}</div>
                           </td>
                           <td>{row.incentiveTypeName}</td>
                           <td>
@@ -436,7 +425,7 @@ export function IncentiveApprovalsView() {
                         </tr>
                         {isActiveRow ? (
                           <tr className="tracking-table-expanded-row">
-                            <td colSpan={10}>
+                            <td colSpan={8}>
                               {detailQuery.isLoading ? (
                                 <div className="expanded-detail-section-full" style={{ padding: '1.5rem' }}>
                                   <p className="tracking-empty-state">Cargando detalle del incentivo...</p>
@@ -541,7 +530,7 @@ export function IncentiveApprovalsView() {
                   })
                 ) : (
                   <tr>
-                    <td className="tracking-empty-state" colSpan={10}>
+                    <td className="tracking-empty-state" colSpan={8}>
                       {approvalQueueQuery.isLoading
                         ? "Cargando aprobaciones..."
                         : "No hay aprobaciones pendientes para el filtro actual."}
