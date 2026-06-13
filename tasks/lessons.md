@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Ocultar un botón no equivale a gobernar la operación**. Si `Anular` cambia estado auditable de un incentivo, la restricción real debe vivir en la función `SECURITY DEFINER`; el frontend solo refleja ese contrato para no ofrecer acciones inválidas.
 - **Las exportaciones auditables no se construyen con payloads resumidos**. Si el usuario necesita sacar XLS “con todo lo guardado”, la fuente correcta es la RPC canónica del historial ampliada con columnas persistidas, no una mezcla de detalle parcial y campos reconstruidos en React.
 
+## 56. En exportaciones analíticas, una fecha bonita de UI sigue siendo un dato malo
+
+- **No reutilices helpers de presentación como `formatRequestDate(...)` para XLS analítico**. Eso produce texto legible, pero no una fecha nativa de Excel; después fallan ordenamientos, filtros, pivots y fórmulas.
+- **La regla correcta es separar semántica y visualización**. El exportador debe emitir objetos `Date` y recién allí aplicar formato Excel por columna (`dd-mm-yyyy` o `dd-mm-yyyy hh:mm`) según si el campo es fecha de negocio o timestamp auditable.
+
 ## 54. Un alias sobre una RPC compartida nunca se implementa reescribiendo una variante vieja del motor
 
 - **Si el cambio pedido es solo agregar campos al JSON, la base obligatoria es la implementación viva exacta de la RPC, no una migración parecida encontrada en el historial**. En este repo, sustituir `get_recruitment_control_dashboard_v2()` desde una variante distinta rompió `candidate_control` y `personnel_to_hire` aunque el objetivo funcional era solo exponer `salary` y `turno`.

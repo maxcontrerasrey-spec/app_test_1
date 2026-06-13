@@ -22,6 +22,19 @@
 - [x] Implementar selección múltiple y exportación XLS por folios seleccionados o por período desde historial
 - [x] Validar typecheck, diff y empujar el cambio a `main`
 
+## Ajuste analítico de fechas en exportación XLS de Incentivos
+
+- [x] Convertir todas las fechas exportadas a celdas nativas de Excel en vez de strings ISO
+- [x] Aplicar formato de visualización por tipo de fecha (`dd-mm-yyyy` y `dd-mm-yyyy hh:mm`) sin romper análisis
+- [x] Validar typecheck y diff limpio
+
+## Resultado de ajuste analítico de fechas en exportación XLS de Incentivos
+
+- [`buildIncentiveExportRows(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:62) dejó de exportar fechas como strings ISO y ahora las transforma a objetos `Date` para que Excel las reciba como fechas reales.
+- Se separó el tratamiento de fechas de negocio y timestamps auditables en [`exportIncentiveRequestsToXlsx(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:139): `fecha_servicio` y `fecha_ingreso_sindicato` salen como `dd-mm-yyyy`, mientras `fecha_creacion`, `fecha_actualizacion` y `fecha_anulacion` salen como `dd-mm-yyyy hh:mm`.
+- La decisión evita reutilizar el helper visual [`formatRequestDate(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/format.ts:12) dentro del XLS, porque ese helper degrada la fecha a texto y rompe ordenamiento, filtros, pivots y fórmulas en Excel.
+- Validación local cerrada con `npx tsc -b` y `git diff --check`.
+
 ## Resultado de endurecimiento de historial de incentivos: anulación y exportación auditables
 
 - Se agregó la migración [`20260613103000_harden_hr_incentive_history_cancel_and_export.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613103000_harden_hr_incentive_history_cancel_and_export.sql:1), que corrige el problema de fondo: [`cancel_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613103000_harden_hr_incentive_history_cancel_and_export.sql:9) ya no confía en el acceso general al módulo, sino que permite anular únicamente a `superadmin/admin` y `control_contratos`.
