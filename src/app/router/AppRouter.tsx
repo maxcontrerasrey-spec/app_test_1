@@ -138,7 +138,6 @@ export function AppRouter() {
                 <RoleProtectedRoute
                   moduleCode="recursos_humanos"
                   allowRoles={HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES}
-                  superAdminOnly
                 >
                   <Navigate to="/recursos-humanos/incentivos" replace />
                 </RoleProtectedRoute>
@@ -150,7 +149,6 @@ export function AppRouter() {
                 <RoleProtectedRoute
                   moduleCode="recursos_humanos"
                   allowRoles={HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES}
-                  superAdminOnly
                 >
                   <HumanResourcesDashboard />
                 </RoleProtectedRoute>
@@ -159,7 +157,7 @@ export function AppRouter() {
             <Route
               path="/roster"
               element={
-                <RoleProtectedRoute moduleCode="jornadas_turnos" superAdminOnly>
+                <RoleProtectedRoute moduleCode="jornadas_turnos">
                   <RosterPage />
                 </RoleProtectedRoute>
               }
@@ -167,7 +165,7 @@ export function AppRouter() {
             <Route
               path="/roster/patterns"
               element={
-                <RoleProtectedRoute moduleCode="jornadas_turnos" superAdminOnly>
+                <RoleProtectedRoute moduleCode="jornadas_turnos">
                   <RosterPage />
                 </RoleProtectedRoute>
               }

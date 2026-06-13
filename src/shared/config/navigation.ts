@@ -13,7 +13,6 @@ export type NavigationItem = {
   subgroup?: string;
   iconKey?: "document" | "timeline" | "certificate" | "tracking" | "flask";
   visibleForRoles?: AppRole[];
-  superAdminOnly?: boolean;
   items?: NavigationItem[];
 };
 
@@ -94,23 +93,20 @@ export const navigationModules: NavigationModule[] = [
         to: "/roster",
         label: "Jornadas y Turnos",
         description: "Calendario operacional de pautas, descansos y excepciones por trabajador.",
-        iconKey: "timeline",
-        superAdminOnly: true
+        iconKey: "timeline"
       },
       {
         label: "Gestión de Incentivos Extraordinarios",
         moduleCode: "recursos_humanos",
         to: "#",
         iconKey: "document",
-        superAdminOnly: true,
         items: [
           {
             moduleCode: "recursos_humanos",
             to: "/recursos-humanos/incentivos",
             label: "Ingreso & Aprobación de Incentivos",
             description: "Registro y control de incentivos extraordinarios.",
-            iconKey: "document",
-            superAdminOnly: true
+            iconKey: "document"
           },
           {
             moduleCode: "recursos_humanos",
@@ -118,7 +114,6 @@ export const navigationModules: NavigationModule[] = [
             label: "Análisis de Incentivos",
             description: "Control gerencial del gasto y desviaciones operacionales.",
             iconKey: "tracking",
-            superAdminOnly: true,
             visibleForRoles: [
               "director_eje",
               "gerente_general",

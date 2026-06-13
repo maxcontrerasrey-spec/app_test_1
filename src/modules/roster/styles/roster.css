@@ -60,7 +60,7 @@
 }
 
 .roster-calendar-dot--extra {
-  background: #0891b2;
+  background: #dc2626;
 }
 
 .roster-calendar-weekdays {
@@ -123,7 +123,7 @@
 }
 
 .roster-calendar-day--extra {
-  background: linear-gradient(180deg, rgba(8, 145, 178, 0.18), rgba(var(--surface-rgb), 0.96));
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.22), rgba(var(--surface-rgb), 0.96));
 }
 
 .roster-calendar-day--training {
