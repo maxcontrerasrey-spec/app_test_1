@@ -178,6 +178,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si el negocio busca por `primer nombre + apellido`, un `LIKE` directo sobre `full_name` es insuficiente**. Obliga a conocer el segundo nombre y genera falsos “no encontrado” aunque la ficha exista y esté activa.
 - **La corrección no debe duplicarse por input**. Se resuelve con una helper reusable de backend basada en campos estructurados de BUK cuando existan, con fallback defensivo desde `full_name`, y luego se alinea cualquier filtro local residual con la misma semántica.
 
+## 56. En BUK, `first_name` no siempre es “primer nombre”; puede venir con nombres compuestos
+
+- **No asumas que `first_name = primer nombre`**. En la data real puede llegar como `Jorge Aníbal`, por lo que reutilizarlo completo en la clave de búsqueda reintroduce exactamente el mismo problema que se intentaba corregir.
+- **Para matching simplificado, el primer nombre debe reducirse al primer token antes de concatenar apellidos**. Si no, búsquedas como `jorge ara` siguen fallando aunque la helper ya use campos estructurados de BUK.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

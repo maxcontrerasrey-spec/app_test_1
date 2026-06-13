@@ -108,6 +108,12 @@
 - Se alineó además el filtro local de conductores en [`OperacionesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/pages/OperacionesDashboard.tsx:134), apoyado por la helper [`buildSimplifiedBukNameSearchKey(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/lib/transformers.ts:28), para que Operaciones no quede con una lógica distinta al resto de los lookups BUK.
 - Cierre validado con `npx tsc -b` y `git diff --check`.
 
+## Hotfix de primer nombre compuesto en búsqueda simplificada BUK
+
+- Se agregó la migración [`20260614133500_fix_buk_name_search_first_token.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614133500_fix_buk_name_search_first_token.sql:1) para corregir un caso real de datos BUK: `first_name` puede venir como `Jorge Aníbal`, no solo `Jorge`.
+- La helper [`build_buk_employee_name_search_key(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614133500_fix_buk_name_search_first_token.sql:1) ahora reduce `first_name` al primer token antes de construir la clave simplificada. Con eso, `jorge ara` vuelve a encontrar correctamente a `Jorge Aníbal Araya Cangana`.
+- La corrección fue aplicada también en la base activa de Supabase durante esta sesión y validada con un query de humo directo sobre `employees_active_current`, confirmando la clave `jorge araya cangana`.
+
 ## Migración completa de motor gráfico a Recharts
 
 - [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico
