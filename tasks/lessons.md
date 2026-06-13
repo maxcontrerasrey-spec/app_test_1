@@ -188,6 +188,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Que el token lea `employees` no implica que pueda leer `vacations` o `absences`**. En BUK los permisos son por módulo/endpoint, así que una integración puede estar parcialmente habilitada.
 - **Si la validación devuelve `401`, no corresponde implementar una sync “a medias”**. Lo correcto es dejar tooling de validación reutilizable, documentar el permiso faltante y retomar la sync solo cuando el token tenga el alcance requerido.
 
+## 58. Cuando una restricción de negocio es correcta pero genera fricción, primero se mejora el mensaje y no la regla
+
+- **No relajes una validación operativa solo porque el usuario reporta confusión**. Si la restricción protege el proceso, el ajuste correcto puede ser exclusivamente de comunicación.
+- **Los bloqueos relevantes deben explicarse igual en backend y frontend**. Si el preview puede fallar por excepción o por validación visible, ambos textos deben converger en la misma causa de negocio para evitar diagnósticos contradictorios.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

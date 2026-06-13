@@ -128,6 +128,25 @@
 - También se agregó el workflow manual [validate-buk-absence-access.yml](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/validate-buk-absence-access.yml:1), para que el equipo pueda revalidar permisos en GitHub Actions apenas BUK habilite `Vacaciones: Lectura` y el acceso necesario para ausencias/licencias.
 - La regla de negocio quedó definida para la siguiente fase: cuando el token tenga alcance, las fechas provenientes de BUK tendrán jerarquía superior y no podrán ser sobreescritas por excepciones manuales locales.
 
+## Hotfix de preview de incentivos con roster_day_row sin asignar
+
+- [ ] Auditar la versión vigente de `calculate_hr_incentive_preview(...)` para aislar por qué falla aunque exista pauta en roster
+- [ ] Corregir la construcción de `roster_validation` para que no lea `roster_day_row` cuando el incentivo no exige descanso
+- [ ] Validar el query de preview en la base activa y documentar el cierre
+
+## Ajuste de mensaje para bloqueo de reemplazo por trabajador en turno
+
+- [x] Auditar el punto exacto donde se informa el bloqueo de pauta en Incentivos
+- [x] Reemplazar el mensaje técnico por una explicación clara de negocio en backend y frontend
+- [x] Validar typecheck y diff, y documentar el ajuste
+
+## Resultado de ajuste de mensaje para bloqueo de reemplazo por trabajador en turno
+
+- Se mantuvo intacta la regla de negocio: si el incentivo exige descanso, un trabajador marcado `en turno` por su pauta no puede ser usado como reemplazo.
+- Se agregó la migración [`20260613192711_clarify_hr_incentive_rest_day_block_message.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613192711_clarify_hr_incentive_rest_day_block_message.sql:1), que redefine [`calculate_hr_incentive_preview(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613192711_clarify_hr_incentive_rest_day_block_message.sql:1) para que el backend explique el bloqueo en lenguaje de negocio: no puede reemplazar porque está en turno en esa fecha.
+- [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:353) ahora muestra el mismo criterio en frontend, evitando el mensaje ambiguo de “exige descanso” sin contexto de reemplazo.
+- Validación local cerrada con `npx tsc -b` y `git diff --check`.
+
 ## Migración completa de motor gráfico a Recharts
 
 - [x] Auditar todas las referencias activas del motor gráfico anterior en dependencias, wrapper compartido, Labs y dashboard analítico

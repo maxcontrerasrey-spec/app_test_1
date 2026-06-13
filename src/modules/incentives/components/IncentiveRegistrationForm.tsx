@@ -353,7 +353,7 @@ export function IncentiveRegistrationForm({
                   >
                     {previewQuery.data.rosterValidation.isRestDay
                       ? `Validación de descanso OK: ${previewQuery.data.rosterValidation.scheduleLabel ?? "Descanso"}.`
-                      : `Este incentivo exige descanso y la pauta vigente indica ${previewQuery.data.rosterValidation.scheduleLabel ?? "trabajo"}.`}
+                      : `No puedes usar a este trabajador como reemplazo en esta fecha porque su pauta vigente indica ${previewQuery.data.rosterValidation.scheduleLabel ?? "turno"}. Solo se permite reemplazo cuando el trabajador está en descanso.`}
                   </p>
                 ) : null}
               </>
