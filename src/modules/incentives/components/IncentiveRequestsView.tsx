@@ -169,7 +169,6 @@ export function IncentiveRequestsView({
                 <th>Contrato</th>
                 <th>Fecha servicio</th>
                 <th>Monto</th>
-                <th>Estado</th>
                 <th>Acción</th>
               </tr>
             </thead>
@@ -208,21 +207,7 @@ export function IncentiveRequestsView({
                           </td>
                           <td>{formatRequestDate(request.serviceDate)}</td>
                           <td>{formatCurrencyValue(request.calculatedAmount)}</td>
-                          <td>
-                            <span className="tracking-status-pill">
-                              {getIncentiveStatusLabel(request.status)}
-                            </span>
-                            {request.currentFlowUser ? (
-                              <div className="tracking-filter-caption">
-                                En flujo con {request.currentFlowUser}
-                              </div>
-                            ) : null}
-                            {request.cancellationComment ? (
-                              <div className="tracking-filter-caption">
-                                {request.cancellationComment}
-                              </div>
-                            ) : null}
-                          </td>
+
                           <td>
                             {request.status !== "C" ? (
                               <button
@@ -243,7 +228,7 @@ export function IncentiveRequestsView({
                         </tr>
                         {isActiveRow ? (
                           <tr className="tracking-table-expanded-row">
-                            <td colSpan={8}>
+                            <td colSpan={7}>
                               {detailQuery.isLoading ? (
                                 <div className="expanded-detail-section-full" style={{ padding: '1.5rem' }}>
                                   <p className="tracking-empty-state">Cargando detalle del incentivo...</p>
