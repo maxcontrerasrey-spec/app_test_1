@@ -218,9 +218,23 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
   return {
     id: String(row.id ?? ""),
     folio: Number(row.folio ?? 0),
+    employeeBukEmployeeId: String(row.employee_buk_employee_id ?? ""),
+    employeeDocumentType: String(row.employee_document_type ?? "rut"),
     employeeFullName: String(row.employee_full_name ?? ""),
     employeeDocumentNumber: String(row.employee_document_number ?? ""),
     employeeJobTitle: String(row.employee_job_title ?? ""),
+    employeeUnionName: readNullableText(row.employee_union_name),
+    employeeUnionStatus:
+      typeof row.employee_union_status === "string" && row.employee_union_status.trim()
+        ? mapUnionStatus(row.employee_union_status)
+        : "unknown",
+    employeeUnionJoinedAt: readNullableText(row.employee_union_joined_at),
+    primaryContractCode: readNullableText(row.primary_contract_code),
+    primaryAreaName: readNullableText(row.primary_area_name),
+    selectedAreaCode: readNullableText(row.selected_area_code),
+    incentiveTypeId: String(row.incentive_type_id ?? ""),
+    requiresReplacement: Boolean(row.requires_replacement),
+    replacementBukEmployeeId: readNullableText(row.replacement_buk_employee_id),
     replacementFullName:
       typeof row.replacement_full_name === "string" && row.replacement_full_name.trim()
         ? row.replacement_full_name
@@ -233,6 +247,9 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
     motive: typeof row.motive === "string" && row.motive.trim() ? row.motive : null,
     description: typeof row.description === "string" && row.description.trim() ? row.description : null,
     incentiveTypeName: String(row.incentive_type_name ?? ""),
+    calculationBasis: row.calculation_basis === "per_hour" ? "per_hour" : "fixed",
+    rateRuleId: readNullableText(row.rate_rule_id),
+    rateRuleAmount: Number(row.rate_rule_amount ?? 0),
     calculatedAmount: Number(row.calculated_amount ?? 0),
     periodCode: String(row.period_code ?? ""),
     selectedAreaName: String(row.selected_area_name ?? ""),
@@ -243,16 +260,21 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
       row.duration_hours === null || row.duration_hours === undefined
         ? null
         : Number(row.duration_hours),
+    createdBy: String(row.created_by ?? ""),
     requesterName: String(row.requester_name ?? ""),
+    requesterEmail: readNullableText(row.requester_email),
     status: String(row.status ?? "P") as HrIncentiveRequest["status"],
     currentFlowUser:
       typeof row.current_flow_user === "string" && row.current_flow_user.trim()
         ? row.current_flow_user
         : null,
+    cancelledAt: readNullableText(row.cancelled_at),
+    cancelledBy: readNullableText(row.cancelled_by),
     cancellationComment:
       typeof row.cancellation_comment === "string" && row.cancellation_comment.trim()
         ? row.cancellation_comment
         : null,
+    updatedAt: String(row.updated_at ?? ""),
     entryLagDays: Number(row.entry_lag_days ?? 0),
     isOutOfDeadline: Boolean(row.is_out_of_deadline),
     isContractMismatch: Boolean(row.is_contract_mismatch)

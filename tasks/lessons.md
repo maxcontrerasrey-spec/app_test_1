@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una integración externa falla, la primera necesidad es ver el error real**. Cubrirlo con un mensaje fijo ralentiza el diagnóstico y obliga a adivinar entre SMTP, URLs, templates o permisos.
 - **La UI puede mantener un tono limpio sin perder precisión**. Si el backend o Supabase entrega un mensaje útil, debe propagarse al menos en ambientes operativos de prueba.
 
+## 55. Si una acción es sensible, el mismo permiso debe cerrarse en UI y en RPC
+
+- **Ocultar un botón no equivale a gobernar la operación**. Si `Anular` cambia estado auditable de un incentivo, la restricción real debe vivir en la función `SECURITY DEFINER`; el frontend solo refleja ese contrato para no ofrecer acciones inválidas.
+- **Las exportaciones auditables no se construyen con payloads resumidos**. Si el usuario necesita sacar XLS “con todo lo guardado”, la fuente correcta es la RPC canónica del historial ampliada con columnas persistidas, no una mezcla de detalle parcial y campos reconstruidos en React.
+
 ## 54. Un alias sobre una RPC compartida nunca se implementa reescribiendo una variante vieja del motor
 
 - **Si el cambio pedido es solo agregar campos al JSON, la base obligatoria es la implementación viva exacta de la RPC, no una migración parecida encontrada en el historial**. En este repo, sustituir `get_recruitment_control_dashboard_v2()` desde una variante distinta rompió `candidate_control` y `personnel_to_hire` aunque el objetivo funcional era solo exponer `salary` y `turno`.

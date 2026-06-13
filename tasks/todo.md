@@ -15,6 +15,21 @@
 - [x] Exponer y resaltar en historial/aprobaciones las banderas `Fuera de Plazo` y `Contrato distinto`, además del periodo calculado
 - [x] Validar build, revisar diff y empujar el cambio a `main`
 
+## Endurecimiento de historial de incentivos: anulación y exportación auditables
+
+- [x] Restringir en backend y frontend la anulación de incentivos para que solo la ejecuten `superadmin` y `control_contratos`
+- [x] Expandir el contrato canónico de historial para permitir exportación XLS con todos los campos persistidos y estatus
+- [x] Implementar selección múltiple y exportación XLS por folios seleccionados o por período desde historial
+- [x] Validar typecheck, diff y empujar el cambio a `main`
+
+## Resultado de endurecimiento de historial de incentivos: anulación y exportación auditables
+
+- Se agregó la migración [`20260613103000_harden_hr_incentive_history_cancel_and_export.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613103000_harden_hr_incentive_history_cancel_and_export.sql:1), que corrige el problema de fondo: [`cancel_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613103000_harden_hr_incentive_history_cancel_and_export.sql:9) ya no confía en el acceso general al módulo, sino que permite anular únicamente a `superadmin/admin` y `control_contratos`.
+- La misma migración redefine [`get_hr_incentive_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613103000_harden_hr_incentive_history_cancel_and_export.sql:66) para devolver el payload persistido relevante del folio: identificadores, contratos primario/seleccionado, sindicato, reglas de cálculo, actor creador, timestamps, anulaciones y banderas operativas. La exportación ya no depende de reconstrucciones parciales en React.
+- [`IncentiveRequestsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:1) ahora oculta la acción `Anular` para cualquier rol fuera de `superadmin` y `control_contratos`, agrega selección múltiple por checkbox y habilita dos salidas auditables: `Exportar seleccionados` y `Exportar período`.
+- La exportación usa [`@mylinkpi/xlsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/package.json:1) ya homologado en el ERP, y genera un `.xlsx` con estatus y campos base guardados en base de datos, evitando otro motor de planillas o un contrato paralelo ad hoc.
+- Validación local cerrada con `npx tsc -b` y `git diff --check`.
+
 ## Resultado de endurecimiento estructural de periodos y alertas operativas en Incentivos
 
 - Se agregó la migración [`20260612233000_harden_hr_incentive_periods_and_flags.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612233000_harden_hr_incentive_periods_and_flags.sql:1), que convierte la lógica de periodo en una regla backend explícita: del día `21` al `20` siguiente, donde el período corresponde al mes de cierre. Ejemplo: `21/05 -> 20/06 = 202606`.
