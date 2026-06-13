@@ -165,7 +165,6 @@ export function IncentiveRequestsView({
                 <th>Contrato</th>
                 <th>Fecha servicio</th>
                 <th>Monto</th>
-                <th>Solicitó</th>
                 <th>Estado</th>
                 <th>Acción</th>
               </tr>
@@ -175,16 +174,16 @@ export function IncentiveRequestsView({
                 ? requestsQuery.data?.map((request) => (
                     <tr key={request.id}>
                       <td>
-                        <strong>{request.folio}</strong>
-                        <div className="tracking-filter-caption">{request.periodCode}</div>
+                        <strong>{String(request.folio).padStart(5, '0')}</strong>
                       </td>
                       <td>
                         <strong>{request.employeeFullName}</strong>
                         <div className="tracking-filter-caption">
                           {formatRut(request.employeeDocumentNumber)}
                         </div>
+                        <div className="tracking-filter-caption">{request.employeeJobTitle}</div>
                         {request.replacementFullName ? (
-                          <div className="tracking-filter-caption">
+                          <div className="tracking-filter-caption" style={{ marginTop: '0.2rem' }}>
                             Reemplaza a {request.replacementFullName}
                           </div>
                         ) : null}
@@ -192,13 +191,9 @@ export function IncentiveRequestsView({
                       <td>{request.incentiveTypeName}</td>
                       <td>
                         <strong>{request.selectedAreaName}</strong>
-                        <div className="tracking-filter-caption">
-                          {request.selectedContractCode}
-                        </div>
                       </td>
                       <td>{formatRequestDate(request.serviceDate)}</td>
                       <td>{formatCurrencyValue(request.calculatedAmount)}</td>
-                      <td>{request.requesterName}</td>
                       <td>
                         <span className="tracking-status-pill">
                           {getIncentiveStatusLabel(request.status)}
@@ -234,7 +229,7 @@ export function IncentiveRequestsView({
 
               {!requestsQuery.isLoading && (requestsQuery.data ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="tracking-empty-state">
+                  <td colSpan={8} className="tracking-empty-state">
                     No hay incentivos para el filtro actual.
                   </td>
                 </tr>
@@ -242,7 +237,7 @@ export function IncentiveRequestsView({
 
               {requestsQuery.isLoading ? (
                 <tr>
-                  <td colSpan={9} className="tracking-empty-state">
+                  <td colSpan={8} className="tracking-empty-state">
                     Cargando incentivos...
                   </td>
                 </tr>
