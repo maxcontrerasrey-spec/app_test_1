@@ -11,7 +11,7 @@ export type NavigationItem = {
   label: string;
   description?: string;
   subgroup?: string;
-  iconKey?: "document" | "timeline" | "certificate" | "tracking";
+  iconKey?: "document" | "timeline" | "certificate" | "tracking" | "flask";
   items?: NavigationItem[];
 };
 
@@ -112,7 +112,7 @@ export const navigationModules: NavigationModule[] = [
         to: "/labs",
         label: "NXTPAPER Test",
         description: "Entorno de pruebas para la simulación visual E-Ink.",
-        iconKey: "flask" as any
+        iconKey: "flask"
       }
     ]
   }

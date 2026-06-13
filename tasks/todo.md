@@ -2,6 +2,20 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Limpieza enterprise de superficies compartidas de tareas y navegación
+
+- [x] Auditar acoplamiento, ramas muertas y `any` introducidos en campana, widget de tareas y navegación
+- [x] Centralizar la clasificación de tareas compartidas y eliminar tipado sintético/frágil en frontend
+- [x] Validar typecheck y consistencia de diff
+
+## Resultado de limpieza enterprise de superficies compartidas de tareas y navegación
+
+- Se creó [`taskPresentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/lib/taskPresentation.ts:1) para centralizar la clasificación de tareas compartidas entre campana y widget de inicio. Antes, esa lógica estaba duplicada y dependía de strings dispersos (`module_code === 'recursos_humanos'`) en más de una superficie.
+- [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:10) dejó de fabricar un item sintético con `as any` para agrupar incentivos en la campana. Ahora usa un tipo explícito `DashboardNotificationPreviewItem`, reduciendo fragilidad para futuros desarrolladores y evitando que la UI dependa de objetos parcialmente tipados.
+- [`TasksWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/TasksWidget.tsx:1) quedó desacoplado del flujo de incentivos: se eliminaron la importación de `decideHrIncentiveApproval(...)`, el detalle expandido muerto y la rama de decisión que ya no podían ejecutarse después del filtro del inicio. Eso reduce tamaño, complejidad ciclomática y riesgo de divergencia funcional.
+- También se corrigieron dos señales de deuda técnica transversal: [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:8) ya tipa correctamente `flask` sin `as any`, y [`SelectField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/SelectField.tsx:3) reemplaza `raw?: any` por `raw?: unknown`.
+- Validación cerrada con `npx tsc -b` exitoso y `git diff --check` limpio.
+
 ## Ajuste de densidad entre campana y widget de tareas del inicio
 
 - [x] Auditar dónde comparten hoy la misma fuente la campana y el widget de inicio

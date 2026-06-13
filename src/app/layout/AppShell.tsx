@@ -9,10 +9,10 @@ import logo from "../../assets/app-logo.png";
 import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
 import { useDashboard } from "../../modules/dashboard/hooks/useDashboard";
-import type { DashboardTaskItem } from "../../modules/dashboard/types";
 import { useTheme } from "../../shared/context/ThemeContext";
 import orionLogo from "../../assets/orion-logo.png";
 import { ORIONWidget } from "../../modules/ai_assistant/components/ORIONWidget";
+import { TopNotificationsMenu } from "./TopNotificationsMenu";
 
 function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
   const commonProps = {
@@ -23,7 +23,7 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
     strokeLinejoin: "round" as const
   };
 
-  switch (iconKey as any) {
+  switch (iconKey) {
     case "flask":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -69,40 +69,6 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
   }
 }
 
-function resolvePendingTaskPath(task: DashboardTaskItem) {
-  if (task.module_code === "movilidad_interna") {
-    return "/movilidad-interna";
-  }
-
-  if (task.module_code === "recursos_humanos") {
-    return "/recursos-humanos/incentivos";
-  }
-
-  return "/control-contrataciones";
-}
-
-function buildPendingTaskSummary(task: DashboardTaskItem) {
-  if (task.type === "who_approval") {
-    return task.candidate_name
-      ? `${task.candidate_name} · ${task.job_position_name ?? "Who pendiente"}`
-      : "Aprobación Who pendiente";
-  }
-
-  if (task.module_code === "movilidad_interna") {
-    return task.employee_name
-      ? `${task.employee_name} · ${task.destination_area_name ?? "Movilidad interna"}`
-      : "Movilidad interna pendiente";
-  }
-
-  if (task.module_code === "recursos_humanos") {
-    return task.employee_name
-      ? `${task.employee_name} · ${task.title ?? task.job_position_name ?? "Incentivo pendiente"}`
-      : task.title ?? task.job_position_name ?? "Aprobación de incentivo pendiente";
-  }
-
-  return task.job_position_name ?? task.title ?? "Aprobación pendiente";
-}
-
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -115,9 +81,8 @@ export function AppShell() {
   const [hoveredModule, setHoveredModule] = useState<string | null>(null);
   const [pinnedModule, setPinnedModule] = useState<string | null>(null);
   const [hoveredMegaItem, setHoveredMegaItem] = useState<string | null>(null);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
-  const notificationsMenuRef = useRef<HTMLDivElement | null>(null);
-  const megaMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsMenuRef = useRef<HTMLDivElement>(null);
   const thirdTrayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnterMegaItem = (label: string) => {
@@ -130,7 +95,7 @@ export function AppShell() {
       setHoveredMegaItem(null);
     }, 100);
   };
-  const navMenuRef = useRef<HTMLDivElement | null>(null);
+  const navMenuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnterModule = (label: string) => {
@@ -229,29 +194,6 @@ export function AppShell() {
 
     return initials || "U";
   }, [displayName]);
-  const pendingTasksCount = Array.isArray(tasksData) ? tasksData.length : 0;
-  const pendingTaskPreview = useMemo(() => {
-    if (!Array.isArray(tasksData)) return [];
-    const incentives = tasksData.filter((t) => t.module_code === "recursos_humanos");
-    const others = tasksData.filter((t) => t.module_code !== "recursos_humanos");
-
-    const preview = [];
-    if (incentives.length > 0) {
-      preview.push({
-        id: "grouped-incentives",
-        folio: "Incentivos Extraordinarios",
-        title: `${incentives.length} solicitudes pendientes de aprobar`,
-        status_label: "Requiere aprobación",
-        module_code: "recursos_humanos",
-      } as any);
-    }
-
-    preview.push(...others);
-    return preview;
-  }, [tasksData]);
-
-
-
   useEffect(() => {
     clearPinnedNavigation();
   }, [location.pathname]);
@@ -378,70 +320,13 @@ export function AppShell() {
 
           <div className="top-shell-right">
             <div className="top-nav-actions">
-            <div className="top-notifications-wrap" ref={notificationsMenuRef}>
-              <button
-                type="button"
-                className={`top-notifications-button ${isNotificationsOpen ? "top-notifications-button-open" : ""}`}
-                onClick={() => setIsNotificationsOpen((current) => !current)}
-                aria-label={`Notificaciones${pendingTasksCount ? `, ${pendingTasksCount} tareas pendientes` : ""}`}
-                aria-expanded={isNotificationsOpen}
-                aria-haspopup="menu"
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
-                  <path d="M10 20a2 2 0 0 0 4 0" />
-                </svg>
-                {pendingTasksCount > 0 ? (
-                  <span className="top-notifications-badge" aria-hidden="true">
-                    {pendingTasksCount > 99 ? "99+" : pendingTasksCount}
-                  </span>
-                ) : null}
-              </button>
-
-              {isNotificationsOpen ? (
-                <div className="top-notifications-menu" role="menu" aria-label="Resumen de tareas pendientes">
-                  <div className="top-notifications-header">
-                    <strong>Tareas pendientes</strong>
-                    <span>{pendingTasksCount > 0 ? `${pendingTasksCount} en cola` : "Sin pendientes"}</span>
-                  </div>
-
-                  {pendingTaskPreview.length > 0 ? (
-                    <div className="top-notifications-list">
-                      {pendingTaskPreview.map((task) => (
-                        <button
-                          key={task.id}
-                          type="button"
-                          className="top-notifications-item"
-                          onClick={() => {
-                            setIsNotificationsOpen(false);
-                            navigate(resolvePendingTaskPath(task));
-                          }}
-                        >
-                          <div className="top-notifications-item-copy">
-                            <strong>{task.folio ?? task.step_name ?? "Tarea pendiente"}</strong>
-                            <span>{buildPendingTaskSummary(task)}</span>
-                          </div>
-                          <small>{task.status_label}</small>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="top-notifications-empty">No tienes tareas pendientes.</div>
-                  )}
-
-                  <button
-                    type="button"
-                    className="top-notifications-footer"
-                    onClick={() => {
-                      setIsNotificationsOpen(false);
-                      navigate("/");
-                    }}
-                  >
-                    Ver panel de inicio
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            <TopNotificationsMenu
+              isOpen={isNotificationsOpen}
+              onToggle={() => setIsNotificationsOpen((current) => !current)}
+              onClose={() => setIsNotificationsOpen(false)}
+              tasks={tasksData}
+              containerRef={notificationsMenuRef}
+            />
             <button
               type="button"
               className="theme-toggle"
