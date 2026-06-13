@@ -35,6 +35,19 @@
 - [x] Implementar vista React con multifiltros, KPIs y gráficas dentro de `HumanResourcesDashboard`
 - [ ] Validar typecheck, diff y push a `main`
 
+## Ajuste backend de ranking de conductores en Analítica de Incentivos
+
+- [x] Auditar la RPC `get_hr_incentives_analytics(...)` vigente contra el contrato que ya espera el frontend para `amount_by_driver`
+- [x] Crear una nueva migración SQL que agregue el ranking top 12 por `requester_name` con desglose anidado por contrato
+- [x] Validar diff y documentar el ajuste sin reescribir migraciones históricas
+
+## Resultado de ajuste backend de ranking de conductores en Analítica de Incentivos
+
+- Se agregó la migración [`20260614001000_update_hr_incentive_driver_amount_analytics.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614001000_update_hr_incentive_driver_amount_analytics.sql:1), que redefine [`get_hr_incentives_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614001000_update_hr_incentive_driver_amount_analytics.sql:1) sin tocar la migración histórica original del dashboard analítico.
+- La causa raíz era un drift claro de contrato: el frontend ya consumía `amount_by_driver`, pero la RPC seguía devolviendo solo `deviations_by_contract`. La nueva versión incorpora `driver_contract_amounts` y `amount_by_driver`, agrupando por `requester_name`, sumando `calculated_amount` y limitando a los 12 conductores con mayor monto total.
+- El payload nuevo sale con la estructura anidada requerida: `driver_name`, `total_amount` y `contracts[]` con `contract_code`, `contract_label` y `amount`, ordenado por monto tanto a nivel de conductor como de contrato.
+- Se mantuvo intacto el bloque `deviations_by_contract` porque la vista actual de [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1) todavía lo renderiza en una tarjeta aparte. Así se corrigió el ranking de conductores sin romper el resto del dashboard.
+
 ## Submódulo Jornadas y Turnos (Roster)
 
 - [x] Aterrizar el plan externo a la arquitectura real del repo: módulo propio `src/modules/roster`, permiso dedicado y validación cruzada con incentivos sin inventar otra superficie HR paralela

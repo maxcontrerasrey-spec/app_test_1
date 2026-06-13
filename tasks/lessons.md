@@ -218,6 +218,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una integración externa falla, la primera necesidad es ver el error real**. Cubrirlo con un mensaje fijo ralentiza el diagnóstico y obliga a adivinar entre SMTP, URLs, templates o permisos.
 - **La UI puede mantener un tono limpio sin perder precisión**. Si el backend o Supabase entrega un mensaje útil, debe propagarse al menos en ambientes operativos de prueba.
 
+## 94. En dashboards analíticos, un contrato parcialmente migrado rompe aunque compile
+
+- **Si el frontend ya cambió de métrica o shape, la RPC agregada debe evolucionar en la misma pasada.** En `Análisis de Incentivos`, la UI ya consumía `amount_by_driver`, pero la función SQL seguía devolviendo solo `deviations_by_contract`; el resultado no era un error de TypeScript, sino tarjetas vacías o datos desalineados en runtime.
+- **No reescribas la migración histórica para “corregirla” después.** Cuando el drift aparece más tarde, la salida enterprise es una nueva migración puntual que redefine la RPC y deja rastro claro del ajuste productivo.
+- **Si una vista vigente sigue usando parte del contrato anterior, no la rompas por purismo.** Mientras `IncentiveAnalyticsView.tsx` todavía renderice desviaciones por contrato, el backend puede sumar `amount_by_driver` sin retirar `deviations_by_contract`; primero se corrige el desacople, después se elimina la superficie vieja en otra pasada consciente.
+
 ## 55. Si una acción es sensible, el mismo permiso debe cerrarse en UI y en RPC
 
 - **Ocultar un botón no equivale a gobernar la operación**. Si `Anular` cambia estado auditable de un incentivo, la restricción real debe vivir en la función `SECURITY DEFINER`; el frontend solo refleja ese contrato para no ofrecer acciones inválidas.
