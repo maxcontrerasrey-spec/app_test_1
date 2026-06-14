@@ -19,6 +19,11 @@ type IncentiveSetupViewProps = {
 
 export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewProps) {
   const queryClient = useQueryClient();
+  const [jobTitleStatusFilter, setJobTitleStatusFilter] = useState<"all" | "active" | "inactive">(
+    "all"
+  );
+  const [typeStatusFilter, setTypeStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [ruleStatusFilter, setRuleStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [jobTitleDraft, setJobTitleDraft] = useState("");
   const [typeCodeDraft, setTypeCodeDraft] = useState("");
   const [typeNameDraft, setTypeNameDraft] = useState("");
@@ -50,6 +55,37 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       })),
     [setupCatalogsQuery.data?.bukUnions]
   );
+  const typeCodeById = useMemo(
+    () =>
+      new Map((setupCatalogsQuery.data?.incentiveTypes ?? []).map((item) => [item.id, item.code])),
+    [setupCatalogsQuery.data?.incentiveTypes]
+  );
+  const filteredAllowedJobTitles = useMemo(() => {
+    const source = setupCatalogsQuery.data?.allowedJobTitles ?? [];
+    if (jobTitleStatusFilter === "all") {
+      return source;
+    }
+
+    return source.filter((item) =>
+      jobTitleStatusFilter === "active" ? item.isActive : !item.isActive
+    );
+  }, [jobTitleStatusFilter, setupCatalogsQuery.data?.allowedJobTitles]);
+  const filteredIncentiveTypes = useMemo(() => {
+    const source = setupCatalogsQuery.data?.incentiveTypes ?? [];
+    if (typeStatusFilter === "all") {
+      return source;
+    }
+
+    return source.filter((item) => (typeStatusFilter === "active" ? item.isActive : !item.isActive));
+  }, [setupCatalogsQuery.data?.incentiveTypes, typeStatusFilter]);
+  const filteredRateRules = useMemo(() => {
+    const source = setupCatalogsQuery.data?.rateRules ?? [];
+    if (ruleStatusFilter === "all") {
+      return source;
+    }
+
+    return source.filter((item) => (ruleStatusFilter === "active" ? item.isActive : !item.isActive));
+  }, [ruleStatusFilter, setupCatalogsQuery.data?.rateRules]);
 
   const refreshSetupCatalogs = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() });
@@ -162,10 +198,27 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           >
             Guardar cargo
           </button>
+          <SelectField
+            id="setup-job-title-status-filter"
+            label="Ver"
+            value={jobTitleStatusFilter}
+            onChange={(event) =>
+              setJobTitleStatusFilter(
+                event.target.value === "active" || event.target.value === "inactive"
+                  ? event.target.value
+                  : "all"
+              )
+            }
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "active", label: "Solo activos" },
+              { value: "inactive", label: "Solo inactivos" }
+            ]}
+          />
         </div>
 
         <div className="hr-incentives-list hr-incentives-list-compact">
-          {(setupCatalogsQuery.data?.allowedJobTitles ?? []).map((item) => (
+          {filteredAllowedJobTitles.map((item) => (
             <div key={item.id} className="hr-incentives-list-item">
               <div>
                 <strong>{item.jobTitle}</strong>
@@ -254,14 +307,32 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           >
             Guardar tipo
           </button>
+          <SelectField
+            id="setup-type-status-filter"
+            label="Ver"
+            value={typeStatusFilter}
+            onChange={(event) =>
+              setTypeStatusFilter(
+                event.target.value === "active" || event.target.value === "inactive"
+                  ? event.target.value
+                  : "all"
+              )
+            }
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "active", label: "Solo activos" },
+              { value: "inactive", label: "Solo inactivos" }
+            ]}
+          />
         </div>
 
         <div className="hr-incentives-list">
-          {(setupCatalogsQuery.data?.incentiveTypes ?? []).map((item) => (
+          {filteredIncentiveTypes.map((item) => (
             <div key={item.id} className="hr-incentives-list-item">
               <div>
                 <strong>{item.name}</strong>
                 <span>
+                  Código: {item.code} ·{" "}
                   {item.calculationBasis === "per_hour" ? "Por hora" : "Monto fijo"} ·{" "}
                   {item.requiresReplacement ? "Con reemplazo" : "Sin reemplazo"} ·{" "}
                   {item.requiresRestDay ? "Exige descanso" : "Sin validación de descanso"}
@@ -404,6 +475,23 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           >
             Guardar regla
           </button>
+          <SelectField
+            id="setup-rule-status-filter"
+            label="Ver"
+            value={ruleStatusFilter}
+            onChange={(event) =>
+              setRuleStatusFilter(
+                event.target.value === "active" || event.target.value === "inactive"
+                  ? event.target.value
+                  : "all"
+              )
+            }
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "active", label: "Solo activas" },
+              { value: "inactive", label: "Solo inactivas" }
+            ]}
+          />
         </div>
 
         {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
@@ -414,6 +502,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             <table className="tracking-table">
               <thead>
                 <tr>
+                  <th>Código</th>
                   <th>Tipo</th>
                   <th>Contrato</th>
                   <th>Cargo</th>
@@ -425,8 +514,9 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                 </tr>
               </thead>
               <tbody>
-                {(setupCatalogsQuery.data?.rateRules ?? []).map((item) => (
+                {filteredRateRules.map((item) => (
                   <tr key={item.id}>
+                    <td>{typeCodeById.get(item.incentiveTypeId) ?? "-"}</td>
                     <td>{item.incentiveTypeName}</td>
                     <td>{item.contractCode || "Todos"}</td>
                     <td>{item.jobTitle || "Todos"}</td>
