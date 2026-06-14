@@ -8,6 +8,20 @@
 - **Limitación original:** La RPC `get_hr_incentives_analytics` no retornaba la sumatoria de `declared_rest_day_count`.
 - **Acción tomada:** Codex agregó la migración SQL necesaria. En frontend, se endureció el tipo `HrIncentiveAnalyticsSummaryCards`, se mapeó `declared_rest_day_count` en la capa de servicios y se reemplazó el KPI de "Solicitudes" por "Descansos trabajados" en la vista.
 
+## Alta Operacional de Personal: backend enterprise y acceso restringido
+
+- [x] Auditar el onboarding legacy ya existente para evitar colisión de nombres o permisos con el nuevo módulo operacional
+- [x] Versionar una migración SQL nueva con tablas, índices, triggers de `updated_at`, métricas automáticas de caso, trazabilidad y bucket privado de evidencias
+- [x] Registrar el módulo `alta_operacional_personal` en `app_modules` dejando acceso explícito solo para `admin`, manteniendo `superadmin` por bypass estructural
+- [x] Validar árbol de migraciones, typecheck, diff y push a `main`
+
+## Resultado de Alta Operacional de Personal
+
+- Se agregó la migración [`20260614213000_add_operational_onboarding_backend.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614213000_add_operational_onboarding_backend.sql:1), que implementa el backend del módulo `Alta Operacional de Personal` con las tablas `onboarding_templates`, `onboarding_template_tasks`, `employee_onboarding_cases`, `employee_onboarding_tasks`, `employee_onboarding_evidence` y `employee_onboarding_activity_log`.
+- El diseño evita colisionar con el onboarding legacy de reclutamiento (`onboarding_processes`, `onboarding_employee_courses`). El nuevo flujo quedó en estructuras separadas, con trazabilidad propia, contadores automáticos por caso y bucket privado `onboarding_evidence`.
+- Se registró el módulo `alta_operacional_personal` en `app_modules` con acceso explícito solo para `admin`. `superadmin` conserva acceso por la helper estructural `user_is_admin(...)`; no se abrió a otros roles ni se publicó una ruta React porque en este checkout todavía no existe frontend operativo para este módulo.
+- Validación cerrada con `npm run audit:migrations`, `npx tsc -b`, `git diff --check` y aplicación real en Supabase (`pzblmbahnoyntrhistea`), además de verificación de tablas creadas, bucket privado y `role_module_access = ['admin']`.
+
 ## Limpieza enterprise de superficies compartidas de tareas y navegación
 
 - [x] Auditar acoplamiento, ramas muertas y `any` introducidos en campana, widget de tareas y navegación

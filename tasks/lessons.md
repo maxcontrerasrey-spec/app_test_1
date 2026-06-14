@@ -979,3 +979,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
   2. Corre `git diff --check`.
   3. Confirma explícitamente que no tocaste `supabase/**` ni archivos de gobernanza de migraciones.
   4. Si hubo que compensar algo por limitación del backend, déjalo escrito en `tasks/todo.md` sin inventar soluciones del lado SQL.
+
+## 95. Si el dominio ya tiene un onboarding legacy, el nuevo módulo no se “reaprovecha” por nombre
+
+- **No mezcles un onboarding operacional nuevo con tablas o RPCs legacy solo porque comparten etiqueta de negocio.** Si el modelo anterior resuelve cursos o entrenamiento y el nuevo pide plantillas, tareas bloqueantes, evidencias y auditoría, forzar reutilización crea deuda semántica y rompe contratos existentes.
+- **La integración correcta es por gobernanza compartida, no por colisión de estructuras.** Se reutilizan `app_modules`, `role_module_access`, `profiles`, `storage.objects` y helpers de autorización; las tablas operativas nuevas deben quedar separadas cuando el ciclo de vida y la trazabilidad no son equivalentes.
