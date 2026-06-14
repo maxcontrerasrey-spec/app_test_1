@@ -5,6 +5,7 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
+  LabelList,
   Legend,
   Line,
   Pie,
@@ -343,6 +344,7 @@ export function IncentiveAnalyticsView() {
                 tickFormatter={(value: number) => formatCompactCurrency(value)}
               />
               <Tooltip
+                cursor={{ fill: "transparent" }}
                 content={(props) => (
                   <ChartTooltip
                     {...props}
@@ -463,6 +465,7 @@ export function IncentiveAnalyticsView() {
                 ))}
               </Pie>
               <Tooltip
+                cursor={{ fill: "transparent" }}
                 content={(props) => (
                   <ChartTooltip
                     {...props}
@@ -550,13 +553,14 @@ export function IncentiveAnalyticsView() {
               <YAxis
                 type="category"
                 dataKey="contractLabel"
-                width={10}
+                width={1}
                 stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
                 tick={false}
               />
               <Tooltip
+                cursor={{ fill: "transparent" }}
                 content={(props) => (
                   <ChartTooltip 
                     {...props} 
@@ -576,7 +580,19 @@ export function IncentiveAnalyticsView() {
                   }
                 }}
                 cursor="pointer"
-              />
+              >
+                <LabelList
+                  dataKey="contractLabel"
+                  content={(props: any) => {
+                    const { y, height, value } = props;
+                    return (
+                      <text x={16} y={y + height / 2} dy={4} fill="#ffffff" fontSize={11.5} fontWeight={500} style={{ pointerEvents: "none" }}>
+                        {value}
+                      </text>
+                    );
+                  }}
+                />
+              </Bar>
             </BarChart>
           </ChartSurface>
         </article>
@@ -652,7 +668,7 @@ export function IncentiveAnalyticsView() {
               <YAxis
                 type="category"
                 dataKey="workerName"
-                width={10}
+                width={1}
                 stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
@@ -673,7 +689,21 @@ export function IncentiveAnalyticsView() {
                   name={contractLabel}
                   stackId="workerAmount"
                   fill={["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"][index % 8]}
-                />
+                >
+                  {index === uniqueWorkerContracts.length - 1 && (
+                    <LabelList
+                      dataKey="workerName"
+                      content={(props: any) => {
+                        const { y, height, value } = props;
+                        return (
+                          <text x={16} y={y + height / 2} dy={4} fill="#ffffff" fontSize={11.5} fontWeight={500} style={{ pointerEvents: "none" }}>
+                            {value}
+                          </text>
+                        );
+                      }}
+                    />
+                  )}
+                </Bar>
               ))}
             </BarChart>
           </ChartSurface>

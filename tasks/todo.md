@@ -22,6 +22,20 @@
 - En frontend se endureció el contrato en [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:298) y [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:700) para aceptar tanto el formato actual single-select como futuros arreglos (`status/statuses`, `contractCode/contractCodes`, `typeId/typeIds`) sin romper las vistas existentes.
 - La migración quedó aplicada en Supabase y validada con queries de humo reales: `get_hr_incentives_analytics(null, array['CONT-028'], null, array['A'])` devolvió un `jsonb` válido y `get_hr_incentive_requests(null, array['P','E','A'], array['CONT-028'], null, null, null)` respondió filas bajo contexto autenticado administrativo.
 
+## Alineación de historial remoto y cambios locales pendientes
+
+- [x] Auditar el drift entre migraciones locales del repo y `supabase_migrations.schema_migrations`
+- [x] Backfillear de forma segura las migraciones recientes ya aplicadas o supersedidas para que queden registradas en Supabase
+- [x] Versionar el cambio local pendiente de `IncentiveAnalyticsView.tsx` y empujarlo a `main`
+- [x] Validar `npx tsc -b`, `git diff --check`, estado limpio de git y relectura del historial remoto
+
+## Resultado de alineación de historial remoto y cambios locales pendientes
+
+- Se registraron en `supabase_migrations.schema_migrations` las versiones locales recientes que estaban fuera del historial remoto pero cuyo efecto ya estaba presente o absorbido por migraciones posteriores: `20260612224500`, `20260612233000`, `20260613103000`, `20260613150000`, `20260613193000`, `20260614001000`, `20260614102500`, `20260614104000`, `20260614113000`, `20260614130000`, `20260614133500` y `20260614170000`.
+- El backfill no reejecutó DDL histórico sobre producción. Se hizo como saneamiento de auditoría después de verificar en base activa la presencia real de hitos recientes: tipos documentales con vencimiento, módulo roster, columnas de incentivos, helper BUK, horizonte de 6 meses y RPC analítica vigente.
+- [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1), que estaba modificado localmente y sin versionar, quedó integrado a `main` con sus ajustes visuales sobre labels internos de barras y cursores de tooltip.
+- Queda identificado un drift legacy más antiguo en el repo: antes de esta ventana reciente existen archivos con un esquema de versionado distinto e incluso timestamps duplicados, por lo que su regularización completa exige una depuración histórica separada y no una carga ciega sobre producción.
+
 ## Endurecimiento final de reglas entre Incentivos y Roster
 
 - [x] Exigir en backend y frontend que el trabajador reemplazado figure en turno cuando el incentivo requiera reemplazo
