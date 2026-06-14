@@ -58,6 +58,89 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
           <path {...commonProps} d="M11 8v3l2 1.5" />
         </svg>
       );
+    case "user-plus":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle {...commonProps} cx="9" cy="7" r="4" />
+          <line {...commonProps} x1="19" x2="19" y1="8" y2="14" />
+          <line {...commonProps} x1="22" x2="16" y1="11" y2="11" />
+        </svg>
+      );
+    case "arrow-right-left":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="m16 3 4 4-4 4" />
+          <path {...commonProps} d="M20 7H4" />
+          <path {...commonProps} d="m8 21-4-4 4-4" />
+          <path {...commonProps} d="M4 17h16" />
+        </svg>
+      );
+    case "clipboard-list":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect {...commonProps} width="8" height="4" x="8" y="2" rx="1" ry="1" />
+          <path {...commonProps} d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <path {...commonProps} d="M12 11h4" />
+          <path {...commonProps} d="M12 16h4" />
+          <path {...commonProps} d="M8 11h.01" />
+          <path {...commonProps} d="M8 16h.01" />
+        </svg>
+      );
+    case "bar-chart":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line {...commonProps} x1="12" x2="12" y1="20" y2="10" />
+          <line {...commonProps} x1="18" x2="18" y1="20" y2="4" />
+          <line {...commonProps} x1="6" x2="6" y1="20" y2="16" />
+        </svg>
+      );
+    case "briefcase":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+          <rect {...commonProps} width="20" height="14" x="2" y="6" rx="2" />
+        </svg>
+      );
+    case "zap":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <polygon {...commonProps} points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    case "download":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline {...commonProps} points="7 10 12 15 17 10" />
+          <line {...commonProps} x1="12" x2="12" y1="15" y2="3" />
+        </svg>
+      );
+    case "calendar-clock":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" />
+          <path {...commonProps} d="M16 2v4" />
+          <path {...commonProps} d="M8 2v4" />
+          <path {...commonProps} d="M3 10h5" />
+          <path {...commonProps} d="M17.5 17.5 16 16.3V14" />
+          <circle {...commonProps} cx="16" cy="16" r="6" />
+        </svg>
+      );
+    case "wallet":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
+          <path {...commonProps} d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
+        </svg>
+      );
+    case "trending-up":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <polyline {...commonProps} points="22 7 13.5 15.5 8.5 10.5 2 17" />
+          <polyline {...commonProps} points="16 7 22 7 22 13" />
+        </svg>
+      );
     case "document":
     default:
       return (

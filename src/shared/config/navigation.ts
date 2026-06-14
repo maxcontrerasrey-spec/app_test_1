@@ -11,7 +11,7 @@ export type NavigationItem = {
   label: string;
   description?: string;
   subgroup?: string;
-  iconKey?: "document" | "timeline" | "certificate" | "tracking" | "flask";
+  iconKey?: "document" | "timeline" | "certificate" | "tracking" | "flask" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up";
   visibleForRoles?: AppRole[];
   items?: NavigationItem[];
 };
@@ -34,21 +34,21 @@ export const navigationModules: NavigationModule[] = [
         to: "/solicitud-contrataciones",
         label: "Solicitud de Contrataciones",
         description: "Crea y envía requerimientos para aprobación.",
-        iconKey: "document"
+        iconKey: "user-plus"
       },
       {
         moduleCode: "movilidad_interna",
         to: "/movilidad-interna",
         label: "Movilidad Interna",
         description: "Solicita traslados internos de trabajadores activos.",
-        iconKey: "document"
+        iconKey: "arrow-right-left"
       },
       {
         moduleCode: "control_contrataciones",
         to: "/control-contrataciones",
         label: "Control de Contrataciones",
         description: "Revisa y administra folios y seguimiento.",
-        iconKey: "timeline"
+        iconKey: "clipboard-list"
       }
     ]
   },
@@ -60,28 +60,28 @@ export const navigationModules: NavigationModule[] = [
         to: "/operaciones/resumen",
         label: "Resumen",
         description: "Vista general y métricas operacionales.",
-        iconKey: "tracking"
+        iconKey: "bar-chart"
       },
       {
         moduleCode: "operaciones",
         to: "/operaciones/registros-base",
         label: "Registro de servicios base",
         description: "Planificación de servicios por contrato.",
-        iconKey: "document"
+        iconKey: "briefcase"
       },
       {
         moduleCode: "operaciones",
         to: "/operaciones/registros-especiales",
         label: "Registro de servicios especiales",
         description: "Gestión de requerimientos no programados.",
-        iconKey: "document"
+        iconKey: "zap"
       },
       {
         moduleCode: "operaciones",
         to: "/operaciones/exportador",
         label: "Exportador de Información",
         description: "Descarga reportes operacionales detallados.",
-        iconKey: "certificate"
+        iconKey: "download"
       }
     ]
   },
@@ -93,21 +93,21 @@ export const navigationModules: NavigationModule[] = [
         to: "/roster",
         label: "Jornadas y Turnos",
         description: "Calendario operacional de pautas, descansos y excepciones por trabajador.",
-        iconKey: "timeline"
+        iconKey: "calendar-clock"
       },
       {
         moduleCode: "recursos_humanos",
         to: "/recursos-humanos/incentivos",
         label: "Gestión de Incentivos Extraordinarios",
         description: "Registro y control de incentivos extraordinarios.",
-        iconKey: "document"
+        iconKey: "wallet"
       },
       {
         moduleCode: "recursos_humanos",
         to: "/recursos-humanos/analisis",
         label: "Análisis de Incentivos",
         description: "Control gerencial del gasto y desviaciones operacionales.",
-        iconKey: "tracking",
+        iconKey: "trending-up",
         visibleForRoles: [
           "director_eje",
           "gerente_general",
