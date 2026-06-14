@@ -238,6 +238,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cuando un módulo ya combina carga inicial, caché implícita, refresh manual y mutaciones con recarga, es señal de migrarlo a TanStack Query**.
 - **El primer paso no es rehacer todo el dominio**. Conviene empezar por el dashboard, dejar `QueryClientProvider` en la raíz y luego extender el patrón a los módulos operativos.
 
+## 66. En flujos masivos, no reutilices RPCs pesadas de lectura completa dentro del camino de escritura
+
+- **Si una RPC pública arma payloads ricos para la UI, no debe ser la fuente interna del camino transaccional de alta**. En Incentivos, recalcular `get_hr_incentive_worker_context(...)` dentro de preview y luego otra vez en creación metía trabajo de `available_areas` que el backend de escritura no necesitaba.
+- **La salida escalable es separar un helper interno mínimo y reutilizable**. Primero se resuelve el núcleo del trabajador y luego se compone el payload rico solo para la UI; las RPCs de creación/preview deben compartir el núcleo, no encadenar lecturas completas redundantes.
+
+## 67. Un bulk administrativo no es enterprise si puede dejar éxito parcial silencioso
+
+- **Procesar un lote fila por fila atrapando excepciones individuales simplifica la UI, pero degrada integridad operacional**. Para aprobaciones masivas, eso permite que un mismo click deje solicitudes mezcladas entre aprobadas y pendientes sin rollback global.
+- **La forma robusta es bloquear el conjunto en orden determinístico y dejar que cualquier error aborte toda la transacción**. Si además existe una mutación derivada por unicidad, como `extra_shift`, debe resolverse con `upsert` atómico y no con `select + insert/update` separados.
+
 ## 23. Evolución ERP: el frontend no debe reconstruir permisos efectivos
 
 - **Si el acceso depende de perfil, roles activos, módulos activos y bypass administrativo, el frontend no debe recomponer ese contrato con varias lecturas y reglas locales**. Esa composición debe resolverse en una RPC única basada en `auth.uid()`.

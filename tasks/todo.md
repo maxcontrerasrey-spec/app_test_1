@@ -2,6 +2,22 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Endurecimiento de escalabilidad masiva en Incentivos
+
+- [x] Eliminar recomputaciones innecesarias del contexto y preview en `create_hr_incentive_request(...)` para reducir costo por ingreso
+- [x] Volver atómica la aprobación masiva de incentivos y endurecer el locking para bajar riesgo de éxito parcial o deadlocks
+- [x] Hacer segura bajo concurrencia la marcación automática de `extra_shift` en descansos trabajados
+- [x] Validar `npm run audit:migrations`, `npx tsc -b`, `git diff --check`, queries de humo y empujar a `main`
+
+## Resultado de endurecimiento de escalabilidad masiva en Incentivos
+
+- Se agregó la migración [`20260614235500_optimize_hr_incentive_mass_workflows.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:1), ya aplicada en Supabase, para optimizar el camino de ingresos y aprobaciones masivas del módulo de incentivos.
+- El cuello principal de validación quedó reducido separando un helper interno liviano [`get_hr_incentive_worker_core(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:26) del payload pesado de [`get_hr_incentive_worker_context(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:94). `calculate_hr_incentive_preview(...)` y [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:363) ahora reutilizan contexto resuelto una sola vez mediante [`build_hr_incentive_preview_from_worker_data(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:203), en vez de recalcular trabajador + preview completo sobre la misma solicitud.
+- La mejora quedó medida en la base activa con una simulación segura de solo lectura: `calculate_hr_incentive_preview(...)` repetido 100 veces bajó de aproximadamente `4.43s` a `3.09s`, cerca de un `30%` menos de tiempo total para el mismo caso válido.
+- La aprobación masiva ya no deja éxito parcial por diseño. [`bulk_decide_hr_incentive_request_approvals(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:607) ahora deduplica IDs, bloquea aprobaciones y solicitudes en orden determinístico y deja que cualquier error aborte el lote completo en la misma transacción.
+- La marcación automática de descansos trabajados dejó de depender de `select + insert/update` separados. [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:534) ahora usa `insert ... on conflict ... do update` sobre `hr_roster_exceptions`, reactivando solo `extra_shift` válidos y preservando excepciones de mayor jerarquía como BUK.
+- Para soportar escala real también se agregaron índices alineados al patrón de uso: búsqueda normalizada de aprobadores en `profiles`, resolución operativa en `buk_contract_mappings`, matching de reglas en `hr_incentive_rate_rules` y cola global de aprobaciones pendientes para vistas administrativas.
+
 ## Endurecimiento enterprise de Alta Operacional de Personal
 
 - [x] Corregir la guarda de acceso del módulo para alinear la ruta con la regla real de `admin` o `superadmin`
