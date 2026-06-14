@@ -65,6 +65,10 @@ const TemplateManagerPage = lazyWithRetry("template-manager-page", async () => (
   default: (await import("../../modules/operational_onboarding/pages/TemplateManagerPage")).TemplateManagerPage
 }));
 
+const TemplateBuilderPage = lazyWithRetry("template-builder-page", async () => ({
+  default: (await import("../../modules/operational_onboarding/pages/TemplateBuilderPage")).TemplateBuilderPage
+}));
+
 function RouteLoadingScreen() {
   return (
     <section className="auth-loading-screen">
@@ -129,6 +133,14 @@ export function AppRouter() {
               element={
                 <AdminProtectedRoute>
                   <TemplateManagerPage />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/alta-operacional/plantillas/:id"
+              element={
+                <AdminProtectedRoute>
+                  <TemplateBuilderPage />
                 </AdminProtectedRoute>
               }
             />
