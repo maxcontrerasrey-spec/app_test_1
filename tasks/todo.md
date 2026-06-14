@@ -20,6 +20,12 @@
 - **Desacople detectado:** Codex creó 6 tablas nuevas para el Onboarding Operacional pero no actualizó `src/types/database.types.ts` mediante la CLI de Supabase, dejando al frontend ciego respecto a los nuevos contratos.
 - **Acción tomada:** Fiel a la regla Eleonora (no tocar base de datos ni inferir arreglos de backend), no generé las interfaces SQL. En su lugar, compensé creando contratos estáticos TypeScript en `src/modules/operational_onboarding/types.ts` mapeando la migración leída. Esto permitió destrabar el frontend sin romper la arquitectura backend.
 
+## RPC de inicio transaccional para Alta Operacional de Personal
+
+- [x] Auditar el modelo desplegado de casos y tareas para definir una RPC consistente con las tablas nuevas
+- [x] Versionar una migración SQL con `start_operational_onboarding(p_candidate_id uuid, p_template_id uuid)` y permisos explícitos
+- [ ] Aplicar la migración en Supabase, probar creación real de caso+tareas y cerrar validación de árbol/typecheck/diff
+
 ## Resultado de Alta Operacional de Personal
 
 - Se agregó la migración [`20260614213000_add_operational_onboarding_backend.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614213000_add_operational_onboarding_backend.sql:1), que implementa el backend del módulo `Alta Operacional de Personal` con las tablas `onboarding_templates`, `onboarding_template_tasks`, `employee_onboarding_cases`, `employee_onboarding_tasks`, `employee_onboarding_evidence` y `employee_onboarding_activity_log`.
