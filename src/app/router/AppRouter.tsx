@@ -61,6 +61,10 @@ const LabsPage = lazyWithRetry("labs-page", async () => ({
   default: (await import("../../modules/labs/pages/LabsPage")).LabsPage
 }));
 
+const TemplateManagerPage = lazyWithRetry("template-manager-page", async () => ({
+  default: (await import("../../modules/operational_onboarding/pages/TemplateManagerPage")).TemplateManagerPage
+}));
+
 function RouteLoadingScreen() {
   return (
     <section className="auth-loading-screen">
@@ -117,6 +121,15 @@ export function AppRouter() {
                 <RoleProtectedRoute moduleCode="control_contrataciones">
                   <HiringStatusPage />
                 </RoleProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/alta-operacional/plantillas"
+              element={
+                <AdminProtectedRoute>
+                  <TemplateManagerPage />
+                </AdminProtectedRoute>
               }
             />
 

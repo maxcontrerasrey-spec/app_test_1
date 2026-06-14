@@ -49,6 +49,14 @@ export const navigationModules: NavigationModule[] = [
         label: "Control de Contrataciones",
         description: "Revisa y administra folios y seguimiento.",
         iconKey: "clipboard-list"
+      },
+      {
+        moduleCode: "alta_operacional_personal",
+        to: "/alta-operacional/plantillas",
+        label: "Alta Operacional (Admin)",
+        description: "Configura las plantillas de alta operacional.",
+        iconKey: "briefcase",
+        visibleForRoles: ["admin"]
       }
     ]
   },
