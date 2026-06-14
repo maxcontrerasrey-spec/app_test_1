@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "audit:migrations": "node scripts/audit-supabase-migrations.mjs --enforce-baseline",
+    "audit:migrations:write-baseline": "node scripts/audit-supabase-migrations.mjs --write-baseline",
     "provision:hiring-approvers": "node scripts/provision-hiring-approvers.mjs",
     "provision:users-matrix": "node scripts/provision-users-from-matrix.mjs"
   },

@@ -26,6 +26,34 @@ La auditoría y el plan seguro de saneamiento quedaron documentados en:
 
 [`supabase/MIGRATIONS_AUDIT.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/MIGRATIONS_AUDIT.md:1)
 
+La baseline congelada que permite auditar sin seguir degradando el árbol quedó en:
+
+[`supabase/migration-baseline.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migration-baseline.json:1)
+
+## Guardia automática
+
+Desde esta reparación, el repo trae un validador explícito:
+
+```bash
+npm run audit:migrations
+```
+
+Ese comando:
+
+- falla si aparece un archivo con naming inválido dentro de `supabase/migrations`
+- falla si entra una migración legacy nueva fuera de la baseline congelada
+- falla si aparece una nueva colisión de versión normalizada
+
+La baseline actual se puede regenerar solo de forma deliberada con:
+
+```bash
+npm run audit:migrations:write-baseline
+```
+
+Además, GitHub Actions ejecuta la misma validación en:
+
+[`audit-supabase-migrations.yml`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/audit-supabase-migrations.yml:1)
+
 ## 🔒 Arquitectura Zero Trust
 
 La plataforma opera bajo el principio de Confianza Cero en la capa de datos:
@@ -46,4 +74,4 @@ supabase start
 supabase migration up
 ```
 
-*(Si no usas la CLI, las migraciones se aplican pegando el SQL directamente en el SQL Editor del dashboard web de Supabase en el proyecto de Staging/Producción).*
+*(Si no usas la CLI, las migraciones se aplican pegando el SQL directamente en el SQL Editor del dashboard web de Supabase en el proyecto de Staging/Producción. Si haces eso, después debes reconciliar `supabase_migrations.schema_migrations` o dejarás roto el historial remoto respecto del repo.)*

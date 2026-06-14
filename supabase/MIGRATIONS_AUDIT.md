@@ -1,75 +1,141 @@
 # Auditoría de Historial de Migraciones
 
-## Resumen
+## Estado auditado
 
-- Estado revisado: `2026-06-12`
-- Archivos SQL en `supabase/migrations`: `119`
-- Migraciones con formato CLI válido (`YYYYMMDDHHMMSS_nombre.sql`): `11`
-- Migraciones legacy con formato partido (`YYYYMMDD_HHMMSS_nombre.sql`): `108`
-- Colisiones detectadas al convertir `YYYYMMDD_HHMMSS` a `YYYYMMDDHHMMSS`: `0`
-- Archivo no SQL que generaba ruido en `migration list`: `README.md`
+- Fecha de auditoría: `2026-06-13`
+- Archivos SQL en `supabase/migrations`: `146`
+- Migraciones con formato canónico `YYYYMMDDHHMMSS_nombre.sql`: `38`
+- Migraciones legacy con formato partido `YYYYMMDD_HHMMSS_nombre.sql`: `108`
+- Archivos con naming inválido: `0`
+- Colisiones de versión normalizada detectadas: `1`
 
-## Qué se corrigió en esta pasada
+## Hallazgo crítico
 
-- Se movió `supabase/migrations/README.md` a [`supabase/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/README.md:1).
-- Se dejó este documento como referencia operativa del saneamiento pendiente.
+El árbol histórico mezcla dos esquemas de versionado:
+
+- canónico: `YYYYMMDDHHMMSS_nombre.sql`
+- legacy: `YYYYMMDD_HHMMSS_nombre.sql`
+
+Además existe una colisión real de versión normalizada:
+
+- `20260522000020`
+  - `20260522_000020_add_update_candidate_driver_license_rpc.sql`
+  - `20260522_000020_candidate_documents_module.sql`
+
+Ese estado no necesariamente rompe la base productiva hoy, pero sí debilita:
+
+- `supabase migration list`
+- reconciliación local vs remoto
+- auditoría de cambios
+- automatización futura de CI/CD sobre base de datos
+
+## Qué se reparó en esta pasada
+
+### 1. Se congeló una baseline explícita del árbol legacy
+
+Quedó creada en:
+
+[`supabase/migration-baseline.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migration-baseline.json:1)
+
+Esa baseline:
+
+- enumera las `108` migraciones legacy permitidas hoy
+- registra la única colisión de versión normalizada actualmente aceptada
+- define el corte canónico en `20260612120000`
+
+### 2. Se agregó un auditor automatizable
+
+Quedó creado:
+
+[`scripts/audit-supabase-migrations.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/audit-supabase-migrations.mjs:1)
+
+Capacidades:
+
+- clasifica canónicas, legacy e inválidas
+- detecta colisiones de versión normalizada
+- puede regenerar la baseline congelada
+- puede fallar el build si aparece deuda nueva fuera del baseline
+
+Comandos:
+
+```bash
+npm run audit:migrations
+npm run audit:migrations:write-baseline
+```
+
+### 3. Se dejó una guardia en CI
+
+Quedó creado:
+
+[`audit-supabase-migrations.yml`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/audit-supabase-migrations.yml:1)
+
+Ese workflow ejecuta `npm run audit:migrations` en push y pull request sobre cambios que toquen:
+
+- `supabase/**`
+- `scripts/audit-supabase-migrations.mjs`
+- `package.json`
+
+### 4. Se actualizó la documentación operativa
+
+Quedó reforzado:
+
+[`supabase/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/README.md:1)
+
+Ahora documenta:
+
+- convención canónica
+- existencia de baseline congelada
+- guardarraíl automático
+- advertencia explícita sobre aplicar SQL manual sin reconciliar historial remoto
+
+## Reconciliación remota ya hecha
+
+En la pasada anterior ya se había backfilleado en `supabase_migrations.schema_migrations` la ventana reciente cuya presencia en base fue verificada o cuyo efecto quedó absorbido por migraciones posteriores:
+
+- `20260612224500`
+- `20260612233000`
+- `20260613103000`
+- `20260613150000`
+- `20260613193000`
+- `20260614001000`
+- `20260614102500`
+- `20260614104000`
+- `20260614113000`
+- `20260614130000`
+- `20260614133500`
+- `20260614170000`
+
+Eso cerró la parte reciente y operativa del drift sin reejecutar DDL histórico sobre producción.
 
 ## Qué no se hizo a propósito
 
-No se renombraron masivamente las `108` migraciones legacy.
+No se renombraron en lote las `108` migraciones legacy.
 
-Razón:
+Razón técnica:
 
-- El historial remoto ya está desalineado respecto del naming local.
-- Varias migraciones fueron aplicadas manualmente en producción fuera del flujo normal de la CLI.
-- Renombrar en lote ahora mismo sin reconciliar `schema_migrations` puede empeorar `migration list` y abrir riesgo de registros falsos en remoto.
+- el sistema productivo hoy opera bien
+- el historial remoto ya mezcla migraciones aplicadas manualmente y registros generados por el conector
+- renombrar archivos históricos sin una reconciliación integral podría empeorar la trazabilidad en vez de mejorarla
 
-## Regla segura
+Tampoco se movieron archivos legacy fuera de `supabase/migrations`, porque hacerlo ahora dejaría un repo incapaz de reconstruir historia completa sin crear primero una baseline SQL materializada, lo que ya sería una cirugía mayor
 
-Antes de renombrar una migración legacy, deben cumplirse las dos cosas:
+## Riesgo residual después de esta reparación
 
-1. Tener claro el nombre destino exacto de 14 dígitos.
-2. Saber si esa versión ya fue aplicada en remoto y, si corresponde, registrarla con `supabase migration repair ... --status applied`.
+Sigue existiendo deuda legacy histórica, pero ahora está encapsulada:
 
-## Mapeo seguro de naming
+- no puede crecer silenciosamente sin romper la auditoría automatizada
+- la colisión conocida quedó registrada como excepción explícita
+- toda migración nueva debe entrar con naming canónico
 
-La normalización segura del nombre es puramente mecánica:
+En otras palabras: no quedó resuelto todo el pasado, pero sí quedó reparado el mecanismo para que el problema no siga empeorando.
 
-- Origen: `YYYYMMDD_HHMMSS_descripcion.sql`
-- Destino: `YYYYMMDDHHMMSS_descripcion.sql`
+## Próxima fase segura si se quisiera sanear el pasado completo
 
-Ejemplos reales:
+Solo en una pasada separada y controlada:
 
-- `20260611_170000_add_hiring_transactional_email_notifications.sql`
-  -> `20260611170000_add_hiring_transactional_email_notifications.sql`
-- `20260611_231500_fix_internal_mobility_worker_resolution.sql`
-  -> `20260611231500_fix_internal_mobility_worker_resolution.sql`
-- `20260612_003000_link_internal_mobility_to_recruitment_cases.sql`
-  -> `20260612003000_link_internal_mobility_to_recruitment_cases.sql`
+1. exportar snapshot completo de `supabase_migrations.schema_migrations`
+2. construir un manifiesto uno a uno `archivo local -> versión normalizada -> estado remoto`
+3. decidir un corte de baseline histórica
+4. recién después evaluar archivado o materialización de baseline SQL
 
-## Migraciones nuevas ya registradas correctamente
-
-Estas sí quedaron con naming válido y registradas en remoto en esta fase reciente:
-
-- `20260612120000_align_internal_mobility_permission_contracts.sql`
-- `20260612130334_add_hr_incentive_double_approval_queue.sql`
-- `20260612131500_expand_hr_incentive_contract_options.sql`
-- `20260612133000_fix_hr_incentive_request_folio_ambiguity.sql`
-- `20260612133601_expose_hr_module_for_incentive_approvers.sql`
-- `20260612140000_restore_requester_visibility_for_hiring_process_summary.sql`
-
-## Próximo saneamiento recomendado
-
-La próxima pasada debe ser controlada y en este orden:
-
-1. Exportar una foto del remoto desde `supabase_migrations.schema_migrations`.
-2. Generar una tabla de equivalencias `legacy local -> normalized local -> remote`.
-3. Renombrar solo archivos cuyo mapeo y estado remoto estén confirmados.
-4. Registrar con `migration repair` únicamente las versiones realmente aplicadas.
-5. Repetir `supabase migration list` y validar que no aparezcan fechas colapsadas como `20260611`.
-
-## Criterio de no regresión
-
-Si una limpieza mejora el naming local pero empeora la reconciliación con remoto, se considera incorrecta.
-
-En este proyecto, primero manda la integridad del historial remoto; después la estética del árbol local.
+Mientras esa fase no ocurra, la baseline congelada actual pasa a ser la fuente operativa de verdad para la deuda legacy.

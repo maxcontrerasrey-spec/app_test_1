@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si una migración se ejecuta manualmente en SQL Editor o mediante un conector que genera otro timestamp, el esquema puede quedar correcto pero `supabase_migrations.schema_migrations` desalineado respecto del repo**. Eso rompe auditoría, trazabilidad y cualquier intento serio de comparar local vs remoto.
 - **La corrección segura no es reejecutar DDL histórico a ciegas sobre producción**. Primero se verifica que el efecto exista o haya sido absorbido por migraciones posteriores; recién después se hace backfill del historial. Si el bloque legacy mezcla timestamps duplicados o más de un esquema de versionado, se aísla como saneamiento histórico aparte.
 
+## 65. La deuda legacy de migraciones no se arregla renombrando primero; se arregla congelando una baseline y poniendo guardias
+
+- **Cuando producción está sana pero el árbol histórico está desordenado, la prioridad no es “dejar lindo `supabase/migrations`”**. La prioridad es impedir que el problema siga creciendo mientras se conserva capacidad de auditoría.
+- **El primer paso seguro es una baseline explícita más un auditor automatizable**. Eso permite tolerar la deuda heredada conocida, detectar de inmediato cualquier migración nueva fuera del estándar y postergar la cirugía histórica real para una fase separada y controlada.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

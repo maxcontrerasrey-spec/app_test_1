@@ -36,6 +36,20 @@
 - [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1), que estaba modificado localmente y sin versionar, quedó integrado a `main` con sus ajustes visuales sobre labels internos de barras y cursores de tooltip.
 - Queda identificado un drift legacy más antiguo en el repo: antes de esta ventana reciente existen archivos con un esquema de versionado distinto e incluso timestamps duplicados, por lo que su regularización completa exige una depuración histórica separada y no una carga ciega sobre producción.
 
+## Reparación segura de gobernanza del árbol de migraciones legacy
+
+- [x] Auditar en detalle el árbol de `supabase/migrations`, cuantificando naming canónico, legacy y colisiones reales
+- [x] Congelar una baseline explícita del estado legacy para impedir que siga creciendo deuda silenciosa
+- [x] Agregar un auditor automatizable y una guardia de CI para fallar ante nuevas migraciones fuera del estándar
+- [x] Documentar el saneamiento con detalle sin renombrar ni reejecutar DDL histórico en producción
+
+## Resultado de reparación segura de gobernanza del árbol de migraciones legacy
+
+- Se creó el auditor [`scripts/audit-supabase-migrations.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/audit-supabase-migrations.mjs:1), capaz de clasificar migraciones canónicas y legacy, detectar naming inválido, detectar colisiones de versión normalizada, escribir baseline y validar que no entre deuda nueva.
+- Se congeló el estado actual en [`supabase/migration-baseline.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migration-baseline.json:1). Esa baseline registra las `108` migraciones legacy permitidas hoy y la única colisión aceptada: `20260522000020`.
+- Se agregó el workflow [`audit-supabase-migrations.yml`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/audit-supabase-migrations.yml:1), que ejecuta `npm run audit:migrations` en cambios sobre `supabase/**` y bloquea nuevas migraciones con formato incorrecto o nuevas colisiones.
+- La auditoría detallada quedó actualizada en [`supabase/MIGRATIONS_AUDIT.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/MIGRATIONS_AUDIT.md:1) y la guía operativa en [`supabase/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/README.md:1). La decisión consciente fue no renombrar ni mover las migraciones legacy en esta pasada porque el sistema productivo está estable y esa cirugía requiere una fase separada con baseline SQL o manifiesto remoto completo.
+
 ## Endurecimiento final de reglas entre Incentivos y Roster
 
 - [x] Exigir en backend y frontend que el trabajador reemplazado figure en turno cuando el incentivo requiera reemplazo
