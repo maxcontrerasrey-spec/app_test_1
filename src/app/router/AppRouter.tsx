@@ -127,9 +127,9 @@ export function AppRouter() {
             <Route
               path="/alta-operacional/:tab?"
               element={
-                <AdminProtectedRoute>
+                <RoleProtectedRoute moduleCode="alta_operacional_personal">
                   <OnboardingModuleLayout />
-                </AdminProtectedRoute>
+                </RoleProtectedRoute>
               }
             />
 

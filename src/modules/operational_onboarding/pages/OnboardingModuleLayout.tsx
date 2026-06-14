@@ -1,4 +1,5 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/context/AuthContext";
 import { PageShell } from "../../../shared/ui/layout/PageShell";
 import { PeopleTab } from "../components/tabs/PeopleTab";
@@ -11,12 +12,19 @@ type TabId = "people" | "templates" | "sequences" | "tasks";
 export function OnboardingModuleLayout() {
   const { tab } = useParams();
   const navigate = useNavigate();
-  const { accessibleModules, isSuperAdmin } = useAuth(); // or user_is_admin check
-
-  const activeTab: TabId = (tab as TabId) || "people";
+  const { accessibleModules, isSuperAdmin } = useAuth();
 
   const isAdmin =
     isSuperAdmin || accessibleModules.includes("alta_operacional_personal");
+  const requestedTab = (tab as TabId) || "people";
+  const activeTab: TabId =
+    requestedTab === "templates" && !isAdmin ? "people" : requestedTab;
+
+  useEffect(() => {
+    if (requestedTab === "templates" && !isAdmin) {
+      navigate("/alta-operacional/people", { replace: true });
+    }
+  }, [isAdmin, navigate, requestedTab]);
 
   const handleTabChange = (newTab: TabId) => {
     navigate(`/alta-operacional/${newTab}`);

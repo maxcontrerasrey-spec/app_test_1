@@ -15,14 +15,17 @@ export function StartOnboardingModal({ onClose }: StartOnboardingModalProps) {
 
   const [selectedCandidate, setSelectedCandidate] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const activeTemplates = templates?.filter((t) => t.is_active) || [];
 
   const handleStart = async () => {
     if (!selectedCandidate || !selectedTemplate) {
-      alert("Por favor selecciona un candidato y una plantilla");
+      setErrorMessage("Selecciona un candidato y una plantilla antes de iniciar el caso.");
       return;
     }
+
+    setErrorMessage(null);
 
     try {
       await startMutation.mutateAsync({
@@ -30,28 +33,32 @@ export function StartOnboardingModal({ onClose }: StartOnboardingModalProps) {
         templateId: selectedTemplate,
       });
       onClose();
-    } catch (error: any) {
-      alert("Error al iniciar el caso: " + error.message);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "No fue posible iniciar el caso operacional.",
+      );
     }
   };
 
   return (
     <div
+      className="approval-modal-backdrop"
+      role="presentation"
+      onClick={onClose}
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.5)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 9999,
       }}
     >
       <div
-        className="info-card"
+        className="approval-modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="start-onboarding-modal-title"
+        onClick={(event) => event.stopPropagation()}
         style={{
           width: "100%",
           maxWidth: "500px",
@@ -59,7 +66,12 @@ export function StartOnboardingModal({ onClose }: StartOnboardingModalProps) {
           background: "var(--surface-color)",
         }}
       >
-        <h3 style={{ margin: "0 0 1.5rem" }}>Iniciar Alta Operacional</h3>
+        <h3 id="start-onboarding-modal-title" style={{ margin: "0 0 0.5rem" }}>
+          Iniciar Alta Operacional
+        </h3>
+        <p className="tracking-filter-caption" style={{ marginBottom: "1.5rem" }}>
+          Se creará el caso y se copiarán automáticamente las tareas activas de la plantilla.
+        </p>
 
         <div style={{ marginBottom: "1rem" }}>
           <label
@@ -115,6 +127,8 @@ export function StartOnboardingModal({ onClose }: StartOnboardingModalProps) {
           </select>
         </div>
 
+        {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
+
         <div
           style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}
         >
@@ -130,7 +144,13 @@ export function StartOnboardingModal({ onClose }: StartOnboardingModalProps) {
             type="button"
             className="soft-primary-button"
             onClick={handleStart}
-            disabled={startMutation.isPending}
+            disabled={
+              startMutation.isPending ||
+              candidatesLoading ||
+              templatesLoading ||
+              !selectedCandidate ||
+              !selectedTemplate
+            }
           >
             {startMutation.isPending ? "Iniciando..." : "Confirmar e Iniciar"}
           </button>

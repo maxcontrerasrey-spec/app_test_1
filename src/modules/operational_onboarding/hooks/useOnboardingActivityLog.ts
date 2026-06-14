@@ -6,8 +6,8 @@ export type OnboardingActivityLogRow = {
   case_id: string;
   task_id: string | null;
   action: string;
-  old_value: any;
-  new_value: any;
+  old_value: unknown;
+  new_value: unknown;
   comment: string | null;
   created_by: string | null;
   created_at: string;

@@ -27,15 +27,14 @@ export function TasksTab() {
   }
 
   const pendingTasks =
-    tasks?.filter(
-      (t) => t.status === "pending" || t.status === "not_applicable",
-    ) || [];
+    tasks?.filter((t) => t.status === "pending") || [];
   const inProgressTasks =
     tasks?.filter((t) => t.status === "in_progress") || [];
   const completedTasks =
     tasks?.filter(
       (t) =>
         t.status === "completed" ||
+        t.status === "not_applicable" ||
         t.status === "rejected" ||
         t.status === "expired",
     ) || [];
@@ -134,6 +133,17 @@ export function TasksTab() {
               }}
             >
               • Vencida
+            </span>
+          )}
+          {task.status === "not_applicable" && (
+            <span
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
+                fontWeight: 600,
+              }}
+            >
+              • No aplica
             </span>
           )}
         </div>

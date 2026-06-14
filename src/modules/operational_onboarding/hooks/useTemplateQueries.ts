@@ -7,6 +7,7 @@ import {
   upsertTemplateTask,
   deleteTemplateTask,
 } from "../services/templateApi";
+import type { OnboardingTemplateInput, OnboardingTemplateTaskInput } from "../types";
 
 export function useTemplates() {
   return useQuery({
@@ -33,7 +34,7 @@ export function useUpdateTemplate() {
       template,
     }: {
       id: string;
-      template: Parameters<typeof updateTemplate>[1];
+      template: OnboardingTemplateInput;
     }) => updateTemplate(id, template),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["onboarding_templates"] });
@@ -52,7 +53,7 @@ export function useTemplateTasks(templateId: string) {
 export function useUpsertTemplateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: upsertTemplateTask,
+    mutationFn: (payload: OnboardingTemplateTaskInput) => upsertTemplateTask(payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["onboarding_template_tasks", variables.template_id],
@@ -64,8 +65,8 @@ export function useUpsertTemplateTask() {
 export function useDeleteTemplateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: string; templateId: string }) =>
-      deleteTemplateTask(id),
+    mutationFn: ({ id, comment }: { id: string; templateId: string; comment?: string | null }) =>
+      deleteTemplateTask(id, comment),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["onboarding_template_tasks", variables.templateId],

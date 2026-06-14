@@ -215,8 +215,16 @@
 
 .hr-incentives-inline-button {
   min-width: auto;
-  min-height: 2.4rem;
-  padding-inline: 0.9rem;
+  min-height: 1.8rem;
+  padding-inline: 0.75rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+}
+
+.hr-incentives-compact-btn {
+  min-height: 2.2rem;
+  padding-inline: 1rem;
+  font-size: 0.85rem;
 }
 
 .hr-incentives-history-actions {

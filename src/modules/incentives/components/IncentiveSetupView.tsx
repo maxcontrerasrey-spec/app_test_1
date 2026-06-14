@@ -154,7 +154,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           />
           <button
             type="button"
-            className="soft-primary-button soft-primary-button-success"
+            className="soft-primary-button soft-primary-button-success hr-incentives-compact-btn"
             disabled={
               jobTitleMutation.isPending || !jobTitleDraft.trim() || bukJobTitleOptions.length === 0
             }
@@ -239,7 +239,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
         <div className="action-row">
           <button
             type="button"
-            className="soft-primary-button soft-primary-button-success"
+            className="soft-primary-button soft-primary-button-success hr-incentives-compact-btn"
             disabled={
               incentiveTypeMutation.isPending || !typeCodeDraft.trim() || !typeNameDraft.trim()
             }

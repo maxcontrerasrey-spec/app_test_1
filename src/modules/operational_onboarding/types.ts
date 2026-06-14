@@ -15,6 +15,20 @@ export type OnboardingTemplate = {
   updated_at: string;
 };
 
+export type OnboardingTemplateInput = {
+  name: string;
+  description?: string | null;
+  cargo?: string | null;
+  area?: string | null;
+  contrato?: string | null;
+  faena?: string | null;
+  division?: string | null;
+  centro_costo?: string | null;
+  worker_type?: string | null;
+  is_active?: boolean;
+  comment?: string | null;
+};
+
 export type OnboardingTemplateTask = {
   id: string;
   template_id: string;
@@ -32,6 +46,24 @@ export type OnboardingTemplateTask = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type OnboardingTemplateTaskInput = {
+  id?: string | null;
+  template_id: string;
+  area_responsible: string;
+  role_responsible?: string | null;
+  task_name: string;
+  task_description?: string | null;
+  is_required?: boolean;
+  is_blocking?: boolean;
+  requires_evidence?: boolean;
+  evidence_type?: string | null;
+  sla_hours?: number | null;
+  order_index?: number;
+  depends_on_task_id?: string | null;
+  is_active?: boolean;
+  comment?: string | null;
 };
 
 export type EmployeeOnboardingCaseStatus =
@@ -122,8 +154,8 @@ export type EmployeeOnboardingActivityLog = {
   case_id: string;
   task_id: string | null;
   action: string;
-  old_value: any;
-  new_value: any;
+  old_value: unknown;
+  new_value: unknown;
   comment: string | null;
   created_by: string | null;
   created_at: string;

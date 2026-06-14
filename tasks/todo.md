@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Endurecimiento enterprise de Alta Operacional de Personal
+
+- [x] Corregir la guarda de acceso del módulo para alinear la ruta con la regla real de `admin` o `superadmin`
+- [x] Reemplazar `prompt` / `confirm` / `alert` del builder y del inicio de casos por formularios y feedback auditables
+- [x] Bajar la configuración sensible de plantillas y tareas a RPCs con trazabilidad versionada
+- [x] Reparar la semántica de estados y completar el detalle operativo de personas en proceso con tareas y bitácora real
+- [x] Validar `npx tsc -b`, `npm run build`, `npm run audit:migrations` y `git diff --check`
+
+## Resultado de endurecimiento enterprise de Alta Operacional de Personal
+
+- Se agregó la migración [`20260614233000_harden_operational_onboarding_module.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614233000_harden_operational_onboarding_module.sql:1), que crea `onboarding_template_activity_log` y versiona RPCs para crear/actualizar plantillas y crear/actualizar/eliminar tareas con validación de permisos y comentario de auditoría opcional.
+- La ruta [`/alta-operacional/:tab?`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:127) dejó de depender de `AdminProtectedRoute` y ahora usa el contrato modular real (`alta_operacional_personal`), consistente con el alta definida para `admin` y el bypass estructural de `superadmin`.
+- El frontend del módulo quedó saneado: [`TemplateBuilderPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operational_onboarding/pages/TemplateBuilderPage.tsx:1) ahora usa formularios explícitos para metadata y tareas, elimina los `window.prompt/confirm/alert`, implementa edición real, confirmación de eliminación y comentarios auditables; [`StartOnboardingModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operational_onboarding/components/modals/StartOnboardingModal.tsx:1) ahora entrega validación inline y no cierra el flujo por errores silenciosos.
+- La vista operativa quedó más honesta y útil: [`PeopleTab.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operational_onboarding/components/tabs/PeopleTab.tsx:1) ya no muestra placeholders de detalle sino tareas y bitácora reales por caso, y [`TasksTab.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operational_onboarding/components/tabs/TasksTab.tsx:1) dejó de clasificar `not_applicable` como pendiente.
+
 ## Limitación backend: Contador de Descansos Trabajados en Dashboard (RESUELTA)
 
 - **Desacople detectado:** El frontend requiere mostrar en las tarjetas de KPIs del dashboard analítico (`IncentiveAnalyticsView.tsx`) un contador de "Descansos Trabajados" en lugar de "Solicitudes".

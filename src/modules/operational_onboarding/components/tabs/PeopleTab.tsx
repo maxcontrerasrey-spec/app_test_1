@@ -1,9 +1,49 @@
 import { useState, Fragment } from "react";
 import { useOnboardingCases } from "../../hooks/useOnboardingCases";
+import { useOnboardingTasks } from "../../hooks/useOnboardingTasks";
+import { useOnboardingActivityLog } from "../../hooks/useOnboardingActivityLog";
 import { StartOnboardingModal } from "../modals/StartOnboardingModal";
+
+function formatDateLabel(value: string | null) {
+  if (!value) {
+    return "-";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function resolveActivityLabel(action: string) {
+  switch (action) {
+    case "case_created":
+      return "Caso iniciado";
+    case "case_status_changed":
+      return "Estado actualizado";
+    case "task_created":
+      return "Tarea creada";
+    case "task_status_changed":
+      return "Estado de tarea actualizado";
+    case "task_updated":
+      return "Tarea actualizada";
+    case "evidence_uploaded":
+      return "Evidencia cargada";
+    default:
+      return action;
+  }
+}
 
 export function PeopleTab() {
   const { data: cases, isLoading, isError, error } = useOnboardingCases();
+  const tasksQuery = useOnboardingTasks();
+  const activityLogQuery = useOnboardingActivityLog();
   const [selectedCaseId, setSelectedCaseId] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -74,6 +114,10 @@ export function PeopleTab() {
             <tbody>
               {cases.map((c) => {
                 const isActiveRow = selectedCaseId === c.id;
+                const caseTasks = (tasksQuery.data ?? []).filter((task) => task.case_id === c.id);
+                const activityItems = (activityLogQuery.data ?? [])
+                  .filter((entry) => entry.case_id === c.id)
+                  .slice(0, 6);
                 const name = c.candidates
                   ? `${c.candidates.full_name}`
                   : c.employees
@@ -121,7 +165,7 @@ export function PeopleTab() {
                       </td>
                       <td>{c.cargo || "-"}</td>
                       <td>{c.contrato || "-"}</td>
-                      <td>{c.target_ready_date || "-"}</td>
+                      <td>{formatDateLabel(c.target_ready_date)}</td>
                       <td>
                         <div
                           style={{
@@ -167,23 +211,10 @@ export function PeopleTab() {
                                 className="expanded-detail-fields"
                                 style={{
                                   display: "grid",
-                                  gridTemplateColumns: "1fr 1fr",
+                                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                                   gap: "1rem",
                                 }}
                               >
-                                <div
-                                  className="expanded-detail-field-full"
-                                  style={{ gridColumn: "1 / -1" }}
-                                >
-                                  <p
-                                    className="tracking-empty-state"
-                                    style={{ margin: 0 }}
-                                  >
-                                    El detalle de tareas por departamento se
-                                    habilitará al conectar los sub-casos de
-                                    tareas (employee_onboarding_tasks).
-                                  </p>
-                                </div>
                                 <div>
                                   <small>Total Tareas</small>
                                   <strong>{c.total_tasks}</strong>
@@ -209,13 +240,117 @@ export function PeopleTab() {
                                   </strong>
                                 </div>
                               </div>
-                              <div style={{ marginTop: "1.5rem" }}>
-                                <button
-                                  type="button"
-                                  className="soft-primary-button"
-                                >
-                                  Ver Bitácora de Caso
-                                </button>
+
+                              <div style={{ marginTop: "1.5rem", display: "grid", gap: "1rem" }}>
+                                <div>
+                                  <h5 style={{ margin: "0 0 0.75rem" }}>Tareas activas del caso</h5>
+                                  {tasksQuery.isError ? (
+                                    <p className="form-status form-status-error" style={{ margin: 0 }}>
+                                      {(tasksQuery.error as Error).message}
+                                    </p>
+                                  ) : caseTasks.length === 0 ? (
+                                    <p className="tracking-empty-state" style={{ margin: 0 }}>
+                                      Aún no hay tareas operativas asociadas a este caso.
+                                    </p>
+                                  ) : (
+                                    <div style={{ display: "grid", gap: "0.65rem" }}>
+                                      {caseTasks.map((task) => (
+                                        <div
+                                          key={task.id}
+                                          style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            gap: "1rem",
+                                            flexWrap: "wrap",
+                                            border: "1px solid var(--border-color)",
+                                            borderRadius: "0.75rem",
+                                            padding: "0.85rem 1rem",
+                                            background: "var(--surface-color)",
+                                          }}
+                                        >
+                                          <div style={{ display: "grid", gap: "0.25rem" }}>
+                                            <strong>{task.task_name}</strong>
+                                            <span className="tracking-filter-caption">
+                                              {task.area_responsible}
+                                              {task.role_responsible ? ` · ${task.role_responsible}` : ""}
+                                            </span>
+                                            {task.task_description ? (
+                                              <span className="tracking-filter-caption">
+                                                {task.task_description}
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                          <div style={{ display: "grid", gap: "0.25rem", textAlign: "right" }}>
+                                            <strong>{task.status}</strong>
+                                            <span className="tracking-filter-caption">
+                                              SLA: {task.due_at ? formatDateLabel(task.due_at) : "Sin vencimiento"}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <h5 style={{ margin: "0 0 0.75rem" }}>Bitácora reciente</h5>
+                                  {activityLogQuery.isLoading ? (
+                                    <p className="tracking-empty-state" style={{ margin: 0 }}>
+                                      Cargando bitácora...
+                                    </p>
+                                  ) : activityLogQuery.isError ? (
+                                    <p className="form-status form-status-error" style={{ margin: 0 }}>
+                                      {(activityLogQuery.error as Error).message}
+                                    </p>
+                                  ) : activityItems.length === 0 ? (
+                                    <p className="tracking-empty-state" style={{ margin: 0 }}>
+                                      No hay movimientos registrados para este caso.
+                                    </p>
+                                  ) : (
+                                    <div style={{ display: "grid", gap: "0.65rem" }}>
+                                      {activityItems.map((entry) => (
+                                        <div
+                                          key={entry.id}
+                                          style={{
+                                            border: "1px solid var(--border-color)",
+                                            borderRadius: "0.75rem",
+                                            padding: "0.85rem 1rem",
+                                            background: "var(--surface-color)",
+                                          }}
+                                        >
+                                          <div
+                                            style={{
+                                              display: "flex",
+                                              justifyContent: "space-between",
+                                              gap: "1rem",
+                                              flexWrap: "wrap",
+                                            }}
+                                          >
+                                            <strong>{resolveActivityLabel(entry.action)}</strong>
+                                            <span className="tracking-filter-caption">
+                                              {formatDateLabel(entry.created_at)}
+                                            </span>
+                                          </div>
+                                          <div
+                                            className="tracking-filter-caption"
+                                            style={{ marginTop: "0.35rem" }}
+                                          >
+                                            {entry.tasks?.task_name ? `${entry.tasks.task_name} · ` : ""}
+                                            {entry.profiles?.full_name || "Sistema"}
+                                          </div>
+                                          {entry.comment ? (
+                                            <div
+                                              className="tracking-filter-caption"
+                                              style={{ marginTop: "0.35rem" }}
+                                            >
+                                              {entry.comment}
+                                            </div>
+                                          ) : null}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
