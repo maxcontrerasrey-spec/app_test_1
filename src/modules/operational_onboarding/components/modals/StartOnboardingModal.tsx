@@ -82,7 +82,7 @@ export function StartOnboardingModal({ onClose }: StartOnboardingModalProps) {
             <option value="">-- Seleccione Candidato --</option>
             {candidates?.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.first_name} {c.last_name} ({c.rut || "Sin RUT"})
+                {c.full_name} ({c.national_id || "Sin RUT"})
               </option>
             ))}
           </select>

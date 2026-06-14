@@ -12,15 +12,14 @@ export type OnboardingActivityLogRow = {
   created_by: string | null;
   created_at: string;
   profiles?: {
-    first_name: string;
-    last_name: string;
+    full_name: string;
   };
   tasks?: {
     task_name: string;
   };
   cases?: {
-    candidates?: { first_name: string; last_name: string };
-    employees?: { first_name: string; last_name: string };
+    candidates?: { full_name: string };
+    employees?: { full_name: string };
   };
 };
 
@@ -35,11 +34,11 @@ export function useOnboardingActivityLog() {
         .select(
           `
           *,
-          profiles:created_by(first_name, last_name),
+          profiles:created_by(full_name),
           tasks:employee_onboarding_tasks(task_name),
           cases:employee_onboarding_cases(
-            candidates:candidate_profiles(first_name, last_name),
-            employees:employees(first_name, last_name)
+            candidates:candidate_profiles(full_name),
+            employees:employees(full_name)
           )
         `,
         )

@@ -22,16 +22,14 @@ export type OnboardingCaseRow = {
   created_at: string;
   updated_at: string;
   candidates?: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    rut: string;
+    full_name: string;
+    email: string | null;
+    national_id: string;
   };
   employees?: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    rut: string;
+    full_name: string;
+    email: string | null;
+    document_number: string | null;
   };
 };
 
@@ -48,8 +46,8 @@ export function useOnboardingCases() {
         .select(
           `
           *,
-          candidates:candidate_profiles (first_name, last_name, email, rut),
-          employees:employees (first_name, last_name, email, rut)
+          candidates:candidate_profiles (full_name, email, national_id),
+          employees:employees (full_name, email, document_number)
         `,
         )
         .order("created_at", { ascending: false });

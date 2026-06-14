@@ -75,11 +75,11 @@ export function PeopleTab() {
               {cases.map((c) => {
                 const isActiveRow = selectedCaseId === c.id;
                 const name = c.candidates
-                  ? `${c.candidates.first_name} ${c.candidates.last_name}`
+                  ? `${c.candidates.full_name}`
                   : c.employees
-                    ? `${c.employees.first_name} ${c.employees.last_name}`
+                    ? `${c.employees.full_name}`
                     : "Candidato Desconocido";
-                const rut = c.candidates?.rut || c.employees?.rut || "-";
+                const rut = c.candidates?.national_id || c.employees?.document_number || "-";
 
                 return (
                   <Fragment key={c.id}>

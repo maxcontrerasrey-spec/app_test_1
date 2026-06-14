@@ -30,9 +30,9 @@ export function SequencesTab() {
 
   const renderLogItem = (log: OnboardingActivityLogRow) => {
     const candidateName = log.cases?.candidates
-      ? `${log.cases.candidates.first_name} ${log.cases.candidates.last_name}`
+      ? `${log.cases.candidates.full_name}`
       : log.cases?.employees
-        ? `${log.cases.employees.first_name} ${log.cases.employees.last_name}`
+        ? `${log.cases.employees.full_name}`
         : "Candidato Desconocido";
 
     const date = new Date(log.created_at).toLocaleString("es-CL", {
@@ -155,7 +155,7 @@ export function SequencesTab() {
             <span>
               👤 Por:{" "}
               {log.profiles
-                ? `${log.profiles.first_name} ${log.profiles.last_name}`
+                ? `${log.profiles.full_name}`
                 : "Sistema Automático"}
             </span>
           </div>

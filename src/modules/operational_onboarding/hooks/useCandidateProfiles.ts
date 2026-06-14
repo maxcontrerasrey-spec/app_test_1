@@ -3,9 +3,8 @@ import { supabase } from "../../../shared/lib/supabase";
 
 export type CandidateProfileRow = {
   id: string;
-  first_name: string;
-  last_name: string;
-  rut: string | null;
+  full_name: string;
+  national_id: string | null;
   status: string;
 };
 
@@ -17,7 +16,7 @@ export function useCandidateProfiles() {
 
       const { data, error } = await supabase
         .from("candidate_profiles")
-        .select("id, first_name, last_name, rut, status")
+        .select("id, full_name, national_id, status")
         .order("created_at", { ascending: false });
 
       if (error) throw error;

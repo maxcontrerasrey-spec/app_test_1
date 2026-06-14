@@ -42,9 +42,9 @@ export function TasksTab() {
 
   const renderTaskCard = (task: OnboardingTaskRow) => {
     const candidateName = task.cases?.candidates
-      ? `${task.cases.candidates.first_name} ${task.cases.candidates.last_name}`
+      ? `${task.cases.candidates.full_name}`
       : task.cases?.employees
-        ? `${task.cases.employees.first_name} ${task.cases.employees.last_name}`
+        ? `${task.cases.employees.full_name}`
         : "Candidato Desconocido";
 
     return (

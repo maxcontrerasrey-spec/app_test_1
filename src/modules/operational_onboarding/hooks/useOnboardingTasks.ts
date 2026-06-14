@@ -33,8 +33,8 @@ export type OnboardingTaskRow = {
   created_at: string;
   updated_at: string;
   cases?: {
-    candidates?: { first_name: string; last_name: string };
-    employees?: { first_name: string; last_name: string };
+    candidates?: { full_name: string };
+    employees?: { full_name: string };
   };
 };
 
@@ -50,8 +50,8 @@ export function useOnboardingTasks() {
           `
           *,
           cases:employee_onboarding_cases(
-            candidates:candidate_profiles(first_name, last_name),
-            employees:employees(first_name, last_name)
+            candidates:candidate_profiles(full_name),
+            employees:employees(full_name)
           )
         `,
         )
