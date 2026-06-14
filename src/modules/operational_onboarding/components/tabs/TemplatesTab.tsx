@@ -9,11 +9,7 @@ export function TemplatesTab() {
 
   return (
     <div className="tab-container">
-      {templateId ? (
-        <TemplateBuilderPage />
-      ) : (
-        <TemplateManagerPage />
-      )}
+      {templateId ? <TemplateBuilderPage /> : <TemplateManagerPage />}
     </div>
   );
 }

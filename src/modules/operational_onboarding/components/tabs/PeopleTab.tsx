@@ -1,113 +1,232 @@
-import { useState } from "react";
-import type { EmployeeOnboardingCase } from "../../types";
-
-// Mock data to demonstrate the UI until the backend is wired up completely
-const mockCases: any[] = [
-  {
-    id: "case-1",
-    candidate_name: "Stan Triepels",
-    email: "hello@chiefonboarding.com",
-    target_ready_date: "2022-08-19",
-    cargo: "Lead developer",
-    progress_percent: 75,
-    tasks_by_area: [
-      { area: "TI", total: 4, completed: 4 },
-      { area: "RRHH", total: 3, completed: 2 },
-      { area: "HSEC", total: 2, completed: 0 }
-    ]
-  },
-  {
-    id: "case-2",
-    candidate_name: "John Weller",
-    email: "test12345@chiefonboarding.com",
-    target_ready_date: "2022-07-21",
-    cargo: "Product Manager",
-    progress_percent: 20,
-    tasks_by_area: [
-      { area: "TI", total: 4, completed: 1 },
-      { area: "RRHH", total: 3, completed: 1 },
-      { area: "HSEC", total: 2, completed: 0 }
-    ]
-  }
-];
+import { useState, Fragment } from "react";
+import { useOnboardingCases } from "../../hooks/useOnboardingCases";
 
 export function PeopleTab() {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { data: cases, isLoading, isError, error } = useOnboardingCases();
+  const [selectedCaseId, setSelectedCaseId] = useState<string>("");
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(prev => prev === id ? null : id);
-  };
+  if (isLoading) {
+    return (
+      <section className="info-card">
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <p className="tracking-empty-state">
+            Cargando casos de alta operacional...
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="info-card">
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <p className="form-status form-status-error">
+            {(error as Error).message}
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!cases || cases.length === 0) {
+    return (
+      <section className="info-card">
+        <div style={{ padding: "3rem 1rem", textAlign: "center" }}>
+          <p className="tracking-empty-state">
+            No hay personal en proceso de alta operacional actualmente.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <div className="tab-container">
-      <div className="tab-header">
-        <div>
-          <h2>New hires</h2>
-          <span className="subtitle">PEOPLE</span>
+    <section className="info-card">
+      <div className="tracking-toolbar">
+        <div className="tracking-toolbar-copy">
+          <h3>Personal en Proceso</h3>
+          <span className="tracking-filter-caption">
+            Gestiona la habilitación y progreso de los candidatos en alta
+            operacional.
+          </span>
         </div>
-        <button className="btn-primary">+ Add</button>
+        <div className="hr-incentives-history-actions">
+          <button type="button" className="soft-primary-button">
+            + Nuevo Caso
+          </button>
+        </div>
       </div>
 
-      <div className="people-list-container">
-        <div className="people-list-header">
-          <div className="col-name">NAME</div>
-          <div className="col-date">START DATE</div>
-          <div className="col-position">POSITION</div>
-          <div className="col-progress">PROGRESS</div>
-          <div className="col-action"></div>
-        </div>
+      <div className="tracking-table-container">
+        <table className="tracking-table hr-incentives-table">
+          <thead>
+            <tr>
+              <th>Personal</th>
+              <th>Cargo</th>
+              <th>Contrato</th>
+              <th>Fecha Ingreso</th>
+              <th>Progreso</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cases.map((c) => {
+              const isActiveRow = selectedCaseId === c.id;
+              const name = c.candidates
+                ? `${c.candidates.first_name} ${c.candidates.last_name}`
+                : c.employees
+                  ? `${c.employees.first_name} ${c.employees.last_name}`
+                  : "Candidato Desconocido";
+              const rut = c.candidates?.rut || c.employees?.rut || "-";
 
-        <div className="people-list-body">
-          {mockCases.map(c => (
-            <div key={c.id} className={`people-row-wrapper ${expandedId === c.id ? "expanded" : ""}`}>
-              <div className="people-row">
-                <div className="col-name">
-                  <div className="avatar-initials">{c.candidate_name.substring(0, 2).toUpperCase()}</div>
-                  <div className="name-info">
-                    <strong>{c.candidate_name}</strong>
-                    <span className="email">{c.email}</span>
-                  </div>
-                </div>
-                <div className="col-date">{c.target_ready_date}</div>
-                <div className="col-position">{c.cargo}</div>
-                <div className="col-progress">
-                  <div className="progress-bar-bg">
-                    <div className="progress-bar-fill" style={{ width: `${c.progress_percent}%` }}></div>
-                  </div>
-                </div>
-                <div className="col-action">
-                  <button className="btn-view" onClick={() => toggleExpand(c.id)}>
-                    View
-                  </button>
-                </div>
-              </div>
-              
-              {expandedId === c.id && (
-                <div className="people-row-expanded">
-                  <h4>Desglose por Departamento</h4>
-                  <div className="area-progress-grid">
-                    {c.tasks_by_area.map((area: any) => (
-                      <div key={area.area} className="area-progress-card">
-                        <h5>{area.area}</h5>
-                        <p>{area.completed} de {area.total} tareas completadas</p>
-                        <div className="progress-bar-bg small">
-                          <div 
-                            className="progress-bar-fill" 
-                            style={{ width: `${(area.completed / area.total) * 100}%` }}
+              return (
+                <Fragment key={c.id}>
+                  <tr
+                    className={isActiveRow ? "tracking-row-selected" : ""}
+                    onClick={() => setSelectedCaseId(isActiveRow ? "" : c.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <td>
+                      <span
+                        className="case-code-toggle"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.4rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        <span
+                          className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`}
+                          style={{
+                            display: "inline-block",
+                            fontSize: "1.2rem",
+                            color: "var(--text-muted)",
+                            transition: "transform 0.2s",
+                            transform: isActiveRow ? "rotate(90deg)" : "none",
+                          }}
+                        >
+                          ▸
+                        </span>
+                        {name}
+                      </span>
+                      <div
+                        className="tracking-filter-caption"
+                        style={{ marginLeft: "1.5rem" }}
+                      >
+                        {rut}
+                      </div>
+                    </td>
+                    <td>{c.cargo || "-"}</td>
+                    <td>{c.contrato || "-"}</td>
+                    <td>{c.target_ready_date || "-"}</td>
+                    <td>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            flex: 1,
+                            height: "6px",
+                            backgroundColor: "var(--border-color)",
+                            borderRadius: "3px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${c.progress_percent}%`,
+                              height: "100%",
+                              backgroundColor: "var(--brand-primary)",
+                            }}
                           ></div>
                         </div>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                          {Math.round(c.progress_percent)}%
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                  <div className="expanded-actions">
-                    <button className="btn-secondary">Ver Bitácora de Caso</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                    </td>
+                    <td>
+                      <strong>{c.status}</strong>
+                    </td>
+                  </tr>
+
+                  {isActiveRow ? (
+                    <tr className="tracking-table-expanded-row">
+                      <td colSpan={6}>
+                        <div className="expanded-case-detail-grid">
+                          <div className="expanded-detail-section">
+                            <h4>DESGLOSE POR DEPARTAMENTO</h4>
+                            <div
+                              className="expanded-detail-fields"
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: "1rem",
+                              }}
+                            >
+                              <div
+                                className="expanded-detail-field-full"
+                                style={{ gridColumn: "1 / -1" }}
+                              >
+                                <p
+                                  className="tracking-empty-state"
+                                  style={{ margin: 0 }}
+                                >
+                                  El detalle de tareas por departamento se
+                                  habilitará al conectar los sub-casos de tareas
+                                  (employee_onboarding_tasks).
+                                </p>
+                              </div>
+                              <div>
+                                <small>Total Tareas</small>
+                                <strong>{c.total_tasks}</strong>
+                              </div>
+                              <div>
+                                <small>Completadas</small>
+                                <strong>{c.completed_tasks}</strong>
+                              </div>
+                              <div>
+                                <small>Vencidas</small>
+                                <strong
+                                  style={{ color: "var(--status-danger)" }}
+                                >
+                                  {c.expired_tasks}
+                                </strong>
+                              </div>
+                              <div>
+                                <small>Bloqueantes Pendientes</small>
+                                <strong
+                                  style={{ color: "var(--status-danger)" }}
+                                >
+                                  {c.blocking_pending_tasks}
+                                </strong>
+                              </div>
+                            </div>
+                            <div style={{ marginTop: "1.5rem" }}>
+                              <button
+                                type="button"
+                                className="soft-primary-button"
+                              >
+                                Ver Bitácora de Caso
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </section>
   );
 }

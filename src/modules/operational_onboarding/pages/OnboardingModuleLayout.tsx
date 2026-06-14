@@ -1,75 +1,75 @@
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/context/AuthContext";
+import { PageShell } from "../../../shared/ui/layout/PageShell";
 import { PeopleTab } from "../components/tabs/PeopleTab";
 import { TemplatesTab } from "../components/tabs/TemplatesTab";
 import { TasksTab } from "../components/tabs/TasksTab";
 import { SequencesTab } from "../components/tabs/SequencesTab";
-import "../styles/onboarding.css";
 
 type TabId = "people" | "templates" | "sequences" | "tasks";
 
 export function OnboardingModuleLayout() {
   const { tab } = useParams();
   const navigate = useNavigate();
-  const { hasCapability, user } = useAuth(); // or user_is_admin check
+  const { accessibleModules, isSuperAdmin } = useAuth(); // or user_is_admin check
 
   const activeTab: TabId = (tab as TabId) || "people";
 
-  // Simulate permission checks (replace with actual role checking logic in your app)
-  const isAdmin = true; // For now, assume admin based on the initial prompt
+  const isAdmin =
+    isSuperAdmin || accessibleModules.includes("alta_operacional_personal");
 
   const handleTabChange = (newTab: TabId) => {
     navigate(`/alta-operacional/${newTab}`);
   };
 
   return (
-    <div className="onboarding-module">
-      <header className="onboarding-header">
-        <div className="onboarding-title-area">
-          <h1>Alta Operacional</h1>
-          <span className="version-badge">v2.0</span>
-        </div>
-        
-        <nav className="onboarding-tabs">
-          <button 
-            className={`tab-item ${activeTab === "people" ? "active" : ""}`}
+    <PageShell>
+      <div className="minimal-page-header">
+        <h1>Alta Operacional</h1>
+      </div>
+
+      <section className="tracking-panel">
+        <div className="approval-chip-row">
+          <button
+            type="button"
+            className={`approval-chip ${activeTab === "people" ? "tracking-kpi-card-active" : ""}`}
             onClick={() => handleTabChange("people")}
           >
-            👥 People
+            Personas en Proceso
           </button>
-          
+
           {isAdmin && (
-            <button 
-              className={`tab-item ${activeTab === "templates" ? "active" : ""}`}
+            <button
+              type="button"
+              className={`approval-chip ${activeTab === "templates" ? "tracking-kpi-card-active" : ""}`}
               onClick={() => handleTabChange("templates")}
             >
-              📑 Templates & Settings
+              Configuración y Plantillas
             </button>
           )}
 
-          <button 
-            className={`tab-item ${activeTab === "sequences" ? "active" : ""}`}
+          <button
+            type="button"
+            className={`approval-chip ${activeTab === "sequences" ? "tracking-kpi-card-active" : ""}`}
             onClick={() => handleTabChange("sequences")}
           >
-            ⏳ Sequences
+            Secuencias
           </button>
 
-          <button 
-            className={`tab-item ${activeTab === "tasks" ? "active" : ""}`}
+          <button
+            type="button"
+            className={`approval-chip ${activeTab === "tasks" ? "tracking-kpi-card-active" : ""}`}
             onClick={() => handleTabChange("tasks")}
           >
-            📋 Tasks
+            Tareas
           </button>
-        </nav>
-      </header>
+        </div>
 
-      <main className="onboarding-content">
         {activeTab === "people" && <PeopleTab />}
         {activeTab === "templates" && <TemplatesTab />}
         {activeTab === "sequences" && <SequencesTab />}
         {activeTab === "tasks" && <TasksTab />}
-      </main>
-    </div>
+      </section>
+    </PageShell>
   );
 }

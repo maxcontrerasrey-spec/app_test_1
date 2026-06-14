@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTemplates, useCreateTemplate } from "../hooks/useTemplateQueries";
-import "../styles/onboarding.css";
 
 export function TemplateManagerPage() {
   const { data: templates, isLoading } = useTemplates();
@@ -19,64 +18,99 @@ export function TemplateManagerPage() {
       division: null,
       centro_costo: null,
       worker_type: null,
-      is_active: false
+      is_active: false,
     });
     // Navegar al builder de inmediato
     navigate(`/alta-operacional/templates?id=${newTpl.id}`);
   };
 
-  return (
-    <div className="module-page-layout">
-      <header className="module-header">
-        <div>
-          <h1>Gestión de Workflows (Alta Operacional)</h1>
-          <p>Configura los procesos de habilitación post-contratación agrupados por cargo.</p>
+  if (isLoading) {
+    return (
+      <section className="info-card">
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <p className="tracking-empty-state">
+            Cargando plantillas de alta operacional...
+          </p>
         </div>
-        <div className="header-actions">
-          <button className="btn-primary" onClick={handleCreate} disabled={createTemplateMutation.isPending}>
-            {createTemplateMutation.isPending ? "Creando..." : "+ Nuevo Workflow"}
+      </section>
+    );
+  }
+
+  return (
+    <section className="info-card">
+      <div className="tracking-toolbar">
+        <div className="tracking-toolbar-copy">
+          <h3>Gestión de Plantillas</h3>
+          <span className="tracking-filter-caption">
+            Configura los flujos y dependencias de tareas que se asignarán
+            automáticamente al aprobar un candidato.
+          </span>
+        </div>
+        <div className="hr-incentives-history-actions">
+          <button
+            type="button"
+            className="soft-primary-button"
+            onClick={handleCreate}
+            disabled={createTemplateMutation.isPending}
+          >
+            {createTemplateMutation.isPending
+              ? "Creando..."
+              : "+ Nueva Plantilla"}
           </button>
         </div>
-      </header>
-
-      <div className="module-content">
-        {isLoading ? (
-          <div>Cargando plantillas...</div>
-        ) : templates?.length === 0 ? (
-          <div className="empty-state">
-            <p>No hay workflows configurados. Crea el primero para empezar.</p>
-          </div>
-        ) : (
-          <div className="workflow-gallery">
-            {templates?.map((t) => (
-              <div
-                key={t.id}
-                className="workflow-card"
-                onClick={() => navigate(`/alta-operacional/templates?id=${t.id}`)}
-              >
-                <div className="workflow-card-header">
-                  <h3>{t.name}</h3>
-                  <span className={`status-badge ${t.is_active ? "status-aprobada" : "status-rechazada"}`}>
-                    {t.is_active ? "Activo" : "Borrador"}
-                  </span>
-                </div>
-
-                <div className="workflow-card-body">
-                  <p className="workflow-card-desc">
-                    {t.description || "Sin descripción proporcionada."}
-                  </p>
-
-                  <div className="workflow-card-meta">
-                    {t.cargo && <span className="meta-badge">💼 {t.cargo}</span>}
-                    {t.area && <span className="meta-badge">🏢 {t.area}</span>}
-                    {t.faena && <span className="meta-badge">📍 {t.faena}</span>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
-    </div>
+
+      <div className="tracking-table-container">
+        <table className="tracking-table hr-incentives-table">
+          <thead>
+            <tr>
+              <th>Nombre del Workflow</th>
+              <th>Cargo Objetivo</th>
+              <th>Área / Contrato</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {templates?.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  style={{ textAlign: "center", padding: "2rem" }}
+                >
+                  <p className="tracking-empty-state">
+                    No hay plantillas configuradas.
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              templates?.map((t) => (
+                <tr
+                  key={t.id}
+                  onClick={() =>
+                    navigate(`/alta-operacional/templates?id=${t.id}`)
+                  }
+                  style={{ cursor: "pointer" }}
+                >
+                  <td>
+                    <strong>{t.name}</strong>
+                    <div className="tracking-filter-caption">
+                      {t.description || "Sin descripción"}
+                    </div>
+                  </td>
+                  <td>{t.cargo || "-"}</td>
+                  <td>
+                    {t.area ? `${t.area} ` : ""}
+                    {t.contrato ? `(${t.contrato})` : "-"}
+                  </td>
+                  <td>
+                    <strong>{t.is_active ? "Activo" : "Borrador"}</strong>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
