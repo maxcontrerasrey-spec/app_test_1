@@ -12,7 +12,10 @@ export async function fetchTemplates() {
 }
 
 export async function createTemplate(
-  template: Omit<OnboardingTemplate, "id" | "created_at" | "updated_at" | "created_by">
+  template: Omit<
+    OnboardingTemplate,
+    "id" | "created_at" | "updated_at" | "created_by"
+  >,
 ) {
   const { data, error } = await supabase!
     .from("onboarding_templates")
@@ -26,7 +29,9 @@ export async function createTemplate(
 
 export async function updateTemplate(
   id: string,
-  template: Partial<Omit<OnboardingTemplate, "id" | "created_at" | "updated_at" | "created_by">>
+  template: Partial<
+    Omit<OnboardingTemplate, "id" | "created_at" | "updated_at" | "created_by">
+  >,
 ) {
   const { data, error } = await supabase!
     .from("onboarding_templates")
@@ -51,7 +56,11 @@ export async function fetchTemplateTasks(templateId: string) {
 }
 
 export async function upsertTemplateTask(
-  task: Partial<OnboardingTemplateTask> & { template_id: string; area_responsible: string; task_name: string }
+  task: Partial<OnboardingTemplateTask> & {
+    template_id: string;
+    area_responsible: string;
+    task_name: string;
+  },
 ) {
   const { data, error } = await supabase!
     .from("onboarding_template_tasks")
@@ -64,6 +73,9 @@ export async function upsertTemplateTask(
 }
 
 export async function deleteTemplateTask(id: string) {
-  const { error } = await supabase!.from("onboarding_template_tasks").delete().eq("id", id);
+  const { error } = await supabase!
+    .from("onboarding_template_tasks")
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }

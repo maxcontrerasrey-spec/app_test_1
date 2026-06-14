@@ -5,13 +5,13 @@ import {
   updateTemplate,
   fetchTemplateTasks,
   upsertTemplateTask,
-  deleteTemplateTask
+  deleteTemplateTask,
 } from "../services/templateApi";
 
 export function useTemplates() {
   return useQuery({
     queryKey: ["onboarding_templates"],
-    queryFn: fetchTemplates
+    queryFn: fetchTemplates,
   });
 }
 
@@ -21,18 +21,23 @@ export function useCreateTemplate() {
     mutationFn: createTemplate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["onboarding_templates"] });
-    }
+    },
   });
 }
 
 export function useUpdateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, template }: { id: string; template: Parameters<typeof updateTemplate>[1] }) =>
-      updateTemplate(id, template),
+    mutationFn: ({
+      id,
+      template,
+    }: {
+      id: string;
+      template: Parameters<typeof updateTemplate>[1];
+    }) => updateTemplate(id, template),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["onboarding_templates"] });
-    }
+    },
   });
 }
 
@@ -40,7 +45,7 @@ export function useTemplateTasks(templateId: string) {
   return useQuery({
     queryKey: ["onboarding_template_tasks", templateId],
     queryFn: () => fetchTemplateTasks(templateId),
-    enabled: !!templateId
+    enabled: !!templateId,
   });
 }
 
@@ -49,17 +54,22 @@ export function useUpsertTemplateTask() {
   return useMutation({
     mutationFn: upsertTemplateTask,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding_template_tasks", variables.template_id] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["onboarding_template_tasks", variables.template_id],
+      });
+    },
   });
 }
 
 export function useDeleteTemplateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: string; templateId: string }) => deleteTemplateTask(id),
+    mutationFn: ({ id }: { id: string; templateId: string }) =>
+      deleteTemplateTask(id),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding_template_tasks", variables.templateId] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["onboarding_template_tasks", variables.templateId],
+      });
+    },
   });
 }

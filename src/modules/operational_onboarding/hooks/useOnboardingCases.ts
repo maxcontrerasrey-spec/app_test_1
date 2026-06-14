@@ -45,18 +45,20 @@ export function useOnboardingCases() {
 
       const { data, error } = await supabase
         .from("employee_onboarding_cases")
-        .select(`
+        .select(
+          `
           *,
           candidates:candidate_profiles (first_name, last_name, email, rut),
           employees:employees (first_name, last_name, email, rut)
-        `)
+        `,
+        )
         .order("created_at", { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      return (data as unknown) as OnboardingCaseRow[];
-    }
+      return data as unknown as OnboardingCaseRow[];
+    },
   });
 }
