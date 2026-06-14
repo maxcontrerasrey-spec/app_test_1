@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTemplates, useTemplateTasks, useUpsertTemplateTask, useDeleteTemplateTask } from "../hooks/useTemplateQueries";
 import type { OnboardingTemplateTask } from "../types";
 import "../styles/onboarding.css";
 
 export function TemplateBuilderPage() {
-  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get("id");
   const navigate = useNavigate();
   const { data: templates } = useTemplates();
   const { data: tasks, isLoading: tasksLoading } = useTemplateTasks(id || "");
@@ -65,7 +66,7 @@ export function TemplateBuilderPage() {
     <div className="builder-layout">
       <header className="builder-header">
         <div className="builder-title-row">
-          <button className="back-btn" onClick={() => navigate("/alta-operacional/plantillas")} title="Volver a la galería">
+          <button className="back-btn" onClick={() => navigate("/alta-operacional/templates")} title="Volver a la galería">
             ← Volver
           </button>
           <h1>Configuración de Workflow: {template.name}</h1>

@@ -61,12 +61,8 @@ const LabsPage = lazyWithRetry("labs-page", async () => ({
   default: (await import("../../modules/labs/pages/LabsPage")).LabsPage
 }));
 
-const TemplateManagerPage = lazyWithRetry("template-manager-page", async () => ({
-  default: (await import("../../modules/operational_onboarding/pages/TemplateManagerPage")).TemplateManagerPage
-}));
-
-const TemplateBuilderPage = lazyWithRetry("template-builder-page", async () => ({
-  default: (await import("../../modules/operational_onboarding/pages/TemplateBuilderPage")).TemplateBuilderPage
+const OnboardingModuleLayout = lazyWithRetry("onboarding-module-layout", async () => ({
+  default: (await import("../../modules/operational_onboarding/pages/OnboardingModuleLayout")).OnboardingModuleLayout
 }));
 
 function RouteLoadingScreen() {
@@ -129,18 +125,10 @@ export function AppRouter() {
             />
 
             <Route
-              path="/alta-operacional/plantillas"
+              path="/alta-operacional/:tab?"
               element={
                 <AdminProtectedRoute>
-                  <TemplateManagerPage />
-                </AdminProtectedRoute>
-              }
-            />
-            <Route
-              path="/alta-operacional/plantillas/:id"
-              element={
-                <AdminProtectedRoute>
-                  <TemplateBuilderPage />
+                  <OnboardingModuleLayout />
                 </AdminProtectedRoute>
               }
             />

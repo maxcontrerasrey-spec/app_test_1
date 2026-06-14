@@ -22,7 +22,7 @@ export function TemplateManagerPage() {
       is_active: false
     });
     // Navegar al builder de inmediato
-    navigate(`/alta-operacional/plantillas/${newTpl.id}`);
+    navigate(`/alta-operacional/templates?id=${newTpl.id}`);
   };
 
   return (
@@ -52,7 +52,7 @@ export function TemplateManagerPage() {
               <div
                 key={t.id}
                 className="workflow-card"
-                onClick={() => navigate(`/alta-operacional/plantillas/${t.id}`)}
+                onClick={() => navigate(`/alta-operacional/templates?id=${t.id}`)}
               >
                 <div className="workflow-card-header">
                   <h3>{t.name}</h3>

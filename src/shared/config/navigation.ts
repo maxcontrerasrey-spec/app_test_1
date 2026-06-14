@@ -52,7 +52,7 @@ export const navigationModules: NavigationModule[] = [
       },
       {
         moduleCode: "alta_operacional_personal",
-        to: "/alta-operacional/plantillas",
+        to: "/alta-operacional",
         label: "Alta Operacional (Admin)",
         description: "Configura las plantillas de alta operacional.",
         iconKey: "briefcase",
