@@ -697,14 +697,30 @@ export async function cancelHrIncentiveRequest(requestId: string, comment?: stri
   }
 }
 
+function normalizeFilterArray(
+  ...values: Array<string | string[] | null | undefined>
+) {
+  const normalized = values.flatMap((value) => {
+    const entries = Array.isArray(value) ? value : value ? [value] : [];
+    return entries
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+  });
+
+  return normalized.length > 0 ? Array.from(new Set(normalized)) : null;
+}
+
 export async function fetchHrIncentiveRequests(filters: HrIncentiveRequestsFilters) {
   const client = getSupabaseClient();
+  const resolvedStatuses = normalizeFilterArray(filters.status, filters.statuses);
+  const resolvedContractCodes = normalizeFilterArray(filters.contractCode, filters.contractCodes);
+  const resolvedTypeIds = normalizeFilterArray(filters.typeId, filters.typeIds);
   const { data, error } = await client.rpc("get_hr_incentive_requests", {
     p_period_code: filters.periodCode?.trim() || null,
-    p_status: filters.status?.trim() || "A",
-    p_contract_code: filters.contractCode?.trim() || null,
+    p_statuses: resolvedStatuses,
+    p_contract_codes: resolvedContractCodes,
     p_worker_search: filters.workerSearch?.trim() || null,
-    p_type_id: filters.typeId?.trim() || null,
+    p_type_ids: resolvedTypeIds,
     p_service_date_until: filters.serviceDateUntil?.trim() || null
   });
 
@@ -717,11 +733,14 @@ export async function fetchHrIncentiveRequests(filters: HrIncentiveRequestsFilte
 
 export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFilters) {
   const client = getSupabaseClient();
+  const resolvedStatuses = normalizeFilterArray(filters.status, filters.statuses);
+  const resolvedContractCodes = normalizeFilterArray(filters.contractCode, filters.contractCodes);
+  const resolvedTypeIds = normalizeFilterArray(filters.typeId, filters.typeIds);
   const { data, error } = await client.rpc("get_hr_incentives_analytics", {
     p_period_code: filters.periodCode?.trim() || null,
-    p_status: filters.status?.trim() || "A",
-    p_contract_code: filters.contractCode?.trim() || null,
-    p_incentive_type_id: filters.typeId?.trim() || null
+    p_statuses: resolvedStatuses,
+    p_contract_codes: resolvedContractCodes,
+    p_type_ids: resolvedTypeIds
   });
 
   if (error) {

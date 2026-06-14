@@ -213,6 +213,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No alcanza con exigir el trabajador principal correcto**. Cuando un tipo de incentivo pide trabajador reemplazado, ese segundo trabajador también participa de la regla de negocio y debe validarse contra la pauta canónica en la misma RPC de registro.
 - **La UI puede anticipar el bloqueo, pero no gobernarlo**. El patrón correcto es: consulta visual dedicada para informar el estado del reemplazado y, además, validación transaccional en `create_hr_incentive_request(...)` para impedir bypass por cliente o drift de estados.
 
+## 63. Si una RPC pública cambia de filtros escalares a arreglos, el contrato se reemplaza completo y no por coexistencia
+
+- **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
+- **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

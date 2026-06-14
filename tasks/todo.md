@@ -8,6 +8,20 @@
 - [x] Centralizar la clasificación de tareas compartidas y eliminar tipado sintético/frágil en frontend
 - [x] Validar typecheck y consistencia de diff
 
+## Soporte multi-select en filtros RPC de Incentivos
+
+- [x] Auditar las firmas activas de `get_hr_incentives_analytics(...)` y `get_hr_incentive_requests(...)` contra el contrato pedido por el frontend
+- [x] Versionar una nueva migración SQL que cambie los filtros singulares por arreglos y sanee `grant execute` sobre las nuevas firmas
+- [x] Alinear el cliente TypeScript para aceptar filtros singulares o múltiples sin romper las vistas actuales
+- [x] Validar `npx tsc -b`, `git diff --check` y queries de humo en Supabase sobre ambas funciones
+
+## Resultado de soporte multi-select en filtros RPC de Incentivos
+
+- Se agregó la migración [`20260614170000_support_multi_select_hr_incentive_filters.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614170000_support_multi_select_hr_incentive_filters.sql:1), que reemplaza las firmas antiguas de [`get_hr_incentives_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614170000_support_multi_select_hr_incentive_filters.sql:4) y [`get_hr_incentive_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614170000_support_multi_select_hr_incentive_filters.sql:261) por versiones con `text[]` y `uuid[]`.
+- El backend ahora sanea arreglos vacíos, ignora valores en blanco, deduplica filtros y mantiene el comportamiento de `A = Todos` para estados. La lógica quedó bajada a `ANY(...)` sin inventar una segunda RPC ni dejar sobrecargas ambiguas vivas en PostgREST.
+- En frontend se endureció el contrato en [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:298) y [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:700) para aceptar tanto el formato actual single-select como futuros arreglos (`status/statuses`, `contractCode/contractCodes`, `typeId/typeIds`) sin romper las vistas existentes.
+- La migración quedó aplicada en Supabase y validada con queries de humo reales: `get_hr_incentives_analytics(null, array['CONT-028'], null, array['A'])` devolvió un `jsonb` válido y `get_hr_incentive_requests(null, array['P','E','A'], array['CONT-028'], null, null, null)` respondió filas bajo contexto autenticado administrativo.
+
 ## Endurecimiento final de reglas entre Incentivos y Roster
 
 - [x] Exigir en backend y frontend que el trabajador reemplazado figure en turno cuando el incentivo requiera reemplazo

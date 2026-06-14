@@ -297,18 +297,24 @@ export type HrIncentiveRequestDetail = {
 
 export type HrIncentiveRequestsFilters = {
   periodCode?: string;
-  status?: string;
-  contractCode?: string;
+  status?: string | string[];
+  statuses?: string[];
+  contractCode?: string | string[];
+  contractCodes?: string[];
   workerSearch?: string;
-  typeId?: string;
+  typeId?: string | string[];
+  typeIds?: string[];
   serviceDateUntil?: string;
 };
 
 export type HrIncentiveAnalyticsFilters = {
   periodCode?: string;
-  status?: string;
-  contractCode?: string;
-  typeId?: string;
+  status?: string | string[];
+  statuses?: string[];
+  contractCode?: string | string[];
+  contractCodes?: string[];
+  typeId?: string | string[];
+  typeIds?: string[];
 };
 
 export type HrIncentiveAnalyticsSummaryCards = {
