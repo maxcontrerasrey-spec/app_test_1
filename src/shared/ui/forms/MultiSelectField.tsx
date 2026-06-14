@@ -72,41 +72,43 @@ export function MultiSelectField({
       >
         {selectedOptions.length === 0 ? (
           <span style={{ color: "#9ca3af", padding: "4px 0" }}>{placeholder}</span>
-        ) : (
-          selectedOptions.map((opt) => (
-            <span
-              key={opt.value}
+        ) : selectedOptions.length === 1 ? (
+          <span
+            key={selectedOptions[0].value}
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#374151",
+              padding: "2px 8px",
+              borderRadius: "4px",
+              fontSize: "0.875rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px"
+            }}
+          >
+            {selectedOptions[0].label}
+            <button
+              type="button"
+              onClick={(e) => handleRemove(e, selectedOptions[0].value)}
               style={{
-                backgroundColor: "#e5e7eb",
-                color: "#374151",
-                padding: "2px 8px",
-                borderRadius: "4px",
-                fontSize: "0.875rem",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+                color: "#6b7280",
                 display: "flex",
                 alignItems: "center",
-                gap: "4px"
+                fontSize: "1rem",
+                lineHeight: 1
               }}
             >
-              {opt.label}
-              <button
-                type="button"
-                onClick={(e) => handleRemove(e, opt.value)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0",
-                  color: "#6b7280",
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: "1rem",
-                  lineHeight: 1
-                }}
-              >
-                &times;
-              </button>
-            </span>
-          ))
+              &times;
+            </button>
+          </span>
+        ) : (
+          <span style={{ color: "#374151", padding: "4px 0", fontSize: "0.875rem" }}>
+            Varios elementos ({selectedOptions.length})
+          </span>
         )}
       </div>
 

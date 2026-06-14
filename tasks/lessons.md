@@ -969,3 +969,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cuando una nueva capacidad cruza otro flujo sensible, la validación estructural debe imponerse en la RPC compartida y recién después reflejarse en la UI.** En `Jornadas y Turnos`, exigir descanso para ciertos incentivos en el formulario habría sido insuficiente porque otras superficies futuras podrían seguir llamando `create_hr_incentive_request(...)`.
 - **La configuración de negocio reusable debe vivir en catálogo, no en lógica ad hoc de formulario.** Marcar `requires_rest_day` sobre `hr_incentive_types` evita listas hardcodeadas, permite auditoría y mantiene a `calculate_hr_incentive_preview(...)` y `create_hr_incentive_request(...)` usando la misma fuente de verdad.
 - **Al crear un submódulo con permiso propio, el cierre no es solo la ruta React.** También hay que registrar `app_modules`, sembrar `role_module_access`, conceder `grant execute`, notificar `pgrst` y tipar el payload frontend desde el contrato real del backend; si falta una de esas piezas, el módulo “existe” en código pero no en operación.
+
+## 94. REGLA ELEONORA (Gobernanza de Alcance Frontend)
+
+- **Alcance cerrado a frontend puro:** Archivos permitidos son `src/**`, estilos, componentes, hooks y utilidades de UI. Archivos prohibidos son `supabase/**`, `.github/workflows/audit-supabase-migrations.yml`, `scripts/audit-supabase-migrations.mjs` y `package.json` salvo aprobación explícita de negocio.
+- **Respeto irrestricto del contrato backend:** No alteres contratos backend ni nombres de campos de RPC por inferencia. Si una vista no calza con el payload, reporta el desacople sin corregir código SQL.
+- **Protocolo obligatorio antes de cerrar:**
+  1. Corre `npx tsc -b`.
+  2. Corre `git diff --check`.
+  3. Confirma explícitamente que no tocaste `supabase/**` ni archivos de gobernanza de migraciones.
+  4. Si hubo que compensar algo por limitación del backend, déjalo escrito en `tasks/todo.md` sin inventar soluciones del lado SQL.
