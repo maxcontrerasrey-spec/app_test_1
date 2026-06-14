@@ -208,6 +208,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con que BUK “gane” al escribir**. Si la ausencia oficial desaparece, el sistema debe poder reconstruir el estado manual o automático que existía antes; de lo contrario, la sync destruye trazabilidad y deja al calendario en un estado falso.
 - **La forma simple y robusta es persistir el estado supersedido en la misma fila canónica** cuando el modelo solo permite una excepción activa por trabajador/fecha.
 
+## 62. Si un incentivo depende de un trabajador reemplazado, esa validación operativa también debe vivir en backend
+
+- **No alcanza con exigir el trabajador principal correcto**. Cuando un tipo de incentivo pide trabajador reemplazado, ese segundo trabajador también participa de la regla de negocio y debe validarse contra la pauta canónica en la misma RPC de registro.
+- **La UI puede anticipar el bloqueo, pero no gobernarlo**. El patrón correcto es: consulta visual dedicada para informar el estado del reemplazado y, además, validación transaccional en `create_hr_incentive_request(...)` para impedir bypass por cliente o drift de estados.
+
 ## 21. Para separación vertical uniforme, `row-gap` es más confiable que márgenes acumulados
 
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.

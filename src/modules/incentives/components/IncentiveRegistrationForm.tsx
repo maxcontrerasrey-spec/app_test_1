@@ -83,6 +83,14 @@ function resolveRosterStatusAppearance(snapshot: HrIncentiveRosterSnapshot | nul
   };
 }
 
+function isReplacementWorkerEligible(snapshot: HrIncentiveRosterSnapshot | null) {
+  if (!snapshot) {
+    return false;
+  }
+
+  return snapshot.scheduleStatus === "working" || snapshot.scheduleStatus === "extra_shift";
+}
+
 export function IncentiveRegistrationForm({
   setupCatalogsQuery
 }: IncentiveRegistrationFormProps) {
@@ -107,6 +115,11 @@ export function IncentiveRegistrationForm({
     bukEmployeeId: selectedWorker?.bukEmployeeId ?? "",
     serviceDate,
     enabled: Boolean(selectedWorker) && Boolean(serviceDate)
+  });
+  const replacementRosterSnapshotQuery = useHrIncentiveRosterSnapshot({
+    bukEmployeeId: replacementWorker?.bukEmployeeId ?? "",
+    serviceDate,
+    enabled: Boolean(replacementWorker) && Boolean(serviceDate)
   });
 
   const incentiveTypes = useMemo(
@@ -172,6 +185,21 @@ export function IncentiveRegistrationForm({
     () => resolveRosterStatusAppearance(rosterSnapshotQuery.data ?? null),
     [rosterSnapshotQuery.data]
   );
+  const replacementRosterStatusAppearance = useMemo(
+    () => resolveRosterStatusAppearance(replacementRosterSnapshotQuery.data ?? null),
+    [replacementRosterSnapshotQuery.data]
+  );
+  const replacementWorkerValidationError = useMemo(() => {
+    if (!selectedIncentiveType?.requiresReplacement || !replacementRosterSnapshotQuery.data) {
+      return null;
+    }
+
+    if (isReplacementWorkerEligible(replacementRosterSnapshotQuery.data)) {
+      return null;
+    }
+
+    return `El trabajador reemplazado debe estar en turno en la fecha seleccionada. El sistema detecta ${replacementRosterSnapshotQuery.data.scheduleLabel ?? "un estado no operativo"}.`;
+  }, [replacementRosterSnapshotQuery.data, selectedIncentiveType?.requiresReplacement]);
 
   const restDeclarationMismatch =
     typeof declaredRestDayBoolean === "boolean" &&
@@ -256,7 +284,11 @@ export function IncentiveRegistrationForm({
     !registrationWindow.isAllowed ||
     (selectedIncentiveType?.calculationBasis === "per_hour" &&
       !(typeof durationHoursNumber === "number" && durationHoursNumber > 0)) ||
-    (selectedIncentiveType?.requiresReplacement && !replacementWorker) ||
+    (selectedIncentiveType?.requiresReplacement &&
+      (!replacementWorker ||
+        replacementRosterSnapshotQuery.isLoading ||
+        !replacementRosterSnapshotQuery.data ||
+        !isReplacementWorkerEligible(replacementRosterSnapshotQuery.data))) ||
     createRequestMutation.isPending;
 
   return (
@@ -508,9 +540,41 @@ export function IncentiveRegistrationForm({
                 label="Trabajador reemplazado"
                 placeholder="Busca al trabajador reemplazado"
                 selectedWorker={replacementWorker}
-                onSelect={setReplacementWorker}
+                onSelect={(worker) => {
+                  setFormError("");
+                  setFormMessage("");
+                  setReplacementWorker(worker);
+                }}
                 excludeBukEmployeeId={selectedWorker?.bukEmployeeId ?? null}
               />
+              {replacementWorker && replacementRosterSnapshotQuery.isLoading ? (
+                <p className="tracking-filter-caption">
+                  Verificando estado operativo del trabajador reemplazado...
+                </p>
+              ) : null}
+              {replacementWorker && replacementRosterSnapshotQuery.isError ? (
+                <p className="form-status form-status-error">
+                  {replacementRosterSnapshotQuery.error.message}
+                </p>
+              ) : null}
+              {replacementRosterStatusAppearance ? (
+                <div
+                  className={`hr-incentives-roster-status hr-incentives-roster-status-${replacementRosterStatusAppearance.tone}`}
+                >
+                  <span className="hr-incentives-roster-status-label">
+                    Estado del trabajador reemplazado
+                  </span>
+                  <strong>{replacementRosterStatusAppearance.title}</strong>
+                  <p>
+                    {isReplacementWorkerEligible(replacementRosterSnapshotQuery.data ?? null)
+                      ? "La pauta detectada permite usarlo como trabajador reemplazado."
+                      : "Solo se permite registrar el incentivo si el trabajador reemplazado figura en turno para esa fecha."}
+                  </p>
+                </div>
+              ) : null}
+              {replacementWorkerValidationError ? (
+                <p className="form-status form-status-error">{replacementWorkerValidationError}</p>
+              ) : null}
             </div>
           ) : null}
 

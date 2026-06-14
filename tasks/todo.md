@@ -8,6 +8,20 @@
 - [x] Centralizar la clasificación de tareas compartidas y eliminar tipado sintético/frágil en frontend
 - [x] Validar typecheck y consistencia de diff
 
+## Endurecimiento final de reglas entre Incentivos y Roster
+
+- [x] Exigir en backend y frontend que el trabajador reemplazado figure en turno cuando el incentivo requiera reemplazo
+- [x] Corregir warnings objetivos del dominio Incentivos/Roster en Supabase: grants expuestos, `search_path` mutable, índices faltantes y políticas RLS con `initplan`
+- [x] Validar con `npx tsc -b`, `git diff --check`, advisors/queries de humo y documentar el cierre
+
+## Resultado de endurecimiento final de reglas entre Incentivos y Roster
+
+- Se agregó la migración [`20260614014734_harden_hr_incentive_replacement_shift_validation.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614014734_harden_hr_incentive_replacement_shift_validation.sql:1), ya aplicada en Supabase, para endurecer [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614014734_harden_hr_incentive_replacement_shift_validation.sql:99). Desde ahora, si el tipo de incentivo exige trabajador reemplazado, ese trabajador debe figurar `En turno` o `Turno adicional` en la fecha seleccionada; cualquier otro estado bloquea el registro con mensaje de negocio claro y deja trazabilidad en `hr_incentive_request_history.metadata.replacement_roster_validation`.
+- En frontend, [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) ahora consulta y muestra el estado operativo del trabajador reemplazado en tiempo real. El botón de registro queda bloqueado si ese trabajador está en descanso, sin pauta o con una ausencia.
+- La misma migración corrigió deuda objetiva del dominio: cerró el `anon` expuesto sobre [`get_hr_incentive_approval_queue()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614014734_harden_hr_incentive_replacement_shift_validation.sql:369), agregó índices faltantes sobre `decision_by`, `created_by`, `assigned_by` y `pattern_id`, y rehízo las políticas RLS de `hr_shift_patterns`, `hr_worker_rosters` y `hr_roster_exceptions` con `initplan` estable.
+- Se agregó además la migración [`20260614015101_harden_hr_buk_helper_search_paths.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614015101_harden_hr_buk_helper_search_paths.sql:1), también aplicada en Supabase, para fijar `search_path = public` en los helpers BUK/HR usados por búsquedas, cargo, turno y compañía.
+- Validación cerrada con `npx tsc -b`, `git diff --check`, advisors y queries de humo sobre la base activa: la regla nueva quedó presente en la función, los grants del approval queue ya no exponen `PUBLIC/anon`, los índices existen y las policies quedaron actualizadas.
+
 ## Bloqueo de incentivos por vacaciones o licencia médica
 
 - [x] Auditar la fuente canónica de estado de calendario y cómo Incentivos consume hoy `roster_validation`
