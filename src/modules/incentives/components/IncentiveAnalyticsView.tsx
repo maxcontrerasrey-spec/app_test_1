@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { ChartSurface, ChartTooltip, SelectField, TextField } from "../../../shared/ui";
+import { ChartSurface, ChartTooltip, SelectField, TextField, MultiSelectField } from "../../../shared/ui";
 import { formatCurrencyValue } from "../../../shared/lib/format";
 import { formatDateForDisplay } from "../../../shared/lib/date";
 import { useHrIncentivesAnalytics, useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
@@ -60,22 +60,22 @@ export function IncentiveAnalyticsView() {
   const [workerTimeView, setWorkerTimeView] = useState<"period" | "date">("date");
 
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
-  const [contractCodeFilter, setContractCodeFilter] = useState("");
-  const [typeIdFilter, setTypeIdFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("A");
+  const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
+  const [typeIdFilter, setTypeIdFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>(["A"]);
 
   const analyticsQuery = useHrIncentivesAnalytics({
     periodCode: periodCodeFilter || undefined,
-    contractCode: contractCodeFilter || undefined,
-    typeId: typeIdFilter || undefined,
-    status: statusFilter
+    contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
+    typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
+    statuses: statusFilter.length > 0 ? statusFilter : undefined
   });
 
   const allPeriodsAnalyticsQuery = useHrIncentivesAnalytics({
     periodCode: undefined,
-    contractCode: contractCodeFilter || undefined,
-    typeId: typeIdFilter || undefined,
-    status: statusFilter
+    contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
+    typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
+    statuses: statusFilter.length > 0 ? statusFilter : undefined
   });
 
   const periodTrendData = useMemo(() => {
@@ -91,9 +91,9 @@ export function IncentiveAnalyticsView() {
 
   const requestsQuery = useHrIncentiveRequests({
     periodCode: actualPeriodCode,
-    contractCode: contractCodeFilter || undefined,
-    typeId: typeIdFilter || undefined,
-    status: statusFilter
+    contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
+    typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
+    statuses: statusFilter.length > 0 ? statusFilter : undefined
   });
 
   const dateTrendData = useMemo(() => {
@@ -195,9 +195,9 @@ export function IncentiveAnalyticsView() {
             className="soft-primary-button"
             onClick={() => {
               setPeriodCodeFilter("");
-              setContractCodeFilter("");
-              setTypeIdFilter("");
-              setStatusFilter("A");
+              setContractCodeFilter([]);
+              setTypeIdFilter([]);
+              setStatusFilter(["A"]);
             }}
           >
             Limpiar filtros
@@ -213,28 +213,29 @@ export function IncentiveAnalyticsView() {
             placeholder="YYYYMM"
             inputMode="numeric"
           />
-          <SelectField
+          <MultiSelectField
             id="hr-incentive-analytics-contract"
-            label="Contrato"
+            label="Contratos"
             value={contractCodeFilter}
-            onChange={(event) => setContractCodeFilter(event.target.value)}
+            onChange={setContractCodeFilter}
             options={contractOptions}
             placeholder="Todos los contratos"
           />
-          <SelectField
+          <MultiSelectField
             id="hr-incentive-analytics-type"
-            label="Tipo de incentivo"
+            label="Tipos de incentivo"
             value={typeIdFilter}
-            onChange={(event) => setTypeIdFilter(event.target.value)}
+            onChange={setTypeIdFilter}
             options={incentiveTypeOptions}
             placeholder="Todos los tipos"
           />
-          <SelectField
+          <MultiSelectField
             id="hr-incentive-analytics-status"
-            label="Estado"
+            label="Estados"
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
+            onChange={setStatusFilter}
             options={statusOptions}
+            placeholder="Todos"
           />
         </div>
       </div>

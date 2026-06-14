@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
-import { SelectField, TextField } from "../../../shared/ui";
+import { SelectField, TextField, MultiSelectField } from "../../../shared/ui";
 import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
 import { formatRut } from "../../../shared/lib/rut";
 import {
@@ -169,10 +169,10 @@ export function IncentiveRequestsView({
   const { appRoles, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [workerSearch, setWorkerSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("A");
-  const [typeIdFilter, setTypeIdFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string[]>(["A"]);
+  const [typeIdFilter, setTypeIdFilter] = useState<string[]>([]);
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
-  const [contractCodeFilter, setContractCodeFilter] = useState("");
+  const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
   const [serviceDateUntil, setServiceDateUntil] = useState("");
   const [mutationError, setMutationError] = useState("");
   const [exportError, setExportError] = useState("");
@@ -190,10 +190,10 @@ export function IncentiveRequestsView({
 
   const requestsQuery = useHrIncentiveRequests({
     workerSearch,
-    status: statusFilter,
-    typeId: typeIdFilter || undefined,
+    statuses: statusFilter.length > 0 ? statusFilter : undefined,
+    typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
     periodCode: periodCodeFilter || undefined,
-    contractCode: contractCodeFilter || undefined,
+    contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
     serviceDateUntil: serviceDateUntil || undefined
   });
 
@@ -402,11 +402,11 @@ export function IncentiveRequestsView({
           onChange={(event) => setWorkerSearch(event.target.value)}
           placeholder="Trabajador, reemplazo, tipo o contrato"
         />
-        <SelectField
+        <MultiSelectField
           id="incentive-filter-status"
-          label="Estado"
+          label="Estados"
           value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
+          onChange={setStatusFilter}
           options={[
             { value: "A", label: "Todos" },
             { value: "P", label: "Pendiente administrador contrato" },
@@ -415,12 +415,13 @@ export function IncentiveRequestsView({
             { value: "F", label: "Aprobado" },
             { value: "C", label: "Anulado" }
           ]}
+          placeholder="Todos"
         />
-        <SelectField
+        <MultiSelectField
           id="incentive-filter-type"
-          label="Tipo"
+          label="Tipos"
           value={typeIdFilter}
-          onChange={(event) => setTypeIdFilter(event.target.value)}
+          onChange={setTypeIdFilter}
           options={incentiveTypeOptions}
           placeholder="Todos los tipos"
         />
@@ -432,11 +433,11 @@ export function IncentiveRequestsView({
           placeholder="YYYYMM"
           inputMode="numeric"
         />
-        <SelectField
+        <MultiSelectField
           id="incentive-filter-contract"
-          label="Contrato"
+          label="Contratos"
           value={contractCodeFilter}
-          onChange={(event) => setContractCodeFilter(event.target.value)}
+          onChange={setContractCodeFilter}
           options={contractOptions}
           placeholder="Todos los contratos"
         />
