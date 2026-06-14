@@ -378,7 +378,8 @@ function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
       approvedCount: Number(summaryCards.approved_count ?? 0),
       rejectedCount: Number(summaryCards.rejected_count ?? 0),
       approvalRate: readNumber(summaryCards.approval_rate),
-      rejectionRate: readNumber(summaryCards.rejection_rate)
+      rejectionRate: readNumber(summaryCards.rejection_rate),
+      declaredRestDayCount: Number(summaryCards.declared_rest_day_count ?? 0)
     },
     totalAmountByPeriod: asArray<Record<string, unknown>>(source.total_amount_by_period).map((item) => ({
       periodCode: String(item.period_code ?? ""),

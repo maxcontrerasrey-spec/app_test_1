@@ -30,6 +30,27 @@ function formatCompactCurrency(value: number) {
   }).format(value);
 }
 
+function formatShortDate(val: string) {
+  const full = formatDateForDisplay(val);
+  const parts = full.split("/");
+  if (parts.length === 3) return `${parts[0]}/${parts[1]}`;
+  return full;
+}
+
+function formatPeriodCode(val: string) {
+  if (val.length === 6) {
+    const year = val.substring(2, 4);
+    const month = val.substring(4, 6);
+    const months: Record<string, string> = {
+      "01": "Ene", "02": "Feb", "03": "Mar", "04": "Abr",
+      "05": "May", "06": "Jun", "07": "Jul", "08": "Ago",
+      "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dic"
+    };
+    return `${months[month] || month}${year}`;
+  }
+  return val;
+}
+
 function getStatusLabel(status: string) {
   switch (status) {
     case "P":
@@ -252,8 +273,8 @@ export function IncentiveAnalyticsView() {
           <strong>{cards ? formatCurrencyValue(cards.totalAmount) : "—"}</strong>
         </article>
         <article className="tracking-kpi-card tracking-kpi-card-pendiente">
-          <span>Solicitudes</span>
-          <strong>{cards ? cards.requestCount.toLocaleString("es-CL") : "—"}</strong>
+          <span>Descansos trabajados</span>
+          <strong>{cards ? cards.declaredRestDayCount.toLocaleString("es-CL") : "—"}</strong>
         </article>
         <article className="tracking-kpi-card tracking-kpi-card-en-proceso">
           <span>Tasa de aprobación</span>
@@ -334,7 +355,7 @@ export function IncentiveAnalyticsView() {
                 axisLine={false}
                 tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
                 tickMargin={12}
-                tickFormatter={(val) => timeView === "date" ? formatDateForDisplay(String(val)) : val}
+                tickFormatter={(val) => timeView === "date" ? formatShortDate(String(val)) : formatPeriodCode(String(val))}
               />
               <YAxis
                 stroke="var(--text-muted)"
@@ -350,7 +371,7 @@ export function IncentiveAnalyticsView() {
                   <ChartTooltip
                     {...props}
                     chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))}
-                    chartLabelFormatter={(label) => timeView === "period" ? `Período ${label}` : `Fecha: ${formatDateForDisplay(String(label))}`}
+                    chartLabelFormatter={(label) => timeView === "period" ? `Período ${formatPeriodCode(String(label))}` : `Fecha: ${formatShortDate(String(label))}`}
                   />
                 )}
               />
@@ -676,6 +697,7 @@ export function IncentiveAnalyticsView() {
                 tick={false}
               />
               <Tooltip
+                cursor={{ fill: "transparent" }}
                 content={(props) => (
                   <ChartTooltip 
                     {...props} 
@@ -690,6 +712,7 @@ export function IncentiveAnalyticsView() {
                   name={contractLabel}
                   stackId="workerAmount"
                   fill={["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"][index % 8]}
+                  radius={[0, 6, 6, 0]}
                 >
                   {index === uniqueWorkerContracts.length - 1 && (
                     <LabelList

@@ -324,6 +324,7 @@ export type HrIncentiveAnalyticsSummaryCards = {
   rejectedCount: number;
   approvalRate: number;
   rejectionRate: number;
+  declaredRestDayCount: number;
 };
 
 export type HrIncentiveAnalyticsAmountByPeriodItem = {

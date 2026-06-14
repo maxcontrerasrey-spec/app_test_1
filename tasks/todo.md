@@ -2,6 +2,12 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Limitación backend: Contador de Descansos Trabajados en Dashboard (RESUELTA)
+
+- **Desacople detectado:** El frontend requiere mostrar en las tarjetas de KPIs del dashboard analítico (`IncentiveAnalyticsView.tsx`) un contador de "Descansos Trabajados" en lugar de "Solicitudes".
+- **Limitación original:** La RPC `get_hr_incentives_analytics` no retornaba la sumatoria de `declared_rest_day_count`.
+- **Acción tomada:** Codex agregó la migración SQL necesaria. En frontend, se endureció el tipo `HrIncentiveAnalyticsSummaryCards`, se mapeó `declared_rest_day_count` en la capa de servicios y se reemplazó el KPI de "Solicitudes" por "Descansos trabajados" en la vista.
+
 ## Limpieza enterprise de superficies compartidas de tareas y navegación
 
 - [x] Auditar acoplamiento, ramas muertas y `any` introducidos en campana, widget de tareas y navegación

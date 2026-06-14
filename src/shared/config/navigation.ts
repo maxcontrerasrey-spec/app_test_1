@@ -96,33 +96,25 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "timeline"
       },
       {
-        label: "Gestión de Incentivos Extraordinarios",
         moduleCode: "recursos_humanos",
-        to: "#",
-        iconKey: "document",
-        items: [
-          {
-            moduleCode: "recursos_humanos",
-            to: "/recursos-humanos/incentivos",
-            label: "Ingreso & Aprobación de Incentivos",
-            description: "Registro y control de incentivos extraordinarios.",
-            iconKey: "document"
-          },
-          {
-            moduleCode: "recursos_humanos",
-            to: "/recursos-humanos/analisis",
-            label: "Análisis de Incentivos",
-            description: "Control gerencial del gasto y desviaciones operacionales.",
-            iconKey: "tracking",
-            visibleForRoles: [
-              "director_eje",
-              "gerente_general",
-              "director_op",
-              "gerencia",
-              "operaciones_l_1",
-              "control_contratos"
-            ]
-          }
+        to: "/recursos-humanos/incentivos",
+        label: "Gestión de Incentivos Extraordinarios",
+        description: "Registro y control de incentivos extraordinarios.",
+        iconKey: "document"
+      },
+      {
+        moduleCode: "recursos_humanos",
+        to: "/recursos-humanos/analisis",
+        label: "Análisis de Incentivos",
+        description: "Control gerencial del gasto y desviaciones operacionales.",
+        iconKey: "tracking",
+        visibleForRoles: [
+          "director_eje",
+          "gerente_general",
+          "director_op",
+          "gerencia",
+          "operaciones_l_1",
+          "control_contratos"
         ]
       }
     ]
