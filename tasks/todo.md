@@ -14,6 +14,19 @@
 - Los formularios y listas del módulo quedaron desacoplados de estilos heredados de Incentivos mediante `roster-form-grid`, `roster-list`, `roster-list-item` y `roster-inline-button`, evitando dependencias visuales cruzadas.
 - Validación cerrada con `git diff --check`, `npx tsc -b` y `npm run build` antes del commit y push.
 
+## Revisión del warning falso de recarga de app
+
+- [x] Inspeccionar el `AppErrorBoundary` y el helper `lazyWithRetry` para identificar qué condición dispara el mensaje de recarga
+- [x] Verificar si el backend participa en ese flujo o si la causa es exclusivamente de carga dinámica frontend
+- [x] Corregir el mensaje para no atribuir erróneamente el problema a un deploy inexistente
+- [x] Validar `npx tsc -b` y `git diff --check`
+
+## Resultado de revisión del warning falso de recarga de app
+
+- La causa raíz no estaba en Supabase ni en una verificación de versión backend. El mensaje provenía del boundary global [`AppErrorBoundary.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/AppErrorBoundary.tsx:1), que trataba cualquier `chunk load error` como si fuera necesariamente una publicación reciente.
+- Ese mismo tipo de error también puede dispararse por fallas transitorias al cargar un módulo lazy (`failed to fetch dynamically imported module`, `loading chunk`, etc.), por lo que el diagnóstico “hubo deploy” era técnicamente incorrecto.
+- La detección de `chunk load error` quedó centralizada en [`lazyWithRetry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/lazyWithRetry.ts:1) y el mensaje visible ahora es neutral: indica que puede deberse a conexión inestable o a actualización reciente, sin mentir sobre un deploy inexistente.
+
 ## Endurecimiento de escalabilidad masiva en Incentivos
 
 - [x] Eliminar recomputaciones innecesarias del contexto y preview en `create_hr_incentive_request(...)` para reducir costo por ingreso

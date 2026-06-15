@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { isChunkLoadError } from "../lib/lazyWithRetry";
 import { logger } from "../lib/logger";
 
 type AppErrorBoundaryProps = {
@@ -11,6 +12,10 @@ type AppErrorBoundaryState = {
 };
 
 function getReadableMessage(error: unknown) {
+  if (isChunkLoadError(error)) {
+    return "No fue posible cargar el módulo solicitado. Esto puede ocurrir por una conexión inestable o por una actualización reciente. Recarga la app para reintentar.";
+  }
+
   if (!(error instanceof Error)) {
     return "Ocurrió un error inesperado en la interfaz.";
   }
@@ -18,14 +23,6 @@ function getReadableMessage(error: unknown) {
   const message = error.message.trim();
   if (!message) {
     return "Ocurrió un error inesperado en la interfaz.";
-  }
-
-  if (
-    message.toLowerCase().includes("failed to fetch dynamically imported module") ||
-    message.toLowerCase().includes("loading chunk") ||
-    message.toLowerCase().includes("importing a module script failed")
-  ) {
-    return "El módulo solicitado quedó desactualizado después de una publicación. Recarga la app para sincronizar la versión activa.";
   }
 
   return message;

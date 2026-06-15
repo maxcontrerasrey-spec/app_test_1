@@ -2,7 +2,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 
 const RETRY_STORAGE_PREFIX = "app:lazy-retry";
 
-function isChunkLoadError(error: unknown) {
+export function isChunkLoadError(error: unknown) {
   if (!(error instanceof Error)) {
     return false;
   }
