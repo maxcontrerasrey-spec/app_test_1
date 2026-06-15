@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. En refactors SQL, no cambies por intuición el tipo de identificadores heredados
+
+- **Si un helper ya expone IDs de tablas legacy o catálogos, el tipo debe rastrearse hasta la tabla real antes de recastearlo**. En este repo, `public.buk_contract_mappings.id` es `bigint`; convertirlo a `uuid` dentro de una RPC compila, pero rompe en runtime apenas el payload devuelve valores como `79`.
+- **Las optimizaciones de RPC deben validar el contrato completo con un caso real, no solo con `create or replace function`**. Un query de humo sobre la función publicada es el control mínimo para detectar estos drift de tipos antes de que el frontend quede mostrando solo campos parciales.
+
 ## 64. Un `chunk load error` no prueba por sí solo que hubo deploy
 
 - **Los fallos de import dinámico de Vite/React (`failed to fetch dynamically imported module`, `loading chunk`, `importing a module script failed`) también ocurren por red intermitente o errores puntuales de carga, no solo por hashes viejos post-deploy**.
