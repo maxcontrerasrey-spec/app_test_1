@@ -197,10 +197,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           logger.error("AuthContext loadAuthorization", error);
-          setProfile(null);
-          setAppRoles([]);
-          setAccessibleModules([]);
-          setCapabilities([]);
           setIsLoading(false);
           return;
         }
@@ -228,10 +224,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCapabilities(Array.from(new Set(nextCapabilities)));
       } catch (err) {
         logger.error("AuthContext loadAuthorization catch", err);
-        setProfile(null);
-        setAppRoles([]);
-        setAccessibleModules([]);
-        setCapabilities([]);
       } finally {
         if (isMounted) {
           setIsLoading(false);
