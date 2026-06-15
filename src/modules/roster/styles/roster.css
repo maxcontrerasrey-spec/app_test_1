@@ -204,6 +204,44 @@
   align-items: start;
 }
 
+.roster-assignment-warning-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+}
+
+.roster-assignment-warning-card strong {
+  font-size: 0.95rem;
+}
+
+.roster-assignment-warning-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.roster-assignment-warning-card--warning {
+  background: rgba(254, 249, 195, 0.92);
+  border-color: rgba(234, 179, 8, 0.3);
+  color: #854d0e;
+}
+
+.roster-assignment-warning-card--danger {
+  background: rgba(254, 226, 226, 0.94);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #b91c1c;
+}
+
+.roster-assignment-warning-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+}
+
 .roster-list {
   display: grid;
   gap: 0.85rem;

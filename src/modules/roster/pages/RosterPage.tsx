@@ -491,6 +491,7 @@ export function RosterPage() {
         isOpen={isAssignmentOpen}
         worker={selectedWorker}
         patterns={setupCatalogsQuery.data?.patterns ?? []}
+        assignments={workerScheduleQuery.data?.assignments ?? []}
         isSubmitting={assignMutation.isPending}
         onClose={() => setIsAssignmentOpen(false)}
         onConfirm={async (payload) => {

@@ -2292,3 +2292,18 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - En la UI, el botón "Trasladar" aparece en el panel derecho del candidato siempre que este no esté en etapa terminal (contratado, rechazado, desistido).
 - Las migraciones aplicables son `20260608_000001_fix_dashboard_active_cases_filter.sql` y `20260608_000002_add_transfer_candidate_rpc.sql`, en ese orden.
 - Error crítico corregido antes de aplicar: el `CHECK` constraint de `action_type` no incluía los nuevos valores `candidate_transferred_out/in` ni los valores de migraciones anteriores como `document_uploaded`, `candidate_person_profile_updated`, etc.
+
+## Warning preventivo al reasignar ciclos de jornada
+
+- [x] Revisar cómo responde el backend cuando una nueva pauta se cruza con una asignación existente
+- [x] Mostrar una tarjeta amarilla cuando una nueva pauta vaya a recortar la asignación vigente
+- [x] Mostrar una tarjeta roja cuando el rango siga bloqueado por superposición real y no pueda guardarse
+- [x] Reutilizar el estilo de warnings del sistema sin alterar la lógica SQL existente
+- [x] Validar `npx tsc -b` y `git diff --check`
+
+## Resultado de Warning preventivo al reasignar ciclos de jornada
+
+- El modal de asignación de pauta ahora anticipa visualmente cuándo una nueva fecha de inicio cerrará la pauta activa el día anterior.
+- Si la nueva asignación además deja un hueco posterior por tener fecha de término, el usuario lo ve antes de guardar.
+- Cuando el rango elegido todavía colisiona con otra asignación ya existente, se muestra una tarjeta roja con el detalle de los tramos que bloquearán el guardado.
+- No se modificó la lógica backend de `assign_hr_worker_roster(...)`; el cambio solo hace explícito en UI lo que el sistema ya aplica o rechaza.

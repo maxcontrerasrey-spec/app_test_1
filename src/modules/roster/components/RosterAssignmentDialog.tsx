@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { DatePickerField, SelectField, TextField } from "../../../shared/ui";
+import { formatRequestDate } from "../../../shared/lib/format";
 import { toTodayDateValue } from "../../../shared/lib/date";
-import type { RosterWorkerSearchItem, ShiftPattern } from "../types";
+import type { RosterWorkerSearchItem, ShiftPattern, WorkerRosterAssignment } from "../types";
 
 type RosterAssignmentDialogProps = {
   isOpen: boolean;
   worker: RosterWorkerSearchItem | null;
   patterns: ShiftPattern[];
+  assignments?: WorkerRosterAssignment[];
   isSubmitting?: boolean;
   onClose: () => void;
   onConfirm: (payload: {
@@ -21,6 +23,7 @@ export function RosterAssignmentDialog({
   isOpen,
   worker,
   patterns,
+  assignments = [],
   isSubmitting = false,
   onClose,
   onConfirm
@@ -41,6 +44,47 @@ export function RosterAssignmentDialog({
         })),
     [patterns]
   );
+  const startDateValue = startDate || null;
+  const endDateValue = endDate || null;
+  const overlappingAssignments = useMemo(() => {
+    if (!startDateValue) {
+      return [];
+    }
+
+    const normalizedEndDate = endDateValue || "9999-12-31";
+
+    return assignments.filter((assignment) => {
+      const assignmentEndDate = assignment.endDate || "9999-12-31";
+      return assignment.startDate <= normalizedEndDate && assignmentEndDate >= startDateValue;
+    });
+  }, [assignments, endDateValue, startDateValue]);
+  const currentAssignmentAtStart = useMemo(() => {
+    if (!startDateValue) {
+      return null;
+    }
+
+    return (
+      assignments.find((assignment) => {
+        const assignmentEndDate = assignment.endDate || "9999-12-31";
+        return assignment.startDate < startDateValue && assignmentEndDate >= startDateValue;
+      }) ?? null
+    );
+  }, [assignments, startDateValue]);
+  const blockingOverlapAssignments = useMemo(() => {
+    if (!startDateValue) {
+      return [];
+    }
+
+    return overlappingAssignments.filter((assignment) => assignment.startDate >= startDateValue);
+  }, [overlappingAssignments, startDateValue]);
+  const willCreateGapAfterTemporaryCycle = useMemo(() => {
+    if (!currentAssignmentAtStart || !startDateValue || !endDateValue) {
+      return false;
+    }
+
+    const currentAssignmentEndDate = currentAssignmentAtStart.endDate || "9999-12-31";
+    return currentAssignmentEndDate > endDateValue;
+  }, [currentAssignmentAtStart, endDateValue, startDateValue]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -138,6 +182,47 @@ export function RosterAssignmentDialog({
             placeholder="Observaciones de la asignación"
           />
         </div>
+
+        {currentAssignmentAtStart ? (
+          <article className="roster-assignment-warning-card roster-assignment-warning-card--warning">
+            <strong>La pauta actual se ajustará</strong>
+            <p>
+              Existe una pauta vigente <strong>{currentAssignmentAtStart.patternName}</strong> desde{" "}
+              {formatRequestDate(currentAssignmentAtStart.startDate)}
+              {currentAssignmentAtStart.endDate
+                ? ` hasta ${formatRequestDate(currentAssignmentAtStart.endDate)}`
+                : " sin término definido"}
+              . Si guardas esta nueva asignación desde el{" "}
+              {formatRequestDate(startDateValue ?? toTodayDateValue())}, la pauta actual se cerrará
+              el día anterior.
+            </p>
+            {willCreateGapAfterTemporaryCycle ? (
+              <p>
+                Como además definiste término para el nuevo ciclo, al finalizar ese rango el
+                trabajador quedará sin pauta hasta que cargues otra asignación.
+              </p>
+            ) : null}
+          </article>
+        ) : null}
+
+        {blockingOverlapAssignments.length > 0 ? (
+          <article className="roster-assignment-warning-card roster-assignment-warning-card--danger">
+            <strong>El rango se superpone y será bloqueado</strong>
+            <p>
+              Ya existe al menos una asignación con inicio dentro del rango que intentas guardar.
+              El backend no permitirá esta nueva pauta mientras no ajustes o elimines la
+              superposición.
+            </p>
+            <ul className="roster-assignment-warning-list">
+              {blockingOverlapAssignments.map((assignment) => (
+                <li key={assignment.id}>
+                  {assignment.patternName} · {formatRequestDate(assignment.startDate)}
+                  {assignment.endDate ? ` al ${formatRequestDate(assignment.endDate)}` : " en adelante"}
+                </li>
+              ))}
+            </ul>
+          </article>
+        ) : null}
 
         {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
 
