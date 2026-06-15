@@ -54,7 +54,13 @@ function resolveSelectedDay(days: WorkerScheduleDay[], selectedDate: string) {
 }
 
 function getExceptionSourceLabel(source: RosterExceptionSource | null) {
-  return source === "buk" ? "BUK" : source === "manual" ? "Manual" : "";
+  return source === "buk"
+    ? "BUK"
+    : source === "incentive_auto"
+      ? "Incentivo"
+      : source === "manual"
+        ? "Manual"
+        : "";
 }
 
 export function RosterPage() {
@@ -415,10 +421,11 @@ export function RosterPage() {
                         className="soft-primary-button soft-primary-button-success"
                         disabled={
                           exceptionMutation.isPending ||
-                          !selectedWorker ||
-                          !exceptionDate ||
-                          !exceptionType ||
-                          exceptionOnFormDate?.exceptionSource === "buk"
+                              !selectedWorker ||
+                              !exceptionDate ||
+                              !exceptionType ||
+                              exceptionOnFormDate?.exceptionSource === "buk" ||
+                              exceptionOnFormDate?.exceptionSource === "incentive_auto"
                         }
                         onClick={() =>
                           exceptionMutation.mutate({
@@ -435,6 +442,11 @@ export function RosterPage() {
                     {exceptionOnFormDate?.exceptionSource === "buk" ? (
                       <p className="form-status form-status-error">
                         La fecha {formatRequestDate(exceptionOnFormDate.exceptionDate)} está gobernada por BUK y no puede reemplazarse manualmente.
+                      </p>
+                    ) : null}
+                    {exceptionOnFormDate?.exceptionSource === "incentive_auto" ? (
+                      <p className="form-status form-status-error">
+                        La fecha {formatRequestDate(exceptionOnFormDate.exceptionDate)} fue marcada automáticamente por Incentivos y no puede reemplazarse manualmente desde Jornadas.
                       </p>
                     ) : null}
                   </section>
@@ -464,12 +476,14 @@ export function RosterPage() {
                             type="button"
                             className={
                               exception.exceptionSource === "buk"
+                                || exception.exceptionSource === "incentive_auto"
                                 ? "roster-inline-button roster-inline-button--disabled"
                                 : `roster-inline-button ${exception.isActive ? "roster-inline-button--deactivate" : "roster-inline-button--activate"}`
                             }
                             disabled={
                               toggleExceptionMutation.isPending ||
-                              exception.exceptionSource === "buk"
+                              exception.exceptionSource === "buk" ||
+                              exception.exceptionSource === "incentive_auto"
                             }
                             onClick={() =>
                               toggleExceptionMutation.mutate({
@@ -480,6 +494,8 @@ export function RosterPage() {
                           >
                             {exception.exceptionSource === "buk"
                               ? "Gobernado por BUK"
+                              : exception.exceptionSource === "incentive_auto"
+                                ? "Gobernado por Incentivos"
                               : exception.isActive
                                 ? "Desactivar"
                                 : "Activar"}

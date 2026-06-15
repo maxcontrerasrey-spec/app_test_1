@@ -26,6 +26,10 @@ function readNullableText(value: unknown) {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+function readRosterExceptionSource(value: unknown) {
+  return value === "buk" || value === "incentive_auto" ? value : "manual";
+}
+
 function mapShiftPattern(row: Record<string, unknown>): ShiftPattern {
   return {
     id: String(row.id ?? ""),
@@ -102,8 +106,7 @@ function mapWorkerSchedule(payload: unknown): WorkerSchedulePayload {
         exceptionDate: String(item.exception_date ?? ""),
         exceptionType: String(item.exception_type ?? "vacation") as RosterExceptionType,
         exceptionLabel: String(item.exception_label ?? ""),
-        exceptionSource:
-          item.exception_source === "buk" ? "buk" : "manual",
+        exceptionSource: readRosterExceptionSource(item.exception_source),
         notes: readNullableText(item.notes),
         isActive: Boolean(item.is_active),
         createdAt: String(item.created_at ?? "")
@@ -122,7 +125,9 @@ function mapWorkerSchedule(payload: unknown): WorkerSchedulePayload {
         exceptionType: readNullableText(item.exception_type) as RosterExceptionType | null,
         exceptionLabel: readNullableText(item.exception_label),
         exceptionSource:
-          item.exception_source === "buk" ? "buk" : item.exception_source === "manual" ? "manual" : null,
+          item.exception_source === null || item.exception_source === undefined
+            ? null
+            : readRosterExceptionSource(item.exception_source),
         exceptionNotes: readNullableText(item.exception_notes),
         isWorkingDay: Boolean(item.is_working_day),
         isRestDay: Boolean(item.is_rest_day)

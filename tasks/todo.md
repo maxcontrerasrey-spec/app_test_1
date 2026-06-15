@@ -2361,3 +2361,18 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se versionó la reparación en [`20260615093000_fix_hr_incentive_worker_context_mapping_id_type.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615093000_fix_hr_incentive_worker_context_mapping_id_type.sql:1), restaurando el contrato correcto sin alterar reglas de negocio ni la estructura del payload.
 - La validación de humo sobre Supabase se hizo con el trabajador BUK `13529` (`Javier Alejandro Luna Herrera`) bajo un contexto `superadmin`, y la RPC volvió a entregar `Sindicato Codelco DMH`, `SERVICIO CODELCO DMH`, `CONT-028` y el listado de áreas sin el error de casteo.
 - La corrección quedó publicada en `main` con el commit `39089d8`.
+
+## Auditoría integral BUK -> Roster -> Incentivos previa a producción
+
+- [x] Mapear las interacciones críticas que rescatan información de la sync BUK en roster e incentivos
+- [x] Ejecutar pruebas de humo backend/frontend sobre la cadena completa: asignación de turno, lectura de calendario, preview/registro de incentivo y marcación de sobreturno
+- [x] Reparar cualquier drift funcional o contractual detectado entre roster e incentivos
+- [x] Validar con `npx tsc -b`, `npm run build`, `git diff --check`, queries de humo en Supabase y empujar a `main`
+
+## Resultado de auditoría integral BUK -> Roster -> Incentivos previa a producción
+
+- Se auditó la cadena completa `BUK -> search_hr_roster_workers/search_hr_incentive_eligible_workers -> get_worker_schedule/resolve_hr_roster_day_status -> get_hr_incentive_worker_context -> create_hr_incentive_request`, verificando en Supabase que un incentivo real en descanso (`folio 4`, trabajador BUK `13529`) sigue marcando correctamente `extra_shift` sobre el calendario operativo.
+- La falla crítica detectada era de gobernanza y trazabilidad: backend ya persistía `exception_source = incentive_auto`, pero el frontend de Jornadas solo conocía `manual | buk` y degradaba ese origen automático a `manual`. Eso permitía mostrar, y potencialmente intentar intervenir, una marca generada por Incentivos como si fuera una excepción manual.
+- Se versionó y aplicó la migración [`20260615113000_reconcile_roster_extra_shift_with_incentives.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:1), que centraliza la reconciliación de `extra_shift` en [`reconcile_hr_roster_extra_shift_from_incentives(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:3), bloquea edición manual de fechas gobernadas por incentivos y repara el ciclo de vida al cancelar o rechazar solicitudes para no dejar sobreturnos huérfanos en el calendario.
+- En frontend, [`RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:56), [`rosterApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/services/rosterApi.ts:29) y [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/types.ts:10) quedaron alineados con el contrato real `manual | buk | incentive_auto`, mostrando `Gobernado por Incentivos` y bloqueando cambios inválidos desde Jornadas.
+- La validación cerró con queries reales en Supabase bajo contexto `superadmin`, además de `git diff --check`, `npx tsc -b`, `npm run build` y `npm run audit:migrations`. También se backfilleó el historial remoto de migraciones para registrar la versión local `20260615113000` junto al apply remoto ya ejecutado.

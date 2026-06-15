@@ -7,7 +7,7 @@ export type RosterExceptionType =
   | "administrative_leave"
   | "union_leave";
 
-export type RosterExceptionSource = "manual" | "buk";
+export type RosterExceptionSource = "manual" | "buk" | "incentive_auto";
 
 export type RosterDayBaseStatus = "working" | "resting" | "unassigned";
 
