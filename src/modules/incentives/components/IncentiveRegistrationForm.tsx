@@ -138,6 +138,12 @@ export function IncentiveRegistrationForm({
       label: area.isPrimary ? `${area.label} · Activa` : area.label
     }));
   }, [workerContextQuery.data?.availableAreas]);
+  const workerIdentity = workerContextQuery.data?.worker ?? null;
+  const workerRutValue = useMemo(() => {
+    const documentNumber = workerIdentity?.documentNumber ?? selectedWorker?.documentNumber ?? "";
+    return documentNumber ? formatRut(documentNumber) : "";
+  }, [selectedWorker?.documentNumber, workerIdentity?.documentNumber]);
+  const workerJobTitleValue = workerIdentity?.jobTitle ?? selectedWorker?.jobTitle ?? "";
 
   useEffect(() => {
     if (areaOptions.length === 0) {
@@ -269,6 +275,9 @@ export function IncentiveRegistrationForm({
 
   const isSubmitDisabled =
     !selectedWorker ||
+    workerContextQuery.isLoading ||
+    workerContextQuery.isError ||
+    !workerContextQuery.data ||
     !selectedIncentiveTypeId ||
     !selectedArea ||
     !serviceDate ||
@@ -331,18 +340,14 @@ export function IncentiveRegistrationForm({
           <TextField
             id="incentive-worker-rut"
             label="RUT"
-            value={
-              workerContextQuery.data?.worker.documentNumber
-                ? formatRut(workerContextQuery.data.worker.documentNumber)
-                : ""
-            }
+            value={workerRutValue}
             readOnly
           />
 
           <TextField
             id="incentive-worker-role"
             label="Cargo BUK"
-            value={workerContextQuery.data?.worker.jobTitle ?? ""}
+            value={workerJobTitleValue}
             readOnly
           />
 
@@ -363,13 +368,23 @@ export function IncentiveRegistrationForm({
             value={selectedAreaValue}
             onChange={(event) => setSelectedAreaValue(event.target.value)}
             options={areaOptions}
-            disabled={areaOptions.length === 0}
+            disabled={workerContextQuery.isLoading || workerContextQuery.isError || areaOptions.length === 0}
             placeholder={
               workerContextQuery.isLoading
                 ? "Cargando contratos..."
-                : "Selecciona el contrato aplicable"
+                : workerContextQuery.isError
+                  ? "No fue posible cargar el contrato operativo"
+                  : "Selecciona el contrato aplicable"
             }
           />
+
+          {selectedWorker && workerContextQuery.isError ? (
+            <div className="hr-incentives-grid-span-2">
+              <p className="form-status form-status-error">
+                {workerContextQuery.error.message}
+              </p>
+            </div>
+          ) : null}
 
           <SelectField
             id="incentive-type"

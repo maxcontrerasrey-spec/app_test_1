@@ -2334,3 +2334,16 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Si la nueva asignación además deja un hueco posterior por tener fecha de término, el usuario lo ve antes de guardar.
 - Cuando el rango elegido todavía colisiona con otra asignación ya existente, se muestra una tarjeta roja con el detalle de los tramos que bloquearán el guardado.
 - No se modificó la lógica backend de `assign_hr_worker_roster(...)`; el cambio solo hace explícito en UI lo que el sistema ya aplica o rechaza.
+
+## Reparación de contexto vacío al seleccionar trabajador en Incentivos
+
+- [x] Auditar el contrato entre `search_hr_incentive_eligible_workers(...)` y `get_hr_incentive_worker_context(...)`
+- [x] Corregir la búsqueda backend para que solo exponga trabajadores con contexto operativo resoluble
+- [x] Hacer visible en el formulario el error de contexto en vez de dejar campos vacíos sin explicación
+- [x] Validar `npx tsc -b` y `git diff --check`
+
+## Resultado de reparación de contexto vacío al seleccionar trabajador en Incentivos
+
+- La causa raíz fue un drift entre RPCs: el buscador de trabajadores de Incentivos permitía seleccionar empleados por cargo elegible aun cuando luego `get_hr_incentive_worker_context(...)` no podía resolverles un área operativa conciliada.
+- Se agregó la migración [`20260615005000_align_hr_incentive_worker_search_with_context.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615005000_align_hr_incentive_worker_search_with_context.sql:1), que vuelve a alinear `search_hr_incentive_eligible_workers(...)` con el mismo criterio operativo del contexto: mapeo BUK 1:1, contrato activo y cargo elegible.
+- En [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) ahora el RUT y cargo usan fallback del trabajador ya seleccionado mientras llega el contexto, el selector de contrato se bloquea explícitamente si la RPC falla y el usuario ve el error real en vez de un formulario silenciosamente vacío.

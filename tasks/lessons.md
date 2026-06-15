@@ -229,6 +229,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La mitigación no es solo `lazyWithRetry`**. También hay que forzar revalidación del HTML (`_headers` con `no-cache, must-revalidate`) y mantener los `assets` como `immutable` para no mezclar shell viejo con bundles nuevos.
 - **Precargar rutas visibles reduce la ventana de falla en módulos lazy críticos**. Hacer `prefetch` en `idle` y en `hover/focus` de navegación es una defensa útil cuando la app vive muchas horas abierta y los usuarios navegan por primera vez a vistas pesadas después de una publicación.
 
+## 66. En Incentivos, el buscador y el contexto del trabajador deben compartir exactamente el mismo filtro operativo
+
+- **No basta con que el worker search respete “cargo elegible” si luego la RPC de contexto exige además contrato activo y mapeo BUK 1:1**. Si ambas funciones no convergen, el usuario puede seleccionar un trabajador válido para el lookup pero inválido para el resto del flujo.
+- **Cuando una RPC dependiente falla y deja vacíos campos críticos, la UI no puede quedar silenciosa**. Debe mostrar el error de contexto explícitamente y bloquear el avance, aunque ofrezca fallback visual mínimo como RUT o cargo ya conocidos desde el resultado de búsqueda.
+
 ## 64. En Supabase, “aplicado” y “registrado en historial” no son la misma cosa
 
 - **Si una migración se ejecuta manualmente en SQL Editor o mediante un conector que genera otro timestamp, el esquema puede quedar correcto pero `supabase_migrations.schema_migrations` desalineado respecto del repo**. Eso rompe auditoría, trazabilidad y cualquier intento serio de comparar local vs remoto.
