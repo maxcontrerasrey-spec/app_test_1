@@ -375,7 +375,7 @@ export function RosterPage() {
                       </span>
                     </div>
 
-                    <div className="hr-incentives-form-grid hr-incentives-form-grid-compact">
+                    <div className="roster-form-grid">
                       <DatePickerField
                         id="roster-exception-date"
                         label="Fecha"
@@ -436,13 +436,13 @@ export function RosterPage() {
                       <h3>Excepciones del mes</h3>
                     </div>
 
-                    <div className="hr-incentives-list">
+                    <div className="roster-list">
                       {(workerScheduleQuery.data.exceptions ?? []).length === 0 ? (
                         <p className="tracking-filter-caption">No hay excepciones activas en este período.</p>
                       ) : null}
 
                       {(workerScheduleQuery.data.exceptions ?? []).map((exception) => (
-                        <div key={exception.id} className="hr-incentives-list-item">
+                        <div key={exception.id} className="roster-list-item">
                           <div>
                             <strong>{exception.exceptionLabel}</strong>
                             <span>
@@ -454,7 +454,11 @@ export function RosterPage() {
                           </div>
                           <button
                             type="button"
-                            className="soft-primary-button hr-incentives-inline-button"
+                            className={
+                              exception.exceptionSource === "buk"
+                                ? "roster-inline-button roster-inline-button--disabled"
+                                : `roster-inline-button ${exception.isActive ? "roster-inline-button--deactivate" : "roster-inline-button--activate"}`
+                            }
                             disabled={
                               toggleExceptionMutation.isPending ||
                               exception.exceptionSource === "buk"

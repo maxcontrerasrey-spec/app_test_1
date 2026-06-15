@@ -105,7 +105,7 @@ export function RosterAssignmentDialog({
           </button>
         </div>
 
-        <div className="hr-incentives-form-grid hr-incentives-form-grid-compact">
+        <div className="roster-form-grid">
           <SelectField
             id="roster-assignment-pattern"
             label="Pauta"

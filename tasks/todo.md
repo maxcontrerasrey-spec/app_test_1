@@ -2,6 +2,18 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Auditoría y publicación de ajustes pendientes en Roster
+
+- [x] Auditar el diff staged en `src/modules/roster` para detectar regresiones visuales o de comportamiento antes de publicar
+- [x] Validar los cambios con checks relevantes del módulo (`npx tsc -b`, `npm run build`, `git diff --check`)
+- [x] Si la auditoría queda limpia, commitear y push a `main`
+
+## Resultado de auditoría y publicación de ajustes pendientes en Roster
+
+- La auditoría del refactor visual detectó una regresión responsive introducida por el reemplazo de `hr-incentives-list-item` por `roster-list-item`: en mobile se perdió el apilado vertical de filas con botón inline. Se corrigió en [`src/modules/roster/styles/roster.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/styles/roster.css:347) restaurando el comportamiento de columna bajo `768px`.
+- Los formularios y listas del módulo quedaron desacoplados de estilos heredados de Incentivos mediante `roster-form-grid`, `roster-list`, `roster-list-item` y `roster-inline-button`, evitando dependencias visuales cruzadas.
+- Validación cerrada con `git diff --check`, `npx tsc -b` y `npm run build` antes del commit y push.
+
 ## Endurecimiento de escalabilidad masiva en Incentivos
 
 - [x] Eliminar recomputaciones innecesarias del contexto y preview en `create_hr_incentive_request(...)` para reducir costo por ingreso

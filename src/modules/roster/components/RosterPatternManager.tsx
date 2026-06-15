@@ -71,7 +71,7 @@ export function RosterPatternManager({ setupCatalogs }: RosterPatternManagerProp
           </span>
         </div>
 
-        <div className="hr-incentives-form-grid hr-incentives-form-grid-compact">
+        <div className="roster-form-grid">
           <TextField
             id="roster-pattern-code"
             label="Código"
@@ -156,9 +156,9 @@ export function RosterPatternManager({ setupCatalogs }: RosterPatternManagerProp
           <h3>Pautas registradas</h3>
         </div>
 
-        <div className="hr-incentives-list">
+        <div className="roster-list">
           {patterns.map((pattern) => (
-            <div key={pattern.id} className="hr-incentives-list-item roster-pattern-list-item">
+            <div key={pattern.id} className="roster-list-item">
               <div>
                 <strong>
                   <span
@@ -175,7 +175,7 @@ export function RosterPatternManager({ setupCatalogs }: RosterPatternManagerProp
               </div>
               <button
                 type="button"
-                className="soft-primary-button hr-incentives-inline-button"
+                className={`roster-inline-button ${pattern.isActive ? "roster-inline-button--deactivate" : "roster-inline-button--activate"}`}
                 disabled={togglePatternMutation.isPending}
                 onClick={() =>
                   togglePatternMutation.mutate({
