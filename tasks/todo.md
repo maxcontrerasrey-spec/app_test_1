@@ -2353,10 +2353,11 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [x] Confirmar la causa raíz del error `invalid input syntax for type uuid` al seleccionar trabajadores en Incentivos
 - [x] Corregir la RPC `get_hr_incentive_worker_context(...)` respetando el tipo real de `buk_contract_mappings.id`
 - [x] Validar la RPC corregida en Supabase con un caso real y verificar que vuelvan sindicato y contrato operativo
-- [ ] Ejecutar `npx tsc -b`, `git diff --check`, commit y push a `main`
+- [x] Ejecutar `npx tsc -b`, `git diff --check`, commit y push a `main`
 
 ## Resultado de corrección de tipo en contexto de trabajador para Incentivos
 
 - La caída ya no provenía del buscador, sino de una regresión introducida en la optimización masiva: `get_hr_incentive_worker_context(...)` intentaba castear `mapping_id` a `uuid` aunque `public.buk_contract_mappings.id` es `bigint`.
 - Se versionó la reparación en [`20260615093000_fix_hr_incentive_worker_context_mapping_id_type.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615093000_fix_hr_incentive_worker_context_mapping_id_type.sql:1), restaurando el contrato correcto sin alterar reglas de negocio ni la estructura del payload.
 - La validación de humo sobre Supabase se hizo con el trabajador BUK `13529` (`Javier Alejandro Luna Herrera`) bajo un contexto `superadmin`, y la RPC volvió a entregar `Sindicato Codelco DMH`, `SERVICIO CODELCO DMH`, `CONT-028` y el listado de áreas sin el error de casteo.
+- La corrección quedó publicada en `main` con el commit `39089d8`.
