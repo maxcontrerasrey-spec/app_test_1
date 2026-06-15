@@ -70,7 +70,11 @@ export function SearchableSelectField({
   };
 
   return (
-    <div className={`field-group ${className}`.trim()} ref={containerRef} style={{ position: 'relative' }}>
+    <div 
+      className={`field-group ${className}`.trim()} 
+      ref={containerRef} 
+      style={{ position: 'relative', zIndex: isOpen ? 9999 : undefined }}
+    >
       <label className="field-label" htmlFor={id}>
         {label}
       </label>
