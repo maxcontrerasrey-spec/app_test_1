@@ -402,3 +402,49 @@
     padding: 0.75rem 0.65rem;
   }
 }
+
+.roster-info-tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.roster-info-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 120%; /* Position above the icon */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--surface-float, #ffffff);
+  color: var(--text-base, #333333);
+  text-align: left;
+  padding: 0.75rem;
+  border-radius: 6px;
+  width: max-content;
+  max-width: 280px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.4;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border-color, #e5e7eb);
+  z-index: 100;
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+}
+
+.roster-info-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--surface-float, #ffffff) transparent transparent transparent;
+}
+
+.roster-info-tooltip-container:hover .roster-info-tooltip {
+  visibility: visible;
+  opacity: 1;
+}

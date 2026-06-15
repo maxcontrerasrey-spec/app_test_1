@@ -366,13 +366,21 @@ export function RosterPage() {
 
                   <section className="info-card">
                     <div className="tracking-toolbar-copy">
-                      <h3>Registrar excepción</h3>
-                      <span className="tracking-filter-caption">
-                        Vacaciones, licencias, turnos extra y permisos que rompen la pauta base.
-                      </span>
-                      <span className="tracking-filter-caption">
-                        Las vacaciones y licencias cargadas por BUK siguen siendo visibles aquí, pero no pueden modificarse manualmente y siempre tienen prioridad.
-                      </span>
+                      <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        Registrar excepción
+                        <div className="roster-info-tooltip-container">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)", cursor: "help" }}>
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4"></path>
+                            <path d="M12 8h.01"></path>
+                          </svg>
+                          <div className="roster-info-tooltip">
+                            Vacaciones, licencias, turnos extra y permisos que rompen la pauta base.
+                            <br/><br/>
+                            Las vacaciones y licencias cargadas por BUK siguen siendo visibles aquí, pero no pueden modificarse manualmente y siempre tienen prioridad.
+                          </div>
+                        </div>
+                      </h3>
                     </div>
 
                     <div className="roster-form-grid">

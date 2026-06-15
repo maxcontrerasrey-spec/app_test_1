@@ -6,3 +6,5 @@ dist/
 .env.local
 .env
 supabase/.temp/
+app_mobile/node_modules/
+app_mobile/.expo/
