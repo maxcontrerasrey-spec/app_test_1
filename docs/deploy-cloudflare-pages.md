@@ -55,6 +55,7 @@ Sin `VITE_PUBLIC_APP_URL`, los correos de recuperación dependen del `window.loc
 El proyecto ya incluye:
 
 - [`public/_redirects`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/public/_redirects)
+- [`public/_headers`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/public/_headers)
 
 Contenido:
 
@@ -69,6 +70,13 @@ Eso permite que rutas como:
 - `/solicitud-contrataciones`
 
 resuelvan correctamente en un despliegue estático.
+
+Además, la política de caché queda intencionalmente separada:
+
+- `/*` se sirve con `Cache-Control: no-cache, must-revalidate`
+- `/assets/*` se sirve con `Cache-Control: public, max-age=31536000, immutable`
+
+Esto reduce el riesgo de que una pestaña vieja conserve `index.html` apuntando a chunks hasheados que ya cambiaron después de un deploy automático.
 
 ## Checklist de publicación
 
@@ -108,6 +116,7 @@ Revisar primero:
 - variable `VITE_PUBLIC_APP_URL`
 - configuración de `Authentication > URL Configuration` en Supabase
 - template de correo de recuperación usando `{{ .ConfirmationURL }}` sin hardcodes a `localhost`
+- que `public/_headers` siga presente en el repo y que el build lo copie a `dist/`
 
 ### Si las rutas internas dan 404
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { preloadRouteModulesForPath } from "../router/routeModules";
 import {
   homeNavigationItem,
   navigationModules,
@@ -153,6 +154,12 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
   }
 }
 
+function collectNavigationPaths(items: NavigationItem[] = []): string[] {
+  return items.flatMap((item) =>
+    item.items?.length ? [item.to, ...collectNavigationPaths(item.items)] : [item.to]
+  );
+}
+
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -304,6 +311,13 @@ export function AppShell() {
     setHoveredModule(null);
     setPinnedModule(null);
   };
+  const preloadNavigationPath = (path?: string) => {
+    if (!path) {
+      return;
+    }
+
+    void preloadRouteModulesForPath(path);
+  };
 
   const userInitials = useMemo(() => {
     const initials = displayName
@@ -342,6 +356,37 @@ export function AppShell() {
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [isUserMenuOpen, isNotificationsOpen, pinnedModule]);
 
+  useEffect(() => {
+    const pathsToWarm = new Set<string>([
+      homeNavigationItem.to,
+      ...visibleModules.flatMap((module) =>
+        module.items?.length ? collectNavigationPaths(module.items) : module.to ? [module.to] : []
+      )
+    ]);
+
+    const warmVisibleRoutes = () => {
+      pathsToWarm.forEach((path) => preloadNavigationPath(path));
+    };
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => {
+        warmVisibleRoutes();
+      }, { timeout: 2500 });
+
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(() => {
+      warmVisibleRoutes();
+    }, 1200);
+
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [visibleModules]);
+
   return (
     <div className="app-shell app-shell-topnav">
       <header className="top-shell" ref={navMenuRef}>
@@ -360,6 +405,8 @@ export function AppShell() {
                 key={homeNavigationItem.to}
                 to={homeNavigationItem.to}
                 end
+                onMouseEnter={() => preloadNavigationPath(homeNavigationItem.to)}
+                onFocus={() => preloadNavigationPath(homeNavigationItem.to)}
                 className={({ isActive }) =>
                   isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
                 }
@@ -370,6 +417,8 @@ export function AppShell() {
               {isSuperAdmin ? (
                 <NavLink
                   to="/copiloto-ia"
+                  onMouseEnter={() => preloadNavigationPath("/copiloto-ia")}
+                  onFocus={() => preloadNavigationPath("/copiloto-ia")}
                   className={({ isActive }) =>
                     isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
                   }
@@ -393,6 +442,8 @@ export function AppShell() {
                       key={module.label}
                       to={module.to ?? "/"}
                       end
+                      onMouseEnter={() => preloadNavigationPath(module.to)}
+                      onFocus={() => preloadNavigationPath(module.to)}
                       className={({ isActive }) =>
                         isActive || isModuleActive
                           ? "top-nav-link top-nav-link-active"
@@ -408,7 +459,10 @@ export function AppShell() {
                   <div
                     key={module.label}
                     className="top-nav-group"
-                    onMouseEnter={() => handleMouseEnterModule(module.label)}
+                    onMouseEnter={() => {
+                      handleMouseEnterModule(module.label);
+                      module.items?.forEach((item) => preloadNavigationPath(item.to));
+                    }}
                     onMouseLeave={() => handleMouseLeaveModule(module.label)}
                   >
                     <button
@@ -547,6 +601,8 @@ export function AppShell() {
                   >
                     <NavLink
                       to={item.to || "#"}
+                      onMouseEnter={() => preloadNavigationPath(item.to)}
+                      onFocus={() => preloadNavigationPath(item.to)}
                       onClick={(e) => {
                         if (item.items && item.items.length > 0) {
                           e.preventDefault();
@@ -592,6 +648,8 @@ export function AppShell() {
                         <NavLink
                           key={subItem.to}
                           to={subItem.to}
+                          onMouseEnter={() => preloadNavigationPath(subItem.to)}
+                          onFocus={() => preloadNavigationPath(subItem.to)}
                           onClick={(e) => {
                             e.stopPropagation();
                             clearPinnedNavigation();

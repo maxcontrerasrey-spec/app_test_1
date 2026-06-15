@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../layout/AppShell";
 import { lazyWithRetry } from "../../shared/lib/lazyWithRetry";
+import { routeModuleImporters } from "./routeModules";
 import {
   AdminProtectedRoute,
   ProtectedRoute,
@@ -10,60 +11,25 @@ import {
 } from "../../modules/auth/components/RouteGuards";
 import { HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES } from "../../modules/incentives/lib/analyticsAccess";
 
-const HomePage = lazyWithRetry("home-page", async () => ({
-  default: (await import("../../modules/home/pages/HomePage")).HomePage
-}));
-
-
-const HiringRequestPage = lazyWithRetry("hiring-request-page", async () => ({
-  default: (await import("../../modules/recruitment/pages/HiringRequestPage")).HiringRequestPage
-}));
-
-const InternalMobilityPage = lazyWithRetry("internal-mobility-page", async () => ({
-  default: (await import("../../modules/internal_mobility/pages/InternalMobilityPage")).InternalMobilityPage
-}));
-
-const HiringStatusPage = lazyWithRetry("hiring-status-page", async () => ({
-  default: (await import("../../modules/recruitment/pages/HiringStatusPage")).HiringStatusPage
-}));
-
-const LoginPage = lazyWithRetry("login-page", async () => ({
-  default: (await import("../../modules/auth/pages/LoginPage")).LoginPage
-}));
-
-const ResetPasswordPage = lazyWithRetry("reset-password-page", async () => ({
-  default: (await import("../../modules/auth/pages/ResetPasswordPage")).ResetPasswordPage
-}));
-
-const AccessDeniedPage = lazyWithRetry("access-denied-page", async () => ({
-  default: (await import("../../modules/auth/pages/AccessDeniedPage")).AccessDeniedPage
-}));
-
-const OperacionesDashboard = lazyWithRetry("operaciones-dashboard", async () => ({
-  default: (await import("../../modules/operaciones/pages/OperacionesDashboard")).OperacionesDashboard
-}));
-
-const HumanResourcesDashboard = lazyWithRetry("human-resources-dashboard", async () => ({
-  default: (
-    await import("../../modules/incentives/pages/HumanResourcesDashboard")
-  ).HumanResourcesDashboard
-}));
-
-const RosterPage = lazyWithRetry("roster-page", async () => ({
-  default: (await import("../../modules/roster/pages/RosterPage")).RosterPage
-}));
-
-const AIAssistantHome = lazyWithRetry("ai-assistant-page", async () => ({
-  default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
-}));
-
-const LabsPage = lazyWithRetry("labs-page", async () => ({
-  default: (await import("../../modules/labs/pages/LabsPage")).LabsPage
-}));
-
-const OnboardingModuleLayout = lazyWithRetry("onboarding-module-layout", async () => ({
-  default: (await import("../../modules/operational_onboarding/pages/OnboardingModuleLayout")).OnboardingModuleLayout
-}));
+const HomePage = lazyWithRetry("home-page", routeModuleImporters.homePage);
+const HiringRequestPage = lazyWithRetry("hiring-request-page", routeModuleImporters.hiringRequestPage);
+const InternalMobilityPage = lazyWithRetry("internal-mobility-page", routeModuleImporters.internalMobilityPage);
+const HiringStatusPage = lazyWithRetry("hiring-status-page", routeModuleImporters.hiringStatusPage);
+const LoginPage = lazyWithRetry("login-page", routeModuleImporters.loginPage);
+const ResetPasswordPage = lazyWithRetry("reset-password-page", routeModuleImporters.resetPasswordPage);
+const AccessDeniedPage = lazyWithRetry("access-denied-page", routeModuleImporters.accessDeniedPage);
+const OperacionesDashboard = lazyWithRetry("operaciones-dashboard", routeModuleImporters.operacionesDashboard);
+const HumanResourcesDashboard = lazyWithRetry(
+  "human-resources-dashboard",
+  routeModuleImporters.humanResourcesDashboard
+);
+const RosterPage = lazyWithRetry("roster-page", routeModuleImporters.rosterPage);
+const AIAssistantHome = lazyWithRetry("ai-assistant-page", routeModuleImporters.aiAssistantHome);
+const LabsPage = lazyWithRetry("labs-page", routeModuleImporters.labsPage);
+const OnboardingModuleLayout = lazyWithRetry(
+  "onboarding-module-layout",
+  routeModuleImporters.onboardingModuleLayout
+);
 
 function RouteLoadingScreen() {
   return (

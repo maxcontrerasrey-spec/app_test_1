@@ -223,6 +223,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los fallos de import dinámico de Vite/React (`failed to fetch dynamically imported module`, `loading chunk`, `importing a module script failed`) también ocurren por red intermitente o errores puntuales de carga, no solo por hashes viejos post-deploy**.
 - **El boundary de recuperación debe ser honesto con el diagnóstico**. Puede sugerir recarga y mencionar que una actualización reciente es una posibilidad, pero no debe afirmar “hubo publicación” salvo que exista una señal más fuerte que un mensaje genérico del navegador.
 
+## 65. En Pages con deploy automático, el shell HTML y los chunks lazy deben defenderse juntos
+
+- **Si Cloudflare Pages publica cada push a `main`, sí existen deploys reales aunque nadie los dispare manualmente**. En una SPA con chunks hasheados, una pestaña vieja puede seguir viva mientras el servidor ya expone otro set de archivos.
+- **La mitigación no es solo `lazyWithRetry`**. También hay que forzar revalidación del HTML (`_headers` con `no-cache, must-revalidate`) y mantener los `assets` como `immutable` para no mezclar shell viejo con bundles nuevos.
+- **Precargar rutas visibles reduce la ventana de falla en módulos lazy críticos**. Hacer `prefetch` en `idle` y en `hover/focus` de navegación es una defensa útil cuando la app vive muchas horas abierta y los usuarios navegan por primera vez a vistas pesadas después de una publicación.
+
 ## 64. En Supabase, “aplicado” y “registrado en historial” no son la misma cosa
 
 - **Si una migración se ejecuta manualmente en SQL Editor o mediante un conector que genera otro timestamp, el esquema puede quedar correcto pero `supabase_migrations.schema_migrations` desalineado respecto del repo**. Eso rompe auditoría, trazabilidad y cualquier intento serio de comparar local vs remoto.

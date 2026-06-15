@@ -27,6 +27,20 @@
 - Ese mismo tipo de error también puede dispararse por fallas transitorias al cargar un módulo lazy (`failed to fetch dynamically imported module`, `loading chunk`, etc.), por lo que el diagnóstico “hubo deploy” era técnicamente incorrecto.
 - La detección de `chunk load error` quedó centralizada en [`lazyWithRetry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/lazyWithRetry.ts:1) y el mensaje visible ahora es neutral: indica que puede deberse a conexión inestable o a actualización reciente, sin mentir sobre un deploy inexistente.
 
+## Endurecimiento de carga lazy y caché para Cloudflare Pages
+
+- [x] Auditar la relación entre deploy automático de Pages, chunks lazy hasheados y errores `failed to fetch dynamically imported module`
+- [x] Bajar headers de caché explícitos para que el shell HTML no quede desincronizado respecto a assets versionados
+- [x] Precargar en segundo plano los módulos visibles y también al hover/focus de navegación
+- [x] Validar `npm run build`, `git diff --check` y que `_headers` llegue a `dist`
+
+## Resultado de endurecimiento de carga lazy y caché para Cloudflare Pages
+
+- La causa estructural más probable quedó identificada: el proyecto está preparado para Cloudflare Pages conectado al repo, por lo que cada push a `main` puede publicar automáticamente una nueva versión con chunks hasheados distintos aunque no haya “deploy manual”.
+- Se agregó [`public/_headers`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/public/_headers:1) para que `/*` se sirva con `Cache-Control: no-cache, must-revalidate`, mientras [`/assets/*`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/public/_headers:4) queda `immutable`. Con esto el navegador vuelve a validar el shell HTML y reduce el riesgo de quedar apuntando a hashes viejos.
+- Se creó la capa [`routeModules.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/routeModules.ts:1) y [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:1) ahora precarga los módulos visibles en `idle` y también al `hover/focus` de la navegación. La meta es bajar la ventana en que un usuario llega por primera vez a un chunk lazy justo después de una publicación o de una red inestable.
+- La validación cerró con `npm run build`, `git diff --check` y comprobación directa de que `dist/_headers` se genera junto a `dist/_redirects`.
+
 ## Endurecimiento de escalabilidad masiva en Incentivos
 
 - [x] Eliminar recomputaciones innecesarias del contexto y preview en `create_hr_incentive_request(...)` para reducir costo por ingreso
