@@ -1033,3 +1033,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los scripts administrativos deben fallar si no reciben secretos por entorno.** Nunca deben incluir URL/llave productiva embebida; el patrón aceptable es `SUPABASE_URL`/`VITE_SUPABASE_URL` más `SUPABASE_SERVICE_ROLE_KEY` desde runtime seguro.
 - **Las mutaciones operativas masivas no deben escribir directo desde React a tablas sensibles.** Cuando hay permisos por contrato, idempotencia y validaciones cruzadas, debe existir una RPC transaccional que valide `auth.uid()` y devuelva errores estructurados por fila.
 - **Un scanner propio debe distinguir críticos de deuda legacy.** JWT `service_role` hardcodeado debe bloquear CI; warnings como grants amplios legacy, helpers con parámetros de usuario o policies por bucket deben quedar visibles para saneamiento progresivo sin impedir todo deploy seguro.
+
+## 98. En sincronizaciones server-to-server, el grant no reemplaza la validación interna de la RPC
+
+- **Si una función `SECURITY DEFINER` valida permisos con `auth.uid()` o claims, `grant execute to service_role` no basta.** Una llamada desde Supabase JS con `service_role` llega por PostgREST con JWT, por lo que no calza con la condición de "contexto interno sin claims" y puede terminar bloqueada por la propia función.
+- **La solución segura es reconocer explícitamente `request.jwt.claim.role = service_role` dentro de la RPC crítica.** Eso mantiene bloqueados `anon` y `authenticated` comunes, pero permite automatizaciones server-to-server sin escribir directo a tablas sensibles.
+- **Las syncs que cruzan BUK y Jornadas deben filtrar contra la fuente canónica local de activos antes de escribir.** Si BUK reporta ausencias de trabajadores no activos o no presentes en `employees_active_current`, esos registros se reportan como omitidos y no deben hacer fallar el workflow.
+- **No confiar en el límite implícito de 1.000 filas del cliente REST de Supabase.** Cualquier auditoría o sync que lea empleados/excepciones debe paginar con `range(...)`; si no, los totales y decisiones de limpieza quedan truncados silenciosamente.

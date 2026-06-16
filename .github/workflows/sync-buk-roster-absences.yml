@@ -1,0 +1,95 @@
+name: Sync BUK Roster Absences
+
+on:
+  schedule:
+    - cron: "20 23 * * *" # ventana posible para 20:20 Chile en horario de verano
+    - cron: "20 0 * * *" # ventana posible para 20:20 Chile en horario estándar
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "Fecha inicial YYYY-MM-DD. Si se omite, usa hoy."
+        required: false
+        type: string
+      to:
+        description: "Fecha final YYYY-MM-DD. Si se omite, usa hoy + 180 días."
+        required: false
+        type: string
+      dry_run:
+        description: "Ejecutar sin escribir cambios."
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve scheduled Santiago window
+        id: local_window
+        run: |
+          LOCAL_OFFSET=$(TZ=America/Santiago date +%z)
+          CRON_TRIGGER="${{ github.event.schedule }}"
+          echo "local_offset=$LOCAL_OFFSET" >> "$GITHUB_OUTPUT"
+          echo "cron_trigger=$CRON_TRIGGER" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_sync=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LOCAL_OFFSET" = "-0300" ] && [ "$CRON_TRIGGER" = "20 23 * * *" ]; then
+            echo "run_sync=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LOCAL_OFFSET" = "-0400" ] && [ "$CRON_TRIGGER" = "20 0 * * *" ]; then
+            echo "run_sync=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_sync=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report sync window decision
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "cron_trigger=${{ steps.local_window.outputs.cron_trigger }}"
+          echo "local_offset=${{ steps.local_window.outputs.local_offset }}"
+          echo "run_sync=${{ steps.local_window.outputs.run_sync }}"
+
+      - name: Checkout Repository
+        if: steps.local_window.outputs.run_sync == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.local_window.outputs.run_sync == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        if: steps.local_window.outputs.run_sync == 'true'
+        run: npm ci --omit=dev
+
+      - name: Validate required sync variables
+        if: steps.local_window.outputs.run_sync == 'true'
+        env:
+          BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
+          BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$BUK_AUTH_TOKEN" || { echo "Missing BUK_AUTH_TOKEN"; exit 1; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
+          test -n "${VITE_SUPABASE_URL:-${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}}" || { echo "Missing VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL"; exit 1; }
+
+      - name: Run BUK roster absence sync
+        if: steps.local_window.outputs.run_sync == 'true'
+        env:
+          BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
+          BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          ARGS=()
+          if [ -n "${{ inputs.from }}" ]; then ARGS+=(--from "${{ inputs.from }}"); fi
+          if [ -n "${{ inputs.to }}" ]; then ARGS+=(--to "${{ inputs.to }}"); fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          node scripts/sync-buk-roster-absences.mjs "${ARGS[@]}"

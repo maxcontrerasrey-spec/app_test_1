@@ -2409,3 +2409,22 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Validación local ejecutada: `node scripts/audit-supabase-security.mjs`, `npm run audit:migrations`, `npx tsc -b --pretty false`, `npm run build` y búsqueda directa de JWT hardcodeados.
 - La migración fue aplicada en Supabase (`global_control_intern`, ref `pzblmbahnoyntrhistea`) mediante `apply_migration`, y los smokes remotos mínimos confirmaron: `anon` no ejecuta las RPCs nuevas, las RPCs de lectura de onboarding responden con `service_role`, y `submit_service_entries_batch(...)` bloquea llamadas sin `auth.uid()`.
 - Pendiente operacional no resoluble solo por código: rotar la credencial `service_role` expuesta en Supabase antes de pasar a producción y ejecutar smokes remotos con usuarios reales por rol.
+
+## Corrección de aprobadores por centro de costo y sync BUK de ausencias
+
+- [x] Releer el Excel `bbdd-cecos.xlsx` y contrastar centros de costo activos contra `cost_center_approvers`
+- [x] Provisionar usuarios/roles/aprobadores faltantes sin resetear contraseñas de usuarios existentes
+- [x] Confirmar en Supabase que no queden contratos activos que disparen P0001 por aprobador faltante
+- [x] Validar que el token BUK actualizado tenga acceso a `employees`, `vacations` y `absences`
+- [x] Agregar sync BUK de vacaciones/licencias hacia `hr_roster_exceptions` usando la RPC canónica
+- [x] Versionar el ajuste de `sync_hr_roster_exception_from_buk(...)` para permitir ejecución server-to-server con `service_role`
+- [x] Aplicar la sync inicial de BUK para la ventana 2026-06-15 a 2026-12-15
+
+## Resultado de corrección de aprobadores por centro de costo y sync BUK de ausencias
+
+- La causa del P0001 en contratación era data operacional incompleta: el Excel sí contenía el gerente del centro `20114`, pero `cost_center_approvers` no tenía todos los centros activos provisionados. Se agregó [`scripts/provision-hiring-approvers-from-cecos.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/provision-hiring-approvers-from-cecos.mjs:1) para leer `Hoja1`/`Hoja2`, crear/actualizar identidades gerenciales, asignar `aprobador_folios` y vincular cada centro de costo.
+- El provisioning fue aplicado en Supabase y la validación posterior confirmó `contractsStillMissingApprover: []`, por lo que no quedan contratos activos que deberían disparar el P0001 por aprobador faltante.
+- Observaciones del Excel: `Jose Miardi Cueto` figura como gerente para centros asociados a contratos no activos/no bloqueantes pero no aparece en la hoja de usuarios; el centro `10111` aparece con dos gerentes distintos, lo que no rompe hoy el flujo activo pero debe resolverse si el negocio requiere aprobador por contrato/proyecto en vez de solo por centro.
+- Se agregó [`scripts/sync-buk-roster-absences.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/sync-buk-roster-absences.mjs:1) y el workflow [`sync-buk-roster-absences.yml`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/sync-buk-roster-absences.yml:1) para sincronizar vacaciones/licencias aprobadas desde BUK hacia Jornadas, preservando la jerarquía BUK sobre registros manuales.
+- Se versionó y aplicó [`20260616023530_allow_service_role_buk_roster_exception_sync.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616023530_allow_service_role_buk_roster_exception_sync.sql:1), que mantiene bloqueada la RPC para `anon/authenticated` común y habilita explícitamente el contexto `service_role` usado por automatizaciones server-to-server.
+- La sync inicial procesó 14.401 registros BUK de vacaciones y 15.176 de ausencias; dentro de la ventana 2026-06-15 a 2026-12-15 aplicó 2.622 días oficiales sin fallas, omitió 46 días porque sus trabajadores no están activos/presentes en la base canónica y no tuvo limpiezas pendientes.
