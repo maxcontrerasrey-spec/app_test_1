@@ -30,6 +30,7 @@ type ProfileRecord = {
   status: "pending" | "active" | "suspended" | "inactive";
   is_super_admin: boolean;
   must_reset_password: boolean;
+  aup_accepted_at: string | null;
 };
 
 type EffectivePermissionsPayload = {
@@ -59,6 +60,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
+  acceptAupPolicy: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 };
 
@@ -146,7 +148,8 @@ function normalizeProfileRecord(value: unknown): ProfileRecord | null {
         ? record.status
         : "pending",
     is_super_admin: record.is_super_admin,
-    must_reset_password: record.must_reset_password
+    must_reset_password: record.must_reset_password,
+    aup_accepted_at: typeof record.aup_accepted_at === "string" ? record.aup_accepted_at : null
   };
 }
 
@@ -413,6 +416,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               : currentProfile
           );
         }
+
+        return { error: null };
+      },
+      acceptAupPolicy: async () => {
+        if (!supabase) {
+          return { error: "Supabase no está configurado en este entorno." };
+        }
+
+        const { data, error } = await supabase.rpc("accept_aup_policy", {
+          p_ip_address: null
+        });
+
+        if (error) {
+          return { error: error.message };
+        }
+
+        const acceptedAt = typeof data === "string" ? data : new Date().toISOString();
+
+        setProfile((currentProfile) =>
+          currentProfile
+            ? {
+                ...currentProfile,
+                aup_accepted_at: acceptedAt
+              }
+            : currentProfile
+        );
 
         return { error: null };
       },

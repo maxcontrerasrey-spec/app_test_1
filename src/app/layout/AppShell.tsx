@@ -9,6 +9,7 @@ import {
 import logo from "../../assets/app-logo.png";
 import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
+import { AupPolicyModal } from "../../modules/auth/components/AupPolicyModal";
 import { useDashboard } from "../../modules/dashboard/hooks/useDashboard";
 import { canViewHrIncentiveAnalytics } from "../../modules/incentives/lib/analyticsAccess";
 import { useTheme } from "../../shared/context/ThemeContext";
@@ -163,7 +164,7 @@ function collectNavigationPaths(items: NavigationItem[] = []): string[] {
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { accessibleModules, appRoles, displayName, email, isSuperAdmin, jobTitle, signOut } =
+  const { accessibleModules, appRoles, displayName, email, isSuperAdmin, jobTitle, profile, signOut } =
     useAuth();
   const { tasksData } = useDashboard();
   const { theme, setTheme } = useTheme();
@@ -676,6 +677,7 @@ export function AppShell() {
       </main>
 
       {isSuperAdmin ? <ORIONWidget /> : null}
+      {profile && !profile.aup_accepted_at ? <AupPolicyModal /> : null}
     </div>
   );
 }

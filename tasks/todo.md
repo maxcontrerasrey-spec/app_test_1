@@ -2428,3 +2428,21 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se agregó [`scripts/sync-buk-roster-absences.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/sync-buk-roster-absences.mjs:1) y el workflow [`sync-buk-roster-absences.yml`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/sync-buk-roster-absences.yml:1) para sincronizar vacaciones/licencias aprobadas desde BUK hacia Jornadas, preservando la jerarquía BUK sobre registros manuales.
 - Se versionó y aplicó [`20260616023530_allow_service_role_buk_roster_exception_sync.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616023530_allow_service_role_buk_roster_exception_sync.sql:1), que mantiene bloqueada la RPC para `anon/authenticated` común y habilita explícitamente el contexto `service_role` usado por automatizaciones server-to-server.
 - La sync inicial procesó 14.401 registros BUK de vacaciones y 15.176 de ausencias; dentro de la ventana 2026-06-15 a 2026-12-15 aplicó 2.622 días oficiales sin fallas, omitió 46 días porque sus trabajadores no están activos/presentes en la base canónica y no tuvo limpiezas pendientes.
+
+## Clickwrap AUP ISO 27001
+
+- [x] Agregar `profiles.aup_accepted_at` como estado canónico de aceptación
+- [x] Crear `security_audit_logs` con RLS, inserts controlados y sin políticas de update/delete
+- [x] Implementar RPC `accept_aup_policy(...)` con log inalterable por trigger
+- [x] Endurecer grants para que el cliente no tenga INSERT/UPDATE/DELETE directo sobre `security_audit_logs`
+- [x] Extender `get_my_effective_permissions()` para exponer `aup_accepted_at` sin fetch adicional
+- [x] Crear modal global bloqueante en `AppShell` con aceptar/cerrar sesión
+- [x] Aplicar migración en Supabase y ejecutar smoke transaccional con rollback
+
+## Resultado de Clickwrap AUP ISO 27001
+
+- Se versionó y aplicó [`20260616130057_add_aup_clickwrap_audit.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616130057_add_aup_clickwrap_audit.sql:1), agregando `aup_accepted_at`, tabla `security_audit_logs`, RLS, trigger de auditoría y RPC `accept_aup_policy(...)`. Luego [`20260616130905_harden_aup_audit_log_grants.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616130905_harden_aup_audit_log_grants.sql:1) retiró INSERT/UPDATE/DELETE directo del cliente.
+- La aceptación queda gobernada por backend: el frontend llama la RPC y el trigger registra `aup_accepted` aunque el cambio de columna ocurriera por otra ruta autorizada. No existen policies ni grants de `UPDATE`/`DELETE` sobre `security_audit_logs`, y el cliente tampoco tiene `INSERT` directo.
+- [`AuthContext.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/context/AuthContext.tsx:1) ahora incluye `aup_accepted_at` en el perfil y expone `acceptAupPolicy()` para actualizar estado local sin recargar ni duplicar llamadas de permisos.
+- [`AupPolicyModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/components/AupPolicyModal.tsx:1) se monta globalmente desde [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:1) cuando el usuario autenticado no ha aceptado la política, bloqueando navegación salvo aceptar o cerrar sesión.
+- Smokes remotos ejecutados con rollback confirmaron que `accept_aup_policy(...)` marca el perfil, crea log `aup_accepted` y que `get_my_effective_permissions()` expone `profile.aup_accepted_at`.

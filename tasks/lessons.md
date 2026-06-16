@@ -1040,3 +1040,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La solución segura es reconocer explícitamente `request.jwt.claim.role = service_role` dentro de la RPC crítica.** Eso mantiene bloqueados `anon` y `authenticated` comunes, pero permite automatizaciones server-to-server sin escribir directo a tablas sensibles.
 - **Las syncs que cruzan BUK y Jornadas deben filtrar contra la fuente canónica local de activos antes de escribir.** Si BUK reporta ausencias de trabajadores no activos o no presentes en `employees_active_current`, esos registros se reportan como omitidos y no deben hacer fallar el workflow.
 - **No confiar en el límite implícito de 1.000 filas del cliente REST de Supabase.** Cualquier auditoría o sync que lea empleados/excepciones debe paginar con `range(...)`; si no, los totales y decisiones de limpieza quedan truncados silenciosamente.
+
+## 99. Un clickwrap de cumplimiento no es un modal frontend; es un contrato auditado
+
+- **La aceptación normativa debe persistirse y auditarse en backend.** Mostrar un popup sin RPC, timestamp y log inalterable solo prueba UX, no cumplimiento ISO.
+- **Si `profiles` permite updates amplios por compatibilidad legacy, la auditoría debe cubrir también cambios fuera de la RPC.** Un trigger sobre `aup_accepted_at` evita que una actualización directa autorizada deje la aceptación sin evidencia.
+- **El estado de aceptación debe viajar en el payload de permisos existente.** Hacer otra query global a `profiles` por cada carga duplica red y puede crear carreras; `get_my_effective_permissions()` ya es la fuente correcta para bloquear la app.
+- **El bloqueo visual debe montarse en el shell autenticado, no en páginas individuales.** Si el usuario no aceptó la política, ninguna ruta operacional debe quedar navegable por omisión.
