@@ -1,23 +1,26 @@
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ComposedChart,
-  LabelList,
-  Legend,
-  Line,
-  Pie,
-  PieChart,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
-import { ChartSurface, ChartTooltip, SelectField, TextField, MultiSelectField } from "../../../shared/ui";
+import type { EChartsOption } from "echarts";
+import { EChartSurface, TextField, MultiSelectField } from "../../../shared/ui";
 import { formatCurrencyValue } from "../../../shared/lib/format";
 import { formatDateForDisplay } from "../../../shared/lib/date";
 import { useHrIncentivesAnalytics, useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
+
+type ChartClickParams = {
+  data?: unknown;
+};
+
+type TooltipParam = {
+  marker?: string;
+  name?: string;
+  seriesName?: string;
+  value?: unknown;
+  data?: unknown;
+  percent?: number;
+};
+
+type ChartDataRecord = Record<string, unknown>;
+
+const CHART_PALETTE = ["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"];
 
 function formatPercent(value: number) {
   return `${value.toFixed(1)}%`;
@@ -69,9 +72,103 @@ function getStatusLabel(status: string) {
   }
 }
 
-function truncateLabel(value: string, maxLength: number = 14) {
+function truncateLabel(value: string, maxLength: number = 22) {
   if (!value) return "";
   return value.length > maxLength ? value.substring(0, maxLength) + "…" : value;
+}
+
+function asTooltipParams(params: unknown): TooltipParam[] {
+  if (Array.isArray(params)) {
+    return params as TooltipParam[];
+  }
+
+  return [params as TooltipParam];
+}
+
+function getChartDataRecord(value: unknown): ChartDataRecord {
+  if (value && typeof value === "object") {
+    return value as ChartDataRecord;
+  }
+
+  return {};
+}
+
+function toNumber(value: unknown) {
+  if (typeof value === "number") return value;
+  if (Array.isArray(value)) return Number(value[1] ?? value[0] ?? 0);
+  return Number(value ?? 0);
+}
+
+function toggleFilterValue(values: string[], nextValue: string) {
+  return values.includes(nextValue)
+    ? values.filter((value) => value !== nextValue)
+    : [...values.filter((value) => value !== "A"), nextValue];
+}
+
+function buildAxisTooltip(params: unknown, title: string) {
+  const rows = asTooltipParams(params);
+  const body = rows
+    .filter((item) => item.seriesName)
+    .map((item) => {
+      const amount = formatCurrencyValue(toNumber(item.value));
+      return `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">${item.marker ?? ""}${item.seriesName}</span><strong>${amount}</strong></div>`;
+    })
+    .join("");
+
+  return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list">${body}</div></div>`;
+}
+
+function buildItemTooltip(title: string, amount: number, suffix = "") {
+  return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list"><div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Monto</span><strong>${formatCurrencyValue(amount)}${suffix}</strong></div></div></div>`;
+}
+
+function ChartToggle({
+  value,
+  onChange
+}: {
+  value: "period" | "date";
+  onChange: (value: "period" | "date") => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
+      <button
+        type="button"
+        onClick={() => onChange("period")}
+        style={{
+          border: "none",
+          background: value === "period" ? "var(--surface)" : "transparent",
+          color: value === "period" ? "var(--title)" : "var(--text-muted)",
+          padding: "0.25rem 0.75rem",
+          fontSize: "0.82rem",
+          fontWeight: value === "period" ? 600 : 500,
+          borderRadius: "calc(var(--radius-md) - 2px)",
+          boxShadow: value === "period" ? "var(--shadow-soft)" : "none",
+          cursor: "pointer",
+          transition: "all 0.2s"
+        }}
+      >
+        Periodos
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("date")}
+        style={{
+          border: "none",
+          background: value === "date" ? "var(--surface)" : "transparent",
+          color: value === "date" ? "var(--title)" : "var(--text-muted)",
+          padding: "0.25rem 0.75rem",
+          fontSize: "0.82rem",
+          fontWeight: value === "date" ? 600 : 500,
+          borderRadius: "calc(var(--radius-md) - 2px)",
+          boxShadow: value === "date" ? "var(--shadow-soft)" : "none",
+          cursor: "pointer",
+          transition: "all 0.2s"
+        }}
+      >
+        Actual
+      </button>
+    </div>
+  );
 }
 
 export function IncentiveAnalyticsView() {
@@ -119,14 +216,11 @@ export function IncentiveAnalyticsView() {
 
   const dateTrendData = useMemo(() => {
     if (!requestsQuery.data) return [];
-    
+
     const aggregated: Record<string, number> = {};
     for (const req of requestsQuery.data) {
       const datePart = req.serviceDate.split("T")[0];
-      if (!aggregated[datePart]) {
-        aggregated[datePart] = 0;
-      }
-      aggregated[datePart] += req.calculatedAmount;
+      aggregated[datePart] = (aggregated[datePart] ?? 0) + req.calculatedAmount;
     }
 
     return Object.entries(aggregated)
@@ -138,16 +232,14 @@ export function IncentiveAnalyticsView() {
   }, [requestsQuery.data]);
 
   const evolutionChartData = timeView === "period" ? periodTrendData : dateTrendData;
-  const evolutionXAxisKey = timeView === "period" ? "periodCode" : "serviceDate";
 
   const amountByTypeData = useMemo(() => {
-    const palette = ["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"];
     const sourceData = typeTimeView === "period" ? allPeriodsAnalyticsQuery.data?.countByIncentiveType : analyticsQuery.data?.countByIncentiveType;
 
     return (sourceData ?? []).map((item, index) => ({
       name: item.incentiveTypeName,
       value: item.totalAmount,
-      color: palette[index % palette.length],
+      itemStyle: { color: CHART_PALETTE[index % CHART_PALETTE.length] },
       typeId: item.incentiveTypeId
     }));
   }, [analyticsQuery.data?.countByIncentiveType, allPeriodsAnalyticsQuery.data?.countByIncentiveType, typeTimeView]);
@@ -161,32 +253,223 @@ export function IncentiveAnalyticsView() {
     }));
   }, [analyticsQuery.data?.amountByContract, allPeriodsAnalyticsQuery.data?.amountByContract, contractTimeView]);
 
-  const amountByWorkerData = useMemo(() => {
+  const rawWorkerData = useMemo(() => {
     const sourceData = workerTimeView === "period" ? allPeriodsAnalyticsQuery.data?.amountByWorker : analyticsQuery.data?.amountByWorker;
-    const rawData = sourceData?.slice(0, 8) ?? [];
-    return rawData.map((item) => {
-      const flatItem: any = {
+    return sourceData?.slice(0, 8) ?? [];
+  }, [analyticsQuery.data?.amountByWorker, allPeriodsAnalyticsQuery.data?.amountByWorker, workerTimeView]);
+
+  const amountByWorkerData = useMemo(() => {
+    return rawWorkerData.map((item) => {
+      const flatItem: Record<string, string | number> = {
         workerName: item.workerName || "Desconocido",
         totalAmount: item.totalAmount
       };
-      item.contracts.forEach((c) => {
-        flatItem[c.contractLabel] = c.amount;
+      item.contracts.forEach((contract) => {
+        flatItem[contract.contractLabel] = contract.amount;
       });
       return flatItem;
     });
-  }, [analyticsQuery.data?.amountByWorker, allPeriodsAnalyticsQuery.data?.amountByWorker, workerTimeView]);
+  }, [rawWorkerData]);
 
   const uniqueWorkerContracts = useMemo(() => {
     const contractsSet = new Set<string>();
-    const sourceData = workerTimeView === "period" ? allPeriodsAnalyticsQuery.data?.amountByWorker : analyticsQuery.data?.amountByWorker;
-    const rawData = sourceData?.slice(0, 8) ?? [];
-    rawData.forEach(item => {
-      item.contracts.forEach(c => {
-        contractsSet.add(c.contractLabel);
+    rawWorkerData.forEach((item) => {
+      item.contracts.forEach((contract) => {
+        contractsSet.add(contract.contractLabel);
       });
     });
     return Array.from(contractsSet);
-  }, [analyticsQuery.data?.amountByWorker, allPeriodsAnalyticsQuery.data?.amountByWorker, workerTimeView]);
+  }, [rawWorkerData]);
+
+  const evolutionOption = useMemo<EChartsOption>(() => {
+    const categories = evolutionChartData.map((item) => {
+      const raw = "periodCode" in item ? item.periodCode : item.serviceDate;
+      return timeView === "date" ? formatShortDate(String(raw)) : formatPeriodCode(String(raw));
+    });
+    const seriesData = evolutionChartData.map((item) => {
+      const raw = "periodCode" in item ? item.periodCode : item.serviceDate;
+      return {
+        value: item.totalAmount,
+        totalAmount: item.totalAmount,
+        periodCode: "periodCode" in item ? item.periodCode : undefined,
+        serviceDate: "serviceDate" in item ? item.serviceDate : undefined,
+        displayLabel: timeView === "date" ? formatShortDate(String(raw)) : formatPeriodCode(String(raw))
+      };
+    });
+
+    return {
+      grid: { top: 36, right: 20, bottom: 42, left: 56 },
+      tooltip: {
+        trigger: "axis",
+        formatter: (params: unknown) => {
+          const first = asTooltipParams(params)[0];
+          const data = getChartDataRecord(first?.data);
+          const title = timeView === "period"
+            ? `Período ${data.displayLabel ?? ""}`
+            : `Fecha: ${data.displayLabel ?? ""}`;
+          return buildAxisTooltip(params, title);
+        }
+      },
+      legend: { bottom: 0, icon: "circle" },
+      xAxis: {
+        type: "category",
+        data: categories,
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: { fontSize: 11, fontWeight: 500 }
+      },
+      yAxis: {
+        type: "value",
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: { formatter: (value: number) => formatCompactCurrency(value), fontSize: 11, fontWeight: 500 },
+        splitLine: { lineStyle: { color: "rgba(148, 163, 184, 0.22)", type: "dashed" } }
+      },
+      series: [
+        {
+          type: "bar",
+          name: "Gasto total",
+          data: seriesData,
+          itemStyle: {
+            color: "rgba(37, 99, 235, 0.22)",
+            borderColor: "#2563eb",
+            borderWidth: 2,
+            borderRadius: [10, 10, 0, 0]
+          }
+        },
+        {
+          type: "line",
+          name: "Tendencia",
+          data: seriesData,
+          smooth: true,
+          symbolSize: 8,
+          lineStyle: { color: "#0f172a", width: 2.5 },
+          itemStyle: { color: "#0f172a" }
+        }
+      ]
+    };
+  }, [evolutionChartData, timeView]);
+
+  const amountByTypeOption = useMemo<EChartsOption>(() => ({
+    tooltip: {
+      trigger: "item",
+      formatter: (params: unknown) => {
+        const item = asTooltipParams(params)[0];
+        const data = getChartDataRecord(item?.data);
+        const percent = typeof item?.percent === "number" ? ` · ${item.percent.toFixed(1)}%` : "";
+        return buildItemTooltip(String(data.name ?? item?.name ?? "Tipo"), Number(data.value ?? item?.value ?? 0), percent);
+      }
+    },
+    legend: { bottom: 0, icon: "circle", type: "scroll" },
+    series: [
+      {
+        type: "pie",
+        name: "Monto",
+        radius: ["42%", "70%"],
+        center: ["50%", "45%"],
+        padAngle: 2,
+        data: amountByTypeData,
+        label: { formatter: ({ name }: { name: string }) => truncateLabel(name, 16) }
+      }
+    ]
+  }), [amountByTypeData]);
+
+  const amountByContractOption = useMemo<EChartsOption>(() => ({
+    grid: { top: 18, right: 28, bottom: 28, left: 12 },
+    tooltip: {
+      trigger: "item",
+      formatter: (params: unknown) => {
+        const item = asTooltipParams(params)[0];
+        const data = getChartDataRecord(item?.data);
+        return buildItemTooltip(String(data.contractLabel ?? "Contrato"), Number(data.value ?? 0));
+      }
+    },
+    xAxis: {
+      type: "value",
+      axisTick: { show: false },
+      axisLine: { show: false },
+      axisLabel: { formatter: (value: number) => formatCompactCurrency(value), fontSize: 11, fontWeight: 500 },
+      splitLine: { lineStyle: { color: "rgba(148, 163, 184, 0.22)", type: "dashed" } }
+    },
+    yAxis: {
+      type: "category",
+      inverse: true,
+      data: amountByContractData.map((item) => item.contractLabel),
+      axisTick: { show: false },
+      axisLine: { show: false },
+      axisLabel: { show: false }
+    },
+    series: [
+      {
+        type: "bar",
+        name: "Monto total",
+        data: amountByContractData.map((item) => ({
+          value: item.totalAmount,
+          contractCode: item.contractCode,
+          contractLabel: item.contractLabel
+        })),
+        itemStyle: { color: "#57a6b2", borderRadius: [0, 6, 6, 0] },
+        label: {
+          show: true,
+          position: "insideLeft",
+          color: "#ffffff",
+          fontSize: 11.5,
+          fontWeight: 600,
+          formatter: (params: { data?: unknown }) => {
+            const data = getChartDataRecord(params.data);
+            return truncateLabel(String(data.contractLabel ?? ""), 34);
+          }
+        }
+      }
+    ]
+  }), [amountByContractData]);
+
+  const amountByWorkerOption = useMemo<EChartsOption>(() => {
+    const workerNames = amountByWorkerData.map((item) => String(item.workerName));
+
+    return {
+      grid: { top: 18, right: 28, bottom: 54, left: 132 },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: (params: unknown) => {
+          const rows = asTooltipParams(params).filter((item) => toNumber(item.value) > 0);
+          const title = rows[0]?.name ?? "Trabajador";
+          const body = rows
+            .map((item) => `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">${item.marker ?? ""}${item.seriesName}</span><strong>${formatCurrencyValue(toNumber(item.value))}</strong></div>`)
+            .join("");
+          return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list">${body}</div></div>`;
+        }
+      },
+      legend: { bottom: 0, icon: "circle", type: "scroll" },
+      xAxis: {
+        type: "value",
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: { formatter: (value: number) => formatCompactCurrency(value), fontSize: 11, fontWeight: 500 },
+        splitLine: { lineStyle: { color: "rgba(148, 163, 184, 0.22)", type: "dashed" } }
+      },
+      yAxis: {
+        type: "category",
+        inverse: true,
+        data: workerNames,
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: {
+          fontSize: 11,
+          fontWeight: 600,
+          formatter: (value: string) => truncateLabel(value, 18)
+        }
+      },
+      series: uniqueWorkerContracts.map((contractLabel, index) => ({
+        type: "bar",
+        name: contractLabel,
+        stack: "workerAmount",
+        data: amountByWorkerData.map((item) => Number(item[contractLabel] ?? 0)),
+        itemStyle: { color: CHART_PALETTE[index % CHART_PALETTE.length], borderRadius: [0, 6, 6, 0] }
+      }))
+    };
+  }, [amountByWorkerData, uniqueWorkerContracts]);
 
   const cards = analyticsQuery.data?.summaryCards;
   const contractOptions = analyticsQuery.data?.filterOptions.contracts ?? [];
@@ -295,124 +578,23 @@ export function IncentiveAnalyticsView() {
                 {timeView === "period" ? "Monto agregado por período" : "Monto agregado por fecha"}
               </span>
             </div>
-            <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
-              <button
-                type="button"
-                onClick={() => setTimeView("period")}
-                style={{
-                  border: "none",
-                  background: timeView === "period" ? "var(--surface)" : "transparent",
-                  color: timeView === "period" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: timeView === "period" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: timeView === "period" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Periodos
-              </button>
-              <button
-                type="button"
-                onClick={() => setTimeView("date")}
-                style={{
-                  border: "none",
-                  background: timeView === "date" ? "var(--surface)" : "transparent",
-                  color: timeView === "date" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: timeView === "date" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: timeView === "date" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Actual
-              </button>
-            </div>
+            <ChartToggle value={timeView} onChange={setTimeView} />
           </div>
-          <ChartSurface
+          <EChartSurface
             height={280}
+            option={evolutionOption}
             loading={analyticsQuery.isLoading || (timeView === "date" && requestsQuery.isLoading)}
             empty={evolutionChartData.length === 0}
             emptyMessage={timeView === "period" ? "No hay períodos para el filtro actual." : "No hay datos para el período actual."}
-          >
-            <ComposedChart data={evolutionChartData as any[]} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
-              <defs>
-                <linearGradient id="incentiveAmountFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.28} />
-                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0.04} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
-              <XAxis
-                dataKey={evolutionXAxisKey}
-                stroke="var(--text-muted)"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
-                tickMargin={12}
-                tickFormatter={(val) => timeView === "date" ? formatShortDate(String(val)) : formatPeriodCode(String(val))}
-              />
-              <YAxis
-                stroke="var(--text-muted)"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
-                tickMargin={12}
-                tickFormatter={(value: number) => formatCompactCurrency(value)}
-              />
-              <Tooltip
-                cursor={{ fill: "transparent" }}
-                content={(props) => (
-                  <ChartTooltip
-                    {...props}
-                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))}
-                    chartLabelFormatter={(label) => timeView === "period" ? `Período ${formatPeriodCode(String(label))}` : `Fecha: ${formatShortDate(String(label))}`}
-                  />
-                )}
-              />
-              <Legend 
-                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "12px" }}
-                iconType="circle"
-                iconSize={8}
-              />
-              <Bar
-                dataKey="totalAmount"
-                name="Gasto total"
-                fill="url(#incentiveAmountFill)"
-                stroke="#2563eb"
-                strokeWidth={2}
-                radius={[10, 10, 0, 0]}
-                onClick={(data: any) => {
-                  const payload = data.payload || data;
-                  if (payload && payload.periodCode) {
-                    setPeriodCodeFilter(prev => prev === payload.periodCode ? "" : payload.periodCode);
-                  }
-                }}
-                cursor="pointer"
-              />
-              <Line
-                type="monotone"
-                dataKey="totalAmount"
-                name="Tendencia"
-                stroke="#0f172a"
-                strokeWidth={2.5}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-                onClick={(data: any) => {
-                  const payload = data.payload || data;
-                  if (payload && payload.periodCode) {
-                    setPeriodCodeFilter(prev => prev === payload.periodCode ? "" : payload.periodCode);
-                  }
-                }}
-                cursor="pointer"
-              />
-            </ComposedChart>
-          </ChartSurface>
+            onEvents={{
+              click: (params: ChartClickParams) => {
+                const data = getChartDataRecord(params.data);
+                const periodCode = typeof data.periodCode === "string" ? data.periodCode : "";
+                if (!periodCode) return;
+                setPeriodCodeFilter((previous) => previous === periodCode ? "" : periodCode);
+              }
+            }}
+          />
         </article>
 
         <article className="hr-incentives-analytics-card">
@@ -421,87 +603,23 @@ export function IncentiveAnalyticsView() {
               <h4>Distribución por tipo</h4>
               <span className="tracking-filter-caption">Participación del presupuesto por incentivo</span>
             </div>
-            <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
-              <button
-                type="button"
-                onClick={() => setTypeTimeView("period")}
-                style={{
-                  border: "none",
-                  background: typeTimeView === "period" ? "var(--surface)" : "transparent",
-                  color: typeTimeView === "period" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: typeTimeView === "period" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: typeTimeView === "period" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Periodos
-              </button>
-              <button
-                type="button"
-                onClick={() => setTypeTimeView("date")}
-                style={{
-                  border: "none",
-                  background: typeTimeView === "date" ? "var(--surface)" : "transparent",
-                  color: typeTimeView === "date" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: typeTimeView === "date" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: typeTimeView === "date" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Actual
-              </button>
-            </div>
+            <ChartToggle value={typeTimeView} onChange={setTypeTimeView} />
           </div>
-          <ChartSurface
+          <EChartSurface
             height={280}
+            option={amountByTypeOption}
             loading={analyticsQuery.isLoading}
             empty={amountByTypeData.length === 0}
             emptyMessage="No hay tipos de incentivo para el filtro actual."
-          >
-            <PieChart>
-              <Pie
-                data={amountByTypeData}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={58}
-                outerRadius={94}
-                paddingAngle={2}
-                onClick={(data: any) => {
-                  const payload = data?.payload || data;
-                  if (payload && payload.typeId) {
-                    setTypeIdFilter(prev => prev === payload.typeId ? "" : payload.typeId);
-                  }
-                }}
-                cursor="pointer"
-              >
-                {amountByTypeData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                cursor={{ fill: "transparent" }}
-                content={(props) => (
-                  <ChartTooltip
-                    {...props}
-                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))}
-                  />
-                )}
-              />
-              <Legend 
-                wrapperStyle={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-secondary)", paddingTop: "16px" }}
-                iconType="circle"
-                iconSize={8}
-              />
-            </PieChart>
-          </ChartSurface>
+            onEvents={{
+              click: (params: ChartClickParams) => {
+                const data = getChartDataRecord(params.data);
+                const typeId = typeof data.typeId === "string" ? data.typeId : "";
+                if (!typeId) return;
+                setTypeIdFilter((previous) => toggleFilterValue(previous, typeId));
+              }
+            }}
+          />
         </article>
 
         <article className="hr-incentives-analytics-card">
@@ -512,111 +630,23 @@ export function IncentiveAnalyticsView() {
                 Top contratos con mayor volumen de incentivos
               </span>
             </div>
-            <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
-              <button
-                type="button"
-                onClick={() => setContractTimeView("period")}
-                style={{
-                  border: "none",
-                  background: contractTimeView === "period" ? "var(--surface)" : "transparent",
-                  color: contractTimeView === "period" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: contractTimeView === "period" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: contractTimeView === "period" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Periodos
-              </button>
-              <button
-                type="button"
-                onClick={() => setContractTimeView("date")}
-                style={{
-                  border: "none",
-                  background: contractTimeView === "date" ? "var(--surface)" : "transparent",
-                  color: contractTimeView === "date" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: contractTimeView === "date" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: contractTimeView === "date" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Actual
-              </button>
-            </div>
+            <ChartToggle value={contractTimeView} onChange={setContractTimeView} />
           </div>
-          <ChartSurface
+          <EChartSurface
             height={320}
+            option={amountByContractOption}
             loading={analyticsQuery.isLoading}
             empty={amountByContractData.length === 0}
             emptyMessage="No hay datos para el filtro actual."
-          >
-            <BarChart
-              data={amountByContractData}
-              layout="vertical"
-              margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
-              <XAxis 
-                type="number" 
-                stroke="var(--text-muted)" 
-                tickLine={false} 
-                axisLine={false} 
-                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
-                tickMargin={12}
-                tickFormatter={(value: number) => formatCompactCurrency(value)}
-              />
-              <YAxis
-                type="category"
-                dataKey="contractLabel"
-                width={1}
-                stroke="var(--text-muted)"
-                tickLine={false}
-                axisLine={false}
-                tick={false}
-              />
-              <Tooltip
-                cursor={{ fill: "transparent" }}
-                content={(props) => (
-                  <ChartTooltip 
-                    {...props} 
-                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))} 
-                  />
-                )}
-              />
-              <Bar 
-                dataKey="totalAmount" 
-                name="Monto total" 
-                fill="#57a6b2" 
-                radius={[0, 6, 6, 0]}
-                onClick={(data: any) => {
-                  const payload = data.payload || data;
-                  if (payload && payload.contractCode) {
-                    setContractCodeFilter(prev => prev === payload.contractCode ? "" : payload.contractCode);
-                  }
-                }}
-                cursor="pointer"
-              >
-                <LabelList
-                  dataKey="contractLabel"
-                  content={(props: any) => {
-                    const { y, height, value } = props;
-                    return (
-                      <text x={16} y={y + height / 2} dy={4} fill="#ffffff" fontSize={11.5} fontWeight={500} style={{ pointerEvents: "none" }}>
-                        {value}
-                      </text>
-                    );
-                  }}
-                />
-              </Bar>
-            </BarChart>
-          </ChartSurface>
+            onEvents={{
+              click: (params: ChartClickParams) => {
+                const data = getChartDataRecord(params.data);
+                const contractCode = typeof data.contractCode === "string" ? data.contractCode : "";
+                if (!contractCode) return;
+                setContractCodeFilter((previous) => toggleFilterValue(previous, contractCode));
+              }
+            }}
+          />
         </article>
 
         <article className="hr-incentives-analytics-card">
@@ -627,110 +657,15 @@ export function IncentiveAnalyticsView() {
                 Trabajadores con mayor monto ingresado, diferenciado por contrato
               </span>
             </div>
-            <div style={{ display: "flex", gap: "0.25rem", background: "var(--surface-muted)", padding: "0.25rem", borderRadius: "var(--radius-md)" }}>
-              <button
-                type="button"
-                onClick={() => setWorkerTimeView("period")}
-                style={{
-                  border: "none",
-                  background: workerTimeView === "period" ? "var(--surface)" : "transparent",
-                  color: workerTimeView === "period" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: workerTimeView === "period" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: workerTimeView === "period" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Periodos
-              </button>
-              <button
-                type="button"
-                onClick={() => setWorkerTimeView("date")}
-                style={{
-                  border: "none",
-                  background: workerTimeView === "date" ? "var(--surface)" : "transparent",
-                  color: workerTimeView === "date" ? "var(--title)" : "var(--text-muted)",
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.82rem",
-                  fontWeight: workerTimeView === "date" ? 600 : 500,
-                  borderRadius: "calc(var(--radius-md) - 2px)",
-                  boxShadow: workerTimeView === "date" ? "var(--shadow-soft)" : "none",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Actual
-              </button>
-            </div>
+            <ChartToggle value={workerTimeView} onChange={setWorkerTimeView} />
           </div>
-          <ChartSurface
+          <EChartSurface
             height={320}
+            option={amountByWorkerOption}
             loading={analyticsQuery.isLoading}
             empty={amountByWorkerData.length === 0}
             emptyMessage="No hay datos para el filtro actual."
-          >
-            <BarChart
-              data={amountByWorkerData}
-              layout="vertical"
-              margin={{ top: 16, right: 16, bottom: 8, left: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.22)" />
-              <XAxis 
-                type="number" 
-                stroke="var(--text-muted)" 
-                tickLine={false} 
-                axisLine={false} 
-                tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 }}
-                tickMargin={12}
-                tickFormatter={(value: number) => formatCompactCurrency(value)}
-              />
-              <YAxis
-                type="category"
-                dataKey="workerName"
-                width={1}
-                stroke="var(--text-muted)"
-                tickLine={false}
-                axisLine={false}
-                tick={false}
-              />
-              <Tooltip
-                cursor={{ fill: "transparent" }}
-                content={(props) => (
-                  <ChartTooltip 
-                    {...props} 
-                    chartValueFormatter={(value) => formatCurrencyValue(Number(value ?? 0))} 
-                  />
-                )}
-              />
-              {uniqueWorkerContracts.map((contractLabel, index) => (
-                <Bar
-                  key={contractLabel}
-                  dataKey={contractLabel}
-                  name={contractLabel}
-                  stackId="workerAmount"
-                  fill={["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"][index % 8]}
-                  radius={[0, 6, 6, 0]}
-                >
-                  {index === uniqueWorkerContracts.length - 1 && (
-                    <LabelList
-                      dataKey="workerName"
-                      content={(props: any) => {
-                        const { y, height, value } = props;
-                        return (
-                          <text x={16} y={y + height / 2} dy={4} fill="#ffffff" fontSize={11.5} fontWeight={500} style={{ pointerEvents: "none" }}>
-                            {value}
-                          </text>
-                        );
-                      }}
-                    />
-                  )}
-                </Bar>
-              ))}
-            </BarChart>
-          </ChartSurface>
+          />
         </article>
       </div>
     </section>

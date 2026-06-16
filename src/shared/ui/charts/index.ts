@@ -1,2 +1,1 @@
-export * from "./ChartSurface";
-export * from "./ChartTooltip";
+export * from "./EChartSurface";

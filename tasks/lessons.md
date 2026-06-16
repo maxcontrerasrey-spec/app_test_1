@@ -1047,3 +1047,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si `profiles` permite updates amplios por compatibilidad legacy, la auditoría debe cubrir también cambios fuera de la RPC.** Un trigger sobre `aup_accepted_at` evita que una actualización directa autorizada deje la aceptación sin evidencia.
 - **El estado de aceptación debe viajar en el payload de permisos existente.** Hacer otra query global a `profiles` por cada carga duplica red y puede crear carreras; `get_my_effective_permissions()` ya es la fuente correcta para bloquear la app.
 - **El bloqueo visual debe montarse en el shell autenticado, no en páginas individuales.** Si el usuario no aceptó la política, ninguna ruta operacional debe quedar navegable por omisión.
+
+## 100. Un ERP no debe convivir con dos motores gráficos en producción
+
+- **La migración de librería de charts debe ser Big Bang si ambas resuelven la misma superficie.** Mantener Recharts y ECharts al mismo tiempo duplica bundle, patrones de tooltips, responsive y criterios visuales; la salida enterprise es un wrapper único y una búsqueda de vestigios antes del cierre.
+- **El wrapper compartido debe absorber el vendor, no cada módulo analítico.** Los módulos de negocio deben construir `option` y eventos, mientras `EChartSurface` gobierna carga diferida, shell visual, estados vacíos/carga y tokens de tema.
+- **No uses metadata con nombres reservados del motor gráfico.** En ECharts, campos como `label` tienen semántica propia dentro de `series.data`; la metadata operacional debe usar nombres explícitos como `displayLabel` o `periodLabel` para evitar errores de tipos y runtime.

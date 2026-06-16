@@ -2446,3 +2446,19 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`AuthContext.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/context/AuthContext.tsx:1) ahora incluye `aup_accepted_at` en el perfil y expone `acceptAupPolicy()` para actualizar estado local sin recargar ni duplicar llamadas de permisos.
 - [`AupPolicyModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/components/AupPolicyModal.tsx:1) se monta globalmente desde [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:1) cuando el usuario autenticado no ha aceptado la política, bloqueando navegación salvo aceptar o cerrar sesión.
 - Smokes remotos ejecutados con rollback confirmaron que `accept_aup_policy(...)` marca el perfil, crea log `aup_accepted` y que `get_my_effective_permissions()` expone `profile.aup_accepted_at`.
+
+## Migración total de gráficos a Apache ECharts
+
+- [x] Eliminar `recharts` del árbol de dependencias y reemplazarlo por `echarts` + `echarts-for-react`
+- [x] Retirar los wrappers compartidos `ChartSurface` / `ChartTooltip` basados en Recharts
+- [x] Crear `EChartSurface` como wrapper único con carga diferida, estados de carga/vacío y tokens visuales del ERP
+- [x] Migrar `Análisis de Incentivos` a opciones ECharts conservando filtros, KPIs, tooltips y clicks de drill-down
+- [x] Reemplazar el showcase de Labs por `EChartsShowcase`
+- [x] Validar que no queden vestigios de Recharts y ejecutar typecheck/build/diff
+
+## Resultado de migración total de gráficos a Apache ECharts
+
+- Se eliminó `recharts` de `package.json` y `package-lock.json`; el único motor gráfico activo del frontend queda en `echarts` / `echarts-for-react`.
+- La capa compartida ahora vive en [`EChartSurface.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChartSurface.tsx:1), que conserva el contrato de shell visual (`chart-shell`, loading y empty states), pero carga el motor gráfico de forma diferida para no penalizar el inicio de la app.
+- [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1) fue migrado a objetos `EChartsOption` para evolución, distribución por tipo, inversión por contrato y ranking apilado por trabajador. Se mantuvieron los filtros múltiples existentes y los clicks sobre período, tipo y contrato.
+- [`LabsPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/pages/LabsPage.tsx:1) ahora carga dinámicamente [`EChartsShowcase.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/components/EChartsShowcase.tsx:1), eliminando el último componente Recharts del código fuente.
