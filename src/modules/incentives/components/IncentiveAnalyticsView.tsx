@@ -331,10 +331,18 @@ export function IncentiveAnalyticsView() {
           name: "Gasto total",
           data: seriesData,
           itemStyle: {
-            color: "rgba(37, 99, 235, 0.22)",
-            borderColor: "#2563eb",
-            borderWidth: 2,
-            borderRadius: [10, 10, 0, 0]
+            color: {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: "rgba(59, 130, 246, 0.8)" },
+                { offset: 1, color: "rgba(59, 130, 246, 0.1)" }
+              ]
+            },
+            borderRadius: [6, 6, 0, 0]
           }
         },
         {
@@ -343,8 +351,19 @@ export function IncentiveAnalyticsView() {
           data: seriesData,
           smooth: true,
           symbolSize: 8,
-          lineStyle: { color: "#0f172a", width: 2.5 },
-          itemStyle: { color: "#0f172a" }
+          symbol: "circle",
+          lineStyle: {
+            color: "#38bdf8",
+            width: 3,
+            shadowColor: "rgba(56, 189, 248, 0.5)",
+            shadowBlur: 12,
+            shadowOffsetY: 4
+          },
+          itemStyle: {
+            color: "#38bdf8",
+            borderWidth: 2,
+            borderColor: "#ffffff"
+          }
         }
       ]
     };
@@ -365,9 +384,18 @@ export function IncentiveAnalyticsView() {
       {
         type: "pie",
         name: "Monto",
-        radius: ["42%", "70%"],
+        radius: ["50%", "75%"],
         center: ["50%", "45%"],
-        padAngle: 2,
+        padAngle: 3,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: "#ffffff",
+          borderWidth: 2,
+          shadowBlur: 10,
+          shadowColor: "rgba(0, 0, 0, 0.08)",
+          shadowOffsetX: 2,
+          shadowOffsetY: 2
+        },
         data: amountByTypeData,
         label: { formatter: ({ name }: { name: string }) => truncateLabel(name, 16) }
       }
@@ -408,7 +436,20 @@ export function IncentiveAnalyticsView() {
           contractCode: item.contractCode,
           contractLabel: item.contractLabel
         })),
-        itemStyle: { color: "#57a6b2", borderRadius: [0, 6, 6, 0] },
+        itemStyle: {
+          color: {
+            type: "linear",
+            x: 0,
+            y: 0,
+            x2: 1,
+            y2: 0,
+            colorStops: [
+              { offset: 0, color: "rgba(16, 185, 129, 0.2)" },
+              { offset: 1, color: "rgba(16, 185, 129, 0.8)" }
+            ]
+          },
+          borderRadius: [0, 8, 8, 0]
+        },
         label: {
           show: true,
           position: "insideLeft",
@@ -466,7 +507,12 @@ export function IncentiveAnalyticsView() {
         name: contractLabel,
         stack: "workerAmount",
         data: amountByWorkerData.map((item) => Number(item[contractLabel] ?? 0)),
-        itemStyle: { color: CHART_PALETTE[index % CHART_PALETTE.length], borderRadius: [0, 6, 6, 0] }
+        itemStyle: { 
+          color: CHART_PALETTE[index % CHART_PALETTE.length], 
+          borderRadius: 4,
+          borderWidth: 1,
+          borderColor: "rgba(255, 255, 255, 0.5)"
+        }
       }))
     };
   }, [amountByWorkerData, uniqueWorkerContracts]);
