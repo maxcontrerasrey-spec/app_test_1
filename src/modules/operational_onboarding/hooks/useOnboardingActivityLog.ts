@@ -29,26 +29,17 @@ export function useOnboardingActivityLog() {
     queryFn: async () => {
       if (!supabase) throw new Error("Supabase is not configured");
 
-      const { data, error } = await supabase
-        .from("employee_onboarding_activity_log")
-        .select(
-          `
-          *,
-          profiles:created_by(full_name),
-          tasks:employee_onboarding_tasks(task_name),
-          cases:employee_onboarding_cases(
-            candidates:candidate_profiles(full_name),
-            employees:employees(full_name)
-          )
-        `,
-        )
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_operational_onboarding_activity_log");
 
       if (error) {
         throw error;
       }
 
-      return data as unknown as OnboardingActivityLogRow[];
+      if (!Array.isArray(data)) {
+        throw new Error("Payload inválido al cargar bitácora de alta operacional.");
+      }
+
+      return data as OnboardingActivityLogRow[];
     },
   });
 }

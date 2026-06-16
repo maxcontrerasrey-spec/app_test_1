@@ -44,24 +44,17 @@ export function useOnboardingTasks() {
     queryFn: async () => {
       if (!supabase) throw new Error("Supabase is not configured");
 
-      const { data, error } = await supabase
-        .from("employee_onboarding_tasks")
-        .select(
-          `
-          *,
-          cases:employee_onboarding_cases(
-            candidates:candidate_profiles(full_name),
-            employees:employees(full_name)
-          )
-        `,
-        )
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_operational_onboarding_tasks");
 
       if (error) {
         throw error;
       }
 
-      return data as unknown as OnboardingTaskRow[];
+      if (!Array.isArray(data)) {
+        throw new Error("Payload inválido al cargar tareas de alta operacional.");
+      }
+
+      return data as OnboardingTaskRow[];
     },
   });
 }

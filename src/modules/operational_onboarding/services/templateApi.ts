@@ -27,6 +27,14 @@ function readText(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
+function requireText(value: unknown, fieldName: string) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`Payload de onboarding inválido: falta ${fieldName}.`);
+  }
+
+  return value;
+}
+
 function readBoolean(value: unknown, fallback = false) {
   return typeof value === "boolean" ? value : fallback;
 }
@@ -39,8 +47,8 @@ function readTemplateRecord(value: unknown): OnboardingTemplate {
   const source = (value ?? {}) as Record<string, unknown>;
 
   return {
-    id: readText(source.id),
-    name: readText(source.name),
+    id: requireText(source.id, "id"),
+    name: requireText(source.name, "name"),
     description: readNullableText(source.description),
     cargo: readNullableText(source.cargo),
     area: readNullableText(source.area),
@@ -60,11 +68,11 @@ function readTemplateTaskRecord(value: unknown): OnboardingTemplateTask {
   const source = (value ?? {}) as Record<string, unknown>;
 
   return {
-    id: readText(source.id),
-    template_id: readText(source.template_id),
-    area_responsible: readText(source.area_responsible),
+    id: requireText(source.id, "id"),
+    template_id: requireText(source.template_id, "template_id"),
+    area_responsible: requireText(source.area_responsible, "area_responsible"),
     role_responsible: readNullableText(source.role_responsible),
-    task_name: readText(source.task_name),
+    task_name: requireText(source.task_name, "task_name"),
     task_description: readNullableText(source.task_description),
     is_required: readBoolean(source.is_required, true),
     is_blocking: readBoolean(source.is_blocking, true),
@@ -79,18 +87,15 @@ function readTemplateTaskRecord(value: unknown): OnboardingTemplateTask {
   };
 }
 
-export async function fetchTemplates() {
+export async function fetchTemplates(): Promise<OnboardingTemplate[]> {
   const client = getClient();
-  const { data, error } = await client
-    .from("onboarding_templates")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data, error } = await client.rpc("get_operational_onboarding_templates");
 
   if (error) throw error;
   return (data ?? []).map(readTemplateRecord);
 }
 
-export async function createTemplate(template: OnboardingTemplateInput) {
+export async function createTemplate(template: OnboardingTemplateInput): Promise<OnboardingTemplate> {
   const client = getClient();
   const { data, error } = await client.rpc(
     "create_operational_onboarding_template",
@@ -113,7 +118,7 @@ export async function createTemplate(template: OnboardingTemplateInput) {
   return readTemplateRecord(data);
 }
 
-export async function updateTemplate(id: string, template: OnboardingTemplateInput) {
+export async function updateTemplate(id: string, template: OnboardingTemplateInput): Promise<OnboardingTemplate> {
   const client = getClient();
   const { data, error } = await client.rpc(
     "update_operational_onboarding_template",
@@ -137,19 +142,17 @@ export async function updateTemplate(id: string, template: OnboardingTemplateInp
   return readTemplateRecord(data);
 }
 
-export async function fetchTemplateTasks(templateId: string) {
+export async function fetchTemplateTasks(templateId: string): Promise<OnboardingTemplateTask[]> {
   const client = getClient();
-  const { data, error } = await client
-    .from("onboarding_template_tasks")
-    .select("*")
-    .eq("template_id", templateId)
-    .order("order_index", { ascending: true });
+  const { data, error } = await client.rpc("get_operational_onboarding_template_tasks", {
+    p_template_id: templateId,
+  });
 
   if (error) throw error;
   return (data ?? []).map(readTemplateTaskRecord);
 }
 
-export async function upsertTemplateTask(task: OnboardingTemplateTaskInput) {
+export async function upsertTemplateTask(task: OnboardingTemplateTaskInput): Promise<OnboardingTemplateTask> {
   const client = getClient();
   const { data, error } = await client.rpc(
     "upsert_operational_onboarding_template_task",

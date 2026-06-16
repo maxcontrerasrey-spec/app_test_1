@@ -12,7 +12,7 @@ import {
   matchesSchedule,
   normalizeText
 } from "../lib/transformers";
-import { submitServiceEntry } from "../services/operacionesApi";
+import { submitServiceEntriesBatch } from "../services/operacionesApi";
 import { SERVICE_DATA } from "../data/services-data";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
@@ -508,22 +508,17 @@ export function OperacionesDashboard() {
       fieldErrorsByService: {},
     });
 
-    const apiFieldErrorsByService: Record<number, Record<string, string>> = {};
+    const response = await submitServiceEntriesBatch(entriesToSubmit, user?.id || "");
+    const apiFieldErrorsByService = response.fieldErrorsByService || {};
 
-    for (const entry of entriesToSubmit) {
-      const response = await submitServiceEntry(entry.payload, user?.id || "");
-      
-      if (!response.ok) {
-        apiFieldErrorsByService[entry.serviceId] = response.fieldErrors || { serviceExternalKey: response.error || "No fue posible guardar la planificación." };
-      }
-    }
-
-    if (Object.keys(apiFieldErrorsByService).length > 0) {
+    if (!response.ok || Object.keys(apiFieldErrorsByService).length > 0) {
       const [firstErrorServiceId] = Object.keys(apiFieldErrorsByService);
-      setExpandedServiceId(Number(firstErrorServiceId));
+      if (firstErrorServiceId) {
+        setExpandedServiceId(Number(firstErrorServiceId));
+      }
       setSubmitState({
         loading: false,
-        error: "No fue posible guardar uno o más servicios.",
+        error: response.error || "No fue posible guardar uno o más servicios.",
         success: "",
         fieldErrors: {},
         fieldErrorsByService: apiFieldErrorsByService,

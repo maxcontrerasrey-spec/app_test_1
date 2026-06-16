@@ -1026,3 +1026,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La misma regla de acceso debe vivir en la ruta y en la pantalla.** Si la navegación habla de acceso modular `admin/superadmin`, no se puede dejar la ruta protegida por un guard más restrictivo solo por comodidad; eso rompe el contrato real de operación.
 - **Las configuraciones sensibles no deben mutarse directo desde React aunque exista RLS.** Para plantillas, tareas y reglas operativas, el patrón correcto es RPC versionada con validación centralizada y trazabilidad explícita, no `insert/update/delete` ad hoc desde el cliente.
 - **Los placeholders de flujo principal son deuda operativa, no detalle cosmético.** Si una fila expandible promete tareas o bitácora, debe renderizar datos reales o no existir; de lo contrario el módulo parece completo pero falla en confianza y auditabilidad.
+
+## 97. Un incidente de `service_role` exige corrección de código y rotación real de credencial
+
+- **Eliminar el secreto del repositorio no invalida la llave ya expuesta.** Si un JWT `service_role` apareció en código, el cierre técnico exige dos acciones separadas: limpiar/versionar el repo y rotar la credencial en Supabase antes de producción.
+- **Los scripts administrativos deben fallar si no reciben secretos por entorno.** Nunca deben incluir URL/llave productiva embebida; el patrón aceptable es `SUPABASE_URL`/`VITE_SUPABASE_URL` más `SUPABASE_SERVICE_ROLE_KEY` desde runtime seguro.
+- **Las mutaciones operativas masivas no deben escribir directo desde React a tablas sensibles.** Cuando hay permisos por contrato, idempotencia y validaciones cruzadas, debe existir una RPC transaccional que valide `auth.uid()` y devuelva errores estructurados por fila.
+- **Un scanner propio debe distinguir críticos de deuda legacy.** JWT `service_role` hardcodeado debe bloquear CI; warnings como grants amplios legacy, helpers con parámetros de usuario o policies por bucket deben quedar visibles para saneamiento progresivo sin impedir todo deploy seguro.

@@ -41,22 +41,17 @@ export function useOnboardingCases() {
         throw new Error("Supabase is not configured");
       }
 
-      const { data, error } = await supabase
-        .from("employee_onboarding_cases")
-        .select(
-          `
-          *,
-          candidates:candidate_profiles (full_name, email, national_id),
-          employees:employees (full_name, email, document_number)
-        `,
-        )
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_operational_onboarding_cases");
 
       if (error) {
         throw error;
       }
 
-      return data as unknown as OnboardingCaseRow[];
+      if (!Array.isArray(data)) {
+        throw new Error("Payload inválido al cargar casos de alta operacional.");
+      }
+
+      return data as OnboardingCaseRow[];
     },
   });
 }

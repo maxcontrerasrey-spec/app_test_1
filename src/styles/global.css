@@ -2427,6 +2427,24 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   flex-wrap: wrap;
 }
 
+.mobility-requests-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border-light);
+}
+
+.mobility-requests-pagination-button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.mobility-requests-pagination-label {
+  margin: 0;
+}
+
 .mobility-detail-copy {
   margin: 0;
   color: var(--title);

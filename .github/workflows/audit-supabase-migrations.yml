@@ -5,12 +5,14 @@ on:
     paths:
       - "supabase/**"
       - "scripts/audit-supabase-migrations.mjs"
+      - "scripts/audit-supabase-security.mjs"
       - "package.json"
       - ".github/workflows/audit-supabase-migrations.yml"
   pull_request:
     paths:
       - "supabase/**"
       - "scripts/audit-supabase-migrations.mjs"
+      - "scripts/audit-supabase-security.mjs"
       - "package.json"
       - ".github/workflows/audit-supabase-migrations.yml"
 
@@ -29,3 +31,6 @@ jobs:
 
       - name: Enforce migration baseline
         run: npm run audit:migrations
+
+      - name: Audit Supabase security patterns
+        run: npm run audit:supabase-security

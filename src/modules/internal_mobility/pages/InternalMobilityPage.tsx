@@ -21,6 +21,7 @@ import type { InternalMobilityEligibleFolio, InternalMobilityEligibleWorker } fr
 const UNRESOLVED_COMPANY_LABEL = "No resuelta";
 const UNRESOLVED_SHIFT_LABEL = "No resuelto";
 const PENDING_LABEL = "Pendiente";
+const REQUESTS_PAGE_SIZE = 7;
 
 function resolveWorkerCompanyLabel(value: string | null | undefined) {
   return value ?? UNRESOLVED_COMPANY_LABEL;
@@ -67,6 +68,7 @@ export function InternalMobilityPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
+  const [page, setPage] = useState(0);
 
   const setupCatalogsQuery = useInternalMobilitySetupCatalogs();
   const workerContextQuery = useInternalMobilityWorkerContext(
@@ -162,6 +164,20 @@ export function InternalMobilityPage() {
         .some((value) => value?.toLowerCase().includes(normalizedSearch))
     );
   }, [requestsQuery.data, searchTerm]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredRequests.length / REQUESTS_PAGE_SIZE);
+  const paginatedRequests = filteredRequests.slice(
+    page * REQUESTS_PAGE_SIZE,
+    (page + 1) * REQUESTS_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setPage((currentPage) => Math.min(currentPage, Math.max(totalPages - 1, 0)));
+  }, [totalPages]);
 
   const isSubmitEnabled =
     Boolean(selectedWorker?.bukEmployeeId) &&
@@ -520,7 +536,7 @@ export function InternalMobilityPage() {
                 ) : null}
 
                 {!requestsQuery.isLoading && !requestsQuery.error
-                  ? filteredRequests.map((request) => {
+                  ? paginatedRequests.map((request) => {
                       const isSelected = selectedRequestId === request.requestId;
 
                       return (
@@ -564,6 +580,29 @@ export function InternalMobilityPage() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 ? (
+            <div className="mobility-requests-pagination">
+              <button
+                type="button"
+                className="soft-primary-button mobility-requests-pagination-button"
+                disabled={page === 0}
+                onClick={() => setPage((currentPage) => currentPage - 1)}
+              >
+                &lt; Anterior
+              </button>
+              <span className="tracking-filter-caption mobility-requests-pagination-label">
+                Página {page + 1} de {totalPages}
+              </span>
+              <button
+                type="button"
+                className="soft-primary-button mobility-requests-pagination-button"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((currentPage) => currentPage + 1)}
+              >
+                Siguiente &gt;
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 

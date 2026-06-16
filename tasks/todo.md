@@ -2,6 +2,16 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Estabilización enterprise SQL/RLS/contratos previa a producción
+
+- [x] Eliminar secretos `service_role` hardcodeados del repo y dejar tooling de auditoría para impedir regresión
+- [x] Crear auditor SQL de seguridad para detectar JWTs, grants peligrosos, helpers con `p_user_id`, policies amplias de Storage y migraciones con RPC/policies sin `notify pgrst`
+- [x] Encapsular escritura de Operaciones en una RPC transaccional `submit_service_entries_batch(...)`
+- [x] Encapsular lecturas de Alta Operacional mediante RPCs `get_operational_onboarding_*` y retirar escrituras directas innecesarias
+- [x] Endurecer Storage `candidate-docs` para que las rutas queden acotadas a candidatos/casos visibles
+- [x] Agregar validadores de payload en servicios frontend para fallar explícitamente ante drift SQL <-> TypeScript
+- [x] Ejecutar validaciones locales y smoke tests posibles antes de cierre
+
 ## Auditoría y publicación de ajustes pendientes en Roster
 
 - [x] Auditar el diff staged en `src/modules/roster` para detectar regresiones visuales o de comportamiento antes de publicar
@@ -2376,3 +2386,26 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se versionó y aplicó la migración [`20260615113000_reconcile_roster_extra_shift_with_incentives.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:1), que centraliza la reconciliación de `extra_shift` en [`reconcile_hr_roster_extra_shift_from_incentives(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:3), bloquea edición manual de fechas gobernadas por incentivos y repara el ciclo de vida al cancelar o rechazar solicitudes para no dejar sobreturnos huérfanos en el calendario.
 - En frontend, [`RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:56), [`rosterApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/services/rosterApi.ts:29) y [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/types.ts:10) quedaron alineados con el contrato real `manual | buk | incentive_auto`, mostrando `Gobernado por Incentivos` y bloqueando cambios inválidos desde Jornadas.
 - La validación cerró con queries reales en Supabase bajo contexto `superadmin`, además de `git diff --check`, `npx tsc -b`, `npm run build` y `npm run audit:migrations`. También se backfilleó el historial remoto de migraciones para registrar la versión local `20260615113000` junto al apply remoto ya ejecutado.
+
+## Estabilización enterprise SQL/RLS/contratos previa a producción
+
+- [x] Eliminar credenciales `service_role` hardcodeadas del repositorio y agregar auditor de secret scanning para CI
+- [x] Crear auditor SQL local para detectar grants amplios, helpers riesgosos, policies amplias de Storage y falta de `notify pgrst`
+- [x] Encapsular escritura masiva de Operaciones en RPC transaccional `submit_service_entries_batch(...)`
+- [x] Encapsular lecturas principales de Onboarding Operacional mediante RPCs y reducir grants directos de mutación
+- [x] Endurecer `candidate-docs` con policies por path/caso usando helper backend
+- [x] Agregar validadores de payload frontend para fallar explícitamente si RPCs críticas rompen contrato
+- [x] Ejecutar validaciones locales: auditoría de seguridad, auditoría de migraciones, typecheck y build
+- [ ] Rotar efectivamente la `service_role` en Supabase y actualizar secretos de runtime fuera del repositorio
+- [x] Ejecutar smoke tests remotos mínimos después de aplicar la migración en Supabase
+
+## Resultado de estabilización enterprise SQL/RLS/contratos previa a producción
+
+- Se removieron scripts one-off con credenciales embebidas y se reemplazaron las credenciales hardcodeadas de `sync-doc.cjs` y `process-pdf.mjs` por variables de entorno obligatorias.
+- Se agregó `scripts/audit-supabase-security.mjs` y se integró al workflow de migraciones para bloquear JWT `service_role` hardcodeado como hallazgo crítico.
+- Se creó la migración `20260615220000_enterprise_security_contract_stabilization.sql` con RPC transaccional para Operaciones, RPCs de lectura para Onboarding Operacional, endurecimiento de policies de `candidate-docs`, revocación de mutaciones directas de onboarding y `notify pgrst`.
+- Se movió la persistencia masiva de planificación operacional desde múltiples escrituras cliente-tabla hacia `submit_service_entries_batch(...)`, con validación backend de `auth.uid()`, contrato, servicio, equipo, payload e idempotencia por clave operacional.
+- Se agregaron validadores explícitos en servicios frontend de Onboarding e Incentivos para que un contrato RPC roto falle temprano en vez de pintar datos vacíos o ceros.
+- Validación local ejecutada: `node scripts/audit-supabase-security.mjs`, `npm run audit:migrations`, `npx tsc -b --pretty false`, `npm run build` y búsqueda directa de JWT hardcodeados.
+- La migración fue aplicada en Supabase (`global_control_intern`, ref `pzblmbahnoyntrhistea`) mediante `apply_migration`, y los smokes remotos mínimos confirmaron: `anon` no ejecuta las RPCs nuevas, las RPCs de lectura de onboarding responden con `service_role`, y `submit_service_entries_batch(...)` bloquea llamadas sin `auth.uid()`.
+- Pendiente operacional no resoluble solo por código: rotar la credencial `service_role` expuesta en Supabase antes de pasar a producción y ejecutar smokes remotos con usuarios reales por rol.

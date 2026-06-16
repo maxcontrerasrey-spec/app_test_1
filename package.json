@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "audit:migrations": "node scripts/audit-supabase-migrations.mjs --enforce-baseline",
     "audit:migrations:write-baseline": "node scripts/audit-supabase-migrations.mjs --write-baseline",
+    "audit:supabase-security": "node scripts/audit-supabase-security.mjs",
     "provision:hiring-approvers": "node scripts/provision-hiring-approvers.mjs",
     "provision:users-matrix": "node scripts/provision-users-from-matrix.mjs"
   },

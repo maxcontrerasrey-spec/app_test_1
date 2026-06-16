@@ -52,6 +52,27 @@ function readNumber(value: unknown) {
   return typeof value === "number" ? value : Number(value ?? 0);
 }
 
+function requireTextField(source: Record<string, unknown>, fieldName: string) {
+  const value = source[fieldName];
+
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+
+  throw new Error(`Contrato RPC inválido: falta ${fieldName}.`);
+}
+
+function requireNumberField(source: Record<string, unknown>, fieldName: string) {
+  const value = source[fieldName];
+  const numericValue = typeof value === "number" ? value : Number(value);
+
+  if (Number.isFinite(numericValue)) {
+    return numericValue;
+  }
+
+  throw new Error(`Contrato RPC inválido: falta ${fieldName}.`);
+}
+
 function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
   const source = (payload ?? {}) as Record<string, unknown>;
 
@@ -427,30 +448,30 @@ function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
 
 function mapApprovalQueueRow(row: Record<string, unknown>): HrIncentiveApprovalQueueItem {
   return {
-    approvalId: Number(row.approval_id ?? 0),
-    requestId: String(row.request_id ?? ""),
-    folio: Number(row.folio ?? 0),
-    stepCode: String(row.step_code ?? "contract_admin") as HrIncentiveApprovalQueueItem["stepCode"],
+    approvalId: requireNumberField(row, "approval_id"),
+    requestId: requireTextField(row, "request_id"),
+    folio: requireNumberField(row, "folio"),
+    stepCode: requireTextField(row, "step_code") as HrIncentiveApprovalQueueItem["stepCode"],
     stepName: String(row.step_name ?? ""),
     stepOrder: Number(row.step_order ?? 0),
-    approvalStatus: String(row.approval_status ?? "pending") as HrIncentiveApprovalQueueItem["approvalStatus"],
+    approvalStatus: requireTextField(row, "approval_status") as HrIncentiveApprovalQueueItem["approvalStatus"],
     approverUserId: readNullableText(row.approver_user_id),
     approverName: String(row.approver_name ?? ""),
-    employeeFullName: String(row.employee_full_name ?? ""),
+    employeeFullName: requireTextField(row, "employee_full_name"),
     employeeDocumentNumber: String(row.employee_document_number ?? ""),
     employeeJobTitle: String(row.employee_job_title ?? ""),
     employeeUnionName: readNullableText(row.employee_union_name),
-    selectedContractCode: String(row.selected_contract_code ?? ""),
+    selectedContractCode: requireTextField(row, "selected_contract_code"),
     selectedAreaName: String(row.selected_area_name ?? ""),
-    incentiveTypeName: String(row.incentive_type_name ?? ""),
-    serviceDate: String(row.service_date ?? ""),
-    calculatedAmount: Number(row.calculated_amount ?? 0),
+    incentiveTypeName: requireTextField(row, "incentive_type_name"),
+    serviceDate: requireTextField(row, "service_date"),
+    calculatedAmount: requireNumberField(row, "calculated_amount"),
     periodCode: String(row.period_code ?? ""),
     entryLagDays: Number(row.entry_lag_days ?? 0),
     isOutOfDeadline: Boolean(row.is_out_of_deadline),
     isContractMismatch: Boolean(row.is_contract_mismatch),
     requesterName: String(row.requester_name ?? ""),
-    createdAt: String(row.created_at ?? "")
+    createdAt: requireTextField(row, "created_at")
   };
 }
 
@@ -460,30 +481,30 @@ function mapRequestDetail(payload: unknown): HrIncentiveRequestDetail {
 
   return {
     request: {
-      id: String(request.id ?? ""),
-      folio: Number(request.folio ?? 0),
-      status: String(request.status ?? "P") as HrIncentiveRequestDetail["request"]["status"],
+      id: requireTextField(request, "id"),
+      folio: requireNumberField(request, "folio"),
+      status: requireTextField(request, "status") as HrIncentiveRequestDetail["request"]["status"],
       employeeBukEmployeeId: String(request.employee_buk_employee_id ?? ""),
       employeeDocumentType: String(request.employee_document_type ?? "rut"),
       employeeDocumentNumber: String(request.employee_document_number ?? ""),
-      employeeFullName: String(request.employee_full_name ?? ""),
+      employeeFullName: requireTextField(request, "employee_full_name"),
       employeeJobTitle: String(request.employee_job_title ?? ""),
       employeeUnionName: readNullableText(request.employee_union_name),
       employeeUnionStatus: mapUnionStatus(request.employee_union_status),
       employeeUnionJoinedAt: readNullableText(request.employee_union_joined_at),
       primaryContractCode: readNullableText(request.primary_contract_code),
       primaryAreaName: readNullableText(request.primary_area_name),
-      selectedContractCode: String(request.selected_contract_code ?? ""),
+      selectedContractCode: requireTextField(request, "selected_contract_code"),
       selectedAreaName: String(request.selected_area_name ?? ""),
       selectedAreaCode: readNullableText(request.selected_area_code),
-      incentiveTypeName: String(request.incentive_type_name ?? ""),
+      incentiveTypeName: requireTextField(request, "incentive_type_name"),
       requiresReplacement: Boolean(request.requires_replacement),
       replacementBukEmployeeId: readNullableText(request.replacement_buk_employee_id),
       replacementDocumentNumber: readNullableText(request.replacement_document_number),
       replacementFullName: readNullableText(request.replacement_full_name),
       motive: readNullableText(request.motive),
       description: readNullableText(request.description),
-      serviceDate: String(request.service_date ?? ""),
+      serviceDate: requireTextField(request, "service_date"),
       durationHours:
         request.duration_hours === null || request.duration_hours === undefined
           ? null
@@ -495,7 +516,7 @@ function mapRequestDetail(payload: unknown): HrIncentiveRequestDetail {
       calculationBasis:
         request.calculation_basis === "per_hour" ? "per_hour" : "fixed",
       rateRuleAmount: Number(request.rate_rule_amount ?? 0),
-      calculatedAmount: Number(request.calculated_amount ?? 0),
+      calculatedAmount: requireNumberField(request, "calculated_amount"),
       requesterName: String(request.requester_name ?? ""),
       requesterEmail: readNullableText(request.requester_email),
       currentStepCode:
@@ -504,26 +525,26 @@ function mapRequestDetail(payload: unknown): HrIncentiveRequestDetail {
       currentApproverName: readNullableText(request.current_approver_name),
       cancelledAt: readNullableText(request.cancelled_at),
       cancellationComment: readNullableText(request.cancellation_comment),
-      createdAt: String(request.created_at ?? ""),
-      updatedAt: String(request.updated_at ?? ""),
+      createdAt: requireTextField(request, "created_at"),
+      updatedAt: requireTextField(request, "updated_at"),
       declaredRestDay:
         request.declared_rest_day === null || request.declared_rest_day === undefined
           ? null
           : Boolean(request.declared_rest_day)
     },
     approvals: asArray<Record<string, unknown>>(source.approvals).map((item) => ({
-      id: Number(item.id ?? 0),
-      stepCode: String(item.step_code ?? "contract_admin") as HrIncentiveRequestDetail["approvals"][number]["stepCode"],
+      id: requireNumberField(item, "id"),
+      stepCode: requireTextField(item, "step_code") as HrIncentiveRequestDetail["approvals"][number]["stepCode"],
       stepName: String(item.step_name ?? ""),
       stepOrder: Number(item.step_order ?? 0),
       approverUserId: readNullableText(item.approver_user_id),
       approverName: readNullableText(item.approver_name),
       approverEmail: readNullableText(item.approver_email),
-      status: String(item.status ?? "pending") as HrIncentiveRequestDetail["approvals"][number]["status"],
+      status: requireTextField(item, "status") as HrIncentiveRequestDetail["approvals"][number]["status"],
       decisionBy: readNullableText(item.decision_by),
       decisionComment: readNullableText(item.decision_comment),
       decidedAt: readNullableText(item.decided_at),
-      createdAt: String(item.created_at ?? "")
+      createdAt: requireTextField(item, "created_at")
     })),
     history: asArray<Record<string, unknown>>(source.history).map((item) => ({
       id: Number(item.id ?? 0),
