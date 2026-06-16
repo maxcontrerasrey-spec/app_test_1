@@ -54,7 +54,7 @@ export function resolveTaskNavigationPath(task: DashboardNotificationPreviewItem
   }
 
   if (task.module_code === "recursos_humanos") {
-    return "/recursos-humanos/incentivos";
+    return "/recursos-humanos/aprobaciones";
   }
 
   return "/control-contrataciones";

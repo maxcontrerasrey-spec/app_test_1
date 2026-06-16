@@ -72,6 +72,14 @@ function getApprovalStepLabel(stepCode: HrIncentiveApprovalQueueItem["stepCode"]
   return stepCode === "contract_admin" ? "Administrador de contrato" : "Gerente de area";
 }
 
+function canCurrentUserDecideRow(
+  row: HrIncentiveApprovalQueueItem,
+  currentUserId: string | undefined,
+  isSuperAdmin: boolean
+) {
+  return isSuperAdmin || !row.approverUserId || row.approverUserId === currentUserId;
+}
+
 export function IncentiveApprovalsView() {
   const queryClient = useQueryClient();
   const { user, isSuperAdmin } = useAuth();
@@ -180,6 +188,18 @@ export function IncentiveApprovalsView() {
   }, [approvalQueueQuery.data]);
 
   useEffect(() => {
+    setSelectedApprovalIds((current) =>
+      current.filter((approvalId) =>
+        (approvalQueueQuery.data ?? []).some(
+          (item) =>
+            item.approvalId === approvalId &&
+            canCurrentUserDecideRow(item, user?.id, isSuperAdmin)
+        )
+      )
+    );
+  }, [approvalQueueQuery.data, isSuperAdmin, user?.id]);
+
+  useEffect(() => {
     if (selectedRequestId && !filteredQueue.some((item) => item.requestId === selectedRequestId)) {
       setSelectedRequestId("");
     }
@@ -191,17 +211,22 @@ export function IncentiveApprovalsView() {
     null;
 
   const detailQuery = useHrIncentiveRequestDetail(selectedRequestId, Boolean(selectedRequestId));
+  const selectableFilteredRows = useMemo(
+    () => filteredQueue.filter((item) => canCurrentUserDecideRow(item, user?.id, isSuperAdmin)),
+    [filteredQueue, isSuperAdmin, user?.id]
+  );
 
   const allFilteredSelected =
-    filteredQueue.length > 0 &&
-    filteredQueue.every((item) => selectedApprovalIds.includes(item.approvalId));
+    selectableFilteredRows.length > 0 &&
+    selectableFilteredRows.every((item) => selectedApprovalIds.includes(item.approvalId));
 
   const selectedRows = useMemo(
     () =>
       (approvalQueueQuery.data ?? []).filter((item) =>
-        selectedApprovalIds.includes(item.approvalId)
+        selectedApprovalIds.includes(item.approvalId) &&
+        canCurrentUserDecideRow(item, user?.id, isSuperAdmin)
       ),
-    [approvalQueueQuery.data, selectedApprovalIds]
+    [approvalQueueQuery.data, isSuperAdmin, selectedApprovalIds, user?.id]
   );
 
   const decisionMutation = useMutation({
@@ -268,7 +293,7 @@ export function IncentiveApprovalsView() {
   };
 
   const toggleSelectAllFiltered = () => {
-    const filteredIds = filteredQueue.map((item) => item.approvalId);
+    const filteredIds = selectableFilteredRows.map((item) => item.approvalId);
 
     setSelectedApprovalIds((current) => {
       if (filteredIds.every((approvalId) => current.includes(approvalId))) {
@@ -394,6 +419,7 @@ export function IncentiveApprovalsView() {
                     <input
                       type="checkbox"
                       checked={allFilteredSelected}
+                      disabled={selectableFilteredRows.length === 0}
                       aria-label="Seleccionar aprobaciones filtradas"
                       onChange={toggleSelectAllFiltered}
                     />
@@ -413,8 +439,7 @@ export function IncentiveApprovalsView() {
                   filteredQueue.map((row) => {
                     const isSelected = selectedApprovalIds.includes(row.approvalId);
                     const isActiveRow = selectedRequestId === row.requestId;
-                    const canDecide =
-                      isSuperAdmin || !row.approverUserId || row.approverUserId === user?.id;
+                    const canDecide = canCurrentUserDecideRow(row, user?.id, isSuperAdmin);
                     const warningClass = row.isOutOfDeadline 
                       ? "hr-incentives-row-danger" 
                       : row.isContractMismatch 
@@ -432,8 +457,14 @@ export function IncentiveApprovalsView() {
                               type="checkbox"
                               checked={isSelected}
                               aria-label="Seleccionar aprobación"
+                              disabled={!canDecide}
                               onClick={(event) => event.stopPropagation()}
-                              onChange={() => toggleApprovalSelection(row.approvalId)}
+                              onChange={() => {
+                                if (!canDecide) {
+                                  return;
+                                }
+                                toggleApprovalSelection(row.approvalId);
+                              }}
                             />
                           </td>
                           <td>

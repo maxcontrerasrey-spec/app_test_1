@@ -218,6 +218,24 @@
 - [x] Implementar selección múltiple y exportación XLS por folios seleccionados o por período desde historial
 - [x] Validar typecheck, diff y empujar el cambio a `main`
 
+## Auditoría integral del flujo de aprobaciones de incentivos
+
+- [x] Mapear el flujo actual de aprobaciones de incentivos en frontend y Supabase, identificando la causa raíz del error `approval_id is ambiguous`
+- [x] Corregir la aprobación masiva para eliminar la ambigüedad SQL sin romper atomicidad ni locking del proceso
+- [x] Endurecer la UI de aprobaciones para que la selección masiva solo incluya filas realmente decidibles por el usuario actual
+- [x] Verificar el ciclo completo con jornadas y turnos: creación de `extra_shift`, conservación de excepciones prioritarias y reconciliación al rechazar/anular
+- [x] Validar con `npx tsc -b`, `npm run build` y `git diff --check`
+
+## Resultado de auditoría integral del flujo de aprobaciones de incentivos
+
+- La causa raíz del error reportado estaba en la RPC masiva `bulk_decide_hr_incentive_request_approvals(...)`: el `RETURNS TABLE` exponía la variable implícita `approval_id` y la misma función reutilizaba `approval_id` como alias/columna del `unnest`, disparando la ambigüedad `42702` antes de iterar las decisiones.
+- Se agregó la migración [`20260616183000_fix_hr_incentive_bulk_approval_ambiguity.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616183000_fix_hr_incentive_bulk_approval_ambiguity.sql:1) para renombrar el alias del `unnest`, conservar la normalización/deduplicación de IDs y mantener intacto el locking/atomicidad del proceso masivo.
+- El SQL del fix quedó aplicado además en la base remota del proyecto vía `npx supabase db query --linked --file ...`; la verificación directa sobre `pg_get_functiondef(...)` confirmó que la función publicada ya contiene `selected_approval_id`.
+- En [`IncentiveApprovalsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveApprovalsView.tsx:1) la selección masiva ahora filtra solo filas decidibles por el usuario actual; los checkboxes de solo lectura quedan deshabilitados y la cabecera no intenta seleccionar aprobaciones ajenas.
+- La navegación desde la campana ahora abre directamente [`/recursos-humanos/aprobaciones`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/lib/taskPresentation.ts:49), que es la bandeja real del flujo de aprobaciones de incentivos.
+- La integración con jornadas y turnos quedó verificada sobre la implementación viva: [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:421) crea/reconcilia `extra_shift` solo cuando el descanso declarado coincide con la pauta, y [`decide_hr_incentive_request_approval(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:837) junto con [`cancel_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:760) revierten o restauran la excepción automática al rechazar/anular sin pisar excepciones BUK.
+- Validación cerrada con `npm run audit:migrations`, `npx tsc -b`, `npm run build` y `git diff --check`.
+
 ## Ajuste analítico de fechas en exportación XLS de Incentivos
 
 - [x] Convertir todas las fechas exportadas a celdas nativas de Excel en vez de strings ISO
