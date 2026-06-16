@@ -2480,3 +2480,40 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - La capa compartida ahora vive en [`EChartSurface.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChartSurface.tsx:1), que conserva el contrato de shell visual (`chart-shell`, loading y empty states), pero carga el motor gráfico de forma diferida para no penalizar el inicio de la app.
 - [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:1) fue migrado a objetos `EChartsOption` para evolución, distribución por tipo, inversión por contrato y ranking apilado por trabajador. Se mantuvieron los filtros múltiples existentes y los clicks sobre período, tipo y contrato.
 - [`LabsPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/pages/LabsPage.tsx:1) ahora carga dinámicamente [`EChartsShowcase.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/components/EChartsShowcase.tsx:1), eliminando el último componente Recharts del código fuente.
+
+## Auditoría adicional de unicidad de folios de Incentivos por período
+
+- [x] Auditar el esquema real de `hr_incentive_requests` y confirmar si `folio` ya tiene unicidad global o si falta endurecimiento estructural
+- [x] Diseñar una guarda SQL reutilizable que audite integridad por `period_code` y detecte duplicidades/anomalías antes de exponer bandejas o reportes
+- [x] Implementar la auditoría en una nueva migración y conectarla a los RPCs relevantes del módulo de Incentivos
+- [x] Validar local/remoto con `npm run audit:migrations`, `npx tsc -b`, `git diff --check` y una query de humo sobre la función de auditoría
+- [x] Documentar el cierre y la lección en `tasks/todo.md` y `tasks/lessons.md`
+
+## Resultado de auditoría adicional de unicidad de folios de Incentivos por período
+
+- `hr_incentive_requests.folio` ya estaba protegido por unicidad global desde el origen (`generated always as identity unique`), por lo que la capa extra no debía duplicar a ciegas ese `UNIQUE`, sino auditar integridad real por `period_code`.
+- Se agregó la migración [`20260616225802_add_hr_incentive_period_folio_integrity_audit.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616225802_add_hr_incentive_period_folio_integrity_audit.sql:1), aplicada además en Supabase y registrada en `supabase_migrations.schema_migrations`.
+- La migración crea dos funciones nuevas: `audit_hr_incentive_period_folio_integrity(...)`, que expone anomalías auditables por período, y `assert_hr_incentive_period_folio_integrity(...)`, que aborta el flujo si detecta duplicidad de folio por período o desalineación entre `period_code` y el período calculado desde `service_date`.
+- La auditoría quedó conectada de dos formas. Primero, como trigger `trg_hr_incentive_requests_period_integrity_audit` sobre `hr_incentive_requests` para revalidar automáticamente el período afectado en cada alta o cambio relevante. Segundo, como guarda previa en las RPCs `get_hr_incentive_requests(...)`, `get_hr_incentives_analytics(...)`, `get_hr_incentive_approval_queue()` y `get_hr_incentive_request_detail(...)`.
+- La verificación remota cerró con `select count(*) as anomaly_count from public.audit_hr_incentive_period_folio_integrity(null);`, devolviendo `0`, y con `select public.assert_hr_incentive_period_folio_integrity(null);`, sin errores. Validación local complementaria: `npm run audit:migrations`, `npx tsc -b --pretty false` y `git diff --check`.
+
+## Automatización BUK de Personal a Contratar
+
+- [x] Revisar `implementation_plan.md` contra la estructura real del repo y la documentación oficial vigente de BUK
+- [x] Aterrizar el plan corrigiendo brechas reales del contrato BUK (`location_id` obligatorio, `payment_period` obligatorio y validación explícita de permisos/token)
+- [x] Implementar backend asíncrono: tabla `buk_sync_jobs`, RPC de encolado, payload canónico de candidato a BUK y Edge Function `sync-buk-candidates`
+- [x] Extender la ficha BUK candidata y la checklist para cubrir campos obligatorios adicionales del alta automática
+- [x] Implementar UI en `HiringPersonnelToHireView.tsx` y servicio `enqueueCandidatesToBuk(...)`
+- [x] Crear script de validación de accesos BUK para empleados, localidades y documentos con diagnóstico explícito
+- [x] Validar `npm run audit:migrations`, `npx tsc -b`, `git diff --check`, aplicar SQL/función remota si corresponde, commitear y pushear
+
+## Resultado de automatización BUK de Personal a Contratar
+
+- El plan original no era ejecutable tal como estaba: al contrastarlo con la documentación oficial de BUK aparecieron dos requisitos reales que faltaban en el modelo local, `location_id` y `payment_period`. En vez de empujar una integración incompleta, se aterrizó la arquitectura para resolverlos sin crear otra ficha paralela.
+- Se agregó la migración [`20260616231219_add_buk_candidate_sync_queue.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616231219_add_buk_candidate_sync_queue.sql:1), ya aplicada en Supabase y registrada en `supabase_migrations.schema_migrations`. La migración crea `buk_sync_jobs`, agrega `payment_period` a `candidate_worker_files`, redefine `upsert_candidate_worker_file(...)` y `get_candidate_buk_profile(...)`, y expone `enqueue_buk_generation(...)` junto con `get_candidate_buk_sync_payload(...)`.
+- El enqueue ya no acepta candidatos ambiguos: solo encola candidatos contratados, con validación documental aprobada y con ficha personal/contractual BUK realmente completa. Si ya existe un job `pending/processing`, lo reutiliza; si el candidato ya fue generado con éxito en BUK, aborta para evitar duplicidades.
+- En frontend, [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) ahora agrega el botón `Generar en BUK`, y [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) expone `enqueueCandidatesToBuk(...)`.
+- La ficha contractual del candidato quedó extendida con `payment_period` en [`CandidateWorkerFileForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateWorkerFileForm.tsx:1), alineando la UI con el contrato que exige el alta automática.
+- Se agregó la Edge Function [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1), desplegada en el proyecto `pzblmbahnoyntrhistea`. Esta función consume la cola, resuelve `location_id` contra `GET /locations`, crea al empleado en BUK, sube documentos aprobados al endpoint configurado y elimina los binarios originales desde `candidate-docs` cuando la subida fue exitosa.
+- Se agregó el script [`scripts/validate-buk-token-access.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/validate-buk-token-access.mjs:1) para validar el token sobre `GET /employees`, `GET /locations` y, opcionalmente, `POST /employees` / `POST /employees/{id}/documents` cuando se entregan fixtures de escritura reales.
+- Validación cerrada con `npm run audit:migrations`, `npx tsc -b --pretty false`, `npm run build`, `git diff --check`, aplicación remota de la migración, despliegue de la Edge Function y smoke HTTP real contra `sync-buk-candidates`, que respondió `200 {"processed":[]}` después de cargar `BUK_AUTH_TOKEN` como secret del proyecto.

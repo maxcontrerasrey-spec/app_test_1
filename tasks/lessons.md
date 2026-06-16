@@ -1059,3 +1059,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No reutilices como alias SQL un nombre ya declarado como columna de salida del `RETURNS TABLE`.** En PL/pgSQL, esos nombres viven como variables implícitas y pueden chocar con columnas/aliases locales, disparando errores `42702` por referencia ambigua aunque la consulta parezca correcta a simple vista.
 - **La revisión de RPCs masivas no termina en el happy path individual.** Si la función bulk deduplica IDs con `unnest(...)`, ordena, bloquea y luego delega a una RPC unitaria, hay que ejecutar o leer específicamente ese wrapper; de lo contrario una colisión de nombres en la etapa de normalización deja rota toda la operación masiva mientras la aprobación individual sigue sana.
 - **Cuando una campana o bandeja resume tareas agrupadas, la navegación debe resolver el subtab operativo real y no la landing genérica del módulo.** Si no, el dato pendiente existe pero el usuario cae en una vista que no le permite actuar y el flujo se siente roto aunque backend esté correcto.
+
+## 102. Si ya existe un `UNIQUE`, la capa extra de seguridad debe auditar integridad derivada y ejecutarse dentro del flujo real
+
+- **No repitas una constraint por ansiedad de control.** Si `folio` ya es `identity unique`, la capa adicional no agrega valor copiando otro `UNIQUE`; debe verificar anomalías que importan al negocio, como desalineación entre `period_code` y `service_date`, o duplicidades detectables al consultar por período.
+- **La auditoría útil no vive solo como query manual.** Debe tener una forma explícita de inspección (`audit_*`) y otra de enforcement (`assert_*`) conectada tanto a las mutaciones como a las RPCs de lectura críticas, para que una inconsistencia rompa temprano y no quede escondida hasta una revisión posterior.
+- **Cuando se aplica una migración con `supabase db query`, el cierre incluye registrar la versión en `supabase_migrations.schema_migrations`.** Si no, el esquema puede quedar correcto pero la trazabilidad remota vuelve a degradarse y reaparece la misma deuda de auditoría histórica.
+
+## 103. En integraciones ERP hacia BUK, el plan funcional se valida primero contra la API oficial y luego contra la ficha local real
+
+- **No implementes un “Generar en BUK” solo porque la UI ya exporta una nómina parecida.** Exportar una planilla y crear un empleado por API no exigen el mismo contrato; antes de escribir cola o Edge Functions, hay que contrastar la ficha local contra los campos obligatorios reales del endpoint oficial.
+- **Si la API obliga datos que el modelo local aún no persiste, el cambio correcto es extender la ficha canónica existente, no abrir otra tabla ad hoc.** En este caso, `payment_period` faltaba en `candidate_worker_files` y `location_id` debía resolverse desde `region/comuna` vía API Buk.
+- **La cola asíncrona debe fallar antes de encolar si el candidato no está realmente listo.** La validación de “contratado + documentación aprobada + ficha BUK completa” tiene que vivir en backend, no en un aviso blando de React.
+- **Desplegar una Edge Function no la vuelve operativa por sí sola.** El cierre real incluye verificar secretos remotos (`BUK_AUTH_TOKEN`) y hacer un smoke HTTP contra la función publicada.

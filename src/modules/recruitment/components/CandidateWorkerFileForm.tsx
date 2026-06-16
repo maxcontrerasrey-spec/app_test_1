@@ -70,6 +70,7 @@ type WorkerDraft = {
   seniorityRecognitionDate: string;
   progressiveVacationStartDate: string;
   paymentMethod: string;
+  paymentPeriod: string;
   bankName: string;
   bankAccountType: string;
   bankAccountNumber: string;
@@ -105,6 +106,14 @@ const firefighterStatusOptions = [
 const yesNoBukOptions = [
   { value: "Sí", label: "Sí" },
   { value: "No", label: "No" }
+];
+
+const bukPaymentPeriodOptions = [
+  { value: "semanal", label: "Semanal" },
+  { value: "mensual", label: "Mensual" },
+  { value: "quincenal", label: "Quincenal" },
+  { value: "diario", label: "Diario" },
+  { value: "por_hora", label: "Por hora" }
 ];
 
 function looksLikeRut(value: string | null | undefined) {
@@ -150,6 +159,7 @@ const requiredWorkerFields: Array<{ key: keyof WorkerDraft; label: string }> = [
   { key: "companyEntryDate", label: "Ingreso compañía" },
   { key: "privateRole", label: "Rol privado" },
   { key: "paymentMethod", label: "Forma de pago" },
+  { key: "paymentPeriod", label: "Periodo de pago" },
   { key: "pensionRegime", label: "Régimen previsional" },
   { key: "increaseQuoteOnePercent", label: "Aumentar cotización 1%" },
   { key: "healthProvider", label: "Fonasa / Isapre" },
@@ -282,6 +292,7 @@ function buildWorkerDraft(
     seniorityRecognitionDate: worker?.seniority_recognition_date ?? "",
     progressiveVacationStartDate: worker?.progressive_vacation_start_date ?? "",
     paymentMethod: worker?.payment_method ?? "",
+    paymentPeriod: worker?.payment_period ?? "",
     bankName: worker?.bank_name ?? candidate.bank_name ?? "",
     bankAccountType: worker?.bank_account_type ?? candidate.bank_account_type ?? "",
     bankAccountNumber: worker?.bank_account_number ?? candidate.bank_account_number ?? "",
@@ -510,6 +521,7 @@ export function CandidateWorkerFileForm({
       seniorityRecognitionDate: workerDraft.seniorityRecognitionDate || null,
       progressiveVacationStartDate: workerDraft.progressiveVacationStartDate || null,
       paymentMethod: workerDraft.paymentMethod,
+      paymentPeriod: workerDraft.paymentPeriod,
       bankName: workerDraft.bankName,
       bankAccountType: workerDraft.bankAccountType,
       bankAccountNumber: workerDraft.bankAccountNumber,
@@ -1070,6 +1082,16 @@ export function CandidateWorkerFileForm({
             placeholder="Selecciona forma de pago"
             onChange={(event) =>
               setWorkerDraft((current) => ({ ...current, paymentMethod: event.target.value }))
+            }
+          />
+          <SelectField
+            id="candidate-payment-period"
+            label="Periodo de pago"
+            value={workerDraft.paymentPeriod}
+            options={bukPaymentPeriodOptions}
+            placeholder="Selecciona periodo"
+            onChange={(event) =>
+              setWorkerDraft((current) => ({ ...current, paymentPeriod: event.target.value }))
             }
           />
           <SelectField

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
+  enqueueCandidatesToBuk,
   fetchCandidateBukProfile,
   formatRut,
   type RecruitmentCaseDetail,
@@ -36,6 +37,7 @@ export function HiringPersonnelToHireView({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [isGeneratingBuk, setIsGeneratingBuk] = useState(false);
   const [exportMessage, setExportMessage] = useState("");
 
   const filteredPersonnel = useMemo(() => {
@@ -153,6 +155,36 @@ export function HiringPersonnelToHireView({
     }
   };
 
+  const handleGenerateBuk = async () => {
+    if (selectedPersonnel.length === 0) {
+      setExportMessage("Selecciona al menos una persona para generar en BUK.");
+      return;
+    }
+
+    setIsGeneratingBuk(true);
+    setExportMessage("");
+
+    const { data, error } = await enqueueCandidatesToBuk(
+      selectedPersonnel.map((candidate) => candidate.id)
+    );
+
+    if (error) {
+      setExportMessage(error);
+      setIsGeneratingBuk(false);
+      return;
+    }
+
+    const queuedCount = data.filter((job) => job.status === "pending").length;
+    const processingCount = data.filter((job) => job.status === "processing").length;
+
+    setExportMessage(
+      processingCount > 0
+        ? `Se encolaron ${queuedCount} persona(s) para generar en BUK. ${processingCount} ya estaban en procesamiento.`
+        : `Se encolaron ${queuedCount} persona(s) para generar en BUK.`
+    );
+    setIsGeneratingBuk(false);
+  };
+
   // Comportamiento actualizado: no autoseleccionar candidato.
 
   return (
@@ -173,6 +205,16 @@ export function HiringPersonnelToHireView({
             onChange={(event) => setSearchTerm(event.target.value)}
             className="tracking-search-field"
           />
+          <button
+            type="button"
+            className="soft-primary-button approval-button-approve"
+            onClick={() => void handleGenerateBuk()}
+            disabled={isGeneratingBuk || selectedPersonnel.length === 0}
+          >
+            {isGeneratingBuk
+              ? "Encolando..."
+              : `Generar en BUK (${selectedPersonnel.length})`}
+          </button>
           <button
             type="button"
             className="soft-primary-button approval-button-approve"

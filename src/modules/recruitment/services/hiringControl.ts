@@ -257,6 +257,7 @@ export type CandidateBukProfileDetails = {
     seniority_recognition_date: string | null;
     progressive_vacation_start_date: string | null;
     payment_method: string | null;
+    payment_period: string | null;
     bank_name: string | null;
     bank_account_type: string | null;
     bank_account_number: string | null;
@@ -879,6 +880,7 @@ export async function updateCandidateWorkerFile(input: {
   seniorityRecognitionDate?: string | null;
   progressiveVacationStartDate?: string | null;
   paymentMethod?: string | null;
+  paymentPeriod?: string | null;
   bankName?: string | null;
   bankAccountType?: string | null;
   bankAccountNumber?: string | null;
@@ -923,6 +925,7 @@ export async function updateCandidateWorkerFile(input: {
     p_seniority_recognition_date: input.seniorityRecognitionDate || null,
     p_progressive_vacation_start_date: input.progressiveVacationStartDate || null,
     p_payment_method: input.paymentMethod?.trim() ? input.paymentMethod.trim() : null,
+    p_payment_period: input.paymentPeriod?.trim() ? input.paymentPeriod.trim() : null,
     p_bank_name: input.bankName?.trim() ? input.bankName.trim() : null,
     p_bank_account_type: input.bankAccountType?.trim()
       ? input.bankAccountType.trim()
@@ -970,6 +973,52 @@ export async function updateCandidateWorkerFile(input: {
   }
 
   return { error: null };
+}
+
+export async function enqueueCandidatesToBuk(candidateIds: string[]) {
+  if (!supabase) {
+    return {
+      data: [] as Array<{
+        job_id: string;
+        recruitment_case_candidate_id: string;
+        status: string;
+      }>,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const normalizedIds = Array.from(
+    new Set(candidateIds.map((candidateId) => candidateId.trim()).filter(Boolean))
+  );
+
+  if (normalizedIds.length === 0) {
+    return {
+      data: [],
+      error: "Selecciona al menos una persona para generar en BUK."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("enqueue_buk_generation", {
+    p_candidate_ids: normalizedIds
+  });
+
+  if (error) {
+    return {
+      data: [],
+      error: formatRpcError(error) || "No fue posible encolar la generación en BUK."
+    };
+  }
+
+  return {
+    data: Array.isArray(data)
+      ? (data as Array<{
+          job_id: string;
+          recruitment_case_candidate_id: string;
+          status: string;
+        }>)
+      : [],
+    error: null
+  };
 }
 
 
