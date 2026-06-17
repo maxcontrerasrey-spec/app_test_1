@@ -32,39 +32,6 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
   };
 
   switch (iconKey) {
-    case "flask":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a2.5 2.5 0 0 0 2.227 3.45h10.106a2.5 2.5 0 0 0 2.227-3.45l-5.068-10.127A2 2 0 0 1 14 9.527V2" />
-          <path {...commonProps} d="M8.5 2h7" />
-          <path {...commonProps} d="M14 16H5.3" />
-        </svg>
-      );
-    case "timeline":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M5 18h14" />
-          <path {...commonProps} d="M7 15V9" />
-          <path {...commonProps} d="M12 15V6" />
-          <path {...commonProps} d="M17 15v-3" />
-        </svg>
-      );
-    case "certificate":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M7 4h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-          <path {...commonProps} d="m9 20 3-2 3 2v-4H9Z" />
-          <path {...commonProps} d="M9 8h6" />
-        </svg>
-      );
-    case "tracking":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle {...commonProps} cx="11" cy="11" r="6" />
-          <path {...commonProps} d="m20 20-4.2-4.2" />
-          <path {...commonProps} d="M11 8v3l2 1.5" />
-        </svg>
-      );
     case "user-plus":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -265,10 +232,6 @@ export function AppShell() {
     () =>
       navigationModules
         .map((module) => {
-          if (module.adminOnly && !isSuperAdmin) {
-            return null;
-          }
-
           const roleAllowed =
             !module.visibleForRoles?.length ||
             module.visibleForRoles.some((role) => appRoles.includes(role));

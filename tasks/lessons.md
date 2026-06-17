@@ -1111,3 +1111,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si un acceso especial como ORION debe existir en la barra principal, su posición final debe respetar el orden del menú, no inyectarse “a mano” antes de los módulos visibles.** De otro modo, el orden percibido por el usuario diverge del orden declarado por producto.
 - **La secuencia top-level es una decisión operacional, no cosmética.** Si el negocio define `Inicio -> Reclutamiento -> Recursos Humanos -> Operaciones -> Business Intelligence -> ORION`, la implementación debe reflejarla exactamente en `navigationModules` y en cualquier link extra del shell.
+
+## 110. No dupliques navegación entre top nav y tabs internos cuando ambas superficies resuelven exactamente la misma decisión
+
+- **Si un módulo ya tiene tabs internos claros para cambiar de vista, la barra superior no debe repetir esas mismas opciones como submenú.** Eso genera ruido visual, compite por jerarquía y hace parecer que existen dos patrones de navegación para la misma acción.
+
+## 111. Si una estructura o artefacto quedó sin consumidores reales, se elimina; no se conserva “por si acaso”
+
+- **Cuando un módulo sale del sistema, sus flags auxiliares, iconos dedicados y ramas especiales del shell deben salir con él.** Dejar `adminOnly`, `flask` o chequeos equivalentes sin consumidores reales solo ensucia la lectura y falsea la complejidad del sistema.
+- **Los builds tipados no deben dejar espejos ejecutables redundantes en la raíz.** Si `tsc -b` se usa solo para validar `vite.config.ts`, la configuración de Node debe emitir como máximo declaraciones; regenerar `vite.config.js` introduce ruido, diffs innecesarios y dobles fuentes de verdad.

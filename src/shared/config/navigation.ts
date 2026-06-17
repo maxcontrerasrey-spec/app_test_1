@@ -11,7 +11,7 @@ export type NavigationItem = {
   label: string;
   description?: string;
   subgroup?: string;
-  iconKey?: "document" | "timeline" | "certificate" | "tracking" | "flask" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up";
+  iconKey?: "document" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up";
   visibleForRoles?: AppRole[];
   items?: NavigationItem[];
 };
@@ -21,7 +21,6 @@ export type NavigationModule = {
   moduleCode?: AppModuleCode;
   to?: string;
   items?: NavigationItem[];
-  adminOnly?: boolean;
   visibleForRoles?: AppRole[];
 };
 
@@ -114,21 +113,7 @@ export const navigationModules: NavigationModule[] = [
   },
   {
     label: "Business Intelligence",
-    items: [
-      {
-        moduleCode: "bi_analytics",
-        to: "/bi/dotacion",
-        label: "Analítica de Dotación",
-        description: "KPIs operacionales, ausentismo, demografía y flujo de reclutamiento.",
-        iconKey: "bar-chart"
-      },
-      {
-        moduleCode: "bi_analytics",
-        to: "/bi/incentivos",
-        label: "Análisis de Incentivos",
-        description: "Dashboards analíticos de dotación, ausentismo e incentivos.",
-        iconKey: "trending-up"
-      }
-    ]
+    moduleCode: "bi_analytics",
+    to: "/bi/dotacion"
   }
 ];

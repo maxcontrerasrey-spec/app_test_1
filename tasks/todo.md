@@ -2604,3 +2604,23 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - La barra superior quedó alineada al orden pedido: `Inicio -> Reclutamiento -> Recursos Humanos -> Operaciones -> Business Intelligence -> ORION`.
 - [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:28) ahora declara `Recursos Humanos` antes de `Operaciones` y `Business Intelligence`, evitando que el orden dependa de cambios accidentales posteriores.
 - En [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:408) ORION dejó de inyectarse antes de los módulos visibles y pasó al cierre real del menú, que era la intención funcional que antes cumplía Labs.
+
+## Simplificación final de navegación BI
+
+- [x] Eliminar el submenú superior duplicado de BI y dejar la navegación interna de la página como única superficie para cambiar entre Dotación e Incentivos.
+
+## Resultado de simplificación final de navegación BI
+
+- [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:82) ahora deja `Business Intelligence` como módulo simple que entra a `/bi/dotacion`, evitando duplicar en la barra superior las mismas dos vistas que ya existen como tabs/chips dentro del dashboard.
+
+## Limpieza estructural adicional de código y build
+
+- [x] Eliminar flags, ramas e iconos muertos que quedaron huérfanos tras la salida de Labs y la simplificación del top nav.
+- [x] Evitar que `tsc -b` regenere `vite.config.js` como artefacto redundante en la raíz.
+- [x] Mantener la tipificación del config de Vite sin arrastrar archivos espejo innecesarios.
+
+## Resultado de limpieza estructural adicional de código y build
+
+- Se removió la deuda declarativa de navegación en [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:7): `adminOnly` dejó de existir en `NavigationModule` y `flask` salió del union de `iconKey` porque ya no había ningún consumidor real tras eliminar Labs.
+- [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:25) quedó más compacto al eliminar el `case "flask"` del render de iconos y la rama muerta que filtraba `module.adminOnly`.
+- [`tsconfig.node.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/tsconfig.node.json:1) ahora emite solo declaraciones para `vite.config.ts`, evitando que el build vuelva a generar [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:1) como duplicado ejecutable en la raíz.
