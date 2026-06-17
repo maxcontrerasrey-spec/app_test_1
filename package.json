@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:frontend-check": "node scripts/run-frontend-build.mjs",
     "preview": "vite preview",
     "audit:migrations": "node scripts/audit-supabase-migrations.mjs --enforce-baseline",
     "audit:migrations:write-baseline": "node scripts/audit-supabase-migrations.mjs --write-baseline",

@@ -15,6 +15,19 @@
 - [x] Aplicar en Supabase la migración mínima necesaria para auditoría del job de sincronización y desplegar las Edge Functions ajustadas
 - [x] Validar build, auditoría de migraciones y humo operacional de la integración antes de commit/push
 
+## Endurecimiento de validación de build frontend
+
+- [x] Reproducir e identificar si `vite build` realmente se bloquea o solo queda silencioso durante la fase de transformación
+- [x] Dejar una vía de validación frontend determinística y observable para evitar falsos positivos de “build colgado”
+- [x] Revalidar el build completo con la nueva vía y documentar el hallazgo
+
+## Resultado de endurecimiento de validación de build frontend
+
+- La duda quedó cerrada con reproducción directa: `vite build` no estaba colgado. El proceso sí completaba, pero la etapa `transforming...` podía quedar varios segundos sin emitir líneas, lo que en ejecuciones previas se interpretó erróneamente como atasco.
+- La validación determinística quedó estandarizada en [`scripts/run-frontend-build.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/run-frontend-build.mjs:1) y expuesta por el script `npm run build:frontend-check` en [`package.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/package.json:1).
+- Ese runner separa `TypeScript` y `Vite`, imprime timestamps de inicio y cierre por fase, y aplica timeout real por etapa. Con esto ya no dependemos de interpretar silencio de consola como estado del build.
+- La revalidación completa quedó cerrada en este entorno con `TypeScript` en `5s` y `Vite` en `4s`, además de `✓ 1112 modules transformed` y artefactos `dist` regenerados correctamente.
+
 ## Resultado de ensamble BUK: alta de ficha y carga documental
 
 - El drift confirmado estaba en el contrato de documentos: ambas Edge Functions BUK seguían construyendo por defecto la ruta `.../documents`, mientras la referencia oficial validada con soporte es `POST /employees/{id}/docs`.

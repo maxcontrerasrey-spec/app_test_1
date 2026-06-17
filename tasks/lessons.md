@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si dos módulos suben documentos al mismo proveedor, ambos deben compartir el mismo helper de transporte y parseo**. Dejar una copia en Reclutamiento y otra en Acreditaciones facilita el drift silencioso, como ocurrió al seguir usando `/documents` después de que BUK confirmó `/employees/{id}/docs`.
 - **Una cola de sincronización debe conservar por separado el payload original y el resultado del intento**. Sobrescribir `payload_snapshot` con la respuesta final destruye auditoría y vuelve imposible reconstruir qué input exacto produjo un alta o un error.
 
+## 65. Un build silencioso no es un build colgado; la validación debe hacer observable cada fase
+
+- **No concluyas que `vite build` se atascó solo porque deja de imprimir durante `transforming...`**. En este repo el build puede entrar en una fase corta pero silenciosa y aun así cerrar bien segundos después.
+- **La salida robusta es un runner explícito por fases**. Separar `tsc` y `vite`, con timestamps y timeout real por etapa, elimina la ambigüedad y vuelve auditable el estado del pipeline frontend.
+
 ## 64. En migraciones de workflow, borrar la lógica legacy implica también borrar triggers activos, no solo dejar RPCs nuevas
 
 - **No basta con publicar la versión nueva del flujo si quedan triggers heredados escuchando la misma tabla**. Aunque el frontend invoque la RPC correcta, un trigger viejo puede reescribir estados o columnas con semántica obsoleta y romper constraints vigentes en runtime.
