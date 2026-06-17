@@ -1,5 +1,6 @@
 import { ChangeEvent, useState, useRef, useEffect, KeyboardEvent } from "react";
 import type { SelectOption } from "./SelectField";
+import { FieldHintIcon } from "./FieldHintIcon";
 
 type SelectFieldProps = {
   id: string;
@@ -79,6 +80,7 @@ export function SearchableSelectField({
     >
       <label className="field-label" htmlFor={id}>
         {label}
+        <FieldHintIcon hint={hint} />
       </label>
       <div style={{ position: 'relative' }}>
         <input
@@ -147,7 +149,6 @@ export function SearchableSelectField({
           )}
         </ul>
       )}
-      {hint ? <p className="field-hint">{hint}</p> : null}
     </div>
   );
 }

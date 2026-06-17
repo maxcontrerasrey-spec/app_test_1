@@ -5,6 +5,7 @@ import {
   HTMLInputTypeAttribute,
   InputHTMLAttributes
 } from "react";
+import { FieldHintIcon } from "./FieldHintIcon";
 
 type TextFieldProps = {
   id: string;
@@ -47,6 +48,7 @@ export function TextField({
     <div className={`field-group ${className}`.trim()}>
       <label className="field-label" htmlFor={id}>
         {label}
+        <FieldHintIcon hint={hint} />
       </label>
       <input
         className={`text-field ${readOnly ? "text-field-readonly" : ""} ${hasError ? "text-field-error" : ""}`.trim()}
@@ -63,7 +65,6 @@ export function TextField({
         inputMode={inputMode}
         autoComplete={autoComplete}
       />
-      {hint ? <p className="field-hint">{hint}</p> : null}
     </div>
   );
 }

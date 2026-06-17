@@ -1,4 +1,5 @@
 import { ChangeEvent } from "react";
+import { FieldHintIcon } from "./FieldHintIcon";
 
 export type SelectOption = {
   value: string;
@@ -33,6 +34,7 @@ export function SelectField({
     <div className={`field-group ${className}`.trim()}>
       <label className="field-label" htmlFor={id}>
         {label}
+        <FieldHintIcon hint={hint} />
       </label>
       <select
         className="text-field"
@@ -48,7 +50,6 @@ export function SelectField({
           </option>
         ))}
       </select>
-      {hint ? <p className="field-hint">{hint}</p> : null}
     </div>
   );
 }
