@@ -183,6 +183,55 @@ function buildActionUrl(payload: EmailPayload, appBaseUrl: string | null): strin
   return `${normalizedBase}${route}`;
 }
 
+function buildEmailLayout(
+  title: string,
+  intro: string,
+  details: Array<[string, string | number | null | undefined]>,
+  actionUrl: string | null,
+  actionText: string,
+  isError: boolean = false
+): string {
+  const titleColor = isError ? "#ef4444" : "#0f172a";
+  return `
+    <div style="background-color: #f8fafc; padding: 40px 20px; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+        <div style="padding: 32px;">
+          <h2 style="margin: 0 0 16px; font-size: 20px; color: ${titleColor}; font-weight: 600;">${escapeHtml(title)}</h2>
+          <p style="margin: 0 0 24px; font-size: 15px; color: #475569; line-height: 1.6;">${escapeHtml(intro)}</p>
+
+          <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tbody>
+                ${details
+                  .map(
+                    ([label, value]) => \`
+                      <tr>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 40%; vertical-align: top;">\${escapeHtml(label)}</td>
+                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 500; vertical-align: top;">\${escapeHtml(value)}</td>
+                      </tr>
+                    \`
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          \${actionUrl ? \`
+            <div style="margin-top: 32px; text-align: center;">
+              <a href="\${escapeHtml(actionUrl)}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: #ffffff; text-decoration: none; font-weight: 500; font-size: 14px; border-radius: 6px;">\${escapeHtml(actionText)}</a>
+            </div>
+          \` : ""}
+        </div>
+
+        <div style="background-color: #f1f5f9; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
+          <p style="margin: 0 0 8px; font-size: 13px; color: #64748b;">Este correo es de generación automática y no se debe responder.</p>
+          <p style="margin: 0; font-size: 13px; color: #64748b; font-weight: 500;">Equipo de Excelencia Operacional</p>
+        </div>
+      </div>
+    </div>
+  \`.trim();
+}
+
 function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: string | null) {
   const stepLabel = payload.approval.step_name || payload.approval.step_code;
   const isInternalMobility = payload.request.request_context === "internal_mobility";
@@ -218,30 +267,13 @@ function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: s
         ["Inicio de contrato", formatDate(payload.request.start_date)],
       ];
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
-      <h2 style="margin-bottom: 12px;">${payload.is_reminder ? "Recordatorio: " : ""}${isInternalMobility ? "Aprobación pendiente de movilidad interna" : "Aprobación pendiente de contratación"}</h2>
-      <p>${escapeHtml(intro)}</p>
-      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-        <tbody>
-          ${details
-            .map(
-              ([label, value]) => `
-                <tr>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: 600; width: 180px;">${escapeHtml(label)}</td>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${escapeHtml(value)}</td>
-                </tr>
-              `,
-            )
-            .join("")}
-        </tbody>
-      </table>
-      ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Abrir bandeja de aprobación</a></p>` : ""}
-      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
-      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
-    </div>
-  `;
+  const html = buildEmailLayout(
+    `${payload.is_reminder ? "Recordatorio: " : ""}${isInternalMobility ? "Aprobación pendiente de movilidad interna" : "Aprobación pendiente de contratación"}`,
+    intro,
+    details,
+    actionUrl,
+    "Abrir bandeja de aprobación"
+  );
 
   const text = [
     intro,
@@ -295,30 +327,13 @@ function buildWhoApprovalEmail(payload: WhoApprovalPayload, actionUrl: string | 
     ["Área destino", payload.request.contract_name || "No informado"],
   ];
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
-      <h2 style="margin-bottom: 12px;">${payload.is_reminder ? "Recordatorio: " : ""}Evaluación de Antecedentes (WHO)</h2>
-      <p>${escapeHtml(intro)}</p>
-      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-        <tbody>
-          ${details
-            .map(
-              ([label, value]) => `
-                <tr>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: 600; width: 180px;">${escapeHtml(label)}</td>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${escapeHtml(value)}</td>
-                </tr>
-              `,
-            )
-            .join("")}
-        </tbody>
-      </table>
-      ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Abrir control de contrataciones</a></p>` : ""}
-      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
-      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
-    </div>
-  `;
+  const html = buildEmailLayout(
+    `${payload.is_reminder ? "Recordatorio: " : ""}Evaluación de Antecedentes (WHO)`,
+    intro,
+    details,
+    actionUrl,
+    "Abrir control de contrataciones"
+  );
 
   const text = [
     intro,
@@ -353,30 +368,14 @@ function buildRejectionEmail(payload: RejectionPayload, actionUrl: string | null
     ["Área destino", payload.request.contract_name || "No informado"],
   ];
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
-      <h2 style="margin-bottom: 12px; color: #b91c1c;">Solicitud rechazada</h2>
-      <p>${escapeHtml(intro)}</p>
-      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-        <tbody>
-          ${details
-            .map(
-              ([label, value]) => `
-                <tr>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: 600; width: 180px;">${escapeHtml(label)}</td>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${escapeHtml(value)}</td>
-                </tr>
-              `,
-            )
-            .join("")}
-        </tbody>
-      </table>
-      ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Ver detalle</a></p>` : ""}
-      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
-      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
-    </div>
-  `;
+  const html = buildEmailLayout(
+    "Solicitud rechazada",
+    intro,
+    details,
+    actionUrl,
+    "Ver detalle",
+    true
+  );
 
   const text = [
     intro,
@@ -424,30 +423,13 @@ function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, action
         ["Inicio de contrato", formatDate(payload.request.start_date)],
       ];
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #0f172a; line-height: 1.5;">
-      <h2 style="margin-bottom: 12px;">${isInternalMobility ? "Nuevo caso de movilidad interna para Reclutamiento" : "Nuevo caso para Reclutamiento"}</h2>
-      <p>${escapeHtml(intro)}</p>
-      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-        <tbody>
-          ${details
-            .map(
-              ([label, value]) => `
-                <tr>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: 600; width: 180px;">${escapeHtml(label)}</td>
-                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${escapeHtml(value)}</td>
-                </tr>
-              `,
-            )
-            .join("")}
-        </tbody>
-      </table>
-      ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 10px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px;">Abrir control de contrataciones</a></p>` : ""}
-      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Este correo es de generación automática y no se debe responder.</p>
-      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Atte.,<br/>Equipo de Excelencia Operacional</p>
-    </div>
-  `;
+  const html = buildEmailLayout(
+    isInternalMobility ? "Nuevo caso de movilidad interna para Reclutamiento" : "Nuevo caso para Reclutamiento",
+    intro,
+    details,
+    actionUrl,
+    "Abrir control de contrataciones"
+  );
 
   const text = [
     intro,
