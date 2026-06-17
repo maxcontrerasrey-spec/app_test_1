@@ -48,12 +48,12 @@ export function BiDashboardPage() {
         </p>
       </div>
 
-      <section className="tracking-panel" style={{ marginBottom: "1.5rem" }}>
+      <section style={{ marginBottom: "1.5rem" }}>
         <div className="approval-chip-row">
           {BI_VIEWS.map((item) => (
             <button
               key={item.key}
-              className={`chip ${activeView === item.key ? "selected" : ""}`}
+              className={`approval-chip ${activeView === item.key ? "tracking-kpi-card-active" : ""}`}
               onClick={() => navigate(`/bi/${item.key}`)}
             >
               {item.label}
