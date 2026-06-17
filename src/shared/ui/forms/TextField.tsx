@@ -22,6 +22,7 @@ type TextFieldProps = {
   autoComplete?: HTMLInputAutoCompleteAttribute;
   hasError?: boolean;
   className?: string;
+  hint?: string;
 };
 
 export function TextField({
@@ -39,7 +40,8 @@ export function TextField({
   inputMode,
   autoComplete,
   hasError = false,
-  className = ""
+  className = "",
+  hint
 }: TextFieldProps) {
   return (
     <div className={`field-group ${className}`.trim()}>
@@ -61,6 +63,7 @@ export function TextField({
         inputMode={inputMode}
         autoComplete={autoComplete}
       />
+      {hint ? <p className="field-hint">{hint}</p> : null}
     </div>
   );
 }

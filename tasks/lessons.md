@@ -259,6 +259,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si la distancia entre siblings no se percibe igual, conviene mover la responsabilidad al layout principal**. Un `row-gap` único en el contenedor evita diferencias entre secciones grid/flex.
 - **Cuando el usuario pide misma distancia para todo, la solución debe ser estructural**. No se resuelve afinando una sección; se resuelve con una regla única para todas.
 
+## 68. Una pantalla de configuración operativa no puede depender de texto libre ni de semántica implícita
+
+- **Si el usuario debe adivinar qué significa cada campo, el contrato está incompleto aunque el CRUD funcione**. La configuración crítica debe explicar inline qué dato pide, de dónde se alimenta y en qué tabla o regla impacta.
+- **Los enums operativos no deben quedar como `TextField` salvo justificación fuerte**. Tipos como `site_type` o `category` deben salir de metadata versionada en backend para que frontend y SQL no deriven catálogos distintos.
+- **La autodocumentación útil nace del mismo payload de setup**. Si React inventa hints por su cuenta y SQL evoluciona aparte, la pantalla vuelve a mentir con el tiempo. Lo correcto es exponer `field_guides` y catálogos controlados desde la RPC de configuración.
+
 ## 22. Evolución ERP: el estado remoto debe salir de `useState` manual
 
 - **Cuando un módulo ya combina carga inicial, caché implícita, refresh manual y mutaciones con recarga, es señal de migrarlo a TanStack Query**.

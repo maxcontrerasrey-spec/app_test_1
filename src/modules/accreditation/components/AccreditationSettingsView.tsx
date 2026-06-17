@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { SelectField, TextField } from "../../../shared/ui";
+import { SearchableSelectField, SelectField, type SelectOption, TextField } from "../../../shared/ui";
 import { invalidateAccreditationQueries, useAccreditationSetupCatalogs } from "../hooks/useAccreditationQueries";
 import {
   saveAccreditationMatrixRule,
   saveAccreditationRequirement,
   saveAccreditationSite
 } from "../services/accreditationApi";
-import type { AccreditationMatrixRule, AccreditationRequirement, AccreditationSite } from "../types";
+import type { AccreditationFieldGuide, AccreditationMatrixRule, AccreditationRequirement, AccreditationSite } from "../types";
 
 const defaultSiteForm = {
   siteId: "",
@@ -41,6 +41,32 @@ const defaultMatrixForm = {
   notes: ""
 };
 
+const fallbackSiteTypeOptions: SelectOption[] = [
+  { value: "contract", label: "Contrato" },
+  { value: "cost_center", label: "Centro de costo" },
+  { value: "project", label: "Proyecto" },
+  { value: "site", label: "Instalacion" },
+  { value: "other", label: "Otro" }
+];
+
+const fallbackRequirementCategoryOptions: SelectOption[] = [
+  { value: "general", label: "General" },
+  { value: "documental", label: "Documental" },
+  { value: "seguridad", label: "Seguridad" },
+  { value: "salud", label: "Salud" },
+  { value: "operacional", label: "Operacional" },
+  { value: "habilitante", label: "Habilitante" }
+];
+
+function getFieldHint(guides: AccreditationFieldGuide[], key: string, fallback?: string) {
+  const guide = guides.find((item) => item.key === key);
+  if (!guide) {
+    return fallback;
+  }
+
+  return `${guide.description} Fuente: ${guide.source}. Guarda en ${guide.target}.`;
+}
+
 export function AccreditationSettingsView() {
   const queryClient = useQueryClient();
   const setupQuery = useAccreditationSetupCatalogs();
@@ -59,6 +85,15 @@ export function AccreditationSettingsView() {
     [setupQuery.data?.sites]
   );
 
+  const siteTypeOptions = useMemo(() => {
+    const options = setupQuery.data?.metadata.siteTypes ?? [];
+    if (!options.length) {
+      return fallbackSiteTypeOptions;
+    }
+
+    return options.map((option) => ({ value: option.value, label: option.label }));
+  }, [setupQuery.data?.metadata.siteTypes]);
+
   const requirementOptions = useMemo(
     () =>
       (setupQuery.data?.requirements ?? []).map((requirement) => ({
@@ -67,6 +102,33 @@ export function AccreditationSettingsView() {
       })),
     [setupQuery.data?.requirements]
   );
+
+  const requirementCategoryOptions = useMemo(() => {
+    const options = setupQuery.data?.metadata.requirementCategories ?? [];
+    if (!options.length) {
+      return fallbackRequirementCategoryOptions;
+    }
+
+    return options.map((option) => ({ value: option.value, label: option.label }));
+  }, [setupQuery.data?.metadata.requirementCategories]);
+
+  const matrixJobTitleOptions = useMemo(() => {
+    const bukOptions = setupQuery.data?.bukJobTitles ?? [];
+    const selectedOption =
+      matrixForm.jobTitle.trim() && !bukOptions.some((option) => option.value === matrixForm.jobTitle)
+        ? [{ value: matrixForm.jobTitle, label: `${matrixForm.jobTitle} · manual` }]
+        : [];
+
+    return [
+      { value: "", label: "Todos los cargos de la faena" },
+      ...selectedOption,
+      ...bukOptions
+    ];
+  }, [matrixForm.jobTitle, setupQuery.data?.bukJobTitles]);
+
+  const siteGuides = setupQuery.data?.metadata.fieldGuides.site ?? [];
+  const requirementGuides = setupQuery.data?.metadata.fieldGuides.requirement ?? [];
+  const matrixGuides = setupQuery.data?.metadata.fieldGuides.matrix ?? [];
 
   async function handleSaveSite() {
     setIsSaving(true);
@@ -180,6 +242,9 @@ export function AccreditationSettingsView() {
   return (
     <section className="tracking-panel accreditation-panel">
       {feedback ? <p className="tracking-filter-caption">{feedback}</p> : null}
+      <p className="tracking-filter-caption">
+        Cada campo explica que dato pide, desde donde nace y en que tabla queda persistido.
+      </p>
 
       <div className="accreditation-settings-grid">
         <article className="info-card accreditation-settings-card">
@@ -190,24 +255,29 @@ export function AccreditationSettingsView() {
               label="Codigo"
               value={siteForm.code}
               onChange={(event) => setSiteForm((current) => ({ ...current, code: event.target.value }))}
+              hint={getFieldHint(siteGuides, "code")}
             />
             <TextField
               id="accreditation-site-name"
               label="Nombre"
               value={siteForm.name}
               onChange={(event) => setSiteForm((current) => ({ ...current, name: event.target.value }))}
+              hint={getFieldHint(siteGuides, "name")}
             />
-            <TextField
+            <SelectField
               id="accreditation-site-type"
               label="Tipo"
               value={siteForm.siteType}
               onChange={(event) => setSiteForm((current) => ({ ...current, siteType: event.target.value }))}
+              options={siteTypeOptions}
+              hint={getFieldHint(siteGuides, "site_type")}
             />
             <TextField
               id="accreditation-site-contract"
               label="Codigo contrato"
               value={siteForm.contractCode}
               onChange={(event) => setSiteForm((current) => ({ ...current, contractCode: event.target.value }))}
+              hint={getFieldHint(siteGuides, "contract_code")}
             />
           </div>
           <div className="field-grid">
@@ -216,12 +286,14 @@ export function AccreditationSettingsView() {
               label="Codigo area"
               value={siteForm.areaCode}
               onChange={(event) => setSiteForm((current) => ({ ...current, areaCode: event.target.value }))}
+              hint={getFieldHint(siteGuides, "area_code")}
             />
             <TextField
               id="accreditation-site-description"
               label="Descripcion"
               value={siteForm.description}
               onChange={(event) => setSiteForm((current) => ({ ...current, description: event.target.value }))}
+              hint={getFieldHint(siteGuides, "description")}
             />
           </div>
           <div className="approval-chip-row">
@@ -251,18 +323,22 @@ export function AccreditationSettingsView() {
               label="Codigo"
               value={requirementForm.code}
               onChange={(event) => setRequirementForm((current) => ({ ...current, code: event.target.value }))}
+              hint={getFieldHint(requirementGuides, "code")}
             />
             <TextField
               id="accreditation-requirement-name"
               label="Nombre"
               value={requirementForm.name}
               onChange={(event) => setRequirementForm((current) => ({ ...current, name: event.target.value }))}
+              hint={getFieldHint(requirementGuides, "name")}
             />
-            <TextField
+            <SelectField
               id="accreditation-requirement-category"
               label="Categoria"
               value={requirementForm.category}
               onChange={(event) => setRequirementForm((current) => ({ ...current, category: event.target.value }))}
+              options={requirementCategoryOptions}
+              hint={getFieldHint(requirementGuides, "category")}
             />
             <TextField
               id="accreditation-requirement-alert"
@@ -271,6 +347,8 @@ export function AccreditationSettingsView() {
               onChange={(event) =>
                 setRequirementForm((current) => ({ ...current, alertDaysBeforeExpiry: event.target.value }))
               }
+              inputMode="numeric"
+              hint={getFieldHint(requirementGuides, "alert_days_before_expiry")}
             />
           </div>
           <div className="field-grid">
@@ -279,12 +357,15 @@ export function AccreditationSettingsView() {
               label="Vigencia dias"
               value={requirementForm.validityDays}
               onChange={(event) => setRequirementForm((current) => ({ ...current, validityDays: event.target.value }))}
+              inputMode="numeric"
+              hint={getFieldHint(requirementGuides, "validity_days")}
             />
             <TextField
               id="accreditation-requirement-description"
               label="Descripcion"
               value={requirementForm.description}
               onChange={(event) => setRequirementForm((current) => ({ ...current, description: event.target.value }))}
+              hint={getFieldHint(requirementGuides, "description")}
             />
           </div>
           <div className="accreditation-toggle-row">
@@ -298,6 +379,7 @@ export function AccreditationSettingsView() {
               />
               Obligatorio
             </label>
+            <span className="accreditation-toggle-hint">{getFieldHint(requirementGuides, "is_mandatory")}</span>
             <label>
               <input
                 type="checkbox"
@@ -308,6 +390,7 @@ export function AccreditationSettingsView() {
               />
               Requiere vencimiento
             </label>
+            <span className="accreditation-toggle-hint">{getFieldHint(requirementGuides, "requires_expiry_date")}</span>
             <label>
               <input
                 type="checkbox"
@@ -318,6 +401,7 @@ export function AccreditationSettingsView() {
               />
               Bloquea acreditacion
             </label>
+            <span className="accreditation-toggle-hint">{getFieldHint(requirementGuides, "blocks_accreditation")}</span>
           </div>
           <div className="approval-chip-row">
             <button
@@ -359,6 +443,7 @@ export function AccreditationSettingsView() {
             onChange={(event) => setMatrixForm((current) => ({ ...current, siteId: event.target.value }))}
             options={siteOptions}
             placeholder="Selecciona una faena"
+            hint={getFieldHint(matrixGuides, "site_id")}
           />
           <SelectField
             id="accreditation-matrix-requirement"
@@ -367,25 +452,31 @@ export function AccreditationSettingsView() {
             onChange={(event) => setMatrixForm((current) => ({ ...current, requirementId: event.target.value }))}
             options={requirementOptions}
             placeholder="Selecciona un requisito"
+            hint={getFieldHint(matrixGuides, "requirement_id")}
           />
-          <TextField
+          <SearchableSelectField
             id="accreditation-matrix-job-title"
             label="Cargo exacto"
             value={matrixForm.jobTitle}
             onChange={(event) => setMatrixForm((current) => ({ ...current, jobTitle: event.target.value }))}
-            placeholder="Vacío = aplica a toda la faena"
+            options={matrixJobTitleOptions}
+            placeholder="Todos los cargos o busca uno de BUK"
+            hint={getFieldHint(matrixGuides, "job_title", "Si queda vacio, la regla aplica a toda la faena.")}
           />
           <TextField
             id="accreditation-matrix-sort-order"
             label="Orden"
             value={matrixForm.sortOrder}
             onChange={(event) => setMatrixForm((current) => ({ ...current, sortOrder: event.target.value }))}
+            inputMode="numeric"
+            hint={getFieldHint(matrixGuides, "sort_order")}
           />
           <TextField
             id="accreditation-matrix-notes"
             label="Notas"
             value={matrixForm.notes}
             onChange={(event) => setMatrixForm((current) => ({ ...current, notes: event.target.value }))}
+            hint={getFieldHint(matrixGuides, "notes")}
           />
         </div>
 

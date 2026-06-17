@@ -218,6 +218,21 @@
 - [x] Implementar selección múltiple y exportación XLS por folios seleccionados o por período desde historial
 - [x] Validar typecheck, diff y empujar el cambio a `main`
 
+## Claridad contractual y UX de Configuración en Acreditaciones
+
+- [x] Auditar la pantalla de configuración para identificar campos ambiguos, texto libre riesgoso y falta de trazabilidad sobre origen/destino de datos
+- [x] Versionar una migración que exponga metadata de configuración en backend y endurezca validaciones de faenas, requisitos y matriz
+- [x] Refactorizar la UI para consumir metadata desde Supabase, reemplazar enums libres por catálogos controlados y explicar cada campo inline
+- [x] Aplicar la migración directamente en Supabase y verificar presencia remota de metadata y validaciones
+- [x] Validar `npm run audit:migrations`, `npx tsc -b`, `npm run build` y `git diff --check`
+
+## Resultado de claridad contractual y UX de Configuración en Acreditaciones
+
+- Se agregó la migración [`20260617134339_clarify_accreditation_setup_contracts.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:1), aplicada en Supabase, para endurecer las RPCs de configuración y hacer explícito el contrato autodocumentado del módulo.
+- [`get_accreditation_setup_catalogs()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:279) ahora devuelve `metadata.site_types`, `metadata.requirement_categories` y `metadata.field_guides`, dejando versionado qué pide cada campo, de dónde nace y dónde se persiste.
+- [`upsert_accreditation_site(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:3), [`upsert_accreditation_requirement(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:86) y [`upsert_accreditation_matrix_rule(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:191) ahora fallan con mensajes de negocio claros ante códigos vacíos, tipos inválidos o referencias inactivas.
+- En frontend, [`AccreditationSettingsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/accreditation/components/AccreditationSettingsView.tsx:1) consume esa metadata real: `Tipo` y `Categoria` dejaron de ser texto libre, `Cargo exacto` pasó a buscarse contra cargos activos BUK y cada campo muestra inline su fuente y tabla destino.
+
 ## Auditoría integral del flujo de aprobaciones de incentivos
 
 - [x] Mapear el flujo actual de aprobaciones de incentivos en frontend y Supabase, identificando la causa raíz del error `approval_id is ambiguous`

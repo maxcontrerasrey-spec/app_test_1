@@ -11,6 +11,7 @@ type SelectFieldProps = {
   disabled?: boolean;
   className?: string;
   renderOption?: (opt: SelectOption) => React.ReactNode;
+  hint?: string;
 };
 
 export function SearchableSelectField({
@@ -22,7 +23,8 @@ export function SearchableSelectField({
   placeholder = "Seleccione una opción",
   disabled = false,
   className = "",
-  renderOption
+  renderOption,
+  hint
 }: SelectFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -145,6 +147,7 @@ export function SearchableSelectField({
           )}
         </ul>
       )}
+      {hint ? <p className="field-hint">{hint}</p> : null}
     </div>
   );
 }

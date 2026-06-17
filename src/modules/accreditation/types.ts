@@ -44,11 +44,37 @@ export type AccreditationMatrixRule = {
   isActive: boolean;
 };
 
+export type AccreditationSetupOption = {
+  value: string;
+  label: string;
+  description: string;
+};
+
+export type AccreditationFieldGuide = {
+  key: string;
+  label: string;
+  required: boolean;
+  source: string;
+  target: string;
+  description: string;
+};
+
+export type AccreditationSetupMetadata = {
+  siteTypes: AccreditationSetupOption[];
+  requirementCategories: AccreditationSetupOption[];
+  fieldGuides: {
+    site: AccreditationFieldGuide[];
+    requirement: AccreditationFieldGuide[];
+    matrix: AccreditationFieldGuide[];
+  };
+};
+
 export type AccreditationSetupCatalogs = {
   sites: AccreditationSite[];
   requirements: AccreditationRequirement[];
   matrixRules: AccreditationMatrixRule[];
   bukJobTitles: Array<{ value: string; label: string }>;
+  metadata: AccreditationSetupMetadata;
 };
 
 export type AccreditationDashboardSummary = {

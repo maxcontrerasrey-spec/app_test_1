@@ -40,8 +40,29 @@ function readNumber(value: unknown) {
   return typeof value === "number" ? value : Number(value ?? 0);
 }
 
+function mapSetupOption(item: Record<string, unknown>) {
+  return {
+    value: readText(item.value),
+    label: readText(item.label),
+    description: readText(item.description)
+  };
+}
+
+function mapFieldGuide(item: Record<string, unknown>) {
+  return {
+    key: readText(item.key),
+    label: readText(item.label),
+    required: readBoolean(item.required),
+    source: readText(item.source),
+    target: readText(item.target),
+    description: readText(item.description)
+  };
+}
+
 function mapSetupCatalogs(payload: unknown): AccreditationSetupCatalogs {
   const source = asRecord(payload);
+  const metadata = asRecord(source.metadata);
+  const fieldGuides = asRecord(metadata.field_guides);
 
   return {
     sites: asArray<Record<string, unknown>>(source.sites).map((item) => ({
@@ -84,7 +105,16 @@ function mapSetupCatalogs(payload: unknown): AccreditationSetupCatalogs {
     bukJobTitles: asArray<Record<string, unknown>>(source.buk_job_titles).map((item) => ({
       value: readText(item.value),
       label: readText(item.label)
-    }))
+    })),
+    metadata: {
+      siteTypes: asArray<Record<string, unknown>>(metadata.site_types).map(mapSetupOption),
+      requirementCategories: asArray<Record<string, unknown>>(metadata.requirement_categories).map(mapSetupOption),
+      fieldGuides: {
+        site: asArray<Record<string, unknown>>(fieldGuides.site).map(mapFieldGuide),
+        requirement: asArray<Record<string, unknown>>(fieldGuides.requirement).map(mapFieldGuide),
+        matrix: asArray<Record<string, unknown>>(fieldGuides.matrix).map(mapFieldGuide)
+      }
+    }
   };
 }
 

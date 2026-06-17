@@ -15,6 +15,7 @@ type SelectFieldProps = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  hint?: string;
 };
 
 export function SelectField({
@@ -25,7 +26,8 @@ export function SelectField({
   options,
   placeholder = "Seleccione una opción",
   disabled = false,
-  className = ""
+  className = "",
+  hint
 }: SelectFieldProps) {
   return (
     <div className={`field-group ${className}`.trim()}>
@@ -46,6 +48,7 @@ export function SelectField({
           </option>
         ))}
       </select>
+      {hint ? <p className="field-hint">{hint}</p> : null}
     </div>
   );
 }
