@@ -398,12 +398,21 @@
 }
 
 .dashboard-operations-item {
+  position: relative;
   display: grid;
   gap: 0px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: rgba(var(--surface-rgb), 0.56);
-  box-shadow: inset 0 1px 0 rgba(var(--surface-rgb), 0.48);
+  padding: 4px 8px 8px 4px;
+  background: transparent;
+}
+
+.dashboard-operations-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, rgba(188, 200, 221, 0.4), transparent);
 }
 
 .dashboard-operations-label {
