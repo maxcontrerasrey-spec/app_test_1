@@ -265,6 +265,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los enums operativos no deben quedar como `TextField` salvo justificación fuerte**. Tipos como `site_type` o `category` deben salir de metadata versionada en backend para que frontend y SQL no deriven catálogos distintos.
 - **La autodocumentación útil nace del mismo payload de setup**. Si React inventa hints por su cuenta y SQL evoluciona aparte, la pantalla vuelve a mentir con el tiempo. Lo correcto es exponer `field_guides` y catálogos controlados desde la RPC de configuración.
 
+## 69. En checklists documentales de reclutamiento, “aplica” y “es obligatorio” son dos dimensiones distintas
+
+- **Si el negocio pide que un documento se vea para todos pero solo bloquee a un subconjunto, no basta con tocar `required_*`**. También hay que abrir el `applies_to_*` del grupo adicional o el documento ni siquiera aparece en el checklist.
+- **La validación correcta es contractual y no visual**. Después de migrar, hay que revisar en base que cada documento quede con `applies_to_other = true` y `required_for_other = false` cuando se pidió “opcional para otros cargos”.
+
+## 70. Un panel lateral seleccionado desde una grilla no debe cerrarse por listeners globales si el usuario pidió toggle explícito
+
+- **Cerrar detalle por click fuera y cerrarlo al volver a pinchar la misma fila son dos UX distintas**. Si el requerimiento es toggle explícito desde la tabla, cualquier `mousedown` global o click del contenedor rompe el contrato.
+- **La forma simple y robusta es concentrar la deselección en la misma fila origen**. Si la fila ya está seleccionada, un segundo click limpia selección; cualquier otro click fuera del listado no debe mutar estado.
+
 ## 22. Evolución ERP: el estado remoto debe salir de `useState` manual
 
 - **Cuando un módulo ya combina carga inicial, caché implícita, refresh manual y mutaciones con recarga, es señal de migrarlo a TanStack Query**.

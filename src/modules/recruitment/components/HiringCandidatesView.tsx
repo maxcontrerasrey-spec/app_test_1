@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
   formatRut,
@@ -68,8 +68,6 @@ export function HiringCandidatesView({
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
   const [candidateStageFilter, setCandidateStageFilter] =
     useState<(typeof candidateStageFilterOptions)[number]["key"]>("active");
-  const layoutRef = useRef<HTMLDivElement | null>(null);
-
   const candidateIntakeCases = useMemo(
     () =>
       activeCases.filter(
@@ -110,30 +108,6 @@ export function HiringCandidatesView({
   const selectedCandidate =
     selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
-
-  useEffect(() => {
-    if (!selectedCandidateBoardRow || isTransferModalOpen) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      const layoutNode = layoutRef.current;
-      if (!layoutNode) {
-        return;
-      }
-
-      if (layoutNode.contains(event.target as Node)) {
-        return;
-      }
-
-      onSelectCandidate("", "");
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-    };
-  }, [onSelectCandidate, selectedCandidateBoardRow, isTransferModalOpen]);
 
   return (
     <>
@@ -181,14 +155,8 @@ export function HiringCandidatesView({
       </div>
 
       <div 
-        ref={layoutRef}
         className="control-layout" 
         style={!selectedCandidateBoardRow ? { gridTemplateColumns: "1fr" } : undefined}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            onSelectCandidate("", "");
-          }
-        }}
       >
         <div className="tracking-table-wrap">
           {showCandidateForm ? (
@@ -221,9 +189,14 @@ export function HiringCandidatesView({
                           ? "tracking-row-selected"
                           : ""
                       }
-                      onClick={() =>
-                        onSelectCandidate(candidate.id, candidate.recruitment_case_id)
-                      }
+                      onClick={() => {
+                        if (candidate.id === selectedCandidateBoardRow?.id) {
+                          onSelectCandidate("", "");
+                          return;
+                        }
+
+                        onSelectCandidate(candidate.id, candidate.recruitment_case_id);
+                      }}
                     >
                       <td>
                         <strong>{candidate.full_name}</strong>

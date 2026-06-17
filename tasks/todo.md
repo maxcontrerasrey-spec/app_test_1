@@ -233,6 +233,19 @@
 - [`upsert_accreditation_site(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:3), [`upsert_accreditation_requirement(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:86) y [`upsert_accreditation_matrix_rule(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617134339_clarify_accreditation_setup_contracts.sql:191) ahora fallan con mensajes de negocio claros ante códigos vacíos, tipos inválidos o referencias inactivas.
 - En frontend, [`AccreditationSettingsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/accreditation/components/AccreditationSettingsView.tsx:1) consume esa metadata real: `Tipo` y `Categoria` dejaron de ser texto libre, `Cargo exacto` pasó a buscarse contra cargos activos BUK y cada campo muestra inline su fuente y tabla destino.
 
+## Ajuste pendiente solicitado: documentos opcionales para no conductores y toggle explícito del lateral en candidatos
+
+- [x] Extender en backend los documentos de conductor solicitados para que también apliquen a cargos no conductores, pero como opcionales
+- [x] Corregir la interacción de `Control de candidatos` para que el lateral solo cierre al pinchar nuevamente la fila izquierda seleccionada
+- [x] Aplicar la migración directamente en Supabase y validar el contrato efectivo en `document_types`
+- [x] Validar `npm run audit:migrations`, `npx tsc -b`, `npm run build` y `git diff --check`
+
+## Resultado de documentos opcionales para no conductores y toggle explícito del lateral en candidatos
+
+- Se agregó la migración [`20260617141731_extend_candidate_driver_docs_to_other_roles.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617141731_extend_candidate_driver_docs_to_other_roles.sql:1), ya aplicada en Supabase, para extender a cargos no conductores como opcionales estos documentos: `Licencia de conducir`, `Hoja de vida del conductor`, `Examen Teórico de Instructor`, `Examen Práctico de Instructor`, `Examen Preocupacional` y `Psicosensotecnico`.
+- La verificación remota sobre `public.document_types` confirmó el contrato pedido: en los seis casos quedó `applies_to_other = true` y `required_for_other = false`, preservando `required_for_driver = true` para conductores.
+- [`HiringCandidatesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringCandidatesView.tsx:1) dejó de cerrar el lateral por click fuera. Se eliminó el listener global y la deselección ahora solo ocurre al pinchar nuevamente la misma fila seleccionada de la tabla izquierda.
+
 ## Auditoría integral del flujo de aprobaciones de incentivos
 
 - [x] Mapear el flujo actual de aprobaciones de incentivos en frontend y Supabase, identificando la causa raíz del error `approval_id is ambiguous`
