@@ -34,9 +34,6 @@ export const routeModuleImporters = {
   aiAssistantHome: async () => ({
     default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
   }),
-  labsPage: async () => ({
-    default: (await import("../../modules/labs/pages/LabsPage")).LabsPage
-  }),
   onboardingModuleLayout: async () => ({
     default: (await import("../../modules/operational_onboarding/pages/OnboardingModuleLayout"))
       .OnboardingModuleLayout
@@ -98,10 +95,6 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/copiloto-ia")) {
     return ["aiAssistantHome"];
-  }
-
-  if (normalizedPath.startsWith("/labs")) {
-    return ["labsPage"];
   }
 
   if (normalizedPath.startsWith("/bi")) {

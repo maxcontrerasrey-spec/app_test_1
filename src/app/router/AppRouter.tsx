@@ -25,7 +25,6 @@ const HumanResourcesDashboard = lazyWithRetry(
 );
 const RosterPage = lazyWithRetry("roster-page", routeModuleImporters.rosterPage);
 const AIAssistantHome = lazyWithRetry("ai-assistant-page", routeModuleImporters.aiAssistantHome);
-const LabsPage = lazyWithRetry("labs-page", routeModuleImporters.labsPage);
 const OnboardingModuleLayout = lazyWithRetry(
   "onboarding-module-layout",
   routeModuleImporters.onboardingModuleLayout
@@ -164,14 +163,6 @@ export function AppRouter() {
                 <RoleProtectedRoute moduleCode="jornadas_turnos">
                   <RosterPage />
                 </RoleProtectedRoute>
-              }
-            />
-            <Route
-              path="/labs"
-              element={
-                <AdminProtectedRoute>
-                  <LabsPage />
-                </AdminProtectedRoute>
               }
             />
           </Route>

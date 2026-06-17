@@ -61,6 +61,25 @@ export const navigationModules: NavigationModule[] = [
     ]
   },
   {
+    label: "Recursos Humanos",
+    items: [
+      {
+        moduleCode: "jornadas_turnos",
+        to: "/roster",
+        label: "Jornadas y Turnos",
+        description: "Calendario operacional de pautas, descansos y excepciones por trabajador.",
+        iconKey: "calendar-clock"
+      },
+      {
+        moduleCode: "recursos_humanos",
+        to: "/recursos-humanos/incentivos",
+        label: "Gestión de Incentivos Extraordinarios",
+        description: "Registro y control de incentivos extraordinarios.",
+        iconKey: "wallet"
+      }
+    ]
+  },
+  {
     label: "Operaciones",
     items: [
       {
@@ -94,41 +113,21 @@ export const navigationModules: NavigationModule[] = [
     ]
   },
   {
-    label: "Recursos Humanos",
+    label: "Business Intelligence",
     items: [
       {
-        moduleCode: "jornadas_turnos",
-        to: "/roster",
-        label: "Jornadas y Turnos",
-        description: "Calendario operacional de pautas, descansos y excepciones por trabajador.",
-        iconKey: "calendar-clock"
-      },
-      {
-        moduleCode: "recursos_humanos",
-        to: "/recursos-humanos/incentivos",
-        label: "Gestión de Incentivos Extraordinarios",
-        description: "Registro y control de incentivos extraordinarios.",
-        iconKey: "wallet"
+        moduleCode: "bi_analytics",
+        to: "/bi/dotacion",
+        label: "Analítica de Dotación",
+        description: "KPIs operacionales, ausentismo, demografía y flujo de reclutamiento.",
+        iconKey: "bar-chart"
       },
       {
         moduleCode: "bi_analytics",
-        to: "/bi",
-        label: "Business Intelligence (BI)",
+        to: "/bi/incentivos",
+        label: "Análisis de Incentivos",
         description: "Dashboards analíticos de dotación, ausentismo e incentivos.",
-        iconKey: "bar-chart"
-      }
-    ]
-  },
-  {
-    label: "Labs",
-    adminOnly: true,
-    items: [
-      {
-        moduleCode: "operaciones", // Can be anything or omitted if adminOnly handles it, but using existing code to pass types
-        to: "/labs",
-        label: "NXTPAPER Test",
-        description: "Entorno de pruebas para la simulación visual E-Ink.",
-        iconKey: "flask"
+        iconKey: "trending-up"
       }
     ]
   }

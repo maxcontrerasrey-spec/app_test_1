@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useORION } from "../context/ORIONContext";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 export function AIChatWindow() {
   const [inputValue, setInputValue] = useState("");
@@ -48,9 +47,7 @@ export function AIChatWindow() {
           {messages.map((msg) => (
             <div key={msg.id} className={`orion-message ${msg.sender}`}>
               <div className="orion-message-content orion-markdown">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {msg.text}
-                </ReactMarkdown>
+                <MarkdownRenderer text={msg.text} fallback="Renderizando respuesta..." />
               </div>
             </div>
           ))}

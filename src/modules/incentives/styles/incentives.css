@@ -247,6 +247,27 @@
   width: 100%;
 }
 
+.hr-incentives-analytics-clear-button {
+  width: 3.2rem;
+  height: 3.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+.hr-incentives-analytics-clear-button:hover,
+.hr-incentives-analytics-clear-button:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
 .hr-incentives-analytics-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

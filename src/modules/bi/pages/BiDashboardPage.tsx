@@ -52,8 +52,10 @@ export function BiDashboardPage() {
         <div className="approval-chip-row">
           {BI_VIEWS.map((item) => (
             <button
+              type="button"
               key={item.key}
               className={`approval-chip ${activeView === item.key ? "tracking-kpi-card-active" : ""}`}
+              aria-current={activeView === item.key ? "page" : undefined}
               onClick={() => navigate(`/bi/${item.key}`)}
             >
               {item.label}

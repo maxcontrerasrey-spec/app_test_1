@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import orionLogo from "../../../assets/orion-logo.png";
 import { useORION } from "../context/ORIONContext";
 import { orionChatService } from "../services/orionChat";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 import "../styles/ai-assistant.css";
 import "../styles/orion-widget.css";
 
@@ -73,9 +72,7 @@ export function ORIONWidget() {
           {messages.map((msg) => (
             <div key={msg.id} className={`orion-message ${msg.sender}`}>
               <div className="orion-message-content orion-markdown">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {msg.text}
-                </ReactMarkdown>
+                <MarkdownRenderer text={msg.text} fallback="Renderizando respuesta..." />
               </div>
             </div>
           ))}

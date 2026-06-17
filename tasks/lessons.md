@@ -1087,3 +1087,27 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La vista operativa no debe penalizar la carga ni ensuciar la arquitectura con herramientas analíticas.** Un dashboard de RRHH enfocado en aprobar solicitudes no debería verse forzado a importar pesadas librerías de gráficos (ECharts) ni a lidiar con roles analíticos gerenciales, ya que ralentiza el trabajo principal de operaciones.
 - **Los módulos analíticos (BI) tienen su propio ciclo de vida y políticas de caché.** Una tabla de solicitudes necesita *Realtime* (websockets) para evitar colisiones entre aprobadores; sin embargo, los tableros analíticos demandan polling mitigado (`staleTime: 5 mins`) para no hacer DDoSing a la base de datos con `count(*)` masivos en cada re-render. Separar los módulos permite asignar estrategias de caché a nivel de carpeta de forma natural.
 - **Tipar vistas de lectura es igual de crítico que tipar tablas transaccionales.** Aunque los *views* de Supabase retornen JSON planos (`Record<string, unknown>`), el frontend no debe inyectarlos ciegamente en ECharts. Los mappers explícitos (e.g. `mapHeadcountByContract`) y contratos estrictos (`interface BukBiHeadcountByContract`) previenen que un campo renombrado en el *view* explote en silencio durante el runtime del navegador.
+
+## 106. Un ajuste visual pequeño no justifica degradar semántica ni mover estados interactivos a inline styles
+
+- **Si un control ya pertenece a un módulo estable, su hover/focus debe vivir en CSS del módulo, no en mutaciones DOM dentro de `onMouseEnter/onMouseLeave`.** Ese patrón dispersa tokens visuales, dificulta auditoría y vuelve más frágil cualquier refactor posterior.
+- **Cambiar un botón textual por un ícono exige reforzar accesibilidad explícita.** `title` no reemplaza `aria-label`; además, el control debe conservar semántica de botón real y foco visible para no degradar navegación asistiva.
+- **Los tabs o chips de navegación también necesitan semántica mínima aunque “solo cambien la vista”.** `type="button"` evita submits accidentales y `aria-current` deja claro cuál sección está activa cuando la navegación se renderiza dentro de shells reutilizados.
+
+## 107. La deuda de performance real no se tapa subiendo el límite del warning; se saca del bundle base y se modulariza el vendor
+
+- **Si una dependencia pesada vive detrás de una ruta opcional o un widget condicional, no puede importarse eager desde el shell principal.** En este repo, ORION y `react-markdown` debían cargarse diferido; de otro modo, el costo del copiloto se pagaba incluso fuera del módulo AI.
+- **Un wrapper compartido pierde su razón de existir si los módulos de negocio vuelven a importar el vendor directo.** BI debe usar el mismo `EChartSurface` que Incentivos/Labs; permitir `import ReactECharts from "echarts-for-react"` en componentes de negocio reintroduce peso y divergencia.
+- **Con ECharts, “lazy” no basta si el runtime sigue trayendo el paquete completo.** El estándar alto es `echarts/core` + registro explícito de charts/componentes realmente usados.
+- **Cuando un vendor sigue grande aun modularizado, la separación debe seguir el grafo real de dependencias, no nombres genéricos.** Partir `echarts`, `zrender` y el wrapper React en chunks distintos elimina vendors monolíticos y vuelve auditable el costo de cada capa.
+
+## 108. En dashboards híbridos, los filtros analíticos deben tolerar drift contractual controlado y la navegación no debe dejar módulos huérfanos
+
+- **Si una RPC analítica cambia el nombre de una clave de filtros (`types` vs `incentive_types`) y el backend vigente ya está desplegado, el frontend no puede asumir una sola forma mientras exista historial de migraciones con ambos contratos.** El mapper debe aceptar explícitamente ambas variantes hasta que el contrato quede consolidado.
+- **Un módulo promovido a primer nivel no puede seguir colgado visualmente de otro dominio por inercia de navegación.** Si Business Intelligence es transversal, debe vivir como módulo propio al nivel de Operaciones, no como subopción de RRHH.
+- **Eliminar un sandbox o laboratorio exige limpiar también preload, rutas y archivos muertos.** Quitar solo el botón de navegación deja deuda de bundle, paths huérfanos y superficies mantenibles a medias.
+
+## 109. El orden del top nav debe salir de una sola fuente de verdad; los accesos especiales no pueden romper la secuencia operacional
+
+- **Si un acceso especial como ORION debe existir en la barra principal, su posición final debe respetar el orden del menú, no inyectarse “a mano” antes de los módulos visibles.** De otro modo, el orden percibido por el usuario diverge del orden declarado por producto.
+- **La secuencia top-level es una decisión operacional, no cosmética.** Si el negocio define `Inicio -> Reclutamiento -> Recursos Humanos -> Operaciones -> Business Intelligence -> ORION`, la implementación debe reflejarla exactamente en `navigationModules` y en cualquier link extra del shell.

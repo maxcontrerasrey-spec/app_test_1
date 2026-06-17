@@ -1,6 +1,8 @@
-import ReactECharts from "echarts-for-react";
+import { useMemo } from "react";
+import type { EChartsOption } from "echarts";
 import { useBiRecruitmentPipeline } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
+import { EChartSurface } from "../../../shared/ui";
 
 export function BiRecruitmentFunnel() {
   const { data, isLoading } = useBiRecruitmentPipeline();
@@ -9,11 +11,11 @@ export function BiRecruitmentFunnel() {
   const isDark = theme === "dark";
   const textColor = isDark ? "#E2E8F0" : "#1E293B";
 
-  const renderChart = () => {
-    if (isLoading) return <div className="bi-loading-state">Cargando datos...</div>;
-    if (!data || data.length === 0) return <div className="bi-empty-state">Sin datos de reclutamiento</div>;
+  const chartOption = useMemo<EChartsOption | null>(() => {
+    if (!data || data.length === 0) {
+      return null;
+    }
 
-    // Agrupar todos los contratos para un Funnel general
     const stageCounts: Record<string, number> = {
       applied: 0,
       interviewed: 0,
@@ -34,9 +36,9 @@ export function BiRecruitmentFunnel() {
       { value: stageCounts.interviewed || 0, name: "Entrevistados" },
       { value: stageCounts.offered || 0, name: "Ofertados" },
       { value: stageCounts.hired || 0, name: "Contratados" }
-    ].sort((a, b) => b.value - a.value); // Funnel typically needs descending order
+    ].sort((a, b) => b.value - a.value);
 
-    const options = {
+    return {
       tooltip: { trigger: "item", formatter: "{a} <br/>{b} : {c}", backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
       legend: { data: ["Aplicantes", "Entrevistados", "Ofertados", "Contratados"], textStyle: { color: textColor } },
       series: [
@@ -56,14 +58,19 @@ export function BiRecruitmentFunnel() {
         }
       ]
     };
-
-    return <ReactECharts option={options} style={{ height: "300px", width: "100%" }} />;
-  };
+  }, [data, isDark, textColor]);
 
   return (
     <div className="info-card">
       <h3 className="bi-chart-title">Embudo de Reclutamiento (General)</h3>
-      {renderChart()}
+      <EChartSurface
+        height={300}
+        option={chartOption ?? {}}
+        loading={isLoading}
+        empty={!chartOption}
+        emptyMessage="Sin datos de reclutamiento"
+        loadingMessage="Cargando datos..."
+      />
     </div>
   );
 }

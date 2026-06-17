@@ -17,6 +17,15 @@ export default defineConfig({
                     if (has("/node_modules/@mylinkpi/xlsx/")) {
                         return "xlsx-vendor";
                     }
+                    if (has("/node_modules/echarts-for-react/")) {
+                        return "echarts-react-vendor";
+                    }
+                    if (has("/node_modules/zrender/")) {
+                        return "zrender-vendor";
+                    }
+                    if (has("/node_modules/echarts/")) {
+                        return "echarts-vendor";
+                    }
                     if (has("/node_modules/react/") ||
                         has("/node_modules/react-dom/") ||
                         has("/node_modules/react-router-dom/") ||

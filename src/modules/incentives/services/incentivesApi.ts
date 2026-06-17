@@ -391,6 +391,7 @@ function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
   const source = (payload ?? {}) as Record<string, unknown>;
   const summaryCards = (source.summary_cards ?? {}) as Record<string, unknown>;
   const filterOptions = (source.filter_options ?? {}) as Record<string, unknown>;
+  const rawTypeOptions = filterOptions.types ?? filterOptions.incentive_types;
 
   return {
     summaryCards: {
@@ -434,7 +435,7 @@ function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
         value: String(item.value ?? ""),
         label: String(item.label ?? "")
       })),
-      incentiveTypes: asArray<Record<string, unknown>>(filterOptions.incentive_types).map((item) => ({
+      incentiveTypes: asArray<Record<string, unknown>>(rawTypeOptions).map((item) => ({
         value: String(item.value ?? ""),
         label: String(item.label ?? "")
       })),

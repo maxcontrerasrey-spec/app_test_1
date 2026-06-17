@@ -2549,3 +2549,58 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se retiró la pestaña analítica de `HumanResourcesDashboard.tsx` aislando el dominio de RRHH para dejarlo netamente transaccional.
 - Se agregó un nuevo rol en `access.ts` (`bi_analytics`) para blindar el acceso gerencial al dashboard global de métricas.
 - La compilación `npx tsc -b` certificó cero errores en tipos, cumpliendo la política de estrictez de la base de código.
+
+## Revisión de estándar sobre ajustes UI recientes
+
+- [x] Auditar los últimos cambios de BI e Incentivos ya integrados en `main` para detectar deuda de estándar o accesibilidad.
+- [x] Eliminar estilos/hover inline evitables del filtro analítico de Incentivos y dejarlos gobernados por CSS del módulo.
+- [x] Endurecer semántica mínima de navegación/acciones (`type="button"`, `aria-label`, `aria-current`) en la superficie BI/Incentivos.
+- [x] Revalidar que TypeScript, build y el árbol git queden limpios tras el ajuste.
+
+## Resultado de revisión de estándar sobre ajustes UI recientes
+
+- La auditoría de los commits UI recientes no detectó regresiones funcionales, pero sí una deuda objetiva de estándar: el botón de limpiar filtros en analítica de Incentivos dependía de estilos inline y de mutación DOM por `onMouseEnter/onMouseLeave`.
+- Se normalizó ese control en [`IncentiveAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveAnalyticsView.tsx:578) y [`incentives.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/styles/incentives.css:249), dejando hover/focus gobernados por CSS del módulo y agregando `aria-label`.
+- También se endureció la navegación de BI en [`BiDashboardPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/pages/BiDashboardPage.tsx:54) con `type="button"` y `aria-current`, evitando semántica ambigua si la vista vuelve a quedar embebida dentro de formularios o shells más complejos.
+
+## Cirugía profunda de performance sobre bundle frontend
+
+- [x] Auditar el árbol de carga real para detectar dependencias pesadas entrando al bundle base por imports eager o widgets globales.
+- [x] Mover ORION y su renderer Markdown a carga diferida real, sin dejar `react-markdown` ni el widget global dentro del shell principal.
+- [x] Reconciliar toda la superficie BI con el wrapper compartido `EChartSurface` para impedir imports directos de `echarts-for-react`.
+- [x] Reemplazar el runtime gráfico por `echarts/core` modular y registrar solo charts/componentes efectivamente usados.
+- [x] Endurecer `manualChunks` para separar `echarts`, `zrender` y el wrapper React, y validar que desaparezca el warning de chunks grandes.
+
+## Resultado de cirugía profunda de performance sobre bundle frontend
+
+- El bundle base dejó de arrastrar dependencias analíticas y de markdown: `ORIONWidget` ahora se carga vía `lazyWithRetry(...)` desde [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:19) y el render de mensajes Markdown quedó encapsulado en [`MarkdownRenderer.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/components/MarkdownRenderer.tsx:1), evitando que `react-markdown` quede pegado al shell autenticado.
+- Los cinco charts BI quedaron migrados al wrapper compartido [`EChartSurface`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/EChartSurface.tsx:1), eliminando imports directos de `echarts-for-react` desde componentes de negocio y alineando BI con el mismo patrón ya usado por Incentivos y Labs.
+- El runtime gráfico ahora usa [`echartsRuntime.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/charts/echartsRuntime.ts:1) con `echarts/core` y registro explícito de `bar`, `line`, `pie`, `gauge` y `funnel`, en vez del paquete completo.
+- La configuración de Vite se endureció en [`vite.config.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:13) y su espejo [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:12), separando `echarts-react-vendor`, `echarts-vendor` y `zrender-vendor`.
+- La mejora quedó medida con build real. El chunk principal `index` bajó de aproximadamente `1,051.62 kB` a `54.47 kB`. El antiguo bloque gráfico monolítico se partió en `echarts-vendor 377.07 kB`, `zrender-vendor 174.81 kB` y `echarts-react-vendor 9.54 kB`. `npm run build` ya no emite el warning de chunks mayores a `500 kB`.
+
+## Corrección de filtro BI de incentivos y limpieza de navegación
+
+- [x] Corregir la lectura de opciones de tipos de incentivo en analítica BI contra el contrato SQL realmente vigente.
+- [x] Mover Business Intelligence a un módulo principal independiente en la navegación superior, junto a Operaciones.
+- [x] Eliminar Labs del routing, preload, navegación y artefactos de UI asociados.
+- [x] Revalidar build y comportamiento general sin romper ECharts ni los módulos existentes.
+
+## Resultado de corrección de filtro BI de incentivos y limpieza de navegación
+
+- La causa raíz del filtro roto era un drift contractual: la versión vigente de [`get_hr_incentives_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616225802_add_hr_incentive_period_folio_integrity_audit.sql:571) expone `filter_options.types`, pero el frontend en [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:393) todavía buscaba solo `filter_options.incentive_types`.
+- Se endureció el mapper para aceptar ambos nombres (`types` y `incentive_types`), dejando compatibilidad hacia atrás y evitando que el dropdown de tipos quede vacío cuando la SQL vigente responde con el contrato nuevo.
+- Business Intelligence quedó promovido a módulo principal en [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:28), con accesos directos a `Analítica de Dotación` y `Análisis de Incentivos`, separado de `Recursos Humanos`.
+- Labs quedó extirpado del sistema: se removieron sus rutas/preload en [`AppRouter.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1) y [`routeModules.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/routeModules.ts:1), y se eliminaron los artefactos [`src/modules/labs/pages/LabsPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/pages/LabsPage.tsx:1) y [`src/modules/labs/components/EChartsShowcase.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/labs/components/EChartsShowcase.tsx:1).
+
+## Ajuste final de orden en navegación superior
+
+- [x] Reordenar los módulos top-level según la secuencia operacional solicitada.
+- [x] Mover ORION al final del menú superior, ocupando la posición final antes reservada para Labs.
+- [x] Verificar que el shell siga compilando y que el orden no dependa de inyecciones especiales fuera de `navigationModules`.
+
+## Resultado de ajuste final de orden en navegación superior
+
+- La barra superior quedó alineada al orden pedido: `Inicio -> Reclutamiento -> Recursos Humanos -> Operaciones -> Business Intelligence -> ORION`.
+- [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:28) ahora declara `Recursos Humanos` antes de `Operaciones` y `Business Intelligence`, evitando que el orden dependa de cambios accidentales posteriores.
+- En [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:408) ORION dejó de inyectarse antes de los módulos visibles y pasó al cierre real del menú, que era la intención funcional que antes cumplía Labs.

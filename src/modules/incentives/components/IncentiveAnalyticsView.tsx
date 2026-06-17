@@ -577,22 +577,14 @@ export function IncentiveAnalyticsView() {
           />
           <button
             type="button"
-            className="icon-button"
-            style={{ width: "3.2rem", height: "3.2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: "pointer", transition: "all 0.2s ease" }}
+            className="hr-incentives-analytics-clear-button"
             title="Limpiar filtros"
+            aria-label="Limpiar filtros"
             onClick={() => {
               setPeriodCodeFilter("");
               setContractCodeFilter([]);
               setTypeIdFilter([]);
               setStatusFilter(["A"]);
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--primary)";
-              e.currentTarget.style.borderColor = "var(--primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-muted)";
-              e.currentTarget.style.borderColor = "var(--border)";
             }}
           >
             <EraserIcon />

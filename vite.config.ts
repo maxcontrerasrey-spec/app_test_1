@@ -21,6 +21,18 @@ export default defineConfig({
             return "xlsx-vendor";
           }
 
+          if (has("/node_modules/echarts-for-react/")) {
+            return "echarts-react-vendor";
+          }
+
+          if (has("/node_modules/zrender/")) {
+            return "zrender-vendor";
+          }
+
+          if (has("/node_modules/echarts/")) {
+            return "echarts-vendor";
+          }
+
           if (
             has("/node_modules/react/") ||
             has("/node_modules/react-dom/") ||

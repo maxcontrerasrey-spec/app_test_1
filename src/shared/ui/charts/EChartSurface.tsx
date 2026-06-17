@@ -3,9 +3,16 @@ import type { CSSProperties } from "react";
 import type { EChartsOption } from "echarts";
 import type { EChartsReactProps } from "echarts-for-react";
 
-const ReactECharts = lazy(async () => ({
-  default: (await import("echarts-for-react")).default
-}));
+const ReactECharts = lazy(async () => {
+  const [{ default: ReactEChartsCore }, { echarts }] = await Promise.all([
+    import("echarts-for-react/lib/core"),
+    import("./echartsRuntime")
+  ]);
+
+  return {
+    default: (props: EChartsReactProps) => <ReactEChartsCore echarts={echarts} {...props} />
+  };
+});
 
 export type EChartSurfaceProps = {
   option: EChartsOption;
