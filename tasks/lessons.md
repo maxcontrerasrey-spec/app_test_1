@@ -264,6 +264,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No mezcles por intuición `contracts.code`, `cost_center_code` y el `contract_code` que llega desde BUK**. En este repo, `hr_incentive_requests.selected_contract_code` sí sigue `contracts.code`, pero `employees_active_current.contract_code` quedó alineado al CECO BUK y hasta puede venir con sufijo `.0`.
 - **La regla segura es validar cada agregado contra una query real del bundle antes de cerrar**. Si el widget devuelve `0` en dotación mientras reclutamiento e incentivos sí muestran datos, el problema no es de permisos sino de semántica de join entre fuentes.
 
+## 69. Un dashboard mixto no debe derivar dotación o incentivos desde la existencia de folios de contratación
+
+- **El scope de reclutamiento y el scope de dotación no son intercambiables**. Que un usuario pueda ver ciertos procesos en `hiring_requests` no implica que toda su población visible quede representada solo por los contratos/CECO que ya tuvieron folios.
+- **Para roles amplios o gerenciales, el universo de dotación debe salir del alcance estructural del rol**. En este repo eso significa usar acceso broad por rol (`admin`, `reclutamiento`, `control_contratos`, directores) o CECO asignado en `cost_center_approvers`, y dejar el fallback basado en solicitudes solo para perfiles acotados tipo requester.
+
 ## 64. En Supabase, “aplicado” y “registrado en historial” no son la misma cosa
 
 - **Si una migración se ejecuta manualmente en SQL Editor o mediante un conector que genera otro timestamp, el esquema puede quedar correcto pero `supabase_migrations.schema_migrations` desalineado respecto del repo**. Eso rompe auditoría, trazabilidad y cualquier intento serio de comparar local vs remoto.
