@@ -9,6 +9,8 @@ import { BiTrendingExceptionsChart } from "../components/BiTrendingExceptionsCha
 import { BiRecruitmentFunnel } from "../components/BiRecruitmentFunnel";
 import { IncentiveAnalyticsView } from "../../incentives/components/IncentiveAnalyticsView";
 import { TextField, MultiSelectField } from "../../../shared/ui";
+import { useBiHeadcountByContract, useBiHeadcountByJobTitle } from "../hooks/useBiQueries";
+import type { BiFilters } from "../types";
 import "../styles/bi.css";
 
 const EraserIcon = () => (
@@ -46,6 +48,33 @@ export function BiDashboardPage() {
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
   const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
   const [jobTitleFilter, setJobTitleFilter] = useState<string[]>([]);
+  const filters = useMemo<BiFilters>(
+    () => ({
+      periodCode: periodCodeFilter.trim() || undefined,
+      contractCodes: contractCodeFilter,
+      jobTitles: jobTitleFilter
+    }),
+    [contractCodeFilter, jobTitleFilter, periodCodeFilter]
+  );
+
+  const { data: contractsData } = useBiHeadcountByContract();
+  const { data: jobsData } = useBiHeadcountByJobTitle();
+
+  const contractOptions = useMemo(() => {
+    if (!contractsData) return [];
+    return Array.from(new Set(contractsData.map(c => c.contractCode)))
+      .filter(Boolean)
+      .sort()
+      .map(code => ({ label: code, value: code }));
+  }, [contractsData]);
+
+  const jobOptions = useMemo(() => {
+    if (!jobsData) return [];
+    return Array.from(new Set(jobsData.map(j => j.jobTitle)))
+      .filter(Boolean)
+      .sort()
+      .map(title => ({ label: title, value: title }));
+  }, [jobsData]);
 
   const activeViewMeta = useMemo(
     () => BI_VIEWS.find((item) => item.key === activeView) ?? BI_VIEWS[0],
@@ -56,12 +85,12 @@ export function BiDashboardPage() {
     <PageShell>
       <div className="minimal-page-header">
         <h1>Inteligencia de Negocios</h1>
-        <p className="description" style={{ color: "var(--text-secondary)", marginTop: "0.5rem" }}>
+        <p className="description bi-dashboard-description">
           {activeViewMeta.description}
         </p>
       </div>
 
-      <section style={{ marginBottom: "0.5rem" }}>
+      <section className="bi-view-switcher">
         <div className="approval-chip-row">
           {BI_VIEWS.map((item) => (
             <button
@@ -79,7 +108,7 @@ export function BiDashboardPage() {
 
       {activeView === "dotacion" && (
         <>
-          <section style={{ marginBottom: "1.5rem" }}>
+          <section className="bi-filter-section">
             <div className="hr-incentives-analytics-filters">
               <TextField
                 id="hr-bi-analytics-period"
@@ -87,12 +116,13 @@ export function BiDashboardPage() {
                 placeholder="Ej. 202606"
                 value={periodCodeFilter}
                 onChange={(e) => setPeriodCodeFilter(e.target.value)}
+                inputMode="numeric"
               />
 
               <MultiSelectField
                 id="hr-bi-analytics-contract"
                 label="Contratos"
-                options={[]}
+                options={contractOptions}
                 value={contractCodeFilter}
                 onChange={setContractCodeFilter}
                 placeholder="Todos los contratos"
@@ -101,7 +131,7 @@ export function BiDashboardPage() {
               <MultiSelectField
                 id="hr-bi-analytics-job"
                 label="Cargos"
-                options={[]}
+                options={jobOptions}
                 value={jobTitleFilter}
                 onChange={setJobTitleFilter}
                 placeholder="Todos los cargos"
@@ -109,22 +139,13 @@ export function BiDashboardPage() {
 
               <button
                 type="button"
-                className="btn btn-secondary"
                 title="Limpiar Filtros"
                 onClick={() => {
                   setPeriodCodeFilter("");
                   setContractCodeFilter([]);
                   setJobTitleFilter([]);
                 }}
-                style={{
-                  height: "3.2rem",
-                  width: "3.2rem",
-                  padding: "0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0
-                }}
+                className="btn btn-secondary bi-filter-reset-button"
               >
                 <EraserIcon />
               </button>
@@ -132,14 +153,14 @@ export function BiDashboardPage() {
           </section>
 
           <div className="bi-dashboard-grid">
-            <BiOverviewCards />
-            <BiHeadcountCharts />
-            <BiPresenceAndExceptions />
+            <BiOverviewCards filters={filters} />
+            <BiHeadcountCharts filters={filters} />
+            <BiPresenceAndExceptions filters={filters} />
             <div className="bi-chart-row">
-              <BiDemographicsChart />
-              <BiRecruitmentFunnel />
+              <BiDemographicsChart filters={filters} />
+              <BiRecruitmentFunnel filters={filters} />
             </div>
-            <BiTrendingExceptionsChart />
+            <BiTrendingExceptionsChart filters={filters} />
           </div>
         </>
       )}

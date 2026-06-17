@@ -3,9 +3,14 @@ import type { EChartsOption } from "echarts";
 import { useBiRecruitmentPipeline } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
+import type { BiFilters } from "../types";
 
-export function BiRecruitmentFunnel() {
-  const { data, isLoading } = useBiRecruitmentPipeline();
+type BiRecruitmentFunnelProps = {
+  filters?: BiFilters;
+};
+
+export function BiRecruitmentFunnel({ filters }: BiRecruitmentFunnelProps) {
+  const { data, isLoading } = useBiRecruitmentPipeline(filters);
   const { theme } = useTheme();
 
   const isDark = theme === "dark";

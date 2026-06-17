@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import type { BiFilters } from "../types";
 import {
   fetchBiWorkforceOverview,
   fetchBiHeadcountByContract,
   fetchBiHeadcountByJobTitle,
+  fetchBiHeadcountByCity,
   fetchBiAgeDistribution,
   fetchBiExceptionsToday,
   fetchBiPresenceSummaryToday,
@@ -15,105 +17,134 @@ import {
 
 const BI_STALE_TIME = 1000 * 60 * 5; // 5 minutos, según lección 48 no ahogar Supabase con polling
 
+function normalizeFilters(filters?: BiFilters) {
+  return {
+    periodCode: filters?.periodCode?.trim() || "",
+    contractCodes: [...(filters?.contractCodes ?? [])].filter(Boolean).sort(),
+    jobTitles: [...(filters?.jobTitles ?? [])].filter(Boolean).sort()
+  };
+}
+
 export const BI_QUERY_KEYS = {
   all: ["bi"] as const,
-  workforceOverview: () => [...BI_QUERY_KEYS.all, "workforceOverview"] as const,
-  headcountByContract: () => [...BI_QUERY_KEYS.all, "headcountByContract"] as const,
-  headcountByJobTitle: () => [...BI_QUERY_KEYS.all, "headcountByJobTitle"] as const,
-  ageDistribution: () => [...BI_QUERY_KEYS.all, "ageDistribution"] as const,
-  exceptionsToday: () => [...BI_QUERY_KEYS.all, "exceptionsToday"] as const,
-  presenceSummaryToday: () => [...BI_QUERY_KEYS.all, "presenceSummaryToday"] as const,
-  exceptionsMonthly: () => [...BI_QUERY_KEYS.all, "exceptionsMonthly"] as const,
-  vacationForecast: () => [...BI_QUERY_KEYS.all, "vacationForecast"] as const,
-  medicalLeaveByArea: () => [...BI_QUERY_KEYS.all, "medicalLeaveByArea"] as const,
-  recruitmentPipeline: () => [...BI_QUERY_KEYS.all, "recruitmentPipeline"] as const,
-  hiringVelocity: () => [...BI_QUERY_KEYS.all, "hiringVelocity"] as const
+  workforceOverview: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "workforceOverview", normalizeFilters(filters)] as const,
+  headcountByContract: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "headcountByContract", normalizeFilters(filters)] as const,
+  headcountByJobTitle: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "headcountByJobTitle", normalizeFilters(filters)] as const,
+  headcountByCity: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "headcountByCity", normalizeFilters(filters)] as const,
+  ageDistribution: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "ageDistribution", normalizeFilters(filters)] as const,
+  exceptionsToday: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "exceptionsToday", normalizeFilters(filters)] as const,
+  presenceSummaryToday: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "presenceSummaryToday", normalizeFilters(filters)] as const,
+  exceptionsMonthly: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "exceptionsMonthly", normalizeFilters(filters)] as const,
+  vacationForecast: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "vacationForecast", normalizeFilters(filters)] as const,
+  medicalLeaveByArea: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "medicalLeaveByArea", normalizeFilters(filters)] as const,
+  recruitmentPipeline: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "recruitmentPipeline", normalizeFilters(filters)] as const,
+  hiringVelocity: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "hiringVelocity", normalizeFilters(filters)] as const
 };
 
-export function useBiWorkforceOverview() {
+export function useBiWorkforceOverview(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.workforceOverview(),
-    queryFn: fetchBiWorkforceOverview,
+    queryKey: BI_QUERY_KEYS.workforceOverview(filters),
+    queryFn: () => fetchBiWorkforceOverview(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiHeadcountByContract() {
+export function useBiHeadcountByContract(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.headcountByContract(),
-    queryFn: fetchBiHeadcountByContract,
+    queryKey: BI_QUERY_KEYS.headcountByContract(filters),
+    queryFn: () => fetchBiHeadcountByContract(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiHeadcountByJobTitle() {
+export function useBiHeadcountByJobTitle(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.headcountByJobTitle(),
-    queryFn: fetchBiHeadcountByJobTitle,
+    queryKey: BI_QUERY_KEYS.headcountByJobTitle(filters),
+    queryFn: () => fetchBiHeadcountByJobTitle(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiAgeDistribution() {
+export function useBiHeadcountByCity(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.ageDistribution(),
-    queryFn: fetchBiAgeDistribution,
+    queryKey: BI_QUERY_KEYS.headcountByCity(filters),
+    queryFn: () => fetchBiHeadcountByCity(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiExceptionsToday() {
+export function useBiAgeDistribution(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.exceptionsToday(),
-    queryFn: fetchBiExceptionsToday,
+    queryKey: BI_QUERY_KEYS.ageDistribution(filters),
+    queryFn: () => fetchBiAgeDistribution(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiPresenceSummaryToday() {
+export function useBiExceptionsToday(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.presenceSummaryToday(),
-    queryFn: fetchBiPresenceSummaryToday,
+    queryKey: BI_QUERY_KEYS.exceptionsToday(filters),
+    queryFn: () => fetchBiExceptionsToday(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiExceptionsMonthly() {
+export function useBiPresenceSummaryToday(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.exceptionsMonthly(),
-    queryFn: fetchBiExceptionsMonthly,
+    queryKey: BI_QUERY_KEYS.presenceSummaryToday(filters),
+    queryFn: () => fetchBiPresenceSummaryToday(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiVacationForecast() {
+export function useBiExceptionsMonthly(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.vacationForecast(),
-    queryFn: fetchBiVacationForecast,
+    queryKey: BI_QUERY_KEYS.exceptionsMonthly(filters),
+    queryFn: () => fetchBiExceptionsMonthly(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiMedicalLeaveByArea() {
+export function useBiVacationForecast(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.medicalLeaveByArea(),
-    queryFn: fetchBiMedicalLeaveByArea,
+    queryKey: BI_QUERY_KEYS.vacationForecast(filters),
+    queryFn: () => fetchBiVacationForecast(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiRecruitmentPipeline() {
+export function useBiMedicalLeaveByArea(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.recruitmentPipeline(),
-    queryFn: fetchBiRecruitmentPipeline,
+    queryKey: BI_QUERY_KEYS.medicalLeaveByArea(filters),
+    queryFn: () => fetchBiMedicalLeaveByArea(filters),
     staleTime: BI_STALE_TIME
   });
 }
 
-export function useBiHiringVelocity() {
+export function useBiRecruitmentPipeline(filters?: BiFilters) {
   return useQuery({
-    queryKey: BI_QUERY_KEYS.hiringVelocity(),
-    queryFn: fetchBiHiringVelocity,
+    queryKey: BI_QUERY_KEYS.recruitmentPipeline(filters),
+    queryFn: () => fetchBiRecruitmentPipeline(filters),
+    staleTime: BI_STALE_TIME
+  });
+}
+
+export function useBiHiringVelocity(filters?: BiFilters) {
+  return useQuery({
+    queryKey: BI_QUERY_KEYS.hiringVelocity(filters),
+    queryFn: () => fetchBiHiringVelocity(filters),
     staleTime: BI_STALE_TIME
   });
 }

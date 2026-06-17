@@ -3,9 +3,14 @@ import type { EChartsOption } from "echarts";
 import { useBiExceptionsMonthly } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
+import type { BiFilters } from "../types";
 
-export function BiTrendingExceptionsChart() {
-  const { data, isLoading } = useBiExceptionsMonthly();
+type BiTrendingExceptionsChartProps = {
+  filters?: BiFilters;
+};
+
+export function BiTrendingExceptionsChart({ filters }: BiTrendingExceptionsChartProps) {
+  const { data, isLoading } = useBiExceptionsMonthly(filters);
   const { theme } = useTheme();
 
   const isDark = theme === "dark";
@@ -26,13 +31,20 @@ export function BiTrendingExceptionsChart() {
 
     const medicalLeaves = months.map((month) => totalsByMonthAndType.get(`${month}:medical_leave`) ?? 0);
     const vacations = months.map((month) => totalsByMonthAndType.get(`${month}:vacation`) ?? 0);
+    const absenteeismByMonth = months.map((month) => {
+      const monthRow = data.find((item) => item.yearMonth === month);
+      return monthRow?.absenteeismPct ?? 0;
+    });
 
     return {
       tooltip: { trigger: "axis", backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
-      legend: { data: ["Licencias Médicas", "Vacaciones"], textStyle: { color: textColor } },
+      legend: { data: ["Licencias Médicas", "Vacaciones", "Ausentismo %"], textStyle: { color: textColor } },
       grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
       xAxis: { type: "category", boundaryGap: false, data: months, axisLabel: { color: textColor } },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: isDark ? "#334155" : "#E2E8F0" } } },
+      yAxis: [
+        { type: "value", splitLine: { lineStyle: { color: isDark ? "#334155" : "#E2E8F0" } } },
+        { type: "value", min: 0, max: 100, axisLabel: { formatter: "{value}%" } }
+      ],
       series: [
         {
           name: "Licencias Médicas",
@@ -49,6 +61,14 @@ export function BiTrendingExceptionsChart() {
           smooth: true,
           itemStyle: { color: "#3B82F6" },
           data: vacations
+        },
+        {
+          name: "Ausentismo %",
+          type: "line",
+          yAxisIndex: 1,
+          smooth: true,
+          itemStyle: { color: "#F59E0B" },
+          data: absenteeismByMonth
         }
       ]
     };

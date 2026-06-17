@@ -426,7 +426,29 @@ async function main() {
     throw activeCountError;
   }
 
-  console.log(JSON.stringify({ ok: true, pagesProcessed, synced, finalCount: count, activeCount }, null, 2));
+  const { data: snapshotResult, error: snapshotError } = await supabase.rpc(
+    "capture_buk_employee_daily_snapshot",
+    { p_snapshot_date: new Date().toISOString().slice(0, 10) },
+  );
+
+  if (snapshotError) {
+    throw snapshotError;
+  }
+
+  console.log(
+    JSON.stringify(
+      {
+        ok: true,
+        pagesProcessed,
+        synced,
+        finalCount: count,
+        activeCount,
+        snapshotRowsAffected: Number(snapshotResult ?? 0),
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 main().catch((error) => {

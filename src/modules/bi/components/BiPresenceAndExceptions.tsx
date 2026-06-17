@@ -3,10 +3,15 @@ import type { EChartsOption } from "echarts";
 import { useBiPresenceSummaryToday, useBiExceptionsToday } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
+import type { BiFilters } from "../types";
 
-export function BiPresenceAndExceptions() {
-  const { data: presenceData, isLoading: isLoadingPresence } = useBiPresenceSummaryToday();
-  const { data: exceptionsData, isLoading: isLoadingExceptions } = useBiExceptionsToday();
+type BiPresenceAndExceptionsProps = {
+  filters?: BiFilters;
+};
+
+export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProps) {
+  const { data: presenceData, isLoading: isLoadingPresence } = useBiPresenceSummaryToday(filters);
+  const { data: exceptionsData, isLoading: isLoadingExceptions } = useBiExceptionsToday(filters);
   const { theme } = useTheme();
 
   const isDark = theme === "dark";
@@ -25,27 +30,48 @@ export function BiPresenceAndExceptions() {
       series: [
         {
           type: "gauge",
-          startAngle: 180,
-          endAngle: 0,
+          startAngle: 200,
+          endAngle: -20,
           min: 0,
           max: 100,
           splitNumber: 10,
           itemStyle: {
-            color: overallPresencePct >= 90 ? "#10B981" : overallPresencePct >= 80 ? "#F59E0B" : "#EF4444"
+            color: overallPresencePct >= 90 ? "#10B981" : overallPresencePct >= 80 ? "#F59E0B" : "#EF4444",
+            shadowColor: "rgba(0,0,0,0.2)",
+            shadowBlur: 10,
+            shadowOffsetX: 2,
+            shadowOffsetY: 2
           },
-          progress: { show: true, width: 30 },
-          pointer: { show: false },
-          axisLine: { lineStyle: { width: 30, color: [[1, isDark ? "#334155" : "#E2E8F0"]] } },
+          progress: { show: true, roundCap: true, width: 18 },
+          pointer: {
+            icon: "path://M12.8,0.7l12,40.1H0.7L12.8,0.7z",
+            length: "12%",
+            width: 20,
+            offsetCenter: [0, "-60%"],
+            itemStyle: { color: "inherit" }
+          },
+          axisLine: { roundCap: true, lineStyle: { width: 18, color: [[1, isDark ? "#334155" : "#E2E8F0"]] } },
           axisTick: { show: false },
           splitLine: { show: false },
           axisLabel: { show: false },
           title: { show: false },
           detail: {
+            backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
+            borderColor: overallPresencePct >= 90 ? "#10B981" : overallPresencePct >= 80 ? "#F59E0B" : "#EF4444",
+            borderWidth: 2,
+            width: "50%",
+            lineHeight: 40,
+            height: 40,
+            borderRadius: 8,
+            offsetCenter: [0, "35%"],
             valueAnimation: true,
-            formatter: "{value}%",
-            color: textColor,
-            fontSize: 40,
-            offsetCenter: [0, "-10%"]
+            formatter: function (value: number) {
+              return "{value|" + value.toFixed(1) + "}{unit|%}";
+            },
+            rich: {
+              value: { fontSize: 30, fontWeight: "bolder", color: textColor },
+              unit: { fontSize: 16, color: textColor, padding: [0, 0, -10, 5] }
+            }
           },
           data: [{ value: Number(overallPresencePct.toFixed(1)) }]
         }

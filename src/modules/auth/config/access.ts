@@ -25,6 +25,7 @@ export type AppModuleCode =
   | "operaciones"
   | "recursos_humanos"
   | "jornadas_turnos"
+  | "acreditacion_personas"
   | "alta_operacional_personal"
   | "ai_assistant"
   | "bi_analytics";
@@ -60,6 +61,7 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "operaciones",
   "recursos_humanos",
   "jornadas_turnos",
+  "acreditacion_personas",
   "alta_operacional_personal",
   "ai_assistant",
   "bi_analytics"

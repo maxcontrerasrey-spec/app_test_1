@@ -3,9 +3,14 @@ import type { EChartsOption } from "echarts";
 import { useBiAgeDistribution } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
+import type { BiFilters } from "../types";
 
-export function BiDemographicsChart() {
-  const { data, isLoading } = useBiAgeDistribution();
+type BiDemographicsChartProps = {
+  filters?: BiFilters;
+};
+
+export function BiDemographicsChart({ filters }: BiDemographicsChartProps) {
+  const { data, isLoading } = useBiAgeDistribution(filters);
   const { theme } = useTheme();
 
   const isDark = theme === "dark";

@@ -38,5 +38,12 @@ export const queryKeys = {
     workerSearch: (search: string) => ["roster", "worker-search", search] as const,
     workerSchedule: (params: Record<string, unknown>) => ["roster", "worker-schedule", params] as const,
     assignmentsRoot: () => ["roster", "assignments"] as const
+  },
+  accreditation: {
+    setupCatalogs: () => ["accreditation", "setup-catalogs"] as const,
+    dashboard: (filters: Record<string, unknown>) => ["accreditation", "dashboard", filters] as const,
+    workers: (filters: Record<string, unknown>) => ["accreditation", "workers", filters] as const,
+    workerProfile: (bukEmployeeId: string, siteId: string) =>
+      ["accreditation", "worker-profile", bukEmployeeId, siteId] as const
   }
 };

@@ -75,6 +75,13 @@ export const navigationModules: NavigationModule[] = [
         label: "Gestión de Incentivos Extraordinarios",
         description: "Registro y control de incentivos extraordinarios.",
         iconKey: "wallet"
+      },
+      {
+        moduleCode: "acreditacion_personas",
+        to: "/recursos-humanos/acreditacion/dashboard",
+        label: "Acreditación de Personas",
+        description: "Matriz documental, vigencias y estado operacional por trabajador.",
+        iconKey: "document"
       }
     ]
   },

@@ -2627,10 +2627,36 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 
 ## Implementación integral de Acreditación de Personas
 
-- [ ] Aterrizar el plan sobre contratos reales del repo, reutilizando `employees_active_current`, helpers de autorización, patrón de RPCs y navegación existente.
-- [ ] Crear la migración del módulo con tablas de acreditación, matriz de requisitos, auditoría, helper de acceso y registro en `app_modules` / `role_module_access`.
-- [ ] Implementar RPCs de lectura y mutación para dashboard, mantenedores, búsqueda de trabajadores, generación de requisitos y recálculo de estado.
-- [ ] Reutilizar la integración BUK existente para registrar/subir documentos de acreditación sin crear una segunda fuente persistente de archivos en Supabase.
-- [ ] Implementar el frontend `src/modules/accreditation` con vistas de Dashboard, Trabajadores y Configuración, conectado a los contratos backend reales.
-- [ ] Verificar integración con Jornadas y Turnos mostrando contexto vigente del trabajador cuando exista pauta activa o excepciones relevantes.
-- [ ] Validar `npm run audit:migrations`, `npx tsc -b`, `npm run build` y `git diff --check`, y documentar cierre y lecciones aprendidas.
+- [x] Aterrizar el plan sobre contratos reales del repo, reutilizando `employees_active_current`, helpers de autorización, patrón de RPCs y navegación existente.
+- [x] Crear la migración del módulo con tablas de acreditación, matriz de requisitos, auditoría, helper de acceso y registro en `app_modules` / `role_module_access`.
+- [x] Implementar RPCs de lectura y mutación para dashboard, mantenedores, búsqueda de trabajadores, generación de requisitos y recálculo de estado.
+- [x] Reutilizar la integración BUK existente para registrar/subir documentos de acreditación sin crear una segunda fuente persistente de archivos en Supabase.
+- [x] Implementar el frontend `src/modules/accreditation` con vistas de Dashboard, Trabajadores y Configuración, conectado a los contratos backend reales.
+- [x] Verificar integración con Jornadas y Turnos mostrando contexto vigente del trabajador cuando exista pauta activa o excepciones relevantes.
+- [x] Validar `npm run audit:migrations`, `npx tsc -b`, `npm run build` y `git diff --check`, y documentar cierre y lecciones aprendidas.
+
+## Resultado de implementación integral de Acreditación de Personas
+
+- Se agregó la migración [`20260617103000_add_people_accreditation_module.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617103000_add_people_accreditation_module.sql:1), que formaliza el módulo `acreditacion_personas` sobre `employees_active_current` con tablas separadas para `accreditation_sites`, `accreditation_requirements`, `accreditation_matrix`, `worker_accreditations`, `worker_document_tracking` y `accreditation_audit_log`, además de helper de acceso, RLS, grants y alta en `app_modules` / `role_module_access`.
+- El motor backend quedó encapsulado en RPCs reales de negocio: generación de requisitos (`generate_worker_requirements(...)`), recálculo transaccional (`recalculate_accreditation_status(...)`), mantenedores (`upsert_accreditation_*`), búsqueda bootstrap desde BUK activo (`search_accreditation_workers(...)`), dashboard (`get_accreditation_dashboard(...)`) y perfil detallado (`get_worker_accreditation_profile(...)`).
+- La integración documental no abrió una segunda bodega persistente en Supabase. Se reutilizó el patrón BUK ya operativo creando la Edge Function [`upload-buk-accreditation-document`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/upload-buk-accreditation-document/index.ts:1), que sube el binario directo al endpoint de documentos del trabajador y devuelve solo metadatos para trazabilidad local.
+- El frontend quedó desplegado en [`src/modules/accreditation`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/accreditation:1) con ruta [`/acreditacion/:view`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1), navegación en Recursos Humanos y tres superficies: dashboard, trabajadores y configuración.
+- La comunicación con Jornadas y Turnos quedó visible dentro de la ficha del trabajador. El perfil muestra jornada activa desde `hr_worker_rosters` y excepciones recientes desde `hr_roster_exceptions`, evitando que acreditación opere ciega respecto al contexto operacional real.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260617103000_add_people_accreditation_module.sql`, `npx tsc -b`, `npm run build` y `git diff --check`.
+
+## Repliegue de Acreditaciones dentro de RRHH y refactor backend BI con snapshot histórico
+
+- [x] Reubicar la ruta contractual y de navegación de `acreditacion_personas` bajo `Recursos Humanos`, manteniendo permisos propios y compatibilidad con enlaces existentes.
+- [x] Diseñar la capa SQL de BI con snapshot diario inmutable, helpers de período y extracción canónica de ciudad/región/fecha de ingreso desde BUK.
+- [x] Reemplazar las lecturas BI basadas en `views` estáticas por RPCs filtrables para overview, headcount, geografía, presencia, ausentismo, forecast y reclutamiento.
+- [x] Ajustar la matemática mensual de ausentismo a la fórmula de Personal Equivalente solicitada y mover `hired_this_month` a BUK real.
+- [x] Refactorizar `biApi.ts`, `useBiQueries.ts` y la superficie BI necesaria para que React Query recargue por filtros.
+- [x] Validar `npm run audit:migrations`, `npx tsc -b`, `npm run build`, `git diff --check`, luego commit y push directo a `main`.
+
+## Resultado de repliegue de Acreditaciones dentro de RRHH y refactor backend BI con snapshot histórico
+
+- La ruta canónica del módulo quedó alineada a RRHH: `acreditacion_personas` ahora apunta a `/recursos-humanos/acreditacion`, [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:1) navega a esa ruta y [`AppRouter.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:1) conserva redirects desde `/acreditacion/*` para no romper enlaces históricos.
+- Se agregó la migración [`20260617143000_refactor_bi_backend_with_filters_and_snapshots.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617143000_refactor_bi_backend_with_filters_and_snapshots.sql:1), que crea `buk_employees_daily_snapshot`, helpers de período/normalización y reemplaza la BI estática por RPCs filtrables, incluyendo `get_bi_headcount_by_city(...)`.
+- La matemática mensual quedó endurecida en backend: `get_bi_exceptions_monthly(...)` y `get_bi_medical_leave_by_area(...)` calculan FTE equivalente con base 30 días y exponen `absenteeism_pct`, mientras `get_bi_workforce_overview(...)` mueve `hired_this_month` a fecha de ingreso real extraída desde BUK.
+- El script [`sync-buk-employees.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/sync-buk-employees.mjs:1) ahora captura snapshot diario al cierre de la sync, dejando el histórico operativo alineado a la carga BUK sin depender solo de `pg_cron`.
+- La capa frontend BI quedó conectada al contrato nuevo: [`biApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/services/biApi.ts:1) consume RPCs con filtros, [`useBiQueries.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/hooks/useBiQueries.ts:1) invalida por `queryKey` reactiva y el dashboard de [`BiDashboardPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/pages/BiDashboardPage.tsx:1) ya propaga `periodCode`, `contractCodes` y `jobTitles` a los widgets.

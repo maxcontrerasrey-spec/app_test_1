@@ -1120,3 +1120,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Cuando un módulo sale del sistema, sus flags auxiliares, iconos dedicados y ramas especiales del shell deben salir con él.** Dejar `adminOnly`, `flask` o chequeos equivalentes sin consumidores reales solo ensucia la lectura y falsea la complejidad del sistema.
 - **Los builds tipados no deben dejar espejos ejecutables redundantes en la raíz.** Si `tsc -b` se usa solo para validar `vite.config.ts`, la configuración de Node debe emitir como máximo declaraciones; regenerar `vite.config.js` introduce ruido, diffs innecesarios y dobles fuentes de verdad.
+
+## 112. Un módulo documental nuevo no puede arrancar desde su tabla hija si necesita bootstrapear trabajadores reales
+
+- **Si la operación parte sobre personas activas sincronizadas desde BUK, la búsqueda primaria debe salir de `employees_active_current` y luego enlazar el estado transaccional del módulo.** Arrancar desde `worker_accreditations` deja invisible a cualquier trabajador que todavía no tenga registro propio y obliga al usuario a sembrar filas manualmente.
+- **El bootstrap correcto es generar o completar la huella transaccional recién cuando el usuario entra al caso o registra el primer documento.** Así se reutiliza la fuente canónica de personas sin poblar basura preventiva ni duplicar catálogos.
+- **Cuando la regla de negocio exige “sin segunda bodega de archivos”, el binario no se persiste por comodidad en Storage.** Se sube directo al sistema destino (BUK) y la base local conserva solo referencias auditables (`buk_document_id`, nombre, URL y payload de sincronización).
+
+## 113. Si un submódulo cambia de dominio visual, la ruta canónica también debe moverse; no basta con recolgar el link
+
+- **Mover un acceso en navegación sin mover su pathname deja el sistema conceptualmente partido.** Si Acreditaciones vive dentro de Recursos Humanos, la ruta canónica debe reflejarlo (`/recursos-humanos/acreditacion/...`) y los paths legacy deben quedar solo como redirect de compatibilidad.
+- **En analítica filtrable, el contrato debe cambiar de punta a punta o el filtro queda decorativo.** No sirve agregar selects en la UI si `biApi`, React Query y SQL siguen leyendo vistas globales sin parámetros; el refactor correcto conecta estado de filtro, `queryKey` reactiva y RPC backend sobre el mismo objeto `filters`.

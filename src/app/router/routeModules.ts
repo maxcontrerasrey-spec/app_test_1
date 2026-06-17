@@ -31,6 +31,9 @@ export const routeModuleImporters = {
   rosterPage: async () => ({
     default: (await import("../../modules/roster/pages/RosterPage")).RosterPage
   }),
+  accreditationPage: async () => ({
+    default: (await import("../../modules/accreditation/pages/AccreditationPage")).AccreditationPage
+  }),
   aiAssistantHome: async () => ({
     default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
   }),
@@ -85,12 +88,20 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
     return ["operacionesDashboard"];
   }
 
+  if (normalizedPath.startsWith("/recursos-humanos/acreditacion")) {
+    return ["accreditationPage"];
+  }
+
   if (normalizedPath.startsWith("/recursos-humanos")) {
     return ["humanResourcesDashboard"];
   }
 
   if (normalizedPath.startsWith("/roster")) {
     return ["rosterPage"];
+  }
+
+  if (normalizedPath.startsWith("/acreditacion")) {
+    return ["accreditationPage"];
   }
 
   if (normalizedPath.startsWith("/copiloto-ia")) {

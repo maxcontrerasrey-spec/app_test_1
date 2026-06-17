@@ -1,7 +1,12 @@
 import { useBiWorkforceOverview } from "../hooks/useBiQueries";
+import type { BiFilters } from "../types";
 
-export function BiOverviewCards() {
-  const { data, isLoading, isError } = useBiWorkforceOverview();
+type BiOverviewCardsProps = {
+  filters?: BiFilters;
+};
+
+export function BiOverviewCards({ filters }: BiOverviewCardsProps) {
+  const { data, isLoading, isError } = useBiWorkforceOverview(filters);
 
   if (isLoading) {
     return <div className="bi-overview-row">Cargando KPIs...</div>;
@@ -21,9 +26,9 @@ export function BiOverviewCards() {
   ];
 
   return (
-    <div className="tracking-kpi-row" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+    <div className="tracking-kpi-row bi-overview-kpi-row">
       {kpis.map((kpi, idx) => (
-        <article key={idx} className={`tracking-kpi-card tracking-kpi-card-${kpi.type}`} style={{ cursor: "default" }}>
+        <article key={idx} className={`tracking-kpi-card tracking-kpi-card-${kpi.type} bi-overview-kpi-card`}>
           <span>{kpi.title}</span>
           <strong>{kpi.value}</strong>
         </article>

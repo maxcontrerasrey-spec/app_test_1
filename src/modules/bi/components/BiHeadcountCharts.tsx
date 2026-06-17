@@ -1,12 +1,17 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiHeadcountByContract, useBiHeadcountByJobTitle } from "../hooks/useBiQueries";
+import { useBiHeadcountByContract, useBiHeadcountByCity } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
+import type { BiFilters } from "../types";
 
-export function BiHeadcountCharts() {
-  const { data: contractData, isLoading: isLoadingContract } = useBiHeadcountByContract();
-  const { data: jobData, isLoading: isLoadingJob } = useBiHeadcountByJobTitle();
+type BiHeadcountChartsProps = {
+  filters?: BiFilters;
+};
+
+export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
+  const { data: contractData, isLoading: isLoadingContract } = useBiHeadcountByContract(filters);
+  const { data: cityData, isLoading: isLoadingCity } = useBiHeadcountByCity(filters);
   const { theme } = useTheme();
 
   const isDark = theme === "dark";
@@ -17,56 +22,85 @@ export function BiHeadcountCharts() {
       return null;
     }
 
+    const totalsByContract = new Map<string, number>();
+
+    contractData.forEach((item) => {
+      totalsByContract.set(item.contractCode, (totalsByContract.get(item.contractCode) ?? 0) + item.headcount);
+    });
+
     return {
       tooltip: { trigger: "item", backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
-      legend: { top: "5%", left: "center", textStyle: { color: textColor } },
       series: [
         {
           name: "Dotación",
           type: "pie",
-          radius: ["40%", "70%"],
-          avoidLabelOverlap: false,
+          radius: ["20%", "80%"],
+          center: ["50%", "50%"],
+          roseType: "area",
           itemStyle: {
-            borderRadius: 10,
-            borderColor: isDark ? "#0F172A" : "#FFFFFF",
-            borderWidth: 2
+            borderRadius: 8
           },
-          label: { show: false, position: "center" },
-          emphasis: {
-            label: { show: true, fontSize: 18, fontWeight: "bold" }
-          },
+          label: { show: false },
           labelLine: { show: false },
-          data: contractData.map((d) => ({ value: d.headcount, name: d.contractCode }))
+          data: [...totalsByContract.entries()].map(([contractCode, headcount]) => ({
+            value: headcount,
+            name: contractCode
+          }))
         }
       ]
     };
   }, [contractData, isDark, textColor]);
 
-  const jobChartOption = useMemo<EChartsOption | null>(() => {
-    if (!jobData || jobData.length === 0) {
+  const mapChartOption = useMemo<EChartsOption | null>(() => {
+    if (!cityData || cityData.length === 0) {
       return null;
     }
 
-    const topJobs = [...jobData].sort((a, b) => b.headcount - a.headcount).slice(0, 10);
+    const topCities = [...cityData]
+      .sort((left, right) => right.headcount - left.headcount)
+      .slice(0, 10)
+      .reverse();
 
     return {
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
+        textStyle: { color: textColor }
+      },
       grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-      xAxis: { type: "value", splitLine: { lineStyle: { color: isDark ? "#334155" : "#E2E8F0" } } },
-      yAxis: { type: "category", data: topJobs.map((d) => d.jobTitle).reverse(), axisLabel: { color: textColor, width: 120, overflow: "truncate" } },
+      xAxis: {
+        type: "value",
+        splitLine: { lineStyle: { color: isDark ? "#334155" : "#E2E8F0" } },
+        axisLabel: { color: textColor }
+      },
+      yAxis: {
+        type: "category",
+        data: topCities.map((item) =>
+          item.regionName && item.regionName !== item.cityName
+            ? `${item.cityName} (${item.regionName})`
+            : item.cityName
+        ),
+        axisLabel: { color: textColor }
+      },
       series: [
         {
           name: "Dotación",
           type: "bar",
-          data: topJobs.map((d) => d.headcount).reverse(),
+          data: topCities.map((item) => item.headcount),
           itemStyle: {
-            color: "#3B82F6",
-            borderRadius: [0, 4, 4, 0]
+            borderRadius: [8, 8, 8, 8],
+            color: "#2563EB"
+          },
+          label: {
+            show: true,
+            position: "right",
+            color: textColor
           }
         }
       ]
     };
-  }, [isDark, jobData, textColor]);
+  }, [cityData, isDark, textColor]);
 
   return (
     <div className="bi-chart-row">
@@ -82,14 +116,14 @@ export function BiHeadcountCharts() {
         />
       </div>
       <div className="info-card">
-        <h3 className="bi-chart-title">Top 10 Cargos</h3>
+        <h3 className="bi-chart-title">Dotación por Ciudad</h3>
         <EChartSurface
           height={300}
-          option={jobChartOption ?? {}}
-          loading={isLoadingJob}
-          empty={!jobChartOption}
-          emptyMessage="Sin datos de cargo"
-          loadingMessage="Cargando datos..."
+          option={mapChartOption ?? {}}
+          loading={isLoadingCity}
+          empty={!mapChartOption}
+          emptyMessage="Sin datos de ciudad"
+          loadingMessage="Cargando ciudades..."
         />
       </div>
     </div>

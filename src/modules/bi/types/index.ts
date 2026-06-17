@@ -1,3 +1,9 @@
+export interface BiFilters {
+  periodCode?: string;
+  contractCodes?: string[];
+  jobTitles?: string[];
+}
+
 export interface BukBiWorkforceOverview {
   totalActiveEmployees: number;
   totalContracts: number;
@@ -19,6 +25,12 @@ export interface BukBiHeadcountByContract {
 export interface BukBiHeadcountByJobTitle {
   contractCode: string;
   jobTitle: string;
+  headcount: number;
+}
+
+export interface BukBiHeadcountByCity {
+  regionName: string;
+  cityName: string;
   headcount: number;
 }
 
@@ -52,6 +64,9 @@ export interface BukBiExceptionsMonthly {
   exceptionSource: string;
   totalDays: number;
   uniqueEmployees: number;
+  fteHeadcountEquivalent: number;
+  headcountBase: number;
+  absenteeismPct: number;
 }
 
 export interface BukBiVacationForecast {
@@ -68,6 +83,9 @@ export interface BukBiMedicalLeaveByArea {
   yearMonth: string;
   medicalLeaveDays: number;
   uniqueEmployees: number;
+  fteHeadcountEquivalent: number;
+  headcountBase: number;
+  absenteeismPct: number;
 }
 
 export interface BukBiRecruitmentPipeline {

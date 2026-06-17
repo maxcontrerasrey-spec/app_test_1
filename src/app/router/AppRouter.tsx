@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AppShell } from "../layout/AppShell";
 import { lazyWithRetry } from "../../shared/lib/lazyWithRetry";
 import { routeModuleImporters } from "./routeModules";
@@ -24,6 +24,10 @@ const HumanResourcesDashboard = lazyWithRetry(
   routeModuleImporters.humanResourcesDashboard
 );
 const RosterPage = lazyWithRetry("roster-page", routeModuleImporters.rosterPage);
+const AccreditationPage = lazyWithRetry(
+  "accreditation-page",
+  routeModuleImporters.accreditationPage
+);
 const AIAssistantHome = lazyWithRetry("ai-assistant-page", routeModuleImporters.aiAssistantHome);
 const OnboardingModuleLayout = lazyWithRetry(
   "onboarding-module-layout",
@@ -40,6 +44,15 @@ function RouteLoadingScreen() {
       </div>
     </section>
   );
+}
+
+function LegacyAccreditationRedirect() {
+  const { view } = useParams();
+  const destination = view
+    ? `/recursos-humanos/acreditacion/${view}`
+    : "/recursos-humanos/acreditacion/dashboard";
+
+  return <Navigate to={destination} replace />;
 }
 
 export function AppRouter() {
@@ -123,6 +136,22 @@ export function AppRouter() {
               }
             />
             <Route
+              path="/recursos-humanos/acreditacion"
+              element={
+                <RoleProtectedRoute moduleCode="acreditacion_personas">
+                  <Navigate to="/recursos-humanos/acreditacion/dashboard" replace />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/recursos-humanos/acreditacion/:view"
+              element={
+                <RoleProtectedRoute moduleCode="acreditacion_personas">
+                  <AccreditationPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
               path="/recursos-humanos/:view"
               element={
                 <RoleProtectedRoute
@@ -162,6 +191,22 @@ export function AppRouter() {
               element={
                 <RoleProtectedRoute moduleCode="jornadas_turnos">
                   <RosterPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/acreditacion"
+              element={
+                <RoleProtectedRoute moduleCode="acreditacion_personas">
+                  <LegacyAccreditationRedirect />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/acreditacion/:view"
+              element={
+                <RoleProtectedRoute moduleCode="acreditacion_personas">
+                  <LegacyAccreditationRedirect />
                 </RoleProtectedRoute>
               }
             />
