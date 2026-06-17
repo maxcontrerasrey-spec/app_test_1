@@ -122,7 +122,8 @@ export const navigationModules: NavigationModule[] = [
           "director_op",
           "gerencia",
           "operaciones_l_1",
-          "control_contratos"
+          "control_contratos",
+          "admin"
         ]
       }
     ]
