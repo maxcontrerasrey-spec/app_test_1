@@ -1,13 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
-import * as echarts from "echarts";
 import { useBiHeadcountByContract, useBiHeadcountByCity } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
 import type { BiFilters } from "../types";
-import chileGeoJson from "../../../shared/assets/maps/chile.json";
-
-echarts.registerMap("chile", chileGeoJson as any);
+import { echarts } from "../../../shared/ui/charts/echartsRuntime";
 
 type BiHeadcountChartsProps = {
   filters?: BiFilters;
@@ -17,9 +14,48 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   const { data: contractData, isLoading: isLoadingContract } = useBiHeadcountByContract(filters);
   const { data: cityData, isLoading: isLoadingCity } = useBiHeadcountByCity(filters);
   const { theme } = useTheme();
+  const [isChileMapReady, setIsChileMapReady] = useState(() => Boolean(echarts.getMap("chile")));
 
   const isDark = theme === "dark";
   const textColor = isDark ? "#E2E8F0" : "#1E293B";
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (echarts.getMap("chile")) {
+      setIsChileMapReady(true);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    void fetch("/maps/chile.json", { cache: "force-cache" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`No fue posible cargar mapa de Chile (${response.status})`);
+        }
+
+        return response.json();
+      })
+      .then((geoJson) => {
+        if (!echarts.getMap("chile")) {
+          echarts.registerMap("chile", geoJson as never);
+        }
+
+        if (isMounted) {
+          setIsChileMapReady(true);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsChileMapReady(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const contractChartOption = useMemo<EChartsOption | null>(() => {
     if (!contractData || contractData.length === 0) {
@@ -56,7 +92,7 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   }, [contractData, isDark, textColor]);
 
   const mapChartOption = useMemo<EChartsOption | null>(() => {
-    if (!cityData || cityData.length === 0) {
+    if (!isChileMapReady || !cityData || cityData.length === 0) {
       return null;
     }
 
@@ -112,7 +148,7 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         }
       ]
     };
-  }, [cityData, isDark, textColor]);
+  }, [cityData, isChileMapReady, isDark, textColor]);
 
   return (
     <div className="bi-chart-row">
@@ -132,10 +168,10 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         <EChartSurface
           height={300}
           option={mapChartOption ?? {}}
-          loading={isLoadingCity}
+          loading={isLoadingCity || !isChileMapReady}
           empty={!mapChartOption}
           emptyMessage="Sin datos de ciudad"
-          loadingMessage="Cargando ciudades..."
+          loadingMessage="Cargando mapa..."
         />
       </div>
     </div>

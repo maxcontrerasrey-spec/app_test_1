@@ -1131,3 +1131,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Mover un acceso en navegación sin mover su pathname deja el sistema conceptualmente partido.** Si Acreditaciones vive dentro de Recursos Humanos, la ruta canónica debe reflejarlo (`/recursos-humanos/acreditacion/...`) y los paths legacy deben quedar solo como redirect de compatibilidad.
 - **En analítica filtrable, el contrato debe cambiar de punta a punta o el filtro queda decorativo.** No sirve agregar selects en la UI si `biApi`, React Query y SQL siguen leyendo vistas globales sin parámetros; el refactor correcto conecta estado de filtro, `queryKey` reactiva y RPC backend sobre el mismo objeto `filters`.
+
+## 114. Si un input se presenta como buscador BUK, no puede quedar encadenado a un filtro maestro que lo desactive
+
+- **Un buscador de trabajadores alimentado por `employees_active_current` debe responder por nombre o RUT aunque todavía no haya selección secundaria, salvo que el dominio exija explícitamente esa dependencia.** En Acreditación, bloquear el query hasta elegir faena convertía un search BUK en un selector muerto.
+- **La semántica de matching de nombres BUK debe reutilizar la misma helper estable (`build_buk_employee_name_search_key`) en todos los módulos.** Volver a un `LIKE` crudo sobre `full_name` reintroduce las mismas fallas ya corregidas en Incentivos y Movilidad Interna.

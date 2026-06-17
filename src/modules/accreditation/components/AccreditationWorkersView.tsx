@@ -47,12 +47,15 @@ export function AccreditationWorkersView() {
     reviewerNotes: ""
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const normalizedSearch = search.trim().toLowerCase();
+  const normalizedDigits = search.replace(/\D/g, "");
+  const canQueryWorkers = Boolean(siteId) || normalizedSearch.length >= 2 || normalizedDigits.length >= 4;
 
   const workerQuery = useAccreditationWorkers({
     search,
     siteId: siteId || null,
     status: status || null,
-    enabled: Boolean(siteId)
+    enabled: canQueryWorkers
   });
 
   const profileQuery = useWorkerAccreditationProfile({
@@ -180,7 +183,11 @@ export function AccreditationWorkersView() {
         />
       </div>
 
-      {!siteId ? <p className="tracking-filter-caption">Selecciona una faena para bootstrapear o revisar acreditaciones.</p> : null}
+      {!siteId ? (
+        <p className="tracking-filter-caption">
+          Selecciona una faena para bootstrapear acreditaciones o busca un trabajador BUK por nombre o RUT.
+        </p>
+      ) : null}
       {feedback ? <p className="tracking-filter-caption">{feedback}</p> : null}
       {workerQuery.error ? (
         <p className="tracking-filter-caption" style={{ color: "var(--danger-700)" }}>
@@ -223,7 +230,7 @@ export function AccreditationWorkersView() {
                 </button>
               );
             })}
-            {siteId && (workerQuery.data ?? []).length === 0 && !workerQuery.isLoading ? (
+            {canQueryWorkers && (workerQuery.data ?? []).length === 0 && !workerQuery.isLoading ? (
               <p className="tracking-filter-caption">No hay trabajadores para el filtro seleccionado.</p>
             ) : null}
           </div>
