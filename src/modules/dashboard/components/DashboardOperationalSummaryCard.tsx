@@ -117,8 +117,7 @@ export function DashboardOperationalSummaryCard({
     <article className="dashboard-info-card dashboard-info-card-operations">
       <div className="dashboard-operations-card-header">
         <div className="dashboard-info-head">
-          <span className="dashboard-info-kicker">{activeSheet.eyebrow}</span>
-          <strong>{activeSheet.title}</strong>
+          <strong style={{ fontSize: "1.05rem" }}>{activeSheet.eyebrow}</strong>
         </div>
         <div className="dashboard-birthday-controls" aria-label="Navegación de resumen operativo">
           <button
