@@ -2,6 +2,19 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección de rechazo de folios en Control de Contratos
+
+- [x] Auditar el flujo de rechazo de aprobaciones de folios y contrastarlo contra la constraint activa de `hiring_requests`
+- [x] Identificar drift o artefactos legacy en Supabase que puedan reescribir estados inválidos
+- [x] Publicar una migración defensiva que elimine el trigger legacy responsable, aplicarla en Supabase y validar el cierre
+
+## Resultado de corrección de rechazo de folios en Control de Contratos
+
+- La causa raíz no estaba en el modal ni en permisos: la base remota todavía mantenía activo el trigger legacy [`trg_hiring_request_approvals_refresh_status`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617161500_remove_legacy_hiring_status_refresh_trigger.sql:1) sobre `hiring_request_approvals`.
+- Ese trigger dependía de las funciones heredadas `refresh_hiring_request_status(...)` y `handle_hiring_request_approval_change()`, diseñadas para el workflow antiguo con estados `pendiente` y `aprobada`. Al rechazar un folio desde el flujo actual, el trigger intentaba reescribir `public.hiring_requests.status` con valores fuera de la constraint moderna y provocaba el error `hiring_requests_status_check`.
+- Se agregó la migración [`20260617161500_remove_legacy_hiring_status_refresh_trigger.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617161500_remove_legacy_hiring_status_refresh_trigger.sql:1) para eliminar explícitamente ese trigger y ambas funciones legacy, dejando como única autoridad de transición de estado a las RPCs vigentes (`decide_hiring_request_approval_v2` y `close_hiring_request`).
+- La migración quedó aplicada directamente en Supabase. El smoke remoto posterior confirmó que `trg_hiring_request_approvals_refresh_status` ya no existe, que `refresh_hiring_request_status(...)` y `handle_hiring_request_approval_change()` quedaron removidas, y que la constraint `hiring_requests_status_check` sigue aceptando exactamente `pending_area_manager`, `pending_contracts_control`, `approved`, `rejected` y `closed`.
+
 ## Estabilización enterprise SQL/RLS/contratos previa a producción
 
 - [x] Eliminar secretos `service_role` hardcodeados del repo y dejar tooling de auditoría para impedir regresión

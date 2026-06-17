@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. En migraciones de workflow, borrar la lógica legacy implica también borrar triggers activos, no solo dejar RPCs nuevas
+
+- **No basta con publicar la versión nueva del flujo si quedan triggers heredados escuchando la misma tabla**. Aunque el frontend invoque la RPC correcta, un trigger viejo puede reescribir estados o columnas con semántica obsoleta y romper constraints vigentes en runtime.
+- **La verificación de cierre debe incluir inventario vivo de triggers y helpers críticos en la base remota**. Si un workflow reemplaza estados o transiciones, hay que confirmar que no sobrevivan funciones como `refresh_*` o `handle_*_change` ligadas al pipeline antiguo.
+
 ## 64. En refactors SQL, no cambies por intuición el tipo de identificadores heredados
 
 - **Si un helper ya expone IDs de tablas legacy o catálogos, el tipo debe rastrearse hasta la tabla real antes de recastearlo**. En este repo, `public.buk_contract_mappings.id` es `bigint`; convertirlo a `uuid` dentro de una RPC compila, pero rompe en runtime apenas el payload devuelve valores como `79`.
