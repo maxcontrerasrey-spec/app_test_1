@@ -48,7 +48,7 @@ export function BiDashboardPage() {
         </p>
       </div>
 
-      <section style={{ marginBottom: "1.5rem" }}>
+      <section style={{ marginBottom: "0.5rem" }}>
         <div className="approval-chip-row">
           {BI_VIEWS.map((item) => (
             <button
@@ -76,7 +76,7 @@ export function BiDashboardPage() {
       )}
 
       {activeView === "incentivos" && (
-        <div style={{ marginTop: "1rem" }}>
+        <div>
           <IncentiveAnalyticsView />
         </div>
       )}

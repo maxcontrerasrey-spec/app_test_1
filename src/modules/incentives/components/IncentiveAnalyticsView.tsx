@@ -578,7 +578,7 @@ export function IncentiveAnalyticsView() {
           <button
             type="button"
             className="icon-button"
-            style={{ width: "38px", height: "38px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: "pointer", transition: "all 0.2s ease" }}
+            style={{ width: "3.2rem", height: "3.2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: "pointer", transition: "all 0.2s ease" }}
             title="Limpiar filtros"
             onClick={() => {
               setPeriodCodeFilter("");

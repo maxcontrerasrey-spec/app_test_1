@@ -60,7 +60,7 @@ export function MultiSelectField({
         className={`text-field ${disabled ? "disabled" : ""}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         style={{
-          minHeight: "38px",
+          minHeight: "3.2rem",
           height: "auto",
           display: "flex",
           flexWrap: "wrap",
