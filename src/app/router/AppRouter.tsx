@@ -137,7 +137,7 @@ export function AppRouter() {
             <Route
               path="/bi"
               element={
-                <RoleProtectedRoute moduleCode="recursos_humanos">
+                <RoleProtectedRoute moduleCode="bi_analytics">
                   <Navigate to="/bi/dotacion" replace />
                 </RoleProtectedRoute>
               }
@@ -145,7 +145,7 @@ export function AppRouter() {
             <Route
               path="/bi/:view"
               element={
-                <RoleProtectedRoute moduleCode="recursos_humanos">
+                <RoleProtectedRoute moduleCode="bi_analytics">
                   <BiDashboardPage />
                 </RoleProtectedRoute>
               }

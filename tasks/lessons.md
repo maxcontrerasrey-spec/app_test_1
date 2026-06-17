@@ -342,6 +342,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si un rol gerencial necesita ver dashboards pero no operar el flujo, no le des acceso global al módulo por `role_module_access` solo para que vea una pestaña**. En este repo eso habría abierto también RPCs de registro, historial y configuración porque `user_can_manage_hr_incentives(...)` depende del acceso al módulo.
 - **El patrón correcto es doble capa**: autorización backend específica para la RPC analítica y autorización frontend específica para ruta/navegación/tabs, permitiendo entrar solo a la vista analítica sin elevar permisos operativos sobre el resto del módulo.
 
+## 106. Nunca parchear permisos de módulos mediante arreglos duros en el Frontend (UI)
+- **Problema:** Ocultar un botón de menú inyectando atributos `visibleForRoles` quemados en el cliente porque falta la migración SQL, rompe el único origen de la verdad (la base de datos). Un usuario con el rol alterado en el backend seguirá bloqueado (o malamente expuesto) en la UI.
+- **Solución:** La autorización debe regirse estrictamente por la lista de módulos accesibles que retorna el backend (vía `get_my_effective_permissions`). Toda nueva sección debe darse de alta formalmente en `app_modules` y cruzar sus accesos en `role_module_access`, para que la navegación reacione automáticamente y de manera unificada.
+
 ## 54. Un alias sobre una RPC compartida nunca se implementa reescribiendo una variante vieja del motor
 
 - **Si el cambio pedido es solo agregar campos al JSON, la base obligatoria es la implementación viva exacta de la RPC, no una migración parecida encontrada en el historial**. En este repo, sustituir `get_recruitment_control_dashboard_v2()` desde una variante distinta rompió `candidate_control` y `personnel_to_hire` aunque el objetivo funcional era solo exponer `salary` y `turno`.

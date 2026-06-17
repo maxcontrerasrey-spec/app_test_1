@@ -111,20 +111,11 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "wallet"
       },
       {
-        moduleCode: "recursos_humanos",
+        moduleCode: "bi_analytics",
         to: "/bi",
         label: "Business Intelligence (BI)",
         description: "Dashboards analíticos de dotación, ausentismo e incentivos.",
-        iconKey: "bar-chart",
-        visibleForRoles: [
-          "director_eje",
-          "gerente_general",
-          "director_op",
-          "gerencia",
-          "operaciones_l_1",
-          "control_contratos",
-          "admin"
-        ]
+        iconKey: "bar-chart"
       }
     ]
   },

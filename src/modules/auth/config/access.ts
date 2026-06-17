@@ -26,7 +26,8 @@ export type AppModuleCode =
   | "recursos_humanos"
   | "jornadas_turnos"
   | "alta_operacional_personal"
-  | "ai_assistant";
+  | "ai_assistant"
+  | "bi_analytics";
 
 const KNOWN_ROLE_CODES = new Set<AppRole>([
   "admin",
@@ -60,7 +61,8 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "recursos_humanos",
   "jornadas_turnos",
   "alta_operacional_personal",
-  "ai_assistant"
+  "ai_assistant",
+  "bi_analytics"
 ]);
 
 export function normalizeRoleCode(value: string | null | undefined): AppRole | null {
