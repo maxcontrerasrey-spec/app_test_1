@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { SearchableSelectField, SelectField, type SelectOption, TextField } from "../../../shared/ui";
+import { SearchableSelectField, SelectField, type SelectOption, TextField, FieldHintIcon } from "../../../shared/ui";
 import { invalidateAccreditationQueries, useAccreditationSetupCatalogs } from "../hooks/useAccreditationQueries";
 import {
   saveAccreditationMatrixRule,
@@ -242,9 +242,6 @@ export function AccreditationSettingsView() {
   return (
     <section className="tracking-panel accreditation-panel">
       {feedback ? <p className="tracking-filter-caption">{feedback}</p> : null}
-      <p className="tracking-filter-caption">
-        Cada campo explica que dato pide, desde donde nace y en que tabla queda persistido.
-      </p>
 
       <div className="accreditation-settings-grid">
         <article className="info-card accreditation-settings-card">
@@ -296,15 +293,14 @@ export function AccreditationSettingsView() {
               hint={getFieldHint(siteGuides, "description")}
             />
           </div>
-          <div className="approval-chip-row">
-            <button type="button" className="approval-chip tracking-kpi-card-active" onClick={() => void handleSaveSite()} disabled={isSaving}>
+          <div className="action-row">
+            <button type="button" className="soft-primary-button soft-primary-button-success" onClick={() => void handleSaveSite()} disabled={isSaving}>
               Guardar faena
             </button>
-            <button type="button" className="approval-chip" onClick={() => setSiteForm(defaultSiteForm)}>
+            <button type="button" className="soft-primary-button soft-primary-button-neutral" onClick={() => setSiteForm(defaultSiteForm)}>
               Limpiar
             </button>
           </div>
-
           <div className="accreditation-inline-list">
             {(setupQuery.data?.sites ?? []).map((site) => (
               <button type="button" key={site.id} className="accreditation-inline-list-item" onClick={() => loadSite(site)}>
@@ -369,7 +365,7 @@ export function AccreditationSettingsView() {
             />
           </div>
           <div className="accreditation-toggle-row">
-            <label>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <input
                 type="checkbox"
                 checked={requirementForm.isMandatory}
@@ -378,9 +374,9 @@ export function AccreditationSettingsView() {
                 }
               />
               Obligatorio
+              <FieldHintIcon hint={getFieldHint(requirementGuides, "is_mandatory")} />
             </label>
-            <span className="accreditation-toggle-hint">{getFieldHint(requirementGuides, "is_mandatory")}</span>
-            <label>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <input
                 type="checkbox"
                 checked={requirementForm.requiresExpiryDate}
@@ -389,9 +385,9 @@ export function AccreditationSettingsView() {
                 }
               />
               Requiere vencimiento
+              <FieldHintIcon hint={getFieldHint(requirementGuides, "requires_expiry_date")} />
             </label>
-            <span className="accreditation-toggle-hint">{getFieldHint(requirementGuides, "requires_expiry_date")}</span>
-            <label>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <input
                 type="checkbox"
                 checked={requirementForm.blocksAccreditation}
@@ -400,19 +396,19 @@ export function AccreditationSettingsView() {
                 }
               />
               Bloquea acreditacion
+              <FieldHintIcon hint={getFieldHint(requirementGuides, "blocks_accreditation")} />
             </label>
-            <span className="accreditation-toggle-hint">{getFieldHint(requirementGuides, "blocks_accreditation")}</span>
           </div>
-          <div className="approval-chip-row">
+          <div className="action-row">
             <button
               type="button"
-              className="approval-chip tracking-kpi-card-active"
+              className="soft-primary-button soft-primary-button-success"
               onClick={() => void handleSaveRequirement()}
               disabled={isSaving}
             >
               Guardar requisito
             </button>
-            <button type="button" className="approval-chip" onClick={() => setRequirementForm(defaultRequirementForm)}>
+            <button type="button" className="soft-primary-button soft-primary-button-neutral" onClick={() => setRequirementForm(defaultRequirementForm)}>
               Limpiar
             </button>
           </div>
@@ -480,16 +476,16 @@ export function AccreditationSettingsView() {
           />
         </div>
 
-        <div className="approval-chip-row">
+        <div className="action-row">
           <button
             type="button"
-            className="approval-chip tracking-kpi-card-active"
+            className="soft-primary-button soft-primary-button-success"
             onClick={() => void handleSaveMatrixRule()}
             disabled={isSaving}
           >
             Guardar regla
           </button>
-          <button type="button" className="approval-chip" onClick={() => setMatrixForm(defaultMatrixForm)}>
+          <button type="button" className="soft-primary-button soft-primary-button-neutral" onClick={() => setMatrixForm(defaultMatrixForm)}>
             Limpiar
           </button>
         </div>

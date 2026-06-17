@@ -66,6 +66,7 @@
 .accreditation-settings-card {
   display: grid;
   gap: 0.65rem;
+  align-content: start;
 }
 
 .accreditation-settings-card .field-grid {
