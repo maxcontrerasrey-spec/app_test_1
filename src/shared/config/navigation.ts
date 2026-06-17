@@ -111,7 +111,7 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "wallet"
       },
       {
-        moduleCode: "bi_analytics",
+        moduleCode: "recursos_humanos",
         to: "/bi",
         label: "Business Intelligence (BI)",
         description: "Dashboards analíticos de dotación, ausentismo e incentivos.",
