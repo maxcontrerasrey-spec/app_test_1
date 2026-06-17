@@ -2624,3 +2624,13 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se removió la deuda declarativa de navegación en [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:7): `adminOnly` dejó de existir en `NavigationModule` y `flask` salió del union de `iconKey` porque ya no había ningún consumidor real tras eliminar Labs.
 - [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:25) quedó más compacto al eliminar el `case "flask"` del render de iconos y la rama muerta que filtraba `module.adminOnly`.
 - [`tsconfig.node.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/tsconfig.node.json:1) ahora emite solo declaraciones para `vite.config.ts`, evitando que el build vuelva a generar [`vite.config.js`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.js:1) como duplicado ejecutable en la raíz.
+
+## Implementación integral de Acreditación de Personas
+
+- [ ] Aterrizar el plan sobre contratos reales del repo, reutilizando `employees_active_current`, helpers de autorización, patrón de RPCs y navegación existente.
+- [ ] Crear la migración del módulo con tablas de acreditación, matriz de requisitos, auditoría, helper de acceso y registro en `app_modules` / `role_module_access`.
+- [ ] Implementar RPCs de lectura y mutación para dashboard, mantenedores, búsqueda de trabajadores, generación de requisitos y recálculo de estado.
+- [ ] Reutilizar la integración BUK existente para registrar/subir documentos de acreditación sin crear una segunda fuente persistente de archivos en Supabase.
+- [ ] Implementar el frontend `src/modules/accreditation` con vistas de Dashboard, Trabajadores y Configuración, conectado a los contratos backend reales.
+- [ ] Verificar integración con Jornadas y Turnos mostrando contexto vigente del trabajador cuando exista pauta activa o excepciones relevantes.
+- [ ] Validar `npm run audit:migrations`, `npx tsc -b`, `npm run build` y `git diff --check`, y documentar cierre y lecciones aprendidas.
