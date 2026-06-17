@@ -1157,3 +1157,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Un buscador de trabajadores alimentado por `employees_active_current` debe responder por nombre o RUT aunque todavía no haya selección secundaria, salvo que el dominio exija explícitamente esa dependencia.** En Acreditación, bloquear el query hasta elegir faena convertía un search BUK en un selector muerto.
 - **La semántica de matching de nombres BUK debe reutilizar la misma helper estable (`build_buk_employee_name_search_key`) en todos los módulos.** Volver a un `LIKE` crudo sobre `full_name` reintroduce las mismas fallas ya corregidas en Incentivos y Movilidad Interna.
+
+## 115. Si una función `RETURNS TABLE` cambia columnas de salida, en Postgres no basta `create or replace`
+
+- **Cambiar el row type de una función pública exige `drop function` explícito antes del `create`.** Si se agregan columnas de salida a una RPC como `get_internal_mobility_requests()`, PostgreSQL responde `cannot change return type of existing function` aunque el cuerpo sea correcto.
+- **La auditoría de migración debe contemplar también contratos de salida, no solo nombres y permisos.** En producción, el cierre seguro es: ajustar la migración, reaplicarla, validar la firma viva en la base remota y luego recién confiar en el frontend que consume ese payload.

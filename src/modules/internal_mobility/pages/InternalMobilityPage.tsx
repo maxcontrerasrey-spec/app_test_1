@@ -9,13 +9,22 @@ import { PageShell, TextField } from "../../../shared/ui";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import { InternalMobilityWorkerLookup } from "../components/InternalMobilityWorkerLookup";
 import {
+  canManageInternalMobilityHrExecution,
+  toInternalMobilityAuditLabel,
+  toInternalMobilityExecutionStatusLabel,
+  toInternalMobilityStatusLabel
+} from "../lib/presentation";
+import {
   invalidateInternalMobilityQueries,
   useInternalMobilityRequestDetail,
   useInternalMobilityRequests,
   useInternalMobilitySetupCatalogs,
   useInternalMobilityWorkerContext
 } from "../hooks/useInternalMobilityQueries";
-import { createInternalMobilityRequest } from "../services/internalMobilityApi";
+import {
+  createInternalMobilityRequest,
+  setInternalMobilityHrExecutionStatus
+} from "../services/internalMobilityApi";
 import type { InternalMobilityEligibleFolio, InternalMobilityEligibleWorker } from "../types";
 
 const UNRESOLVED_COMPANY_LABEL = "No resuelta";
@@ -39,26 +48,9 @@ function resolveFolioLabel(folio: InternalMobilityEligibleFolio | null) {
   return folio.folio ?? folio.caseCode;
 }
 
-function toStatusLabel(value: string | null | undefined) {
-  if (value === "approved") return "Aprobada";
-  if (value === "rejected") return "Rechazada";
-  if (value === "closed") return "Cerrada";
-  if (value === "pending_contracts_control") return "Pendiente control contratos";
-  if (value === "pending_area_manager") return "Pendiente gerente de area";
-  return "Pendiente";
-}
-
-function toAuditLabel(value: string | null | undefined) {
-  if (value === "submitted") return "Solicitud enviada";
-  if (value === "approval_created") return "Aprobación creada";
-  if (value === "approved") return "Aprobación registrada";
-  if (value === "rejected") return "Solicitud rechazada";
-  return value || "Evento";
-}
-
 export function InternalMobilityPage() {
   const queryClient = useQueryClient();
-  const { displayName, jobTitle, user } = useAuth();
+  const { appRoles, displayName, isSuperAdmin, jobTitle, user } = useAuth();
   const [selectedWorker, setSelectedWorker] = useState<InternalMobilityEligibleWorker | null>(null);
   const [selectedFolioId, setSelectedFolioId] = useState("");
   const [motive, setMotive] = useState("");
@@ -69,6 +61,8 @@ export function InternalMobilityPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
   const [page, setPage] = useState(0);
+  const [isHrExecutionSaving, setIsHrExecutionSaving] = useState(false);
+  const [hrExecutionError, setHrExecutionError] = useState<string | null>(null);
 
   const setupCatalogsQuery = useInternalMobilitySetupCatalogs();
   const workerContextQuery = useInternalMobilityWorkerContext(
@@ -169,6 +163,10 @@ export function InternalMobilityPage() {
     setPage(0);
   }, [searchTerm]);
 
+  useEffect(() => {
+    setHrExecutionError(null);
+  }, [selectedRequestId]);
+
   const totalPages = Math.ceil(filteredRequests.length / REQUESTS_PAGE_SIZE);
   const paginatedRequests = filteredRequests.slice(
     page * REQUESTS_PAGE_SIZE,
@@ -186,6 +184,7 @@ export function InternalMobilityPage() {
     Boolean(motive.trim()) &&
     requesterSigned &&
     !isSubmitting;
+  const canManageHrExecution = canManageInternalMobilityHrExecution(appRoles, isSuperAdmin);
 
   const handleSubmit = async () => {
     if (!isSubmitEnabled || !selectedWorker) {
@@ -223,6 +222,34 @@ export function InternalMobilityPage() {
       setSubmitError(error instanceof Error ? error.message : "No fue posible registrar la solicitud.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleHrExecutionStatusChange = async (status: "pending" | "executed") => {
+    if (!selectedRequestId) {
+      return;
+    }
+
+    setIsHrExecutionSaving(true);
+    setHrExecutionError(null);
+
+    try {
+      const { error } = await setInternalMobilityHrExecutionStatus({
+        requestId: selectedRequestId,
+        status
+      });
+
+      if (error) {
+        setHrExecutionError(error);
+        return;
+      }
+
+      await invalidateInternalMobilityQueries(queryClient, selectedRequestId);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.home(user?.id ?? "anonymous")
+      });
+    } finally {
+      setIsHrExecutionSaving(false);
     }
   };
 
@@ -502,6 +529,7 @@ export function InternalMobilityPage() {
                 <tr>
                   <th>Folio</th>
                   <th>Estado</th>
+                  <th>RRHH</th>
                   <th>Trabajador</th>
                   <th>Origen</th>
                   <th>Destino</th>
@@ -511,7 +539,7 @@ export function InternalMobilityPage() {
               <tbody>
                 {requestsQuery.isLoading ? (
                   <tr>
-                    <td colSpan={6} className="tracking-empty-state">
+                    <td colSpan={7} className="tracking-empty-state">
                       Cargando solicitudes de movilidad...
                     </td>
                   </tr>
@@ -519,7 +547,7 @@ export function InternalMobilityPage() {
 
                 {!requestsQuery.isLoading && requestsQuery.error ? (
                   <tr>
-                    <td colSpan={6} className="tracking-empty-state">
+                    <td colSpan={7} className="tracking-empty-state">
                       {requestsQuery.error.message}
                     </td>
                   </tr>
@@ -529,7 +557,7 @@ export function InternalMobilityPage() {
                 !requestsQuery.error &&
                 filteredRequests.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="tracking-empty-state">
+                    <td colSpan={7} className="tracking-empty-state">
                       No hay solicitudes para el filtro actual.
                     </td>
                   </tr>
@@ -547,7 +575,14 @@ export function InternalMobilityPage() {
                         >
                           <td>{request.folio}</td>
                           <td>
-                            <span className="tracking-status-pill">{toStatusLabel(request.status)}</span>
+                            <span className="tracking-status-pill">
+                              {toInternalMobilityStatusLabel(request.status)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="tracking-status-pill">
+                              {toInternalMobilityExecutionStatusLabel(request.hrExecutionStatus)}
+                            </span>
                           </td>
                           <td>
                             <strong>{request.employeeFullName}</strong>
@@ -635,12 +670,17 @@ export function InternalMobilityPage() {
                 <div>
                   <h3 id="mobility-modal-title">{requestDetailQuery.data.request.folio}</h3>
                   <p className="helper-copy">
-                    {toStatusLabel(requestDetailQuery.data.request.status)} · {requestDetailQuery.data.request.employeeFullName}
+                    {toInternalMobilityStatusLabel(requestDetailQuery.data.request.status)} · {requestDetailQuery.data.request.employeeFullName}
                   </p>
                 </div>
-                <span className="tracking-status-pill">
-                  {requestDetailQuery.data.request.requiresTermination ? "Requiere finiquito" : "Sin finiquito"}
-                </span>
+                <div className="mobility-detail-pill-row">
+                  <span className="tracking-status-pill">
+                    {toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}
+                  </span>
+                  <span className="tracking-status-pill">
+                    {requestDetailQuery.data.request.requiresTermination ? "Requiere finiquito" : "Sin finiquito"}
+                  </span>
+                </div>
               </div>
 
               <div className="expanded-case-detail-grid expanded-case-detail-grid-vertical">
@@ -736,8 +776,62 @@ export function InternalMobilityPage() {
                       <small>Rechazada</small>
                       <strong>{formatDateTimeLabel(requestDetailQuery.data.request.rejectedAt, "—")}</strong>
                     </div>
+                    <div>
+                      <small>RRHH actualizó</small>
+                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.hrExecutionUpdatedAt, "—")}</strong>
+                    </div>
+                    <div>
+                      <small>RRHH ejecutó</small>
+                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.hrExecutionExecutedAt, "—")}</strong>
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="expanded-detail-section">
+                <h4>Ejecución RRHH</h4>
+                <div className="expanded-detail-fields">
+                  <div>
+                    <small>Estado RRHH</small>
+                    <strong>{toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}</strong>
+                  </div>
+                  <div>
+                    <small>Última gestión RRHH</small>
+                    <strong>{requestDetailQuery.data.request.hrExecutionUpdatedByName ?? "—"}</strong>
+                  </div>
+                  <div>
+                    <small>Ejecutó RRHH</small>
+                    <strong>{requestDetailQuery.data.request.hrExecutionExecutedByName ?? "—"}</strong>
+                  </div>
+                </div>
+                {requestDetailQuery.data.request.status === "approved" ? (
+                  <div className="mobility-execution-actions">
+                    <button
+                      type="button"
+                      className="soft-primary-button"
+                      disabled={!canManageHrExecution || isHrExecutionSaving}
+                      onClick={() => {
+                        void handleHrExecutionStatusChange("pending");
+                      }}
+                    >
+                      Pendiente de Ejecución RRHH
+                    </button>
+                    <button
+                      type="button"
+                      className="soft-primary-button"
+                      disabled={!canManageHrExecution || isHrExecutionSaving}
+                      onClick={() => {
+                        void handleHrExecutionStatusChange("executed");
+                      }}
+                    >
+                      {isHrExecutionSaving ? "Guardando..." : "Ejecutado RRHH"}
+                    </button>
+                  </div>
+                ) : null}
+                {!canManageHrExecution && requestDetailQuery.data.request.status === "approved" ? (
+                  <p className="helper-copy">Solo RRHH administrativo o administradores pueden cerrar esta ejecución.</p>
+                ) : null}
+                {hrExecutionError ? <p className="form-status form-status-error">{hrExecutionError}</p> : null}
               </div>
 
               <div className="expanded-detail-section">
@@ -753,7 +847,9 @@ export function InternalMobilityPage() {
                       <div key={approval.id} className="mobility-history-item">
                         <div className="mobility-history-item-head">
                           <strong>{approval.stepName}</strong>
-                          <span className="tracking-status-pill">{toStatusLabel(approval.status)}</span>
+                          <span className="tracking-status-pill">
+                            {toInternalMobilityStatusLabel(approval.status)}
+                          </span>
                         </div>
                         <span>{approval.approverName ?? "Sin aprobador asignado"}</span>
                         <span>Creada: {formatDateTimeLabel(approval.createdAt, "—")}</span>
@@ -770,7 +866,7 @@ export function InternalMobilityPage() {
                     {requestDetailQuery.data.auditLog.map((event) => (
                       <div key={event.id} className="mobility-history-item">
                         <div className="mobility-history-item-head">
-                          <strong>{toAuditLabel(event.actionType)}</strong>
+                          <strong>{toInternalMobilityAuditLabel(event.actionType)}</strong>
                           <span>{formatDateTimeLabel(event.createdAt, "—")}</span>
                         </div>
                         <span>{event.actorName ?? event.actorUserId}</span>

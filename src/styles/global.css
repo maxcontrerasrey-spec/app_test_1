@@ -2585,6 +2585,13 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   flex-wrap: wrap;
 }
 
+.mobility-detail-pill-row,
+.mobility-execution-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .mobility-requests-pagination {
   display: flex;
   align-items: center;
@@ -2635,6 +2642,10 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+.mobility-execution-actions {
+  margin-top: 1rem;
 }
 
 .expanded-detail-full {

@@ -4,6 +4,7 @@ import type {
   CreateInternalMobilityRequestResult,
   InternalMobilityEligibleWorker,
   InternalMobilityEligibleFolio,
+  InternalMobilityHrExecutionStatus,
   InternalMobilityRequestDetail,
   InternalMobilityRequestSummary,
   InternalMobilitySetupCatalogs,
@@ -32,6 +33,10 @@ function readNullableText(value: unknown) {
 
 function readNullableNumber(value: unknown) {
   return value === null || value === undefined ? null : Number(value);
+}
+
+function readNullableTimestamp(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 function formatRpcError(error: {
@@ -127,6 +132,7 @@ function mapRequestSummary(row: Record<string, unknown>): InternalMobilityReques
     requestId: readText(row.request_id),
     folio: readText(row.folio),
     status: String(row.status ?? "pending_area_manager") as InternalMobilityRequestSummary["status"],
+    hrExecutionStatus: String(row.hr_execution_status ?? "pending") as InternalMobilityHrExecutionStatus,
     requesterName: readText(row.requester_name),
     requesterEmail: readNullableText(row.requester_email),
     employeeFullName: readText(row.employee_full_name),
@@ -153,12 +159,14 @@ function mapRequestSummary(row: Record<string, unknown>): InternalMobilityReques
       typeof row.current_approver_name === "string" && row.current_approver_name.trim()
         ? row.current_approver_name
         : null,
+    hrExecutionUpdatedAt: readNullableTimestamp(row.hr_execution_updated_at),
+    hrExecutionUpdatedByName: readNullableText(row.hr_execution_updated_by_name),
+    hrExecutionExecutedAt: readNullableTimestamp(row.hr_execution_executed_at),
+    hrExecutionExecutedByName: readNullableText(row.hr_execution_executed_by_name),
     createdAt: String(row.created_at ?? ""),
     submittedAt: String(row.submitted_at ?? ""),
-    approvedAt:
-      typeof row.approved_at === "string" && row.approved_at.trim() ? row.approved_at : null,
-    rejectedAt:
-      typeof row.rejected_at === "string" && row.rejected_at.trim() ? row.rejected_at : null
+    approvedAt: readNullableTimestamp(row.approved_at),
+    rejectedAt: readNullableTimestamp(row.rejected_at)
   };
 }
 
@@ -171,6 +179,7 @@ function mapRequestDetail(payload: unknown): InternalMobilityRequestDetail {
       id: readText(request.id),
       folio: readText(request.folio),
       status: String(request.status ?? "pending_area_manager") as InternalMobilityRequestDetail["request"]["status"],
+      hrExecutionStatus: String(request.hr_execution_status ?? "pending") as InternalMobilityHrExecutionStatus,
       requesterName: readText(request.requester_name),
       requesterJobTitle: readNullableText(request.requester_job_title),
       requesterEmail: readNullableText(request.requester_email),
@@ -206,14 +215,14 @@ function mapRequestDetail(payload: unknown): InternalMobilityRequestDetail {
           ? request.current_step_code
           : null,
       submittedAt: String(request.submitted_at ?? ""),
-      approvedAt:
-        typeof request.approved_at === "string" && request.approved_at.trim()
-          ? request.approved_at
-          : null,
-      rejectedAt:
-        typeof request.rejected_at === "string" && request.rejected_at.trim()
-          ? request.rejected_at
-          : null,
+      approvedAt: readNullableTimestamp(request.approved_at),
+      rejectedAt: readNullableTimestamp(request.rejected_at),
+      hrExecutionUpdatedAt: readNullableTimestamp(request.hr_execution_updated_at),
+      hrExecutionUpdatedBy: readNullableText(request.hr_execution_updated_by),
+      hrExecutionUpdatedByName: readNullableText(request.hr_execution_updated_by_name),
+      hrExecutionExecutedAt: readNullableTimestamp(request.hr_execution_executed_at),
+      hrExecutionExecutedBy: readNullableText(request.hr_execution_executed_by),
+      hrExecutionExecutedByName: readNullableText(request.hr_execution_executed_by_name),
       createdAt: readText(request.created_at),
       updatedAt: readText(request.updated_at)
     },
@@ -389,6 +398,27 @@ export async function decideInternalMobilityApproval(params: {
   if (error) {
     return {
       error: formatRpcError(error) || "No fue posible registrar la decisión."
+    };
+  }
+
+  return {
+    error: null
+  };
+}
+
+export async function setInternalMobilityHrExecutionStatus(params: {
+  requestId: string;
+  status: InternalMobilityHrExecutionStatus;
+}) {
+  const client = getSupabaseClient();
+  const { error } = await client.rpc("set_internal_mobility_hr_execution_status", {
+    p_request_id: params.requestId,
+    p_status: params.status
+  });
+
+  if (error) {
+    return {
+      error: formatRpcError(error) || "No fue posible actualizar la ejecución RRHH."
     };
   }
 

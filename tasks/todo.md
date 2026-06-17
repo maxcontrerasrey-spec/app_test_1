@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Etapa RRHH en Movilidad Interna y auditoría preventiva de legacies
+
+- [x] Auditar el flujo actual de movilidad interna y ubicar una etapa RRHH posterior a la aprobación sin romper el contrato operativo vigente
+- [x] Extender backend y frontend para soportar `Pendiente de Ejecución RRHH` / `Ejecutado RRHH`, con permisos explícitos para `administrativo`
+- [x] Auditar residuos legacy peligrosos en el circuito de movilidad, aplicar migración en Supabase y validar build / typecheck / queries de humo
+
+## Resultado de etapa RRHH en Movilidad Interna y auditoría preventiva de legacies
+
+- Se agregó la migración [`20260617170000_add_internal_mobility_hr_execution_stage.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617170000_add_internal_mobility_hr_execution_stage.sql:1), ya aplicada en Supabase, para introducir una segunda capa operativa sobre movilidades aprobadas: `hr_execution_status = pending|executed`, con trazabilidad de último gestor y ejecutor RRHH.
+- La aprobación sigue significando “movilidad autorizada”; la nueva etapa RRHH significa “anexo generado y firmas gestionadas”. Esto evita sobrecargar `status = approved` con semántica operativa nueva y deja auditable el cierre real del traslado.
+- Se creó la RPC [`set_internal_mobility_hr_execution_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617170000_add_internal_mobility_hr_execution_stage.sql:74), limitada a `admin`/`superadmin` y rol `administrativo`. También se corrigió el helper de visibilidad para que `administrativo` pueda operar la cola RRHH y no quede con acceso al módulo pero sin visibilidad funcional.
+- En frontend, las vistas [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1) y [`HiringInternalMobilityView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringInternalMobilityView.tsx:1) ahora muestran el estado RRHH y permiten marcar `Pendiente de Ejecución RRHH` o `Ejecutado RRHH` según permisos. La bandeja operativa de ejecución filtra solo movilidades aprobadas aún no ejecutadas, de modo que desaparecen al cerrarse.
+- Como saneamiento de código, se centralizó la presentación de estados y auditoría en [`presentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/lib/presentation.ts:1), reduciendo duplicación entre módulos y bajando riesgo de drift visual o semántico.
+- La pasada preventiva de legacies sobre movilidad confirmó que en la base activa no existe un trigger equivalente al residuo que rompía contrataciones: sobre `internal_mobility_request_approvals` solo quedaron `trg_internal_mobility_pending_email_dispatch`, `trg_internal_mobility_request_approvals_set_updated_at` y `trg_mobility_approvals_rejected_email_dispatch`.
+
 ## Corrección de rechazo de folios en Control de Contratos
 
 - [x] Auditar el flujo de rechazo de aprobaciones de folios y contrastarlo contra la constraint activa de `hiring_requests`

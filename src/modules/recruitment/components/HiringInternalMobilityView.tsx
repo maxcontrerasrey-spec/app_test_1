@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../../auth/context/AuthContext";
 import { formatDateTimeLabel } from "../../../shared/lib/format";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { formatRut } from "../../../shared/lib/rut";
 import { TextField } from "../../../shared/ui";
 import {
+  canManageInternalMobilityHrExecution,
+  toInternalMobilityExecutionStatusLabel,
+  toInternalMobilityStatusLabel
+} from "../../internal_mobility/lib/presentation";
+import {
+  invalidateInternalMobilityQueries,
   useInternalMobilityRequestDetail,
   useInternalMobilityRequests
 } from "../../internal_mobility/hooks/useInternalMobilityQueries";
-
-function formatMobilityStatus(status: string) {
-  if (status === "approved") return "Aprobada";
-  if (status === "closed") return "Cerrada";
-  if (status === "rejected") return "Rechazada";
-  if (status === "pending_contracts_control") return "Pendiente control contratos";
-  if (status === "pending_area_manager") return "Pendiente gerente de area";
-  return "Pendiente";
-}
+import { setInternalMobilityHrExecutionStatus } from "../../internal_mobility/services/internalMobilityApi";
 
 type HiringInternalMobilityViewProps = {
   isParentLoading: boolean;
@@ -25,15 +26,20 @@ export function HiringInternalMobilityView({
   isParentLoading,
   externalErrorMessage
 }: HiringInternalMobilityViewProps) {
+  const queryClient = useQueryClient();
+  const { appRoles, isSuperAdmin, user } = useAuth();
   const requestsQuery = useInternalMobilityRequests();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState("");
+  const [isHrExecutionSaving, setIsHrExecutionSaving] = useState(false);
+  const [hrExecutionError, setHrExecutionError] = useState<string | null>(null);
+  const canManageHrExecution = canManageInternalMobilityHrExecution(appRoles, isSuperAdmin);
 
   const approvedRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return (requestsQuery.data ?? [])
-      .filter((request) => request.status === "approved")
+      .filter((request) => request.status === "approved" && request.hrExecutionStatus !== "executed")
       .filter((request) => {
         if (!normalizedSearch) {
           return true;
@@ -67,6 +73,10 @@ export function HiringInternalMobilityView({
     }
   }, [approvedRequests, selectedRequestId]);
 
+  useEffect(() => {
+    setHrExecutionError(null);
+  }, [selectedRequestId]);
+
   const selectedRequest =
     approvedRequests.find((request) => request.requestId === selectedRequestId) ?? null;
   const requestDetailQuery = useInternalMobilityRequestDetail(
@@ -77,8 +87,37 @@ export function HiringInternalMobilityView({
   const isLoading = isParentLoading || requestsQuery.isLoading;
   const errorMessage =
     externalErrorMessage ||
+    hrExecutionError ||
     (requestsQuery.error instanceof Error ? requestsQuery.error.message : "") ||
     (requestDetailQuery.error instanceof Error ? requestDetailQuery.error.message : "");
+
+  const handleHrExecutionStatusChange = async (status: "pending" | "executed") => {
+    if (!selectedRequestId) {
+      return;
+    }
+
+    setIsHrExecutionSaving(true);
+    setHrExecutionError(null);
+
+    try {
+      const { error } = await setInternalMobilityHrExecutionStatus({
+        requestId: selectedRequestId,
+        status
+      });
+
+      if (error) {
+        setHrExecutionError(error);
+        return;
+      }
+
+      await invalidateInternalMobilityQueries(queryClient, selectedRequestId);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.home(user?.id ?? "anonymous")
+      });
+    } finally {
+      setIsHrExecutionSaving(false);
+    }
+  };
 
   return (
     <>
@@ -172,7 +211,12 @@ export function HiringInternalMobilityView({
               <div>
                 <h3>{requestDetailQuery.data.request.employeeFullName}</h3>
                 <span className="tracking-status-pill">
-                  {formatMobilityStatus(requestDetailQuery.data.request.status)}
+                  {toInternalMobilityStatusLabel(requestDetailQuery.data.request.status)}
+                </span>
+              </div>
+              <div className="mobility-detail-pill-row">
+                <span className="tracking-status-pill">
+                  {toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}
                 </span>
               </div>
             </div>
@@ -273,9 +317,46 @@ export function HiringInternalMobilityView({
                   </div>
                   <div>
                     <small>Estado final</small>
-                    <strong>{formatMobilityStatus(requestDetailQuery.data.request.status)}</strong>
+                    <strong>{toInternalMobilityStatusLabel(requestDetailQuery.data.request.status)}</strong>
+                  </div>
+                  <div>
+                    <small>Estado RRHH</small>
+                    <strong>{toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}</strong>
+                  </div>
+                  <div>
+                    <small>RRHH ejecutó</small>
+                    <strong>{formatDateTimeLabel(requestDetailQuery.data.request.hrExecutionExecutedAt, "—")}</strong>
+                  </div>
+                  <div>
+                    <small>Ejecutó RRHH</small>
+                    <strong>{requestDetailQuery.data.request.hrExecutionExecutedByName ?? "—"}</strong>
                   </div>
                 </div>
+                <div className="mobility-execution-actions">
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    disabled={!canManageHrExecution || isHrExecutionSaving}
+                    onClick={() => {
+                      void handleHrExecutionStatusChange("pending");
+                    }}
+                  >
+                    Pendiente de Ejecución RRHH
+                  </button>
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    disabled={!canManageHrExecution || isHrExecutionSaving}
+                    onClick={() => {
+                      void handleHrExecutionStatusChange("executed");
+                    }}
+                  >
+                    {isHrExecutionSaving ? "Guardando..." : "Ejecutado RRHH"}
+                  </button>
+                </div>
+                {!canManageHrExecution ? (
+                  <p className="helper-copy">Solo RRHH administrativo o administradores pueden cerrar esta ejecución.</p>
+                ) : null}
               </div>
 
               <div className="expanded-detail-section expanded-detail-section-full">

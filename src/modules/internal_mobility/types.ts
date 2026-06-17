@@ -81,10 +81,13 @@ export type InternalMobilityRequestStatus =
   | "rejected"
   | "closed";
 
+export type InternalMobilityHrExecutionStatus = "pending" | "executed";
+
 export type InternalMobilityRequestSummary = {
   requestId: string;
   folio: string;
   status: InternalMobilityRequestStatus;
+  hrExecutionStatus: InternalMobilityHrExecutionStatus;
   requesterName: string;
   requesterEmail: string | null;
   employeeFullName: string;
@@ -105,6 +108,10 @@ export type InternalMobilityRequestSummary = {
   motive: string;
   currentStepName: string | null;
   currentApproverName: string | null;
+  hrExecutionUpdatedAt: string | null;
+  hrExecutionUpdatedByName: string | null;
+  hrExecutionExecutedAt: string | null;
+  hrExecutionExecutedByName: string | null;
   createdAt: string;
   submittedAt: string;
   approvedAt: string | null;
@@ -141,6 +148,7 @@ export type InternalMobilityRequestDetail = {
     id: string;
     folio: string;
     status: InternalMobilityRequestStatus;
+    hrExecutionStatus: InternalMobilityHrExecutionStatus;
     requesterName: string;
     requesterJobTitle: string | null;
     requesterEmail: string | null;
@@ -175,6 +183,12 @@ export type InternalMobilityRequestDetail = {
     submittedAt: string;
     approvedAt: string | null;
     rejectedAt: string | null;
+    hrExecutionUpdatedAt: string | null;
+    hrExecutionUpdatedBy: string | null;
+    hrExecutionUpdatedByName: string | null;
+    hrExecutionExecutedAt: string | null;
+    hrExecutionExecutedBy: string | null;
+    hrExecutionExecutedByName: string | null;
     createdAt: string;
     updatedAt: string;
   };
