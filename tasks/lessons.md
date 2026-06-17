@@ -1182,3 +1182,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Cambiar el row type de una función pública exige `drop function` explícito antes del `create`.** Si se agregan columnas de salida a una RPC como `get_internal_mobility_requests()`, PostgreSQL responde `cannot change return type of existing function` aunque el cuerpo sea correcto.
 - **La auditoría de migración debe contemplar también contratos de salida, no solo nombres y permisos.** En producción, el cierre seguro es: ajustar la migración, reaplicarla, validar la firma viva en la base remota y luego recién confiar en el frontend que consume ese payload.
+
+## 116. En flujos secuenciales de aprobación, el solicitante no debe reencontrarse como aprobador del mismo paso
+
+- **Si el aprobador del CECO coincide con `auth.uid()` al crear la solicitud, ese paso debe resolverse en backend dentro de la misma transacción.** Dejar que el folio vuelva a la misma persona para “aprobarse a sí misma” agrega ruido operacional y debilita la segregación de funciones.
+- **La forma correcta no es borrar el paso sino auto-registrarlo con trazabilidad explícita.** El historial debe mostrar que `area_manager` existía, que quedó autoaprobado por coincidencia de roles y que el folio avanzó de inmediato a `control_contratos`.
+- **La regla debe vivir en la RPC de creación, no en la UI ni en filtros posteriores.** Si el estado inicial nace mal en `hiring_requests` y `hiring_request_approvals`, cualquier parche de frontend solo oculta la redundancia sin corregir la causa raíz.

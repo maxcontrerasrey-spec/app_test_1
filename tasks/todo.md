@@ -8,6 +8,19 @@
 - [x] Extender backend y frontend para soportar `Pendiente de Ejecución RRHH` / `Ejecutado RRHH`, con permisos explícitos para `administrativo`
 - [x] Auditar residuos legacy peligrosos en el circuito de movilidad, aplicar migración en Supabase y validar build / typecheck / queries de humo
 
+## Eliminación de autoaprobación redundante en Solicitud de Contrataciones
+
+- [x] Auditar el flujo real de creación de folios para identificar por qué un gerente solicitante recibía de vuelta su propia aprobación de área
+- [x] Versionar y aplicar en Supabase una migración que salte automáticamente a `control_contratos` cuando el solicitante coincide con el aprobador del CECO
+- [x] Mantener trazabilidad completa del paso omitido, validar el diff y dejar documentada la regla operativa
+
+## Resultado de eliminación de autoaprobación redundante en Solicitud de Contrataciones
+
+- Se agregó la migración [`20260617215411_skip_redundant_area_manager_self_approval.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617215411_skip_redundant_area_manager_self_approval.sql:1), ya aplicada en Supabase, que redefine [`submit_hiring_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617215411_skip_redundant_area_manager_self_approval.sql:3).
+- La regla nueva detecta cuando `auth.uid()` coincide con `cost_center_approvers.approver_user_id` del contrato solicitado. En ese caso, el folio nace directamente en `pending_contracts_control` y `current_step_code = 'contracts_control'`, sin devolver la aprobación al mismo gerente que lo creó.
+- No se perdió auditoría: el paso `area_manager` se sigue insertando en `hiring_request_approvals`, pero autoaprobado con comentario explícito y con `hiring_request_audit_log` marcando `auto_skipped_area_manager = true`.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260617215411_skip_redundant_area_manager_self_approval.sql`, `git diff --check` y `npx --yes supabase db push --linked --yes`.
+
 ## Ensamble BUK: alta de ficha y carga documental
 
 - [x] Auditar el flujo actual de creación de empleado y carga documental BUK para detectar drift contra el endpoint oficial confirmado por soporte
