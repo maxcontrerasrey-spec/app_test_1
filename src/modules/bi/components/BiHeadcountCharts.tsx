@@ -1,9 +1,13 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
+import * as echarts from "echarts";
 import { useBiHeadcountByContract, useBiHeadcountByCity } from "../hooks/useBiQueries";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
 import type { BiFilters } from "../types";
+import chileGeoJson from "../../../shared/assets/maps/chile.json";
+
+echarts.registerMap("chile", chileGeoJson as any);
 
 type BiHeadcountChartsProps = {
   filters?: BiFilters;
@@ -56,47 +60,55 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
       return null;
     }
 
-    const topCities = [...cityData]
-      .sort((left, right) => right.headcount - left.headcount)
-      .slice(0, 10)
-      .reverse();
+    // Agrupar por regionName en un intento de match con el GeoJSON
+    const totalsByRegion = new Map<string, number>();
+    cityData.forEach((item) => {
+      const region = item.regionName || item.cityName;
+      let normalizedRegion = region;
+      // Normalización simple para que haga match con el mapa de 'fcortes/Chile-GeoJSON'
+      if (!region.startsWith("Región")) {
+        if (region.includes("Metropolitana")) normalizedRegion = "Región Metropolitana de Santiago";
+        else if (region.includes("O'Higgins")) normalizedRegion = "Región del Libertador General Bernardo O'Higgins";
+        else if (region.includes("Aysén")) normalizedRegion = "Región de Aysén del General Carlos Ibáñez del Campo";
+        else if (region.includes("Magallanes")) normalizedRegion = "Región de Magallanes y de la Antártica Chilena";
+        else normalizedRegion = `Región de ${region}`;
+      }
+      totalsByRegion.set(normalizedRegion, (totalsByRegion.get(normalizedRegion) ?? 0) + item.headcount);
+    });
+
+    const maxHeadcount = Math.max(...totalsByRegion.values(), 10);
 
     return {
       tooltip: {
-        trigger: "axis",
-        axisPointer: { type: "shadow" },
+        trigger: "item",
         backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
+        textStyle: { color: textColor },
+        formatter: "{b}<br/>Dotación: {c}"
+      },
+      visualMap: {
+        min: 0,
+        max: maxHeadcount,
+        text: ["High", "Low"],
+        realtime: false,
+        calculable: true,
+        inRange: {
+          color: ["#E0F2FE", "#3B82F6", "#1E3A8A"]
+        },
         textStyle: { color: textColor }
-      },
-      grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-      xAxis: {
-        type: "value",
-        splitLine: { lineStyle: { color: isDark ? "#334155" : "#E2E8F0" } },
-        axisLabel: { color: textColor }
-      },
-      yAxis: {
-        type: "category",
-        data: topCities.map((item) =>
-          item.regionName && item.regionName !== item.cityName
-            ? `${item.cityName} (${item.regionName})`
-            : item.cityName
-        ),
-        axisLabel: { color: textColor }
       },
       series: [
         {
           name: "Dotación",
-          type: "bar",
-          data: topCities.map((item) => item.headcount),
-          itemStyle: {
-            borderRadius: [8, 8, 8, 8],
-            color: "#2563EB"
-          },
+          type: "map",
+          map: "chile",
+          roam: true,
           label: {
-            show: true,
-            position: "right",
-            color: textColor
-          }
+            show: false
+          },
+          emphasis: {
+            label: { show: true, color: textColor }
+          },
+          data: [...totalsByRegion.entries()].map(([name, value]) => ({ name, value }))
         }
       ]
     };
