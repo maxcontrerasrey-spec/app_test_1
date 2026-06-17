@@ -8,6 +8,23 @@
 - [x] Extender backend y frontend para soportar `Pendiente de Ejecución RRHH` / `Ejecutado RRHH`, con permisos explícitos para `administrativo`
 - [x] Auditar residuos legacy peligrosos en el circuito de movilidad, aplicar migración en Supabase y validar build / typecheck / queries de humo
 
+## Ensamble BUK: alta de ficha y carga documental
+
+- [x] Auditar el flujo actual de creación de empleado y carga documental BUK para detectar drift contra el endpoint oficial confirmado por soporte
+- [x] Unificar la lógica de upload documental BUK entre reclutamiento y acreditaciones, endureciendo contratos y trazabilidad
+- [x] Aplicar en Supabase la migración mínima necesaria para auditoría del job de sincronización y desplegar las Edge Functions ajustadas
+- [x] Validar build, auditoría de migraciones y humo operacional de la integración antes de commit/push
+
+## Resultado de ensamble BUK: alta de ficha y carga documental
+
+- El drift confirmado estaba en el contrato de documentos: ambas Edge Functions BUK seguían construyendo por defecto la ruta `.../documents`, mientras la referencia oficial validada con soporte es `POST /employees/{id}/docs`.
+- Se creó el helper compartido [`supabase/functions/_shared/bukDocuments.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/_shared/bukDocuments.ts:1) para que reclutamiento y acreditaciones usen exactamente la misma lógica de URL, subida y parseo de respuesta BUK. Ese helper normaliza templates legacy, soporta placeholders `{employee_id}` o `{id}` y corrige automáticamente templates heredados que todavía apunten a `/documents`.
+- La carga documental quedó endurecida con fallback controlado: primero intenta `multipart/form-data` con `file`, y si BUK responde con errores típicos de contrato (`400/409/415/422`), reintenta mediante `file_base64`, que es el segundo formato documentado por soporte.
+- Se agregó la migración [`20260617165000_harden_buk_document_upload_contract.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617165000_harden_buk_document_upload_contract.sql:1), ya aplicada en Supabase, para incorporar `buk_sync_jobs.result_snapshot` y no seguir sobreescribiendo `payload_snapshot`. Desde ahora el job conserva el input original y registra aparte el empleado creado, los documentos subidos, el transporte usado (`file` o `file_base64`) y cualquier error.
+- La Edge Function [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) ya no pierde trazabilidad: cada documento aprobado descargado desde `candidate-docs` queda reflejado en `result_snapshot.documents`, junto con el `bukDocumentId` y la respuesta devuelta por BUK.
+- La Edge Function [`upload-buk-accreditation-document`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/upload-buk-accreditation-document/index.ts:1) quedó alineada al mismo helper y ahora devuelve también `transport` y `bukStatus`, manteniendo el contrato previo con `bukDocumentId`, `bukDocumentUrl` y `documentName`.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260617165000_harden_buk_document_upload_contract.sql`, `npx tsc -b --pretty false`, `git diff --check`, `supabase migration list --linked`, `supabase db push --linked --include-all` y deploy directo de `sync-buk-candidates` + `upload-buk-accreditation-document` al proyecto `pzblmbahnoyntrhistea`. En este entorno, `vite build` quedó colgado sin salida ni consumo relevante de CPU, por lo que no lo usé como señal válida de cierre.
+
 ## Resultado de etapa RRHH en Movilidad Interna y auditoría preventiva de legacies
 
 - Se agregó la migración [`20260617170000_add_internal_mobility_hr_execution_stage.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617170000_add_internal_mobility_hr_execution_stage.sql:1), ya aplicada en Supabase, para introducir una segunda capa operativa sobre movilidades aprobadas: `hr_execution_status = pending|executed`, con trazabilidad de último gestor y ejecutor RRHH.

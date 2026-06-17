@@ -1,5 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  buildBukBaseUrl,
+  extractBukDocumentMetadata,
+  uploadBukDocument
+} from "../_shared/bukDocuments.ts";
 
 type SyncRequest = {
   jobIds?: string[];
@@ -140,19 +145,6 @@ function resolveGender(value: string | null | undefined) {
 function resolvePrivateRole(value: string | null | undefined) {
   const normalized = normalizeText(value);
   return normalized === "si" || normalized === "sí" || normalized === "true";
-}
-
-function buildBukBaseUrl() {
-  return (Deno.env.get("BUK_EMPLOYEES_URL") ?? "https://busesjm.buk.cl/api/v1/chile/employees").trim();
-}
-
-function buildBukDocumentsUrl(employeeId: string | number) {
-  const template = (
-    Deno.env.get("BUK_EMPLOYEE_DOCUMENTS_URL_TEMPLATE") ??
-    `${buildBukBaseUrl()}/{employee_id}/documents`
-  ).trim();
-
-  return template.replace("{employee_id}", encodeURIComponent(String(employeeId)));
 }
 
 function buildBukLocationsUrl() {
@@ -338,30 +330,6 @@ async function createBukEmployee(payload: BukCandidateSyncPayload, locations: Bu
   };
 }
 
-async function uploadBukDocument(
-  employeeId: string,
-  documentName: string,
-  fileBlob: Blob,
-) {
-  const formData = new FormData();
-  formData.append("file", fileBlob, documentName);
-  formData.append("name", documentName);
-
-  const authToken = requireEnv(Deno.env.get("BUK_AUTH_TOKEN"), "BUK_AUTH_TOKEN");
-  const response = await fetch(buildBukDocumentsUrl(employeeId), {
-    method: "POST",
-    headers: {
-      auth_token: authToken
-    },
-    body: formData
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Buk document upload ${response.status} ${response.statusText}: ${body}`);
-  }
-}
-
 function buildBukDocumentFileName(payload: BukCandidateSyncPayload, originalName: string) {
   const safeBaseName = originalName
     .normalize("NFD")
@@ -380,6 +348,8 @@ async function processDocuments(
   payload: BukCandidateSyncPayload,
   employeeId: string,
 ) {
+  const uploadedDocuments: Array<Record<string, unknown>> = [];
+
   for (const document of payload.documents) {
     if (!document.file_path) {
       continue;
@@ -394,7 +364,9 @@ async function processDocuments(
     }
 
     const bukFileName = buildBukDocumentFileName(payload, document.document_name);
-    await uploadBukDocument(employeeId, bukFileName, fileData);
+    const uploadResult = await uploadBukDocument(employeeId, bukFileName, fileData);
+    const uploadPayload = uploadResult.payload;
+    const { bukDocumentId, bukDocumentUrl } = extractBukDocumentMetadata(uploadPayload);
 
     const { error: removeError } = await supabase.storage
       .from("candidate-docs")
@@ -403,7 +375,21 @@ async function processDocuments(
     if (removeError) {
       throw new Error(`El documento se subió a Buk, pero no se pudo eliminar ${document.document_name} de Supabase Storage: ${removeError.message}`);
     }
+
+    uploadedDocuments.push({
+      sourceDocumentId: document.id,
+      sourceDocumentName: document.document_name,
+      sourceFilePath: document.file_path,
+      bukDocumentId,
+      bukDocumentUrl,
+      bukDocumentName: bukFileName,
+      transport: uploadResult.transport,
+      status: uploadResult.status,
+      response: uploadPayload
+    });
   }
+
+  return uploadedDocuments;
 }
 
 async function markJobState(
@@ -464,6 +450,10 @@ Deno.serve(async (req) => {
     const results: Array<Record<string, unknown>> = [];
 
     for (const job of jobs) {
+      const jobResultSnapshot: Record<string, unknown> = {
+        syncedAt: new Date().toISOString()
+      };
+
       try {
         await markJobState(supabase, job.id, {
           status: "processing",
@@ -483,13 +473,18 @@ Deno.serve(async (req) => {
 
         const payload = syncPayload as BukCandidateSyncPayload;
         const { employeeId, employeePayload } = await createBukEmployee(payload, locations);
+        jobResultSnapshot.employee = {
+          id: employeeId,
+          request: employeePayload
+        };
 
-        await processDocuments(supabase, payload, employeeId);
+        const uploadedDocuments = await processDocuments(supabase, payload, employeeId);
+        jobResultSnapshot.documents = uploadedDocuments;
 
         await markJobState(supabase, job.id, {
           status: "success",
           buk_employee_id: employeeId,
-          payload_snapshot: employeePayload,
+          result_snapshot: jobResultSnapshot,
           finished_at: new Date().toISOString()
         });
 
@@ -501,9 +496,11 @@ Deno.serve(async (req) => {
         });
       } catch (error) {
         const message = toErrorMessage(error);
+        jobResultSnapshot.error = message;
         await markJobState(supabase, job.id, {
           status: "error",
           error_message: message,
+          result_snapshot: jobResultSnapshot,
           finished_at: new Date().toISOString()
         });
 

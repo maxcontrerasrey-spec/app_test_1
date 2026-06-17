@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. En integraciones externas, el contrato auditable no puede vivir duplicado ni sobreescribir su propio input
+
+- **Si dos módulos suben documentos al mismo proveedor, ambos deben compartir el mismo helper de transporte y parseo**. Dejar una copia en Reclutamiento y otra en Acreditaciones facilita el drift silencioso, como ocurrió al seguir usando `/documents` después de que BUK confirmó `/employees/{id}/docs`.
+- **Una cola de sincronización debe conservar por separado el payload original y el resultado del intento**. Sobrescribir `payload_snapshot` con la respuesta final destruye auditoría y vuelve imposible reconstruir qué input exacto produjo un alta o un error.
+
 ## 64. En migraciones de workflow, borrar la lógica legacy implica también borrar triggers activos, no solo dejar RPCs nuevas
 
 - **No basta con publicar la versión nueva del flujo si quedan triggers heredados escuchando la misma tabla**. Aunque el frontend invoque la RPC correcta, un trigger viejo puede reescribir estados o columnas con semántica obsoleta y romper constraints vigentes en runtime.

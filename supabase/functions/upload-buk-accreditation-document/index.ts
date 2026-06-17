@@ -1,32 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { extractBukDocumentMetadata, uploadBukDocument } from "../_shared/bukDocuments.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
-
-function requireEnv(value: string | undefined, label: string) {
-  const normalized = value?.trim();
-  if (!normalized) {
-    throw new Error(`Missing ${label}`);
-  }
-
-  return normalized;
-}
-
-function buildBukBaseUrl() {
-  return (Deno.env.get("BUK_EMPLOYEES_URL") ?? "https://busesjm.buk.cl/api/v1/chile/employees").trim();
-}
-
-function buildBukDocumentsUrl(employeeId: string | number) {
-  const template = (
-    Deno.env.get("BUK_EMPLOYEE_DOCUMENTS_URL_TEMPLATE") ??
-    `${buildBukBaseUrl()}/{employee_id}/documents`
-  ).trim();
-
-  return template.replace("{employee_id}", encodeURIComponent(String(employeeId)));
-}
 
 function sanitizeFileName(fileName: string, employeeId: string) {
   const safeBaseName = fileName
@@ -40,32 +19,6 @@ function sanitizeFileName(fileName: string, employeeId: string) {
     : ".pdf";
   const stem = safeBaseName.replace(/\.[^.]+$/, "");
   return `${stem || "documento"}_${employeeId}${extension}`;
-}
-
-async function uploadBukDocument(employeeId: string, documentName: string, fileBlob: Blob) {
-  const formData = new FormData();
-  formData.append("file", fileBlob, documentName);
-  formData.append("name", documentName);
-
-  const authToken = requireEnv(Deno.env.get("BUK_AUTH_TOKEN"), "BUK_AUTH_TOKEN");
-  const response = await fetch(buildBukDocumentsUrl(employeeId), {
-    method: "POST",
-    headers: {
-      auth_token: authToken
-    },
-    body: formData
-  });
-
-  const rawBody = await response.text();
-  if (!response.ok) {
-    throw new Error(`Buk document upload ${response.status} ${response.statusText}: ${rawBody}`);
-  }
-
-  try {
-    return rawBody ? JSON.parse(rawBody) : {};
-  } catch {
-    return { raw: rawBody };
-  }
 }
 
 Deno.serve(async (req) => {
@@ -95,21 +48,15 @@ Deno.serve(async (req) => {
     }
 
     const bukFileName = sanitizeFileName(documentName || file.name, employeeId);
-    const payload = await uploadBukDocument(employeeId, bukFileName, file);
-    const bukDocumentId =
-      payload?.data?.id ??
-      payload?.id ??
-      payload?.document_id ??
-      null;
-    const bukDocumentUrl =
-      payload?.data?.url ??
-      payload?.url ??
-      payload?.document_url ??
-      null;
+    const uploadResult = await uploadBukDocument(employeeId, bukFileName, file);
+    const payload = uploadResult.payload;
+    const { bukDocumentId, bukDocumentUrl } = extractBukDocumentMetadata(payload);
 
     return new Response(
       JSON.stringify({
         success: true,
+        transport: uploadResult.transport,
+        bukStatus: uploadResult.status,
         bukDocumentId: bukDocumentId ? String(bukDocumentId) : null,
         bukDocumentUrl: bukDocumentUrl ? String(bukDocumentUrl) : null,
         documentName: bukFileName,
