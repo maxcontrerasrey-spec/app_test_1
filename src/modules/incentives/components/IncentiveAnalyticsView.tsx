@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
+
+const EraserIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
+    <path d="M22 21H7" />
+    <path d="m13.3 6 5.6 5.6" />
+  </svg>
+);
 import { EChartSurface, TextField, MultiSelectField } from "../../../shared/ui";
 import { formatCurrencyValue } from "../../../shared/lib/format";
 import { formatDateForDisplay } from "../../../shared/lib/date";
@@ -533,26 +541,6 @@ export function IncentiveAnalyticsView() {
   return (
     <section className="hr-incentives-analytics-layout">
       <div className="info-card">
-        <div className="tracking-toolbar">
-          <div className="tracking-toolbar-copy">
-            <h3>Análisis de Incentivos</h3>
-            <span className="tracking-filter-caption">
-              Control gerencial del gasto, la aprobación y las desviaciones operacionales.
-            </span>
-          </div>
-          <button
-            type="button"
-            className="soft-primary-button"
-            onClick={() => {
-              setPeriodCodeFilter("");
-              setContractCodeFilter([]);
-              setTypeIdFilter([]);
-              setStatusFilter(["A"]);
-            }}
-          >
-            Limpiar filtros
-          </button>
-        </div>
 
         <div className="hr-incentives-analytics-filters">
           <TextField
@@ -587,6 +575,28 @@ export function IncentiveAnalyticsView() {
             options={statusOptions}
             placeholder="Todos"
           />
+          <button
+            type="button"
+            className="icon-button"
+            style={{ width: "38px", height: "38px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: "pointer", transition: "all 0.2s ease" }}
+            title="Limpiar filtros"
+            onClick={() => {
+              setPeriodCodeFilter("");
+              setContractCodeFilter([]);
+              setTypeIdFilter([]);
+              setStatusFilter(["A"]);
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--primary)";
+              e.currentTarget.style.borderColor = "var(--primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-muted)";
+              e.currentTarget.style.borderColor = "var(--border)";
+            }}
+          >
+            <EraserIcon />
+          </button>
         </div>
       </div>
 

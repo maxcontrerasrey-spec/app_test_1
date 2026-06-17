@@ -241,8 +241,9 @@
 
 .hr-incentives-analytics-filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 120px 2fr 1fr 140px 38px;
   gap: 0.75rem;
+  align-items: flex-end;
   width: 100%;
 }
 
