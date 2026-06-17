@@ -70,11 +70,11 @@ export function BiHeadcountCharts() {
 
   return (
     <div className="bi-chart-row">
-      <div className="bi-chart-container">
+      <div className="info-card">
         <h3 className="bi-chart-title">Dotación por Contrato</h3>
         {renderContractChart()}
       </div>
-      <div className="bi-chart-container">
+      <div className="info-card">
         <h3 className="bi-chart-title">Top 10 Cargos</h3>
         {renderJobChart()}
       </div>

@@ -56,7 +56,7 @@ export function BiTrendingExceptionsChart() {
   };
 
   return (
-    <div className="bi-chart-container bi-chart-full-width">
+    <div className="info-card">
       <h3 className="bi-chart-title">Tendencia de Ausentismo (Días Perdidos por Mes)</h3>
       {renderChart()}
     </div>

@@ -61,7 +61,7 @@ export function BiRecruitmentFunnel() {
   };
 
   return (
-    <div className="bi-chart-container bi-chart-full-width">
+    <div className="info-card">
       <h3 className="bi-chart-title">Embudo de Reclutamiento (General)</h3>
       {renderChart()}
     </div>

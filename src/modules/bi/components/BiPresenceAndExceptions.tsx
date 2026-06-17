@@ -89,11 +89,11 @@ export function BiPresenceAndExceptions() {
 
   return (
     <div className="bi-chart-row">
-      <div className="bi-chart-container">
+      <div className="info-card">
         <h3 className="bi-chart-title">Presencia General Hoy</h3>
         {renderGauge()}
       </div>
-      <div className="bi-chart-container">
+      <div className="info-card">
         <h3 className="bi-chart-title">Composición de Ausentismo Hoy</h3>
         {renderExceptionsDonut()}
       </div>

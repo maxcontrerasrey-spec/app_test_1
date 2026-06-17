@@ -43,7 +43,7 @@ export function BiDemographicsChart() {
   };
 
   return (
-    <div className="bi-chart-container bi-chart-full-width">
+    <div className="info-card">
       <h3 className="bi-chart-title">Distribución Etaria por Contrato</h3>
       {renderChart()}
     </div>
