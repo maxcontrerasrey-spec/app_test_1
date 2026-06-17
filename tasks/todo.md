@@ -2517,3 +2517,16 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se agregó la Edge Function [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1), desplegada en el proyecto `pzblmbahnoyntrhistea`. Esta función consume la cola, resuelve `location_id` contra `GET /locations`, crea al empleado en BUK, sube documentos aprobados al endpoint configurado y elimina los binarios originales desde `candidate-docs` cuando la subida fue exitosa.
 - Se agregó el script [`scripts/validate-buk-token-access.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/validate-buk-token-access.mjs:1) para validar el token sobre `GET /employees`, `GET /locations` y, opcionalmente, `POST /employees` / `POST /employees/{id}/documents` cuando se entregan fixtures de escritura reales.
 - Validación cerrada con `npm run audit:migrations`, `npx tsc -b --pretty false`, `npm run build`, `git diff --check`, aplicación remota de la migración, despliegue de la Edge Function y smoke HTTP real contra `sync-buk-candidates`, que respondió `200 {"processed":[]}` después de cargar `BUK_AUTH_TOKEN` como secret del proyecto.
+
+## Despliegue de vistas analíticas BI BUK
+
+- [x] Generar migración con vistas para Headcount, Presencia, Excepciones y Pipeline de Reclutamiento.
+- [x] Ejecutar la migración asegurando el formato `security_invoker = true`, uso exclusivo de esquema `public.` y transacciones con `notify pgrst`.
+- [x] Confirmar aplicación en la base de datos de producción (`pzblmbahnoyntrhistea`) y registro manual en `supabase_migrations.schema_migrations`.
+- [x] Validar que todas las vistas cumplen la convención de lecciones y no contienen `search_path`.
+
+## Resultado de despliegue de vistas analíticas BI BUK
+
+- Se creó y aplicó la migración `20260617001200_add_buk_bi_analytics_views.sql`. Las 11 vistas materializan KPIs para cuadros de mando usando BUK data.
+- Todas las vistas heredan explícitamente RLS a través de `with (security_invoker = true)` y referencian tablas `public.`, respetando el patrón estricto del repositorio.
+- Se insertó la versión manualmente en `supabase_migrations.schema_migrations` debido a que la aplicación de la migración fue directa sobre el motor SQL de Supabase Pro, manteniendo íntegra la auditoría e historial del entorno de producción.

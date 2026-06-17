@@ -1072,3 +1072,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si la API obliga datos que el modelo local aún no persiste, el cambio correcto es extender la ficha canónica existente, no abrir otra tabla ad hoc.** En este caso, `payment_period` faltaba en `candidate_worker_files` y `location_id` debía resolverse desde `region/comuna` vía API Buk.
 - **La cola asíncrona debe fallar antes de encolar si el candidato no está realmente listo.** La validación de “contratado + documentación aprobada + ficha BUK completa” tiene que vivir en backend, no en un aviso blando de React.
 - **Desplegar una Edge Function no la vuelve operativa por sí sola.** El cierre real incluye verificar secretos remotos (`BUK_AUTH_TOKEN`) y hacer un smoke HTTP contra la función publicada.
+
+## 104. Vistas analíticas y seguridad: El dashboard también respeta RLS
+
+- **Las vistas BI no son una excusa para evadir políticas de datos.** Crear una vista estadística sobre tablas de empleados no debe eludir la seguridad y no justifica el uso de roles administradores.
+- **La corrección es estructural:** Toda vista analítica nueva debe definirse explícitamente con `with (security_invoker = true)` para que PostgreSQL resuelva el query con los permisos del usuario que consulta (el llamador), en lugar de los del creador de la vista. Esto garantiza que un jefe solo vea agregaciones de sus propios trabajadores o áreas permitidas sin crear brechas en la arquitectura.
