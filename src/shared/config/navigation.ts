@@ -110,30 +110,12 @@ export const navigationModules: NavigationModule[] = [
         description: "Registro y control de incentivos extraordinarios.",
         iconKey: "wallet"
       },
-    ]
-  },
-  {
-    label: "Inteligencia de Negocios",
-    items: [
       {
         moduleCode: "bi_analytics",
-        to: "/bi/dotacion",
-        label: "Analítica de Dotación",
-        description: "Métricas de headcount, ausentismo y flujo de reclutamiento BUK.",
+        to: "/bi",
+        label: "Business Intelligence (BI)",
+        description: "Dashboards analíticos de dotación, ausentismo e incentivos.",
         iconKey: "bar-chart",
-        visibleForRoles: [
-          "director_eje",
-          "gerente_general",
-          "director_op",
-          "gerencia"
-        ]
-      },
-      {
-        moduleCode: "bi_analytics",
-        to: "/bi/incentivos",
-        label: "Análisis de Incentivos",
-        description: "Control gerencial del gasto y desviaciones operacionales.",
-        iconKey: "trending-up",
         visibleForRoles: [
           "director_eje",
           "gerente_general",
