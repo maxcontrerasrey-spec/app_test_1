@@ -21,12 +21,26 @@
 - [x] Dejar una vía de validación frontend determinística y observable para evitar falsos positivos de “build colgado”
 - [x] Revalidar el build completo con la nueva vía y documentar el hallazgo
 
+## Widget operativo multipestaña en Inicio
+
+- [x] Auditar el bundle actual del dashboard y reutilizar la misma regla de visibilidad de procesos para evitar contratos nuevos de permisos
+- [x] Extender backend con un resumen operativo agregado de reclutamiento, dotación e incentivos, aplicado directamente en Supabase
+- [x] Incorporar un cuarto widget paginado en Inicio consumiendo el nuevo payload y revalidar build, migraciones y query remota de humo
+
 ## Resultado de endurecimiento de validación de build frontend
 
 - La duda quedó cerrada con reproducción directa: `vite build` no estaba colgado. El proceso sí completaba, pero la etapa `transforming...` podía quedar varios segundos sin emitir líneas, lo que en ejecuciones previas se interpretó erróneamente como atasco.
 - La validación determinística quedó estandarizada en [`scripts/run-frontend-build.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/run-frontend-build.mjs:1) y expuesta por el script `npm run build:frontend-check` en [`package.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/package.json:1).
 - Ese runner separa `TypeScript` y `Vite`, imprime timestamps de inicio y cierre por fase, y aplica timeout real por etapa. Con esto ya no dependemos de interpretar silencio de consola como estado del build.
 - La revalidación completa quedó cerrada en este entorno con `TypeScript` en `5s` y `Vite` en `4s`, además de `✓ 1112 modules transformed` y artefactos `dist` regenerados correctamente.
+
+## Resultado de widget operativo multipestaña en Inicio
+
+- Se agregó el componente [`DashboardOperationalSummaryCard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardOperationalSummaryCard.tsx:1) y el home ahora muestra un cuarto card paginado, con navegación y rotación automática, para resumir `Reclutamiento`, `Dotación` e `Incentivos` al lado de los widgets superiores existentes.
+- El backend quedó endurecido con tres migraciones versionadas y aplicadas en Supabase: [`20260617200234_add_dashboard_operational_summary_widget_scope.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617200234_add_dashboard_operational_summary_widget_scope.sql:1), [`20260617200819_fix_dashboard_operational_summary_employee_scope.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617200819_fix_dashboard_operational_summary_employee_scope.sql:1) y [`20260617201047_align_dashboard_operational_summary_workforce_scope.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617201047_align_dashboard_operational_summary_workforce_scope.sql:1).
+- El nuevo helper SQL `get_dashboard_operational_summary()` reutiliza `user_can_view_hiring_request_process_summary(...)` como fuente única de alcance visible. Con eso, `operaciones_l_1` queda acotado a sus propios procesos, y perfiles gerenciales/directivos heredan la visibilidad por CECO ya vigente sin abrir un bypass paralelo.
+- La parte de dotación necesitó una corrección explícita contra el esquema vivo: `employees_active_current.contract_code` está alineado al `cost_center_code` BUK y no al `contracts.code`. Por eso la lógica final normaliza y compara CECO para headcount/ausentismo, mientras mantiene `contracts.code` para incentivos.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files ...` sobre las tres migraciones, `git diff --check`, `supabase db push --linked --yes` y query remota de humo sobre `get_dashboard_home_bundle(6)`, que devolvió `operational_summary_data` con datos reales en las tres pestañas.
 
 ## Resultado de ensamble BUK: alta de ficha y carga documental
 

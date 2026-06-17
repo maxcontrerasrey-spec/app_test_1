@@ -11,7 +11,7 @@ export type NavigationItem = {
   label: string;
   description?: string;
   subgroup?: string;
-  iconKey?: "document" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up";
+  iconKey?: "document" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up" | "badge-check";
   visibleForRoles?: AppRole[];
   items?: NavigationItem[];
 };
@@ -81,7 +81,7 @@ export const navigationModules: NavigationModule[] = [
         to: "/recursos-humanos/acreditacion/dashboard",
         label: "Acreditación de Personas",
         description: "Matriz documental, vigencias y estado operacional por trabajador.",
-        iconKey: "document"
+        iconKey: "badge-check"
       }
     ]
   },

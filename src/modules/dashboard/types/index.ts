@@ -128,9 +128,30 @@ export interface DashboardBirthdayItem {
   days_until: number;
 }
 
+export interface DashboardOperationalSummary {
+  recruitment: {
+    openProcesses: number;
+    requestedVacancies: number;
+    inProgressCandidates: number;
+    hiredCandidates: number;
+  };
+  workforce: {
+    totalEmployees: number;
+    medicalLeavesToday: number;
+    vacationsToday: number;
+    absenteeismPct: number;
+  };
+  incentives: {
+    totalGenerated: number;
+    pendingApproval: number;
+    approved: number;
+  };
+}
+
 export interface DashboardDataBundle {
   tasksData: DashboardTaskItem[];
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   birthdaysData?: DashboardBirthdayItem[];
+  operationalSummaryData?: DashboardOperationalSummary | null;
 }

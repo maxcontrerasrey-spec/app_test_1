@@ -6,6 +6,7 @@ import type {
   DashboardApprovalTrackingItem,
   DashboardActiveFolioItem,
   DashboardBirthdayItem,
+  DashboardOperationalSummary,
   DashboardTaskItem
 } from "../types";
 
@@ -14,6 +15,7 @@ type DashboardQueryPayload = {
   approvalTrackingData: DashboardApprovalTrackingItem[];
   activeFoliosData: DashboardActiveFolioItem[];
   birthdaysData: DashboardBirthdayItem[];
+  operationalSummaryData: DashboardOperationalSummary | null;
 };
 
 export function useDashboard() {
@@ -38,6 +40,7 @@ export function useDashboard() {
     approvalTrackingData: data?.approvalTrackingData ?? [],
     activeFoliosData: data?.activeFoliosData ?? [],
     birthdaysData: data?.birthdaysData ?? [],
+    operationalSummaryData: data?.operationalSummaryData ?? null,
     isLoading,
     refresh: refetch
   };

@@ -115,6 +115,13 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
           <polyline {...commonProps} points="16 7 22 7 22 13" />
         </svg>
       );
+    case "badge-check":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
+          <path {...commonProps} d="m9 12 2 2 4-4" />
+        </svg>
+      );
     case "document":
     default:
       return (

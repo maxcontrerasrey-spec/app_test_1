@@ -259,6 +259,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No conviertas en `manual` un origen automático solo porque el frontend todavía no conoce el enum nuevo**. Si backend persiste `exception_source = incentive_auto`, tipos, mappers, badges, botones y bloqueos deben alinearse con ese tercer estado o la UI rompe trazabilidad y ofrece acciones inválidas.
 - **Las automatizaciones cruzadas también necesitan cierre de ciclo**. Si crear un incentivo genera `extra_shift` en calendario, cancelar o rechazar esa solicitud debe reconciliar la misma excepción en backend para no dejar sobreturnos huérfanos ni pisar excepciones manuales previas.
 
+## 68. En dashboards con visibilidad por proceso, la capa de dotación no puede asumir que `contract_code` significa lo mismo en todas las fuentes
+
+- **No mezcles por intuición `contracts.code`, `cost_center_code` y el `contract_code` que llega desde BUK**. En este repo, `hr_incentive_requests.selected_contract_code` sí sigue `contracts.code`, pero `employees_active_current.contract_code` quedó alineado al CECO BUK y hasta puede venir con sufijo `.0`.
+- **La regla segura es validar cada agregado contra una query real del bundle antes de cerrar**. Si el widget devuelve `0` en dotación mientras reclutamiento e incentivos sí muestran datos, el problema no es de permisos sino de semántica de join entre fuentes.
+
 ## 64. En Supabase, “aplicado” y “registrado en historial” no son la misma cosa
 
 - **Si una migración se ejecuta manualmente en SQL Editor o mediante un conector que genera otro timestamp, el esquema puede quedar correcto pero `supabase_migrations.schema_migrations` desalineado respecto del repo**. Eso rompe auditoría, trazabilidad y cualquier intento serio de comparar local vs remoto.

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DashboardBirthdayItem } from "../types";
+import type { DashboardBirthdayItem, DashboardOperationalSummary } from "../types";
 import { DashboardEconomicCard } from "./DashboardEconomicCard";
+import { DashboardOperationalSummaryCard } from "./DashboardOperationalSummaryCard";
 
 type DashboardInfoCardsProps = {
   pendingTasksCount: number;
   approvalTrackingCount: number;
   birthdays: DashboardBirthdayItem[];
+  operationalSummary: DashboardOperationalSummary | null;
 };
 
 type WeatherState = {
@@ -427,7 +429,8 @@ function isGeolocationError(error: unknown): error is GeolocationPositionError {
 export function DashboardInfoCards({
   pendingTasksCount,
   approvalTrackingCount,
-  birthdays
+  birthdays,
+  operationalSummary
 }: DashboardInfoCardsProps) {
   const [birthdayIndex, setBirthdayIndex] = useState(0);
   const [location, setLocation] = useState<LiveLocationState>(() => {
@@ -902,6 +905,7 @@ export function DashboardInfoCards({
       </article>
 
       <DashboardEconomicCard />
+      <DashboardOperationalSummaryCard summary={operationalSummary} />
     </section>
   );
 }

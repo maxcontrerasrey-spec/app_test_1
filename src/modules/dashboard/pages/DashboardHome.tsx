@@ -15,6 +15,7 @@ export function DashboardHome() {
     approvalTrackingData,
     activeFoliosData,
     birthdaysData,
+    operationalSummaryData,
     refresh
   } = useDashboard();
   const dashboardQueryKey = useMemo(
@@ -30,7 +31,9 @@ export function DashboardHome() {
       { table: "recruitment_cases" },
       { table: "recruitment_case_candidates" },
       { table: "candidate_stage_approvals" },
-      { table: "employees" }
+      { table: "employees" },
+      { table: "hr_roster_exceptions" },
+      { table: "hr_incentive_requests" }
     ],
     []
   );
@@ -58,6 +61,7 @@ export function DashboardHome() {
           pendingTasksCount={tasksData.length}
           approvalTrackingCount={approvalTrackingData.length}
           birthdays={birthdaysData}
+          operationalSummary={operationalSummaryData}
         />
         <DashboardGrid
           isLoading={isLoading}

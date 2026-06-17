@@ -104,6 +104,13 @@
     linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
 }
 
+.dashboard-info-card-operations {
+  background:
+    radial-gradient(circle at 85% 18%, rgba(53, 111, 214, 0.14), transparent 36%),
+    radial-gradient(circle at 15% 78%, rgba(16, 185, 129, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+}
+
 .dashboard-economic-card-header {
   display: flex;
   justify-content: space-between;
@@ -372,6 +379,52 @@
   width: 24px;
   background: linear-gradient(90deg, rgba(73, 143, 229, 0.95), rgba(123, 181, 243, 0.95));
   box-shadow: 0 10px 22px rgba(76, 133, 228, 0.26);
+}
+
+.dashboard-operations-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-operations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.dashboard-operations-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(var(--surface-rgb), 0.56);
+  box-shadow: inset 0 1px 0 rgba(var(--surface-rgb), 0.48);
+}
+
+.dashboard-operations-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.dashboard-operations-value {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--title);
+}
+
+.dashboard-operations-caption {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--text-muted);
 }
 
 .dashboard-greeting h2 {
