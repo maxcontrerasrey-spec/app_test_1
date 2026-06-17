@@ -2813,3 +2813,18 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se agregó la migración [`20260617101500_fix_accreditation_worker_search_alignment.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617101500_fix_accreditation_worker_search_alignment.sql:1), que redefine `search_accreditation_workers(...)` para reutilizar `build_buk_employee_name_search_key(...)`, soportar búsqueda por RUT normalizado y ordenar resultados con la misma lógica de prioridad que ya usa el resto del ecosistema BUK.
 - La auditoría de commits detectó un hallazgo de proceso en [`3356754`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.git/COMMIT_EDITMSG:1): aunque la intención fue reparar historial, el commit reescribió nombres de migraciones históricas ya congeladas. Hoy el auditor pasa, pero la acción sigue siendo delicada y no debe repetirse como patrón normal porque toca historia del árbol, no solo baseline o tooling.
 - También se detectó una regresión de performance introducida por el mapa BI en [`d02b0d1`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.git/COMMIT_EDITMSG:1): el componente había vuelto a importar `echarts` completo. Se corrigió reutilizando el runtime compartido y moviendo el GeoJSON a carga dinámica; el warning residual de build queda concentrado solo en el chunk `chile-*.js`, no en `BiDashboardPage`.
+
+## Endurecimiento de catálogos en configuración de Acreditaciones
+
+- [x] Auditar la pantalla de configuración para distinguir campos maestros que deben seguir libres de los campos que sí pueden colgarse de catálogos canónicos del ERP.
+- [x] Convertir `Código contrato` y `Código área` en selects buscables alimentados desde contratos/CECOs reales, manteniendo compatibilidad con valores legacy ya guardados.
+- [x] Exponer los nuevos catálogos desde la RPC de setup y versionar/aplicar la migración correspondiente en Supabase.
+- [x] Validar migración, tipado, build y consistencia de diff antes del commit final.
+
+## Resultado de endurecimiento de catálogos en configuración de Acreditaciones
+
+- [`get_accreditation_setup_catalogs()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617225911_add_accreditation_setup_contract_area_catalogs.sql:1) ahora devuelve `contract_options` y `area_options` construidos desde [`public.contracts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617225911_add_accreditation_setup_contract_area_catalogs.sql:1), con labels operativos y trazabilidad explícita del `area_code` ligado al contrato.
+- [`AccreditationSettingsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/accreditation/components/AccreditationSettingsView.tsx:1) reemplazó los inputs libres de `Código contrato` y `Código área` por `SearchableSelectField`, reduciendo error humano en la configuración de faenas y autocompletando el área al seleccionar un contrato conocido.
+- La UI conserva compatibilidad operativa con registros antiguos: si una faena ya guardó un `contract_code` o `area_code` que hoy no existe en el catálogo activo, el formulario lo sigue mostrando como opción manual en vez de romper la edición.
+- Se mantuvieron como texto libre los campos de definición maestra (`Código`, `Nombre`, descripciones y códigos propios del requisito), porque no salen de un catálogo corporativo existente y convertirlos en listas habría degradado flexibilidad sin respaldo de fuente canónica.
+- Cierre validado con `npm run audit:migrations -- --files supabase/migrations/20260617225911_add_accreditation_setup_contract_area_catalogs.sql`, `npx tsc -b`, `git diff --check` y `npx --yes supabase db push --linked --yes`.

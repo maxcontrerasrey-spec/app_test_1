@@ -1203,3 +1203,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si una tarjeta mezcla fetch state, navegación, iconografía, forecast y fallback visual en el mismo archivo, el componente ya superó su densidad razonable.** La salida correcta es separar la UI en subcomponentes puros y dejar el estado asincrónico en el contenedor.
 - **Cuando una prop o parte del estado ya no gobierna ninguna vista, se elimina en la misma pasada.** Mantener contadores o campos huérfanos “por si vuelven” degrada legibilidad y vuelve más frágil el tipado.
+
+## 120. En pantallas de configuración ERP, solo se vuelve desplegable lo que tenga catálogo canónico vivo; lo demás sigue siendo dato maestro
+
+- **No conviertas inputs a selects por intuición visual.** Solo deben pasar a lista los campos respaldados por una fuente única y operativa del repositorio, como contratos, CECOs, cargos o catálogos equivalentes; de lo contrario solo se reemplaza un error humano por deuda de mantenimiento manual.
+- **Si un formulario ya guarda valores legacy fuera del catálogo vigente, el hardening no puede volverlos invisibles.** El control debe mantener una opción compatible para editar o revisar el dato histórico mientras se empuja el uso del catálogo actual.
+- **Cuando dos campos tienen dependencia natural de negocio, la UI debe reflejarla.** Si un contrato determina un CECO/área conocido, seleccionar el contrato debe sugerir o completar el área para reducir captura manual y evitar combinaciones incoherentes.

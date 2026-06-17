@@ -112,6 +112,40 @@ export function AccreditationSettingsView() {
     return options.map((option) => ({ value: option.value, label: option.label }));
   }, [setupQuery.data?.metadata.requirementCategories]);
 
+  const contractOptions = useMemo(() => {
+    const sourceOptions = setupQuery.data?.contractOptions ?? [];
+    const selectedOption =
+      siteForm.contractCode.trim() && !sourceOptions.some((option) => option.value === siteForm.contractCode)
+        ? [{ value: siteForm.contractCode, label: `${siteForm.contractCode} · manual` }]
+        : [];
+
+    return [
+      ...selectedOption,
+      ...sourceOptions.map((option) => ({ value: option.value, label: option.label }))
+    ];
+  }, [setupQuery.data?.contractOptions, siteForm.contractCode]);
+
+  const areaOptions = useMemo(() => {
+    const sourceOptions = setupQuery.data?.areaOptions ?? [];
+    const selectedOption =
+      siteForm.areaCode.trim() && !sourceOptions.some((option) => option.value === siteForm.areaCode)
+        ? [{ value: siteForm.areaCode, label: `${siteForm.areaCode} · manual` }]
+        : [];
+
+    return [
+      ...selectedOption,
+      ...sourceOptions.map((option) => ({ value: option.value, label: option.label }))
+    ];
+  }, [setupQuery.data?.areaOptions, siteForm.areaCode]);
+
+  const contractAreaMap = useMemo(
+    () =>
+      new Map(
+        (setupQuery.data?.contractOptions ?? []).map((option) => [option.value, option.areaCode ?? ""])
+      ),
+    [setupQuery.data?.contractOptions]
+  );
+
   const matrixJobTitleOptions = useMemo(() => {
     const bukOptions = setupQuery.data?.bukJobTitles ?? [];
     const selectedOption =
@@ -228,6 +262,16 @@ export function AccreditationSettingsView() {
     });
   }
 
+  function handleSiteContractChange(contractCode: string) {
+    const suggestedAreaCode = contractAreaMap.get(contractCode) ?? "";
+
+    setSiteForm((current) => ({
+      ...current,
+      contractCode,
+      areaCode: suggestedAreaCode || current.areaCode
+    }));
+  }
+
   function loadMatrixRule(rule: AccreditationMatrixRule) {
     setMatrixForm({
       ruleId: rule.id,
@@ -269,20 +313,24 @@ export function AccreditationSettingsView() {
               options={siteTypeOptions}
               hint={getFieldHint(siteGuides, "site_type")}
             />
-            <TextField
+            <SearchableSelectField
               id="accreditation-site-contract"
               label="Codigo contrato"
               value={siteForm.contractCode}
-              onChange={(event) => setSiteForm((current) => ({ ...current, contractCode: event.target.value }))}
+              onChange={(event) => handleSiteContractChange(event.target.value)}
+              options={contractOptions}
+              placeholder="Selecciona un contrato activo"
               hint={getFieldHint(siteGuides, "contract_code")}
             />
           </div>
           <div className="field-grid">
-            <TextField
+            <SearchableSelectField
               id="accreditation-site-area"
               label="Codigo area"
               value={siteForm.areaCode}
               onChange={(event) => setSiteForm((current) => ({ ...current, areaCode: event.target.value }))}
+              options={areaOptions}
+              placeholder="Selecciona un CECO o area"
               hint={getFieldHint(siteGuides, "area_code")}
             />
             <TextField

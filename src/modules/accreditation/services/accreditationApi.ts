@@ -106,6 +106,15 @@ function mapSetupCatalogs(payload: unknown): AccreditationSetupCatalogs {
       value: readText(item.value),
       label: readText(item.label)
     })),
+    contractOptions: asArray<Record<string, unknown>>(source.contract_options).map((item) => ({
+      value: readText(item.value),
+      label: readText(item.label),
+      areaCode: readNullableText(item.area_code)
+    })),
+    areaOptions: asArray<Record<string, unknown>>(source.area_options).map((item) => ({
+      value: readText(item.value),
+      label: readText(item.label)
+    })),
     metadata: {
       siteTypes: asArray<Record<string, unknown>>(metadata.site_types).map(mapSetupOption),
       requirementCategories: asArray<Record<string, unknown>>(metadata.requirement_categories).map(mapSetupOption),

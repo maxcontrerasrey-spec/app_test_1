@@ -74,6 +74,8 @@ export type AccreditationSetupCatalogs = {
   requirements: AccreditationRequirement[];
   matrixRules: AccreditationMatrixRule[];
   bukJobTitles: Array<{ value: string; label: string }>;
+  contractOptions: Array<{ value: string; label: string; areaCode: string | null }>;
+  areaOptions: Array<{ value: string; label: string }>;
   metadata: AccreditationSetupMetadata;
 };
 
