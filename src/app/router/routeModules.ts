@@ -40,6 +40,9 @@ export const routeModuleImporters = {
   onboardingModuleLayout: async () => ({
     default: (await import("../../modules/operational_onboarding/pages/OnboardingModuleLayout"))
       .OnboardingModuleLayout
+  }),
+  biDashboard: async () => ({
+    default: (await import("../../modules/bi/pages/BiDashboardPage")).BiDashboardPage
   })
 } as const;
 
@@ -99,6 +102,10 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/labs")) {
     return ["labsPage"];
+  }
+
+  if (normalizedPath.startsWith("/bi")) {
+    return ["biDashboard"];
   }
 
   if (normalizedPath.startsWith("/login")) {

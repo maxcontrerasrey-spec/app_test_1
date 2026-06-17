@@ -11,7 +11,6 @@ import {
 } from "../hooks/useIncentivesQueries";
 import { canViewHrIncentiveAnalytics } from "../lib/analyticsAccess";
 import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationForm";
-import { IncentiveAnalyticsView } from "../components/IncentiveAnalyticsView";
 import { IncentiveApprovalsView } from "../components/IncentiveApprovalsView";
 import { IncentiveRequestsView } from "../components/IncentiveRequestsView";
 import { IncentiveSetupView } from "../components/IncentiveSetupView";
@@ -38,11 +37,6 @@ const HUMAN_RESOURCES_VIEWS = [
     key: "configuracion",
     label: "Configuración base",
     description: "Administra cargos elegibles, tipos de incentivo y reglas de cálculo."
-  },
-  {
-    key: "analisis",
-    label: "Análisis de Incentivos",
-    description: "Visualiza el gasto agregado y las desviaciones operacionales por período, tipo y contrato."
   }
 ] as const;
 
@@ -62,13 +56,10 @@ export function HumanResourcesDashboard() {
   const canManageStandardViews =
     isSuperAdmin || hasModuleAccess(accessibleModules, "recursos_humanos");
   const visibleViews = useMemo(
-    () =>
-      HUMAN_RESOURCES_VIEWS.filter((item) =>
-        item.key === "analisis" ? canViewAnalytics : canManageStandardViews
-      ),
-    [canManageStandardViews, canViewAnalytics]
+    () => (canManageStandardViews ? HUMAN_RESOURCES_VIEWS : []),
+    [canManageStandardViews]
   );
-  const fallbackView = canManageStandardViews ? "incentivos" : canViewAnalytics ? "analisis" : null;
+  const fallbackView = canManageStandardViews ? "incentivos" : null;
   const setupCatalogsQuery = useHrIncentiveSetupCatalogs(
     canManageStandardViews &&
       (activeView === "incentivos" || activeView === "solicitudes" || activeView === "configuracion")
@@ -109,12 +100,7 @@ export function HumanResourcesDashboard() {
     return <Navigate to="/sin-acceso" replace />;
   }
 
-  if (
-    (activeView === "analisis" && !canViewAnalytics) ||
-    (activeView !== "analisis" && !canManageStandardViews)
-  ) {
-    return <Navigate to={`/recursos-humanos/${fallbackView}`} replace />;
-  }
+
 
   return (
     <PageShell>
@@ -149,8 +135,6 @@ export function HumanResourcesDashboard() {
         {activeView === "configuracion" ? (
           <IncentiveSetupView setupCatalogsQuery={setupCatalogsQuery} />
         ) : null}
-
-        {activeView === "analisis" ? <IncentiveAnalyticsView /> : null}
       </section>
     </PageShell>
   );

@@ -1,0 +1,85 @@
+import { useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { PageShell } from "../../../shared/ui";
+import { BiOverviewCards } from "../components/BiOverviewCards";
+import { BiHeadcountCharts } from "../components/BiHeadcountCharts";
+import { BiDemographicsChart } from "../components/BiDemographicsChart";
+import { BiPresenceAndExceptions } from "../components/BiPresenceAndExceptions";
+import { BiTrendingExceptionsChart } from "../components/BiTrendingExceptionsChart";
+import { BiRecruitmentFunnel } from "../components/BiRecruitmentFunnel";
+import { IncentiveAnalyticsView } from "../../incentives/components/IncentiveAnalyticsView";
+import "../styles/bi.css";
+
+const BI_VIEWS = [
+  {
+    key: "dotacion",
+    label: "Analítica de Dotación (BUK)",
+    description: "KPIs operacionales, ausentismo, demografía y flujo de reclutamiento."
+  },
+  {
+    key: "incentivos",
+    label: "Análisis de Incentivos",
+    description: "Control gerencial del gasto extraordinario y desviaciones operacionales."
+  }
+] as const;
+
+type BiViewKey = (typeof BI_VIEWS)[number]["key"];
+
+function isBiView(value: string | undefined): value is BiViewKey {
+  return BI_VIEWS.some((view) => view.key === value);
+}
+
+export function BiDashboardPage() {
+  const navigate = useNavigate();
+  const { view } = useParams();
+  const activeView = isBiView(view) ? view : "dotacion";
+
+  const activeViewMeta = useMemo(
+    () => BI_VIEWS.find((item) => item.key === activeView) ?? BI_VIEWS[0],
+    [activeView]
+  );
+
+  return (
+    <PageShell>
+      <div className="minimal-page-header">
+        <h1>Inteligencia de Negocios</h1>
+        <p className="description" style={{ color: "var(--text-secondary)", marginTop: "0.5rem" }}>
+          {activeViewMeta.description}
+        </p>
+      </div>
+
+      <section className="tracking-panel" style={{ marginBottom: "1.5rem" }}>
+        <div className="approval-chip-row">
+          {BI_VIEWS.map((item) => (
+            <button
+              key={item.key}
+              className={`chip ${activeView === item.key ? "selected" : ""}`}
+              onClick={() => navigate(`/bi/${item.key}`)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {activeView === "dotacion" && (
+        <div className="bi-dashboard-grid">
+          <BiOverviewCards />
+          <BiHeadcountCharts />
+          <BiPresenceAndExceptions />
+          <div className="bi-chart-row">
+            <BiDemographicsChart />
+            <BiRecruitmentFunnel />
+          </div>
+          <BiTrendingExceptionsChart />
+        </div>
+      )}
+
+      {activeView === "incentivos" && (
+        <div style={{ marginTop: "1rem" }}>
+          <IncentiveAnalyticsView />
+        </div>
+      )}
+    </PageShell>
+  );
+}

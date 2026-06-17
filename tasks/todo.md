@@ -2530,3 +2530,20 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se creó y aplicó la migración `20260617001200_add_buk_bi_analytics_views.sql`. Las 11 vistas materializan KPIs para cuadros de mando usando BUK data.
 - Todas las vistas heredan explícitamente RLS a través de `with (security_invoker = true)` y referencian tablas `public.`, respetando el patrón estricto del repositorio.
 - Se insertó la versión manualmente en `supabase_migrations.schema_migrations` debido a que la aplicación de la migración fue directa sobre el motor SQL de Supabase Pro, manteniendo íntegra la auditoría e historial del entorno de producción.
+
+## Implementación de Dashboard BI (Inteligencia de Negocios) en Frontend
+
+- [x] Crear estructura base para nuevo módulo `/bi` independiente de RRHH
+- [x] Mapear tipos estrictos TypeScript contra los 11 *views* generados (`buk_bi_*`)
+- [x] Implementar capa de servicios y abstracción de queries (`React Query`) con `staleTime` de 5 minutos
+- [x] Desarrollar componentes visuales usando Apache ECharts respetando el diseño premium
+- [x] Refactorizar la navegación, quitando Análisis de Incentivos de RRHH y reubicándolo en el nuevo Dashboard BI
+- [x] Validar que `npx tsc -b` y build finalicen sin errores, asegurando que la refactorización fue exitosa
+
+## Resultado de implementación de Dashboard BI en Frontend
+
+- Se creó el módulo `src/modules/bi` bajo la ruta `/bi` y se añadieron vistas explícitas para "Analítica de Dotación" e "Incentivos".
+- Las consultas a `buk_bi_*` fueron mapeadas mediante funciones tipadas en `biApi.ts` y envueltas en hooks `useBiQueries.ts`, garantizando que la caché en memoria alivie el tráfico a Supabase.
+- Se retiró la pestaña analítica de `HumanResourcesDashboard.tsx` aislando el dominio de RRHH para dejarlo netamente transaccional.
+- Se agregó un nuevo rol en `access.ts` (`bi_analytics`) para blindar el acceso gerencial al dashboard global de métricas.
+- La compilación `npx tsc -b` certificó cero errores en tipos, cumpliendo la política de estrictez de la base de código.

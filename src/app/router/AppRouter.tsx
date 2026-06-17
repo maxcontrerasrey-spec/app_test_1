@@ -30,6 +30,7 @@ const OnboardingModuleLayout = lazyWithRetry(
   "onboarding-module-layout",
   routeModuleImporters.onboardingModuleLayout
 );
+const BiDashboardPage = lazyWithRetry("bi-dashboard-page", routeModuleImporters.biDashboard);
 
 function RouteLoadingScreen() {
   return (
@@ -130,6 +131,22 @@ export function AppRouter() {
                   allowRoles={HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES}
                 >
                   <HumanResourcesDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/bi"
+              element={
+                <RoleProtectedRoute moduleCode="bi_analytics">
+                  <Navigate to="/bi/dotacion" replace />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/bi/:view"
+              element={
+                <RoleProtectedRoute moduleCode="bi_analytics">
+                  <BiDashboardPage />
                 </RoleProtectedRoute>
               }
             />
