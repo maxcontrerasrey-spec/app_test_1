@@ -108,8 +108,8 @@
   gap: 4px;
   padding: 12px 14px;
   background:
-    radial-gradient(circle at 85% 18%, rgba(53, 111, 214, 0.14), transparent 36%),
-    radial-gradient(circle at 15% 78%, rgba(16, 185, 129, 0.1), transparent 30%),
+    radial-gradient(circle at 85% 18%, rgba(139, 92, 246, 0.14), transparent 36%),
+    radial-gradient(circle at 15% 78%, rgba(59, 130, 246, 0.12), transparent 30%),
     linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
 }
 
