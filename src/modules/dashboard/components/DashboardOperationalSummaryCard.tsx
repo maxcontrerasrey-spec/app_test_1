@@ -10,15 +10,24 @@ type SummaryMetric = {
   value: string;
 };
 
+type SummaryHighlight = {
+  label: string;
+  value: string;
+};
+
 type SummarySheet = {
   id: "recruitment" | "workforce" | "incentives";
   eyebrow: string;
-  title: string;
-  caption: string;
   metrics: SummaryMetric[];
+  highlight?: SummaryHighlight | null;
 };
 
 const numberFormatter = new Intl.NumberFormat("es-CL");
+const currencyFormatter = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0
+});
 
 function formatCount(value: number | null | undefined) {
   return numberFormatter.format(Math.max(0, Math.trunc(value ?? 0)));
@@ -26,6 +35,10 @@ function formatCount(value: number | null | undefined) {
 
 function formatPercent(value: number | null | undefined) {
   return `${Number(value ?? 0).toFixed(1)}%`;
+}
+
+function formatCurrency(value: number | null | undefined) {
+  return currencyFormatter.format(Math.max(0, Number(value ?? 0)));
 }
 
 export function DashboardOperationalSummaryCard({
@@ -40,8 +53,6 @@ export function DashboardOperationalSummaryCard({
       {
         id: "recruitment",
         eyebrow: "Reclutamiento",
-        title: "Procesos y avance",
-        caption: "Respeta el mismo alcance visible del solicitante o CECO asignado.",
         metrics: [
           { label: "Procesos abiertos", value: formatCount(recruitment?.openProcesses) },
           { label: "Cupos solicitados", value: formatCount(recruitment?.requestedVacancies) },
@@ -52,8 +63,6 @@ export function DashboardOperationalSummaryCard({
       {
         id: "workforce",
         eyebrow: "Dotación",
-        title: "Estado de hoy",
-        caption: "Ausentismo calculado sobre vacaciones, licencias y otras ausencias activas hoy.",
         metrics: [
           { label: "Personas contratadas", value: formatCount(workforce?.totalEmployees) },
           { label: "Lic. médicas (hoy)", value: formatCount(workforce?.medicalLeavesToday) },
@@ -64,13 +73,14 @@ export function DashboardOperationalSummaryCard({
       {
         id: "incentives",
         eyebrow: "Incentivos",
-        title: "Estado extraordinario",
-        caption: "Total emitido excluye solicitudes rechazadas.",
         metrics: [
-          { label: "Emitidos", value: formatCount(incentives?.totalGenerated) },
-          { label: "Pendientes", value: formatCount(incentives?.pendingApproval) },
-          { label: "Aprobados", value: formatCount(incentives?.approved) }
-        ]
+          { label: "Aprobados", value: formatCount(incentives?.approved) },
+          { label: "Pendientes", value: formatCount(incentives?.pendingApproval) }
+        ],
+        highlight: {
+          label: "Monto total",
+          value: formatCurrency(incentives?.totalAmount)
+        }
       }
     ];
   }, [summary]);
@@ -117,7 +127,7 @@ export function DashboardOperationalSummaryCard({
     <article className="dashboard-info-card dashboard-info-card-operations">
       <div className="dashboard-operations-card-header">
         <div className="dashboard-info-head">
-          <strong style={{ fontSize: "1.05rem" }}>{activeSheet.eyebrow}</strong>
+          <strong className="dashboard-operations-heading">{activeSheet.eyebrow}</strong>
         </div>
         <div className="dashboard-birthday-controls" aria-label="Navegación de resumen operativo">
           <button
@@ -148,7 +158,12 @@ export function DashboardOperationalSummaryCard({
         ))}
       </div>
 
-      <p className="dashboard-operations-caption">{activeSheet.caption}</p>
+      {activeSheet.highlight ? (
+        <div className="dashboard-operations-highlight">
+          <span className="dashboard-operations-highlight-label">{activeSheet.highlight.label}</span>
+          <strong className="dashboard-operations-highlight-value">{activeSheet.highlight.value}</strong>
+        </div>
+      ) : null}
 
       <div className="dashboard-birthday-pagination" aria-label="Posición del resumen operativo">
         {sheets.map((sheet, index) => (

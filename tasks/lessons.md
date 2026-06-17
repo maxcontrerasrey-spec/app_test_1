@@ -1188,3 +1188,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si el aprobador del CECO coincide con `auth.uid()` al crear la solicitud, ese paso debe resolverse en backend dentro de la misma transacción.** Dejar que el folio vuelva a la misma persona para “aprobarse a sí misma” agrega ruido operacional y debilita la segregación de funciones.
 - **La forma correcta no es borrar el paso sino auto-registrarlo con trazabilidad explícita.** El historial debe mostrar que `area_manager` existía, que quedó autoaprobado por coincidencia de roles y que el folio avanzó de inmediato a `control_contratos`.
 - **La regla debe vivir en la RPC de creación, no en la UI ni en filtros posteriores.** Si el estado inicial nace mal en `hiring_requests` y `hiring_request_approvals`, cualquier parche de frontend solo oculta la redundancia sin corregir la causa raíz.
+
+## 117. Si un widget ejecutivo muestra montos operativos, el total debe venir del backend ya filtrado y con la misma semántica visible del resto del módulo
+
+- **No recalcules montos agregados en React cuando la visibilidad depende de roles, CECO y contratos derivados.** El card debe consumir un total ya consolidado en la RPC para no abrir drift entre lo que el usuario puede listar y lo que ve resumido.
+- **Cuando un rol administrativo debe tener alcance amplio, eso se resuelve en la helper o CTE de alcance, no duplicando excepciones por tarjeta.** El widget operativo debe heredar el mismo motor de visibilidad para reclutamiento, dotación e incentivos.
+
+## 118. En widgets densos de inicio, no agregues leyendas explicativas si la métrica ya es autoevidente y el negocio no la pidió
+
+- **La tarjeta operativa del home debe privilegiar señal sobre explicación.** Si el usuario ya entiende el KPI por su label, una leyenda inferior solo consume espacio crítico y compite con el dato.
+- **Cuando se elimina una capa visual, también se elimina su contrato y su CSS.** Ocultarla dejando props o clases muertas solo traslada la deuda en vez de resolverla.
+
+## 119. En el dashboard home, la lógica de datos puede vivir en el contenedor, pero la presentación densa debe salir a subcomponentes
+
+- **Si una tarjeta mezcla fetch state, navegación, iconografía, forecast y fallback visual en el mismo archivo, el componente ya superó su densidad razonable.** La salida correcta es separar la UI en subcomponentes puros y dejar el estado asincrónico en el contenedor.
+- **Cuando una prop o parte del estado ya no gobierna ninguna vista, se elimina en la misma pasada.** Mantener contadores o campos huérfanos “por si vuelven” degrada legibilidad y vuelve más frágil el tipado.

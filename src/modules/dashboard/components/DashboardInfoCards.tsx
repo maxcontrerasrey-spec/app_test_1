@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DashboardBirthdayItem, DashboardOperationalSummary } from "../types";
+import { DashboardBirthdayCard } from "./DashboardBirthdayCard";
 import { DashboardEconomicCard } from "./DashboardEconomicCard";
 import { DashboardOperationalSummaryCard } from "./DashboardOperationalSummaryCard";
+import { DashboardWeatherCard, type WeatherForecastDay } from "./DashboardWeatherCard";
 
 type DashboardInfoCardsProps = {
-  pendingTasksCount: number;
-  approvalTrackingCount: number;
   birthdays: DashboardBirthdayItem[];
   operationalSummary: DashboardOperationalSummary | null;
 };
 
 type WeatherState = {
   temperature: number | null;
-  temperatureMax: number | null;
-  temperatureMin: number | null;
   code: number | null;
   isLoading: boolean;
-  dailyForecast: { time: number; temperatureMax: number; temperatureMin: number; code: number }[];
+  dailyForecast: WeatherForecastDay[];
 };
 
 type LiveLocationState = {
@@ -128,111 +126,6 @@ function persistBrowserLocation(label: string, latitude: number, longitude: numb
   } catch {
     // Best effort cache only.
   }
-}
-
-function toWeatherLabel(code: number | null) {
-  if (code == null) return "Sin dato";
-  if ([0].includes(code)) return "Despejado";
-  if ([1, 2, 3].includes(code)) return "Nublado";
-  if ([45, 48].includes(code)) return "Neblina";
-  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "Lluvia";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "Nieve";
-  if ([95, 96, 99].includes(code)) return "Tormenta";
-  return "Variable";
-}
-
-function toWeatherIcon(code: number | null, size: number = 30, strokeWidth: number = 1.8) {
-  const defaultProps = {
-    width: size.toString(),
-    height: size.toString(),
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: strokeWidth.toString(),
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
-
-  if (code == null) return <svg {...defaultProps}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
-  
-  if ([0].includes(code)) {
-    return (
-      <svg {...defaultProps}>
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2" />
-        <path d="M12 20v2" />
-        <path d="m4.93 4.93 1.41 1.41" />
-        <path d="m17.66 17.66 1.41 1.41" />
-        <path d="M2 12h2" />
-        <path d="M20 12h2" />
-        <path d="m6.34 17.66-1.41 1.41" />
-        <path d="m19.07 4.93-1.41 1.41" />
-      </svg>
-    );
-  }
-  
-  if ([1, 2, 3].includes(code)) {
-    return (
-      <svg {...defaultProps}>
-        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-      </svg>
-    );
-  }
-  
-  if ([45, 48].includes(code)) {
-    return (
-      <svg {...defaultProps}>
-        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-        <path d="M8 22h8" />
-        <path d="M10 22v-4" />
-        <path d="M14 22v-4" />
-      </svg>
-    );
-  }
-  
-  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
-    return (
-      <svg {...defaultProps}>
-        <path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9" />
-        <path d="M16 14v6" />
-        <path d="M8 14v6" />
-        <path d="M12 16v6" />
-      </svg>
-    );
-  }
-  
-  if ([71, 73, 75, 77, 85, 86].includes(code)) {
-    return (
-      <svg {...defaultProps}>
-        <path d="m8 15 4-4 4 4" />
-        <path d="m16 9-4 4-4-4" />
-        <path d="M12 3v18" />
-      </svg>
-    );
-  }
-  
-  if ([95, 96, 99].includes(code)) {
-    return (
-      <svg {...defaultProps}>
-        <path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9" />
-        <polyline points="13 11 9 17 15 17 11 23" />
-      </svg>
-    );
-  }
-  
-  return (
-    <svg {...defaultProps}>
-      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-    </svg>
-  );
-}
-
-function formatTodayLabel() {
-  return new Intl.DateTimeFormat("es-CL", {
-    weekday: "long",
-    day: "numeric",
-    month: "short"
-  }).format(new Date());
 }
 
 type ReverseGeocodingAdministrativeArea = {
@@ -427,8 +320,6 @@ function isGeolocationError(error: unknown): error is GeolocationPositionError {
 }
 
 export function DashboardInfoCards({
-  pendingTasksCount,
-  approvalTrackingCount,
   birthdays,
   operationalSummary
 }: DashboardInfoCardsProps) {
@@ -442,8 +333,6 @@ export function DashboardInfoCards({
   });
   const [weather, setWeather] = useState<WeatherState>({
     temperature: null,
-    temperatureMax: null,
-    temperatureMin: null,
     code: null,
     isLoading: true,
     dailyForecast: []
@@ -717,8 +606,6 @@ export function DashboardInfoCards({
 
         setWeather({
           temperature: typeof current?.temperature_2m === "number" ? current.temperature_2m : null,
-          temperatureMax: typeof daily?.temperature_2m_max?.[0] === "number" ? daily.temperature_2m_max[0] : null,
-          temperatureMin: typeof daily?.temperature_2m_min?.[0] === "number" ? daily.temperature_2m_min[0] : null,
           code: typeof current?.weather_code === "number" ? current.weather_code : null,
           isLoading: false,
           dailyForecast: nextDays
@@ -726,8 +613,6 @@ export function DashboardInfoCards({
       } catch (_error) {
         setWeather({
           temperature: null,
-          temperatureMax: null,
-          temperatureMin: null,
           code: null,
           isLoading: false,
           dailyForecast: []
@@ -799,110 +684,25 @@ export function DashboardInfoCards({
 
   return (
     <section className="dashboard-info-row" aria-label="Tarjetas informativas">
-      <article className={`dashboard-info-card dashboard-info-card-weather${weatherThemeClass}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '2.8rem', lineHeight: 1, color: '#3b82f6', display: 'flex' }}>
-              {toWeatherIcon(weather.code, 48, 1.5)}
-            </span>
-            <span style={{ fontSize: '2.8rem', fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--title)' }}>
-              {weather.isLoading || weather.temperature == null ? "--" : Math.round(weather.temperature)}°
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
-            <strong style={{ fontSize: '0.85rem', letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--title)', fontWeight: 600 }}>
-              {location.label ? location.label.split(',')[0] : "UBICACIÓN"}
-            </strong>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', lineHeight: 1.2, marginTop: '2px' }}>
-              {weather.isLoading ? "CARGANDO..." : toWeatherLabel(weather.code)}
-            </span>
-            {(location.isFallback || !location.isResolved) ? (
-              <button
-                type="button"
-                className="dashboard-info-weather-action"
-                style={{ fontSize: '0.65rem', marginTop: '2px', padding: 0 }}
-                onClick={() => void requestBrowserLocation()}
-              >
-                Reintentar
-              </button>
-            ) : null}
-          </div>
-        </div>
-        
-        {weather.dailyForecast.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', marginTop: 'auto' }}>
-            {weather.dailyForecast.map((d, i) => {
-              const date = new Date((d.time + 14400) * 1000); // offset to local timezone roughly
-              const dayName = new Intl.DateTimeFormat("es-CL", { weekday: "short" }).format(date).toUpperCase();
-              return (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--title)' }}>{dayName}</span>
-                  <span style={{ color: 'var(--text-muted)', display: 'flex' }}>
-                    {toWeatherIcon(d.code, 22, 1.8)}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'var(--title)' }}>{Math.round(d.temperatureMax)}°</span>/{Math.round(d.temperatureMin)}°
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </article>
+      <DashboardWeatherCard
+        themeClass={weatherThemeClass}
+        isLoading={weather.isLoading}
+        temperature={weather.temperature}
+        code={weather.code}
+        locationLabel={location.label}
+        dailyForecast={weather.dailyForecast}
+        showRetry={location.isFallback || !location.isResolved}
+        onRetry={() => void requestBrowserLocation()}
+      />
 
-      <article className="dashboard-info-card dashboard-info-card-birthday" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {nextBirthday ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <svg className="dashboard-birthday-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
-                <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
-                <path d="M2 21h20" />
-                <path d="M7 8v3" />
-                <path d="M12 8v3" />
-                <path d="M17 8v3" />
-                <path d="M7 4h.01" />
-                <path d="M12 4h.01" />
-                <path d="M17 4h.01" />
-              </svg>
-              {birthdays.length > 1 ? (
-                <div className="dashboard-birthday-controls" aria-label="Navegación de cumpleaños">
-                  <button type="button" className="dashboard-birthday-control" onClick={() => moveBirthday("prev")} aria-label="Cumpleañero anterior">‹</button>
-                  <button type="button" className="dashboard-birthday-control" onClick={() => moveBirthday("next")} aria-label="Siguiente cumpleañero">›</button>
-                </div>
-              ) : null}
-            </div>
-            <div className="dashboard-birthday-summary" style={{ marginTop: 'auto' }}>
-              <strong style={{ fontSize: '1rem', lineHeight: 1.2, fontWeight: 500 }}>{nextBirthday.full_name}</strong>
-              <small style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
-                {nextBirthday.birthday_label} · <span style={{ color: 'var(--title)', fontWeight: 500 }}>{birthdaySummary}</span>
-              </small>
-            </div>
-            {birthdays.length > 1 ? (
-              <div className="dashboard-birthday-pagination" aria-label="Posición del cumpleañero" style={{ marginTop: '6px' }}>
-                {birthdays.map((birthday, index) => (
-                  <button
-                    key={birthday.id}
-                    type="button"
-                    className={`dashboard-birthday-dot${index === birthdayIndex ? " is-active" : ""}`}
-                    onClick={() => setBirthdayIndex(index)}
-                    aria-label={`Ver cumpleañero ${index + 1}`}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '8px' }}>
-              <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
-              <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2 1 2 1" />
-              <path d="M2 21h20" />
-            </svg>
-            <span style={{ fontSize: '0.9rem' }}>No hay cumpleaños próximos</span>
-          </div>
-        )}
-      </article>
+      <DashboardBirthdayCard
+        birthdays={birthdays}
+        birthdayIndex={birthdayIndex}
+        nextBirthday={nextBirthday}
+        birthdaySummary={birthdaySummary}
+        onMove={moveBirthday}
+        onSelect={setBirthdayIndex}
+      />
 
       <DashboardEconomicCard />
       <DashboardOperationalSummaryCard summary={operationalSummary} />

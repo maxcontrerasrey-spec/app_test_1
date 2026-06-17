@@ -98,6 +98,17 @@
     linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
 }
 
+.dashboard-weather-card,
+.dashboard-birthday-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-weather-card {
+  justify-content: center;
+}
+
 .dashboard-info-card-economics {
   background:
     radial-gradient(circle at 75% 20%, rgba(16, 185, 129, 0.12), transparent 40%),
@@ -189,34 +200,6 @@
   font-weight: 600;
 }
 
-.dashboard-info-primary {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 2.6vw, 2.65rem);
-  line-height: 1;
-  color: var(--title);
-  letter-spacing: -0.04em;
-}
-
-.dashboard-info-secondary {
-  color: var(--text-muted);
-  font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-.dashboard-info-weather-range,
-.dashboard-info-weather-zone {
-  display: block;
-  margin-top: 6px;
-  font-size: 0.84rem;
-  line-height: 1.35;
-  color: var(--text-muted);
-}
-
-.dashboard-info-weather-zone {
-  font-weight: 600;
-  color: var(--title);
-}
-
 .dashboard-info-weather-action {
   margin-top: 10px;
   padding: 0;
@@ -235,96 +218,124 @@
   text-decoration: underline;
 }
 
-.dashboard-info-weather-body {
+.dashboard-weather-card-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: auto;
-  margin-bottom: 6px;
 }
 
-.dashboard-info-weather-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  background: rgba(var(--surface-rgb), 0.62);
-  color: #3b82f6;
-  font-size: 1.8rem;
-  box-shadow: inset 0 1px 0 rgba(var(--surface-rgb), 0.56);
-}
-
-.dashboard-info-weather-hourly {
+.dashboard-weather-card-temperature {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(27, 37, 59, 0.08);
+  align-items: center;
+  gap: 10px;
 }
 
-.dashboard-weather-hour-item {
+.dashboard-weather-card-icon {
+  display: flex;
+  color: #3b82f6;
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.dashboard-weather-card-value {
+  font-size: 2.8rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--title);
+}
+
+.dashboard-weather-card-meta {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-end;
+  text-align: right;
 }
 
-.dashboard-weather-hour-time {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.dashboard-weather-hour-icon {
-  color: var(--text-muted);
-}
-
-.dashboard-weather-hour-temp {
-  font-size: 0.8rem;
+.dashboard-weather-card-location {
+  font-size: 0.85rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--title);
+}
+
+.dashboard-weather-card-status {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.dashboard-weather-card-retry {
+  margin-top: 2px;
+  padding: 0;
+  font-size: 0.65rem;
 }
 
 .dashboard-birthday-summary {
   display: grid;
   gap: 2px;
   min-height: 76px;
+  margin-top: auto;
 }
 
-.dashboard-birthday-summary strong {
+.dashboard-birthday-summary-name {
   color: var(--title);
-  font-size: 0.98rem;
-  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 500;
 }
 
-.dashboard-birthday-summary span,
-.dashboard-birthday-summary small {
+.dashboard-birthday-summary-detail {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
-.dashboard-birthday-summary span {
-  font-size: 0.88rem;
+.dashboard-birthday-summary-emphasis {
+  color: var(--title);
+  font-weight: 500;
 }
 
-.dashboard-birthday-summary small {
-  font-size: 0.8rem;
+.dashboard-weather-card-forecast {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
 }
 
-.dashboard-birthday-sheet {
+.dashboard-weather-card-forecast-day {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 4px;
 }
 
-.dashboard-birthday-sheet-header {
+.dashboard-weather-card-forecast-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--title);
+}
+
+.dashboard-weather-card-forecast-icon {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  color: var(--text-muted);
+}
+
+.dashboard-weather-card-forecast-range {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.dashboard-weather-card-forecast-max {
+  color: var(--title);
 }
 
 .dashboard-birthday-controls {
@@ -369,6 +380,10 @@
   gap: 8px;
 }
 
+.dashboard-birthday-pagination-spaced {
+  margin-top: 6px;
+}
+
 .dashboard-birthday-dot {
   width: 9px;
   height: 9px;
@@ -383,11 +398,33 @@
   box-shadow: 0 10px 22px rgba(76, 133, 228, 0.26);
 }
 
+.dashboard-birthday-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.dashboard-birthday-empty-icon {
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.dashboard-birthday-empty-label {
+  font-size: 0.9rem;
+}
+
 .dashboard-operations-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 4px;
+}
+
+.dashboard-operations-heading {
+  font-size: 1.05rem;
 }
 
 .dashboard-operations-grid {
@@ -434,12 +471,27 @@
   color: var(--title);
 }
 
-.dashboard-operations-caption {
-  margin: 0;
-  font-size: 0.65rem;
-  line-height: 1.15;
+.dashboard-operations-highlight {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0 6px;
+  padding: 4px 4px 0;
+}
+
+.dashboard-operations-highlight-label {
+  font-size: 0.63rem;
+  font-weight: 600;
   color: var(--text-muted);
-  min-height: 2.3em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.dashboard-operations-highlight-value {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--title);
 }
 
 .dashboard-greeting h2 {

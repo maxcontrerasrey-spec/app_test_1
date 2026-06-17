@@ -63,6 +63,7 @@ export const dashboardService = {
           total_generated?: number | null;
           pending_approval?: number | null;
           approved?: number | null;
+          total_amount?: number | null;
         } | null;
       } | null;
     };
@@ -89,7 +90,8 @@ export const dashboardService = {
             incentives: {
               totalGenerated: payload.operational_summary_data.incentives?.total_generated ?? 0,
               pendingApproval: payload.operational_summary_data.incentives?.pending_approval ?? 0,
-              approved: payload.operational_summary_data.incentives?.approved ?? 0
+              approved: payload.operational_summary_data.incentives?.approved ?? 0,
+              totalAmount: payload.operational_summary_data.incentives?.total_amount ?? 0
             }
           }
         : null

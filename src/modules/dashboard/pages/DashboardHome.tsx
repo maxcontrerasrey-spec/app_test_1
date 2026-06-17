@@ -58,8 +58,6 @@ export function DashboardHome() {
 
       <main className="dashboard-main">
         <DashboardInfoCards
-          pendingTasksCount={tasksData.length}
-          approvalTrackingCount={approvalTrackingData.length}
           birthdays={birthdaysData}
           operationalSummary={operationalSummaryData}
         />

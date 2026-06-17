@@ -21,6 +21,32 @@
 - No se perdió auditoría: el paso `area_manager` se sigue insertando en `hiring_request_approvals`, pero autoaprobado con comentario explícito y con `hiring_request_audit_log` marcando `auto_skipped_area_manager = true`.
 - Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260617215411_skip_redundant_area_manager_self_approval.sql`, `git diff --check` y `npx --yes supabase db push --linked --yes`.
 
+## Ajuste de alcance y jerarquía del widget operativo de incentivos
+
+- [x] Auditar el resumen operativo vigente para confirmar cómo se calcula el alcance visible y qué métricas de incentivos expone hoy
+- [x] Extender el backend para dar alcance amplio a `administrativo` y agregar el monto total emitido excluyendo rechazados
+- [x] Reordenar la hoja de incentivos del widget para mostrar primero `Aprobados` y `Pendientes`, con el monto total debajo, y revalidar tipado/migración
+
+## Resultado de ajuste de alcance y jerarquía del widget operativo de incentivos
+
+- Se agregó la migración [`20260617222335_adjust_dashboard_operational_incentives_widget_scope.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617222335_adjust_dashboard_operational_incentives_widget_scope.sql:1), que redefine `get_dashboard_operational_summary()` para incluir a `administrativo` dentro del `broad_access`.
+- En la misma RPC, la sección `incentives` ahora agrega `total_amount` usando `sum(hir.calculated_amount)` solo para solicitudes con `status <> 'R'`, manteniendo la exclusión de rechazados tanto en monto como en total emitido.
+- El frontend quedó alineado en [`dashboardService.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/services/dashboardService.ts:1), [`types/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/types/index.ts:131) y [`DashboardOperationalSummaryCard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardOperationalSummaryCard.tsx:1): la hoja de incentivos ahora muestra primero `Aprobados`, luego `Pendientes` y debajo `Monto total`.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260617222335_adjust_dashboard_operational_incentives_widget_scope.sql`, `npx tsc -b --pretty false` y `git diff --check`.
+
+## Limpieza y estandarización profunda del frontend del dashboard
+
+- [x] Auditar hotspots del home y detectar contratos muertos, inline styles y componentes demasiado concentrados
+- [x] Separar tarjetas densas en subcomponentes reutilizables, limpiar props/estado innecesarios y retirar CSS sin uso
+- [x] Revalidar `TypeScript`, build frontend y diff limpio antes de commit/push
+
+## Resultado de limpieza y estandarización profunda del frontend del dashboard
+
+- [`DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:1) dejó de concentrar la presentación completa de clima y cumpleaños. Esa UI se extrajo a [`DashboardWeatherCard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardWeatherCard.tsx:1) y [`DashboardBirthdayCard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardBirthdayCard.tsx:1), manteniendo la lógica de datos en el contenedor y bajando acoplamiento visual.
+- Se eliminaron contratos muertos del dashboard: `pendingTasksCount` y `approvalTrackingCount` ya no viajan hacia `DashboardInfoCards`, y `WeatherState` ya no arrastra `temperatureMax/temperatureMin` que la UI no consumía.
+- [`dashboard.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/styles/dashboard.css:1) quedó más honesto: se trasladó presentación inline de clima/cumpleaños a clases de módulo y se removieron selectores sin consumidores reales (`dashboard-info-primary`, `dashboard-info-secondary`, weather helpers legacy).
+- La tarjeta operativa también quedó más limpia: [`DashboardOperationalSummaryCard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardOperationalSummaryCard.tsx:1) ya no usa leyendas inferiores ni estilos inline residuales para su heading.
+
 ## Ensamble BUK: alta de ficha y carga documental
 
 - [x] Auditar el flujo actual de creación de empleado y carga documental BUK para detectar drift contra el endpoint oficial confirmado por soporte

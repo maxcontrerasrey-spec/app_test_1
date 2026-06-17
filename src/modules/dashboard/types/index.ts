@@ -145,6 +145,7 @@ export interface DashboardOperationalSummary {
     totalGenerated: number;
     pendingApproval: number;
     approved: number;
+    totalAmount: number;
   };
 }
 
