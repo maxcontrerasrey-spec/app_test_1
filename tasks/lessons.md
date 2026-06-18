@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. Una auditoría sobre `supabase/migrations` no describe por sí sola el estado vivo de producción
+
+- **No tomes como vulnerabilidad actual cualquier policy o constraint visto en una migración antigua si existen redefiniciones posteriores del mismo objeto.** En este repositorio hay funciones, policies y constraints que fueron endurecidos varias veces; antes de corregir hay que seguir la cadena completa de `create or replace`, `drop policy`, `alter table ... drop/add constraint` y quedarte con el estado final.
+- **Renombrar o reescribir migraciones históricas ya versionadas casi nunca es una corrección segura.** Si el hallazgo es de nomenclatura o de orden de hotfixes en archivos ya ejecutados, la respuesta correcta suele ser documentarlo como deuda de proceso futura, no mutar historia congelada en un sistema que ya opera.
+
 ## 123. En transiciones operativas con payload estructurado, la UI no puede filtrar silenciosamente campos incompletos
 
 - **Si un paso como Who depende de causas tipificadas, cada fila iniciada debe terminar completa o bloquear el envío**. Filtrar en React los registros parciales y seguir adelante hace que el usuario perciba que “no pasó nada” o que el sistema decidió otra cosa sin avisar.
@@ -1260,3 +1265,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Si el usuario dispara una integración desde un botón y el frontend solo llama a una RPC de cola, el flujo queda incompleto aunque la tabla de jobs exista.** La UI debe invocar explícitamente al worker o Edge Function responsable, o existir una automatización confirmada aguas abajo; de lo contrario, el mensaje “generado” es un falso positivo.
 - **Los mensajes operacionales deben distinguir entre “encolado”, “en procesamiento”, “procesado con éxito” y “encolado pero no ejecutado”.** Mezclar esas fases en una sola confirmación impide auditoría real y hace parecer estable un proceso que todavía no salió de la cola.
+
+## 124. La limpieza de frontend debe atacar primero duplicación estructural y estilos inline repetidos, no solo conteo bruto de líneas
+
+- **Reducir líneas no significa colapsar lógica crítica en bloques más opacos.** La limpieza útil sale de extraer columnas, helpers y estados visuales repetidos a constantes o CSS compartido, dejando más corto el diff mental sin deformar contratos de negocio.
+- **Cuando una tabla operativa repite sorting manual por columna, el siguiente paso no es otro parche local sino una fuente de verdad única para headers y valores ordenables.** Eso evita que futuras columnas queden desalineadas entre label, icono y comparador.
+- **Los `catch (err: any)` y estilos inline con comportamiento ya estabilizado son deuda barata de resolver y alto retorno auditivo.** Quitarlos temprano reduce ruido, mejora tipado y baja la superficie de regressions visuales antes de tocar archivos gigantes de mayor riesgo.

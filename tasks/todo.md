@@ -2,6 +2,22 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Aterrizaje de auditoría SQL enterprise
+
+- [x] Contrastar la auditoría adjunta contra el estado real del repo y separar hallazgos vigentes de findings ya corregidos por migraciones posteriores
+- [x] Aplicar solo los endurecimientos seguros que no rompen contratos productivos actuales
+- [x] Validar la nueva migración, diff limpio y dejar documentados los hallazgos descartados por obsolescencia o riesgo de reescritura histórica
+
+## Resultado de aterrizaje de auditoría SQL enterprise
+
+- La auditoría adjunta combinaba riesgos reales con hallazgos históricos ya corregidos por migraciones posteriores. Se confirmó como **desactualizado** el punto crítico sobre `candidate-docs`: el bucket ya no está abierto por `bucket_id` desde la migración [`20260615220000_enterprise_security_contract_stabilization.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:602), que reemplazó esas policies por acceso scoped vía [`user_can_access_candidate_document_object(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:560).
+- También quedó descartado como **ya corregido** el hallazgo sobre `recruitment_case_audit_log.action_type`: el constraint fue ampliado en migraciones posteriores como [`20260523000024_add_interview_notes.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260523000024_add_interview_notes.sql:8), [`20260608000002_add_transfer_candidate_rpc.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608000002_add_transfer_candidate_rpc.sql:7) y [`20260611220000_expand_internal_mobility_and_recruitment_stage_controls.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611220000_expand_internal_mobility_and_recruitment_stage_controls.sql:279).
+- Se aplicó la migración [`20260618163500_harden_enterprise_sql_audit_followups.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618163500_harden_enterprise_sql_audit_followups.sql:1) para cerrar dos puntos vigentes y seguros:
+  1. eliminar la policy muerta `security_audit_logs_insert_self`, que nunca podía entrar en juego porque `authenticated` no tenía `INSERT` sobre `security_audit_logs`;
+  2. endurecer [`sync_hr_roster_exception_from_buk(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618163500_harden_enterprise_sql_audit_followups.sql:5) para que use el helper vivo [`current_request_has_service_role()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618041437_allow_internal_context_for_buk_snapshot.sql:1) en vez de depender solo de la heurística de claims vacíos.
+- No se tocaron los archivos con doble timestamp ni migraciones históricas ya ejecutadas. Reescribir nombres versionados a esta altura genera más riesgo operacional que beneficio y debe tratarse como higiene de proceso futura, no como hotfix sobre historia congelada.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260618163500_harden_enterprise_sql_audit_followups.sql`, `git diff --check` y auditoría local `node scripts/audit-supabase-security.mjs` solo como referencia de ruido histórico, no como truth source de estado vivo.
+
 ## Etapa RRHH en Movilidad Interna y auditoría preventiva de legacies
 
 - [x] Auditar el flujo actual de movilidad interna y ubicar una etapa RRHH posterior a la aprobación sin romper el contrato operativo vigente
@@ -2934,3 +2950,18 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`generateCandidatesInBuk(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1016) ahora encapsula el flujo completo: primero encola los candidatos y luego invoca `sync-buk-candidates` con los `jobIds` recién creados. Si la ejecución automática falla, la UI ya no reporta “éxito”; devuelve un mensaje explícito de job encolado pero no procesado.
 - [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) cambió el contrato de feedback: diferencia entre encolado, procesamiento efectivo, jobs ya en curso y errores devueltos por la Edge Function, evitando falsos positivos operacionales en el botón `Generar en BUK`.
 - Validación cerrada con consulta remota a `public.buk_sync_jobs`, confirmación de despliegue activo de `sync-buk-candidates`, `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+## Limpieza y optimización segura de frontend transversal
+
+- [x] Auditar hotspots reales de redundancia, estilos inline y tipado laxo antes de tocar módulos críticos.
+- [x] Compactar lógica duplicada de sorting y estados visuales en vistas operativas sin alterar contratos de negocio.
+- [x] Eliminar líneas muertas y mover estilos repetidos a CSS compartido para reducir ruido de mantenimiento.
+- [x] Validar con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`, luego commit y push a `main`.
+
+## Resultado de limpieza y optimización segura de frontend transversal
+
+- [`IncentiveApprovalsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveApprovalsView.tsx:1) dejó de usar `any` en sorting, centralizó columnas ordenables en una sola constante y eliminó varias celdas/estilos inline repetidos del detalle expandido.
+- [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1) consolidó el contrato de ordenamiento en helpers reutilizables y dejó de repetir manualmente cada `<th>` sortable.
+- [`AIKnowledgePanel.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/components/AIKnowledgePanel.tsx:1) eliminó un `pathName` muerto, reemplazó `catch (err: any)` por manejo seguro de errores y descargó estados visuales al CSS del módulo.
+- [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1) y [`ai-assistant.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/styles/ai-assistant.css:1) absorbieron los estilos compartidos nuevos para evitar lógica visual inline dispersa entre vistas.
+- El cierre técnico pasó con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`, dejando esta pasada lista para versionar junto con la migración SQL pendiente de endurecimiento.

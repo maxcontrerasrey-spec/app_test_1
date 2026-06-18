@@ -5,6 +5,10 @@ import {
   type OrionKnowledgeDocument
 } from "../services/orionKnowledge";
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export function AIKnowledgePanel() {
   const { isSuperAdmin } = useAuth();
   const [docs, setDocs] = useState<OrionKnowledgeDocument[]>([]);
@@ -26,7 +30,6 @@ export function AIKnowledgePanel() {
     setIsUploading(true);
     const tempId = `temp-${Date.now()}`;
     const cleanName = file.name;
-    const pathName = `${Date.now()}_${cleanName}`;
 
     setDocs((prev) => [
       {
@@ -55,11 +58,11 @@ export function AIKnowledgePanel() {
       setDocs((prev) =>
         prev.map((d) => (d.storagePath === uploadedDocument.storagePath ? { ...d, status: "Procesado" } : d))
       );
-    } catch (err: any) {
+    } catch (error) {
       setDocs((prev) =>
         prev.map((d) =>
-          d.id === tempId || d.storagePath === pathName
-            ? { ...d, status: "Error: " + (err.message || "Fallo en procesamiento") }
+          d.id === tempId
+            ? { ...d, status: `Error: ${getErrorMessage(error, "Fallo en procesamiento")}` }
             : d
         )
       );
@@ -83,8 +86,8 @@ export function AIKnowledgePanel() {
     try {
       await orionKnowledgeService.deleteDocument(document.storagePath);
       setDocs((prev) => prev.filter((item) => item.storagePath !== document.storagePath));
-    } catch (err: any) {
-      alert(`Error al eliminar: ${err.message}`);
+    } catch (error) {
+      alert(`Error al eliminar: ${getErrorMessage(error, "No se pudo eliminar el documento")}`);
       setDocs((prev) =>
         prev.map((item) =>
           item.storagePath === document.storagePath ? { ...item, status: "Procesado" } : item
@@ -102,21 +105,20 @@ export function AIKnowledgePanel() {
 
       {isSuperAdmin && (
         <div 
-          className="orion-upload-zone" 
+          className={`orion-upload-zone ${isUploading ? "orion-upload-zone-disabled" : ""}`}
           aria-label="Subir documento"
           onClick={() => !isUploading && fileInputRef.current?.click()}
-          style={{ cursor: isUploading ? "not-allowed" : "pointer", opacity: isUploading ? 0.7 : 1 }}
         >
           <input 
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileChange} 
             accept=".pdf,.doc,.docx" 
-            style={{ display: "none" }} 
+            className="orion-hidden-file-input"
             disabled={isUploading}
           />
           {isUploading ? (
-            <div className="orion-spinner" style={{ borderTopColor: "var(--accent)", width: 32, height: 32, borderWidth: 3 }}></div>
+            <div className="orion-spinner orion-upload-spinner"></div>
           ) : (
             <svg className="orion-upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -148,7 +150,7 @@ export function AIKnowledgePanel() {
             </svg>
             <div className="orion-doc-info">
               <span className="orion-doc-name" title={doc.name}>{doc.name}</span>
-              <span className="orion-doc-meta" style={{ color: doc.status.includes("Error") ? "red" : "inherit" }}>
+              <span className={`orion-doc-meta ${doc.status.includes("Error") ? "orion-doc-meta-error" : ""}`}>
                 {doc.sizeLabel} · {doc.status}
               </span>
             </div>
@@ -158,12 +160,6 @@ export function AIKnowledgePanel() {
                 className="orion-doc-delete-btn"
                 title="Eliminar documento"
                 disabled={doc.status.includes("Procesando") || doc.status.includes("Eliminando")}
-                style={{
-                  background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer",
-                  padding: "4px", marginLeft: "auto", borderRadius: "4px"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = "var(--danger)"}
-                onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -173,7 +169,7 @@ export function AIKnowledgePanel() {
           </div>
         ))}
         {docs.length === 0 && (
-          <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem", padding: "1rem" }}>
+          <div className="orion-doc-empty-state">
             No hay documentos cargados.
           </div>
         )}

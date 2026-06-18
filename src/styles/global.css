@@ -2927,6 +2927,23 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   font-weight: 600;
 }
 
+.tracking-sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.tracking-sort-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1rem;
+  margin-left: 0.3rem;
+}
+
+.tracking-sort-icon-idle {
+  opacity: 0.3;
+}
+
 .tracking-table td {
   font-size: 0.8rem;
   color: var(--title);
@@ -3035,6 +3052,10 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   font-weight: 600;
 }
 
+.tracking-case-code-toggle {
+  gap: 0.45rem;
+}
+
 .expand-chevron {
   display: inline-block;
   font-size: 0.7rem;
@@ -3044,6 +3065,10 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expand-chevron-open {
   transform: rotate(90deg);
+}
+
+.tracking-expand-chevron {
+  font-size: 1.2rem;
 }
 
 .tracking-table-expanded-row > td {
@@ -3116,6 +3141,42 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-detail-field-full {
   grid-column: 1 / -1;
+}
+
+.tracking-expanded-feedback {
+  padding: 1.5rem;
+}
+
+.tracking-expanded-fields-two-columns {
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tracking-expanded-fields-single-column {
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.tracking-expanded-fields-incentive {
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.tracking-operational-flags-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  grid-row: span 2;
+}
+
+.tracking-expanded-actions-end {
+  grid-column: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 1.25rem 1.5rem;
 }
 
 .expanded-detail-fields > div {

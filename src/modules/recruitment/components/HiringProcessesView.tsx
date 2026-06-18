@@ -14,6 +14,17 @@ import {
 import { ApprovalModal } from "./ApprovalModal";
 
 type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "requester_name";
+type SortValue = number | string;
+
+const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
+  { column: "case_code", label: "Caso" },
+  { column: "status", label: "Estado" },
+  { column: "job_position_name", label: "Cargo" },
+  { column: "contract_name", label: "Contrato" },
+  { column: "vacancies", label: "Cupos" },
+  { column: "candidate_count", label: "Candidatos activos" },
+  { column: "requester_name", label: "Solicitó" }
+];
 
 const normalizeCaseSearchValue = (value: string | null | undefined) =>
   (value ?? "")
@@ -43,6 +54,25 @@ const buildCaseSearchHaystack = (caseRow: RecruitmentCaseListRow) =>
       .filter(Boolean)
       .join(" ")
   );
+
+const getCaseSortValue = (caseRow: RecruitmentCaseListRow, column: SortColumn): SortValue => {
+  switch (column) {
+    case "case_code":
+      return caseRow.case_code;
+    case "status":
+      return caseRow.status;
+    case "job_position_name":
+      return caseRow.job_position_name;
+    case "contract_name":
+      return caseRow.contract_name;
+    case "vacancies":
+      return caseRow.requested_vacancies;
+    case "candidate_count":
+      return caseRow.candidate_count;
+    case "requester_name":
+      return caseRow.requester_name ?? "";
+  }
+};
 
 type HiringProcessesViewProps = {
   isLoading: boolean;
@@ -105,10 +135,14 @@ export function HiringProcessesView({
     }
   };
 
-  const getSortIcon = (column: SortColumn) => {
-    if (sortColumn !== column) return null;
-    return <span style={{ marginLeft: "0.3rem" }}>{sortDirection === "asc" ? "↑" : "↓"}</span>;
-  };
+  const renderSortIcon = (column: SortColumn) => (
+    <span
+      aria-hidden="true"
+      className={`tracking-sort-icon ${sortColumn !== column ? "tracking-sort-icon-idle" : ""}`}
+    >
+      {sortColumn === column ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}
+    </span>
+  );
 
   const filteredAndSortedCases = useMemo(() => {
     const normalizedSearchTerms = normalizeCaseSearchValue(caseSearchTerm)
@@ -137,39 +171,8 @@ export function HiringProcessesView({
     if (!sortColumn) return filtered;
 
     return [...filtered].sort((a, b) => {
-      let valA: string | number = "";
-      let valB: string | number = "";
-
-      switch (sortColumn) {
-        case "case_code":
-          valA = a.case_code;
-          valB = b.case_code;
-          break;
-        case "status":
-          valA = a.status;
-          valB = b.status;
-          break;
-        case "job_position_name":
-          valA = a.job_position_name;
-          valB = b.job_position_name;
-          break;
-        case "contract_name":
-          valA = a.contract_name;
-          valB = b.contract_name;
-          break;
-        case "vacancies":
-          valA = a.requested_vacancies;
-          valB = b.requested_vacancies;
-          break;
-        case "candidate_count":
-          valA = a.candidate_count;
-          valB = b.candidate_count;
-          break;
-        case "requester_name":
-          valA = a.requester_name ?? "";
-          valB = b.requester_name ?? "";
-          break;
-      }
+      const valA = getCaseSortValue(a, sortColumn);
+      const valB = getCaseSortValue(b, sortColumn);
 
       if (valA < valB) return sortDirection === "asc" ? -1 : 1;
       if (valA > valB) return sortDirection === "asc" ? 1 : -1;
@@ -285,13 +288,16 @@ export function HiringProcessesView({
           <table className="tracking-table">
             <thead>
               <tr>
-                <th onClick={() => handleSort("case_code")} style={{ cursor: "pointer", userSelect: "none" }}>Caso{getSortIcon("case_code")}</th>
-                <th onClick={() => handleSort("status")} style={{ cursor: "pointer", userSelect: "none" }}>Estado{getSortIcon("status")}</th>
-                <th onClick={() => handleSort("job_position_name")} style={{ cursor: "pointer", userSelect: "none" }}>Cargo{getSortIcon("job_position_name")}</th>
-                <th onClick={() => handleSort("contract_name")} style={{ cursor: "pointer", userSelect: "none" }}>Contrato{getSortIcon("contract_name")}</th>
-                <th onClick={() => handleSort("vacancies")} style={{ cursor: "pointer", userSelect: "none" }}>Cupos{getSortIcon("vacancies")}</th>
-                <th onClick={() => handleSort("candidate_count")} style={{ cursor: "pointer", userSelect: "none" }}>Candidatos activos{getSortIcon("candidate_count")}</th>
-                <th onClick={() => handleSort("requester_name")} style={{ cursor: "pointer", userSelect: "none" }}>Solicitó{getSortIcon("requester_name")}</th>
+                {SORTABLE_HEADERS.map(({ column, label }) => (
+                  <th
+                    key={column}
+                    className="tracking-sortable-header"
+                    onClick={() => handleSort(column)}
+                  >
+                    {label}
+                    {renderSortIcon(column)}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -567,7 +573,7 @@ export function HiringProcessesView({
                                   caseRow.can_close_request &&
                                   onCloseRequest &&
                                   hr && (
-                                    <div className="expanded-detail-actions" style={{ padding: "1.25rem 1.5rem", gridColumn: "3", display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
+                                    <div className="expanded-detail-actions tracking-expanded-actions-end">
                                       <button
                                         type="button"
                                         className="soft-primary-button soft-primary-button-danger"

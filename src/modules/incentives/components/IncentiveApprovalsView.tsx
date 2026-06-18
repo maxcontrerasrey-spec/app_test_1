@@ -17,6 +17,35 @@ import type { HrIncentiveApprovalQueueItem } from "../types";
 import { IncentiveActionModal } from "./IncentiveActionModal";
 import { IncentiveOperationalFlags } from "./IncentiveOperationalFlags";
 
+type SortColumn = "folio" | "trabajador" | "incentivo" | "contrato" | "fecha" | "monto";
+type SortValue = number | string;
+
+const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
+  { column: "folio", label: "Folio" },
+  { column: "trabajador", label: "Trabajador" },
+  { column: "incentivo", label: "Incentivo" },
+  { column: "contrato", label: "Contrato" },
+  { column: "fecha", label: "Fecha servicio" },
+  { column: "monto", label: "Monto" }
+];
+
+function getSortValue(item: HrIncentiveApprovalQueueItem, column: SortColumn): SortValue {
+  switch (column) {
+    case "folio":
+      return Number(item.folio);
+    case "trabajador":
+      return item.employeeFullName.toLowerCase();
+    case "incentivo":
+      return item.incentiveTypeName.toLowerCase();
+    case "contrato":
+      return item.selectedAreaName.toLowerCase();
+    case "fecha":
+      return new Date(item.serviceDate).getTime();
+    case "monto":
+      return item.calculatedAmount;
+  }
+}
+
 type DecisionModalState =
   | { mode: "closed" }
   | {
@@ -90,10 +119,10 @@ export function IncentiveApprovalsView() {
   const [feedbackError, setFeedbackError] = useState("");
   const [decisionModal, setDecisionModal] = useState<DecisionModalState>({ mode: "closed" });
 
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const handleSort = (column: string) => {
+  const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       if (sortDirection === "asc") setSortDirection("desc");
       else {
@@ -106,10 +135,14 @@ export function IncentiveApprovalsView() {
     }
   };
 
-  const SortIcon = ({ column }: { column: string }) => {
-    if (sortColumn !== column) return <span style={{ opacity: 0.3, marginLeft: '0.3rem' }}>↕</span>;
-    return <span style={{ marginLeft: '0.3rem' }}>{sortDirection === "asc" ? "↑" : "↓"}</span>;
-  };
+  const renderSortIcon = (column: SortColumn) => (
+    <span
+      aria-hidden="true"
+      className={`tracking-sort-icon ${sortColumn !== column ? "tracking-sort-icon-idle" : ""}`}
+    >
+      {sortColumn === column ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}
+    </span>
+  );
 
   const approvalQueueQuery = useHrIncentiveApprovalQueue();
 
@@ -140,35 +173,8 @@ export function IncentiveApprovalsView() {
 
     if (sortColumn) {
       result.sort((a, b) => {
-        let aVal: any = 0;
-        let bVal: any = 0;
-        
-        switch (sortColumn) {
-          case "folio":
-            aVal = Number(a.folio);
-            bVal = Number(b.folio);
-            break;
-          case "trabajador":
-            aVal = a.employeeFullName.toLowerCase();
-            bVal = b.employeeFullName.toLowerCase();
-            break;
-          case "incentivo":
-            aVal = a.incentiveTypeName.toLowerCase();
-            bVal = b.incentiveTypeName.toLowerCase();
-            break;
-          case "contrato":
-            aVal = a.selectedAreaName.toLowerCase();
-            bVal = b.selectedAreaName.toLowerCase();
-            break;
-          case "fecha":
-            aVal = new Date(a.serviceDate).getTime();
-            bVal = new Date(b.serviceDate).getTime();
-            break;
-          case "monto":
-            aVal = a.calculatedAmount;
-            bVal = b.calculatedAmount;
-            break;
-        }
+        const aVal = getSortValue(a, sortColumn);
+        const bVal = getSortValue(b, sortColumn);
 
         if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
         if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
@@ -425,12 +431,16 @@ export function IncentiveApprovalsView() {
                     />
                   </th>
 
-                  <th onClick={() => handleSort('folio')} style={{ cursor: 'pointer', userSelect: 'none' }}>Folio <SortIcon column="folio" /></th>
-                  <th onClick={() => handleSort('trabajador')} style={{ cursor: 'pointer', userSelect: 'none' }}>Trabajador <SortIcon column="trabajador" /></th>
-                  <th onClick={() => handleSort('incentivo')} style={{ cursor: 'pointer', userSelect: 'none' }}>Incentivo <SortIcon column="incentivo" /></th>
-                  <th onClick={() => handleSort('contrato')} style={{ cursor: 'pointer', userSelect: 'none' }}>Contrato <SortIcon column="contrato" /></th>
-                  <th onClick={() => handleSort('fecha')} style={{ cursor: 'pointer', userSelect: 'none' }}>Fecha servicio <SortIcon column="fecha" /></th>
-                  <th onClick={() => handleSort('monto')} style={{ cursor: 'pointer', userSelect: 'none' }}>Monto <SortIcon column="monto" /></th>
+                  {SORTABLE_HEADERS.map(({ column, label }) => (
+                    <th
+                      key={column}
+                      className="tracking-sortable-header"
+                      onClick={() => handleSort(column)}
+                    >
+                      {label}
+                      {renderSortIcon(column)}
+                    </th>
+                  ))}
                   <th>Acción</th>
                 </tr>
               </thead>
@@ -468,8 +478,8 @@ export function IncentiveApprovalsView() {
                             />
                           </td>
                           <td>
-                            <span className="case-code-toggle" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
-                              <span className={`expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`} style={{ display: 'inline-block', fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isActiveRow ? 'rotate(90deg)' : 'none' }}>▸</span>
+                            <span className="case-code-toggle tracking-case-code-toggle">
+                              <span className={`expand-chevron tracking-expand-chevron ${isActiveRow ? "expand-chevron-open" : ""}`}>▸</span>
                               {String(row.folio).padStart(5, '0')}
                             </span>
                           </td>
@@ -521,13 +531,13 @@ export function IncentiveApprovalsView() {
                           <tr className="tracking-table-expanded-row">
                             <td colSpan={8}>
                               {detailQuery.isLoading ? (
-                                <div className="expanded-detail-section-full" style={{ padding: '1.5rem' }}>
+                                <div className="expanded-detail-section-full tracking-expanded-feedback">
                                   <p className="tracking-empty-state">Cargando detalle del incentivo...</p>
                                 </div>
                               ) : null}
 
                               {detailQuery.isError ? (
-                                <div className="expanded-detail-section-full" style={{ padding: '1.5rem' }}>
+                                <div className="expanded-detail-section-full tracking-expanded-feedback">
                                   <p className="form-status form-status-error">{detailQuery.error.message}</p>
                                 </div>
                               ) : null}
@@ -537,8 +547,8 @@ export function IncentiveApprovalsView() {
                                   <div className="expanded-case-detail-grid">
                                     <div className="expanded-detail-section">
                                       <h4>TRABAJADOR Y CONTRATO</h4>
-                                      <div className="expanded-detail-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                        <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
+                                      <div className="expanded-detail-fields tracking-expanded-fields-two-columns">
+                                        <div className="expanded-detail-field-full">
                                           <small>Trabajador</small>
                                           <strong>{detailQuery.data.request.employeeFullName}</strong>
                                         </div>
@@ -558,15 +568,13 @@ export function IncentiveApprovalsView() {
                                           <small>Contrato del Servicio</small>
                                           <strong>{detailQuery.data.request.selectedAreaName}</strong>
                                         </div>
-                                        <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
-                                        </div>
                                       </div>
                                     </div>
 
                                     <div className="expanded-detail-section">
                                       <h4>DETALLES INCENTIVO</h4>
-                                      <div className="expanded-detail-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1rem', alignItems: 'start' }}>
-                                        <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
+                                      <div className="expanded-detail-fields tracking-expanded-fields-incentive">
+                                        <div className="expanded-detail-field-full">
                                           <small>Tipo incentivo</small>
                                           <strong>{detailQuery.data.request.incentiveTypeName}</strong>
                                         </div>
@@ -574,7 +582,7 @@ export function IncentiveApprovalsView() {
                                           <small>Fecha servicio</small>
                                           <strong>{formatRequestDate(detailQuery.data.request.serviceDate)}</strong>
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.4rem', gridRow: 'span 2' }}>
+                                        <div className="tracking-operational-flags-cell">
                                           <small>Período pago</small>
                                           <IncentiveOperationalFlags
                                             periodCode={detailQuery.data.request.periodCode}
@@ -589,7 +597,7 @@ export function IncentiveApprovalsView() {
                                           <strong>{formatCurrencyValue(detailQuery.data.request.calculatedAmount)}</strong>
                                         </div>
                                         {detailQuery.data.request.replacementFullName ? (
-                                          <div className="expanded-detail-field-full" style={{ gridColumn: '1 / -1' }}>
+                                          <div className="expanded-detail-field-full">
                                             <small>Trabajador reemplazado</small>
                                             <strong>
                                               {detailQuery.data.request.replacementFullName}
@@ -604,7 +612,7 @@ export function IncentiveApprovalsView() {
 
                                     <div className="expanded-detail-section">
                                       <h4>GESTIÓN Y OPERACIÓN</h4>
-                                      <div className="expanded-detail-fields" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                                      <div className="expanded-detail-fields tracking-expanded-fields-single-column">
                                         <div>
                                           <small>Estado actual</small>
                                           <strong>{getRequestStatusLabel(detailQuery.data.request.status)}</strong>
