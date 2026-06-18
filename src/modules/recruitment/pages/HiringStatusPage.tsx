@@ -3,6 +3,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { invalidateInternalMobilityQueries } from "../../internal_mobility/hooks/useInternalMobilityQueries";
+import { hasModuleAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   getRecruitmentCaseDetailQueryOptions,
@@ -36,7 +37,7 @@ const emptySummary: RecruitmentDashboardSummary = {
 };
 
 export function HiringStatusPage() {
-  const { user, hasCapability } = useAuth();
+  const { accessibleModules, hasCapability, isSuperAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [selectedCaseId, setSelectedCaseId] = useState("");
@@ -47,6 +48,8 @@ export function HiringStatusPage() {
   const [stageDraft, setStageDraft] = useState<RecruitmentCandidateStage | "">("");
   const [stageComment, setStageComment] = useState("");
   const canAccessCandidateControl = hasCapability("candidate_control_access");
+  const canAccessInternalMobility =
+    isSuperAdmin || hasModuleAccess(accessibleModules, "movilidad_interna");
   const dashboardQuery = useRecruitmentControlDashboard();
   const dashboardData = dashboardQuery.data;
   const summary = dashboardData?.summary ?? emptySummary;
@@ -149,13 +152,17 @@ export function HiringStatusPage() {
   }, [selectedCaseId, selectedCandidateId]);
 
   useEffect(() => {
+    if (activeView === "internal_mobility" && canAccessInternalMobility) {
+      return;
+    }
+
     if (!canAccessCandidateControl && activeView !== "processes") {
       setActiveView("processes");
       setSelectedCandidateId("");
       setStageDraft("");
       setStageComment("");
     }
-  }, [activeView, canAccessCandidateControl]);
+  }, [activeView, canAccessCandidateControl, canAccessInternalMobility]);
 
   const handleCandidateAdded = async (caseId: string, candidateId: string) => {
     setSelectedCaseId(caseId);
@@ -322,6 +329,20 @@ export function HiringStatusPage() {
     await invalidateRecruitmentCache();
   };
 
+  const processesView = (
+    <HiringProcessesView
+      isLoading={isLoading}
+      pendingApprovals={pendingApprovals}
+      activeCases={activeCases}
+      currentUserId={user?.id}
+      isDecisionLoading={isDecisionLoading}
+      decisionMessage={decisionMessage}
+      errorMessage={errorMessage}
+      onApprovalSuccess={() => void invalidateRecruitmentCache()}
+      onCloseRequest={handleCloseHiringRequest}
+    />
+  );
+
   return (
     <PageShell>
       <div className="minimal-page-header">
@@ -370,7 +391,7 @@ export function HiringStatusPage() {
               Personal a Contratar
             </button>
           ) : null}
-          {canAccessCandidateControl ? (
+          {canAccessInternalMobility ? (
             <button
               type="button"
               className={`approval-chip ${activeView === "internal_mobility" ? "tracking-kpi-card-active" : ""}`}
@@ -381,18 +402,9 @@ export function HiringStatusPage() {
           ) : null}
         </div>
 
-        {activeView === "processes" || !canAccessCandidateControl ? (
-          <HiringProcessesView
-            isLoading={isLoading}
-            pendingApprovals={pendingApprovals}
-            activeCases={activeCases}
-            currentUserId={user?.id}
-            isDecisionLoading={isDecisionLoading}
-            decisionMessage={decisionMessage}
-            errorMessage={errorMessage}
-            onApprovalSuccess={() => void invalidateRecruitmentCache()}
-            onCloseRequest={handleCloseHiringRequest}
-          />
+        {activeView === "processes" ||
+        (!canAccessCandidateControl && activeView !== "internal_mobility") ? (
+          processesView
         ) : activeView === "candidates" ? (
           <HiringCandidatesView
             isLoading={isLoading}
@@ -434,11 +446,13 @@ export function HiringStatusPage() {
             onInterviewNotesUpdated={handleLicenseUpdated}
             onCandidateFileUpdated={handleCandidateFileUpdated}
           />
-        ) : (
+        ) : activeView === "internal_mobility" && canAccessInternalMobility ? (
           <HiringInternalMobilityView
             isParentLoading={dashboardQuery.isLoading}
             externalErrorMessage={dashboardError}
           />
+        ) : (
+          processesView
         )}
       </section>
     </PageShell>

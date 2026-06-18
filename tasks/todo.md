@@ -8,6 +8,19 @@
 - [x] Extender backend y frontend para soportar `Pendiente de Ejecución RRHH` / `Ejecutado RRHH`, con permisos explícitos para `administrativo`
 - [x] Auditar residuos legacy peligrosos en el circuito de movilidad, aplicar migración en Supabase y validar build / typecheck / queries de humo
 
+## Visibilidad de Movilidad Interna para Administrativo en Control de Contrataciones
+
+- [x] Auditar por qué `administrativo` no veía la sección `Movilidad Interna` pese a tener acceso operativo al cierre RRHH
+- [x] Corregir la guarda de frontend para que `Movilidad Interna` dependa del módulo `movilidad_interna` y no de capacidades de control de candidatos
+- [x] Revalidar `TypeScript`, build frontend instrumentado y diff limpio antes de cerrar
+
+## Resultado de visibilidad de Movilidad Interna para Administrativo en Control de Contrataciones
+
+- La causa raíz estaba en [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1): la pestaña `Movilidad Interna` se renderizaba solo si el usuario tenía `candidate_control_access`, aunque el cierre RRHH ya había sido diseñado para el rol `administrativo`.
+- La corrección separó ambos contratos: `Control de candidatos` y `Personal a Contratar` siguen gobernados por capacidad, mientras `Movilidad Interna` ahora usa acceso modular real (`movilidad_interna`) con bypass de `superadmin`.
+- También se ajustó el fallback de vista para que la falta de acceso a candidatos no fuerce volver a `Resumen de procesos` cuando el usuario sí puede operar la cola de movilidad.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Eliminación de autoaprobación redundante en Solicitud de Contrataciones
 
 - [x] Auditar el flujo real de creación de folios para identificar por qué un gerente solicitante recibía de vuelta su propia aprobación de área
