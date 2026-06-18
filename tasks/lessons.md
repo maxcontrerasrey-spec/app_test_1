@@ -1215,3 +1215,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Una RPC `SECURITY DEFINER` usada por automation no puede asumir que `request.jwt.claim.role` siempre viene poblado.** Con `service_role` o secretos server-to-server, el contexto puede llegar solo con `request.jwt.claims` o incluso vacío; la validación correcta debe aceptar explícitamente ese patrón interno, no solo el happy path de JWT interactivo.
 - **Supabase JS no siempre falla lanzando excepciones; muchas veces devuelve `{ error }`.** Si el retry wrapper solo captura `throw`, los `statement timeout` (`57014`) quedan sin reintento aunque el código parezca “protegido”.
 - **Los contadores finales de una sync no deben poder botar una carga ya exitosa.** Si el dato es solo informativo, conviene usar `count: "planned"` o degradar elegantemente; el hard-fail debe reservarse para la mutación core y para snapshots o auditorías que sí forman parte del contrato operacional.
+
+## 122. Si una sync ya procesa datos por lotes, no cierres con una segunda mutación masiva que rehace el mismo universo
+
+- **Cuando el workflow ya recorre páginas de 100 registros, el snapshot derivado debe construirse en ese mismo loop si el timeout del backend es sensible.** Hacer al final una RPC que vuelve a upsertear los mismos miles de filas concentra todo el costo en un solo statement y expone la sync a timeouts evitables.
+- **Las proyecciones analíticas derivadas no tienen por qué nacer en una sola función SQL.** Si el proceso transaccional ya posee los registros normalizados en memoria y la escritura por lotes mantiene el mismo contrato, persistir el snapshot incrementalmente puede ser más robusto y igual de auditable.

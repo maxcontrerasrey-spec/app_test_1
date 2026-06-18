@@ -114,6 +114,41 @@ function parseDateValue(value) {
   return null;
 }
 
+function getNestedValue(source, path) {
+  let current = source;
+
+  for (const key of path) {
+    if (!current || typeof current !== "object" || !(key in current)) {
+      return null;
+    }
+
+    current = current[key];
+  }
+
+  if (typeof current === "string") {
+    const trimmed = current.trim();
+    return trimmed || null;
+  }
+
+  return current ?? null;
+}
+
+function firstNonEmptyValue(...values) {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+      continue;
+    }
+
+    if (value !== null && value !== undefined && value !== "") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function getBirthDate(employee) {
   return parseDateValue(
     employee.birthday ??
@@ -125,6 +160,53 @@ function getBirthDate(employee) {
       employee.personal_information?.date_of_birth ??
       employee.document?.birthday ??
       null,
+  );
+}
+
+function getHireDate(employee) {
+  const raw = employee.raw_payload ?? employee;
+  return parseDateValue(
+    firstNonEmptyValue(
+      raw?.hire_date,
+      raw?.hired_at,
+      raw?.active_since,
+      raw?.company_entry_date,
+      raw?.start_date,
+      getNestedValue(raw, ["current_job", "start_date"]),
+      getNestedValue(raw, ["current_job", "active_since"]),
+      getNestedValue(raw, ["current_job", "company_entry_date"]),
+      getNestedValue(raw, ["current_job", "custom_attributes", "Fecha de ingreso"]),
+      getNestedValue(raw, ["current_job", "custom_attributes", "Fecha Ingreso"]),
+    ),
+  );
+}
+
+function getCityName(employee) {
+  const raw = employee.raw_payload ?? employee;
+  return firstNonEmptyValue(
+    raw?.current_city,
+    raw?.city,
+    raw?.district_or_commune,
+    getNestedValue(raw, ["current_address", "city"]),
+    getNestedValue(raw, ["current_address", "commune"]),
+    getNestedValue(raw, ["address", "city"]),
+    getNestedValue(raw, ["address", "commune"]),
+    getNestedValue(raw, ["address", "district"]),
+    getNestedValue(raw, ["personal_information", "city"]),
+    getNestedValue(raw, ["personal_information", "commune"]),
+    getNestedValue(raw, ["current_job", "location", "name"]),
+  );
+}
+
+function getRegionName(employee) {
+  const raw = employee.raw_payload ?? employee;
+  return firstNonEmptyValue(
+    raw?.region,
+    getNestedValue(raw, ["current_address", "region"]),
+    getNestedValue(raw, ["address", "region"]),
+    getNestedValue(raw, ["personal_information", "region"]),
+    getNestedValue(raw, ["current_job", "location", "region"]),
+    getNestedValue(raw, ["current_job", "location", "parent_name"]),
   );
 }
 
@@ -213,6 +295,28 @@ function normalizeBukEmployee(employee, areaLookup = new Map()) {
     status,
     is_active: inferActive(status),
     raw_payload: employee,
+  };
+}
+
+function buildSnapshotRow(employee, snapshotDate) {
+  return {
+    snapshot_date: snapshotDate,
+    buk_employee_id: employee.buk_employee_id,
+    full_name: employee.full_name,
+    email: employee.email,
+    job_title: employee.job_title,
+    contract_code: employee.contract_code,
+    area_name: employee.area_name,
+    area_code: employee.area_code,
+    document_number: employee.document_number,
+    document_type: employee.document_type ?? "rut",
+    birth_date: employee.birth_date,
+    hire_date: getHireDate(employee),
+    city_name: getCityName(employee),
+    region_name: getRegionName(employee),
+    status: employee.status,
+    is_active: employee.is_active,
+    raw_payload: employee.raw_payload,
   };
 }
 
@@ -422,6 +526,7 @@ async function main() {
   let hasMore = true;
   let synced = 0;
   let pagesProcessed = 0;
+  const snapshotDate = new Date().toISOString().slice(0, 10);
 
   while (hasMore) {
     const result = await fetchBukEmployeesPage(env, page);
@@ -436,6 +541,17 @@ async function main() {
       if (error) {
         throw error;
       }
+
+      const snapshotRows = employees.map((employee) => buildSnapshotRow(employee, snapshotDate));
+      const { error: snapshotPageError } = await runSupabaseOperationWithRetry(
+        `daily BUK snapshot page ${page}`,
+        async () =>
+          supabase.from("buk_employees_daily_snapshot").upsert(snapshotRows, {
+            onConflict: "snapshot_date,buk_employee_id",
+          }),
+        { retries: 5, baseDelayMs: 5000 },
+      );
+      if (snapshotPageError) throw snapshotPageError;
 
       synced += employees.length;
     }
@@ -472,18 +588,6 @@ async function main() {
   );
   if (activeCountError) throw activeCountError;
 
-  const snapshotDate = new Date().toISOString().slice(0, 10);
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-  const { data: snapshotResult, error: snapshotError } = await runSupabaseOperationWithRetry(
-    "daily BUK snapshot",
-    async () =>
-      supabase.rpc("capture_buk_employee_daily_snapshot", {
-        p_snapshot_date: snapshotDate,
-      }),
-    { retries: 5, baseDelayMs: 5000 },
-  );
-  if (snapshotError) throw snapshotError;
-
   console.log(
     JSON.stringify(
       {
@@ -493,7 +597,7 @@ async function main() {
         snapshotDate,
         finalCount: count,
         activeCount,
-        snapshotRowsAffected: Number(snapshotResult ?? 0),
+        snapshotRowsAffected: synced,
       },
       null,
       2,
