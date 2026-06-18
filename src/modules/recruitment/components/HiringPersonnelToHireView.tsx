@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
-  enqueueCandidatesToBuk,
   fetchCandidateBukProfile,
   formatRut,
+  generateCandidatesInBuk,
   type RecruitmentCaseDetail,
   type RecruitmentPersonnelToHireRow
 } from "../services/hiringControl";
@@ -164,7 +164,7 @@ export function HiringPersonnelToHireView({
     setIsGeneratingBuk(true);
     setExportMessage("");
 
-    const { data, error } = await enqueueCandidatesToBuk(
+    const { data, processed, error, dispatchError } = await generateCandidatesInBuk(
       selectedPersonnel.map((candidate) => candidate.id)
     );
 
@@ -176,11 +176,26 @@ export function HiringPersonnelToHireView({
 
     const queuedCount = data.filter((job) => job.status === "pending").length;
     const processingCount = data.filter((job) => job.status === "processing").length;
+    const successCount = processed.filter((job) => job.status === "success").length;
+    const failedJobs = processed.filter((job) => job.status === "error");
+
+    if (dispatchError) {
+      setExportMessage(
+        `Se encolaron ${queuedCount} persona(s), pero no se pudo ejecutar la sincronización automática con BUK. ${dispatchError}`
+      );
+      setIsGeneratingBuk(false);
+      return;
+    }
 
     setExportMessage(
-      processingCount > 0
-        ? `Se encolaron ${queuedCount} persona(s) para generar en BUK. ${processingCount} ya estaban en procesamiento.`
-        : `Se encolaron ${queuedCount} persona(s) para generar en BUK.`
+      failedJobs.length > 0
+        ? `BUK procesó ${successCount} persona(s) correctamente y ${failedJobs.length} fallaron. ${failedJobs
+            .map((job) => job.error)
+            .filter(Boolean)
+            .join(" | ")}`
+        : processingCount > 0
+          ? `BUK procesó ${successCount} persona(s). ${processingCount} ya estaban en procesamiento.`
+          : `BUK procesó ${successCount} persona(s) correctamente.`
     );
     setIsGeneratingBuk(false);
   };
@@ -212,7 +227,7 @@ export function HiringPersonnelToHireView({
             disabled={isGeneratingBuk || selectedPersonnel.length === 0}
           >
             {isGeneratingBuk
-              ? "Encolando..."
+              ? "Generando..."
               : `Generar en BUK (${selectedPersonnel.length})`}
           </button>
           <button

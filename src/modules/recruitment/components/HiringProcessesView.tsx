@@ -15,6 +15,35 @@ import { ApprovalModal } from "./ApprovalModal";
 
 type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "requester_name";
 
+const normalizeCaseSearchValue = (value: string | null | undefined) =>
+  (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const buildCaseSearchHaystack = (caseRow: RecruitmentCaseListRow) =>
+  normalizeCaseSearchValue(
+    [
+      caseRow.case_code,
+      caseRow.folio,
+      caseRow.title,
+      caseRow.contract_name,
+      caseRow.job_position_name,
+      caseRow.cost_center_name,
+      caseRow.cost_center_code,
+      caseRow.requester_name,
+      caseRow.requester_email,
+      caseRow.owner_name,
+      caseRow.shift_name,
+      caseRow.turno,
+      caseRow.travel_methodology,
+      caseRow.other_benefits
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+
 type HiringProcessesViewProps = {
   isLoading: boolean;
   pendingApprovals: HiringControlApproval[];
@@ -82,7 +111,9 @@ export function HiringProcessesView({
   };
 
   const filteredAndSortedCases = useMemo(() => {
-    const normalizedSearch = caseSearchTerm.trim().toLowerCase();
+    const normalizedSearchTerms = normalizeCaseSearchValue(caseSearchTerm)
+      .split(/\s+/)
+      .filter(Boolean);
 
     const filtered = activeCases.filter((caseRow) => {
       let matchesFilter = false;
@@ -95,12 +126,10 @@ export function HiringProcessesView({
       }
 
       if (!matchesFilter) return false;
+      const haystack = buildCaseSearchHaystack(caseRow);
       const matchesSearch =
-        !normalizedSearch ||
-        caseRow.case_code.toLowerCase().includes(normalizedSearch) ||
-        caseRow.contract_name.toLowerCase().includes(normalizedSearch) ||
-        caseRow.job_position_name.toLowerCase().includes(normalizedSearch) ||
-        caseRow.cost_center_name.toLowerCase().includes(normalizedSearch);
+        normalizedSearchTerms.length === 0 ||
+        normalizedSearchTerms.every((term) => haystack.includes(term));
 
       return matchesFilter && matchesSearch;
     });
@@ -229,7 +258,7 @@ export function HiringProcessesView({
             id="hiring-processes-search"
             label="Buscar casos"
             value={caseSearchTerm}
-            placeholder="Buscar por caso, contrato, cargo o centro de costo"
+            placeholder="Buscar por caso, contrato, cargo, gerencia, area o centro de costo"
             onChange={(event) => setCaseSearchTerm(event.target.value)}
             className="tracking-search-field"
           />

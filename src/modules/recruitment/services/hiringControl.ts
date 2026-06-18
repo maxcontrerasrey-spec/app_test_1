@@ -1021,6 +1021,87 @@ export async function enqueueCandidatesToBuk(candidateIds: string[]) {
   };
 }
 
+type BukSyncQueueRow = {
+  job_id: string;
+  recruitment_case_candidate_id: string;
+  status: string;
+};
+
+type BukSyncProcessedRow = {
+  jobId: string;
+  candidateId: string;
+  status: "success" | "error";
+  bukEmployeeId?: string;
+  error?: string;
+};
+
+export async function generateCandidatesInBuk(candidateIds: string[]) {
+  const queueResult = await enqueueCandidatesToBuk(candidateIds);
+  if (queueResult.error) {
+    return {
+      data: [] as BukSyncQueueRow[],
+      processed: [] as BukSyncProcessedRow[],
+      error: queueResult.error,
+      dispatchError: null as string | null
+    };
+  }
+
+  const queuedJobs = queueResult.data as BukSyncQueueRow[];
+  const pendingJobIds = queuedJobs
+    .filter((job) => job.status === "pending" && typeof job.job_id === "string" && job.job_id.trim())
+    .map((job) => job.job_id);
+
+  if (pendingJobIds.length === 0) {
+    return {
+      data: queuedJobs,
+      processed: [] as BukSyncProcessedRow[],
+      error: null,
+      dispatchError: null
+    };
+  }
+
+  if (!supabase) {
+    return {
+      data: queuedJobs,
+      processed: [] as BukSyncProcessedRow[],
+      error: null,
+      dispatchError: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.functions.invoke("sync-buk-candidates", {
+    body: { jobIds: pendingJobIds }
+  });
+
+  if (error) {
+    return {
+      data: queuedJobs,
+      processed: [] as BukSyncProcessedRow[],
+      error: null,
+      dispatchError:
+        error.message || "No fue posible ejecutar la sincronización automática con BUK."
+    };
+  }
+
+  const payload =
+    data && typeof data === "object" ? (data as { error?: unknown; processed?: unknown }) : null;
+  const functionError =
+    payload?.error && typeof payload.error === "string"
+      ? payload.error
+      : payload?.error
+        ? String(payload.error)
+        : null;
+
+  return {
+    data: queuedJobs,
+    processed: Array.isArray(payload?.processed)
+      ? (payload.processed as BukSyncProcessedRow[])
+      : [],
+    error: null,
+    dispatchError: functionError
+  };
+}
+
 
 export interface CandidateHistoricalRejection {
   case_code: string;

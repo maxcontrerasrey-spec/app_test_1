@@ -32,6 +32,19 @@
 - [x] Versionar y aplicar en Supabase la corrección incremental de `capability -> capability_code` en la función lateral WHO
 - [x] Revalidar auditoría de migraciones, tipado y push remoto antes de cerrar
 
+## Búsqueda ampliada en resumen de procesos de contratación
+
+- [x] Auditar qué columnas usa hoy el buscador de `Resumen de procesos de contratación`
+- [x] Ampliar el matching para que encuentre términos parciales de gerencia, área, centro de costo y labels operativos relacionados
+- [x] Revalidar tipado/diff limpio y documentar la nueva semántica del filtro
+
+## Resultado de búsqueda ampliada en resumen de procesos de contratación
+
+- El buscador de [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:15) dejó de depender solo de `case_code`, `contract_name`, `job_position_name` y `cost_center_name`.
+- Ahora construye un índice textual unificado con `case_code`, `folio`, `title`, `contract_name`, `job_position_name`, `cost_center_name`, `cost_center_code`, `requester_name`, `requester_email`, `owner_name`, `shift_name`, `turno`, `travel_methodology` y `other_benefits`.
+- La búsqueda quedó normalizada sin tildes y por múltiples términos. Con eso expresiones como `zona ii`, `prevencion`, `mantenimiento` o combinaciones parciales del nombre operativo del centro/caso pueden resolver aunque no coincidan exactamente con un solo campo visible en la tabla.
+- Validación cerrada con `npx tsc -b --pretty false` y `git diff --check`.
+
 ## Resultado de hotfix de columna de capability en notificación WHO
 
 - La segunda falla vino de la misma función lateral [`enqueue_who_pending_approval_email(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618153004_fix_who_pending_email_capability_column.sql:1): el filtro de destinatarios consultaba `rc.capability`, pero la tabla [`role_capabilities`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260526150000_add_effective_capabilities.sql:13) expone `capability_code`.
@@ -2908,3 +2921,16 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - La migración [`20260618041437_allow_internal_context_for_buk_snapshot.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618041437_allow_internal_context_for_buk_snapshot.sql:1) endurece `current_request_has_service_role()` para leer `request.jwt.claim.role` o `request.jwt.claims`, y permite que `capture_buk_employee_daily_snapshot(...)` acepte contexto interno sin claims del mismo modo que otras syncs server-to-server del ERP.
 - [`sync-buk-employees.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/sync-buk-employees.mjs:1) ya no depende de una RPC masiva al final para construir el snapshot BI. Ahora persiste `buk_employees_daily_snapshot` por página en el mismo loop paginado de empleados, mantiene retry real sobre `result.error` para timeouts `57014` y deja los contadores finales en modo informativo con `count: "planned"`.
 - La verificación real cerró completa: una llamada aislada a `capture_buk_employee_daily_snapshot('2026-06-18')` devolvió `5218`, y la sync manual completa terminó con `pagesProcessed: 53`, `synced: 5218`, `finalCount: 5218`, `activeCount: 1586` y `snapshotRowsAffected: 5218`.
+
+## Reparación del disparo automático en la generación BUK de candidatos
+
+- [x] Auditar el flujo real de `Generar en BUK` entre frontend, RPC `enqueue_buk_generation(...)`, cola `buk_sync_jobs` y Edge Function `sync-buk-candidates`.
+- [x] Corregir el flujo para que la UI no marque éxito cuando solo se encoló el job, sino cuando además se haya intentado ejecutar la sincronización.
+- [x] Validar el estado remoto de `buk_sync_jobs`, la disponibilidad de la Edge Function y el tipado frontend antes del commit final.
+
+## Resultado de reparación del disparo automático en la generación BUK de candidatos
+
+- La auditoría viva confirmó que la observación principal era correcta: la UI de [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) llamaba solo a [`enqueue_buk_generation(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260616231219_add_buk_candidate_sync_queue.sql:692), pero nunca despertaba la Edge Function [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1). En producción, `public.buk_sync_jobs` estaba vacía al momento de la revisión, lo que confirma que el problema no era un backlog atascado sino una brecha de orquestación.
+- [`generateCandidatesInBuk(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1016) ahora encapsula el flujo completo: primero encola los candidatos y luego invoca `sync-buk-candidates` con los `jobIds` recién creados. Si la ejecución automática falla, la UI ya no reporta “éxito”; devuelve un mensaje explícito de job encolado pero no procesado.
+- [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) cambió el contrato de feedback: diferencia entre encolado, procesamiento efectivo, jobs ya en curso y errores devueltos por la Edge Function, evitando falsos positivos operacionales en el botón `Generar en BUK`.
+- Validación cerrada con consulta remota a `public.buk_sync_jobs`, confirmación de despliegue activo de `sync-buk-candidates`, `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.

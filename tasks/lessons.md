@@ -233,6 +233,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si la tabla ya normaliza capacidades por `capability_code`, no uses `capability` por intuición**. En este repositorio los joins de permisos están estandarizados sobre `role_capabilities.capability_code`, y apartarse de ese contrato rompe helpers laterales aunque la lógica de negocio sea correcta.
 - **Los hotfix de funciones deben copiar también el contrato exacto de autorización**. Al reemplazar una función productiva, hay que contrastar sus joins contra la DDL real y contra helpers vigentes como `user_has_capability(...)`, no reescribirlos de memoria.
 
+## 126. En buscadores operativos, el usuario busca por conceptos de negocio, no por columnas aisladas
+
+- **No limites la búsqueda a las cuatro columnas visibles si el proceso se reconoce por etiquetas más amplias**. En bandejas ERP, términos como gerencia, área, CECO, folio o descriptor operativo deben resolverse desde un índice textual unificado del caso.
+- **La normalización del filtro debe tolerar escritura real**. Tildes, mayúsculas y búsquedas multipartes como `zona ii` o `prevencion riesgos` deben converger en el mismo matcher para evitar falsos “no existe”.
+
 ## 64. En vistas compuestas, cada submódulo debe colgar de su propio contrato de acceso
 
 - **No reutilices una capability lateral para esconder una pestaña que en realidad responde a acceso modular distinto**. Si `Movilidad Interna` depende de `movilidad_interna`, no puede quedar secuestrada por `candidate_control_access` solo porque comparte pantalla con Reclutamiento.
@@ -1250,3 +1255,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Cuando el workflow ya recorre páginas de 100 registros, el snapshot derivado debe construirse en ese mismo loop si el timeout del backend es sensible.** Hacer al final una RPC que vuelve a upsertear los mismos miles de filas concentra todo el costo en un solo statement y expone la sync a timeouts evitables.
 - **Las proyecciones analíticas derivadas no tienen por qué nacer en una sola función SQL.** Si el proceso transaccional ya posee los registros normalizados en memoria y la escritura por lotes mantiene el mismo contrato, persistir el snapshot incrementalmente puede ser más robusto y igual de auditable.
+
+## 123. En flujos asíncronos iniciados desde la UI, encolar no equivale a ejecutar; el feedback de éxito debe cubrir ambas fases
+
+- **Si el usuario dispara una integración desde un botón y el frontend solo llama a una RPC de cola, el flujo queda incompleto aunque la tabla de jobs exista.** La UI debe invocar explícitamente al worker o Edge Function responsable, o existir una automatización confirmada aguas abajo; de lo contrario, el mensaje “generado” es un falso positivo.
+- **Los mensajes operacionales deben distinguir entre “encolado”, “en procesamiento”, “procesado con éxito” y “encolado pero no ejecutado”.** Mezclar esas fases en una sola confirmación impide auditoría real y hace parecer estable un proceso que todavía no salió de la cola.
