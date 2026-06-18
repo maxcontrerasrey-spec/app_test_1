@@ -13,6 +13,8 @@ import {
 } from "./hiringControlViewUtils";
 import { ApprovalModal } from "./ApprovalModal";
 
+type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "requester_name";
+
 type HiringProcessesViewProps = {
   isLoading: boolean;
   pendingApprovals: HiringControlApproval[];
@@ -39,6 +41,8 @@ export function HiringProcessesView({
   const [caseSearchTerm, setCaseSearchTerm] = useState("");
   const [caseFilter, setCaseFilter] =
     useState<(typeof caseFilterOptions)[number]["key"]>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [selectedApprovalId, setSelectedApprovalId] = useState<number | null>(null);
   const [isApprovalQueueExpanded, setIsApprovalQueueExpanded] = useState(false);
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
@@ -58,10 +62,29 @@ export function HiringProcessesView({
     setExpandedCaseId(caseId);
   };
 
-  const filteredCases = useMemo(() => {
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else {
+        setSortColumn(null);
+        setSortDirection("asc");
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return null;
+    return <span style={{ marginLeft: "0.3rem" }}>{sortDirection === "asc" ? "↑" : "↓"}</span>;
+  };
+
+  const filteredAndSortedCases = useMemo(() => {
     const normalizedSearch = caseSearchTerm.trim().toLowerCase();
 
-    return activeCases.filter((caseRow) => {
+    const filtered = activeCases.filter((caseRow) => {
       let matchesFilter = false;
       if (caseFilter === null) {
         matchesFilter = ["open", "sourcing", "screening", "ready_to_hire", "partially_filled"].includes(caseRow.status);
@@ -81,7 +104,49 @@ export function HiringProcessesView({
 
       return matchesFilter && matchesSearch;
     });
-  }, [activeCases, caseFilter, caseSearchTerm]);
+
+    if (!sortColumn) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      let valA: string | number = "";
+      let valB: string | number = "";
+
+      switch (sortColumn) {
+        case "case_code":
+          valA = a.case_code;
+          valB = b.case_code;
+          break;
+        case "status":
+          valA = a.status;
+          valB = b.status;
+          break;
+        case "job_position_name":
+          valA = a.job_position_name;
+          valB = b.job_position_name;
+          break;
+        case "contract_name":
+          valA = a.contract_name;
+          valB = b.contract_name;
+          break;
+        case "vacancies":
+          valA = a.requested_vacancies;
+          valB = b.requested_vacancies;
+          break;
+        case "candidate_count":
+          valA = a.candidate_count;
+          valB = b.candidate_count;
+          break;
+        case "requester_name":
+          valA = a.requester_name ?? "";
+          valB = b.requester_name ?? "";
+          break;
+      }
+
+      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [activeCases, caseFilter, caseSearchTerm, sortColumn, sortDirection]);
 
   const selectedApproval =
     pendingApprovals.find((approval) => approval.id === selectedApprovalId) ?? null;
@@ -191,18 +256,18 @@ export function HiringProcessesView({
           <table className="tracking-table">
             <thead>
               <tr>
-                <th>Caso</th>
-                <th>Estado</th>
-                <th>Cargo</th>
-                <th>Contrato</th>
-                <th>Cupos</th>
-                <th>Candidatos activos</th>
-                <th>Solicitó</th>
+                <th onClick={() => handleSort("case_code")} style={{ cursor: "pointer", userSelect: "none" }}>Caso{getSortIcon("case_code")}</th>
+                <th onClick={() => handleSort("status")} style={{ cursor: "pointer", userSelect: "none" }}>Estado{getSortIcon("status")}</th>
+                <th onClick={() => handleSort("job_position_name")} style={{ cursor: "pointer", userSelect: "none" }}>Cargo{getSortIcon("job_position_name")}</th>
+                <th onClick={() => handleSort("contract_name")} style={{ cursor: "pointer", userSelect: "none" }}>Contrato{getSortIcon("contract_name")}</th>
+                <th onClick={() => handleSort("vacancies")} style={{ cursor: "pointer", userSelect: "none" }}>Cupos{getSortIcon("vacancies")}</th>
+                <th onClick={() => handleSort("candidate_count")} style={{ cursor: "pointer", userSelect: "none" }}>Candidatos activos{getSortIcon("candidate_count")}</th>
+                <th onClick={() => handleSort("requester_name")} style={{ cursor: "pointer", userSelect: "none" }}>Solicitó{getSortIcon("requester_name")}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCases.length > 0 ? (
-                filteredCases.map((caseRow) => {
+              {filteredAndSortedCases.length > 0 ? (
+                filteredAndSortedCases.map((caseRow) => {
                   const isExpanded = expandedCaseId === caseRow.id;
                   const detail = isExpanded ? expandedCaseDetailQuery.data ?? null : null;
                   const hr = detail?.case?.hiring_request;

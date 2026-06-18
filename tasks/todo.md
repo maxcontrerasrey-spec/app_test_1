@@ -20,6 +20,31 @@
 - [x] Endurecer la UI para bloquear causas WHO incompletas y dejar visible junto al botón el resultado exacto del envío
 - [x] Revalidar `TypeScript`, diff limpio y registrar el hallazgo operativo para evitar nuevas transiciones silenciosas
 
+## Hotfix de error SQL al enviar WHO a aprobación
+
+- [x] Auditar el error `column rcc.candidate_id does not exist` para confirmar si nacía en la RPC principal o en un trigger lateral del flujo WHO
+- [x] Versionar y aplicar en Supabase una migración mínima que corrija la función de notificación WHO sin tocar el contrato de etapas
+- [x] Revalidar auditoría de migraciones, tipado y estado remoto para cerrar el hotfix con trazabilidad
+
+## Hotfix de columna de capability en notificación WHO
+
+- [x] Auditar el nuevo error `column rc.capability does not exist` para confirmar el contrato real de `role_capabilities`
+- [x] Versionar y aplicar en Supabase la corrección incremental de `capability -> capability_code` en la función lateral WHO
+- [x] Revalidar auditoría de migraciones, tipado y push remoto antes de cerrar
+
+## Resultado de hotfix de columna de capability en notificación WHO
+
+- La segunda falla vino de la misma función lateral [`enqueue_who_pending_approval_email(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618153004_fix_who_pending_email_capability_column.sql:1): el filtro de destinatarios consultaba `rc.capability`, pero la tabla [`role_capabilities`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260526150000_add_effective_capabilities.sql:13) expone `capability_code`.
+- Se agregó y aplicó en Supabase la migración [`20260618153004_fix_who_pending_email_capability_column.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618153004_fix_who_pending_email_capability_column.sql:1), que mantiene intacta la lógica del helper y solo corrige la columna del join de permisos.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260618153004_fix_who_pending_email_capability_column.sql`, `npx tsc -b --pretty false`, `git diff --check` y `npx --yes supabase db push --linked --yes`.
+
+## Resultado de hotfix de error SQL al enviar WHO a aprobación
+
+- La causa raíz no estaba en [`request_candidate_stage_who(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260607173000_autoapprove_who_without_findings.sql:73), sino en la función lateral [`enqueue_who_pending_approval_email(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618151509_fix_who_pending_email_candidate_profile_join.sql:1), disparada por el trigger de `candidate_stage_approvals` cuando la solicitud sí alcanzaba estado `pending`.
+- Esa función seguía usando un join legacy `rcc.candidate_id`, pero el esquema vigente de [`recruitment_case_candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260520000012_recruitment_cases_phase1.sql:58) trabaja con `candidate_profile_id`. Por eso la transición fallaba recién al intentar encolar la notificación.
+- Se agregó y aplicó en Supabase la migración [`20260618151509_fix_who_pending_email_candidate_profile_join.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618151509_fix_who_pending_email_candidate_profile_join.sql:1), que reemplaza ese join por `candidate_profiles` y toma `national_id` como RUT sin alterar el resto del payload.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260618151509_fix_who_pending_email_candidate_profile_join.sql`, `npx tsc -b --pretty false`, `git diff --check`, `npx --yes supabase db push --linked --yes` y `npx --yes supabase migration list --linked`.
+
 ## Resultado de flujo WHO en control de candidatos de Reclutamiento
 
 - La RPC correcta ya estaba conectada: [`request_candidate_stage_who(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260607173000_autoapprove_who_without_findings.sql:73) seguía siendo la responsable de mover `Lead -> who_pending` cuando existen causas y de autoaprobar solo cuando no hay hallazgos.

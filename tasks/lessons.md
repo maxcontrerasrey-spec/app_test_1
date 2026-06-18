@@ -223,6 +223,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si un paso como Who depende de causas tipificadas, cada fila iniciada debe terminar completa o bloquear el envío**. Filtrar en React los registros parciales y seguir adelante hace que el usuario perciba que “no pasó nada” o que el sistema decidió otra cosa sin avisar.
 - **El feedback crítico debe vivir al lado de la acción**. Los mensajes de error o éxito del cambio de etapa no pueden quedar enterrados al final de un panel largo; deben verse junto al botón que ejecuta la transición.
 
+## 124. Un trigger lateral también forma parte del contrato operativo del paso principal
+
+- **No declares sana una RPC porque su `update/insert` principal compila o parece correcto**. Si la transición dispara triggers de correo, auditoría o colas, cualquiera de esas funciones puede romper el flujo completo en runtime aunque el núcleo de negocio esté bien.
+- **Las referencias legacy suelen sobrevivir en funciones accesorias**. Cuando aparezca un error de columna inexistente tras una mutación válida, hay que revisar también los `after insert/update` asociados y no solo la función que invocó el frontend.
+
+## 125. En contratos de permisos, no inventes nombres de columnas “semánticamente obvios”
+
+- **Si la tabla ya normaliza capacidades por `capability_code`, no uses `capability` por intuición**. En este repositorio los joins de permisos están estandarizados sobre `role_capabilities.capability_code`, y apartarse de ese contrato rompe helpers laterales aunque la lógica de negocio sea correcta.
+- **Los hotfix de funciones deben copiar también el contrato exacto de autorización**. Al reemplazar una función productiva, hay que contrastar sus joins contra la DDL real y contra helpers vigentes como `user_has_capability(...)`, no reescribirlos de memoria.
+
 ## 64. En vistas compuestas, cada submódulo debe colgar de su propio contrato de acceso
 
 - **No reutilices una capability lateral para esconder una pestaña que en realidad responde a acceso modular distinto**. Si `Movilidad Interna` depende de `movilidad_interna`, no puede quedar secuestrada por `candidate_control_access` solo porque comparte pantalla con Reclutamiento.
