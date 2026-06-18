@@ -264,6 +264,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si el backend todavía mezcla `user_can_access_module(...)`, `user_has_capability(...)` y `user_has_role(..., 'rol')`, crear un rol nuevo solo en `app_roles` y `role_module_access` lo deja funcional a medias**. Los flujos viejos seguirán preguntando por los nombres heredados.
 - **La salida robusta es centralizar la compatibilidad en la capa de autorización**. Si un rol nuevo debe comportarse como suma de otros, la equivalencia debe vivir en un helper único como `user_has_role(...)`, no en una cascada de parches repartidos por RPC.
 
+## 124. Cuando un módulo nace después que un rol compuesto, la herencia de acceso debe revisarse contra ese catálogo incremental
+
+- **Copiar módulos al momento de crear un rol compuesto no garantiza cobertura futura**. Si después se registra un módulo nuevo como `bi_analytics`, ese rol no lo heredará automáticamente salvo que exista una regla explícita o una migración incremental.
+- **La verificación correcta no es solo revisar `role_module_access`**. También hay que comprobar el helper vivo que gobierna la ruta o las RPCs (`user_can_access_module(...)`) sobre un usuario real del rol para evitar una falsa sensación de acceso resuelto.
+
 ## 67. Si Incentivos gobierna una marca operativa en Jornadas, ese origen debe existir como estado de primer nivel en toda la cadena
 
 - **No conviertas en `manual` un origen automático solo porque el frontend todavía no conoce el enum nuevo**. Si backend persiste `exception_source = incentive_auto`, tipos, mappers, badges, botones y bloqueos deben alinearse con ese tercer estado o la UI rompe trazabilidad y ofrece acciones inválidas.
