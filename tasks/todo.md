@@ -14,6 +14,19 @@
 - [x] Corregir la guarda de frontend para que `Movilidad Interna` dependa del módulo `movilidad_interna` y no de capacidades de control de candidatos
 - [x] Revalidar `TypeScript`, build frontend instrumentado y diff limpio antes de cerrar
 
+## Nuevo rol Jefe Administrativo
+
+- [x] Auditar el contrato actual de roles, módulos, capabilities y checks legacy por nombre para incorporar `jefe_administrativo` sin dejar permisos partidos
+- [x] Versionar y aplicar en Supabase la migración del rol `jefe_administrativo`, con herencia funcional de `administrativo + reclutamiento`
+- [x] Asignar el nuevo rol a Francisco Cordero Villagra y verificar módulos, capability y equivalencias efectivas
+
+## Resultado de nuevo rol Jefe Administrativo
+
+- Se agregó la migración [`20260618135544_add_jefe_administrativo_role.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618135544_add_jefe_administrativo_role.sql:1), aplicada directamente en Supabase productivo, para registrar `jefe_administrativo` en `app_roles`, copiarle la unión de `role_module_access` y `role_capabilities` de `administrativo` + `reclutamiento`, y reasignar a Francisco Cordero Villagra.
+- La parte crítica no fue solo crear el rol: se redefinió [`public.user_has_role(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618135544_add_jefe_administrativo_role.sql:33) para que `jefe_administrativo` satisfaga checks legacy que todavía preguntan explícitamente por `administrativo` o `reclutamiento`. Con eso se evitó tener que parchear decenas de RPCs una por una.
+- Francisco quedó con un único rol asignado (`jefe_administrativo`), pero la verificación remota confirmó `inherits_administrativo = true` e `inherits_reclutamiento = true`, además de los módulos `solicitud_contrataciones`, `control_contrataciones`, `movilidad_interna`, `jornadas_turnos` y `acreditacion_personas`, más la capability `candidate_control_access`.
+- En frontend también se actualizó el contrato de roles en [`access.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/config/access.ts:1) y el helper RRHH de movilidad en [`presentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/lib/presentation.ts:1) para que la sesión reconozca el nuevo rol sin drift visual.
+
 ## Resultado de visibilidad de Movilidad Interna para Administrativo en Control de Contrataciones
 
 - La causa raíz estaba en [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1): la pestaña `Movilidad Interna` se renderizaba solo si el usuario tenía `candidate_control_access`, aunque el cierre RRHH ya había sido diseñado para el rol `administrativo`.

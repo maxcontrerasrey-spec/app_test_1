@@ -259,6 +259,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con que el worker search respete “cargo elegible” si luego la RPC de contexto exige además contrato activo y mapeo BUK 1:1**. Si ambas funciones no convergen, el usuario puede seleccionar un trabajador válido para el lookup pero inválido para el resto del flujo.
 - **Cuando una RPC dependiente falla y deja vacíos campos críticos, la UI no puede quedar silenciosa**. Debe mostrar el error de contexto explícitamente y bloquear el avance, aunque ofrezca fallback visual mínimo como RUT o cargo ya conocidos desde el resultado de búsqueda.
 
+## 123. Un rol compuesto no queda listo solo copiando módulos; la herencia también debe cubrir los checks legacy por nombre
+
+- **Si el backend todavía mezcla `user_can_access_module(...)`, `user_has_capability(...)` y `user_has_role(..., 'rol')`, crear un rol nuevo solo en `app_roles` y `role_module_access` lo deja funcional a medias**. Los flujos viejos seguirán preguntando por los nombres heredados.
+- **La salida robusta es centralizar la compatibilidad en la capa de autorización**. Si un rol nuevo debe comportarse como suma de otros, la equivalencia debe vivir en un helper único como `user_has_role(...)`, no en una cascada de parches repartidos por RPC.
+
 ## 67. Si Incentivos gobierna una marca operativa en Jornadas, ese origen debe existir como estado de primer nivel en toda la cadena
 
 - **No conviertas en `manual` un origen automático solo porque el frontend todavía no conoce el enum nuevo**. Si backend persiste `exception_source = incentive_auto`, tipos, mappers, badges, botones y bloqueos deben alinearse con ese tercer estado o la UI rompe trazabilidad y ofrece acciones inválidas.

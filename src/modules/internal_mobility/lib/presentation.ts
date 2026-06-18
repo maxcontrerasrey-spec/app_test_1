@@ -32,5 +32,10 @@ export function canManageInternalMobilityHrExecution(
   appRoles: AppRole[],
   isSuperAdmin: boolean
 ) {
-  return isSuperAdmin || appRoles.includes("admin") || appRoles.includes("administrativo");
+  return (
+    isSuperAdmin ||
+    appRoles.includes("admin") ||
+    appRoles.includes("administrativo") ||
+    appRoles.includes("jefe_administrativo")
+  );
 }
