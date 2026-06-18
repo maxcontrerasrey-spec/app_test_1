@@ -2828,3 +2828,17 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - La UI conserva compatibilidad operativa con registros antiguos: si una faena ya guardó un `contract_code` o `area_code` que hoy no existe en el catálogo activo, el formulario lo sigue mostrando como opción manual en vez de romper la edición.
 - Se mantuvieron como texto libre los campos de definición maestra (`Código`, `Nombre`, descripciones y códigos propios del requisito), porque no salen de un catálogo corporativo existente y convertirlos en listas habría degradado flexibilidad sin respaldo de fuente canónica.
 - Cierre validado con `npm run audit:migrations -- --files supabase/migrations/20260617225911_add_accreditation_setup_contract_area_catalogs.sql`, `npx tsc -b`, `git diff --check` y `npx --yes supabase db push --linked --yes`.
+
+## Reparación de sync BUK fallida por snapshot diario
+
+- [x] Auditar el workflow y capturar el error real de la última corrida fallida.
+- [x] Corregir la autorización de `capture_buk_employee_daily_snapshot(...)` para contexto `service_role` e interno server-to-server.
+- [x] Endurecer el script `sync-buk-employees.mjs` para reintentar operaciones finales timeout-sensitive devueltas como `{ error }` por Supabase JS.
+- [x] Aplicar la migración en Supabase y verificar la sync completa con ejecución real local.
+
+## Resultado de reparación de sync BUK fallida por snapshot diario
+
+- La corrida fallida [`27732317190`](https://github.com/maxcontrerasrey-spec/app_test_1/actions/runs/27732317190) no estaba rompiendo en BUK ni en los upserts de empleados: procesó las 53 páginas y cayó al cierre con `P0001: Sin permisos para capturar snapshot diario BUK`.
+- La migración [`20260618041437_allow_internal_context_for_buk_snapshot.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618041437_allow_internal_context_for_buk_snapshot.sql:1) endurece `current_request_has_service_role()` para leer `request.jwt.claim.role` o `request.jwt.claims`, y permite que `capture_buk_employee_daily_snapshot(...)` acepte contexto interno sin claims del mismo modo que otras syncs server-to-server del ERP.
+- [`sync-buk-employees.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/sync-buk-employees.mjs:1) ahora trata como retryables los `57014 statement timeout` devueltos dentro de `result.error`, usa `count: "planned"` para los contadores informativos y reintenta el snapshot diario hasta 3 veces antes de fallar.
+- La verificación real cerró completa: una llamada aislada a `capture_buk_employee_daily_snapshot('2026-06-18')` devolvió `5218`, y la sync manual completa terminó con `pagesProcessed: 53`, `synced: 5218`, `finalCount: 5218`, `activeCount: 1586` y `snapshotRowsAffected: 5218`, mostrando dos reintentos de snapshot antes del éxito.

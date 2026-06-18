@@ -1209,3 +1209,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No conviertas inputs a selects por intuición visual.** Solo deben pasar a lista los campos respaldados por una fuente única y operativa del repositorio, como contratos, CECOs, cargos o catálogos equivalentes; de lo contrario solo se reemplaza un error humano por deuda de mantenimiento manual.
 - **Si un formulario ya guarda valores legacy fuera del catálogo vigente, el hardening no puede volverlos invisibles.** El control debe mantener una opción compatible para editar o revisar el dato histórico mientras se empuja el uso del catálogo actual.
 - **Cuando dos campos tienen dependencia natural de negocio, la UI debe reflejarla.** Si un contrato determina un CECO/área conocido, seleccionar el contrato debe sugerir o completar el área para reducir captura manual y evitar combinaciones incoherentes.
+
+## 121. En syncs server-to-server con Supabase JS, el control de permisos y los retries deben modelar el contrato real del cliente REST
+
+- **Una RPC `SECURITY DEFINER` usada por automation no puede asumir que `request.jwt.claim.role` siempre viene poblado.** Con `service_role` o secretos server-to-server, el contexto puede llegar solo con `request.jwt.claims` o incluso vacío; la validación correcta debe aceptar explícitamente ese patrón interno, no solo el happy path de JWT interactivo.
+- **Supabase JS no siempre falla lanzando excepciones; muchas veces devuelve `{ error }`.** Si el retry wrapper solo captura `throw`, los `statement timeout` (`57014`) quedan sin reintento aunque el código parezca “protegido”.
+- **Los contadores finales de una sync no deben poder botar una carga ya exitosa.** Si el dato es solo informativo, conviene usar `count: "planned"` o degradar elegantemente; el hard-fail debe reservarse para la mutación core y para snapshots o auditorías que sí forman parte del contrato operacional.

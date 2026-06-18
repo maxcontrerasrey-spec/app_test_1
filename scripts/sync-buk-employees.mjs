@@ -238,6 +238,46 @@ async function fetchWithRetry(url, options, retries = 3) {
   throw lastError instanceof Error ? lastError : new Error("Buk fetch failed.");
 }
 
+function isStatementTimeoutError(error) {
+  if (!error) return false;
+
+  const code = (error.code ?? "").toString().trim();
+  const message = (error.message ?? "").toString().toLowerCase();
+
+  return code === "57014" || message.includes("statement timeout");
+}
+
+async function runSupabaseOperationWithRetry(label, operation, retries = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      const result = await operation();
+      const resultError =
+        result && typeof result === "object" && "error" in result ? result.error : null;
+
+      if (resultError) {
+        throw resultError;
+      }
+
+      return result;
+    } catch (error) {
+      lastError = error;
+
+      if (!isStatementTimeoutError(error) || attempt === retries) {
+        throw error;
+      }
+
+      console.warn(
+        `[sync-buk] ${label} timed out on attempt ${attempt}/${retries}. Retrying...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`${label} failed.`);
+}
+
 function getEmployeesBaseUrl(env) {
   return optionalEnv(env.BUK_EMPLOYEES_URL) ?? "https://busesjm.buk.cl/api/v1/chile/employees";
 }
@@ -412,28 +452,30 @@ async function main() {
     }
   }
 
-  const { count, error } = await supabase.from("employees").select("id", { count: "exact", head: true });
-  if (error) {
-    throw error;
-  }
-
-  const { count: activeCount, error: activeCountError } = await supabase
-    .from("employees")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true);
-
-  if (activeCountError) {
-    throw activeCountError;
-  }
-
-  const { data: snapshotResult, error: snapshotError } = await supabase.rpc(
-    "capture_buk_employee_daily_snapshot",
-    { p_snapshot_date: new Date().toISOString().slice(0, 10) },
+  const { count, error } = await runSupabaseOperationWithRetry("employees total count", async () =>
+    supabase.from("employees").select("id", { count: "planned", head: true }),
   );
+  if (error) throw error;
 
-  if (snapshotError) {
-    throw snapshotError;
-  }
+  const { count: activeCount, error: activeCountError } = await runSupabaseOperationWithRetry(
+    "employees active count",
+    async () =>
+      supabase
+        .from("employees")
+        .select("id", { count: "planned", head: true })
+        .eq("is_active", true),
+  );
+  if (activeCountError) throw activeCountError;
+
+  const snapshotDate = new Date().toISOString().slice(0, 10);
+  const { data: snapshotResult, error: snapshotError } = await runSupabaseOperationWithRetry(
+    "daily BUK snapshot",
+    async () =>
+      supabase.rpc("capture_buk_employee_daily_snapshot", {
+        p_snapshot_date: snapshotDate,
+      }),
+  );
+  if (snapshotError) throw snapshotError;
 
   console.log(
     JSON.stringify(
@@ -441,6 +483,7 @@ async function main() {
         ok: true,
         pagesProcessed,
         synced,
+        snapshotDate,
         finalCount: count,
         activeCount,
         snapshotRowsAffected: Number(snapshotResult ?? 0),
