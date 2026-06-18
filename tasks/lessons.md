@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 123. En transiciones operativas con payload estructurado, la UI no puede filtrar silenciosamente campos incompletos
+
+- **Si un paso como Who depende de causas tipificadas, cada fila iniciada debe terminar completa o bloquear el envío**. Filtrar en React los registros parciales y seguir adelante hace que el usuario perciba que “no pasó nada” o que el sistema decidió otra cosa sin avisar.
+- **El feedback crítico debe vivir al lado de la acción**. Los mensajes de error o éxito del cambio de etapa no pueden quedar enterrados al final de un panel largo; deben verse junto al botón que ejecuta la transición.
+
 ## 64. En vistas compuestas, cada submódulo debe colgar de su propio contrato de acceso
 
 - **No reutilices una capability lateral para esconder una pestaña que en realidad responde a acceso modular distinto**. Si `Movilidad Interna` depende de `movilidad_interna`, no puede quedar secuestrada por `candidate_control_access` solo porque comparte pantalla con Reclutamiento.

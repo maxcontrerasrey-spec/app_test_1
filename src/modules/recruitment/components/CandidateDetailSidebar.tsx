@@ -51,6 +51,12 @@ type WhoCauseDraft = {
   comment: string;
 };
 
+const isWhoCauseDraftStarted = (cause: WhoCauseDraft) =>
+  Boolean(cause.type || cause.year.trim() || cause.comment.trim());
+
+const isWhoCauseDraftComplete = (cause: WhoCauseDraft) =>
+  Boolean(cause.type && cause.year.trim() && cause.comment.trim());
+
 const buildEmptyWhoCauseDrafts = (): WhoCauseDraft[] =>
   Array.from({ length: 4 }, () => ({
     type: "",
@@ -172,9 +178,11 @@ export function CandidateDetailSidebar({
   const isWhoPending = selectedCandidate.stage_code === "who_pending";
   const canApproveWho = hasCapability("can_approve_who_stage");
   const latestWhoApproval = selectedCandidate.who_approval ?? null;
-  const completedWhoCauseCount = whoCauseDrafts.filter(
-    (cause) => cause.type && cause.year.trim() && cause.comment.trim()
-  ).length;
+  const completedWhoCauseCount = whoCauseDrafts.filter(isWhoCauseDraftComplete).length;
+  const hasStartedWhoCauseDrafts = whoCauseDrafts.some(isWhoCauseDraftStarted);
+  const hasIncompleteWhoCauseDrafts = whoCauseDrafts.some(
+    (cause) => isWhoCauseDraftStarted(cause) && !isWhoCauseDraftComplete(cause)
+  );
   const isDocumentValidationApproved =
     selectedCandidate.document_validation_status === "approved";
 
@@ -196,7 +204,7 @@ export function CandidateDetailSidebar({
   };
 
   const normalizedWhoCauses: WhoApprovalCause[] = whoCauseDrafts
-    .filter((cause) => cause.type && cause.year.trim() && cause.comment.trim())
+    .filter(isWhoCauseDraftComplete)
     .map((cause) => ({
       type: cause.type as WhoCauseType,
       year: Number(cause.year),
@@ -490,7 +498,11 @@ export function CandidateDetailSidebar({
                       <div className="who-causes-configurator-header">
                         <div>
                           <small>Resumen para aprobación Who</small>
-                          <strong>{completedWhoCauseCount} / 4 causas completas</strong>
+                          <strong>
+                            {completedWhoCauseCount > 0
+                              ? `${completedWhoCauseCount} causa(s) completas`
+                              : "Sin causas registradas"}
+                          </strong>
                         </div>
                         <button
                           type="button"
@@ -502,8 +514,9 @@ export function CandidateDetailSidebar({
                       </div>
 
                       <p className="who-causes-summary-note">
-                        Si no registras hallazgos, la validación Who se aprobará automáticamente y
-                        no generará una tarea pendiente.
+                        Registra solo las causas existentes. Si no hay hallazgos y dejas todas las
+                        filas vacías, la validación Who se aprobará automáticamente y no generará
+                        una tarea pendiente.
                       </p>
 
                       {isWhoCausesExpanded ? (
@@ -565,7 +578,8 @@ export function CandidateDetailSidebar({
                       isWhoPending || 
                       !stageDraft || 
                       ((stageDraft === "rejected" || stageDraft === "withdrawn") && !stageComment.trim()) ||
-                      (stageDraft === "ready_for_hire" && !isDocumentValidationApproved)
+                      (stageDraft === "ready_for_hire" && !isDocumentValidationApproved) ||
+                      (stageDraft === "who_pending" && hasIncompleteWhoCauseDrafts)
                     }
                     onClick={() =>
                       void onAdvanceStage(
@@ -584,6 +598,21 @@ export function CandidateDetailSidebar({
                     <p className="control-inline-error" style={{ marginTop: "6px", fontSize: "0.85rem", color: "#cf1322" }}>
                       * Debes aprobar la revisión documental en la pestaña de Control Documental antes de dejarlo listo para contratar.
                     </p>
+                  ) : null}
+                  {stageDraft === "who_pending" && hasIncompleteWhoCauseDrafts ? (
+                    <p className="control-inline-error" style={{ marginTop: "6px", fontSize: "0.85rem", color: "#cf1322" }}>
+                      * Completa o limpia cada causa iniciada antes de enviar la solicitud Who a aprobación.
+                    </p>
+                  ) : null}
+                  {stageDraft === "who_pending" && !hasIncompleteWhoCauseDrafts ? (
+                    <p className="who-causes-summary-note" style={{ marginTop: "6px" }}>
+                      {hasStartedWhoCauseDrafts
+                        ? `Se enviará a aprobación Who con ${completedWhoCauseCount} causa(s) registrada(s).`
+                        : "Sin causas registradas, el paso Who se aprobará automáticamente."}
+                    </p>
+                  ) : null}
+                  {decisionMessage ? (
+                    <p className="form-status form-status-spaced">{decisionMessage}</p>
                   ) : null}
                 </div>
               </div>
@@ -716,10 +745,6 @@ export function CandidateDetailSidebar({
               </div>
             ) : null}
           </div>
-
-
-
-          {decisionMessage ? <p className="form-status form-status-spaced">{decisionMessage}</p> : null}
         </div>
       )}
 

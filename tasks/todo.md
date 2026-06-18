@@ -14,6 +14,19 @@
 - [x] Corregir la guarda de frontend para que `Movilidad Interna` dependa del módulo `movilidad_interna` y no de capacidades de control de candidatos
 - [x] Revalidar `TypeScript`, build frontend instrumentado y diff limpio antes de cerrar
 
+## Flujo WHO en control de candidatos de Reclutamiento
+
+- [x] Auditar la transición `Lead -> Who` para confirmar si el botón realmente dispara la RPC y dónde se pierde la señal de error o éxito
+- [x] Endurecer la UI para bloquear causas WHO incompletas y dejar visible junto al botón el resultado exacto del envío
+- [x] Revalidar `TypeScript`, diff limpio y registrar el hallazgo operativo para evitar nuevas transiciones silenciosas
+
+## Resultado de flujo WHO en control de candidatos de Reclutamiento
+
+- La RPC correcta ya estaba conectada: [`request_candidate_stage_who(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260607173000_autoapprove_who_without_findings.sql:73) seguía siendo la responsable de mover `Lead -> who_pending` cuando existen causas y de autoaprobar solo cuando no hay hallazgos.
+- La fricción estaba en frontend, dentro de [`CandidateDetailSidebar.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDetailSidebar.tsx:51): la UI filtraba silenciosamente filas WHO incompletas antes de invocar el cambio de etapa y además dejaba el mensaje de error/éxito enterrado al final del panel.
+- Se endureció el flujo para que cualquier causa iniciada deba quedar completa o el botón quede bloqueado con mensaje explícito. También se dejó una confirmación visible junto al botón indicando si la solicitud irá a aprobación Who o si, por no existir causas, se autoaprobará.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Nuevo rol Jefe Administrativo
 
 - [x] Auditar el contrato actual de roles, módulos, capabilities y checks legacy por nombre para incorporar `jefe_administrativo` sin dejar permisos partidos
