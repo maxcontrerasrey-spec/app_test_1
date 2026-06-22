@@ -130,6 +130,23 @@
 - La verificación remota confirmó que ambos `buk_area_name` ya existen en `buk_contract_mappings` con `contract_id` enlazado y código operacional visible (`CONT-102`, `CONT-103`), por lo que quedan disponibles para los flujos que consumen este catálogo.
 - Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260622183000_add_acciona_talabre_sigma_dand_contract_mappings.sql`, consulta remota de humo vía service role sobre `buk_contract_mappings`, `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
 
+## Endurecimiento de cupos en Movilidad Interna contra folios de Reclutamiento
+
+- [x] Auditar el contrato real entre `internal_mobility_requests` y `recruitment_cases` para confirmar en qué momento los cupos del folio se descontaban o quedaban solo informativos.
+- [x] Corregir la métrica de cupos para que las movilidades pendientes también reserven vacante desde la creación, no recién al aprobarse.
+- [x] Blindar la aprobación final frente a sobrecupos legacy, validar el flujo y dejar documentada la regla operativa resultante.
+
+## Resultado de endurecimiento de cupos en Movilidad Interna contra folios de Reclutamiento
+
+- La auditoría del contrato vigente mostró la raíz exacta del problema en [`get_recruitment_case_effective_metrics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612003000_link_internal_mobility_to_recruitment_cases.sql:14): `available_vacancies` solo restaba `hired_candidate_count + approved_mobility_count`. Eso significaba que una movilidad pendiente sí aparecía en métricas operativas, pero **no reservaba cupo** del folio.
+- En la práctica, con esa lógica, un folio con `2` cupos podía aceptar `3` movilidades si ninguna había llegado todavía a `approved`. El bloqueo recién ocurría tarde o derechamente no ocurría en aprobación final, porque la reserva no nacía en `submit_internal_mobility_request(...)`.
+- Se dejó versionada la migración [`20260622203000_harden_internal_mobility_vacancy_reservations.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260622203000_harden_internal_mobility_vacancy_reservations.sql:1), que cambia dos cosas:
+  1. `available_vacancies` ahora descuenta `hired + mobility_pending + mobility_approved`, por lo que el cupo queda reservado desde que la solicitud entra a `pending_area_manager` o `pending_contracts_control`;
+  2. la nueva helper `internal_mobility_request_has_reserved_slot(...)` blinda `decide_internal_mobility_request_approval(...)` para que una solicitud legacy que haya quedado fuera del cupo reservado no pueda aprobarse en Control de Contratos.
+- La auditoría remota de datos sobre el proyecto real no encontró hoy casos activos sobre-reservados ni pendientes abiertas, por lo que el ajuste es preventivo y endurece el flujo antes de que aparezca el primer desborde real.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260622203000_harden_internal_mobility_vacancy_reservations.sql`, `npx tsc -b --pretty false`, `git diff --check` y auditoría remota por `service_role` sobre `recruitment_cases`, `recruitment_case_candidates` e `internal_mobility_requests`.
+- Aplicación remota pendiente: el entorno sí permite `npx supabase migration list --linked`, pero `npx supabase db push --linked` falla por autenticación del pooler (`cli_login_postgres`, `SQLSTATE 28P01`). El bloqueo es del acceso DB del entorno, no del SQL preparado.
+
 ## Eliminación de autoaprobación redundante en Solicitud de Contrataciones
 
 - [x] Auditar el flujo real de creación de folios para identificar por qué un gerente solicitante recibía de vuelta su propia aprobación de área

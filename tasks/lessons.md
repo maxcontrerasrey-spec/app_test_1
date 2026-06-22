@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. Si un flujo consume cupos compartidos, la reserva debe nacer en la primera etapa pendiente, no al aprobarse
+
+- **No basta con mostrar `pending_mobility_count` como dato informativo si `available_vacancies` no lo descuenta**. En ese diseño, el sistema aparenta conocer la cola pero sigue aceptando nuevas solicitudes como si el cupo estuviera libre.
+- **La regla correcta es doble**: la métrica de disponibilidad debe restar `pendientes + aprobadas`, y la aprobación final debe revalidar que la solicitud aún conserva una reserva efectiva para contener sobrecupos legacy o carreras históricas.
+
 ## 64. Una auditoría sobre `supabase/migrations` no describe por sí sola el estado vivo de producción
 
 - **No tomes como vulnerabilidad actual cualquier policy o constraint visto en una migración antigua si existen redefiniciones posteriores del mismo objeto.** En este repositorio hay funciones, policies y constraints que fueron endurecidos varias veces; antes de corregir hay que seguir la cadena completa de `create or replace`, `drop policy`, `alter table ... drop/add constraint` y quedarte con el estado final.
