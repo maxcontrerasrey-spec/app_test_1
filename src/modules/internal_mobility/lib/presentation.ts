@@ -4,6 +4,20 @@ import type {
   InternalMobilityRequestStatus
 } from "../types";
 
+function normalizeToStartOfDay(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 export function toInternalMobilityStatusLabel(value: InternalMobilityRequestStatus | string | null | undefined) {
   if (value === "approved") return "Aprobada";
   if (value === "rejected") return "Rechazada";
@@ -17,6 +31,41 @@ export function toInternalMobilityExecutionStatusLabel(
   value: InternalMobilityHrExecutionStatus | string | null | undefined
 ) {
   return value === "executed" ? "Ejecutado RRHH" : "Pendiente ejecución RRHH";
+}
+
+export function toInternalMobilityVisibleStatusLabel(
+  status: InternalMobilityRequestStatus | string | null | undefined,
+  hrExecutionStatus: InternalMobilityHrExecutionStatus | string | null | undefined
+) {
+  if (status === "approved" && hrExecutionStatus === "executed") {
+    return "Ejecutada";
+  }
+
+  return toInternalMobilityStatusLabel(status);
+}
+
+export function formatInternalMobilityOpenDays(
+  openedAt: string | null | undefined,
+  closedAt?: string | null | undefined
+) {
+  const openedDate = normalizeToStartOfDay(openedAt);
+  if (!openedDate) {
+    return "No disponible";
+  }
+
+  const endDate = normalizeToStartOfDay(closedAt) ?? normalizeToStartOfDay(new Date().toISOString());
+  if (!endDate) {
+    return "No disponible";
+  }
+
+  const diffInDays = Math.max(
+    0,
+    Math.floor((endDate.getTime() - openedDate.getTime()) / 86_400_000)
+  );
+
+  if (diffInDays === 0) return "Hoy";
+  if (diffInDays === 1) return "1 dia";
+  return `${diffInDays} dias`;
 }
 
 export function toInternalMobilityAuditLabel(value: string | null | undefined) {

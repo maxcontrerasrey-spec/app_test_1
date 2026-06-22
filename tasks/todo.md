@@ -103,6 +103,33 @@
 - También se ajustó el fallback de vista para que la falta de acceso a candidatos no fuerce volver a `Resumen de procesos` cuando el usuario sí puede operar la cola de movilidad.
 - Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
 
+## Ajuste de estado visible y aging congelado en historial de Movilidad Interna
+
+- [x] Auditar dónde se construye el estado visible del historial y qué timestamps ya están disponibles para calcular aging sin abrir migraciones innecesarias.
+- [x] Ajustar la presentación para que una movilidad aprobada y luego ejecutada por RRHH se vea como `Ejecutada` en el resumen visible al solicitante y al gerente.
+- [x] Reemplazar la columna `Requiere finiquito` del historial por `Días abierta`, congelando el contador al ejecutar RRHH o al rechazo, y revalidar tipado/build/diff.
+
+## Resultado de ajuste de estado visible y aging congelado en historial de Movilidad Interna
+
+- [`presentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/lib/presentation.ts:1) ahora consolida dos semánticas nuevas: `toInternalMobilityVisibleStatusLabel(...)`, que muestra `Ejecutada` cuando `status = approved` y `hr_execution_status = executed`, y `formatInternalMobilityOpenDays(...)`, que calcula días abiertos desde `approved_at` o `submitted_at` y los congela cuando existe `hr_execution_executed_at` o `rejected_at`.
+- [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1) dejó de mostrar solo `Aprobada/Rechazada` en la tabla histórica. Ahora el solicitante o gerente ve `Ejecutada` en la columna `Estado` cuando RRHH ya cerró la movilidad.
+- En esa misma tabla, la columna final ya no muestra `Requiere finiquito`. Ahora muestra `Días abierta`, con el aging congelado al momento de ejecución o rechazo para no seguir corriendo después del cierre operativo.
+- El detalle modal también quedó alineado: el encabezado usa el estado visible consolidado y la sección de destino expone `Días abierta` junto al resto del contexto operativo.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+## Alta de contratos ACCIONA - TRANQUE TALABRE y SIGMA - DAND en catálogo operacional
+
+- [x] Auditar la fuente de verdad de contratos/áreas para no tocar solo el aprobador por CECO y dejar roto el catálogo operacional.
+- [x] Versionar una migración puntual que agregue o actualice ambos contratos en `contracts` y `buk_contract_mappings` siguiendo el patrón del catálogo BUK vigente.
+- [x] Aplicar el cambio al proyecto productivo correcto, validar disponibilidad y cerrar con auditoría de migraciones/diff.
+
+## Resultado de alta de contratos ACCIONA - TRANQUE TALABRE y SIGMA - DAND en catálogo operacional
+
+- Se agregó la migración [`20260622183000_add_acciona_talabre_sigma_dand_contract_mappings.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260622183000_add_acciona_talabre_sigma_dand_contract_mappings.sql:1), que reutiliza el mismo patrón del catálogo BUK vigente: sanea/crea filas en `contracts` y luego inserta o actualiza `buk_contract_mappings`, cerrando finalmente el `contract_id`.
+- Los dos contratos quedaron aplicados directamente sobre el proyecto real apuntado por `.env.local` (`pzblmbahnoyntrhistea`) usando `SUPABASE_SERVICE_ROLE_KEY`, porque en este entorno no está disponible el CLI `supabase`. El alta efectiva creó `CONT-102` para `5906986003:0001 / ACCIONA - TRANQUE TALABRE` y `CONT-103` para `7680816001:0001 / SIGMA - DAND`.
+- La verificación remota confirmó que ambos `buk_area_name` ya existen en `buk_contract_mappings` con `contract_id` enlazado y código operacional visible (`CONT-102`, `CONT-103`), por lo que quedan disponibles para los flujos que consumen este catálogo.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260622183000_add_acciona_talabre_sigma_dand_contract_mappings.sql`, consulta remota de humo vía service role sobre `buk_contract_mappings`, `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Eliminación de autoaprobación redundante en Solicitud de Contrataciones
 
 - [x] Auditar el flujo real de creación de folios para identificar por qué un gerente solicitante recibía de vuelta su propia aprobación de área

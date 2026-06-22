@@ -258,6 +258,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No concluyas que `vite build` se atascó solo porque deja de imprimir durante `transforming...`**. En este repo el build puede entrar en una fase corta pero silenciosa y aun así cerrar bien segundos después.
 - **La salida robusta es un runner explícito por fases**. Separar `tsc` y `vite`, con timestamps y timeout real por etapa, elimina la ambigüedad y vuelve auditable el estado del pipeline frontend.
 
+## 66. Cuando un proceso gana una subetapa operativa, el estado visible del historial también debe consolidar ese cierre
+
+- **No basta con agregar `hr_execution_status` como columna auxiliar si el usuario final sigue leyendo el proceso por una sola etiqueta de estado.** Si RRHH cierra una movilidad, el resumen del solicitante o gerente debe reflejar `Ejecutada`, no quedarse semánticamente en `Aprobada`.
+- **El aging de una cola no puede seguir corriendo después del cierre real.** Si la vista reemplaza una columna secundaria por `Días abierta`, ese contador debe detenerse en `hr_execution_executed_at` o en `rejected_at`; de lo contrario, la tabla sigue mostrando como “abierto” algo que ya está materialmente resuelto.
+
 ## 64. En migraciones de workflow, borrar la lógica legacy implica también borrar triggers activos, no solo dejar RPCs nuevas
 
 - **No basta con publicar la versión nueva del flujo si quedan triggers heredados escuchando la misma tabla**. Aunque el frontend invoque la RPC correcta, un trigger viejo puede reescribir estados o columnas con semántica obsoleta y romper constraints vigentes en runtime.

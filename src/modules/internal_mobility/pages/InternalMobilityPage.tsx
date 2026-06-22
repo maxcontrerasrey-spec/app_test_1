@@ -10,9 +10,11 @@ import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/S
 import { InternalMobilityWorkerLookup } from "../components/InternalMobilityWorkerLookup";
 import {
   canManageInternalMobilityHrExecution,
+  formatInternalMobilityOpenDays,
   toInternalMobilityAuditLabel,
   toInternalMobilityExecutionStatusLabel,
-  toInternalMobilityStatusLabel
+  toInternalMobilityStatusLabel,
+  toInternalMobilityVisibleStatusLabel
 } from "../lib/presentation";
 import {
   invalidateInternalMobilityQueries,
@@ -185,6 +187,12 @@ export function InternalMobilityPage() {
     requesterSigned &&
     !isSubmitting;
   const canManageHrExecution = canManageInternalMobilityHrExecution(appRoles, isSuperAdmin);
+  const selectedRequestOpenDays = requestDetailQuery.data
+    ? formatInternalMobilityOpenDays(
+        requestDetailQuery.data.request.approvedAt ?? requestDetailQuery.data.request.submittedAt,
+        requestDetailQuery.data.request.hrExecutionExecutedAt ?? requestDetailQuery.data.request.rejectedAt
+      )
+    : "—";
 
   const handleSubmit = async () => {
     if (!isSubmitEnabled || !selectedWorker) {
@@ -533,7 +541,7 @@ export function InternalMobilityPage() {
                   <th>Trabajador</th>
                   <th>Origen</th>
                   <th>Destino</th>
-                  <th>Requiere finiquito</th>
+                  <th>Días abierta</th>
                 </tr>
               </thead>
               <tbody>
@@ -576,7 +584,10 @@ export function InternalMobilityPage() {
                           <td>{request.folio}</td>
                           <td>
                             <span className="tracking-status-pill">
-                              {toInternalMobilityStatusLabel(request.status)}
+                              {toInternalMobilityVisibleStatusLabel(
+                                request.status,
+                                request.hrExecutionStatus
+                              )}
                             </span>
                           </td>
                           <td>
@@ -607,7 +618,12 @@ export function InternalMobilityPage() {
                               {request.destinationShiftName ?? "Sin turno"}
                             </span>
                           </td>
-                          <td>{request.requiresTermination ? "Sí" : "No"}</td>
+                          <td>
+                            {formatInternalMobilityOpenDays(
+                              request.approvedAt ?? request.submittedAt,
+                              request.hrExecutionExecutedAt ?? request.rejectedAt
+                            )}
+                          </td>
                         </tr>
                       );
                     })
@@ -670,7 +686,11 @@ export function InternalMobilityPage() {
                 <div>
                   <h3 id="mobility-modal-title">{requestDetailQuery.data.request.folio}</h3>
                   <p className="helper-copy">
-                    {toInternalMobilityStatusLabel(requestDetailQuery.data.request.status)} · {requestDetailQuery.data.request.employeeFullName}
+                    {toInternalMobilityVisibleStatusLabel(
+                      requestDetailQuery.data.request.status,
+                      requestDetailQuery.data.request.hrExecutionStatus
+                    )}{" "}
+                    · {requestDetailQuery.data.request.employeeFullName}
                   </p>
                 </div>
                 <div className="mobility-detail-pill-row">
@@ -749,6 +769,10 @@ export function InternalMobilityPage() {
                     <div>
                       <small>Requiere finiquito</small>
                       <strong>{requestDetailQuery.data.request.requiresTermination ? "Sí" : "No"}</strong>
+                    </div>
+                    <div>
+                      <small>Días abierta</small>
+                      <strong>{selectedRequestOpenDays}</strong>
                     </div>
                   </div>
                 </div>
