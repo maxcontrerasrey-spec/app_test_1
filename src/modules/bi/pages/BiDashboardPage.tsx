@@ -109,46 +109,48 @@ export function BiDashboardPage() {
       {activeView === "dotacion" && (
         <>
           <section className="bi-filter-section">
-            <div className="hr-incentives-analytics-filters">
-              <TextField
-                id="hr-bi-analytics-period"
-                label="Periodo"
-                placeholder="Ej. 202606"
-                value={periodCodeFilter}
-                onChange={(e) => setPeriodCodeFilter(e.target.value)}
-                inputMode="numeric"
-              />
+            <div className="info-card">
+              <div className="bi-analytics-filters">
+                <TextField
+                  id="hr-bi-analytics-period"
+                  label="Periodo"
+                  placeholder="Ej. 202606"
+                  value={periodCodeFilter}
+                  onChange={(e) => setPeriodCodeFilter(e.target.value)}
+                  inputMode="numeric"
+                />
 
-              <MultiSelectField
-                id="hr-bi-analytics-contract"
-                label="Contratos"
-                options={contractOptions}
-                value={contractCodeFilter}
-                onChange={setContractCodeFilter}
-                placeholder="Todos los contratos"
-              />
+                <MultiSelectField
+                  id="hr-bi-analytics-contract"
+                  label="Contratos"
+                  options={contractOptions}
+                  value={contractCodeFilter}
+                  onChange={setContractCodeFilter}
+                  placeholder="Todos los contratos"
+                />
 
-              <MultiSelectField
-                id="hr-bi-analytics-job"
-                label="Cargos"
-                options={jobOptions}
-                value={jobTitleFilter}
-                onChange={setJobTitleFilter}
-                placeholder="Todos los cargos"
-              />
+                <MultiSelectField
+                  id="hr-bi-analytics-job"
+                  label="Cargos"
+                  options={jobOptions}
+                  value={jobTitleFilter}
+                  onChange={setJobTitleFilter}
+                  placeholder="Todos los cargos"
+                />
 
-              <button
-                type="button"
-                title="Limpiar Filtros"
-                onClick={() => {
-                  setPeriodCodeFilter("");
-                  setContractCodeFilter([]);
-                  setJobTitleFilter([]);
-                }}
-                className="btn btn-secondary bi-filter-reset-button"
-              >
-                <EraserIcon />
-              </button>
+                <button
+                  type="button"
+                  title="Limpiar Filtros"
+                  onClick={() => {
+                    setPeriodCodeFilter("");
+                    setContractCodeFilter([]);
+                    setJobTitleFilter([]);
+                  }}
+                  className="bi-filter-reset-button"
+                >
+                  <EraserIcon />
+                </button>
+              </div>
             </div>
           </section>
 
