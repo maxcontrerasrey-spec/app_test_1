@@ -102,7 +102,22 @@ export function InternalMobilityPage() {
 
   const setupCatalogs = setupCatalogsQuery.data;
   const workerContext = workerContextQuery.data?.worker ?? null;
-  const eligibleFolios = setupCatalogs?.eligibleFolios ?? [];
+  const operationalContractNumbers = useMemo(
+    () =>
+      new Set(
+        (setupCatalogs?.destinations ?? [])
+          .map((destination) => destination.contractNumber?.trim())
+          .filter(Boolean)
+      ),
+    [setupCatalogs?.destinations]
+  );
+  const eligibleFolios = useMemo(
+    () =>
+      (setupCatalogs?.eligibleFolios ?? []).filter((folio) =>
+        folio.contractNumber ? operationalContractNumbers.has(folio.contractNumber.trim()) : false
+      ),
+    [operationalContractNumbers, setupCatalogs?.eligibleFolios]
+  );
 
   const selectedFolio =
     eligibleFolios.find((folio) => folio.recruitmentCaseId === selectedFolioId) ??
