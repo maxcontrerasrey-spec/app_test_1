@@ -218,7 +218,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
-## 64. Si un flujo consume cupos compartidos, la reserva debe nacer en la primera etapa pendiente, no al aprobarse
+## 64. Si una bandeja necesita expandirse, la fila debe consumir la RPC de detalle ya auditada y no crear un resumen paralelo
+
+- **No abras un segundo contrato de backend solo para mostrar la expansión inline si ya existe una RPC de detalle aprobada para ese dominio**. Duplicar payloads entre lista, modal y expansión hace divergir fechas, actores y labels operativos.
+- **El patrón correcto es lista liviana + detalle on-demand por fila expandida**. Así la grilla se mantiene rápida, el detalle conserva la misma fuente de verdad y cualquier ajuste de auditoría ocurre una sola vez.
+
+## 65. Si un flujo consume cupos compartidos, la reserva debe nacer en la primera etapa pendiente, no al aprobarse
 
 - **No basta con mostrar `pending_mobility_count` como dato informativo si `available_vacancies` no lo descuenta**. En ese diseño, el sistema aparenta conocer la cola pero sigue aceptando nuevas solicitudes como si el cupo estuviera libre.
 - **La regla correcta es doble**: la métrica de disponibilidad debe restar `pendientes + aprobadas`, y la aprobación final debe revalidar que la solicitud aún conserva una reserva efectiva para contener sobrecupos legacy o carreras históricas.

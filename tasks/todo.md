@@ -136,6 +136,19 @@
 - [x] Corregir la métrica de cupos para que las movilidades pendientes también reserven vacante desde la creación, no recién al aprobarse.
 - [x] Blindar la aprobación final frente a sobrecupos legacy, validar el flujo y dejar documentada la regla operativa resultante.
 
+## Historial expandible en Solicitudes visibles de Movilidad Interna
+
+- [x] Auditar si la tabla actual puede reutilizar `get_internal_mobility_request_detail(...)` para mostrar historial inline sin crear contratos paralelos
+- [x] Reemplazar la interacción modal por filas expandibles con flecha y bloques `Solicitud | Aprobación | Ejecución`, mostrando fechas, estados y actor responsable
+- [x] Revalidar `TypeScript`, build frontend y diff limpio; documentar el resultado final en este archivo y en `tasks/lessons.md` si aparece un patrón reusable
+
+## Resultado de historial expandible en Solicitudes visibles de Movilidad Interna
+
+- [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1) dejó de abrir un modal externo para el historial visible. La tabla ahora usa el patrón expandible estándar del repo: flecha en el folio, toggle inline y una fila secundaria con el detalle debajo del registro seleccionado.
+- El cambio reutiliza la RPC ya vigente [`get_internal_mobility_request_detail(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617170000_add_internal_mobility_hr_execution_stage.sql:312), por lo que no fue necesario inventar un segundo contrato ni abrir una migración solo para la UI.
+- La expansión muestra tres bloques fijos alineados al flujo pedido: `Solicitud`, `Aprobación` y `Ejecución`. En cada uno se exponen actor, fechas y estado útil para auditoría operativa; además se conservaron las acciones RRHH dentro del bloque `Ejecución`.
+- Validación cerrada con `npx tsc -b --pretty false` y `git diff --check`. `vite build` volvió a quedar en `transforming...` sin consumo relevante de CPU, reproduciendo el síntoma ya conocido del entorno y no un error nuevo introducido por este ajuste.
+
 ## Resultado de endurecimiento de cupos en Movilidad Interna contra folios de Reclutamiento
 
 - La auditoría del contrato vigente mostró la raíz exacta del problema en [`get_recruitment_case_effective_metrics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612003000_link_internal_mobility_to_recruitment_cases.sql:14): `available_vacancies` solo restaba `hired_candidate_count + approved_mobility_count`. Eso significaba que una movilidad pendiente sí aparecía en métricas operativas, pero **no reservaba cupo** del folio.

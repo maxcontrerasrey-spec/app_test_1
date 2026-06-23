@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
@@ -48,6 +48,12 @@ function resolveFolioLabel(folio: InternalMobilityEligibleFolio | null) {
   }
 
   return folio.folio ?? folio.caseCode;
+}
+
+function toApprovalTimelineLabel(status: "pending" | "approved" | "rejected") {
+  if (status === "approved") return "Aprobada";
+  if (status === "rejected") return "Rechazada";
+  return "Pendiente";
 }
 
 export function InternalMobilityPage() {
@@ -193,6 +199,10 @@ export function InternalMobilityPage() {
         requestDetailQuery.data.request.hrExecutionExecutedAt ?? requestDetailQuery.data.request.rejectedAt
       )
     : "—";
+
+  const toggleRequestExpansion = (requestId: string) => {
+    setSelectedRequestId((currentId) => (currentId === requestId ? "" : requestId));
+  };
 
   const handleSubmit = async () => {
     if (!isSubmitEnabled || !selectedWorker) {
@@ -574,57 +584,213 @@ export function InternalMobilityPage() {
                 {!requestsQuery.isLoading && !requestsQuery.error
                   ? paginatedRequests.map((request) => {
                       const isSelected = selectedRequestId === request.requestId;
+                      const requestDetail = isSelected ? requestDetailQuery.data : null;
+                      const approvalTimeline = requestDetail?.approvals ?? [];
 
                       return (
-                        <tr
-                          key={request.requestId}
-                          className={`tracking-table-row-clickable ${isSelected ? "tracking-table-row-expanded" : ""}`}
-                          onClick={() => setSelectedRequestId(request.requestId)}
-                        >
-                          <td>{request.folio}</td>
-                          <td>
-                            <span className="tracking-status-pill">
-                              {toInternalMobilityVisibleStatusLabel(
-                                request.status,
-                                request.hrExecutionStatus
+                        <Fragment key={request.requestId}>
+                          <tr
+                            className={`tracking-table-row-clickable ${isSelected ? "tracking-table-row-expanded" : ""}`}
+                            onClick={() => toggleRequestExpansion(request.requestId)}
+                          >
+                            <td>
+                              <span className="case-code-toggle">
+                                <span className={`expand-chevron ${isSelected ? "expand-chevron-open" : ""}`}>▸</span>
+                                {request.folio}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="tracking-status-pill">
+                                {toInternalMobilityVisibleStatusLabel(
+                                  request.status,
+                                  request.hrExecutionStatus
+                                )}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="tracking-status-pill">
+                                {toInternalMobilityExecutionStatusLabel(request.hrExecutionStatus)}
+                              </span>
+                            </td>
+                            <td>
+                              <strong>{request.employeeFullName}</strong>
+                              <br />
+                              <span>{request.employeeDocumentNumber ? formatRut(request.employeeDocumentNumber) : "—"}</span>
+                            </td>
+                            <td>
+                              <span className="dashboard-contract-inline">
+                                {request.currentAreaName || "—"}
+                                <br />
+                                {resolveWorkerCompanyLabel(request.currentCompanyName)}
+                                <br />
+                                {request.currentShiftName ?? "Sin turno"}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="dashboard-contract-inline">
+                                {request.destinationAreaName}
+                                <br />
+                                {request.destinationCompanyName}
+                                <br />
+                                {request.destinationShiftName ?? "Sin turno"}
+                              </span>
+                            </td>
+                            <td>
+                              {formatInternalMobilityOpenDays(
+                                request.approvedAt ?? request.submittedAt,
+                                request.hrExecutionExecutedAt ?? request.rejectedAt
                               )}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="tracking-status-pill">
-                              {toInternalMobilityExecutionStatusLabel(request.hrExecutionStatus)}
-                            </span>
-                          </td>
-                          <td>
-                            <strong>{request.employeeFullName}</strong>
-                            <br />
-                            <span>{request.employeeDocumentNumber ? formatRut(request.employeeDocumentNumber) : "—"}</span>
-                          </td>
-                          <td>
-                            <span className="dashboard-contract-inline">
-                              {request.currentAreaName || "—"}
-                              <br />
-                              {resolveWorkerCompanyLabel(request.currentCompanyName)}
-                              <br />
-                              {request.currentShiftName ?? "Sin turno"}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="dashboard-contract-inline">
-                              {request.destinationAreaName}
-                              <br />
-                              {request.destinationCompanyName}
-                              <br />
-                              {request.destinationShiftName ?? "Sin turno"}
-                            </span>
-                          </td>
-                          <td>
-                            {formatInternalMobilityOpenDays(
-                              request.approvedAt ?? request.submittedAt,
-                              request.hrExecutionExecutedAt ?? request.rejectedAt
-                            )}
-                          </td>
-                        </tr>
+                            </td>
+                          </tr>
+                          {isSelected ? (
+                            <tr className="tracking-table-expanded-row">
+                              <td colSpan={7}>
+                                {requestDetailQuery.isLoading ? (
+                                  <div className="expanded-case-detail-grid mobility-inline-history-grid">
+                                    <div className="expanded-detail-section expanded-detail-section-full tracking-expanded-feedback">
+                                      Cargando historial de la solicitud...
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                {requestDetailQuery.error ? (
+                                  <div className="expanded-case-detail-grid mobility-inline-history-grid">
+                                    <div className="expanded-detail-section expanded-detail-section-full tracking-expanded-feedback">
+                                      {requestDetailQuery.error.message}
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                {requestDetail ? (
+                                  <div className="expanded-case-detail-grid mobility-inline-history-grid">
+                                    <div className="expanded-detail-section">
+                                      <h4>Solicitud</h4>
+                                      <div className="expanded-detail-fields">
+                                        <div>
+                                          <small>Solicitó</small>
+                                          <strong>{requestDetail.request.requesterName}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Correo</small>
+                                          <strong>{requestDetail.request.requesterEmail ?? "—"}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Enviada</small>
+                                          <strong>{formatDateTimeLabel(requestDetail.request.submittedAt, "—")}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Estado visible</small>
+                                          <strong>
+                                            {toInternalMobilityVisibleStatusLabel(
+                                              requestDetail.request.status,
+                                              requestDetail.request.hrExecutionStatus
+                                            )}
+                                          </strong>
+                                        </div>
+                                        <div>
+                                          <small>Folio reclutamiento</small>
+                                          <strong>{requestDetail.request.sourceFolio ?? requestDetail.request.recruitmentCaseCode ?? "—"}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Días abierta</small>
+                                          <strong>{selectedRequestOpenDays}</strong>
+                                        </div>
+                                        <div className="expanded-detail-field-full">
+                                          <small>Motivo</small>
+                                          <strong>{requestDetail.request.motive.trim() || "Sin motivo registrado"}</strong>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="expanded-detail-section">
+                                      <h4>Aprobación</h4>
+                                      <div className="mobility-history-list">
+                                        {approvalTimeline.length ? (
+                                          approvalTimeline.map((approval) => (
+                                            <div key={approval.id} className="mobility-history-item">
+                                              <div className="mobility-history-item-head">
+                                                <strong>{approval.stepName}</strong>
+                                                <span className="tracking-status-pill">
+                                                  {toApprovalTimelineLabel(approval.status)}
+                                                </span>
+                                              </div>
+                                              <span>Responsable: {approval.approverName ?? "Sin aprobador asignado"}</span>
+                                              <span>Creada: {formatDateTimeLabel(approval.createdAt, "—")}</span>
+                                              <span>Resuelta: {formatDateTimeLabel(approval.decidedAt, "—")}</span>
+                                              {approval.decisionComment ? <p>{approval.decisionComment}</p> : null}
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <div className="mobility-history-item">
+                                            <span>Sin hitos de aprobación registrados.</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="expanded-detail-section">
+                                      <h4>Ejecución</h4>
+                                      <div className="expanded-detail-fields">
+                                        <div>
+                                          <small>Estado RRHH</small>
+                                          <strong>{toInternalMobilityExecutionStatusLabel(requestDetail.request.hrExecutionStatus)}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Última gestión RRHH</small>
+                                          <strong>{requestDetail.request.hrExecutionUpdatedByName ?? "—"}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Fecha gestión RRHH</small>
+                                          <strong>{formatDateTimeLabel(requestDetail.request.hrExecutionUpdatedAt, "—")}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Ejecutó RRHH</small>
+                                          <strong>{requestDetail.request.hrExecutionExecutedByName ?? "—"}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Fecha ejecución</small>
+                                          <strong>{formatDateTimeLabel(requestDetail.request.hrExecutionExecutedAt, "—")}</strong>
+                                        </div>
+                                        <div>
+                                          <small>Requiere finiquito</small>
+                                          <strong>{requestDetail.request.requiresTermination ? "Sí" : "No"}</strong>
+                                        </div>
+                                      </div>
+                                      {requestDetail.request.status === "approved" ? (
+                                        <div className="mobility-execution-actions">
+                                          <button
+                                            type="button"
+                                            className="soft-primary-button"
+                                            disabled={!canManageHrExecution || isHrExecutionSaving}
+                                            onClick={() => {
+                                              void handleHrExecutionStatusChange("pending");
+                                            }}
+                                          >
+                                            Pendiente de Ejecución RRHH
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="soft-primary-button"
+                                            disabled={!canManageHrExecution || isHrExecutionSaving}
+                                            onClick={() => {
+                                              void handleHrExecutionStatusChange("executed");
+                                            }}
+                                          >
+                                            {isHrExecutionSaving ? "Guardando..." : "Ejecutado RRHH"}
+                                          </button>
+                                        </div>
+                                      ) : null}
+                                      {!canManageHrExecution && requestDetail.request.status === "approved" ? (
+                                        <p className="helper-copy">Solo RRHH administrativo o administradores pueden cerrar esta ejecución.</p>
+                                      ) : null}
+                                      {hrExecutionError ? <p className="form-status form-status-error">{hrExecutionError}</p> : null}
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
                       );
                     })
                   : null}
@@ -657,253 +823,6 @@ export function InternalMobilityPage() {
         </div>
       </div>
 
-      {selectedRequestId ? (
-        <div className="approval-modal-backdrop" role="presentation" onClick={() => setSelectedRequestId("")}>
-          <div
-            className="approval-modal-card mobility-modal-override"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mobility-modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="modal-close-button"
-              onClick={() => setSelectedRequestId("")}
-              aria-label="Cerrar detalle"
-            >
-              ✕
-            </button>
-
-            {requestDetailQuery.isLoading ? <p className="helper-copy">Cargando detalle de la solicitud...</p> : null}
-            {requestDetailQuery.error ? (
-              <p className="form-status form-status-error">{requestDetailQuery.error.message}</p>
-            ) : null}
-
-            {requestDetailQuery.data ? (
-              <>
-                <div className="mobility-detail-header">
-                <div>
-                  <h3 id="mobility-modal-title">{requestDetailQuery.data.request.folio}</h3>
-                  <p className="helper-copy">
-                    {toInternalMobilityVisibleStatusLabel(
-                      requestDetailQuery.data.request.status,
-                      requestDetailQuery.data.request.hrExecutionStatus
-                    )}{" "}
-                    · {requestDetailQuery.data.request.employeeFullName}
-                  </p>
-                </div>
-                <div className="mobility-detail-pill-row">
-                  <span className="tracking-status-pill">
-                    {toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}
-                  </span>
-                  <span className="tracking-status-pill">
-                    {requestDetailQuery.data.request.requiresTermination ? "Requiere finiquito" : "Sin finiquito"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="expanded-case-detail-grid expanded-case-detail-grid-vertical">
-                <div className="expanded-detail-section">
-                  <h4>Trabajador actual</h4>
-                  <div className="expanded-detail-fields">
-                    <div>
-                      <small>Nombre</small>
-                      <strong>{requestDetailQuery.data.request.employeeFullName}</strong>
-                    </div>
-                    <div>
-                      <small>RUT</small>
-                      <strong>
-                        {requestDetailQuery.data.request.employeeDocumentNumber
-                          ? formatRut(requestDetailQuery.data.request.employeeDocumentNumber)
-                          : "—"}
-                      </strong>
-                    </div>
-                    <div>
-                      <small>Cargo actual</small>
-                      <strong>{requestDetailQuery.data.request.currentJobTitle ?? "—"}</strong>
-                    </div>
-                    <div>
-                      <small>Área actual</small>
-                      <strong>{requestDetailQuery.data.request.currentAreaName ?? "—"}</strong>
-                    </div>
-                    <div>
-                      <small>Empresa actual</small>
-                      <strong>{resolveWorkerCompanyLabel(requestDetailQuery.data.request.currentCompanyName)}</strong>
-                    </div>
-                    <div>
-                      <small>Turno actual</small>
-                      <strong>{resolveWorkerShiftLabel(requestDetailQuery.data.request.currentShiftName)}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="expanded-detail-section">
-                  <h4>Destino solicitado</h4>
-                  <div className="expanded-detail-fields">
-                    <div>
-                      <small>Cargo destino</small>
-                      <strong>{requestDetailQuery.data.request.destinationJobTitle}</strong>
-                    </div>
-                    <div>
-                      <small>Área destino</small>
-                      <strong>{requestDetailQuery.data.request.destinationAreaName}</strong>
-                    </div>
-                    <div>
-                      <small>Centro de costo</small>
-                      <strong>
-                        {requestDetailQuery.data.request.destinationCostCenterName ?? "—"}
-                        {requestDetailQuery.data.request.destinationCostCenterCode
-                          ? ` (${requestDetailQuery.data.request.destinationCostCenterCode})`
-                          : ""}
-                      </strong>
-                    </div>
-                    <div>
-                      <small>Empresa destino</small>
-                      <strong>{requestDetailQuery.data.request.destinationCompanyName}</strong>
-                    </div>
-                    <div>
-                      <small>Turno destino</small>
-                      <strong>{requestDetailQuery.data.request.destinationShiftName ?? "—"}</strong>
-                    </div>
-                    <div>
-                      <small>Requiere finiquito</small>
-                      <strong>{requestDetailQuery.data.request.requiresTermination ? "Sí" : "No"}</strong>
-                    </div>
-                    <div>
-                      <small>Días abierta</small>
-                      <strong>{selectedRequestOpenDays}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="expanded-detail-section">
-                  <h4>Trazabilidad</h4>
-                  <div className="expanded-detail-fields">
-                    <div>
-                      <small>Solicitó</small>
-                      <strong>{requestDetailQuery.data.request.requesterName}</strong>
-                    </div>
-                    <div>
-                      <small>Correo</small>
-                      <strong>{requestDetailQuery.data.request.requesterEmail ?? "—"}</strong>
-                    </div>
-                    <div>
-                      <small>Enviada</small>
-                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.submittedAt, "—")}</strong>
-                    </div>
-                    <div>
-                      <small>Aprobada</small>
-                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.approvedAt, "—")}</strong>
-                    </div>
-                    <div>
-                      <small>Rechazada</small>
-                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.rejectedAt, "—")}</strong>
-                    </div>
-                    <div>
-                      <small>RRHH actualizó</small>
-                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.hrExecutionUpdatedAt, "—")}</strong>
-                    </div>
-                    <div>
-                      <small>RRHH ejecutó</small>
-                      <strong>{formatDateTimeLabel(requestDetailQuery.data.request.hrExecutionExecutedAt, "—")}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="expanded-detail-section">
-                <h4>Ejecución RRHH</h4>
-                <div className="expanded-detail-fields">
-                  <div>
-                    <small>Estado RRHH</small>
-                    <strong>{toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}</strong>
-                  </div>
-                  <div>
-                    <small>Última gestión RRHH</small>
-                    <strong>{requestDetailQuery.data.request.hrExecutionUpdatedByName ?? "—"}</strong>
-                  </div>
-                  <div>
-                    <small>Ejecutó RRHH</small>
-                    <strong>{requestDetailQuery.data.request.hrExecutionExecutedByName ?? "—"}</strong>
-                  </div>
-                </div>
-                {requestDetailQuery.data.request.status === "approved" ? (
-                  <div className="mobility-execution-actions">
-                    <button
-                      type="button"
-                      className="soft-primary-button"
-                      disabled={!canManageHrExecution || isHrExecutionSaving}
-                      onClick={() => {
-                        void handleHrExecutionStatusChange("pending");
-                      }}
-                    >
-                      Pendiente de Ejecución RRHH
-                    </button>
-                    <button
-                      type="button"
-                      className="soft-primary-button"
-                      disabled={!canManageHrExecution || isHrExecutionSaving}
-                      onClick={() => {
-                        void handleHrExecutionStatusChange("executed");
-                      }}
-                    >
-                      {isHrExecutionSaving ? "Guardando..." : "Ejecutado RRHH"}
-                    </button>
-                  </div>
-                ) : null}
-                {!canManageHrExecution && requestDetailQuery.data.request.status === "approved" ? (
-                  <p className="helper-copy">Solo RRHH administrativo o administradores pueden cerrar esta ejecución.</p>
-                ) : null}
-                {hrExecutionError ? <p className="form-status form-status-error">{hrExecutionError}</p> : null}
-              </div>
-
-              <div className="expanded-detail-section">
-                <h4>Motivo del cambio</h4>
-                <p className="mobility-detail-copy">{requestDetailQuery.data.request.motive}</p>
-              </div>
-
-              <div className="mobility-history-grid">
-                <div className="expanded-detail-section">
-                  <h4>Historial de aprobaciones</h4>
-                  <div className="mobility-history-list">
-                    {requestDetailQuery.data.approvals.map((approval) => (
-                      <div key={approval.id} className="mobility-history-item">
-                        <div className="mobility-history-item-head">
-                          <strong>{approval.stepName}</strong>
-                          <span className="tracking-status-pill">
-                            {toInternalMobilityStatusLabel(approval.status)}
-                          </span>
-                        </div>
-                        <span>{approval.approverName ?? "Sin aprobador asignado"}</span>
-                        <span>Creada: {formatDateTimeLabel(approval.createdAt, "—")}</span>
-                        <span>Resuelta: {formatDateTimeLabel(approval.decidedAt, "—")}</span>
-                        {approval.decisionComment ? <p>{approval.decisionComment}</p> : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="expanded-detail-section">
-                  <h4>Auditoría</h4>
-                  <div className="mobility-history-list">
-                    {requestDetailQuery.data.auditLog.map((event) => (
-                      <div key={event.id} className="mobility-history-item">
-                        <div className="mobility-history-item-head">
-                          <strong>{toInternalMobilityAuditLabel(event.actionType)}</strong>
-                          <span>{formatDateTimeLabel(event.createdAt, "—")}</span>
-                        </div>
-                        <span>{event.actorName ?? event.actorUserId}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : null}
-          </div>
-        </div>
-      ) : null}
     </PageShell>
   );
 }
