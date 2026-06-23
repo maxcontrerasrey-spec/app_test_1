@@ -156,6 +156,21 @@
 - [x] Verificar que los formularios de solicitud de contrataciones y movilidad interna ya queden limitados a mappings operativos sin abrir contratos paralelos en frontend
 - [x] Validar con humo remoto del catálogo, `TypeScript`, build frontend si cierra, y diff limpio; documentar resultado y lección si aparece un patrón reusable
 
+## Normalización one-to-one del catálogo BUK en formularios operativos
+
+- [x] Auditar por qué mappings operativos del workbook siguen compartiendo `contract_id` y quedan fuera del selector pese a ser válidos para negocio
+- [x] Versionar una normalización segura del catálogo para asignar contrato dedicado a cada mapping operativo que hoy quedó ambiguo, sin romper folios ni historiales existentes
+- [x] Aplicar la corrección directamente en Supabase, revalidar disponibilidad en contratación/movilidad y documentar el resultado final
+
+## Resultado de normalización one-to-one del catálogo BUK en formularios operativos
+
+- La causa raíz no era el estado `Operativo/Terminado`, sino la historia del catálogo `contracts`: varios mappings operativos válidos seguían apuntando al mismo `contract_id` genérico, por lo que el sistema los degradaba a `is_one_to_one = false` y los escondía de los formularios.
+- Se confirmó que el modelo `public.contracts` sí permite la corrección elegante porque su unicidad es `(contract_number, contract_name)`, no solo `contract_number`. Eso habilita crear contratos dedicados por variante operativa sin tocar folios ni solicitudes históricas ya grabadas.
+- Se dejó versionada la migración [`20260623192941_normalize_buk_operational_one_to_one_contracts.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260623192941_normalize_buk_operational_one_to_one_contracts.sql:1), que normaliza cualquier mapping operativo ambiguo creando el contrato exacto `contract_number + buk_area_name` cuando falta, reasignando el `contract_id` del mapping y recalculando `is_one_to_one` sobre el catálogo operativo final.
+- La corrección quedó aplicada directamente en Supabase productivo. Se crearon `CONT-104` a `CONT-110` para los casos que no tenían contrato exacto: `ADMINISTRACION CALAMA`, `BODEGA JM`, `MANTENCION CALAMA JM`, `RECURSOS HUMANOS JM`, `RECURSOS HUMANOS ZONA NORTE`, `Newrest - Caserones` y `BODEGA ZONA NORTE`.
+- Los casos que ya tenían contrato exacto reutilizable no se duplicaron: `INDIRECTOS ZONA II` siguió en `CONT-056` y `MANTENCION CALAMA` en `CONT-062`.
+- La verificación remota posterior cerró limpia: `0` mappings operativos quedaron con `is_one_to_one = false`. En particular, `RECURSOS HUMANOS JM` y `RECURSOS HUMANOS ZONA NORTE` ahora resuelven a `CONT-107` y `CONT-108`, respectivamente, por lo que vuelven a ser seleccionables en contratación y también quedan disponibles para cualquier flujo que consuma destinos operativos one-to-one.
+
 ## Resultado de sincronización de estado operativo de contratos BUK para formularios
 
 - Se auditó el workbook [`Libro1.xlsx`](/Users/maximilianocontrerasrey/Documents/GitHub/Libro1.xlsx) contra `public.buk_contract_mappings` y se encontró drift real de catálogo: faltaban 7 filas en base, había 10 diferencias de `is_operational` y 12 registros legacy fuera del workbook que seguían activos. El origen del desalineamiento no estaba en los formularios sino en la fuente maestra de mappings.

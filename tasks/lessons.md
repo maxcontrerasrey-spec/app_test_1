@@ -263,6 +263,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No abras automáticamente todos los mappings `is_operational = true` en formularios solo porque el workbook los marque como operativos**. Si el flujo de negocio todavía selecciona y valida por `contract_id` único, los mappings `non one-to-one` siguen siendo ambiguos y deben quedar fuera de la selección hasta rediseñar ese contrato.
 - **La sincronización del maestro y la elegibilidad del formulario son dos capas distintas**. Primero se alinea `buk_contract_mappings` con la fuente oficial; después se verifica que la UI ofrezca solo destinos que además pasen la validación transaccional vigente del backend.
 
+## 128. Si el negocio trata variantes BUK como contratos distintos, la unicidad real debe resolverse creando contratos exactos, no forzando flags
+
+- **No marques `is_one_to_one = true` a mano cuando varios mappings operativos siguen compartiendo el mismo `contract_id`**. Eso solo maquilla la ambigüedad y deja a contratación/movilidad consumiendo opciones distintas que internamente apuntan al mismo contrato.
+- **La corrección robusta es `contract_number + buk_area_name -> contract_id` dedicado**. Si el esquema `contracts` permite varias filas por `contract_number` con distinto `contract_name`, cada variante operativa válida debe tener su propio contrato exacto y luego recién recalcular `is_one_to_one` desde el uso real del catálogo.
+
 ## 65. En integraciones externas, el contrato auditable no puede vivir duplicado ni sobreescribir su propio input
 
 - **Si dos módulos suben documentos al mismo proveedor, ambos deben compartir el mismo helper de transporte y parseo**. Dejar una copia en Reclutamiento y otra en Acreditaciones facilita el drift silencioso, como ocurrió al seguir usando `/documents` después de que BUK confirmó `/employees/{id}/docs`.
