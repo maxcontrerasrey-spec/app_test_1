@@ -14,6 +14,12 @@
 - [x] Corregir la regresión de frontend y blindar la resolución de destino en las RPCs para que siga funcionando con el catálogo BUK one-to-one actual
 - [x] Aplicar la migración en el proyecto productivo correcto y dejar evidencia auditable de la publicación remota
 
+## Ajuste de filtros en Business Intelligence
+
+- [x] Auditar por qué el filtro de contratos de BI muestra códigos en vez de nombres operativos y por qué el selector de cargos no ofrece una selección masiva usable
+- [x] Corregir la presentación de contratos con labels humanos y mejorar el multiselect compartido para selección total, limpieza y selección parcial clara
+- [x] Validar tipado/build/diff y registrar la regla de presentación para que BI no vuelva a exponer claves técnicas al usuario
+
 ## Resultado de aterrizaje de auditoría SQL enterprise
 
 - La auditoría adjunta combinaba riesgos reales con hallazgos históricos ya corregidos por migraciones posteriores. Se confirmó como **desactualizado** el punto crítico sobre `candidate-docs`: el bucket ya no está abierto por `bucket_id` desde la migración [`20260615220000_enterprise_security_contract_stabilization.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:602), que reemplazó esas policies por acceso scoped vía [`user_can_access_candidate_document_object(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:560).
@@ -32,6 +38,14 @@
 - En esa misma migración se repone además el payload `destinations` operativo desde `buk_contract_mappings`, dejando alineadas las dos capas del flujo y evitando nuevas regresiones de frontend por catálogos vacíos o parciales.
 - La verificación productiva preliminar confirmó que sí existen folios abiertos con cupos en base; el síntoma no era falta de data sino una desalineación entre contrato RPC histórico, catálogo operativo normalizado y filtro de UI.
 - La publicación remota quedó ejecutada en el proyecto vinculado con `npx --yes supabase db push --linked --include-all`. La verificación posterior con `npx --yes supabase migration list --linked` confirmó que ya no quedan diferencias entre migraciones locales y remotas.
+
+## Resultado de ajuste de filtros en Business Intelligence
+
+- La causa del filtro de contratos estaba en [`BiDashboardPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/pages/BiDashboardPage.tsx:63): el selector armaba sus opciones solo con `contractCode`, aunque la misma consulta de BI ya traía `areaName`. Por eso el usuario veía claves técnicas como `10100` o `010201` en vez del nombre real del contrato.
+- Se corrigió el armado de opciones para que el valor siga siendo el `contractCode` que consume el backend, pero el label visible use `areaName` con fallback defensivo al código solo si no existe nombre operativo.
+- También se alineó la visualización de contratos en los gráficos visibles de dotación desde [`BiHeadcountCharts.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/components/BiHeadcountCharts.tsx:1) y [`BiDemographicsChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/components/BiDemographicsChart.tsx:1), para no seguir mostrando números como nombre de contrato en tooltips o ejes.
+- El problema de cargos no era de datos sino de UX del componente compartido [`MultiSelectField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/MultiSelectField.tsx:1): permitía checkboxes individuales, pero no ofrecía una forma explícita de `Seleccionar todos` o `Limpiar`, lo que volvía torpe la selección parcial frente a catálogos largos.
+- El multiselect ahora incorpora una cabecera fija con acciones `Seleccionar todos` y `Limpiar`, además de resumir correctamente cuando todas las opciones están activas.
 
 ## Etapa RRHH en Movilidad Interna y auditoría preventiva de legacies
 

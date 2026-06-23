@@ -62,17 +62,29 @@ export function BiDashboardPage() {
 
   const contractOptions = useMemo(() => {
     if (!contractsData) return [];
-    return Array.from(new Set(contractsData.map(c => c.contractCode)))
-      .filter(Boolean)
-      .sort()
-      .map(code => ({ label: code, value: code }));
+
+    const optionsByCode = new Map<string, { label: string; value: string }>();
+
+    contractsData.forEach((contract) => {
+      const code = contract.contractCode.trim();
+      if (!code || optionsByCode.has(code)) {
+        return;
+      }
+
+      const label = contract.areaName.trim() || code;
+      optionsByCode.set(code, { label, value: code });
+    });
+
+    return [...optionsByCode.values()].sort((left, right) =>
+      left.label.localeCompare(right.label, "es", { sensitivity: "base" })
+    );
   }, [contractsData]);
 
   const jobOptions = useMemo(() => {
     if (!jobsData) return [];
     return Array.from(new Set(jobsData.map(j => j.jobTitle)))
       .filter(Boolean)
-      .sort()
+      .sort((left, right) => left.localeCompare(right, "es", { sensitivity: "base" }))
       .map(title => ({ label: title, value: title }));
   }, [jobsData]);
 

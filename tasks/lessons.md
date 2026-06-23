@@ -258,6 +258,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No limites la búsqueda a las cuatro columnas visibles si el proceso se reconoce por etiquetas más amplias**. En bandejas ERP, términos como gerencia, área, CECO, folio o descriptor operativo deben resolverse desde un índice textual unificado del caso.
 - **La normalización del filtro debe tolerar escritura real**. Tildes, mayúsculas y búsquedas multipartes como `zona ii` o `prevencion riesgos` deben converger en el mismo matcher para evitar falsos “no existe”.
 
+## 127. En filtros ejecutivos, el valor técnico puede viajar oculto, pero la etiqueta visible debe ser de negocio
+
+- **Si el backend filtra por claves como `contract_code`, la UI no debe mostrar esa clave como nombre del contrato cuando ya existe un `area_name` o label operativo humano**. El valor interno puede seguir siendo técnico, pero el usuario siempre debe ver el descriptor real del negocio.
+- **La misma regla aplica a gráficos y filtros**. Si un contrato se presenta con nombre en el selector pero con código en tooltip o eje, el módulo queda inconsistente y vuelve a generar ruido operacional.
+
+## 128. Un multiselect ERP con catálogos largos necesita acciones explícitas de masa
+
+- **Checkboxes individuales no bastan cuando el catálogo puede ser grande**. Debe existir, como mínimo, `Seleccionar todos` y `Limpiar` visibles dentro del mismo control para soportar selección total y selección parcial sin fricción.
+- **El resumen del control debe reflejar el estado real**. Si todas las opciones están activas, el campo debe decirlo explícitamente y no seguir viéndose como una selección opaca o accidental.
+
 ## 64. En vistas compuestas, cada submódulo debe colgar de su propio contrato de acceso
 
 - **No reutilices una capability lateral para esconder una pestaña que en realidad responde a acceso modular distinto**. Si `Movilidad Interna` depende de `movilidad_interna`, no puede quedar secuestrada por `candidate_control_access` solo porque comparte pantalla con Reclutamiento.

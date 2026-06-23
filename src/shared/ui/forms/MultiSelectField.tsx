@@ -24,6 +24,8 @@ export function MultiSelectField({
 }: MultiSelectFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasOptions = options.length > 0;
+  const areAllSelected = hasOptions && value.length === options.length;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,6 +52,16 @@ export function MultiSelectField({
 
   const selectedOptions = options.filter((opt) => value.includes(opt.value));
 
+  const handleSelectAll = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onChange(options.map((option) => option.value));
+  };
+
+  const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onChange([]);
+  };
+
   return (
     <div className={`field-group ${className}`.trim()} ref={containerRef} style={{ position: "relative" }}>
       <label className="field-label" htmlFor={id}>
@@ -72,6 +84,10 @@ export function MultiSelectField({
       >
         {selectedOptions.length === 0 ? (
           <span style={{ color: "#9ca3af", padding: "4px 0" }}>{placeholder}</span>
+        ) : areAllSelected ? (
+          <span style={{ color: "#374151", padding: "4px 0", fontSize: "0.875rem" }}>
+            Todas las opciones ({selectedOptions.length})
+          </span>
         ) : selectedOptions.length === 1 ? (
           <span
             key={selectedOptions[0].value}
@@ -132,37 +148,84 @@ export function MultiSelectField({
           {options.length === 0 ? (
             <div style={{ padding: "8px 12px", color: "#6b7280" }}>No hay opciones</div>
           ) : (
-            options.map((opt) => {
-              const isSelected = value.includes(opt.value);
-              return (
-                <div
-                  key={opt.value}
-                  onClick={() => toggleOption(opt.value)}
+            <>
+              <div
+                style={{
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 1,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "8px",
+                  padding: "8px 12px",
+                  backgroundColor: "#f8fafc",
+                  borderBottom: "1px solid #e5e7eb"
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
                   style={{
-                    padding: "8px 12px",
+                    border: "none",
+                    background: "none",
+                    padding: 0,
                     cursor: "pointer",
-                    backgroundColor: isSelected ? "#f3f4f6" : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f3f4f6";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = isSelected ? "#f3f4f6" : "transparent";
+                    color: "#2563eb",
+                    fontSize: "0.875rem",
+                    fontWeight: 600
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    readOnly
-                    style={{ cursor: "pointer" }}
-                  />
-                  <span style={{ color: "#374151" }}>{opt.label}</span>
-                </div>
-              );
-            })
+                  Seleccionar todos
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    color: "#64748b",
+                    fontSize: "0.875rem",
+                    fontWeight: 600
+                  }}
+                >
+                  Limpiar
+                </button>
+              </div>
+
+              {options.map((opt) => {
+                const isSelected = value.includes(opt.value);
+                return (
+                  <div
+                    key={opt.value}
+                    onClick={() => toggleOption(opt.value)}
+                    style={{
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      backgroundColor: isSelected ? "#f3f4f6" : "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f3f4f6";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = isSelected ? "#f3f4f6" : "transparent";
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      readOnly
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span style={{ color: "#374151" }}>{opt.label}</span>
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
       )}

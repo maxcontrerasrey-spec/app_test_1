@@ -62,10 +62,14 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
       return null;
     }
 
-    const totalsByContract = new Map<string, number>();
+    const totalsByContract = new Map<string, { label: string; headcount: number }>();
 
     contractData.forEach((item) => {
-      totalsByContract.set(item.contractCode, (totalsByContract.get(item.contractCode) ?? 0) + item.headcount);
+      const current = totalsByContract.get(item.contractCode);
+      totalsByContract.set(item.contractCode, {
+        label: item.areaName || item.contractCode,
+        headcount: (current?.headcount ?? 0) + item.headcount
+      });
     });
 
     return {
@@ -82,9 +86,9 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
           },
           label: { show: false },
           labelLine: { show: false },
-          data: [...totalsByContract.entries()].map(([contractCode, headcount]) => ({
-            value: headcount,
-            name: contractCode
+          data: [...totalsByContract.values()].map((item) => ({
+            value: item.headcount,
+            name: item.label
           }))
         }
       ]
