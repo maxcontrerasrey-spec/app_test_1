@@ -8,6 +8,12 @@
 - [x] Aplicar solo los endurecimientos seguros que no rompen contratos productivos actuales
 - [x] Validar la nueva migración, diff limpio y dejar documentados los hallazgos descartados por obsolescencia o riesgo de reescritura histórica
 
+## Hotfix de folios elegibles en Movilidad Interna
+
+- [x] Auditar por qué `Movilidad Interna` quedó mostrando `No hay folios abiertos` aunque existan casos con cupos activos
+- [x] Corregir la regresión de frontend y blindar la resolución de destino en las RPCs para que siga funcionando con el catálogo BUK one-to-one actual
+- [x] Aplicar la migración en el proyecto productivo correcto y dejar evidencia auditable de la publicación remota
+
 ## Resultado de aterrizaje de auditoría SQL enterprise
 
 - La auditoría adjunta combinaba riesgos reales con hallazgos históricos ya corregidos por migraciones posteriores. Se confirmó como **desactualizado** el punto crítico sobre `candidate-docs`: el bucket ya no está abierto por `bucket_id` desde la migración [`20260615220000_enterprise_security_contract_stabilization.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:602), que reemplazó esas policies por acceso scoped vía [`user_can_access_candidate_document_object(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:560).
@@ -17,6 +23,15 @@
   2. endurecer [`sync_hr_roster_exception_from_buk(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618163500_harden_enterprise_sql_audit_followups.sql:5) para que use el helper vivo [`current_request_has_service_role()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618041437_allow_internal_context_for_buk_snapshot.sql:1) en vez de depender solo de la heurística de claims vacíos.
 - No se tocaron los archivos con doble timestamp ni migraciones históricas ya ejecutadas. Reescribir nombres versionados a esta altura genera más riesgo operacional que beneficio y debe tratarse como higiene de proceso futura, no como hotfix sobre historia congelada.
 - Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260618163500_harden_enterprise_sql_audit_followups.sql`, `git diff --check` y auditoría local `node scripts/audit-supabase-security.mjs` solo como referencia de ruido histórico, no como truth source de estado vivo.
+
+## Resultado de hotfix de folios elegibles en Movilidad Interna
+
+- La causa raíz inmediata estaba en [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1): la UI volvió a filtrar `eligibleFolios` contra `setupCatalogs.destinations`, pero la versión vigente de [`get_internal_mobility_setup_catalogs()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260612003000_link_internal_mobility_to_recruitment_cases.sql:151) devolvía `destinations = []`. Resultado: aunque backend sí entregara folios con cupos, el cliente los vaciaba todos y mostraba el falso negativo de la captura.
+- El problema profundo venía del backend y no debía quedar sin cirugía: después de la normalización one-to-one del catálogo BUK, ya no es seguro resolver el destino de una movilidad uniendo solo por `contract_number`. Eso deja ambigüedad cuando existen varios contratos activos con el mismo número y distinto `contract_name`.
+- Se dejó versionada la migración [`20260623200718_fix_internal_mobility_destination_resolution.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260623200718_fix_internal_mobility_destination_resolution.sql:1), que rehace `get_internal_mobility_setup_catalogs()` y `submit_internal_mobility_request(...)` para resolver el mapping exacto por `contract_number` más coincidencia prioritaria de `buk_area_name_normalized` contra `hr.contract_name / rc.contract_name`, con fallback controlado por `cost_center_code`.
+- En esa misma migración se repone además el payload `destinations` operativo desde `buk_contract_mappings`, dejando alineadas las dos capas del flujo y evitando nuevas regresiones de frontend por catálogos vacíos o parciales.
+- La verificación productiva preliminar confirmó que sí existen folios abiertos con cupos en base; el síntoma no era falta de data sino una desalineación entre contrato RPC histórico, catálogo operativo normalizado y filtro de UI.
+- La publicación remota quedó ejecutada en el proyecto vinculado con `npx --yes supabase db push --linked --include-all`. La verificación posterior con `npx --yes supabase migration list --linked` confirmó que ya no quedan diferencias entre migraciones locales y remotas.
 
 ## Etapa RRHH en Movilidad Interna y auditoría preventiva de legacies
 

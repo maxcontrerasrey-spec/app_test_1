@@ -218,7 +218,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
-## 64. Si una bandeja necesita expandirse, la fila debe consumir la RPC de detalle ya auditada y no crear un resumen paralelo
+## 64. Si un catálogo one-to-one se normaliza en backend, ninguna resolución downstream puede seguir uniendo solo por `contract_number`
+
+- **Cuando `contracts` permite múltiples filas activas para el mismo `contract_number`, cualquier RPC que resuelva destino por ese campo aislado queda ambigua**. La resolución correcta debe usar también el identificador operativo que distingue la variante real, idealmente `buk_area_name_normalized`, y solo después un fallback controlado como `cost_center_code`.
+- **El frontend no debe vaciar listas operativas apoyándose en payloads auxiliares opcionales**. Si `eligible_folios` ya viene resuelto desde backend, filtrarlo otra vez contra `destinations` o catálogos secundarios reintroduce falsos “sin resultados” cuando una migración posterior deja ese payload vacío o parcial.
+
+## 65. Si una bandeja necesita expandirse, la fila debe consumir la RPC de detalle ya auditada y no crear un resumen paralelo
 
 - **No abras un segundo contrato de backend solo para mostrar la expansión inline si ya existe una RPC de detalle aprobada para ese dominio**. Duplicar payloads entre lista, modal y expansión hace divergir fechas, actores y labels operativos.
 - **El patrón correcto es lista liviana + detalle on-demand por fila expandida**. Así la grilla se mantiene rápida, el detalle conserva la misma fuente de verdad y cualquier ajuste de auditoría ocurre una sola vez.
