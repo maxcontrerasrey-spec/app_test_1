@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. En BI, cada pestaña debe construirse con su propio universo operativo y no reciclar widgets “parecidos”
+
+- **No reutilices el grid de otra pestaña dentro de una condición compartida solo porque comparten filtros**. Si `Reclutamiento` y `Dotación` viven bajo el mismo módulo pero responden a fuentes distintas, la condición de render debe separar explícitamente filtros compartidos de contenido específico.
+- **Una métrica ejecutiva sin trazabilidad operativa es peor que una tarjeta vacía**. Si el tablero de reclutamiento debe contrastarse contra bandejas reales, las tarjetas y gráficos tienen que nacer desde esas mismas RPCs operativas (`get_recruitment_control_dashboard_v2`, `get_internal_mobility_requests`) y no desde un agregado BI derivado cuya semántica ya se desalineó del flujo vivo.
+
 ## 64. Si un catálogo one-to-one se normaliza en backend, ninguna resolución downstream puede seguir uniendo solo por `contract_number`
 
 - **Cuando `contracts` permite múltiples filas activas para el mismo `contract_number`, cualquier RPC que resuelva destino por ese campo aislado queda ambigua**. La resolución correcta debe usar también el identificador operativo que distingue la variante real, idealmente `buk_area_name_normalized`, y solo después un fallback controlado como `cost_center_code`.

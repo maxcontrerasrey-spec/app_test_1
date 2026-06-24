@@ -12,12 +12,7 @@ import type {
   BukBiVacationForecast,
   BukBiMedicalLeaveByArea,
   BukBiRecruitmentPipeline,
-  BukBiHiringVelocity,
-  BukBiRecruitmentDashboard,
-  BiLabelValueDatum,
-  BiRecruitmentApprovalStepMetric,
-  BiRecruitmentApprovalOwnerMetric,
-  BiRecruitmentTimelineDatum
+  BiLabelValueDatum
 } from "../types";
 
 function getSupabaseClient() {
@@ -170,97 +165,11 @@ export function mapRecruitmentPipeline(row: Record<string, unknown>): BukBiRecru
   };
 }
 
-export function mapHiringVelocity(row: Record<string, unknown>): BukBiHiringVelocity {
-  return {
-    contractName: String(row.contract_name ?? ""),
-    monthStart: String(row.month_start ?? ""),
-    yearMonth: String(row.year_month ?? ""),
-    hiredCount: Number(row.hired_count ?? 0)
-  };
-}
-
 function mapLabelValueDatum(value: unknown): BiLabelValueDatum {
   const row = (value ?? {}) as Record<string, unknown>;
   return {
     label: String(row.label ?? ""),
     value: Number(row.value ?? 0)
-  };
-}
-
-function mapApprovalStepMetric(value: unknown): BiRecruitmentApprovalStepMetric {
-  const row = (value ?? {}) as Record<string, unknown>;
-  return {
-    stepCode: String(row.stepCode ?? ""),
-    stepName: String(row.stepName ?? ""),
-    totalItems: Number(row.totalItems ?? 0),
-    pendingItems: Number(row.pendingItems ?? 0),
-    decidedItems: Number(row.decidedItems ?? 0),
-    avgHours: row.avgHours == null ? null : Number(row.avgHours)
-  };
-}
-
-function mapApprovalOwnerMetric(value: unknown): BiRecruitmentApprovalOwnerMetric {
-  const row = (value ?? {}) as Record<string, unknown>;
-  return {
-    label: String(row.label ?? ""),
-    totalItems: Number(row.totalItems ?? 0),
-    pendingItems: Number(row.pendingItems ?? 0),
-    avgHours: row.avgHours == null ? null : Number(row.avgHours)
-  };
-}
-
-function mapTimelineDatum(value: unknown): BiRecruitmentTimelineDatum {
-  const row = (value ?? {}) as Record<string, unknown>;
-  return {
-    bucketStart: String(row.bucketStart ?? ""),
-    bucketLabel: String(row.bucketLabel ?? ""),
-    openedFolios: Number(row.openedFolios ?? 0),
-    openedCases: Number(row.openedCases ?? 0),
-    hiredCandidates: Number(row.hiredCandidates ?? 0),
-    submittedMobilities: Number(row.submittedMobilities ?? 0),
-    approvedMobilities: Number(row.approvedMobilities ?? 0),
-    executedMobilities: Number(row.executedMobilities ?? 0)
-  };
-}
-
-export function mapRecruitmentDashboard(payload: unknown): BukBiRecruitmentDashboard {
-  const row = (payload ?? {}) as Record<string, unknown>;
-  const summary = (row.summary ?? {}) as Record<string, unknown>;
-
-  return {
-    summary: {
-      openFolios: Number(summary.openFolios ?? 0),
-      openCases: Number(summary.openCases ?? 0),
-      requestedVacancies: Number(summary.requestedVacancies ?? 0),
-      candidatesInProgress: Number(summary.candidatesInProgress ?? 0),
-      readyCandidates: Number(summary.readyCandidates ?? 0),
-      hiredCandidates: Number(summary.hiredCandidates ?? 0),
-      pendingApprovals: Number(summary.pendingApprovals ?? 0),
-      avgDaysToHire: summary.avgDaysToHire == null ? null : Number(summary.avgDaysToHire),
-      avgApprovalHours: summary.avgApprovalHours == null ? null : Number(summary.avgApprovalHours),
-      mobilityRequests: Number(summary.mobilityRequests ?? 0),
-      mobilityPendingExecution: Number(summary.mobilityPendingExecution ?? 0),
-      mobilityExecuted: Number(summary.mobilityExecuted ?? 0),
-      mobilityRejected: Number(summary.mobilityRejected ?? 0),
-      avgMobilityApprovalHours:
-        summary.avgMobilityApprovalHours == null ? null : Number(summary.avgMobilityApprovalHours),
-      avgMobilityExecutionHours:
-        summary.avgMobilityExecutionHours == null ? null : Number(summary.avgMobilityExecutionHours)
-    },
-    casesByStatus: Array.isArray(row.casesByStatus) ? row.casesByStatus.map(mapLabelValueDatum) : [],
-    candidatesByStage: Array.isArray(row.candidatesByStage)
-      ? row.candidatesByStage.map(mapLabelValueDatum)
-      : [],
-    approvalsByStep: Array.isArray(row.approvalsByStep)
-      ? row.approvalsByStep.map(mapApprovalStepMetric)
-      : [],
-    approvalOwners: Array.isArray(row.approvalOwners)
-      ? row.approvalOwners.map(mapApprovalOwnerMetric)
-      : [],
-    mobilityByStatus: Array.isArray(row.mobilityByStatus)
-      ? row.mobilityByStatus.map(mapLabelValueDatum)
-      : [],
-    timeline: Array.isArray(row.timeline) ? row.timeline.map(mapTimelineDatum) : []
   };
 }
 
@@ -357,20 +266,4 @@ export async function fetchBiRecruitmentPipeline(filters?: BiFilters): Promise<B
   const { data, error } = await client.rpc("get_bi_recruitment_pipeline", buildBiRpcParams(filters));
   if (error) throw error;
   return (data || []).map((row: Record<string, unknown>) => mapRecruitmentPipeline(row));
-}
-
-export async function fetchBiHiringVelocity(filters?: BiFilters): Promise<BukBiHiringVelocity[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_hiring_velocity", buildBiRpcParams(filters));
-  if (error) throw error;
-  return (data || []).map((row: Record<string, unknown>) => mapHiringVelocity(row));
-}
-
-export async function fetchBiRecruitmentDashboard(
-  filters?: BiFilters
-): Promise<BukBiRecruitmentDashboard> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_recruitment_dashboard", buildBiRpcParams(filters));
-  if (error) throw error;
-  return mapRecruitmentDashboard(data);
 }

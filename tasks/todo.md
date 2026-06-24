@@ -218,6 +218,21 @@
 
 - [x] Auditar por qué mappings operativos del workbook siguen compartiendo `contract_id` y quedan fuera del selector pese a ser válidos para negocio
 - [x] Versionar una normalización segura del catálogo para asignar contrato dedicado a cada mapping operativo que hoy quedó ambiguo, sin romper folios ni historiales existentes
+
+## Corrección de BI Reclutamiento con fuentes reales
+
+- [x] Auditar por qué la pestaña `Reclutamiento` estaba heredando widgets de `Analítica de Dotación`
+- [x] Reemplazar la analítica de reclutamiento basada en RPC BI derivada por una vista sustentada en las fuentes operativas reales de reclutamiento y movilidad interna
+- [x] Validar tipado/build/diff, documentar el resultado y registrar la lección para no volver a mezclar universos de BI
+
+## Resultado de corrección de BI Reclutamiento con fuentes reales
+
+- La causa raíz visual estaba en [`BiDashboardPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/pages/BiDashboardPage.tsx:1): la condición `activeView === "dotacion" || activeView === "reclutamiento"` envolvía no solo los filtros sino también todo el grid de dotación. Por eso la pestaña `Reclutamiento` heredaba tarjetas y gráficos que nunca debieron renderizarse allí.
+- Esa mezcla además contaminaba el diagnóstico de negocio: el componente [`BiRecruitmentAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/components/BiRecruitmentAnalyticsView.tsx:1) consumía un RPC BI derivado que no estaba alineado con la operación diaria, mientras el usuario contrastaba contra bandejas reales de reclutamiento y movilidad.
+- La corrección separó ambos universos. `Dotación` volvió a renderizar solo su stack original, mientras `Reclutamiento` ahora usa un dataset propio calculado desde [`get_recruitment_control_dashboard_v2()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:449) y [`get_internal_mobility_requests()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/services/internalMobilityApi.ts:364), agregados en el hook [`useBiRecruitmentOperationalAnalytics.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/hooks/useBiRecruitmentOperationalAnalytics.ts:1).
+- Las nuevas tarjetas y gráficos de reclutamiento quedaron limitadas a métricas respaldadas por esas fuentes vivas: folios/casos abiertos, cupos solicitados/cubiertos, candidatos en curso, listos para contratar, pendientes de aprobación, movilidades internas, estados de movilidad y pulso semanal operativo. Se retiraron del tablero de reclutamiento los bloques que dependían de inferencias no trazables.
+- Los filtros de `Contratos` y `Cargos` dentro de `Reclutamiento` ya no se alimentan desde la dimensión de dotación. Ahora salen del mismo universo operativo filtrado, evitando que el selector ofrezca combinaciones o labels ajenos a la data real visible en esa pestaña.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
 - [x] Aplicar la corrección directamente en Supabase, revalidar disponibilidad en contratación/movilidad y documentar el resultado final
 
 ## Resultado de normalización one-to-one del catálogo BUK en formularios operativos

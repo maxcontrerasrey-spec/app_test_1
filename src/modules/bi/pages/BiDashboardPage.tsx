@@ -11,6 +11,7 @@ import { BiRecruitmentAnalyticsView } from "../components/BiRecruitmentAnalytics
 import { IncentiveAnalyticsView } from "../../incentives/components/IncentiveAnalyticsView";
 import { TextField, MultiSelectField } from "../../../shared/ui";
 import { useBiHeadcountByContract, useBiHeadcountByJobTitle } from "../hooks/useBiQueries";
+import { useBiRecruitmentOperationalAnalytics } from "../hooks/useBiRecruitmentOperationalAnalytics";
 import { formatBiContractLabel } from "../lib/presentation";
 import type { BiFilters } from "../types";
 import "../styles/bi.css";
@@ -27,7 +28,7 @@ const BI_VIEWS = [
   {
     key: "dotacion",
     label: "Analítica de Dotación (BUK)",
-    description: "KPIs operacionales, ausentismo, demografía y flujo de reclutamiento."
+    description: "KPIs operacionales de dotación, ausentismo, demografía y presencia."
   },
   {
     key: "incentivos",
@@ -66,6 +67,10 @@ export function BiDashboardPage() {
 
   const { data: contractsData } = useBiHeadcountByContract();
   const { data: jobsData } = useBiHeadcountByJobTitle();
+  const recruitmentAnalytics = useBiRecruitmentOperationalAnalytics(
+    filters,
+    activeView === "reclutamiento"
+  );
 
   const jobTitlesByContractCode = useMemo(() => {
     const lookup = new Map<string, Set<string>>();
@@ -146,7 +151,7 @@ export function BiDashboardPage() {
     );
   }, [contractCodeFilter, jobTitlesByContractCode, jobsData]);
 
-  const contractOptions = useMemo(() => {
+  const dotacionContractOptions = useMemo(() => {
     if (filteredContractCodes.length === 0) return [];
 
     return filteredContractCodes
@@ -156,7 +161,7 @@ export function BiDashboardPage() {
     );
   }, [contractLabelByCode, filteredContractCodes]);
 
-  const jobOptions = useMemo(() => {
+  const dotacionJobOptions = useMemo(() => {
     if (filteredJobTitles.length === 0) return [];
 
     return [...filteredJobTitles]
@@ -164,17 +169,47 @@ export function BiDashboardPage() {
       .map(title => ({ label: title, value: title }));
   }, [filteredJobTitles]);
 
+  const recruitmentContractOptions = useMemo(
+    () =>
+      (recruitmentAnalytics.data?.availableContracts ?? []).map((item) => ({
+        label: item,
+        value: item
+      })),
+    [recruitmentAnalytics.data?.availableContracts]
+  );
+
+  const recruitmentJobOptions = useMemo(
+    () =>
+      (recruitmentAnalytics.data?.availableJobTitles ?? []).map((item) => ({
+        label: item,
+        value: item
+      })),
+    [recruitmentAnalytics.data?.availableJobTitles]
+  );
+
+  const contractOptions =
+    activeView === "reclutamiento" ? recruitmentContractOptions : dotacionContractOptions;
+  const jobOptions = activeView === "reclutamiento" ? recruitmentJobOptions : dotacionJobOptions;
+
   useEffect(() => {
-    const allowedContractCodes = new Set(filteredContractCodes);
+    if (activeView === "reclutamiento" && recruitmentAnalytics.isLoading) {
+      return;
+    }
+
+    const allowedContractCodes = new Set(contractOptions.map((item) => item.value));
     setContractCodeFilter((current) =>
       current.filter((contractCode) => allowedContractCodes.has(contractCode))
     );
-  }, [filteredContractCodes]);
+  }, [activeView, contractOptions, recruitmentAnalytics.isLoading]);
 
   useEffect(() => {
-    const allowedJobTitles = new Set(filteredJobTitles);
+    if (activeView === "reclutamiento" && recruitmentAnalytics.isLoading) {
+      return;
+    }
+
+    const allowedJobTitles = new Set(jobOptions.map((item) => item.value));
     setJobTitleFilter((current) => current.filter((jobTitle) => allowedJobTitles.has(jobTitle)));
-  }, [filteredJobTitles]);
+  }, [activeView, jobOptions, recruitmentAnalytics.isLoading]);
 
   const activeViewMeta = useMemo(
     () => BI_VIEWS.find((item) => item.key === activeView) ?? BI_VIEWS[0],
@@ -253,18 +288,20 @@ export function BiDashboardPage() {
               </div>
             </div>
           </section>
-
-          <div className="bi-dashboard-grid">
-            <BiOverviewCards filters={filters} />
-            <BiHeadcountCharts filters={filters} />
-            <BiPresenceAndExceptions filters={filters} />
-            <div className="bi-chart-row">
-              <BiDemographicsChart filters={filters} />
-              <BiRecruitmentFunnel filters={filters} />
-            </div>
-            <BiTrendingExceptionsChart filters={filters} />
-          </div>
         </>
+      )}
+
+      {activeView === "dotacion" && (
+        <div className="bi-dashboard-grid">
+          <BiOverviewCards filters={filters} />
+          <BiHeadcountCharts filters={filters} />
+          <BiPresenceAndExceptions filters={filters} />
+          <div className="bi-chart-row">
+            <BiDemographicsChart filters={filters} />
+            <BiRecruitmentFunnel filters={filters} />
+          </div>
+          <BiTrendingExceptionsChart filters={filters} />
+        </div>
       )}
 
       {activeView === "incentivos" && (
@@ -274,7 +311,11 @@ export function BiDashboardPage() {
       )}
 
       {activeView === "reclutamiento" && (
-        <BiRecruitmentAnalyticsView filters={filters} />
+        <BiRecruitmentAnalyticsView
+          dashboard={recruitmentAnalytics.data}
+          isLoading={recruitmentAnalytics.isLoading}
+          isError={recruitmentAnalytics.isError}
+        />
       )}
     </PageShell>
   );

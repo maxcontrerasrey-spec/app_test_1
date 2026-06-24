@@ -99,69 +99,49 @@ export interface BukBiRecruitmentPipeline {
   selectedCount: number;
 }
 
-export interface BukBiHiringVelocity {
-  contractName: string;
-  monthStart: string;
-  yearMonth: string;
-  hiredCount: number;
-}
-
 export interface BiLabelValueDatum {
   label: string;
   value: number;
 }
 
-export interface BiRecruitmentApprovalStepMetric {
-  stepCode: string;
-  stepName: string;
-  totalItems: number;
-  pendingItems: number;
-  decidedItems: number;
-  avgHours: number | null;
-}
-
-export interface BiRecruitmentApprovalOwnerMetric {
+export interface BiRecruitmentVacancyByContractDatum {
   label: string;
-  totalItems: number;
-  pendingItems: number;
-  avgHours: number | null;
+  requested: number;
+  filled: number;
 }
 
-export interface BiRecruitmentTimelineDatum {
-  bucketStart: string;
-  bucketLabel: string;
-  openedFolios: number;
-  openedCases: number;
-  hiredCandidates: number;
-  submittedMobilities: number;
-  approvedMobilities: number;
-  executedMobilities: number;
-}
-
-export interface BukBiRecruitmentDashboardSummary {
+export interface BiRecruitmentOperationalSummary {
   openFolios: number;
   openCases: number;
   requestedVacancies: number;
+  filledVacancies: number;
   candidatesInProgress: number;
   readyCandidates: number;
-  hiredCandidates: number;
   pendingApprovals: number;
-  avgDaysToHire: number | null;
-  avgApprovalHours: number | null;
   mobilityRequests: number;
   mobilityPendingExecution: number;
   mobilityExecuted: number;
-  mobilityRejected: number;
   avgMobilityApprovalHours: number | null;
   avgMobilityExecutionHours: number | null;
 }
 
-export interface BukBiRecruitmentDashboard {
-  summary: BukBiRecruitmentDashboardSummary;
+export interface BiRecruitmentOperationalTimelineDatum {
+  bucketStart: string;
+  bucketLabel: string;
+  openedFolios: number;
+  readyCandidates: number;
+  hiredCandidates: number;
+  submittedMobilities: number;
+  executedMobilities: number;
+}
+
+export interface BiRecruitmentOperationalAnalytics {
+  availableContracts: string[];
+  availableJobTitles: string[];
+  summary: BiRecruitmentOperationalSummary;
   casesByStatus: BiLabelValueDatum[];
   candidatesByStage: BiLabelValueDatum[];
-  approvalsByStep: BiRecruitmentApprovalStepMetric[];
-  approvalOwners: BiRecruitmentApprovalOwnerMetric[];
+  vacanciesByContract: BiRecruitmentVacancyByContractDatum[];
   mobilityByStatus: BiLabelValueDatum[];
-  timeline: BiRecruitmentTimelineDatum[];
+  timeline: BiRecruitmentOperationalTimelineDatum[];
 }
