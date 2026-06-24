@@ -1,15 +1,12 @@
 import { useCallback, useMemo } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { hasModuleAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
-import {
-  invalidateHrIncentiveQueries,
-  useHrIncentiveSetupCatalogs
-} from "../hooks/useIncentivesQueries";
-import { canViewHrIncentiveAnalytics } from "../lib/analyticsAccess";
+import { useHrIncentiveSetupCatalogs } from "../hooks/useIncentivesQueries";
 import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationForm";
 import { IncentiveApprovalsView } from "../components/IncentiveApprovalsView";
 import { IncentiveRequestsView } from "../components/IncentiveRequestsView";
@@ -50,9 +47,8 @@ export function HumanResourcesDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { view } = useParams();
-  const { accessibleModules, appRoles, isSuperAdmin } = useAuth();
+  const { accessibleModules, isSuperAdmin } = useAuth();
   const activeView = isHumanResourcesView(view) ? view : "incentivos";
-  const canViewAnalytics = canViewHrIncentiveAnalytics({ appRoles, isSuperAdmin });
   const canManageStandardViews =
     isSuperAdmin || hasModuleAccess(accessibleModules, "recursos_humanos");
   const visibleViews = useMemo(
@@ -64,27 +60,43 @@ export function HumanResourcesDashboard() {
     canManageStandardViews &&
       (activeView === "incentivos" || activeView === "solicitudes" || activeView === "configuracion")
   );
+  const incentivesRealtimeSubscriptions = useMemo(() => {
+    if (activeView === "configuracion" || activeView === "incentivos") {
+      return [
+        { table: "hr_incentive_allowed_job_titles" },
+        { table: "hr_incentive_types" },
+        { table: "hr_incentive_rate_rules" }
+      ];
+    }
 
-  const activeViewMeta = useMemo(
-    () => visibleViews.find((item) => item.key === activeView) ?? visibleViews[0] ?? HUMAN_RESOURCES_VIEWS[0],
-    [activeView, visibleViews]
-  );
-  const incentivesRealtimeSubscriptions = useMemo(
-    () => [
-      { table: "hr_incentive_allowed_job_titles" },
-      { table: "hr_incentive_types" },
-      { table: "hr_incentive_rate_rules" },
+    return [
       { table: "hr_incentive_requests" },
       { table: "hr_incentive_request_approvals" },
-      { table: "hr_incentive_request_history" },
-      { table: "employees" }
-    ],
-    []
-  );
+      { table: "hr_incentive_request_history" }
+    ];
+  }, [activeView]);
 
   const invalidateIncentives = useCallback(async () => {
-    await invalidateHrIncentiveQueries(queryClient);
-  }, [queryClient]);
+    if (activeView === "configuracion" || activeView === "incentivos") {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.incentives.setupCatalogs()
+      });
+      return;
+    }
+
+    const invalidations = [
+      queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestsRoot() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestDetailRoot() })
+    ];
+
+    if (activeView === "aprobaciones") {
+      invalidations.push(
+        queryClient.invalidateQueries({ queryKey: queryKeys.incentives.approvalsRoot() })
+      );
+    }
+
+    await Promise.all(invalidations);
+  }, [activeView, queryClient]);
 
   useRealtimeQueryInvalidation({
     channelName: `hr-incentives:${activeView}`,
@@ -99,8 +111,6 @@ export function HumanResourcesDashboard() {
   if (!fallbackView) {
     return <Navigate to="/sin-acceso" replace />;
   }
-
-
 
   return (
     <PageShell>

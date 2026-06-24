@@ -1,25 +1,39 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
-import { SelectField, TextField, MultiSelectField } from "../../../shared/ui";
+import { TextField, MultiSelectField } from "../../../shared/ui";
 import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
 import { formatRut } from "../../../shared/lib/rut";
 import {
   cancelHrIncentiveRequest,
-  fetchHrIncentiveRequests
+  fetchAllHrIncentiveRequests
 } from "../services/incentivesApi";
 import {
   invalidateHrIncentiveQueries,
   useHrIncentiveRequestDetail,
-  useHrIncentiveRequests
+  useHrIncentiveRequestsPage
 } from "../hooks/useIncentivesQueries";
-import type { HrIncentiveRequest, HrIncentiveSetupCatalogs } from "../types";
+import type {
+  HrIncentiveRequest,
+  HrIncentiveRequestSortColumn,
+  HrIncentiveSetupCatalogs
+} from "../types";
 import { IncentiveActionModal } from "./IncentiveActionModal";
 import { IncentiveOperationalFlags } from "./IncentiveOperationalFlags";
 
 type IncentiveRequestsViewProps = {
   setupCatalogsQuery: UseQueryResult<HrIncentiveSetupCatalogs, Error>;
 };
+
+const REQUESTS_PAGE_SIZE = 50;
+const STATUS_FILTER_OPTIONS = [
+  { value: "A", label: "Todos" },
+  { value: "P", label: "Pendiente administrador contrato" },
+  { value: "E", label: "Pendiente gerente de area" },
+  { value: "R", label: "Rechazado" },
+  { value: "F", label: "Aprobado" },
+  { value: "C", label: "Anulado" }
+];
 
 function getIncentiveStatusLabel(status: HrIncentiveRequest["status"]) {
   switch (status) {
@@ -35,27 +49,6 @@ function getIncentiveStatusLabel(status: HrIncentiveRequest["status"]) {
       return "Anulado";
     default:
       return status;
-  }
-}
-
-function getSortableValue(request: HrIncentiveRequest, column: string) {
-  switch (column) {
-    case "folio":
-      return request.folio;
-    case "trabajador":
-      return request.employeeFullName.toLowerCase();
-    case "incentivo":
-      return request.incentiveTypeName.toLowerCase();
-    case "contrato":
-      return request.selectedAreaName.toLowerCase();
-    case "fecha":
-      return new Date(request.serviceDate).getTime();
-    case "monto":
-      return request.calculatedAmount;
-    case "estado":
-      return getIncentiveStatusLabel(request.status).toLowerCase();
-    default:
-      return 0;
   }
 }
 
@@ -169,6 +162,7 @@ export function IncentiveRequestsView({
   const { appRoles, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [workerSearch, setWorkerSearch] = useState("");
+  const [debouncedWorkerSearch, setDebouncedWorkerSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>(["A"]);
   const [typeIdFilter, setTypeIdFilter] = useState<string[]>([]);
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
@@ -182,62 +176,73 @@ export function IncentiveRequestsView({
   const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
   const [isExportingSelection, setIsExportingSelection] = useState(false);
   const [isExportingPeriod, setIsExportingPeriod] = useState(false);
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortColumn, setSortColumn] = useState<HrIncentiveRequestSortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(0);
   const detailQuery = useHrIncentiveRequestDetail(selectedRequestId);
 
   const canCancelRequests = isSuperAdmin || appRoles.includes("control_contratos");
 
-  const requestsQuery = useHrIncentiveRequests({
-    workerSearch,
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedWorkerSearch(workerSearch.trim());
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [workerSearch]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [
+    contractCodeFilter,
+    debouncedWorkerSearch,
+    periodCodeFilter,
+    serviceDateUntil,
+    sortColumn,
+    sortDirection,
+    statusFilter,
+    typeIdFilter
+  ]);
+
+  const requestsQuery = useHrIncentiveRequestsPage({
+    workerSearch: debouncedWorkerSearch || undefined,
     statuses: statusFilter.length > 0 ? statusFilter : undefined,
     typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
     periodCode: periodCodeFilter || undefined,
     contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
-    serviceDateUntil: serviceDateUntil || undefined
+    serviceDateUntil: serviceDateUntil || undefined,
+    limit: REQUESTS_PAGE_SIZE,
+    offset: page * REQUESTS_PAGE_SIZE,
+    sortColumn,
+    sortDirection
   });
 
-  const sortedRequests = useMemo(() => {
-    const result = [...(requestsQuery.data ?? [])];
-
-    if (!sortColumn) {
-      return result;
-    }
-
-    result.sort((left, right) => {
-      const leftValue = getSortableValue(left, sortColumn);
-      const rightValue = getSortableValue(right, sortColumn);
-
-      if (leftValue < rightValue) {
-        return sortDirection === "asc" ? -1 : 1;
-      }
-
-      if (leftValue > rightValue) {
-        return sortDirection === "asc" ? 1 : -1;
-      }
-
-      return 0;
-    });
-
-    return result;
-  }, [requestsQuery.data, sortColumn, sortDirection]);
+  const pagedRequests = requestsQuery.data?.items ?? [];
+  const totalCount = requestsQuery.data?.totalCount ?? 0;
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / REQUESTS_PAGE_SIZE) : 0;
 
   useEffect(() => {
-    const visibleRequestIds = new Set(sortedRequests.map((request) => request.id));
+    if (page > 0 && totalPages > 0 && page >= totalPages) {
+      setPage(totalPages - 1);
+    }
+  }, [page, totalPages]);
+
+  useEffect(() => {
+    const visibleRequestIds = new Set(pagedRequests.map((request) => request.id));
     setSelectedRequestIds((current) => current.filter((requestId) => visibleRequestIds.has(requestId)));
 
     if (selectedRequestId && !visibleRequestIds.has(selectedRequestId)) {
       setSelectedRequestId("");
     }
-  }, [sortedRequests, selectedRequestId]);
+  }, [pagedRequests, selectedRequestId]);
 
   const selectedRequests = useMemo(() => {
     const selectedIds = new Set(selectedRequestIds);
-    return sortedRequests.filter((request) => selectedIds.has(request.id));
-  }, [selectedRequestIds, sortedRequests]);
+    return pagedRequests.filter((request) => selectedIds.has(request.id));
+  }, [pagedRequests, selectedRequestIds]);
 
   const allVisibleSelected =
-    sortedRequests.length > 0 && selectedRequestIds.length === sortedRequests.length;
+    pagedRequests.length > 0 && selectedRequestIds.length === pagedRequests.length;
 
   const incentiveTypeOptions = useMemo(
     () =>
@@ -248,16 +253,7 @@ export function IncentiveRequestsView({
     [setupCatalogsQuery.data?.incentiveTypes]
   );
 
-  const contractOptions = useMemo(() => {
-    const uniqueContracts = new Set(
-      (requestsQuery.data ?? []).map((item) => item.selectedContractCode).filter(Boolean)
-    );
-
-    return Array.from(uniqueContracts).map((contractCode) => ({
-      value: contractCode,
-      label: contractCode
-    }));
-  }, [requestsQuery.data]);
+  const contractOptions = setupCatalogsQuery.data?.contractOptions ?? [];
 
   const cancelMutation = useMutation({
     mutationFn: ({ requestId, comment }: { requestId: string; comment?: string }) =>
@@ -271,7 +267,7 @@ export function IncentiveRequestsView({
     }
   });
 
-  const handleSort = (column: string) => {
+  const handleSort = (column: HrIncentiveRequestSortColumn) => {
     if (sortColumn === column) {
       if (sortDirection === "asc") {
         setSortDirection("desc");
@@ -289,7 +285,7 @@ export function IncentiveRequestsView({
 
   const handleToggleSelectAll = () => {
     setSelectedRequestIds((current) =>
-      current.length === sortedRequests.length ? [] : sortedRequests.map((request) => request.id)
+      current.length === pagedRequests.length ? [] : pagedRequests.map((request) => request.id)
     );
   };
 
@@ -336,9 +332,13 @@ export function IncentiveRequestsView({
     setExportSuccess("");
 
     try {
-      const periodRequests = await fetchHrIncentiveRequests({
+      const periodRequests = await fetchAllHrIncentiveRequests({
         periodCode: normalizedPeriodCode,
-        status: "A"
+        workerSearch: debouncedWorkerSearch || undefined,
+        statuses: statusFilter.length > 0 ? statusFilter : undefined,
+        typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
+        contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
+        serviceDateUntil: serviceDateUntil || undefined
       });
 
       await exportIncentiveRequestsToXlsx({
@@ -355,7 +355,7 @@ export function IncentiveRequestsView({
     }
   };
 
-  const SortIcon = ({ column }: { column: string }) => {
+  const SortIcon = ({ column }: { column: HrIncentiveRequestSortColumn }) => {
     if (sortColumn !== column) {
       return <span style={{ opacity: 0.3, marginLeft: "0.3rem" }}>↕</span>;
     }
@@ -407,14 +407,7 @@ export function IncentiveRequestsView({
           label="Estados"
           value={statusFilter}
           onChange={setStatusFilter}
-          options={[
-            { value: "A", label: "Todos" },
-            { value: "P", label: "Pendiente administrador contrato" },
-            { value: "E", label: "Pendiente gerente de area" },
-            { value: "R", label: "Rechazado" },
-            { value: "F", label: "Aprobado" },
-            { value: "C", label: "Anulado" }
-          ]}
+          options={STATUS_FILTER_OPTIONS}
           placeholder="Todos"
         />
         <MultiSelectField
@@ -453,6 +446,9 @@ export function IncentiveRequestsView({
       {mutationError ? <p className="form-status form-status-error">{mutationError}</p> : null}
       {exportError ? <p className="form-status form-status-error">{exportError}</p> : null}
       {exportSuccess ? <p className="form-status form-status-success">{exportSuccess}</p> : null}
+      {requestsQuery.isError ? (
+        <p className="form-status form-status-error">{requestsQuery.error.message}</p>
+      ) : null}
 
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
@@ -513,8 +509,8 @@ export function IncentiveRequestsView({
               </tr>
             </thead>
             <tbody>
-              {sortedRequests.length > 0
-                ? sortedRequests.map((request) => {
+              {pagedRequests.length > 0
+                ? pagedRequests.map((request) => {
                     const isActiveRow = selectedRequestId === request.id;
                     const warningClass = request.isOutOfDeadline
                       ? "hr-incentives-row-danger"
@@ -748,7 +744,7 @@ export function IncentiveRequestsView({
                   })
                 : null}
 
-              {!requestsQuery.isLoading && sortedRequests.length === 0 ? (
+              {!requestsQuery.isLoading && pagedRequests.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="tracking-empty-state">
                     No hay incentivos para el filtro actual.
@@ -767,6 +763,36 @@ export function IncentiveRequestsView({
           </table>
         </div>
       </div>
+
+      {totalPages > 1 ? (
+        <div className="hr-incentives-pagination">
+          <button
+            type="button"
+            className="soft-primary-button hr-incentives-pagination-button"
+            disabled={page === 0}
+            onClick={() => setPage((currentPage) => currentPage - 1)}
+          >
+            &lt; Anterior
+          </button>
+          <span className="tracking-filter-caption hr-incentives-pagination-label">
+            Página {page + 1} de {totalPages} · {totalCount} registros
+          </span>
+          <button
+            type="button"
+            className="soft-primary-button hr-incentives-pagination-button"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((currentPage) => currentPage + 1)}
+          >
+            Siguiente &gt;
+          </button>
+        </div>
+      ) : null}
+
+      {totalCount > 0 ? (
+        <p className="tracking-filter-caption">
+          {selectedRequests.length} incentivo(s) seleccionados · {totalCount} coincidencia(s) para el filtro
+        </p>
+      ) : null}
 
       <IncentiveActionModal
         isOpen={Boolean(requestToCancel)}

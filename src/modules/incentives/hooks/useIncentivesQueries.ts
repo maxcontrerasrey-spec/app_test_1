@@ -3,19 +3,26 @@ import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchHrIncentivesAnalytics,
   fetchHrIncentiveApprovalQueue,
+  fetchHrIncentiveApprovalQueuePage,
   fetchHrIncentivePreview,
   fetchHrIncentiveRosterSnapshot,
   fetchHrIncentiveRequestDetail,
   fetchHrIncentiveRequests,
+  fetchHrIncentiveRequestsPage,
   fetchHrIncentiveSetupCatalogs,
   fetchHrIncentiveWorkerContext,
   searchHrIncentiveEligibleWorkers
 } from "../services/incentivesApi";
-import type { HrIncentiveAnalyticsFilters, HrIncentiveRequestsFilters } from "../types";
+import type {
+  HrIncentiveAnalyticsFilters,
+  HrIncentiveApprovalQueuePageFilters,
+  HrIncentiveRequestsFilters,
+  HrIncentiveRequestsPageFilters
+} from "../types";
 
 const INCENTIVES_CATALOGS_STALE_TIME_MS = 5 * 60_000;
-const INCENTIVES_REQUESTS_STALE_TIME_MS = 20_000;
-const INCENTIVES_REQUESTS_REFETCH_MS = 30_000;
+const INCENTIVES_REQUESTS_STALE_TIME_MS = 30_000;
+const INCENTIVES_REQUESTS_REFETCH_MS = 5 * 60_000;
 const INCENTIVES_WORKER_CONTEXT_STALE_TIME_MS = 60_000;
 const INCENTIVES_SEARCH_STALE_TIME_MS = 15_000;
 const INCENTIVES_CACHE_GC_TIME_MS = 20 * 60_000;
@@ -42,15 +49,46 @@ export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters) {
   });
 }
 
+export function useHrIncentiveRequestsPage(filters: HrIncentiveRequestsPageFilters, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.incentives.requests(filters),
+    queryFn: () => fetchHrIncentiveRequestsPage(filters),
+    staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
+    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
+    refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    placeholderData: (previous) => previous,
+    enabled
+  });
+}
+
 export function useHrIncentiveApprovalQueue() {
   return useQuery({
-    queryKey: queryKeys.incentives.approvalsQueue(),
+    queryKey: queryKeys.incentives.approvalsQueue({}),
     queryFn: fetchHrIncentiveApprovalQueue,
     staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true
+  });
+}
+
+export function useHrIncentiveApprovalQueuePage(
+  filters: HrIncentiveApprovalQueuePageFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: queryKeys.incentives.approvalsQueue(filters),
+    queryFn: () => fetchHrIncentiveApprovalQueuePage(filters),
+    staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
+    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
+    refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    placeholderData: (previous) => previous,
+    enabled
   });
 }
 
@@ -169,6 +207,7 @@ export async function invalidateHrIncentiveQueries(queryClient: QueryClient) {
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestsRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.analyticsRoot() }),
-    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.approvalsRoot() })
+    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.approvalsRoot() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestDetailRoot() })
   ]);
 }

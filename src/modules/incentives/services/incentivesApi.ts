@@ -5,13 +5,17 @@ import type {
   CreateHrIncentiveRequestResult,
   HrIncentiveAnalyticsPayload,
   HrIncentiveAnalyticsFilters,
+  HrIncentiveApprovalQueuePageFilters,
   HrIncentiveApprovalQueueItem,
   HrIncentiveEligibleWorker,
+  HrIncentiveFilterOption,
+  HrIncentivePagedResult,
   HrIncentivePreview,
   HrIncentiveRosterSnapshot,
   HrIncentiveRequestDetail,
   HrIncentiveRequest,
   HrIncentiveRequestsFilters,
+  HrIncentiveRequestsPageFilters,
   HrIncentiveSetupCatalogs,
   HrIncentiveUnionStatus,
   HrIncentiveWorkerContext
@@ -73,6 +77,26 @@ function requireNumberField(source: Record<string, unknown>, fieldName: string) 
   throw new Error(`Contrato RPC inválido: falta ${fieldName}.`);
 }
 
+function mapFilterOptions(source: unknown): HrIncentiveFilterOption[] {
+  return asArray<Record<string, unknown>>(source).map((item) => ({
+    value: String(item.value ?? ""),
+    label: String(item.label ?? "")
+  }));
+}
+
+function mapPagedResult<T>(
+  rows: Record<string, unknown>[] | null,
+  mapper: (row: Record<string, unknown>) => T
+): HrIncentivePagedResult<T> {
+  const items = asArray<Record<string, unknown>>(rows).map(mapper);
+  const firstRow = rows?.[0];
+
+  return {
+    items,
+    totalCount: firstRow ? Number(firstRow.total_count ?? 0) : 0
+  };
+}
+
 function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
   const source = (payload ?? {}) as Record<string, unknown>;
 
@@ -88,6 +112,7 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
       value: mapUnionStatus(item.value),
       label: String(item.label ?? "")
     })),
+    contractOptions: mapFilterOptions(source.contract_options),
     allowedJobTitles: asArray<Record<string, unknown>>(source.allowed_job_titles).map((item) => ({
       id: String(item.id ?? ""),
       jobTitle: String(item.job_title ?? ""),
@@ -431,18 +456,9 @@ function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPayload {
       }))
     })),
     filterOptions: {
-      contracts: asArray<Record<string, unknown>>(filterOptions.contracts).map((item) => ({
-        value: String(item.value ?? ""),
-        label: String(item.label ?? "")
-      })),
-      incentiveTypes: asArray<Record<string, unknown>>(rawTypeOptions).map((item) => ({
-        value: String(item.value ?? ""),
-        label: String(item.label ?? "")
-      })),
-      statuses: asArray<Record<string, unknown>>(filterOptions.statuses).map((item) => ({
-        value: String(item.value ?? ""),
-        label: String(item.label ?? "")
-      }))
+      contracts: mapFilterOptions(filterOptions.contracts),
+      incentiveTypes: mapFilterOptions(rawTypeOptions),
+      statuses: mapFilterOptions(filterOptions.statuses)
     }
   };
 }
@@ -754,6 +770,59 @@ export async function fetchHrIncentiveRequests(filters: HrIncentiveRequestsFilte
   return asArray<Record<string, unknown>>(data).map(mapRequestRow);
 }
 
+export async function fetchHrIncentiveRequestsPage(filters: HrIncentiveRequestsPageFilters) {
+  const client = getSupabaseClient();
+  const resolvedStatuses = normalizeFilterArray(filters.status, filters.statuses);
+  const resolvedContractCodes = normalizeFilterArray(filters.contractCode, filters.contractCodes);
+  const resolvedTypeIds = normalizeFilterArray(filters.typeId, filters.typeIds);
+  const { data, error } = await client.rpc("get_hr_incentive_requests", {
+    p_period_code: filters.periodCode?.trim() || null,
+    p_statuses: resolvedStatuses,
+    p_contract_codes: resolvedContractCodes,
+    p_worker_search: filters.workerSearch?.trim() || null,
+    p_type_ids: resolvedTypeIds,
+    p_service_date_until: filters.serviceDateUntil?.trim() || null,
+    p_limit: filters.limit ?? null,
+    p_offset: filters.offset ?? 0,
+    p_sort_column: filters.sortColumn ?? null,
+    p_sort_direction: filters.sortDirection ?? "desc"
+  });
+
+  if (error) {
+    throw new Error(
+      formatRpcError(error) || "No fue posible cargar los incentivos registrados."
+    );
+  }
+
+  return mapPagedResult(data, mapRequestRow);
+}
+
+export async function fetchAllHrIncentiveRequests(
+  filters: HrIncentiveRequestsFilters,
+  pageSize = 500
+) {
+  const items: HrIncentiveRequest[] = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await fetchHrIncentiveRequestsPage({
+      ...filters,
+      limit: pageSize,
+      offset
+    });
+
+    items.push(...page.items);
+
+    if (page.items.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return items;
+}
+
 export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFilters) {
   const client = getSupabaseClient();
   const resolvedStatuses = normalizeFilterArray(filters.status, filters.statuses);
@@ -776,8 +845,21 @@ export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFi
 }
 
 export async function fetchHrIncentiveApprovalQueue() {
+  const result = await fetchHrIncentiveApprovalQueuePage({});
+  return result.items;
+}
+
+export async function fetchHrIncentiveApprovalQueuePage(
+  filters: HrIncentiveApprovalQueuePageFilters
+) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_hr_incentive_approval_queue");
+  const { data, error } = await client.rpc("get_hr_incentive_approval_queue", {
+    p_search: filters.search?.trim() || null,
+    p_limit: filters.limit ?? null,
+    p_offset: filters.offset ?? 0,
+    p_sort_column: filters.sortColumn ?? null,
+    p_sort_direction: filters.sortDirection ?? "asc"
+  });
 
   if (error) {
     throw new Error(
@@ -785,7 +867,7 @@ export async function fetchHrIncentiveApprovalQueue() {
     );
   }
 
-  return asArray<Record<string, unknown>>(data).map(mapApprovalQueueRow);
+  return mapPagedResult(data, mapApprovalQueueRow);
 }
 
 export async function fetchHrIncentiveRequestDetail(requestId: string) {

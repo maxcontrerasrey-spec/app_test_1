@@ -377,6 +377,23 @@
   gap: 1.25rem;
 }
 
+.hr-incentives-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.hr-incentives-pagination-button {
+  min-width: 7.5rem;
+}
+
+.hr-incentives-pagination-label {
+  min-width: 12rem;
+  text-align: center;
+}
+
 .hr-incentives-row-warning {
   background: rgba(87, 166, 178, 0.15) !important;
   backdrop-filter: blur(4px);
@@ -486,5 +503,15 @@
 
   .hr-incentives-inline-actions {
     flex-direction: column;
+  }
+
+  .hr-incentives-pagination {
+    justify-content: stretch;
+  }
+
+  .hr-incentives-pagination-button,
+  .hr-incentives-pagination-label {
+    width: 100%;
+    text-align: center;
   }
 }

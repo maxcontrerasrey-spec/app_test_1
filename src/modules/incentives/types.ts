@@ -11,6 +11,11 @@ export type HrIncentiveUnionOption = {
   label: string;
 };
 
+export type HrIncentiveFilterOption = {
+  value: string;
+  label: string;
+};
+
 export type IncentiveRequestStatus = "P" | "E" | "R" | "F" | "C";
 
 export type HrIncentiveApprovalDecision = "approved" | "rejected";
@@ -83,6 +88,7 @@ export type HrIncentiveSetupCatalogs = {
   bukJobTitles: string[];
   bukUnions: HrIncentiveUnionOption[];
   bukUnionStatuses: HrIncentiveUnionStatusOption[];
+  contractOptions: HrIncentiveFilterOption[];
   allowedJobTitles: HrIncentiveAllowedJobTitle[];
   incentiveTypes: HrIncentiveType[];
   rateRules: HrIncentiveRateRule[];
@@ -348,10 +354,7 @@ export interface HrIncentiveAnalyticsAmountByContractItem {
   totalAmount: number;
 };
 
-export type HrIncentiveAnalyticsFilterOption = {
-  value: string;
-  label: string;
-};
+export type HrIncentiveAnalyticsFilterOption = HrIncentiveFilterOption;
 
 export type HrIncentiveAnalyticsFilterOptions = {
   contracts: HrIncentiveAnalyticsFilterOption[];
@@ -411,4 +414,41 @@ export type BulkHrIncentiveApprovalDecisionResult = {
   success: boolean;
   requestStatus: IncentiveRequestStatus | null;
   error: string | null;
+};
+
+export type HrIncentiveRequestSortColumn =
+  | "folio"
+  | "trabajador"
+  | "incentivo"
+  | "contrato"
+  | "fecha"
+  | "monto"
+  | "estado";
+
+export type HrIncentiveApprovalQueueSortColumn =
+  | "folio"
+  | "trabajador"
+  | "incentivo"
+  | "contrato"
+  | "fecha"
+  | "monto";
+
+export type HrIncentivePagedResult<T> = {
+  items: T[];
+  totalCount: number;
+};
+
+export type HrIncentiveRequestsPageFilters = HrIncentiveRequestsFilters & {
+  limit?: number;
+  offset?: number;
+  sortColumn?: HrIncentiveRequestSortColumn | null;
+  sortDirection?: "asc" | "desc";
+};
+
+export type HrIncentiveApprovalQueuePageFilters = {
+  search?: string;
+  limit?: number;
+  offset?: number;
+  sortColumn?: HrIncentiveApprovalQueueSortColumn | null;
+  sortDirection?: "asc" | "desc";
 };

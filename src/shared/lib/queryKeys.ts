@@ -24,7 +24,9 @@ export const queryKeys = {
     analyticsRoot: () => ["incentives", "analytics"] as const,
     analytics: (filters: Record<string, unknown>) => ["incentives", "analytics", filters] as const,
     approvalsRoot: () => ["incentives", "approvals"] as const,
-    approvalsQueue: () => ["incentives", "approvals", "queue"] as const,
+    approvalsQueue: (filters: Record<string, unknown>) =>
+      ["incentives", "approvals", "queue", filters] as const,
+    requestDetailRoot: () => ["incentives", "request-detail"] as const,
     requestDetail: (requestId: string) => ["incentives", "request-detail", requestId] as const,
     workerSearch: (search: string) => ["incentives", "worker-search", search] as const,
     workerContext: (bukEmployeeId: string) =>

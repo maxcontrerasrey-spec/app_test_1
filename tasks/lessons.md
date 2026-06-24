@@ -218,6 +218,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. Una auditoría pesada no pertenece al hot path de una bandeja operativa
+
+- **No ejecutes validaciones globales de integridad dentro de cada RPC de lectura** si la misma comprobación ya puede correrse por trigger barato, constraint o auditoría manual. En bandejas con crecimiento mensual, eso convierte una revisión administrativa en costo fijo por cada render.
+- **La regla correcta es separar invariantes de operación y auditorías profundas**. Lo que debe bloquear escritura se expresa con `CHECK`, `UNIQUE`, snapshots o validación transaccional; lo que sirve para revisión histórica se deja como función explícita de auditoría.
+
+## 65. Si una bandeja puede superar cientos de filas, la paginación y el search server-side no son opcionales
+
+- **No cargues el universo completo en React para luego filtrar, ordenar y expandir en memoria**. Aunque hoy el volumen parezca bajo, ese patrón se degrada rápido y duplica costo en red, CPU del navegador y Realtime invalidations.
+- **La forma robusta es paginar en backend, debouncizar el input y limitar el polling a respaldo largo**. Las exportaciones masivas quedan como acción consciente y aislada; la operación diaria consume páginas acotadas y ordenadas desde SQL.
+
 ## 64. En BI, cada pestaña debe construirse con su propio universo operativo y no reciclar widgets “parecidos”
 
 - **No reutilices el grid de otra pestaña dentro de una condición compartida solo porque comparten filtros**. Si `Reclutamiento` y `Dotación` viven bajo el mismo módulo pero responden a fuentes distintas, la condición de render debe separar explícitamente filtros compartidos de contenido específico.

@@ -10,17 +10,22 @@ import {
 } from "../services/incentivesApi";
 import {
   invalidateHrIncentiveQueries,
-  useHrIncentiveApprovalQueue,
+  useHrIncentiveApprovalQueuePage,
   useHrIncentiveRequestDetail
 } from "../hooks/useIncentivesQueries";
-import type { HrIncentiveApprovalQueueItem } from "../types";
+import type {
+  HrIncentiveApprovalQueueItem,
+  HrIncentiveApprovalQueueSortColumn
+} from "../types";
 import { IncentiveActionModal } from "./IncentiveActionModal";
 import { IncentiveOperationalFlags } from "./IncentiveOperationalFlags";
 
-type SortColumn = "folio" | "trabajador" | "incentivo" | "contrato" | "fecha" | "monto";
-type SortValue = number | string;
+const APPROVALS_PAGE_SIZE = 50;
 
-const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
+const SORTABLE_HEADERS: ReadonlyArray<{
+  column: HrIncentiveApprovalQueueSortColumn;
+  label: string;
+}> = [
   { column: "folio", label: "Folio" },
   { column: "trabajador", label: "Trabajador" },
   { column: "incentivo", label: "Incentivo" },
@@ -28,23 +33,6 @@ const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
   { column: "fecha", label: "Fecha servicio" },
   { column: "monto", label: "Monto" }
 ];
-
-function getSortValue(item: HrIncentiveApprovalQueueItem, column: SortColumn): SortValue {
-  switch (column) {
-    case "folio":
-      return Number(item.folio);
-    case "trabajador":
-      return item.employeeFullName.toLowerCase();
-    case "incentivo":
-      return item.incentiveTypeName.toLowerCase();
-    case "contrato":
-      return item.selectedAreaName.toLowerCase();
-    case "fecha":
-      return new Date(item.serviceDate).getTime();
-    case "monto":
-      return item.calculatedAmount;
-  }
-}
 
 type DecisionModalState =
   | { mode: "closed" }
@@ -60,25 +48,6 @@ type DecisionModalState =
       decision: "approved" | "rejected";
       description: string;
     };
-
-function formatDateTimeValue(value: string | null) {
-  if (!value) {
-    return "No disponible";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Fecha inválida";
-  }
-
-  return date.toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
 
 function getRequestStatusLabel(status: string) {
   switch (status) {
@@ -97,10 +66,6 @@ function getRequestStatusLabel(status: string) {
   }
 }
 
-function getApprovalStepLabel(stepCode: HrIncentiveApprovalQueueItem["stepCode"]) {
-  return stepCode === "contract_admin" ? "Administrador de contrato" : "Gerente de area";
-}
-
 function canCurrentUserDecideRow(
   row: HrIncentiveApprovalQueueItem,
   currentUserId: string | undefined,
@@ -113,16 +78,30 @@ export function IncentiveApprovalsView() {
   const queryClient = useQueryClient();
   const { user, isSuperAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedApprovalIds, setSelectedApprovalIds] = useState<number[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
   const [decisionModal, setDecisionModal] = useState<DecisionModalState>({ mode: "closed" });
 
-  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortColumn, setSortColumn] = useState<HrIncentiveApprovalQueueSortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(0);
 
-  const handleSort = (column: SortColumn) => {
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchTerm, sortColumn, sortDirection]);
+
+  const handleSort = (column: HrIncentiveApprovalQueueSortColumn) => {
     if (sortColumn === column) {
       if (sortDirection === "asc") setSortDirection("desc");
       else {
@@ -135,7 +114,7 @@ export function IncentiveApprovalsView() {
     }
   };
 
-  const renderSortIcon = (column: SortColumn) => (
+  const renderSortIcon = (column: HrIncentiveApprovalQueueSortColumn) => (
     <span
       aria-hidden="true"
       className={`tracking-sort-icon ${sortColumn !== column ? "tracking-sort-icon-idle" : ""}`}
@@ -144,82 +123,54 @@ export function IncentiveApprovalsView() {
     </span>
   );
 
-  const approvalQueueQuery = useHrIncentiveApprovalQueue();
+  const approvalQueueQuery = useHrIncentiveApprovalQueuePage({
+    search: debouncedSearchTerm || undefined,
+    limit: APPROVALS_PAGE_SIZE,
+    offset: page * APPROVALS_PAGE_SIZE,
+    sortColumn,
+    sortDirection
+  });
 
-  const filteredQueue = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+  const visibleQueue = approvalQueueQuery.data?.items ?? [];
+  const totalCount = approvalQueueQuery.data?.totalCount ?? 0;
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / APPROVALS_PAGE_SIZE) : 0;
 
-    let result = (approvalQueueQuery.data ?? []).filter((item) => {
-      if (!normalizedSearch) {
-        return true;
-      }
-
-      return [
-        item.employeeFullName,
-        item.employeeDocumentNumber,
-        item.employeeJobTitle,
-        item.employeeUnionName ?? "",
-        item.selectedContractCode,
-        item.selectedAreaName,
-        item.incentiveTypeName,
-        item.requesterName,
-        item.approverName,
-        getApprovalStepLabel(item.stepCode)
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedSearch);
-    });
-
-    if (sortColumn) {
-      result.sort((a, b) => {
-        const aVal = getSortValue(a, sortColumn);
-        const bVal = getSortValue(b, sortColumn);
-
-        if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
-        if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
-        return 0;
-      });
+  useEffect(() => {
+    if (page > 0 && totalPages > 0 && page >= totalPages) {
+      setPage(totalPages - 1);
     }
-
-    return result;
-  }, [approvalQueueQuery.data, searchTerm, sortColumn, sortDirection]);
+  }, [page, totalPages]);
 
   useEffect(() => {
     setSelectedApprovalIds((current) =>
       current.filter((approvalId) =>
-        (approvalQueueQuery.data ?? []).some((item) => item.approvalId === approvalId)
+        visibleQueue.some((item) => item.approvalId === approvalId)
       )
     );
-  }, [approvalQueueQuery.data]);
+  }, [visibleQueue]);
 
   useEffect(() => {
     setSelectedApprovalIds((current) =>
       current.filter((approvalId) =>
-        (approvalQueueQuery.data ?? []).some(
+        visibleQueue.some(
           (item) =>
             item.approvalId === approvalId &&
             canCurrentUserDecideRow(item, user?.id, isSuperAdmin)
         )
       )
     );
-  }, [approvalQueueQuery.data, isSuperAdmin, user?.id]);
+  }, [visibleQueue, isSuperAdmin, user?.id]);
 
   useEffect(() => {
-    if (selectedRequestId && !filteredQueue.some((item) => item.requestId === selectedRequestId)) {
+    if (selectedRequestId && !visibleQueue.some((item) => item.requestId === selectedRequestId)) {
       setSelectedRequestId("");
     }
-  }, [filteredQueue, selectedRequestId]);
-
-  const selectedRow =
-    filteredQueue.find((item) => item.requestId === selectedRequestId) ??
-    approvalQueueQuery.data?.find((item) => item.requestId === selectedRequestId) ??
-    null;
+  }, [selectedRequestId, visibleQueue]);
 
   const detailQuery = useHrIncentiveRequestDetail(selectedRequestId, Boolean(selectedRequestId));
   const selectableFilteredRows = useMemo(
-    () => filteredQueue.filter((item) => canCurrentUserDecideRow(item, user?.id, isSuperAdmin)),
-    [filteredQueue, isSuperAdmin, user?.id]
+    () => visibleQueue.filter((item) => canCurrentUserDecideRow(item, user?.id, isSuperAdmin)),
+    [isSuperAdmin, user?.id, visibleQueue]
   );
 
   const allFilteredSelected =
@@ -228,11 +179,12 @@ export function IncentiveApprovalsView() {
 
   const selectedRows = useMemo(
     () =>
-      (approvalQueueQuery.data ?? []).filter((item) =>
-        selectedApprovalIds.includes(item.approvalId) &&
-        canCurrentUserDecideRow(item, user?.id, isSuperAdmin)
+      visibleQueue.filter(
+        (item) =>
+          selectedApprovalIds.includes(item.approvalId) &&
+          canCurrentUserDecideRow(item, user?.id, isSuperAdmin)
       ),
-    [approvalQueueQuery.data, isSuperAdmin, selectedApprovalIds, user?.id]
+    [isSuperAdmin, selectedApprovalIds, user?.id, visibleQueue]
   );
 
   const decisionMutation = useMutation({
@@ -445,8 +397,8 @@ export function IncentiveApprovalsView() {
                 </tr>
               </thead>
               <tbody>
-                {filteredQueue.length > 0 ? (
-                  filteredQueue.map((row) => {
+                {visibleQueue.length > 0 ? (
+                  visibleQueue.map((row) => {
                     const isSelected = selectedApprovalIds.includes(row.approvalId);
                     const isActiveRow = selectedRequestId === row.requestId;
                     const canDecide = canCurrentUserDecideRow(row, user?.id, isSuperAdmin);
@@ -655,13 +607,35 @@ export function IncentiveApprovalsView() {
             </table>
           </div>
         </div>
-
-
       </div>
 
-      {filteredQueue.length > 0 ? (
+      {totalPages > 1 ? (
+        <div className="hr-incentives-pagination">
+          <button
+            type="button"
+            className="soft-primary-button hr-incentives-pagination-button"
+            disabled={page === 0}
+            onClick={() => setPage((currentPage) => currentPage - 1)}
+          >
+            &lt; Anterior
+          </button>
+          <span className="tracking-filter-caption hr-incentives-pagination-label">
+            Página {page + 1} de {totalPages} · {totalCount} pendientes
+          </span>
+          <button
+            type="button"
+            className="soft-primary-button hr-incentives-pagination-button"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((currentPage) => currentPage + 1)}
+          >
+            Siguiente &gt;
+          </button>
+        </div>
+      ) : null}
+
+      {totalCount > 0 ? (
         <p className="tracking-filter-caption">
-          {selectedRows.length} aprobación(es) seleccionadas · {filteredQueue.length} visibles en la bandeja
+          {selectedRows.length} aprobación(es) seleccionadas · {totalCount} coincidencia(s) en la bandeja
         </p>
       ) : null}
 

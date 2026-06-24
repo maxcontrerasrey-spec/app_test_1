@@ -3196,3 +3196,29 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - El dashboard de Inicio reutiliza su resumen operacional para los contadores y las expansiones comparten el caché de detalle de React Query; los pollings de respaldo pasan de 30 segundos a 5 minutos porque ambos dominios ya usan Realtime.
 - La migración `20260624021807_optimize_recruitment_bi_metrics_and_filters.sql` quedó aplicada y alineada en Supabase. El smoke remoto confirmó los valores productivos y un `EXPLAIN ANALYZE` redujo la consulta BI de aproximadamente `68 ms / 4.747 shared hits`, más una segunda llamada de movilidad, a aproximadamente `33 ms / 2.792 shared hits` en una sola RPC.
 - La auditoría SQL detectó además contratos legacy previos a esta entrega. Se versionó `20260624023707_repair_legacy_sql_contracts_found_by_lint.sql` para retirar dos RPCs obsoletas y restaurar `user_contracts`; persiste como hallazgo independiente que Operaciones fue incorporado sin versionar las tablas `base_services`, `equipment` y `service_entries`, por lo que no se inventaron datos maestros para ocultarlo.
+
+## Endurecimiento de escala y multiaprobación para Incentivos Extraordinarios
+
+- [x] Contrastar la auditoría adjunta contra el contrato real de Incentivos para separar riesgos vigentes de hallazgos ya corregidos por migraciones previas.
+- [x] Eliminar del hot path las auditorías de integridad costosas en `get_hr_incentive_requests`, `get_hr_incentive_approval_queue`, `get_hr_incentive_request_detail` y `get_hr_incentives_analytics`, reemplazándolas por invariantes baratos y verificables en base.
+- [x] Versionar una migración que añada paginación server-side e índices de soporte para historial y bandeja de aprobaciones, manteniendo compatibilidad operacional con exportación y multiaprobación secuencial.
+- [x] Refactorizar el frontend de Incentivos para consumir páginas, mover la búsqueda pesada al backend, reducir polling redundante y evitar render masivo del dataset completo en el DOM.
+- [x] Aplicar la migración en Supabase, validar humo SQL, `npx tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations`, `git diff --check` y documentar el resultado final aquí y en `tasks/lessons.md`.
+
+## Resultado de endurecimiento de escala y multiaprobación para Incentivos Extraordinarios
+
+- La auditoría externa sí apuntaba a dos problemas reales del módulo: demasiada lógica de integridad ejecutándose dentro de cada RPC de lectura y bandejas que cargaban el dataset completo para luego filtrar/sortear en React. Ese diseño no escala bien a miles de incentivos por período ni a una cola de aprobación secuencial operada por múltiples usuarios.
+- Se dejó versionada y aplicada en Supabase la migración [`20260624184559_scale_hr_incentives_pagination_and_integrity.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624184559_scale_hr_incentives_pagination_and_integrity.sql:1), que hace cuatro cosas estructurales:
+  1. elimina del hot path los `perform assert_hr_incentive_period_folio_integrity(...)` en historial, cola, analítica y detalle, dejando la auditoría como verificación explícita y no como costo fijo por consulta;
+  2. endurece invariantes productivos baratos en base: `period_code` alineado a `service_date`, aprobaciones pendientes siempre con `approver_user_id`, un único pendiente por solicitud y snapshot persistido del gerente de área;
+  3. corrige la multiaprobación secuencial para congelar el aprobador de segunda etapa al crear la solicitud y autoaprobar esa segunda etapa cuando administrador de contrato y gerente de área resultan ser la misma persona;
+  4. agrega índices de soporte y RPCs paginadas (`get_hr_incentive_requests` y `get_hr_incentive_approval_queue`) con búsqueda y ordenamiento server-side.
+- En frontend, [`IncentiveRequestsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:1) y [`IncentiveApprovalsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveApprovalsView.tsx:1) dejaron de cargar y ordenar todo el universo en memoria. Ahora consumen páginas de 50 registros, debounced search, orden server-side y paginación explícita, manteniendo exportación masiva solo como acción puntual y no como patrón permanente de lectura.
+- También se redujo la presión de refresco en vivo desde [`HumanResourcesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/pages/HumanResourcesDashboard.tsx:1): las suscripciones Realtime ahora se acotan por vista activa y el polling de respaldo pasa a 5 minutos, evitando invalidaciones globales innecesarias sobre todo el módulo.
+- Validación cerrada con:
+  1. `npx tsc -b --pretty false`
+  2. `npm run build:frontend-check`
+  3. `npm run audit:migrations -- --files supabase/migrations/20260624184559_scale_hr_incentives_pagination_and_integrity.sql`
+  4. `npx --yes supabase db push --linked --include-all`
+  5. `npx --yes supabase migration list --linked`
+  6. humo remoto vía service role: `audit_hr_incentive_period_folio_integrity(null) = 0`, `pendingWithoutApprover = 0`, `multiPendingRequests = 0`, `missingAreaManagerSnapshots = 0`.
