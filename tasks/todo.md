@@ -20,6 +20,18 @@
 - [x] Corregir la presentación de contratos con labels humanos y mejorar el multiselect compartido para selección total, limpieza y selección parcial clara
 - [x] Validar tipado/build/diff y registrar la regla de presentación para que BI no vuelva a exponer claves técnicas al usuario
 
+## Ajuste de KPI y cascada de filtros en Business Intelligence
+
+- [x] Reemplazar la tarjeta de `Contratos Activos` por `% de Ausentismo` calculado según los filtros vigentes
+- [x] Hacer que contratos y cargos se filtren mutuamente para mostrar solo combinaciones válidas según la selección actual
+- [x] Validar tipado/build/diff y dejar documentado el contrato de cascada para evitar drift futuro
+
+## Alineación de dimensión contractual en Business Intelligence
+
+- [x] Auditar por qué al seleccionar un contrato operativo como `ALTO NORTE` los gráficos seguían mostrando universos ajenos como `ROL PRIVADO JM`
+- [x] Corregir la dimensión de filtrado BI para que opere por `area_name` operacional y no por `contract_code` interno cuando el usuario filtra contratos
+- [x] Aplicar la migración en Supabase, revalidar build/diff y documentar la regla de diseño para evitar mezclas futuras
+
 ## Resultado de aterrizaje de auditoría SQL enterprise
 
 - La auditoría adjunta combinaba riesgos reales con hallazgos históricos ya corregidos por migraciones posteriores. Se confirmó como **desactualizado** el punto crítico sobre `candidate-docs`: el bucket ya no está abierto por `bucket_id` desde la migración [`20260615220000_enterprise_security_contract_stabilization.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:602), que reemplazó esas policies por acceso scoped vía [`user_can_access_candidate_document_object(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615220000_enterprise_security_contract_stabilization.sql:560).
@@ -46,6 +58,23 @@
 - También se alineó la visualización de contratos en los gráficos visibles de dotación desde [`BiHeadcountCharts.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/components/BiHeadcountCharts.tsx:1) y [`BiDemographicsChart.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/components/BiDemographicsChart.tsx:1), para no seguir mostrando números como nombre de contrato en tooltips o ejes.
 - El problema de cargos no era de datos sino de UX del componente compartido [`MultiSelectField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/MultiSelectField.tsx:1): permitía checkboxes individuales, pero no ofrecía una forma explícita de `Seleccionar todos` o `Limpiar`, lo que volvía torpe la selección parcial frente a catálogos largos.
 - El multiselect ahora incorpora una cabecera fija con acciones `Seleccionar todos` y `Limpiar`, además de resumir correctamente cuando todas las opciones están activas.
+
+## Resultado de ajuste de KPI y cascada de filtros en Business Intelligence
+
+- La tarjeta resumen de [`BiOverviewCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/components/BiOverviewCards.tsx:1) dejó de mostrar `Contratos Activos` y ahora expone `Ausentismo Hoy`, calculado como `(vacaciones + licencias médicas + otros permisos/ausencias) / dotación activa` sobre el universo ya filtrado por periodo, contratos y cargos.
+- El cálculo reutiliza el overview existente y no abrió una RPC nueva: toma `onVacationToday`, `onMedicalLeaveToday`, `otherAbsencesToday` y `totalActiveEmployees`, entregando un porcentaje con formato local.
+- En [`BiDashboardPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/pages/BiDashboardPage.tsx:1) los filtros de `Contratos` y `Cargos` quedaron acoplados por combinaciones válidas del dataset BI ya cargado:
+  1. si eliges contrato, el catálogo de cargos se reduce a los cargos presentes en ese contrato;
+  2. si eliges cargo, el catálogo de contratos se reduce a los contratos que tienen ese cargo;
+  3. si hay selecciones incompatibles después de cambiar el otro filtro, la UI sanea automáticamente los valores inválidos para no dejar un estado roto.
+
+## Resultado de alineación de dimensión contractual en Business Intelligence
+
+- La causa raíz de la inconsistencia no estaba en el tooltip sino en el contrato entero de BI: [`get_bi_employee_population(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260623235155_align_bi_contract_filters_with_area_dimension.sql:1) filtraba por `contract_code`, mientras la UI presentaba y el usuario entendía los contratos por `area_name`.
+- En la data real eso rompe fuerte el universo porque una misma operación como `ALTO NORTE (8832580001:0001)` convive con múltiples `contract_code` (`10116.0`, `0`, etc.). Por eso al elegir Alto Norte podían aparecer gráficos de otro universo asociado a la clave `0`, como `ROL PRIVADO JM`.
+- Se agregó y aplicó en Supabase la migración [`20260623235155_align_bi_contract_filters_with_area_dimension.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260623235155_align_bi_contract_filters_with_area_dimension.sql:1), que alinea `get_bi_employee_population(...)`, `get_bi_workforce_overview(...)`, `get_bi_headcount_by_job_title(...)` y `get_bi_age_distribution(...)` para resolver filtros de contrato por `area_name` operacional normalizado, manteniendo compatibilidad defensiva con selecciones legacy por código interno.
+- En frontend también se dejó explícita la separación entre valor operativo y label visible: los filtros ahora envían `area_name` como dimensión real, mientras [`formatBiContractLabel(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/lib/presentation.ts:1) limpia el sufijo técnico entre paréntesis para no contaminar chips, ejes ni tooltips.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260623235155_align_bi_contract_filters_with_area_dimension.sql`, `npx tsc -b --pretty false`, `npm run build:frontend-check`, `git diff --check` y `npx --yes supabase db push --linked --include-all`.
 
 ## Etapa RRHH en Movilidad Interna y auditoría preventiva de legacies
 
@@ -3082,3 +3111,19 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`AIKnowledgePanel.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/components/AIKnowledgePanel.tsx:1) eliminó un `pathName` muerto, reemplazó `catch (err: any)` por manejo seguro de errores y descargó estados visuales al CSS del módulo.
 - [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1) y [`ai-assistant.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/ai_assistant/styles/ai-assistant.css:1) absorbieron los estilos compartidos nuevos para evitar lógica visual inline dispersa entre vistas.
 - El cierre técnico pasó con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`, dejando esta pasada lista para versionar junto con la migración SQL pendiente de endurecimiento.
+
+## Dashboard BI de Reclutamiento y alineación de scope contractual
+
+- [x] Auditar el contrato actual de BI para no mezclar filtros de dotación por `area_name` con métricas de reclutamiento/movilidad aún atadas a nombres o códigos inconsistentes.
+- [x] Incorporar una nueva vista `Reclutamiento` en Business Intelligence, reutilizando filtros existentes y agregando métricas ejecutivas de folios, candidatos, aprobaciones y movilidad interna.
+- [x] Versionar y aplicar en Supabase las RPCs necesarias para que la nueva vista respete visibilidad por solicitante/CECO y soporte filtros operacionales por contrato y cargo.
+- [x] Validar el cierre con `npm run audit:migrations`, `npx tsc -b`, `npm run build:frontend-check`, `git diff --check`, `supabase db push --linked` y consultas directas a las RPCs sobre la base remota.
+
+## Resultado de dashboard BI de Reclutamiento y alineación de scope contractual
+
+- [`BiDashboardPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/pages/BiDashboardPage.tsx:1) ahora expone una tercera vista `Reclutamiento` junto a `Analítica de Dotación (BUK)` y `Análisis de Incentivos`, reutilizando la misma barra de filtros por período, contrato y cargo para mantener una navegación BI consistente.
+- Se agregó [`BiRecruitmentAnalyticsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/components/BiRecruitmentAnalyticsView.tsx:1), que concentra KPIs y gráficos para folios abiertos, casos activos, cupos solicitados, candidatos en curso, SLA de aprobación, responsables con mayor demora, movilidad interna y pulso semanal del período.
+- [`biApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/services/biApi.ts:1), [`useBiQueries.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/hooks/useBiQueries.ts:1) y [`types/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/types/index.ts:1) incorporaron el contrato tipado `get_bi_recruitment_dashboard(...)`, evitando parseo implícito o gráficos colgados de JSON sin shape validado.
+- La primera migración [`20260624001734_add_bi_recruitment_dashboard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624001734_add_bi_recruitment_dashboard.sql:1) introdujo la nueva RPC BI y además alineó `get_bi_recruitment_pipeline(...)` y `get_bi_hiring_velocity(...)` para usar el mismo matching operacional por `normalize_buk_area_name(...)` y el mismo scope visible del proceso de contratación.
+- La validación runtime encontró una deriva real en agregaciones con `FILTER`, por lo que se corrigió de forma auditable con la migración incremental [`20260624002636_fix_bi_recruitment_dashboard_runtime.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624002636_fix_bi_recruitment_dashboard_runtime.sql:1). Esa segunda pasada también reemplazó un timeline cartesiano por subconsultas semanales correlacionadas para no inflar conteos ni degradar performance.
+- Quedó verificado en Supabase remoto que `get_bi_recruitment_dashboard(...)` devuelve payload real y que `get_bi_recruitment_pipeline(...)` sigue respondiendo bajo el mismo usuario autenticado de prueba (`set_config('request.jwt.claim.sub', ...)`), además de `supabase migration list --linked` sin deriva entre local y remoto.

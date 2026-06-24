@@ -16,9 +16,19 @@ export function BiOverviewCards({ filters }: BiOverviewCardsProps) {
     return <div className="bi-error-state">No se pudieron cargar los KPIs.</div>;
   }
 
+  const totalAbsencesToday =
+    data.onVacationToday + data.onMedicalLeaveToday + data.otherAbsencesToday;
+  const absenteeismTodayPct =
+    data.totalActiveEmployees > 0
+      ? `${((totalAbsencesToday / data.totalActiveEmployees) * 100).toLocaleString("es-CL", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        })}%`
+      : "0,0%";
+
   const kpis = [
     { title: "Dotación Activa", value: data.totalActiveEmployees.toLocaleString("es-CL"), type: "generado" },
-    { title: "Contratos Activos", value: data.totalContracts.toLocaleString("es-CL"), type: "pendiente" },
+    { title: "Ausentismo Hoy", value: absenteeismTodayPct, type: "pendiente" },
     { title: "Presencia Hoy", value: (data.totalActiveEmployees - data.onVacationToday - data.onMedicalLeaveToday - data.otherAbsencesToday).toLocaleString("es-CL"), type: "en-proceso" },
     { title: "Licencias Médicas Hoy", value: data.onMedicalLeaveToday.toLocaleString("es-CL"), type: "error" },
     { title: "Vacaciones Hoy", value: data.onVacationToday.toLocaleString("es-CL"), type: "pendiente" },

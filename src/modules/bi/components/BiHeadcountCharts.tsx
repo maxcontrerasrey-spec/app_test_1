@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiHeadcountByContract, useBiHeadcountByCity } from "../hooks/useBiQueries";
+import { formatBiContractLabel } from "../lib/presentation";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
 import type { BiFilters } from "../types";
@@ -65,9 +66,10 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
     const totalsByContract = new Map<string, { label: string; headcount: number }>();
 
     contractData.forEach((item) => {
-      const current = totalsByContract.get(item.contractCode);
-      totalsByContract.set(item.contractCode, {
-        label: item.areaName || item.contractCode,
+      const contractKey = item.areaName || item.contractCode;
+      const current = totalsByContract.get(contractKey);
+      totalsByContract.set(contractKey, {
+        label: formatBiContractLabel(item.areaName || item.contractCode),
         headcount: (current?.headcount ?? 0) + item.headcount
       });
     });

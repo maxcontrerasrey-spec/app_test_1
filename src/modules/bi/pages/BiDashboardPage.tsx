@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PageShell } from "../../../shared/ui";
 import { BiOverviewCards } from "../components/BiOverviewCards";
@@ -7,9 +7,11 @@ import { BiDemographicsChart } from "../components/BiDemographicsChart";
 import { BiPresenceAndExceptions } from "../components/BiPresenceAndExceptions";
 import { BiTrendingExceptionsChart } from "../components/BiTrendingExceptionsChart";
 import { BiRecruitmentFunnel } from "../components/BiRecruitmentFunnel";
+import { BiRecruitmentAnalyticsView } from "../components/BiRecruitmentAnalyticsView";
 import { IncentiveAnalyticsView } from "../../incentives/components/IncentiveAnalyticsView";
 import { TextField, MultiSelectField } from "../../../shared/ui";
 import { useBiHeadcountByContract, useBiHeadcountByJobTitle } from "../hooks/useBiQueries";
+import { formatBiContractLabel } from "../lib/presentation";
 import type { BiFilters } from "../types";
 import "../styles/bi.css";
 
@@ -31,6 +33,11 @@ const BI_VIEWS = [
     key: "incentivos",
     label: "Análisis de Incentivos",
     description: "Control gerencial del gasto extraordinario y desviaciones operacionales."
+  },
+  {
+    key: "reclutamiento",
+    label: "Reclutamiento",
+    description: "Seguimiento ejecutivo de folios, candidatos, aprobaciones y movilidad interna."
   }
 ] as const;
 
@@ -60,33 +67,114 @@ export function BiDashboardPage() {
   const { data: contractsData } = useBiHeadcountByContract();
   const { data: jobsData } = useBiHeadcountByJobTitle();
 
-  const contractOptions = useMemo(() => {
-    if (!contractsData) return [];
+  const jobTitlesByContractCode = useMemo(() => {
+    const lookup = new Map<string, Set<string>>();
 
-    const optionsByCode = new Map<string, { label: string; value: string }>();
-
-    contractsData.forEach((contract) => {
-      const code = contract.contractCode.trim();
-      if (!code || optionsByCode.has(code)) {
+    jobsData?.forEach((item) => {
+      const contractCode = item.areaName.trim();
+      const jobTitle = item.jobTitle.trim();
+      if (!contractCode || !jobTitle) {
         return;
       }
 
-      const label = contract.areaName.trim() || code;
-      optionsByCode.set(code, { label, value: code });
+      const currentSet = lookup.get(contractCode) ?? new Set<string>();
+      currentSet.add(jobTitle);
+      lookup.set(contractCode, currentSet);
     });
 
-    return [...optionsByCode.values()].sort((left, right) =>
-      left.label.localeCompare(right.label, "es", { sensitivity: "base" })
-    );
+    return lookup;
+  }, [jobsData]);
+
+  const contractLabelByCode = useMemo(() => {
+    const lookup = new Map<string, string>();
+
+    contractsData?.forEach((contract) => {
+      const code = contract.areaName.trim();
+      if (!code || lookup.has(code)) {
+        return;
+      }
+
+      lookup.set(code, formatBiContractLabel(contract.areaName));
+    });
+
+    return lookup;
   }, [contractsData]);
 
+  const contractsByJobTitle = useMemo(() => {
+    const lookup = new Map<string, Set<string>>();
+
+    jobsData?.forEach((item) => {
+      const contractCode = item.areaName.trim();
+      const jobTitle = item.jobTitle.trim();
+      if (!contractCode || !jobTitle) {
+        return;
+      }
+
+      const currentSet = lookup.get(jobTitle) ?? new Set<string>();
+      currentSet.add(contractCode);
+      lookup.set(jobTitle, currentSet);
+    });
+
+    return lookup;
+  }, [jobsData]);
+
+  const filteredContractCodes = useMemo(() => {
+    const allContractCodes = [...contractLabelByCode.keys()];
+
+    if (jobTitleFilter.length === 0) {
+      return allContractCodes;
+    }
+
+    return allContractCodes.filter((contractCode) =>
+      jobTitleFilter.every((jobTitle) => contractsByJobTitle.get(jobTitle)?.has(contractCode))
+    );
+  }, [contractLabelByCode, contractsByJobTitle, jobTitleFilter]);
+
+  const filteredJobTitles = useMemo(() => {
+    const allJobTitles = Array.from(
+      new Set((jobsData ?? []).map((item) => item.jobTitle.trim()).filter(Boolean))
+    );
+
+    if (contractCodeFilter.length === 0) {
+      return allJobTitles;
+    }
+
+    return allJobTitles.filter((jobTitle) =>
+      contractCodeFilter.every((contractCode) =>
+        jobTitlesByContractCode.get(contractCode)?.has(jobTitle)
+      )
+    );
+  }, [contractCodeFilter, jobTitlesByContractCode, jobsData]);
+
+  const contractOptions = useMemo(() => {
+    if (filteredContractCodes.length === 0) return [];
+
+    return filteredContractCodes
+      .map((code) => ({ label: contractLabelByCode.get(code) ?? code, value: code }))
+      .sort((left, right) =>
+      left.label.localeCompare(right.label, "es", { sensitivity: "base" })
+    );
+  }, [contractLabelByCode, filteredContractCodes]);
+
   const jobOptions = useMemo(() => {
-    if (!jobsData) return [];
-    return Array.from(new Set(jobsData.map(j => j.jobTitle)))
-      .filter(Boolean)
+    if (filteredJobTitles.length === 0) return [];
+
+    return [...filteredJobTitles]
       .sort((left, right) => left.localeCompare(right, "es", { sensitivity: "base" }))
       .map(title => ({ label: title, value: title }));
-  }, [jobsData]);
+  }, [filteredJobTitles]);
+
+  useEffect(() => {
+    const allowedContractCodes = new Set(filteredContractCodes);
+    setContractCodeFilter((current) =>
+      current.filter((contractCode) => allowedContractCodes.has(contractCode))
+    );
+  }, [filteredContractCodes]);
+
+  useEffect(() => {
+    const allowedJobTitles = new Set(filteredJobTitles);
+    setJobTitleFilter((current) => current.filter((jobTitle) => allowedJobTitles.has(jobTitle)));
+  }, [filteredJobTitles]);
 
   const activeViewMeta = useMemo(
     () => BI_VIEWS.find((item) => item.key === activeView) ?? BI_VIEWS[0],
@@ -118,7 +206,7 @@ export function BiDashboardPage() {
         </div>
       </section>
 
-      {activeView === "dotacion" && (
+      {(activeView === "dotacion" || activeView === "reclutamiento") && (
         <>
           <section className="bi-filter-section">
             <div className="info-card">
@@ -183,6 +271,10 @@ export function BiDashboardPage() {
         <div>
           <IncentiveAnalyticsView />
         </div>
+      )}
+
+      {activeView === "reclutamiento" && (
+        <BiRecruitmentAnalyticsView filters={filters} />
       )}
     </PageShell>
   );

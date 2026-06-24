@@ -12,7 +12,8 @@ import {
   fetchBiVacationForecast,
   fetchBiMedicalLeaveByArea,
   fetchBiRecruitmentPipeline,
-  fetchBiHiringVelocity
+  fetchBiHiringVelocity,
+  fetchBiRecruitmentDashboard
 } from "../services/biApi";
 
 const BI_STALE_TIME = 1000 * 60 * 5; // 5 minutos, según lección 48 no ahogar Supabase con polling
@@ -50,7 +51,9 @@ export const BI_QUERY_KEYS = {
   recruitmentPipeline: (filters?: BiFilters) =>
     [...BI_QUERY_KEYS.all, "recruitmentPipeline", normalizeFilters(filters)] as const,
   hiringVelocity: (filters?: BiFilters) =>
-    [...BI_QUERY_KEYS.all, "hiringVelocity", normalizeFilters(filters)] as const
+    [...BI_QUERY_KEYS.all, "hiringVelocity", normalizeFilters(filters)] as const,
+  recruitmentDashboard: (filters?: BiFilters) =>
+    [...BI_QUERY_KEYS.all, "recruitmentDashboard", normalizeFilters(filters)] as const
 };
 
 export function useBiWorkforceOverview(filters?: BiFilters) {
@@ -145,6 +148,14 @@ export function useBiHiringVelocity(filters?: BiFilters) {
   return useQuery({
     queryKey: BI_QUERY_KEYS.hiringVelocity(filters),
     queryFn: () => fetchBiHiringVelocity(filters),
+    staleTime: BI_STALE_TIME
+  });
+}
+
+export function useBiRecruitmentDashboard(filters?: BiFilters) {
+  return useQuery({
+    queryKey: BI_QUERY_KEYS.recruitmentDashboard(filters),
+    queryFn: () => fetchBiRecruitmentDashboard(filters),
     staleTime: BI_STALE_TIME
   });
 }

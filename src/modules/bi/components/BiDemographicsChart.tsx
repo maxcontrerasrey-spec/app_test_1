@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiAgeDistribution, useBiHeadcountByContract } from "../hooks/useBiQueries";
+import { formatBiContractLabel } from "../lib/presentation";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
 import type { BiFilters } from "../types";
@@ -23,18 +24,20 @@ export function BiDemographicsChart({ filters }: BiDemographicsChartProps) {
     }
 
     const ageRanges = ["< 20", "20–29", "30–39", "40–49", "50–59", "60+", "Desconocido"];
-    const contracts = Array.from(new Set(data.map((d) => d.contractCode)));
+    const contracts = Array.from(new Set(data.map((d) => d.areaName || d.contractCode)));
     const lookup = new Map<string, number>();
     const contractLabels = new Map<string, string>();
 
     contractsData?.forEach((item) => {
-      if (!contractLabels.has(item.contractCode)) {
-        contractLabels.set(item.contractCode, item.areaName || item.contractCode);
+      const contractKey = item.areaName || item.contractCode;
+      if (!contractLabels.has(contractKey)) {
+        contractLabels.set(contractKey, formatBiContractLabel(item.areaName || item.contractCode));
       }
     });
 
     data.forEach((item) => {
-      lookup.set(`${item.contractCode}:${item.ageRange}`, item.headcount);
+      const contractKey = item.areaName || item.contractCode;
+      lookup.set(`${contractKey}:${item.ageRange}`, item.headcount);
     });
 
     const seriesData = ageRanges.map((range) => {

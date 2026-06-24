@@ -24,6 +24,7 @@ export interface BukBiHeadcountByContract {
 
 export interface BukBiHeadcountByJobTitle {
   contractCode: string;
+  areaName: string;
   jobTitle: string;
   headcount: number;
 }
@@ -36,6 +37,7 @@ export interface BukBiHeadcountByCity {
 
 export interface BukBiAgeDistribution {
   contractCode: string;
+  areaName: string;
   ageRange: string;
   headcount: number;
 }
@@ -102,4 +104,64 @@ export interface BukBiHiringVelocity {
   monthStart: string;
   yearMonth: string;
   hiredCount: number;
+}
+
+export interface BiLabelValueDatum {
+  label: string;
+  value: number;
+}
+
+export interface BiRecruitmentApprovalStepMetric {
+  stepCode: string;
+  stepName: string;
+  totalItems: number;
+  pendingItems: number;
+  decidedItems: number;
+  avgHours: number | null;
+}
+
+export interface BiRecruitmentApprovalOwnerMetric {
+  label: string;
+  totalItems: number;
+  pendingItems: number;
+  avgHours: number | null;
+}
+
+export interface BiRecruitmentTimelineDatum {
+  bucketStart: string;
+  bucketLabel: string;
+  openedFolios: number;
+  openedCases: number;
+  hiredCandidates: number;
+  submittedMobilities: number;
+  approvedMobilities: number;
+  executedMobilities: number;
+}
+
+export interface BukBiRecruitmentDashboardSummary {
+  openFolios: number;
+  openCases: number;
+  requestedVacancies: number;
+  candidatesInProgress: number;
+  readyCandidates: number;
+  hiredCandidates: number;
+  pendingApprovals: number;
+  avgDaysToHire: number | null;
+  avgApprovalHours: number | null;
+  mobilityRequests: number;
+  mobilityPendingExecution: number;
+  mobilityExecuted: number;
+  mobilityRejected: number;
+  avgMobilityApprovalHours: number | null;
+  avgMobilityExecutionHours: number | null;
+}
+
+export interface BukBiRecruitmentDashboard {
+  summary: BukBiRecruitmentDashboardSummary;
+  casesByStatus: BiLabelValueDatum[];
+  candidatesByStage: BiLabelValueDatum[];
+  approvalsByStep: BiRecruitmentApprovalStepMetric[];
+  approvalOwners: BiRecruitmentApprovalOwnerMetric[];
+  mobilityByStatus: BiLabelValueDatum[];
+  timeline: BiRecruitmentTimelineDatum[];
 }

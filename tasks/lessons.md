@@ -268,6 +268,26 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Checkboxes individuales no bastan cuando el catálogo puede ser grande**. Debe existir, como mínimo, `Seleccionar todos` y `Limpiar` visibles dentro del mismo control para soportar selección total y selección parcial sin fricción.
 - **El resumen del control debe reflejar el estado real**. Si todas las opciones están activas, el campo debe decirlo explícitamente y no seguir viéndose como una selección opaca o accidental.
 
+## 129. En filtros cruzados, las opciones visibles deben depender del estado del otro filtro y sanear selecciones inválidas
+
+- **Si contrato y cargo representan el mismo universo operativo desde dos ejes distintos, no pueden ofrecer combinaciones imposibles entre sí**. Cuando el usuario selecciona uno, el otro debe reducirse automáticamente a las opciones compatibles.
+- **La UI debe autolimpiar selecciones que queden fuera del universo válido tras un cambio cruzado**. Dejar valores incompatibles activos genera dashboards vacíos o estados que parecen bug aunque el backend esté correcto.
+
+## 130. Un KPI visible no debe ocupar espacio si el negocio realmente necesita un ratio más accionable
+
+- **No mantengas una tarjeta de conteo como `Contratos Activos` si la decisión diaria depende más de un ratio como `% de ausentismo`**. En vistas ejecutivas, la prioridad la marca la utilidad operativa, no la facilidad del dato.
+- **Si el numerador y denominador ya existen en el mismo payload filtrado, primero reutiliza ese contrato antes de abrir una RPC nueva**. La solución elegante es derivar el KPI compuesto desde la misma fuente auditada.
+
+## 131. En BI operacional, la dimensión visible del filtro debe coincidir con la dimensión real del backend
+
+- **Si el usuario elige contratos por `area_name`, el backend no puede seguir filtrando por `contract_code` interno y esperar resultados coherentes**. En BUK una misma área operativa puede agrupar múltiples códigos internos, y mezclar ambas dimensiones genera gráficos aparentemente “arbitrarios”.
+- **La compatibilidad correcta es doble**: el filtro principal opera por la dimensión de negocio (`area_name` normalizado), pero las RPCs pueden aceptar además el código técnico como fallback para no romper estados legacy o transiciones parciales.
+
+## 132. Un label operativo puede requerir una versión limpia para UI y otra cruda para matching
+
+- **No uses el mismo string crudo de BUK para todo** si trae sufijos técnicos entre paréntesis. La UI ejecutiva necesita una versión limpia del contrato, pero el filtro y los joins pueden seguir trabajando con la variante completa o normalizada.
+- **La limpieza visual debe centralizarse en una helper reusable**. Si chips, ejes, tooltips y selectores limpian el label cada uno por su cuenta, la vista vuelve a desalinearse al siguiente ajuste.
+
 ## 64. En vistas compuestas, cada submódulo debe colgar de su propio contrato de acceso
 
 - **No reutilices una capability lateral para esconder una pestaña que en realidad responde a acceso modular distinto**. Si `Movilidad Interna` depende de `movilidad_interna`, no puede quedar secuestrada por `candidate_control_access` solo porque comparte pantalla con Reclutamiento.
@@ -1311,3 +1331,15 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Reducir líneas no significa colapsar lógica crítica en bloques más opacos.** La limpieza útil sale de extraer columnas, helpers y estados visuales repetidos a constantes o CSS compartido, dejando más corto el diff mental sin deformar contratos de negocio.
 - **Cuando una tabla operativa repite sorting manual por columna, el siguiente paso no es otro parche local sino una fuente de verdad única para headers y valores ordenables.** Eso evita que futuras columnas queden desalineadas entre label, icono y comparador.
 - **Los `catch (err: any)` y estilos inline con comportamiento ya estabilizado son deuda barata de resolver y alto retorno auditivo.** Quitarlos temprano reduce ruido, mejora tipado y baja la superficie de regressions visuales antes de tocar archivos gigantes de mayor riesgo.
+
+## 125. Si BI mezcla universos de personal y reclutamiento, el filtro contractual debe normalizarse una sola vez y reutilizarse en todas las RPCs del dominio
+
+- **No basta corregir el dropdown visible o el tooltip del gráfico.** Si `dotación` filtra por `area_name` y `reclutamiento` sigue leyendo `contract_name` o `contract_code` con semánticas distintas, el usuario termina viendo datos cruzados aunque la UI parezca coherente.
+- **La forma robusta es alinear todo el dominio analítico al mismo matcher operacional.** En este repo, eso significa usar `normalize_buk_area_name(...)` tanto para workforce como para reclutamiento y movilidad, manteniendo compatibilidad defensiva con códigos legacy cuando todavía existan selecciones viejas.
+- **Las métricas ejecutivas deben heredar el mismo scope operativo que la bandeja transaccional.** Si un gerente o `Operaciones_L1` ve procesos por `user_can_view_hiring_request_process_summary(...)`, la BI de reclutamiento no puede abrir un universo más amplio “por ser dashboard”.
+
+## 126. Si una migración compila pero la RPC falla al ejecutarse, el fix debe salir en una migración incremental y con validación remota explícita
+
+- **Pasar `db push` no demuestra que la función sirva en runtime.** Errores como `FILTER specified, but round is not an aggregate function` aparecen recién al invocar la RPC sobre la base viva, no en el parser superficial de la migración.
+- **Una vez aplicada una migración defectuosa, la corrección auditable no es reescribirla sino agregar una nueva.** Así queda rastro completo del problema, de la causa raíz y del ajuste real desplegado.
+- **Las agregaciones temporales con varios universos no deben resolverse con joins cartesianos “porque después hay `distinct`”.** En dashboards ejecutivos, la solución correcta es subconsulta correlacionada o CTE por bucket para preservar exactitud y evitar deuda de performance silenciosa.
