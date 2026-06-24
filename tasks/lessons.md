@@ -223,6 +223,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No reutilices el grid de otra pestaña dentro de una condición compartida solo porque comparten filtros**. Si `Reclutamiento` y `Dotación` viven bajo el mismo módulo pero responden a fuentes distintas, la condición de render debe separar explícitamente filtros compartidos de contenido específico.
 - **Una métrica ejecutiva sin trazabilidad operativa es peor que una tarjeta vacía**. Si el tablero de reclutamiento debe contrastarse contra bandejas reales, las tarjetas y gráficos tienen que nacer desde esas mismas RPCs operativas (`get_recruitment_control_dashboard_v2`, `get_internal_mobility_requests`) y no desde un agregado BI derivado cuya semántica ya se desalineó del flujo vivo.
 
+## 65. Cuando una RPC operacional se reescribe por una mejora puntual, hay que volver a contrastarla contra el esquema vivo completo
+
+- **No basta con portar la nueva lógica del dominio si las tablas accesorias cambiaron de contrato**. En `submit_internal_mobility_request(...)`, arreglar la resolución del destino por folio no servía de nada si los inserts de aprobaciones y auditoría seguían usando columnas legacy como `request_id`.
+- **Toda reescritura de una RPC productiva debe validar también los writes laterales, no solo el `select` principal**. Si la función toca snapshots, approvals, audit log o side effects como `sync_recruitment_case_status(...)`, cada bloque debe compararse contra la estructura real actual antes de publicar.
+
 ## 64. Si un catálogo one-to-one se normaliza en backend, ninguna resolución downstream puede seguir uniendo solo por `contract_number`
 
 - **Cuando `contracts` permite múltiples filas activas para el mismo `contract_number`, cualquier RPC que resuelva destino por ese campo aislado queda ambigua**. La resolución correcta debe usar también el identificador operativo que distingue la variante real, idealmente `buk_area_name_normalized`, y solo después un fallback controlado como `cost_center_code`.

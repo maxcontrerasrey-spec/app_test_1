@@ -219,6 +219,20 @@
 - [x] Auditar por qué mappings operativos del workbook siguen compartiendo `contract_id` y quedan fuera del selector pese a ser válidos para negocio
 - [x] Versionar una normalización segura del catálogo para asignar contrato dedicado a cada mapping operativo que hoy quedó ambiguo, sin romper folios ni historiales existentes
 
+## Hotfix de drift de esquema en submit de Movilidad Interna
+
+- [x] Auditar el error `request_id of relation internal_mobility_request_approvals does not exist` al enviar una movilidad interna
+- [x] Corregir la RPC `submit_internal_mobility_request(...)` para alinearla con el esquema vivo de aprobaciones y auditoría de movilidad
+- [x] Aplicar la migración en Supabase, validar humo remoto del contrato y dejar documentado el hallazgo
+
+## Resultado de hotfix de drift de esquema en submit de Movilidad Interna
+
+- La causa raíz estaba en la versión vigente de [`submit_internal_mobility_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260623200718_fix_internal_mobility_destination_resolution.sql:138): al rehacer la resolución de destino por folio/cupo, la función volvió a insertar en `internal_mobility_request_approvals (request_id, ...)` y `internal_mobility_request_audit_log (request_id, ...)`, aunque el esquema real usa `internal_mobility_request_id`.
+- Eso dejó una mezcla peligrosa: la mitad de la RPC estaba al día con la lógica de folios de reclutamiento, pero los inserts de aprobaciones y auditoría quedaron copiados desde un contrato previo. El error aparecía exactamente al momento de enviar la solicitud, antes de que la aprobación pudiera siquiera crearse.
+- Se agregó y aplicó la migración [`20260624014344_fix_internal_mobility_submit_approval_schema_drift.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624014344_fix_internal_mobility_submit_approval_schema_drift.sql:1), que reemplaza la función completa por una versión consistente con el esquema vivo: conserva la resolución one-to-one del destino por folio, repone los inserts correctos en `internal_mobility_request_snapshots`, `internal_mobility_request_approvals` y `internal_mobility_request_audit_log`, y vuelve a sincronizar el caso de reclutamiento con `sync_recruitment_case_status(...)`.
+- La publicación remota quedó cerrada con `SUPABASE_DISABLE_TELEMETRY=1 npx --yes supabase db push --linked --include-all` y `SUPABASE_DISABLE_TELEMETRY=1 npx --yes supabase migration list --linked`, confirmando que la migración [`20260624014344`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624014344_fix_internal_mobility_submit_approval_schema_drift.sql:1) ya está alineada entre local y remoto.
+- Como humo remoto adicional se consultó el `pg_get_functiondef(...)` de la función publicada para verificar que ya no existan inserts malos a `request_id` ni en aprobaciones ni en auditoría. Validación local cerrada además con `npm run audit:migrations -- --files supabase/migrations/20260624014344_fix_internal_mobility_submit_approval_schema_drift.sql` y `git diff --check`.
+
 ## Corrección de BI Reclutamiento con fuentes reales
 
 - [x] Auditar por qué la pestaña `Reclutamiento` estaba heredando widgets de `Analítica de Dotación`
