@@ -233,6 +233,27 @@
 - La publicación remota quedó cerrada con `SUPABASE_DISABLE_TELEMETRY=1 npx --yes supabase db push --linked --include-all` y `SUPABASE_DISABLE_TELEMETRY=1 npx --yes supabase migration list --linked`, confirmando que la migración [`20260624014344`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624014344_fix_internal_mobility_submit_approval_schema_drift.sql:1) ya está alineada entre local y remoto.
 - Como humo remoto adicional se consultó el `pg_get_functiondef(...)` de la función publicada para verificar que ya no existan inserts malos a `request_id` ni en aprobaciones ni en auditoría. Validación local cerrada además con `npm run audit:migrations -- --files supabase/migrations/20260624014344_fix_internal_mobility_submit_approval_schema_drift.sql` y `git diff --check`.
 
+## Corrección integral de métricas y performance en Reclutamiento / BI
+
+- [x] Unificar la métrica `Candidatos en curso` en Control de Candidatos, excluyendo contratados, rechazados y retirados
+- [x] Corregir BI Reclutamiento para que `Folios abiertos` excluya casos cubiertos, cerrados y cancelados sin depender de listas truncadas
+- [x] Reemplazar en BI Reclutamiento los filtros `Contrato / Cargo` por `Gerencia / Contrato`, con catálogos coherentes y columnas equitativas
+- [x] Homologar el tamaño de las tarjetas, ordenar el bloque de Movilidad Interna y retirar los tiempos de aprobación/ejecución solicitados
+- [x] Sustituir la agregación pesada en React por una única RPC filtrada y agregada en PostgreSQL, preservando el alcance por rol y CECO
+- [x] Auditar y optimizar la carga de BI y los detalles expandibles, evitando polling, payloads duplicados y consultas N+1 innecesarias
+- [x] Aplicar/versionar la migración en Supabase y validar cifras reales, permisos, índices, tipado, build y regresiones visuales
+
+## Resultado de corrección integral de métricas y performance en Reclutamiento / BI
+
+- La causa de `60` folios no era visual: BI agregaba en React sobre `active_cases`, una lista operacional truncada a 60 filas después de mezclar casos activos con solicitudes cerradas/rechazadas. La consulta remota confirmó `54` folios realmente abiertos y la nueva RPC entrega ese mismo valor.
+- [`get_bi_recruitment_dashboard(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624021807_optimize_recruitment_bi_metrics_and_filters.sql:5) quedó como fuente única de BI Reclutamiento. Calcula stocks completos en PostgreSQL, preserva el scope por rol/CECO, devuelve solo agregados y expone filtros encadenados de `Gerencia` y `Contrato`.
+- La métrica `Candidatos en curso` quedó unificada: incluye cualquier etapa vigente, incluido `ready_for_hire`, y excluye solo `hired`, `rejected` y `withdrawn` dentro de folios abiertos. La comprobación productiva devolvió `46`.
+- La vista de BI ahora muestra seis tarjetas principales de tamaño homogéneo y un segundo bloque con `Movilidades Internas`, `Movilidades Ejecutadas`, `Pend. Ejecución RRHH` y `Pendiente de Aprobación`. Se eliminaron `T. Aprobación MI` y `T. Ejecución RRHH`.
+- El widget de folios de Inicio dejó de lanzar una segunda carga completa de Control de Contrataciones. Reutiliza `operational_summary_data` del bundle de Inicio y las expansiones comparten la caché de detalle de TanStack Query.
+- El polling de respaldo de Reclutamiento y Movilidad pasó de 30 segundos a 5 minutos porque ambas superficies ya invalidan por Realtime. Esto reduce solicitudes periódicas simultáneas sin perder actualización operacional.
+- Se agregaron seis índices específicos para estados activos, etapas de candidatos y fechas/estados de movilidad. En producción, la nueva RPC ejecutó en aproximadamente `33 ms`, frente a `68 ms` de `get_recruitment_control_dashboard_v2()` sin sumar la segunda llamada de movilidad que antes requería BI.
+- Validación cerrada con auditoría canónica de migraciones, `npx tsc -b --pretty false`, `npm run build:frontend-check`, `git diff --check`, humo remoto de la RPC con `54` folios / `46` candidatos, prueba de filtro Zona II (`23` folios y `12` contratos), verificación de índices y alineación local/remota de la migración `20260624021807`.
+
 ## Corrección de BI Reclutamiento con fuentes reales
 
 - [x] Auditar por qué la pestaña `Reclutamiento` estaba heredando widgets de `Analítica de Dotación`
@@ -3156,3 +3177,22 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - La primera migración [`20260624001734_add_bi_recruitment_dashboard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624001734_add_bi_recruitment_dashboard.sql:1) introdujo la nueva RPC BI y además alineó `get_bi_recruitment_pipeline(...)` y `get_bi_hiring_velocity(...)` para usar el mismo matching operacional por `normalize_buk_area_name(...)` y el mismo scope visible del proceso de contratación.
 - La validación runtime encontró una deriva real en agregaciones con `FILTER`, por lo que se corrigió de forma auditable con la migración incremental [`20260624002636_fix_bi_recruitment_dashboard_runtime.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260624002636_fix_bi_recruitment_dashboard_runtime.sql:1). Esa segunda pasada también reemplazó un timeline cartesiano por subconsultas semanales correlacionadas para no inflar conteos ni degradar performance.
 - Quedó verificado en Supabase remoto que `get_bi_recruitment_dashboard(...)` devuelve payload real y que `get_bi_recruitment_pipeline(...)` sigue respondiendo bajo el mismo usuario autenticado de prueba (`set_config('request.jwt.claim.sub', ...)`), además de `supabase migration list --linked` sin deriva entre local y remoto.
+
+## Optimización y corrección de métricas BI/Reclutamiento del 23-06-2026
+
+- [x] Incorporar `Candidatos en curso` en Control de Candidatos y Dashboard, excluyendo descartados, rechazados, contratados y folios cerrados.
+- [x] Reemplazar los filtros de Reclutamiento BI por `Gerencias` y `Contratos`, con opciones dependientes calculadas en backend.
+- [x] Corregir el universo de folios abiertos y KPIs para que no dependa de listas operacionales truncadas.
+- [x] Igualar dimensiones de tarjetas, ordenar las métricas de movilidad y retirar los dos tiempos solicitados.
+- [x] Sustituir la agregación cliente de reclutamiento y movilidad por una RPC agregada, autorizada e indexada.
+- [x] Reutilizar el caché TanStack Query en expansiones y reducir polling redundante cuando existe Realtime.
+- [x] Aplicar y versionar las migraciones, ejecutar pruebas remotas, typecheck, build, auditor de migraciones y revisión de diff.
+
+## Resultado de optimización y corrección de métricas BI/Reclutamiento
+
+- `get_bi_recruitment_dashboard(...)` ahora agrega el universo completo autorizado en PostgreSQL y devuelve `54` folios abiertos y `46` candidatos en curso; la cifra anterior de `60` provenía de mezclar estados cerrados/rechazados dentro de una lista limitada.
+- La vista BI de Reclutamiento carga una sola respuesta agregada, con filtros por gerencia y contrato, en lugar de descargar candidatos, folios y movilidades con datos personales para agregarlos en el navegador.
+- Las tarjetas quedaron separadas en seis KPIs primarios y cuatro de movilidad, con altura uniforme y el orden solicitado: total, ejecutadas, pendientes RRHH y pendientes de aprobación.
+- El dashboard de Inicio reutiliza su resumen operacional para los contadores y las expansiones comparten el caché de detalle de React Query; los pollings de respaldo pasan de 30 segundos a 5 minutos porque ambos dominios ya usan Realtime.
+- La migración `20260624021807_optimize_recruitment_bi_metrics_and_filters.sql` quedó aplicada y alineada en Supabase. El smoke remoto confirmó los valores productivos y un `EXPLAIN ANALYZE` redujo la consulta BI de aproximadamente `68 ms / 4.747 shared hits`, más una segunda llamada de movilidad, a aproximadamente `33 ms / 2.792 shared hits` en una sola RPC.
+- La auditoría SQL detectó además contratos legacy previos a esta entrega. Se versionó `20260624023707_repair_legacy_sql_contracts_found_by_lint.sql` para retirar dos RPCs obsoletas y restaurar `user_contracts`; persiste como hallazgo independiente que Operaciones fue incorporado sin versionar las tablas `base_services`, `equipment` y `service_entries`, por lo que no se inventaron datos maestros para ocultarlo.

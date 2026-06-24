@@ -87,7 +87,7 @@ export interface BaseServiceQueryRow {
 export interface UserContractQueryRow {
   contracts: Array<{
     code: string | null;
-    display_name: string | null;
+    contract_name: string | null;
   }> | null;
 }
 

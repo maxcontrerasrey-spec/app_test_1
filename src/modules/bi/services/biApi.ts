@@ -12,7 +12,10 @@ import type {
   BukBiVacationForecast,
   BukBiMedicalLeaveByArea,
   BukBiRecruitmentPipeline,
-  BiLabelValueDatum
+  BiLabelValueDatum,
+  BiRecruitmentDashboard,
+  BiRecruitmentTimelineDatum,
+  BiRecruitmentVacancyByContractDatum
 } from "../types";
 
 function getSupabaseClient() {
@@ -30,7 +33,8 @@ function normalizeBiFilters(filters?: BiFilters) {
   return {
     periodCode,
     contractCodes,
-    jobTitles
+    jobTitles,
+    managementNames: filters?.managementNames?.map((value) => value.trim()).filter(Boolean) ?? []
   };
 }
 
@@ -41,6 +45,65 @@ function buildBiRpcParams(filters?: BiFilters) {
     p_period_code: normalized.periodCode ?? null,
     p_contract_codes: normalized.contractCodes.length > 0 ? normalized.contractCodes : null,
     p_job_titles: normalized.jobTitles.length > 0 ? normalized.jobTitles : null
+  };
+}
+
+function mapVacancyByContract(value: unknown): BiRecruitmentVacancyByContractDatum {
+  const row = (value ?? {}) as Record<string, unknown>;
+  return {
+    label: String(row.label ?? ""),
+    requested: Number(row.requested ?? 0),
+    filled: Number(row.filled ?? 0)
+  };
+}
+
+function mapRecruitmentTimeline(value: unknown): BiRecruitmentTimelineDatum {
+  const row = (value ?? {}) as Record<string, unknown>;
+  return {
+    bucketStart: String(row.bucketStart ?? ""),
+    bucketLabel: String(row.bucketLabel ?? ""),
+    openedFolios: Number(row.openedFolios ?? 0),
+    readyCandidates: Number(row.readyCandidates ?? 0),
+    hiredCandidates: Number(row.hiredCandidates ?? 0),
+    executedMobilities: Number(row.executedMobilities ?? 0)
+  };
+}
+
+export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboard {
+  const row = (payload ?? {}) as Record<string, unknown>;
+  const summary = (row.summary ?? {}) as Record<string, unknown>;
+  const filterOptions = (row.filterOptions ?? {}) as Record<string, unknown>;
+
+  return {
+    availableManagements: Array.isArray(filterOptions.managements)
+      ? filterOptions.managements.map(String)
+      : [],
+    availableContracts: Array.isArray(filterOptions.contracts)
+      ? filterOptions.contracts.map(String)
+      : [],
+    summary: {
+      openFolios: Number(summary.openFolios ?? 0),
+      openCases: Number(summary.openCases ?? 0),
+      requestedVacancies: Number(summary.requestedVacancies ?? 0),
+      filledVacancies: Number(summary.filledVacancies ?? 0),
+      candidatesInProgress: Number(summary.candidatesInProgress ?? 0),
+      readyCandidates: Number(summary.readyCandidates ?? 0),
+      mobilityRequests: Number(summary.mobilityRequests ?? 0),
+      mobilityPendingExecution: Number(summary.mobilityPendingExecution ?? 0),
+      mobilityExecuted: Number(summary.mobilityExecuted ?? 0),
+      mobilityPendingApproval: Number(summary.mobilityPendingApproval ?? 0)
+    },
+    casesByStatus: Array.isArray(row.casesByStatus) ? row.casesByStatus.map(mapLabelValueDatum) : [],
+    candidatesByStage: Array.isArray(row.candidatesByStage)
+      ? row.candidatesByStage.map(mapLabelValueDatum)
+      : [],
+    vacanciesByContract: Array.isArray(row.vacanciesByContract)
+      ? row.vacanciesByContract.map(mapVacancyByContract)
+      : [],
+    mobilityByStatus: Array.isArray(row.mobilityByStatus)
+      ? row.mobilityByStatus.map(mapLabelValueDatum)
+      : [],
+    timeline: Array.isArray(row.timeline) ? row.timeline.map(mapRecruitmentTimeline) : []
   };
 }
 
@@ -266,4 +329,18 @@ export async function fetchBiRecruitmentPipeline(filters?: BiFilters): Promise<B
   const { data, error } = await client.rpc("get_bi_recruitment_pipeline", buildBiRpcParams(filters));
   if (error) throw error;
   return (data || []).map((row: Record<string, unknown>) => mapRecruitmentPipeline(row));
+}
+
+export async function fetchBiRecruitmentDashboard(filters?: BiFilters): Promise<BiRecruitmentDashboard> {
+  const client = getSupabaseClient();
+  const normalized = normalizeBiFilters(filters);
+  const { data, error } = await client.rpc("get_bi_recruitment_dashboard", {
+    p_period_code: normalized.periodCode ?? null,
+    p_management_names:
+      normalized.managementNames.length > 0 ? normalized.managementNames : null,
+    p_contract_names: normalized.contractCodes.length > 0 ? normalized.contractCodes : null
+  });
+
+  if (error) throw error;
+  return mapRecruitmentDashboard(data);
 }

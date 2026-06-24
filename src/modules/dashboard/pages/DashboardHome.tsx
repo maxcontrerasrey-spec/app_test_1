@@ -63,7 +63,13 @@ export function DashboardHome() {
         />
         <DashboardGrid
           isLoading={isLoading}
-          dashboardData={{ tasksData, approvalTrackingData, activeFoliosData, birthdaysData }}
+          dashboardData={{
+            tasksData,
+            approvalTrackingData,
+            activeFoliosData,
+            birthdaysData,
+            operationalSummaryData
+          }}
           onRefresh={() => {
             void refresh();
           }}

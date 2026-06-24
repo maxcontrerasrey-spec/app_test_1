@@ -134,6 +134,8 @@ export interface DashboardOperationalSummary {
     requestedVacancies: number;
     inProgressCandidates: number;
     hiredCandidates: number;
+    readyToHireCases: number;
+    filledCases: number;
   };
   workforce: {
     totalEmployees: number;

@@ -52,6 +52,8 @@ export const dashboardService = {
           requested_vacancies?: number | null;
           in_progress_candidates?: number | null;
           hired_candidates?: number | null;
+          ready_to_hire_cases?: number | null;
+          filled_cases?: number | null;
         } | null;
         workforce?: {
           total_employees?: number | null;
@@ -79,7 +81,9 @@ export const dashboardService = {
               openProcesses: payload.operational_summary_data.recruitment?.open_processes ?? 0,
               requestedVacancies: payload.operational_summary_data.recruitment?.requested_vacancies ?? 0,
               inProgressCandidates: payload.operational_summary_data.recruitment?.in_progress_candidates ?? 0,
-              hiredCandidates: payload.operational_summary_data.recruitment?.hired_candidates ?? 0
+              hiredCandidates: payload.operational_summary_data.recruitment?.hired_candidates ?? 0,
+              readyToHireCases: payload.operational_summary_data.recruitment?.ready_to_hire_cases ?? 0,
+              filledCases: payload.operational_summary_data.recruitment?.filled_cases ?? 0
             },
             workforce: {
               totalEmployees: payload.operational_summary_data.workforce?.total_employees ?? 0,

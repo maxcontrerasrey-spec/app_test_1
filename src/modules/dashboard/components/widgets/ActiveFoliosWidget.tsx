@@ -1,14 +1,11 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { TextField } from "../../../../shared/ui";
 import { getDaysSince } from "../../../../shared/lib/date";
-import {
-  fetchRecruitmentCaseDetail,
-  toRecruitmentCaseStatusLabel,
-  type RecruitmentCaseDetail
-} from "../../../recruitment/services/hiringControl";
+import { toRecruitmentCaseStatusLabel, type RecruitmentCaseDetail } from "../../../recruitment/services/hiringControl";
+import { getRecruitmentCaseDetailQueryOptions } from "../../../recruitment/hooks/useRecruitmentQueries";
 import type { DashboardActiveFolioItem, DashboardDataBundle } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
-import { useRecruitmentControlDashboard } from "../../../recruitment/hooks/useRecruitmentQueries";
 
 type ActiveFoliosWidgetProps = {
   title: string;
@@ -36,6 +33,7 @@ function formatDateTimeValue(dateStr: string | null | undefined) {
 }
 
 export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetProps) {
+  const queryClient = useQueryClient();
   const folios = dashboardData?.activeFoliosData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
@@ -43,12 +41,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail | null>>({});
   const [caseDetailErrors, setCaseDetailErrors] = useState<Record<string, string | null>>({});
 
-  const dashboardQuery = useRecruitmentControlDashboard();
-  const summary = dashboardQuery.data?.summary ?? {
-    active_cases: 0,
-    ready_to_hire_cases: 0,
-    filled_cases: 0
-  };
+  const recruitmentSummary = dashboardData?.operationalSummaryData?.recruitment;
 
   const [page, setPage] = useState(0);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
@@ -120,15 +113,16 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     }
 
     setIsLoadingDetail(true);
-    const { data, error } = await fetchRecruitmentCaseDetail(caseId);
-    setCaseDetailsCache((current) => ({
-      ...current,
-      [caseId]: data
-    }));
-    setCaseDetailErrors((current) => ({
-      ...current,
-      [caseId]: error
-    }));
+    try {
+      const data = await queryClient.fetchQuery(getRecruitmentCaseDetailQueryOptions(caseId));
+      setCaseDetailsCache((current) => ({ ...current, [caseId]: data }));
+      setCaseDetailErrors((current) => ({ ...current, [caseId]: null }));
+    } catch (error) {
+      setCaseDetailErrors((current) => ({
+        ...current,
+        [caseId]: error instanceof Error ? error.message : "No fue posible cargar el detalle."
+      }));
+    }
     setIsLoadingDetail(false);
   };
 
@@ -149,15 +143,19 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
         <div className="tracking-kpi-row dashboard-folios-kpis">
           <article className="tracking-kpi-card tracking-kpi-card-pendiente dashboard-folios-kpi-card">
             <span className="micro-label">Folios activos en búsqueda</span>
-            <strong>{summary.active_cases}</strong>
+            <strong>{recruitmentSummary?.openProcesses ?? 0}</strong>
+          </article>
+          <article className="tracking-kpi-card tracking-kpi-card-en-proceso dashboard-folios-kpi-card">
+            <span className="micro-label">Candidatos en curso</span>
+            <strong>{recruitmentSummary?.inProgressCandidates ?? 0}</strong>
           </article>
           <article className="tracking-kpi-card tracking-kpi-card-en-proceso dashboard-folios-kpi-card">
             <span className="micro-label">Con candidato listo</span>
-            <strong>{summary.ready_to_hire_cases}</strong>
+            <strong>{recruitmentSummary?.readyToHireCases ?? 0}</strong>
           </article>
           <article className="tracking-kpi-card tracking-kpi-card-generado dashboard-folios-kpi-card">
             <span className="micro-label">Casos cubiertos</span>
-            <strong>{summary.filled_cases}</strong>
+            <strong>{recruitmentSummary?.filledCases ?? 0}</strong>
           </article>
         </div>
       </div>

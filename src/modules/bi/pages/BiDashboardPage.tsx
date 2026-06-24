@@ -10,8 +10,11 @@ import { BiRecruitmentFunnel } from "../components/BiRecruitmentFunnel";
 import { BiRecruitmentAnalyticsView } from "../components/BiRecruitmentAnalyticsView";
 import { IncentiveAnalyticsView } from "../../incentives/components/IncentiveAnalyticsView";
 import { TextField, MultiSelectField } from "../../../shared/ui";
-import { useBiHeadcountByContract, useBiHeadcountByJobTitle } from "../hooks/useBiQueries";
-import { useBiRecruitmentOperationalAnalytics } from "../hooks/useBiRecruitmentOperationalAnalytics";
+import {
+  useBiHeadcountByContract,
+  useBiHeadcountByJobTitle,
+  useBiRecruitmentDashboard
+} from "../hooks/useBiQueries";
 import { formatBiContractLabel } from "../lib/presentation";
 import type { BiFilters } from "../types";
 import "../styles/bi.css";
@@ -54,23 +57,41 @@ export function BiDashboardPage() {
   const activeView = isBiView(view) ? view : "dotacion";
 
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
+  const [debouncedPeriodCode, setDebouncedPeriodCode] = useState("");
   const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
   const [jobTitleFilter, setJobTitleFilter] = useState<string[]>([]);
-  const filters = useMemo<BiFilters>(
+  const [managementFilter, setManagementFilter] = useState<string[]>([]);
+  const dotacionFilters = useMemo<BiFilters>(
     () => ({
-      periodCode: periodCodeFilter.trim() || undefined,
+      periodCode: debouncedPeriodCode || undefined,
       contractCodes: contractCodeFilter,
       jobTitles: jobTitleFilter
     }),
-    [contractCodeFilter, jobTitleFilter, periodCodeFilter]
+    [contractCodeFilter, debouncedPeriodCode, jobTitleFilter]
+  );
+  const recruitmentFilters = useMemo<BiFilters>(
+    () => ({
+      periodCode: debouncedPeriodCode || undefined,
+      managementNames: managementFilter,
+      contractCodes: contractCodeFilter
+    }),
+    [contractCodeFilter, debouncedPeriodCode, managementFilter]
   );
 
-  const { data: contractsData } = useBiHeadcountByContract();
-  const { data: jobsData } = useBiHeadcountByJobTitle();
-  const recruitmentAnalytics = useBiRecruitmentOperationalAnalytics(
-    filters,
+  const { data: contractsData } = useBiHeadcountByContract(undefined, activeView === "dotacion");
+  const { data: jobsData } = useBiHeadcountByJobTitle(undefined, activeView === "dotacion");
+  const recruitmentAnalytics = useBiRecruitmentDashboard(
+    recruitmentFilters,
     activeView === "reclutamiento"
   );
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(
+      () => setDebouncedPeriodCode(periodCodeFilter.trim()),
+      400
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [periodCodeFilter]);
 
   const jobTitlesByContractCode = useMemo(() => {
     const lookup = new Map<string, Set<string>>();
@@ -178,18 +199,19 @@ export function BiDashboardPage() {
     [recruitmentAnalytics.data?.availableContracts]
   );
 
-  const recruitmentJobOptions = useMemo(
+  const recruitmentManagementOptions = useMemo(
     () =>
-      (recruitmentAnalytics.data?.availableJobTitles ?? []).map((item) => ({
+      (recruitmentAnalytics.data?.availableManagements ?? []).map((item) => ({
         label: item,
         value: item
       })),
-    [recruitmentAnalytics.data?.availableJobTitles]
+    [recruitmentAnalytics.data?.availableManagements]
   );
 
   const contractOptions =
     activeView === "reclutamiento" ? recruitmentContractOptions : dotacionContractOptions;
-  const jobOptions = activeView === "reclutamiento" ? recruitmentJobOptions : dotacionJobOptions;
+  const secondaryOptions =
+    activeView === "reclutamiento" ? recruitmentManagementOptions : dotacionJobOptions;
 
   useEffect(() => {
     if (activeView === "reclutamiento" && recruitmentAnalytics.isLoading) {
@@ -207,9 +229,13 @@ export function BiDashboardPage() {
       return;
     }
 
-    const allowedJobTitles = new Set(jobOptions.map((item) => item.value));
-    setJobTitleFilter((current) => current.filter((jobTitle) => allowedJobTitles.has(jobTitle)));
-  }, [activeView, jobOptions, recruitmentAnalytics.isLoading]);
+    const allowedValues = new Set(secondaryOptions.map((item) => item.value));
+    if (activeView === "reclutamiento") {
+      setManagementFilter((current) => current.filter((value) => allowedValues.has(value)));
+      return;
+    }
+    setJobTitleFilter((current) => current.filter((value) => allowedValues.has(value)));
+  }, [activeView, recruitmentAnalytics.isLoading, secondaryOptions]);
 
   const activeViewMeta = useMemo(
     () => BI_VIEWS.find((item) => item.key === activeView) ?? BI_VIEWS[0],
@@ -256,21 +282,53 @@ export function BiDashboardPage() {
                 />
 
                 <MultiSelectField
-                  id="hr-bi-analytics-contract"
-                  label="Contratos"
-                  options={contractOptions}
-                  value={contractCodeFilter}
-                  onChange={setContractCodeFilter}
-                  placeholder="Todos los contratos"
+                  id={
+                    activeView === "reclutamiento"
+                      ? "hr-bi-analytics-management"
+                      : "hr-bi-analytics-contract"
+                  }
+                  label={activeView === "reclutamiento" ? "Gerencias" : "Contratos"}
+                  options={
+                    activeView === "reclutamiento" ? secondaryOptions : contractOptions
+                  }
+                  value={
+                    activeView === "reclutamiento" ? managementFilter : contractCodeFilter
+                  }
+                  onChange={
+                    activeView === "reclutamiento"
+                      ? setManagementFilter
+                      : setContractCodeFilter
+                  }
+                  placeholder={
+                    activeView === "reclutamiento"
+                      ? "Todas las gerencias"
+                      : "Todos los contratos"
+                  }
                 />
 
                 <MultiSelectField
-                  id="hr-bi-analytics-job"
-                  label="Cargos"
-                  options={jobOptions}
-                  value={jobTitleFilter}
-                  onChange={setJobTitleFilter}
-                  placeholder="Todos los cargos"
+                  id={
+                    activeView === "reclutamiento"
+                      ? "hr-bi-analytics-contract"
+                      : "hr-bi-analytics-job"
+                  }
+                  label={activeView === "reclutamiento" ? "Contratos" : "Cargos"}
+                  options={
+                    activeView === "reclutamiento" ? contractOptions : secondaryOptions
+                  }
+                  value={
+                    activeView === "reclutamiento" ? contractCodeFilter : jobTitleFilter
+                  }
+                  onChange={
+                    activeView === "reclutamiento"
+                      ? setContractCodeFilter
+                      : setJobTitleFilter
+                  }
+                  placeholder={
+                    activeView === "reclutamiento"
+                      ? "Todos los contratos"
+                      : "Todos los cargos"
+                  }
                 />
 
                 <button
@@ -280,6 +338,7 @@ export function BiDashboardPage() {
                     setPeriodCodeFilter("");
                     setContractCodeFilter([]);
                     setJobTitleFilter([]);
+                    setManagementFilter([]);
                   }}
                   className="bi-filter-reset-button"
                 >
@@ -293,14 +352,14 @@ export function BiDashboardPage() {
 
       {activeView === "dotacion" && (
         <div className="bi-dashboard-grid">
-          <BiOverviewCards filters={filters} />
-          <BiHeadcountCharts filters={filters} />
-          <BiPresenceAndExceptions filters={filters} />
+          <BiOverviewCards filters={dotacionFilters} />
+          <BiHeadcountCharts filters={dotacionFilters} />
+          <BiPresenceAndExceptions filters={dotacionFilters} />
           <div className="bi-chart-row">
-            <BiDemographicsChart filters={filters} />
-            <BiRecruitmentFunnel filters={filters} />
+            <BiDemographicsChart filters={dotacionFilters} />
+            <BiRecruitmentFunnel filters={dotacionFilters} />
           </div>
-          <BiTrendingExceptionsChart filters={filters} />
+          <BiTrendingExceptionsChart filters={dotacionFilters} />
         </div>
       )}
 
@@ -312,7 +371,7 @@ export function BiDashboardPage() {
 
       {activeView === "reclutamiento" && (
         <BiRecruitmentAnalyticsView
-          dashboard={recruitmentAnalytics.data}
+          dashboard={recruitmentAnalytics.data ?? null}
           isLoading={recruitmentAnalytics.isLoading}
           isError={recruitmentAnalytics.isError}
         />

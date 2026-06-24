@@ -26,7 +26,7 @@ export function getRecruitmentControlDashboardQueryOptions() {
     },
     staleTime: RECRUITMENT_DASHBOARD_STALE_TIME_MS,
     gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
-    refetchInterval: 30_000,
+    refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true
   };

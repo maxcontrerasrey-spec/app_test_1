@@ -2,27 +2,16 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
-import type { BiRecruitmentOperationalAnalytics } from "../types";
+import type { BiRecruitmentDashboard } from "../types";
 
 type BiRecruitmentAnalyticsViewProps = {
-  dashboard: BiRecruitmentOperationalAnalytics | null;
+  dashboard: BiRecruitmentDashboard | null;
   isLoading: boolean;
   isError: boolean;
 };
 
 function formatMetricValue(value: number) {
   return value.toLocaleString("es-CL");
-}
-
-function formatDuration(value: number | null | undefined) {
-  if (value == null) {
-    return "Sin dato";
-  }
-
-  return `${value.toLocaleString("es-CL", {
-    minimumFractionDigits: value % 1 === 0 ? 0 : 1,
-    maximumFractionDigits: 1
-  })} h`;
 }
 
 export function BiRecruitmentAnalyticsView({
@@ -36,25 +25,27 @@ export function BiRecruitmentAnalyticsView({
   const textColor = isDark ? "#E2E8F0" : "#1E293B";
   const axisColor = isDark ? "rgba(148, 163, 184, 0.22)" : "rgba(148, 163, 184, 0.28)";
 
-  const summaryCards = useMemo(() => {
+  const summaryCardGroups = useMemo(() => {
     if (!dashboard) {
-      return [];
+      return { primary: [], mobility: [] };
     }
 
-    return [
-      { title: "Folios Abiertos", value: formatMetricValue(dashboard.summary.openFolios), type: "pendiente" },
-      { title: "Casos Abiertos", value: formatMetricValue(dashboard.summary.openCases), type: "en-proceso" },
-      { title: "Cupos Solicitados", value: formatMetricValue(dashboard.summary.requestedVacancies), type: "generado" },
-      { title: "Cupos Cubiertos", value: formatMetricValue(dashboard.summary.filledVacancies), type: "generado" },
-      { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "en-proceso" },
-      { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "pendiente" },
-      { title: "Pendientes de Aprobación", value: formatMetricValue(dashboard.summary.pendingApprovals), type: "error" },
-      { title: "Movilidades Internas", value: formatMetricValue(dashboard.summary.mobilityRequests), type: "en-proceso" },
-      { title: "Pend. Ejecución RRHH", value: formatMetricValue(dashboard.summary.mobilityPendingExecution), type: "error" },
-      { title: "Movilidades Ejecutadas", value: formatMetricValue(dashboard.summary.mobilityExecuted), type: "generado" },
-      { title: "T. Aprobación MI", value: formatDuration(dashboard.summary.avgMobilityApprovalHours), type: "pendiente" },
-      { title: "T. Ejecución RRHH", value: formatDuration(dashboard.summary.avgMobilityExecutionHours), type: "pendiente" }
-    ];
+    return {
+      primary: [
+        { title: "Folios Abiertos", value: formatMetricValue(dashboard.summary.openFolios), type: "pendiente" },
+        { title: "Casos Abiertos", value: formatMetricValue(dashboard.summary.openCases), type: "en-proceso" },
+        { title: "Cupos Solicitados", value: formatMetricValue(dashboard.summary.requestedVacancies), type: "generado" },
+        { title: "Cupos Cubiertos", value: formatMetricValue(dashboard.summary.filledVacancies), type: "generado" },
+        { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "en-proceso" },
+        { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "pendiente" }
+      ],
+      mobility: [
+        { title: "Movilidades Internas", value: formatMetricValue(dashboard.summary.mobilityRequests), type: "en-proceso" },
+        { title: "Movilidades Ejecutadas", value: formatMetricValue(dashboard.summary.mobilityExecuted), type: "generado" },
+        { title: "Pend. Ejecución RRHH", value: formatMetricValue(dashboard.summary.mobilityPendingExecution), type: "error" },
+        { title: "Pendiente de Aprobación", value: formatMetricValue(dashboard.summary.mobilityPendingApproval), type: "pendiente" }
+      ]
+    };
   }, [dashboard]);
 
   const casesByStatusOption = useMemo<EChartsOption | null>(() => {
@@ -224,8 +215,20 @@ export function BiRecruitmentAnalyticsView({
 
   return (
     <div className="bi-dashboard-grid">
-      <div className="tracking-kpi-row bi-overview-kpi-row">
-        {summaryCards.map((card) => (
+      <div className="tracking-kpi-row bi-recruitment-kpi-row">
+        {summaryCardGroups.primary.map((card) => (
+          <article
+            key={card.title}
+            className={`tracking-kpi-card tracking-kpi-card-${card.type} bi-overview-kpi-card`}
+          >
+            <span>{card.title}</span>
+            <strong>{card.value}</strong>
+          </article>
+        ))}
+      </div>
+
+      <div className="tracking-kpi-row bi-recruitment-kpi-row">
+        {summaryCardGroups.mobility.map((card) => (
           <article
             key={card.title}
             className={`tracking-kpi-card tracking-kpi-card-${card.type} bi-overview-kpi-card`}

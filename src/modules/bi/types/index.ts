@@ -2,6 +2,7 @@ export interface BiFilters {
   periodCode?: string;
   contractCodes?: string[];
   jobTitles?: string[];
+  managementNames?: string[];
 }
 
 export interface BukBiWorkforceOverview {
@@ -110,38 +111,35 @@ export interface BiRecruitmentVacancyByContractDatum {
   filled: number;
 }
 
-export interface BiRecruitmentOperationalSummary {
+export interface BiRecruitmentDashboardSummary {
   openFolios: number;
   openCases: number;
   requestedVacancies: number;
   filledVacancies: number;
   candidatesInProgress: number;
   readyCandidates: number;
-  pendingApprovals: number;
   mobilityRequests: number;
   mobilityPendingExecution: number;
   mobilityExecuted: number;
-  avgMobilityApprovalHours: number | null;
-  avgMobilityExecutionHours: number | null;
+  mobilityPendingApproval: number;
 }
 
-export interface BiRecruitmentOperationalTimelineDatum {
+export interface BiRecruitmentTimelineDatum {
   bucketStart: string;
   bucketLabel: string;
   openedFolios: number;
   readyCandidates: number;
   hiredCandidates: number;
-  submittedMobilities: number;
   executedMobilities: number;
 }
 
-export interface BiRecruitmentOperationalAnalytics {
+export interface BiRecruitmentDashboard {
+  availableManagements: string[];
   availableContracts: string[];
-  availableJobTitles: string[];
-  summary: BiRecruitmentOperationalSummary;
+  summary: BiRecruitmentDashboardSummary;
   casesByStatus: BiLabelValueDatum[];
   candidatesByStage: BiLabelValueDatum[];
   vacanciesByContract: BiRecruitmentVacancyByContractDatum[];
   mobilityByStatus: BiLabelValueDatum[];
-  timeline: BiRecruitmentOperationalTimelineDatum[];
+  timeline: BiRecruitmentTimelineDatum[];
 }

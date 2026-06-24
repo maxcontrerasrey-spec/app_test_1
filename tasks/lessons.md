@@ -278,6 +278,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Checkboxes individuales no bastan cuando el catálogo puede ser grande**. Debe existir, como mínimo, `Seleccionar todos` y `Limpiar` visibles dentro del mismo control para soportar selección total y selección parcial sin fricción.
 - **El resumen del control debe reflejar el estado real**. Si todas las opciones están activas, el campo debe decirlo explícitamente y no seguir viéndose como una selección opaca o accidental.
 
+## 129. Una bandeja paginada o limitada nunca debe ser la fuente de un KPI ejecutivo
+
+- **No agregues métricas de BI en React desde payloads operativos con `LIMIT`**. Una lista diseñada para renderizar 20, 60 o 200 registros puede ser correcta como bandeja y, al mismo tiempo, producir totales falsos cuando se usa como universo estadístico.
+- **Los KPI deben calcularse en una RPC agregada sobre el universo completo autorizado**. La función debe aplicar el mismo scope por rol/CECO, devolver solo dimensiones y métricas necesarias, y dejar las listas detalladas para sus flujos operativos.
+- **Las métricas de stock y de flujo no comparten necesariamente la misma fecha**. Un folio actualmente abierto no desaparece por haber sido creado en otro mes; el período debe aplicarse a eventos temporales cuando corresponda y no recortar silenciosamente el stock vigente.
+
 ## 129. En filtros cruzados, las opciones visibles deben depender del estado del otro filtro y sanear selecciones inválidas
 
 - **Si contrato y cargo representan el mismo universo operativo desde dos ejes distintos, no pueden ofrecer combinaciones imposibles entre sí**. Cuando el usuario selecciona uno, el otro debe reducirse automáticamente a las opciones compatibles.
@@ -1353,3 +1359,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Pasar `db push` no demuestra que la función sirva en runtime.** Errores como `FILTER specified, but round is not an aggregate function` aparecen recién al invocar la RPC sobre la base viva, no en el parser superficial de la migración.
 - **Una vez aplicada una migración defectuosa, la corrección auditable no es reescribirla sino agregar una nueva.** Así queda rastro completo del problema, de la causa raíz y del ajuste real desplegado.
 - **Las agregaciones temporales con varios universos no deben resolverse con joins cartesianos “porque después hay `distinct`”.** En dashboards ejecutivos, la solución correcta es subconsulta correlacionada o CTE por bucket para preservar exactitud y evitar deuda de performance silenciosa.
+
+## 127. Un KPI no puede derivarse de una bandeja paginada o limitada
+
+- **Las listas operacionales y los indicadores ejecutivos tienen contratos distintos.** Una bandeja puede limitar filas para proteger la UI; un KPI debe agregarse sobre el universo completo autorizado en la base.
+- **No agregues PII en el navegador para construir BI.** La base debe devolver métricas y series ya agrupadas, con el mismo helper de visibilidad del proceso transaccional.
+- **Realtime no justifica polling agresivo.** Cuando existe suscripción de cambios, el polling debe ser solo un respaldo espaciado y las expansiones deben reutilizar el caché por identificador.

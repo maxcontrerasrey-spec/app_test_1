@@ -259,7 +259,7 @@ export function OperacionesDashboard() {
             .from("user_contracts")
             .select(
               `
-                contracts:contract_id (code, display_name)
+                contracts:contract_id (code, contract_name)
               `,
             )
             .eq("user_id", session.user.id),
@@ -300,7 +300,7 @@ export function OperacionesDashboard() {
         setUserContracts(
           ((contractRows ?? []) as UserContractQueryRow[])
             .flatMap((row) => row.contracts ?? [])
-            .map((contract) => contract.display_name || contract.code || "")
+            .map((contract) => contract.contract_name || contract.code || "")
             .filter(Boolean),
         );
 

@@ -57,6 +57,11 @@ export function HiringStatusPage() {
   const activeCases = dashboardData?.activeCases ?? [];
   const candidateControl = dashboardData?.candidateControl ?? [];
   const personnelToHire = dashboardData?.personnelToHire ?? [];
+  const candidatesInProgress = candidateControl.filter(
+    (candidate) =>
+      !["hired", "rejected", "withdrawn"].includes(candidate.stage_code) &&
+      !["filled", "closed_unfilled", "cancelled"].includes(candidate.case_status)
+  ).length;
   const shouldLoadCaseDetail =
     canAccessCandidateControl &&
     (activeView === "candidates" || activeView === "personnel_to_hire") &&
@@ -354,6 +359,10 @@ export function HiringStatusPage() {
           <article className="tracking-kpi-card tracking-kpi-card-pendiente">
             <span className="micro-label">Folios activos en búsqueda</span>
             <strong>{summary.active_cases}</strong>
+          </article>
+          <article className="tracking-kpi-card tracking-kpi-card-en-proceso">
+            <span className="micro-label">Candidatos en curso</span>
+            <strong>{candidatesInProgress}</strong>
           </article>
           <article className="tracking-kpi-card tracking-kpi-card-en-proceso">
             <span className="micro-label">Con candidato listo</span>
