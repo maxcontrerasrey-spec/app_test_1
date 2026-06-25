@@ -2,6 +2,37 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Reapertura automática de cupos y folios por rechazo de Movilidad Interna
+
+- [x] Auditar el contrato actual entre `internal_mobility_requests`, `recruitment_cases` y `hiring_requests` para identificar por qué un rechazo RRHH libera la movilidad pero no siempre reabre el folio/cupo
+- [x] Endurecer el backend para que cualquier liberación efectiva de cupo por rechazo de movilidad resincronice el caso de reclutamiento y reabra el folio cuando corresponda, sin pisar cierres finales ajenos al dominio
+- [x] Blindar el cierre manual del folio frente a movilidades activas inconsistentes y dejar la reapertura automática auditable con logs explícitos
+- [x] Aplicar la migración en Supabase, ejecutar humo SQL, `TypeScript`, build, `git diff --check` y documentar el resultado final en este archivo
+
+## Resultado de reapertura automática de cupos y folios por rechazo de Movilidad Interna
+
+- La causa raíz estaba partida en dos contratos backend:
+  1. [`set_internal_mobility_hr_execution_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625184520_harden_internal_mobility_worker_lock_and_rrhh_rejection.sql:666) sí permitía rechazar RRHH y dejaba de contar la movilidad como aprobada, pero no re-sincronizaba siempre el caso asociado;
+  2. [`sync_recruitment_case_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625214500_refine_reopen_closed_folios_to_rejected_mobility_release.sql:3) preservaba `cancelled` cuando existían `close_reason` y `closed_at`, por lo que un folio cerrado manualmente jamás reaparecía aunque recuperara cupo.
+- Se versionaron dos migraciones incrementales:
+  - [`20260625213000_reopen_recruitment_slots_after_internal_mobility_rejection.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625213000_reopen_recruitment_slots_after_internal_mobility_rejection.sql:1), que conecta el rechazo RRHH con `sync_recruitment_case_status(...)`, endurece `close_hiring_request(...)` para no cerrar folios con movilidades activas reservando cupos y deja la reapertura auditable;
+  - [`20260625214500_refine_reopen_closed_folios_to_rejected_mobility_release.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625214500_refine_reopen_closed_folios_to_rejected_mobility_release.sql:1), que restringe la reapertura automática exclusivamente a cierres recuperados por `internal_mobility_requests.status = 'rejected'`, evitando reabrir folios cerrados históricos sin relación con movilidad.
+- El contrato final quedó así:
+  - si una movilidad aprobada pasa a `Rechazado RRHH`, el request cambia a `rejected`, el caso vinculado se resincroniza y el cupo vuelve inmediatamente al folio;
+  - si ese folio estaba cerrado manualmente y la vacante reaparece específicamente por una movilidad interna rechazada, el sistema reabre `hiring_requests.status = approved`, limpia el cierre del caso y vuelve a dejarlo visible operativamente;
+  - si el folio cerrado no tiene una movilidad rechazada vinculada, permanece cerrado aunque tenga vacantes, evitando reaperturas espurias de históricos.
+- `close_hiring_request(...)` ahora bloquea cierres cuando el folio tiene movilidades en `pending_area_manager`, `pending_contracts_control` o `approved + hr_execution_status = pending`, cerrando el hueco que permitía clausurar folios con cupos aún reservados.
+- Se corrigió además la deriva de versionado remoto: en `supabase_migrations.schema_migrations` existía `20260625185730_harden_internal_mobility_worker_lock_and_rrhh_rejection`, mientras el repo llevaba `20260625184520`. Se normalizó el historial remoto para que coincida con el código versionado y se hizo lo mismo con los timestamps que el conector Supabase generó al aplicar las dos migraciones nuevas.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260625213000_reopen_recruitment_slots_after_internal_mobility_rejection.sql`
+  - `npm run audit:migrations -- --files supabase/migrations/20260625214500_refine_reopen_closed_folios_to_rejected_mobility_release.sql`
+  - `npx tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - humo remoto vía Supabase:
+    - `pg_get_functiondef(...)` confirmó `has_rejected_internal_mobility`, el bloqueo de cierre por movilidades activas y el `perform public.sync_recruitment_case_status(...)` dentro del rechazo RRHH;
+    - no quedaron casos productivos pendientes de reapertura bajo la nueva regla (`affected_cases = 0`, `reopened_after_sync = 0`).
+
 ## Ajuste visual y cierre operativo de Movilidad Interna
 
 - [x] Auditar el layout actual de la bandeja de conductores en `Movilidad Interna` y el contrato backend de ejecución RRHH / bloqueo de trabajador

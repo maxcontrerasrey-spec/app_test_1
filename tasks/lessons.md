@@ -9,6 +9,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con aplicar `ORDER BY ... LIMIT/OFFSET` antes de agregar JSON**. Si luego se usa `jsonb_agg` sin un ordinal estable calculado después del ordenamiento, PostgreSQL puede devolver los items de la página en orden distinto al solicitado aunque la página seleccionada sea la correcta.
 - **El patrón seguro es ordenar en una subconsulta y recién después asignar `row_number()` para el aggregate**. Toda RPC que devuelva `{items,total_count}` debe validar con una query de humo que `sort asc/desc` se refleje en el arreglo JSON final, no solo en el plan SQL intermedio.
 
+## 67. Cuando un cupo puede quedar reservado por movilidad interna, la liberación y la reapertura deben salir del mismo motor de sincronización
+
+- **No basta con cambiar `internal_mobility_requests.status` a `rejected`**. Si esa movilidad contaba dentro de `effective_filled_vacancies`, el backend debe reejecutar la sincronización del caso/folio en la misma operación o el cupo queda liberado solo “en teoría”, pero la bandeja sigue mostrando el folio como lleno o cerrado.
+- **La reapertura automática de folios cerrados debe tener una causa explícita**. Reabrir cualquier `hiring_request.status = 'closed'` apenas aparezcan vacantes reintroduce folios históricos no deseados; el gatillo correcto debe exigir una liberación real proveniente del dominio que reservaba el cupo, en este caso una `internal_mobility_request` rechazada.
+
 ## 1. Zero Trust y Supabase RLS
 
 - **No confíes en el cliente para gobernar datos sensibles**. Aunque RLS en Supabase ofrece políticas a nivel de tabla, si un usuario tiene permiso `UPDATE` sobre su propio registro en la tabla `profiles`, puede inyectar modificaciones maliciosas a columnas sensibles como `is_super_admin`.
