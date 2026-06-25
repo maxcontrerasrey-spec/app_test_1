@@ -2,6 +2,20 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Habilitación completa de Incentivos Extraordinarios para Control de Contratos
+
+- [x] Auditar el contrato actual de permisos del módulo de Incentivos Extraordinarios y el rol efectivo de María Jesús Lagos
+- [x] Versionar una migración mínima para habilitar el acceso requerido sin abrir permisos ajenos al contrato actual
+- [x] Aplicar la migración en Supabase y verificar que `control_contratos` ya hereda gestión completa de incentivos
+
+## Resultado de habilitación completa de Incentivos Extraordinarios para Control de Contratos
+
+- Se confirmó que la cuenta `mariajesus.lagos@busesjm.com` corresponde a `Maria Jesus Lagos Minardi`, con estado `active` y rol único `control_contratos`.
+- El contrato actual del backend no expone Incentivos Extraordinarios como módulo independiente: la gestión completa depende de [`user_can_manage_hr_incentives(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260606090000_add_hr_incentives_module.sql:170), que hoy habilita acceso a quien tenga el módulo `recursos_humanos`.
+- Se agregó y aplicó en Supabase la migración [`20260625162703_grant_control_contratos_hr_module_for_incentives.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625162703_grant_control_contratos_hr_module_for_incentives.sql:1), que otorga `role_module_access(control_contratos, recursos_humanos, true)` sin tocar RLS ni funciones del dominio.
+- La verificación remota cerró con tres checks efectivos sobre el usuario de María Jesús: `user_can_access_module(..., 'recursos_humanos') = true`, `user_can_manage_hr_incentives(...) = true` y `user_can_view_hr_incentive_analytics(...) = true`.
+- `supabase migration list --linked` quedó alineado y ya muestra `20260625162703` tanto local como remoto.
+
 ## Endurecimiento enterprise de Reclutamiento y Movilidad Interna
 
 - [x] Contrastar cada hallazgo de la auditoría adjunta contra el esquema, RPCs, triggers e índices finales, descartando recomendaciones ya resueltas o que introduzcan riesgo operacional
