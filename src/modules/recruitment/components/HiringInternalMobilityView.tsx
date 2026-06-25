@@ -212,22 +212,32 @@ export function HiringInternalMobilityView({
             <div className="control-detail-header">
               <div>
                 <h3>{requestDetailQuery.data.request.employeeFullName}</h3>
-                <span className="tracking-status-pill">
-                  {toInternalMobilityVisibleStatusLabel(
-                    requestDetailQuery.data.request.status,
-                    requestDetailQuery.data.request.hrExecutionStatus
-                  )}
-                </span>
-              </div>
-              <div className="mobility-detail-pill-row">
-                <span className="tracking-status-pill">
-                  {toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}
-                </span>
+                <div className="mobility-detail-pill-row mobility-detail-pill-row-tight">
+                  <span className="tracking-status-pill">
+                    {toInternalMobilityVisibleStatusLabel(
+                      requestDetailQuery.data.request.status,
+                      requestDetailQuery.data.request.hrExecutionStatus
+                    )}
+                  </span>
+                  <span
+                    className={[
+                      "tracking-status-pill",
+                      "mobility-status-pill",
+                      requestDetailQuery.data.request.hrExecutionStatus === "executed"
+                        ? "mobility-status-pill-success"
+                        : requestDetailQuery.data.request.hrExecutionStatus === "rejected"
+                          ? "mobility-status-pill-danger"
+                          : "mobility-status-pill-warning"
+                    ].join(" ")}
+                  >
+                    {toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}
+                  </span>
+                </div>
               </div>
             </div>
 
             <div className="control-detail-body">
-              <div className="control-readonly-grid">
+              <div className="control-readonly-grid control-readonly-grid-triple">
                 <div>
                   <small>Folio movilidad</small>
                   <strong>{requestDetailQuery.data.request.folio}</strong>
@@ -237,68 +247,66 @@ export function HiringInternalMobilityView({
                   <strong>{requestDetailQuery.data.request.sourceFolio ?? "—"}</strong>
                 </div>
                 <div>
-                  <small>Caso contratación</small>
-                  <strong>{requestDetailQuery.data.request.recruitmentCaseCode ?? "—"}</strong>
-                </div>
-                <div>
                   <small>Solicitó</small>
                   <strong>{requestDetailQuery.data.request.requesterName}</strong>
                 </div>
               </div>
 
-              <div className="expanded-detail-section">
-                <h4>Origen actual</h4>
-                <div className="expanded-detail-fields">
-                  <div>
-                    <small>Cargo actual</small>
-                    <strong>{requestDetailQuery.data.request.currentJobTitle ?? "—"}</strong>
-                  </div>
-                  <div>
-                    <small>Área actual</small>
-                    <strong>{requestDetailQuery.data.request.currentAreaName ?? "—"}</strong>
-                  </div>
-                  <div>
-                    <small>Empresa actual</small>
-                    <strong>{requestDetailQuery.data.request.currentCompanyName ?? "—"}</strong>
-                  </div>
-                  <div>
-                    <small>Turno actual</small>
-                    <strong>{requestDetailQuery.data.request.currentShiftName ?? "—"}</strong>
+              <div className="mobility-comparison-grid">
+                <div className="expanded-detail-section mobility-comparison-panel">
+                  <h4>Origen actual</h4>
+                  <div className="expanded-detail-fields">
+                    <div>
+                      <small>Cargo actual</small>
+                      <strong>{requestDetailQuery.data.request.currentJobTitle ?? "—"}</strong>
+                    </div>
+                    <div>
+                      <small>Área actual</small>
+                      <strong>{requestDetailQuery.data.request.currentAreaName ?? "—"}</strong>
+                    </div>
+                    <div>
+                      <small>Empresa actual</small>
+                      <strong>{requestDetailQuery.data.request.currentCompanyName ?? "—"}</strong>
+                    </div>
+                    <div>
+                      <small>Turno actual</small>
+                      <strong>{requestDetailQuery.data.request.currentShiftName ?? "—"}</strong>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="expanded-detail-section">
-                <h4>Destino aprobado</h4>
-                <div className="expanded-detail-fields">
-                  <div>
-                    <small>Cargo destino</small>
-                    <strong>{requestDetailQuery.data.request.destinationJobTitle}</strong>
-                  </div>
-                  <div>
-                    <small>Contrato / Área destino</small>
-                    <strong>{requestDetailQuery.data.request.destinationAreaName}</strong>
-                  </div>
-                  <div>
-                    <small>Centro de costo</small>
-                    <strong>
-                      {requestDetailQuery.data.request.destinationCostCenterName ?? "—"}
-                      {requestDetailQuery.data.request.destinationCostCenterCode
-                        ? ` (${requestDetailQuery.data.request.destinationCostCenterCode})`
-                        : ""}
-                    </strong>
-                  </div>
-                  <div>
-                    <small>Empresa destino</small>
-                    <strong>{requestDetailQuery.data.request.destinationCompanyName ?? "—"}</strong>
-                  </div>
-                  <div>
-                    <small>Turno destino</small>
-                    <strong>{requestDetailQuery.data.request.destinationShiftName ?? "—"}</strong>
-                  </div>
-                  <div>
-                    <small>Requiere finiquito</small>
-                    <strong>{requestDetailQuery.data.request.requiresTermination ? "Sí" : "No"}</strong>
+                <div className="expanded-detail-section mobility-comparison-panel">
+                  <h4>Destino aprobado</h4>
+                  <div className="expanded-detail-fields">
+                    <div>
+                      <small>Cargo destino</small>
+                      <strong>{requestDetailQuery.data.request.destinationJobTitle}</strong>
+                    </div>
+                    <div>
+                      <small>Contrato / Área destino</small>
+                      <strong>{requestDetailQuery.data.request.destinationAreaName}</strong>
+                    </div>
+                    <div>
+                      <small>Empresa destino</small>
+                      <strong>{requestDetailQuery.data.request.destinationCompanyName ?? "—"}</strong>
+                    </div>
+                    <div>
+                      <small>Turno destino</small>
+                      <strong>{requestDetailQuery.data.request.destinationShiftName ?? "—"}</strong>
+                    </div>
+                    <div>
+                      <small>Centro de costo</small>
+                      <strong>
+                        {requestDetailQuery.data.request.destinationCostCenterName ?? "—"}
+                        {requestDetailQuery.data.request.destinationCostCenterCode
+                          ? ` (${requestDetailQuery.data.request.destinationCostCenterCode})`
+                          : ""}
+                      </strong>
+                    </div>
+                    <div>
+                      <small>Requiere finiquito</small>
+                      <strong>{requestDetailQuery.data.request.requiresTermination ? "Sí" : "No"}</strong>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -331,7 +339,21 @@ export function HiringInternalMobilityView({
                   </div>
                   <div>
                     <small>Estado RRHH</small>
-                    <strong>{toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}</strong>
+                    <strong>
+                      <span
+                        className={[
+                          "tracking-status-pill",
+                          "mobility-status-pill",
+                          requestDetailQuery.data.request.hrExecutionStatus === "executed"
+                            ? "mobility-status-pill-success"
+                            : requestDetailQuery.data.request.hrExecutionStatus === "rejected"
+                              ? "mobility-status-pill-danger"
+                              : "mobility-status-pill-warning"
+                        ].join(" ")}
+                      >
+                        {toInternalMobilityExecutionStatusLabel(requestDetailQuery.data.request.hrExecutionStatus)}
+                      </span>
+                    </strong>
                   </div>
                   <div>
                     <small>RRHH ejecutó</small>
@@ -345,7 +367,7 @@ export function HiringInternalMobilityView({
                 <div className="mobility-execution-actions">
                   <button
                     type="button"
-                    className="soft-primary-button"
+                    className="soft-primary-button mobility-action-button-pending"
                     disabled={!canManageHrExecution || isHrExecutionSaving}
                     onClick={() => {
                       void handleHrExecutionStatusChange("pending");
@@ -355,7 +377,7 @@ export function HiringInternalMobilityView({
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button"
+                    className="soft-primary-button soft-primary-button-success"
                     disabled={!canManageHrExecution || isHrExecutionSaving}
                     onClick={() => {
                       void handleHrExecutionStatusChange("executed");
@@ -365,7 +387,7 @@ export function HiringInternalMobilityView({
                   </button>
                   <button
                     type="button"
-                    className="soft-primary-button"
+                    className="soft-primary-button soft-primary-button-danger"
                     disabled={!canManageHrExecution || isHrExecutionSaving}
                     onClick={() => {
                       void handleHrExecutionStatusChange("rejected");
