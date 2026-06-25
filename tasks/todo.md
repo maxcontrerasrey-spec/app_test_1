@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Aterrizaje enterprise de auditoría de reclutamiento, movilidad y sync BUK
+
+- [x] Contrastar la auditoría adjunta contra el estado vivo del SQL, las RPCs y la Edge Function `sync-buk-candidates`
+- [x] Corregir el orden de locks de `sync_recruitment_case_status(...)` para eliminar el camino de deadlock con `close_hiring_request(...)`
+- [x] Endurecer `transfer_candidate_to_case(...)` para resincronizar caso origen y destino sin introducir nuevos interbloqueos
+- [x] Crear caché local versionado para ubicaciones BUK y reutilizarlo desde `sync-buk-candidates` con TTL y fallback resiliente
+- [x] Aplicar la migración en Supabase, desplegar la Edge Function corregida, validar build/auditoría y documentar el cierre auditable
+
+## Resultado de aterrizaje enterprise de auditoría de reclutamiento, movilidad y sync BUK
+
+- La auditoría adjunta quedó confirmada como vigente en sus tres hallazgos principales: el riesgo de deadlock entre [`close_hiring_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625213000_reopen_recruitment_slots_after_internal_mobility_rejection.sql:155) y [`sync_recruitment_case_status(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625214500_refine_reopen_closed_folios_to_rejected_mobility_release.sql:3), la deriva de contadores al mover candidatos entre folios y la latencia redundante de `GET /locations` en la Edge Function BUK.
+- Se agregó y aplicó en Supabase la migración [`20260625233000_harden_recruitment_sync_and_buk_locations_cache.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625233000_harden_recruitment_sync_and_buk_locations_cache.sql:1), que introduce `public.buk_locations`, rehace `sync_recruitment_case_status(...)` con orden de lock `hiring_requests -> recruitment_cases`, y endurece [`transfer_candidate_to_case(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625233000_harden_recruitment_sync_and_buk_locations_cache.sql:203) para resincronizar ambos casos con orden determinista por UUID.
+- La corrección del traslado no se limitó a “llamar sync dos veces”: el backend ahora sincroniza origen y destino en un orden estable, evitando crear un segundo vector de deadlock si dos traslados concurrentes cruzan folios distintos en sentidos opuestos.
+- [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) dejó de consultar todas las localizaciones de BUK en cada corrida. Ahora lee `public.buk_locations`, refresca solo cuando el caché expira (TTL por defecto: 12 horas, configurable por `BUK_LOCATIONS_CACHE_TTL_HOURS`) y, si BUK falla pero existe caché previa, continúa con fallback stale en vez de abortar el procesamiento completo.
+- El runtime quedó efectivamente publicado: además de versionar el cambio en repo, se desplegó `sync-buk-candidates` al proyecto `pzblmbahnoyntrhistea` con `npx --yes supabase functions deploy sync-buk-candidates --project-ref pzblmbahnoyntrhistea --use-api --yes`.
+- Se corrigió también la deriva del historial remoto del conector Supabase: `apply_migration` registró la migración con timestamp `20260625224046`, por lo que se normalizó `supabase_migrations.schema_migrations` al versionado real `20260625233000` para que producción y repo no intenten re-aplicar el mismo cambio en el siguiente `db push`.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260625233000_harden_recruitment_sync_and_buk_locations_cache.sql`
+  - `npx tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - humo remoto vía Supabase:
+    - `pg_get_functiondef('public.sync_recruitment_case_status(uuid, uuid)'::regprocedure)` confirmó el lock order corregido;
+    - `pg_get_functiondef('public.transfer_candidate_to_case(uuid, uuid, text)'::regprocedure)` confirmó la resincronización determinista de ambos casos;
+    - `information_schema.columns` confirmó la creación de `public.buk_locations`;
+    - `list_edge_functions` confirmó la publicación vigente de `sync-buk-candidates`.
+
 ## Reapertura automática de cupos y folios por rechazo de Movilidad Interna
 
 - [x] Auditar el contrato actual entre `internal_mobility_requests`, `recruitment_cases` y `hiring_requests` para identificar por qué un rechazo RRHH libera la movilidad pero no siempre reabre el folio/cupo

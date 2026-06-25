@@ -14,6 +14,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con cambiar `internal_mobility_requests.status` a `rejected`**. Si esa movilidad contaba dentro de `effective_filled_vacancies`, el backend debe reejecutar la sincronización del caso/folio en la misma operación o el cupo queda liberado solo “en teoría”, pero la bandeja sigue mostrando el folio como lleno o cerrado.
 - **La reapertura automática de folios cerrados debe tener una causa explícita**. Reabrir cualquier `hiring_request.status = 'closed'` apenas aparezcan vacantes reintroduce folios históricos no deseados; el gatillo correcto debe exigir una liberación real proveniente del dominio que reservaba el cupo, en este caso una `internal_mobility_request` rechazada.
 
+## 68. Si dos funciones productivas tocan las mismas entidades padre/hija, el orden global de locks debe quedar fijado por diseño y no por accidente
+
+- **No sirve que cada RPC sea “correcta” de forma aislada si una bloquea `recruitment_cases -> hiring_requests` y otra `hiring_requests -> recruitment_cases`**. Ese cruce crea deadlocks intermitentes que solo aparecen bajo concurrencia real.
+- **La regla robusta es única para todo el dominio**: cuando un flujo de reclutamiento deba tocar ambos niveles, primero bloquea `hiring_requests` y después `recruitment_cases`. Si otra operación necesita resincronizar dos casos en una misma transacción, además debe fijar un orden determinista entre ellos para no reintroducir el problema por otra vía.
+
+## 69. Los catálogos externos compartidos no pertenecen al hot path de una Edge Function operativa
+
+- **No vuelvas a descargar tablas maestras de BUK en cada ejecución de una cola**. Aunque la lógica funcional sea correcta, eso agrega latencia fija, consumo innecesario de rate limit y un nuevo punto de falla por cada candidato procesado.
+- **La forma enterprise es caché local con TTL y fallback stale controlado**. Primero se resuelve desde base local; solo cuando expira se refresca el catálogo externo. Si el proveedor falla pero el caché existe, el proceso debe degradar con resiliencia y no colapsar toda la corrida.
+
 ## 1. Zero Trust y Supabase RLS
 
 - **No confíes en el cliente para gobernar datos sensibles**. Aunque RLS en Supabase ofrece políticas a nivel de tabla, si un usuario tiene permiso `UPDATE` sobre su propio registro en la tabla `profiles`, puede inyectar modificaciones maliciosas a columnas sensibles como `is_super_admin`.

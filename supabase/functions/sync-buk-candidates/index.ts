@@ -96,11 +96,20 @@ type BukLocation = {
   region: string | null;
 };
 
+type BukLocationCacheRow = {
+  location_id: string;
+  location_name: string;
+  region_name: string | null;
+  synced_at: string | null;
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
+
+const DEFAULT_BUK_LOCATIONS_CACHE_TTL_HOURS = 12;
 
 function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
@@ -228,6 +237,121 @@ async function fetchAllBukLocations() {
   } while (page <= totalPages);
 
   return locations;
+}
+
+function resolveBukLocationsCacheTtlMs() {
+  const rawValue = Number(Deno.env.get("BUK_LOCATIONS_CACHE_TTL_HOURS") ?? DEFAULT_BUK_LOCATIONS_CACHE_TTL_HOURS);
+  const hours = Number.isFinite(rawValue) && rawValue > 0 ? rawValue : DEFAULT_BUK_LOCATIONS_CACHE_TTL_HOURS;
+  return hours * 60 * 60 * 1000;
+}
+
+function mapBukLocationCacheRows(rows: BukLocationCacheRow[]) {
+  return rows.map((row) => ({
+    id: row.location_id,
+    name: row.location_name,
+    region: row.region_name
+  }));
+}
+
+function isBukLocationCacheFresh(rows: BukLocationCacheRow[]) {
+  if (rows.length === 0) {
+    return false;
+  }
+
+  const latestSyncedAt = rows.reduce<number>((currentMax, row) => {
+    const value = row.synced_at ? Date.parse(row.synced_at) : Number.NaN;
+    return Number.isFinite(value) ? Math.max(currentMax, value) : currentMax;
+  }, Number.NEGATIVE_INFINITY);
+
+  if (!Number.isFinite(latestSyncedAt)) {
+    return false;
+  }
+
+  return Date.now() - latestSyncedAt <= resolveBukLocationsCacheTtlMs();
+}
+
+async function loadBukLocationsCache(supabase: ReturnType<typeof createClient>) {
+  const { data, error } = await supabase
+    .from("buk_locations")
+    .select("location_id, location_name, region_name, synced_at")
+    .order("location_name", { ascending: true });
+
+  if (error) {
+    throw new Error(`No fue posible leer el caché local de ubicaciones BUK: ${error.message}`);
+  }
+
+  return (data ?? []) as BukLocationCacheRow[];
+}
+
+async function writeBukLocationsCache(
+  supabase: ReturnType<typeof createClient>,
+  cachedRows: BukLocationCacheRow[],
+  locations: BukLocation[]
+) {
+  if (locations.length === 0) {
+    throw new Error("Buk no retornó ubicaciones para refrescar el caché local");
+  }
+
+  const syncedAt = new Date().toISOString();
+  const payload = locations.map((location) => ({
+    location_id: String(location.id),
+    location_name: location.name,
+    region_name: location.region,
+    raw_payload: {
+      id: location.id,
+      name: location.name,
+      region: location.region
+    },
+    synced_at: syncedAt
+  }));
+
+  const { error: upsertError } = await supabase
+    .from("buk_locations")
+    .upsert(payload, { onConflict: "location_id" });
+
+  if (upsertError) {
+    throw new Error(`No fue posible refrescar el caché local de ubicaciones BUK: ${upsertError.message}`);
+  }
+
+  const freshIds = new Set(payload.map((row) => row.location_id));
+  const staleIds = cachedRows
+    .map((row) => row.location_id)
+    .filter((locationId) => !freshIds.has(locationId));
+
+  if (staleIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("buk_locations")
+      .delete()
+      .in("location_id", staleIds);
+
+    if (deleteError) {
+      throw new Error(`No fue posible limpiar ubicaciones BUK obsoletas: ${deleteError.message}`);
+    }
+  }
+}
+
+async function resolveBukLocations(supabase: ReturnType<typeof createClient>) {
+  const cachedRows = await loadBukLocationsCache(supabase);
+  const cachedLocations = mapBukLocationCacheRows(cachedRows);
+
+  if (isBukLocationCacheFresh(cachedRows)) {
+    return cachedLocations;
+  }
+
+  try {
+    const freshLocations = await fetchAllBukLocations();
+    await writeBukLocationsCache(supabase, cachedRows, freshLocations);
+    return freshLocations;
+  } catch (error) {
+    if (cachedLocations.length > 0) {
+      console.warn(
+        `BUK locations refresh failed, using stale local cache (${cachedLocations.length} rows): ${toErrorMessage(error)}`
+      );
+      return cachedLocations;
+    }
+
+    throw error;
+  }
 }
 
 function resolveLocationId(payload: BukCandidateSyncPayload, locations: BukLocation[]) {
@@ -446,7 +570,7 @@ Deno.serve(async (req) => {
   try {
     const requestBody = req.method === "POST" ? ((await req.json().catch(() => ({}))) as SyncRequest) : {};
     const jobs = await fetchJobs(supabase, requestBody);
-    const locations = await fetchAllBukLocations();
+    const locations = await resolveBukLocations(supabase);
     const results: Array<Record<string, unknown>> = [];
 
     for (const job of jobs) {
