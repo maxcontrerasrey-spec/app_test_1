@@ -218,6 +218,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No dejes viva la firma antigua cuando PostgREST expone la función por nombre**. Mantener sobrecargas `text` y `text[]` para el mismo RPC abre ambigüedad operativa y vuelve frágil el binding desde `supabase-js`.
 - **El cliente debe aceptar transición sin rehacer la UI entera**. La salida robusta es versionar la nueva firma en SQL, sanear arreglos en backend y adaptar el servicio/frontend para serializar tanto el formato singular heredado como el múltiple nuevo mientras las vistas evolucionan.
 
+## 64. En analítica, los catálogos de filtros nunca deben depender de la tabla fact histórica
+
+- **Los dropdowns de filtros no se llenan con `SELECT DISTINCT` sobre la tabla transaccional si existe una tabla maestra pequeña para el mismo dominio**. Ese patrón parece inofensivo al inicio, pero degrada la UX justo en la vista analítica a medida que crece el histórico.
+- **La regla correcta es separar universo de análisis y universo de catálogos**. Los montos y conteos pueden leer la tabla fact; los contratos y tipos disponibles deben salir de `contracts`/`buk_contract_mappings` y `hr_incentive_types`, o de una dimensión equivalente gobernada.
+
 ## 64. Una auditoría pesada no pertenece al hot path de una bandeja operativa
 
 - **No ejecutes validaciones globales de integridad dentro de cada RPC de lectura** si la misma comprobación ya puede correrse por trigger barato, constraint o auditoría manual. En bandejas con crecimiento mensual, eso convierte una revisión administrativa en costo fijo por cada render.

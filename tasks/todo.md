@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Optimización final de catálogos en analítica de incentivos
+
+- [x] Contrastar la auditoría post-optimización contra `get_hr_incentives_analytics(...)` y aislar el único hallazgo aún vigente
+- [x] Reemplazar en una migración nueva los `SELECT DISTINCT` transaccionales de `filter_options` por catálogos maestros (`contracts`/`buk_contract_mappings` y `hr_incentive_types`)
+- [x] Aplicar la migración en Supabase, validar humo SQL, `TypeScript`, build y cerrar el resultado auditable en este archivo
+
+## Resultado de optimización final de catálogos en analítica de incentivos
+
+- Se agregó la migración [`20260625014355_optimize_hr_incentive_analytics_filter_catalogs.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625014355_optimize_hr_incentive_analytics_filter_catalogs.sql:1), que mantiene intacto el contrato JSON de `get_hr_incentives_analytics(...)` y solo reemplaza el origen de `filter_options`.
+- `filter_options.contracts` dejó de escanear `hr_incentive_requests` y ahora se alimenta del catálogo maestro activo `contracts + buk_contract_mappings`, reutilizando el mismo criterio operativo de labels que la configuración del módulo.
+- `filter_options.types` dejó de salir de la tabla transaccional y ahora se resuelve desde `hr_incentive_types` activos, evitando que el costo del dropdown crezca con el histórico de solicitudes.
+- La migración se publicó con `npx --yes supabase db push --linked --include-all`. En este entorno, `supabase migration list --linked` no pudo cerrarse porque el CLI pidió `SUPABASE_DB_PASSWORD`, pero el despliegue sí terminó y la verificación remota quedó cerrada por RPC autenticada.
+- Humo remoto validado con sesión temporal de un usuario autorizado (`control_contratos`): `get_hr_incentives_analytics(...)` devolvió `110` contratos y `7` tipos en `filter_options`, exactamente igual al conteo de tablas maestras activas consultadas por service role. El payload analítico siguió respondiendo sin cambios de shape.
+- Validación local cerrada con `npm run audit:migrations -- --files supabase/migrations/20260625014355_optimize_hr_incentive_analytics_filter_catalogs.sql`, `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Aterrizaje de auditoría SQL enterprise
 
 - [x] Contrastar la auditoría adjunta contra el estado real del repo y separar hallazgos vigentes de findings ya corregidos por migraciones posteriores
