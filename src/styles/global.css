@@ -2919,6 +2919,10 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   max-height: none;
 }
 
+.tracking-table-scroll-mobility-queue {
+  max-height: 26rem;
+}
+
 .tracking-table {
   width: 100%;
   border-collapse: collapse;
@@ -3248,6 +3252,18 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .control-detail-panel-inline {
   margin-bottom: 1.25rem;
+}
+
+.control-detail-panel-full {
+  width: 100%;
+}
+
+.control-layout-stacked {
+  grid-template-columns: 1fr;
+}
+
+.control-layout-stacked-mobility {
+  gap: 1rem;
 }
 
 .control-detail-header {

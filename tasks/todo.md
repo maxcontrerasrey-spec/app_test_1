@@ -2,6 +2,24 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste visual y cierre operativo de Movilidad Interna
+
+- [x] Auditar el layout actual de la bandeja de conductores en `Movilidad Interna` y el contrato backend de ejecución RRHH / bloqueo de trabajador
+- [x] Llevar la lista de conductores a ancho completo con detalle inferior, manteniendo máximo 5 filas visibles con scroll
+- [x] Bloquear en backend y frontend que un trabajador con movilidad interna activa o aprobada pendiente de ejecución participe en otra simultánea
+- [x] Agregar cierre RRHH `Rechazado` que marque la solicitud como rechazada y libere al trabajador para futuros procesos
+- [x] Aplicar la migración en Supabase, validar humo SQL, `TypeScript`, build y documentar el resultado
+
+## Resultado de ajuste visual y cierre operativo de Movilidad Interna
+
+- [`HiringInternalMobilityView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringInternalMobilityView.tsx:1) dejó el layout lateral de dos columnas y ahora usa la lista de conductores a ancho completo, con el resumen/detalle debajo. La tabla conserva scroll propio con un máximo visual equivalente a 5 filas visibles.
+- [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:2910) agregó clases específicas (`control-layout-stacked-mobility`, `control-detail-panel-full`, `tracking-table-scroll-mobility-queue`) para no romper otros tableros que reutilizan `control-layout`.
+- [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/types.ts:84), [`presentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/lib/presentation.ts:21), [`InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1) y [`HiringInternalMobilityView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringInternalMobilityView.tsx:1) quedaron alineados con un tercer estado RRHH: `rejected`, expuesto en UI como `Rechazado RRHH`.
+- Se versionó y aplicó en Supabase la migración [`20260625184520_harden_internal_mobility_worker_lock_and_rrhh_rejection.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625184520_harden_internal_mobility_worker_lock_and_rrhh_rejection.sql:1). Esa migración endurece tres frentes: bloqueo de búsqueda para trabajadores con movilidad activa, bloqueo transaccional en `submit_internal_mobility_request(...)` mediante `pg_advisory_xact_lock(...)`, y cierre RRHH rechazado que cambia `status = rejected`, libera al trabajador y deja auditoría.
+- La validación remota confirmó que `search_internal_mobility_workers(...)` ya excluye trabajadores con solicitudes `pending_area_manager`, `pending_contracts_control` o `approved + hr_execution_status = pending`, y que `set_internal_mobility_hr_execution_status(...)` ya acepta `pending`, `executed` y `rejected`.
+- `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check` cerraron sin errores.
+- La auditoría operativa detectó 3 duplicidades históricas previas al bloqueo nuevo: `MI-0032 / MI-0015`, `MI-0033 / MI-0014` y `MI-0031 / MI-0013`. No se corrigieron automáticamente para no intervenir datos productivos sin instrucción explícita, pero ahora RRHH puede cerrarlas desde la UI con `Rechazado`.
+
 ## Habilitación completa de Incentivos Extraordinarios para Control de Contratos
 
 - [x] Auditar el contrato actual de permisos del módulo de Incentivos Extraordinarios y el rol efectivo de María Jesús Lagos

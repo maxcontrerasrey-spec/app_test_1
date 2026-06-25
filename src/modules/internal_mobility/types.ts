@@ -81,7 +81,7 @@ export type InternalMobilityRequestStatus =
   | "rejected"
   | "closed";
 
-export type InternalMobilityHrExecutionStatus = "pending" | "executed";
+export type InternalMobilityHrExecutionStatus = "pending" | "executed" | "rejected";
 
 export type InternalMobilityRequestSummary = {
   requestId: string;

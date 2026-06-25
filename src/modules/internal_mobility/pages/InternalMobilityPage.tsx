@@ -13,7 +13,6 @@ import {
   formatInternalMobilityOpenDays,
   toInternalMobilityAuditLabel,
   toInternalMobilityExecutionStatusLabel,
-  toInternalMobilityStatusLabel,
   toInternalMobilityVisibleStatusLabel
 } from "../lib/presentation";
 import {
@@ -243,7 +242,9 @@ export function InternalMobilityPage() {
     }
   };
 
-  const handleHrExecutionStatusChange = async (status: "pending" | "executed") => {
+  const handleHrExecutionStatusChange = async (
+    status: "pending" | "executed" | "rejected"
+  ) => {
     if (!selectedRequestId) {
       return;
     }
@@ -777,6 +778,16 @@ export function InternalMobilityPage() {
                                             }}
                                           >
                                             {isHrExecutionSaving ? "Guardando..." : "Ejecutado RRHH"}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="soft-primary-button"
+                                            disabled={!canManageHrExecution || isHrExecutionSaving}
+                                            onClick={() => {
+                                              void handleHrExecutionStatusChange("rejected");
+                                            }}
+                                          >
+                                            {isHrExecutionSaving ? "Guardando..." : "Rechazado"}
                                           </button>
                                         </div>
                                       ) : null}

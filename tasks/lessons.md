@@ -1385,3 +1385,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Las listas operacionales y los indicadores ejecutivos tienen contratos distintos.** Una bandeja puede limitar filas para proteger la UI; un KPI debe agregarse sobre el universo completo autorizado en la base.
 - **No agregues PII en el navegador para construir BI.** La base debe devolver métricas y series ya agrupadas, con el mismo helper de visibilidad del proceso transaccional.
 - **Realtime no justifica polling agresivo.** Cuando existe suscripción de cambios, el polling debe ser solo un respaldo espaciado y las expansiones deben reutilizar el caché por identificador.
+
+## 128. En movilidad interna, la exclusividad del trabajador no puede depender solo de la UI ni resolverse con validación tardía
+
+- **Si un trabajador ya está en una movilidad activa, el bloqueo debe existir tanto en el catálogo de búsqueda como en la mutación transaccional.** Filtrar solo en frontend o solo en `search_internal_mobility_workers(...)` deja ventanas para duplicidades por carrera o por datos cacheados.
+- **Cuando el cierre operativo depende de RRHH, debe existir una salida explícita de liberación.** `Pendiente` y `Ejecutado` no alcanzan; si el trabajador se retracta, el flujo necesita `Rechazado RRHH` para cerrar el caso, marcar la solicitud como rechazada y liberar al trabajador sin SQL manual.
+- **Las correcciones sobre exclusividad no deben tocar datos productivos históricos automáticamente.** Primero se blinda el flujo futuro y se expone una vía auditable de cierre; recién después, si negocio lo decide, se sanean duplicidades legadas con intervención controlada.

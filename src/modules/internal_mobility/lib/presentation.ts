@@ -30,7 +30,9 @@ export function toInternalMobilityStatusLabel(value: InternalMobilityRequestStat
 export function toInternalMobilityExecutionStatusLabel(
   value: InternalMobilityHrExecutionStatus | string | null | undefined
 ) {
-  return value === "executed" ? "Ejecutado RRHH" : "Pendiente ejecución RRHH";
+  if (value === "executed") return "Ejecutado RRHH";
+  if (value === "rejected") return "Rechazado RRHH";
+  return "Pendiente ejecución RRHH";
 }
 
 export function toInternalMobilityVisibleStatusLabel(

@@ -7,8 +7,8 @@ import { formatRut } from "../../../shared/lib/rut";
 import { TextField } from "../../../shared/ui";
 import {
   canManageInternalMobilityHrExecution,
-  toInternalMobilityExecutionStatusLabel,
-  toInternalMobilityStatusLabel
+  toInternalMobilityVisibleStatusLabel,
+  toInternalMobilityExecutionStatusLabel
 } from "../../internal_mobility/lib/presentation";
 import {
   invalidateInternalMobilityQueries,
@@ -91,7 +91,9 @@ export function HiringInternalMobilityView({
     (requestsQuery.error instanceof Error ? requestsQuery.error.message : "") ||
     (requestDetailQuery.error instanceof Error ? requestDetailQuery.error.message : "");
 
-  const handleHrExecutionStatusChange = async (status: "pending" | "executed") => {
+  const handleHrExecutionStatusChange = async (
+    status: "pending" | "executed" | "rejected"
+  ) => {
     if (!selectedRequestId) {
       return;
     }
@@ -143,16 +145,15 @@ export function HiringInternalMobilityView({
       {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
 
       <div
-        className="control-layout"
-        style={!selectedRequest ? { gridTemplateColumns: "1fr" } : undefined}
+        className="control-layout control-layout-stacked control-layout-stacked-mobility"
         onClick={(event) => {
           if (event.target === event.currentTarget) {
             setSelectedRequestId("");
           }
         }}
       >
-        <div className="tracking-table-wrap">
-          <div className="tracking-table-scroll">
+        <div className="tracking-table-wrap tracking-table-wrap-full">
+          <div className="tracking-table-scroll tracking-table-scroll-mobility-queue">
             <table className="tracking-table">
               <thead>
                 <tr>
@@ -205,13 +206,17 @@ export function HiringInternalMobilityView({
           </div>
         </div>
 
-        {selectedRequest && requestDetailQuery.data ? (
-          <aside className="control-detail-panel">
+        <aside className="control-detail-panel control-detail-panel-full">
+          {selectedRequest && requestDetailQuery.data ? (
+            <>
             <div className="control-detail-header">
               <div>
                 <h3>{requestDetailQuery.data.request.employeeFullName}</h3>
                 <span className="tracking-status-pill">
-                  {toInternalMobilityStatusLabel(requestDetailQuery.data.request.status)}
+                  {toInternalMobilityVisibleStatusLabel(
+                    requestDetailQuery.data.request.status,
+                    requestDetailQuery.data.request.hrExecutionStatus
+                  )}
                 </span>
               </div>
               <div className="mobility-detail-pill-row">
@@ -317,7 +322,12 @@ export function HiringInternalMobilityView({
                   </div>
                   <div>
                     <small>Estado final</small>
-                    <strong>{toInternalMobilityStatusLabel(requestDetailQuery.data.request.status)}</strong>
+                    <strong>
+                      {toInternalMobilityVisibleStatusLabel(
+                        requestDetailQuery.data.request.status,
+                        requestDetailQuery.data.request.hrExecutionStatus
+                      )}
+                    </strong>
                   </div>
                   <div>
                     <small>Estado RRHH</small>
@@ -353,6 +363,16 @@ export function HiringInternalMobilityView({
                   >
                     {isHrExecutionSaving ? "Guardando..." : "Ejecutado RRHH"}
                   </button>
+                  <button
+                    type="button"
+                    className="soft-primary-button"
+                    disabled={!canManageHrExecution || isHrExecutionSaving}
+                    onClick={() => {
+                      void handleHrExecutionStatusChange("rejected");
+                    }}
+                  >
+                    {isHrExecutionSaving ? "Guardando..." : "Rechazado"}
+                  </button>
                 </div>
                 {!canManageHrExecution ? (
                   <p className="helper-copy">Solo RRHH administrativo o administradores pueden cerrar esta ejecución.</p>
@@ -364,8 +384,15 @@ export function HiringInternalMobilityView({
                 <p className="mobility-detail-copy">{requestDetailQuery.data.request.motive}</p>
               </div>
             </div>
-          </aside>
-        ) : null}
+            </>
+          ) : (
+            <div className="control-detail-body">
+              <div className="expanded-detail-section expanded-detail-section-full tracking-expanded-feedback">
+                Selecciona un conductor para revisar el resumen de la movilidad interna.
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
     </>
   );
