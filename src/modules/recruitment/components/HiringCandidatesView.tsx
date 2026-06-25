@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { TextField } from "../../../shared/ui";
 import {
   formatRut,
@@ -6,9 +7,13 @@ import {
   type RecruitmentCandidateControlRow,
   type RecruitmentCandidateStage,
   type RecruitmentCaseDetail,
-  type RecruitmentCaseListRow,
   type WhoApprovalCause
 } from "../services/hiringControl";
+import {
+  invalidateRecruitmentControlQueries,
+  useRecruitmentActiveCaseOptions,
+  useRecruitmentCandidatesPage
+} from "../hooks/useRecruitmentQueries";
 import {
   candidateStageFilterOptions,
   getCandidateControlLockLabel,
@@ -17,12 +22,13 @@ import {
 import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
 import { CandidateIntakeForm } from "./CandidateIntakeForm";
 import { TransferCandidateModal } from "./TransferCandidateModal";
+import { TrackingPagination } from "./TrackingPagination";
+
+const CANDIDATE_PAGE_SIZE = 50;
 
 type HiringCandidatesViewProps = {
-  isLoading: boolean;
+  isParentLoading: boolean;
   errorMessage: string;
-  activeCases: RecruitmentCaseListRow[];
-  candidateControl: RecruitmentCandidateControlRow[];
   selectedCandidateId: string;
   selectedCaseDetail: RecruitmentCaseDetail | null;
   stageDraft: RecruitmentCandidateStage | "";
@@ -42,10 +48,8 @@ type HiringCandidatesViewProps = {
 };
 
 export function HiringCandidatesView({
-  isLoading,
+  isParentLoading,
   errorMessage,
-  activeCases,
-  candidateControl,
   selectedCandidateId,
   selectedCaseDetail,
   stageDraft,
@@ -63,11 +67,31 @@ export function HiringCandidatesView({
   onInterviewNotesUpdated,
   onCandidateFileUpdated
 }: HiringCandidatesViewProps) {
+  const queryClient = useQueryClient();
   const [showCandidateForm, setShowCandidateForm] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [candidateSearchTerm, setCandidateSearchTerm] = useState("");
   const [candidateStageFilter, setCandidateStageFilter] =
     useState<(typeof candidateStageFilterOptions)[number]["key"]>("active");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [candidatePage, setCandidatePage] = useState(0);
+  const candidatesQuery = useRecruitmentCandidatesPage({
+    search: debouncedSearchTerm,
+    stageFilter: candidateStageFilter,
+    limit: CANDIDATE_PAGE_SIZE,
+    offset: candidatePage * CANDIDATE_PAGE_SIZE
+  });
+  const activeCaseOptionsQuery = useRecruitmentActiveCaseOptions({ limit: 500 });
+  const candidateControl = candidatesQuery.data?.items ?? [];
+  const activeCases = activeCaseOptionsQuery.data ?? [];
+  const candidateTotalCount = candidatesQuery.data?.totalCount ?? 0;
+  const candidatesError =
+    candidatesQuery.error instanceof Error ? candidatesQuery.error.message : "";
+  const caseOptionsError =
+    activeCaseOptionsQuery.error instanceof Error ? activeCaseOptionsQuery.error.message : "";
+  const combinedErrorMessage = errorMessage || candidatesError || caseOptionsError;
+  const isLoading =
+    isParentLoading || candidatesQuery.isLoading || activeCaseOptionsQuery.isLoading;
   const candidateIntakeCases = useMemo(
     () =>
       activeCases.filter(
@@ -75,31 +99,6 @@ export function HiringCandidatesView({
       ),
     [activeCases]
   );
-
-  const filteredCandidateControl = useMemo(() => {
-    const normalizedSearch = candidateSearchTerm.trim().toLowerCase();
-
-    return candidateControl.filter((candidate) => {
-      let matchesStage = false;
-      if (candidateStageFilter === "active") {
-        matchesStage = candidate.stage_code !== "rejected" && candidate.stage_code !== "withdrawn";
-      } else if (candidateStageFilter === "discarded") {
-        matchesStage = candidate.stage_code === "rejected" || candidate.stage_code === "withdrawn";
-      } else {
-        matchesStage = candidate.stage_code === candidateStageFilter;
-      }
-
-      const matchesSearch =
-        !normalizedSearch ||
-        candidate.full_name.toLowerCase().includes(normalizedSearch) ||
-        candidate.national_id.toLowerCase().includes(normalizedSearch) ||
-        candidate.case_code.toLowerCase().includes(normalizedSearch) ||
-        candidate.contract_name.toLowerCase().includes(normalizedSearch) ||
-        (candidate.folio ?? "").toLowerCase().includes(normalizedSearch);
-
-      return matchesStage && matchesSearch;
-    });
-  }, [candidateControl, candidateSearchTerm, candidateStageFilter]);
 
   const selectedCandidateBoardRow =
     candidateControl.find((candidate) => candidate.id === selectedCandidateId) ??
@@ -109,14 +108,26 @@ export function HiringCandidatesView({
     selectedCaseDetail?.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchTerm(candidateSearchTerm);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [candidateSearchTerm]);
+
+  useEffect(() => {
+    setCandidatePage(0);
+  }, [debouncedSearchTerm, candidateStageFilter]);
+
   return (
     <>
       <div className="tracking-toolbar">
         <div className="tracking-toolbar-copy">
           <h3>Control de candidatos</h3>
-          {errorMessage ? (
+          {combinedErrorMessage ? (
             <span className="tracking-filter-caption">
-              {errorMessage}
+              {combinedErrorMessage}
             </span>
           ) : null}
         </div>
@@ -180,8 +191,8 @@ export function HiringCandidatesView({
                 </tr>
               </thead>
               <tbody>
-                {filteredCandidateControl.length > 0 ? (
-                  filteredCandidateControl.map((candidate) => (
+                {candidateControl.length > 0 ? (
+                  candidateControl.map((candidate) => (
                     <tr
                       key={candidate.id}
                       className={
@@ -263,11 +274,18 @@ export function HiringCandidatesView({
         onClose={() => setIsTransferModalOpen(false)}
         onSuccess={() => {
           setIsTransferModalOpen(false);
-          // trigger a refresh of the dashboard
-          // Since there is no onRefresh passed to HiringCandidatesView directly,
-          // the parent handles polling/refresh via queries, but we might want to force it.
-          // For now, the user can change candidate or the polling will pick it up.
+          void invalidateRecruitmentControlQueries(
+            queryClient,
+            selectedCandidateBoardRow?.recruitment_case_id
+          );
         }}
+      />
+      <TrackingPagination
+        page={candidatePage}
+        pageSize={CANDIDATE_PAGE_SIZE}
+        totalCount={candidateTotalCount}
+        label="Candidatos visibles"
+        onPageChange={setCandidatePage}
       />
     </>
   );

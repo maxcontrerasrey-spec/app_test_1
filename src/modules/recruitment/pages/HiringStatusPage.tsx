@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
-import { invalidateInternalMobilityQueries } from "../../internal_mobility/hooks/useInternalMobilityQueries";
 import { hasModuleAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   getRecruitmentCaseDetailQueryOptions,
   invalidateRecruitmentControlQueries,
   useRecruitmentCaseDetail,
-  useRecruitmentControlDashboard
+  useRecruitmentControlSummary
 } from "../hooks/useRecruitmentQueries";
 import {
   approveCandidateStageWho,
@@ -30,10 +29,12 @@ type RecruitmentInternalView = "processes" | "candidates" | "personnel_to_hire" 
 
 const emptySummary: RecruitmentDashboardSummary = {
   pending_contracts_control: 0,
+  pending_approval_count: 0,
   active_cases: 0,
   ready_to_hire_cases: 0,
   filled_cases: 0,
-  total_cases: 0
+  total_cases: 0,
+  candidates_in_progress: 0
 };
 
 export function HiringStatusPage() {
@@ -42,7 +43,6 @@ export function HiringStatusPage() {
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
-  const [isDecisionLoading, setIsDecisionLoading] = useState<number | null>(null);
   const [isStageSaving, setIsStageSaving] = useState(false);
   const [decisionMessage, setDecisionMessage] = useState("");
   const [stageDraft, setStageDraft] = useState<RecruitmentCandidateStage | "">("");
@@ -50,65 +50,58 @@ export function HiringStatusPage() {
   const canAccessCandidateControl = hasCapability("candidate_control_access");
   const canAccessInternalMobility =
     isSuperAdmin || hasModuleAccess(accessibleModules, "movilidad_interna");
-  const dashboardQuery = useRecruitmentControlDashboard();
-  const dashboardData = dashboardQuery.data;
-  const summary = dashboardData?.summary ?? emptySummary;
-  const pendingApprovals = dashboardData?.pendingApprovals ?? [];
-  const activeCases = dashboardData?.activeCases ?? [];
-  const candidateControl = dashboardData?.candidateControl ?? [];
-  const personnelToHire = dashboardData?.personnelToHire ?? [];
-  const candidatesInProgress = candidateControl.filter(
-    (candidate) =>
-      !["hired", "rejected", "withdrawn"].includes(candidate.stage_code) &&
-      !["filled", "closed_unfilled", "cancelled"].includes(candidate.case_status)
-  ).length;
+  const summaryQuery = useRecruitmentControlSummary();
+  const summary = summaryQuery.data ?? emptySummary;
+  const candidatesInProgress = summary.candidates_in_progress ?? 0;
   const shouldLoadCaseDetail =
     canAccessCandidateControl &&
     (activeView === "candidates" || activeView === "personnel_to_hire") &&
     Boolean(selectedCaseId);
   const caseDetailQuery = useRecruitmentCaseDetail(selectedCaseId, shouldLoadCaseDetail);
   const selectedCaseDetail = caseDetailQuery.data ?? null;
-  const dashboardError =
-    dashboardQuery.error instanceof Error ? dashboardQuery.error.message : "";
+  const summaryError =
+    summaryQuery.error instanceof Error ? summaryQuery.error.message : "";
   const caseDetailError =
     caseDetailQuery.error instanceof Error ? caseDetailQuery.error.message : "";
-  const errorMessage = dashboardError || (shouldLoadCaseDetail ? caseDetailError : "");
+  const errorMessage = summaryError || (shouldLoadCaseDetail ? caseDetailError : "");
   const isLoading = Boolean(
-    dashboardQuery.isLoading || (shouldLoadCaseDetail && caseDetailQuery.isLoading)
+    summaryQuery.isLoading || (shouldLoadCaseDetail && caseDetailQuery.isLoading)
   );
 
-  const preferredCaseIds = useMemo(
-    () => [
-      ...activeCases.map((item) => item.id),
-      ...candidateControl.map((item) => item.recruitment_case_id),
-      ...personnelToHire.map((item) => item.recruitment_case_id)
-    ],
-    [activeCases, candidateControl, personnelToHire]
-  );
-  const recruitmentRealtimeSubscriptions = useMemo(
-    () => [
-      { table: "recruitment_cases" },
-      { table: "recruitment_case_assignments" },
-      { table: "recruitment_case_candidates" },
-      { table: "recruitment_case_audit_log" },
-      { table: "candidate_stage_approvals" },
-      { table: "candidate_profiles" },
-      { table: "candidate_worker_files" },
-      { table: "candidate_documents" },
-      { table: "hiring_requests" },
-      { table: "hiring_request_approvals" },
-      { table: "internal_mobility_requests" },
-      { table: "internal_mobility_request_approvals" }
-    ],
-    []
-  );
+  const recruitmentRealtimeSubscriptions = useMemo(() => {
+    if (activeView === "processes") {
+      return [
+        { table: "recruitment_cases" },
+        { table: "recruitment_case_assignments" },
+        { table: "hiring_requests" },
+        { table: "hiring_request_approvals" },
+        { table: "internal_mobility_requests" }
+      ];
+    }
+
+    if (activeView === "candidates") {
+      return [
+        { table: "recruitment_cases" },
+        { table: "recruitment_case_candidates" },
+        { table: "candidate_stage_approvals" },
+        { table: "candidate_profiles" }
+      ];
+    }
+
+    if (activeView === "personnel_to_hire") {
+      return [
+        { table: "recruitment_case_candidates" },
+        { table: "candidate_worker_files" },
+        { table: "candidate_documents" }
+      ];
+    }
+
+    return [];
+  }, [activeView]);
 
   const invalidateRealtimeRecruitment = useCallback(
     async (client: QueryClient) => {
-      await Promise.all([
-        invalidateRecruitmentControlQueries(client, selectedCaseId || undefined),
-        invalidateInternalMobilityQueries(client)
-      ]);
+      await invalidateRecruitmentControlQueries(client, selectedCaseId || undefined);
     },
     [selectedCaseId]
   );
@@ -123,17 +116,6 @@ export function HiringStatusPage() {
   const invalidateRecruitmentCache = async (caseId?: string) => {
     await invalidateRecruitmentControlQueries(queryClient, caseId || selectedCaseId || undefined);
   };
-
-  useEffect(() => {
-    const nextCaseId =
-      selectedCaseId && preferredCaseIds.includes(selectedCaseId)
-        ? selectedCaseId
-        : preferredCaseIds[0] ?? "";
-
-    if (nextCaseId !== selectedCaseId) {
-      setSelectedCaseId(nextCaseId);
-    }
-  }, [preferredCaseIds, selectedCaseId]);
 
   useEffect(() => {
     if (!selectedCaseDetail) {
@@ -337,10 +319,8 @@ export function HiringStatusPage() {
   const processesView = (
     <HiringProcessesView
       isLoading={isLoading}
-      pendingApprovals={pendingApprovals}
-      activeCases={activeCases}
+      pendingApprovalCount={summary.pending_approval_count ?? summary.pending_contracts_control}
       currentUserId={user?.id}
-      isDecisionLoading={isDecisionLoading}
       decisionMessage={decisionMessage}
       errorMessage={errorMessage}
       onApprovalSuccess={() => void invalidateRecruitmentCache()}
@@ -416,10 +396,8 @@ export function HiringStatusPage() {
           processesView
         ) : activeView === "candidates" ? (
           <HiringCandidatesView
-            isLoading={isLoading}
+            isParentLoading={isLoading}
             errorMessage={errorMessage}
-            activeCases={activeCases}
-            candidateControl={candidateControl}
             selectedCandidateId={selectedCandidateId}
             selectedCaseDetail={selectedCaseDetail}
             stageDraft={stageDraft}
@@ -442,9 +420,8 @@ export function HiringStatusPage() {
           />
         ) : activeView === "personnel_to_hire" ? (
           <HiringPersonnelToHireView
-            isLoading={isLoading}
+            isParentLoading={isLoading}
             errorMessage={errorMessage}
-            personnelToHire={personnelToHire}
             selectedCandidateId={selectedCandidateId}
             selectedCaseDetail={selectedCaseDetail}
             onSelectCandidate={(candidateId, caseId) => {
@@ -457,8 +434,8 @@ export function HiringStatusPage() {
           />
         ) : activeView === "internal_mobility" && canAccessInternalMobility ? (
           <HiringInternalMobilityView
-            isParentLoading={dashboardQuery.isLoading}
-            externalErrorMessage={dashboardError}
+            isParentLoading={summaryQuery.isLoading}
+            externalErrorMessage={summaryError}
           />
         ) : (
           processesView

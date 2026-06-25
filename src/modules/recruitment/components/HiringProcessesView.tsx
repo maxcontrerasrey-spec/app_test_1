@@ -1,20 +1,25 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
   toRecruitmentCaseStatusLabel,
-  type HiringControlApproval,
   type RecruitmentCaseListRow,
 } from "../services/hiringControl";
-import { useRecruitmentCaseDetail } from "../hooks/useRecruitmentQueries";
+import {
+  useRecruitmentCaseDetail,
+  useRecruitmentPendingApprovalsPage,
+  useRecruitmentProcessesPage
+} from "../hooks/useRecruitmentQueries";
 import {
   caseFilterOptions,
   formatDateValue,
   formatDateTimeValue
 } from "./hiringControlViewUtils";
 import { ApprovalModal } from "./ApprovalModal";
+import { TrackingPagination } from "./TrackingPagination";
 
 type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "requester_name";
-type SortValue = number | string;
+const PROCESS_PAGE_SIZE = 50;
+const APPROVAL_PAGE_SIZE = 50;
 
 const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
   { column: "case_code", label: "Caso" },
@@ -26,60 +31,10 @@ const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
   { column: "requester_name", label: "Solicitó" }
 ];
 
-const normalizeCaseSearchValue = (value: string | null | undefined) =>
-  (value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-
-const buildCaseSearchHaystack = (caseRow: RecruitmentCaseListRow) =>
-  normalizeCaseSearchValue(
-    [
-      caseRow.case_code,
-      caseRow.folio,
-      caseRow.title,
-      caseRow.contract_name,
-      caseRow.job_position_name,
-      caseRow.cost_center_name,
-      caseRow.cost_center_code,
-      caseRow.requester_name,
-      caseRow.requester_email,
-      caseRow.owner_name,
-      caseRow.shift_name,
-      caseRow.turno,
-      caseRow.travel_methodology,
-      caseRow.other_benefits
-    ]
-      .filter(Boolean)
-      .join(" ")
-  );
-
-const getCaseSortValue = (caseRow: RecruitmentCaseListRow, column: SortColumn): SortValue => {
-  switch (column) {
-    case "case_code":
-      return caseRow.case_code;
-    case "status":
-      return caseRow.status;
-    case "job_position_name":
-      return caseRow.job_position_name;
-    case "contract_name":
-      return caseRow.contract_name;
-    case "vacancies":
-      return caseRow.requested_vacancies;
-    case "candidate_count":
-      return caseRow.candidate_count;
-    case "requester_name":
-      return caseRow.requester_name ?? "";
-  }
-};
-
 type HiringProcessesViewProps = {
   isLoading: boolean;
-  pendingApprovals: HiringControlApproval[];
-  activeCases: RecruitmentCaseListRow[];
+  pendingApprovalCount: number;
   currentUserId?: string;
-  isDecisionLoading: number | null;
   decisionMessage: string;
   errorMessage: string;
   onApprovalSuccess: () => void;
@@ -88,10 +43,8 @@ type HiringProcessesViewProps = {
 
 export function HiringProcessesView({
   isLoading,
-  pendingApprovals,
-  activeCases,
+  pendingApprovalCount,
   currentUserId,
-  isDecisionLoading,
   decisionMessage,
   errorMessage,
   onApprovalSuccess,
@@ -105,12 +58,62 @@ export function HiringProcessesView({
   const [selectedApprovalId, setSelectedApprovalId] = useState<number | null>(null);
   const [isApprovalQueueExpanded, setIsApprovalQueueExpanded] = useState(false);
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [casePage, setCasePage] = useState(0);
+  const [approvalPage, setApprovalPage] = useState(0);
+  const processesQuery = useRecruitmentProcessesPage({
+    search: debouncedSearchTerm,
+    statusFilter: caseFilter,
+    sortColumn,
+    sortDirection,
+    limit: PROCESS_PAGE_SIZE,
+    offset: casePage * PROCESS_PAGE_SIZE
+  });
+  const approvalsQuery = useRecruitmentPendingApprovalsPage(
+    {
+      limit: APPROVAL_PAGE_SIZE,
+      offset: approvalPage * APPROVAL_PAGE_SIZE
+    },
+    isApprovalQueueExpanded
+  );
+  const activeCases = processesQuery.data?.items ?? [];
+  const pendingApprovals = approvalsQuery.data?.items ?? [];
+  const processTotalCount = processesQuery.data?.totalCount ?? 0;
+  const approvalTotalCount = approvalsQuery.data?.totalCount ?? pendingApprovalCount;
+  const processError =
+    processesQuery.error instanceof Error ? processesQuery.error.message : "";
+  const approvalError =
+    approvalsQuery.error instanceof Error ? approvalsQuery.error.message : "";
+  const combinedErrorMessage = errorMessage || processError || approvalError;
+  const isProcessLoading = isLoading || processesQuery.isLoading;
   const expandedCaseRow =
     activeCases.find((caseRow) => caseRow.id === expandedCaseId) ?? null;
   const expandedCaseDetailQuery = useRecruitmentCaseDetail(
     expandedCaseRow?.source_type === "request" ? "" : expandedCaseId ?? "",
     Boolean(expandedCaseId) && expandedCaseRow?.source_type !== "request"
   );
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchTerm(caseSearchTerm);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [caseSearchTerm]);
+
+  useEffect(() => {
+    setCasePage(0);
+  }, [debouncedSearchTerm, caseFilter, sortColumn, sortDirection]);
+
+  useEffect(() => {
+    setApprovalPage(0);
+  }, [isApprovalQueueExpanded]);
+
+  useEffect(() => {
+    if (expandedCaseId && !activeCases.some((caseRow) => caseRow.id === expandedCaseId)) {
+      setExpandedCaseId(null);
+    }
+  }, [activeCases, expandedCaseId]);
 
   const handleRowClick = (caseId: string) => {
     if (expandedCaseId === caseId) {
@@ -144,42 +147,6 @@ export function HiringProcessesView({
     </span>
   );
 
-  const filteredAndSortedCases = useMemo(() => {
-    const normalizedSearchTerms = normalizeCaseSearchValue(caseSearchTerm)
-      .split(/\s+/)
-      .filter(Boolean);
-
-    const filtered = activeCases.filter((caseRow) => {
-      let matchesFilter = false;
-      if (caseFilter === null) {
-        matchesFilter = ["open", "sourcing", "screening", "ready_to_hire", "partially_filled"].includes(caseRow.status);
-      } else if (caseFilter === "cancelled") {
-        matchesFilter = ["cancelled", "closed_unfilled"].includes(caseRow.status);
-      } else {
-        matchesFilter = caseRow.status === caseFilter;
-      }
-
-      if (!matchesFilter) return false;
-      const haystack = buildCaseSearchHaystack(caseRow);
-      const matchesSearch =
-        normalizedSearchTerms.length === 0 ||
-        normalizedSearchTerms.every((term) => haystack.includes(term));
-
-      return matchesFilter && matchesSearch;
-    });
-
-    if (!sortColumn) return filtered;
-
-    return [...filtered].sort((a, b) => {
-      const valA = getCaseSortValue(a, sortColumn);
-      const valB = getCaseSortValue(b, sortColumn);
-
-      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [activeCases, caseFilter, caseSearchTerm, sortColumn, sortDirection]);
-
   const selectedApproval =
     pendingApprovals.find((approval) => approval.id === selectedApprovalId) ?? null;
 
@@ -200,14 +167,14 @@ export function HiringProcessesView({
               <h3>Cola de aprobación final</h3>
               <span
                 className={`approval-count-badge ${
-                  pendingApprovals.length === 0
+                  pendingApprovalCount === 0
                     ? "badge-green"
-                    : pendingApprovals.length <= 3
+                    : pendingApprovalCount <= 3
                     ? "badge-yellow"
                     : "badge-red"
                 }`}
               >
-                {pendingApprovals.length}
+                {pendingApprovalCount}
               </span>
             </div>
           </div>
@@ -215,6 +182,10 @@ export function HiringProcessesView({
             {isApprovalQueueExpanded ? "▲" : "▼"}
           </span>
         </div>
+
+        {isApprovalQueueExpanded && approvalsQuery.isLoading ? (
+          <p className="approval-empty-state">Cargando aprobaciones pendientes...</p>
+        ) : null}
 
         {isApprovalQueueExpanded && pendingApprovals.length > 0 && (
           <ul className="approval-queue">
@@ -241,9 +212,19 @@ export function HiringProcessesView({
             ))}
           </ul>
         )}
-        {isApprovalQueueExpanded && pendingApprovals.length === 0 && (
+        {isApprovalQueueExpanded && !approvalsQuery.isLoading && pendingApprovals.length === 0 && (
           <p className="approval-empty-state">No hay aprobaciones pendientes en este momento.</p>
         )}
+
+        {isApprovalQueueExpanded ? (
+          <TrackingPagination
+            page={approvalPage}
+            pageSize={APPROVAL_PAGE_SIZE}
+            totalCount={approvalTotalCount}
+            label="Aprobaciones pendientes"
+            onPageChange={setApprovalPage}
+          />
+        ) : null}
 
         {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
       </article>
@@ -268,7 +249,7 @@ export function HiringProcessesView({
         </div>
       </div>
 
-      {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
+      {combinedErrorMessage ? <p className="form-status form-status-error">{combinedErrorMessage}</p> : null}
 
       <div className="approval-chip-row">
         {caseFilterOptions.map((option) => (
@@ -301,8 +282,8 @@ export function HiringProcessesView({
               </tr>
             </thead>
             <tbody>
-              {filteredAndSortedCases.length > 0 ? (
-                filteredAndSortedCases.map((caseRow) => {
+              {activeCases.length > 0 ? (
+                activeCases.map((caseRow) => {
                   const isExpanded = expandedCaseId === caseRow.id;
                   const detail = isExpanded ? expandedCaseDetailQuery.data ?? null : null;
                   const hr = detail?.case?.hiring_request;
@@ -603,13 +584,20 @@ export function HiringProcessesView({
               ) : (
                 <tr>
                   <td className="tracking-empty-state" colSpan={7}>
-                    {isLoading ? "Cargando casos..." : "No hay folios para el filtro actual."}
+                    {isProcessLoading ? "Cargando casos..." : "No hay folios para el filtro actual."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        <TrackingPagination
+          page={casePage}
+          pageSize={PROCESS_PAGE_SIZE}
+          totalCount={processTotalCount}
+          label="Procesos visibles"
+          onPageChange={setCasePage}
+        />
       </div>
 
       <ApprovalModal

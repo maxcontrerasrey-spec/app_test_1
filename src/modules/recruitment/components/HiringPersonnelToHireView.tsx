@@ -7,14 +7,17 @@ import {
   type RecruitmentCaseDetail,
   type RecruitmentPersonnelToHireRow
 } from "../services/hiringControl";
+import { useRecruitmentPersonnelToHirePage } from "../hooks/useRecruitmentQueries";
 import { formatDateTimeValue } from "./hiringControlViewUtils";
 import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
 import { exportBukNominaXls } from "../lib/bukEmployeeNomina";
+import { TrackingPagination } from "./TrackingPagination";
+
+const PERSONNEL_PAGE_SIZE = 50;
 
 type HiringPersonnelToHireViewProps = {
-  isLoading: boolean;
+  isParentLoading: boolean;
   errorMessage: string;
-  personnelToHire: RecruitmentPersonnelToHireRow[];
   selectedCandidateId: string;
   selectedCaseDetail: RecruitmentCaseDetail | null;
   onSelectCandidate: (candidateId: string, caseId: string) => void;
@@ -24,9 +27,8 @@ type HiringPersonnelToHireViewProps = {
 };
 
 export function HiringPersonnelToHireView({
-  isLoading,
+  isParentLoading,
   errorMessage,
-  personnelToHire,
   selectedCandidateId,
   selectedCaseDetail,
   onSelectCandidate,
@@ -35,33 +37,23 @@ export function HiringPersonnelToHireView({
   onCandidateFileUpdated
 }: HiringPersonnelToHireViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingBuk, setIsGeneratingBuk] = useState(false);
   const [exportMessage, setExportMessage] = useState("");
-
-  const filteredPersonnel = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    return personnelToHire.filter((candidate) => {
-      if (!normalizedSearch) {
-        return true;
-      }
-
-      return [
-        candidate.full_name,
-        candidate.national_id,
-        candidate.case_code,
-        candidate.contract_name,
-        candidate.job_position_name,
-        candidate.folio ?? "",
-        candidate.owner_name ?? ""
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedSearch);
-    });
-  }, [personnelToHire, searchTerm]);
+  const personnelQuery = useRecruitmentPersonnelToHirePage({
+    search: debouncedSearchTerm,
+    limit: PERSONNEL_PAGE_SIZE,
+    offset: page * PERSONNEL_PAGE_SIZE
+  });
+  const personnelToHire = personnelQuery.data?.items ?? [];
+  const totalCount = personnelQuery.data?.totalCount ?? 0;
+  const personnelError =
+    personnelQuery.error instanceof Error ? personnelQuery.error.message : "";
+  const combinedErrorMessage = errorMessage || personnelError;
+  const isLoading = isParentLoading || personnelQuery.isLoading;
 
   const selectedCandidateBoardRow =
     personnelToHire.find((candidate) => candidate.id === selectedCandidateId) ??
@@ -77,12 +69,24 @@ export function HiringPersonnelToHireView({
   );
 
   const allFilteredSelected =
-    filteredPersonnel.length > 0 &&
-    filteredPersonnel.every((candidate) => selectedCandidateIds.includes(candidate.id));
+    personnelToHire.length > 0 &&
+    personnelToHire.every((candidate) => selectedCandidateIds.includes(candidate.id));
 
-  const visibleSelectedCount = filteredPersonnel.filter((candidate) =>
+  const visibleSelectedCount = personnelToHire.filter((candidate) =>
     selectedCandidateIds.includes(candidate.id)
   ).length;
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchTerm]);
 
   useEffect(() => {
     setSelectedCandidateIds((current) =>
@@ -99,7 +103,7 @@ export function HiringPersonnelToHireView({
   };
 
   const toggleSelectAllFiltered = () => {
-    const filteredIds = filteredPersonnel.map((candidate) => candidate.id);
+    const filteredIds = personnelToHire.map((candidate) => candidate.id);
 
     setSelectedCandidateIds((current) => {
       if (filteredIds.every((id) => current.includes(id))) {
@@ -208,7 +212,7 @@ export function HiringPersonnelToHireView({
         <div className="tracking-toolbar-copy">
           <h3>Personal a Contratar</h3>
           <span className="tracking-filter-caption">
-            {errorMessage || "Candidatos contratados listos para revisar ficha y documentación final."}
+            {combinedErrorMessage || "Candidatos contratados listos para revisar ficha y documentación final."}
           </span>
         </div>
         <div className="tracking-filters tracking-filters-inline">
@@ -273,8 +277,8 @@ export function HiringPersonnelToHireView({
                 </tr>
               </thead>
               <tbody>
-                {filteredPersonnel.length > 0 ? (
-                  filteredPersonnel.map((candidate) => (
+                {personnelToHire.length > 0 ? (
+                  personnelToHire.map((candidate) => (
                     <tr
                       key={candidate.id}
                       className={
@@ -336,9 +340,16 @@ export function HiringPersonnelToHireView({
           onCandidateFileUpdated={onCandidateFileUpdated}
         />
       </div>
-      {filteredPersonnel.length > 0 ? (
+      <TrackingPagination
+        page={page}
+        pageSize={PERSONNEL_PAGE_SIZE}
+        totalCount={totalCount}
+        label="Personal visible"
+        onPageChange={setPage}
+      />
+      {personnelToHire.length > 0 ? (
         <p className="tracking-filter-caption">
-          {visibleSelectedCount} seleccionado(s) en el filtro actual · {selectedPersonnel.length} total para exportar
+          {visibleSelectedCount} seleccionado(s) en la página actual · {selectedPersonnel.length} total para exportar
         </p>
       ) : null}
     </>

@@ -33,10 +33,12 @@ export type WhoApprovalCause = {
 
 export type RecruitmentDashboardSummary = {
   pending_contracts_control: number;
+  pending_approval_count?: number;
   active_cases: number;
   ready_to_hire_cases: number;
   filled_cases: number;
   total_cases: number;
+  candidates_in_progress?: number;
 };
 
 export type HiringControlApproval = {
@@ -386,12 +388,14 @@ export type RecruitmentCaseDetail = {
   audit: RecruitmentCaseAuditRow[];
 };
 
-type RecruitmentControlDashboardPayload = {
-  summary?: RecruitmentDashboardSummary | null;
-  pending_approvals?: HiringControlApproval[] | null;
-  active_cases?: RecruitmentCaseListRow[] | null;
-  candidate_control?: RecruitmentCandidateControlRow[] | null;
-  personnel_to_hire?: RecruitmentPersonnelToHireRow[] | null;
+export type RecruitmentPagedResponse<T> = {
+  items: T[];
+  totalCount: number;
+};
+
+type RecruitmentPagedPayload<T> = {
+  items?: T[] | null;
+  total_count?: number | null;
 };
 
 function formatRpcError(error: {
@@ -438,7 +442,16 @@ export function toRecruitmentCandidateStageLabel(
   return "Lead";
 }
 
-export async function fetchRecruitmentControlDashboard() {
+function parsePagedPayload<T>(payload: unknown): RecruitmentPagedResponse<T> {
+  const parsed = (payload ?? {}) as RecruitmentPagedPayload<T>;
+
+  return {
+    items: Array.isArray(parsed.items) ? parsed.items : [],
+    totalCount: Number(parsed.total_count ?? 0)
+  };
+}
+
+export async function fetchRecruitmentControlSummary() {
   if (!supabase) {
     return {
       data: null,
@@ -446,31 +459,184 @@ export async function fetchRecruitmentControlDashboard() {
     };
   }
 
-  const { data, error } = await supabase.rpc("get_recruitment_control_dashboard_v2");
+  const { data, error } = await supabase.rpc("get_recruitment_control_summary");
 
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar el tablero de Control de Contrataciones."
+      error: formatRpcError(error) || "No fue posible cargar el resumen de Control de Contrataciones."
     };
   }
 
-  const payload = (data ?? {}) as RecruitmentControlDashboardPayload;
+  return {
+    data: (data ?? {
+      pending_contracts_control: 0,
+      pending_approval_count: 0,
+      active_cases: 0,
+      ready_to_hire_cases: 0,
+      filled_cases: 0,
+      total_cases: 0,
+      candidates_in_progress: 0
+    }) as RecruitmentDashboardSummary,
+    error: null
+  };
+}
+
+export async function fetchRecruitmentPendingApprovalsPage(input: {
+  limit: number;
+  offset: number;
+}) {
+  if (!supabase) {
+    return {
+      data: null,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_recruitment_pending_approvals_page", {
+    p_limit: input.limit,
+    p_offset: input.offset
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: formatRpcError(error) || "No fue posible cargar la cola de aprobaciones."
+    };
+  }
 
   return {
-    data: {
-      summary: payload.summary ?? {
-        pending_contracts_control: 0,
-        active_cases: 0,
-        ready_to_hire_cases: 0,
-        filled_cases: 0,
-        total_cases: 0
-      },
-      pendingApprovals: payload.pending_approvals ?? [],
-      activeCases: payload.active_cases ?? [],
-      candidateControl: payload.candidate_control ?? [],
-      personnelToHire: payload.personnel_to_hire ?? []
-    },
+    data: parsePagedPayload<HiringControlApproval>(data),
+    error: null
+  };
+}
+
+export async function fetchRecruitmentProcessesPage(input: {
+  search?: string;
+  statusFilter?: string | null;
+  sortColumn?: string | null;
+  sortDirection?: "asc" | "desc";
+  limit: number;
+  offset: number;
+}) {
+  if (!supabase) {
+    return {
+      data: null,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_recruitment_processes_page", {
+    p_search: input.search?.trim() ? input.search.trim() : null,
+    p_status_filter: input.statusFilter ?? null,
+    p_sort_column: input.sortColumn ?? null,
+    p_sort_direction: input.sortDirection ?? "asc",
+    p_limit: input.limit,
+    p_offset: input.offset
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: formatRpcError(error) || "No fue posible cargar los procesos de contratación."
+    };
+  }
+
+  return {
+    data: parsePagedPayload<RecruitmentCaseListRow>(data),
+    error: null
+  };
+}
+
+export async function fetchRecruitmentCandidatesPage(input: {
+  search?: string;
+  stageFilter?: string;
+  limit: number;
+  offset: number;
+}) {
+  if (!supabase) {
+    return {
+      data: null,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_recruitment_candidates_page", {
+    p_search: input.search?.trim() ? input.search.trim() : null,
+    p_stage_filter: input.stageFilter ?? "active",
+    p_limit: input.limit,
+    p_offset: input.offset
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: formatRpcError(error) || "No fue posible cargar candidatos."
+    };
+  }
+
+  return {
+    data: parsePagedPayload<RecruitmentCandidateControlRow>(data),
+    error: null
+  };
+}
+
+export async function fetchRecruitmentPersonnelToHirePage(input: {
+  search?: string;
+  limit: number;
+  offset: number;
+}) {
+  if (!supabase) {
+    return {
+      data: null,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_recruitment_personnel_to_hire_page", {
+    p_search: input.search?.trim() ? input.search.trim() : null,
+    p_limit: input.limit,
+    p_offset: input.offset
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: formatRpcError(error) || "No fue posible cargar personal a contratar."
+    };
+  }
+
+  return {
+    data: parsePagedPayload<RecruitmentPersonnelToHireRow>(data),
+    error: null
+  };
+}
+
+export async function fetchRecruitmentActiveCaseOptions(input: {
+  search?: string;
+  limit?: number;
+} = {}) {
+  if (!supabase) {
+    return {
+      data: [] as RecruitmentCaseListRow[],
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_recruitment_active_case_options", {
+    p_search: input.search?.trim() ? input.search.trim() : null,
+    p_limit: input.limit ?? 500
+  });
+
+  if (error) {
+    return {
+      data: [] as RecruitmentCaseListRow[],
+      error: formatRpcError(error) || "No fue posible cargar folios disponibles."
+    };
+  }
+
+  return {
+    data: Array.isArray(data) ? (data as RecruitmentCaseListRow[]) : [],
     error: null
   };
 }

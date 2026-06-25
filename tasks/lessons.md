@@ -4,6 +4,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 66. En RPCs paginadas, el orden debe sobrevivir hasta el `jsonb_agg`
+
+- **No basta con aplicar `ORDER BY ... LIMIT/OFFSET` antes de agregar JSON**. Si luego se usa `jsonb_agg` sin un ordinal estable calculado después del ordenamiento, PostgreSQL puede devolver los items de la página en orden distinto al solicitado aunque la página seleccionada sea la correcta.
+- **El patrón seguro es ordenar en una subconsulta y recién después asignar `row_number()` para el aggregate**. Toda RPC que devuelva `{items,total_count}` debe validar con una query de humo que `sort asc/desc` se refleje en el arreglo JSON final, no solo en el plan SQL intermedio.
+
 ## 1. Zero Trust y Supabase RLS
 
 - **No confíes en el cliente para gobernar datos sensibles**. Aunque RLS en Supabase ofrece políticas a nivel de tabla, si un usuario tiene permiso `UPDATE` sobre su propio registro en la tabla `profiles`, puede inyectar modificaciones maliciosas a columnas sensibles como `is_super_admin`.

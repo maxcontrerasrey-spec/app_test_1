@@ -3,7 +3,21 @@ export const queryKeys = {
     home: (userId: string) => ["dashboard-home", userId] as const
   },
   recruitment: {
-    controlDashboard: () => ["recruitment", "control-dashboard"] as const,
+    controlSummary: () => ["recruitment", "control-summary"] as const,
+    approvalsRoot: () => ["recruitment", "approvals"] as const,
+    approvals: (filters: Record<string, unknown>) =>
+      ["recruitment", "approvals", filters] as const,
+    processesRoot: () => ["recruitment", "processes"] as const,
+    processes: (filters: Record<string, unknown>) =>
+      ["recruitment", "processes", filters] as const,
+    candidatesRoot: () => ["recruitment", "candidates"] as const,
+    candidates: (filters: Record<string, unknown>) =>
+      ["recruitment", "candidates", filters] as const,
+    personnelRoot: () => ["recruitment", "personnel-to-hire"] as const,
+    personnel: (filters: Record<string, unknown>) =>
+      ["recruitment", "personnel-to-hire", filters] as const,
+    activeCaseOptions: (filters: Record<string, unknown>) =>
+      ["recruitment", "active-case-options", filters] as const,
     caseDetail: (caseId: string) => ["recruitment", "case-detail", caseId] as const,
     hiringCatalogs: () => ["recruitment", "hiring-catalogs"] as const
   },

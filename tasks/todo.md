@@ -2,6 +2,25 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Endurecimiento enterprise de Reclutamiento y Movilidad Interna
+
+- [x] Contrastar cada hallazgo de la auditoría adjunta contra el esquema, RPCs, triggers e índices finales, descartando recomendaciones ya resueltas o que introduzcan riesgo operacional
+- [x] Corregir las brechas vigentes de notificación secuencial, indexación y consistencia del catálogo one-to-one mediante una migración incremental segura
+- [x] Reducir invalidaciones Realtime globales y payloads innecesarios del control de reclutamiento sin degradar actualización ni permisos
+- [x] Evaluar la búsqueda de trabajadores de movilidad sobre la fuente BUK actual y descartar materialización riesgosa sin duplicar fuentes de verdad
+- [x] Aplicar y versionar la migración en Supabase, ejecutar pruebas de contrato/rendimiento, validar frontend y documentar el cierre
+
+## Resultado de endurecimiento enterprise de Reclutamiento y Movilidad Interna
+
+- Se agregó y aplicó en Supabase la migración [`20260625022401_harden_recruitment_mobility_enterprise_scale.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625022401_harden_recruitment_mobility_enterprise_scale.sql:1), con índices faltantes sobre `internal_mobility_requests.destination_contract_id`, `submitted_by` y `final_decided_by`.
+- La notificación pendiente de Movilidad Interna ya no depende solo de `INSERT`: `trg_internal_mobility_pending_email_dispatch` quedó como `AFTER INSERT OR UPDATE OF status`, por lo que una reapertura a `pending` en `contracts_control` vuelve a encolar correo.
+- El flag `buk_contract_mappings.is_one_to_one` dejó de ser solo backfill estático. Ahora se recalcula por trigger cuando cambia `contract_id`, `is_operational` o el propio flag, evitando que nuevos mappings operativos dejen destinos ambiguos visibles en contratación/movilidad.
+- `Control de Contrataciones` dejó de consumir `get_recruitment_control_dashboard_v2` en frontend. La vista ahora usa `get_recruitment_control_summary()` y páginas específicas para aprobaciones, procesos, candidatos, personal y folios activos, todas con `limit/offset`, búsqueda server-side y `total_count`.
+- Las invalidaciones Realtime del módulo quedaron acotadas por subvista: procesos, candidatos y personal ya no escuchan las 12 tablas globales al mismo tiempo ni invalidan movilidad interna desde el padre.
+- Se evaluó la recomendación de materializar `employees_active_current` y no se aplicó en esta pasada: habría creado una segunda fuente de verdad BUK sin un job de sincronización dedicado. La decisión segura fue no tocar esa vista hasta diseñar una sync/materialización explícita.
+- Validación remota cerrada con `supabase db push --linked --include-all`, `supabase migration list --linked`, humo RPC con usuario de reclutamiento (`active_cases = 53`, `candidates_in_progress = 45`, búsqueda `zona ii = 41`) y prueba de orden server-side corregida (`RC-0013`, `RC-0015`, `RC-0017`, ...).
+- Validación local cerrada con `npm run audit:migrations -- --files supabase/migrations/20260625022401_harden_recruitment_mobility_enterprise_scale.sql`, `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Optimización final de catálogos en analítica de incentivos
 
 - [x] Contrastar la auditoría post-optimización contra `get_hr_incentives_analytics(...)` y aislar el único hallazgo aún vigente
