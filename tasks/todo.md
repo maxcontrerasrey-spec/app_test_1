@@ -258,6 +258,27 @@
 - [x] Versionar y aplicar en Supabase la corrección incremental de `capability -> capability_code` en la función lateral WHO
 - [x] Revalidar auditoría de migraciones, tipado y push remoto antes de cerrar
 
+## Aterrizaje de auditoría enterprise de Incentivos Extraordinarios
+
+- [x] Contrastar cada hallazgo de `/Users/maximilianocontrerasrey/Downloads/auditoria_incentivos_extraordinarios.md` contra las RPCs y migraciones vivas del módulo para separar findings vigentes de puntos ya corregidos
+- [x] Endurecer la bandeja de incentivos sin romper contrato: denormalizar el aprobador pendiente actual, eliminar la subconsulta lateral del filtro principal y reemplazar `COUNT(*) OVER` por un patrón de conteo/página más barato
+- [x] Corregir la agregación analítica por homónimos usando `employee_buk_employee_id` como clave de grupo manteniendo el payload JSON que ya consume frontend
+- [x] Reducir costo de resolución de trabajador en incentivos con soporte de indexación seguro para `normalize_buk_area_name(area_name)` sin alterar la fuente de verdad BUK
+- [x] Validar con `audit:migrations`, `TypeScript`, build, `git diff --check`, `db push` remoto, humo SQL y documentar qué hallazgos de la auditoría quedaron descartados por ya estar resueltos
+
+## Resultado de aterrizaje de auditoría enterprise de Incentivos Extraordinarios
+
+- La auditoría quedó aterrizada contra el SQL vivo y no se implementó a ciegas. Dos hallazgos venían **ya resueltos** antes de esta pasada:
+  1. `SEC-01` ya estaba cubierto en [`cancel_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260615113000_reconcile_roster_extra_shift_with_incentives.sql:758), que hoy sí reconcilia `extra_shift` al anular incentivos sobre descanso.
+  2. `CONC-01` ya estaba cubierto en [`bulk_decide_hr_incentive_request_approvals(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260614235500_optimize_hr_incentive_mass_workflows.sql:816), que normaliza y ordena determinísticamente los `approval_ids` antes de bloquear y procesar.
+- Se agregó y aplicó en Supabase la migración [`20260626152000_harden_hr_incentives_enterprise_audit_findings.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260626152000_harden_hr_incentives_enterprise_audit_findings.sql:1), que cierra los hallazgos vigentes sin romper el contrato frontend:
+  - denormaliza `current_approver_name` en `hr_incentive_requests`, con sincronización automática por trigger desde `hr_incentive_request_approvals`;
+  - rehace [`get_hr_incentive_requests(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260626152000_harden_hr_incentives_enterprise_audit_findings.sql:115) para quitar el `LEFT JOIN LATERAL` del filtro de texto y reemplazar `COUNT(*) OVER()` por `filtered_count + paged_requests`;
+  - corrige [`get_hr_incentives_analytics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260626152000_harden_hr_incentives_enterprise_audit_findings.sql:398) para agrupar por `employee_buk_employee_id` y evitar colisión de homónimos sin alterar el JSON consumido por la UI;
+  - agrega soporte de indexación para búsquedas textuales (`pg_trgm`) y para `normalize_buk_area_name(area_name)` sobre `public.employees`.
+- El único ajuste de implementación requerido durante el despliegue fue técnico y seguro: el índice GIN no aceptó `concat_ws(...)` por no ser `IMMUTABLE`, así que se introdujo la helper [`build_hr_incentive_request_search_text(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260626152000_harden_hr_incentives_enterprise_audit_findings.sql:7) para alinear expresión de búsqueda e indexación sin tocar el payload del módulo.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260626152000_harden_hr_incentives_enterprise_audit_findings.sql`, `npx tsc -b --pretty false`, `npm run build:frontend-check`, `git diff --check`, `npx --yes supabase db push --linked --include-all` y verificación remota posterior con `supabase migration list --linked`.
+
 ## Búsqueda ampliada en resumen de procesos de contratación
 
 - [x] Auditar qué columnas usa hoy el buscador de `Resumen de procesos de contratación`
