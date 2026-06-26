@@ -33,9 +33,15 @@ export type RosterExceptionTypeOption = {
   label: string;
 };
 
+export type RosterOperationalAreaOption = {
+  value: string;
+  label: string;
+};
+
 export type RosterSetupCatalogs = {
   patterns: ShiftPattern[];
   exceptionTypes: RosterExceptionTypeOption[];
+  operationalAreas: RosterOperationalAreaOption[];
 };
 
 export type RosterWorkerSearchItem = {

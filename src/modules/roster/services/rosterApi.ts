@@ -54,6 +54,10 @@ function mapSetupCatalogs(payload: unknown): RosterSetupCatalogs {
     exceptionTypes: asArray<Record<string, unknown>>(source.exception_types).map((item) => ({
       value: String(item.value ?? "") as RosterExceptionType,
       label: String(item.label ?? "")
+    })),
+    operationalAreas: asArray<Record<string, unknown>>(source.operational_areas).map((item) => ({
+      value: String(item.value ?? ""),
+      label: String(item.label ?? "")
     }))
   };
 }

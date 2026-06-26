@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { PageShell, DatePickerField, SelectField, TextField } from "../../../shared/ui";
+import { DatePickerField, PageShell, SelectField, TextField } from "../../../shared/ui";
 import { formatRequestDate, formatPersonLabel } from "../../../shared/lib/format";
 import { addMonthsToDateValue, getDaysSince, toMonthInputValue, toTodayDateValue } from "../../../shared/lib/date";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
@@ -76,8 +76,7 @@ export function RosterPage() {
   const [selectedWorker, setSelectedWorker] = useState<RosterWorkerSearchItem | null>(null);
   const [workerSearchTerm, setWorkerSearchTerm] = useState("");
   const [monthValue, setMonthValue] = useState(todayMonthValue());
-  const [contractFilter, setContractFilter] = useState("");
-  const [areaFilter, setAreaFilter] = useState("");
+  const [operationalAreaFilter, setOperationalAreaFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState(toTodayDateValue());
   const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
   const [exceptionDate, setExceptionDate] = useState(toTodayDateValue());
@@ -91,10 +90,10 @@ export function RosterPage() {
   const rosterCalendarSummaryQuery = useRosterCalendarSummary({
     monthValue,
     search: workerSearchTerm,
-    contractFilter,
-    areaFilter,
+    areaFilter: operationalAreaFilter,
     enabled: !isPatternsView
   });
+  const operationalAreaOptions = setupCatalogsQuery.data?.operationalAreas ?? [];
   const monthRange = useMemo(() => buildMonthRange(monthValue), [monthValue]);
   const workerScheduleQuery = useWorkerSchedule({
     bukEmployeeId: selectedWorker?.bukEmployeeId ?? "",
@@ -255,20 +254,13 @@ export function RosterPage() {
                   />
                 </div>
 
-                <TextField
-                  id="roster-worker-contract"
-                  label="Contrato"
-                  value={contractFilter}
-                  placeholder={selectedWorker?.contractCode ?? "Filtra por contrato"}
-                  onChange={(event) => setContractFilter(event.target.value)}
-                  className="roster-filter-contract"
-                />
-                <TextField
-                  id="roster-worker-area"
-                  label="Área"
-                  value={areaFilter}
-                  placeholder={selectedWorker?.areaName ?? "Filtra por área"}
-                  onChange={(event) => setAreaFilter(event.target.value)}
+                <SelectField
+                  id="roster-operational-area"
+                  label="Contrato / Área"
+                  value={operationalAreaFilter}
+                  onChange={(event) => setOperationalAreaFilter(event.target.value)}
+                  options={operationalAreaOptions}
+                  placeholder="Todos los contratos / áreas"
                   className="roster-filter-area"
                 />
               </div>

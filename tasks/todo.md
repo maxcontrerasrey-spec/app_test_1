@@ -233,6 +233,19 @@
 - [`src/modules/roster/pages/RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:1) ahora muestra dos tarjetas bajo `Calendario` con personas asignadas y pendientes. El conteo se respalda en la nueva RPC [`get_hr_roster_calendar_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260626124500_add_hr_roster_calendar_summary.sql:1), filtrando por mes, búsqueda de trabajador, contrato y área sin depender de resultados parciales del autocomplete.
 - Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260626124500_add_hr_roster_calendar_summary.sql`, `npx tsc -b --pretty false`, `npm run build`, `git diff --check` y publicación remota de la migración con `npx --yes supabase db push --linked --include-all`.
 
+## Ajuste de filtro semántico en Jornadas y Turnos
+
+- [x] Reemplazar los inputs libres de `Contrato` y `Área` en `Jornadas y Turnos` por un único desplegable consistente con la semántica real de la vista
+- [x] Publicar desde backend el catálogo de opciones operativas para ese filtro y alinear el resumen de roster para que trate `Contrato/Área` como una sola dimensión
+- [x] Revalidar `TypeScript`, build, auditoría SQL, `db push` remoto y documentar el cierre
+
+## Resultado de ajuste de filtro semántico en Jornadas y Turnos
+
+- [`src/modules/roster/pages/RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:1) dejó de mostrar dos campos libres (`Contrato` y `Área`) y ahora usa un solo desplegable `Contrato / Área`, coherente con la semántica operativa que ya consumía la vista.
+- [`src/modules/roster/services/rosterApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/services/rosterApi.ts:1) y [`src/modules/roster/types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/types.ts:1) ahora leen `operational_areas` desde setup catalogs para poblar ese selector sin depender del trabajador seleccionado.
+- La migración [`20260626133500_unify_hr_roster_scope_filter.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260626133500_unify_hr_roster_scope_filter.sql:1) unifica el filtro backend sobre `coalesce(area_name, contract_code)` y publica el catálogo del desplegable desde `get_hr_roster_setup_catalogs()`, manteniendo compatibilidad con la firma previa de `get_hr_roster_calendar_summary(...)`.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260626133500_unify_hr_roster_scope_filter.sql`, `npx tsc -b --pretty false`, `npm run build`, `git diff --check`, `npx --yes supabase db push --linked --include-all` y verificación posterior con `supabase migration list --linked`.
+
 ## Hotfix de error SQL al enviar WHO a aprobación
 
 - [x] Auditar el error `column rcc.candidate_id does not exist` para confirmar si nacía en la RPC principal o en un trigger lateral del flujo WHO

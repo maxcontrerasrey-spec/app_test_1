@@ -34,6 +34,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con commitear, pushear y pasar `tsc/build` si la UI llama una función nueva de Supabase**. Si la migración no se aplica al proyecto remoto, PostgREST responderá `Could not find the function ... in the schema cache` aunque el código del repo sea correcto.
 - **La verificación mínima de cierre para RPCs nuevas es doble**: `supabase db push --linked --include-all` y luego `supabase migration list --linked` o una comprobación equivalente que demuestre que la versión quedó presente en remoto. Solo después de eso el cambio está realmente operativo.
 
+## 72. Si dos filtros representan la misma dimensión operativa, la UI debe exponer uno solo y con catálogo controlado
+
+- **No uses dos inputs distintos para `Contrato` y `Área` cuando el usuario opera ambos como el mismo scope de trabajo**. Esa duplicidad crea ambigüedad, filtros contradictorios y una semántica falsa sobre el dominio.
+- **Cuando el scope es único, el filtro correcto es un desplegable respaldado por catálogo backend**. Así la UI evita texto libre inconsistente, el resumen agregado y la búsqueda usan la misma dimensión, y el nombre visible sale de una fuente operativa única.
+
 ## 1. Zero Trust y Supabase RLS
 
 - **No confíes en el cliente para gobernar datos sensibles**. Aunque RLS en Supabase ofrece políticas a nivel de tabla, si un usuario tiene permiso `UPDATE` sobre su propio registro en la tabla `profiles`, puede inyectar modificaciones maliciosas a columnas sensibles como `is_super_admin`.
