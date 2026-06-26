@@ -24,6 +24,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No vuelvas a descargar tablas maestras de BUK en cada ejecución de una cola**. Aunque la lógica funcional sea correcta, eso agrega latencia fija, consumo innecesario de rate limit y un nuevo punto de falla por cada candidato procesado.
 - **La forma enterprise es caché local con TTL y fallback stale controlado**. Primero se resuelve desde base local; solo cuando expira se refresca el catálogo externo. Si el proveedor falla pero el caché existe, el proceso debe degradar con resiliencia y no colapsar toda la corrida.
 
+## 70. Una vista de resumen no debe convertirse en superficie operativa, y los detalles filtrados deben poder des-seleccionarse
+
+- **Si el mismo dominio tiene una pantalla de resumen y otra de control, los botones mutables deben vivir en un solo lugar**. Duplicar acciones como `ejecutar`, `rechazar` o `cerrar` en la vista histórica rompe la separación entre seguimiento y operación, y termina creando ambigüedad sobre cuál es la superficie autorizada.
+- **Cuando una tabla usa selección por click para filtrar el detalle, el comportamiento debe ser simétrico**. Si un primer click aplica el filtro, un segundo click sobre la misma fila debe retirarlo; además, la UI no debe rehidratar automáticamente la primera fila solo porque la data sigue cargada, o el usuario siente un resumen “pegado” que nunca se limpia.
+
 ## 1. Zero Trust y Supabase RLS
 
 - **No confíes en el cliente para gobernar datos sensibles**. Aunque RLS en Supabase ofrece políticas a nivel de tabla, si un usuario tiene permiso `UPDATE` sobre su propio registro en la tabla `profiles`, puede inyectar modificaciones maliciosas a columnas sensibles como `is_super_admin`.

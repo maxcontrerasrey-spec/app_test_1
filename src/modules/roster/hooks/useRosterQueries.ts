@@ -1,6 +1,7 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  fetchRosterCalendarSummary,
   fetchRosterSetupCatalogs,
   fetchWorkerSchedule,
   searchRosterWorkers
@@ -17,6 +18,43 @@ export function useRosterSetupCatalogs(enabled = true) {
     staleTime: ROSTER_SETUP_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
     enabled
+  });
+}
+
+export function useRosterCalendarSummary(params: {
+  monthValue: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+  enabled?: boolean;
+}) {
+  const {
+    monthValue,
+    search = "",
+    contractFilter = "",
+    areaFilter = "",
+    enabled = true
+  } = params;
+
+  return useQuery({
+    queryKey: queryKeys.roster.calendarSummary({
+      monthValue,
+      search,
+      contractFilter,
+      areaFilter
+    }),
+    queryFn: () =>
+      fetchRosterCalendarSummary({
+        monthValue,
+        search,
+        contractFilter,
+        areaFilter
+      }),
+    staleTime: ROSTER_STALE_TIME_MS,
+    gcTime: ROSTER_GC_TIME_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    enabled: enabled && Boolean(monthValue)
   });
 }
 

@@ -68,8 +68,8 @@ export function HiringInternalMobilityView({
       return;
     }
 
-    if (!selectedRequestId || !approvedRequests.some((request) => request.requestId === selectedRequestId)) {
-      setSelectedRequestId(approvedRequests[0].requestId);
+    if (selectedRequestId && !approvedRequests.some((request) => request.requestId === selectedRequestId)) {
+      setSelectedRequestId("");
     }
   }, [approvedRequests, selectedRequestId]);
 
@@ -174,7 +174,11 @@ export function HiringInternalMobilityView({
                       className={
                         request.requestId === selectedRequestId ? "tracking-row-selected" : ""
                       }
-                      onClick={() => setSelectedRequestId(request.requestId)}
+                      onClick={() =>
+                        setSelectedRequestId((currentId) =>
+                          currentId === request.requestId ? "" : request.requestId
+                        )
+                      }
                     >
                       <td>
                         <strong>{request.employeeFullName}</strong>

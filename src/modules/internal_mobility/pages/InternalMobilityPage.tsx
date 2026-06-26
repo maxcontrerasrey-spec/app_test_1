@@ -9,7 +9,6 @@ import { PageShell, TextField } from "../../../shared/ui";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import { InternalMobilityWorkerLookup } from "../components/InternalMobilityWorkerLookup";
 import {
-  canManageInternalMobilityHrExecution,
   formatInternalMobilityOpenDays,
   toInternalMobilityAuditLabel,
   toInternalMobilityExecutionStatusLabel,
@@ -22,10 +21,7 @@ import {
   useInternalMobilitySetupCatalogs,
   useInternalMobilityWorkerContext
 } from "../hooks/useInternalMobilityQueries";
-import {
-  createInternalMobilityRequest,
-  setInternalMobilityHrExecutionStatus
-} from "../services/internalMobilityApi";
+import { createInternalMobilityRequest } from "../services/internalMobilityApi";
 import type { InternalMobilityEligibleFolio, InternalMobilityEligibleWorker } from "../types";
 
 const UNRESOLVED_COMPANY_LABEL = "No resuelta";
@@ -57,7 +53,7 @@ function toApprovalTimelineLabel(status: "pending" | "approved" | "rejected") {
 
 export function InternalMobilityPage() {
   const queryClient = useQueryClient();
-  const { appRoles, displayName, isSuperAdmin, jobTitle, user } = useAuth();
+  const { displayName, jobTitle, user } = useAuth();
   const [selectedWorker, setSelectedWorker] = useState<InternalMobilityEligibleWorker | null>(null);
   const [selectedFolioId, setSelectedFolioId] = useState("");
   const [motive, setMotive] = useState("");
@@ -68,8 +64,6 @@ export function InternalMobilityPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
   const [page, setPage] = useState(0);
-  const [isHrExecutionSaving, setIsHrExecutionSaving] = useState(false);
-  const [hrExecutionError, setHrExecutionError] = useState<string | null>(null);
 
   const setupCatalogsQuery = useInternalMobilitySetupCatalogs();
   const workerContextQuery = useInternalMobilityWorkerContext(
@@ -170,10 +164,6 @@ export function InternalMobilityPage() {
     setPage(0);
   }, [searchTerm]);
 
-  useEffect(() => {
-    setHrExecutionError(null);
-  }, [selectedRequestId]);
-
   const totalPages = Math.ceil(filteredRequests.length / REQUESTS_PAGE_SIZE);
   const paginatedRequests = filteredRequests.slice(
     page * REQUESTS_PAGE_SIZE,
@@ -191,7 +181,6 @@ export function InternalMobilityPage() {
     Boolean(motive.trim()) &&
     requesterSigned &&
     !isSubmitting;
-  const canManageHrExecution = canManageInternalMobilityHrExecution(appRoles, isSuperAdmin);
   const selectedRequestOpenDays = requestDetailQuery.data
     ? formatInternalMobilityOpenDays(
         requestDetailQuery.data.request.approvedAt ?? requestDetailQuery.data.request.submittedAt,
@@ -239,36 +228,6 @@ export function InternalMobilityPage() {
       setSubmitError(error instanceof Error ? error.message : "No fue posible registrar la solicitud.");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleHrExecutionStatusChange = async (
-    status: "pending" | "executed" | "rejected"
-  ) => {
-    if (!selectedRequestId) {
-      return;
-    }
-
-    setIsHrExecutionSaving(true);
-    setHrExecutionError(null);
-
-    try {
-      const { error } = await setInternalMobilityHrExecutionStatus({
-        requestId: selectedRequestId,
-        status
-      });
-
-      if (error) {
-        setHrExecutionError(error);
-        return;
-      }
-
-      await invalidateInternalMobilityQueries(queryClient, selectedRequestId);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.dashboard.home(user?.id ?? "anonymous")
-      });
-    } finally {
-      setIsHrExecutionSaving(false);
     }
   };
 
@@ -757,44 +716,6 @@ export function InternalMobilityPage() {
                                           <strong>{requestDetail.request.requiresTermination ? "Sí" : "No"}</strong>
                                         </div>
                                       </div>
-                                      {requestDetail.request.status === "approved" ? (
-                                        <div className="mobility-execution-actions">
-                                          <button
-                                            type="button"
-                                            className="soft-primary-button"
-                                            disabled={!canManageHrExecution || isHrExecutionSaving}
-                                            onClick={() => {
-                                              void handleHrExecutionStatusChange("pending");
-                                            }}
-                                          >
-                                            Pendiente de Ejecución RRHH
-                                          </button>
-                                          <button
-                                            type="button"
-                                            className="soft-primary-button"
-                                            disabled={!canManageHrExecution || isHrExecutionSaving}
-                                            onClick={() => {
-                                              void handleHrExecutionStatusChange("executed");
-                                            }}
-                                          >
-                                            {isHrExecutionSaving ? "Guardando..." : "Ejecutado RRHH"}
-                                          </button>
-                                          <button
-                                            type="button"
-                                            className="soft-primary-button"
-                                            disabled={!canManageHrExecution || isHrExecutionSaving}
-                                            onClick={() => {
-                                              void handleHrExecutionStatusChange("rejected");
-                                            }}
-                                          >
-                                            {isHrExecutionSaving ? "Guardando..." : "Rechazado"}
-                                          </button>
-                                        </div>
-                                      ) : null}
-                                      {!canManageHrExecution && requestDetail.request.status === "approved" ? (
-                                        <p className="helper-copy">Solo RRHH administrativo o administradores pueden cerrar esta ejecución.</p>
-                                      ) : null}
-                                      {hrExecutionError ? <p className="form-status form-status-error">{hrExecutionError}</p> : null}
                                     </div>
                                   </div>
                                 ) : null}

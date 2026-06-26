@@ -49,6 +49,14 @@ export type RosterWorkerSearchItem = {
   displayLabel: string;
 };
 
+export type RosterCalendarSummary = {
+  monthStart: string;
+  monthEnd: string;
+  assignedCount: number;
+  pendingCount: number;
+  totalCount: number;
+};
+
 export type WorkerRosterAssignment = {
   id: string;
   patternId: string;

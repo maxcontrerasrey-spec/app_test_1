@@ -6,7 +6,12 @@ import { formatRequestDate, formatPersonLabel } from "../../../shared/lib/format
 import { addMonthsToDateValue, getDaysSince, toMonthInputValue, toTodayDateValue } from "../../../shared/lib/date";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
-import { invalidateRosterQueries, useRosterSetupCatalogs, useWorkerSchedule } from "../hooks/useRosterQueries";
+import {
+  invalidateRosterQueries,
+  useRosterCalendarSummary,
+  useRosterSetupCatalogs,
+  useWorkerSchedule
+} from "../hooks/useRosterQueries";
 import {
   assignWorkerRoster,
   setRosterExceptionStatus,
@@ -69,7 +74,10 @@ export function RosterPage() {
   const queryClient = useQueryClient();
   const isPatternsView = location.pathname.endsWith("/patterns");
   const [selectedWorker, setSelectedWorker] = useState<RosterWorkerSearchItem | null>(null);
+  const [workerSearchTerm, setWorkerSearchTerm] = useState("");
   const [monthValue, setMonthValue] = useState(todayMonthValue());
+  const [contractFilter, setContractFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState(toTodayDateValue());
   const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
   const [exceptionDate, setExceptionDate] = useState(toTodayDateValue());
@@ -80,6 +88,13 @@ export function RosterPage() {
   const rosterProjectionMaxMonth = maxProjectionMonthValue();
 
   const setupCatalogsQuery = useRosterSetupCatalogs();
+  const rosterCalendarSummaryQuery = useRosterCalendarSummary({
+    monthValue,
+    search: workerSearchTerm,
+    contractFilter,
+    areaFilter,
+    enabled: !isPatternsView
+  });
   const monthRange = useMemo(() => buildMonthRange(monthValue), [monthValue]);
   const workerScheduleQuery = useWorkerSchedule({
     bukEmployeeId: selectedWorker?.bukEmployeeId ?? "",
@@ -214,6 +229,7 @@ export function RosterPage() {
                   label="Trabajador"
                   placeholder="Busca por nombre, RUT, contrato o cargo"
                   selectedWorker={selectedWorker}
+                  onSearchChange={setWorkerSearchTerm}
                   onSelect={(worker) => {
                     setSelectedWorker(worker);
                     setStatusMessage("");
@@ -242,15 +258,17 @@ export function RosterPage() {
                 <TextField
                   id="roster-worker-contract"
                   label="Contrato"
-                  value={selectedWorker?.contractCode ?? ""}
-                  readOnly
+                  value={contractFilter}
+                  placeholder={selectedWorker?.contractCode ?? "Filtra por contrato"}
+                  onChange={(event) => setContractFilter(event.target.value)}
                   className="roster-filter-contract"
                 />
                 <TextField
                   id="roster-worker-area"
                   label="Área"
-                  value={selectedWorker?.areaName ?? ""}
-                  readOnly
+                  value={areaFilter}
+                  placeholder={selectedWorker?.areaName ?? "Filtra por área"}
+                  onChange={(event) => setAreaFilter(event.target.value)}
                   className="roster-filter-area"
                 />
               </div>
@@ -258,6 +276,33 @@ export function RosterPage() {
               {statusMessage ? <p className="form-status form-status-success">{statusMessage}</p> : null}
               {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
             </section>
+
+            <div className="tracking-kpi-row roster-kpi-row">
+              <article className="tracking-kpi-card tracking-kpi-card-generado">
+                <span>Personas con jornada asignada</span>
+                <strong>
+                  {rosterCalendarSummaryQuery.isLoading
+                    ? "..."
+                    : rosterCalendarSummaryQuery.data?.assignedCount ?? 0}
+                </strong>
+              </article>
+              <article className="tracking-kpi-card tracking-kpi-card-pendiente">
+                <span>Personas pendientes</span>
+                <strong>
+                  {rosterCalendarSummaryQuery.isLoading
+                    ? "..."
+                    : rosterCalendarSummaryQuery.data?.pendingCount ?? 0}
+                </strong>
+              </article>
+            </div>
+
+            {rosterCalendarSummaryQuery.error ? (
+              <section className="info-card">
+                <p className="form-status form-status-error">
+                  {rosterCalendarSummaryQuery.error.message}
+                </p>
+              </section>
+            ) : null}
 
             {selectedWorker && workerScheduleQuery.data ? (
               <div className="tracking-kpi-row roster-kpi-row">

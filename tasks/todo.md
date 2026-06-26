@@ -218,6 +218,21 @@
 - [x] Endurecer la UI para bloquear causas WHO incompletas y dejar visible junto al botón el resultado exacto del envío
 - [x] Revalidar `TypeScript`, diff limpio y registrar el hallazgo operativo para evitar nuevas transiciones silenciosas
 
+## Ajustes operativos de Movilidad Interna y Jornadas y Turnos
+
+- [x] Auditar la UI viva de `Movilidad Interna`, `Control de contratación > Movilidad Interna` y `Jornadas y Turnos` para confirmar dónde vive cada control y cómo persisten los filtros/selecciones
+- [x] Quitar del resumen standalone de movilidad interna cualquier acción de cierre o ejecución, manteniendo ese control únicamente en `Control de contratación`
+- [x] Hacer que la selección de detalle en `Control de contratación > Movilidad Interna` opere como toggle: primer click muestra detalle, segundo click sobre la misma fila limpia la selección
+- [x] Agregar bajo `Calendario` tarjetas dinámicas con conteo de personas con jornada asignada y personas pendientes, respetando mes y filtros visibles de trabajador, contrato y área
+- [x] Validar con `npx tsc -b --pretty false`, `npm run build`, `git diff --check`, documentar el cierre aquí, actualizar `tasks/lessons.md`, hacer commit en `main` y push
+
+## Resultado de ajustes operativos de Movilidad Interna y Jornadas y Turnos
+
+- [`src/modules/internal_mobility/pages/InternalMobilityPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/pages/InternalMobilityPage.tsx:1) dejó el historial como vista de solo lectura: se mantuvieron los estados RRHH y la trazabilidad, pero se eliminaron los botones de ejecución/rechazo para que el control operativo permanezca únicamente en contratación.
+- [`src/modules/recruitment/components/HiringInternalMobilityView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringInternalMobilityView.tsx:1) ya no fuerza un detalle persistente: si vuelves a hacer click sobre la misma movilidad, la selección se limpia y el panel desaparece.
+- [`src/modules/roster/pages/RosterPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/pages/RosterPage.tsx:1) ahora muestra dos tarjetas bajo `Calendario` con personas asignadas y pendientes. El conteo se respalda en la nueva RPC [`get_hr_roster_calendar_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260626124500_add_hr_roster_calendar_summary.sql:1), filtrando por mes, búsqueda de trabajador, contrato y área sin depender de resultados parciales del autocomplete.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260626124500_add_hr_roster_calendar_summary.sql`, `npx tsc -b --pretty false`, `npm run build` y `git diff --check`.
+
 ## Hotfix de error SQL al enviar WHO a aprobación
 
 - [x] Auditar el error `column rcc.candidate_id does not exist` para confirmar si nacía en la RPC principal o en un trigger lateral del flujo WHO

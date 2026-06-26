@@ -9,6 +9,7 @@ type RosterWorkerLookupProps = {
   placeholder: string;
   selectedWorker: RosterWorkerSearchItem | null;
   onSelect: (worker: RosterWorkerSearchItem | null) => void;
+  onSearchChange?: (value: string) => void;
   disabled?: boolean;
 };
 
@@ -18,6 +19,7 @@ export function RosterWorkerLookup({
   placeholder,
   selectedWorker,
   onSelect,
+  onSearchChange,
   disabled = false
 }: RosterWorkerLookupProps) {
   const [searchValue, setSearchValue] = useState(selectedWorker?.fullName ?? "");
@@ -27,6 +29,10 @@ export function RosterWorkerLookup({
   useEffect(() => {
     setSearchValue(selectedWorker?.fullName ?? "");
   }, [selectedWorker]);
+
+  useEffect(() => {
+    onSearchChange?.(searchValue);
+  }, [onSearchChange, searchValue]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

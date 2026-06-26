@@ -1,5 +1,6 @@
 import { supabase } from "../../../shared/lib/supabase";
 import type {
+  RosterCalendarSummary,
   RosterExceptionType,
   RosterSetupCatalogs,
   RosterWorkerSearchItem,
@@ -54,6 +55,18 @@ function mapSetupCatalogs(payload: unknown): RosterSetupCatalogs {
       value: String(item.value ?? "") as RosterExceptionType,
       label: String(item.label ?? "")
     }))
+  };
+}
+
+function mapRosterCalendarSummary(payload: unknown): RosterCalendarSummary {
+  const source = (payload ?? {}) as Record<string, unknown>;
+
+  return {
+    monthStart: String(source.month_start ?? ""),
+    monthEnd: String(source.month_end ?? ""),
+    assignedCount: Number(source.assigned_count ?? 0),
+    pendingCount: Number(source.pending_count ?? 0),
+    totalCount: Number(source.total_count ?? 0)
   };
 }
 
@@ -145,6 +158,30 @@ export async function fetchRosterSetupCatalogs() {
   }
 
   return mapSetupCatalogs(data);
+}
+
+export async function fetchRosterCalendarSummary(params: {
+  monthValue: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+}) {
+  const client = getSupabaseClient();
+  const [year, month] = params.monthValue.split("-");
+  const normalizedMonth =
+    year && month ? `${year}-${month}-01` : `${new Date().toISOString().slice(0, 7)}-01`;
+  const { data, error } = await client.rpc("get_hr_roster_calendar_summary", {
+    p_month: normalizedMonth,
+    p_search: params.search?.trim() || null,
+    p_contract_filter: params.contractFilter?.trim() || null,
+    p_area_filter: params.areaFilter?.trim() || null
+  });
+
+  if (error) {
+    throw new Error(error.message || "No fue posible cargar el resumen de jornadas.");
+  }
+
+  return mapRosterCalendarSummary(data);
 }
 
 export async function searchRosterWorkers(search: string, limit = 12) {
