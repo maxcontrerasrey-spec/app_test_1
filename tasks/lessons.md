@@ -29,6 +29,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si el mismo dominio tiene una pantalla de resumen y otra de control, los botones mutables deben vivir en un solo lugar**. Duplicar acciones como `ejecutar`, `rechazar` o `cerrar` en la vista histórica rompe la separación entre seguimiento y operación, y termina creando ambigüedad sobre cuál es la superficie autorizada.
 - **Cuando una tabla usa selección por click para filtrar el detalle, el comportamiento debe ser simétrico**. Si un primer click aplica el filtro, un segundo click sobre la misma fila debe retirarlo; además, la UI no debe rehidratar automáticamente la primera fila solo porque la data sigue cargada, o el usuario siente un resumen “pegado” que nunca se limpia.
 
+## 71. Un cambio frontend que depende de una RPC nueva no está cerrado hasta confirmar schema cache remoto
+
+- **No basta con commitear, pushear y pasar `tsc/build` si la UI llama una función nueva de Supabase**. Si la migración no se aplica al proyecto remoto, PostgREST responderá `Could not find the function ... in the schema cache` aunque el código del repo sea correcto.
+- **La verificación mínima de cierre para RPCs nuevas es doble**: `supabase db push --linked --include-all` y luego `supabase migration list --linked` o una comprobación equivalente que demuestre que la versión quedó presente en remoto. Solo después de eso el cambio está realmente operativo.
+
 ## 1. Zero Trust y Supabase RLS
 
 - **No confíes en el cliente para gobernar datos sensibles**. Aunque RLS en Supabase ofrece políticas a nivel de tabla, si un usuario tiene permiso `UPDATE` sobre su propio registro en la tabla `profiles`, puede inyectar modificaciones maliciosas a columnas sensibles como `is_super_admin`.
