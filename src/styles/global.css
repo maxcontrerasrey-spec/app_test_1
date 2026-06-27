@@ -720,7 +720,7 @@ textarea {
   position: absolute;
   top: calc(100% + 0.4rem);
   left: 0;
-  min-width: 230px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -754,6 +754,7 @@ textarea {
   transition: all 150ms ease;
   cursor: pointer;
   text-align: left;
+  white-space: nowrap;
 }
 
 .top-nav-dropdown-link:hover {
@@ -780,7 +781,7 @@ textarea {
   position: absolute;
   top: -0.55rem;
   left: calc(100% + 0.35rem);
-  min-width: 210px;
+  width: 320px;
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.55rem;
