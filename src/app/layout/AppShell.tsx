@@ -448,6 +448,57 @@ export function AppShell() {
                       </span>
                     </button>
 
+                    {isModuleOpen && module.items && module.items.length > 0 && (
+                      <div className="top-nav-dropdown-panel">
+                        {module.items.map((item) => (
+                          <div key={item.label} className="top-nav-dropdown-item-wrap">
+                            <NavLink
+                              to={item.to || "#"}
+                              onMouseEnter={() => preloadNavigationPath(item.to)}
+                              onFocus={() => preloadNavigationPath(item.to)}
+                              onClick={() => {
+                                if (!item.items || item.items.length === 0) {
+                                  clearPinnedNavigation();
+                                }
+                              }}
+                              className={({ isActive }) =>
+                                isActive && !item.items
+                                  ? "top-nav-dropdown-link top-nav-dropdown-link-active"
+                                  : "top-nav-dropdown-link"
+                              }
+                            >
+                              <span>{item.label}</span>
+                              {item.items && item.items.length > 0 && (
+                                <span className="top-nav-dropdown-arrow" aria-hidden="true">
+                                  ›
+                                </span>
+                              )}
+                            </NavLink>
+                            {item.items && item.items.length > 0 && (
+                              <div className="top-nav-dropdown-subpanel">
+                                {item.items.map((subItem) => (
+                                  <NavLink
+                                    key={subItem.label}
+                                    to={subItem.to}
+                                    onMouseEnter={() => preloadNavigationPath(subItem.to)}
+                                    onFocus={() => preloadNavigationPath(subItem.to)}
+                                    onClick={() => clearPinnedNavigation()}
+                                    className={({ isActive }) =>
+                                      isActive
+                                        ? "top-nav-dropdown-link top-nav-dropdown-link-active"
+                                        : "top-nav-dropdown-link"
+                                    }
+                                  >
+                                    <span>{subItem.label}</span>
+                                  </NavLink>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                   </div>
                 );
               })}
@@ -561,91 +612,6 @@ export function AppShell() {
         </div>
         </div>
 
-        {openModule?.items?.length ? (
-          <div
-            className="top-nav-mega-shell"
-            onMouseEnter={handleMouseEnterMega}
-            onMouseLeave={handleMouseLeaveMega}
-          >
-            <div className="top-nav-mega-panel">
-              <div className="top-nav-mega-grid">
-                {openModule.items.map((item) => (
-                  <div 
-                    key={item.label} 
-                    className="top-nav-mega-item-wrapper"
-                    onMouseEnter={() => handleMouseEnterMegaItem(item.label)}
-                    onMouseLeave={() => handleMouseLeaveMegaItem()}
-                  >
-                    <NavLink
-                      to={item.to || "#"}
-                      onMouseEnter={() => preloadNavigationPath(item.to)}
-                      onFocus={() => preloadNavigationPath(item.to)}
-                      onClick={(e) => {
-                        if (item.items && item.items.length > 0) {
-                          e.preventDefault();
-                        } else {
-                          clearPinnedNavigation();
-                        }
-                      }}
-                      className={({ isActive }) =>
-                        isActive && !item.items
-                          ? "top-nav-mega-link top-nav-mega-link-active"
-                          : "top-nav-mega-link"
-                      }
-                    >
-                      <span className="top-nav-mega-icon">
-                        <SubmenuIcon iconKey={item.iconKey} />
-                      </span>
-                      <span className="top-nav-mega-copy">
-                        <strong>{item.label}</strong>
-                      </span>
-
-                      {item.items && item.items.length > 0 && (
-                        <span className="top-nav-indicator" style={{ marginLeft: "auto", fontSize: "0.8rem" }}>
-                          ▾
-                        </span>
-                      )}
-                    </NavLink>
-                  </div>
-                ))}
-              </div>
-
-              {/* Render third trays outside the grid to guarantee full width */}
-              {openModule.items.map((item) => {
-                if (!item.items || item.items.length === 0) return null;
-                return (
-                  <div
-                    key={`${item.label}-tray`}
-                    className={`top-nav-third-tray ${hoveredMegaItem === item.label ? 'is-visible' : ''}`}
-                    onMouseEnter={() => handleMouseEnterMegaItem(item.label)}
-                    onMouseLeave={() => handleMouseLeaveMegaItem()}
-                  >
-                    <div className="top-nav-third-content">
-                      {item.items.map((subItem) => (
-                        <NavLink
-                          key={subItem.to}
-                          to={subItem.to}
-                          onMouseEnter={() => preloadNavigationPath(subItem.to)}
-                          onFocus={() => preloadNavigationPath(subItem.to)}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearPinnedNavigation();
-                          }}
-                          className="top-nav-third-link"
-                        >
-                          <span className="top-nav-mega-icon" style={{ width: "1.5rem", height: "1.5rem" }}>
-                            <SubmenuIcon iconKey={subItem.iconKey} />
-                          </span>
-                          <strong>{subItem.label}</strong>
-                        </NavLink>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
       </header>
 
       <main className="main-content main-content-topnav">

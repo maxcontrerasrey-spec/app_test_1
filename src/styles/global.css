@@ -711,6 +711,92 @@ textarea {
   position: relative;
 }
 
+/* Vertical Neumorphic Dropdown Navigation */
+.top-nav-group {
+  position: relative;
+}
+
+.top-nav-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  min-width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.55rem;
+  border: 1px solid var(--soft-border);
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
+  box-shadow:
+    12px 12px 28px var(--soft-shadow-dark),
+    -12px -12px 28px var(--soft-shadow-light);
+  z-index: 999;
+}
+
+.top-nav-dropdown-item-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.top-nav-dropdown-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--soft-text-primary);
+  border: 1px solid transparent;
+  border-radius: 0.85rem;
+  text-decoration: none;
+  transition: all 150ms ease;
+  cursor: pointer;
+  text-align: left;
+}
+
+.top-nav-dropdown-link:hover {
+  background: linear-gradient(135deg, rgba(var(--surface-soft-rgb), 0.95), rgba(var(--surface-rgb), 0.68));
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow:
+    inset 3px 3px 8px var(--soft-shadow-dark),
+    inset -3px -3px 8px var(--soft-shadow-light);
+  color: var(--soft-accent);
+}
+
+.top-nav-dropdown-link-active {
+  color: var(--soft-accent);
+  font-weight: 600;
+}
+
+.top-nav-dropdown-arrow {
+  font-size: 0.9rem;
+  color: var(--soft-text-muted);
+}
+
+.top-nav-dropdown-subpanel {
+  display: none;
+  position: absolute;
+  top: -0.55rem;
+  left: calc(100% + 0.35rem);
+  min-width: 210px;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.55rem;
+  border: 1px solid var(--soft-border);
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
+  box-shadow:
+    12px 12px 28px var(--soft-shadow-dark),
+    -12px -12px 28px var(--soft-shadow-light);
+  z-index: 1000;
+}
+
+.top-nav-dropdown-item-wrap:hover > .top-nav-dropdown-subpanel {
+  display: flex;
+}
+
 .top-nav-mega-grid {
   width: 100%;
   margin: 0 auto;
