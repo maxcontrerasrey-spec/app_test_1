@@ -51,7 +51,7 @@ export function DashboardHome() {
         <div className="dashboard-greeting dashboard-hero-copy">
           <h2>Bienvenido(a), {displayName}</h2>
           <p className="helper-copy">
-            Lectura rápida de operación, aprobaciones y desvíos críticos sin salir del tablero principal.
+            Aquí tienes tu resumen operativo y tareas pendientes de hoy.
           </p>
         </div>
       </header>
