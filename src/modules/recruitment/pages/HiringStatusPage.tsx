@@ -207,7 +207,13 @@ export function HiringStatusPage() {
           : "Solicitud Who enviada a aprobación."
       );
     } else {
-      setDecisionMessage("Etapa del candidato actualizada.");
+      if (stageDraft === "rejected" || stageDraft === "withdrawn") {
+        setDecisionMessage(
+          "Etapa del candidato actualizada. La limpieza documental quedó programada para la revisión automática nocturna de las 22:00."
+        );
+      } else {
+        setDecisionMessage("Etapa del candidato actualizada.");
+      }
     }
     setStageDraft("");
     setStageComment("");

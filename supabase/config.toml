@@ -1,2 +1,5 @@
 [functions.hiring-transactional-email]
 verify_jwt = false
+
+[functions.purge-candidate-documents]
+verify_jwt = false

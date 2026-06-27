@@ -24,13 +24,23 @@ function runStep(label, command, args) {
       );
     }, FRONTEND_BUILD_TIMEOUT_MS);
 
+    const heartbeat = setInterval(() => {
+      console.log(
+        `[build-check] ${timestamp()} ${label} sigue ejecutandose (${Math.round(
+          (Date.now() - startedAt) / 1000
+        )}s)`
+      );
+    }, 15000);
+
     child.on("error", (error) => {
       clearTimeout(timeout);
+      clearInterval(heartbeat);
       reject(error);
     });
 
     child.on("exit", (code, signal) => {
       clearTimeout(timeout);
+      clearInterval(heartbeat);
 
       if (code === 0) {
         console.log(

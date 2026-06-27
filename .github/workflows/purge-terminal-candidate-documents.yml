@@ -1,0 +1,75 @@
+name: Purge Terminal Candidate Documents
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # ventana posible para 22:00 Chile en horario de verano
+    - cron: "0 2 * * *" # ventana posible para 22:00 Chile en horario estándar
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Cantidad máxima de jobs a procesar en esta corrida"
+        required: false
+        default: "250"
+        type: string
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve scheduled Santiago window
+        id: local_window
+        run: |
+          LOCAL_OFFSET=$(TZ=America/Santiago date +%z)
+          CRON_TRIGGER="${{ github.event.schedule }}"
+          echo "local_offset=$LOCAL_OFFSET" >> "$GITHUB_OUTPUT"
+          echo "cron_trigger=$CRON_TRIGGER" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_job=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LOCAL_OFFSET" = "-0300" ] && [ "$CRON_TRIGGER" = "0 1 * * *" ]; then
+            echo "run_job=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LOCAL_OFFSET" = "-0400" ] && [ "$CRON_TRIGGER" = "0 2 * * *" ]; then
+            echo "run_job=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_job=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report purge window decision
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "cron_trigger=${{ steps.local_window.outputs.cron_trigger }}"
+          echo "local_offset=${{ steps.local_window.outputs.local_offset }}"
+          echo "run_job=${{ steps.local_window.outputs.run_job }}"
+
+      - name: Checkout Repository
+        if: steps.local_window.outputs.run_job == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.local_window.outputs.run_job == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate required purge variables
+        if: steps.local_window.outputs.run_job == 'true'
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET: ${{ secrets.CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET }}
+        run: |
+          test -n "${VITE_SUPABASE_URL:-${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}}" || { echo "Missing VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL"; exit 1; }
+          test -n "$CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET" || { echo "Missing CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET"; exit 1; }
+
+      - name: Run nightly purge
+        if: steps.local_window.outputs.run_job == 'true'
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET: ${{ secrets.CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET }}
+        run: |
+          LIMIT="${{ inputs.limit }}"
+          if [ -z "$LIMIT" ]; then LIMIT="250"; fi
+          node scripts/purge-terminal-candidate-documents.mjs --limit "$LIMIT"

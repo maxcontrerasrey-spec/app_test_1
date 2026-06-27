@@ -39,6 +39,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **`Días Abierto` no puede verse ordenable si internamente sigue cayendo a `sort_opened_at desc` como fallback fijo.** Eso da la ilusión de capacidad, pero el usuario nunca puede invertir el sentido ni confirmar que el click hizo algo real.
 - **La regla correcta es habilitar la columna extremo a extremo**: header clickeable, clave válida en frontend y soporte explícito en la RPC para `asc/desc`. Si no existe soporte backend, se versiona la migración; no se maquilla el problema en la UI.
 
+## 139. Si BUK es el destino final de documentos, la carga operativa no debe disparar la sync en caliente
+
+- **Que Buk acepte `path` no significa que haya que subir cada archivo en el mismo click del usuario.** Si la experiencia operativa exige rapidez, los documentos se almacenan temporalmente en staging auditable, se sincronizan por cola o corte explícito, y recién después se purga el staging local.
+- **Los descartes terminales deben limpiar storage por diseño, no por disciplina manual.** Si un candidato pasa a `rejected` o `withdrawn`, la eliminación de sus documentos debe quedar encolada y auditada, pero la ejecución operativa puede moverse a un barrido programado si el negocio prefiere desacoplarla del click del usuario.
+- **Si el negocio fija una hora local de saneamiento, el scheduler debe hablar en hora Chile real y además barrer rezagos históricos.** No basta con procesar “lo recién rechazado”; la corrida nocturna debe revisar también candidatos terminales ya existentes con documentos remanentes y reintentar jobs fallidos.
+
 ## 67. Cuando un cupo puede quedar reservado por movilidad interna, la liberación y la reapertura deben salir del mismo motor de sincronización
 
 - **No basta con cambiar `internal_mobility_requests.status` a `rejected`**. Si esa movilidad contaba dentro de `effective_filled_vacancies`, el backend debe reejecutar la sincronización del caso/folio en la misma operación o el cupo queda liberado solo “en teoría”, pero la bandeja sigue mostrando el folio como lleno o cerrado.
