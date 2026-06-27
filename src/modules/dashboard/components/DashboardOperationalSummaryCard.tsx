@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatCurrencyValue, formatNumberValue, formatPercentValue } from "../../../shared/lib/format";
 import type { DashboardOperationalSummary } from "../types";
 import { SoftSurface } from "../../../shared/ui";
 
@@ -23,23 +24,16 @@ type SummarySheet = {
   highlight?: SummaryHighlight | null;
 };
 
-const numberFormatter = new Intl.NumberFormat("es-CL");
-const currencyFormatter = new Intl.NumberFormat("es-CL", {
-  style: "currency",
-  currency: "CLP",
-  maximumFractionDigits: 0
-});
-
 function formatCount(value: number | null | undefined) {
-  return numberFormatter.format(Math.max(0, Math.trunc(value ?? 0)));
+  return formatNumberValue(Math.max(0, Math.trunc(value ?? 0)), "0");
 }
 
 function formatPercent(value: number | null | undefined) {
-  return `${Number(value ?? 0).toFixed(1)}%`;
+  return formatPercentValue(Number(value ?? 0), 1, "0.0%");
 }
 
 function formatCurrency(value: number | null | undefined) {
-  return currencyFormatter.format(Math.max(0, Number(value ?? 0)));
+  return formatCurrencyValue(Math.max(0, Number(value ?? 0)), { fallback: "$0" });
 }
 
 export function DashboardOperationalSummaryCard({

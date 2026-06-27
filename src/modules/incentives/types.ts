@@ -1,3 +1,5 @@
+import type { BukEmployee } from "../../shared/types/buk";
+
 export type IncentiveCalculationBasis = "fixed" | "per_hour";
 export type HrIncentiveUnionStatus = "unionized" | "non_unionized" | "unknown";
 
@@ -94,15 +96,7 @@ export type HrIncentiveSetupCatalogs = {
   rateRules: HrIncentiveRateRule[];
 };
 
-export type HrIncentiveEligibleWorker = {
-  bukEmployeeId: string;
-  fullName: string;
-  documentNumber: string;
-  jobTitle: string;
-  contractCode: string | null;
-  areaName: string | null;
-  displayLabel: string;
-};
+export type HrIncentiveEligibleWorker = BukEmployee;
 
 export type HrIncentiveWorkerAreaOption = {
   contractCode: string | null;

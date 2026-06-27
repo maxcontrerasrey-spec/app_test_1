@@ -7,4 +7,5 @@ export * from "./forms/SearchableSelectField";
 export * from "./forms/MultiSelectField";
 export * from "./forms/DatePickerField";
 export * from "./forms/FieldHintIcon";
+export * from "./forms/WorkerLookupField";
 export * from "./charts";

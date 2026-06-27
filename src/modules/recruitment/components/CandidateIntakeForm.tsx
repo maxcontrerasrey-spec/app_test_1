@@ -13,6 +13,7 @@ import {
   type CandidateHistoricalRejection
 } from "../services/hiringControl";
 import { validateRut } from "../../../shared/lib/rut";
+import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 
@@ -36,16 +37,11 @@ function formatBukExitDate(value?: string | null) {
     return null;
   }
 
-  const parsedDate = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (Number.isNaN(new Date(`${value}T00:00:00`).getTime())) {
     return value;
   }
 
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(parsedDate);
+  return formatRequestDate(`${value}T00:00:00`) || value;
 }
 
 export function CandidateIntakeForm({
@@ -278,10 +274,8 @@ export function CandidateIntakeForm({
           renderOption={(opt) => {
             const caseRow = opt.raw as import("../services/hiringControl").RecruitmentCaseListRow;
             
-            const formatSalary = (val?: number | null) => {
-              if (val == null) return "No informada";
-              return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(val);
-            };
+            const formatSalary = (val?: number | null) =>
+              val == null ? "No informada" : formatCurrencyValue(val);
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

@@ -1,4 +1,5 @@
 import { useState, Fragment } from "react";
+import { formatRequestDate } from "../../../../shared/lib/format";
 import { useOnboardingCases } from "../../hooks/useOnboardingCases";
 import { useOnboardingTasks } from "../../hooks/useOnboardingTasks";
 import { useOnboardingActivityLog } from "../../hooks/useOnboardingActivityLog";
@@ -9,16 +10,7 @@ function formatDateLabel(value: string | null) {
     return "-";
   }
 
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(parsed);
+  return formatRequestDate(value) || value;
 }
 
 function resolveActivityLabel(action: string) {

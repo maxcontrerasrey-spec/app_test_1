@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatCurrencyValue, formatPercentValue } from "../../../shared/lib/format";
 import { SoftSurface } from "../../../shared/ui";
 
 type MindicadorResponse = {
@@ -19,20 +20,6 @@ type EconomicState = {
   dolar: number | null;
   ipc: number | null;
 };
-
-function formatCurrency(value: number | null) {
-  if (value === null) return "--";
-  return new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    minimumFractionDigits: value % 1 !== 0 ? 2 : 0,
-  }).format(value);
-}
-
-function formatPercent(value: number | null) {
-  if (value === null) return "--";
-  return `${value.toFixed(1)}%`;
-}
 
 export function DashboardEconomicCard() {
   const [data, setData] = useState<EconomicState>({
@@ -88,28 +75,46 @@ export function DashboardEconomicCard() {
         <div className="dashboard-economic-item">
           <span className="dashboard-economic-label">UF</span>
           <span className="dashboard-economic-value">
-            {data.isLoading ? "..." : formatCurrency(data.uf)}
+            {data.isLoading
+              ? "..."
+              : formatCurrencyValue(data.uf, {
+                  fallback: "--",
+                  minimumFractionDigits: data.uf && data.uf % 1 !== 0 ? 2 : 0,
+                  maximumFractionDigits: data.uf && data.uf % 1 !== 0 ? 2 : 0
+                })}
           </span>
         </div>
         
         <div className="dashboard-economic-item">
           <span className="dashboard-economic-label">Dólar Obs.</span>
           <span className="dashboard-economic-value">
-            {data.isLoading ? "..." : formatCurrency(data.dolar)}
+            {data.isLoading
+              ? "..."
+              : formatCurrencyValue(data.dolar, {
+                  fallback: "--",
+                  minimumFractionDigits: data.dolar && data.dolar % 1 !== 0 ? 2 : 0,
+                  maximumFractionDigits: data.dolar && data.dolar % 1 !== 0 ? 2 : 0
+                })}
           </span>
         </div>
 
         <div className="dashboard-economic-item">
           <span className="dashboard-economic-label">UTM</span>
           <span className="dashboard-economic-value">
-            {data.isLoading ? "..." : formatCurrency(data.utm)}
+            {data.isLoading
+              ? "..."
+              : formatCurrencyValue(data.utm, {
+                  fallback: "--",
+                  minimumFractionDigits: data.utm && data.utm % 1 !== 0 ? 2 : 0,
+                  maximumFractionDigits: data.utm && data.utm % 1 !== 0 ? 2 : 0
+                })}
           </span>
         </div>
 
         <div className="dashboard-economic-item">
           <span className="dashboard-economic-label">IPC</span>
           <span className="dashboard-economic-value">
-            {data.isLoading ? "..." : formatPercent(data.ipc)}
+            {data.isLoading ? "..." : formatPercentValue(data.ipc, 1, "--")}
           </span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { formatWeekdayShortLabel } from "../../../shared/lib/format";
 import { SoftSurface } from "../../../shared/ui";
 
 type WeatherForecastDay = {
@@ -167,7 +168,7 @@ export function DashboardWeatherCard({
         <div className="dashboard-weather-card-forecast">
           {dailyForecast.map((day) => {
             const date = new Date((day.time + 14400) * 1000);
-            const dayName = new Intl.DateTimeFormat("es-CL", { weekday: "short" }).format(date).toUpperCase();
+            const dayName = formatWeekdayShortLabel(date);
 
             return (
               <div key={day.time} className="dashboard-weather-card-forecast-day">

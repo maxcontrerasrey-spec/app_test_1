@@ -1,4 +1,5 @@
 import type { RecruitmentCandidateControlRow, RecruitmentCandidateStage } from "../services/hiringControl";
+import { formatDateTimeLabel, formatRequestDate } from "../../../shared/lib/format";
 
 export const caseFilterOptions = [
   { key: null, label: "Activos (Todos)" },
@@ -21,39 +22,11 @@ export const candidateStageFilterOptions = [
 ] as const;
 
 export function formatDateValue(value: string | null | undefined) {
-  if (!value) {
-    return "No disponible";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "No disponible";
-  }
-
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(date);
+  return formatRequestDate(value) || "No disponible";
 }
 
 export function formatDateTimeValue(value: string | null | undefined) {
-  if (!value) {
-    return "No disponible";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "No disponible";
-  }
-
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(date);
+  return formatDateTimeLabel(value);
 }
 
 export function getNextStageOptions(

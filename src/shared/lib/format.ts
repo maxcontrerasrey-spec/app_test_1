@@ -5,6 +5,26 @@
  * (HomePage, OperacionesDashboard, etc.) into a single reusable module.
  */
 
+const requestDateFormatter = new Intl.DateTimeFormat("es-CL", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+const dateTimeFormatter = new Intl.DateTimeFormat("es-CL", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+const numberFormatter = new Intl.NumberFormat("es-CL");
+const compactNumberFormatter = new Intl.NumberFormat("es-CL", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+const weekdayShortFormatter = new Intl.DateTimeFormat("es-CL", {
+  weekday: "short",
+});
+
 /**
  * Formats an ISO date string to dd/MM/yyyy (es-CL locale).
  * Returns empty string for invalid or missing values.
@@ -13,11 +33,7 @@ export function formatRequestDate(value: string | null | undefined): string {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+  return requestDateFormatter.format(date);
 }
 
 /**
@@ -31,10 +47,7 @@ export function formatDateTimeLabel(
   if (!value) return fallback;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return fallback;
-  return new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+  return dateTimeFormatter.format(date);
 }
 
 /**
@@ -60,16 +73,63 @@ export function formatDaysSince(value: string | null | undefined): string {
   return `${diffInDays} dias`;
 }
 
+export function formatNumberValue(
+  value: number | null | undefined,
+  fallback = "No disponible"
+): string {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return numberFormatter.format(value);
+}
+
+export function formatCompactNumberValue(
+  value: number | null | undefined,
+  fallback = "No disponible"
+): string {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return compactNumberFormatter.format(value);
+}
+
+export function formatWeekdayShortLabel(
+  value: string | number | Date,
+  fallback = ""
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return weekdayShortFormatter.format(date).toUpperCase();
+}
+
+export function formatPercentValue(
+  value: number | null | undefined,
+  fractionDigits = 1,
+  fallback = "No disponible"
+): string {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return `${value.toFixed(fractionDigits)}%`;
+}
+
+type CurrencyFormatOptions = {
+  fallback?: string;
+  minimumFractionDigits?: number;
+  maximumFractionDigits?: number;
+};
+
 /**
  * Formats a numeric value as CLP currency (Chilean pesos).
  * Returns "No disponible" for null/undefined/NaN.
  */
-export function formatCurrencyValue(value: number | null | undefined): string {
-  if (typeof value !== "number" || Number.isNaN(value)) return "No disponible";
+export function formatCurrencyValue(
+  value: number | null | undefined,
+  options?: CurrencyFormatOptions
+): string {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return options?.fallback ?? "No disponible";
+  }
+
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
     currency: "CLP",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: options?.minimumFractionDigits ?? 0,
+    maximumFractionDigits: options?.maximumFractionDigits ?? 0,
   }).format(value);
 }
 

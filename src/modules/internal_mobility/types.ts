@@ -1,13 +1,6 @@
-export type InternalMobilityEligibleWorker = {
-  bukEmployeeId: string;
-  fullName: string;
-  documentNumber: string;
-  jobTitle: string;
-  contractCode: string | null;
-  areaName: string | null;
-  companyName: string | null;
-  displayLabel: string;
-};
+import type { BukEmployeeWithCompany } from "../../shared/types/buk";
+
+export type InternalMobilityEligibleWorker = BukEmployeeWithCompany;
 
 export type InternalMobilityWorkerContext = {
   worker: {

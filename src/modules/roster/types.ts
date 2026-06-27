@@ -1,3 +1,5 @@
+import type { BukEmployeeWithDocumentType } from "../../shared/types/buk";
+
 export type RosterExceptionType =
   | "vacation"
   | "medical_leave"
@@ -44,16 +46,7 @@ export type RosterSetupCatalogs = {
   operationalAreas: RosterOperationalAreaOption[];
 };
 
-export type RosterWorkerSearchItem = {
-  bukEmployeeId: string;
-  fullName: string;
-  documentNumber: string;
-  documentType: string;
-  jobTitle: string;
-  contractCode: string | null;
-  areaName: string | null;
-  displayLabel: string;
-};
+export type RosterWorkerSearchItem = BukEmployeeWithDocumentType;
 
 export type RosterCalendarSummary = {
   monthStart: string;

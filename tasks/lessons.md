@@ -1475,3 +1475,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cuando el buscador necesita responder en sub-segundo, no construyas el `LIKE '%...%'` sobre helpers calculados fila a fila dentro de `employees_active_current`.** El patrón robusto es indexar una clave de búsqueda reusable sobre `employees`, filtrar primero sobre el universo activo y recién después deduplicar identidad si hace falta.
 - **Si el mismo input alimenta otra RPC pesada de resumen o dashboard, al menos una de las dos debe desacoplarse o esperar al debounce estabilizado.** De lo contrario, el usuario percibe que “la búsqueda demora” aunque el cuello real sea el segundo query colateral.
 - **Las optimizaciones de search deben tocar también el contrato de bloqueo operacional adyacente.** En movilidad interna, acelerar el lookup sin un índice específico para trabajadores ya bloqueados deja viva una parte del costo justo en la ruta que negocio usa para excluir duplicidades.
+
+## 139. Si la auditoría pide “compactar”, primero consume primitives compartidas reales antes de crear otra capa de abstracción
+
+- **Reducir líneas no justifica abrir una primitive paralela si el repo ya tiene una utilitaria canónica.** En este ERP, el hallazgo correcto no era “crear neumorfismo compartido”, porque `SoftSurface` y `soft-surface` ya existían; la corrección elegante fue reconectar los módulos a esa base y borrar CSS duplicado.
+- **La compactación buena separa infraestructura común de semántica de módulo.** Un `WorkerLookupField` compartido debe absorber debounce, overlay y estados de carga, mientras incentivos, movilidad y roster solo inyectan hook, labels y filtrado específico.
+- **La regla operativa es shared-first y de impacto mínimo.** Antes de abstraer, se busca si la pieza ya existe; si existe, se reutiliza y se limpia el vestigio duplicado. Solo se crea una primitive nueva cuando el contrato compartido realmente no está en el sistema.

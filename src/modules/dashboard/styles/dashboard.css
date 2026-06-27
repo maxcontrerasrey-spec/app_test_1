@@ -89,11 +89,7 @@
   height: 185px;
   padding: 16px 18px;
   border-radius: 28px;
-  border: none !important;
-  box-shadow:
-    9px 9px 22px var(--soft-shadow-dark),
-    -9px -9px 22px var(--soft-shadow-light),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.65);
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-info-card > * {
@@ -102,24 +98,7 @@
 }
 
 .dashboard-info-card-weather {
-  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
   transition: background 0.8s ease;
-}
-
-.dashboard-info-card-weather.is-warm {
-  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
-}
-
-.dashboard-info-card-weather.is-cold {
-  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
-}
-
-.dashboard-info-card-weather.is-rainy {
-  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
-}
-
-.dashboard-info-card-birthday {
-  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-weather-card,
@@ -133,13 +112,8 @@
   justify-content: center;
 }
 
-.dashboard-info-card-economics {
-  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
-}
-
 .dashboard-info-card-operations {
   gap: 6px;
-  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-economic-card-header {

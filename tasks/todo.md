@@ -3532,3 +3532,20 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
   4. `npx --yes supabase db push --linked --include-all`
   5. `npx --yes supabase migration list --linked`
   6. humo remoto vía service role: `audit_hr_incentive_period_folio_integrity(null) = 0`, `pendingWithoutApprover = 0`, `multiPendingRequests = 0`, `missingAreaManagerSnapshots = 0`.
+
+## Ejecución de auditoría de líneas de código y compactación shared-first
+
+- [x] Revisar `auditoria_lineas_codigo.md` contra el estado real del repo para separar hallazgos vigentes de infraestructura ya existente.
+- [x] Centralizar la búsqueda de trabajadores en un único `WorkerLookupField` reutilizable sin cambiar contratos de hooks ni UX operativa.
+- [x] Unificar tipos base de trabajadores BUK en `src/shared/types/buk.ts` y reconectar los módulos de incentivos, movilidad interna y roster.
+- [x] Migrar instancias locales de `Intl` a `src/shared/lib/format.ts` y absorber el formateo restante de clima, onboarding, reclutamiento e incentivos.
+- [x] Eliminar duplicación de sombras/fondos en dashboard reutilizando la superficie neumórfica ya existente en vez de abrir otra capa de CSS.
+- [x] Validar con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check` antes de commitear y subir a `main`.
+
+## Resultado de auditoría de líneas de código y compactación shared-first
+
+- La auditoría quedó aterrizada sobre el código vivo, no sobre una lectura genérica del repo. El hallazgo de sombras duplicadas no justificaba inventar otra primitive porque [`SoftSurface`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/layout/SoftSurface.tsx:1) y las utilidades `soft-surface` ya existían; la corrección útil fue recortar reglas repetidas en [`dashboard.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/styles/dashboard.css:1) para que los cards vuelvan a depender de la superficie compartida.
+- Los tres lookups locales se compactaron sobre [`WorkerLookupField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/WorkerLookupField.tsx:1) y ahora [`IncentiveWorkerLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveWorkerLookup.tsx:1), [`InternalMobilityWorkerLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/components/InternalMobilityWorkerLookup.tsx:1) y [`RosterWorkerLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/components/RosterWorkerLookup.tsx:1) solo aportan la semántica específica de cada módulo.
+- Se versionó el modelo compartido [`src/shared/types/buk.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/types/buk.ts:1) y los tipos `HrIncentiveEligibleWorker`, `InternalMobilityEligibleWorker` y `RosterWorkerSearchItem` dejaron de redefinir la misma identidad base del trabajador BUK.
+- [`src/shared/lib/format.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/format.ts:1) ahora concentra número, porcentaje, moneda compacta, fecha, fecha-hora y weekday corto. Esa pasada eliminó instancias locales de `Intl` en dashboard, incentivos, onboarding y reclutamiento, reduciendo ruido y evitando crear formatters ad-hoc en renders densos.
+- Esta compactación fue deliberadamente shared-first y de impacto acotado: se redujo duplicación donde ya había contrato repetido, pero se evitó “sobrecompactar” vistas con comportamiento distinto solo para bajar líneas artificialmente.

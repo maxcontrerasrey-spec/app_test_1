@@ -15,6 +15,7 @@ import {
   formatDateValue,
   buildCalendarDays
 } from "../../../shared/lib/date";
+import { formatNumberValue } from "../../../shared/lib/format";
 import {
   PageShell,
   TextField,
@@ -60,7 +61,7 @@ function formatCurrencyDisplay(value: string) {
     return "";
   }
 
-  return new Intl.NumberFormat("es-CL").format(Number(value));
+  return formatNumberValue(Number(value), "");
 }
 
 export function HiringRequestPage() {

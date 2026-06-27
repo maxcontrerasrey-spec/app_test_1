@@ -9,7 +9,11 @@ const EraserIcon = () => (
   </svg>
 );
 import { EChartSurface, TextField, MultiSelectField } from "../../../shared/ui";
-import { formatCurrencyValue } from "../../../shared/lib/format";
+import {
+  formatCompactNumberValue,
+  formatCurrencyValue,
+  formatPercentValue
+} from "../../../shared/lib/format";
 import { formatDateForDisplay } from "../../../shared/lib/date";
 import { useHrIncentivesAnalytics, useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
 
@@ -31,14 +35,11 @@ type ChartDataRecord = Record<string, unknown>;
 const CHART_PALETTE = ["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"];
 
 function formatPercent(value: number) {
-  return `${value.toFixed(1)}%`;
+  return formatPercentValue(value, 1, "0.0%");
 }
 
 function formatCompactCurrency(value: number) {
-  return new Intl.NumberFormat("es-CL", {
-    notation: "compact",
-    maximumFractionDigits: 1
-  }).format(value);
+  return formatCompactNumberValue(value, "0");
 }
 
 function formatShortDate(val: string) {

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { SelectField, TextField } from "../../../shared/ui";
+import { formatNumberValue } from "../../../shared/lib/format";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   addHrIncentiveAllowedJobTitle,
@@ -523,7 +524,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                     <td>
                       {item.unionName || "Todos"}
                     </td>
-                    <td>{new Intl.NumberFormat("es-CL").format(item.amount)}</td>
+                    <td>{formatNumberValue(item.amount, "0")}</td>
                     <td>{item.priority}</td>
                     <td>
                       {(item.validFrom || "Siempre") +
