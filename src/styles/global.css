@@ -249,9 +249,9 @@ body {
 
 .soft-surface--raised {
   box-shadow:
-    18px 18px 38px -30px var(--soft-shadow-dark),
-    -10px -10px 24px -22px var(--soft-shadow-light),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.55);
+    8px 8px 20px var(--soft-shadow-dark),
+    -8px -8px 20px var(--soft-shadow-light),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .soft-surface--panel {
@@ -295,8 +295,12 @@ body {
 
 .soft-surface--interactive:hover,
 .soft-surface--interactive:focus-within {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   border-color: var(--soft-border-strong);
+  box-shadow:
+    12px 12px 28px var(--soft-shadow-dark),
+    -12px -12px 28px var(--soft-shadow-light),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .soft-inline-chip {
