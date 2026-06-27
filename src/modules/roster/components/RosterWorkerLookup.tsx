@@ -31,16 +31,16 @@ export function RosterWorkerLookup({
   }, [selectedWorker]);
 
   useEffect(() => {
-    onSearchChange?.(searchValue);
-  }, [onSearchChange, searchValue]);
-
-  useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setDebouncedSearch(searchValue.trim());
-    }, 250);
+    }, 150);
 
     return () => window.clearTimeout(timeoutId);
   }, [searchValue]);
+
+  useEffect(() => {
+    onSearchChange?.(debouncedSearch);
+  }, [debouncedSearch, onSearchChange]);
 
   const workerSearchQuery = useRosterWorkerSearch(debouncedSearch, !disabled && isOpen);
   const results = useMemo(() => workerSearchQuery.data ?? [], [workerSearchQuery.data]);

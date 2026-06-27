@@ -31,7 +31,7 @@ export function InternalMobilityWorkerLookup({
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setDebouncedSearch(searchValue.trim());
-    }, 250);
+    }, 150);
 
     return () => window.clearTimeout(timeoutId);
   }, [searchValue]);

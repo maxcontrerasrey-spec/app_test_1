@@ -1,10 +1,17 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { SoftMetricCard, TextField } from "../../../../shared/ui";
 import { getDaysSince } from "../../../../shared/lib/date";
-import { toRecruitmentCaseStatusLabel, type RecruitmentCaseDetail } from "../../../recruitment/services/hiringControl";
-import { getRecruitmentCaseDetailQueryOptions } from "../../../recruitment/hooks/useRecruitmentQueries";
-import type { DashboardActiveFolioItem, DashboardDataBundle } from "../../types";
+import {
+  useRecruitmentProcessesPage,
+  getRecruitmentCaseDetailQueryOptions
+} from "../../../recruitment/hooks/useRecruitmentQueries";
+import {
+  toRecruitmentCaseStatusLabel,
+  type RecruitmentCaseDetail,
+  type RecruitmentCaseListRow
+} from "../../../recruitment/services/hiringControl";
+import type { DashboardDataBundle } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import { formatDashboardDate, formatDashboardDateTime } from "../../lib/formatters";
 
@@ -15,17 +22,18 @@ type ActiveFoliosWidgetProps = {
 
 export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetProps) {
   const queryClient = useQueryClient();
-  const folios = dashboardData?.activeFoliosData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail | null>>({});
   const [caseDetailErrors, setCaseDetailErrors] = useState<Record<string, string | null>>({});
+  const [page, setPage] = useState(0);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(
+    null
+  );
 
   const recruitmentSummary = dashboardData?.operationalSummaryData?.recruitment;
-
-  const [page, setPage] = useState(0);
-  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const pageSize = 7;
   const sortableColumns = [
     { key: "case_code", label: "Caso" },
@@ -59,57 +67,53 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     }
   ];
 
-  const filteredAndSortedFolios = useMemo(() => {
-    let result = folios;
-    
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (normalizedSearch) {
-      result = result.filter((folio) =>
-        [
-          folio.case_code,
-          folio.job_position_name,
-          folio.contract_name,
-          folio.cost_center_code,
-          folio.cost_center_name,
-          folio.requester_name
-        ]
-          .filter(Boolean)
-          .some((value) => value?.toLowerCase().includes(normalizedSearch))
-      );
-    }
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+    }, 150);
 
-    if (sortConfig) {
-      result = [...result].sort((a, b) => {
-        const aVal = a[sortConfig.key as keyof DashboardActiveFolioItem] ?? "";
-        const bVal = b[sortConfig.key as keyof DashboardActiveFolioItem] ?? "";
-        
-        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return result;
-  }, [folios, searchTerm, sortConfig]);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   useEffect(() => {
     setPage(0);
-  }, [searchTerm, sortConfig]);
+  }, [debouncedSearch, sortConfig]);
 
-  const totalPages = Math.ceil(filteredAndSortedFolios.length / pageSize);
-  const paginatedFolios = filteredAndSortedFolios.slice(page * pageSize, (page + 1) * pageSize);
+  const activeFoliosQuery = useRecruitmentProcessesPage({
+    search: debouncedSearch || undefined,
+    statusFilter: null,
+    sortColumn: sortConfig?.key === "opened_at" ? null : sortConfig?.key ?? null,
+    sortDirection: sortConfig?.direction ?? "desc",
+    limit: pageSize,
+    offset: page * pageSize
+  });
+
+  const folios = useMemo<RecruitmentCaseListRow[]>(
+    () => activeFoliosQuery.data?.items ?? [],
+    [activeFoliosQuery.data]
+  );
+  const totalCount = activeFoliosQuery.data?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    if (key === "opened_at") {
+      setSortConfig(null);
+      return;
+    }
+
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
     }
     setSortConfig({ key, direction });
   };
 
   const getSortIcon = (key: string) => {
+    if (key === "opened_at") {
+      return null;
+    }
     if (sortConfig?.key !== key) return <span style={{ opacity: 0.3 }}> ↕</span>;
-    return sortConfig.direction === 'asc' ? <span> ↑</span> : <span> ↓</span>;
+    return sortConfig.direction === "asc" ? <span> ↑</span> : <span> ↓</span>;
   };
 
   const handleRowClick = async (caseId: string) => {
@@ -177,8 +181,10 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                 {sortableColumns.map((column) => (
                   <th
                     key={column.key}
-                    className="dashboard-sortable-heading"
-                    onClick={() => handleSort(column.key)}
+                    className={column.key === "opened_at" ? undefined : "dashboard-sortable-heading"}
+                    onClick={
+                      column.key === "opened_at" ? undefined : () => handleSort(column.key)
+                    }
                   >
                     {column.label}
                     {getSortIcon(column.key)}
@@ -187,8 +193,8 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
               </tr>
             </thead>
             <tbody>
-              {paginatedFolios.length > 0 ? (
-                paginatedFolios.map((folio: DashboardActiveFolioItem) => {
+              {folios.length > 0 ? (
+                folios.map((folio) => {
                   const isExpanded = expandedCaseId === folio.id;
                   const detail = caseDetailsCache[folio.id] ?? null;
                   const detailError = caseDetailErrors[folio.id] ?? null;
@@ -198,12 +204,20 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                   return (
                     <React.Fragment key={folio.id}>
                       <tr
-                        className={`tracking-table-row-clickable ${isExpanded ? "tracking-table-row-expanded" : ""}`}
+                        className={`tracking-table-row-clickable ${
+                          isExpanded ? "tracking-table-row-expanded" : ""
+                        }`}
                         onClick={() => void handleRowClick(folio.id)}
                       >
                         <td>
                           <span className="case-code-toggle">
-                            <span className={`expand-chevron ${isExpanded ? "expand-chevron-open" : ""}`}>▸</span>
+                            <span
+                              className={`expand-chevron ${
+                                isExpanded ? "expand-chevron-open" : ""
+                              }`}
+                            >
+                              ▸
+                            </span>
                             {folio.case_code}
                           </span>
                         </td>
@@ -213,17 +227,29 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                           </span>
                         </td>
                         <td>{folio.job_position_name}</td>
-                        <td>{folio.contract_name} {folio.cost_center_code ? `(${folio.cost_center_code})` : ""}</td>
-                        <td>{folio.filled_vacancies}/{folio.requested_vacancies}</td>
+                        <td>
+                          {folio.contract_name}{" "}
+                          {folio.cost_center_code ? `(${folio.cost_center_code})` : ""}
+                        </td>
+                        <td>
+                          {folio.filled_vacancies}/{folio.requested_vacancies}
+                        </td>
                         <td>
                           <div className="candidate-count-indicator">
-                            <span className="candidate-circle candidate-circle-neutral">{folio.candidate_count}</span>
+                            <span className="candidate-circle candidate-circle-neutral">
+                              {folio.candidate_count}
+                            </span>
                             <span className="candidate-circle-label">Activos</span>
-                            <span className="candidate-circle candidate-circle-success">{folio.ready_candidates}</span>
+                            <span className="candidate-circle candidate-circle-success">
+                              {folio.ready_candidates}
+                            </span>
                             <span className="candidate-circle-label">Listos</span>
                             {folio.mobility_active_count ? (
                               <>
-                                <span className="candidate-circle candidate-circle-warning" title="Movilidades internas en aprobación asociadas al folio">
+                                <span
+                                  className="candidate-circle candidate-circle-warning"
+                                  title="Movilidades internas en aprobación asociadas al folio"
+                                >
                                   {folio.mobility_active_count}
                                 </span>
                                 <span className="candidate-circle-label">Movilidad</span>
@@ -237,7 +263,9 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                         <tr className="tracking-table-expanded-row">
                           <td colSpan={7}>
                             {isLoadingDetail && !detail ? (
-                              <div className="expanded-case-loading">Cargando detalle del caso...</div>
+                              <div className="expanded-case-loading">
+                                Cargando detalle del caso...
+                              </div>
                             ) : detail ? (
                               <div className="expanded-case-detail-grid">
                                 <div className="expanded-detail-section">
@@ -245,11 +273,15 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Solicitante</small>
-                                      <strong>{hr?.requester_name ?? folio.requester_name ?? "—"}</strong>
+                                      <strong>
+                                        {hr?.requester_name ?? folio.requester_name ?? "—"}
+                                      </strong>
                                     </div>
                                     <div>
                                       <small>Correo</small>
-                                      <strong>{hr?.requester_email ?? folio.requester_email ?? "—"}</strong>
+                                      <strong>
+                                        {hr?.requester_email ?? folio.requester_email ?? "—"}
+                                      </strong>
                                     </div>
                                     <div>
                                       <small>Folio</small>
@@ -257,7 +289,9 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                     </div>
                                     <div>
                                       <small>Centro de costo</small>
-                                      <strong>{detail.case.cost_center_name} ({detail.case.cost_center_code})</strong>
+                                      <strong>
+                                        {detail.case.cost_center_name} ({detail.case.cost_center_code})
+                                      </strong>
                                     </div>
                                   </div>
                                 </div>
@@ -266,7 +300,9 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Ingreso solicitado</small>
-                                      <strong>{formatDashboardDate(detail.case.requested_entry_date)}</strong>
+                                      <strong>
+                                        {formatDashboardDate(detail.case.requested_entry_date)}
+                                      </strong>
                                     </div>
                                     <div>
                                       <small>Inicio contrato</small>
@@ -287,7 +323,11 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Renta líquida ofrecida</small>
-                                      <strong>{hr?.salary_offer ? `$${hr.salary_offer.toLocaleString("es-CL")}` : "—"}</strong>
+                                      <strong>
+                                        {hr?.salary_offer
+                                          ? `$${hr.salary_offer.toLocaleString("es-CL")}`
+                                          : "—"}
+                                      </strong>
                                     </div>
                                     <div>
                                       <small>Campamento</small>
@@ -312,7 +352,13 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                     </div>
                                     <div>
                                       <small>Resolución</small>
-                                      <strong>{approvalSummary?.status === "approved" ? "Aprobada" : approvalSummary?.status === "rejected" ? "Rechazada" : "—"}</strong>
+                                      <strong>
+                                        {approvalSummary?.status === "approved"
+                                          ? "Aprobada"
+                                          : approvalSummary?.status === "rejected"
+                                            ? "Rechazada"
+                                            : "—"}
+                                      </strong>
                                     </div>
                                     <div>
                                       <small>Resuelto por</small>
@@ -320,11 +366,16 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                     </div>
                                     <div>
                                       <small>Fecha decisión</small>
-                                      <strong>{formatDashboardDateTime(approvalSummary?.decided_at)}</strong>
+                                      <strong>
+                                        {formatDashboardDateTime(approvalSummary?.decided_at)}
+                                      </strong>
                                     </div>
                                     <div className="expanded-detail-field-full">
                                       <small>Comentario</small>
-                                      <strong>{approvalSummary?.decision_comment?.trim() || "Sin comentario registrado"}</strong>
+                                      <strong>
+                                        {approvalSummary?.decision_comment?.trim() ||
+                                          "Sin comentario registrado"}
+                                      </strong>
                                     </div>
                                   </div>
                                 </div>
@@ -343,36 +394,45 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
               ) : (
                 <tr>
                   <td colSpan={7} className="tracking-empty-state">
-                    No hay folios en curso para el filtro actual.
+                    {activeFoliosQuery.isLoading
+                      ? "Cargando folios en curso..."
+                      : activeFoliosQuery.error instanceof Error
+                        ? activeFoliosQuery.error.message
+                        : "No hay folios en curso para el filtro actual."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderTop: '1px solid var(--border-light)' }}>
-            <button 
+
+        {activeFoliosQuery.isFetching && !activeFoliosQuery.isLoading ? (
+          <div className="tracking-helper-copy">Actualizando folios visibles...</div>
+        ) : null}
+
+        {totalCount > pageSize ? (
+          <div className="tracking-pagination">
+            <button
               type="button"
-              className="soft-primary-button" 
-              disabled={page === 0} 
-              onClick={() => setPage(p => p - 1)}
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+              className="secondary-button"
+              onClick={() => setPage((current) => Math.max(current - 1, 0))}
+              disabled={page === 0}
             >
-              &lt; Anterior
+              Anterior
             </button>
-            <span className="tracking-filter-caption" style={{ margin: 0 }}>Página {page + 1} de {totalPages}</span>
-            <button 
+            <span>
+              Página {page + 1} de {totalPages}
+            </span>
+            <button
               type="button"
-              className="soft-primary-button" 
-              disabled={page >= totalPages - 1} 
-              onClick={() => setPage(p => p + 1)}
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+              className="secondary-button"
+              onClick={() => setPage((current) => Math.min(current + 1, totalPages - 1))}
+              disabled={page >= totalPages - 1}
             >
-              Siguiente &gt;
+              Siguiente
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </DashboardWidgetFrame>
   );

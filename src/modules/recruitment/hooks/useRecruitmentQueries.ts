@@ -140,6 +140,7 @@ export function useRecruitmentProcessesPage(filters: RecruitmentProcessesPageFil
     },
     staleTime: RECRUITMENT_DASHBOARD_STALE_TIME_MS,
     gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
+    placeholderData: (previous) => previous,
     refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true

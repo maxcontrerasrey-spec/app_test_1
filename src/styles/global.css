@@ -1,35 +1,43 @@
 :root {
-  font-family:
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  --font-sans:
+    Inter,
     -apple-system,
+    BlinkMacSystemFont,
     "SF Pro Text",
     "SF Pro Display",
-    BlinkMacSystemFont,
     "Segoe UI",
     Roboto,
-    "Helvetica Neue",
+    Helvetica,
     Arial,
     sans-serif;
-  color: var(--title);
+  color: var(--text-primary);
   background: #f7f8fa;
-  line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --surface: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #5f6673;
+  --text-tertiary: #7b8494;
+  --text-muted: #6e7683;
+  --surface-page: #f5f5f7;
+  --surface-card: #ffffff;
+  --surface-soft: #fbfbfd;
+  --surface: var(--surface-card);
   --surface-rgb: 255, 255, 255;
-  --surface-soft: #f7f8fa;
-  --surface-soft-rgb: 247, 248, 250;
+  --surface-soft-rgb: 251, 251, 253;
   --surface-muted: #f1f3f5;
   --border: #e4e7ec;
-  --border-subtle: #edf0f3;
+  --border-subtle: rgba(29, 29, 31, 0.08);
   --accent: #2d63ff;
   --accent-soft: #eef4ff;
   --accent-border: #cad8ff;
-  --text-muted: #6b7280;
-  --title: #111827;
+  --title: var(--text-primary);
   --accent-deep: #0f172a;
   --sidebar-surface: #f7f8fa;
   --page-glow: #f8fafc;
@@ -47,26 +55,8 @@
   --soft-success: #177a52;
   --soft-warning: #a25a14;
   --soft-danger: #a83b3b;
-  --font-text:
-    -apple-system,
-    "SF Pro Text",
-    "SF Pro Display",
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  --font-display:
-    -apple-system,
-    "SF Pro Display",
-    "SF Pro Text",
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  --font-text: var(--font-sans);
+  --font-display: var(--font-sans);
   --radius-xl: 24px;
   --radius-lg: 18px;
   --radius-md: 14px;
@@ -94,6 +84,9 @@
   color-scheme: dark;
   color: #f8fafc;
   background: #0f172a;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
   --surface: #1e293b;
   --surface-rgb: 30, 41, 59;
   --surface-soft: #0f172a;
@@ -135,6 +128,9 @@
   color-scheme: light;
   color: #111111;
   background: #f4f1e8;
+  --text-primary: #111111;
+  --text-secondary: #37352f;
+  --text-tertiary: #5a564d;
   --surface: #fbfaf5;
   --surface-rgb: 251, 250, 245;
   --surface-soft: #f4f1e8;
@@ -177,6 +173,13 @@
   font-family: "Bookerly", Georgia, "Times New Roman", serif;
   --font-text: "Bookerly", Georgia, "Times New Roman", serif;
   --font-display: "Bookerly", Georgia, "Times New Roman", serif;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body[data-theme="e-ink"] {
@@ -235,8 +238,49 @@ body {
     radial-gradient(circle at top left, rgba(209, 223, 246, 0.28), transparent 24%),
     radial-gradient(circle at top right, rgba(230, 236, 246, 0.52), transparent 28%),
     linear-gradient(180deg, var(--soft-bg) 0%, #eef2f7 35%, #ebedf2 100%);
-  color: var(--title);
+  color: var(--text-primary);
   font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+h3 {
+  font-size: 1.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+h4 {
+  font-size: 1rem;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+p {
+  line-height: 1.55;
+  color: var(--text-secondary);
 }
 
 .soft-surface {
@@ -344,6 +388,7 @@ body {
   line-height: 1;
   letter-spacing: -0.04em;
   color: var(--soft-text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .soft-metric-card__detail {
@@ -370,6 +415,18 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.soft-metric-card__value,
+.dashboard-operations-value,
+.dashboard-operations-highlight-value,
+.tracking-table,
+.nx-table,
+.amount,
+.numeric,
+.kpi,
+[data-numeric="true"] {
+  font-variant-numeric: tabular-nums;
 }
 
 button,

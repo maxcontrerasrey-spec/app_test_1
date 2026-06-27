@@ -1433,3 +1433,15 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No apliques un lenguaje visual nuevo duplicando sombras, radios y fondos pantalla por pantalla.** Si el objetivo es modernizar un ERP sin romperlo, la primera pasada debe vivir en tokens y contenedores reutilizables (`surface`, `metric card`, `panel`) que luego las vistas consumen.
 - **El neumorfismo útil en software operativo es selectivo.** Cards KPI, navegación, headers ejecutivos y paneles resumen sí ganan con superficies soft; tablas densas, formularios críticos y grillas de decisión deben mantener bordes claros, contraste fuerte y comportamiento táctico por encima del efecto visual.
 - **La compactación correcta sale de extraer helpers y configuraciones repetidas, no de colapsar JSX complejo a cualquier costo.** Si varios widgets repiten formatters, headers de tabla o bloques KPI equivalentes, se comparte esa pieza; el detalle operativo específico de cada módulo se conserva local para no degradar legibilidad ni trazabilidad.
+
+## 131. El Inicio no puede contar reclutamiento con un motor paralelo al de Control de Contrataciones
+
+- **Si dos superficies del ERP hablan del mismo universo de procesos abiertos, deben derivar del mismo resumen operativo o de una helper común.** Mantener una lista manual de estados en `Inicio` y otra regla distinta en `Control de Contrataciones` reabre drift silencioso apenas aparece un estado nuevo o cambia la visibilidad.
+- **Los helpers de visibilidad por CECO deben normalizar ambos lados antes de comparar.** En este repo, diferencias como `10116` vs `10116.0` bastan para esconder casos reales a perfiles gerenciales aunque el resto del SQL sea correcto.
+- **Un bundle home puede seguir siendo liviano, pero sus KPIs no pueden inventar semántica propia.** Si el widget necesita `open_processes`, `ready_to_hire_cases` o `filled_cases`, esos números deben heredar el contrato operativo ya aprobado por el dominio.
+
+## 132. Un lookup de trabajadores no debe disparar scans sobre la view deduplicada ni arrastrar consultas secundarias por cada tecla
+
+- **Cuando el buscador necesita responder en sub-segundo, no construyas el `LIKE '%...%'` sobre helpers calculados fila a fila dentro de `employees_active_current`.** El patrón robusto es indexar una clave de búsqueda reusable sobre `employees`, filtrar primero sobre el universo activo y recién después deduplicar identidad si hace falta.
+- **Si el mismo input alimenta otra RPC pesada de resumen o dashboard, al menos una de las dos debe desacoplarse o esperar al debounce estabilizado.** De lo contrario, el usuario percibe que “la búsqueda demora” aunque el cuello real sea el segundo query colateral.
+- **Las optimizaciones de search deben tocar también el contrato de bloqueo operacional adyacente.** En movilidad interna, acelerar el lookup sin un índice específico para trabajadores ya bloqueados deja viva una parte del costo justo en la ruta que negocio usa para excluir duplicidades.

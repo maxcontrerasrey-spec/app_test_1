@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Auditoría enterprise, tipografía SF segura y hardening de Inicio + búsqueda de trabajadores
+
+- [x] Auditar el contrato vivo entre `Inicio`, `get_dashboard_home_bundle(...)`, `get_dashboard_operational_summary()` y `get_recruitment_control_summary()` para explicar por qué el resumen de reclutamiento abierto muestra menos casos que los existentes
+- [x] Corregir de forma incremental y versionada la métrica/RPC responsable para alinear `Inicio` con el universo operativo real sin romper visibilidad por rol ni las bandejas actuales
+- [x] Aplicar la mejora tipográfica enterprise inspirada en Apple/SF de forma centralizada y legal, reutilizando `Inter` ya disponible, endureciendo jerarquía y legibilidad, y agregando tratamiento numérico tabular donde aporte valor ERP
+- [x] Reducir la latencia de búsqueda de trabajadores por debajo de 1 segundo mediante la ruta más segura entre SQL, índices y UX del lookup, sin crear una segunda fuente de verdad BUK
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `git diff --check` y, si el entorno responde, humo real de las RPCs afectadas antes de commitear y subir a `main`
+
+## Resultado de auditoría enterprise, tipografía SF segura y hardening de Inicio + búsqueda de trabajadores
+
+- La deriva de `Inicio` quedó acotada a backend y no a React: `get_dashboard_operational_summary()` contaba reclutamiento con un motor distinto de [`get_recruitment_control_summary()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625022401_harden_recruitment_mobility_enterprise_scale.sql:32), mientras la visibilidad gerencial dependía de una comparación literal de CECO en [`user_can_view_hiring_request_process_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627153000_harden_dashboard_and_worker_search_enterprise.sql:106). La migración nueva [`20260627153000_harden_dashboard_and_worker_search_enterprise.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627153000_harden_dashboard_and_worker_search_enterprise.sql:1) normaliza ambos CECO y hace que el bloque de reclutamiento en Inicio reutilice el resumen operativo vivo para `open_processes`, `ready_to_hire_cases` y `filled_cases`.
+- El bloque inferior de `Folios en curso` dejó de depender del payload capado del bundle de Inicio. [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1) ahora consume [`useRecruitmentProcessesPage(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/hooks/useRecruitmentQueries.ts:129) con paginación y búsqueda server-side, preservando el detalle expandible pero mostrando todo el universo visible por página en vez de quedarse limitado al subset cargado por `get_dashboard_home_bundle(...)`.
+- La búsqueda de trabajadores quedó endurecida en la capa correcta: la misma migración agrega helpers indexables (`build_active_employee_search_text`, `build_employee_document_digits`, `build_active_employee_identity_key`), índices `pg_trgm` sobre `public.employees` y un índice parcial para trabajadores bloqueados de movilidad. Las RPCs [`search_hr_incentive_eligible_workers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627153000_harden_dashboard_and_worker_search_enterprise.sql:319), [`search_internal_mobility_workers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627153000_harden_dashboard_and_worker_search_enterprise.sql:435), [`search_hr_roster_workers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627153000_harden_dashboard_and_worker_search_enterprise.sql:544) y [`get_hr_roster_calendar_summary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627153000_harden_dashboard_and_worker_search_enterprise.sql:623) dejaron de apoyarse en el hot path no-sargable sobre `employees_active_current` y ahora filtran primero sobre `employees` activos con helpers reutilizables antes de deduplicar identidad.
+- También se recortó fricción evitable en frontend: los tres lookups de trabajador redujeron debounce a `150 ms`, y [`RosterWorkerLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/components/RosterWorkerLookup.tsx:1) ya no dispara el filtro secundario del resumen mensual por cada tecla sin pausa, sino recién cuando la búsqueda debounced se estabiliza.
+- La capa tipográfica quedó centralizada y legal: [`src/main.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/main.tsx:1) carga `Inter` desde `@fontsource` en subset `latin`, y [`src/styles/global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1) ahora define un stack `Inter + system`, jerarquía de headings sobria, colores de texto más consistentes y `font-variant-numeric: tabular-nums` para métricas, tablas y resúmenes de dashboard.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260627153000_harden_dashboard_and_worker_search_enterprise.sql`
+  - `npx tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto vía `supabase db query --linked`:
+    - `pg_get_functiondef(...)` confirmó la normalización CECO en `user_can_view_hiring_request_process_summary(...)`;
+    - `pg_get_functiondef(...)` confirmó que `get_dashboard_operational_summary()` reutiliza `get_recruitment_control_summary()`;
+    - `pg_indexes` confirmó `idx_employees_active_worker_search_text_trgm`, `idx_employees_active_name_search_prefix`, `idx_employees_active_document_digits_trgm` e `idx_internal_mobility_requests_blocked_worker_lookup`.
+
 ## Aterrizaje enterprise de auditoría de reclutamiento, movilidad y sync BUK
 
 - [x] Contrastar la auditoría adjunta contra el estado vivo del SQL, las RPCs y la Edge Function `sync-buk-candidates`
