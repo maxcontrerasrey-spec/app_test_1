@@ -34,6 +34,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con mostrar un encabezado clickeable**. Si la columna visible usa una key distinta a la aceptada por la RPC, el usuario percibe que “se puede ordenar”, pero la query cae al orden por defecto y la UX queda mentirosa.
 - **La regla correcta es tipar y centralizar el mapping de columnas ordenables**. Cada header debe usar exactamente una clave válida del backend, y las columnas no soportadas deben quedar explícitamente fuera del sort en vez de depender de nombres parecidos.
 
+## 138. Si el usuario pide ordenar una columna temporal, no la “simules” dejando el orden por defecto
+
+- **`Días Abierto` no puede verse ordenable si internamente sigue cayendo a `sort_opened_at desc` como fallback fijo.** Eso da la ilusión de capacidad, pero el usuario nunca puede invertir el sentido ni confirmar que el click hizo algo real.
+- **La regla correcta es habilitar la columna extremo a extremo**: header clickeable, clave válida en frontend y soporte explícito en la RPC para `asc/desc`. Si no existe soporte backend, se versiona la migración; no se maquilla el problema en la UI.
+
 ## 67. Cuando un cupo puede quedar reservado por movilidad interna, la liberación y la reapertura deben salir del mismo motor de sincronización
 
 - **No basta con cambiar `internal_mobility_requests.status` a `rejected`**. Si esa movilidad contaba dentro de `effective_filled_vacancies`, el backend debe reejecutar la sincronización del caso/folio en la misma operación o el cupo queda liberado solo “en teoría”, pero la bandeja sigue mostrando el folio como lleno o cerrado.

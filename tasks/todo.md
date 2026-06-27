@@ -104,6 +104,19 @@
 - [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:338) agrega una clase específica solo a la tarjeta `Folios activos en búsqueda`, y [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:3258) le da más borde, contraste cálido y una sombra mejor definida para que no se funda con el fondo ni parezca sin bordes.
 - Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
 
+## Hotfix de ordenamiento por dias abierto en Inicio
+
+- [x] Auditar por qué la columna `Días Abierto` del resumen de folios en Inicio seguía sin ordenar pese a tener header visible
+- [x] Habilitar `opened_at` como sort explícito tanto en `ActiveFoliosWidget` como en `get_recruitment_processes_page(...)`
+- [x] Validar migración SQL, `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de hotfix de ordenamiento por dias abierto en Inicio
+
+- [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:20) dejó de tratar `Días Abierto` como excepción: el header ahora es clickeable, muestra icono de orden y alterna `asc`, `desc` y reset igual que el resto de columnas.
+- Se versionó la migración [`20260627164000_enable_opened_at_sort_for_dashboard_folios.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627164000_enable_opened_at_sort_for_dashboard_folios.sql:1), que amplía `get_recruitment_processes_page(...)` para aceptar `opened_at` como `p_sort_column` válido y ordenar explícitamente por `sort_opened_at` en ambos sentidos.
+- La corrección no quedó solo local: `npx --yes supabase db push --linked --include-all` aplicó la migración al proyecto remoto enlazado, así que el sort por antigüedad ya puede funcionar también en el entorno vivo que consume esa RPC.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260627164000_enable_opened_at_sort_for_dashboard_folios.sql`, `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Aterrizaje enterprise de auditoría de reclutamiento, movilidad y sync BUK
 
 - [x] Contrastar la auditoría adjunta contra el estado vivo del SQL, las RPCs y la Edge Function `sync-buk-candidates`

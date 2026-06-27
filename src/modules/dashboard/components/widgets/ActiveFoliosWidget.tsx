@@ -82,7 +82,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const activeFoliosQuery = useRecruitmentProcessesPage({
     search: debouncedSearch || undefined,
     statusFilter: null,
-    sortColumn: sortConfig?.key === "opened_at" ? null : sortConfig?.key ?? null,
+    sortColumn: sortConfig?.key ?? null,
     sortDirection: sortConfig?.direction ?? "desc",
     limit: pageSize,
     offset: page * pageSize
@@ -96,22 +96,19 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const handleSort = (key: ActiveFoliosSortKey) => {
-    if (key === "opened_at") {
-      setSortConfig(null);
+    if (sortConfig?.key === key) {
+      if (sortConfig.direction === "asc") {
+        setSortConfig({ key, direction: "desc" });
+      } else {
+        setSortConfig(null);
+      }
       return;
     }
 
-    let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
+    setSortConfig({ key, direction: "asc" });
   };
 
-  const getSortIcon = (key: string) => {
-    if (key === "opened_at") {
-      return null;
-    }
+  const getSortIcon = (key: ActiveFoliosSortKey) => {
     if (sortConfig?.key !== key) return <span style={{ opacity: 0.3 }}> ↕</span>;
     return sortConfig.direction === "asc" ? <span> ↑</span> : <span> ↓</span>;
   };
@@ -181,10 +178,8 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                 {sortableColumns.map((column) => (
                   <th
                     key={column.key}
-                    className={column.key === "opened_at" ? undefined : "dashboard-sortable-heading"}
-                    onClick={
-                      column.key === "opened_at" ? undefined : () => handleSort(column.key)
-                    }
+                    className="dashboard-sortable-heading"
+                    onClick={() => handleSort(column.key)}
                   >
                     {column.label}
                     {getSortIcon(column.key)}
