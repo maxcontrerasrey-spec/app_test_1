@@ -1059,6 +1059,17 @@ textarea {
   text-align: left;
 }
 
+.top-user-panel.top-user-panel-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0 !important;
+  width: 46px !important;
+  height: 46px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
 .user-avatar {
   width: 38px;
   height: 38px;

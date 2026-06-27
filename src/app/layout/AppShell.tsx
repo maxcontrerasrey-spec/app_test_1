@@ -516,17 +516,14 @@ export function AppShell() {
           <div className="top-user-panel-wrap" ref={userMenuRef}>
             <button
               type="button"
-              className="top-user-panel"
+              className="top-user-panel top-user-panel-compact"
               onClick={() => setIsUserMenuOpen((current) => !current)}
               aria-expanded={isUserMenuOpen}
               aria-haspopup="menu"
+              title={`${displayName} - ${jobTitle || "Usuario activo"}`}
             >
               <div className="user-avatar" aria-hidden="true">
                 {userInitials}
-              </div>
-              <div className="top-user-meta">
-                <strong>{displayName}</strong>
-                <span>{jobTitle || appRoles[0] || "Usuario activo"}</span>
               </div>
             </button>
 
