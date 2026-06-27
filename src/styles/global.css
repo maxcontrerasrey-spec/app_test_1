@@ -394,11 +394,9 @@ textarea {
   top: 0;
   z-index: 100;
   padding: 0.65rem 0 0;
-  background:
-    linear-gradient(180deg, rgba(var(--surface-rgb), 0.96), rgba(var(--surface-rgb), 0.92)),
-    var(--top-shell-bg);
-  border-bottom: 1px solid rgba(var(--border-rgb), 0.45);
-  backdrop-filter: saturate(1.05) blur(18px);
+  background: transparent;
+  border-bottom: none;
+  backdrop-filter: none;
 }
 
 .top-shell-bar {
