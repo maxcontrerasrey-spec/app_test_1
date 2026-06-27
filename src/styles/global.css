@@ -766,6 +766,11 @@ textarea {
   flex-shrink: 0;
 }
 
+.top-nav-dropdown-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
 .top-nav-dropdown-link:hover {
   background: linear-gradient(135deg, rgba(var(--surface-soft-rgb), 0.95), rgba(var(--surface-rgb), 0.68));
   border-color: rgba(255, 255, 255, 0.4);
