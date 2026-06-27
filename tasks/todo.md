@@ -29,6 +29,29 @@
     - `pg_get_functiondef(...)` confirmó que `get_dashboard_operational_summary()` reutiliza `get_recruitment_control_summary()`;
     - `pg_indexes` confirmó `idx_employees_active_worker_search_text_trgm`, `idx_employees_active_name_search_prefix`, `idx_employees_active_document_digits_trgm` e `idx_internal_mobility_requests_blocked_worker_lookup`.
 
+## Ejecucion visible del prompt de auditoria enterprise ERP
+
+- [x] Releer el prompt de auditoria y convertir su ejecucion en artefactos versionados visibles dentro del repo
+- [x] Levantar documentacion viva minima de arquitectura, modelo de datos, modulos, permisos, auditoria, humo, deployment, rollback y security review
+- [x] Registrar hallazgos vigentes que quedaron fuera del cambio funcional anterior, incluyendo deuda legacy de onboarding
+- [x] Dejar esta ejecucion trazable en `tasks/todo.md` y `tasks/lessons.md`
+
+## Resultado de ejecucion visible del prompt de auditoria enterprise ERP
+
+- La corrida del prompt ya no queda implicita solo en cambios de SQL/frontend. Se versionaron documentos concretos en `docs/` para que cualquier auditor vea estado actual, riesgos, cambios recientes y forma de operar sin depender de memoria tribal:
+  - `docs/architecture.md`
+  - `docs/database-model.md`
+  - `docs/permissions-matrix.md`
+  - `docs/audit-logs.md`
+  - `docs/smoke-tests.md`
+  - `docs/deployment.md`
+  - `docs/rollback.md`
+  - `docs/module-map.md`
+  - `docs/security-review.md`
+- La ejecucion deja explicitado el contrato actual entre frontend, AuthContext, `get_my_effective_permissions()`, rutas protegidas y helpers `user_can_*`, en vez de asumir que el endurecimiento ya era autoevidente por las migraciones.
+- Tambien queda documentado un hallazgo vigente que no convenia esconder: existe SQL legacy de onboarding que sigue usando `user_can_access_module(..., 'reclutamiento')` aunque `'reclutamiento'` es rol y no modulo. El backend nuevo de alta operacional ya opera con `alta_operacional_personal`, por lo que el riesgo actual es de coherencia/legado y debe corregirse cuando se sanee ese bloque viejo.
+- Esta pasada no agrego otra correccion funcional productiva porque el objetivo puntual era hacer visible y auditable la ejecucion del prompt sin abrir un frente fuera de alcance ni mezclar una cirugia adicional no pedida con el cierre documental.
+
 ## Aterrizaje enterprise de auditoría de reclutamiento, movilidad y sync BUK
 
 - [x] Contrastar la auditoría adjunta contra el estado vivo del SQL, las RPCs y la Edge Function `sync-buk-candidates`

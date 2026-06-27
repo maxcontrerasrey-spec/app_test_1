@@ -9,6 +9,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con aplicar `ORDER BY ... LIMIT/OFFSET` antes de agregar JSON**. Si luego se usa `jsonb_agg` sin un ordinal estable calculado después del ordenamiento, PostgreSQL puede devolver los items de la página en orden distinto al solicitado aunque la página seleccionada sea la correcta.
 - **El patrón seguro es ordenar en una subconsulta y recién después asignar `row_number()` para el aggregate**. Toda RPC que devuelva `{items,total_count}` debe validar con una query de humo que `sort asc/desc` se refleje en el arreglo JSON final, no solo en el plan SQL intermedio.
 
+## 133. Si el usuario pide "ejecutar un prompt", la salida debe quedar visible como artefacto versionado y no solo implicita en el diff funcional
+
+- **No asumas que una auditoria o prompt ya "se ve" porque produjo fixes reales**. Si el usuario pide ejecutar un prompt de auditoria, el repo debe mostrar documentos o trazas explicitas de esa corrida: mapa modular, matriz de permisos, security review, smoke plan o equivalente.
+- **La regla operativa es simple**: cuando el trabajo incluya diagnostico enterprise, deja evidencia navegable en `docs/` y registra el cierre en `tasks/todo.md`; si no, el usuario solo ve el efecto lateral y no la ejecucion auditable.
+
 ## 67. Cuando un cupo puede quedar reservado por movilidad interna, la liberación y la reapertura deben salir del mismo motor de sincronización
 
 - **No basta con cambiar `internal_mobility_requests.status` a `rejected`**. Si esa movilidad contaba dentro de `effective_filled_vacancies`, el backend debe reejecutar la sincronización del caso/folio en la misma operación o el cupo queda liberado solo “en teoría”, pero la bandeja sigue mostrando el folio como lleno o cerrado.
