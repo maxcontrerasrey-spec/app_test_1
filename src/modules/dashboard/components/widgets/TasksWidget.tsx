@@ -11,21 +11,13 @@ import {
 } from "../../../recruitment/services/hiringWorkflow";
 import { approveCandidateStageWho, rejectCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 import { decideInternalMobilityApproval } from "../../../internal_mobility/services/internalMobilityApi";
+import { formatDashboardDate } from "../../lib/formatters";
 
 type TasksWidgetProps = {
   title: string;
   dashboardData?: DashboardDataBundle;
   onRefresh?: () => void;
 };
-
-function formatDateValue(dateStr: string | null | undefined) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  });
-}
 
 export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProps) {
   const tasks = filterHomeTasks(dashboardData?.tasksData ?? []);
@@ -132,7 +124,11 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
   };
 
   return (
-    <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
+    <DashboardWidgetFrame
+      title={title}
+      subtitle="Decisiones activas que bloquean operación o aprobaciones en curso."
+      className="widget-tasks widget-fill-height"
+    >
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
           <table className="tracking-table dashboard-pending-approvals-table">
@@ -219,15 +215,15 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                                 <div className="expanded-detail-fields">
                                   <div>
                                     <small>Ingreso solicitado</small>
-                                    <strong>{formatDateValue(task.requested_income_date)}</strong>
+                                    <strong>{formatDashboardDate(task.requested_income_date)}</strong>
                                   </div>
                                   <div>
                                     <small>Inicio contrato</small>
-                                    <strong>{formatDateValue(task.contract_start_date)}</strong>
+                                    <strong>{formatDashboardDate(task.contract_start_date)}</strong>
                                   </div>
                                   <div>
                                     <small>Fin contrato</small>
-                                    <strong>{formatDateValue(task.contract_end_date)}</strong>
+                                    <strong>{formatDashboardDate(task.contract_end_date)}</strong>
                                   </div>
                                   <div>
                                     <small>Turno</small>
@@ -359,7 +355,7 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                                     </div>
                                     <div>
                                       <small>Fecha solicitud</small>
-                                      <strong>{formatDateValue(task.created_at)}</strong>
+                                      <strong>{formatDashboardDate(task.created_at)}</strong>
                                     </div>
                                   </div>
 

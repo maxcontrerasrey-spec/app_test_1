@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DashboardOperationalSummary } from "../types";
+import { SoftSurface } from "../../../shared/ui";
 
 type DashboardOperationalSummaryCardProps = {
   summary: DashboardOperationalSummary | null;
@@ -124,7 +125,11 @@ export function DashboardOperationalSummaryCard({
   }
 
   return (
-    <article className="dashboard-info-card dashboard-info-card-operations">
+    <SoftSurface
+      as="article"
+      className="dashboard-info-card dashboard-info-card-operations"
+      variant="raised"
+    >
       <div className="dashboard-operations-card-header">
         <div className="dashboard-info-head">
           <strong className="dashboard-operations-heading">{activeSheet.eyebrow}</strong>
@@ -176,6 +181,6 @@ export function DashboardOperationalSummaryCard({
           />
         ))}
       </div>
-    </article>
+    </SoftSurface>
   );
 }

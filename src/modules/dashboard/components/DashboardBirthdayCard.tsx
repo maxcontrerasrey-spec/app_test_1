@@ -1,4 +1,5 @@
 import type { DashboardBirthdayItem } from "../types";
+import { SoftSurface } from "../../../shared/ui";
 
 type DashboardBirthdayCardProps = {
   birthdays: DashboardBirthdayItem[];
@@ -18,7 +19,11 @@ export function DashboardBirthdayCard({
   onSelect
 }: DashboardBirthdayCardProps) {
   return (
-    <article className="dashboard-info-card dashboard-info-card-birthday dashboard-birthday-card">
+    <SoftSurface
+      as="article"
+      className="dashboard-info-card dashboard-info-card-birthday dashboard-birthday-card"
+      variant="raised"
+    >
       {nextBirthday ? (
         <>
           <div className="dashboard-birthday-card-header">
@@ -94,6 +99,6 @@ export function DashboardBirthdayCard({
           <span className="dashboard-birthday-empty-label">No hay cumpleaños próximos</span>
         </div>
       )}
-    </article>
+    </SoftSurface>
   );
 }

@@ -1,36 +1,17 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { TextField } from "../../../../shared/ui";
+import { SoftMetricCard, TextField } from "../../../../shared/ui";
 import { getDaysSince } from "../../../../shared/lib/date";
 import { toRecruitmentCaseStatusLabel, type RecruitmentCaseDetail } from "../../../recruitment/services/hiringControl";
 import { getRecruitmentCaseDetailQueryOptions } from "../../../recruitment/hooks/useRecruitmentQueries";
 import type { DashboardActiveFolioItem, DashboardDataBundle } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
+import { formatDashboardDate, formatDashboardDateTime } from "../../lib/formatters";
 
 type ActiveFoliosWidgetProps = {
   title: string;
   dashboardData?: DashboardDataBundle;
 };
-
-function formatDateValue(dateStr: string | null | undefined) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  });
-}
-
-function formatDateTimeValue(dateStr: string | null | undefined) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
 
 export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetProps) {
   const queryClient = useQueryClient();
@@ -46,6 +27,37 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const [page, setPage] = useState(0);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const pageSize = 7;
+  const sortableColumns = [
+    { key: "case_code", label: "Caso" },
+    { key: "status", label: "Estado" },
+    { key: "job_position_name", label: "Cargo" },
+    { key: "contract_name", label: "Contrato / CC" },
+    { key: "requested_vacancies", label: "Cupos" },
+    { key: "candidate_count", label: "Candidatos activos" },
+    { key: "opened_at", label: "Días Abierto" }
+  ] as const;
+  const folioKpis = [
+    {
+      label: "Folios activos en búsqueda",
+      tone: "warning" as const,
+      value: String(recruitmentSummary?.openProcesses ?? 0)
+    },
+    {
+      label: "Candidatos en curso",
+      tone: "info" as const,
+      value: String(recruitmentSummary?.inProgressCandidates ?? 0)
+    },
+    {
+      label: "Con candidato listo",
+      tone: "info" as const,
+      value: String(recruitmentSummary?.readyToHireCases ?? 0)
+    },
+    {
+      label: "Casos cubiertos",
+      tone: "success" as const,
+      value: String(recruitmentSummary?.filledCases ?? 0)
+    }
+  ];
 
   const filteredAndSortedFolios = useMemo(() => {
     let result = folios;
@@ -127,7 +139,11 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   };
 
   return (
-    <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
+    <DashboardWidgetFrame
+      title={title}
+      subtitle="Búsquedas abiertas con KPIs de avance y detalle expandible por caso."
+      className="widget-tasks widget-fill-height"
+    >
       <div className="dashboard-folios-toolbar dashboard-folios-toolbar-split">
         <div className="dashboard-folios-toolbar-search">
           <TextField
@@ -141,22 +157,15 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
         </div>
 
         <div className="tracking-kpi-row dashboard-folios-kpis">
-          <article className="tracking-kpi-card tracking-kpi-card-pendiente dashboard-folios-kpi-card">
-            <span className="micro-label">Folios activos en búsqueda</span>
-            <strong>{recruitmentSummary?.openProcesses ?? 0}</strong>
-          </article>
-          <article className="tracking-kpi-card tracking-kpi-card-en-proceso dashboard-folios-kpi-card">
-            <span className="micro-label">Candidatos en curso</span>
-            <strong>{recruitmentSummary?.inProgressCandidates ?? 0}</strong>
-          </article>
-          <article className="tracking-kpi-card tracking-kpi-card-en-proceso dashboard-folios-kpi-card">
-            <span className="micro-label">Con candidato listo</span>
-            <strong>{recruitmentSummary?.readyToHireCases ?? 0}</strong>
-          </article>
-          <article className="tracking-kpi-card tracking-kpi-card-generado dashboard-folios-kpi-card">
-            <span className="micro-label">Casos cubiertos</span>
-            <strong>{recruitmentSummary?.filledCases ?? 0}</strong>
-          </article>
+          {folioKpis.map((kpi) => (
+            <SoftMetricCard
+              key={kpi.label}
+              className="dashboard-folios-kpi-card"
+              label={kpi.label}
+              tone={kpi.tone}
+              value={kpi.value}
+            />
+          ))}
         </div>
       </div>
 
@@ -165,13 +174,16 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
           <table className="tracking-table">
             <thead>
               <tr>
-                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("case_code")}>Caso{getSortIcon("case_code")}</th>
-                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("status")}>Estado{getSortIcon("status")}</th>
-                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("job_position_name")}>Cargo{getSortIcon("job_position_name")}</th>
-                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("contract_name")}>Contrato / CC{getSortIcon("contract_name")}</th>
-                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("requested_vacancies")}>Cupos{getSortIcon("requested_vacancies")}</th>
-                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("candidate_count")}>Candidatos activos{getSortIcon("candidate_count")}</th>
-                <th style={{ cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("opened_at")}>Días Abierto{getSortIcon("opened_at")}</th>
+                {sortableColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="dashboard-sortable-heading"
+                    onClick={() => handleSort(column.key)}
+                  >
+                    {column.label}
+                    {getSortIcon(column.key)}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -254,15 +266,15 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Ingreso solicitado</small>
-                                      <strong>{formatDateValue(detail.case.requested_entry_date)}</strong>
+                                      <strong>{formatDashboardDate(detail.case.requested_entry_date)}</strong>
                                     </div>
                                     <div>
                                       <small>Inicio contrato</small>
-                                      <strong>{formatDateValue(hr?.start_date)}</strong>
+                                      <strong>{formatDashboardDate(hr?.start_date)}</strong>
                                     </div>
                                     <div>
                                       <small>Fin contrato</small>
-                                      <strong>{formatDateValue(hr?.end_date)}</strong>
+                                      <strong>{formatDashboardDate(hr?.end_date)}</strong>
                                     </div>
                                     <div>
                                       <small>Turno</small>
@@ -308,7 +320,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                     </div>
                                     <div>
                                       <small>Fecha decisión</small>
-                                      <strong>{formatDateTimeValue(approvalSummary?.decided_at)}</strong>
+                                      <strong>{formatDashboardDateTime(approvalSummary?.decided_at)}</strong>
                                     </div>
                                     <div className="expanded-detail-field-full">
                                       <small>Comentario</small>

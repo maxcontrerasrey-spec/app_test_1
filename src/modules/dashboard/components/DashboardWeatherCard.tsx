@@ -1,3 +1,5 @@
+import { SoftSurface } from "../../../shared/ui";
+
 type WeatherForecastDay = {
   time: number;
   temperatureMax: number;
@@ -136,7 +138,11 @@ export function DashboardWeatherCard({
   const locationName = locationLabel ? locationLabel.split(",")[0] : "UBICACION";
 
   return (
-    <article className={`dashboard-info-card dashboard-info-card-weather${themeClass} dashboard-weather-card`}>
+    <SoftSurface
+      as="article"
+      className={`dashboard-info-card dashboard-info-card-weather${themeClass} dashboard-weather-card`}
+      variant="raised"
+    >
       <div className="dashboard-weather-card-main">
         <div className="dashboard-weather-card-temperature">
           <span className="dashboard-weather-card-icon">{toWeatherIcon(code, 48, 1.5)}</span>
@@ -176,7 +182,7 @@ export function DashboardWeatherCard({
           })}
         </div>
       ) : null}
-    </article>
+    </SoftSurface>
   );
 }
 

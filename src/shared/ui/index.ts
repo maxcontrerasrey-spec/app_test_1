@@ -1,4 +1,6 @@
 export * from "./layout/PageShell";
+export * from "./layout/SoftMetricCard";
+export * from "./layout/SoftSurface";
 export * from "./forms/TextField";
 export * from "./forms/SelectField";
 export * from "./forms/SearchableSelectField";

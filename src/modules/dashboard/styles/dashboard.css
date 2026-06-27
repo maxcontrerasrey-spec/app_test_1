@@ -16,24 +16,68 @@
   z-index: 20;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  padding-bottom: var(--spacing-8);
-  gap: var(--spacing-4);
+  align-items: stretch;
+  gap: var(--spacing-6);
+}
+
+.dashboard-hero {
+  padding: 0.5rem 0 0.25rem;
+}
+
+.dashboard-hero-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 0.85rem;
+}
+
+.dashboard-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 2rem;
+  padding: 0 0.85rem;
+  border: 1px solid rgba(31, 94, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(31, 94, 255, 0.08);
+  color: var(--soft-accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .dashboard-header-actions {
   position: relative;
   z-index: 30;
-  display: flex;
+  display: grid;
   justify-content: flex-end;
-  align-items: flex-start;
+  align-items: stretch;
+}
+
+.dashboard-hero-metrics {
+  grid-template-columns: repeat(2, minmax(190px, 1fr));
+  gap: 0.85rem;
+  min-width: min(100%, 430px);
+}
+
+.dashboard-main-soft {
+  display: grid;
+  gap: 1.3rem;
 }
 
 .dashboard-info-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) minmax(0, 0.95fr) minmax(0, 1.1fr);
   gap: 18px;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
 }
 
 .dashboard-info-card {
@@ -42,14 +86,8 @@
   display: grid;
   gap: 12px;
   min-height: auto;
-  padding: 14px 18px;
+  padding: 16px 18px;
   border-radius: 24px;
-  border: 1px solid rgba(188, 200, 221, 0.42);
-  background:
-    linear-gradient(180deg, rgba(var(--surface-rgb), 0.94), rgba(var(--surface-soft-rgb), 0.88));
-  box-shadow:
-    0 22px 44px -34px rgba(70, 90, 128, 0.28),
-    0 8px 18px -18px rgba(70, 90, 128, 0.18);
 }
 
 .dashboard-info-card::before {
@@ -69,8 +107,8 @@
 
 .dashboard-info-card-weather {
   background:
-    radial-gradient(circle at 80% 24%, rgba(190, 221, 255, 0.32), transparent 30%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+    radial-gradient(circle at 80% 24%, rgba(190, 221, 255, 0.28), transparent 30%),
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
   transition: background 0.8s ease;
 }
 
@@ -94,8 +132,8 @@
 
 .dashboard-info-card-birthday {
   background:
-    radial-gradient(circle at 18% 24%, rgba(255, 238, 211, 0.38), transparent 28%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+    radial-gradient(circle at 18% 24%, rgba(255, 238, 211, 0.34), transparent 28%),
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
 }
 
 .dashboard-weather-card,
@@ -111,17 +149,17 @@
 
 .dashboard-info-card-economics {
   background:
-    radial-gradient(circle at 75% 20%, rgba(16, 185, 129, 0.12), transparent 40%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+    radial-gradient(circle at 75% 20%, rgba(16, 185, 129, 0.1), transparent 40%),
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
 }
 
 .dashboard-info-card-operations {
-  gap: 4px;
-  padding: 12px 14px;
+  gap: 6px;
+  padding: 14px 16px;
   background:
-    radial-gradient(circle at 85% 18%, rgba(139, 92, 246, 0.14), transparent 36%),
-    radial-gradient(circle at 15% 78%, rgba(59, 130, 246, 0.12), transparent 30%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+    radial-gradient(circle at 85% 18%, rgba(90, 127, 198, 0.16), transparent 36%),
+    radial-gradient(circle at 15% 78%, rgba(59, 130, 246, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
 }
 
 .dashboard-economic-card-header {
@@ -495,12 +533,12 @@
 }
 
 .dashboard-greeting h2 {
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  color: var(--title);
+  font-size: clamp(2rem, 3.6vw, 2.95rem);
+  font-weight: 700;
+  color: var(--soft-text-primary);
   margin-top: 4px;
   margin-bottom: 2px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.045em;
 }
 
 .dashboard-greeting .eyebrow {
@@ -515,7 +553,7 @@
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: 18px;
+  row-gap: 20px;
 }
 
 .dashboard-zone {
@@ -557,6 +595,16 @@
 }
 
 @media (max-width: 1024px) {
+  .dashboard-header,
+  .dashboard-hero {
+    flex-direction: column;
+  }
+
+  .dashboard-hero-metrics {
+    width: 100%;
+    min-width: 0;
+  }
+
   .dashboard-info-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -571,6 +619,10 @@
 }
 
 @media (max-width: 720px) {
+  .dashboard-hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-info-row {
     grid-template-columns: 1fr;
   }
@@ -599,13 +651,8 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.92));
-  border: 1px solid rgba(183, 198, 223, 0.42);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
-  box-shadow:
-    0 24px 44px -34px rgba(69, 88, 125, 0.24),
-    0 8px 18px -16px rgba(69, 88, 125, 0.16);
+  padding: 18px 20px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
@@ -616,8 +663,8 @@
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 64px;
-  background: linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.7), rgba(var(--surface-soft-rgb), 0));
+  height: 68px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.54), rgba(var(--surface-soft-rgb), 0));
   pointer-events: none;
   z-index: 0;
 }
@@ -674,16 +721,38 @@
 .widget-header {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* Center instead of flex-start */
-  margin-bottom: 14px;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 16px;
+}
+
+.widget-header-copy {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.widget-header-actions {
+  flex: 0 0 auto;
 }
 
 .widget-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--title);
-  letter-spacing: -0.01em;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--soft-text-primary);
+  letter-spacing: -0.03em;
   margin: 0;
+}
+
+.widget-subtitle {
+  margin: 0;
+  color: var(--soft-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.dashboard-sortable-heading {
+  cursor: pointer;
+  user-select: none;
 }
 
 @media (max-width: 760px) {

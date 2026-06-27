@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SoftSurface } from "../../../shared/ui";
 
 type MindicadorResponse = {
   version: string;
@@ -78,9 +79,11 @@ export function DashboardEconomicCard() {
   }, []);
 
   return (
-    <article className="dashboard-info-card dashboard-info-card-economics">
-
-
+    <SoftSurface
+      as="article"
+      className="dashboard-info-card dashboard-info-card-economics"
+      variant="raised"
+    >
       <div className="dashboard-economics-grid">
         <div className="dashboard-economic-item">
           <span className="dashboard-economic-label">UF</span>
@@ -116,6 +119,6 @@ export function DashboardEconomicCard() {
           Error al cargar indicadores
         </span>
       )}
-    </article>
+    </SoftSurface>
   );
 }

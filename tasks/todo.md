@@ -298,6 +298,28 @@
 - Se agregó y aplicó en Supabase la migración [`20260618153004_fix_who_pending_email_capability_column.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618153004_fix_who_pending_email_capability_column.sql:1), que mantiene intacta la lógica del helper y solo corrige la columna del join de permisos.
 - Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260618153004_fix_who_pending_email_capability_column.sql`, `npx tsc -b --pretty false`, `git diff --check` y `npx --yes supabase db push --linked --yes`.
 
+## Soft ERP UI incremental con limpieza y compactación
+
+- [x] Auditar el dashboard, la navegación principal y los contenedores compartidos para aterrizar el prompt `soft neumorphism` solo donde agrega valor operacional
+- [x] Crear primitives reutilizables de superficie/carta soft y reutilizarlas en `AppShell`, `DashboardWidgetFrame` y cards ejecutivas para evitar estilos duplicados
+- [x] Modernizar `DashboardHome` y sus widgets con jerarquía visual más limpia, manteniendo tablas y formularios densos en modo operativo y legible
+- [x] Compactar helpers y patrones repetidos del dashboard para reducir líneas sin degradar contratos ni estados de carga/error/empty
+- [x] Validar `TypeScript`, build frontend, diff limpio, documentar el resultado, actualizar `tasks/lessons.md`, commit en `main` y push
+
+## Resultado de Soft ERP UI incremental con limpieza y compactación
+
+- La implementación del prompt se aterrizó sobre la superficie real del home y no como “neumorfismo total”. Se modernizaron [`AppShell.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/layout/AppShell.tsx:1), [`DashboardHome.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/pages/DashboardHome.tsx:1), [`DashboardWidgetFrame.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/DashboardWidgetFrame.tsx:1) y el sistema visual de [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1) / [`dashboard.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/styles/dashboard.css:1), dejando tablas y flujos densos en modo operativo y legible.
+- Se creó una capa reusable mínima en frontend en vez de repartir estilos ad hoc por pantalla:
+  - [`SoftSurface.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/layout/SoftSurface.tsx:1) centraliza superficies `raised/panel/inset/accent`;
+  - [`SoftMetricCard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/layout/SoftMetricCard.tsx:1) consolida KPIs/cards ejecutivas;
+  - [`formatters.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/lib/formatters.ts:1) elimina duplicación de formateo de fechas en widgets del dashboard.
+- El home quedó con una línea `Soft ERP UI` controlada: hero ejecutivo con métricas rápidas, navegación superior más sobria y táctil, widgets con mejor jerarquía visual y cards informativas suavizadas. No se tocó el contrato funcional de filtros, expansión de filas, acciones ni queries del dashboard.
+- La compactación se concentró en deuda visible y segura:
+  - `DashboardWidgetFrame` ahora acepta subtítulo y envuelve la superficie compartida;
+  - `ActiveFoliosWidget` dejó de repetir headers inline y KPIs hardcodeados, reutilizando configuración y `SoftMetricCard`;
+  - `TasksWidget`, `ApprovalTrackingWidget` y `ActiveFoliosWidget` comparten helpers de fecha en vez de duplicar utilitarios locales.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Resultado de hotfix de error SQL al enviar WHO a aprobación
 
 - La causa raíz no estaba en [`request_candidate_stage_who(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260607173000_autoapprove_who_without_findings.sql:73), sino en la función lateral [`enqueue_who_pending_approval_email(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618151509_fix_who_pending_email_candidate_profile_join.sql:1), disparada por el trigger de `candidate_stage_approvals` cuando la solicitud sí alcanzaba estado `pending`.

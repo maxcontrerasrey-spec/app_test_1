@@ -4,20 +4,12 @@ import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import type { DashboardApprovalTrackingItem, DashboardDataBundle } from "../../types";
 import { toTravelMethodologyLabel } from "../../../recruitment/services/hiringWorkflow";
 import { toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
+import { formatDashboardDate } from "../../lib/formatters";
 
 type ApprovalTrackingWidgetProps = {
   title: string;
   dashboardData?: DashboardDataBundle;
 };
-
-function formatDateValue(dateStr: string | null | undefined) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  });
-}
 
 export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackingWidgetProps) {
   const approvals = dashboardData?.approvalTrackingData ?? [];
@@ -44,7 +36,11 @@ export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackin
   }, [approvals, searchTerm]);
 
   return (
-    <DashboardWidgetFrame title={title} className="widget-tasks widget-fill-height">
+    <DashboardWidgetFrame
+      title={title}
+      subtitle="Solicitudes ya levantadas que aún recorren su flujo de aprobación."
+      className="widget-tasks widget-fill-height"
+    >
       <div className="dashboard-folios-toolbar">
         <TextField
           id="dashboard-approval-tracking-search"
@@ -138,15 +134,15 @@ export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackin
                                 <div className="expanded-detail-fields">
                                   <div>
                                     <small>Ingreso solicitado</small>
-                                    <strong>{formatDateValue(approval.requested_income_date)}</strong>
+                                    <strong>{formatDashboardDate(approval.requested_income_date)}</strong>
                                   </div>
                                   <div>
                                     <small>Inicio contrato</small>
-                                    <strong>{formatDateValue(approval.contract_start_date)}</strong>
+                                    <strong>{formatDashboardDate(approval.contract_start_date)}</strong>
                                   </div>
                                   <div>
                                     <small>Fin contrato</small>
-                                    <strong>{formatDateValue(approval.contract_end_date)}</strong>
+                                    <strong>{formatDashboardDate(approval.contract_end_date)}</strong>
                                   </div>
                                   <div>
                                     <small>Turno</small>
@@ -231,7 +227,7 @@ export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackin
                                   </div>
                                   <div>
                                     <small>Fecha solicitud</small>
-                                    <strong>{formatDateValue(approval.created_at)}</strong>
+                                    <strong>{formatDashboardDate(approval.created_at)}</strong>
                                   </div>
                                   <div>
                                     <small>Etapa actual</small>

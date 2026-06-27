@@ -524,6 +524,10 @@ export function AppShell() {
               <div className="user-avatar" aria-hidden="true">
                 {userInitials}
               </div>
+              <div className="top-user-meta">
+                <strong>{displayName}</strong>
+                <span>{jobTitle || appRoles[0] || "Usuario activo"}</span>
+              </div>
             </button>
 
             {isUserMenuOpen ? (
