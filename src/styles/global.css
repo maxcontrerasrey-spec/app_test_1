@@ -740,7 +740,8 @@ textarea {
 .top-nav-dropdown-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.65rem;
   width: 100%;
   padding: 0.65rem 0.95rem;
   font-size: 0.9rem;
@@ -753,6 +754,16 @@ textarea {
   cursor: pointer;
   text-align: left;
   white-space: nowrap;
+}
+
+.top-nav-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--soft-text-secondary);
+  flex-shrink: 0;
 }
 
 .top-nav-dropdown-link:hover {
@@ -770,6 +781,7 @@ textarea {
 }
 
 .top-nav-dropdown-arrow {
+  margin-left: auto;
   font-size: 0.9rem;
   color: var(--soft-text-muted);
 }

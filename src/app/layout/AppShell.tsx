@@ -467,6 +467,9 @@ export function AppShell() {
                                   : "top-nav-dropdown-link"
                               }
                             >
+                              <span className="top-nav-dropdown-icon">
+                                <SubmenuIcon iconKey={item.iconKey} />
+                              </span>
                               <span>{item.label}</span>
                               {item.items && item.items.length > 0 && (
                                 <span className="top-nav-dropdown-arrow" aria-hidden="true">
@@ -489,6 +492,9 @@ export function AppShell() {
                                         : "top-nav-dropdown-link"
                                     }
                                   >
+                                    <span className="top-nav-dropdown-icon">
+                                      <SubmenuIcon iconKey={subItem.iconKey} />
+                                    </span>
                                     <span>{subItem.label}</span>
                                   </NavLink>
                                 ))}
