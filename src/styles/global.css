@@ -34,12 +34,12 @@
   --sidebar-surface: #f7f8fa;
   --page-glow: #f8fafc;
   --soft-bg: #eef2f7;
-  --soft-surface: rgba(255, 255, 255, 0.88);
-  --soft-surface-alt: rgba(245, 248, 252, 0.92);
-  --soft-border: rgba(174, 186, 208, 0.34);
-  --soft-border-strong: rgba(137, 154, 183, 0.5);
-  --soft-shadow-dark: rgba(148, 163, 184, 0.22);
-  --soft-shadow-light: rgba(255, 255, 255, 0.9);
+  --soft-surface: #ffffff;
+  --soft-surface-alt: #eef2f7;
+  --soft-border: rgba(255, 255, 255, 0.4);
+  --soft-border-strong: rgba(137, 154, 183, 0.3);
+  --soft-shadow-dark: rgba(165, 179, 202, 0.45);
+  --soft-shadow-light: rgba(255, 255, 255, 1.0);
   --soft-text-primary: #162033;
   --soft-text-secondary: #475569;
   --soft-text-muted: #64748b;
@@ -243,7 +243,7 @@ body {
   position: relative;
   border: 1px solid var(--soft-border);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--soft-surface), var(--soft-surface-alt));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
   color: var(--soft-text-primary);
 }
 

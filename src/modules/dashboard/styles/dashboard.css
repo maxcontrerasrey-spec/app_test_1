@@ -95,50 +95,30 @@
     inset 1px 1px 0 rgba(255, 255, 255, 0.65);
 }
 
-.dashboard-info-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 100%;
-  height: 74px;
-  background: linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.78), rgba(var(--surface-soft-rgb), 0));
-  pointer-events: none;
-}
-
 .dashboard-info-card > * {
   position: relative;
   z-index: 1;
 }
 
 .dashboard-info-card-weather {
-  background:
-    radial-gradient(circle at 80% 24%, rgba(190, 221, 255, 0.28), transparent 30%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
   transition: background 0.8s ease;
 }
 
 .dashboard-info-card-weather.is-warm {
-  background:
-    radial-gradient(circle at 80% 24%, rgba(255, 178, 122, 0.18), transparent 35%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-info-card-weather.is-cold {
-  background:
-    radial-gradient(circle at 80% 24%, rgba(130, 190, 255, 0.22), transparent 35%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-info-card-weather.is-rainy {
-  background:
-    radial-gradient(circle at 80% 24%, rgba(150, 165, 185, 0.22), transparent 35%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.96), rgba(var(--surface-soft-rgb), 0.9));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-info-card-birthday {
-  background:
-    radial-gradient(circle at 18% 24%, rgba(255, 238, 211, 0.34), transparent 28%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-weather-card,
@@ -153,17 +133,12 @@
 }
 
 .dashboard-info-card-economics {
-  background:
-    radial-gradient(circle at 75% 20%, rgba(16, 185, 129, 0.1), transparent 40%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-info-card-operations {
   gap: 6px;
-  background:
-    radial-gradient(circle at 85% 18%, rgba(90, 127, 198, 0.16), transparent 36%),
-    radial-gradient(circle at 15% 78%, rgba(59, 130, 246, 0.08), transparent 30%),
-    linear-gradient(180deg, rgba(var(--surface-soft-rgb), 0.98), rgba(var(--surface-soft-rgb), 0.9));
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
 .dashboard-economic-card-header {
