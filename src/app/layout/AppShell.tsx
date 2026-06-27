@@ -115,6 +115,18 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
           <polyline {...commonProps} points="16 7 22 7 22 13" />
         </svg>
       );
+    case "handshake":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M3 18h3l3-3-3-3H3v6z" />
+          <path {...commonProps} d="M21 18h-3l-3-3 3-3h3v6z" />
+          <path {...commonProps} d="m9 15 2.5 2.5a1.5 1.5 0 0 0 2.1 0L17 14" />
+          <path {...commonProps} d="m15 13-2-2a1.5 1.5 0 0 0-2.1 0L9 13" />
+          <path {...commonProps} d="M11.5 15.5c.3-.3.7-.3 1 0" />
+          <path {...commonProps} d="M12.5 16.5c.3-.3.7-.3 1 0" />
+          <path {...commonProps} stroke="var(--soft-accent, #3b82f6)" strokeWidth={2.4} d="m9.5 5 2 2L16 3.5" />
+        </svg>
+      );
     case "badge-check":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">

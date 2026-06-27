@@ -11,7 +11,7 @@ export type NavigationItem = {
   label: string;
   description?: string;
   subgroup?: string;
-  iconKey?: "document" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up" | "badge-check";
+  iconKey?: "document" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up" | "badge-check" | "handshake";
   visibleForRoles?: AppRole[];
   items?: NavigationItem[];
 };
@@ -54,7 +54,7 @@ export const navigationModules: NavigationModule[] = [
         to: "/alta-operacional",
         label: "Onboarding",
         description: "Configura las plantillas de alta operacional.",
-        iconKey: "briefcase",
+        iconKey: "handshake",
         visibleForRoles: ["admin"]
       }
     ]
