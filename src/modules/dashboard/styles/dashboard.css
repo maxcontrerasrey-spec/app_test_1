@@ -83,9 +83,10 @@
 .dashboard-info-card {
   position: relative;
   overflow: hidden;
-  display: grid;
-  gap: 12px;
-  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 185px;
   padding: 16px 18px;
   border-radius: 28px;
   border: none !important;

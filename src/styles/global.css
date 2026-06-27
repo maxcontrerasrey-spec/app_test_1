@@ -390,10 +390,9 @@ textarea {
 }
 
 .top-shell {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
-  padding: 0.65rem 0 0;
+  padding: 0;
   background: transparent;
   border-bottom: none;
   backdrop-filter: none;
@@ -404,10 +403,10 @@ textarea {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 1.25rem;
-  min-height: 4.5rem;
+  min-height: 3.2rem;
   width: min(100%, 1480px);
   margin: 0 auto;
-  padding: 0.45rem 1.5rem 0.85rem 0.85rem;
+  padding: 0.15rem 1.5rem 0.4rem 0.85rem;
   background: transparent;
 }
 
@@ -627,13 +626,10 @@ textarea {
   max-width: 100%;
   overflow: visible;
   flex-wrap: nowrap;
-  padding: 0.25rem;
-  border: 1px solid var(--soft-border);
-  border-radius: 999px;
-  background: rgba(var(--surface-rgb), 0.62);
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.52),
-    14px 14px 28px -26px var(--soft-shadow-dark);
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .top-nav-group {
@@ -2624,7 +2620,8 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 @media (max-width: 1320px) {
   .top-shell-bar {
     gap: 0.85rem;
-    padding: 0.5rem 0.85rem;
+    padding: 0.2rem 0.85rem;
+    min-height: auto;
   }
 
   .top-nav {
