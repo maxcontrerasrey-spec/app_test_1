@@ -704,8 +704,10 @@ textarea {
   padding: 0.65rem;
   border: 1px solid var(--soft-border);
   border-radius: 1.75rem;
-  background: rgba(var(--surface-rgb), 0.96);
-  box-shadow: var(--shadow-popover);
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
+  box-shadow:
+    12px 12px 30px var(--soft-shadow-dark),
+    -12px -12px 30px var(--soft-shadow-light);
   position: relative;
 }
 
@@ -734,9 +736,12 @@ textarea {
 }
 
 .top-nav-mega-link:hover {
-  background: rgba(var(--surface-soft-rgb), 0.88);
-  border-color: rgba(var(--border-rgb), 0.38);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(var(--surface-soft-rgb), 0.95), rgba(var(--surface-rgb), 0.68));
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow:
+    inset 4px 4px 10px var(--soft-shadow-dark),
+    inset -4px -4px 10px var(--soft-shadow-light);
+  transform: translateY(0);
 }
 
 .top-nav-mega-link-active {
@@ -1122,10 +1127,12 @@ textarea {
   display: grid;
   gap: 0.2rem;
   padding: 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: rgba(var(--surface-rgb), 0.98);
-  box-shadow: var(--shadow-popover);
+  border: 1px solid var(--soft-border);
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
+  box-shadow:
+    12px 12px 30px var(--soft-shadow-dark),
+    -12px -12px 30px var(--soft-shadow-light);
   z-index: 20;
 }
 

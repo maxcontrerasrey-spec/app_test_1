@@ -444,7 +444,7 @@ export function AppShell() {
                     >
                       <span>{module.label}</span>
                       <span className="top-nav-indicator" aria-hidden="true">
-                        ▾
+                        {isModuleOpen ? "▴" : "▾"}
                       </span>
                     </button>
 
