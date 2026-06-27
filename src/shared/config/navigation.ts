@@ -38,7 +38,7 @@ export const navigationModules: NavigationModule[] = [
       {
         moduleCode: "movilidad_interna",
         to: "/movilidad-interna",
-        label: "Movilidad Interna",
+        label: "Solicitud de Movilidad Interna",
         description: "Solicita traslados internos de trabajadores activos.",
         iconKey: "arrow-right-left"
       },
@@ -52,7 +52,7 @@ export const navigationModules: NavigationModule[] = [
       {
         moduleCode: "alta_operacional_personal",
         to: "/alta-operacional",
-        label: "Alta Operacional (Admin)",
+        label: "Onboarding",
         description: "Configura las plantillas de alta operacional.",
         iconKey: "briefcase",
         visibleForRoles: ["admin"]

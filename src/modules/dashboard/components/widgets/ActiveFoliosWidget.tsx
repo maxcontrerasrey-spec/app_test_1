@@ -29,9 +29,9 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail | null>>({});
   const [caseDetailErrors, setCaseDetailErrors] = useState<Record<string, string | null>>({});
   const [page, setPage] = useState(0);
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(
-    null
-  );
+  const [sortConfig, setSortConfig] = useState<
+    { key: ActiveFoliosSortKey; direction: "asc" | "desc" } | null
+  >(null);
 
   const recruitmentSummary = dashboardData?.operationalSummaryData?.recruitment;
   const pageSize = 7;
@@ -40,7 +40,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     { key: "status", label: "Estado" },
     { key: "job_position_name", label: "Cargo" },
     { key: "contract_name", label: "Contrato / CC" },
-    { key: "requested_vacancies", label: "Cupos" },
+    { key: "vacancies", label: "Cupos" },
     { key: "candidate_count", label: "Candidatos activos" },
     { key: "opened_at", label: "Días Abierto" }
   ] as const;
@@ -95,7 +95,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const totalCount = activeFoliosQuery.data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const handleSort = (key: string) => {
+  const handleSort = (key: ActiveFoliosSortKey) => {
     if (key === "opened_at") {
       setSortConfig(null);
       return;
@@ -414,7 +414,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
           <div className="tracking-pagination">
             <button
               type="button"
-              className="secondary-button"
+              className="soft-primary-button tracking-pagination-button"
               onClick={() => setPage((current) => Math.max(current - 1, 0))}
               disabled={page === 0}
             >
@@ -425,7 +425,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
             </span>
             <button
               type="button"
-              className="secondary-button"
+              className="soft-primary-button tracking-pagination-button"
               onClick={() => setPage((current) => Math.min(current + 1, totalPages - 1))}
               disabled={page >= totalPages - 1}
             >
@@ -437,3 +437,12 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     </DashboardWidgetFrame>
   );
 }
+
+type ActiveFoliosSortKey =
+  | "case_code"
+  | "status"
+  | "job_position_name"
+  | "contract_name"
+  | "vacancies"
+  | "candidate_count"
+  | "opened_at";

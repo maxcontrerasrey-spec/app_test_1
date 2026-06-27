@@ -52,6 +52,58 @@
 - Tambien queda documentado un hallazgo vigente que no convenia esconder: existe SQL legacy de onboarding que sigue usando `user_can_access_module(..., 'reclutamiento')` aunque `'reclutamiento'` es rol y no modulo. El backend nuevo de alta operacional ya opera con `alta_operacional_personal`, por lo que el riesgo actual es de coherencia/legado y debe corregirse cuando se sanee ese bloque viejo.
 - Esta pasada no agrego otra correccion funcional productiva porque el objetivo puntual era hacer visible y auditable la ejecucion del prompt sin abrir un frente fuera de alcance ni mezclar una cirugia adicional no pedida con el cierre documental.
 
+## Simplificacion del registro de incentivos y alertas de prohibicion
+
+- [x] Eliminar del formulario la confirmacion manual redundante `En descanso` y derivar el valor desde el cruce vivo con Jornadas
+- [x] Convertir los bloqueos/prohibiciones de negocio del formulario de incentivos a alertas rojas con icono warning y paleta ERP vigente
+- [x] Eliminar `Observaciones complementarias`, dejando `Motivo operacional` como unico texto libre
+- [x] Validar `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de simplificacion del registro de incentivos y alertas de prohibicion
+
+- [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) ya no pide la confirmacion manual `En descanso`. El formulario deriva `declaredRestDay` desde `useHrIncentiveRosterSnapshot(...)` y sigue enviando ese valor al backend para conservar el contrato y la persistencia auditada sin forzar una reconfirmacion humana redundante.
+- El mensaje de prohibicion por descanso/reemplazo y los bloqueos equivalentes del formulario dejaron de renderizarse como texto rojo plano. Ahora usan una alerta dedicada con icono warning y paleta roja enterprise definida en [`incentives.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/styles/incentives.css:1).
+- [`IncentiveOperationalFlags.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveOperationalFlags.tsx:1) ya no muestra la pill derivada de `declaredRestDay`, evitando repetir en la UI una señal que el usuario ya ve en el cruce operativo del roster.
+- Se eliminó `Observaciones complementarias`; el único texto libre del alta quedó en `Motivo operacional`, que es el campo con valor de negocio real para este flujo.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+## Ajuste de labels del menu de Reclutamiento
+
+- [x] Auditar la configuracion viva del menu de Reclutamiento y la regla visual del dropdown para evitar filas dobles
+- [x] Renombrar `Movilidad Interna` a `Solicitud de Movilidad Interna` y `Alta Operacional (Admin)` a `Onboarding`
+- [x] Validar `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de ajuste de labels del menu de Reclutamiento
+
+- [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:1) ahora expone `Solicitud de Movilidad Interna` y `Onboarding` como labels del submenu de `Reclutamiento`, sin tocar rutas, permisos ni `moduleCode`.
+- [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:770) endurece el contrato visual del dropdown con `min-width`, `width: max-content` y `max-width` acotado para que labels mas largos sigan entrando en una sola fila y el panel no genere dobles lineas.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+## Ajuste neumorfico de paginacion en tablas
+
+- [x] Auditar el paginador visible que usa `Anterior` y `Siguiente` para ubicar por qué no seguía la estetica neumorfica del ERP
+- [x] Unificar el paginador de `Folios en curso` con el mismo boton base del sistema y endurecer el estilo de paginacion compartida
+- [x] Validar `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de ajuste neumorfico de paginacion en tablas
+
+- [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:414) dejó de usar el botón aislado que rompía la continuidad visual y ahora reutiliza `soft-primary-button` junto a la variante compartida de paginación.
+- [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:2997) endurece el contrato visual de `tracking`, `movilidad` e `incentivos` con una misma variante neumórfica para `Anterior/Siguiente`: relieve exterior, hover con lift sutil, estado presionado inset y disabled hundido en la misma paleta del sistema.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+## Ordenamiento completo del resumen de folios y contraste de KPI en Control de Contrataciones
+
+- [x] Auditar el contrato entre el resumen de `Folios en curso` y `get_recruitment_processes_page(...)` para identificar por qué no todas las columnas quedaban ordenables
+- [x] Corregir el mapping de sort del resumen para que todas las columnas salvo `Días Abierto` usen claves válidas del backend
+- [x] Reforzar contraste, borde y sombra de la tarjeta `Folios activos en búsqueda` sin romper la grilla ni la paleta actual
+- [x] Validar `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de ordenamiento completo del resumen de folios y contraste de KPI en Control de Contrataciones
+
+- [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:18) ahora tipa las claves ordenables del resumen y corrige `Cupos` para usar `vacancies`, que es la clave real aceptada por `get_recruitment_processes_page(...)`. Con eso, `Caso`, `Estado`, `Cargo`, `Contrato / CC`, `Cupos` y `Candidatos activos` vuelven a ordenar de verdad; `Días Abierto` sigue explícitamente fuera del sort.
+- [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:338) agrega una clase específica solo a la tarjeta `Folios activos en búsqueda`, y [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:3258) le da más borde, contraste cálido y una sombra mejor definida para que no se funda con el fondo ni parezca sin bordes.
+- Validación cerrada con `npx tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Aterrizaje enterprise de auditoría de reclutamiento, movilidad y sync BUK
 
 - [x] Contrastar la auditoría adjunta contra el estado vivo del SQL, las RPCs y la Edge Function `sync-buk-candidates`

@@ -771,7 +771,9 @@ textarea {
   position: absolute;
   top: calc(100% + 0.4rem);
   left: 0;
-  width: 320px;
+  min-width: 360px;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 2rem));
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -849,7 +851,9 @@ textarea {
   position: absolute;
   top: -0.55rem;
   left: calc(100% + 0.35rem);
-  width: 320px;
+  min-width: 360px;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 2rem));
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.55rem;
@@ -2991,8 +2995,8 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 .mobility-requests-pagination-button {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
+  padding: 0 1.1rem;
+  font-size: 0.88rem;
 }
 
 .mobility-requests-pagination-label {
@@ -3009,13 +3013,68 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 .tracking-pagination-button {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
+  padding: 0 1.1rem;
+  font-size: 0.88rem;
 }
 
 .tracking-pagination-label {
   margin: 0;
   text-align: center;
+}
+
+.tracking-pagination-button,
+.mobility-requests-pagination-button,
+.hr-incentives-pagination-button {
+  min-width: 9.5rem;
+  min-height: 3.1rem;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(240, 244, 250, 0.92));
+  color: var(--soft-text-primary);
+  box-shadow:
+    10px 10px 22px rgba(165, 179, 202, 0.28),
+    -10px -10px 22px rgba(255, 255, 255, 0.96),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.tracking-pagination-button:not(:disabled):hover,
+.mobility-requests-pagination-button:not(:disabled):hover,
+.hr-incentives-pagination-button:not(:disabled):hover {
+  color: var(--soft-accent);
+  border-color: rgba(193, 210, 244, 0.92);
+  box-shadow:
+    12px 12px 24px rgba(165, 179, 202, 0.24),
+    -12px -12px 24px rgba(255, 255, 255, 0.98),
+    inset 3px 3px 8px rgba(255, 255, 255, 0.42),
+    inset -3px -3px 8px rgba(215, 224, 238, 0.28);
+  transform: translateY(-1px);
+}
+
+.tracking-pagination-button:not(:disabled):active,
+.mobility-requests-pagination-button:not(:disabled):active,
+.hr-incentives-pagination-button:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow:
+    inset 5px 5px 12px rgba(165, 179, 202, 0.24),
+    inset -5px -5px 12px rgba(255, 255, 255, 0.92);
+}
+
+.tracking-pagination-button:disabled,
+.mobility-requests-pagination-button:disabled,
+.hr-incentives-pagination-button:disabled {
+  color: var(--soft-text-muted);
+  border-color: rgba(228, 231, 236, 0.92);
+  background: linear-gradient(145deg, rgba(248, 249, 251, 0.94), rgba(238, 241, 246, 0.88));
+  box-shadow:
+    inset 4px 4px 10px rgba(215, 223, 236, 0.34),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.84);
+  opacity: 1;
 }
 
 .mobility-detail-copy {
@@ -3199,6 +3258,22 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 .tracking-kpi-card-pendiente {
   background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.88), rgba(var(--surface-soft-rgb), 0.92));
   border-color: var(--soft-border);
+}
+
+.tracking-kpi-card-folio-search {
+  border-color: rgba(218, 188, 122, 0.56);
+  background:
+    linear-gradient(180deg, rgba(255, 251, 241, 0.98), rgba(248, 243, 230, 0.94));
+  box-shadow:
+    16px 16px 34px -24px rgba(165, 179, 202, 0.32),
+    -10px -10px 22px -20px rgba(255, 255, 255, 0.98),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.tracking-kpi-card-folio-search:hover {
+  border-color: rgba(205, 170, 96, 0.7);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 1), rgba(250, 245, 232, 0.98));
 }
 
 .tracking-kpi-card-en-proceso {

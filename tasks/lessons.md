@@ -14,6 +14,26 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No asumas que una auditoria o prompt ya "se ve" porque produjo fixes reales**. Si el usuario pide ejecutar un prompt de auditoria, el repo debe mostrar documentos o trazas explicitas de esa corrida: mapa modular, matriz de permisos, security review, smoke plan o equivalente.
 - **La regla operativa es simple**: cuando el trabajo incluya diagnostico enterprise, deja evidencia navegable en `docs/` y registra el cierre en `tasks/todo.md`; si no, el usuario solo ve el efecto lateral y no la ejecucion auditable.
 
+## 134. Si un estado operativo ya viene del motor canónico, no lo vuelvas a pedir como confirmacion manual en la UI
+
+- **No dupliques en formulario una decision que el sistema ya resuelve desde el cruce vivo de roster/jornadas.** Esa reconfirmacion solo agrega friccion, abre contradicciones artificiales y termina obligando al usuario a “confirmar” algo que el backend ya conoce.
+- **La regla correcta es derivar y persistir el dato desde la fuente canónica, y reservar la UI para mostrar el resultado y bloquear con mensajes claros cuando el negocio lo exige.** Si ademas hay prohibiciones, se presentan como alertas visibles de negocio, no como selects redundantes.
+
+## 135. En un menu ERP denso, cualquier cambio de label debe cerrar con una verificacion explicita de ancho util para evitar filas dobles
+
+- **Renombrar una opcion no es solo cambiar texto**. Si el submenu usa `white-space: nowrap`, el panel debe tener ancho suficiente para absorber el label mas largo sin wrap, clipping ni salto de fila visual.
+- **La regla correcta es ajustar el contrato visual del dropdown junto con el copy**. Primero se cambia el label, luego se valida el ancho minimo/maximo del panel para que la navegacion siga viendose limpia y consistente.
+
+## 136. La paginacion visible de tablas ERP debe salir del mismo lenguaje de botones que el resto del sistema
+
+- **Un paginador no puede quedar con botones “especiales” o sin clase compartida**. Si `Anterior/Siguiente` usan otra base visual o un estilo huérfano, el usuario percibe inmediatamente que el bloque no pertenece al mismo sistema.
+- **La regla correcta es doble**: usar el botón base compartido y luego aplicar una variante de paginación también compartida para relieve, hover, activo y disabled. Así cualquier tabla nueva hereda estética coherente sin rehacer CSS local.
+
+## 137. Si una tabla frontend delega el sort al backend, las claves visibles deben mapear 1:1 al contrato RPC real
+
+- **No basta con mostrar un encabezado clickeable**. Si la columna visible usa una key distinta a la aceptada por la RPC, el usuario percibe que “se puede ordenar”, pero la query cae al orden por defecto y la UX queda mentirosa.
+- **La regla correcta es tipar y centralizar el mapping de columnas ordenables**. Cada header debe usar exactamente una clave válida del backend, y las columnas no soportadas deben quedar explícitamente fuera del sort en vez de depender de nombres parecidos.
+
 ## 67. Cuando un cupo puede quedar reservado por movilidad interna, la liberación y la reapertura deben salir del mismo motor de sincronización
 
 - **No basta con cambiar `internal_mobility_requests.status` a `rejected`**. Si esa movilidad contaba dentro de `effective_filled_vacancies`, el backend debe reejecutar la sincronización del caso/folio en la misma operación o el cupo queda liberado solo “en teoría”, pero la bandeja sigue mostrando el folio como lleno o cerrado.

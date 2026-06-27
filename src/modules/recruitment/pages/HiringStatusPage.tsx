@@ -336,7 +336,7 @@ export function HiringStatusPage() {
 
       <section className="tracking-panel">
         <div className="tracking-kpi-row">
-          <article className="tracking-kpi-card tracking-kpi-card-pendiente">
+          <article className="tracking-kpi-card tracking-kpi-card-pendiente tracking-kpi-card-folio-search">
             <span className="micro-label">Folios activos en búsqueda</span>
             <strong>{summary.active_cases}</strong>
           </article>
