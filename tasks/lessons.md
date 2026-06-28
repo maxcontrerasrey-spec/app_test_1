@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada
 
+## 165. Un lookup controlado no debe resincronizar el texto por cada render del padre
+
+- **Si el input mantiene un `searchValue` local y además lo resincronizas desde `selectedWorker` con dependencias inestables, el usuario pierde el control del campo.** Basta con pasar callbacks inline como `getWorkerFullName` o `getWorkerId` para que el efecto se dispare en cada render y pise lo recién escrito.
+- **La regla correcta es sincronizar el texto sólo cuando cambia realmente la selección externa.** Usa una identidad estable del trabajador seleccionado para distinguir “nuevo seleccionado” de “simple rerender del padre”.
+- **Cuando el usuario vuelve a escribir sobre un trabajador ya seleccionado, primero hay que soltar esa selección.** Si no, el lookup mezcla búsqueda libre con detalle activo y termina reseteando el campo o dejando un contexto visual incoherente.
+
 - **Que el Excel y la dotación activa tengan el mismo número de filas no prueba que representen al mismo universo.** En DRT ambos lados tenían `177`, pero el cruce real por `RUT` dejó `175` matches válidos, `2` trabajadores históricos ya fuera de nómina y `2` trabajadores nuevos no presentes en el archivo base.
 - **La regla correcta es reconciliar primero por identificador estable y dejar esa conciliación versionada.** Antes de insertar en `hr_worker_rosters`, el repo debe guardar el origen normalizado y un reporte explícito de `matched / missing / extra`, para que auditoría y operación sepan exactamente qué quedó cargado y qué quedó fuera.
 - **Nunca inventes la pauta de un trabajador sin match canónico ni borres a ciegas a un activo nuevo ausente del archivo.** Si el input no representa a la dotación viva 1:1, la carga debe aplicar sólo el subconjunto conciliado y dejar evidencia de las divergencias para seguimiento operacional.

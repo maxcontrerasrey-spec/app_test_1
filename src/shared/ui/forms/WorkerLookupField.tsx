@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatRut } from "../../lib/rut";
 
 type WorkerLookupSearchResult<TWorker> = {
@@ -56,10 +56,20 @@ export function WorkerLookupField<TWorker>({
   );
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const lastSyncedWorkerIdRef = useRef<string | null>(
+    selectedWorker ? getWorkerId(selectedWorker) : null
+  );
 
   useEffect(() => {
+    const selectedWorkerId = selectedWorker ? getWorkerId(selectedWorker) : null;
+
+    if (selectedWorkerId === lastSyncedWorkerIdRef.current) {
+      return;
+    }
+
+    lastSyncedWorkerIdRef.current = selectedWorkerId;
     setSearchValue(selectedWorker ? getWorkerFullName(selectedWorker) : "");
-  }, [getWorkerFullName, selectedWorker]);
+  }, [getWorkerFullName, getWorkerId, selectedWorker]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -105,7 +115,10 @@ export function WorkerLookupField<TWorker>({
             const nextValue = event.target.value;
             setSearchValue(nextValue);
 
-            if (!nextValue.trim()) {
+            if (selectedWorker) {
+              lastSyncedWorkerIdRef.current = null;
+              onSelect(null);
+            } else if (!nextValue.trim()) {
               onSelect(null);
             }
           }}
