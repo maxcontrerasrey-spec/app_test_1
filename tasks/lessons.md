@@ -4,6 +4,36 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 156. La bandeja de tareas debe validar la etapa viva, no solo confiar en filas `pending`
+
+- **Una aprobación marcada `pending` no garantiza que siga siendo trabajo vigente.** Si el request o candidato cambió de estado o avanzó de etapa y quedó una fila rezagada, el dashboard puede resucitar una tarea ya inválida aunque el backend principal haya seguido su curso.
+- **La regla correcta es cruzar cada tarea contra el estado canónico del dominio.** En solicitudes y movilidad, la fila pendiente debe coincidir con `current_step_code` y con un estado activo del request; en Who, la participación del candidato debe seguir realmente en `who_pending`.
+- **Las bandejas ejecutivas no deben depender de limpieza perfecta de datos históricos.** Aunque hoy no existan residuos visibles, el selector debe ser defensivo para que un rezago transaccional no vuelva a contaminar Inicio ni notificaciones.
+
+## 157. Una cola nocturna no es segura si reclamar jobs y marcarlos `processing` ocurre en pasos separados
+
+- **Leer jobs `pending` y luego actualizarlos en un segundo round-trip deja una ventana real de doble procesamiento.** Basta una corrida manual o superpuesta para que dos workers tomen el mismo candidato y conviertan una purga idempotente en errores falsos de storage o auditoría duplicada.
+- **La regla correcta es reclamar la cola atómicamente desde SQL.** Usa `FOR UPDATE SKIP LOCKED` y cambia el estado a `processing` dentro de la misma sentencia o función antes de devolver el lote al worker.
+- **No delegues la exclusión mutua a GitHub Actions ni al scheduler externo.** El contrato debe ser robusto aunque existan dos invocaciones legítimas del mismo webhook o una reejecución manual durante la ventana nocturna.
+
+## 158. Un barrido histórico no debe depender de una muestra parcial de `candidate_documents`
+
+- **Limitar primero `candidate_documents` y recién después cruzarlo con candidatos terminales convierte la sweep en una lotería de volumen.** Cuando crece el historial, algunos descartados con documentos remanentes pueden quedar fuera del lote aunque sí cumplan la regla de purga.
+- **La regla correcta es seleccionar los targets exactos desde el dominio canónico.** Parte de `recruitment_case_candidates` en etapa `rejected/withdrawn`, exige `exists(candidate_documents ...)` y excluye jobs activos en la misma consulta SQL antes de aplicar el `limit`.
+- **Los barridos nocturnos deben paginar sobre entidades de negocio, no sobre residuos.** Si el lote se recorta sobre blobs o documentos sueltos, el sistema optimiza por accidente técnico en vez de por prioridad operativa real.
+
+## 159. Una Edge Function con efectos externos no puede quedar abierta al `anon` path ni reclamar cola en dos pasos
+
+- **Si la function crea empleados en BUK, subir documentos o tocar integraciones externas, no basta con que el frontend normal la llame autenticado.** Mientras el runtime no valide JWT o secreto interno, cualquier invocación con la `anon key` pública del proyecto puede intentar procesar jobs pendientes.
+- **La regla correcta es doble:** exigir autenticación real o webhook secreto antes de ejecutar, y reclamar la cola atómicamente con `FOR UPDATE SKIP LOCKED` en lugar de `select pending -> update processing`.
+- **Las integraciones async comparten la misma lección que las colas internas.** Si el worker no protege identidad del llamador y exclusión mutua del lote, terminas mezclando riesgo de seguridad con duplicación operativa justo en el tramo más sensible del ERP.
+
+## 160. Un retry de sync externa debe reutilizar evidencia del intento parcial para no duplicar side effects
+
+- **Si una corrida sube algunos documentos a BUK y falla más adelante, el siguiente retry no puede reconstruir el payload como si nada hubiese pasado.** De lo contrario, vuelve a intentar subir documentos ya procesados y termina duplicando side effects en el sistema externo.
+- **La regla correcta es persistir progreso parcial en el job y reutilizarlo en los reintentos.** Si `result_snapshot.documents` ya contiene `sourceDocumentId` enviados con éxito, el worker debe saltarlos en la siguiente ejecución del mismo job.
+- **La idempotencia de colas externas no termina en reclamar el lote.** También hay que evitar reemitir efectos parciales exitosos cuando el job falla después de avanzar más de una etapa.
+
 ## 150. Un reingreso al mismo folio no puede resolverse con `on conflict do nothing`
 
 - **Un retorno “exitoso” de la fila existente no equivale a reactivar al candidato.** Si la participación estaba en `rejected` o `withdrawn`, el backend debe moverla explícitamente a `lead`, resetear el estado derivado que quedó terminal y volver a sincronizar el caso.

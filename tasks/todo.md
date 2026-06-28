@@ -2,6 +2,104 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Idempotencia documental en reintentos de sync BUK
+
+- [x] Auditar si `sync-buk-candidates` podía re-subir documentos ya enviados a BUK cuando un job fallaba a mitad de proceso
+- [x] Corregir el retry para que reutilice el progreso parcial guardado en `buk_sync_jobs.result_snapshot`
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run` y `git diff --check`
+
+## Resultado de idempotencia documental en reintentos de sync BUK
+
+- La auditoría del loop mostró un riesgo funcional después del blindaje de auth/concurrencia: si [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) subía algunos documentos a BUK y luego fallaba más adelante, el retry reconstruía el payload completo y podía volver a intentar subir esos mismos documentos externos.
+- Se reutilizó el mismo endurecimiento de cola [`20260628054500_claim_buk_sync_jobs_atomically.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628054500_claim_buk_sync_jobs_atomically.sql:1) para devolver también `result_snapshot`, y la Edge Function ahora usa `result_snapshot.documents` como evidencia de progreso parcial al reintentar el mismo job.
+- [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) ya no vuelve a procesar documentos cuyo `sourceDocumentId` quedó registrado como subido en un intento previo del mismo job, reduciendo duplicación de side effects en BUK cuando la falla ocurre después de una carga parcial.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628054500_claim_buk_sync_jobs_atomically.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `git diff --check`
+
+## Blindaje de seguridad y concurrencia en la sync BUK
+
+- [x] Auditar el flujo `Generar en BUK` entre `HiringPersonnelToHireView`, `enqueue_buk_generation(...)`, `buk_sync_jobs` y la Edge Function `sync-buk-candidates`
+- [x] Corregir la exposición pública de la function y la reclamación no atómica de la cola
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run` y `git diff --check`
+
+## Resultado de blindaje de seguridad y concurrencia en la sync BUK
+
+- La auditoría del loop mostró dos huecos de alto riesgo en la misma Edge Function [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1): no validaba JWT ni secreto interno antes de procesar la cola BUK, y seguía usando el patrón frágil `select pending -> update processing` en dos pasos.
+- Se agregó la migración [`20260628054500_claim_buk_sync_jobs_atomically.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628054500_claim_buk_sync_jobs_atomically.sql:1), que versiona [`claim_buk_sync_jobs(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628054500_claim_buk_sync_jobs_atomically.sql:1) para reclamar jobs `pending/error` con `FOR UPDATE SKIP LOCKED` y dejarlos en `processing` dentro de la misma operación.
+- La Edge Function [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) ahora:
+  - exige `Authorization: Bearer ...` válido o un secreto interno opcional `BUK_SYNC_INTERNAL_WEBHOOK_SECRET` antes de tocar la cola;
+  - usa la reclamación atómica SQL y deja de hacer la transición a `processing` en un segundo round-trip.
+- El cambio reduce riesgo en dos dimensiones a la vez: evita ejecuciones públicas no autenticadas sobre una integración sensible con BUK y reduce duplicación de jobs cuando hay reintentos o invocaciones superpuestas.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628054500_claim_buk_sync_jobs_atomically.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `git diff --check`
+
+## Selección exacta de targets para la sweep documental nocturna
+
+- [x] Auditar si el barrido histórico de candidatos terminales con documentos remanentes dependía de una muestra parcial de `candidate_documents`
+- [x] Corregir la selección de targets para que el `limit` se aplique sobre candidatos elegibles reales y no sobre residuos documentales arbitrarios
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run` y `git diff --check`
+
+## Resultado de selección exacta de targets para la sweep documental nocturna
+
+- La revisión del loop mostró una segunda fragilidad en la misma purga nocturna: [`enqueueSweepJobs(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:99) tomaba primero una muestra limitada de `candidate_documents` y recién después buscaba candidatos terminales compatibles. Ese orden hacía que el `limit` real se aplicara sobre residuos documentales y no sobre candidatos descartados elegibles.
+- Se agregó la migración [`20260628050000_exact_terminal_cleanup_sweep_targets.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628050000_exact_terminal_cleanup_sweep_targets.sql:1), que versiona [`list_terminal_candidate_cleanup_targets(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628050000_exact_terminal_cleanup_sweep_targets.sql:1) para seleccionar exactamente candidatos en `rejected/withdrawn` con documentos remanentes y sin jobs activos, aplicando el `limit` sobre entidades de negocio reales.
+- La Edge Function [`purge-candidate-documents`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:99) ahora usa esa lista exacta y deja de depender de un muestreo parcial de `candidate_documents`, reduciendo el riesgo de que descartados antiguos con documentos vivos queden fuera de la limpieza nocturna solo por volumen.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628050000_exact_terminal_cleanup_sweep_targets.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `git diff --check`
+
+## Reclamación atómica de la cola de purga documental nocturna
+
+- [x] Auditar la interacción entre `advance_recruitment_candidate_stage(...)`, `candidate_document_cleanup_jobs`, la Edge Function `purge-candidate-documents` y el scheduler nocturno
+- [x] Corregir el riesgo de doble procesamiento cuando dos invocaciones reclaman la misma cola en paralelo
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run` y `git diff --check`
+
+## Resultado de reclamación atómica de la cola de purga documental nocturna
+
+- La implementación previa ya resolvía la seguridad funcional del contexto terminal y la reactivación del candidato, pero seguía teniendo una carrera operativa: [`purge-candidate-documents`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:1) primero leía jobs `pending/error` y recién después los marcaba `processing`, dejando una ventana donde dos invocaciones podían tomar el mismo lote.
+- Se agregó la migración [`20260628043000_claim_candidate_document_cleanup_jobs_atomically.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628043000_claim_candidate_document_cleanup_jobs_atomically.sql:1), que versiona [`claim_candidate_document_cleanup_jobs(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628043000_claim_candidate_document_cleanup_jobs_atomically.sql:1) con `FOR UPDATE SKIP LOCKED` y el cambio a `processing` dentro de la misma reclamación.
+- La Edge Function [`purge-candidate-documents`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:1) ahora usa esa reclamación atómica y deja de hacer el patrón frágil “select pending -> update processing” en dos round-trips separados.
+- El cambio reduce un riesgo transversal entre scheduler, storage y auditoría: una corrida manual, repetida o superpuesta ya no debería traducirse en dobles borrados sobre `candidate-docs`, errores espurios de limpieza ni eventos `candidate_documents_purged` duplicados por el mismo job.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628043000_claim_candidate_document_cleanup_jobs_atomically.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `git diff --check`
+- Validación no disponible en este entorno:
+  - `deno check supabase/functions/purge-candidate-documents/index.ts` no pudo ejecutarse porque `deno` no está instalado en la sesión actual.
+
+## Endurecimiento de tareas vigentes en Inicio
+
+- [x] Auditar `get_dashboard_tasks(...)` contra `DashboardHome`, `TasksWidget`, estados de reclutamiento, movilidad interna y aprobaciones Who para detectar tareas potencialmente huérfanas
+- [x] Corregir la RPC para que solo exponga aprobaciones cuya etapa siga viva según `current_step_code` o `stage_code` canónico
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de endurecimiento de tareas vigentes en Inicio
+
+- La auditoría del loop mostró una asimetría de contrato dentro del propio dashboard: [`get_dashboard_approval_tracking()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628023000_exclude_closed_hiring_requests_from_dashboard_approval_tracking.sql:1) ya quedó amarrado a la etapa viva del request, pero [`get_dashboard_tasks(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628033000_harden_dashboard_tasks_active_step_alignment.sql:1) seguía confiando solo en filas `pending`.
+- Se agregó la migración [`20260628033000_harden_dashboard_tasks_active_step_alignment.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628033000_harden_dashboard_tasks_active_step_alignment.sql:1), que endurece tres frentes sin cambiar el contrato consumido por React:
+  - aprobaciones de contratación solo aparecen si `hiring_requests.status` sigue en `pending_area_manager` o `pending_contracts_control` y `hiring_request_approvals.step_code = hiring_requests.current_step_code`;
+  - aprobaciones de movilidad interna solo aparecen si `internal_mobility_requests` sigue en etapa pendiente equivalente y el `step_code` coincide con `current_step_code`;
+  - aprobaciones Who solo aparecen si la participación del candidato sigue realmente en `recruitment_case_candidates.stage_code = 'who_pending'` y el caso sigue operativo.
+- El cambio reduce una clase de riesgo silenciosa: que Inicio o las notificaciones revivan tareas ya cerradas por un rezago de datos, aunque hoy la muestra manual del remoto no expuso filas huérfanas para contratación.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628033000_harden_dashboard_tasks_active_step_alignment.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+
 ## Auditoría enterprise, tipografía SF segura y hardening de Inicio + búsqueda de trabajadores
 
 - [x] Auditar el contrato vivo entre `Inicio`, `get_dashboard_home_bundle(...)`, `get_dashboard_operational_summary()` y `get_recruitment_control_summary()` para explicar por qué el resumen de reclutamiento abierto muestra menos casos que los existentes

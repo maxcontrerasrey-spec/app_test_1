@@ -16,6 +16,7 @@ type BukJobRow = {
   recruitment_case_candidate_id: string;
   status: "pending" | "processing" | "success" | "error";
   attempts: number;
+  result_snapshot: Record<string, unknown> | null;
 };
 
 type BukCandidateSyncPayload = {
@@ -106,7 +107,7 @@ type BukLocationCacheRow = {
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-webhook-secret"
 };
 
 const DEFAULT_BUK_LOCATIONS_CACHE_TTL_HOURS = 12;
@@ -471,10 +472,14 @@ async function processDocuments(
   supabase: ReturnType<typeof createClient>,
   payload: BukCandidateSyncPayload,
   employeeId: string,
+  uploadedDocuments: Array<Record<string, unknown>>,
+  alreadyUploadedDocumentIds: Set<string>,
 ) {
-  const uploadedDocuments: Array<Record<string, unknown>> = [];
-
   for (const document of payload.documents) {
+    if (alreadyUploadedDocumentIds.has(document.id)) {
+      continue;
+    }
+
     if (!document.file_path) {
       continue;
     }
@@ -511,9 +516,22 @@ async function processDocuments(
       status: uploadResult.status,
       response: uploadPayload
     });
+    alreadyUploadedDocumentIds.add(document.id);
   }
 
   return uploadedDocuments;
+}
+
+function extractUploadedDocumentsFromSnapshot(snapshot: Record<string, unknown> | null) {
+  const documents = snapshot?.documents;
+  if (!Array.isArray(documents)) {
+    return [] as Array<Record<string, unknown>>;
+  }
+
+  return documents.filter(
+    (entry): entry is Record<string, unknown> =>
+      Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
+  );
 }
 
 async function markJobState(
@@ -531,25 +549,23 @@ async function markJobState(
   }
 }
 
-async function fetchJobs(
+async function claimJobs(
   supabase: ReturnType<typeof createClient>,
   request: SyncRequest
 ) {
-  let query = supabase
-    .from("buk_sync_jobs")
-    .select("id, recruitment_case_candidate_id, status, attempts")
-    .order("created_at", { ascending: true })
-    .limit(Math.min(Math.max(request.limit ?? 10, 1), 50));
+  const normalizedLimit = Math.min(Math.max(request.limit ?? 10, 1), 50);
+  const normalizedJobIds = Array.from(
+    new Set((request.jobIds ?? []).map((jobId) => jobId.trim()).filter(Boolean))
+  );
+  const jobIdsParam = normalizedJobIds.length > 0 ? normalizedJobIds : null;
 
-  if (request.jobIds && request.jobIds.length > 0) {
-    query = query.in("id", request.jobIds);
-  } else {
-    query = query.eq("status", "pending");
-  }
+  const { data, error } = await supabase.rpc("claim_buk_sync_jobs", {
+    p_limit: normalizedLimit,
+    p_job_ids: jobIdsParam
+  });
 
-  const { data, error } = await query;
   if (error) {
-    throw new Error(`No fue posible leer la cola BUK: ${error.message}`);
+    throw new Error(`No fue posible reclamar la cola BUK: ${error.message}`);
   }
 
   return (data ?? []) as BukJobRow[];
@@ -568,24 +584,60 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    const internalWebhookSecret = (Deno.env.get("BUK_SYNC_INTERNAL_WEBHOOK_SECRET") ?? "").trim();
+    const suppliedWebhookSecret = (req.headers.get("x-internal-webhook-secret") ?? "").trim();
+    const isInternalInvocation =
+      internalWebhookSecret.length > 0 && suppliedWebhookSecret === internalWebhookSecret;
+
+    if (!isInternalInvocation) {
+      if (!accessToken) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json"
+          }
+        });
+      }
+
+      const {
+        data: { user },
+        error: authError
+      } = await supabase.auth.getUser(accessToken);
+
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json"
+          }
+        });
+      }
+    }
+
     const requestBody = req.method === "POST" ? ((await req.json().catch(() => ({}))) as SyncRequest) : {};
-    const jobs = await fetchJobs(supabase, requestBody);
+    const jobs = await claimJobs(supabase, requestBody);
     const locations = await resolveBukLocations(supabase);
     const results: Array<Record<string, unknown>> = [];
 
     for (const job of jobs) {
+      const uploadedDocuments = extractUploadedDocumentsFromSnapshot(job.result_snapshot);
+      const alreadyUploadedDocumentIds = new Set(
+        uploadedDocuments
+          .map((entry) =>
+            typeof entry.sourceDocumentId === "string" ? entry.sourceDocumentId : null
+          )
+          .filter((value): value is string => Boolean(value))
+      );
       const jobResultSnapshot: Record<string, unknown> = {
-        syncedAt: new Date().toISOString()
+        syncedAt: new Date().toISOString(),
+        documents: uploadedDocuments
       };
 
       try {
-        await markJobState(supabase, job.id, {
-          status: "processing",
-          attempts: job.attempts + 1,
-          started_at: new Date().toISOString(),
-          error_message: null
-        });
-
         const { data: syncPayload, error: payloadError } = await supabase.rpc(
           "get_candidate_buk_sync_payload",
           { p_case_candidate_id: job.recruitment_case_candidate_id }
@@ -602,7 +654,13 @@ Deno.serve(async (req) => {
           request: employeePayload
         };
 
-        const uploadedDocuments = await processDocuments(supabase, payload, employeeId);
+        await processDocuments(
+          supabase,
+          payload,
+          employeeId,
+          uploadedDocuments,
+          alreadyUploadedDocumentIds
+        );
         jobResultSnapshot.documents = uploadedDocuments;
 
         await markJobState(supabase, job.id, {

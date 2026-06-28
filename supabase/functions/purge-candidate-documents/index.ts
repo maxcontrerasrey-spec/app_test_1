@@ -74,29 +74,23 @@ async function markJobState(
   }
 }
 
-async function fetchJobs(
+async function claimJobs(
   supabase: ReturnType<typeof createClient>,
   request: CleanupRequest
 ) {
   const batchLimit = Math.min(Math.max(request.limit ?? 25, 1), 250);
-  let query = supabase
-    .from("candidate_document_cleanup_jobs")
-    .select("id, recruitment_case_candidate_id, recruitment_case_id, candidate_profile_id, terminal_stage, requested_by, attempts")
-    .order("created_at", { ascending: true })
-    .limit(batchLimit)
-    .in("status", ["pending", "error"]);
-
   const normalizedCandidateIds = Array.from(
     new Set((request.candidateIds ?? []).map((candidateId) => candidateId.trim()).filter(Boolean))
   );
+  const candidateIdsParam = normalizedCandidateIds.length > 0 ? normalizedCandidateIds : null;
 
-  if (normalizedCandidateIds.length > 0) {
-    query = query.in("recruitment_case_candidate_id", normalizedCandidateIds);
-  }
+  const { data, error } = await supabase.rpc("claim_candidate_document_cleanup_jobs", {
+    p_limit: batchLimit,
+    p_candidate_ids: candidateIdsParam
+  });
 
-  const { data, error } = await query;
   if (error) {
-    throw new Error(`No fue posible leer la cola de limpieza documental: ${error.message}`);
+    throw new Error(`No fue posible reclamar la cola de limpieza documental: ${error.message}`);
   }
 
   return (data ?? []) as CleanupJobRow[];
@@ -111,71 +105,27 @@ async function enqueueSweepJobs(
     new Set((request.candidateIds ?? []).map((candidateId) => candidateId.trim()).filter(Boolean))
   );
 
-  const { data: documentRows, error: documentsError } = await supabase
-    .from("candidate_documents")
-    .select("recruitment_case_id, candidate_profile_id")
-    .limit(batchLimit * 10);
-
-  if (documentsError) {
-    throw new Error(`No fue posible inspeccionar documentos terminales: ${documentsError.message}`);
-  }
-
-  const caseIds = Array.from(
-    new Set((documentRows ?? []).map((row) => row.recruitment_case_id).filter(Boolean))
-  );
-  const candidateProfileIds = Array.from(
-    new Set((documentRows ?? []).map((row) => row.candidate_profile_id).filter(Boolean))
+  const candidateIdsParam = normalizedCandidateIds.length > 0 ? normalizedCandidateIds : null;
+  const { data: candidateRows, error: candidatesError } = await supabase.rpc(
+    "list_terminal_candidate_cleanup_targets",
+    {
+      p_limit: batchLimit,
+      p_candidate_ids: candidateIdsParam
+    }
   );
 
-  if (caseIds.length === 0 || candidateProfileIds.length === 0) {
-    return { queued: 0 };
-  }
-
-  let candidateQuery = supabase
-    .from("recruitment_case_candidates")
-    .select("id, recruitment_case_id, candidate_profile_id, stage_code, created_by")
-    .in("recruitment_case_id", caseIds)
-    .in("candidate_profile_id", candidateProfileIds)
-    .in("stage_code", ["rejected", "withdrawn"]);
-
-  if (normalizedCandidateIds.length > 0) {
-    candidateQuery = candidateQuery.in("id", normalizedCandidateIds);
-  }
-
-  const { data: candidateRows, error: candidatesError } = await candidateQuery;
   if (candidatesError) {
-    throw new Error(`No fue posible inspeccionar candidatos terminales: ${candidatesError.message}`);
+    throw new Error(
+      `No fue posible inspeccionar candidatos terminales con documentos remanentes: ${candidatesError.message}`
+    );
   }
 
-  const exactDocumentPairs = new Set(
-    (documentRows ?? []).map((row) => `${row.recruitment_case_id}::${row.candidate_profile_id}`)
-  );
-  const terminalCandidates = ((candidateRows ?? []) as TerminalCandidateSweepRow[])
-    .filter((candidate) =>
-      exactDocumentPairs.has(`${candidate.recruitment_case_id}::${candidate.candidate_profile_id}`)
-    )
-    .slice(0, batchLimit);
+  const terminalCandidates = (candidateRows ?? []) as TerminalCandidateSweepRow[];
 
   if (terminalCandidates.length === 0) {
     return { queued: 0 };
   }
-
-  const candidateIds = terminalCandidates.map((candidate) => candidate.id);
-  const { data: existingJobs, error: existingJobsError } = await supabase
-    .from("candidate_document_cleanup_jobs")
-    .select("recruitment_case_candidate_id, status")
-    .in("recruitment_case_candidate_id", candidateIds)
-    .in("status", ["pending", "processing", "error"]);
-
-  if (existingJobsError) {
-    throw new Error(`No fue posible inspeccionar jobs previos de limpieza: ${existingJobsError.message}`);
-  }
-
-  const blockedCandidates = new Set(
-    (existingJobs ?? []).map((row) => row.recruitment_case_candidate_id)
-  );
   const jobsToInsert = terminalCandidates
-    .filter((candidate) => !blockedCandidates.has(candidate.id))
     .map((candidate) => ({
       recruitment_case_candidate_id: candidate.id,
       recruitment_case_id: candidate.recruitment_case_id,
@@ -371,19 +321,11 @@ Deno.serve(async (req) => {
     const sweepSummary = requestBody.sweepTerminalCandidates
       ? await enqueueSweepJobs(supabase, requestBody)
       : { queued: 0 };
-    const jobs = await fetchJobs(supabase, requestBody);
+    const jobs = await claimJobs(supabase, requestBody);
     const results: Array<Record<string, unknown>> = [];
 
     for (const job of jobs) {
       try {
-        await markJobState(supabase, job.id, {
-          status: "processing",
-          attempts: job.attempts + 1,
-          started_at: new Date().toISOString(),
-          finished_at: null,
-          error_message: null
-        });
-
         const purgeResult = await purgeCandidateDocuments(supabase, job);
 
         await markJobState(supabase, job.id, {
