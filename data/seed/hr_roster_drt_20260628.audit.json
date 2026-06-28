@@ -1,0 +1,54 @@
+{
+  "source_file": "/Users/maximilianocontrerasrey/Desktop/drt.xlsx",
+  "generated_at": "2026-06-28",
+  "contract_scope": "CODELCO DRT",
+  "source_row_count": 177,
+  "active_employee_count": 177,
+  "matched_employee_count": 175,
+  "missing_source_rows": [
+    {
+      "name": "Vergara Rivera Moises Gabriel",
+      "rut": "11.724.567-5",
+      "job_title": "CONDUCTOR DE BUS",
+      "cycle": "10X5+5",
+      "first_workday": "2026-06-19"
+    },
+    {
+      "name": "Carreño Astudillo José Agustin",
+      "rut": "10.421.699-4",
+      "job_title": "CONDUCTOR DE TAXI BUS",
+      "cycle": "7X7",
+      "first_workday": "2026-06-10"
+    }
+  ],
+  "active_employees_missing_from_source": [
+    {
+      "buk_employee_id": "37646",
+      "full_name": "Enrique Fernando Retamales Laport",
+      "document_number": "15.078.051-9",
+      "area_name": "CODELCO DRT (6170400010:0004)",
+      "contract_code": "0"
+    },
+    {
+      "buk_employee_id": "41342",
+      "full_name": "Luis Alejandro Alvarez Aro",
+      "document_number": "16.000.975-6",
+      "area_name": "CODELCO DRT (6170400010:0004)",
+      "contract_code": "0"
+    }
+  ],
+  "cycle_distribution": {
+    "7X7": 76,
+    "10X5+5": 86,
+    "4X3": 12,
+    "5X2": 3
+  },
+  "start_date_distribution": {
+    "2026-06-03": 38,
+    "2026-06-19": 43,
+    "2026-06-01": 15,
+    "2026-06-05": 1,
+    "2026-06-10": 37,
+    "2026-06-09": 43
+  }
+}

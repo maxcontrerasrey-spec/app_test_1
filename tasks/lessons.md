@@ -8,6 +8,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 161. Un módulo enterprise no puede quedar con dos contratos de acceso distintos entre su capa viva y su capa legacy
 
+## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada
+
+- **Que el Excel y la dotación activa tengan el mismo número de filas no prueba que representen al mismo universo.** En DRT ambos lados tenían `177`, pero el cruce real por `RUT` dejó `175` matches válidos, `2` trabajadores históricos ya fuera de nómina y `2` trabajadores nuevos no presentes en el archivo base.
+- **La regla correcta es reconciliar primero por identificador estable y dejar esa conciliación versionada.** Antes de insertar en `hr_worker_rosters`, el repo debe guardar el origen normalizado y un reporte explícito de `matched / missing / extra`, para que auditoría y operación sepan exactamente qué quedó cargado y qué quedó fuera.
+- **Nunca inventes la pauta de un trabajador sin match canónico ni borres a ciegas a un activo nuevo ausente del archivo.** Si el input no representa a la dotación viva 1:1, la carga debe aplicar sólo el subconjunto conciliado y dejar evidencia de las divergencias para seguimiento operacional.
+
 - **Si una reimplementación canónica ya migró a un `module_code` nuevo, la superficie legacy no debe seguir autorizándose con un módulo o rol distinto.** Aunque hoy no tenga consumidores visibles en React, esa capa sigue siendo parte del backend productivo mientras sus RPCs y tablas existan.
 - **La regla correcta es encapsular tanto la capa nueva como la legacy detrás del mismo helper semántico.** En onboarding operacional, toda entrada debe pasar por `user_can_access_operational_onboarding(...)` para que frontend, RLS, storage y RPCs compartan la misma verdad de acceso.
 - **`app_modules.route` también es contrato y debe reflejar la ruta real protegida por el router.** Aunque hoy `get_my_effective_permissions()` entregue solo códigos, dejar una ruta distinta en catálogo crea deriva silenciosa para futuras pantallas, auditorías o automatizaciones que sí lean esa metadata.

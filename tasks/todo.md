@@ -8,6 +8,30 @@
 - [x] Corregir el retry para que reutilice el progreso parcial guardado en `buk_sync_jobs.result_snapshot`
 - [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run` y `git diff --check`
 
+## Carga inicial del calendario de jornadas DRT
+
+- [x] Auditar el archivo base [`drt.xlsx`](/Users/maximilianocontrerasrey/Desktop/drt.xlsx) y reconciliarlo contra la dotación activa de `CODELCO DRT`
+- [x] Versionar el origen normalizado y la conciliación de la carga en artefactos auditables del repositorio
+- [x] Publicar la carga masiva de jornadas DRT sobre `hr_shift_patterns` y `hr_worker_rosters` sin romper las asignaciones existentes de otros contratos
+- [x] Validar con auditoría de migraciones, `db push --dry-run`, aplicación remota y verificación SQL de conteos/resultados
+
+## Resultado de la carga inicial del calendario de jornadas DRT
+
+- El archivo fuente quedó aterrizado en [`data/seed/hr_roster_drt_20260628.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/data/seed/hr_roster_drt_20260628.json:1) y su conciliación operativa en [`data/seed/hr_roster_drt_20260628.audit.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/data/seed/hr_roster_drt_20260628.audit.json:1), dejando evidencia navegable del input y del cruce contra `employees_active_current`.
+- La reconciliación cerró con una conclusión importante: el Excel trae `177` filas y la dotación activa DRT también suma `177`, pero el cruce exacto por `RUT` sólo encontró `175` coincidencias válidas. El archivo sigue mencionando a `11.724.567-5` y `10.421.699-4`, que ya no existen como trabajadores activos, mientras la dotación viva DRT ya incluye a `15.078.051-9` y `16.000.975-6`, que no vienen en la base Excel.
+- Se agregó la migración [`20260628162000_import_drt_roster_calendar.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628162000_import_drt_roster_calendar.sql:1), que:
+  - normaliza la carga del archivo en una tabla temporal auditable;
+  - reutiliza o reactiva las pautas `10X5+5`, `4X3`, `5X2` y `7X7` en `hr_shift_patterns`;
+  - proyecta sólo los `175` trabajadores activos realmente conciliados en `CODELCO DRT`;
+  - cierra solapes previos sobre esos mismos trabajadores antes de insertar o actualizar la pauta vigente en `hr_worker_rosters`.
+- La estrategia evita dos clases de error de alto costo: no inventa asignaciones para trabajadores ya inexistentes y tampoco pisa a ciegas a los dos trabajadores nuevos que hoy están activos en DRT pero todavía no forman parte del Excel recibido.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628162000_import_drt_roster_calendar.sql`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto por SQL/REST para confirmar `175` asignaciones DRT cargadas, distribución por pauta consistente con el archivo conciliado y preservación de las demás pautas del módulo
+  - `git diff --check`
+
 ## Alineación del contrato legacy de onboarding operacional
 
 - [x] Auditar la convivencia entre el onboarding legacy (`onboarding_processes`, `onboarding_employee_courses`) y el onboarding canónico (`employee_onboarding_*`, `alta_operacional_personal`)
