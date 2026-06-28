@@ -181,6 +181,13 @@ export function CandidateIntakeForm({
     return existing || null;
   }, [candidateForm.nationalId, candidateForm.caseId, selectedCaseDetail]);
 
+  const candidateCanBeReactivated = useMemo(
+    () =>
+      candidateInSelectedCase?.stage_code === "rejected" ||
+      candidateInSelectedCase?.stage_code === "withdrawn",
+    [candidateInSelectedCase]
+  );
+
   const handleAddCandidate = async () => {
     if (!candidateForm.caseId) {
       setCandidateRutTouched(true);
@@ -203,7 +210,7 @@ export function CandidateIntakeForm({
       return;
     }
 
-    if (candidateInSelectedCase) {
+    if (candidateInSelectedCase && !candidateCanBeReactivated) {
       setCandidateFormError("Este candidato ya participa en el caso seleccionado.");
       setCandidateFormStatus("");
       return;
@@ -240,7 +247,11 @@ export function CandidateIntakeForm({
     setFoundCandidateProfile(null);
     setLastSearchedRut("");
     setCandidateRutTouched(false);
-    setCandidateFormStatus("Candidato registrado en el caso seleccionado.");
+    setCandidateFormStatus(
+      candidateCanBeReactivated
+        ? "Candidato reactivado en el caso seleccionado."
+        : "Candidato registrado en el caso seleccionado."
+    );
     setIsCandidateSaving(false);
 
     await onCandidateAdded(savedCaseId, savedCandidateId);
@@ -372,9 +383,17 @@ export function CandidateIntakeForm({
 
         {candidateInSelectedCase ? (
           <div className="control-span-full" style={{ margin: "0.25rem 0" }}>
-            <p className="form-status form-status-error" style={{ fontSize: "0.88rem", fontWeight: 500 }}>
-              ⚠️ Este candidato ya participa en el caso seleccionado en la etapa "
-              {toRecruitmentCandidateStageLabel(candidateInSelectedCase.stage_code)}".
+            <p
+              className={candidateCanBeReactivated ? "form-status" : "form-status form-status-error"}
+              style={{
+                fontSize: "0.88rem",
+                fontWeight: 500,
+                color: candidateCanBeReactivated ? "var(--warning-700, #b54708)" : undefined
+              }}
+            >
+              {candidateCanBeReactivated
+                ? `⚠️ Este candidato ya estuvo en este caso en la etapa "${toRecruitmentCandidateStageLabel(candidateInSelectedCase.stage_code)}". Si continúas, se reactivará desde Lead.`
+                : `⚠️ Este candidato ya participa en el caso seleccionado en la etapa "${toRecruitmentCandidateStageLabel(candidateInSelectedCase.stage_code)}".`}
             </p>
           </div>
         ) : null}
@@ -383,21 +402,31 @@ export function CandidateIntakeForm({
           <button
             type="button"
             className="soft-primary-button approval-button-approve"
-            disabled={isCandidateSaving || isSearchingCandidate || Boolean(candidateInSelectedCase)}
+            disabled={
+              isCandidateSaving ||
+              isSearchingCandidate ||
+              (Boolean(candidateInSelectedCase) && !candidateCanBeReactivated)
+            }
             onClick={() => void handleAddCandidate()}
           >
-            {isCandidateSaving ? "Registrando..." : "Registrar candidato en el caso"}
+            {isCandidateSaving
+              ? candidateCanBeReactivated
+                ? "Reactivando..."
+                : "Registrando..."
+              : candidateCanBeReactivated
+                ? "Reactivar candidato en el caso"
+                : "Registrar candidato en el caso"}
           </button>
         </div>
       </div>
 
-      {candidateFormError && !candidateInSelectedCase ? (
+      {candidateFormError && !(candidateInSelectedCase && !candidateCanBeReactivated) ? (
         <p className="form-status form-status-error" style={{ marginTop: "0.5rem" }}>
           {candidateFormError}
         </p>
       ) : null}
 
-      {foundBukStatus?.exists && !candidateInSelectedCase ? (
+      {foundBukStatus?.exists && !(candidateInSelectedCase && !candidateCanBeReactivated) ? (
         <div 
           className="control-span-full" 
           style={{ 
@@ -427,7 +456,9 @@ export function CandidateIntakeForm({
         </div>
       ) : null}
 
-      {foundCandidateProfile?.historical_rejections && foundCandidateProfile.historical_rejections.length > 0 && !candidateInSelectedCase ? (
+      {foundCandidateProfile?.historical_rejections &&
+      foundCandidateProfile.historical_rejections.length > 0 &&
+      !(candidateInSelectedCase && !candidateCanBeReactivated) ? (
         <div 
           className="control-span-full" 
           style={{ 

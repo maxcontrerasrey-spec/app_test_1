@@ -142,7 +142,143 @@
     - `pg_get_functiondef('public.sync_recruitment_case_status(uuid, uuid)'::regprocedure)` confirmó el lock order corregido;
     - `pg_get_functiondef('public.transfer_candidate_to_case(uuid, uuid, text)'::regprocedure)` confirmó la resincronización determinista de ambos casos;
     - `information_schema.columns` confirmó la creación de `public.buk_locations`;
-    - `list_edge_functions` confirmó la publicación vigente de `sync-buk-candidates`.
+- `list_edge_functions` confirmó la publicación vigente de `sync-buk-candidates`.
+
+## Hardening de resolución de ubicación en widget de clima
+
+- [x] Auditar el flujo de geolocalización, reverse geocoding y fallback por IP del widget de clima
+- [x] Corregir la resolución aproximada de ubicación para que no degrade a labels inválidos o errores textuales cuando fallen los proveedores primarios
+- [x] Validar `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de hardening de resolución de ubicación en widget de clima
+
+- [`DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:1) dejó de depender de un único fallback frágil para ubicación por red. Ahora intenta primero `BigDataCloud` por IP con el mismo contrato de reverse geocoding que ya usa para coordenadas, y solo después cae a `geojs`.
+- El parsing del fallback quedó endurecido: ciudad, región y código de país ahora se resuelven de forma defensiva, las coordenadas se validan con `Number.isFinite`, y solo se persiste caché cuando el payload tiene label y lat/lon utilizables.
+- El caché local de ubicación dejó de mezclar orígenes incompatibles. Ahora persiste `isFallback`, distingue `Última ubicación conocida` de `Última ubicación aproximada`, y evita que una ubicación aproximada vuelva a entrar como si fuera geolocalización real en la lógica de reintento.
+- El fetch meteorológico también quedó endurecido frente a carreras: el widget ahora ignora aborts de requests viejas, valida `response.ok` antes de parsear Open Meteo y solo permite que la request activa escriba `weather`, evitando que una respuesta cancelada limpie el forecast correcto.
+- La consulta a Open Meteo ya no puede quedar esperando indefinidamente por lentitud del proveedor. [`DashboardInfoCards.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardInfoCards.tsx:1) ahora usa `fetchJsonWithTimeout(...)` con `WEATHER_REQUEST_TIMEOUT_MS = 8000`, enlazado al `AbortController` del effect para que timeout local, cambio de ubicación y unmount compartan el mismo camino de salida.
+- El contrato visual también quedó alineado: [`DashboardWeatherCard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/DashboardWeatherCard.tsx:1) ahora consume `locationStatusLabel` y muestra el estado operativo de ubicación cuando la tarjeta está resolviendo o en fallback, en vez de calcularlo en el padre y descartarlo silenciosamente.
+- Cuando no se puede resolver una ubicación aproximada, el widget ya no muestra `Error: ...` como label visible. Degrada a la ubicación por defecto con un `statusLabel` explícito, manteniendo operativo el widget de clima sin exponer ruido técnico al usuario final.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Hardening transaccional del upload documental en reclutamiento
+
+- [x] Auditar el flujo `storage -> RPC -> checklist` en la carga documental de candidatos para detectar residuos o drift entre binario y metadato
+- [x] Corregir de forma mínima el caso donde el archivo sube a `candidate-docs` pero la RPC documental falla y deja blobs huérfanos
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de hardening transaccional del upload documental en reclutamiento
+
+- [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:1) ahora trata la carga documental como una operación compensable: si el archivo ya subió a `candidate-docs` pero [`upload_candidate_document(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260605121500_restrict_candidate_control_access.sql:445) falla por permisos, validación o estado del candidato, el frontend elimina inmediatamente el blob recién creado.
+- El cambio reduce residuos en storage sin tocar SQL, RLS ni contratos RPC. El binario solo queda persistido cuando la referencia de base se registró correctamente.
+- La ruta de error también quedó más diagnóstica: si falla tanto la RPC como la limpieza compensatoria, el usuario recibe un mensaje explícito indicando que además no se pudo limpiar el archivo temporal.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Alineación de audit log con eventos documentales vivos de reclutamiento
+
+- [x] Contrastar los `action_type` realmente emitidos por las RPCs documentales contra la constraint vigente de `recruitment_case_audit_log`
+- [x] Corregir por migración incremental la desalineación entre funciones vivas y constraint, sin tocar permisos ni contratos RPC
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de alineación de audit log con eventos documentales vivos de reclutamiento
+
+- La revisión del flujo documental mostró un drift real entre backend y esquema: [`reset_candidate_document_validation(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:221) y [`approve_candidate_documentation(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:684) insertan `candidate_document_validation_reset` y `candidate_documentation_approved`, pero la última constraint versionada de `recruitment_case_audit_log` no los aceptaba.
+- Se agregó la migración [`20260627223000_allow_candidate_document_audit_actions.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627223000_allow_candidate_document_audit_actions.sql:1), que recompone el `CHECK` de `recruitment_case_audit_log_action_type_check` incluyendo ambos eventos junto con `candidate_documents_purged`.
+- El cambio reduce riesgo de errores en runtime justo en la trazabilidad documental: las RPCs vivas ya no quedan en situación de intentar auditar un evento que el propio esquema rechaza.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Acotación de resets documentales multi-caso por cambios de perfil
+
+- [x] Auditar si una edición de `candidate_profiles` estaba reseteando validaciones documentales de más cuando la persona participa en varios casos
+- [x] Restringir el trigger a cambios en campos que realmente gobiernan el checklist documental
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de acotación de resets documentales multi-caso por cambios de perfil
+
+- La función [`trg_reset_candidate_document_validation_from_profile()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:346) reseteaba validación documental de todos los casos del perfil ante cualquier `UPDATE` sobre `candidate_profiles`, incluso si el cambio era ajeno al checklist.
+- Se agregó la migración [`20260627230000_scope_candidate_profile_document_validation_reset.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627230000_scope_candidate_profile_document_validation_reset.sql:1), que deja el reset solo para cambios en campos efectivamente usados por el checklist personal: documento, identidad, sexo, nacionalidad, nacimiento, estado civil y domicilio.
+- El cambio reduce falsos resets multi-caso sin tocar RLS, RPCs ni la lógica de validación real. Una persona puede seguir participar en varios casos, pero ya no pierde aprobación documental por modificaciones irrelevantes del perfil compartido.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Alineación del checklist documental con la ficha contractual BUK
+
+- [x] Auditar el contrato entre `CandidateWorkerFileForm`, `get_candidate_checklist(...)` y `approve_candidate_documentation(...)` para detectar discrepancias entre campos obligatorios UI y backend
+- [x] Corregir por migración incremental el campo contractual faltante y acotar los resets automáticos del worker file a cambios que realmente afectan la aprobación documental
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de alineación del checklist documental con la ficha contractual BUK
+
+- La auditoría del loop mostró un drift real de contrato: [`CandidateWorkerFileForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateWorkerFileForm.tsx:157) exige `Periodo de pago` como obligatorio, y la cola BUK también lo trata como requisito contractual, pero [`get_candidate_checklist(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:389) no lo consideraba dentro de `missing_worker_fields`.
+- Se agregó la migración [`20260627233000_align_worker_file_document_validation_contract.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627233000_align_worker_file_document_validation_contract.sql:1), que incorpora `payment_period` al cálculo de `worker_file_complete` y por lo tanto al bloqueo real de [`approve_candidate_documentation(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:684).
+- La misma migración endurece [`trg_reset_candidate_document_validation_from_worker_file()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627233000_align_worker_file_document_validation_contract.sql:1) para que un `UPDATE` sobre `candidate_worker_files` solo resetee la aprobación documental cuando cambian campos que gobiernan la completitud contractual, evitando falsos resets por notas o metadatos no decisorios.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Trazabilidad exacta de revisión documental por candidato-participación
+
+- [x] Auditar `review_candidate_document(...)` para verificar si el audit log resolvía el `recruitment_case_candidate_id` exacto o lo infería de forma ambigua por `candidate_profile_id`
+- [x] Corregir la RPC y el cliente para que la revisión documental audite la participación exacta del candidato dentro del caso
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de trazabilidad exacta de revisión documental por candidato-participación
+
+- La revisión mostró un riesgo real en [`review_candidate_document(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:593): el audit log resolvía `recruitment_case_candidate_id` buscando por `recruitment_case_id + candidate_profile_id` y quedándose con el registro más reciente, en vez de usar la participación exacta que ya conoce el checklist abierto en UI.
+- Se agregó la migración [`20260627234500_scope_document_review_audit_to_case_candidate.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627234500_scope_document_review_audit_to_case_candidate.sql:1), que redefine la RPC de revisión documental para exigir `p_case_candidate_id`, bloquear la fila real de `recruitment_case_candidates`, validar que el documento pertenezca a ese candidato dentro del caso y auditar con ese id exacto.
+- [`documentChecklistApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/documentChecklistApi.ts:99) y [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:166) ahora envían el `caseCandidateId` ya disponible en pantalla, sin abrir un contrato nuevo hacia el usuario ni tocar la persistencia documental.
+- El cambio reduce riesgo de auditoría cruzada o equivocada cuando un mismo perfil participa más de una vez en el dominio de reclutamiento y deja el evento `document_reviewed` anclado a la participación operativa real.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Reset documental obligatorio al trasladar candidatos entre folios
+
+- [x] Auditar el contrato entre `transfer_candidate_to_case(...)`, `candidate_documents`, `get_candidate_checklist(...)` y `document_validation_status`
+- [x] Corregir el traslado para que cualquier cambio de folio invalide la aprobación documental previa y no deje aprobaciones arrastradas al nuevo contexto
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de reset documental obligatorio al trasladar candidatos entre folios
+
+- La auditoría mostró un drift de alto riesgo: [`transfer_candidate_to_case(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625233000_harden_recruitment_sync_and_buk_locations_cache.sql:219) mueve `candidate_documents` al folio destino, pero no reseteaba `document_validation_status`. Como [`get_candidate_checklist(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:386) recalcula requisitos según el caso destino, un candidato ya aprobado podía quedar visualmente “validado” en un folio con otro contexto documental.
+- El hueco no lo cubría el trigger documental existente: al actualizar `candidate_documents.recruitment_case_id`, el trigger buscaba la participación del candidato ya en el caso destino, pero en ese momento `recruitment_case_candidates` todavía no había sido movido, así que no encontraba fila que resetear.
+- Se agregó la migración [`20260628001000_reset_document_validation_after_candidate_transfer.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628001000_reset_document_validation_after_candidate_transfer.sql:1), que redefine `transfer_candidate_to_case(...)` para llamar explícitamente a [`reset_candidate_document_validation(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:228) inmediatamente después de mover la participación al nuevo folio.
+- El cambio mantiene el modelo actual de documentos y no relaja permisos, pero garantiza que una aprobación documental quede siempre anclada al contexto vigente del candidato y no sobreviva indebidamente a un traslado.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Unificación de firma viva para `review_candidate_document(...)`
+
+- [x] Auditar si la migración nueva de revisión documental dejó conviviendo la firma antigua y la nueva de la RPC
+- [x] Eliminar la sobrecarga residual para dejar una sola firma viva y evitar drift de schema cache / contrato muerto
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de unificación de firma viva para `review_candidate_document(...)`
+
+- La revisión mostró un riesgo de contrato vivo en [`20260627234500_scope_document_review_audit_to_case_candidate.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627234500_scope_document_review_audit_to_case_candidate.sql:1): la migración redefinía la RPC con `p_case_candidate_id`, pero solo eliminaba la firma nueva de 4 argumentos antes del `create or replace`, dejando coexistir la firma legacy de 3 argumentos en el historial.
+- Se endureció esa misma migración para eliminar explícitamente también [`review_candidate_document(uuid, text, text)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627234500_scope_document_review_audit_to_case_candidate.sql:1), de modo que el runtime final conserve una sola firma documental activa.
+- El cambio no modifica la lógica de revisión ni el cliente actual; reduce riesgo de sobrecarga RPC, ambigüedad de schema cache y persistencia de contratos muertos en producción.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Limpieza automática del blob reemplazado en recargas documentales
+
+- [x] Auditar si una recarga exitosa de documento reemplazaba `file_path` en base pero dejaba el archivo anterior huérfano en `candidate-docs`
+- [x] Corregir el flujo de upload para limpiar el blob reemplazado sin tocar SQL ni permisos
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de limpieza automática del blob reemplazado en recargas documentales
+
+- La auditoría mostró una fuga silenciosa de storage: [`upload_candidate_document(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260605121500_restrict_candidate_control_access.sql:445) hace `on conflict ... do update` sobre `candidate_documents` y reemplaza `file_path`, pero el flujo feliz no eliminaba el archivo anterior de `candidate-docs`.
+- Se corrigió en [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:90): tras una RPC exitosa, si el documento ya tenía `file_path` previo y este difiere del nuevo upload, el cliente elimina el blob reemplazado. Si esa limpieza falla, la operación principal se mantiene exitosa pero deja un mensaje explícito de residuo para no ocultar el problema.
+- El cambio reduce consumo innecesario de storage y mantiene el contrato actual `storage -> RPC` sin abrir una nueva dependencia entre frontend y SQL.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Guardia de contexto antes de purgar documentos terminales
+
+- [x] Auditar si la Edge Function nocturna validaba que el candidato siguiera en la misma participación terminal antes de borrar documentos
+- [x] Endurecer la purga para que revalide `case_candidate`, caso, perfil y etapa terminal antes de eliminar storage/base
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de guardia de contexto antes de purgar documentos terminales
+
+- La revisión mostró un riesgo diferido en [`purge-candidate-documents`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:1): el job se ejecutaba usando solo el snapshot guardado en `candidate_document_cleanup_jobs`, sin confirmar que la participación siguiera existiendo en el mismo caso y todavía en la etapa terminal que originó la limpieza.
+- Se agregó una validación previa en la misma Edge Function para releer [`recruitment_case_candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:104) y abortar la purga si cambió el caso, el perfil o la etapa. Con eso, la limpieza ya no depende ciegamente de un job viejo cuando el contexto operativo pudo haber cambiado antes de las 22:00 o por una corrección administrativa posterior.
+- El cambio no altera el modelo de jobs ni la semántica de borrado exitosa; solo impide que una purga obsoleta borre documentos fuera del contexto vigente del candidato.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
 
 ## Reapertura automática de cupos y folios por rechazo de Movilidad Interna
 
@@ -3566,3 +3702,47 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - El scheduler quedó versionado en [`scripts/purge-terminal-candidate-documents.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/purge-terminal-candidate-documents.mjs:1) y [`.github/workflows/purge-terminal-candidate-documents.yml`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.github/workflows/purge-terminal-candidate-documents.yml:1), con doble ventana UTC para respetar `22:00` en `America/Santiago`.
 - [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1) ya no intenta ejecutar la purga en el click del usuario; la etapa terminal queda actualizada al instante y la limpieza pasa a ser una regla automática nocturna.
 - El cierre remoto quedó ejecutado y verificado el 27-06-2026: `npx supabase db push --linked --include-all` aplicó [`20260627184500_queue_terminal_candidate_document_cleanup.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627184500_queue_terminal_candidate_document_cleanup.sql:1) y [`20260627195500_allow_candidate_document_purge_audit_log.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627195500_allow_candidate_document_purge_audit_log.sql:1), `npx supabase functions deploy purge-candidate-documents` publicó la function, y el secreto `CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET` quedó cargado tanto en Supabase como en GitHub Actions. La prueba de humo `node scripts/purge-terminal-candidate-documents.mjs --limit 5` respondió `ok: true`, `mode: internal`.
+
+## Reactivación controlada de candidatos terminales en el mismo folio
+
+- [x] Auditar por qué un candidato rechazado o desistido no podía reingresar al mismo folio aunque el negocio sí requiere reapertura controlada
+- [x] Corregir backend y frontend para distinguir duplicado activo versus participación terminal reactivable
+- [x] Mantener la reapertura auditable, limpiando aprobaciones y jobs pendientes que ya no aplican
+- [x] Validar `TypeScript` y `git diff --check`
+
+## Resultado de reactivación controlada de candidatos terminales en el mismo folio
+
+- La auditoría mostró un drift de contrato entre UI y SQL: [`CandidateIntakeForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx:1) bloqueaba cualquier coincidencia de RUT dentro del caso, y [`add_candidate_to_recruitment_case(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608150500_fix_add_candidate_ambiguous_column.sql:1) resolvía el conflicto con `on conflict do nothing`, devolviendo la fila existente sin reactivar realmente la participación terminal.
+- Se versionó la migración [`20260628004500_allow_reactivate_terminal_candidate_in_same_case.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628004500_allow_reactivate_terminal_candidate_in_same_case.sql:1), que redefine `add_candidate_to_recruitment_case(...)` para permitir solo la reactivación de participaciones `rejected` o `withdrawn`, devolverlas a `lead`, resetear la validación documental, cancelar aprobaciones `who_pending` pendientes y eliminar jobs documentales obsoletos antes de re-sincronizar el folio.
+- El backend ahora rechaza explícitamente los duplicados activos con `El candidato ya participa en el caso seleccionado`, en vez de esconder el conflicto detrás de un retorno exitoso vacío.
+- [`CandidateIntakeForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx:1) distingue visualmente ambos escenarios: un candidato activo sigue bloqueado, mientras uno terminal muestra advertencia operativa y habilita el CTA `Reactivar candidato en el caso`.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false` y `git diff --check`.
+
+## Cancelación de aprobaciones Who al cerrar candidatos manualmente
+
+- [x] Auditar si una transición manual a `rejected` o `withdrawn` dejaba aprobaciones `Who` pendientes fuera de contexto
+- [x] Corregir la RPC de cambio de etapa para cancelar aprobaciones pendientes antes de encolar la purga documental
+- [x] Mantener trazabilidad del saneamiento en auditoría sin abrir un refactor lateral
+- [x] Validar `TypeScript`, auditoría de migración y `git diff --check`
+
+## Resultado de cancelación de aprobaciones Who al cerrar candidatos manualmente
+
+- La revisión del flujo mostró una desalineación entre pipeline, bandejas y auditoría: [`advance_recruitment_candidate_stage(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260627184500_queue_terminal_candidate_document_cleanup.sql:117) podía cerrar manualmente un candidato en `rejected` o `withdrawn`, pero dejaba viva una fila `candidate_stage_approvals.status = pending` cuando el candidato venía de `who_pending`.
+- Se versionó la migración [`20260628010000_cancel_pending_who_approval_on_terminal_candidate_transition.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628010000_cancel_pending_who_approval_on_terminal_candidate_transition.sql:1), que redefine `advance_recruitment_candidate_stage(...)` para cancelar cualquier aprobación `Who` pendiente del mismo `recruitment_case_candidate_id` antes de auditar el cambio y encolar la limpieza documental.
+- La misma RPC deja ahora el conteo `cancelled_who_approvals` en `recruitment_case_audit_log.metadata`, de modo que la transición terminal conserva trazabilidad explícita del saneamiento y no solo del cambio de etapa.
+- El cambio reduce riesgo operativo directo: la bandeja de tareas ya no puede seguir mostrando aprobaciones `Who` pendientes para un candidato que el propio pipeline marcó como cerrado.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run audit:migrations -- --files supabase/migrations/20260628010000_cancel_pending_who_approval_on_terminal_candidate_transition.sql` y `git diff --check`.
+
+## Motivo obligatorio en transiciones terminales de candidatos
+
+- [x] Auditar si la RPC viva seguía exigiendo motivo al mover un candidato a `rejected` o `withdrawn`
+- [x] Reponer la validación backend para que la trazabilidad no dependa solo de la UI
+- [x] Mantener alineada la cancelación `Who` recién agregada dentro de la misma firma viva
+- [x] Validar `TypeScript`, auditoría de migración y `git diff --check`
+
+## Resultado de motivo obligatorio en transiciones terminales de candidatos
+
+- La auditoría mostró una regresión de contrato en la RPC viva [`advance_recruitment_candidate_stage(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628010000_cancel_pending_who_approval_on_terminal_candidate_transition.sql:1): una versión previa sí exigía comentario para `rejected` o `withdrawn`, pero la firma más reciente había perdido esa validación.
+- Se versionó la migración [`20260628011500_require_terminal_candidate_reason_in_stage_transition.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628011500_require_terminal_candidate_reason_in_stage_transition.sql:1), que recompone ese guardrail en backend sin cambiar el contrato cliente actual. La UI ya pedía comentario, pero ahora cualquier consumidor futuro o bypass técnico vuelve a quedar cubierto por la RPC.
+- El cambio reduce un riesgo de trazabilidad enterprise: ya no se puede cerrar una participación de candidato sin motivo persistido en `rejection_reason`, `withdrawal_reason`, historial de etapas y audit log.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run audit:migrations -- --files supabase/migrations/20260628011500_require_terminal_candidate_reason_in_stage_transition.sql` y `git diff --check`.

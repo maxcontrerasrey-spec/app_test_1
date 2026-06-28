@@ -32,6 +32,13 @@ type TerminalCandidateSweepRow = {
   created_by: string;
 };
 
+type CandidateCleanupGuardRow = {
+  id: string;
+  recruitment_case_id: string;
+  candidate_profile_id: string;
+  stage_code: string;
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -215,10 +222,52 @@ async function fetchCandidateDocuments(
   return (data ?? []) as CandidateDocumentRow[];
 }
 
+async function assertCandidateCleanupStillApplicable(
+  supabase: ReturnType<typeof createClient>,
+  job: CleanupJobRow
+) {
+  const { data, error } = await supabase
+    .from("recruitment_case_candidates")
+    .select("id, recruitment_case_id, candidate_profile_id, stage_code")
+    .eq("id", job.recruitment_case_candidate_id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `No fue posible verificar el estado actual del candidato ${job.recruitment_case_candidate_id}: ${error.message}`
+    );
+  }
+
+  const candidate = data as CandidateCleanupGuardRow | null;
+
+  if (!candidate) {
+    throw new Error(
+      `El candidato ${job.recruitment_case_candidate_id} ya no existe para ejecutar la limpieza documental`
+    );
+  }
+
+  if (
+    candidate.recruitment_case_id !== job.recruitment_case_id ||
+    candidate.candidate_profile_id !== job.candidate_profile_id
+  ) {
+    throw new Error(
+      `La limpieza documental quedó obsoleta porque el contexto del candidato ${job.recruitment_case_candidate_id} cambió`
+    );
+  }
+
+  if (candidate.stage_code !== job.terminal_stage) {
+    throw new Error(
+      `La limpieza documental ya no aplica porque el candidato ${job.recruitment_case_candidate_id} salió de la etapa terminal ${job.terminal_stage}`
+    );
+  }
+}
+
 async function purgeCandidateDocuments(
   supabase: ReturnType<typeof createClient>,
   job: CleanupJobRow
 ) {
+  await assertCandidateCleanupStillApplicable(supabase, job);
+
   const documents = await fetchCandidateDocuments(supabase, job);
   const filePaths = Array.from(
     new Set(documents.map((document) => document.file_path?.trim() ?? "").filter(Boolean))

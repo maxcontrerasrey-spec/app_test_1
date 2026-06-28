@@ -14,6 +14,7 @@ type DashboardWeatherCardProps = {
   temperature: number | null;
   code: number | null;
   locationLabel: string;
+  locationStatusLabel: string;
   dailyForecast: WeatherForecastDay[];
   showRetry: boolean;
   onRetry: () => void;
@@ -132,11 +133,13 @@ export function DashboardWeatherCard({
   temperature,
   code,
   locationLabel,
+  locationStatusLabel,
   dailyForecast,
   showRetry,
   onRetry
 }: DashboardWeatherCardProps) {
   const locationName = locationLabel ? locationLabel.split(",")[0] : "UBICACION";
+  const statusText = isLoading || showRetry ? locationStatusLabel : toWeatherLabel(code);
 
   return (
     <SoftSurface
@@ -154,7 +157,7 @@ export function DashboardWeatherCard({
         <div className="dashboard-weather-card-meta">
           <strong className="dashboard-weather-card-location">{locationName}</strong>
           <span className="dashboard-weather-card-status">
-            {isLoading ? "CARGANDO..." : toWeatherLabel(code)}
+            {statusText}
           </span>
           {showRetry ? (
             <button type="button" className="dashboard-info-weather-action dashboard-weather-card-retry" onClick={onRetry}>

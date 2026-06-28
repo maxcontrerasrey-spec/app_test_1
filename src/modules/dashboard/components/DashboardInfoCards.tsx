@@ -37,6 +37,7 @@ const INITIAL_LOCATION: LiveLocationState = {
 
 const LOCATION_CACHE_KEY = "dashboard:weather:last-browser-location";
 const LOCATION_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
+const WEATHER_REQUEST_TIMEOUT_MS = 8000;
 
 const UNAVAILABLE_LOCATION: LiveLocationState = {
   label: "Los Andes, CL",
@@ -55,6 +56,10 @@ function buildBigDataCloudReverseGeocodingUrl(latitude: number, longitude: numbe
   return `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=es`;
 }
 
+function buildBigDataCloudIpGeolocationUrl() {
+  return "https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=es";
+}
+
 function buildNominatimReverseGeocodingUrl(latitude: number, longitude: number) {
   return `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=es`;
 }
@@ -63,10 +68,49 @@ function formatCoordinateLabel(latitude: number, longitude: number) {
   return `${Math.abs(latitude).toFixed(2)}°${latitude >= 0 ? "N" : "S"} · ${Math.abs(longitude).toFixed(2)}°${longitude >= 0 ? "E" : "O"}`;
 }
 
+async function fetchJsonWithTimeout<T>(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number
+) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => {
+    controller.abort(new DOMException(`Request timed out after ${timeoutMs}ms`, "AbortError"));
+  }, timeoutMs);
+
+  const parentSignal = init.signal;
+  const abortFromParent = () => controller.abort(parentSignal?.reason);
+
+  if (parentSignal) {
+    if (parentSignal.aborted) {
+      abortFromParent();
+    } else {
+      parentSignal.addEventListener("abort", abortFromParent, { once: true });
+    }
+  }
+
+  try {
+    const response = await fetch(input, {
+      ...init,
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    return (await response.json()) as T;
+  } finally {
+    window.clearTimeout(timeoutId);
+    parentSignal?.removeEventListener("abort", abortFromParent);
+  }
+}
+
 type CachedLocationPayload = {
   label: string;
   latitude: number;
   longitude: number;
+  isFallback?: boolean;
   savedAt: number;
 };
 
@@ -82,10 +126,12 @@ function readCachedBrowserLocation(): LiveLocationState | null {
     }
 
     const parsed = JSON.parse(rawValue) as Partial<CachedLocationPayload>;
+    const latitude = typeof parsed?.latitude === "number" ? parsed.latitude : Number.NaN;
+    const longitude = typeof parsed?.longitude === "number" ? parsed.longitude : Number.NaN;
     if (
       typeof parsed?.label !== "string" ||
-      typeof parsed?.latitude !== "number" ||
-      typeof parsed?.longitude !== "number" ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
       typeof parsed?.savedAt !== "number"
     ) {
       return null;
@@ -97,18 +143,23 @@ function readCachedBrowserLocation(): LiveLocationState | null {
 
     return {
       label: parsed.label,
-      statusLabel: "Última ubicación conocida",
-      latitude: parsed.latitude,
-      longitude: parsed.longitude,
+      statusLabel: parsed.isFallback ? "Última ubicación aproximada" : "Última ubicación conocida",
+      latitude,
+      longitude,
       isResolved: true,
-      isFallback: false
+      isFallback: parsed.isFallback === true
     };
   } catch {
     return null;
   }
 }
 
-function persistBrowserLocation(label: string, latitude: number, longitude: number) {
+function persistBrowserLocation(
+  label: string,
+  latitude: number,
+  longitude: number,
+  isFallback: boolean
+) {
   if (typeof window === "undefined") {
     return;
   }
@@ -120,6 +171,7 @@ function persistBrowserLocation(label: string, latitude: number, longitude: numb
         label,
         latitude,
         longitude,
+        isFallback,
         savedAt: Date.now()
       } satisfies CachedLocationPayload)
     );
@@ -138,6 +190,8 @@ type ReverseGeocodingPayload = {
   locality?: string;
   principalSubdivision?: string;
   countryCode?: string;
+  latitude?: number | string;
+  longitude?: number | string;
   address?: {
     city?: string;
     town?: string;
@@ -200,6 +254,100 @@ function formatLocationLabel(payload: unknown) {
       : "CL";
 
   return city ? `${city}, ${countryCode}` : null;
+}
+
+type IpFallbackLocation = {
+  label: string;
+  latitude: number;
+  longitude: number;
+};
+
+function parseFiniteCoordinate(value: unknown) {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseFloat(value)
+        : Number.NaN;
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseGeoJsLocationLabel(payload: unknown) {
+  const data = payload as
+    | {
+        city?: unknown;
+        region?: unknown;
+        country_code?: unknown;
+        country?: unknown;
+        latitude?: unknown;
+        longitude?: unknown;
+      }
+    | null;
+
+  if (!data) {
+    return null;
+  }
+
+  const city =
+    typeof data.city === "string" && data.city.trim()
+      ? data.city.trim()
+      : typeof data.region === "string" && data.region.trim()
+        ? data.region.trim()
+      : null;
+
+  const countryCode =
+    typeof data.country_code === "string" && data.country_code.trim()
+      ? data.country_code.trim().toUpperCase()
+      : typeof data.country === "string" && data.country.trim()
+        ? data.country.trim().slice(0, 2).toUpperCase()
+        : "CL";
+
+  const latitude = parseFiniteCoordinate(data.latitude);
+  const longitude = parseFiniteCoordinate(data.longitude);
+
+  if (!city || latitude == null || longitude == null) {
+    return null;
+  }
+
+  return {
+    label: `${city}, ${countryCode}`,
+    latitude,
+    longitude
+  } satisfies IpFallbackLocation;
+}
+
+async function fetchIpFallbackLocation(signal?: AbortSignal) {
+  try {
+    const response = await fetch(buildBigDataCloudIpGeolocationUrl(), { signal });
+    if (response.ok) {
+      const payload = (await response.json()) as ReverseGeocodingPayload | null;
+      const label = formatLocationLabel(payload);
+      const latitude = parseFiniteCoordinate(payload?.latitude);
+      const longitude = parseFiniteCoordinate(payload?.longitude);
+
+      if (label && latitude != null && longitude != null) {
+        return {
+          label,
+          latitude,
+          longitude
+        } satisfies IpFallbackLocation;
+      }
+    }
+  } catch {
+    // Continue with the secondary provider.
+  }
+
+  try {
+    const response = await fetch("https://get.geojs.io/v1/ip/geo.json", { signal });
+    if (!response.ok) {
+      return null;
+    }
+
+    return parseGeoJsLocationLabel(await response.json());
+  } catch {
+    return null;
+  }
 }
 
 function toGeolocationStatusLabel(error?: GeolocationPositionError | null) {
@@ -341,6 +489,7 @@ export function DashboardInfoCards({
   const locationRequestInFlightRef = useRef(false);
   const reverseControllerRef = useRef<AbortController | null>(null);
   const activeLocationRequestIdRef = useRef(0);
+  const activeWeatherRequestIdRef = useRef(0);
 
   useEffect(() => {
     locationRef.current = location;
@@ -357,7 +506,7 @@ export function DashboardInfoCards({
         formatCoordinateLabel(latitude, longitude);
 
       if (requestId === activeLocationRequestIdRef.current) {
-        persistBrowserLocation(label, latitude, longitude);
+        persistBrowserLocation(label, latitude, longitude, false);
         setLocation({
           label,
           statusLabel,
@@ -370,7 +519,7 @@ export function DashboardInfoCards({
     } catch (_error) {
       if (requestId === activeLocationRequestIdRef.current) {
         const label = formatCoordinateLabel(latitude, longitude);
-        persistBrowserLocation(label, latitude, longitude);
+        persistBrowserLocation(label, latitude, longitude, false);
         setLocation({
           label,
           statusLabel,
@@ -394,31 +543,30 @@ export function DashboardInfoCards({
     }
 
     try {
-      const response = await fetch("https://get.geojs.io/v1/ip/geo.json");
-      const data = await response.json();
-      if (
-        data &&
-        data.latitude &&
-        data.longitude
-      ) {
+      const fallbackLocation = await fetchIpFallbackLocation();
+      if (fallbackLocation) {
+        persistBrowserLocation(
+          fallbackLocation.label,
+          fallbackLocation.latitude,
+          fallbackLocation.longitude,
+          true
+        );
         setLocation({
-          label: `${data.city || data.region}, ${data.country_code}`,
+          label: fallbackLocation.label,
           statusLabel: `Aproximada por red (${reasonLabel})`,
-          latitude: parseFloat(data.latitude),
-          longitude: parseFloat(data.longitude),
+          latitude: fallbackLocation.latitude,
+          longitude: fallbackLocation.longitude,
           isResolved: true,
           isFallback: true
         });
         return;
       }
 
-      throw new Error("Invalid IP location data");
-    } catch (_error) {
-      const errStr = _error instanceof Error ? _error.message : String(_error);
+      throw new Error("No fue posible resolver ubicación aproximada por red");
+    } catch {
       setLocation({
         ...UNAVAILABLE_LOCATION,
-        label: "Error: " + errStr.substring(0, 30),
-        statusLabel: reasonLabel
+        statusLabel: `${reasonLabel} · usando ubicación por defecto`
       });
     }
   }, []);
@@ -573,21 +721,34 @@ export function DashboardInfoCards({
 
   useEffect(() => {
     const controller = new AbortController();
+    const requestId = ++activeWeatherRequestIdRef.current;
 
     async function loadWeather() {
       if (location.latitude == null || location.longitude == null) {
-        setWeather((current) => ({
-          ...current,
-          isLoading: true
-        }));
+        if (requestId === activeWeatherRequestIdRef.current) {
+          setWeather((current) => ({
+            ...current,
+            isLoading: true
+          }));
+        }
         return;
       }
 
       try {
-        const response = await fetch(buildWeatherUrl(location.latitude, location.longitude), {
+        const payload = await fetchJsonWithTimeout<{
+          current?: {
+            temperature_2m?: number;
+            weather_code?: number;
+          } | null;
+          daily?: {
+            time?: number[];
+            temperature_2m_max?: number[];
+            temperature_2m_min?: number[];
+            weather_code?: number[];
+          } | null;
+        }>(buildWeatherUrl(location.latitude, location.longitude), {
           signal: controller.signal
-        });
-        const payload = await response.json();
+        }, WEATHER_REQUEST_TIMEOUT_MS);
         const current = payload?.current ?? null;
         const daily = payload?.daily ?? null;
 
@@ -604,13 +765,19 @@ export function DashboardInfoCards({
           }
         }
 
-        setWeather({
-          temperature: typeof current?.temperature_2m === "number" ? current.temperature_2m : null,
-          code: typeof current?.weather_code === "number" ? current.weather_code : null,
-          isLoading: false,
-          dailyForecast: nextDays
-        });
+        if (requestId === activeWeatherRequestIdRef.current && !controller.signal.aborted) {
+          setWeather({
+            temperature: typeof current?.temperature_2m === "number" ? current.temperature_2m : null,
+            code: typeof current?.weather_code === "number" ? current.weather_code : null,
+            isLoading: false,
+            dailyForecast: nextDays
+          });
+        }
       } catch (_error) {
+        if (controller.signal.aborted || requestId !== activeWeatherRequestIdRef.current) {
+          return;
+        }
+
         setWeather({
           temperature: null,
           code: null,
@@ -620,10 +787,12 @@ export function DashboardInfoCards({
       }
     }
 
-    setWeather((current) => ({
-      ...current,
-      isLoading: true
-    }));
+    if (requestId === activeWeatherRequestIdRef.current) {
+      setWeather((current) => ({
+        ...current,
+        isLoading: true
+      }));
+    }
     void loadWeather();
 
     return () => controller.abort();
@@ -690,6 +859,7 @@ export function DashboardInfoCards({
         temperature={weather.temperature}
         code={weather.code}
         locationLabel={location.label}
+        locationStatusLabel={location.statusLabel}
         dailyForecast={weather.dailyForecast}
         showRetry={location.isFallback || !location.isResolved}
         onRetry={() => void requestBrowserLocation()}

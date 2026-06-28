@@ -97,6 +97,7 @@ export async function uploadCandidateDocument(input: {
 }
 
 export async function reviewCandidateDocument(input: {
+  caseCandidateId: string;
   documentId: string;
   status: "approved" | "rejected";
   notes?: string;
@@ -108,7 +109,8 @@ export async function reviewCandidateDocument(input: {
   const { error } = await supabase.rpc("review_candidate_document", {
     p_document_id: input.documentId,
     p_status: input.status,
-    p_notes: input.notes?.trim() ? input.notes.trim() : null
+    p_notes: input.notes?.trim() ? input.notes.trim() : null,
+    p_case_candidate_id: input.caseCandidateId
   });
 
   if (error) {

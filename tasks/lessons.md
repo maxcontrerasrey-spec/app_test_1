@@ -4,6 +4,24 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 150. Un reingreso al mismo folio no puede resolverse con `on conflict do nothing`
+
+- **Un retorno “exitoso” de la fila existente no equivale a reactivar al candidato.** Si la participación estaba en `rejected` o `withdrawn`, el backend debe moverla explícitamente a `lead`, resetear el estado derivado que quedó terminal y volver a sincronizar el caso.
+- **La UI debe distinguir duplicado activo de participación terminal reactivable.** Bloquear ambos con el mismo mensaje condena al usuario a un falso callejón sin salida y empuja correcciones manuales en base.
+- **Reactivar también implica sanear efectos colaterales del estado terminal anterior.** Aprobaciones `who_pending` pendientes, jobs de purga documental y validaciones documentales aprobadas ya no son válidos cuando el candidato vuelve al pipeline.
+
+## 151. Cerrar un candidato también debe cerrar sus tareas Who pendientes
+
+- **No basta con mover `recruitment_case_candidates.stage_code` a `rejected` o `withdrawn`.** Si el candidato venía de `who_pending`, una fila `candidate_stage_approvals.status = pending` seguirá alimentando bandejas y notificaciones con una tarea ya inválida.
+- **La regla correcta es cancelar la aprobación pendiente dentro de la misma RPC de transición terminal.** El saneamiento debe ocurrir en la misma transacción que cambia la etapa y antes de encolar efectos diferidos como la purga documental.
+- **Cuando una transición limpia trabajo pendiente, la auditoría debe registrarlo explícitamente.** Dejar el contador o señal en `metadata` evita investigaciones ciegas cuando alguien pregunta por qué una aprobación desapareció de la cola.
+
+## 152. La UI puede guiar el motivo de descarte, pero la RPC debe exigirlo
+
+- **No confíes en que el modal o sidebar siempre será el único llamador.** Si `advance_recruitment_candidate_stage(...)` permite `rejected` o `withdrawn` sin comentario, tarde o temprano aparecerá un cierre terminal sin causa persistida aunque la pantalla actual lo bloquee.
+- **La regla correcta es duplicar el guardrail crítico en backend.** Las transiciones terminales deben fallar sin motivo tanto para proteger la auditoría como para asegurar que `rejection_reason`, `withdrawal_reason` e historial de etapas no queden vacíos.
+- **Cuando recompongas una firma viva, no pierdas correcciones recientes al reescribirla.** El fix debe preservar también cancelación de aprobaciones `Who`, limpieza documental y el resto de invariantes ya endurecidos.
+
 ## 66. En RPCs paginadas, el orden debe sobrevivir hasta el `jsonb_agg`
 
 - **No basta con aplicar `ORDER BY ... LIMIT/OFFSET` antes de agregar JSON**. Si luego se usa `jsonb_agg` sin un ordinal estable calculado después del ordenamiento, PostgreSQL puede devolver los items de la página en orden distinto al solicitado aunque la página seleccionada sea la correcta.
@@ -44,6 +62,61 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Que Buk acepte `path` no significa que haya que subir cada archivo en el mismo click del usuario.** Si la experiencia operativa exige rapidez, los documentos se almacenan temporalmente en staging auditable, se sincronizan por cola o corte explícito, y recién después se purga el staging local.
 - **Los descartes terminales deben limpiar storage por diseño, no por disciplina manual.** Si un candidato pasa a `rejected` o `withdrawn`, la eliminación de sus documentos debe quedar encolada y auditada, pero la ejecución operativa puede moverse a un barrido programado si el negocio prefiere desacoplarla del click del usuario.
 - **Si el negocio fija una hora local de saneamiento, el scheduler debe hablar en hora Chile real y además barrer rezagos históricos.** No basta con procesar “lo recién rechazado”; la corrida nocturna debe revisar también candidatos terminales ya existentes con documentos remanentes y reintentar jobs fallidos.
+
+## 140. En widgets de clima, la ubicación degradada debe seguir siendo útil y no exponer errores técnicos al usuario
+
+- **No dependas de un solo proveedor de IP geolocation ni asumas que siempre devolverá `city` y coordenadas válidas.** Si el fallback llega incompleto, el widget puede terminar mostrando `undefined`, coordenadas inútiles o directamente un mensaje de error como label principal.
+- **La salida correcta es una cadena de fallback y parsing defensivo**: reverse geocoding por coordenadas, luego IP geolocation consistente, luego ubicación por defecto. Solo se cachea una ubicación si tiene label y lat/lon válidos, y si todo falla el estado visible debe degradar con copy operacional, no con texto técnico de excepción.
+- **El caché debe preservar el origen operativo de la ubicación.** Si una ubicación aproximada por IP se persiste sin marcarse como fallback, el siguiente render la puede tratar como ubicación confiable, ocultar el reintento y degradar silenciosamente la lógica de refresco.
+- **En fetches encadenados por ubicación, abortar no es lo mismo que fallar.** Si una request vieja cancelada limpia el estado compartido al entrar al `catch`, el widget puede borrar un forecast válido recién cargado por la request nueva. La corrección mínima es gatear escrituras con un request id activo y salir temprano en `AbortController`.
+- **Las APIs públicas de soporte en dashboard necesitan timeout local aunque ya exista abort por desmontaje.** Cambiar de ubicación o salir de la vista no cubre la lentitud del proveedor; si el negocio exige UX estable, el fetch debe autoliquidarse en un umbral razonable y degradar a “sin dato” sin dejar loaders colgados.
+- **Si el padre calcula un estado operacional para la UI, el hijo debe consumirlo o el estado sobra.** Mantener `statusLabel` solo en el contenedor crea una falsa sensación de trazabilidad: la lógica existe, pero el usuario no la ve. En dashboards ejecutivos, ese drift entre cálculo y render es deuda de contrato, no solo detalle visual.
+
+## 141. En uploads con binario primero y metadato después, tiene que existir compensación explícita
+
+- **Subir el archivo a storage y registrar la referencia en RPC son dos commits distintos.** Si el segundo falla por permisos, validación o estado del dominio, el primero no puede quedar vivo como residuo silencioso.
+- **La corrección mínima no siempre es SQL.** Cuando el contrato actual sube desde frontend a storage y luego llama una RPC, el cliente debe borrar el blob recién subido si la persistencia de base falla. Si también falla la compensación, el error visible debe decirlo explícitamente.
+
+## 142. Si una RPC emite nuevos `action_type`, la constraint del audit log debe evolucionar en la misma pasada
+
+- **No basta con versionar la función que inserta auditoría.** Si `recruitment_case_audit_log_action_type_check` no incluye el evento nuevo, el flujo queda aparentemente correcto en código pero falla justo al escribir trazabilidad.
+- **La revisión correcta es bidireccional:** cada vez que una migración agrega `candidate_*` o `document_*` en inserts de auditoría, hay que contrastarlo contra la última constraint efectiva del audit log y extenderla en la misma serie de cambios.
+
+## 143. En entidades compartidas entre casos, no resetees aprobaciones por cualquier update
+
+- **`candidate_profiles` es una ficha compartida; `recruitment_case_candidates` es la participación contextual.** Si un trigger del perfil compartido invalida aprobaciones de todos los casos por cualquier cambio, el ERP castiga más de la cuenta y destruye trabajo válido.
+- **La regla correcta es resetear solo por campos que gobiernan la validación que estás protegiendo.** En validación documental personal, los cambios relevantes son identidad, estado civil, nacimiento y domicilio; cambios secundarios o administrativos no deben tumbar aprobaciones documentales ya emitidas.
+
+## 144. Si la UI exige un campo contractual para guardar o sincronizar, la aprobación documental debe exigir exactamente el mismo contrato
+
+- **No permitas que `worker_file_complete` sea más laxo que el formulario contractual o que la cola de sincronización.** Si frontend y sync consideran obligatorio un dato como `payment_period`, pero `get_candidate_checklist(...)` no lo evalúa, el sistema puede aprobar candidatos con una ficha que el mismo ERP declaraba incompleta.
+- **La regla correcta es compartir el mismo set de campos críticos entre completitud, aprobación y reset automático.** Los triggers documentales del worker file solo deben reaccionar a cambios en esos campos críticos; cualquier metadato accesorio debe quedar fuera para no destruir aprobaciones válidas.
+
+## 145. Si la UI ya conoce la participación exacta del candidato, la auditoría backend no debe re-inferirla por joins ambiguos
+
+- **No reconstruyas `recruitment_case_candidate_id` desde `recruitment_case_id + candidate_profile_id` cuando el flujo ya opera sobre un `caseCandidateId` concreto.** Ese join puede terminar apuntando a la participación más reciente y no a la que realmente se estaba gestionando, degradando trazabilidad justo en auditoría.
+- **La regla correcta es exigir el identificador contextual en la RPC y validarlo contra el documento antes de escribir el log.** Primero se comprueba que el documento pertenezca a ese candidato en ese caso; recién después se actualiza estado y se audita con el `recruitment_case_candidate_id` exacto.
+
+## 146. Trasladar documentos de un folio a otro sin resetear la validación deja aprobaciones fuera de contexto
+
+- **Mover `candidate_documents.recruitment_case_id` no equivale a revalidar el nuevo folio.** Si el checklist depende del cargo o del contexto del caso destino, una aprobación documental anterior no puede sobrevivir al traslado como si siguiera siendo válida.
+- **No confíes en triggers implícitos cuando el orden de updates cambia el contexto.** Si primero se mueven documentos y después la participación del candidato, el trigger documental puede no encontrar todavía la fila destino y saltarse el reset.
+- **La regla correcta es resetear explícitamente la validación documental desde `transfer_candidate_to_case(...)` una vez movida la participación.** Así la aprobación queda siempre alineada con el folio vigente y no depende de coincidencias temporales entre triggers y updates.
+
+## 147. Si endureces una RPC con nueva firma, elimina la sobrecarga vieja en la misma migración
+
+- **No dejes conviviendo la firma legacy y la firma nueva de una misma RPC documental.** Aunque el cliente actual use la versión correcta, mantener la sobrecarga antigua crea drift operativo: schema cache ambiguo, grants duplicados y contratos muertos que pueden reaparecer por error.
+- **La regla correcta es cerrar la migración con una única firma viva.** Si cambias parámetros de una RPC en Supabase/PostgREST, primero se eliminan explícitamente las firmas legacy relevantes y recién después se crea la versión final que el frontend consume.
+
+## 148. Reemplazar un documento en base no basta si el blob anterior sigue vivo en storage
+
+- **Un `on conflict ... do update` sobre `file_path` no limpia por sí solo el archivo viejo.** Si el frontend sube un binario nuevo y la RPC actualiza el metadato al nuevo path, el blob anterior queda huérfano aunque la operación aparente estar “correcta”.
+- **La corrección mínima puede vivir en el cliente cuando la UI ya conoce el path anterior.** Si el checklist trae `file_path`, el frontend puede borrar el blob reemplazado justo después de una actualización exitosa, sin tocar RLS ni cambiar el contrato SQL.
+
+## 149. Una purga diferida no debe confiar ciegamente en el snapshot del job
+
+- **Que un candidato estuviera terminal al encolar la limpieza no garantiza que siga en el mismo contexto al ejecutar la tarea nocturna.** Si una corrección administrativa, migración o flujo futuro cambia el caso, el perfil o la etapa antes del barrido, borrar usando solo el snapshot del job vuelve la purga peligrosa.
+- **La regla correcta es revalidar el contexto vivo justo antes de eliminar.** La Edge Function debe comprobar que `recruitment_case_candidate_id`, `recruitment_case_id`, `candidate_profile_id` y la etapa terminal actual siguen coincidiendo con el job antes de tocar storage o `candidate_documents`.
 
 ## 67. Cuando un cupo puede quedar reservado por movilidad interna, la liberación y la reapertura deben salir del mismo motor de sincronización
 

@@ -97,6 +97,8 @@ export function CandidateDocumentChecklist({
     const fileExt = file.name.split(".").pop() || "pdf";
     const fileName = `${document.document_type_id}_${Date.now()}.${fileExt}`;
     const storagePath = `${caseCandidateId}/${fileName}`;
+    const previousFilePath = document.file_path?.trim() ? document.file_path.trim() : null;
+    let shouldCleanupUploadedFile = false;
 
     const { data: uploadData, error: uploadErr } = await supabase.storage
       .from("candidate-docs")
@@ -107,18 +109,49 @@ export function CandidateDocumentChecklist({
 
     if (uploadErr) throw new Error(`Error subiendo archivo: ${uploadErr.message}`);
     if (!uploadData) throw new Error("No se devolvio path de subida");
+    shouldCleanupUploadedFile = true;
 
-    const { error: rpcError } = await uploadCandidateDocument({
-      caseCandidateId,
-      documentTypeId: document.document_type_id,
-      filePath: uploadData.path,
-      expiryDate
-    });
+    try {
+      const { error: rpcError } = await uploadCandidateDocument({
+        caseCandidateId,
+        documentTypeId: document.document_type_id,
+        filePath: uploadData.path,
+        expiryDate
+      });
 
-    if (rpcError) throw new Error(`Error en base de datos: ${rpcError}`);
+      if (rpcError) throw new Error(`Error en base de datos: ${rpcError}`);
 
-    await loadChecklist();
-    await onChecklistUpdated?.();
+      shouldCleanupUploadedFile = false;
+
+      if (previousFilePath && previousFilePath !== uploadData.path) {
+        const { error: replacedFileCleanupError } = await supabase.storage
+          .from("candidate-docs")
+          .remove([previousFilePath]);
+
+        if (replacedFileCleanupError) {
+          setUploadError(
+            `Documento actualizado, pero no se pudo limpiar el archivo reemplazado: ${replacedFileCleanupError.message}`
+          );
+        }
+      }
+
+      await loadChecklist();
+      await onChecklistUpdated?.();
+    } catch (error) {
+      if (shouldCleanupUploadedFile) {
+        const { error: cleanupError } = await supabase.storage
+          .from("candidate-docs")
+          .remove([uploadData.path]);
+
+        if (cleanupError) {
+          throw new Error(
+            `${error instanceof Error ? error.message : "No fue posible registrar el documento."} · Ademas no se pudo limpiar el archivo temporal: ${cleanupError.message}`
+          );
+        }
+      }
+
+      throw error;
+    }
   }
 
   async function handleDownload(doc: CandidateDocumentRow) {
@@ -145,6 +178,7 @@ export function CandidateDocumentChecklist({
     notes: string
   ) {
     const { error } = await reviewCandidateDocument({
+      caseCandidateId,
       documentId: docId,
       status,
       notes
