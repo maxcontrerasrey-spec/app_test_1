@@ -8,6 +8,71 @@
 - [x] Corregir el retry para que reutilice el progreso parcial guardado en `buk_sync_jobs.result_snapshot`
 - [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run` y `git diff --check`
 
+## Alineación del contrato legacy de onboarding operacional
+
+- [x] Auditar la convivencia entre el onboarding legacy (`onboarding_processes`, `onboarding_employee_courses`) y el onboarding canónico (`employee_onboarding_*`, `alta_operacional_personal`)
+- [x] Corregir permisos/RLS legacy para que dependan del helper canónico `user_can_access_operational_onboarding(...)` en vez del módulo legacy `reclutamiento`
+- [x] Alinear la `route` registrada en `app_modules` para `alta_operacional_personal` con la ruta real protegida por React
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run`, aplicación remota y `git diff --check`
+
+## Resultado de alineación del contrato legacy de onboarding operacional
+
+- La auditoría del loop mostró una doble deriva en onboarding: la UI viva y las RLS nuevas ya operan con el módulo `alta_operacional_personal`, pero la capa legacy creada en [`20260608175000_create_onboarding_module_tables.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608175000_create_onboarding_module_tables.sql:1) y [`20260608175500_onboarding_module_rpcs.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608175500_onboarding_module_rpcs.sql:1) seguía validando acceso contra `user_can_access_module(..., 'reclutamiento')`, que hoy no representa el contrato visible del módulo.
+- Se agregó la migración [`20260628130000_align_operational_onboarding_legacy_permissions.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628130000_align_operational_onboarding_legacy_permissions.sql:1), que hace tres ajustes seguros sin cambiar payloads:
+  - actualiza `app_modules.route` de `alta_operacional_personal` a `/alta-operacional`, que es la ruta real protegida por [`AppRouter.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:105);
+  - reemplaza las políticas `SELECT` legacy por políticas que reutilizan `user_can_access_operational_onboarding((select auth.uid()))`;
+  - recompila las RPCs legacy `start_employee_onboarding`, `get_onboarding_dashboard`, `get_employee_onboarding_detail` y `evaluate_onboarding_course` para exigir el mismo helper canónico.
+- La migración quedó además endurecida para ambientes heterogéneos: si la capa legacy no existe físicamente, el ajuste se vuelve un no-op seguro para tablas/RPCs ausentes y aun así mantiene alineada la metadata del módulo en `app_modules`.
+- El cambio reduce riesgo de incoherencia entre frontend, `app_modules`, RLS y RPCs: donde la superficie legacy exista, ya no queda autorizada por un módulo distinto al que realmente expone y protege la aplicación; donde no exista, la versión queda reconciliada sin romper el despliegue.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628130000_align_operational_onboarding_legacy_permissions.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto vía `supabase db query --linked`:
+    - `supabase_migrations.schema_migrations` confirmó la versión `20260628130000`;
+    - `app_modules` confirmó `alta_operacional_personal -> /alta-operacional`;
+    - `pg_proc` devolvió `0` filas para `start_employee_onboarding`, `get_onboarding_dashboard`, `get_employee_onboarding_detail` y `evaluate_onboarding_course`, confirmando que la capa legacy no está desplegada en el remoto enlazado y que la migración debe seguir siendo condicional.
+  - `git diff --check`
+
+## Alineación de ruta canónica para Acreditación de Personas
+
+- [x] Auditar el contrato entre `app_modules`, navegación y router de Acreditación de Personas
+- [x] Corregir la metadata SQL para que `acreditacion_personas` apunte a la ruta canónica actual y no al alias legacy
+- [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, aplicación remota y `git diff --check`
+
+## Resultado de alineación de ruta canónica para Acreditación de Personas
+
+- La auditoría del loop mostró otra deriva de catálogo similar a onboarding, pero más acotada: [`navigation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/config/navigation.ts:80) y [`AppRouter.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/app/router/AppRouter.tsx:139) ya operan Acreditación de Personas bajo `/recursos-humanos/acreditacion/...`, mientras `app_modules.route` seguía registrando `/acreditacion`, que hoy existe solo como redirect legacy de compatibilidad.
+- Se agregó la migración [`20260628134500_align_accreditation_module_route.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628134500_align_accreditation_module_route.sql:1), que actualiza `app_modules.route` de `acreditacion_personas` a `/recursos-humanos/acreditacion/dashboard` sin tocar `module_code`, grants, RLS ni consumers.
+- El cambio reduce riesgo de deriva entre catálogo SQL y superficie real del ERP: cualquier consumo futuro de `app_modules.route` ya aterriza en la ruta canónica del módulo en vez del alias histórico.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260628134500_align_accreditation_module_route.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto vía `supabase db query --linked` para confirmar `acreditacion_personas -> /recursos-humanos/acreditacion/dashboard`
+  - `git diff --check`
+
+## Hotfix del workflow Purge Terminal Candidate Documents
+
+- [x] Auditar el workflow de GitHub Actions y el script `purge-terminal-candidate-documents.mjs` contra el último run fallido
+- [x] Corregir el selector de URL Supabase para que use la primera variable no vacía y no falle si `SUPABASE_URL` viene definida como string vacío
+- [x] Validar typecheck/build y reproducir localmente el escenario del run fallido
+
+## Resultado del hotfix del workflow Purge Terminal Candidate Documents
+
+- El fallo del run `28313347787` no vino de Supabase ni del secreto del webhook. El workflow validó correctamente que existía una URL usable vía `VITE_SUPABASE_URL`, pero el script [`purge-terminal-candidate-documents.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/purge-terminal-candidate-documents.mjs:1) resolvía la URL con `env.SUPABASE_URL ?? env.VITE_SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL`.
+- Como GitHub Actions inyectó `SUPABASE_URL` como string vacío y `VITE_SUPABASE_URL` con valor real, el operador `??` se quedó con `""` y `requireEnv(...)` terminó abortando con `Missing SUPABASE_URL`, exactamente como se vio en el log del job `purge`.
+- El script ahora usa `firstNonEmpty(...)` para elegir la primera variable realmente usable entre `SUPABASE_URL`, `VITE_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_URL`, alineándose con la lógica del paso `Validate required purge variables` del workflow. Además, `process.env` vuelve a tener prioridad sobre `.env.local`, evitando que pruebas locales o ejecuciones automatizadas queden contaminadas por un archivo de desarrollo.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - reproducción local del escenario del run fallido con `SUPABASE_URL=''` y `VITE_SUPABASE_URL` poblada, comprobando que el script ya no aborta por `Missing SUPABASE_URL`
+  - `git diff --check`
+
 ## Resultado de idempotencia documental en reintentos de sync BUK
 
 - La auditoría del loop mostró un riesgo funcional después del blindaje de auth/concurrencia: si [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) subía algunos documentos a BUK y luego fallaba más adelante, el retry reconstruía el payload completo y podía volver a intentar subir esos mismos documentos externos.

@@ -6,6 +6,23 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 156. La bandeja de tareas debe validar la etapa viva, no solo confiar en filas `pending`
 
+## 161. Un módulo enterprise no puede quedar con dos contratos de acceso distintos entre su capa viva y su capa legacy
+
+- **Si una reimplementación canónica ya migró a un `module_code` nuevo, la superficie legacy no debe seguir autorizándose con un módulo o rol distinto.** Aunque hoy no tenga consumidores visibles en React, esa capa sigue siendo parte del backend productivo mientras sus RPCs y tablas existan.
+- **La regla correcta es encapsular tanto la capa nueva como la legacy detrás del mismo helper semántico.** En onboarding operacional, toda entrada debe pasar por `user_can_access_operational_onboarding(...)` para que frontend, RLS, storage y RPCs compartan la misma verdad de acceso.
+- **`app_modules.route` también es contrato y debe reflejar la ruta real protegida por el router.** Aunque hoy `get_my_effective_permissions()` entregue solo códigos, dejar una ruta distinta en catálogo crea deriva silenciosa para futuras pantallas, auditorías o automatizaciones que sí lean esa metadata.
+
+## 162. Un alias de compatibilidad no debe seguir figurando como ruta oficial del módulo
+
+- **Si el router conserva un path viejo solo para redirigir, ese alias no debe quedarse en `app_modules.route` como si fuera la superficie vigente.** En el corto plazo parece inocuo; en el mediano plazo contamina navegación dinámica, auditorías y cualquier automatización que use el catálogo como source of truth.
+- **La regla correcta es registrar en SQL la ruta canónica y dejar los aliases solo en el router.** Los redirects legacy cumplen compatibilidad; el catálogo de módulos debe apuntar siempre al destino oficial actual del ERP.
+
+## 163. Si un workflow valida un fallback de variables, el script que ejecuta debe resolverlas con la misma semántica
+
+- **No mezcles “variable definida” con “variable usable”.** En GitHub Actions una env puede existir como string vacío; si el workflow la trata como fallback inválido pero el script la toma por `??`, ambos contratos divergen y el job falla antes de llegar a la lógica real.
+- **La regla correcta es seleccionar la primera variable no vacía en ambos lados.** Si el paso bash usa expansión por contenido para `SUPABASE_URL / VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL`, el script Node debe usar exactamente el mismo criterio, no nullish coalescing.
+- **Las variables explícitas del proceso deben ganar sobre `.env.local`.** En automatizaciones o reproducciones controladas, un archivo local no puede pisar lo que el entorno ya definió; primero se carga `.env.local` como fallback de desarrollo y luego `process.env` como fuente autoritativa.
+
 - **Una aprobación marcada `pending` no garantiza que siga siendo trabajo vigente.** Si el request o candidato cambió de estado o avanzó de etapa y quedó una fila rezagada, el dashboard puede resucitar una tarea ya inválida aunque el backend principal haya seguido su curso.
 - **La regla correcta es cruzar cada tarea contra el estado canónico del dominio.** En solicitudes y movilidad, la fila pendiente debe coincidir con `current_step_code` y con un estado activo del request; en Who, la participación del candidato debe seguir realmente en `who_pending`.
 - **Las bandejas ejecutivas no deben depender de limpieza perfecta de datos históricos.** Aunque hoy no existan residuos visibles, el selector debe ser defensivo para que un rezago transaccional no vuelva a contaminar Inicio ni notificaciones.

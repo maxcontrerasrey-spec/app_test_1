@@ -26,6 +26,17 @@ function requireEnv(value, label) {
   return normalized;
 }
 
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    const normalized = (value ?? "").toString().trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return "";
+}
+
 function parseArgs(argv) {
   const options = {
     limit: 250,
@@ -49,12 +60,12 @@ function parseArgs(argv) {
 
 async function main() {
   const env = {
-    ...process.env,
     ...readEnvFile(),
+    ...process.env,
   };
   const options = parseArgs(process.argv.slice(2));
   const supabaseUrl = requireEnv(
-    env.SUPABASE_URL ?? env.VITE_SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL,
+    firstNonEmpty(env.SUPABASE_URL, env.VITE_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_URL),
     "SUPABASE_URL",
   ).replace(/\/$/, "");
   const webhookSecret = requireEnv(
