@@ -3746,3 +3746,42 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se versionó la migración [`20260628011500_require_terminal_candidate_reason_in_stage_transition.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628011500_require_terminal_candidate_reason_in_stage_transition.sql:1), que recompone ese guardrail en backend sin cambiar el contrato cliente actual. La UI ya pedía comentario, pero ahora cualquier consumidor futuro o bypass técnico vuelve a quedar cubierto por la RPC.
 - El cambio reduce un riesgo de trazabilidad enterprise: ya no se puede cerrar una participación de candidato sin motivo persistido en `rejection_reason`, `withdrawal_reason`, historial de etapas y audit log.
 - Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run audit:migrations -- --files supabase/migrations/20260628011500_require_terminal_candidate_reason_in_stage_transition.sql` y `git diff --check`.
+
+## Resumen de aprobación coherente al reabrir folios
+
+- [x] Auditar cómo `get_recruitment_processes_page(...)` construye `approval_summary` para folios activos después de un cierre y reapertura automática
+- [x] Corregir el selector de `latest_approval` para que un request nuevamente `approved` no arrastre como resumen un rechazo del cierre manual anterior
+- [x] Validar `TypeScript`, build frontend, auditoría de migración y `git diff --check`
+
+## Resultado de resumen de aprobación coherente al reabrir folios
+
+- La auditoría mostró una inconsistencia real entre workflow y UI: [`get_recruitment_processes_page(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260625022401_harden_recruitment_mobility_enterprise_scale.sql:211) elegía `approval_summary` por “última aprobación cronológica” sin considerar `hiring_requests.status`. Si un folio se cerraba manualmente y luego se reabría por liberación de cupo, el request volvía a `approved`, pero el resumen podía seguir mostrando el rechazo administrativo del cierre.
+- Se versionó la migración [`20260628014500_prefer_approved_summary_for_reopened_hiring_requests.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628014500_prefer_approved_summary_for_reopened_hiring_requests.sql:1), que redefine `get_recruitment_processes_page(...)` para priorizar aprobaciones `approved` cuando el `hiring_request` está actualmente `approved`. Con eso, Inicio y Reclutamiento dejan de mostrar una señal de rechazo obsoleta sobre un folio operativo otra vez activo.
+- El ajuste no cambia contratos frontend ni permisos. Solo corrige la selección SQL del resumen para que el estado visible del folio y su `approval_summary` vuelvan a hablar el mismo idioma.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260628014500_prefer_approved_summary_for_reopened_hiring_requests.sql` y `git diff --check`.
+
+## Alineación del detalle de caso con folios reabiertos
+
+- [x] Auditar si `get_recruitment_case_detail(...)` seguía seleccionando `approval_summary` por último evento histórico aunque el folio ya estuviera reabierto
+- [x] Corregir el detalle para que use el mismo criterio de “aprobación vigente” del resumen paginado
+- [x] Validar `TypeScript`, build frontend, auditoría de migración y `git diff --check`
+
+## Resultado de alineación del detalle de caso con folios reabiertos
+
+- La misma deriva existía en [`get_recruitment_case_detail(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260609121500_expand_hiring_summary_and_document_validation.sql:956): el `approval_summary` del `hiring_request` seguía el último `approved/rejected` por fecha y podía mostrar el rechazo del cierre manual aun cuando el request ya estaba otra vez `approved`.
+- Se versionó la migración [`20260628020000_align_case_detail_approval_summary_with_reopened_requests.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628020000_align_case_detail_approval_summary_with_reopened_requests.sql:1), que redefine `get_recruitment_case_detail(...)` para priorizar aprobaciones `approved` cuando el estado actual del `hiring_request` es `approved`, replicando el mismo criterio que ya usa [`get_recruitment_processes_page(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628014500_prefer_approved_summary_for_reopened_hiring_requests.sql:1).
+- Con esto, el expandible o detalle lateral del caso deja de contradecir al listado principal: ambos muestran la señal operativa vigente y no el último rechazo administrativo histórico.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260628020000_align_case_detail_approval_summary_with_reopened_requests.sql` y `git diff --check`.
+
+## Exclusión de folios cerrados en seguimiento de aprobaciones del Dashboard
+
+- [x] Auditar `get_dashboard_approval_tracking()` para verificar si seguía filtrando con estados legacy y podía incluir solicitudes ya cerradas
+- [x] Corregir la RPC para mostrar solo solicitudes realmente pendientes y amarradas a su `current_step_code`
+- [x] Validar `TypeScript`, build frontend, auditoría de migración y `git diff --check`
+
+## Resultado de exclusión de folios cerrados en seguimiento de aprobaciones del Dashboard
+
+- La revisión mostró un drift claro en [`get_dashboard_approval_tracking()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260608162000_make_approval_tracking_public.sql:1): seguía excluyendo estados legacy (`approved`, `rejected`, `canceled`, `withdrawn`) pero no `closed`, por lo que podía dejar folios ya cerrados dentro del widget “Seguimiento de aprobaciones”.
+- Se versionó la migración [`20260628023000_exclude_closed_hiring_requests_from_dashboard_approval_tracking.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628023000_exclude_closed_hiring_requests_from_dashboard_approval_tracking.sql:1), que endurece la RPC para incluir solo `pending_area_manager` y `pending_contracts_control`, exigir `current_step_code` no nulo y resolver el join del aprobador pendiente exactamente contra esa etapa vigente.
+- El cambio reduce ruido operativo en Inicio: el widget deja de mezclar solicitudes aún en flujo con folios cerrados que ya no tienen una aprobación real por resolver.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260628023000_exclude_closed_hiring_requests_from_dashboard_approval_tracking.sql` y `git diff --check`.

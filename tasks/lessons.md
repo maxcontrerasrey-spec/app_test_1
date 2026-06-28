@@ -22,6 +22,24 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es duplicar el guardrail crítico en backend.** Las transiciones terminales deben fallar sin motivo tanto para proteger la auditoría como para asegurar que `rejection_reason`, `withdrawal_reason` e historial de etapas no queden vacíos.
 - **Cuando recompongas una firma viva, no pierdas correcciones recientes al reescribirla.** El fix debe preservar también cancelación de aprobaciones `Who`, limpieza documental y el resto de invariantes ya endurecidos.
 
+## 153. Un folio reabierto no puede seguir mostrando como resumen el rechazo que lo cerró
+
+- **Elegir “la última aprobación” por timestamp no alcanza cuando el request puede cerrarse y luego reabrirse.** Un rechazo administrativo del cierre manual puede ser más nuevo que la aprobación operativa real, pero si el request volvió a `approved`, esa ya no es la señal vigente para la UI.
+- **La regla correcta es condicionar el resumen al estado actual del request.** Si `hiring_requests.status = 'approved'`, el `approval_summary` debe preferir una aprobación `approved` antes que un rechazo histórico de cierre.
+- **Los resúmenes SQL que alimentan varias pantallas son contrato de negocio, no solo conveniencia visual.** Si Inicio y Reclutamiento leen el mismo payload, una inconsistencia ahí se multiplica en todo el ERP.
+
+## 154. Si corriges una señal agregada, valida también el detalle que el usuario abre desde esa lista
+
+- **No basta con arreglar el listado principal si el sidebar o detalle sigue usando otra heurística.** El usuario interpreta ambos como la misma verdad operativa; si el resumen dice “aprobado” y el detalle dice “rechazado”, el ERP pierde credibilidad aunque ambas consultas “sean válidas” históricamente.
+- **La regla correcta es alinear los selectores de estado vigente entre resumen y detalle.** Cuando el bug está en cómo eliges el evento representativo, todos los payloads hermanos que sintetizan ese evento deben revisarse juntos.
+- **Los payloads de detalle también son superficie de contrato.** No son un dump histórico neutral: deben responder la misma pregunta de negocio que el listado desde el que se abren.
+
+## 155. Los widgets de seguimiento no deben filtrar con vocabulario de estados muerto
+
+- **Cuando el dominio cambió sus estados canónicos, cualquier filtro legacy en dashboard se vuelve una fuga silenciosa.** Excluir `approved/rejected/canceled/withdrawn` no protege contra `closed` si ese es el estado final real del flujo actual.
+- **La regla correcta es positiva, no negativa.** Para bandejas de trabajo activas, lista explícitamente los estados vigentes que sí deben aparecer y amarra además el join al `current_step_code` actual cuando exista.
+- **Un widget de “pendientes” no puede depender de que la ausencia de datos se infiera por descarte histórico.** Debe consultar directamente la etapa viva pendiente, o termina mostrando elementos cerrados como si siguieran en curso.
+
 ## 66. En RPCs paginadas, el orden debe sobrevivir hasta el `jsonb_agg`
 
 - **No basta con aplicar `ORDER BY ... LIMIT/OFFSET` antes de agregar JSON**. Si luego se usa `jsonb_agg` sin un ordinal estable calculado después del ordenamiento, PostgreSQL puede devolver los items de la página en orden distinto al solicitado aunque la página seleccionada sea la correcta.
