@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DatePickerField, PageShell, SelectField, TextField } from "../../../shared/ui";
 import { formatRequestDate, formatPersonLabel } from "../../../shared/lib/format";
 import { addMonthsToDateValue, getDaysSince, toMonthInputValue, toTodayDateValue } from "../../../shared/lib/date";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
+import { hasFeatureAccess } from "../../auth/config/access";
+import { useAuth } from "../../auth/context/AuthContext";
 import {
   invalidateRosterQueries,
   useRosterCalendarSummary,
@@ -69,10 +71,17 @@ function getExceptionSourceLabel(source: RosterExceptionSource | null) {
 }
 
 export function RosterPage() {
+  const { accessibleFeatures, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
   const isPatternsView = location.pathname.endsWith("/patterns");
+  const canViewCalendar =
+    isSuperAdmin || hasFeatureAccess(accessibleFeatures, "roster_calendar");
+  const canAssignPattern =
+    isSuperAdmin || hasFeatureAccess(accessibleFeatures, "roster_assign_pattern");
+  const canManagePatterns =
+    isSuperAdmin || hasFeatureAccess(accessibleFeatures, "roster_manage_patterns");
   const [selectedWorker, setSelectedWorker] = useState<RosterWorkerSearchItem | null>(null);
   const [workerSearchTerm, setWorkerSearchTerm] = useState("");
   const [monthValue, setMonthValue] = useState(todayMonthValue());
@@ -86,7 +95,7 @@ export function RosterPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const rosterProjectionMaxMonth = maxProjectionMonthValue();
 
-  const setupCatalogsQuery = useRosterSetupCatalogs();
+  const setupCatalogsQuery = useRosterSetupCatalogs(canViewCalendar || canManagePatterns);
   const rosterCalendarSummaryQuery = useRosterCalendarSummary({
     monthValue,
     search: workerSearchTerm,
@@ -179,6 +188,14 @@ export function RosterPage() {
     }
   });
 
+  if (!canViewCalendar && !canManagePatterns) {
+    return <Navigate to="/sin-acceso" replace />;
+  }
+
+  if (isPatternsView && !canManagePatterns) {
+    return <Navigate to="/roster" replace />;
+  }
+
   return (
     <PageShell>
       <div className="minimal-page-header">
@@ -187,20 +204,24 @@ export function RosterPage() {
 
       <section className="tracking-panel roster-module-shell">
         <div className="approval-chip-row">
-          <button
-            type="button"
-            className={`approval-chip ${!isPatternsView ? "tracking-kpi-card-active" : ""}`}
-            onClick={() => navigate("/roster")}
-          >
-            Calendario
-          </button>
-          <button
-            type="button"
-            className={`approval-chip ${isPatternsView ? "tracking-kpi-card-active" : ""}`}
-            onClick={() => navigate("/roster/patterns")}
-          >
-            Gestor de pautas
-          </button>
+          {canViewCalendar ? (
+            <button
+              type="button"
+              className={`approval-chip ${!isPatternsView ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => navigate("/roster")}
+            >
+              Calendario
+            </button>
+          ) : null}
+          {canManagePatterns ? (
+            <button
+              type="button"
+              className={`approval-chip ${isPatternsView ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => navigate("/roster/patterns")}
+            >
+              Gestor de pautas
+            </button>
+          ) : null}
         </div>
 
         {isPatternsView ? (
@@ -216,7 +237,12 @@ export function RosterPage() {
                   type="button"
                   className="soft-primary-button"
                   onClick={() => setIsAssignmentOpen(true)}
-                  disabled={!selectedWorker || assignMutation.isPending || !setupCatalogsQuery.data}
+                  disabled={
+                    !canAssignPattern ||
+                    !selectedWorker ||
+                    assignMutation.isPending ||
+                    !setupCatalogsQuery.data
+                  }
                 >
                   Asignar pauta
                 </button>
@@ -457,6 +483,7 @@ export function RosterPage() {
                         type="button"
                         className="soft-primary-button soft-primary-button-success"
                         disabled={
+                          !canAssignPattern ||
                           exceptionMutation.isPending ||
                               !selectedWorker ||
                               !exceptionDate ||
@@ -518,6 +545,7 @@ export function RosterPage() {
                                 : `roster-inline-button ${exception.isActive ? "roster-inline-button--deactivate" : "roster-inline-button--activate"}`
                             }
                             disabled={
+                              !canAssignPattern ||
                               toggleExceptionMutation.isPending ||
                               exception.exceptionSource === "buk" ||
                               exception.exceptionSource === "incentive_auto"
@@ -553,10 +581,10 @@ export function RosterPage() {
         worker={selectedWorker}
         patterns={setupCatalogsQuery.data?.patterns ?? []}
         assignments={workerScheduleQuery.data?.assignments ?? []}
-        isSubmitting={assignMutation.isPending}
+        isSubmitting={assignMutation.isPending || !canAssignPattern}
         onClose={() => setIsAssignmentOpen(false)}
         onConfirm={async (payload) => {
-          if (!selectedWorker) {
+          if (!selectedWorker || !canAssignPattern) {
             return;
           }
 

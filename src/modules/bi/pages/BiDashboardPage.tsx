@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { PageShell } from "../../../shared/ui";
+import { hasFeatureAccess } from "../../auth/config/access";
+import { useAuth } from "../../auth/context/AuthContext";
 import { BiOverviewCards } from "../components/BiOverviewCards";
 import { BiHeadcountCharts } from "../components/BiHeadcountCharts";
 import { BiDemographicsChart } from "../components/BiDemographicsChart";
@@ -52,9 +54,30 @@ function isBiView(value: string | undefined): value is BiViewKey {
 }
 
 export function BiDashboardPage() {
+  const { accessibleFeatures, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { view } = useParams();
   const activeView = isBiView(view) ? view : "dotacion";
+  const visibleViews = useMemo(
+    () =>
+      BI_VIEWS.filter((item) => {
+        if (isSuperAdmin) {
+          return true;
+        }
+
+        if (item.key === "dotacion") {
+          return hasFeatureAccess(accessibleFeatures, "bi_dotacion");
+        }
+
+        if (item.key === "incentivos") {
+          return hasFeatureAccess(accessibleFeatures, "bi_incentivos");
+        }
+
+        return hasFeatureAccess(accessibleFeatures, "bi_reclutamiento");
+      }),
+    [accessibleFeatures, isSuperAdmin]
+  );
+  const fallbackView = visibleViews[0]?.key ?? null;
 
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
   const [debouncedPeriodCode, setDebouncedPeriodCode] = useState("");
@@ -242,6 +265,14 @@ export function BiDashboardPage() {
     [activeView]
   );
 
+  if (!fallbackView) {
+    return <Navigate to="/sin-acceso" replace />;
+  }
+
+  if (!visibleViews.some((item) => item.key === activeView)) {
+    return <Navigate to={`/bi/${fallbackView}`} replace />;
+  }
+
   return (
     <PageShell>
       <div className="minimal-page-header">
@@ -253,7 +284,7 @@ export function BiDashboardPage() {
 
       <section className="bi-view-switcher">
         <div className="approval-chip-row">
-          {BI_VIEWS.map((item) => (
+          {visibleViews.map((item) => (
             <button
               type="button"
               key={item.key}

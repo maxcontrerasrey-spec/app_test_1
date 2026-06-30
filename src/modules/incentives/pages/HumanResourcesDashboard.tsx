@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
-import { hasModuleAccess } from "../../auth/config/access";
+import { hasFeatureAccess, hasModuleAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useHrIncentiveSetupCatalogs } from "../hooks/useIncentivesQueries";
 import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationForm";
@@ -47,17 +47,38 @@ export function HumanResourcesDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { view } = useParams();
-  const { accessibleModules, isSuperAdmin } = useAuth();
+  const { accessibleFeatures, accessibleModules, isSuperAdmin } = useAuth();
   const activeView = isHumanResourcesView(view) ? view : "incentivos";
-  const canManageStandardViews =
-    isSuperAdmin || hasModuleAccess(accessibleModules, "recursos_humanos");
   const visibleViews = useMemo(
-    () => (canManageStandardViews ? HUMAN_RESOURCES_VIEWS : []),
-    [canManageStandardViews]
+    () =>
+      HUMAN_RESOURCES_VIEWS.filter((item) => {
+        if (isSuperAdmin) {
+          return true;
+        }
+
+        if (!hasModuleAccess(accessibleModules, "recursos_humanos")) {
+          return false;
+        }
+
+        if (item.key === "incentivos") {
+          return hasFeatureAccess(accessibleFeatures, "hr_incentives_register");
+        }
+
+        if (item.key === "aprobaciones") {
+          return hasFeatureAccess(accessibleFeatures, "hr_incentives_approvals");
+        }
+
+        if (item.key === "solicitudes") {
+          return hasFeatureAccess(accessibleFeatures, "hr_incentives_history");
+        }
+
+        return hasFeatureAccess(accessibleFeatures, "hr_incentives_configuration");
+      }),
+    [accessibleFeatures, accessibleModules, isSuperAdmin]
   );
-  const fallbackView = canManageStandardViews ? "incentivos" : null;
+  const fallbackView = visibleViews[0]?.key ?? null;
   const setupCatalogsQuery = useHrIncentiveSetupCatalogs(
-    canManageStandardViews &&
+    Boolean(fallbackView) &&
       (activeView === "incentivos" || activeView === "solicitudes" || activeView === "configuracion")
   );
   const incentivesRealtimeSubscriptions = useMemo(() => {
@@ -110,6 +131,10 @@ export function HumanResourcesDashboard() {
 
   if (!fallbackView) {
     return <Navigate to="/sin-acceso" replace />;
+  }
+
+  if (!visibleViews.some((item) => item.key === activeView)) {
+    return <Navigate to={`/recursos-humanos/${fallbackView}`} replace />;
   }
 
   return (

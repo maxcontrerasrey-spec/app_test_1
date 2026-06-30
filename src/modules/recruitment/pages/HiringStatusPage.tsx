@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
-import { hasModuleAccess } from "../../auth/config/access";
+import { hasFeatureAccess, hasModuleAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   getRecruitmentCaseDetailQueryOptions,
@@ -38,7 +38,7 @@ const emptySummary: RecruitmentDashboardSummary = {
 };
 
 export function HiringStatusPage() {
-  const { accessibleModules, hasCapability, isSuperAdmin, user } = useAuth();
+  const { accessibleFeatures, accessibleModules, hasCapability, isSuperAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [selectedCaseId, setSelectedCaseId] = useState("");
@@ -47,14 +47,25 @@ export function HiringStatusPage() {
   const [decisionMessage, setDecisionMessage] = useState("");
   const [stageDraft, setStageDraft] = useState<RecruitmentCandidateStage | "">("");
   const [stageComment, setStageComment] = useState("");
-  const canAccessCandidateControl = hasCapability("candidate_control_access");
+  const canAccessProcesses =
+    isSuperAdmin ||
+    hasFeatureAccess(accessibleFeatures, "recruitment_processes_summary") ||
+    hasModuleAccess(accessibleModules, "control_contrataciones");
+  const canAccessCandidateControl =
+    isSuperAdmin ||
+    hasFeatureAccess(accessibleFeatures, "recruitment_candidate_control") ||
+    hasCapability("candidate_control_access");
+  const canAccessPersonnelToHire =
+    isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_personnel_to_hire");
   const canAccessInternalMobility =
-    isSuperAdmin || hasModuleAccess(accessibleModules, "movilidad_interna");
+    isSuperAdmin ||
+    hasFeatureAccess(accessibleFeatures, "recruitment_internal_mobility") ||
+    hasModuleAccess(accessibleModules, "movilidad_interna");
   const summaryQuery = useRecruitmentControlSummary();
   const summary = summaryQuery.data ?? emptySummary;
   const candidatesInProgress = summary.candidates_in_progress ?? 0;
   const shouldLoadCaseDetail =
-    canAccessCandidateControl &&
+    (canAccessCandidateControl || canAccessPersonnelToHire) &&
     (activeView === "candidates" || activeView === "personnel_to_hire") &&
     Boolean(selectedCaseId);
   const caseDetailQuery = useRecruitmentCaseDetail(selectedCaseId, shouldLoadCaseDetail);
@@ -139,17 +150,37 @@ export function HiringStatusPage() {
   }, [selectedCaseId, selectedCandidateId]);
 
   useEffect(() => {
-    if (activeView === "internal_mobility" && canAccessInternalMobility) {
+    const firstAllowedView: RecruitmentInternalView | null = canAccessProcesses
+      ? "processes"
+      : canAccessCandidateControl
+        ? "candidates"
+        : canAccessPersonnelToHire
+          ? "personnel_to_hire"
+          : canAccessInternalMobility
+            ? "internal_mobility"
+            : null;
+
+    const activeViewAllowed =
+      (activeView === "processes" && canAccessProcesses) ||
+      (activeView === "candidates" && canAccessCandidateControl) ||
+      (activeView === "personnel_to_hire" && canAccessPersonnelToHire) ||
+      (activeView === "internal_mobility" && canAccessInternalMobility);
+
+    if (activeViewAllowed || !firstAllowedView) {
       return;
     }
 
-    if (!canAccessCandidateControl && activeView !== "processes") {
-      setActiveView("processes");
-      setSelectedCandidateId("");
-      setStageDraft("");
-      setStageComment("");
-    }
-  }, [activeView, canAccessCandidateControl, canAccessInternalMobility]);
+    setActiveView(firstAllowedView);
+    setSelectedCandidateId("");
+    setStageDraft("");
+    setStageComment("");
+  }, [
+    activeView,
+    canAccessCandidateControl,
+    canAccessInternalMobility,
+    canAccessPersonnelToHire,
+    canAccessProcesses
+  ]);
 
   const handleCandidateAdded = async (caseId: string, candidateId: string) => {
     setSelectedCaseId(caseId);
@@ -361,13 +392,15 @@ export function HiringStatusPage() {
         </div>
 
         <div className="approval-chip-row">
-          <button
-            type="button"
-            className={`approval-chip ${activeView === "processes" ? "tracking-kpi-card-active" : ""}`}
-            onClick={() => setActiveView("processes")}
-          >
-            Resumen de procesos de contratación
-          </button>
+          {canAccessProcesses ? (
+            <button
+              type="button"
+              className={`approval-chip ${activeView === "processes" ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => setActiveView("processes")}
+            >
+              Resumen de procesos de contratación
+            </button>
+          ) : null}
           {canAccessCandidateControl ? (
             <button
               type="button"
@@ -377,7 +410,7 @@ export function HiringStatusPage() {
               Control de candidatos
             </button>
           ) : null}
-          {canAccessCandidateControl ? (
+          {canAccessPersonnelToHire ? (
             <button
               type="button"
               className={`approval-chip ${activeView === "personnel_to_hire" ? "tracking-kpi-card-active" : ""}`}
@@ -397,10 +430,9 @@ export function HiringStatusPage() {
           ) : null}
         </div>
 
-        {activeView === "processes" ||
-        (!canAccessCandidateControl && activeView !== "internal_mobility") ? (
+        {activeView === "processes" && canAccessProcesses ? (
           processesView
-        ) : activeView === "candidates" ? (
+        ) : activeView === "candidates" && canAccessCandidateControl ? (
           <HiringCandidatesView
             isParentLoading={isLoading}
             errorMessage={errorMessage}
@@ -424,7 +456,7 @@ export function HiringStatusPage() {
             onInterviewNotesUpdated={handleLicenseUpdated}
             onCandidateFileUpdated={handleCandidateFileUpdated}
           />
-        ) : activeView === "personnel_to_hire" ? (
+        ) : activeView === "personnel_to_hire" && canAccessPersonnelToHire ? (
           <HiringPersonnelToHireView
             isParentLoading={isLoading}
             errorMessage={errorMessage}

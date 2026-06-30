@@ -18,6 +18,22 @@ export type AppRole =
 
 export type AppCapability = "can_approve_who_stage" | "candidate_control_access";
 
+export type AppFeatureCode =
+  | "recruitment_processes_summary"
+  | "recruitment_candidate_control"
+  | "recruitment_personnel_to_hire"
+  | "recruitment_internal_mobility"
+  | "roster_calendar"
+  | "roster_assign_pattern"
+  | "roster_manage_patterns"
+  | "hr_incentives_register"
+  | "hr_incentives_approvals"
+  | "hr_incentives_history"
+  | "hr_incentives_configuration"
+  | "bi_dotacion"
+  | "bi_incentivos"
+  | "bi_reclutamiento";
+
 export type AppModuleCode =
   | "solicitud_contrataciones"
   | "movilidad_interna"
@@ -53,6 +69,23 @@ const KNOWN_ROLE_CODES = new Set<AppRole>([
 const KNOWN_CAPABILITY_CODES = new Set<AppCapability>([
   "can_approve_who_stage",
   "candidate_control_access"
+]);
+
+const KNOWN_FEATURE_CODES = new Set<AppFeatureCode>([
+  "recruitment_processes_summary",
+  "recruitment_candidate_control",
+  "recruitment_personnel_to_hire",
+  "recruitment_internal_mobility",
+  "roster_calendar",
+  "roster_assign_pattern",
+  "roster_manage_patterns",
+  "hr_incentives_register",
+  "hr_incentives_approvals",
+  "hr_incentives_history",
+  "hr_incentives_configuration",
+  "bi_dotacion",
+  "bi_incentivos",
+  "bi_reclutamiento"
 ]);
 
 const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
@@ -100,6 +133,17 @@ export function normalizeCapabilityCode(
   return KNOWN_CAPABILITY_CODES.has(normalized) ? normalized : null;
 }
 
+export function normalizeFeatureCode(
+  value: string | null | undefined
+): AppFeatureCode | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase() as AppFeatureCode;
+  return KNOWN_FEATURE_CODES.has(normalized) ? normalized : null;
+}
+
 export function resolvePrimaryRole(roles: AppRole[], isSuperAdmin: boolean) {
   if (isSuperAdmin || roles.includes("admin")) {
     return "admin" satisfies AppRole;
@@ -113,4 +157,11 @@ export function hasModuleAccess(
   moduleCode: AppModuleCode
 ) {
   return accessibleModules.includes(moduleCode);
+}
+
+export function hasFeatureAccess(
+  accessibleFeatures: AppFeatureCode[],
+  featureCode: AppFeatureCode
+) {
+  return accessibleFeatures.includes(featureCode);
 }

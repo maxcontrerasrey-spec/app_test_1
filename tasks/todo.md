@@ -2,6 +2,35 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Implementación de matriz de accesos desde `usuarios_busesjm.xlsx`
+
+- [x] Versionar la matriz aterrizada en permisos finos de módulos y submódulos
+- [x] Agregar capa `app_features`/`role_feature_access` y exponer `accessible_features` en `get_my_effective_permissions()`
+- [x] Normalizar los grants de `role_module_access` para que todo lo no definido en el Excel quede solo para `admin`
+- [x] Aplicar gating por submódulo en Reclutamiento, Jornadas, Incentivos y BI sin romper rutas ni estados actuales
+- [x] Endurecer al menos las mutaciones críticas de Jornadas contra permisos finos reales
+- [x] Validar con auditoría de migración, `TypeScript`, build frontend, `db push --dry-run`, aplicación remota, `git diff --check` y dejar cierre auditado en este documento
+
+## Resultado de implementación de matriz de accesos desde `usuarios_busesjm.xlsx`
+
+- La propuesta aterrizada quedó versionada en [`docs/access-matrix-propuesta-usuarios-busesjm.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/access-matrix-propuesta-usuarios-busesjm.md:1), separando explícitamente módulos, submódulos, workflows y el bloque `admin only`.
+- Se agregó la migración [`20260629173000_implement_enterprise_access_matrix_features.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260629173000_implement_enterprise_access_matrix_features.sql:1), que:
+  - crea `app_features` y `role_feature_access`;
+  - normaliza `role_module_access` según la matriz del Excel;
+  - deja `acreditacion_personas`, `alta_operacional_personal`, `ai_assistant`, `operaciones`, `certificados` y `seguimiento_certificados` solo para `admin`;
+  - amplía `get_my_effective_permissions()` para devolver `accessible_features`;
+  - endurece Jornadas para que el backend distinga entre `roster_calendar`, `roster_assign_pattern` y `roster_manage_patterns`.
+- En frontend, [`AuthContext.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/auth/context/AuthContext.tsx:1) ahora expone `accessibleFeatures`/`hasFeature`, y las pantallas de Reclutamiento, Jornadas, Incentivos y BI usan esa señal para mostrar solo los submódulos realmente autorizados y redirigir a la primera vista válida cuando corresponde.
+- Aplicación remota confirmada en el proyecto enlazado: la migración quedó publicada en Supabase y las verificaciones SQL devolvieron `14` features activas y grants consistentes para roles como `reclutamiento`, `operaciones_l_2`, `control_contratos` y `admin`.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260629173000_implement_enterprise_access_matrix_features.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - verificaciones SQL remotas sobre `app_features`, `role_feature_access` y `role_module_access`
+  - `git diff --check`
+
 ## Idempotencia documental en reintentos de sync BUK
 
 - [x] Auditar si `sync-buk-candidates` podía re-subir documentos ya enviados a BUK cuando un job fallaba a mitad de proceso

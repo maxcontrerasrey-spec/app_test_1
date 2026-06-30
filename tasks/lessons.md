@@ -6,6 +6,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 156. La bandeja de tareas debe validar la etapa viva, no solo confiar en filas `pending`
 
+## 167. Una matriz enterprise con submódulos no cabe en `role_module_access`; necesita una capa formal de features
+
+- **Si un Excel distingue “módulo” de “submódulo”, intentar resolverlo solo con módulos o capabilities heredadas termina mezclando semánticas distintas.** Un mismo módulo puede requerir lectura ejecutiva, operación parcial y administración avanzada sin que eso signifique acceso total.
+- **La regla correcta es separar permisos gruesos y finos.** `role_module_access` gobierna la entrada al módulo; `app_features` y `role_feature_access` gobiernan tabs, subflujos y mutaciones sensibles dentro del módulo.
+- **La autenticación efectiva debe exponer ambas capas en el mismo payload.** Si frontend solo recibe módulos, termina reconstruyendo permisos con heurísticas (`candidate_control_access`, roles hardcodeados, tabs “ocultos”) y el contrato se vuelve frágil.
+
 ## 161. Un módulo enterprise no puede quedar con dos contratos de acceso distintos entre su capa viva y su capa legacy
 
 ## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada
