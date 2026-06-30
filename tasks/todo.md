@@ -30,6 +30,27 @@
   - RPC autenticada `get_hr_incentive_worker_context('8657')`, confirmando que el backend ya no debe depender de un mapping operativo primario para reconocer el trabajador
   - `npm run audit:migrations -- --files supabase/migrations/20260630213000_harden_hr_incentive_worker_context_without_mapping.sql`
   - `./node_modules/.bin/tsc -b --pretty false`
+- `npm run build:frontend-check`
+- `git diff --check`
+
+## Corrección end-to-end de elegibilidad para incentivos por hora con regla global
+
+- [x] Auditar la cadena completa de `sobretiempo` para DMH y DRT: tipo, reglas activas, worker context, payload BUK y resolución horaria
+- [x] Corregir la extracción backend del sueldo base BUK para que la estrategia `buk_overtime` use el payload real vigente y no descarte incentivos válidos
+- [x] Validar con RPC autenticadas reales sobre trabajadores DMH y DRT, más auditoría de migración, `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de corrección end-to-end de elegibilidad para incentivos por hora con regla global
+
+- La auditoría completa confirmó que `sobretiempo` no desaparecía por contrato ni por regla. El tipo [`sobretiempo`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630184500_add_buk_overtime_strategy_to_hr_incentives.sql:39) está activo, usa `calculation_basis = per_hour`, `hour_rate_strategy = buk_overtime` y sí matchea una regla global activa (`contract/job_title/union = Todos`).
+- El descarte ocurría en la última milla de elegibilidad. `resolve_hr_incentive_hour_rate(...)` devolvía `can_resolve = false` porque el `worker_core` llegaba con `base_salary = null`, aun cuando el payload BUK vivo sí traía el dato como `current_job.base_wage`.
+- La causa raíz era el extractor backend [`extract_hr_incentive_worker_base_salary(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630220500_fix_buk_overtime_base_wage_extraction.sql:3): solo buscaba `base_salary` y variantes parciales, pero no `base_wage`, que es precisamente el campo efectivo que llega hoy desde BUK en los trabajadores auditados de DMH y DRT.
+- La nueva migración [`20260630220500_fix_buk_overtime_base_wage_extraction.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630220500_fix_buk_overtime_base_wage_extraction.sql:1) corrige el extractor de forma enterprise y compatible hacia atrás, agregando lectura ordenada de `base_wage` en raíz, `contract`, `current_job` y `current_job.compensation`, sin cambiar la semántica de los flujos que ya resolvían con `base_salary`.
+- Con esto, la cadena completa vuelve a ser coherente: `get_hr_incentive_worker_core(...)` carga sueldo base real desde BUK, `resolve_hr_incentive_hour_rate(...)` logra calcular la hora extra y `get_hr_incentive_eligible_types(...)` deja de esconder `sobretiempo` para trabajadores DMH/DRT que sí tienen una regla global aplicable.
+- Validación cerrada con:
+  - RPC autenticada de `resolve_hr_incentive_rate_rule(...)` + `resolve_hr_incentive_hour_rate(...)` para una trabajadora DMH (`12247`), confirmando que antes el match existía pero fallaba solo la resolución salarial
+  - RPC autenticada de `get_hr_incentive_eligible_types(...)` para DMH (`12247`) y DRT (`17264`) después de la corrección
+  - `npm run audit:migrations -- --files supabase/migrations/20260630220500_fix_buk_overtime_base_wage_extraction.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
   - `npm run build:frontend-check`
   - `git diff --check`
 

@@ -18,6 +18,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 176. Si un diseño depende de datos sensibles de un integrador, primero valida el payload vivo y recién después decides el motor de negocio
 
+## 179. En integraciones HR, no asumas que el sueldo base llegará bajo la misma clave semántica que usó el diseño original
+
+- **Que el modelo hable de `base_salary` no significa que el payload vivo de BUK use esa misma clave.** En los trabajadores auditados de Incentivos, la jornada llegaba correctamente y el sueldo también existía, pero bajo `current_job.base_wage`; como el extractor solo leía `base_salary`, el sistema concluía erróneamente que no podía calcular hora extra.
+- **La regla correcta es diseñar extractores defensivos y orientados al payload real.** Si una estrategia crítica como `buk_overtime` depende de un dato externo, el helper debe absorber las variantes efectivas del integrador (`base_salary`, `base_wage`, ramas `contract/current_job/compensation`) antes de degradar la operación.
+- **Cuando un incentivo desaparece pese a tener regla global válida, revisa siempre la última condición de resolubilidad.** En tipos `per_hour`, la exclusión puede no venir del match de regla sino de que el motor horario haya marcado `can_resolve = false` por un extractor incompleto.
+
 - **No basta con que un documento técnico diga que BUK “provee” `base_salary` o campos equivalentes.** En el proyecto real, la sync actual puede traer la jornada (`weekly_hours`) pero no el sueldo base por permisos del token o por shape efectivo del endpoint.
 - **La regla correcta es auditar el payload remoto antes de acoplar la lógica de negocio a ese dato.** Si el salario no está hoy en `raw_payload`, el contrato enterprise debe contemplar una degradación explícita y versionada, no romper la operación ni inventar heurísticas silenciosas.
 - **Cuando un motor nuevo sustituye una regla viva, conserva siempre un respaldo canónico.** En incentivos por hora, el cálculo automático desde BUK puede convivir con fallback salarial versionado y con el `rate_rule_amount` directo como última línea de continuidad para no degradar el ERP mientras la integración madura.
