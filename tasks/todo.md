@@ -4,9 +4,22 @@
 
 ## Hotfix del workflow `Sync BUK Employees`
 
-- [ ] Auditar el último run fallido del workflow `sync-buk.yml` y ubicar la operación exacta que dispara `statement timeout`
-- [ ] Endurecer `scripts/sync-buk-employees.mjs` para persistir páginas grandes sin depender de un solo `upsert` monolítico
-- [ ] Validar el script localmente y dejar el cierre auditado en este documento
+- [x] Auditar el último run fallido del workflow `sync-buk.yml` y ubicar la operación exacta que dispara `statement timeout`
+- [x] Endurecer `scripts/sync-buk-employees.mjs` para persistir páginas grandes sin depender de un solo `upsert` monolítico
+- [x] Validar el script localmente y dejar el cierre auditado en este documento
+
+## Resultado del hotfix del workflow `Sync BUK Employees`
+
+- El run fallido [`28415240557`](https://github.com/maxcontrerasrey-spec/app_test_1/actions/runs/28415240557) no se cayó por credenciales ni por BUK. La traza mostró que la sync avanzó hasta la página `32/53` y luego abortó con `57014 / canceling statement due to statement timeout` dentro de la persistencia de página, antes incluso de imprimir el `Page 32/... synced ...`.
+- La causa raíz era operativa: [`scripts/sync-buk-employees.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/sync-buk-employees.mjs:1) todavía dependía de dos `upsert` monolíticos por página de `100` empleados, y solo el snapshot diario tenía retry. Cuando el costo de escritura subió, una página completa dejó de entrar cómodamente dentro del timeout del proyecto.
+- El script ahora:
+  - resuelve la URL Supabase con semántica de primer valor no vacío (`VITE_SUPABASE_URL`, `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`);
+  - parte la persistencia en chunks (`25` para `employees`, `20` para `buk_employees_daily_snapshot`);
+  - aplica retry por chunk también sobre la tabla principal `employees`, no solo sobre el snapshot.
+- Validación cerrada con:
+  - `node --check scripts/sync-buk-employees.mjs`
+  - `git diff --check`
+  - corrida manual exitosa del workflow [`28415556775`](https://github.com/maxcontrerasrey-spec/app_test_1/actions/runs/28415556775), que completó `Run BUK Sync Script` en `5m15s` sin volver a caer por `statement timeout`
 
 ## Implementación de matriz de accesos desde `usuarios_busesjm.xlsx`
 
