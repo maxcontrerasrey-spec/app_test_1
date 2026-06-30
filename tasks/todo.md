@@ -2,6 +2,12 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix del workflow `Sync BUK Employees`
+
+- [ ] Auditar el último run fallido del workflow `sync-buk.yml` y ubicar la operación exacta que dispara `statement timeout`
+- [ ] Endurecer `scripts/sync-buk-employees.mjs` para persistir páginas grandes sin depender de un solo `upsert` monolítico
+- [ ] Validar el script localmente y dejar el cierre auditado en este documento
+
 ## Implementación de matriz de accesos desde `usuarios_busesjm.xlsx`
 
 - [x] Versionar la matriz aterrizada en permisos finos de módulos y submódulos

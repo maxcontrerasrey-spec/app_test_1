@@ -149,6 +149,28 @@ function firstNonEmptyValue(...values) {
   return null;
 }
 
+function firstNonEmptyText(...values) {
+  for (const value of values) {
+    const normalized = (value ?? "").toString().trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
+function chunkArray(items, chunkSize) {
+  const safeChunkSize = Math.max(1, Number(chunkSize) || 1);
+  const chunks = [];
+
+  for (let index = 0; index < items.length; index += safeChunkSize) {
+    chunks.push(items.slice(index, index + safeChunkSize));
+  }
+
+  return chunks;
+}
+
 function getBirthDate(employee) {
   return parseDateValue(
     employee.birthday ??
@@ -386,6 +408,38 @@ async function runSupabaseOperationWithRetry(
   throw lastError instanceof Error ? lastError : new Error(`${label} failed.`);
 }
 
+async function upsertInChunks(
+  supabase,
+  {
+    table,
+    rows,
+    onConflict,
+    chunkSize = 25,
+    retries = 5,
+    baseDelayMs = 5000,
+    page,
+  },
+) {
+  const chunks = chunkArray(rows, chunkSize);
+
+  for (let index = 0; index < chunks.length; index += 1) {
+    const chunk = chunks[index];
+    const chunkLabel =
+      page == null
+        ? `${table} chunk ${index + 1}/${chunks.length}`
+        : `${table} page ${page} chunk ${index + 1}/${chunks.length}`;
+
+    await runSupabaseOperationWithRetry(
+      chunkLabel,
+      async () =>
+        supabase.from(table).upsert(chunk, {
+          onConflict,
+        }),
+      { retries, baseDelayMs },
+    );
+  }
+}
+
 function getEmployeesBaseUrl(env) {
   return optionalEnv(env.BUK_EMPLOYEES_URL) ?? "https://busesjm.buk.cl/api/v1/chile/employees";
 }
@@ -512,7 +566,11 @@ async function fetchBukAreas(env) {
 async function main() {
   const env = readEnvFile();
   const supabaseUrl = requireEnv(
-    env.VITE_SUPABASE_URL ?? env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+    firstNonEmptyText(
+      env.VITE_SUPABASE_URL,
+      env.SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_URL,
+    ),
     "Missing Supabase URL. Expected VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL",
   );
   const serviceRoleKey = requireEnv(env.SUPABASE_SERVICE_ROLE_KEY ?? null, "SUPABASE_SERVICE_ROLE_KEY");
@@ -534,24 +592,26 @@ async function main() {
     pagesProcessed += 1;
 
     if (employees.length > 0) {
-      const { error } = await supabase.from("employees").upsert(employees, {
+      await upsertInChunks(supabase, {
+        table: "employees",
+        rows: employees,
         onConflict: "buk_employee_id",
+        chunkSize: 25,
+        retries: 5,
+        baseDelayMs: 5000,
+        page,
       });
 
-      if (error) {
-        throw error;
-      }
-
       const snapshotRows = employees.map((employee) => buildSnapshotRow(employee, snapshotDate));
-      const { error: snapshotPageError } = await runSupabaseOperationWithRetry(
-        `daily BUK snapshot page ${page}`,
-        async () =>
-          supabase.from("buk_employees_daily_snapshot").upsert(snapshotRows, {
-            onConflict: "snapshot_date,buk_employee_id",
-          }),
-        { retries: 5, baseDelayMs: 5000 },
-      );
-      if (snapshotPageError) throw snapshotPageError;
+      await upsertInChunks(supabase, {
+        table: "buk_employees_daily_snapshot",
+        rows: snapshotRows,
+        onConflict: "snapshot_date,buk_employee_id",
+        chunkSize: 20,
+        retries: 5,
+        baseDelayMs: 5000,
+        page,
+      });
 
       synced += employees.length;
     }

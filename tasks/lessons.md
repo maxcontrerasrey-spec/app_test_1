@@ -12,6 +12,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es separar permisos gruesos y finos.** `role_module_access` gobierna la entrada al módulo; `app_features` y `role_feature_access` gobiernan tabs, subflujos y mutaciones sensibles dentro del módulo.
 - **La autenticación efectiva debe exponer ambas capas en el mismo payload.** Si frontend solo recibe módulos, termina reconstruyendo permisos con heurísticas (`candidate_control_access`, roles hardcodeados, tabs “ocultos”) y el contrato se vuelve frágil.
 
+## 168. Una sync masiva no debe depender de un `upsert` monolítico por página cuando el payload crece día a día
+
+- **Que una página de 100 filas haya funcionado ayer no garantiza que siga entrando dentro del `statement_timeout` mañana.** En tablas con `raw_payload`, índices y snapshot diario acumulado, el costo real del `upsert` sube con el volumen histórico aunque el page size del origen no cambie.
+- **La regla correcta es particionar la persistencia y reintentar por chunk.** Si el worker sincroniza páginas grandes desde BUK, debe trocear la escritura en lotes más pequeños y aplicar retry sobre cada tramo crítico, no solo sobre una de las dos tablas destino.
+- **El mismo script debe resolver variables fallback con semántica de “primer valor no vacío”.** Si el workflow valida una URL usable pero el runtime sigue usando `??`, se reintroduce un fallo viejo justo en una automatización sensible.
+
 ## 161. Un módulo enterprise no puede quedar con dos contratos de acceso distintos entre su capa viva y su capa legacy
 
 ## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada
