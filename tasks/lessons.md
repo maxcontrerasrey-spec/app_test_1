@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada
 
+## 166. Una Edge Function operativa no debe aceptar ejecuciones interactivas abiertas sobre una cola compartida
+
+- **Autenticar no basta si el request todavía puede reclamar trabajo ajeno o toda la cola.** En jobs como sync BUK o purga documental, una invocación desde UI debe venir acotada a `jobIds` o `candidateIds` concretos y esos IDs deben validarse contra el ámbito real del usuario antes de hacer `claim`.
+- **La regla correcta es separar dos modos de ejecución.** El barrido global o masivo queda reservado al webhook interno; la ejecución interactiva solo procesa targets explícitos y autorizados.
+- **Cuando el helper de autorización recibe un `user_id` explícito, su exposición debe ser cero.** Si la función existe solo para service-role o runtime interno, se revoca a `public/anon/authenticated` para no abrir una vía de impersonación lógica.
+
 ## 165. Un lookup controlado no debe resincronizar el texto por cada render del padre
 
 - **Si el input mantiene un `searchValue` local y además lo resincronizas desde `selectedWorker` con dependencias inestables, el usuario pierde el control del campo.** Basta con pasar callbacks inline como `getWorkerFullName` o `getWorkerId` para que el efecto se dispare en cada render y pise lo recién escrito.
@@ -19,6 +25,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Que el Excel y la dotación activa tengan el mismo número de filas no prueba que representen al mismo universo.** En DRT ambos lados tenían `177`, pero el cruce real por `RUT` dejó `175` matches válidos, `2` trabajadores históricos ya fuera de nómina y `2` trabajadores nuevos no presentes en el archivo base.
 - **La regla correcta es reconciliar primero por identificador estable y dejar esa conciliación versionada.** Antes de insertar en `hr_worker_rosters`, el repo debe guardar el origen normalizado y un reporte explícito de `matched / missing / extra`, para que auditoría y operación sepan exactamente qué quedó cargado y qué quedó fuera.
 - **Nunca inventes la pauta de un trabajador sin match canónico ni borres a ciegas a un activo nuevo ausente del archivo.** Si el input no representa a la dotación viva 1:1, la carga debe aplicar sólo el subconjunto conciliado y dejar evidencia de las divergencias para seguimiento operacional.
+
+- **Dos queries React con payload distinto no pueden compartir la misma clave de caché.** Si una devuelve lista simple y otra página con `items/totalCount`, React Query puede reciclar la forma equivocada y producir estados incoherentes o trabajo extra de refetch.
+- **La regla correcta es versionar la semántica en la propia key.** Usa sufijos explícitos como `list/page`, `summary/detail` o equivalentes para que cada contrato cacheado sea único.
+- **En vistas ERP pesadas, volver a enfocar la pestaña no debe disparar otra ráfaga completa de queries si ya existe polling o invalidación dirigida.** `refetchOnWindowFocus` y `refetchOnReconnect` deben quedar desactivados cuando sólo agregan presión y no mejoran la frescura útil del dato.
 
 - **Si una reimplementación canónica ya migró a un `module_code` nuevo, la superficie legacy no debe seguir autorizándose con un módulo o rol distinto.** Aunque hoy no tenga consumidores visibles en React, esa capa sigue siendo parte del backend productivo mientras sus RPCs y tablas existan.
 - **La regla correcta es encapsular tanto la capa nueva como la legacy detrás del mismo helper semántico.** En onboarding operacional, toda entrada debe pasar por `user_can_access_operational_onboarding(...)` para que frontend, RLS, storage y RPCs compartan la misma verdad de acceso.

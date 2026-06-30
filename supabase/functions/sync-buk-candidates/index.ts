@@ -124,6 +124,21 @@ function requireEnv(value: string | undefined, label: string) {
   return normalized;
 }
 
+function resolveErrorStatus(error: unknown) {
+  const message = toErrorMessage(error);
+  if (message === "Unauthorized") {
+    return 401;
+  }
+  if (message.includes("Sin permisos")) {
+    return 403;
+  }
+  if (message.includes("Debe indicar")) {
+    return 400;
+  }
+
+  return 500;
+}
+
 function normalizeText(value: string | null | undefined) {
   return (value ?? "")
     .normalize("NFD")
@@ -571,6 +586,33 @@ async function claimJobs(
   return (data ?? []) as BukJobRow[];
 }
 
+async function authorizeRequestedJobs(
+  supabase: ReturnType<typeof createClient>,
+  actorUserId: string,
+  request: SyncRequest
+) {
+  const normalizedJobIds = Array.from(
+    new Set((request.jobIds ?? []).map((jobId) => jobId.trim()).filter(Boolean))
+  );
+
+  if (normalizedJobIds.length === 0) {
+    throw new Error("Debe indicar los jobs BUK a ejecutar en una invocacion interactiva.");
+  }
+
+  const { data, error } = await supabase.rpc("authorize_buk_sync_jobs", {
+    p_actor_user_id: actorUserId,
+    p_job_ids: normalizedJobIds
+  });
+
+  if (error) {
+    throw new Error(`No fue posible validar permisos de sincronizacion BUK: ${error.message}`);
+  }
+
+  if (data !== true) {
+    throw new Error("Sin permisos para ejecutar uno o mas jobs BUK solicitados.");
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -590,6 +632,7 @@ Deno.serve(async (req) => {
     const suppliedWebhookSecret = (req.headers.get("x-internal-webhook-secret") ?? "").trim();
     const isInternalInvocation =
       internalWebhookSecret.length > 0 && suppliedWebhookSecret === internalWebhookSecret;
+    const requestBody = req.method === "POST" ? ((await req.json().catch(() => ({}))) as SyncRequest) : {};
 
     if (!isInternalInvocation) {
       if (!accessToken) {
@@ -616,9 +659,9 @@ Deno.serve(async (req) => {
           }
         });
       }
-    }
 
-    const requestBody = req.method === "POST" ? ((await req.json().catch(() => ({}))) as SyncRequest) : {};
+      await authorizeRequestedJobs(supabase, user.id, requestBody);
+    }
     const jobs = await claimJobs(supabase, requestBody);
     const locations = await resolveBukLocations(supabase);
     const results: Array<Record<string, unknown>> = [];
@@ -704,7 +747,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: toErrorMessage(error) }), {
-      status: 500,
+      status: resolveErrorStatus(error),
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json"

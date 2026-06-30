@@ -31,8 +31,8 @@ export function useDashboard() {
     enabled: Boolean(user?.id),
     staleTime: 15_000,
     refetchInterval: 180_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 
   return {

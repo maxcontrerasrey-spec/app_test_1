@@ -47,12 +47,21 @@ export function AccreditationWorkersView() {
     reviewerNotes: ""
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const normalizedSearch = search.trim().toLowerCase();
   const normalizedDigits = search.replace(/\D/g, "");
   const canQueryWorkers = Boolean(siteId) || normalizedSearch.length >= 2 || normalizedDigits.length >= 4;
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 150);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [search]);
+
   const workerQuery = useAccreditationWorkers({
-    search,
+    search: debouncedSearch,
     siteId: siteId || null,
     status: status || null,
     enabled: canQueryWorkers

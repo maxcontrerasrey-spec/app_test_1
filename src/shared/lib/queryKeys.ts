@@ -34,12 +34,17 @@ export const queryKeys = {
   incentives: {
     setupCatalogs: () => ["incentives", "setup-catalogs"] as const,
     requestsRoot: () => ["incentives", "requests"] as const,
-    requests: (filters: Record<string, unknown>) => ["incentives", "requests", filters] as const,
+    requestsList: (filters: Record<string, unknown>) =>
+      ["incentives", "requests", "list", filters] as const,
+    requestsPage: (filters: Record<string, unknown>) =>
+      ["incentives", "requests", "page", filters] as const,
     analyticsRoot: () => ["incentives", "analytics"] as const,
     analytics: (filters: Record<string, unknown>) => ["incentives", "analytics", filters] as const,
     approvalsRoot: () => ["incentives", "approvals"] as const,
-    approvalsQueue: (filters: Record<string, unknown>) =>
-      ["incentives", "approvals", "queue", filters] as const,
+    approvalsQueueList: (filters: Record<string, unknown>) =>
+      ["incentives", "approvals", "queue", "list", filters] as const,
+    approvalsQueuePage: (filters: Record<string, unknown>) =>
+      ["incentives", "approvals", "queue", "page", filters] as const,
     requestDetailRoot: () => ["incentives", "request-detail"] as const,
     requestDetail: (requestId: string) => ["incentives", "request-detail", requestId] as const,
     workerSearch: (search: string) => ["incentives", "worker-search", search] as const,

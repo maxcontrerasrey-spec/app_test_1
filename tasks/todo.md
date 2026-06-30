@@ -8,6 +8,33 @@
 - [x] Corregir el retry para que reutilice el progreso parcial guardado en `buk_sync_jobs.result_snapshot`
 - [x] Validar con auditoría SQL focalizada, `TypeScript`, build frontend, `db push --dry-run` y `git diff --check`
 
+## Hardening enterprise de API, búsquedas y presión de consultas
+
+- [x] Auditar las rutas de consulta más sensibles del ERP para detectar autorización insuficiente, colisiones de caché y ráfagas de refetch innecesarias
+- [x] Endurecer las Edge Functions críticas para que solo ejecuten jobs o uploads dentro del ámbito autorizado del usuario o del webhook interno
+- [x] Separar claves de React Query incompatibles y bajar refetch agresivo en vistas pesadas para reducir carga sobre frontend, PostgREST y base
+- [x] Llevar la búsqueda de Acreditación de Personas al mismo patrón indexable enterprise usado en jornadas, movilidad e incentivos
+- [x] Validar con auditoría de migración, `TypeScript`, build frontend, `db push --dry-run`, aplicación remota de la migración, deploy de Edge Functions y `git diff --check`
+
+## Resultado del hardening enterprise de API, búsquedas y presión de consultas
+
+- Se agregó la migración [`20260629113000_harden_enterprise_api_auth_and_accreditation_search.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260629113000_harden_enterprise_api_auth_and_accreditation_search.sql:1), que deja dos helpers internos de autorización (`authorize_buk_sync_jobs`, `authorize_candidate_document_cleanup_targets`) sin exposición a `authenticated` y recompila [`search_accreditation_workers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260629113000_harden_enterprise_api_auth_and_accreditation_search.sql:58) sobre `public.employees` activos con el mismo patrón indexable de búsqueda ya usado por jornadas, movilidad e incentivos.
+- [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) ya no permite invocaciones interactivas abiertas sobre la cola completa. Fuera del webhook interno exige `jobIds` explícitos y valida que todos pertenezcan a casos gestionables por el usuario antes de reclamar jobs.
+- [`purge-candidate-documents`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:1) quedó con la misma disciplina: la sweep masiva nocturna sólo puede correr por webhook interno y una invocación interactiva debe venir acotada a candidatos autorizados concretos.
+- [`upload-buk-accreditation-document`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/upload-buk-accreditation-document/index.ts:1) ahora exige JWT válido, permiso real de Acreditación de Personas y guardrails de archivo (`PDF/JPG/PNG`, máximo `10 MB`) antes de tocar BUK.
+- En frontend se eliminaron dos focos de presión evitable:
+  - [`queryKeys.incentives`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/queryKeys.ts:1) ya separa explícitamente listas y páginas para evitar colisiones de caché entre payloads distintos;
+  - los hooks pesados de `dashboard`, `recruitment`, `incentives`, `internal mobility` y `roster` dejaron de hacer `refetchOnWindowFocus/refetchOnReconnect` automático, conservando `staleTime`, `refetchInterval` e invalidaciones explícitas para no castigar a la base al volver al tab.
+- [`AccreditationWorkersView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/accreditation/components/AccreditationWorkersView.tsx:1) ahora debouncea la búsqueda a `150 ms`, lo que evita round-trips por cada tecla en el módulo de acreditación.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260629113000_harden_enterprise_api_auth_and_accreditation_search.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - `npx --yes supabase functions deploy sync-buk-candidates purge-candidate-documents upload-buk-accreditation-document --project-ref pzblmbahnoyntrhistea --use-api --yes`
+  - `git diff --check`
+
 ## Carga inicial del calendario de jornadas DRT
 
 - [x] Auditar el archivo base [`drt.xlsx`](/Users/maximilianocontrerasrey/Desktop/drt.xlsx) y reconciliarlo contra la dotación activa de `CODELCO DRT`

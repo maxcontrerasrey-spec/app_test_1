@@ -60,8 +60,8 @@ export function getRecruitmentControlSummaryQueryOptions() {
     staleTime: RECRUITMENT_DASHBOARD_STALE_TIME_MS,
     gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
     refetchInterval: 5 * 60_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   };
 }
 
@@ -142,8 +142,8 @@ export function useRecruitmentProcessesPage(filters: RecruitmentProcessesPageFil
     gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
     placeholderData: (previous) => previous,
     refetchInterval: 5 * 60_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 }
 
@@ -165,8 +165,8 @@ export function useRecruitmentCandidatesPage(
     staleTime: RECRUITMENT_DASHBOARD_STALE_TIME_MS,
     gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
     refetchInterval: enabled ? 5 * 60_000 : false,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled
   });
 }
@@ -189,8 +189,8 @@ export function useRecruitmentPersonnelToHirePage(
     staleTime: RECRUITMENT_DASHBOARD_STALE_TIME_MS,
     gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
     refetchInterval: enabled ? 5 * 60_000 : false,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled
   });
 }

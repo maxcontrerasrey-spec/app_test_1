@@ -52,8 +52,8 @@ export function useRosterCalendarSummary(params: {
       }),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled: enabled && Boolean(monthValue)
   });
 }
@@ -81,8 +81,8 @@ export function useWorkerSchedule(params: {
     queryFn: () => fetchWorkerSchedule({ bukEmployeeId, startDate, endDate }),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled: enabled && Boolean(bukEmployeeId) && Boolean(startDate) && Boolean(endDate)
   });
 }

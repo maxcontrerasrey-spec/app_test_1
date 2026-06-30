@@ -51,8 +51,8 @@ export function useInternalMobilityRequests() {
     staleTime: INTERNAL_MOBILITY_REQUESTS_STALE_TIME_MS,
     gcTime: INTERNAL_MOBILITY_CACHE_GC_TIME_MS,
     refetchInterval: INTERNAL_MOBILITY_REQUESTS_REFETCH_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 }
 

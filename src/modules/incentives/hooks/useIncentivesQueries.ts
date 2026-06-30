@@ -39,25 +39,25 @@ export function useHrIncentiveSetupCatalogs(enabled = true) {
 
 export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters) {
   return useQuery({
-    queryKey: queryKeys.incentives.requests(filters),
+    queryKey: queryKeys.incentives.requestsList(filters),
     queryFn: () => fetchHrIncentiveRequests(filters),
     staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 }
 
 export function useHrIncentiveRequestsPage(filters: HrIncentiveRequestsPageFilters, enabled = true) {
   return useQuery({
-    queryKey: queryKeys.incentives.requests(filters),
+    queryKey: queryKeys.incentives.requestsPage(filters),
     queryFn: () => fetchHrIncentiveRequestsPage(filters),
     staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     placeholderData: (previous) => previous,
     enabled
   });
@@ -65,13 +65,13 @@ export function useHrIncentiveRequestsPage(filters: HrIncentiveRequestsPageFilte
 
 export function useHrIncentiveApprovalQueue() {
   return useQuery({
-    queryKey: queryKeys.incentives.approvalsQueue({}),
+    queryKey: queryKeys.incentives.approvalsQueueList({}),
     queryFn: fetchHrIncentiveApprovalQueue,
     staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 }
 
@@ -80,13 +80,13 @@ export function useHrIncentiveApprovalQueuePage(
   enabled = true
 ) {
   return useQuery({
-    queryKey: queryKeys.incentives.approvalsQueue(filters),
+    queryKey: queryKeys.incentives.approvalsQueuePage(filters),
     queryFn: () => fetchHrIncentiveApprovalQueuePage(filters),
     staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     placeholderData: (previous) => previous,
     enabled
   });
@@ -99,8 +99,8 @@ export function useHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFilters, e
     staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled
   });
 }

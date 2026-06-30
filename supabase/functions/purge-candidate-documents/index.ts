@@ -59,6 +59,21 @@ function requireEnv(value: string | undefined, label: string) {
   return normalized;
 }
 
+function resolveErrorStatus(error: unknown) {
+  const message = toErrorMessage(error);
+  if (message === "Unauthorized") {
+    return 401;
+  }
+  if (message.includes("Sin permisos")) {
+    return 403;
+  }
+  if (message.includes("Debe indicar") || message.includes("solo puede ejecutarse")) {
+    return 400;
+  }
+
+  return 500;
+}
+
 async function markJobState(
   supabase: ReturnType<typeof createClient>,
   jobId: string,
@@ -94,6 +109,37 @@ async function claimJobs(
   }
 
   return (data ?? []) as CleanupJobRow[];
+}
+
+async function authorizeInteractiveCleanup(
+  supabase: ReturnType<typeof createClient>,
+  actorUserId: string,
+  request: CleanupRequest
+) {
+  const normalizedCandidateIds = Array.from(
+    new Set((request.candidateIds ?? []).map((candidateId) => candidateId.trim()).filter(Boolean))
+  );
+
+  if (request.sweepTerminalCandidates) {
+    throw new Error("La barrida masiva nocturna solo puede ejecutarse mediante la invocacion interna.");
+  }
+
+  if (normalizedCandidateIds.length === 0) {
+    throw new Error("Debe indicar candidatos especificos para ejecutar una limpieza documental interactiva.");
+  }
+
+  const { data, error } = await supabase.rpc("authorize_candidate_document_cleanup_targets", {
+    p_actor_user_id: actorUserId,
+    p_case_candidate_ids: normalizedCandidateIds
+  });
+
+  if (error) {
+    throw new Error(`No fue posible validar permisos de limpieza documental: ${error.message}`);
+  }
+
+  if (data !== true) {
+    throw new Error("Sin permisos para ejecutar una o mas limpiezas documentales solicitadas.");
+  }
 }
 
 async function enqueueSweepJobs(
@@ -295,6 +341,7 @@ Deno.serve(async (req) => {
     const suppliedWebhookSecret = (req.headers.get("x-internal-webhook-secret") ?? "").trim();
     const isInternalInvocation =
       internalWebhookSecret.length > 0 && suppliedWebhookSecret === internalWebhookSecret;
+    const requestBody = ((await req.json().catch(() => ({}))) as CleanupRequest) ?? {};
 
     if (!isInternalInvocation) {
       if (!accessToken) {
@@ -315,9 +362,10 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
+
+      await authorizeInteractiveCleanup(supabase, user.id, requestBody);
     }
 
-    const requestBody = ((await req.json().catch(() => ({}))) as CleanupRequest) ?? {};
     const sweepSummary = requestBody.sweepTerminalCandidates
       ? await enqueueSweepJobs(supabase, requestBody)
       : { queued: 0 };
@@ -383,7 +431,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: toErrorMessage(error) }), {
-      status: 500,
+      status: resolveErrorStatus(error),
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json"
