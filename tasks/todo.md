@@ -2,6 +2,36 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Alineación backend del módulo de Operaciones con ERP vigente
+
+- [x] Auditar el drift actual entre Operaciones y el ERP vigente para distinguir qué reglas siguen duplicadas en frontend y cuáles deben migrarse al backend canónico
+- [x] Formalizar el contrato backend de Operaciones que hoy no está versionado (`base_services`, `equipment`, `service_entries` y/o sus wrappers) sin inventar datos maestros ni romper los dos contratos actuales bosquejados
+- [x] Reemplazar la lógica editable del estado del conductor para que Operaciones derive turno/descanso desde Jornadas (`Roster`) en vez de aceptar una decisión manual
+- [x] Llevar la búsqueda de conductores al mismo patrón BUK ya usado por Jornadas, Incentivos, Movilidad Interna y Acreditación
+- [x] Revisar y corregir la matriz de acceso del módulo `operaciones` para que el backend quede alineado con la seguridad modular vigente
+- [x] Validar con auditoría de migraciones, `TypeScript`, build, smoke backend y dejar el cierre auditado en este documento
+
+## Resultado de alineación backend del módulo de Operaciones con ERP vigente
+
+- Se versionó la migración [`20260630133626_align_operations_backend_with_roster_and_catalogs.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630133626_align_operations_backend_with_roster_and_catalogs.sql:1), que formaliza `base_services`, `equipment` y `service_entries`, crea `user_can_manage_operations(...)`, expone `search_operations_drivers(...)` y redefine [`submit_service_entries_batch(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630133626_align_operations_backend_with_roster_and_catalogs.sql:282) para derivar turno/descanso desde Jornadas en vez de aceptar una decisión manual del cliente.
+- La misma migración quedó aplicada y registrada remotamente en Supabase. Validación remota confirmada: `92` servicios base sembrados, `6` equipos bootstrap activos y presencia de columnas roster-aware (`driver_buk_employee_id`, `driver_shift_source`, `driver_roster_base_status`, `driver_roster_effective_status`) en `public.service_entries`.
+- El módulo Operaciones ya no resuelve contratos contra etiquetas legacy rígidas. [`OperacionesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/pages/OperacionesDashboard.tsx:1) carga `contracts.contract_name` desde el ERP vivo y el backend acepta tanto `CODELCO DMH` como el alias heredado `SERVICIO CODELCO DMH` solo para compatibilidad.
+- El selector manual de “Estado de turno” dejó de ser una decisión editable. [`OperationsBaseRegister.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsBaseRegister.tsx:1) ahora muestra el estado resuelto desde roster (`Turno`, `Descanso`, `Turno adicional`, `Vacaciones`, `Licencia médica`, `Sin pauta`) y el payload dejó de depender de esa variable local.
+- La búsqueda de conductores se reconectó al patrón BUK indexado del ERP. [`searchOperationsDrivers(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/services/operacionesApi.ts:1) consume la RPC `search_operations_drivers(...)`, y Operaciones dejó de precargar `employees_active_current` completo para filtrar en cliente.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql supabase/migrations/20260630133626_align_operations_backend_with_roster_and_catalogs.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `node scripts/generate-recruitment-migration-template.mjs`
+  - `node scripts/audit-supabase-security.mjs`
+  - `git diff --check`
+
+## Resultado de auditoría de trabajos pendientes ajenos
+
+- El bloque pendiente de Incentivos sí aplicaba al ERP actual y quedó incorporado: la migración [`20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql:1) ya está validada localmente y aplicada/remotamente para impedir dobles incentivos sobre el mismo descanso consumido.
+- La limpieza profunda del repo también aplicaba y se mantuvo: se retiran scripts one-off sin integración viva (`process-pdf.mjs`, `sync-doc.cjs`, `test-rpc.mjs`, `scripts/preview_migracion.cjs`, `supabase/.temp/linked-project.json`), se actualiza [`scripts/audit-supabase-security.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/audit-supabase-security.mjs:1) al árbol real y [`.gitignore`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.gitignore:1) pasa a ignorar `vite.config.d.ts`.
+- El retiro de Excels binarios del repo también quedó validado: [`docs/templates/plantilla_migracion_reclutamiento.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.md:1), [`docs/templates/generador_certificados_legacy.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/generador_certificados_legacy.md:1) y [`docs/templates/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/README.md:1) preservan el contrato funcional en texto auditable, y no quedaron referencias vivas del runtime a los `.xls/.xlsx` retirados.
+
 ## Hotfix del workflow `Sync BUK Employees`
 
 - [x] Auditar el último run fallido del workflow `sync-buk.yml` y ubicar la operación exacta que dispara `statement timeout`
@@ -1997,7 +2027,7 @@
 ## Resultado de plantilla XLS de migración para reclutamiento en producción
 
 - Se creó el generador reutilizable [`scripts/generate-recruitment-migration-template.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/generate-recruitment-migration-template.mjs:1), que arma la plantilla de migración directamente desde el contrato vivo del módulo y reutiliza la misma base de headers BUK ya ocupada por la nómina de `Personal a Contratar`.
-- El entregable quedó publicado en dos formatos dentro de [`docs/templates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates): [`plantilla_migracion_reclutamiento.xls`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.xls) y [`plantilla_migracion_reclutamiento.xlsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.xlsx).
+- El entregable quedó publicado originalmente como `plantilla_migracion_reclutamiento.xls` y `plantilla_migracion_reclutamiento.xlsx`; ambos binarios fueron retirados después en favor de [`docs/templates/plantilla_migracion_reclutamiento.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.md:1).
 - La plantilla trae diez hojas: `Instrucciones`, `Diccionario`, `Folios`, `Casos`, `Candidatos`, `Ficha_BUK`, `Documentos`, `Matriz_Documental`, `Catalogos_Migracion` y `Listas_BUK`.
 - `fecha_solicitud_original` quedó explícitamente como columna obligatoria en `Folios`, para que la futura carga pueda respetar la fecha original de solicitud como pidió negocio.
 - `Ficha_BUK` replica la estructura real de RRHH/BUK ya usada por la app y `Documentos` migra estado y referencia documental, dejando claro en instrucciones que los archivos binarios no viajan dentro del Excel.
@@ -4047,3 +4077,46 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se versionó la migración [`20260628023000_exclude_closed_hiring_requests_from_dashboard_approval_tracking.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628023000_exclude_closed_hiring_requests_from_dashboard_approval_tracking.sql:1), que endurece la RPC para incluir solo `pending_area_manager` y `pending_contracts_control`, exigir `current_step_code` no nulo y resolver el join del aprobador pendiente exactamente contra esa etapa vigente.
 - El cambio reduce ruido operativo en Inicio: el widget deja de mezclar solicitudes aún en flujo con folios cerrados que ya no tienen una aprobación real por resolver.
 - Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260628023000_exclude_closed_hiring_requests_from_dashboard_approval_tracking.sql` y `git diff --check`.
+
+## Limpieza profunda conservadora del repositorio
+
+- [x] Auditar artefactos generados locales, temporales Supabase y residuos de builds/cachés fuera de valor operacional
+- [x] Confirmar qué scripts versionados eran one-off sin integración en package scripts, workflows ni documentación viva
+- [x] Eliminar solo residuos demostrablemente prescindibles y mantener intactos los scripts con valor operativo real
+- [x] Validar `TypeScript`, build frontend, auditoría de seguridad y `git diff --check` tras la limpieza
+
+## Resultado de limpieza profunda conservadora del repositorio
+
+- Se eliminaron residuos versionados sin integración activa ni valor futuro claro: `process-pdf.mjs`, `sync-doc.cjs`, `test-rpc.mjs`, `scripts/preview_migracion.cjs`, `supabase/.temp/linked-project.json` y `vite.config.d.ts`.
+- La limpieza también contempla artefactos locales no versionados sin valor persistente: `dist/`, `*.tsbuildinfo`, `.DS_Store`, `app_mobile/.expo/`, `app_mobile/node_modules/` y el directorio `app_mobile/` completo al no contener código versionado.
+- [`.gitignore`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.gitignore:1) ahora ignora `vite.config.d.ts` para evitar que el typecheck vuelva a reintroducir ese espejo generado en la raíz.
+- Se ajustó [`scripts/audit-supabase-security.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/audit-supabase-security.mjs:1) para que siga auditando archivos raíz mantenidos y deje de depender de helpers obsoletos.
+- El criterio fue conservador: no se tocaron documentos funcionales, scripts operativos activos ni plantillas que aún respaldan procesos del ERP.
+
+## Retiro de Excel versionados del repositorio
+
+- [x] Auditar todos los `.xls` y `.xlsx` dentro del repo y determinar si tenían uso real o solo valor de referencia
+- [x] Convertir a Markdown las plantillas que todavía aportaban contexto o contrato funcional
+- [x] Eliminar los binarios Excel del repositorio
+- [x] Validar generación de la nueva documentación, estado git y ausencia total de Excel versionados
+
+## Resultado de retiro de Excel versionados del repositorio
+
+- La plantilla de migración de reclutamiento dejó de vivir como binario y quedó convertida a [`docs/templates/plantilla_migracion_reclutamiento.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.md:1), generada desde el mismo contrato fuente en [`scripts/generate-recruitment-migration-template.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/generate-recruitment-migration-template.mjs:1).
+- El workbook legado de certificados quedó condensado en [`docs/templates/generador_certificados_legacy.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/generador_certificados_legacy.md:1), preservando estructura, datasets y razón de retiro sin mantener el Excel en git.
+- Se agregó [`docs/templates/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/README.md:1) para dejar explícito qué plantillas siguen vigentes.
+- Los archivos `docs/templates/generador_de_certificados_rev02.xlsx`, `docs/templates/plantilla_migracion_reclutamiento.xls` y `docs/templates/plantilla_migracion_reclutamiento.xlsx` se retiran del repositorio.
+
+## Bloqueo de incentivos por descanso ya ocupado en la misma fecha
+
+- [x] Auditar el contrato actual de `calculate_hr_incentive_preview(...)` y `create_hr_incentive_request(...)` para ubicar el punto correcto del bloqueo transversal por fecha
+- [x] Versionar una migración nueva que impida registrar cualquier incentivo adicional cuando ya exista otro incentivo activo que exige descanso para ese trabajador y fecha
+- [x] Exponer el motivo de bloqueo en la UI de registro con mensaje explícito indicando contrato ya ocupado
+- [x] Validar `TypeScript`, build/frontend si aplica, auditoría de migración y `git diff --check`
+
+## Resultado de bloqueo de incentivos por descanso ya ocupado en la misma fecha
+
+- Se versionó la migración [`20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql:1), que redefine [`build_hr_incentive_preview_from_worker_data(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql:3) y [`create_hr_incentive_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql:190) para bloquear el registro cuando el trabajador ya tiene otro incentivo activo cuyo tipo exige descanso en la misma fecha.
+- El bloqueo backend no depende del contrato que se intenta usar ahora: revisa cualquier incentivo activo (`P`, `E`, `F`) del mismo trabajador y fecha, cruza contra [`hr_incentive_types.requires_rest_day`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260613193000_add_hr_roster_module.sql:45) y devuelve un mensaje explícito indicando el contrato ya ocupado.
+- [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1), [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:1) y [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:1) quedaron alineados para exponer `blockedByExistingRestDayIncentive`, pintar la alerta roja y deshabilitar el botón de registro antes de persistir.
+- Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260630093000_block_duplicate_rest_day_incentives_per_worker_date.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.

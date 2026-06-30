@@ -6,6 +6,14 @@ export interface Driver {
   documentNumber: string;
   areaName: string;
   areaCode: string;
+  documentType?: string;
+  jobTitle?: string;
+  contractCode?: string | null;
+  displayLabel?: string;
+  rosterBaseStatus?: string | null;
+  rosterEffectiveStatus?: string | null;
+  isWorkingDay?: boolean;
+  isRestDay?: boolean;
   isActive: boolean;
 }
 
@@ -22,7 +30,6 @@ export interface Equipment {
 
 export interface ServiceDraft {
   driverId: string;
-  driverShiftStatus: string;
   equipmentCode: string;
 }
 
@@ -81,6 +88,7 @@ export interface BaseServiceQueryRow {
   schedule_label: string;
   contracts: Array<{
     code: string | null;
+    contract_name: string | null;
   }> | null;
 }
 
@@ -129,7 +137,6 @@ export interface PendingServiceSubmission {
     driverName: string;
     driverDocument: string;
     driverArea: string;
-    driverShiftStatus: string;
     equipmentCode: string;
   };
 }

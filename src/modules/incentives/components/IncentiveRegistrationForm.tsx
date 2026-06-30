@@ -293,6 +293,7 @@ export function IncentiveRegistrationForm({
     previewQuery.isLoading ||
     !previewQuery.data ||
     previewQuery.data.rosterValidation.blockedByAbsence ||
+    previewQuery.data.rosterValidation.blockedByExistingRestDayIncentive ||
     (previewQuery.data?.rosterValidation.requiresRestDay &&
       !previewQuery.data.rosterValidation.isRestDay) ||
     !registrationWindow.isAllowed ||
@@ -496,8 +497,15 @@ export function IncentiveRegistrationForm({
                       "No se puede registrar este incentivo porque el trabajador figura con vacaciones o licencia médica en la fecha seleccionada."}
                   </IncentiveRuleAlert>
                 ) : null}
+                {previewQuery.data.rosterValidation.blockedByExistingRestDayIncentive ? (
+                  <IncentiveRuleAlert>
+                    {previewQuery.data.rosterValidation.blockReason ??
+                      `No se puede registrar otro incentivo el ${formatDateForDisplay(serviceDate)} porque el trabajador ya registra un incentivo con descanso activo para esa fecha.`}
+                  </IncentiveRuleAlert>
+                ) : null}
                 {previewQuery.data.rosterValidation.requiresRestDay &&
-                !previewQuery.data.rosterValidation.blockedByAbsence ? (
+                !previewQuery.data.rosterValidation.blockedByAbsence &&
+                !previewQuery.data.rosterValidation.blockedByExistingRestDayIncentive ? (
                   previewQuery.data.rosterValidation.isRestDay ? (
                     <p className="form-status form-status-success">
                       {`Validación de descanso OK: ${previewQuery.data.rosterValidation.scheduleLabel ?? "Descanso"}.`}

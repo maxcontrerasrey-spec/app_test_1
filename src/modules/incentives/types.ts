@@ -42,21 +42,6 @@ export type HrIncentiveType = {
   createdAt: string;
 };
 
-export type HrIncentiveRosterValidation = {
-  requiresRestDay: boolean;
-  baseStatus: "working" | "resting" | "unassigned" | null;
-  effectiveStatus: string | null;
-  exceptionType: string | null;
-  exceptionLabel: string | null;
-  patternName: string | null;
-  scheduleStatus: string | null;
-  scheduleLabel: string | null;
-  isRestDay: boolean | null;
-  blockedByAbsence: boolean;
-  blockReason: string | null;
-  matchedDate: string | null;
-};
-
 export type HrIncentiveRosterSnapshot = {
   baseStatus: "working" | "resting" | "unassigned" | null;
   effectiveStatus: string | null;
@@ -68,6 +53,27 @@ export type HrIncentiveRosterSnapshot = {
   isWorkingDay: boolean;
   isRestDay: boolean;
   blockedByAbsence: boolean;
+};
+
+export type HrIncentiveRosterValidation = {
+  requiresRestDay: boolean;
+  baseStatus: "working" | "resting" | "unassigned" | null;
+  effectiveStatus: string | null;
+  exceptionType: string | null;
+  exceptionLabel: string | null;
+  patternName: string | null;
+  scheduleStatus: string | null;
+  scheduleLabel: string | null;
+  isRestDay: boolean | null;
+  blockedByAbsence: boolean;
+  blockedByExistingRestDayIncentive: boolean;
+  existingRestDayRequestId: string | null;
+  existingRestDayFolio: number | null;
+  existingRestDayContractCode: string | null;
+  existingRestDayContractName: string | null;
+  existingRestDayIncentiveTypeName: string | null;
+  blockReason: string | null;
+  matchedDate: string | null;
 };
 
 export type HrIncentiveRateRule = {

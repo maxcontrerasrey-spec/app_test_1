@@ -50,6 +50,23 @@ function formatLongDate(date: Date | null): string {
   });
 }
 
+function getDriverRosterLabel(driver: Driver | null) {
+  if (!driver) return "";
+
+  switch (driver.rosterEffectiveStatus) {
+    case "vacation":
+      return "Vacaciones";
+    case "medical_leave":
+      return "Licencia médica";
+    case "extra_shift":
+      return "Turno adicional";
+    default:
+      if (driver.isRestDay) return "Descanso";
+      if (driver.isWorkingDay) return "Turno";
+      return "Sin pauta";
+  }
+}
+
 export function OperationsBaseRegister({
   selectedDateValue,
   setSelectedDateValue,
@@ -262,7 +279,7 @@ export function OperationsBaseRegister({
                                 tabIndex={0}
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  updateDraft(service.id, { driverId: "", driverShiftStatus: "en_turno" });
+                                  updateDraft(service.id, { driverId: "" });
                                   setDriverQuery("");
                                   setOpenDriverServiceId(null);
                                 }}
@@ -270,7 +287,7 @@ export function OperationsBaseRegister({
                                   if (event.key === "Enter" || event.key === " ") {
                                     event.preventDefault();
                                     event.stopPropagation();
-                                    updateDraft(service.id, { driverId: "", driverShiftStatus: "en_turno" });
+                                    updateDraft(service.id, { driverId: "" });
                                     setDriverQuery("");
                                     setOpenDriverServiceId(null);
                                   }
@@ -309,6 +326,8 @@ export function OperationsBaseRegister({
                                       {employee.fullName}
                                     </button>
                                   ))
+                                ) : !driverQuery.trim() ? (
+                                  <p className="driver-picker__empty">Escribe nombre, apellido o RUT para buscar en BUK.</p>
                                 ) : (
                                   <p className="driver-picker__empty">No se encontraron conductores.</p>
                                 )}
@@ -330,17 +349,12 @@ export function OperationsBaseRegister({
 
                       <label className="service-assignment-field">
                         <span>Estado de turno</span>
-                        <div className={`turn-status-control turn-status-control--${draft.driverShiftStatus}`}>
-                          <select
-                            value={draft.driverShiftStatus}
-                            onChange={(event) => updateDraft(service.id, { driverShiftStatus: event.target.value })}
-                            aria-invalid={Boolean(fieldErrors.driverShiftStatus)}
-                          >
-                            <option value="en_turno">En Turno</option>
-                            <option value="fuera_de_turno">Fuera de Turno</option>
-                          </select>
-                          <span className="turn-status-control__dot" aria-hidden="true" />
-                        </div>
+                        <input
+                          type="text"
+                          readOnly
+                          value={getDriverRosterLabel(selectedDriver)}
+                          className="compact-readonly"
+                        />
                       </label>
                     </div>
 
@@ -450,7 +464,7 @@ export function OperationsBaseRegister({
                       {fieldErrors.driverName ? <p className="field-error">{fieldErrors.driverName}</p> : <span />}
                       <span />
                       <span />
-                      {fieldErrors.driverShiftStatus ? <p className="field-error">{fieldErrors.driverShiftStatus}</p> : <span />}
+                      <span />
                     </div>
                     <div className="field-errors-grid field-errors-grid--service field-errors-grid--compact">
                       {fieldErrors.equipmentCode ? <p className="field-error">{fieldErrors.equipmentCode}</p> : <span />}

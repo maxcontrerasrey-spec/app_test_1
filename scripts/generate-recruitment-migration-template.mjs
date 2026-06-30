@@ -1,8 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import xlsx from "@mylinkpi/xlsx";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
@@ -313,79 +311,163 @@ function buildDictionaryRows(sheetName, headers, meta) {
   ]);
 }
 
-function rowsToSheet(rows) {
-  const sheet = xlsx.utils.aoa_to_sheet(rows);
-  sheet["!cols"] = computeColumnWidths(rows);
-  return sheet;
+function escapeMarkdown(value) {
+  return String(value ?? "")
+    .replace(/\r?\n/g, "<br />")
+    .replace(/\|/g, "\\|")
+    .trim();
 }
 
-function computeColumnWidths(rows) {
-  const columnCount = Math.max(...rows.map((row) => row.length), 0);
-  return Array.from({ length: columnCount }, (_, columnIndex) => {
-    const maxLength = rows.reduce((currentMax, row) => {
-      const raw = row[columnIndex] ?? "";
-      return Math.max(currentMax, String(raw).length);
-    }, 12);
+function formatValue(value) {
+  if (value === "") {
+    return "`(vacio)`";
+  }
 
-    return { wch: Math.min(Math.max(maxLength + 2, 14), 44) };
-  });
+  return `\`${escapeMarkdown(value)}\``;
 }
 
-function buildCatalogRows() {
-  const headers = Object.keys(migrationCatalogs);
-  const maxRows = Math.max(...headers.map((header) => migrationCatalogs[header].length), 0);
+function rowsToMarkdownTable(headers, rows) {
+  const headerRow = `| ${headers.map((header) => escapeMarkdown(header)).join(" | ")} |`;
+  const separatorRow = `| ${headers.map(() => "---").join(" | ")} |`;
+  const bodyRows = rows.map(
+    (row) => `| ${row.map((cell) => escapeMarkdown(cell)).join(" | ")} |`
+  );
+
+  return [headerRow, separatorRow, ...bodyRows].join("\n");
+}
+
+function renderHeaderSection(title, description, headers) {
+  return [
+    `## ${title}`,
+    "",
+    description,
+    "",
+    headers.map((header) => `- \`${header}\``).join("\n")
+  ].join("\n");
+}
+
+function renderInstructionsSection() {
+  const [, ...rows] = instructionsRows;
 
   return [
-    headers,
-    ...Array.from({ length: maxRows }, (_, rowIndex) =>
-      headers.map((header) => migrationCatalogs[header][rowIndex] ?? "")
-    )
-  ];
+    "## Instrucciones",
+    "",
+    rowsToMarkdownTable(["Hoja", "Campo / regla", "Detalle"], rows)
+  ].join("\n");
 }
 
-function buildBukListsRows() {
-  const headers = Object.keys(bukOptionLists);
-  const maxRows = Math.max(...headers.map((header) => bukOptionLists[header].length), 0);
+function renderDictionarySection() {
+  const [headers, ...rows] = dictionaryRows;
 
   return [
-    headers,
-    ...Array.from({ length: maxRows }, (_, rowIndex) =>
-      headers.map((header) => bukOptionLists[header][rowIndex] ?? "")
-    )
-  ];
+    "## Diccionario",
+    "",
+    rowsToMarkdownTable(headers, rows)
+  ].join("\n");
 }
 
-function buildDocumentReferenceRows() {
+function renderDocumentMatrixSection() {
   return [
-    ["documento", "aplica_a", "obligatorio"],
-    ...documentRows
-  ];
+    "## Matriz documental base",
+    "",
+    rowsToMarkdownTable(["Documento", "Aplica a", "Obligatorio"], documentRows)
+  ].join("\n");
+}
+
+function renderCatalogsSection() {
+  const rows = Object.entries(migrationCatalogs).map(([field, values]) => [
+    field,
+    values.map((value) => formatValue(value)).join(", ")
+  ]);
+
+  return [
+    "## Catalogos de migracion",
+    "",
+    rowsToMarkdownTable(["Campo", "Valores permitidos"], rows)
+  ].join("\n");
+}
+
+function renderBukListsSection() {
+  const sections = Object.entries(bukOptionLists).map(([field, values]) =>
+    [
+      `### ${field}`,
+      "",
+      values.map((value) => `- ${formatValue(value)}`).join("\n")
+    ].join("\n")
+  );
+
+  return [
+    "## Listas BUK",
+    "",
+    "Las opciones siguientes salen del mismo contrato vivo que usa el ERP para la ficha de `Personal a Contratar`.",
+    "",
+    ...sections
+  ].join("\n");
+}
+
+function buildMarkdownDocument() {
+  return [
+    "# Plantilla de migracion de reclutamiento",
+    "",
+    "Este documento reemplaza la antigua plantilla Excel del repositorio. Mantiene el contrato funcional de migracion en un formato auditable, legible y versionable en texto.",
+    "",
+    "## Origen",
+    "",
+    "- Generado desde `scripts/generate-recruitment-migration-template.mjs`.",
+    "- Reutiliza los encabezados y listas BUK definidos en `src/modules/recruitment/lib/bukEmployeeTemplateData.json`.",
+    "- La relacion entre hojas se mantiene por `folio_externo`, `case_code_externo` y `rut_candidato`.",
+    "",
+    renderInstructionsSection(),
+    "",
+    renderHeaderSection(
+      "Folios",
+      "Una fila por folio operativo. Preserva la fecha original de solicitud y el estado vigente del folio.",
+      folioHeaders
+    ),
+    "",
+    renderHeaderSection(
+      "Casos",
+      "Una fila por caso operativo asociado al folio.",
+      caseHeaders
+    ),
+    "",
+    renderHeaderSection(
+      "Candidatos",
+      "Una fila por postulacion dentro del caso.",
+      candidateHeaders
+    ),
+    "",
+    renderHeaderSection(
+      "Ficha BUK",
+      "Replica exacta de la ficha personal/laboral usada para personal a contratar.",
+      candidateBukHeaders
+    ),
+    "",
+    renderHeaderSection(
+      "Documentos",
+      "Estado documental y referencias de respaldo por candidato.",
+      documentSheetHeaders
+    ),
+    "",
+    renderDocumentMatrixSection(),
+    "",
+    renderCatalogsSection(),
+    "",
+    renderDictionarySection(),
+    "",
+    renderBukListsSection(),
+    ""
+  ].join("\n");
 }
 
 function main() {
-  const workbook = xlsx.utils.book_new();
-
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet(instructionsRows), "Instrucciones");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet(dictionaryRows), "Diccionario");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet([folioHeaders]), "Folios");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet([caseHeaders]), "Casos");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet([candidateHeaders]), "Candidatos");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet([candidateBukHeaders]), "Ficha_BUK");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet([documentSheetHeaders]), "Documentos");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet(buildDocumentReferenceRows()), "Matriz_Documental");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet(buildCatalogRows()), "Catalogos_Migracion");
-  xlsx.utils.book_append_sheet(workbook, rowsToSheet(buildBukListsRows()), "Listas_BUK");
-
   const outputDir = path.join(repoRoot, "docs", "templates");
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const outputXlsxPath = path.join(outputDir, "plantilla_migracion_reclutamiento.xlsx");
-  const outputXlsPath = path.join(outputDir, "plantilla_migracion_reclutamiento.xls");
+  const outputMarkdownPath = path.join(outputDir, "plantilla_migracion_reclutamiento.md");
+  fs.writeFileSync(outputMarkdownPath, buildMarkdownDocument(), "utf8");
 
-  xlsx.writeFile(workbook, outputXlsxPath, { bookType: "xlsx" });
-  xlsx.writeFile(workbook, outputXlsPath, { bookType: "biff8" });
-
-  process.stdout.write(`${outputXlsxPath}\n${outputXlsPath}\n`);
+  process.stdout.write(`${outputMarkdownPath}\n`);
 }
 
 main();

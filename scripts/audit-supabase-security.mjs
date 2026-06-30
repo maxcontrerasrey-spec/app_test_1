@@ -5,7 +5,7 @@ import process from "node:process";
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ["src", "scripts", "supabase", ".github"];
-const ROOT_FILES = ["package.json", "test-db.cjs", "sync-doc.cjs", "process-pdf.mjs"];
+const ROOT_FILES = ["package.json", "vite.config.ts", "index.html", ".env.example"];
 const TEXT_EXTENSIONS = new Set([
   ".cjs",
   ".css",

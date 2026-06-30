@@ -1,5 +1,6 @@
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload, type ServiceEntryPayload } from "../lib/service-entry";
+import type { Driver } from "../types";
 
 export interface SubmitServiceEntryResult {
   ok: boolean;
@@ -26,6 +27,49 @@ type BackendBatchError = {
   service_id?: string | number | null;
   field_errors?: Record<string, string>;
 };
+
+function asArray<T>(value: unknown) {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function readNullableText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+export async function searchOperationsDrivers(search: string, serviceDate: string, limit = 12) {
+  if (!supabase) {
+    throw new Error("Supabase no está configurado.");
+  }
+
+  const { data, error } = await supabase.rpc("search_operations_drivers", {
+    p_search: search.trim() || null,
+    p_service_date: serviceDate || null,
+    p_limit: limit,
+  });
+
+  if (error) {
+    throw new Error(error.message || "No fue posible buscar conductores.");
+  }
+
+  return asArray<Record<string, unknown>>(data).map(
+    (item): Driver => ({
+      id: String(item.buk_employee_id ?? ""),
+      fullName: String(item.full_name ?? ""),
+      documentNumber: String(item.document_number ?? ""),
+      documentType: readNullableText(item.document_type) ?? "rut",
+      areaName: readNullableText(item.area_name) ?? "",
+      areaCode: readNullableText(item.contract_code) ?? "",
+      jobTitle: readNullableText(item.job_title) ?? "",
+      contractCode: readNullableText(item.contract_code),
+      displayLabel: readNullableText(item.display_label) ?? "",
+      rosterBaseStatus: readNullableText(item.roster_base_status),
+      rosterEffectiveStatus: readNullableText(item.roster_effective_status),
+      isWorkingDay: Boolean(item.is_working_day),
+      isRestDay: Boolean(item.is_rest_day),
+      isActive: true,
+    })
+  );
+}
 
 export async function submitServiceEntry(
   payload: ServiceEntryPayload,

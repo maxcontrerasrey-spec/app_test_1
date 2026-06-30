@@ -1659,3 +1659,27 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Reducir líneas no justifica abrir una primitive paralela si el repo ya tiene una utilitaria canónica.** En este ERP, el hallazgo correcto no era “crear neumorfismo compartido”, porque `SoftSurface` y `soft-surface` ya existían; la corrección elegante fue reconectar los módulos a esa base y borrar CSS duplicado.
 - **La compactación buena separa infraestructura común de semántica de módulo.** Un `WorkerLookupField` compartido debe absorber debounce, overlay y estados de carga, mientras incentivos, movilidad y roster solo inyectan hook, labels y filtrado específico.
 - **La regla operativa es shared-first y de impacto mínimo.** Antes de abstraer, se busca si la pieza ya existe; si existe, se reutiliza y se limpia el vestigio duplicado. Solo se crea una primitive nueva cuando el contrato compartido realmente no está en el sistema.
+
+## 140. La limpieza profunda debe empezar por residuos generados y cerrar también los vestigios versionados que ya no están integrados
+
+- **No borres “documentación que parece vieja” ni scripts por intuición.** Primero demuestra desuso real contra `package.json`, workflows, referencias `rg` y trazas operativas antes de tocar algo versionado.
+- **Los artefactos locales regenerables deben salir del árbol final aunque hayan servido para validar.** Si `build`, `tsc` o herramientas móviles recrean `dist/`, `*.tsbuildinfo`, `.expo/` o `node_modules` auxiliares, se valida y luego se limpian otra vez.
+- **Si una auditoría interna sigue apuntando a archivos one-off ya obsoletos, la limpieza queda incompleta.** Hay que borrar el residuo y ajustar la herramienta para que siga cubriendo solo la superficie viva del repositorio.
+
+## 141. Si un Excel sigue aportando contexto, la salida enterprise no es conservar el binario sino mover su contrato a texto versionable
+
+- **Primero separa binario operativo de fuente de verdad.** Si el valor real del workbook ya vive en JSON, CSV, código o documentación del módulo, el Excel no debe seguir siendo el artefacto canónico.
+- **Cuando una plantilla legacy aún explica el proceso, conviértela a Markdown antes de borrarla.** El objetivo no es solo ahorrar peso; es dejar trazabilidad legible, diffable y auditable en git.
+- **No confundas “spreadsheet usado por runtime” con “spreadsheet guardado en el repo”.** Los CSV consumidos por la app pueden seguir vivos; los `.xls/.xlsx` estáticos sin ejecución directa deben justificarse o salir.
+
+## 142. Si un incentivo consume un descanso, ese descanso queda reservado por fecha para todo el dominio de incentivos
+
+- **La regla no puede depender del incentivo que estoy creando, sino también de los ya activos ese día.** Si el trabajador ya tiene un incentivo activo cuyo tipo exige descanso, cualquier segundo incentivo sobre la misma fecha debe bloquearse aunque venga para otro contrato o aunque el segundo tipo no exija descanso.
+- **El preview y la mutación deben compartir exactamente la misma detección de conflicto.** La UI puede anticipar la alerta roja, pero `create_hr_incentive_request(...)` tiene que volver a rechazarla usando el mismo payload de `build_hr_incentive_preview_from_worker_data(...)`.
+- **Cuando el bloqueo cruza contratos, el mensaje debe nombrar el contrato ya ocupado.** No basta con “ya existe un incentivo”; para operación real hay que indicar en qué contrato quedó consumido ese descanso para evitar dobles imputaciones silenciosas.
+
+## 143. Operaciones no debe inferir conductores ni turno desde un preload local; debe vivir sobre lookup BUK indexado y roster canónico
+
+- **Precargar `employees_active_current` completo para filtrar en cliente rompe el estándar enterprise del ERP.** Pierdes ranking indexado, vuelves a duplicar lógica de búsqueda y arriesgas que el lookup use una foto distinta de la que ya consumen Jornadas, Incentivos o Movilidad.
+- **El estado `turno/descanso` no es un campo de formulario; es una derivación operacional.** Si el backend ya resuelve la pauta diaria, Operaciones solo debe mostrar ese resultado y persistir la fuente (`roster`) junto a los snapshots necesarios para auditoría.
+- **Cuando el lookup remoto es efímero, el seleccionado debe preservarse aparte de los resultados.** Si el componente borra la lista al cerrar el buscador pero usa esa misma lista como source of truth del seleccionado, introduce una regresión silenciosa justo después de elegir al conductor.

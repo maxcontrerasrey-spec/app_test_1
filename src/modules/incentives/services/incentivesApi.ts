@@ -290,6 +290,24 @@ function mapPreview(payload: unknown): HrIncentivePreview {
           ? null
           : Boolean(rosterValidation.is_rest_day),
       blockedByAbsence: Boolean(rosterValidation.blocked_by_absence),
+      blockedByExistingRestDayIncentive: Boolean(
+        rosterValidation.blocked_by_existing_rest_day_incentive
+      ),
+      existingRestDayRequestId: readNullableText(rosterValidation.existing_rest_day_request_id),
+      existingRestDayFolio:
+        rosterValidation.existing_rest_day_folio === null ||
+        rosterValidation.existing_rest_day_folio === undefined
+          ? null
+          : Number(rosterValidation.existing_rest_day_folio),
+      existingRestDayContractCode: readNullableText(
+        rosterValidation.existing_rest_day_contract_code
+      ),
+      existingRestDayContractName: readNullableText(
+        rosterValidation.existing_rest_day_contract_name
+      ),
+      existingRestDayIncentiveTypeName: readNullableText(
+        rosterValidation.existing_rest_day_incentive_type_name
+      ),
       blockReason: readNullableText(rosterValidation.block_reason),
       matchedDate:
         readNullableText(rosterValidation.matched_date) ?? readNullableText(source.service_date)

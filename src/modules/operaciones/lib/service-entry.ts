@@ -6,7 +6,6 @@ export interface ServiceEntryPayload {
   driverName?: string;
   driverDocument?: string;
   driverArea?: string;
-  driverShiftStatus?: string;
   equipmentCode?: string;
 }
 
@@ -18,7 +17,6 @@ export interface CleanedServiceEntryPayload {
   driverName: string;
   driverDocument: string;
   driverArea: string;
-  driverShiftStatus: string;
   equipmentCode: string;
 }
 
@@ -29,7 +27,6 @@ export interface ServiceEntryValidationResult {
 }
 
 const SHIFT_OPTIONS = new Set(["am", "pm"]);
-const DRIVER_SHIFT_STATUS_OPTIONS = new Set(["en_turno", "fuera_de_turno"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DRIVER_PATTERN = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.'\- ]{2,140}$/;
 const EQUIPMENT_PATTERN = /^[A-Za-z0-9._\-\/ ]{2,50}$/;
@@ -66,7 +63,6 @@ export function validateServiceEntryPayload(payload: unknown): ServiceEntryValid
     driverName: sanitizeText(record.driverName),
     driverDocument: sanitizeText(record.driverDocument),
     driverArea: sanitizeText(record.driverArea),
-    driverShiftStatus: sanitizeText(record.driverShiftStatus).toLowerCase(),
     equipmentCode: sanitizeText(record.equipmentCode).toUpperCase(),
   };
 
@@ -98,10 +94,6 @@ export function validateServiceEntryPayload(payload: unknown): ServiceEntryValid
 
   if (cleaned.driverArea.length > 160) {
     errors.driverArea = "El área del conductor no es válida.";
-  }
-
-  if (!DRIVER_SHIFT_STATUS_OPTIONS.has(cleaned.driverShiftStatus)) {
-    errors.driverShiftStatus = "Selecciona un estado de turno válido.";
   }
 
   if (!cleaned.equipmentCode || !EQUIPMENT_PATTERN.test(cleaned.equipmentCode)) {

@@ -3,16 +3,14 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
 import {
-  buildSimplifiedBukNameSearchKey,
   buildDashboardSummary,
-  buildDriverDirectory,
   buildEquipmentDirectory,
   enumerateDateRange,
   fetchAllPagedRows,
   matchesSchedule,
   normalizeText
 } from "../lib/transformers";
-import { submitServiceEntriesBatch } from "../services/operacionesApi";
+import { searchOperationsDrivers, submitServiceEntriesBatch } from "../services/operacionesApi";
 import { SERVICE_DATA } from "../data/services-data";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
@@ -24,7 +22,6 @@ import type {
   DashboardEntryRow,
   DashboardSummary,
   Driver,
-  EmployeeActiveRow,
   Equipment,
   EquipmentDirectoryRow,
   ExportEntryRow,
@@ -40,25 +37,7 @@ import { OperationsExport } from "../components/OperationsExport";
 import { OperationsSpecialRegister } from "../components/OperationsSpecialRegister";
 import "../styles/operaciones.css";
 
-const PILOT_CONTRACTS = ["CODELCO DRT", "SERVICIO CODELCO DMH"];
-
-const SAMPLE_DRIVERS: Driver[] = ["Carlos Rojas", "Juan Araya", "Luis Muñoz", "Pedro Cortés", "Marco Silva", "Héctor Díaz"].map((fullName, index) => ({
-  id: `sample-${index + 1}`,
-  fullName,
-  documentNumber: "",
-  areaName: "",
-  areaCode: "",
-  isActive: true,
-}));
-
-const SAMPLE_EQUIPMENT: Equipment[] = ["BUS-042", "BUS-115", "MB-203", "TX-018", "TX-026", "CRY-015"].map((equipmentCode) => ({
-  code: equipmentCode,
-  plate: "",
-  type: "",
-  currentClient: "",
-}));
-
-const EMPLOYEES_PAGE_SIZE = 1000;
+const PILOT_CONTRACTS = ["CODELCO DRT", "CODELCO DMH"];
 const EXPORT_PAGE_SIZE = 1000;
 const DASHBOARD_PAGE_SIZE = 1000;
 const DASHBOARD_ENTRY_SELECT = "contract_code, service_date, shift, driver_name, driver_shift_status, service_operational_name";
@@ -103,8 +82,9 @@ export function OperacionesDashboard() {
   const [userContracts, setUserContracts] = useState<string[]>([]);
 
   const [openDriverServiceId, setOpenDriverServiceId] = useState<number | null>(null);
-  const [driversData, setDriversData] = useState<Driver[]>(SAMPLE_DRIVERS);
-  const [equipmentData, setEquipmentData] = useState<Equipment[]>(SAMPLE_EQUIPMENT);
+  const [driverDirectory, setDriverDirectory] = useState<Record<string, Driver>>({});
+  const [driverResults, setDriverResults] = useState<Driver[]>([]);
+  const [equipmentData, setEquipmentData] = useState<Equipment[]>([]);
   const [driverQuery, setDriverQuery] = useState("");
   const [openEquipmentServiceId, setOpenEquipmentServiceId] = useState<number | null>(null);
   const [equipmentQuery, setEquipmentQuery] = useState("");
@@ -132,30 +112,7 @@ export function OperacionesDashboard() {
     );
   }, [selectedContract, selectedShift, selectedDate, servicesData]);
 
-  const filteredDrivers = useMemo(() => {
-    const query = normalizeText(driverQuery);
-
-    if (!query) {
-      return driversData;
-    }
-
-    const parts = query.split(" ").filter(Boolean);
-
-    return driversData.filter((employee) => {
-      const haystack = `${normalizeText(employee.fullName)} ${buildSimplifiedBukNameSearchKey(employee.fullName)}`.trim();
-      return parts.every((part) => {
-        if (haystack.includes(part)) {
-          return true;
-        }
-
-        if (part.endsWith("s") && part.length > 4) {
-          return haystack.includes(part.slice(0, -1));
-        }
-
-        return false;
-      });
-    });
-  }, [driverQuery, driversData]);
+  const filteredDrivers = useMemo(() => driverResults, [driverResults]);
 
   const filteredEquipment = useMemo(() => {
     const query = normalizeText(equipmentQuery);
@@ -192,7 +149,6 @@ export function OperacionesDashboard() {
     return (
       serviceDrafts[serviceId] ?? {
         driverId: "",
-        driverShiftStatus: "en_turno",
         equipmentCode: "",
       }
     );
@@ -210,7 +166,7 @@ export function OperacionesDashboard() {
   }
 
   function getDriverById(driverId: string): Driver | null {
-    return driversData.find((employee) => employee.id === driverId) ?? null;
+    return driverDirectory[driverId] ?? null;
   }
 
   function getEquipmentByCode(code: string): Equipment | null {
@@ -223,23 +179,10 @@ export function OperacionesDashboard() {
 
     let active = true;
 
-    async function fetchAllActiveEmployees() {
-      if (!client) return [];
-      return fetchAllPagedRows<EmployeeActiveRow>({
-        pageSize: EMPLOYEES_PAGE_SIZE,
-        buildQuery: (from, to) =>
-          client
-            .from("employees_active_current")
-            .select("buk_employee_id, full_name, document_number, document_type, area_name, area_code, is_active, status, updated_at")
-            .order("full_name", { ascending: true })
-            .range(from, to),
-      });
-    }
-
     async function loadSessionData() {
       if (!client || !session) return;
       try {
-        const [servicesResponse, contractsResponse, employeeRows, equipmentResponse] = await Promise.all([
+        const [servicesResponse, contractsResponse, equipmentResponse] = await Promise.all([
           client
             .from("base_services")
             .select(
@@ -251,7 +194,7 @@ export function OperacionesDashboard() {
                 contractual_name,
                 contractual_category,
                 schedule_label,
-                contracts:contract_id (code)
+                contracts:contract_id (code, contract_name)
               `,
             )
             .order("external_key", { ascending: true }),
@@ -263,7 +206,6 @@ export function OperacionesDashboard() {
               `,
             )
             .eq("user_id", session.user.id),
-          fetchAllActiveEmployees(),
           client
             .from("equipment")
             .select("equipment_code, plate, equipment_type, current_client, brand, model, year, is_active, updated_at")
@@ -288,7 +230,7 @@ export function OperacionesDashboard() {
           type: row.service_type,
           contractName: row.contractual_name,
           category: row.contractual_category,
-          contract: row.contracts?.[0]?.code ?? "",
+          contract: row.contracts?.[0]?.contract_name || row.contracts?.[0]?.code || "",
           schedule: row.schedule_label,
           normalizedSchedule: normalizeText(row.schedule_label),
         }));
@@ -304,17 +246,14 @@ export function OperacionesDashboard() {
             .filter(Boolean),
         );
 
-        if ((employeeRows ?? []).length > 0) {
-          setDriversData(buildDriverDirectory(employeeRows as EmployeeActiveRow[]));
-        }
-
         if (!equipmentError && (equipmentRows ?? []).length > 0) {
           setEquipmentData(buildEquipmentDirectory(equipmentRows as EquipmentDirectoryRow[]));
         }
       } catch {
         if (active) {
-          setDriversData(SAMPLE_DRIVERS);
-          setEquipmentData(SAMPLE_EQUIPMENT);
+          setDriverResults([]);
+          setDriverDirectory({});
+          setEquipmentData([]);
         }
       }
     }
@@ -325,6 +264,47 @@ export function OperacionesDashboard() {
       active = false;
     };
   }, [session]);
+
+  useEffect(() => {
+    if (!session || openDriverServiceId === null) {
+      setDriverResults([]);
+      return;
+    }
+
+    const trimmedQuery = driverQuery.trim();
+    const documentDigits = driverQuery.replace(/\D/g, "");
+
+    if (!trimmedQuery || (trimmedQuery.length < 2 && documentDigits.length < 4)) {
+      setDriverResults([]);
+      return;
+    }
+
+    let active = true;
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const rows = await searchOperationsDrivers(trimmedQuery, selectedDateValue, 12);
+        if (active) {
+          setDriverResults(rows);
+          setDriverDirectory((current) => {
+            const next = { ...current };
+            for (const row of rows) {
+              next[row.id] = row;
+            }
+            return next;
+          });
+        }
+      } catch {
+        if (active) {
+          setDriverResults([]);
+        }
+      }
+    }, 200);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [driverQuery, openDriverServiceId, selectedDateValue, session]);
 
   useEffect(() => {
     const client = supabase;
@@ -387,6 +367,8 @@ export function OperacionesDashboard() {
   useEffect(() => {
     setServiceDrafts({});
     setExpandedServiceId(null);
+    setDriverDirectory({});
+    setDriverResults([]);
     setDriverQuery("");
     setOpenDriverServiceId(null);
     setEquipmentQuery("");
@@ -439,7 +421,7 @@ export function OperacionesDashboard() {
     for (const service of eligibleServices) {
       const draft = getDraft(service.id);
       const selectedDriver = getDriverById(draft.driverId);
-      const touched = Boolean(draft.driverId || draft.equipmentCode || draft.driverShiftStatus !== "en_turno");
+      const touched = Boolean(draft.driverId || draft.equipmentCode);
       const completed = Boolean(draft.driverId && draft.equipmentCode);
 
       if (!touched) {
@@ -454,7 +436,6 @@ export function OperacionesDashboard() {
         driverName: selectedDriver?.fullName ?? "",
         driverDocument: selectedDriver?.documentNumber ?? "",
         driverArea: selectedDriver?.areaName || selectedDriver?.areaCode || "",
-        driverShiftStatus: draft.driverShiftStatus,
         equipmentCode: draft.equipmentCode,
       });
 
