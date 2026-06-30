@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 175. Un selector operativo no debe ofrecer entidades que el backend ya sabe que son inviables para el contexto activo
+
+- **Mostrar tipos de incentivo activos pero sin regla aplicable para el trabajador, contrato o fecha obliga al usuario a descubrir la invalidez recién en preview o submit.** Eso degrada la operación y convierte una incompatibilidad determinística en ensayo y error.
+- **La regla correcta es resolver elegibilidad contextualmente en backend y usar ese contrato para poblar el dropdown.** Si la misma lógica canónica ya existe en `resolve_hr_incentive_rate_rule(...)`, el selector debe consumir una RPC derivada de esa verdad, no reconstruir filtros locales con catálogos parciales.
+- **Cuando la elegibilidad depende de contexto operativo, el estado vacío debe explicarse con semántica de negocio.** “No hay incentivos con regla activa para este trabajador, contrato y fecha” es contrato operativo; un dropdown genérico vacío no lo es.
+
 ## 174. Si una capacidad base resuelve el dato final, no puede seguir bloqueada por un fallback opcional de otra capa
 
 - **Permitir “monto manual” en el tipo de incentivo pero seguir exigiendo una regla activa antes de aceptar ese monto rompe el contrato semántico del módulo.** El sistema dice que el monto manual es fuente válida, pero en ejecución sigue subordinándolo a una regla que ya no es necesaria para ese caso.

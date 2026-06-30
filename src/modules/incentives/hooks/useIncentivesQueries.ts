@@ -4,6 +4,7 @@ import {
   fetchHrIncentivesAnalytics,
   fetchHrIncentiveApprovalQueue,
   fetchHrIncentiveApprovalQueuePage,
+  fetchHrIncentiveEligibleTypes,
   fetchHrIncentivePreview,
   fetchHrIncentiveRosterSnapshot,
   fetchHrIncentiveRequestDetail,
@@ -135,6 +136,41 @@ export function useHrIncentiveWorkerContext(bukEmployeeId: string, enabled = tru
   });
 }
 
+export function useHrIncentiveEligibleTypes(params: {
+  bukEmployeeId: string;
+  selectedContractCode: string;
+  serviceDate?: string | null;
+  enabled?: boolean;
+}) {
+  const {
+    bukEmployeeId,
+    selectedContractCode,
+    serviceDate,
+    enabled = true
+  } = params;
+
+  return useQuery({
+    queryKey: queryKeys.incentives.eligibleTypes({
+      bukEmployeeId,
+      selectedContractCode,
+      serviceDate: serviceDate ?? null
+    }),
+    queryFn: () =>
+      fetchHrIncentiveEligibleTypes({
+        bukEmployeeId,
+        selectedContractCode,
+        serviceDate
+      }),
+    staleTime: INCENTIVES_WORKER_CONTEXT_STALE_TIME_MS,
+    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
+    enabled:
+      enabled &&
+      Boolean(bukEmployeeId) &&
+      Boolean(selectedContractCode) &&
+      Boolean(serviceDate)
+  });
+}
+
 export function useHrIncentiveRosterSnapshot(params: {
   bukEmployeeId: string;
   serviceDate?: string | null;
@@ -209,6 +245,7 @@ export function useHrIncentivePreview(params: {
 export async function invalidateHrIncentiveQueries(queryClient: QueryClient) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.eligibleTypesRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.requestsRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.analyticsRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.incentives.approvalsRoot() }),

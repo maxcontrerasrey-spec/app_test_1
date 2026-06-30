@@ -2,6 +2,28 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Restricción de tipos de incentivo por regla activa del trabajador
+
+- [x] Auditar cómo se carga hoy el dropdown de tipos de incentivo y dónde se desacopla del contrato real de reglas activas
+- [x] Agregar un contrato backend que resuelva tipos elegibles por trabajador, contrato y fecha usando la misma lógica canónica de matching de reglas
+- [x] Conectar el formulario de registro para mostrar solo tipos elegibles y degradar correctamente cuando no existan reglas activas aplicables
+- [x] Validar con auditoría de migraciones, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
+
+## Resultado de restricción de tipos de incentivo por regla activa del trabajador
+
+- Se agregó la migración [`20260630171000_filter_hr_incentive_types_by_active_rules.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630171000_filter_hr_incentive_types_by_active_rules.sql:1), que incorpora la RPC `get_hr_incentive_eligible_types(...)` para resolver tipos elegibles por `trabajador + contrato + fecha` reutilizando la misma lógica canónica de `resolve_hr_incentive_rate_rule(...)`.
+- El formulario dejó de poblar el selector desde el catálogo global de tipos activos. [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) ahora consulta la RPC de elegibilidad y solo muestra incentivos con regla activa aplicable al contexto seleccionado.
+- La UX también quedó alineada con el contrato operativo: si faltan trabajador, contrato o fecha, el selector lo indica; si no existe ninguna regla activa aplicable, muestra un mensaje semántico explícito en vez de dejar al usuario descubrir el bloqueo recién en preview.
+- La invalidez de caché también quedó alineada: [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1), [`useIncentivesQueries.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/hooks/useIncentivesQueries.ts:1) y [`queryKeys.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/queryKeys.ts:1) invalidan y versionan explícitamente la caché de tipos elegibles cuando cambia la configuración base.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260630171000_filter_hr_incentive_types_by_active_rules.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run --include-all`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto de la migración y la nueva RPC
+  - `git diff --check`
+
 ## Corrección enterprise del monto manual en Incentivos
 
 - [x] Auditar por qué el flujo de monto manual sigue exigiendo una regla activa antes de aceptar el monto digitado

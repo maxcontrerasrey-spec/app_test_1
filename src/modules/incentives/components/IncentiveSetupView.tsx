@@ -95,7 +95,10 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   }, [ruleStatusFilter, setupCatalogsQuery.data?.rateRules]);
 
   const refreshSetupCatalogs = () =>
-    queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() });
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.incentives.setupCatalogs() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.incentives.eligibleTypesRoot() })
+    ]);
 
   const jobTitleMutation = useMutation({
     mutationFn: addHrIncentiveAllowedJobTitle,

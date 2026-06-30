@@ -8,6 +8,7 @@ import {
   createHrIncentiveRequest
 } from "../services/incentivesApi";
 import {
+  useHrIncentiveEligibleTypes,
   invalidateHrIncentiveQueries,
   useHrIncentivePreview,
   useHrIncentiveRosterSnapshot,
@@ -148,11 +149,17 @@ export function IncentiveRegistrationForm({
     serviceDate,
     enabled: Boolean(replacementWorker) && Boolean(serviceDate)
   });
+  const eligibleIncentiveTypesQuery = useHrIncentiveEligibleTypes({
+    bukEmployeeId: selectedWorker?.bukEmployeeId ?? "",
+    selectedContractCode: selectedAreaValue ? (workerContextQuery.data?.availableAreas ?? []).find(
+      (item) =>
+        buildAreaOptionValue(item.contractCode, item.areaCode, item.areaName) === selectedAreaValue
+    )?.contractCode ?? "" : "",
+    serviceDate,
+    enabled: Boolean(selectedWorker) && Boolean(selectedAreaValue) && Boolean(serviceDate)
+  });
 
-  const incentiveTypes = useMemo(
-    () => (setupCatalogsQuery.data?.incentiveTypes ?? []).filter((item) => item.isActive),
-    [setupCatalogsQuery.data?.incentiveTypes]
-  );
+  const incentiveTypes = eligibleIncentiveTypesQuery.data ?? [];
 
   const selectedIncentiveType = useMemo(
     () => incentiveTypes.find((item) => item.id === selectedIncentiveTypeId) ?? null,
@@ -190,6 +197,18 @@ export function IncentiveRegistrationForm({
       setReplacementWorker(null);
     }
   }, [selectedIncentiveType?.requiresReplacement]);
+
+  useEffect(() => {
+    if (!selectedIncentiveTypeId) {
+      return;
+    }
+
+    if (incentiveTypes.some((item) => item.id === selectedIncentiveTypeId)) {
+      return;
+    }
+
+    setSelectedIncentiveTypeId("");
+  }, [incentiveTypes, selectedIncentiveTypeId]);
 
   useEffect(() => {
     if (!selectedIncentiveType?.allowsManualAmount) {
@@ -338,7 +357,7 @@ export function IncentiveRegistrationForm({
           </div>
         </div>
 
-        {incentiveTypes.length === 0 ? (
+        {(setupCatalogsQuery.data?.incentiveTypes ?? []).filter((item) => item.isActive).length === 0 ? (
           <p className="form-status form-status-error">
             No hay tipos de incentivo activos. Configúralos primero en la pestaña
             &quot;Configuración base&quot;.
@@ -423,9 +442,47 @@ export function IncentiveRegistrationForm({
               value: type.id,
               label: type.name
             }))}
-            disabled={setupCatalogsQuery.isLoading}
-            placeholder="Selecciona el incentivo"
+            disabled={
+              setupCatalogsQuery.isLoading ||
+              !selectedWorker ||
+              !selectedArea?.contractCode ||
+              !serviceDate ||
+              eligibleIncentiveTypesQuery.isLoading
+            }
+            placeholder={
+              !selectedWorker || !selectedArea?.contractCode || !serviceDate
+                ? "Selecciona trabajador, contrato y fecha"
+                : eligibleIncentiveTypesQuery.isLoading
+                  ? "Cargando incentivos disponibles..."
+                  : incentiveTypes.length === 0
+                    ? "No hay incentivos con regla activa"
+                    : "Selecciona el incentivo"
+            }
           />
+
+          {selectedWorker &&
+          selectedArea?.contractCode &&
+          serviceDate &&
+          eligibleIncentiveTypesQuery.isError ? (
+            <div className="hr-incentives-grid-span-2">
+              <p className="form-status form-status-error">
+                {eligibleIncentiveTypesQuery.error.message}
+              </p>
+            </div>
+          ) : null}
+
+          {selectedWorker &&
+          selectedArea?.contractCode &&
+          serviceDate &&
+          !eligibleIncentiveTypesQuery.isLoading &&
+          !eligibleIncentiveTypesQuery.isError &&
+          incentiveTypes.length === 0 ? (
+            <div className="hr-incentives-grid-span-2">
+              <p className="form-status form-status-error">
+                No existen tipos de incentivo con regla activa para este trabajador, contrato y fecha.
+              </p>
+            </div>
+          ) : null}
 
           <DatePickerField
             id="incentive-service-date"

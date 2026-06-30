@@ -33,6 +33,7 @@ export const queryKeys = {
   },
   incentives: {
     setupCatalogs: () => ["incentives", "setup-catalogs"] as const,
+    eligibleTypesRoot: () => ["incentives", "eligible-types"] as const,
     requestsRoot: () => ["incentives", "requests"] as const,
     requestsList: (filters: Record<string, unknown>) =>
       ["incentives", "requests", "list", filters] as const,
@@ -50,6 +51,8 @@ export const queryKeys = {
     workerSearch: (search: string) => ["incentives", "worker-search", search] as const,
     workerContext: (bukEmployeeId: string) =>
       ["incentives", "worker-context", bukEmployeeId] as const,
+    eligibleTypes: (params: Record<string, unknown>) =>
+      ["incentives", "eligible-types", params] as const,
     rosterSnapshot: (params: Record<string, unknown>) =>
       ["incentives", "roster-snapshot", params] as const,
     preview: (params: Record<string, unknown>) => ["incentives", "preview", params] as const

@@ -664,6 +664,35 @@ export async function fetchHrIncentiveWorkerContext(bukEmployeeId: string) {
   return mapWorkerContext(data);
 }
 
+export async function fetchHrIncentiveEligibleTypes(params: {
+  bukEmployeeId: string;
+  selectedContractCode: string;
+  serviceDate?: string | null;
+}) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("get_hr_incentive_eligible_types", {
+    p_buk_employee_id: params.bukEmployeeId,
+    p_selected_contract_code: params.selectedContractCode,
+    p_service_date: params.serviceDate ?? null
+  });
+
+  if (error) {
+    throw new Error(error.message || "No fue posible cargar los incentivos disponibles.");
+  }
+
+  return asArray<Record<string, unknown>>(data).map((item) => ({
+    id: String(item.id ?? ""),
+    code: String(item.code ?? ""),
+    name: String(item.name ?? ""),
+    calculationBasis: item.calculation_basis === "per_hour" ? "per_hour" : "fixed",
+    requiresReplacement: Boolean(item.requires_replacement),
+    requiresRestDay: Boolean(item.requires_rest_day),
+    allowsManualAmount: Boolean(item.allows_manual_amount),
+    isActive: Boolean(item.is_active),
+    createdAt: String(item.created_at ?? "")
+  }));
+}
+
 export async function fetchHrIncentivePreview(params: {
   bukEmployeeId: string;
   incentiveTypeId: string;
