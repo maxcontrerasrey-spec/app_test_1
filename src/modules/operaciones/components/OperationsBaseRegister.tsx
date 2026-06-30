@@ -1,5 +1,6 @@
 import { DatePickerField } from "../../../shared/ui";
 import { parseDateValue } from "../../../shared/lib/date";
+import { OperationsDriverLookup } from "./OperationsDriverLookup";
 import type { ServiceDataRecord } from "../data/services-data";
 import type { Driver, Equipment, ServiceDraft } from "../types";
 
@@ -25,18 +26,14 @@ interface OperationsBaseRegisterProps {
   getDraft: (serviceId: number) => ServiceDraft;
   updateDraft: (serviceId: number, patch: Partial<ServiceDraft>) => void;
   getDriverById: (driverId: string) => Driver | null;
+  rememberDriver: (driver: Driver) => void;
   getEquipmentByCode: (code: string) => Equipment | null;
   expandedServiceId: number | null;
   setExpandedServiceId: (value: number | null) => void;
-  openDriverServiceId: number | null;
-  setOpenDriverServiceId: (value: number | null) => void;
   openEquipmentServiceId: number | null;
   setOpenEquipmentServiceId: (value: number | null) => void;
-  driverQuery: string;
-  setDriverQuery: (value: string) => void;
   equipmentQuery: string;
   setEquipmentQuery: (value: string) => void;
-  filteredDrivers: Driver[];
   filteredEquipment: Equipment[];
 }
 
@@ -67,6 +64,13 @@ function getDriverRosterLabel(driver: Driver | null) {
   }
 }
 
+function getDriverRosterTone(driver: Driver | null) {
+  if (!driver) return "is-empty";
+  if (driver.isRestDay) return "is-resting";
+  if (driver.isWorkingDay || driver.rosterEffectiveStatus === "extra_shift") return "is-working";
+  return "is-neutral";
+}
+
 export function OperationsBaseRegister({
   selectedDateValue,
   setSelectedDateValue,
@@ -83,18 +87,14 @@ export function OperationsBaseRegister({
   getDraft,
   updateDraft,
   getDriverById,
+  rememberDriver,
   getEquipmentByCode,
   expandedServiceId,
   setExpandedServiceId,
-  openDriverServiceId,
-  setOpenDriverServiceId,
   openEquipmentServiceId,
   setOpenEquipmentServiceId,
-  driverQuery,
-  setDriverQuery,
   equipmentQuery,
   setEquipmentQuery,
-  filteredDrivers,
   filteredEquipment,
 }: OperationsBaseRegisterProps) {
   const selectedDate = selectedDateValue ? parseDateValue(selectedDateValue) : null;
@@ -102,13 +102,6 @@ export function OperationsBaseRegister({
 
   return (
     <section className="operations-page-shell">
-      <section className="dashboard-hero operations-page-hero">
-        <div className="dashboard-hero__copy">
-          <h3>Registro de servicios base</h3>
-          <p>Define fecha, turno y contrato para habilitar la planificación operativa del día.</p>
-        </div>
-      </section>
-
       <section className="operations-control-grid operations-control-grid--base">
         <section className="panel operations-panel jornada-panel">
           <p className="panel-label">Jornada</p>
@@ -206,9 +199,7 @@ export function OperationsBaseRegister({
                     aria-expanded={isExpanded}
                     onClick={() => {
                       setExpandedServiceId(expandedServiceId === service.id ? null : service.id);
-                      setOpenDriverServiceId(null);
                       setOpenEquipmentServiceId(null);
-                      setDriverQuery("");
                       setEquipmentQuery("");
                     }}
                   >
@@ -256,86 +247,22 @@ export function OperationsBaseRegister({
                     </div>
 
                     <div className="service-reference-row service-reference-row--driver">
-                      <label className="service-assignment-field">
-                        <span>Conductor</span>
-                        <div className="driver-picker">
-                          <button
-                            type="button"
-                            className="driver-picker__trigger"
-                            aria-expanded={selectedDriver ? false : openDriverServiceId === service.id}
-                            aria-invalid={Boolean(fieldErrors.driverName)}
-                            onClick={() => {
-                              if (selectedDriver) return;
-                              setOpenDriverServiceId(openDriverServiceId === service.id ? null : service.id);
-                              setOpenEquipmentServiceId(null);
-                              setEquipmentQuery("");
-                            }}
-                          >
-                            <span className="driver-picker__value">{selectedDriver?.fullName || "Selecciona conductor"}</span>
-                            {selectedDriver ? (
-                              <span
-                                className="driver-picker__clear"
-                                role="button"
-                                tabIndex={0}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  updateDraft(service.id, { driverId: "" });
-                                  setDriverQuery("");
-                                  setOpenDriverServiceId(null);
-                                }}
-                                onKeyDown={(event) => {
-                                  if (event.key === "Enter" || event.key === " ") {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    updateDraft(service.id, { driverId: "" });
-                                    setDriverQuery("");
-                                    setOpenDriverServiceId(null);
-                                  }
-                                }}
-                                aria-label="Quitar conductor seleccionado"
-                              >
-                                ×
-                              </span>
-                            ) : null}
-                            {!selectedDriver ? <span className="driver-picker__chevron" /> : null}
-                          </button>
+                      <OperationsDriverLookup
+                        id={`operations-driver-${service.id}`}
+                        label="Conductor"
+                        placeholder="Busca conductor por nombre o RUT"
+                        selectedWorker={selectedDriver}
+                        serviceDate={selectedDateValue}
+                        onSelect={(driver) => {
+                          if (driver) {
+                            rememberDriver(driver);
+                            updateDraft(service.id, { driverId: driver.id });
+                            return;
+                          }
 
-                          {openDriverServiceId === service.id ? (
-                            <div className="driver-picker__popover">
-                              <input
-                                type="text"
-                                value={driverQuery}
-                                onChange={(event) => setDriverQuery(event.target.value)}
-                                placeholder="Buscar por nombre o apellidos"
-                                className="driver-picker__search"
-                                autoFocus
-                              />
-                              <div className="driver-picker__list" role="listbox" aria-label="Resultados de conductor">
-                                {filteredDrivers.length > 0 ? (
-                                  filteredDrivers.map((employee) => (
-                                    <button
-                                      key={employee.id}
-                                      type="button"
-                                      className={`driver-picker__option${employee.id === draft.driverId ? " is-selected" : ""}`}
-                                      onClick={() => {
-                                        updateDraft(service.id, { driverId: employee.id });
-                                        setOpenDriverServiceId(null);
-                                        setDriverQuery("");
-                                      }}
-                                    >
-                                      {employee.fullName}
-                                    </button>
-                                  ))
-                                ) : !driverQuery.trim() ? (
-                                  <p className="driver-picker__empty">Escribe nombre, apellido o RUT para buscar en BUK.</p>
-                                ) : (
-                                  <p className="driver-picker__empty">No se encontraron conductores.</p>
-                                )}
-                              </div>
-                            </div>
-                          ) : null}
-                        </div>
-                      </label>
+                          updateDraft(service.id, { driverId: "" });
+                        }}
+                      />
 
                       <label className="service-assignment-field">
                         <span>RUT / Documento</span>
@@ -349,12 +276,12 @@ export function OperationsBaseRegister({
 
                       <label className="service-assignment-field">
                         <span>Estado de turno</span>
-                        <input
-                          type="text"
-                          readOnly
-                          value={getDriverRosterLabel(selectedDriver)}
-                          className="compact-readonly"
-                        />
+                        <div className={`shift-status-indicator ${getDriverRosterTone(selectedDriver)}`}>
+                          <span className="shift-status-indicator__dot" aria-hidden="true" />
+                          <span className="shift-status-indicator__label">
+                            {getDriverRosterLabel(selectedDriver) || "Sin pauta"}
+                          </span>
+                        </div>
                       </label>
                     </div>
 
@@ -370,8 +297,6 @@ export function OperationsBaseRegister({
                             onClick={() => {
                               if (selectedEquipment) return;
                               setOpenEquipmentServiceId(openEquipmentServiceId === service.id ? null : service.id);
-                              setOpenDriverServiceId(null);
-                              setDriverQuery("");
                             }}
                           >
                             <span className="driver-picker__value">{selectedEquipment?.code || "Selecciona equipo"}</span>
@@ -472,7 +397,6 @@ export function OperationsBaseRegister({
                       <span />
                       <span />
                     </div>
-                    {openDriverServiceId === service.id && driverQuery ? <p className="helper-copy helper-copy--tight">{filteredDrivers.length} conductor(es) encontrados.</p> : null}
                     {openEquipmentServiceId === service.id && equipmentQuery ? <p className="helper-copy helper-copy--tight">{filteredEquipment.length} equipo(s) encontrados.</p> : null}
                   </div>
                 ) : null}

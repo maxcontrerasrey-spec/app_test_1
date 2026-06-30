@@ -62,6 +62,10 @@ export const queryKeys = {
     workerSchedule: (params: Record<string, unknown>) => ["roster", "worker-schedule", params] as const,
     assignmentsRoot: () => ["roster", "assignments"] as const
   },
+  operations: {
+    driverSearch: (params: Record<string, unknown>) =>
+      ["operations", "driver-search", params] as const
+  },
   accreditation: {
     setupCatalogs: () => ["accreditation", "setup-catalogs"] as const,
     dashboard: (filters: Record<string, unknown>) => ["accreditation", "dashboard", filters] as const,

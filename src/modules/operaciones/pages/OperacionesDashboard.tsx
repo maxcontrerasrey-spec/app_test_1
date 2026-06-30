@@ -10,7 +10,7 @@ import {
   matchesSchedule,
   normalizeText
 } from "../lib/transformers";
-import { searchOperationsDrivers, submitServiceEntriesBatch } from "../services/operacionesApi";
+import { submitServiceEntriesBatch } from "../services/operacionesApi";
 import { SERVICE_DATA } from "../data/services-data";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
@@ -103,11 +103,8 @@ export function OperacionesDashboard() {
 
   const [userContracts, setUserContracts] = useState<string[]>([]);
 
-  const [openDriverServiceId, setOpenDriverServiceId] = useState<number | null>(null);
   const [driverDirectory, setDriverDirectory] = useState<Record<string, Driver>>({});
-  const [driverResults, setDriverResults] = useState<Driver[]>([]);
   const [equipmentData, setEquipmentData] = useState<Equipment[]>([]);
-  const [driverQuery, setDriverQuery] = useState("");
   const [openEquipmentServiceId, setOpenEquipmentServiceId] = useState<number | null>(null);
   const [equipmentQuery, setEquipmentQuery] = useState("");
 
@@ -132,8 +129,6 @@ export function OperacionesDashboard() {
       (item) => item.contract === selectedContract && matchesSchedule(item.normalizedSchedule, selectedDate),
     );
   }, [selectedContract, selectedShift, selectedDate, servicesData]);
-
-  const filteredDrivers = useMemo(() => driverResults, [driverResults]);
 
   const filteredEquipment = useMemo(() => {
     const query = normalizeText(equipmentQuery);
@@ -188,6 +183,13 @@ export function OperacionesDashboard() {
 
   function getDriverById(driverId: string): Driver | null {
     return driverDirectory[driverId] ?? null;
+  }
+
+  function rememberDriver(driver: Driver) {
+    setDriverDirectory((current) => ({
+      ...current,
+      [driver.id]: driver,
+    }));
   }
 
   function getEquipmentByCode(code: string): Equipment | null {
@@ -297,7 +299,6 @@ export function OperacionesDashboard() {
         }
       } catch {
         if (active) {
-          setDriverResults([]);
           setDriverDirectory({});
           setEquipmentData([]);
         }
@@ -310,47 +311,6 @@ export function OperacionesDashboard() {
       active = false;
     };
   }, [session]);
-
-  useEffect(() => {
-    if (!session || openDriverServiceId === null) {
-      setDriverResults([]);
-      return;
-    }
-
-    const trimmedQuery = driverQuery.trim();
-    const documentDigits = driverQuery.replace(/\D/g, "");
-
-    if (!trimmedQuery || (trimmedQuery.length < 2 && documentDigits.length < 4)) {
-      setDriverResults([]);
-      return;
-    }
-
-    let active = true;
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        const rows = await searchOperationsDrivers(trimmedQuery, selectedDateValue, 12);
-        if (active) {
-          setDriverResults(rows);
-          setDriverDirectory((current) => {
-            const next = { ...current };
-            for (const row of rows) {
-              next[row.id] = row;
-            }
-            return next;
-          });
-        }
-      } catch {
-        if (active) {
-          setDriverResults([]);
-        }
-      }
-    }, 200);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timeoutId);
-    };
-  }, [driverQuery, openDriverServiceId, selectedDateValue, session]);
 
   useEffect(() => {
     const client = supabase;
@@ -414,9 +374,6 @@ export function OperacionesDashboard() {
     setServiceDrafts({});
     setExpandedServiceId(null);
     setDriverDirectory({});
-    setDriverResults([]);
-    setDriverQuery("");
-    setOpenDriverServiceId(null);
     setEquipmentQuery("");
     setOpenEquipmentServiceId(null);
     setSubmitState({
@@ -432,8 +389,6 @@ export function OperacionesDashboard() {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement;
       if (!target.closest(".driver-picker")) {
-        setOpenDriverServiceId(null);
-        setDriverQuery("");
         setOpenEquipmentServiceId(null);
         setEquipmentQuery("");
       }
@@ -705,18 +660,14 @@ export function OperacionesDashboard() {
             getDraft={getDraft}
             updateDraft={updateDraft}
             getDriverById={getDriverById}
+            rememberDriver={rememberDriver}
             getEquipmentByCode={getEquipmentByCode}
             expandedServiceId={expandedServiceId}
             setExpandedServiceId={setExpandedServiceId}
-            openDriverServiceId={openDriverServiceId}
-            setOpenDriverServiceId={setOpenDriverServiceId}
             openEquipmentServiceId={openEquipmentServiceId}
             setOpenEquipmentServiceId={setOpenEquipmentServiceId}
-            driverQuery={driverQuery}
-            setDriverQuery={setDriverQuery}
             equipmentQuery={equipmentQuery}
             setEquipmentQuery={setEquipmentQuery}
-            filteredDrivers={filteredDrivers}
             filteredEquipment={filteredEquipment}
           />
         )}

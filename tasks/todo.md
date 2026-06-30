@@ -32,6 +32,21 @@
 - La limpieza profunda del repo también aplicaba y se mantuvo: se retiran scripts one-off sin integración viva (`process-pdf.mjs`, `sync-doc.cjs`, `test-rpc.mjs`, `scripts/preview_migracion.cjs`, `supabase/.temp/linked-project.json`), se actualiza [`scripts/audit-supabase-security.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/audit-supabase-security.mjs:1) al árbol real y [`.gitignore`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/.gitignore:1) pasa a ignorar `vite.config.d.ts`.
 - El retiro de Excels binarios del repo también quedó validado: [`docs/templates/plantilla_migracion_reclutamiento.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/plantilla_migracion_reclutamiento.md:1), [`docs/templates/generador_certificados_legacy.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/generador_certificados_legacy.md:1) y [`docs/templates/README.md`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/docs/templates/README.md:1) preservan el contrato funcional en texto auditable, y no quedaron referencias vivas del runtime a los `.xls/.xlsx` retirados.
 
+## Refinamiento visual y reutilización compartida en Operaciones / registros base
+
+- [x] Eliminar la cabecera superior redundante de `registros_base` y dejar el bloque operativo arrancando directamente en los controles útiles
+- [x] Unificar alturas, tipografía y tratamiento visual de inputs/selectores/readonly en la sección para que siga el lenguaje compartido del ERP
+- [x] Reemplazar el selector artesanal de conductores por el lookup compartido usado por Jornadas, Incentivos y Movilidad Interna
+- [x] Marcar visualmente el estado de turno desde roster con semántica visible (`verde = en turno`, `rojo = descanso`) sin reintroducir edición manual
+- [x] Validar con `TypeScript`, build frontend y `git diff --check`
+
+## Resultado del refinamiento visual y reutilización compartida en Operaciones / registros base
+
+- [`OperationsBaseRegister.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsBaseRegister.tsx:1) eliminó la cabecera redundante, usa el lookup compartido de conductores, simplifica el estado local del bloque y reemplaza el antiguo input de turno por un indicador semántico derivado desde roster.
+- [`OperationsDriverLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsDriverLookup.tsx:1) y [`useOperationsQueries.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/hooks/useOperationsQueries.ts:1) conectan Operaciones al mismo patrón `WorkerLookupField + React Query + búsqueda remota indexada` ya operativo en otros módulos, eliminando el popover artesanal y el debounce manual del dashboard.
+- [`WorkerLookupField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/WorkerLookupField.tsx:1) ahora acepta `searchContext`, dejando reusable el patrón compartido incluso cuando una búsqueda necesita contexto adicional como la fecha de servicio.
+- [`operaciones.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/styles/operaciones.css:1) alinea la tipografía con las variables globales del ERP, iguala alturas de campos, refuerza el relieve neumórfico de paneles/tarjetas/resultados y deja el bloque visual consistente con el estándar actual.
+
 ## Hotfix del workflow `Sync BUK Employees`
 
 - [x] Auditar el último run fallido del workflow `sync-buk.yml` y ubicar la operación exacta que dispara `statement timeout`

@@ -7,7 +7,7 @@ type WorkerLookupSearchResult<TWorker> = {
   isLoading: boolean;
 };
 
-type WorkerLookupFieldProps<TWorker> = {
+type WorkerLookupFieldProps<TWorker, TSearchContext = unknown> = {
   id: string;
   label: string;
   placeholder: string;
@@ -15,8 +15,10 @@ type WorkerLookupFieldProps<TWorker> = {
   onSelect: (worker: TWorker | null) => void;
   useSearchQuery: (
     search: string,
-    enabled: boolean
+    enabled: boolean,
+    searchContext?: TSearchContext
   ) => WorkerLookupSearchResult<TWorker>;
+  searchContext?: TSearchContext;
   getWorkerId: (worker: TWorker) => string;
   getWorkerFullName: (worker: TWorker) => string;
   renderWorkerSecondary: (worker: TWorker) => string;
@@ -31,13 +33,14 @@ type WorkerLookupFieldProps<TWorker> = {
   filterResults?: (workers: TWorker[]) => TWorker[];
 };
 
-export function WorkerLookupField<TWorker>({
+export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   id,
   label,
   placeholder,
   selectedWorker,
   onSelect,
   useSearchQuery,
+  searchContext,
   getWorkerId,
   getWorkerFullName,
   renderWorkerSecondary,
@@ -83,7 +86,11 @@ export function WorkerLookupField<TWorker>({
     onSearchChange?.(debouncedSearch);
   }, [debouncedSearch, onSearchChange]);
 
-  const workerSearchQuery = useSearchQuery(debouncedSearch, !disabled && isOpen);
+  const workerSearchQuery = useSearchQuery(
+    debouncedSearch,
+    !disabled && isOpen,
+    searchContext
+  );
   const results = useMemo(() => {
     const workers = workerSearchQuery.data ?? [];
     return filterResults ? filterResults(workers) : workers;

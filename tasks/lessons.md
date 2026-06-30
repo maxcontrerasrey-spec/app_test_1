@@ -18,6 +18,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es particionar la persistencia y reintentar por chunk.** Si el worker sincroniza páginas grandes desde BUK, debe trocear la escritura en lotes más pequeños y aplicar retry sobre cada tramo crítico, no solo sobre una de las dos tablas destino.
 - **El mismo script debe resolver variables fallback con semántica de “primer valor no vacío”.** Si el workflow valida una URL usable pero el runtime sigue usando `??`, se reintroduce un fallo viejo justo en una automatización sensible.
 
+## 169. Si el ERP ya tiene un lookup de trabajadores compartido, no abras una variante local para otro módulo
+
+- **Un selector artesanal puede “funcionar”, pero rompe tres contratos a la vez: performance, consistencia visual y semántica de resultados.** Operaciones quedó más lento y mostraba menos contexto porque rehízo búsqueda, debounce, popover y render de opciones por fuera de `WorkerLookupField`.
+- **La regla correcta es extender el componente compartido cuando falte contexto, no clonarlo localmente.** Si una búsqueda necesita fecha de servicio, contrato u otro parámetro, el patrón reusable debe absorber ese `searchContext` y seguir resolviendo `React Query`, focus/blur y layout desde un solo lugar.
+- **En un ERP modular, la igualdad visual también es contrato funcional.** Nombre, identidad secundaria, línea terciaria, alturas y estados del lookup deben verse iguales entre Jornadas, Incentivos, Movilidad y Operaciones para no degradar la operación ni duplicar deuda de mantenimiento.
+
 ## 161. Un módulo enterprise no puede quedar con dos contratos de acceso distintos entre su capa viva y su capa legacy
 
 ## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada
