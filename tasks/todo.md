@@ -17,6 +17,32 @@
 - [x] Ajustar configuración base y formulario para exponer la nueva estrategia y mostrar un desglose auditable del valor hora cuando aplique, sin romper flujos existentes
 - [x] Validar con auditoría de migración, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
 
+## Cierre del bucle en tipos manuales de Incentivos
+
+- [x] Auditar por qué los tipos con `allows_manual_amount` siguen desapareciendo del selector cuando no tienen regla activa y por qué configuración base aún exige monto para registrar su contexto
+- [x] Corregir la elegibilidad backend para que un tipo manual siga visible sin regla monetaria y la regla vacía no se interprete como monto `0` válido
+- [x] Ajustar configuración base para permitir reglas sin monto en tipos que ya resuelven el importe manualmente
+- [x] Validar con auditoría de migración, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
+
+## Resultado de cierre del bucle en tipos manuales de Incentivos
+
+- Se agregó la migración [`20260630195500_fix_manual_incentive_eligibility_and_amountless_rules.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630195500_fix_manual_incentive_eligibility_and_amountless_rules.sql:1), que recompila `add_hr_incentive_rate_rule(...)`, `get_hr_incentive_eligible_types(...)` y `build_hr_incentive_preview_from_worker_data(...)` para separar definitivamente la elegibilidad manual de la existencia de una regla monetaria.
+- La causa raíz quedó cerrada en backend: `get_hr_incentive_eligible_types(...)` seguía naciendo solo desde `resolve_hr_incentive_rate_rule(...)`, por lo que cualquier tipo con `allows_manual_amount = true` pero sin regla activa jamás llegaba al selector. Ahora esos tipos se incorporan explícitamente como elegibles por capacidad propia y se deduplican frente a los tipos que sí traen regla.
+- La otra mitad del bucle también quedó corregida: una regla sin monto para un tipo manual ya no es inválida en configuración base, pero tampoco pasa a significar “monto 0 operativo”. `add_hr_incentive_rate_rule(...)` admite monto nulo en tipos manuales y lo persiste como contexto neutro; luego `build_hr_incentive_preview_from_worker_data(...)` bloquea el caso si el usuario no ingresa monto manual y la regla solo aporta `0`, exigiendo monto manual o una regla monetaria real.
+- [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1) dejó de exigir monto para tipos que ya resuelven el importe manualmente. El campo ahora es opcional en esos casos y el submit envía `null` en vez de forzar un `0` artificial desde frontend.
+- Validación remota dirigida sobre `Servicio Especial Facturable al Cliente`:
+  - el tipo sigue con `allows_manual_amount = true`;
+  - mantiene `0` reglas activas;
+  - aun así `build_hr_incentive_preview_from_worker_data(...)` resolvió correctamente una previsualización manual real para un trabajador de `CONT-028 / CODELCO DMH`, devolviendo `amount_source = manual`, `calculated_amount = 8000` y `rate_rule_id = null`.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260630195500_fix_manual_incentive_eligibility_and_amountless_rules.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run --include-all`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto sobre `hr_incentive_rate_rules` y `build_hr_incentive_preview_from_worker_data(...)` para el caso `servicio_especial_facturable`
+  - `git diff --check`
+
 ## Resultado de cálculo enterprise de horas extra desde BUK con fallback auditable
 
 - Se agregó la migración [`20260630184500_add_buk_overtime_strategy_to_hr_incentives.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630184500_add_buk_overtime_strategy_to_hr_incentives.sql:1), que formaliza una estrategia horaria por tipo (`rule_amount` / `buk_overtime`), extiende las reglas con `fallback_base_salary`, `fallback_weekly_hours` y `overtime_multiplier`, y recompila los contratos vivos de setup, elegibilidad, preview y create.

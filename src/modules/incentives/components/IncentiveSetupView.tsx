@@ -81,6 +81,8 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   );
   const selectedRuleType = ruleTypeIdDraft ? typeById.get(ruleTypeIdDraft) ?? null : null;
   const ruleUsesBukOvertime = selectedRuleType?.hourRateStrategy === "buk_overtime";
+  const ruleAmountIsOptional =
+    ruleUsesBukOvertime || selectedRuleType?.allowsManualAmount === true;
   const filteredAllowedJobTitles = useMemo(() => {
     const source = setupCatalogsQuery.data?.allowedJobTitles ?? [];
     if (jobTitleStatusFilter === "all") {
@@ -521,7 +523,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           />
           <TextField
             id="setup-rule-amount"
-            label={ruleUsesBukOvertime ? "Valor hora directo (opcional)" : "Monto"}
+            label={ruleAmountIsOptional ? "Monto (opcional)" : "Monto"}
             type="number"
             min="0"
             step="1"
@@ -622,7 +624,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             disabled={
               rateRuleMutation.isPending ||
               !ruleTypeIdDraft ||
-              (ruleUsesBukOvertime ? false : !ruleAmountDraft) ||
+              (!ruleAmountIsOptional && !ruleAmountDraft) ||
               (ruleAmountDraft.trim().length > 0 && Number(ruleAmountDraft) < 0) ||
               (ruleFallbackBaseSalaryDraft.trim().length > 0 &&
                 Number(ruleFallbackBaseSalaryDraft) < 0) ||
@@ -634,7 +636,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             onClick={() =>
               rateRuleMutation.mutate({
                 incentiveTypeId: ruleTypeIdDraft,
-                amount: ruleAmountDraft.trim().length > 0 ? Number(ruleAmountDraft) : 0,
+                amount: ruleAmountDraft.trim().length > 0 ? Number(ruleAmountDraft) : null,
                 contractCode: ruleContractCodeDraft || null,
                 jobTitle: ruleJobTitleDraft || null,
                 unionName: ruleUnionNameDraft || null,

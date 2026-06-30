@@ -1150,7 +1150,7 @@ export async function setHrIncentiveTypeHourRateStrategy(
 
 export async function addHrIncentiveRateRule(input: {
   incentiveTypeId: string;
-  amount: number;
+  amount?: number | null;
   contractCode?: string | null;
   jobTitle?: string | null;
   unionName?: string | null;
@@ -1165,7 +1165,7 @@ export async function addHrIncentiveRateRule(input: {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("add_hr_incentive_rate_rule", {
     p_incentive_type_id: input.incentiveTypeId,
-    p_amount: input.amount,
+    p_amount: input.amount ?? null,
     p_contract_code: input.contractCode?.trim() || null,
     p_job_title: input.jobTitle?.trim() || null,
     p_union_name: input.unionName?.trim() || null,

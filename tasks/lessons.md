@@ -16,6 +16,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es auditar el payload remoto antes de acoplar la lógica de negocio a ese dato.** Si el salario no está hoy en `raw_payload`, el contrato enterprise debe contemplar una degradación explícita y versionada, no romper la operación ni inventar heurísticas silenciosas.
 - **Cuando un motor nuevo sustituye una regla viva, conserva siempre un respaldo canónico.** En incentivos por hora, el cálculo automático desde BUK puede convivir con fallback salarial versionado y con el `rate_rule_amount` directo como última línea de continuidad para no degradar el ERP mientras la integración madura.
 
+## 177. Si un tipo ya resuelve su monto manualmente, su elegibilidad no puede seguir naciendo desde una regla monetaria obligatoria
+
+- **Un tipo con `allows_manual_amount = true` no debe desaparecer del selector solo porque no exista una fila en `hr_incentive_rate_rules`.** Esa dependencia recrea el mismo bucle que el módulo ya había corregido en preview/create: para usar el tipo te piden una regla, y para la regla te obligan a definir un monto que justamente querías ingresar manualmente al registrar.
+- **La regla correcta es separar “capacidad elegible” de “monto automático disponible”.** La RPC de elegibilidad debe incluir explícitamente los tipos manuales activos aunque no exista regla; la regla, si existe, solo agrega contexto o fallback, no la existencia misma del tipo.
+- **Una regla vacía para un tipo manual no equivale a monto cero válido.** Si se permite registrar una regla sin monto para conservar contexto contractual, el backend debe tratar ese `0` como ausencia de monto automático y seguir exigiendo monto manual al registrar, en vez de aprobar silenciosamente una solicitud en cero.
+
 ## 174. Si una capacidad base resuelve el dato final, no puede seguir bloqueada por un fallback opcional de otra capa
 
 - **Permitir “monto manual” en el tipo de incentivo pero seguir exigiendo una regla activa antes de aceptar ese monto rompe el contrato semántico del módulo.** El sistema dice que el monto manual es fuente válida, pero en ejecución sigue subordinándolo a una regla que ya no es necesaria para ese caso.
