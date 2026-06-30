@@ -120,6 +120,42 @@ function isReplacementWorkerEligible(snapshot: HrIncentiveRosterSnapshot | null)
   return snapshot.scheduleStatus === "working" || snapshot.scheduleStatus === "extra_shift";
 }
 
+function buildHourlyRateBreakdownCopy(params: {
+  hourRateStrategy: "rule_amount" | "buk_overtime";
+  rateSource: "rule_amount" | "buk_payload" | "rule_fallback_salary";
+  rateRuleAmount: number;
+  rateBaseSalary: number | null;
+  rateWeeklyHours: number | null;
+  rateOvertimeMultiplier: number | null;
+}) {
+  const {
+    hourRateStrategy,
+    rateSource,
+    rateRuleAmount,
+    rateBaseSalary,
+    rateWeeklyHours,
+    rateOvertimeMultiplier
+  } = params;
+
+  if (hourRateStrategy !== "buk_overtime") {
+    return null;
+  }
+
+  if (rateSource === "buk_payload" && rateBaseSalary !== null && rateWeeklyHours !== null) {
+    return `Valor hora extra calculado desde BUK: ${formatCurrencyValue(rateRuleAmount)} (${formatCurrencyValue(rateBaseSalary)} base / ${rateWeeklyHours} hrs semanales x ${rateOvertimeMultiplier ?? 1.5}).`;
+  }
+
+  if (
+    rateSource === "rule_fallback_salary" &&
+    rateBaseSalary !== null &&
+    rateWeeklyHours !== null
+  ) {
+    return `Valor hora extra calculado desde fallback configurado: ${formatCurrencyValue(rateRuleAmount)} (${formatCurrencyValue(rateBaseSalary)} base / ${rateWeeklyHours} hrs semanales x ${rateOvertimeMultiplier ?? 1.5}).`;
+  }
+
+  return `No hubo datos salariales suficientes en BUK; se aplicó el valor hora de respaldo definido en la regla: ${formatCurrencyValue(rateRuleAmount)}.`;
+}
+
 export function IncentiveRegistrationForm({
   setupCatalogsQuery
 }: IncentiveRegistrationFormProps) {
@@ -612,6 +648,22 @@ export function IncentiveRegistrationForm({
                     <strong>{previewQuery.data.rule.rateRuleId ? previewQuery.data.rule.priority : "No aplica"}</strong>
                   </div>
                 </div>
+                {previewQuery.data.amountSource === "rule" ? (
+                  (() => {
+                    const hourlyRateBreakdown = buildHourlyRateBreakdownCopy({
+                      hourRateStrategy: previewQuery.data.rule.hourRateStrategy,
+                      rateSource: previewQuery.data.rateSource,
+                      rateRuleAmount: previewQuery.data.rule.rateRuleAmount,
+                      rateBaseSalary: previewQuery.data.rateBaseSalary,
+                      rateWeeklyHours: previewQuery.data.rateWeeklyHours,
+                      rateOvertimeMultiplier: previewQuery.data.rateOvertimeMultiplier
+                    });
+
+                    return hourlyRateBreakdown ? (
+                      <p className="tracking-filter-caption">{hourlyRateBreakdown}</p>
+                    ) : null;
+                  })()
+                ) : null}
                 {previewQuery.data.rosterValidation.blockedByAbsence ? (
                   <IncentiveRuleAlert>
                     {previewQuery.data.rosterValidation.blockReason ??

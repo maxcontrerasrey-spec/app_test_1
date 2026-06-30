@@ -9,6 +9,31 @@
 - [x] Conectar el formulario de registro para mostrar solo tipos elegibles y degradar correctamente cuando no existan reglas activas aplicables
 - [x] Validar con auditoría de migraciones, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
 
+## Cálculo enterprise de horas extra desde BUK con fallback auditable
+
+- [x] Auditar el plan externo y contrastarlo con el ERP vivo para confirmar qué datos contractuales llegan hoy desde la sync BUK y qué drift existe respecto del diseño propuesto
+- [x] Formalizar una estrategia de cálculo por tipo para incentivos `per_hour`, de modo que solo los tipos configurados como horas extra usen cálculo automático y el resto mantenga la lógica vigente por regla
+- [x] Extender el contrato backend de reglas/preview/create para resolver hora extra desde datos BUK cuando existan y, si faltan salarios en payload, degradar a un fallback explícito versionado en configuración base
+- [x] Ajustar configuración base y formulario para exponer la nueva estrategia y mostrar un desglose auditable del valor hora cuando aplique, sin romper flujos existentes
+- [x] Validar con auditoría de migración, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
+
+## Resultado de cálculo enterprise de horas extra desde BUK con fallback auditable
+
+- Se agregó la migración [`20260630184500_add_buk_overtime_strategy_to_hr_incentives.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630184500_add_buk_overtime_strategy_to_hr_incentives.sql:1), que formaliza una estrategia horaria por tipo (`rule_amount` / `buk_overtime`), extiende las reglas con `fallback_base_salary`, `fallback_weekly_hours` y `overtime_multiplier`, y recompila los contratos vivos de setup, elegibilidad, preview y create.
+- La auditoría remota aterrizó el drift clave del plan externo: la sync actual sí trae `weekly_hours`, pero no `base_salary` en `employees.raw_payload`. Por eso el diseño quedó enterprise y no frágil: `sobretiempo` intenta calcular desde BUK cuando exista sueldo base, degrada a fallback salarial versionado en la regla cuando falta ese dato, y conserva como último respaldo el `rate_rule_amount` directo para no romper la operación vigente.
+- [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1), [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:1) y [`types.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/types.ts:1) ahora exponen esta estrategia en configuración base, incluyendo toggle por tipo `per_hour` y campos de fallback auditable por regla.
+- [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) muestra el desglose del valor hora solo cuando aplica la estrategia `buk_overtime`, diferenciando si el valor vino desde BUK, desde fallback salarial de regla o desde el respaldo directo de la regla.
+- `get_hr_incentive_eligible_types(...)` dejó de ofrecer incentivos por hora que no pueden resolverse operacionalmente con el contexto real del trabajador, salvo que el propio tipo permita resolución manual. Así el selector sigue alineado con la verdad backend y no ofrece caminos inviables.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260630184500_add_buk_overtime_strategy_to_hr_incentives.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run --include-all`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto sobre `hr_incentive_types` para confirmar `sobretiempo -> buk_overtime`
+  - humo remoto sobre `resolve_hr_incentive_hour_rate(...)` para verificar los tres caminos: BUK, fallback salarial versionado y respaldo directo por regla
+  - `git diff --check`
+
 ## Resultado de restricción de tipos de incentivo por regla activa del trabajador
 
 - Se agregó la migración [`20260630171000_filter_hr_incentive_types_by_active_rules.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630171000_filter_hr_incentive_types_by_active_rules.sql:1), que incorpora la RPC `get_hr_incentive_eligible_types(...)` para resolver tipos elegibles por `trabajador + contrato + fecha` reutilizando la misma lógica canónica de `resolve_hr_incentive_rate_rule(...)`.

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { SelectField, TextField } from "../../../shared/ui";
 import { formatNumberValue } from "../../../shared/lib/format";
@@ -9,6 +9,7 @@ import {
   addHrIncentiveType,
   setHrIncentiveAllowedJobTitleStatus,
   setHrIncentiveRateRuleStatus,
+  setHrIncentiveTypeHourRateStrategy,
   setHrIncentiveTypeManualAmountOption,
   setHrIncentiveTypeRosterRequirement,
   setHrIncentiveTypeStatus
@@ -30,10 +31,16 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   const [typeCodeDraft, setTypeCodeDraft] = useState("");
   const [typeNameDraft, setTypeNameDraft] = useState("");
   const [typeBasisDraft, setTypeBasisDraft] = useState<"fixed" | "per_hour">("fixed");
+  const [typeHourRateStrategyDraft, setTypeHourRateStrategyDraft] = useState<
+    "rule_amount" | "buk_overtime"
+  >("rule_amount");
   const [typeRequiresReplacementDraft, setTypeRequiresReplacementDraft] = useState("false");
   const [typeAllowsManualAmountDraft, setTypeAllowsManualAmountDraft] = useState("false");
   const [ruleTypeIdDraft, setRuleTypeIdDraft] = useState("");
   const [ruleAmountDraft, setRuleAmountDraft] = useState("");
+  const [ruleFallbackBaseSalaryDraft, setRuleFallbackBaseSalaryDraft] = useState("");
+  const [ruleFallbackWeeklyHoursDraft, setRuleFallbackWeeklyHoursDraft] = useState("");
+  const [ruleOvertimeMultiplierDraft, setRuleOvertimeMultiplierDraft] = useState("1.5");
   const [ruleContractCodeDraft, setRuleContractCodeDraft] = useState("");
   const [ruleJobTitleDraft, setRuleJobTitleDraft] = useState("");
   const [ruleUnionNameDraft, setRuleUnionNameDraft] = useState("");
@@ -67,6 +74,13 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       new Map((setupCatalogsQuery.data?.incentiveTypes ?? []).map((item) => [item.id, item.code])),
     [setupCatalogsQuery.data?.incentiveTypes]
   );
+  const typeById = useMemo(
+    () =>
+      new Map((setupCatalogsQuery.data?.incentiveTypes ?? []).map((item) => [item.id, item])),
+    [setupCatalogsQuery.data?.incentiveTypes]
+  );
+  const selectedRuleType = ruleTypeIdDraft ? typeById.get(ruleTypeIdDraft) ?? null : null;
+  const ruleUsesBukOvertime = selectedRuleType?.hourRateStrategy === "buk_overtime";
   const filteredAllowedJobTitles = useMemo(() => {
     const source = setupCatalogsQuery.data?.allowedJobTitles ?? [];
     if (jobTitleStatusFilter === "all") {
@@ -120,6 +134,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       setTypeCodeDraft("");
       setTypeNameDraft("");
       setTypeBasisDraft("fixed");
+      setTypeHourRateStrategyDraft("rule_amount");
       setTypeRequiresReplacementDraft("false");
       setTypeAllowsManualAmountDraft("false");
       setErrorMessage("");
@@ -136,6 +151,9 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
     mutationFn: addHrIncentiveRateRule,
     onSuccess: async () => {
       setRuleAmountDraft("");
+      setRuleFallbackBaseSalaryDraft("");
+      setRuleFallbackWeeklyHoursDraft("");
+      setRuleOvertimeMultiplierDraft("1.5");
       setRuleContractCodeDraft("");
       setRuleJobTitleDraft("");
       setRuleUnionNameDraft("");
@@ -176,11 +194,36 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
     onSuccess: refreshSetupCatalogs
   });
 
+  const toggleTypeHourRateStrategyMutation = useMutation({
+    mutationFn: ({
+      id,
+      hourRateStrategy
+    }: {
+      id: string;
+      hourRateStrategy: "rule_amount" | "buk_overtime";
+    }) => setHrIncentiveTypeHourRateStrategy(id, hourRateStrategy),
+    onSuccess: refreshSetupCatalogs
+  });
+
   const toggleRuleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       setHrIncentiveRateRuleStatus(id, isActive),
     onSuccess: refreshSetupCatalogs
   });
+
+  useEffect(() => {
+    if (typeBasisDraft !== "per_hour") {
+      setTypeHourRateStrategyDraft("rule_amount");
+    }
+  }, [typeBasisDraft]);
+
+  useEffect(() => {
+    if (!ruleUsesBukOvertime) {
+      setRuleFallbackBaseSalaryDraft("");
+      setRuleFallbackWeeklyHoursDraft("");
+      setRuleOvertimeMultiplierDraft("1.5");
+    }
+  }, [ruleUsesBukOvertime]);
 
   return (
     <section className="hr-incentives-setup-grid">
@@ -314,6 +357,21 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
               { value: "true", label: "Sí" }
             ]}
           />
+          <SelectField
+            id="setup-type-hour-rate-strategy"
+            label="Tarifa horaria"
+            value={typeBasisDraft === "per_hour" ? typeHourRateStrategyDraft : "rule_amount"}
+            onChange={(event) =>
+              setTypeHourRateStrategyDraft(
+                event.target.value === "buk_overtime" ? "buk_overtime" : "rule_amount"
+              )
+            }
+            options={[
+              { value: "rule_amount", label: "Regla directa" },
+              { value: "buk_overtime", label: "Hora extra BUK" }
+            ]}
+            disabled={typeBasisDraft !== "per_hour"}
+          />
         </div>
 
         <div className="action-row">
@@ -328,6 +386,8 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                 code: typeCodeDraft.trim().toLowerCase(),
                 name: typeNameDraft.trim(),
                 calculationBasis: typeBasisDraft,
+                hourRateStrategy:
+                  typeBasisDraft === "per_hour" ? typeHourRateStrategyDraft : "rule_amount",
                 requiresReplacement: typeRequiresReplacementDraft === "true",
                 allowsManualAmount: typeAllowsManualAmountDraft === "true"
               })
@@ -362,12 +422,38 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                 <span>
                   Código: {item.code} ·{" "}
                   {item.calculationBasis === "per_hour" ? "Por hora" : "Monto fijo"} ·{" "}
+                  {item.calculationBasis === "per_hour"
+                    ? item.hourRateStrategy === "buk_overtime"
+                      ? "Hora extra BUK"
+                      : "Tarifa por regla"
+                    : "Tarifa directa"}{" "}
+                  ·{" "}
                   {item.requiresReplacement ? "Con reemplazo" : "Sin reemplazo"} ·{" "}
                   {item.requiresRestDay ? "Exige descanso" : "Sin validación de descanso"} ·{" "}
                   {item.allowsManualAmount ? "Permite monto manual" : "Monto solo por regla"}
                 </span>
               </div>
               <div className="hr-incentives-list-item-actions">
+                {item.calculationBasis === "per_hour" ? (
+                  <button
+                    type="button"
+                    className="soft-primary-button hr-incentives-inline-button"
+                    disabled={toggleTypeHourRateStrategyMutation.isPending}
+                    onClick={() =>
+                      toggleTypeHourRateStrategyMutation.mutate({
+                        id: item.id,
+                        hourRateStrategy:
+                          item.hourRateStrategy === "buk_overtime"
+                            ? "rule_amount"
+                            : "buk_overtime"
+                      })
+                    }
+                  >
+                    {item.hourRateStrategy === "buk_overtime"
+                      ? "Usar regla horaria"
+                      : "Usar hora extra BUK"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="soft-primary-button hr-incentives-inline-button"
@@ -435,7 +521,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
           />
           <TextField
             id="setup-rule-amount"
-            label="Monto"
+            label={ruleUsesBukOvertime ? "Valor hora directo (opcional)" : "Monto"}
             type="number"
             min="0"
             step="1"
@@ -443,6 +529,42 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             value={ruleAmountDraft}
             onChange={(event) => setRuleAmountDraft(event.target.value)}
           />
+          {ruleUsesBukOvertime ? (
+            <TextField
+              id="setup-rule-fallback-base-salary"
+              label="Sueldo base fallback (opcional)"
+              type="number"
+              min="0"
+              step="1"
+              inputMode="numeric"
+              value={ruleFallbackBaseSalaryDraft}
+              onChange={(event) => setRuleFallbackBaseSalaryDraft(event.target.value)}
+            />
+          ) : null}
+          {ruleUsesBukOvertime ? (
+            <TextField
+              id="setup-rule-fallback-weekly-hours"
+              label="Jornada semanal fallback (opcional)"
+              type="number"
+              min="1"
+              step="0.5"
+              inputMode="decimal"
+              value={ruleFallbackWeeklyHoursDraft}
+              onChange={(event) => setRuleFallbackWeeklyHoursDraft(event.target.value)}
+            />
+          ) : null}
+          {ruleUsesBukOvertime ? (
+            <TextField
+              id="setup-rule-overtime-multiplier"
+              label="Recargo hora extra"
+              type="number"
+              min="0.1"
+              step="0.01"
+              inputMode="decimal"
+              value={ruleOvertimeMultiplierDraft}
+              onChange={(event) => setRuleOvertimeMultiplierDraft(event.target.value)}
+            />
+          ) : null}
           <SelectField
             id="setup-rule-contract"
             label="Contrato (opcional)"
@@ -500,19 +622,37 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             disabled={
               rateRuleMutation.isPending ||
               !ruleTypeIdDraft ||
-              !ruleAmountDraft ||
-              Number(ruleAmountDraft) < 0
+              (ruleUsesBukOvertime ? false : !ruleAmountDraft) ||
+              (ruleAmountDraft.trim().length > 0 && Number(ruleAmountDraft) < 0) ||
+              (ruleFallbackBaseSalaryDraft.trim().length > 0 &&
+                Number(ruleFallbackBaseSalaryDraft) < 0) ||
+              (ruleFallbackWeeklyHoursDraft.trim().length > 0 &&
+                Number(ruleFallbackWeeklyHoursDraft) <= 0) ||
+              (ruleOvertimeMultiplierDraft.trim().length > 0 &&
+                Number(ruleOvertimeMultiplierDraft) <= 0)
             }
             onClick={() =>
               rateRuleMutation.mutate({
                 incentiveTypeId: ruleTypeIdDraft,
-                amount: Number(ruleAmountDraft),
+                amount: ruleAmountDraft.trim().length > 0 ? Number(ruleAmountDraft) : 0,
                 contractCode: ruleContractCodeDraft || null,
                 jobTitle: ruleJobTitleDraft || null,
                 unionName: ruleUnionNameDraft || null,
                 priority: Number(rulePriorityDraft || "100"),
                 validFrom: ruleValidFromDraft || null,
-                validTo: ruleValidToDraft || null
+                validTo: ruleValidToDraft || null,
+                fallbackBaseSalary:
+                  ruleFallbackBaseSalaryDraft.trim().length > 0
+                    ? Number(ruleFallbackBaseSalaryDraft)
+                    : null,
+                fallbackWeeklyHours:
+                  ruleFallbackWeeklyHoursDraft.trim().length > 0
+                    ? Number(ruleFallbackWeeklyHoursDraft)
+                    : null,
+                overtimeMultiplier:
+                  ruleOvertimeMultiplierDraft.trim().length > 0
+                    ? Number(ruleOvertimeMultiplierDraft)
+                    : null
               })
             }
           >
@@ -550,7 +690,9 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                   <th>Contrato</th>
                   <th>Cargo</th>
                   <th>Sindicato</th>
+                  <th>Motor</th>
                   <th>Monto</th>
+                  <th>Fallback</th>
                   <th>Prioridad</th>
                   <th>Vigencia</th>
                   <th>Estado</th>
@@ -566,7 +708,19 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                     <td>
                       {item.unionName || "Todos"}
                     </td>
+                    <td>
+                      {typeById.get(item.incentiveTypeId)?.hourRateStrategy === "buk_overtime"
+                        ? "Hora extra BUK"
+                        : "Regla directa"}
+                    </td>
                     <td>{formatNumberValue(item.amount, "0")}</td>
+                    <td>
+                      {typeById.get(item.incentiveTypeId)?.hourRateStrategy === "buk_overtime"
+                        ? item.fallbackBaseSalary !== null && item.fallbackWeeklyHours !== null
+                          ? `${formatNumberValue(item.fallbackBaseSalary, "0")} / ${formatNumberValue(item.fallbackWeeklyHours, "0.##")}h x ${formatNumberValue(item.overtimeMultiplier, "0.##")}`
+                          : "Sin fallback salarial"
+                        : "No aplica"}
+                    </td>
                     <td>{item.priority}</td>
                     <td>
                       {(item.validFrom || "Siempre") +

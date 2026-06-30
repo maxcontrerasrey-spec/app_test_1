@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es resolver elegibilidad contextualmente en backend y usar ese contrato para poblar el dropdown.** Si la misma lógica canónica ya existe en `resolve_hr_incentive_rate_rule(...)`, el selector debe consumir una RPC derivada de esa verdad, no reconstruir filtros locales con catálogos parciales.
 - **Cuando la elegibilidad depende de contexto operativo, el estado vacío debe explicarse con semántica de negocio.** “No hay incentivos con regla activa para este trabajador, contrato y fecha” es contrato operativo; un dropdown genérico vacío no lo es.
 
+## 176. Si un diseño depende de datos sensibles de un integrador, primero valida el payload vivo y recién después decides el motor de negocio
+
+- **No basta con que un documento técnico diga que BUK “provee” `base_salary` o campos equivalentes.** En el proyecto real, la sync actual puede traer la jornada (`weekly_hours`) pero no el sueldo base por permisos del token o por shape efectivo del endpoint.
+- **La regla correcta es auditar el payload remoto antes de acoplar la lógica de negocio a ese dato.** Si el salario no está hoy en `raw_payload`, el contrato enterprise debe contemplar una degradación explícita y versionada, no romper la operación ni inventar heurísticas silenciosas.
+- **Cuando un motor nuevo sustituye una regla viva, conserva siempre un respaldo canónico.** En incentivos por hora, el cálculo automático desde BUK puede convivir con fallback salarial versionado y con el `rate_rule_amount` directo como última línea de continuidad para no degradar el ERP mientras la integración madura.
+
 ## 174. Si una capacidad base resuelve el dato final, no puede seguir bloqueada por un fallback opcional de otra capa
 
 - **Permitir “monto manual” en el tipo de incentivo pero seguir exigiendo una regla activa antes de aceptar ese monto rompe el contrato semántico del módulo.** El sistema dice que el monto manual es fuente válida, pero en ejecución sigue subordinándolo a una regla que ya no es necesaria para ese caso.

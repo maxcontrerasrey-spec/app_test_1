@@ -124,6 +124,8 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
       code: String(item.code ?? ""),
       name: String(item.name ?? ""),
       calculationBasis: (item.calculation_basis === "per_hour" ? "per_hour" : "fixed"),
+      hourRateStrategy:
+        item.hour_rate_strategy === "buk_overtime" ? "buk_overtime" : "rule_amount",
       requiresReplacement: Boolean(item.requires_replacement),
       requiresRestDay: Boolean(item.requires_rest_day),
       allowsManualAmount: Boolean(item.allows_manual_amount),
@@ -147,6 +149,15 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
           ? mapUnionStatus(item.union_status)
           : null,
       amount: Number(item.amount ?? 0),
+      fallbackBaseSalary:
+        item.fallback_base_salary === null || item.fallback_base_salary === undefined
+          ? null
+          : Number(item.fallback_base_salary),
+      fallbackWeeklyHours:
+        item.fallback_weekly_hours === null || item.fallback_weekly_hours === undefined
+          ? null
+          : Number(item.fallback_weekly_hours),
+      overtimeMultiplier: Number(item.overtime_multiplier ?? 1.5),
       priority: Number(item.priority ?? 100),
       validFrom: typeof item.valid_from === "string" ? item.valid_from : null,
       validTo: typeof item.valid_to === "string" ? item.valid_to : null,
@@ -240,6 +251,8 @@ function mapPreview(payload: unknown): HrIncentivePreview {
       incentiveTypeId: String(rule.incentive_type_id ?? ""),
       incentiveTypeName: String(rule.incentive_type_name ?? ""),
       calculationBasis: rule.calculation_basis === "per_hour" ? "per_hour" : "fixed",
+      hourRateStrategy:
+        rule.hour_rate_strategy === "buk_overtime" ? "buk_overtime" : "rule_amount",
       requiresReplacement: Boolean(rule.requires_replacement),
       requiresRestDay: Boolean(rule.requires_rest_day),
       allowsManualAmount: Boolean(rule.allows_manual_amount),
@@ -273,6 +286,22 @@ function mapPreview(payload: unknown): HrIncentivePreview {
       source.manual_amount === null || source.manual_amount === undefined
         ? null
         : Number(source.manual_amount),
+    rateSource:
+      source.rate_source === "buk_payload" || source.rate_source === "rule_fallback_salary"
+        ? source.rate_source
+        : "rule_amount",
+    rateBaseSalary:
+      source.rate_base_salary === null || source.rate_base_salary === undefined
+        ? null
+        : Number(source.rate_base_salary),
+    rateWeeklyHours:
+      source.rate_weekly_hours === null || source.rate_weekly_hours === undefined
+        ? null
+        : Number(source.rate_weekly_hours),
+    rateOvertimeMultiplier:
+      source.rate_overtime_multiplier === null || source.rate_overtime_multiplier === undefined
+        ? null
+        : Number(source.rate_overtime_multiplier),
     calculatedAmount: Number(source.calculated_amount ?? 0),
     rosterValidation: {
       requiresRestDay: Boolean(rosterValidation.requires_rest_day),
@@ -685,6 +714,8 @@ export async function fetchHrIncentiveEligibleTypes(params: {
     code: String(item.code ?? ""),
     name: String(item.name ?? ""),
     calculationBasis: item.calculation_basis === "per_hour" ? "per_hour" : "fixed",
+    hourRateStrategy:
+      item.hour_rate_strategy === "buk_overtime" ? "buk_overtime" : "rule_amount",
     requiresReplacement: Boolean(item.requires_replacement),
     requiresRestDay: Boolean(item.requires_rest_day),
     allowsManualAmount: Boolean(item.allows_manual_amount),
@@ -1035,6 +1066,7 @@ export async function addHrIncentiveType(input: {
   calculationBasis: "fixed" | "per_hour";
   requiresReplacement: boolean;
   allowsManualAmount: boolean;
+  hourRateStrategy: "rule_amount" | "buk_overtime";
 }) {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("add_hr_incentive_type", {
@@ -1042,7 +1074,8 @@ export async function addHrIncentiveType(input: {
     p_name: input.name,
     p_calculation_basis: input.calculationBasis,
     p_requires_replacement: input.requiresReplacement,
-    p_allows_manual_amount: input.allowsManualAmount
+    p_allows_manual_amount: input.allowsManualAmount,
+    p_hour_rate_strategy: input.hourRateStrategy
   });
 
   if (error) {
@@ -1098,6 +1131,23 @@ export async function setHrIncentiveTypeManualAmountOption(
   }
 }
 
+export async function setHrIncentiveTypeHourRateStrategy(
+  typeId: string,
+  hourRateStrategy: "rule_amount" | "buk_overtime"
+) {
+  const client = getSupabaseClient();
+  const { error } = await client.rpc("set_hr_incentive_type_hour_rate_strategy", {
+    p_type_id: typeId,
+    p_hour_rate_strategy: hourRateStrategy
+  });
+
+  if (error) {
+    throw new Error(
+      error.message || "No fue posible actualizar la estrategia horaria del incentivo."
+    );
+  }
+}
+
 export async function addHrIncentiveRateRule(input: {
   incentiveTypeId: string;
   amount: number;
@@ -1108,6 +1158,9 @@ export async function addHrIncentiveRateRule(input: {
   priority?: number;
   validFrom?: string | null;
   validTo?: string | null;
+  fallbackBaseSalary?: number | null;
+  fallbackWeeklyHours?: number | null;
+  overtimeMultiplier?: number | null;
 }) {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("add_hr_incentive_rate_rule", {
@@ -1119,7 +1172,10 @@ export async function addHrIncentiveRateRule(input: {
     p_union_status: input.unionStatus?.trim() || null,
     p_priority: input.priority ?? 100,
     p_valid_from: input.validFrom?.trim() || null,
-    p_valid_to: input.validTo?.trim() || null
+    p_valid_to: input.validTo?.trim() || null,
+    p_fallback_base_salary: input.fallbackBaseSalary ?? null,
+    p_fallback_weekly_hours: input.fallbackWeeklyHours ?? null,
+    p_overtime_multiplier: input.overtimeMultiplier ?? null
   });
 
   if (error) {

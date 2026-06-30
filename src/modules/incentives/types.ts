@@ -2,6 +2,8 @@ import type { BukEmployee } from "../../shared/types/buk";
 
 export type IncentiveCalculationBasis = "fixed" | "per_hour";
 export type IncentiveAmountSource = "rule" | "manual";
+export type IncentiveHourRateStrategy = "rule_amount" | "buk_overtime";
+export type IncentiveHourRateSource = "rule_amount" | "buk_payload" | "rule_fallback_salary";
 export type HrIncentiveUnionStatus = "unionized" | "non_unionized" | "unknown";
 
 export type HrIncentiveUnionStatusOption = {
@@ -37,6 +39,7 @@ export type HrIncentiveType = {
   code: string;
   name: string;
   calculationBasis: IncentiveCalculationBasis;
+  hourRateStrategy: IncentiveHourRateStrategy;
   requiresReplacement: boolean;
   requiresRestDay: boolean;
   allowsManualAmount: boolean;
@@ -87,6 +90,9 @@ export type HrIncentiveRateRule = {
   unionName: string | null;
   unionStatus: HrIncentiveUnionStatus | null;
   amount: number;
+  fallbackBaseSalary: number | null;
+  fallbackWeeklyHours: number | null;
+  overtimeMultiplier: number;
   priority: number;
   validFrom: string | null;
   validTo: string | null;
@@ -139,6 +145,7 @@ export type HrIncentivePreview = {
     incentiveTypeId: string;
     incentiveTypeName: string;
     calculationBasis: IncentiveCalculationBasis;
+    hourRateStrategy: IncentiveHourRateStrategy;
     requiresReplacement: boolean;
     requiresRestDay: boolean;
     allowsManualAmount: boolean;
@@ -154,6 +161,10 @@ export type HrIncentivePreview = {
   selectedContractCode: string;
   amountSource: IncentiveAmountSource;
   manualAmount: number | null;
+  rateSource: IncentiveHourRateSource;
+  rateBaseSalary: number | null;
+  rateWeeklyHours: number | null;
+  rateOvertimeMultiplier: number | null;
   calculatedAmount: number;
   rosterValidation: HrIncentiveRosterValidation;
 };
