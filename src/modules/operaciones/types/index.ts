@@ -31,6 +31,8 @@ export interface Equipment {
 export interface ServiceDraft {
   driverId: string;
   equipmentCode: string;
+  serviceExecutionStatus: "planned" | "not_performed";
+  serviceExecutionNote: string;
 }
 
 export interface ContractSummary {
@@ -117,6 +119,8 @@ export interface ExportEntryRow {
   service_contractual_name: string | null;
   service_category: string | null;
   service_company: string | null;
+  service_execution_status: string | null;
+  service_execution_note: string | null;
   driver_name: string | null;
   driver_document: string | null;
   driver_area: string | null;
@@ -135,6 +139,8 @@ export interface PendingServiceSubmission {
     shift: string;
     serviceDate: string;
     serviceExternalKey: number;
+    serviceExecutionStatus: "planned" | "not_performed";
+    serviceExecutionNote: string;
     driverName: string;
     driverDocument: string;
     driverArea: string;

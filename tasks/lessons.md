@@ -1711,3 +1711,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un fallback local puede servir para maqueta o resiliencia controlada, pero no como fuente efectiva de operación.** Si contratos, servicios o catálogos maestros vienen de Supabase/ERP, la corrección buena es endurecer la consulta backend o su resolución por IDs, no reinyectar una copia local silenciosa.
 - **Cuando una relación embebida falla, la salida correcta es seguir resolviendo desde otra señal backend del mismo contrato.** Por ejemplo: `contract_id` más catálogo SQL vigente, no una tabla estática del frontend.
 - **Si el usuario explicita “no uso vista local”, trátalo como regla de arquitectura, no como preferencia visual.** Cualquier arreglo que todavía dependa de datos locales para llenar selects o reconstruir dominio sigue estando mal cerrado.
+
+## 145. Si Operaciones necesita registrar una excepción obligatoria, la excepción debe vivir en el mismo contrato y en la misma exportación del servicio
+
+- **No resuelvas “servicio no realizado” escondiendo campos o dejando nulos mudos.** Si el usuario necesita declarar una excepción operativa sobre un servicio obligatorio, el backend debe persistir un estado explícito y una observación legible dentro del mismo registro `service_entries`.
+- **La UI puede disparar la excepción, pero no puede inventar un canal paralelo.** El mismo batch RPC que guarda servicios planificados debe aceptar también el estado excepcional, limpiar asignaciones incompatibles y seguir aplicando seguridad y unicidad sobre el mismo servicio.
+- **Toda excepción operativa debe salir visible en exportación.** Si el reporte histórico solo muestra conductor/equipo vacíos, obligas a interpretar silencios; la salida enterprise es exportar el estado y la observación para que la trazabilidad sea directa y auditable.

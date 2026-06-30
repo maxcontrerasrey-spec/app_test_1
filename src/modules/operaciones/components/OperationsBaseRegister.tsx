@@ -4,6 +4,8 @@ import { OperationsDriverLookup } from "./OperationsDriverLookup";
 import type { ServiceDataRecord } from "../data/services-data";
 import type { Driver, Equipment, ServiceDraft } from "../types";
 
+const DEFAULT_NOT_PERFORMED_NOTE = "Servicio no realizado";
+
 interface OperationsBaseRegisterProps {
   selectedDateValue: string;
   setSelectedDateValue: (value: string) => void;
@@ -100,6 +102,32 @@ export function OperationsBaseRegister({
   const selectedDate = selectedDateValue ? parseDateValue(selectedDateValue) : null;
   const shiftLabel = selectedShift ? selectedShift.toUpperCase() : "Sin turno";
 
+  function markServiceAsNotPerformed(serviceId: number) {
+    const confirmed = window.confirm(
+      "¿Estás seguro de registrar este servicio como no realizado? Esta acción dejará sin conductor ni equipo la planificación de este servicio."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    updateDraft(serviceId, {
+      driverId: "",
+      equipmentCode: "",
+      serviceExecutionStatus: "not_performed",
+      serviceExecutionNote: DEFAULT_NOT_PERFORMED_NOTE,
+    });
+    setOpenEquipmentServiceId(null);
+    setEquipmentQuery("");
+  }
+
+  function restorePlannedService(serviceId: number) {
+    updateDraft(serviceId, {
+      serviceExecutionStatus: "planned",
+      serviceExecutionNote: "",
+    });
+  }
+
   return (
     <section className="operations-page-shell">
       <section className="operations-control-grid operations-control-grid--base">
@@ -184,13 +212,16 @@ export function OperationsBaseRegister({
             const selectedDriver = getDriverById(draft.driverId);
             const selectedEquipment = getEquipmentByCode(draft.equipmentCode);
             const isExpanded = expandedServiceId === service.id;
-            const isComplete = Boolean(selectedDriver && selectedEquipment);
+            const isMarkedNotPerformed = draft.serviceExecutionStatus === "not_performed";
+            const isComplete = isMarkedNotPerformed || Boolean(selectedDriver && selectedEquipment);
             const fieldErrors = submitState.fieldErrorsByService[service.id] || {};
 
             return (
               <article
                 key={service.id}
-                className={`service-module${isExpanded ? " is-expanded" : " is-collapsed"}${isComplete ? " is-complete" : ""}`}
+                className={`service-module${isExpanded ? " is-expanded" : " is-collapsed"}${isComplete ? " is-complete" : ""}${
+                  isMarkedNotPerformed ? " is-not-performed" : ""
+                }`}
               >
                 <div className="service-module__header">
                   <button
@@ -208,22 +239,64 @@ export function OperationsBaseRegister({
 
                   {!isExpanded ? (
                     <div className="service-module__summary">
-                      <strong className={`service-module__service-pill${isComplete ? " is-complete" : " is-pending"}`}>{service.service}</strong>
-                      <span>{selectedDriver?.fullName || "Sin conductor"}</span>
-                      <span>{selectedEquipment?.code || "Sin equipo"}</span>
+                      <strong
+                        className={`service-module__service-pill${
+                          isMarkedNotPerformed ? " is-not-performed" : isComplete ? " is-complete" : " is-pending"
+                        }`}
+                      >
+                        {service.service}
+                      </strong>
+                      <span>{isMarkedNotPerformed ? DEFAULT_NOT_PERFORMED_NOTE : selectedDriver?.fullName || "Sin conductor"}</span>
+                      <span>{isMarkedNotPerformed ? "Registro operativo" : selectedEquipment?.code || "Sin equipo"}</span>
                     </div>
                   ) : (
                     <div className="service-module__summary service-module__summary--expanded" />
                   )}
 
                   <div className="service-module__header-side">
-                    {isComplete ? <span className="service-module__complete-dot" aria-label="Servicio completo" /> : null}
+                    {isComplete && !isMarkedNotPerformed ? <span className="service-module__complete-dot" aria-label="Servicio completo" /> : null}
+                    {isMarkedNotPerformed ? (
+                      <span className="service-module__status-flag service-module__status-flag--not-performed">
+                        Servicio no realizado
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      className={`soft-primary-button service-module__action-button${
+                        isMarkedNotPerformed ? " soft-primary-button-neutral" : " soft-primary-button-danger"
+                      }`}
+                      onClick={() => {
+                        if (isMarkedNotPerformed) {
+                          restorePlannedService(service.id);
+                          return;
+                        }
+
+                        markServiceAsNotPerformed(service.id);
+                      }}
+                    >
+                      {isMarkedNotPerformed ? "Restablecer servicio" : "Servicio no realizado"}
+                    </button>
                     <span className="badge badge-soft">{service.schedule ?? "Sin periodicidad"}</span>
                   </div>
                 </div>
 
                 {isExpanded ? (
                   <div className="service-module__body">
+                    {isMarkedNotPerformed ? (
+                      <div className="service-module__warning" role="alert">
+                        <div className="service-module__warning-icon-shell" aria-hidden="true">
+                          <span className="service-module__warning-icon">!</span>
+                        </div>
+                        <div className="service-module__warning-copy">
+                          <strong>Servicio No Realizado</strong>
+                          <span>
+                            Este servicio se registrará sin conductor ni equipo y quedará exportado con la observación
+                            operativa correspondiente.
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
+
                     <div className="service-assignment-row">
                       <label className="service-assignment-field">
                         <span>Servicio</span>
@@ -253,10 +326,15 @@ export function OperationsBaseRegister({
                         placeholder="Busca conductor por nombre o RUT"
                         selectedWorker={selectedDriver}
                         serviceDate={selectedDateValue}
+                        disabled={isMarkedNotPerformed}
                         onSelect={(driver) => {
                           if (driver) {
                             rememberDriver(driver);
-                            updateDraft(service.id, { driverId: driver.id });
+                            updateDraft(service.id, {
+                              driverId: driver.id,
+                              serviceExecutionStatus: "planned",
+                              serviceExecutionNote: "",
+                            });
                             return;
                           }
 
@@ -266,20 +344,30 @@ export function OperationsBaseRegister({
 
                       <label className="service-assignment-field">
                         <span>RUT / Documento</span>
-                        <input type="text" readOnly value={selectedDriver?.documentNumber ?? ""} className="compact-readonly" />
+                        <input
+                          type="text"
+                          readOnly
+                          value={isMarkedNotPerformed ? DEFAULT_NOT_PERFORMED_NOTE : selectedDriver?.documentNumber ?? ""}
+                          className="compact-readonly"
+                        />
                       </label>
 
                       <label className="service-assignment-field">
                         <span>Área</span>
-                        <input type="text" readOnly value={selectedDriver?.areaName || selectedDriver?.areaCode || ""} className="compact-readonly" />
+                        <input
+                          type="text"
+                          readOnly
+                          value={isMarkedNotPerformed ? "Registro operativo" : selectedDriver?.areaName || selectedDriver?.areaCode || ""}
+                          className="compact-readonly"
+                        />
                       </label>
 
                       <label className="service-assignment-field">
                         <span>Estado de turno</span>
-                        <div className={`shift-status-indicator ${getDriverRosterTone(selectedDriver)}`}>
+                        <div className={`shift-status-indicator ${isMarkedNotPerformed ? "is-neutral" : getDriverRosterTone(selectedDriver)}`}>
                           <span className="shift-status-indicator__dot" aria-hidden="true" />
                           <span className="shift-status-indicator__label">
-                            {getDriverRosterLabel(selectedDriver) || "Sin pauta"}
+                            {isMarkedNotPerformed ? "No realizado" : getDriverRosterLabel(selectedDriver) || "Sin pauta"}
                           </span>
                         </div>
                       </label>
@@ -294,12 +382,15 @@ export function OperationsBaseRegister({
                             className="driver-picker__trigger"
                             aria-expanded={selectedEquipment ? false : openEquipmentServiceId === service.id}
                             aria-invalid={Boolean(fieldErrors.equipmentCode)}
+                            disabled={isMarkedNotPerformed}
                             onClick={() => {
-                              if (selectedEquipment) return;
+                              if (selectedEquipment || isMarkedNotPerformed) return;
                               setOpenEquipmentServiceId(openEquipmentServiceId === service.id ? null : service.id);
                             }}
                           >
-                            <span className="driver-picker__value">{selectedEquipment?.code || "Selecciona equipo"}</span>
+                            <span className="driver-picker__value">
+                              {isMarkedNotPerformed ? DEFAULT_NOT_PERFORMED_NOTE : selectedEquipment?.code || "Selecciona equipo"}
+                            </span>
                             {selectedEquipment ? (
                               <span
                                 className="driver-picker__clear"
@@ -346,7 +437,11 @@ export function OperationsBaseRegister({
                                       type="button"
                                       className={`driver-picker__option${item.code === draft.equipmentCode ? " is-selected" : ""}`}
                                       onClick={() => {
-                                        updateDraft(service.id, { equipmentCode: item.code });
+                                        updateDraft(service.id, {
+                                          equipmentCode: item.code,
+                                          serviceExecutionStatus: "planned",
+                                          serviceExecutionNote: "",
+                                        });
                                         setOpenEquipmentServiceId(null);
                                         setEquipmentQuery("");
                                       }}
@@ -365,17 +460,32 @@ export function OperationsBaseRegister({
 
                       <label className="service-assignment-field">
                         <span>Tipo</span>
-                        <input type="text" readOnly value={selectedEquipment?.type ?? ""} className="compact-readonly" />
+                        <input
+                          type="text"
+                          readOnly
+                          value={isMarkedNotPerformed ? "No aplica" : selectedEquipment?.type ?? ""}
+                          className="compact-readonly"
+                        />
                       </label>
 
                       <label className="service-assignment-field">
                         <span>Patente</span>
-                        <input type="text" readOnly value={selectedEquipment?.plate ?? ""} className="compact-readonly" />
+                        <input
+                          type="text"
+                          readOnly
+                          value={isMarkedNotPerformed ? "No aplica" : selectedEquipment?.plate ?? ""}
+                          className="compact-readonly"
+                        />
                       </label>
 
                       <label className="service-assignment-field">
                         <span>Cliente actual</span>
-                        <input type="text" readOnly value={selectedEquipment?.currentClient ?? ""} className="compact-readonly" />
+                        <input
+                          type="text"
+                          readOnly
+                          value={isMarkedNotPerformed ? draft.serviceExecutionNote || DEFAULT_NOT_PERFORMED_NOTE : selectedEquipment?.currentClient ?? ""}
+                          className="compact-readonly"
+                        />
                       </label>
                     </div>
 
@@ -386,13 +496,13 @@ export function OperationsBaseRegister({
                       <span />
                     </div>
                     <div className="field-errors-grid field-errors-grid--service field-errors-grid--compact">
-                      {fieldErrors.driverName ? <p className="field-error">{fieldErrors.driverName}</p> : <span />}
+                      {!isMarkedNotPerformed && fieldErrors.driverName ? <p className="field-error">{fieldErrors.driverName}</p> : <span />}
                       <span />
                       <span />
                       <span />
                     </div>
                     <div className="field-errors-grid field-errors-grid--service field-errors-grid--compact">
-                      {fieldErrors.equipmentCode ? <p className="field-error">{fieldErrors.equipmentCode}</p> : <span />}
+                      {!isMarkedNotPerformed && fieldErrors.equipmentCode ? <p className="field-error">{fieldErrors.equipmentCode}</p> : <span />}
                       <span />
                       <span />
                       <span />

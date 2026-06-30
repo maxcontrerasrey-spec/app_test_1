@@ -42,7 +42,7 @@ const EXPORT_PAGE_SIZE = 1000;
 const DASHBOARD_PAGE_SIZE = 1000;
 const DASHBOARD_ENTRY_SELECT = "contract_code, service_date, shift, driver_name, driver_shift_status, service_operational_name";
 const EXPORT_ENTRY_SELECT =
-  "service_date, shift, contract_code, service_operational_name, service_contractual_name, service_category, service_company, driver_name, driver_document, driver_area, driver_shift_status, equipment_code, equipment_plate, equipment_type, equipment_client, created_at";
+  "service_date, shift, contract_code, service_operational_name, service_contractual_name, service_category, service_company, service_execution_status, service_execution_note, driver_name, driver_document, driver_area, driver_shift_status, equipment_code, equipment_plate, equipment_type, equipment_client, created_at";
 
 const LOCAL_NORMALIZED_DATA: OperationsServiceRecord[] = SERVICE_DATA.map((item) => ({
   ...item,
@@ -166,6 +166,8 @@ export function OperacionesDashboard() {
       serviceDrafts[serviceId] ?? {
         driverId: "",
         equipmentCode: "",
+        serviceExecutionStatus: "planned",
+        serviceExecutionNote: "",
       }
     );
   }
@@ -422,8 +424,9 @@ export function OperacionesDashboard() {
     for (const service of eligibleServices) {
       const draft = getDraft(service.id);
       const selectedDriver = getDriverById(draft.driverId);
-      const touched = Boolean(draft.driverId || draft.equipmentCode);
-      const completed = Boolean(draft.driverId && draft.equipmentCode);
+      const isMarkedNotPerformed = draft.serviceExecutionStatus === "not_performed";
+      const touched = isMarkedNotPerformed || Boolean(draft.driverId || draft.equipmentCode);
+      const completed = isMarkedNotPerformed || Boolean(draft.driverId && draft.equipmentCode);
 
       if (!touched) {
         continue;
@@ -434,6 +437,8 @@ export function OperacionesDashboard() {
         shift: selectedShift,
         serviceDate: selectedDateValue,
         serviceExternalKey: service.id,
+        serviceExecutionStatus: draft.serviceExecutionStatus,
+        serviceExecutionNote: draft.serviceExecutionNote,
         driverName: selectedDriver?.fullName ?? "",
         driverDocument: selectedDriver?.documentNumber ?? "",
         driverArea: selectedDriver?.areaName || selectedDriver?.areaCode || "",
@@ -580,10 +585,17 @@ export function OperacionesDashboard() {
       "Nombre contractual": row.service_contractual_name ?? "",
       "Categoria contractual": row.service_category ?? "",
       "Empresa usuaria": row.service_company ?? "",
+      "Estado servicio": row.service_execution_status === "not_performed" ? "Servicio no realizado" : "Planificado",
+      Observacion: row.service_execution_note ?? "",
       Conductor: row.driver_name ?? "",
       "RUT / Documento": row.driver_document ?? "",
       Area: row.driver_area ?? "",
-      "Estado de turno": row.driver_shift_status === "fuera_de_turno" ? "Fuera de Turno" : "En Turno",
+      "Estado de turno":
+        row.driver_shift_status === "fuera_de_turno"
+          ? "Fuera de Turno"
+          : row.driver_shift_status === "en_turno"
+            ? "En Turno"
+            : "",
       Equipo: row.equipment_code ?? "",
       Patente: row.equipment_plate ?? "",
       Tipo: row.equipment_type ?? "",
@@ -600,6 +612,8 @@ export function OperacionesDashboard() {
       { wch: 32 },
       { wch: 26 },
       { wch: 22 },
+      { wch: 18 },
+      { wch: 24 },
       { wch: 30 },
       { wch: 16 },
       { wch: 28 },
@@ -621,6 +635,10 @@ export function OperacionesDashboard() {
     eligibleServices.length > 0 &&
     eligibleServices.every((service) => {
       const draft = getDraft(service.id);
+      if (draft.serviceExecutionStatus === "not_performed") {
+        return true;
+      }
+
       return Boolean(getDriverById(draft.driverId) && getEquipmentByCode(draft.equipmentCode));
     });
 

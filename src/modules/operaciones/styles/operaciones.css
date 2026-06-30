@@ -1043,8 +1043,8 @@
 
 .dashboard-table__head--export,
 .dashboard-table__row--export {
-  width: max(100%, 1228px);
-  grid-template-columns: 108px 92px 188px 232px 224px 156px 110px 118px;
+  width: max(100%, 1640px);
+  grid-template-columns: 108px 92px 188px 220px 164px 212px 156px 110px 118px 232px;
 }
 
 .dashboard-table__head--export span,
@@ -1204,11 +1204,47 @@
   color: #985049;
 }
 
+.service-module__service-pill.is-not-performed {
+  background: rgba(185, 58, 58, 0.14);
+  border-color: rgba(185, 58, 58, 0.22);
+  color: #a13333;
+}
+
 .service-module__header-side {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.service-module__action-button {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.service-module__status-flag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.service-module__status-flag--not-performed {
+  background: rgba(185, 58, 58, 0.14);
+  border-color: rgba(185, 58, 58, 0.22);
+  color: #a13333;
 }
 
 .service-module__complete-dot {
@@ -1221,6 +1257,52 @@
 
 .service-module__body {
   margin-top: 18px;
+}
+
+.service-module__warning {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(213, 91, 91, 0.24);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 242, 242, 0.96) 0%, rgba(255, 233, 233, 0.98) 100%);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.service-module__warning-icon-shell {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(177, 48, 48, 0.14);
+  color: #ab2f2f;
+}
+
+.service-module__warning-icon {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.service-module__warning-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.service-module__warning-copy strong {
+  color: #9f2c2c;
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.service-module__warning-copy span {
+  color: #7a4343;
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 
 .submit-plan-button {
@@ -1334,6 +1416,12 @@
   gap: 10px;
   cursor: pointer;
   text-align: left;
+}
+
+.driver-picker__trigger:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  background: linear-gradient(180deg, rgba(251, 244, 244, 0.98) 0%, rgba(246, 236, 236, 0.98) 100%);
 }
 
 .operations-theme .hr-worker-lookup {

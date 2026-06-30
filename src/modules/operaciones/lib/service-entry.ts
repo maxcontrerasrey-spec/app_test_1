@@ -3,6 +3,8 @@ export interface ServiceEntryPayload {
   shift?: string;
   serviceDate?: string;
   serviceExternalKey?: number;
+  serviceExecutionStatus?: "planned" | "not_performed" | string;
+  serviceExecutionNote?: string;
   driverName?: string;
   driverDocument?: string;
   driverArea?: string;
@@ -14,6 +16,8 @@ export interface CleanedServiceEntryPayload {
   shift: string;
   serviceDate: string;
   serviceExternalKey: number;
+  serviceExecutionStatus: "planned" | "not_performed";
+  serviceExecutionNote: string;
   driverName: string;
   driverDocument: string;
   driverArea: string;
@@ -30,6 +34,8 @@ const SHIFT_OPTIONS = new Set(["am", "pm"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DRIVER_PATTERN = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.'\- ]{2,140}$/;
 const EQUIPMENT_PATTERN = /^[A-Za-z0-9._\-\/ ]{2,50}$/;
+const EXECUTION_STATUS_OPTIONS = new Set(["planned", "not_performed"]);
+const DEFAULT_NOT_PERFORMED_NOTE = "Servicio no realizado";
 
 function sanitizeText(value: string | null | undefined): string {
   return (value ?? "").toString().trim().replace(/\s+/g, " ");
@@ -54,12 +60,18 @@ export function validateServiceEntryPayload(payload: unknown): ServiceEntryValid
   }
 
   const record = payload as ServiceEntryPayload;
+  const normalizedExecutionStatus = sanitizeText(record.serviceExecutionStatus).toLowerCase();
 
   const cleaned: CleanedServiceEntryPayload = {
     contractCode: sanitizeText(record.contractCode),
     shift: sanitizeText(record.shift).toLowerCase(),
     serviceDate: sanitizeText(record.serviceDate),
     serviceExternalKey: Number(record.serviceExternalKey),
+    serviceExecutionStatus:
+      normalizedExecutionStatus === ""
+        ? "planned"
+        : (normalizedExecutionStatus as CleanedServiceEntryPayload["serviceExecutionStatus"]),
+    serviceExecutionNote: sanitizeText(record.serviceExecutionNote),
     driverName: sanitizeText(record.driverName),
     driverDocument: sanitizeText(record.driverDocument),
     driverArea: sanitizeText(record.driverArea),
@@ -84,7 +96,17 @@ export function validateServiceEntryPayload(payload: unknown): ServiceEntryValid
     errors.serviceExternalKey = "Selecciona un servicio válido.";
   }
 
-  if (!cleaned.driverName || !DRIVER_PATTERN.test(cleaned.driverName)) {
+  if (!EXECUTION_STATUS_OPTIONS.has(cleaned.serviceExecutionStatus)) {
+    errors.serviceExecutionStatus = "Selecciona un estado operativo válido.";
+  }
+
+  if (cleaned.serviceExecutionStatus === "not_performed") {
+    cleaned.serviceExecutionNote = cleaned.serviceExecutionNote || DEFAULT_NOT_PERFORMED_NOTE;
+    cleaned.driverName = "";
+    cleaned.driverDocument = "";
+    cleaned.driverArea = "";
+    cleaned.equipmentCode = "";
+  } else if (!cleaned.driverName || !DRIVER_PATTERN.test(cleaned.driverName)) {
     errors.driverName = "Selecciona un conductor válido.";
   }
 
@@ -96,7 +118,14 @@ export function validateServiceEntryPayload(payload: unknown): ServiceEntryValid
     errors.driverArea = "El área del conductor no es válida.";
   }
 
-  if (!cleaned.equipmentCode || !EQUIPMENT_PATTERN.test(cleaned.equipmentCode)) {
+  if (cleaned.serviceExecutionNote.length > 240) {
+    errors.serviceExecutionNote = "La observación operativa no es válida.";
+  }
+
+  if (
+    cleaned.serviceExecutionStatus === "planned" &&
+    (!cleaned.equipmentCode || !EQUIPMENT_PATTERN.test(cleaned.equipmentCode))
+  ) {
     errors.equipmentCode = "Selecciona un equipo válido.";
   }
 

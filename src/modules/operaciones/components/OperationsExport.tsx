@@ -22,7 +22,13 @@ function formatShiftLabel(shift: string | null | undefined): string {
 }
 
 function formatTurnStatusLabel(value: string | null | undefined): string {
-  return value === "fuera_de_turno" ? "Fuera de Turno" : "En Turno";
+  if (value === "fuera_de_turno") return "Fuera de Turno";
+  if (value === "en_turno") return "En Turno";
+  return "";
+}
+
+function formatServiceExecutionStatus(value: string | null | undefined): string {
+  return value === "not_performed" ? "Servicio no realizado" : "Planificado";
 }
 
 export function OperationsExport({
@@ -117,10 +123,12 @@ export function OperationsExport({
               <span>Turno</span>
               <span>Contrato</span>
               <span>Servicio</span>
+              <span>Estado servicio</span>
               <span>Conductor</span>
-              <span>Estado</span>
+              <span>Estado turno</span>
               <span>Equipo</span>
               <span>Patente</span>
+              <span>Observación</span>
             </div>
 
             {exportRows.map((row, index) => (
@@ -129,10 +137,12 @@ export function OperationsExport({
                 <span>{formatShiftLabel(row.shift)}</span>
                 <strong>{row.contract_code || ""}</strong>
                 <span>{row.service_operational_name || ""}</span>
+                <span>{formatServiceExecutionStatus(row.service_execution_status)}</span>
                 <span>{row.driver_name || ""}</span>
                 <span>{formatTurnStatusLabel(row.driver_shift_status)}</span>
                 <span>{row.equipment_code || ""}</span>
                 <span>{row.equipment_plate || ""}</span>
+                <span>{row.service_execution_note || ""}</span>
               </div>
             ))}
           </div>
