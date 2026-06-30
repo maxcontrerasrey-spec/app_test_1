@@ -56,6 +56,10 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       })),
     [setupCatalogsQuery.data?.bukUnions]
   );
+  const contractOptions = useMemo(
+    () => setupCatalogsQuery.data?.contractOptions ?? [],
+    [setupCatalogsQuery.data?.contractOptions]
+  );
   const typeCodeById = useMemo(
     () =>
       new Map((setupCatalogsQuery.data?.incentiveTypes ?? []).map((item) => [item.id, item.code])),
@@ -402,12 +406,13 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
             value={ruleAmountDraft}
             onChange={(event) => setRuleAmountDraft(event.target.value)}
           />
-          <TextField
+          <SelectField
             id="setup-rule-contract"
             label="Contrato (opcional)"
             value={ruleContractCodeDraft}
             onChange={(event) => setRuleContractCodeDraft(event.target.value)}
-            placeholder="Código contrato"
+            options={contractOptions}
+            placeholder="Todos los contratos"
           />
           <SelectField
             id="setup-rule-job-title"

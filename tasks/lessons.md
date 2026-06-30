@@ -1723,3 +1723,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cuando el usuario reporta que un rol como `control_contratos` no ve una pestaña que la matriz sí le concede, el arreglo debe revisar dos contratos a la vez:** `role_feature_access`/`role_module_access` en backend y el gating de vistas en React. Corregir solo uno deja el síntoma latente.
 - **Los refuerzos de permisos deben ser idempotentes y explícitos.** Si una grant crítica puede haberse perdido por drift o despliegue parcial, la salida senior es una migración corta que reasegure el acceso exacto en vez de asumir que “ya estaba en la migración grande”.
 - **En tarjetas operativas colapsables, los CTA de excepción no deben vivir en el resumen comprimido.** El resumen muestra estado; la acción sensible se ejecuta dentro de la expansión para mantener jerarquía visual y reducir errores de operación.
+
+## 147. Si un formulario administrativo usa un catálogo maestro vivo, no dejes un campo libre para capturar esa misma dimensión
+
+- **Cuando el ERP ya carga `contractOptions` desde backend, `Contrato (opcional)` no puede seguir como `TextField`.** Ese input abre códigos inválidos, diferencias de spelling y reglas que luego no matchean con el resto del sistema.
+- **La regla correcta es reutilizar el mismo catálogo compartido del módulo.** Si la pantalla ya tiene `setupCatalogsQuery.data.contractOptions`, el selector debe salir de ahí y no de una segunda fuente ni de escritura manual.
+- **En configuraciones enterprise, “opcional” no significa “texto libre”.** Significa permitir vacío para aplicar a todos, pero cuando el usuario sí selecciona un contrato debe ser uno de los contratos reales y activos del ERP.

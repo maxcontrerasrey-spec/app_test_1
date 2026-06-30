@@ -4188,3 +4188,15 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`HumanResourcesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/pages/HumanResourcesDashboard.tsx:1) ahora permite la vista `Historial` también por rol base (`control_contratos` y `gerencia`) además del feature flag, evitando que una desalineación transitoria de `accessible_features` esconda la pestaña a usuarios que sí deben verla.
 - La migración [`20260630183500_restore_hr_incentives_history_access_for_management_roles.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630183500_restore_hr_incentives_history_access_for_management_roles.sql:1) refuerza de forma idempotente `role_module_access` sobre `recursos_humanos` y `role_feature_access` sobre `hr_incentives_history` para `gerencia` y `control_contratos`, preservando que el historial siga completo y sin filtro extra por contrato.
 - Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260630183500_restore_hr_incentives_history_access_for_management_roles.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npx --yes supabase db push --linked --dry-run`, `npx --yes supabase db push --linked --include-all` y `git diff --check`.
+
+## Selector de contrato en reglas de monto de Incentivos
+
+- [x] Auditar el campo `Contrato (opcional)` de reglas de monto para confirmar si seguía como texto libre pese a existir catálogo vivo de contratos
+- [x] Reemplazar el input libre por una lista desplegable alimentada por `contractOptions` ya cargado por el módulo
+- [x] Validar con `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de selector de contrato en reglas de monto de Incentivos
+
+- [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1) dejó de usar un `TextField` libre para `Contrato (opcional)` en `Reglas de monto`.
+- El formulario ahora reutiliza `setupCatalogsQuery.data.contractOptions`, mostrando una lista desplegable con los contratos reales ya vigentes en el ERP y manteniendo `Todos los contratos` como opción vacía.
+- Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
