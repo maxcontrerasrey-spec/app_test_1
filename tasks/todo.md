@@ -2,6 +2,27 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección enterprise del monto manual en Incentivos
+
+- [x] Auditar por qué el flujo de monto manual sigue exigiendo una regla activa antes de aceptar el monto digitado
+- [x] Reconciliar el contrato backend de preview/create para que el tipo de incentivo pueda operar sin regla cuando el monto manual resuelve la solicitud
+- [x] Ajustar la salida frontend del preview para representar correctamente el caso manual sin regla en vez de simular una regla base inexistente
+- [x] Validar con auditoría de migraciones, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
+
+## Resultado de corrección enterprise del monto manual en Incentivos
+
+- Se agregó la migración [`20260630162000_fix_hr_incentive_manual_amount_without_rule.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630162000_fix_hr_incentive_manual_amount_without_rule.sql:1), que recompila `build_hr_incentive_preview_from_worker_data(...)` para resolver primero la política del tipo de incentivo y usar la regla de monto solo cuando el caso realmente la necesita.
+- El backend ya no exige una regla placeholder para solicitudes con monto manual. Si el tipo permite `allows_manual_amount` y el usuario ingresa un monto válido, el flujo puede previsualizar y registrar aunque no exista una regla activa para esa combinación.
+- Cuando el tipo permite monto manual pero el usuario deja el campo vacío y tampoco existe una regla activa, el backend devuelve ahora un bloqueo semántico correcto: debe ingresar monto manual o configurar una regla, en vez de fallar como si todo el flujo dependiera siempre de la tabla de reglas.
+- [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) dejó de simular una “regla base 0”. El preview muestra `Sin regla requerida` y `No aplica` para los metadatos de regla cuando el monto viene resuelto manualmente sin match de regla.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260630162000_fix_hr_incentive_manual_amount_without_rule.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run --include-all`
+  - `npx --yes supabase db push --linked --include-all`
+  - `git diff --check`
+
 ## Habilitación de monto manual controlado en Incentivos
 
 - [x] Auditar el contrato actual de Incentivos para ubicar dónde se resuelve hoy el monto y qué superficies dependen de `calculated_amount`

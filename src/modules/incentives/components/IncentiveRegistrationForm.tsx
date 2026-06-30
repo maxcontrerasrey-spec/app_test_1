@@ -458,7 +458,7 @@ export function IncentiveRegistrationForm({
               </strong>
               <span className="tracking-filter-caption">
                 {selectedIncentiveType?.allowsManualAmount
-                  ? "Puedes ingresar un monto manual para esta solicitud. Si no lo haces, el sistema usará la regla vigente."
+                  ? "Puedes ingresar un monto manual para esta solicitud. Si no lo haces, el sistema usará la regla vigente si existe."
                   : "La solicitud se registrará con esta misma resolución."}
               </span>
             </div>
@@ -514,7 +514,11 @@ export function IncentiveRegistrationForm({
                   </div>
                   <div>
                     <span>Regla base</span>
-                    <strong>{formatCurrencyValue(previewQuery.data.rule.rateRuleAmount)}</strong>
+                    <strong>
+                      {previewQuery.data.rule.rateRuleId
+                        ? formatCurrencyValue(previewQuery.data.rule.rateRuleAmount)
+                        : "Sin regla requerida"}
+                    </strong>
                   </div>
                   {previewQuery.data.manualAmount !== null ? (
                     <div>
@@ -525,20 +529,30 @@ export function IncentiveRegistrationForm({
                   <div>
                     <span>Contrato aplicado</span>
                     <strong>
-                      {previewQuery.data.rule.matchedContractCode ?? "Todos"}
+                      {previewQuery.data.rule.rateRuleId
+                        ? previewQuery.data.rule.matchedContractCode ?? "Todos"
+                        : "No aplica"}
                     </strong>
                   </div>
                   <div>
                     <span>Cargo aplicado</span>
-                    <strong>{previewQuery.data.rule.matchedJobTitle ?? "Todos"}</strong>
+                    <strong>
+                      {previewQuery.data.rule.rateRuleId
+                        ? previewQuery.data.rule.matchedJobTitle ?? "Todos"
+                        : "No aplica"}
+                    </strong>
                   </div>
                   <div>
                     <span>Sindicato aplicado</span>
-                    <strong>{previewQuery.data.rule.matchedUnionName ?? "Cualquiera"}</strong>
+                    <strong>
+                      {previewQuery.data.rule.rateRuleId
+                        ? previewQuery.data.rule.matchedUnionName ?? "Cualquiera"
+                        : "No aplica"}
+                    </strong>
                   </div>
                   <div>
                     <span>Prioridad</span>
-                    <strong>{previewQuery.data.rule.priority}</strong>
+                    <strong>{previewQuery.data.rule.rateRuleId ? previewQuery.data.rule.priority : "No aplica"}</strong>
                   </div>
                 </div>
                 {previewQuery.data.rosterValidation.blockedByAbsence ? (

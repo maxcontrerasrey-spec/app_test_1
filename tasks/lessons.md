@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 174. Si una capacidad base resuelve el dato final, no puede seguir bloqueada por un fallback opcional de otra capa
+
+- **Permitir “monto manual” en el tipo de incentivo pero seguir exigiendo una regla activa antes de aceptar ese monto rompe el contrato semántico del módulo.** El sistema dice que el monto manual es fuente válida, pero en ejecución sigue subordinándolo a una regla que ya no es necesaria para ese caso.
+- **La regla correcta es separar metadata de tipo y resolución de regla.** Primero se resuelve el tipo activo y sus políticas (`requires_replacement`, `requires_rest_day`, `calculation_basis`, `allows_manual_amount`); recién después se intenta resolver una regla solo si el caso realmente la necesita.
+- **Cuando no existe regla y el tipo permite resolución manual, el preview debe degradar de forma explícita, no simular una regla vacía.** La UI debe mostrar “sin regla requerida” o pedir monto manual; nunca inventar un `0` como si fuese una regla válida.
+
 ## 173. Si un incentivo permite override manual, el origen del monto debe quedar como contrato explícito y no como inferencia
 
 - **No basta con aceptar un número editable en frontend.** Si el ERP ya usa `calculated_amount` en aprobaciones, historial, exportación y analítica, un override manual sin `amount_source` y `manual_amount` degrada trazabilidad y obliga a inferir después algo que el sistema sí sabía al momento de registrar.
