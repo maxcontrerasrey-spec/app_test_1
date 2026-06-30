@@ -2,6 +2,29 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Habilitación de monto manual controlado en Incentivos
+
+- [x] Auditar el contrato actual de Incentivos para ubicar dónde se resuelve hoy el monto y qué superficies dependen de `calculated_amount`
+- [x] Extender el backend de Incentivos para permitir monto manual solo en tipos configurados en base, con trazabilidad completa en solicitud e historial
+- [x] Ajustar configuración base y formulario de registro para exponer el monto manual solo cuando aplique, sin romper el flujo vigente por regla
+- [x] Validar con auditoría de migraciones, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
+
+## Resultado de habilitación de monto manual controlado en Incentivos
+
+- Se agregó la migración [`20260630150000_enable_manual_amounts_for_hr_incentives.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630150000_enable_manual_amounts_for_hr_incentives.sql:1), que incorpora `allows_manual_amount` en `hr_incentive_types` y `amount_source`/`manual_amount` en `hr_incentive_requests`, manteniendo `calculated_amount` como monto canónico para todo el ERP.
+- El backend de Incentivos ahora soporta override manual solo para tipos habilitados desde configuración base. Las RPCs `calculate_hr_incentive_preview(...)` y `create_hr_incentive_request(...)` conservan compatibilidad con sus firmas previas y exponen nuevas sobrecargas con `p_manual_amount`, evitando quiebres en consumidores existentes.
+- La trazabilidad quedó cerrada de punta a punta: el origen del monto viaja por preview, solicitud persistida, historial y exportación. Si no se ingresa monto manual, el flujo sigue comportándose exactamente como antes y usa la regla vigente.
+- [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1) ahora permite definir y alternar la opción “Permite monto manual” por tipo; [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) solo muestra el campo manual cuando el tipo lo autoriza y deja el monto por regla si el usuario no lo completa.
+- [`IncentiveRequestsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRequestsView.tsx:1) y [`IncentiveApprovalsView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveApprovalsView.tsx:1) ya muestran el origen del monto en detalle, y la exportación agrega columnas para `origen_monto` y `monto_manual`.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260630150000_enable_manual_amounts_for_hr_incentives.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx --yes supabase db push --linked --dry-run --include-all`
+  - `npx --yes supabase db push --linked --include-all`
+  - humo remoto sobre `pg_proc` e `information_schema.columns` para confirmar firmas nuevas y columnas `allows_manual_amount`, `amount_source`, `manual_amount`
+  - `git diff --check`
+
 ## Alineación backend del módulo de Operaciones con ERP vigente
 
 - [x] Auditar el drift actual entre Operaciones y el ERP vigente para distinguir qué reglas siguen duplicadas en frontend y cuáles deben migrarse al backend canónico

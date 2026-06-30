@@ -1,6 +1,7 @@
 import type { BukEmployee } from "../../shared/types/buk";
 
 export type IncentiveCalculationBasis = "fixed" | "per_hour";
+export type IncentiveAmountSource = "rule" | "manual";
 export type HrIncentiveUnionStatus = "unionized" | "non_unionized" | "unknown";
 
 export type HrIncentiveUnionStatusOption = {
@@ -38,6 +39,7 @@ export type HrIncentiveType = {
   calculationBasis: IncentiveCalculationBasis;
   requiresReplacement: boolean;
   requiresRestDay: boolean;
+  allowsManualAmount: boolean;
   isActive: boolean;
   createdAt: string;
 };
@@ -139,6 +141,7 @@ export type HrIncentivePreview = {
     calculationBasis: IncentiveCalculationBasis;
     requiresReplacement: boolean;
     requiresRestDay: boolean;
+    allowsManualAmount: boolean;
     rateRuleAmount: number;
     matchedContractCode: string | null;
     matchedJobTitle: string | null;
@@ -149,6 +152,8 @@ export type HrIncentivePreview = {
   durationHours: number | null;
   serviceDate: string;
   selectedContractCode: string;
+  amountSource: IncentiveAmountSource;
+  manualAmount: number | null;
   calculatedAmount: number;
   rosterValidation: HrIncentiveRosterValidation;
 };
@@ -178,6 +183,8 @@ export type HrIncentiveRequest = {
   calculationBasis: IncentiveCalculationBasis;
   rateRuleId: string | null;
   rateRuleAmount: number;
+  amountSource: IncentiveAmountSource;
+  manualAmount: number | null;
   calculatedAmount: number;
   periodCode: string;
   selectedAreaName: string;
@@ -285,6 +292,8 @@ export type HrIncentiveRequestDetail = {
     isContractMismatch: boolean;
     calculationBasis: IncentiveCalculationBasis;
     rateRuleAmount: number;
+    amountSource: IncentiveAmountSource;
+    manualAmount: number | null;
     calculatedAmount: number;
     requesterName: string;
     requesterEmail: string | null;
@@ -391,6 +400,7 @@ export type CreateHrIncentiveRequestInput = {
   selectedAreaCode?: string | null;
   serviceDate: string;
   durationHours?: number | null;
+  manualAmount?: number | null;
   motive?: string | null;
   description?: string | null;
   replacementBukEmployeeId?: string | null;

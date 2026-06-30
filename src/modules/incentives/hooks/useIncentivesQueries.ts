@@ -163,6 +163,7 @@ export function useHrIncentivePreview(params: {
   incentiveTypeId: string;
   selectedContractCode: string;
   durationHours?: number | null;
+  manualAmount?: number | null;
   serviceDate?: string | null;
   enabled?: boolean;
 }) {
@@ -171,6 +172,7 @@ export function useHrIncentivePreview(params: {
     incentiveTypeId,
     selectedContractCode,
     durationHours,
+    manualAmount,
     serviceDate,
     enabled = true
   } = params;
@@ -181,6 +183,7 @@ export function useHrIncentivePreview(params: {
       incentiveTypeId,
       selectedContractCode,
       durationHours: durationHours ?? null,
+      manualAmount: manualAmount ?? null,
       serviceDate: serviceDate ?? null
     }),
     queryFn: () =>
@@ -189,6 +192,7 @@ export function useHrIncentivePreview(params: {
         incentiveTypeId,
         selectedContractCode,
         durationHours,
+        manualAmount,
         serviceDate
       }),
     staleTime: 10_000,

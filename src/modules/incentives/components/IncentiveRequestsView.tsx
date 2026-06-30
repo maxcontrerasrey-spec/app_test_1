@@ -101,6 +101,8 @@ function buildIncentiveExportRows(requests: HrIncentiveRequest[]) {
     trabajador_reemplazado: request.replacementFullName ?? "",
     motivo: request.motive ?? "",
     descripcion: request.description ?? "",
+    origen_monto: request.amountSource === "manual" ? "Manual" : "Regla",
+    monto_manual: request.manualAmount ?? "",
     monto_regla: request.rateRuleAmount,
     monto_calculado: request.calculatedAmount,
     duracion_horas: request.durationHours ?? "",
@@ -690,6 +692,20 @@ export function IncentiveRequestsView({
                                         <small>Monto</small>
                                         <strong>{formatCurrencyValue(detailQuery.data.request.calculatedAmount)}</strong>
                                       </div>
+                                      <div>
+                                        <small>Origen del monto</small>
+                                        <strong>
+                                          {detailQuery.data.request.amountSource === "manual" ? "Manual" : "Regla"}
+                                        </strong>
+                                      </div>
+                                      {detailQuery.data.request.manualAmount !== null ? (
+                                        <div>
+                                          <small>Monto ingresado</small>
+                                          <strong>
+                                            {formatCurrencyValue(detailQuery.data.request.manualAmount)}
+                                          </strong>
+                                        </div>
+                                      ) : null}
                                       {detailQuery.data.request.replacementFullName ? (
                                         <div className="expanded-detail-field-full" style={{ gridColumn: "1 / -1" }}>
                                           <small>Trabajador reemplazado</small>

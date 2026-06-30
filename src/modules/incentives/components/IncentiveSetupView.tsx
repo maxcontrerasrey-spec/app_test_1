@@ -9,6 +9,7 @@ import {
   addHrIncentiveType,
   setHrIncentiveAllowedJobTitleStatus,
   setHrIncentiveRateRuleStatus,
+  setHrIncentiveTypeManualAmountOption,
   setHrIncentiveTypeRosterRequirement,
   setHrIncentiveTypeStatus
 } from "../services/incentivesApi";
@@ -30,6 +31,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   const [typeNameDraft, setTypeNameDraft] = useState("");
   const [typeBasisDraft, setTypeBasisDraft] = useState<"fixed" | "per_hour">("fixed");
   const [typeRequiresReplacementDraft, setTypeRequiresReplacementDraft] = useState("false");
+  const [typeAllowsManualAmountDraft, setTypeAllowsManualAmountDraft] = useState("false");
   const [ruleTypeIdDraft, setRuleTypeIdDraft] = useState("");
   const [ruleAmountDraft, setRuleAmountDraft] = useState("");
   const [ruleContractCodeDraft, setRuleContractCodeDraft] = useState("");
@@ -116,6 +118,7 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
       setTypeNameDraft("");
       setTypeBasisDraft("fixed");
       setTypeRequiresReplacementDraft("false");
+      setTypeAllowsManualAmountDraft("false");
       setErrorMessage("");
       setStatusMessage("Tipo de incentivo actualizado.");
       await refreshSetupCatalogs();
@@ -161,6 +164,12 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
   const toggleTypeRosterMutation = useMutation({
     mutationFn: ({ id, requiresRestDay }: { id: string; requiresRestDay: boolean }) =>
       setHrIncentiveTypeRosterRequirement(id, requiresRestDay),
+    onSuccess: refreshSetupCatalogs
+  });
+
+  const toggleTypeManualAmountMutation = useMutation({
+    mutationFn: ({ id, allowsManualAmount }: { id: string; allowsManualAmount: boolean }) =>
+      setHrIncentiveTypeManualAmountOption(id, allowsManualAmount),
     onSuccess: refreshSetupCatalogs
   });
 
@@ -292,6 +301,16 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
               { value: "true", label: "Sí" }
             ]}
           />
+          <SelectField
+            id="setup-type-manual-amount"
+            label="Permite monto manual"
+            value={typeAllowsManualAmountDraft}
+            onChange={(event) => setTypeAllowsManualAmountDraft(event.target.value)}
+            options={[
+              { value: "false", label: "No" },
+              { value: "true", label: "Sí" }
+            ]}
+          />
         </div>
 
         <div className="action-row">
@@ -306,7 +325,8 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                 code: typeCodeDraft.trim().toLowerCase(),
                 name: typeNameDraft.trim(),
                 calculationBasis: typeBasisDraft,
-                requiresReplacement: typeRequiresReplacementDraft === "true"
+                requiresReplacement: typeRequiresReplacementDraft === "true",
+                allowsManualAmount: typeAllowsManualAmountDraft === "true"
               })
             }
           >
@@ -340,10 +360,24 @@ export function IncentiveSetupView({ setupCatalogsQuery }: IncentiveSetupViewPro
                   Código: {item.code} ·{" "}
                   {item.calculationBasis === "per_hour" ? "Por hora" : "Monto fijo"} ·{" "}
                   {item.requiresReplacement ? "Con reemplazo" : "Sin reemplazo"} ·{" "}
-                  {item.requiresRestDay ? "Exige descanso" : "Sin validación de descanso"}
+                  {item.requiresRestDay ? "Exige descanso" : "Sin validación de descanso"} ·{" "}
+                  {item.allowsManualAmount ? "Permite monto manual" : "Monto solo por regla"}
                 </span>
               </div>
               <div className="hr-incentives-list-item-actions">
+                <button
+                  type="button"
+                  className="soft-primary-button hr-incentives-inline-button"
+                  disabled={toggleTypeManualAmountMutation.isPending}
+                  onClick={() =>
+                    toggleTypeManualAmountMutation.mutate({
+                      id: item.id,
+                      allowsManualAmount: !item.allowsManualAmount
+                    })
+                  }
+                >
+                  {item.allowsManualAmount ? "Bloquear monto manual" : "Permitir monto manual"}
+                </button>
                 <button
                   type="button"
                   className="soft-primary-button hr-incentives-inline-button"

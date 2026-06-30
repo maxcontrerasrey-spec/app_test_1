@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 173. Si un incentivo permite override manual, el origen del monto debe quedar como contrato explícito y no como inferencia
+
+- **No basta con aceptar un número editable en frontend.** Si el ERP ya usa `calculated_amount` en aprobaciones, historial, exportación y analítica, un override manual sin `amount_source` y `manual_amount` degrada trazabilidad y obliga a inferir después algo que el sistema sí sabía al momento de registrar.
+- **La regla correcta es mantener un monto canónico y dos metadatos de auditoría.** `calculated_amount` sigue siendo la cifra operativa final; `amount_source` declara si vino de regla o ingreso manual; `manual_amount` conserva el valor digitado cuando aplica.
+- **La autorización del monto manual debe nacer en la configuración base del tipo de incentivo y validarse en backend en preview y create.** Si solo se oculta o muestra un campo en UI, el contrato queda frágil y cualquier cliente alternativo podría saltarse la restricción.
+
 ## 156. La bandeja de tareas debe validar la etapa viva, no solo confiar en filas `pending`
 
 ## 167. Una matriz enterprise con submódulos no cabe en `role_module_access`; necesita una capa formal de features

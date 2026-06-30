@@ -548,6 +548,20 @@ export function IncentiveApprovalsView() {
                                           <small>Monto</small>
                                           <strong>{formatCurrencyValue(detailQuery.data.request.calculatedAmount)}</strong>
                                         </div>
+                                        <div>
+                                          <small>Origen del monto</small>
+                                          <strong>
+                                            {detailQuery.data.request.amountSource === "manual" ? "Manual" : "Regla"}
+                                          </strong>
+                                        </div>
+                                        {detailQuery.data.request.manualAmount !== null ? (
+                                          <div>
+                                            <small>Monto ingresado</small>
+                                            <strong>
+                                              {formatCurrencyValue(detailQuery.data.request.manualAmount)}
+                                            </strong>
+                                          </div>
+                                        ) : null}
                                         {detailQuery.data.request.replacementFullName ? (
                                           <div className="expanded-detail-field-full">
                                             <small>Trabajador reemplazado</small>

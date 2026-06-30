@@ -126,6 +126,7 @@ function mapSetupCatalogs(payload: unknown): HrIncentiveSetupCatalogs {
       calculationBasis: (item.calculation_basis === "per_hour" ? "per_hour" : "fixed"),
       requiresReplacement: Boolean(item.requires_replacement),
       requiresRestDay: Boolean(item.requires_rest_day),
+      allowsManualAmount: Boolean(item.allows_manual_amount),
       isActive: Boolean(item.is_active),
       createdAt: String(item.created_at ?? "")
     })),
@@ -241,6 +242,7 @@ function mapPreview(payload: unknown): HrIncentivePreview {
       calculationBasis: rule.calculation_basis === "per_hour" ? "per_hour" : "fixed",
       requiresReplacement: Boolean(rule.requires_replacement),
       requiresRestDay: Boolean(rule.requires_rest_day),
+      allowsManualAmount: Boolean(rule.allows_manual_amount),
       rateRuleAmount: Number(rule.rate_rule_amount ?? 0),
       matchedContractCode:
         typeof rule.matched_contract_code === "string" && rule.matched_contract_code.trim()
@@ -266,6 +268,11 @@ function mapPreview(payload: unknown): HrIncentivePreview {
         : Number(source.duration_hours),
     serviceDate: String(source.service_date ?? ""),
     selectedContractCode: String(source.selected_contract_code ?? ""),
+    amountSource: source.amount_source === "manual" ? "manual" : "rule",
+    manualAmount:
+      source.manual_amount === null || source.manual_amount === undefined
+        ? null
+        : Number(source.manual_amount),
     calculatedAmount: Number(source.calculated_amount ?? 0),
     rosterValidation: {
       requiresRestDay: Boolean(rosterValidation.requires_rest_day),
@@ -395,6 +402,11 @@ function mapRequestRow(row: Record<string, unknown>): HrIncentiveRequest {
     calculationBasis: row.calculation_basis === "per_hour" ? "per_hour" : "fixed",
     rateRuleId: readNullableText(row.rate_rule_id),
     rateRuleAmount: Number(row.rate_rule_amount ?? 0),
+    amountSource: row.amount_source === "manual" ? "manual" : "rule",
+    manualAmount:
+      row.manual_amount === null || row.manual_amount === undefined
+        ? null
+        : Number(row.manual_amount),
     calculatedAmount: Number(row.calculated_amount ?? 0),
     periodCode: String(row.period_code ?? ""),
     selectedAreaName: String(row.selected_area_name ?? ""),
@@ -551,6 +563,11 @@ function mapRequestDetail(payload: unknown): HrIncentiveRequestDetail {
       calculationBasis:
         request.calculation_basis === "per_hour" ? "per_hour" : "fixed",
       rateRuleAmount: Number(request.rate_rule_amount ?? 0),
+      amountSource: request.amount_source === "manual" ? "manual" : "rule",
+      manualAmount:
+        request.manual_amount === null || request.manual_amount === undefined
+          ? null
+          : Number(request.manual_amount),
       calculatedAmount: requireNumberField(request, "calculated_amount"),
       requesterName: String(request.requester_name ?? ""),
       requesterEmail: readNullableText(request.requester_email),
@@ -652,6 +669,7 @@ export async function fetchHrIncentivePreview(params: {
   incentiveTypeId: string;
   selectedContractCode: string;
   durationHours?: number | null;
+  manualAmount?: number | null;
   serviceDate?: string | null;
 }) {
   const client = getSupabaseClient();
@@ -660,6 +678,7 @@ export async function fetchHrIncentivePreview(params: {
     p_incentive_type_id: params.incentiveTypeId,
     p_selected_contract_code: params.selectedContractCode,
     p_duration_hours: params.durationHours ?? null,
+    p_manual_amount: params.manualAmount ?? null,
     p_service_date: params.serviceDate ?? null
   });
 
@@ -714,6 +733,7 @@ export async function createHrIncentiveRequest(input: CreateHrIncentiveRequestIn
     p_selected_area_code: input.selectedAreaCode ?? null,
     p_service_date: input.serviceDate,
     p_duration_hours: input.durationHours ?? null,
+    p_manual_amount: input.manualAmount ?? null,
     p_motive: input.motive ?? null,
     p_description: input.description ?? null,
     p_replacement_buk_employee_id: input.replacementBukEmployeeId ?? null,
@@ -985,13 +1005,15 @@ export async function addHrIncentiveType(input: {
   name: string;
   calculationBasis: "fixed" | "per_hour";
   requiresReplacement: boolean;
+  allowsManualAmount: boolean;
 }) {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("add_hr_incentive_type", {
     p_code: input.code,
     p_name: input.name,
     p_calculation_basis: input.calculationBasis,
-    p_requires_replacement: input.requiresReplacement
+    p_requires_replacement: input.requiresReplacement,
+    p_allows_manual_amount: input.allowsManualAmount
   });
 
   if (error) {
@@ -1026,6 +1048,23 @@ export async function setHrIncentiveTypeRosterRequirement(
   if (error) {
     throw new Error(
       error.message || "No fue posible actualizar la validación de descanso del incentivo."
+    );
+  }
+}
+
+export async function setHrIncentiveTypeManualAmountOption(
+  typeId: string,
+  allowsManualAmount: boolean
+) {
+  const client = getSupabaseClient();
+  const { error } = await client.rpc("set_hr_incentive_type_manual_amount_option", {
+    p_type_id: typeId,
+    p_allows_manual_amount: allowsManualAmount
+  });
+
+  if (error) {
+    throw new Error(
+      error.message || "No fue posible actualizar la política de monto manual del incentivo."
     );
   }
 }

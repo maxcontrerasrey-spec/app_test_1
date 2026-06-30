@@ -128,6 +128,7 @@ export function IncentiveRegistrationForm({
   const [selectedIncentiveTypeId, setSelectedIncentiveTypeId] = useState("");
   const [serviceDate, setServiceDate] = useState(toTodayDateValue());
   const [durationHours, setDurationHours] = useState("");
+  const [manualAmount, setManualAmount] = useState("");
   const [motive, setMotive] = useState("");
   const [replacementWorker, setReplacementWorker] = useState<HrIncentiveEligibleWorker | null>(null);
   const [formMessage, setFormMessage] = useState("");
@@ -190,6 +191,12 @@ export function IncentiveRegistrationForm({
     }
   }, [selectedIncentiveType?.requiresReplacement]);
 
+  useEffect(() => {
+    if (!selectedIncentiveType?.allowsManualAmount) {
+      setManualAmount("");
+    }
+  }, [selectedIncentiveType?.allowsManualAmount]);
+
   const selectedArea = useMemo(() => {
     const source = workerContextQuery.data?.availableAreas ?? [];
     return (
@@ -205,6 +212,13 @@ export function IncentiveRegistrationForm({
     selectedIncentiveType?.calculationBasis === "per_hour" && durationHours.trim()
       ? Number(durationHours)
       : null;
+  const hasManualAmountInput = manualAmount.trim() !== "";
+  const manualAmountNumber = hasManualAmountInput ? Number(manualAmount) : null;
+  const manualAmountIsValid =
+    !hasManualAmountInput ||
+    (typeof manualAmountNumber === "number" &&
+      Number.isFinite(manualAmountNumber) &&
+      manualAmountNumber >= 0);
 
   const rosterStatusAppearance = useMemo(
     () => resolveRosterStatusAppearance(rosterSnapshotQuery.data ?? null),
@@ -251,12 +265,14 @@ export function IncentiveRegistrationForm({
     incentiveTypeId: selectedIncentiveTypeId,
     selectedContractCode: selectedArea?.contractCode ?? "",
     durationHours: durationHoursNumber,
+    manualAmount: manualAmountNumber,
     serviceDate,
     enabled:
       Boolean(selectedWorker) &&
       Boolean(selectedIncentiveTypeId) &&
       Boolean(selectedArea?.contractCode) &&
       Boolean(serviceDate) &&
+      manualAmountIsValid &&
       (selectedIncentiveType?.calculationBasis !== "per_hour" ||
         (typeof durationHoursNumber === "number" && durationHoursNumber > 0))
   });
@@ -275,6 +291,7 @@ export function IncentiveRegistrationForm({
       setSelectedIncentiveTypeId("");
       setServiceDate(toTodayDateValue());
       setDurationHours("");
+      setManualAmount("");
       setMotive("");
       setReplacementWorker(null);
       await invalidateHrIncentiveQueries(queryClient);
@@ -304,6 +321,7 @@ export function IncentiveRegistrationForm({
     !registrationWindow.isAllowed ||
     (selectedIncentiveType?.calculationBasis === "per_hour" &&
       !(typeof durationHoursNumber === "number" && durationHoursNumber > 0)) ||
+    (selectedIncentiveType?.allowsManualAmount && !manualAmountIsValid) ||
     (selectedIncentiveType?.requiresReplacement &&
       (!replacementWorker ||
         replacementRosterSnapshotQuery.isLoading ||
@@ -418,11 +436,30 @@ export function IncentiveRegistrationForm({
             maxValue={registrationWindow.maximumDateValue}
           />
 
+          {selectedIncentiveType?.allowsManualAmount ? (
+            <TextField
+              id="incentive-manual-amount"
+              label="Monto manual (opcional)"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={manualAmount}
+              onChange={(event) => setManualAmount(event.target.value)}
+              placeholder="Si lo dejas vacío, se usará la regla activa"
+              hasError={hasManualAmountInput && !manualAmountIsValid}
+            />
+          ) : null}
+
           <div className="hr-incentives-grid-span-2 hr-incentives-preview-card">
             <div className="hr-incentives-preview-header">
-              <strong>Monto resuelto por regla</strong>
+              <strong>
+                {selectedIncentiveType?.allowsManualAmount ? "Monto final de la solicitud" : "Monto resuelto por regla"}
+              </strong>
               <span className="tracking-filter-caption">
-                La solicitud se registrará con esta misma resolución.
+                {selectedIncentiveType?.allowsManualAmount
+                  ? "Puedes ingresar un monto manual para esta solicitud. Si no lo haces, el sistema usará la regla vigente."
+                  : "La solicitud se registrará con esta misma resolución."}
               </span>
             </div>
 
@@ -472,9 +509,19 @@ export function IncentiveRegistrationForm({
                     <strong>{formatCurrencyValue(previewQuery.data.calculatedAmount)}</strong>
                   </div>
                   <div>
+                    <span>Origen del monto</span>
+                    <strong>{previewQuery.data.amountSource === "manual" ? "Manual" : "Regla"}</strong>
+                  </div>
+                  <div>
                     <span>Regla base</span>
                     <strong>{formatCurrencyValue(previewQuery.data.rule.rateRuleAmount)}</strong>
                   </div>
+                  {previewQuery.data.manualAmount !== null ? (
+                    <div>
+                      <span>Monto ingresado</span>
+                      <strong>{formatCurrencyValue(previewQuery.data.manualAmount)}</strong>
+                    </div>
+                  ) : null}
                   <div>
                     <span>Contrato aplicado</span>
                     <strong>
@@ -615,6 +662,7 @@ export function IncentiveRegistrationForm({
               setSelectedIncentiveTypeId("");
               setServiceDate(toTodayDateValue());
               setDurationHours("");
+              setManualAmount("");
               setMotive("");
               setReplacementWorker(null);
               setFormError("");
@@ -646,6 +694,7 @@ export function IncentiveRegistrationForm({
                 selectedAreaCode: selectedArea.areaCode,
                 serviceDate: `${serviceDate}T12:00:00-04:00`,
                 durationHours: durationHoursNumber,
+                manualAmount: manualAmountNumber,
                 motive,
                 description: null,
                 replacementBukEmployeeId: replacementWorker?.bukEmployeeId ?? null,
