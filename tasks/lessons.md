@@ -1717,3 +1717,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No resuelvas “servicio no realizado” escondiendo campos o dejando nulos mudos.** Si el usuario necesita declarar una excepción operativa sobre un servicio obligatorio, el backend debe persistir un estado explícito y una observación legible dentro del mismo registro `service_entries`.
 - **La UI puede disparar la excepción, pero no puede inventar un canal paralelo.** El mismo batch RPC que guarda servicios planificados debe aceptar también el estado excepcional, limpiar asignaciones incompatibles y seguir aplicando seguridad y unicidad sobre el mismo servicio.
 - **Toda excepción operativa debe salir visible en exportación.** Si el reporte histórico solo muestra conductor/equipo vacíos, obligas a interpretar silencios; la salida enterprise es exportar el estado y la observación para que la trazabilidad sea directa y auditable.
+
+## 146. Si una vista ya fue aprobada para un rol en la matriz enterprise, no confíes solo en el feature flag del cliente para dejarla visible
+
+- **Cuando el usuario reporta que un rol como `control_contratos` no ve una pestaña que la matriz sí le concede, el arreglo debe revisar dos contratos a la vez:** `role_feature_access`/`role_module_access` en backend y el gating de vistas en React. Corregir solo uno deja el síntoma latente.
+- **Los refuerzos de permisos deben ser idempotentes y explícitos.** Si una grant crítica puede haberse perdido por drift o despliegue parcial, la salida senior es una migración corta que reasegure el acceso exacto en vez de asumir que “ya estaba en la migración grande”.
+- **En tarjetas operativas colapsables, los CTA de excepción no deben vivir en el resumen comprimido.** El resumen muestra estado; la acción sensible se ejecuta dentro de la expansión para mantener jerarquía visual y reducir errores de operación.

@@ -47,8 +47,10 @@ export function HumanResourcesDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { view } = useParams();
-  const { accessibleFeatures, accessibleModules, isSuperAdmin } = useAuth();
+  const { accessibleFeatures, accessibleModules, appRoles, isSuperAdmin } = useAuth();
   const activeView = isHumanResourcesView(view) ? view : "incentivos";
+  const canAccessHistoryByRole =
+    appRoles.includes("control_contratos") || appRoles.includes("gerencia");
   const visibleViews = useMemo(
     () =>
       HUMAN_RESOURCES_VIEWS.filter((item) => {
@@ -69,12 +71,15 @@ export function HumanResourcesDashboard() {
         }
 
         if (item.key === "solicitudes") {
-          return hasFeatureAccess(accessibleFeatures, "hr_incentives_history");
+          return (
+            hasFeatureAccess(accessibleFeatures, "hr_incentives_history") ||
+            canAccessHistoryByRole
+          );
         }
 
         return hasFeatureAccess(accessibleFeatures, "hr_incentives_configuration");
       }),
-    [accessibleFeatures, accessibleModules, isSuperAdmin]
+    [accessibleFeatures, accessibleModules, canAccessHistoryByRole, isSuperAdmin]
   );
   const fallbackView = visibleViews[0]?.key ?? null;
   const setupCatalogsQuery = useHrIncentiveSetupCatalogs(

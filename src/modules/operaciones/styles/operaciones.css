@@ -1259,6 +1259,12 @@
   margin-top: 18px;
 }
 
+.service-module__body-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
 .service-module__warning {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

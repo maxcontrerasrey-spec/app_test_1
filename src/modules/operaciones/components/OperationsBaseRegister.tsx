@@ -260,28 +260,31 @@ export function OperationsBaseRegister({
                         Servicio no realizado
                       </span>
                     ) : null}
-                    <button
-                      type="button"
-                      className={`soft-primary-button service-module__action-button${
-                        isMarkedNotPerformed ? " soft-primary-button-neutral" : " soft-primary-button-danger"
-                      }`}
-                      onClick={() => {
-                        if (isMarkedNotPerformed) {
-                          restorePlannedService(service.id);
-                          return;
-                        }
-
-                        markServiceAsNotPerformed(service.id);
-                      }}
-                    >
-                      {isMarkedNotPerformed ? "Restablecer servicio" : "Servicio no realizado"}
-                    </button>
                     <span className="badge badge-soft">{service.schedule ?? "Sin periodicidad"}</span>
                   </div>
                 </div>
 
                 {isExpanded ? (
                   <div className="service-module__body">
+                    <div className="service-module__body-actions">
+                      <button
+                        type="button"
+                        className={`soft-primary-button service-module__action-button${
+                          isMarkedNotPerformed ? " soft-primary-button-neutral" : " soft-primary-button-danger"
+                        }`}
+                        onClick={() => {
+                          if (isMarkedNotPerformed) {
+                            restorePlannedService(service.id);
+                            return;
+                          }
+
+                          markServiceAsNotPerformed(service.id);
+                        }}
+                      >
+                        {isMarkedNotPerformed ? "Restablecer servicio" : "Servicio no realizado"}
+                      </button>
+                    </div>
+
                     {isMarkedNotPerformed ? (
                       <div className="service-module__warning" role="alert">
                         <div className="service-module__warning-icon-shell" aria-hidden="true">
