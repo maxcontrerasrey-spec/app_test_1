@@ -86,6 +86,7 @@ export interface BaseServiceQueryRow {
   contractual_name: string;
   contractual_category: string;
   schedule_label: string;
+  contract_id: number | string | null;
   contracts: Array<{
     code: string | null;
     contract_name: string | null;

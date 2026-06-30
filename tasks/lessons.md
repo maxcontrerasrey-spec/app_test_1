@@ -1683,3 +1683,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Precargar `employees_active_current` completo para filtrar en cliente rompe el estándar enterprise del ERP.** Pierdes ranking indexado, vuelves a duplicar lógica de búsqueda y arriesgas que el lookup use una foto distinta de la que ya consumen Jornadas, Incentivos o Movilidad.
 - **El estado `turno/descanso` no es un campo de formulario; es una derivación operacional.** Si el backend ya resuelve la pauta diaria, Operaciones solo debe mostrar ese resultado y persistir la fuente (`roster`) junto a los snapshots necesarios para auditoría.
 - **Cuando el lookup remoto es efímero, el seleccionado debe preservarse aparte de los resultados.** Si el componente borra la lista al cerrar el buscador pero usa esa misma lista como source of truth del seleccionado, introduce una regresión silenciosa justo después de elegir al conductor.
+
+## 144. En este ERP no se cierra una pantalla productiva apoyándose en fallback local de catálogo
+
+- **Un fallback local puede servir para maqueta o resiliencia controlada, pero no como fuente efectiva de operación.** Si contratos, servicios o catálogos maestros vienen de Supabase/ERP, la corrección buena es endurecer la consulta backend o su resolución por IDs, no reinyectar una copia local silenciosa.
+- **Cuando una relación embebida falla, la salida correcta es seguir resolviendo desde otra señal backend del mismo contrato.** Por ejemplo: `contract_id` más catálogo SQL vigente, no una tabla estática del frontend.
+- **Si el usuario explicita “no uso vista local”, trátalo como regla de arquitectura, no como preferencia visual.** Cualquier arreglo que todavía dependa de datos locales para llenar selects o reconstruir dominio sigue estando mal cerrado.

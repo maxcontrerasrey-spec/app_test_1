@@ -49,6 +49,28 @@ const LOCAL_NORMALIZED_DATA: OperationsServiceRecord[] = SERVICE_DATA.map((item)
   normalizedSchedule: normalizeText(item.schedule),
 }));
 
+function normalizeOperationsContractLabel(value: string | null | undefined) {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) return "";
+  return trimmed.replace(/^SERVICIO\s+/i, "");
+}
+
+function sortOperationsContracts(contracts: string[]) {
+  const unique = [...new Set(contracts.map(normalizeOperationsContractLabel).filter(Boolean))];
+  return unique.sort((left, right) => {
+    const leftIndex = PILOT_CONTRACTS.indexOf(left);
+    const rightIndex = PILOT_CONTRACTS.indexOf(right);
+
+    if (leftIndex >= 0 || rightIndex >= 0) {
+      if (leftIndex === -1) return 1;
+      if (rightIndex === -1) return -1;
+      return leftIndex - rightIndex;
+    }
+
+    return left.localeCompare(right, "es");
+  });
+}
+
 export function OperacionesDashboard() {
   const today = useMemo(() => new Date(), []);
   const todayStr = useMemo(() => toTodayDateValue(), []);
@@ -100,10 +122,9 @@ export function OperacionesDashboard() {
   const selectedDate = selectedDateValue ? parseDateValue(selectedDateValue) : null;
 
   const availableContracts = useMemo(() => {
-    const currentContracts = new Set(servicesData.map((item) => item.contract).filter(Boolean));
-    return PILOT_CONTRACTS.filter((contract) => currentContracts.has(contract));
+    return sortOperationsContracts(servicesData.map((item) => item.contract));
   }, [servicesData]);
-  const contractOptions = userContracts.length > 0 ? userContracts : availableContracts;
+  const contractOptions = userContracts.length > 0 ? sortOperationsContracts(userContracts) : availableContracts;
 
   const eligibleServices = useMemo(() => {
     if (!selectedContract || !selectedShift || !selectedDate) return [];
@@ -182,7 +203,7 @@ export function OperacionesDashboard() {
     async function loadSessionData() {
       if (!client || !session) return;
       try {
-        const [servicesResponse, contractsResponse, equipmentResponse] = await Promise.all([
+        const [servicesResponse, contractsResponse, contractsCatalogResponse, equipmentResponse] = await Promise.all([
           client
             .from("base_services")
             .select(
@@ -194,6 +215,7 @@ export function OperacionesDashboard() {
                 contractual_name,
                 contractual_category,
                 schedule_label,
+                contract_id,
                 contracts:contract_id (code, contract_name)
               `,
             )
@@ -207,6 +229,10 @@ export function OperacionesDashboard() {
             )
             .eq("user_id", session.user.id),
           client
+            .from("contracts")
+            .select("id, code, contract_name")
+            .eq("is_active", true),
+          client
             .from("equipment")
             .select("equipment_code, plate, equipment_type, current_client, brand, model, year, is_active, updated_at")
             .eq("is_active", true)
@@ -217,33 +243,53 @@ export function OperacionesDashboard() {
 
         const { data: rows, error: servicesError } = servicesResponse;
         const { data: contractRows } = contractsResponse;
+        const { data: contractsCatalogRows } = contractsCatalogResponse;
         const { data: equipmentRows, error: equipmentError } = equipmentResponse;
 
         if (servicesError) {
           return;
         }
 
-        const normalizedRemoteData: OperationsServiceRecord[] = ((rows ?? []) as BaseServiceQueryRow[]).map((row) => ({
-          id: Number(row.external_key),
-          service: row.operational_name,
-          company: row.company_name,
-          type: row.service_type,
-          contractName: row.contractual_name,
-          category: row.contractual_category,
-          contract: row.contracts?.[0]?.contract_name || row.contracts?.[0]?.code || "",
-          schedule: row.schedule_label,
-          normalizedSchedule: normalizeText(row.schedule_label),
-        }));
+        const contractCatalogById = new Map(
+          ((contractsCatalogRows ?? []) as Array<{ id: number | string; code: string | null; contract_name: string | null }>)
+            .map((contract) => [
+              Number(contract.id),
+              normalizeOperationsContractLabel(contract.contract_name || contract.code || ""),
+            ] as const)
+        );
+
+        const normalizedRemoteData: OperationsServiceRecord[] = ((rows ?? []) as BaseServiceQueryRow[]).map((row) => {
+          const resolvedContract = normalizeOperationsContractLabel(
+            row.contracts?.[0]?.contract_name ||
+              row.contracts?.[0]?.code ||
+              contractCatalogById.get(Number(row.contract_id ?? 0)) ||
+              ""
+          );
+
+          return {
+            id: Number(row.external_key),
+            service: row.operational_name,
+            company: row.company_name,
+            type: row.service_type,
+            contractName: row.contractual_name,
+            category: row.contractual_category,
+            contract: resolvedContract,
+            schedule: row.schedule_label,
+            normalizedSchedule: normalizeText(row.schedule_label),
+          };
+        });
 
         if (normalizedRemoteData.length > 0) {
           setServicesData(normalizedRemoteData);
         }
 
         setUserContracts(
-          ((contractRows ?? []) as UserContractQueryRow[])
-            .flatMap((row) => row.contracts ?? [])
-            .map((contract) => contract.contract_name || contract.code || "")
-            .filter(Boolean),
+          sortOperationsContracts(
+            ((contractRows ?? []) as UserContractQueryRow[])
+              .flatMap((row) => row.contracts ?? [])
+              .map((contract) => contract.contract_name || contract.code || "")
+              .filter(Boolean)
+          ),
         );
 
         if (!equipmentError && (equipmentRows ?? []).length > 0) {
