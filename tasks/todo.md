@@ -59,6 +59,18 @@
 - La migración [`20260630154500_optimize_operations_driver_search.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630154500_optimize_operations_driver_search.sql:1) recompila la RPC para usar `public.employees` con `is_active = true`, aprovechar `idx_employees_active_worker_search_text_trgm` y `idx_employees_active_document_digits_trgm`, y resolver `resolve_hr_roster_day_status(...)` solo sobre el subconjunto ya rankeado y limitado.
 - Verificación remota comparativa cerrada con una búsqueda de referencia (`jorge`): la forma anterior ejecutó en ~`2763 ms`; la forma optimizada equivalente quedó en ~`80 ms` usando el índice trigram y limitando antes del lateral de roster.
 
+## Microajustes visuales pendientes en Operaciones e Incentivos
+
+- [x] Igualar el selector superior de contrato de Operaciones con el tratamiento visual de fecha y turno
+- [x] Encerrar el mensaje bloqueante de Incentivo Extraordinario en una alerta roja con icono y paleta del ERP
+- [x] Validar con `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de microajustes visuales pendientes en Operaciones e Incentivos
+
+- [`OperationsBaseRegister.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsBaseRegister.tsx:1) y [`operaciones.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/styles/operaciones.css:1) ahora aplican el mismo tratamiento de `select` superior tanto a Jornada como a Ingreso, eliminando el control nativo pequeño que seguía rompiendo la simetría visual del bloque.
+- [`IncentiveRegistrationForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveRegistrationForm.tsx:1) dejó de renderizar el bloqueo de negocio del preview como texto suelto en la rama `previewQuery.isError`; ahora reutiliza la misma alerta semántica del módulo con icono de emergencia.
+- [`incentives.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/styles/incentives.css:1) refuerza la alerta roja con un contenedor más visible, cápsula de icono y copy jerarquizado dentro de la paleta del ERP.
+
 ## Hotfix del workflow `Sync BUK Employees`
 
 - [x] Auditar el último run fallido del workflow `sync-buk.yml` y ubicar la operación exacta que dispara `statement timeout`

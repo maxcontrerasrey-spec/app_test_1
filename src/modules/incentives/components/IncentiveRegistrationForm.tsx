@@ -37,7 +37,7 @@ function buildAreaOptionValue(
   return [contractCode ?? "", areaCode ?? "", areaName ?? ""].join("::");
 }
 
-function WarningIcon() {
+function EmergencyIcon() {
   return (
     <svg
       aria-hidden="true"
@@ -46,7 +46,7 @@ function WarningIcon() {
       viewBox="0 0 20 20"
     >
       <path
-        d="M10 2.5 18 17H2l8-14.5Zm0 4.15a.85.85 0 0 0-.85.85v4.55a.85.85 0 1 0 1.7 0V7.5a.85.85 0 0 0-.85-.85Zm0 8.35a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+        d="M10 1.75 3.15 4.1 1.75 10l1.4 5.9L10 18.25l6.85-2.35 1.4-5.9-1.4-5.9L10 1.75Zm.05 4.2c.5 0 .9.39.9.88v4.52a.9.9 0 0 1-1.8 0V6.83c0-.49.4-.88.9-.88Zm0 8.2a1.03 1.03 0 1 1 0-2.05 1.03 1.03 0 0 1 0 2.05Z"
         fill="currentColor"
       />
     </svg>
@@ -56,8 +56,13 @@ function WarningIcon() {
 function IncentiveRuleAlert({ children }: { children: string }) {
   return (
     <div className="hr-incentives-rule-alert" role="alert">
-      <WarningIcon />
-      <span>{children}</span>
+      <div className="hr-incentives-rule-alert-icon-shell" aria-hidden="true">
+        <EmergencyIcon />
+      </div>
+      <div className="hr-incentives-rule-alert-copy">
+        <strong className="hr-incentives-rule-alert-title">Bloqueo operativo</strong>
+        <span>{children}</span>
+      </div>
     </div>
   );
 }
@@ -450,9 +455,7 @@ export function IncentiveRegistrationForm({
             ) : null}
 
             {shouldShowPreview && previewQuery.isError ? (
-              <p className="form-status form-status-error">
-                {previewQuery.error.message}
-              </p>
+              <IncentiveRuleAlert>{previewQuery.error.message}</IncentiveRuleAlert>
             ) : null}
 
             {previewQuery.data ? (

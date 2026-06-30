@@ -30,6 +30,16 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es reutilizar el patrón base indexado sobre `public.employees` con `is_active = true`.** Primero se filtra con los índices trigram/prefix/documento, luego se deduplica una sola vez, y recién después se cruza contexto adicional como roster, acreditación o locks.
 - **Cuando una búsqueda necesita enriquecimiento por fila, ese enriquecimiento debe ocurrir después del `limit` siempre que el ranking principal ya esté resuelto.** Resolver roster o contexto lateral antes del recorte final es trabajo caro que el usuario nunca verá.
 
+## 171. Si dos controles superiores representan el mismo lenguaje visual, ambos deben compartir también `appearance` y no solo altura/borde
+
+- **En `select` nativos, igualar `min-height`, borde y fondo no basta si uno conserva `appearance` del navegador y el otro no.** El resultado parece “casi” correcto en código, pero visualmente rompe el bloque con un control más pequeño y una flecha distinta.
+- **La regla correcta es cerrar el contrato del control completo.** Si fecha/turno/contrato son parte del mismo grupo operativo, deben compartir altura, padding, radio, tipografía y también `appearance`, iconografía y espaciado de flecha.
+
+## 172. Un bloqueo de negocio no debe caer por la rama visual de error genérico si el módulo ya tiene alerta semántica propia
+
+- **Cuando una validación operacional bloquea el flujo, mostrarla como texto rojo suelto degrada jerarquía y hace parecer la pantalla rota en vez de controlada.** El usuario necesita ver un estado de negocio explícito, no una línea perdida debajo del resumen.
+- **La regla correcta es reutilizar el mismo componente de alerta del módulo para todas las ramas equivalentes de bloqueo.** Si `previewQuery.data` y `previewQuery.isError` pueden comunicar el mismo tipo de impedimento operativo, ambas salidas deben converger al mismo tratamiento visual, iconografía y copy.
+
 ## 161. Un módulo enterprise no puede quedar con dos contratos de acceso distintos entre su capa viva y su capa legacy
 
 ## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada

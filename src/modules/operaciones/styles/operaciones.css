@@ -702,7 +702,8 @@
   z-index: 12;
 }
 
-.operations-theme .jornada-panel select {
+.operations-theme .jornada-panel select,
+.operations-theme .operations-panel--entry select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;

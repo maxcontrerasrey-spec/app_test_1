@@ -124,7 +124,7 @@ export function OperationsBaseRegister({
           ) : null}
         </section>
 
-        <section className="panel operations-panel">
+        <section className="panel operations-panel operations-panel--entry">
           <p className="panel-label">Ingreso</p>
           <label>
             <span>Contrato</span>
