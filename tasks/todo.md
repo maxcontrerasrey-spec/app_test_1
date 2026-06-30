@@ -9,6 +9,30 @@
 - [x] Conectar el formulario de registro para mostrar solo tipos elegibles y degradar correctamente cuando no existan reglas activas aplicables
 - [x] Validar con auditoría de migraciones, `TypeScript`, build frontend, aplicación remota y dejar el cierre auditado en este documento
 
+## Coherencia contractual DMH en contexto y elegibilidad de Incentivos
+
+- [x] Auditar el flujo completo `búsqueda -> contexto del trabajador -> contrato seleccionado -> tipos elegibles` para el caso DMH reportado
+- [x] Corregir el backend para no romper el contexto de trabajadores activos cuando su área BUK no tenga mapping operativo 1:1, degradando de forma controlada al catálogo vivo de contratos
+- [x] Limitar el selector de contrato del trabajador a sus opciones reales cuando sí exista mapping, evitando que el formulario herede contratos ajenos entre trabajadores
+- [x] Validar con RPC autenticadas reales para un caso DMH mapeado y uno sin mapping operativo, más `audit:migrations`, `TypeScript`, build frontend y `git diff --check`
+
+## Resultado de coherencia contractual DMH en contexto y elegibilidad de Incentivos
+
+- La revisión end-to-end confirmó que el problema no estaba en la regla de `cambio_turno_vuelta`: la regla global activa existe y un trabajador DMH correctamente mapeado (`CONT-028`) ya devuelve en backend `cambio_turno_vuelta` y `servicio_especial_facturable`.
+- La incoherencia real estaba una capa antes. [`get_hr_incentive_worker_core(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630213000_harden_hr_incentive_worker_context_without_mapping.sql:3) abortaba todo el flujo cuando el trabajador existía en BUK pero su área primaria no tenía mapping operativo `1:1`, dejando al formulario sin contexto aunque el trabajador siguiera activo y elegible en negocio.
+- La nueva migración [`20260630213000_harden_hr_incentive_worker_context_without_mapping.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630213000_harden_hr_incentive_worker_context_without_mapping.sql:1) endurece el contrato backend en tres puntos:
+  - `get_hr_incentive_worker_core(...)` ya no exige mapping operativo para reconocer al trabajador; solo exige que el trabajador exista y devuelve contrato/área primaria cuando el mapping está disponible.
+  - `get_hr_incentive_worker_context(...)` deja de mezclar todos los contratos del ERP cuando el trabajador sí tiene contexto propio. Ahora entrega solo sus áreas/contratos reales; únicamente si no existe ninguna opción operativa propia degrada al catálogo vivo de contratos para que la operación no se bloquee.
+  - `search_hr_incentive_eligible_workers(...)` deja visible al trabajador elegible por cargo aunque su área primaria no tenga mapping operativo, usando el área normalizada como contexto de búsqueda y permitiendo que luego el contrato se seleccione desde el backend endurecido.
+- Este ajuste corrige dos problemas de coherencia a la vez: elimina la herencia silenciosa de contratos ajenos entre trabajadores en el selector y evita que un caso DMH con área BUK no catalogada quede fuera de toda la cadena solo por esa ausencia de mapping.
+- Validación cerrada con:
+  - RPC autenticada `get_hr_incentive_worker_context('12247')` + `get_hr_incentive_eligible_types('12247','CONT-028','2026-06-30')`, confirmando para una trabajadora DMH mapeada la visibilidad de `cambio_turno_vuelta` y `servicio_especial_facturable`
+  - RPC autenticada `get_hr_incentive_worker_context('8657')`, confirmando que el backend ya no debe depender de un mapping operativo primario para reconocer el trabajador
+  - `npm run audit:migrations -- --files supabase/migrations/20260630213000_harden_hr_incentive_worker_context_without_mapping.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+
 ## Cálculo enterprise de horas extra desde BUK con fallback auditable
 
 - [x] Auditar el plan externo y contrastarlo con el ERP vivo para confirmar qué datos contractuales llegan hoy desde la sync BUK y qué drift existe respecto del diseño propuesto

@@ -6,6 +6,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 175. Un selector operativo no debe ofrecer entidades que el backend ya sabe que son inviables para el contexto activo
 
+## 178. Si el trabajador existe pero falta el mapping operativo primario, el backend debe degradar el contexto; no anular toda la operación
+
+- **Una ausencia de mapping contractual no significa que el trabajador haya dejado de existir ni que toda la solicitud sea inválida.** Si BUK entrega al trabajador activo, su cargo permitido y su identidad contractual, pero el área primaria no está catalogada como `is_operational + is_one_to_one`, bloquear `worker_context`, preview y elegibilidad completa convierte un problema de catálogo en una caída de negocio.
+- **La regla correcta es separar reconocimiento del trabajador y resolución del contrato operativo.** Primero se resuelve el trabajador base; luego, si existe mapping operativo propio, se usa y se restringe el selector a esas opciones reales. Solo cuando no existe ninguna opción mapeada se degrada al catálogo vivo de contratos para que la operación siga teniendo una salida controlada.
+- **No mezcles el catálogo completo cuando sí existe contexto propio del trabajador.** Ofrecer todos los contratos del ERP a un trabajador ya mapeado reintroduce incoherencia de selección, puede heredar contratos ajenos entre cambios de trabajador y hace parecer “faltantes” incentivos que en realidad se están evaluando contra un contrato incorrecto.
+
 - **Mostrar tipos de incentivo activos pero sin regla aplicable para el trabajador, contrato o fecha obliga al usuario a descubrir la invalidez recién en preview o submit.** Eso degrada la operación y convierte una incompatibilidad determinística en ensayo y error.
 - **La regla correcta es resolver elegibilidad contextualmente en backend y usar ese contrato para poblar el dropdown.** Si la misma lógica canónica ya existe en `resolve_hr_incentive_rate_rule(...)`, el selector debe consumir una RPC derivada de esa verdad, no reconstruir filtros locales con catálogos parciales.
 - **Cuando la elegibilidad depende de contexto operativo, el estado vacío debe explicarse con semántica de negocio.** “No hay incentivos con regla activa para este trabajador, contrato y fecha” es contrato operativo; un dropdown genérico vacío no lo es.
