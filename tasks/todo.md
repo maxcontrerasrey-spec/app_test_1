@@ -47,6 +47,18 @@
 - [`WorkerLookupField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/WorkerLookupField.tsx:1) ahora acepta `searchContext`, dejando reusable el patrón compartido incluso cuando una búsqueda necesita contexto adicional como la fecha de servicio.
 - [`operaciones.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/styles/operaciones.css:1) alinea la tipografía con las variables globales del ERP, iguala alturas de campos, refuerza el relieve neumórfico de paneles/tarjetas/resultados y deja el bloque visual consistente con el estándar actual.
 
+## Optimización de latencia en búsqueda de conductores de Operaciones
+
+- [x] Medir la ruta actual de búsqueda para distinguir si la lentitud viene del lookup frontend o de la RPC backend
+- [x] Recompilar la RPC `search_operations_drivers(...)` sobre el patrón indexado correcto del ERP y reducir trabajo previo al `limit`
+- [x] Validar con `audit:migrations`, `db push --dry-run`, aplicación remota, humo SQL comparativo y `git diff --check`
+
+## Resultado de optimización de latencia en búsqueda de conductores de Operaciones
+
+- La causa raíz quedó aislada en backend: `search_operations_drivers(...)` estaba consultando `employees_active_current`, que ya deduplica con `window functions`, y luego Operaciones volvía a deduplicar/ordenar antes de aplicar `limit`. Ese doble trabajo anulaba los índices de búsqueda y llevaba una búsqueda representativa a ~`2763 ms`.
+- La migración [`20260630154500_optimize_operations_driver_search.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630154500_optimize_operations_driver_search.sql:1) recompila la RPC para usar `public.employees` con `is_active = true`, aprovechar `idx_employees_active_worker_search_text_trgm` y `idx_employees_active_document_digits_trgm`, y resolver `resolve_hr_roster_day_status(...)` solo sobre el subconjunto ya rankeado y limitado.
+- Verificación remota comparativa cerrada con una búsqueda de referencia (`jorge`): la forma anterior ejecutó en ~`2763 ms`; la forma optimizada equivalente quedó en ~`80 ms` usando el índice trigram y limitando antes del lateral de roster.
+
 ## Hotfix del workflow `Sync BUK Employees`
 
 - [x] Auditar el último run fallido del workflow `sync-buk.yml` y ubicar la operación exacta que dispara `statement timeout`

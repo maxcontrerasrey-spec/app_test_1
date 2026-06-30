@@ -24,6 +24,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es extender el componente compartido cuando falte contexto, no clonarlo localmente.** Si una búsqueda necesita fecha de servicio, contrato u otro parámetro, el patrón reusable debe absorber ese `searchContext` y seguir resolviendo `React Query`, focus/blur y layout desde un solo lugar.
 - **En un ERP modular, la igualdad visual también es contrato funcional.** Nombre, identidad secundaria, línea terciaria, alturas y estados del lookup deben verse iguales entre Jornadas, Incentivos, Movilidad y Operaciones para no degradar la operación ni duplicar deuda de mantenimiento.
 
+## 170. Un search enterprise no debe montarse sobre una vista ya deduplicada si luego el mismo módulo vuelve a deduplicar
+
+- **Buscar sobre `employees_active_current` puede parecer cómodo, pero si la RPC vuelve a aplicar `row_number()`, ranking y orden propio, el costo explota y los índices útiles dejan de participar temprano.** En Operaciones eso empujó una búsqueda simple a varios segundos aun con pocos miles de empleados.
+- **La regla correcta es reutilizar el patrón base indexado sobre `public.employees` con `is_active = true`.** Primero se filtra con los índices trigram/prefix/documento, luego se deduplica una sola vez, y recién después se cruza contexto adicional como roster, acreditación o locks.
+- **Cuando una búsqueda necesita enriquecimiento por fila, ese enriquecimiento debe ocurrir después del `limit` siempre que el ranking principal ya esté resuelto.** Resolver roster o contexto lateral antes del recorte final es trabajo caro que el usuario nunca verá.
+
 ## 161. Un módulo enterprise no puede quedar con dos contratos de acceso distintos entre su capa viva y su capa legacy
 
 ## 164. Una carga masiva de jornadas no se valida por conteo bruto; se valida por identidad estable y conciliación versionada
