@@ -14,6 +14,27 @@
 - [x] Corregir la resolución de `location_id` para usar el catálogo BUK correcto a nivel comuna (`depth=3`) con fallback seguro por región
 - [x] Reprocesar un job fallido real contra producción, validar la creación en BUK, la carga documental y documentar el cierre operativo
 
+## Corrección enterprise de exportación XLS de nómina BUK
+
+- [x] Auditar la ruta de exportación XLS y reproducir la causa exacta del error `e.match is not a function`
+- [x] Corregir la serialización de fechas del workbook `biff8` sin alterar el contrato funcional de la nómina
+- [x] Validar compilación, build frontend y prueba dirigida de la librería XLS antes de versionar
+
+## Resultado de corrección enterprise de exportación XLS de nómina BUK
+
+- La causa raíz no estaba en los datos del candidato ni en la plantilla JSON. El fallo se reproducía directamente en la librería `@mylinkpi/xlsx` al exportar `bookType: "biff8"` con celdas tipadas como `Date` y `cell.t = "d"`.
+- La evidencia exacta quedó reproducida en terminal: `writeFile(..., { bookType: "biff8" })` terminaba en `parseDate(str)` dentro de `xlsx.js`, lo que rompe con `str.match is not a function` cuando la celda recibe un objeto `Date` en vez de un string.
+- Se corrigió el exportador [`bukEmployeeNomina.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/bukEmployeeNomina.ts:1) con el contrato correcto para `xls`:
+  - las fechas ahora se convierten a serial numérico de Excel;
+  - las columnas de fecha se escriben como `cell.t = "n"` con formato `dd-mm-yyyy`;
+  - el autofit sigue mostrando correctamente el ancho visual formateando esas fechas solo para cálculo de ancho.
+- Con esto se preserva el comportamiento esperado del archivo Excel sin degradar la exportación a texto plano ni depender de un tipo no soportado por `biff8`.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - prueba dirigida con `@mylinkpi/xlsx`, confirmando que un workbook `biff8` con fechas numéricas formateadas exporta correctamente mientras la variante anterior con `Date` fallaba en `parseDate(str)`
+
 ## Resultado de corrección enterprise de secret interno y resolución geográfica BUK
 
 - La revisión remota confirmó dos drift distintos en la integración:

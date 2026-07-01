@@ -14,6 +14,16 @@ type NominaSource = {
 
 const employeeHeaders = templateData.headers as string[];
 const optionLists = templateData.optionLists as OptionLists;
+const dateHeaders = new Set([
+  "Fecha de Nacimiento*",
+  "Ingreso Compañía*",
+  "Fecha de Inicio Cotización AFC",
+  "Fecha Reconocimiento de Antigüedad",
+  "Fecha Inicio Vacaciones Progresivas",
+  "Fecha de notificación de Discapacidad",
+  "Fecha de notificación de Invalidez",
+  "Actualización Datos Personales"
+]);
 
 function looksLikeRut(value: string | null | undefined) {
   const normalized = normalizeRut(value);
@@ -87,6 +97,12 @@ function resolveDocumentNumber(
   return looksLikeRut(sourceValue) ? formatRut(sourceValue) : sourceValue;
 }
 
+function formatDateForDisplay(date: Date) {
+  return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}-${date.getFullYear()}`;
+}
+
 function toExcelDateValue(value: string | null | undefined) {
   if (!value?.trim()) {
     return "";
@@ -99,7 +115,8 @@ function toExcelDateValue(value: string | null | undefined) {
     return value;
   }
 
-  return date;
+  const excelEpoch = Date.UTC(1899, 11, 30);
+  return (date.getTime() - excelEpoch) / 86_400_000;
 }
 
 function toStringValue(value: string | number | null | undefined) {
@@ -114,7 +131,7 @@ function buildEmployeeRow({ candidate, bukProfile }: NominaSource) {
   const fallbackName = splitFullName(candidate.full_name);
   const worker = bukProfile?.worker_file;
 
-  const valuesByHeader: Record<string, string | number | Date> = {
+  const valuesByHeader: Record<string, string | number> = {
     "Tipo de Documento*": resolveDocumentType(bukProfile, candidate),
     "Número de Documento*": resolveDocumentNumber(bukProfile, candidate),
     "Apellido*": bukProfile?.last_name ?? fallbackName.lastName,
@@ -192,7 +209,7 @@ function buildEmployeeRow({ candidate, bukProfile }: NominaSource) {
 
   return employeeHeaders.map((header) => {
     const value = valuesByHeader[header];
-    if (value instanceof Date) {
+    if (dateHeaders.has(header)) {
       return value;
     }
 
@@ -216,15 +233,13 @@ function buildListsSheetRows() {
   ];
 }
 
-function autoFitColumns(rows: Array<Array<string | number | Date>>) {
+function autoFitColumns(rows: Array<Array<string | number>>) {
   return employeeHeaders.map((header, columnIndex) => {
     const width = rows.reduce((max, row) => {
       const cell = row[columnIndex];
       const cellValue =
-        cell instanceof Date
-          ? `${cell.getDate().toString().padStart(2, "0")}-${(cell.getMonth() + 1)
-              .toString()
-              .padStart(2, "0")}-${cell.getFullYear()}`
+        dateHeaders.has(header) && typeof cell === "number"
+          ? formatDateForDisplay(new Date(Math.round((cell - 25569) * 86_400_000)))
           : toStringValue(cell);
       return Math.max(max, cellValue.length);
     }, header.length);
@@ -256,19 +271,10 @@ export async function exportBukNominaXls(sources: NominaSource[], fileName?: str
       }
 
       if (
-        [
-          "Fecha de Nacimiento*",
-          "Ingreso Compañía*",
-          "Fecha de Inicio Cotización AFC",
-          "Fecha Reconocimiento de Antigüedad",
-          "Fecha Inicio Vacaciones Progresivas",
-          "Fecha de notificación de Discapacidad",
-          "Fecha de notificación de Invalidez",
-          "Actualización Datos Personales"
-        ].includes(header) &&
-        employeeRows[rowIndex][columnIndex] instanceof Date
+        dateHeaders.has(header) &&
+        typeof employeeRows[rowIndex][columnIndex] === "number"
       ) {
-        cell.t = "d";
+        cell.t = "n";
         cell.z = "dd-mm-yyyy";
       }
     });

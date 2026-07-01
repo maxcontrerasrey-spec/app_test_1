@@ -12,6 +12,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es fijar explícitamente el nivel geográfico requerido por el caso de uso.** Para alta de empleados, el worker debe priorizar `GET /locations?depth=3`, derivar la región desde `full_name` cuando BUK no la entregue separada, y solo degradar a niveles superiores si el integrador realmente no expone comunas.
 - **La política de frescura del caché debe validar forma, no solo timestamp.** Si la tabla local todavía contiene el formato viejo (por ejemplo, solo regiones sin `depth>=3` ni `region_name` derivada), el worker debe forzar refresh aunque el TTL siga vigente; de lo contrario, la integración persiste un error estructural bajo apariencia de caché saludable.
 
+## 186. En exportación XLS `biff8`, las fechas deben salir como serial Excel; no como `Date` tipado `d`
+
+- **Que una librería soporte `Date` en `xlsx` no implica que soporte el mismo contrato en `xls/biff8`.** En `@mylinkpi/xlsx`, una celda `Date` con `cell.t = "d"` terminó bajando a `parseDate(str)` en la ruta BIFF8 y rompió con `match is not a function`.
+- **La regla correcta es usar el tipo nativo del formato destino.** Para `xls`, las fechas deben serializarse como número de Excel y marcarse como `cell.t = "n"` con el `z` apropiado; así se preserva semántica de fecha sin depender de coerciones internas inestables.
+- **Cuando un error de exportación apunta a una librería de archivo, reproduce primero el caso mínimo fuera del dominio.** Confirmar que el bug nace del writer con un workbook de dos filas evita perseguir falsos positivos en catálogos, perfiles o templates JSON.
+
 ## 184. Un worker async autorizado por UI no debe reconstruir datos auth-bound después de encolar; debe consumir el snapshot ya validado
 
 - **Si un job ya fue creado por una RPC autenticada con `payload_snapshot`, volver a llamar una RPC de dominio dentro del worker rompe la frontera de confianza.** Bajo `service_role` o bajo un runtime sin JWT de usuario, cualquier dependencia de `auth.uid()` o helpers equivalentes puede reaparecer como `Usuario no autenticado` aunque el job original haya sido perfectamente válido.
