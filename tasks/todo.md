@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix backend de transición de candidatos a `En Proceso`
+
+- [x] Auditar la cadena completa de transición de candidatos y reproducir por contrato SQL la causa del error `Etapa inválida - Código: P0001`
+- [x] Corregir la función backend viva preservando todos los controles recientes de cierre terminal, auditoría y validación documental
+- [x] Verificar ramificaciones derivadas para asegurar coherencia entre etapas visibles, constraints y RPC activa antes de aplicar en remoto
+- [x] Validar con auditoría de migración, compilación, aplicación remota y documentar el cierre operativo
+
+## Resultado de hotfix backend de transición de candidatos a `En Proceso`
+
+- La causa raíz no estaba en la UI ni en permisos: la función viva [`advance_recruitment_candidate_stage(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260628011500_require_terminal_candidate_reason_in_stage_transition.sql:3) fue recompilada el `2026-06-28` sin conservar la etapa `in_process` que ya había sido incorporada antes al pipeline de reclutamiento.
+- Eso dejó al sistema en drift: frontend, métricas BI, labels, filtros, constraints de `recruitment_case_candidates` y datos productivos sí reconocían `En Proceso`, pero la RPC operativa rechazaba `p_to_stage = 'in_process'` con `Etapa invalida`.
+- La nueva migración [`20260701103500_restore_in_process_transition_in_recruitment_stage_rpc.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260701103500_restore_in_process_transition_in_recruitment_stage_rpc.sql:1) recompone la función sobre la versión más reciente y conserva las defensas nuevas:
+  - vuelve a permitir `who_approved -> in_process -> medical_exams`
+  - exige aprobación Who resuelta para avanzar tanto a `in_process` como a `medical_exams`
+  - mantiene motivo obligatorio para `rejected/withdrawn`
+  - conserva cancelación de aprobaciones Who pendientes en cierres terminales
+  - conserva validación documental y bloqueo contractual antes de `ready_for_hire`
+  - conserva cola de limpieza documental y auditoría de cambios
+- La auditoría de ramificaciones confirmó que no había otra ruptura activa equivalente en frontend ni en catálogos: el drift estaba concentrado en la recompilación de la RPC backend.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260701103500_restore_in_process_transition_in_recruitment_stage_rpc.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npx supabase db push --linked --include-all`
+  - verificación remota de la definición efectiva de `advance_recruitment_candidate_stage(...)` para confirmar soporte de `in_process`
+  - `git diff --check`
+
 ## Restricción de tipos de incentivo por regla activa del trabajador
 
 - [x] Auditar cómo se carga hoy el dropdown de tipos de incentivo y dónde se desacopla del contrato real de reglas activas

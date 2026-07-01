@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 180. Si una RPC crítica se recompila en una migración posterior, debe arrastrar explícitamente todas las etapas ya vigentes del pipeline
+
+- **En un ERP versionado, una etapa nueva no queda “asegurada” solo porque exista en frontend, constraints o dashboards.** Si una migración posterior vuelve a crear la función operativa y omite esa etapa en sus validaciones, el sistema queda partido: la UI ofrece una acción válida, la base acepta el estado, pero la RPC la rechaza con error genérico.
+- **La regla correcta es consolidar cada `create or replace function` crítico sobre la versión más reciente del contrato, no sobre una copia parcial anterior.** Antes de publicar una recompilación de `advance_recruitment_candidate_stage(...)`, hay que barrer whitelist de etapas, transiciones permitidas, validaciones por etapa y side effects terminales para asegurar que ningún comportamiento vigente se pierda por omisión.
+- **Cuando el síntoma productivo es `P0001` sobre una etapa visible, la primera auditoría debe comparar la última migración que recompiló la RPC contra la última migración que introdujo la etapa.** Ese diff suele mostrar rápido el drift real y evita tocar frontend o permisos donde no está la causa raíz.
+
 ## 175. Un selector operativo no debe ofrecer entidades que el backend ya sabe que son inviables para el contexto activo
 
 ## 178. Si el trabajador existe pero falta el mapping operativo primario, el backend debe degradar el contexto; no anular toda la operación
