@@ -6,6 +6,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 181. En fichas BUK con columnas marcadas por plantilla, la obligatoriedad real debe gobernarse por contrato operativo y aplicabilidad de negocio
 
+## 184. Un worker async autorizado por UI no debe reconstruir datos auth-bound después de encolar; debe consumir el snapshot ya validado
+
+- **Si un job ya fue creado por una RPC autenticada con `payload_snapshot`, volver a llamar una RPC de dominio dentro del worker rompe la frontera de confianza.** Bajo `service_role` o bajo un runtime sin JWT de usuario, cualquier dependencia de `auth.uid()` o helpers equivalentes puede reaparecer como `Usuario no autenticado` aunque el job original haya sido perfectamente válido.
+- **La regla correcta es separar autorización y ejecución.** La capa síncrona del ERP autoriza al usuario, resuelve el payload canónico y lo congela en la cola; el worker asíncrono solo debe consumir ese snapshot, registrar progreso parcial e interactuar con sistemas externos.
+- **Si una Edge Function ofrece un modo interno alternativo al JWT, el contrato de despliegue debe reflejarlo explícitamente.** No basta con validar `x-internal-webhook-secret` dentro del código si la plataforma todavía exige JWT por delante; la configuración/deploy debe dejar `verify_jwt = false` y el propio handler debe encargarse de distinguir la invocación interactiva de la interna.
+
 - **No basta con copiar literalmente los `*` de un Excel hacia un formulario si algunos campos dependen del régimen seleccionado.** Tratar `Régimen jubilación` como obligatorio siempre, o exigir planes Isapre aun cuando el trabajador está en Fonasa, rompe la operación igual que si faltara un campo realmente crítico.
 - **La regla correcta es separar tres capas pero hacerlas coincidir semánticamente:** defaults automáticos visibles en UI, checklist backend de completitud y payload transaccional que habilita el paso siguiente. Si `Rol Privado = No`, `AFC = Menos de 11 Años` o `Código de Ficha = F1/Fx` se derivan por negocio, esa derivación debe vivir también en backend y no solo en React.
 - **Cuando el template externo cambia la marca de obligatoriedad, hay que barrer también el exportador canónico y los mensajes de faltantes.** Si el JSON de headers sigue sin `Tipo de Documento*` o `Email Personal*`, el ERP vuelve a exportar una ficha distinta a la que exige para completar contratación.

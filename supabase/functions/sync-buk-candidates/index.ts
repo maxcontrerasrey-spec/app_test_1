@@ -16,6 +16,7 @@ type BukJobRow = {
   recruitment_case_candidate_id: string;
   status: "pending" | "processing" | "success" | "error";
   attempts: number;
+  payload_snapshot: Record<string, unknown> | null;
   result_snapshot: Record<string, unknown> | null;
 };
 
@@ -549,6 +550,32 @@ function extractUploadedDocumentsFromSnapshot(snapshot: Record<string, unknown> 
   );
 }
 
+function resolveAuthorizedPayload(job: BukJobRow) {
+  const snapshot = job.payload_snapshot;
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    throw new Error("El job BUK no tiene un payload autorizado disponible.");
+  }
+
+  const candidate = snapshot.candidate;
+  const profile = snapshot.profile;
+  const jobCase = snapshot.case;
+  const documents = snapshot.documents;
+
+  if (
+    !candidate ||
+    typeof candidate !== "object" ||
+    !profile ||
+    typeof profile !== "object" ||
+    !jobCase ||
+    typeof jobCase !== "object" ||
+    !Array.isArray(documents)
+  ) {
+    throw new Error("El payload autorizado del job BUK esta incompleto o es invalido.");
+  }
+
+  return snapshot as unknown as BukCandidateSyncPayload;
+}
+
 async function markJobState(
   supabase: ReturnType<typeof createClient>,
   jobId: string,
@@ -681,16 +708,7 @@ Deno.serve(async (req) => {
       };
 
       try {
-        const { data: syncPayload, error: payloadError } = await supabase.rpc(
-          "get_candidate_buk_sync_payload",
-          { p_case_candidate_id: job.recruitment_case_candidate_id }
-        );
-
-        if (payloadError || !syncPayload) {
-          throw new Error(payloadError?.message ?? "No fue posible construir el payload del candidato");
-        }
-
-        const payload = syncPayload as BukCandidateSyncPayload;
+        const payload = resolveAuthorizedPayload(job);
         const { employeeId, employeePayload } = await createBukEmployee(payload, locations);
         jobResultSnapshot.employee = {
           id: employeeId,

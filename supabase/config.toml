@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.purge-candidate-documents]
 verify_jwt = false
+
+[functions.sync-buk-candidates]
+verify_jwt = false
