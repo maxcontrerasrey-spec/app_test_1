@@ -16,6 +16,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es auditar la cadena completa y separar dos preguntas:** qué rol tiene hoy el usuario (`profiles -> user_roles`) y qué rol debería tener según la operación real. Solo después se decide si el fix está en la asignación individual o en la matriz global.
 - **Cuando el usuario corrige explícitamente el rol esperado, la reparación enterprise debe revertir cualquier sobreacceso transitorio introducido durante la investigación.** En un ERP auditado, el historial puede contener una migración intermedia, pero el estado final debe volver a representar exactamente la intención de negocio.
 
+## 183. Si un selector de contratación usa un catálogo ERP estático, no asumas que nuevos cargos de BUK aparecerán solos
+
+- **Que un cargo exista en BUK o en la operación no significa que el formulario de contratación lo reciba automáticamente.** Si `fetchHiringCatalogs()` lee `public.job_positions`, el source of truth de ese selector es el catálogo versionado del ERP, no `employees.raw_payload`.
+- **La regla correcta es auditar primero el contrato de lectura antes de tocar la UI.** Si el cargo falta en `job_positions`, el fix enterprise es cargarlo ahí con migración idempotente; cambiar el select o inventar lecturas paralelas desde BUK solo rompe el diseño modular.
+- **También hay que distinguir catálogo de dotación activa.** Un cargo válido para contratar puede no existir hoy en `employees`, y aun así debe estar disponible si el negocio lo requiere; por eso el catálogo de contratación no debe depender implícitamente de la nómina viva salvo que ese contrato se haya definido explícitamente.
+
 ## 180. Si una RPC crítica se recompila en una migración posterior, debe arrastrar explícitamente todas las etapas ya vigentes del pipeline
 
 - **En un ERP versionado, una etapa nueva no queda “asegurada” solo porque exista en frontend, constraints o dashboards.** Si una migración posterior vuelve a crear la función operativa y omite esa etapa en sus validaciones, el sistema queda partido: la UI ofrece una acción válida, la base acepta el estado, pero la RPC la rechaza con error genérico.

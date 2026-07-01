@@ -2,6 +2,23 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección de catálogo de cargo en solicitud de contrataciones
+
+- [x] Auditar la cadena `BUK -> catálogo ERP -> selector de contratación` para confirmar por qué no aparece `Conductor Minibus Acercamiento`
+- [x] Cargar el cargo faltante en el catálogo backend canónico de `job_positions` sin alterar el contrato frontend
+- [x] Validar el catálogo remoto, auditar migración y documentar el cierre operativo
+
+## Resultado de corrección de catálogo de cargo en solicitud de contrataciones
+
+- La revisión del flujo confirmó que el selector `Cargo solicitado` de [`HiringRequestPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringRequestPage.tsx:304) no consume un catálogo vivo desde BUK. La vista usa [`fetchHiringCatalogs()`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringCatalogs.ts:61), y esa función lee directamente `public.job_positions`.
+- El cargo `Conductor Minibus Acercamiento` no existía en `job_positions`, por eso nunca podía aparecer en la solicitud aunque operativamente se espere como cargo válido. La auditoría también confirmó que hoy no aparece en la dotación activa sincronizada de `employees`, así que el faltante real estaba en el catálogo canónico del ERP y no en un filtro de frontend.
+- Se agregó la migración [`20260701183000_add_missing_minibus_job_position_to_hiring_catalog.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260701183000_add_missing_minibus_job_position_to_hiring_catalog.sql:1), que incorpora `CONDUCTOR MINIBUS ACERCAMIENTO` como cargo activo en `public.job_positions` con upsert idempotente.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260701183000_add_missing_minibus_job_position_to_hiring_catalog.sql`
+  - `npx --yes supabase db push --linked --include-all`
+  - verificación remota de `public.job_positions`, confirmando `code = CARGO-090`, `name = CONDUCTOR MINIBUS ACERCAMIENTO` e `is_active = true`
+  - `git diff --check`
+
 ## Alineación enterprise de la ficha BUK para paso a contratación
 
 - [x] Auditar el contrato vivo de la ficha BUK contra la lista Excel adjunta y detectar drift entre obligatoriedad, defaults visibles, checklist y payload backend
