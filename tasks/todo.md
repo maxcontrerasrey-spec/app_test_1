@@ -9,6 +9,29 @@
 - [x] Alinear formulario, template/exportación y validaciones backend para que solo bloqueen por los campos realmente exigibles según contexto
 - [x] Validar compilación, auditoría de migraciones, consistencia de diffs y aplicar la migración en el remoto enlazado antes de versionar en `main`
 
+## Corrección de rol y acceso de Isac Arratia en movilidad interna
+
+- [x] Auditar el rol efectivo de Isac Arratia y la matriz viva que decide el acceso a `movilidad_interna`
+- [x] Revertir el sobreacceso transitorio de `operaciones_l_2` y corregir la asignación de Isac a `operaciones_l_1`
+- [x] Validar el rol y permiso efectivo final con `user_roles` y `user_can_access_module(...)`, auditar migración y documentar el cierre operativo
+
+## Resultado de corrección de rol y acceso de Isac Arratia en movilidad interna
+
+- La causa raíz final no era el módulo de `operaciones_l_2`; era la clasificación del usuario. Isac Arratia (`iarratia@busesjm.com`) estaba cargado en `user_roles` como `operaciones_l_2`, pero debía operar como `operaciones_l_1`.
+- La migración intermedia [`20260701114500_restore_internal_mobility_for_operaciones_l2.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260701114500_restore_internal_mobility_for_operaciones_l2.sql:1) quedó solo como rastro auditable del diagnóstico inicial. La corrección efectiva y final está en [`20260701170000_reassign_isac_arratia_to_operaciones_l1.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260701170000_reassign_isac_arratia_to_operaciones_l1.sql:1), que:
+  - revierte el sobreacceso transitorio de `movilidad_interna` para `operaciones_l_2`;
+  - elimina la asignación `operaciones_l_2` de Isac;
+  - inserta la asignación correcta `operaciones_l_1` para el usuario.
+- La validación remota confirmó el estado final esperado:
+  - `user_roles` de Isac quedó en `operaciones_l_1`;
+  - `user_can_access_module('movilidad_interna')` devuelve `true` para Isac;
+  - un usuario real que sí permanece en `operaciones_l_2` (`jorge.parra@busesjm.com`) devuelve `false`, probando que no quedó sobrepermiso residual en ese rol.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260701170000_reassign_isac_arratia_to_operaciones_l1.sql`
+  - `npx --yes supabase db push --linked --include-all`
+  - verificación remota de `public.user_roles`, `public.role_module_access` y `public.user_can_access_module(...)`
+  - `git diff --check`
+
 ## Resultado de alineación enterprise de la ficha BUK para paso a contratación
 
 - La auditoría sobre la lista [`lista.xls`](</Users/maximilianocontrerasrey/Desktop/lista.xls>) confirmó tres drift relevantes del contrato vivo: el template canónico aún no marcaba `Tipo de Documento*` ni `Email Personal*`, la ficha seguía obligando `Régimen jubilación` aun cuando `Jubilado = No`, y los defaults operativos (`Código de Ficha`, `Rol Privado`, `AFC`, `Aumentar cotización 1%`) no estaban resueltos de forma canónica entre pantalla, checklist y payload backend.

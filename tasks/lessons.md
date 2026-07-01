@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es separar tres capas pero hacerlas coincidir semánticamente:** defaults automáticos visibles en UI, checklist backend de completitud y payload transaccional que habilita el paso siguiente. Si `Rol Privado = No`, `AFC = Menos de 11 Años` o `Código de Ficha = F1/Fx` se derivan por negocio, esa derivación debe vivir también en backend y no solo en React.
 - **Cuando el template externo cambia la marca de obligatoriedad, hay que barrer también el exportador canónico y los mensajes de faltantes.** Si el JSON de headers sigue sin `Tipo de Documento*` o `Email Personal*`, el ERP vuelve a exportar una ficha distinta a la que exige para completar contratación.
 
+## 182. Ante un problema de acceso, primero confirma el rol esperado del usuario antes de ensanchar la matriz de permisos
+
+- **No basta con ver que un rol hermano sí tiene el módulo que falta.** Si el usuario está mal clasificado en `user_roles`, ampliar `role_module_access` para todo el rol equivocado introduce sobrepermisos y corrige el síntoma, no la causa raíz.
+- **La regla correcta es auditar la cadena completa y separar dos preguntas:** qué rol tiene hoy el usuario (`profiles -> user_roles`) y qué rol debería tener según la operación real. Solo después se decide si el fix está en la asignación individual o en la matriz global.
+- **Cuando el usuario corrige explícitamente el rol esperado, la reparación enterprise debe revertir cualquier sobreacceso transitorio introducido durante la investigación.** En un ERP auditado, el historial puede contener una migración intermedia, pero el estado final debe volver a representar exactamente la intención de negocio.
+
 ## 180. Si una RPC crítica se recompila en una migración posterior, debe arrastrar explícitamente todas las etapas ya vigentes del pipeline
 
 - **En un ERP versionado, una etapa nueva no queda “asegurada” solo porque exista en frontend, constraints o dashboards.** Si una migración posterior vuelve a crear la función operativa y omite esa etapa en sus validaciones, el sistema queda partido: la UI ofrece una acción válida, la base acepta el estado, pero la RPC la rechaza con error genérico.
