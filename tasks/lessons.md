@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 181. En fichas BUK con columnas marcadas por plantilla, la obligatoriedad real debe gobernarse por contrato operativo y aplicabilidad de negocio
+
+- **No basta con copiar literalmente los `*` de un Excel hacia un formulario si algunos campos dependen del régimen seleccionado.** Tratar `Régimen jubilación` como obligatorio siempre, o exigir planes Isapre aun cuando el trabajador está en Fonasa, rompe la operación igual que si faltara un campo realmente crítico.
+- **La regla correcta es separar tres capas pero hacerlas coincidir semánticamente:** defaults automáticos visibles en UI, checklist backend de completitud y payload transaccional que habilita el paso siguiente. Si `Rol Privado = No`, `AFC = Menos de 11 Años` o `Código de Ficha = F1/Fx` se derivan por negocio, esa derivación debe vivir también en backend y no solo en React.
+- **Cuando el template externo cambia la marca de obligatoriedad, hay que barrer también el exportador canónico y los mensajes de faltantes.** Si el JSON de headers sigue sin `Tipo de Documento*` o `Email Personal*`, el ERP vuelve a exportar una ficha distinta a la que exige para completar contratación.
+
 ## 180. Si una RPC crítica se recompila en una migración posterior, debe arrastrar explícitamente todas las etapas ya vigentes del pipeline
 
 - **En un ERP versionado, una etapa nueva no queda “asegurada” solo porque exista en frontend, constraints o dashboards.** Si una migración posterior vuelve a crear la función operativa y omite esa etapa en sus validaciones, el sistema queda partido: la UI ofrece una acción válida, la base acepta el estado, pero la RPC la rechaza con error genérico.

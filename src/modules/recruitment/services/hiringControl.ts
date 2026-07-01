@@ -208,6 +208,7 @@ export type CandidateDocumentValidationSummary = {
 export type CandidateBukProfileDetails = {
   case_candidate_id: string;
   candidate_profile_id: string;
+  suggested_employee_code?: string | null;
   document_type: string | null;
   document_number: string;
   first_name: string | null;

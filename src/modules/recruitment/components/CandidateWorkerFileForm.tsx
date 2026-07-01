@@ -4,6 +4,10 @@ import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/S
 import { formatRut, normalizeRut } from "../../../shared/lib/rut";
 import { bukEmployeeFieldOptions } from "../lib/bukEmployeeTemplate";
 import {
+  applyCandidateBukWorkerDefaults,
+  collectCandidateBukWorkerMissingFields
+} from "../lib/candidateBukWorkerRules";
+import {
   fetchCandidateBukProfile,
   updateCandidatePersonProfile,
   updateCandidateWorkerFile,
@@ -149,22 +153,10 @@ const requiredPersonFields: Array<{ key: keyof PersonDraft; label: string }> = [
   { key: "nationality", label: "Nacionalidad" },
   { key: "birthDate", label: "Fecha de nacimiento" },
   { key: "maritalStatus", label: "Estado civil" },
+  { key: "personalEmail", label: "Email personal" },
   { key: "addressLine", label: "Dirección" },
   { key: "region", label: "Región" },
   { key: "districtOrCommune", label: "Comuna" }
-];
-
-const requiredWorkerFields: Array<{ key: keyof WorkerDraft; label: string }> = [
-  { key: "employeeCode", label: "Código de ficha" },
-  { key: "companyEntryDate", label: "Ingreso compañía" },
-  { key: "privateRole", label: "Rol privado" },
-  { key: "paymentMethod", label: "Forma de pago" },
-  { key: "paymentPeriod", label: "Periodo de pago" },
-  { key: "pensionRegime", label: "Régimen previsional" },
-  { key: "increaseQuoteOnePercent", label: "Aumentar cotización 1%" },
-  { key: "healthProvider", label: "Fonasa / Isapre" },
-  { key: "afcRegime", label: "AFC" },
-  { key: "retirementRegime", label: "Régimen jubilación" }
 ];
 
 function splitFullName(fullName: string) {
@@ -276,8 +268,8 @@ function buildWorkerDraft(
 ): WorkerDraft {
   const worker = bukProfile?.worker_file;
 
-  return {
-    employeeCode: worker?.employee_code ?? "",
+  return applyCandidateBukWorkerDefaults({
+    employeeCode: worker?.employee_code ?? bukProfile?.suggested_employee_code ?? "",
     projectName: worker?.project_name ?? caseDetail.case.contract_name ?? "",
     companyEntryDate:
       worker?.company_entry_date ??
@@ -321,7 +313,7 @@ function buildWorkerDraft(
       worker?.invalid_load_count != null ? String(worker.invalid_load_count) : "",
     familyAllowanceSection: worker?.family_allowance_section ?? "",
     personalDataUpdateDate: worker?.personal_data_update_date ?? ""
-  };
+  });
 }
 
 function parseNullableNumber(value: string) {
@@ -375,6 +367,10 @@ export function CandidateWorkerFileForm({
     setBukProfile(profile);
     setPersonDraft(buildPersonDraft(candidateRow, profile));
     setWorkerDraft(buildWorkerDraft(candidateRow, detail, profile));
+  };
+
+  const updateWorkerDraft = (patch: Partial<WorkerDraft>) => {
+    setWorkerDraft((current) => applyCandidateBukWorkerDefaults({ ...current, ...patch }));
   };
 
   useEffect(() => {
@@ -483,7 +479,10 @@ export function CandidateWorkerFileForm({
     setIsWorkerSaving(true);
     setWorkerMessage("");
 
-    const missingFields = collectMissingFields(workerDraft, requiredWorkerFields);
+    const normalizedWorkerDraft = applyCandidateBukWorkerDefaults(workerDraft);
+    setWorkerDraft(normalizedWorkerDraft);
+
+    const missingFields = collectCandidateBukWorkerMissingFields(normalizedWorkerDraft);
 
     if (missingFields.length > 0) {
       setWorkerMessage(`Completa campos BUK obligatorios: ${missingFields.join(", ")}.`);
@@ -491,16 +490,18 @@ export function CandidateWorkerFileForm({
       return;
     }
 
-    const numericAdvanceAmount = parseNullableNumber(workerDraft.advanceAmount);
-    const numericHealthPlanUf = parseNullableNumber(workerDraft.healthPlanUf);
-    const numericHealthPlanPesos = parseNullableNumber(workerDraft.healthPlanPesos);
-    const numericHealthPlanPercentage = parseNullableNumber(workerDraft.healthPlanPercentage);
-    const simpleLoadCount = parseNullableInteger(workerDraft.simpleLoadCount);
-    const maternalLoadCount = parseNullableInteger(workerDraft.maternalLoadCount);
-    const invalidLoadCount = parseNullableInteger(workerDraft.invalidLoadCount);
+    const numericAdvanceAmount = parseNullableNumber(normalizedWorkerDraft.advanceAmount);
+    const numericHealthPlanUf = parseNullableNumber(normalizedWorkerDraft.healthPlanUf);
+    const numericHealthPlanPesos = parseNullableNumber(normalizedWorkerDraft.healthPlanPesos);
+    const numericHealthPlanPercentage = parseNullableNumber(
+      normalizedWorkerDraft.healthPlanPercentage
+    );
+    const simpleLoadCount = parseNullableInteger(normalizedWorkerDraft.simpleLoadCount);
+    const maternalLoadCount = parseNullableInteger(normalizedWorkerDraft.maternalLoadCount);
+    const invalidLoadCount = parseNullableInteger(normalizedWorkerDraft.invalidLoadCount);
 
     if (
-      workerDraft.advanceAmount.trim() !== "" &&
+      normalizedWorkerDraft.advanceAmount.trim() !== "" &&
       (numericAdvanceAmount == null || numericAdvanceAmount < 0)
     ) {
       setWorkerMessage("El anticipo debe ser un monto numérico válido.");
@@ -510,42 +511,42 @@ export function CandidateWorkerFileForm({
 
     const { error } = await updateCandidateWorkerFile({
       caseCandidateId: candidate.id,
-      employeeCode: workerDraft.employeeCode,
-      projectName: workerDraft.projectName,
-      companyEntryDate: workerDraft.companyEntryDate || null,
-      shiftName: workerDraft.shiftName,
+      employeeCode: normalizedWorkerDraft.employeeCode,
+      projectName: normalizedWorkerDraft.projectName,
+      companyEntryDate: normalizedWorkerDraft.companyEntryDate || null,
+      shiftName: normalizedWorkerDraft.shiftName,
       advanceAmount: numericAdvanceAmount,
-      contractNotes: workerDraft.contractNotes,
-      privateRole: workerDraft.privateRole,
-      afcStartDate: workerDraft.afcStartDate || null,
-      seniorityRecognitionDate: workerDraft.seniorityRecognitionDate || null,
-      progressiveVacationStartDate: workerDraft.progressiveVacationStartDate || null,
-      paymentMethod: workerDraft.paymentMethod,
-      paymentPeriod: workerDraft.paymentPeriod,
-      bankName: workerDraft.bankName,
-      bankAccountType: workerDraft.bankAccountType,
-      bankAccountNumber: workerDraft.bankAccountNumber,
-      bankBranchCode: workerDraft.bankBranchCode,
-      valeVistaType: workerDraft.valeVistaType,
-      pensionRegime: workerDraft.pensionRegime,
-      contributionFund: workerDraft.contributionFund,
-      afpCollectionEntity: workerDraft.afpCollectionEntity,
-      increaseQuoteOnePercent: workerDraft.increaseQuoteOnePercent,
-      healthProvider: workerDraft.healthProvider,
+      contractNotes: normalizedWorkerDraft.contractNotes,
+      privateRole: normalizedWorkerDraft.privateRole,
+      afcStartDate: normalizedWorkerDraft.afcStartDate || null,
+      seniorityRecognitionDate: normalizedWorkerDraft.seniorityRecognitionDate || null,
+      progressiveVacationStartDate: normalizedWorkerDraft.progressiveVacationStartDate || null,
+      paymentMethod: normalizedWorkerDraft.paymentMethod,
+      paymentPeriod: normalizedWorkerDraft.paymentPeriod,
+      bankName: normalizedWorkerDraft.bankName,
+      bankAccountType: normalizedWorkerDraft.bankAccountType,
+      bankAccountNumber: normalizedWorkerDraft.bankAccountNumber,
+      bankBranchCode: normalizedWorkerDraft.bankBranchCode,
+      valeVistaType: normalizedWorkerDraft.valeVistaType,
+      pensionRegime: normalizedWorkerDraft.pensionRegime,
+      contributionFund: normalizedWorkerDraft.contributionFund,
+      afpCollectionEntity: normalizedWorkerDraft.afpCollectionEntity,
+      increaseQuoteOnePercent: normalizedWorkerDraft.increaseQuoteOnePercent,
+      healthProvider: normalizedWorkerDraft.healthProvider,
       healthPlanUf: numericHealthPlanUf,
       healthPlanPesos: numericHealthPlanPesos,
       healthPlanPercentage: numericHealthPlanPercentage,
-      afcRegime: workerDraft.afcRegime,
-      retiredStatus: workerDraft.retiredStatus,
-      retirementRegime: workerDraft.retirementRegime,
-      accountTwoFund: workerDraft.accountTwoFund,
-      accountTwoPlan: workerDraft.accountTwoPlan,
-      currency: workerDraft.currency,
+      afcRegime: normalizedWorkerDraft.afcRegime,
+      retiredStatus: normalizedWorkerDraft.retiredStatus,
+      retirementRegime: normalizedWorkerDraft.retirementRegime,
+      accountTwoFund: normalizedWorkerDraft.accountTwoFund,
+      accountTwoPlan: normalizedWorkerDraft.accountTwoPlan,
+      currency: normalizedWorkerDraft.currency,
       simpleLoadCount,
       maternalLoadCount,
       invalidLoadCount,
-      familyAllowanceSection: workerDraft.familyAllowanceSection,
-      personalDataUpdateDate: workerDraft.personalDataUpdateDate || null
+      familyAllowanceSection: normalizedWorkerDraft.familyAllowanceSection,
+      personalDataUpdateDate: normalizedWorkerDraft.personalDataUpdateDate || null
     });
 
     if (error) {
@@ -1016,7 +1017,7 @@ export function CandidateWorkerFileForm({
             label="Código de ficha"
             value={workerDraft.employeeCode}
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, employeeCode: event.target.value }))
+              updateWorkerDraft({ employeeCode: event.target.value })
             }
           />
           <TextField
@@ -1025,10 +1026,7 @@ export function CandidateWorkerFileForm({
             type="date"
             value={workerDraft.companyEntryDate}
             onChange={(event) =>
-              setWorkerDraft((current) => ({
-                ...current,
-                companyEntryDate: event.target.value
-              }))
+              updateWorkerDraft({ companyEntryDate: event.target.value })
             }
           />
           <SelectField
@@ -1038,7 +1036,7 @@ export function CandidateWorkerFileForm({
             options={bukEmployeeFieldOptions.privateRole}
             placeholder="Selecciona opción"
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, privateRole: event.target.value }))
+              updateWorkerDraft({ privateRole: event.target.value })
             }
           />
           <TextField
@@ -1047,7 +1045,7 @@ export function CandidateWorkerFileForm({
             type="date"
             value={workerDraft.afcStartDate}
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, afcStartDate: event.target.value }))
+              updateWorkerDraft({ afcStartDate: event.target.value })
             }
           />
           <TextField
@@ -1056,10 +1054,7 @@ export function CandidateWorkerFileForm({
             type="date"
             value={workerDraft.seniorityRecognitionDate}
             onChange={(event) =>
-              setWorkerDraft((current) => ({
-                ...current,
-                seniorityRecognitionDate: event.target.value
-              }))
+              updateWorkerDraft({ seniorityRecognitionDate: event.target.value })
             }
           />
           <TextField
@@ -1068,10 +1063,7 @@ export function CandidateWorkerFileForm({
             type="date"
             value={workerDraft.progressiveVacationStartDate}
             onChange={(event) =>
-              setWorkerDraft((current) => ({
-                ...current,
-                progressiveVacationStartDate: event.target.value
-              }))
+              updateWorkerDraft({ progressiveVacationStartDate: event.target.value })
             }
           />
           <SelectField
@@ -1081,7 +1073,7 @@ export function CandidateWorkerFileForm({
             options={bukEmployeeFieldOptions.paymentMethod}
             placeholder="Selecciona forma de pago"
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, paymentMethod: event.target.value }))
+              updateWorkerDraft({ paymentMethod: event.target.value })
             }
           />
           <SelectField
@@ -1143,7 +1135,7 @@ export function CandidateWorkerFileForm({
             options={bukEmployeeFieldOptions.valeVistaType}
             placeholder="Selecciona tipo"
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, valeVistaType: event.target.value }))
+              updateWorkerDraft({ valeVistaType: event.target.value })
             }
           />
           <SelectField
@@ -1153,7 +1145,7 @@ export function CandidateWorkerFileForm({
             options={bukEmployeeFieldOptions.pensionRegime}
             placeholder="Selecciona régimen"
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, pensionRegime: event.target.value }))
+              updateWorkerDraft({ pensionRegime: event.target.value })
             }
           />
           <SelectField
@@ -1163,10 +1155,7 @@ export function CandidateWorkerFileForm({
             options={bukEmployeeFieldOptions.contributionFund}
             placeholder="Selecciona fondo"
             onChange={(event) =>
-              setWorkerDraft((current) => ({
-                ...current,
-                contributionFund: event.target.value
-              }))
+              updateWorkerDraft({ contributionFund: event.target.value })
             }
           />
           <TextField
@@ -1174,10 +1163,7 @@ export function CandidateWorkerFileForm({
             label="AFP recaudadora"
             value={workerDraft.afpCollectionEntity}
             onChange={(event) =>
-              setWorkerDraft((current) => ({
-                ...current,
-                afpCollectionEntity: event.target.value
-              }))
+              updateWorkerDraft({ afpCollectionEntity: event.target.value })
             }
           />
           <SelectField
@@ -1187,10 +1173,7 @@ export function CandidateWorkerFileForm({
             options={yesNoBukOptions}
             placeholder="Selecciona opción"
             onChange={(event) =>
-              setWorkerDraft((current) => ({
-                ...current,
-                increaseQuoteOnePercent: event.target.value
-              }))
+              updateWorkerDraft({ increaseQuoteOnePercent: event.target.value })
             }
           />
           <SelectField
@@ -1200,7 +1183,7 @@ export function CandidateWorkerFileForm({
             options={bukEmployeeFieldOptions.healthProvider}
             placeholder="Selecciona prestador"
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, healthProvider: event.target.value }))
+              updateWorkerDraft({ healthProvider: event.target.value })
             }
           />
           <TextField
@@ -1253,7 +1236,7 @@ export function CandidateWorkerFileForm({
             options={bukEmployeeFieldOptions.retiredStatus}
             placeholder="Selecciona condición"
             onChange={(event) =>
-              setWorkerDraft((current) => ({ ...current, retiredStatus: event.target.value }))
+              updateWorkerDraft({ retiredStatus: event.target.value })
             }
           />
           <SelectField

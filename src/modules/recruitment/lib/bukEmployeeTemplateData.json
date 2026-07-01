@@ -1,6 +1,6 @@
 {
   "headers": [
-    "Tipo de Documento",
+    "Tipo de Documento*",
     "Número de Documento*",
     "Apellido*",
     "Segundo Apellido",
@@ -16,7 +16,7 @@
     "Teléfono Particular",
     "Teléfono Oficina",
     "Email",
-    "Email Personal",
+    "Email Personal*",
     "País",
     "Calle",
     "Número de Calle",

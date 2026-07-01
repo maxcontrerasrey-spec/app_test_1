@@ -2,6 +2,40 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Alineación enterprise de la ficha BUK para paso a contratación
+
+- [x] Auditar el contrato vivo de la ficha BUK contra la lista Excel adjunta y detectar drift entre obligatoriedad, defaults visibles, checklist y payload backend
+- [x] Implementar defaults automáticos y reglas condicionales de negocio para código de ficha, rol privado, AFC, antigüedad, vacaciones progresivas y jubilación
+- [x] Alinear formulario, template/exportación y validaciones backend para que solo bloqueen por los campos realmente exigibles según contexto
+- [x] Validar compilación, auditoría de migraciones, consistencia de diffs y aplicar la migración en el remoto enlazado antes de versionar en `main`
+
+## Resultado de alineación enterprise de la ficha BUK para paso a contratación
+
+- La auditoría sobre la lista [`lista.xls`](</Users/maximilianocontrerasrey/Desktop/lista.xls>) confirmó tres drift relevantes del contrato vivo: el template canónico aún no marcaba `Tipo de Documento*` ni `Email Personal*`, la ficha seguía obligando `Régimen jubilación` aun cuando `Jubilado = No`, y los defaults operativos (`Código de Ficha`, `Rol Privado`, `AFC`, `Aumentar cotización 1%`) no estaban resueltos de forma canónica entre pantalla, checklist y payload backend.
+- En frontend se endureció la ficha contractual/personal en [`CandidateWorkerFileForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateWorkerFileForm.tsx:1) y se encapsularon las reglas de negocio en [`candidateBukWorkerRules.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/candidateBukWorkerRules.ts:1):
+  - `Email Personal*` pasa a ser obligatorio en ficha personal.
+  - `Código de Ficha` se autocompleta con sugerencia backend `F1/Fx`.
+  - `Rol Privado` por defecto queda en `No`.
+  - `Inicio cotización AFC`, `Reconocimiento de Antigüedad` e `Inicio Vacaciones Progresivas` se completan automáticamente con la fecha de ingreso.
+  - `Aumentar cotización 1%` por defecto queda en `No`.
+  - `AFC` por defecto queda en `Menos de 11 Años`.
+  - `Régimen jubilación` solo se exige cuando `Jubilado = Sí`; si no, queda vacío.
+  - `AFP Recaudadora` degrada al mismo fondo de cotización cuando aplica AFP.
+  - `Tipo Vale Vista` y los planes de salud se limpian o exigen solo cuando realmente aplican por método de pago/prestador.
+- El backend quedó como fuente de verdad con la migración [`20260701162000_harden_buk_worker_file_defaults_and_requirement_rules.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260701162000_harden_buk_worker_file_defaults_and_requirement_rules.sql:1), que:
+  - crea helpers para resolver valores afirmativos BUK, aplicabilidad de plan de salud y correlativo de código de ficha por candidato;
+  - rehace `upsert_candidate_worker_file(...)` para derivar defaults operativos y exigir `Régimen jubilación` solo cuando corresponde;
+  - rehace `get_candidate_buk_profile(...)` para devolver la sugerencia de ficha y los defaults efectivos que la app debe mostrar;
+  - alinea `get_candidate_checklist(...)` y `get_candidate_buk_sync_payload(...)` con la misma semántica, evitando que la ficha se vea “completa” en una capa y “incompleta” en otra.
+- También se sincronizó el template/exportación de nómina en [`bukEmployeeTemplateData.json`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/bukEmployeeTemplateData.json:1) y [`bukEmployeeNomina.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/bukEmployeeNomina.ts:1) para reflejar `Tipo de Documento*`, `Email Personal*` y los defaults nuevos del contrato.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260701162000_harden_buk_worker_file_defaults_and_requirement_rules.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+  - `npx --yes supabase migration list --linked`
+
 ## Hotfix backend de transición de candidatos a `En Proceso`
 
 - [x] Auditar la cadena completa de transición de candidatos y reproducir por contrato SQL la causa del error `Etapa inválida - Código: P0001`

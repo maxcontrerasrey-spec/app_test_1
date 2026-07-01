@@ -115,7 +115,7 @@ function buildEmployeeRow({ candidate, bukProfile }: NominaSource) {
   const worker = bukProfile?.worker_file;
 
   const valuesByHeader: Record<string, string | number | Date> = {
-    "Tipo de Documento": resolveDocumentType(bukProfile, candidate),
+    "Tipo de Documento*": resolveDocumentType(bukProfile, candidate),
     "Número de Documento*": resolveDocumentNumber(bukProfile, candidate),
     "Apellido*": bukProfile?.last_name ?? fallbackName.lastName,
     "Segundo Apellido": bukProfile?.second_last_name ?? fallbackName.secondLastName,
@@ -133,18 +133,18 @@ function buildEmployeeRow({ candidate, bukProfile }: NominaSource) {
     "Teléfono Particular": bukProfile?.phone ?? candidate.phone ?? "",
     "Teléfono Oficina": bukProfile?.office_phone ?? "",
     Email: bukProfile?.email ?? candidate.email ?? "",
-    "Email Personal": bukProfile?.personal_email ?? "",
+    "Email Personal*": bukProfile?.personal_email ?? "",
     "País": bukProfile?.country ?? "Chile",
     Calle: bukProfile?.street_name ?? "",
     "Número de Calle": bukProfile?.street_number ?? "",
     "Depto / Oficina": bukProfile?.apartment_or_office ?? "",
     "Título": bukProfile?.education_title ?? "",
     Institución: bukProfile?.education_institution ?? "",
-    "Código de Ficha*": worker?.employee_code ?? "",
+    "Código de Ficha*": worker?.employee_code ?? bukProfile?.suggested_employee_code ?? "",
     "Ingreso Compañía*": toExcelDateValue(
       worker?.company_entry_date ?? candidate.hired_at ?? candidate.stage_entered_at
     ),
-    "Rol Privado*": worker?.private_role ?? "",
+    "Rol Privado*": worker?.private_role ?? "No",
     "Fecha de Inicio Cotización AFC": toExcelDateValue(worker?.afc_start_date),
     "Fecha Reconocimiento de Antigüedad": toExcelDateValue(worker?.seniority_recognition_date),
     "Fecha Inicio Vacaciones Progresivas": toExcelDateValue(
@@ -159,12 +159,12 @@ function buildEmployeeRow({ candidate, bukProfile }: NominaSource) {
     "Régimen Previsional*": worker?.pension_regime ?? "",
     "Fondo de Cotización": worker?.contribution_fund ?? "",
     "AFP Recaudadora": worker?.afp_collection_entity ?? "",
-    "Aumentar la cotización en 1%*": worker?.increase_quote_one_percent ?? "",
+    "Aumentar la cotización en 1%*": worker?.increase_quote_one_percent ?? "No",
     "Fonasa/Isapre*": worker?.health_provider ?? "",
     "Plan Isapre UF*": worker?.health_plan_uf ?? "",
     "Plan Isapre Pesos*": worker?.health_plan_pesos ?? "",
     "Plan Isapre Porcentual*": worker?.health_plan_percentage ?? "",
-    "AFC*": worker?.afc_regime ?? "",
+    "AFC*": worker?.afc_regime ?? "Menos de 11 Años",
     Jubilado: worker?.retired_status ?? "",
     "Régimen Jubilacion*": worker?.retirement_regime ?? "",
     "Cuenta 2": worker?.account_two_fund ?? "",
