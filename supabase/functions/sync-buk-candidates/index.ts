@@ -96,6 +96,8 @@ type BukLocation = {
   id: number | string;
   name: string;
   region: string | null;
+  depth: number | null;
+  full_name: string | null;
 };
 
 type BukLocationCacheRow = {
@@ -103,6 +105,7 @@ type BukLocationCacheRow = {
   location_name: string;
   region_name: string | null;
   synced_at: string | null;
+  raw_payload?: Record<string, unknown> | null;
 };
 
 const corsHeaders = {
@@ -214,6 +217,11 @@ function parseBukLocations(rawData: unknown): BukLocation[] {
       if (!entry || typeof entry !== "object") return null;
       const record = entry as Record<string, unknown>;
       const id = record.id ?? record.location_id;
+      const fullName =
+        (record.full_name as string | undefined) ??
+        (record.fullName as string | undefined) ??
+        null;
+      const depth = typeof record.depth === "number" ? record.depth : null;
       const name =
         (record.name as string | undefined) ??
         (record.district as string | undefined) ??
@@ -221,23 +229,35 @@ function parseBukLocations(rawData: unknown): BukLocation[] {
         (record.city as string | undefined) ??
         (record.location_name as string | undefined) ??
         "";
+      const fullNameSegments =
+        typeof fullName === "string"
+          ? fullName
+              .split(" - ")
+              .map((segment) => segment.trim())
+              .filter(Boolean)
+          : [];
+      const derivedRegionFromFullName =
+        fullNameSegments.length >= 2 ? fullNameSegments[1] : null;
       const region =
         (record.region as string | undefined) ??
         (record.parent_name as string | undefined) ??
         (record.state as string | undefined) ??
+        derivedRegionFromFullName ??
         null;
 
       if (!id || !name) return null;
       return {
         id,
         name,
-        region
+        region,
+        depth,
+        full_name: fullName
       };
     })
     .filter((item): item is BukLocation => item !== null);
 }
 
-async function fetchAllBukLocations() {
+async function fetchBukLocationsByDepth(depth?: number) {
   const locations: BukLocation[] = [];
   let page = 1;
   let totalPages = 1;
@@ -246,6 +266,9 @@ async function fetchAllBukLocations() {
     const url = new URL(buildBukLocationsUrl());
     url.searchParams.set("page", String(page));
     url.searchParams.set("page_size", "100");
+    if (depth !== undefined) {
+      url.searchParams.set("depth", String(depth));
+    }
 
     const payload = await fetchBukJson(url.toString());
     locations.push(...parseBukLocations(payload.data ?? []));
@@ -254,6 +277,15 @@ async function fetchAllBukLocations() {
   } while (page <= totalPages);
 
   return locations;
+}
+
+async function fetchAllBukLocations() {
+  const communeLocations = await fetchBukLocationsByDepth(3);
+  if (communeLocations.length > 0) {
+    return communeLocations;
+  }
+
+  return fetchBukLocationsByDepth();
 }
 
 function resolveBukLocationsCacheTtlMs() {
@@ -266,7 +298,15 @@ function mapBukLocationCacheRows(rows: BukLocationCacheRow[]) {
   return rows.map((row) => ({
     id: row.location_id,
     name: row.location_name,
-    region: row.region_name
+    region: row.region_name,
+    depth:
+      row.raw_payload && typeof row.raw_payload.depth === "number"
+        ? row.raw_payload.depth
+        : null,
+    full_name:
+      row.raw_payload && typeof row.raw_payload.full_name === "string"
+        ? row.raw_payload.full_name
+        : null
   }));
 }
 
@@ -287,10 +327,21 @@ function isBukLocationCacheFresh(rows: BukLocationCacheRow[]) {
   return Date.now() - latestSyncedAt <= resolveBukLocationsCacheTtlMs();
 }
 
+function hasPreferredBukLocationDepth(rows: BukLocationCacheRow[]) {
+  return rows.some((row) => {
+    if (row.region_name) {
+      return true;
+    }
+
+    const depth = row.raw_payload?.depth;
+    return typeof depth === "number" && depth >= 3;
+  });
+}
+
 async function loadBukLocationsCache(supabase: ReturnType<typeof createClient>) {
   const { data, error } = await supabase
     .from("buk_locations")
-    .select("location_id, location_name, region_name, synced_at")
+    .select("location_id, location_name, region_name, synced_at, raw_payload")
     .order("location_name", { ascending: true });
 
   if (error) {
@@ -317,7 +368,9 @@ async function writeBukLocationsCache(
     raw_payload: {
       id: location.id,
       name: location.name,
-      region: location.region
+      region: location.region,
+      depth: location.depth,
+      full_name: location.full_name
     },
     synced_at: syncedAt
   }));
@@ -351,7 +404,7 @@ async function resolveBukLocations(supabase: ReturnType<typeof createClient>) {
   const cachedRows = await loadBukLocationsCache(supabase);
   const cachedLocations = mapBukLocationCacheRows(cachedRows);
 
-  if (isBukLocationCacheFresh(cachedRows)) {
+  if (isBukLocationCacheFresh(cachedRows) && hasPreferredBukLocationDepth(cachedRows)) {
     return cachedLocations;
   }
 
@@ -375,24 +428,63 @@ function resolveLocationId(payload: BukCandidateSyncPayload, locations: BukLocat
   const commune = normalizeText(payload.profile.district_or_commune);
   const region = normalizeText(payload.profile.region);
 
-  if (!commune) {
-    throw new Error("La ficha BUK del candidato no tiene comuna para resolver location_id");
+  if (!commune && !region) {
+    throw new Error("La ficha BUK del candidato no tiene comuna ni región para resolver location_id");
   }
 
-  const match = locations.find((location) => {
-    const sameCommune = normalizeText(location.name) === commune;
-    if (!sameCommune) return false;
+  const exactCommuneAndRegion = locations.find((location) => {
+    if (!commune) return false;
+    if (normalizeText(location.name) !== commune) return false;
     if (!region) return true;
     return normalizeText(location.region) === region;
   });
 
-  if (!match) {
+  if (exactCommuneAndRegion) {
+    return exactCommuneAndRegion.id;
+  }
+
+  const exactCommune = locations.find(
+    (location) => Boolean(commune) && normalizeText(location.name) === commune
+  );
+
+  if (exactCommune) {
+    return exactCommune.id;
+  }
+
+  const exactRegion = locations.find(
+    (location) => Boolean(region) && normalizeText(location.name) === region
+  );
+
+  if (exactRegion) {
+    return exactRegion.id;
+  }
+
+  const parentRegion = locations.find(
+    (location) => Boolean(region) && normalizeText(location.region) === region
+  );
+
+  if (parentRegion) {
+    return parentRegion.id;
+  }
+
+  const regionalOnlyLocations = locations.filter((location) => !normalizeText(location.region));
+  const regionalOnlyMatch = regionalOnlyLocations.find(
+    (location) => Boolean(region) && normalizeText(location.name) === region
+  );
+
+  if (regionalOnlyMatch) {
+    return regionalOnlyMatch.id;
+  }
+
+  if (!commune) {
     throw new Error(
-      `No fue posible resolver location_id en Buk para comuna "${payload.profile.district_or_commune}" y región "${payload.profile.region ?? ""}"`
+      `No fue posible resolver location_id en Buk para región "${payload.profile.region ?? ""}"`
     );
   }
 
-  return match.id;
+  throw new Error(
+    `No fue posible resolver location_id en Buk para comuna "${payload.profile.district_or_commune}" y región "${payload.profile.region ?? ""}"`
+  );
 }
 
 function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: string | number) {

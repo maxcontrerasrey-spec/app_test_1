@@ -6,6 +6,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 181. En fichas BUK con columnas marcadas por plantilla, la obligatoriedad real debe gobernarse por contrato operativo y aplicabilidad de negocio
 
+## 185. En BUK, un caché geográfico “fresco” puede seguir siendo inválido si fue poblado con el nivel jerárquico equivocado
+
+- **Que `GET /locations` responda 200 y alimente el caché no significa que sirva para crear colaboradores.** En el tenant auditado, la llamada sin filtros devolvía solo 16 regiones `depth=1`; el alta de empleados necesitaba `location_id` de comuna (`depth=3`), por lo que el cache quedaba técnicamente fresco pero semánticamente inútil.
+- **La regla correcta es fijar explícitamente el nivel geográfico requerido por el caso de uso.** Para alta de empleados, el worker debe priorizar `GET /locations?depth=3`, derivar la región desde `full_name` cuando BUK no la entregue separada, y solo degradar a niveles superiores si el integrador realmente no expone comunas.
+- **La política de frescura del caché debe validar forma, no solo timestamp.** Si la tabla local todavía contiene el formato viejo (por ejemplo, solo regiones sin `depth>=3` ni `region_name` derivada), el worker debe forzar refresh aunque el TTL siga vigente; de lo contrario, la integración persiste un error estructural bajo apariencia de caché saludable.
+
 ## 184. Un worker async autorizado por UI no debe reconstruir datos auth-bound después de encolar; debe consumir el snapshot ya validado
 
 - **Si un job ya fue creado por una RPC autenticada con `payload_snapshot`, volver a llamar una RPC de dominio dentro del worker rompe la frontera de confianza.** Bajo `service_role` o bajo un runtime sin JWT de usuario, cualquier dependencia de `auth.uid()` o helpers equivalentes puede reaparecer como `Usuario no autenticado` aunque el job original haya sido perfectamente válido.

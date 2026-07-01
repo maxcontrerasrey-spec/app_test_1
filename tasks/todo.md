@@ -8,6 +8,38 @@
 - [x] Corregir el contrato backend para que el worker consuma el `payload_snapshot` autorizado del job y no reejecute RPCs auth-bound bajo `service_role`
 - [x] Validar la corrección sobre jobs reales/remotos, desplegar la edge function actualizada, documentar el cierre y registrar la lección operativa
 
+## Corrección enterprise de secret interno y resolución geográfica BUK
+
+- [x] Auditar el estado real del webhook interno `BUK_SYNC_INTERNAL_WEBHOOK_SECRET` y dejarlo operativo en el proyecto remoto
+- [x] Corregir la resolución de `location_id` para usar el catálogo BUK correcto a nivel comuna (`depth=3`) con fallback seguro por región
+- [x] Reprocesar un job fallido real contra producción, validar la creación en BUK, la carga documental y documentar el cierre operativo
+
+## Resultado de corrección enterprise de secret interno y resolución geográfica BUK
+
+- La revisión remota confirmó dos drift distintos en la integración:
+  - el proyecto Supabase no tenía cargado `BUK_SYNC_INTERNAL_WEBHOOK_SECRET`, por lo que la vía interna del worker no era utilizable de forma real;
+  - el worker estaba consumiendo `GET /locations` sin `depth`, y BUK retornaba solo 16 regiones `depth=1`, no comunas. Por eso el caché local quedó mal poblado y la resolución de `location_id` para un candidato de `Maule / VII: del Maule` terminaba usando un nivel geográfico incorrecto.
+- Se corrigió el contrato de ubicaciones en [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1):
+  - ahora el fetch prioriza `GET /locations?depth=3`, que en el tenant real devuelve comunas;
+  - el parser deriva `region` desde `full_name` cuando BUK no la entrega explícitamente;
+  - el caché `buk_locations` guarda también `depth` y `full_name` en `raw_payload`;
+  - si el caché aún contiene el formato viejo (solo regiones sin `depth>=3`), el worker fuerza refresh aunque siga dentro del TTL.
+- También se cargó el secreto remoto `BUK_SYNC_INTERNAL_WEBHOOK_SECRET` en el proyecto `pzblmbahnoyntrhistea`, dejando operativa la ruta interna del worker con `x-internal-webhook-secret`.
+- La validación final se hizo sobre el mismo job productivo que había fallado antes:
+  - job `cf9c791d-ab1a-4844-bf68-7649c9b9eb08`
+  - candidato `00a06205-74fa-4192-af1b-f3503f4e174d`
+  - `buk_locations` quedó refrescado a `346` comunas, incluyendo `Maule -> location_id 147 -> region_name "VII: del Maule"`
+  - la reinvocación interna del worker terminó en `success`
+  - BUK creó exitosamente al trabajador con `bukEmployeeId = 41739`
+  - el `result_snapshot` del job registró además la carga exitosa de los documentos del candidato en BUK
+- Validación cerrada con:
+  - verificación remota de `supabase secrets list`, confirmando `BUK_SYNC_INTERNAL_WEBHOOK_SECRET`
+  - consulta directa a `GET /locations?depth=3`, confirmando la comuna `Maule` con `id = 147`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `git diff --check`
+  - `npx --yes supabase functions deploy sync-buk-candidates --project-ref pzblmbahnoyntrhistea --no-verify-jwt`
+  - reinvocación interna real de `sync-buk-candidates` con `x-internal-webhook-secret`, confirmando `status = success`, `buk_employee_id = 41739` y caché geográfico corregido
+
 ## Resultado de corrección enterprise de autenticación en generación BUK desde Personal a Contratar
 
 - La auditoría end-to-end confirmó que el problema no estaba en la creación del job ni en la ficha del candidato. El job remoto fallido `cf9c791d-ab1a-4844-bf68-7649c9b9eb08` quedó registrado con `payload_snapshot` completo en `public.buk_sync_jobs`, pero el worker [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) volvía a ejecutar `get_candidate_buk_sync_payload(...)` desde `service_role`, reabriendo una cadena auth-bound y terminando en `Usuario no autenticado`.
