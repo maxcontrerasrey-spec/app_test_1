@@ -2,6 +2,32 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix enterprise de generación BUK para Administrativo en Personal a Contratar
+
+- [x] Auditar el error de Angélica Calderón reproduciendo la cadena `Personal a Contratar -> detalle de caso -> generar en BUK` y confirmar qué RPCs siguen exigiendo permisos o etapas legacy
+- [x] Corregir el acceso al detalle operativo del caso para que `administrativo` y `jefe_administrativo` puedan ver el subflujo BUK de candidatos pendientes sin recuperar la pestaña `Control de candidatos`
+- [x] Alinear la generación BUK con el bucket pendiente real, permitiendo candidatos en `ready_for_hire` o `hired` siempre que aún no exista sync BUK exitosa
+- [x] Validar SQL, TypeScript, despliegue remoto y documentar el cierre antes de versionar en `main`
+
+## Resultado de hotfix enterprise de generación BUK para Administrativo en Personal a Contratar
+
+- La causa raíz quedó en dos drift backend distintos que seguían activos después del hotfix anterior:
+  - [`get_recruitment_case_detail(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703142845_fix_admin_buk_generation_personnel_access.sql:1) todavía arrancaba exigiendo `user_can_view_recruitment_process_summary(...)`, helper que excluye a `administrativo`; por eso Angélica veía `Sin permisos para ver este proceso de contratación` aunque sí tenía acceso al bucket `Personal a Contratar`.
+  - [`get_candidate_buk_sync_payload(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703143352_fix_buk_sync_payload_document_contract_for_admin_generation.sql:1) seguía bloqueando todo lo que no estuviera en `stage_code = ready_for_hire`, aunque el bucket productivo ya agrupa pendientes BUK tanto en `ready_for_hire` como en `hired` mientras no exista sync exitosa.
+- La reparación quedó versionada en dos migraciones complementarias:
+  - [`20260703142845_fix_admin_buk_generation_personnel_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703142845_fix_admin_buk_generation_personnel_access.sql:1) recompila `get_recruitment_case_detail(...)` para aceptar cualquiera de estas fronteras válidas: resumen, control de candidatos o acceso operativo de personal pendiente BUK.
+  - [`20260703143352_fix_buk_sync_payload_document_contract_for_admin_generation.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703143352_fix_buk_sync_payload_document_contract_for_admin_generation.sql:1) alinea la generación con el bucket real y restaura el contrato documental que consume el worker BUK (`document_type_id`, `document_name`, `file_path`, `status`, `expiry_date`).
+- La verificación remota sobre producción quedó cerrada contra la cuenta real `angelica.calderon@busesjm.com`:
+  - `user_can_view_recruitment_process_summary(...) = false`, lo que confirma que no reabrimos el resumen general ni `Control de candidatos`;
+  - `get_recruitment_case_detail('RC-2108')` ya devuelve el caso y `1` candidato para el flujo operativo;
+  - `get_candidate_buk_sync_payload(...)` ya construye correctamente el payload del candidato `RC-2108` aun estando en `stage_code = hired`, porque sigue pendiente de generación BUK efectiva.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703142845_fix_admin_buk_generation_personnel_access.sql supabase/migrations/20260703143352_fix_buk_sync_payload_document_contract_for_admin_generation.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase migration list --linked`, confirmando aplicadas `20260703142845` y `20260703143352`
+
 ## Corrección enterprise de empresa destino DSAL en Movilidad Interna
 
 - [x] Auditar la fuente canónica que resuelve `company_name` para `CODELCO - DSAL` y reproducir el desvío en producción entre `buk_contract_mappings`, contrato destino y solicitudes de movilidad

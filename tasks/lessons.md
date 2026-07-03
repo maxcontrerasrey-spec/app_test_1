@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es tratar `company_name` como dato canónico del catálogo operativo cuando el negocio ya conoce la excepción.** Si un área/contrato fue auditado y tiene empresa jurídica explícita, el backend debe persistirla o resolverla por excepción antes de aplicar heurísticas por `company_id` o sufijo contractual.
 - **Cuando una clasificación contractual incorrecta ya generó requests productivos, la reparación debe incluir backfill sobre las entidades derivadas.** No basta con corregir el helper para nuevos casos: también hay que sanear `internal_mobility_requests` y cualquier snapshot visible que hoy siga induciendo a finiquito o cambio de empresa inexistente.
 
+## 192. El detalle operativo y el payload BUK deben compartir la misma frontera canónica de “pendiente de generación”, aunque el resumen general siga cerrado para `administrativo`
+
+- **Un rol puede no tener acceso al resumen del proceso y aun así necesitar operar el tramo BUK del caso.** Si `get_recruitment_case_detail(...)` arranca heredando `user_can_view_recruitment_process_summary(...)`, `administrativo` termina viendo la pestaña `Personal a Contratar` pero choca con `Sin permisos para ver este proceso de contratación` al abrir el caso.
+- **La regla correcta es separar el gate operativo del gate ejecutivo.** El detalle usado por ficha BUK, checklist y generación debe aceptar `user_can_access_recruitment_personnel(...)` aunque `summary_access` sea false, siempre sin devolver visibilidad a `Control de candidatos`.
+- **El bucket pendiente BUK y la RPC que genera el payload deben clasificarse con el mismo criterio externo.** Si `Personal a Contratar` agrupa candidatos sin sync BUK exitosa aunque estén en `ready_for_hire` o `hired`, entonces `get_candidate_buk_sync_payload(...)` no puede seguir hardcodeado a `stage_code = ready_for_hire`; esa deriva vuelve a romper producción exactamente en el clic de `Generar en BUK`.
+
 ## 190. Un tab visible de contratación no puede seguir dependiendo en backend de `candidate_control_access` ni de un helper de visibilidad de casos pensado para reclutamiento
 
 - **Ocultar `Control de candidatos` en UI no resuelve por sí solo el permiso operativo de `Personal a Contratar`.** Si la lista, el detalle, la ficha BUK o el checklist siguen llamando RPCs que arrancan con `assert_candidate_control_access(...)` o filtran por `user_can_view_recruitment_case(...)`, el rol `administrativo` queda con la pestaña visible pero sin datos ni operaciones reales.
