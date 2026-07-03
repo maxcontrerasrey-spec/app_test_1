@@ -1810,6 +1810,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 147. Si un formulario administrativo usa un catálogo maestro vivo, no dejes un campo libre para capturar esa misma dimensión
 
+## 148. En reclutamiento, `ready_for_hire` y `hired` no son sinónimos: la frontera real la define el éxito en BUK
+
+- **Mover manualmente un candidato a `Contratado` antes de que BUK confirme el alta mezcla preparación con ejecución.** Eso deja la cola `Personal a Contratar` contaminada, impide distinguir pendientes reales de casos ya cargados y vuelve opaco el estado del caso para operaciones y RRHH.
+- **La regla correcta es reservar `ready_for_hire` para el candidato listo documentalmente y usar `hired` solo como cierre sistémico posterior al éxito real en BUK.** La UI no debe ofrecer la transición manual a `Contratado`; el worker o la RPC de cierre deben mover la etapa, registrar historial y resincronizar el estado del caso.
+- **Las restricciones de acciones sensibles no pueden vivir solo en la vista.** Si `Generar en BUK` o `Exportar nómina` son exclusivos de RRHH administrativo, la pantalla puede ocultar botones para reclutamiento, pero el backend también debe validar rol antes de encolar o autorizar jobs.
+- **Cuando la previsión depende del prestador de salud, la derivación debe vivir en frontend y backend a la vez.** Fonasa debe forzar 7% automáticamente, mientras Isapre debe exigir `Plan Isapre UF`; si solo una capa conoce la regla, reaparece drift entre formulario, checklist, exportación y payload API.
+
 - **Cuando el ERP ya carga `contractOptions` desde backend, `Contrato (opcional)` no puede seguir como `TextField`.** Ese input abre códigos inválidos, diferencias de spelling y reglas que luego no matchean con el resto del sistema.
 - **La regla correcta es reutilizar el mismo catálogo compartido del módulo.** Si la pantalla ya tiene `setupCatalogsQuery.data.contractOptions`, el selector debe salir de ahí y no de una segunda fuente ni de escritura manual.
 - **En configuraciones enterprise, “opcional” no significa “texto libre”.** Significa permitir vacío para aplicar a todos, pero cuando el usuario sí selecciona un contrato debe ser uno de los contratos reales y activos del ERP.

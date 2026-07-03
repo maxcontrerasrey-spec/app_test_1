@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui";
+import { useAuth } from "../../auth/context/AuthContext";
 import {
   fetchCandidateBukProfile,
   formatRut,
@@ -7,7 +8,10 @@ import {
   type RecruitmentCaseDetail,
   type RecruitmentPersonnelToHireRow
 } from "../services/hiringControl";
-import { useRecruitmentPersonnelToHirePage } from "../hooks/useRecruitmentQueries";
+import {
+  useRecruitmentContractedPersonnelPage,
+  useRecruitmentPersonnelToHirePage
+} from "../hooks/useRecruitmentQueries";
 import { formatDateTimeValue } from "./hiringControlViewUtils";
 import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
 import { exportBukNominaXls } from "../lib/bukEmployeeNomina";
@@ -15,7 +19,10 @@ import { TrackingPagination } from "./TrackingPagination";
 
 const PERSONNEL_PAGE_SIZE = 50;
 
+type PersonnelBucket = "to_hire" | "contracted";
+
 type HiringPersonnelToHireViewProps = {
+  bucket?: PersonnelBucket;
   isParentLoading: boolean;
   errorMessage: string;
   selectedCandidateId: string;
@@ -27,6 +34,7 @@ type HiringPersonnelToHireViewProps = {
 };
 
 export function HiringPersonnelToHireView({
+  bucket = "to_hire",
   isParentLoading,
   errorMessage,
   selectedCandidateId,
@@ -36,6 +44,7 @@ export function HiringPersonnelToHireView({
   onInterviewNotesUpdated,
   onCandidateFileUpdated
 }: HiringPersonnelToHireViewProps) {
+  const { appRoles, isSuperAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [page, setPage] = useState(0);
@@ -43,17 +52,36 @@ export function HiringPersonnelToHireView({
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingBuk, setIsGeneratingBuk] = useState(false);
   const [exportMessage, setExportMessage] = useState("");
-  const personnelQuery = useRecruitmentPersonnelToHirePage({
+  const filters = {
     search: debouncedSearchTerm,
     limit: PERSONNEL_PAGE_SIZE,
     offset: page * PERSONNEL_PAGE_SIZE
-  });
+  };
+  const toHireQuery = useRecruitmentPersonnelToHirePage(filters, bucket === "to_hire");
+  const contractedQuery = useRecruitmentContractedPersonnelPage(filters, bucket === "contracted");
+  const personnelQuery = bucket === "contracted" ? contractedQuery : toHireQuery;
   const personnelToHire = personnelQuery.data?.items ?? [];
   const totalCount = personnelQuery.data?.totalCount ?? 0;
   const personnelError =
     personnelQuery.error instanceof Error ? personnelQuery.error.message : "";
   const combinedErrorMessage = errorMessage || personnelError;
   const isLoading = isParentLoading || personnelQuery.isLoading;
+  const canManageBukActions =
+    isSuperAdmin ||
+    appRoles.includes("administrativo") ||
+    appRoles.includes("jefe_administrativo");
+  const showBukActions = bucket === "to_hire" && canManageBukActions;
+  const title = bucket === "to_hire" ? "Personal a Contratar" : "Personal contratado";
+  const description =
+    bucket === "to_hire"
+      ? "Candidatos listos para generar en BUK y cerrar su contratación."
+      : "Personal ya generado en BUK y retirado de la cola de contratación.";
+  const dateLabel =
+    bucket === "to_hire" ? "Fecha listo para contratar" : "Fecha generación BUK";
+  const emptyMessage =
+    bucket === "to_hire"
+      ? "No hay personas listas para contratar para el filtro actual."
+      : "No hay personal contratado para el filtro actual.";
 
   const selectedCandidateBoardRow =
     personnelToHire.find((candidate) => candidate.id === selectedCandidateId) ??
@@ -69,6 +97,7 @@ export function HiringPersonnelToHireView({
   );
 
   const allFilteredSelected =
+    showBukActions &&
     personnelToHire.length > 0 &&
     personnelToHire.every((candidate) => selectedCandidateIds.includes(candidate.id));
 
@@ -86,15 +115,24 @@ export function HiringPersonnelToHireView({
 
   useEffect(() => {
     setPage(0);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, bucket]);
 
   useEffect(() => {
+    if (!showBukActions) {
+      setSelectedCandidateIds([]);
+      return;
+    }
+
     setSelectedCandidateIds((current) =>
       current.filter((candidateId) => personnelToHire.some((candidate) => candidate.id === candidateId))
     );
-  }, [personnelToHire]);
+  }, [personnelToHire, showBukActions]);
 
   const toggleCandidateSelection = (candidateId: string) => {
+    if (!showBukActions) {
+      return;
+    }
+
     setSelectedCandidateIds((current) =>
       current.includes(candidateId)
         ? current.filter((id) => id !== candidateId)
@@ -103,6 +141,10 @@ export function HiringPersonnelToHireView({
   };
 
   const toggleSelectAllFiltered = () => {
+    if (!showBukActions) {
+      return;
+    }
+
     const filteredIds = personnelToHire.map((candidate) => candidate.id);
 
     setSelectedCandidateIds((current) => {
@@ -115,6 +157,11 @@ export function HiringPersonnelToHireView({
   };
 
   const handleExportNomina = async () => {
+    if (!showBukActions) {
+      setExportMessage("Solo RRHH administrativo puede exportar la nómina.");
+      return;
+    }
+
     if (selectedPersonnel.length === 0) {
       setExportMessage("Selecciona al menos una persona para exportar la nómina.");
       return;
@@ -160,6 +207,11 @@ export function HiringPersonnelToHireView({
   };
 
   const handleGenerateBuk = async () => {
+    if (!showBukActions) {
+      setExportMessage("Solo RRHH administrativo puede generar personal en BUK.");
+      return;
+    }
+
     if (selectedPersonnel.length === 0) {
       setExportMessage("Selecciona al menos una persona para generar en BUK.");
       return;
@@ -201,52 +253,58 @@ export function HiringPersonnelToHireView({
           ? `BUK procesó ${successCount} persona(s). ${processingCount} ya estaban en procesamiento.`
           : `BUK procesó ${successCount} persona(s) correctamente.`
     );
+    setSelectedCandidateIds([]);
+    await onCandidateFileUpdated();
     setIsGeneratingBuk(false);
   };
 
-  // Comportamiento actualizado: no autoseleccionar candidato.
+  const emptyColSpan = showBukActions ? 7 : 6;
 
   return (
     <>
       <div className="tracking-toolbar">
         <div className="tracking-toolbar-copy">
-          <h3>Personal a Contratar</h3>
+          <h3>{title}</h3>
           <span className="tracking-filter-caption">
-            {combinedErrorMessage || "Candidatos contratados listos para revisar ficha y documentación final."}
+            {combinedErrorMessage || description}
           </span>
         </div>
         <div className="tracking-filters tracking-filters-inline">
           <TextField
-            id="hiring-personnel-search"
+            id={`hiring-personnel-search-${bucket}`}
             label="Buscar personal"
             value={searchTerm}
             placeholder="Buscar por candidato, RUT, caso, contrato o aprobador"
             onChange={(event) => setSearchTerm(event.target.value)}
             className="tracking-search-field"
           />
-          <button
-            type="button"
-            className="soft-primary-button approval-button-approve"
-            onClick={() => void handleGenerateBuk()}
-            disabled={isGeneratingBuk || selectedPersonnel.length === 0}
-          >
-            {isGeneratingBuk
-              ? "Generando..."
-              : `Generar en BUK (${selectedPersonnel.length})`}
-          </button>
-          <button
-            type="button"
-            className="soft-primary-button approval-button-approve"
-            onClick={() => void handleExportNomina()}
-            disabled={isExporting || selectedPersonnel.length === 0}
-          >
-            {isExporting ? "Exportando..." : `Exportar nómina (${selectedPersonnel.length})`}
-          </button>
+          {showBukActions ? (
+            <>
+              <button
+                type="button"
+                className="soft-primary-button approval-button-approve"
+                onClick={() => void handleGenerateBuk()}
+                disabled={isGeneratingBuk || selectedPersonnel.length === 0}
+              >
+                {isGeneratingBuk
+                  ? "Generando..."
+                  : `Generar en BUK (${selectedPersonnel.length})`}
+              </button>
+              <button
+                type="button"
+                className="soft-primary-button approval-button-approve"
+                onClick={() => void handleExportNomina()}
+                disabled={isExporting || selectedPersonnel.length === 0}
+              >
+                {isExporting ? "Exportando..." : `Exportar nómina (${selectedPersonnel.length})`}
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
       {exportMessage ? <p className="tracking-filter-caption">{exportMessage}</p> : null}
 
-      <div 
+      <div
         className="control-layout"
         style={!selectedCandidateBoardRow ? { gridTemplateColumns: "1fr" } : undefined}
         onClick={(e) => {
@@ -260,19 +318,21 @@ export function HiringPersonnelToHireView({
             <table className="tracking-table">
               <thead>
                 <tr>
-                  <th className="tracking-selection-cell">
-                    <input
-                      type="checkbox"
-                      checked={allFilteredSelected}
-                      aria-label="Seleccionar personal filtrado"
-                      onChange={toggleSelectAllFiltered}
-                    />
-                  </th>
+                  {showBukActions ? (
+                    <th className="tracking-selection-cell">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        aria-label="Seleccionar personal filtrado"
+                        onChange={toggleSelectAllFiltered}
+                      />
+                    </th>
+                  ) : null}
                   <th>Candidato</th>
                   <th>Caso</th>
                   <th>Cargo</th>
                   <th>Contrato</th>
-                  <th>Fecha contratación</th>
+                  <th>{dateLabel}</th>
                   <th>Owner</th>
                 </tr>
               </thead>
@@ -286,15 +346,17 @@ export function HiringPersonnelToHireView({
                       }
                       onClick={() => onSelectCandidate(candidate.id, candidate.recruitment_case_id)}
                     >
-                      <td className="tracking-selection-cell">
-                        <input
-                          type="checkbox"
-                          checked={selectedCandidateIds.includes(candidate.id)}
-                          aria-label={`Seleccionar ${candidate.full_name}`}
-                          onClick={(event) => event.stopPropagation()}
-                          onChange={() => toggleCandidateSelection(candidate.id)}
-                        />
-                      </td>
+                      {showBukActions ? (
+                        <td className="tracking-selection-cell">
+                          <input
+                            type="checkbox"
+                            checked={selectedCandidateIds.includes(candidate.id)}
+                            aria-label={`Seleccionar ${candidate.full_name}`}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() => toggleCandidateSelection(candidate.id)}
+                          />
+                        </td>
+                      ) : null}
                       <td>
                         <strong>{candidate.full_name}</strong>
                         <div className="tracking-filter-caption">
@@ -304,16 +366,20 @@ export function HiringPersonnelToHireView({
                       <td>{candidate.case_code}</td>
                       <td>{candidate.job_position_name}</td>
                       <td>{candidate.contract_name}</td>
-                      <td>{formatDateTimeValue(candidate.hired_at ?? candidate.stage_entered_at)}</td>
+                      <td>
+                        {formatDateTimeValue(
+                          bucket === "contracted"
+                            ? candidate.hired_at ?? candidate.stage_entered_at
+                            : candidate.stage_entered_at
+                        )}
+                      </td>
                       <td>{candidate.owner_name ?? "No asignado"}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="tracking-empty-state" colSpan={7}>
-                      {isLoading
-                        ? "Cargando personal..."
-                        : "No hay personas contratadas para el filtro actual."}
+                    <td className="tracking-empty-state" colSpan={emptyColSpan}>
+                      {isLoading ? "Cargando personal..." : emptyMessage}
                     </td>
                   </tr>
                 )}
@@ -347,7 +413,7 @@ export function HiringPersonnelToHireView({
         label="Personal visible"
         onPageChange={setPage}
       />
-      {personnelToHire.length > 0 ? (
+      {showBukActions && personnelToHire.length > 0 ? (
         <p className="tracking-filter-caption">
           {visibleSelectedCount} seleccionado(s) en la página actual · {selectedPersonnel.length} total para exportar
         </p>

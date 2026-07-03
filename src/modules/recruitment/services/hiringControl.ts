@@ -613,6 +613,37 @@ export async function fetchRecruitmentPersonnelToHirePage(input: {
   };
 }
 
+export async function fetchRecruitmentContractedPersonnelPage(input: {
+  search?: string;
+  limit: number;
+  offset: number;
+}) {
+  if (!supabase) {
+    return {
+      data: null,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_recruitment_contracted_personnel_page", {
+    p_search: input.search?.trim() ? input.search.trim() : null,
+    p_limit: input.limit,
+    p_offset: input.offset
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: formatRpcError(error) || "No fue posible cargar el personal contratado."
+    };
+  }
+
+  return {
+    data: parsePagedPayload<RecruitmentPersonnelToHireRow>(data),
+    error: null
+  };
+}
+
 export async function fetchRecruitmentActiveCaseOptions(input: {
   search?: string;
   limit?: number;

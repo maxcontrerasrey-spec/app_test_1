@@ -16,6 +16,9 @@ export const queryKeys = {
     personnelRoot: () => ["recruitment", "personnel-to-hire"] as const,
     personnel: (filters: Record<string, unknown>) =>
       ["recruitment", "personnel-to-hire", filters] as const,
+    contractedPersonnelRoot: () => ["recruitment", "contracted-personnel"] as const,
+    contractedPersonnel: (filters: Record<string, unknown>) =>
+      ["recruitment", "contracted-personnel", filters] as const,
     activeCaseOptions: (filters: Record<string, unknown>) =>
       ["recruitment", "active-case-options", filters] as const,
     caseDetail: (caseId: string) => ["recruitment", "case-detail", caseId] as const,

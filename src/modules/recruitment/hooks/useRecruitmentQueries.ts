@@ -4,6 +4,7 @@ import {
   fetchRecruitmentActiveCaseOptions,
   fetchRecruitmentCaseDetail,
   fetchRecruitmentCandidatesPage,
+  fetchRecruitmentContractedPersonnelPage,
   fetchRecruitmentControlSummary,
   fetchRecruitmentPendingApprovalsPage,
   fetchRecruitmentPersonnelToHirePage,
@@ -195,6 +196,30 @@ export function useRecruitmentPersonnelToHirePage(
   });
 }
 
+export function useRecruitmentContractedPersonnelPage(
+  filters: RecruitmentPersonnelPageFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: queryKeys.recruitment.contractedPersonnel(filters),
+    queryFn: async () => {
+      const result = await fetchRecruitmentContractedPersonnelPage(filters);
+
+      if (result.error || !result.data) {
+        throw new Error(result.error ?? "No fue posible cargar el personal contratado.");
+      }
+
+      return result.data;
+    },
+    staleTime: RECRUITMENT_DASHBOARD_STALE_TIME_MS,
+    gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
+    refetchInterval: enabled ? 5 * 60_000 : false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled
+  });
+}
+
 export function useRecruitmentActiveCaseOptions(
   filters: { search?: string; limit?: number } = {},
   enabled = true
@@ -237,6 +262,7 @@ export async function invalidateRecruitmentControlQueries(
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.processesRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.candidatesRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.personnelRoot() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.contractedPersonnelRoot() }),
     queryClient.invalidateQueries({
       predicate: (query) => query.queryKey[0] === "recruitment" && query.queryKey[1] === "active-case-options"
     })

@@ -25,7 +25,12 @@ import { HiringInternalMobilityView } from "../components/HiringInternalMobility
 import { HiringPersonnelToHireView } from "../components/HiringPersonnelToHireView";
 import { HiringProcessesView } from "../components/HiringProcessesView";
 
-type RecruitmentInternalView = "processes" | "candidates" | "personnel_to_hire" | "internal_mobility";
+type RecruitmentInternalView =
+  | "processes"
+  | "candidates"
+  | "personnel_to_hire"
+  | "personnel_contracted"
+  | "internal_mobility";
 
 const emptySummary: RecruitmentDashboardSummary = {
   pending_contracts_control: 0,
@@ -57,6 +62,7 @@ export function HiringStatusPage() {
     hasCapability("candidate_control_access");
   const canAccessPersonnelToHire =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_personnel_to_hire");
+  const canAccessContractedPersonnel = canAccessPersonnelToHire;
   const canAccessInternalMobility =
     isSuperAdmin ||
     hasFeatureAccess(accessibleFeatures, "recruitment_internal_mobility") ||
@@ -65,8 +71,12 @@ export function HiringStatusPage() {
   const summary = summaryQuery.data ?? emptySummary;
   const candidatesInProgress = summary.candidates_in_progress ?? 0;
   const shouldLoadCaseDetail =
-    (canAccessCandidateControl || canAccessPersonnelToHire) &&
-    (activeView === "candidates" || activeView === "personnel_to_hire") &&
+    (canAccessCandidateControl || canAccessPersonnelToHire || canAccessContractedPersonnel) &&
+    (
+      activeView === "candidates" ||
+      activeView === "personnel_to_hire" ||
+      activeView === "personnel_contracted"
+    ) &&
     Boolean(selectedCaseId);
   const caseDetailQuery = useRecruitmentCaseDetail(selectedCaseId, shouldLoadCaseDetail);
   const selectedCaseDetail = caseDetailQuery.data ?? null;
@@ -99,11 +109,12 @@ export function HiringStatusPage() {
       ];
     }
 
-    if (activeView === "personnel_to_hire") {
+    if (activeView === "personnel_to_hire" || activeView === "personnel_contracted") {
       return [
         { table: "recruitment_case_candidates" },
         { table: "candidate_worker_files" },
-        { table: "candidate_documents" }
+        { table: "candidate_documents" },
+        { table: "buk_sync_jobs" }
       ];
     }
 
@@ -156,7 +167,9 @@ export function HiringStatusPage() {
         ? "candidates"
         : canAccessPersonnelToHire
           ? "personnel_to_hire"
-          : canAccessInternalMobility
+          : canAccessContractedPersonnel
+            ? "personnel_contracted"
+            : canAccessInternalMobility
             ? "internal_mobility"
             : null;
 
@@ -164,6 +177,7 @@ export function HiringStatusPage() {
       (activeView === "processes" && canAccessProcesses) ||
       (activeView === "candidates" && canAccessCandidateControl) ||
       (activeView === "personnel_to_hire" && canAccessPersonnelToHire) ||
+      (activeView === "personnel_contracted" && canAccessContractedPersonnel) ||
       (activeView === "internal_mobility" && canAccessInternalMobility);
 
     if (activeViewAllowed || !firstAllowedView) {
@@ -178,6 +192,7 @@ export function HiringStatusPage() {
     activeView,
     canAccessCandidateControl,
     canAccessInternalMobility,
+    canAccessContractedPersonnel,
     canAccessPersonnelToHire,
     canAccessProcesses
   ]);
@@ -419,6 +434,15 @@ export function HiringStatusPage() {
               Personal a Contratar
             </button>
           ) : null}
+          {canAccessContractedPersonnel ? (
+            <button
+              type="button"
+              className={`approval-chip ${activeView === "personnel_contracted" ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => setActiveView("personnel_contracted")}
+            >
+              Personal contratado
+            </button>
+          ) : null}
           {canAccessInternalMobility ? (
             <button
               type="button"
@@ -458,6 +482,23 @@ export function HiringStatusPage() {
           />
         ) : activeView === "personnel_to_hire" && canAccessPersonnelToHire ? (
           <HiringPersonnelToHireView
+            key="personnel-to-hire"
+            isParentLoading={isLoading}
+            errorMessage={errorMessage}
+            selectedCandidateId={selectedCandidateId}
+            selectedCaseDetail={selectedCaseDetail}
+            onSelectCandidate={(candidateId, caseId) => {
+              setSelectedCandidateId(candidateId);
+              setSelectedCaseId(caseId);
+            }}
+            onLicenseUpdated={handleLicenseUpdated}
+            onInterviewNotesUpdated={handleLicenseUpdated}
+            onCandidateFileUpdated={handleCandidateFileUpdated}
+          />
+        ) : activeView === "personnel_contracted" && canAccessContractedPersonnel ? (
+          <HiringPersonnelToHireView
+            key="personnel-contracted"
+            bucket="contracted"
             isParentLoading={isLoading}
             errorMessage={errorMessage}
             selectedCandidateId={selectedCandidateId}

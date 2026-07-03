@@ -78,6 +78,8 @@ type BukCandidateSyncPayload = {
       afp_collection_entity: string | null;
       increase_quote_one_percent: string | null;
       health_provider: string | null;
+      health_plan_uf: number | null;
+      health_plan_percentage: number | null;
       afc_regime: string | null;
       retired_status: string | null;
       retirement_regime: string | null;
@@ -174,6 +176,36 @@ function resolveGender(value: string | null | undefined) {
 function resolvePrivateRole(value: string | null | undefined) {
   const normalized = normalizeText(value);
   return normalized === "si" || normalized === "sí" || normalized === "true";
+}
+
+function buildBukHealthPlanPayload(worker: BukCandidateSyncPayload["profile"]["worker_file"]) {
+  const provider = normalizeText(worker.health_provider);
+  const healthPlanUf =
+    typeof worker.health_plan_uf === "number" && Number.isFinite(worker.health_plan_uf)
+      ? worker.health_plan_uf
+      : null;
+  const healthPlanPercentage =
+    typeof worker.health_plan_percentage === "number" &&
+    Number.isFinite(worker.health_plan_percentage)
+      ? worker.health_plan_percentage
+      : null;
+
+  if (provider === "fonasa" && healthPlanPercentage != null) {
+    return {
+      health_company_plan: healthPlanPercentage,
+      health_company_plan_currency: "%",
+      health_company_plan_percentage: healthPlanPercentage
+    };
+  }
+
+  if (healthPlanUf != null) {
+    return {
+      health_company_plan: healthPlanUf,
+      health_company_plan_currency: "UF"
+    };
+  }
+
+  return {};
 }
 
 function buildBukLocationsUrl() {
@@ -533,7 +565,8 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
     account_type: worker.bank_account_type || undefined,
     account_number: worker.bank_account_number || undefined,
     active_since: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined,
-    start_date: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined
+    start_date: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined,
+    ...buildBukHealthPlanPayload(worker)
   };
 }
 
@@ -683,6 +716,23 @@ async function markJobState(
   }
 }
 
+async function finalizeSuccessfulJob(
+  supabase: ReturnType<typeof createClient>,
+  jobId: string,
+  employeeId: string,
+  resultSnapshot: Record<string, unknown>
+) {
+  const { error } = await supabase.rpc("finalize_buk_sync_job_success", {
+    p_job_id: jobId,
+    p_buk_employee_id: employeeId,
+    p_result_snapshot: resultSnapshot
+  });
+
+  if (error) {
+    throw new Error(`No fue posible cerrar el job BUK ${jobId}: ${error.message}`);
+  }
+}
+
 async function claimJobs(
   supabase: ReturnType<typeof createClient>,
   request: SyncRequest
@@ -816,12 +866,7 @@ Deno.serve(async (req) => {
         );
         jobResultSnapshot.documents = uploadedDocuments;
 
-        await markJobState(supabase, job.id, {
-          status: "success",
-          buk_employee_id: employeeId,
-          result_snapshot: jobResultSnapshot,
-          finished_at: new Date().toISOString()
-        });
+        await finalizeSuccessfulJob(supabase, job.id, employeeId, jobResultSnapshot);
 
         results.push({
           jobId: job.id,

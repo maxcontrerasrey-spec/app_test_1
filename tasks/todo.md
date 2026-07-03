@@ -2,6 +2,35 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Control enterprise de Personal a Contratar, Personal contratado y payload previsional BUK
+
+- [x] Auditar y corregir la frontera de negocio entre `ready_for_hire`, generación en BUK y `hired`, para que la gestión manual deje de usar la etapa Contratado y el éxito real en BUK mueva al candidato a Personal contratado
+- [x] Restringir la generación en BUK y la exportación de nómina a los roles `administrativo` y `jefe_administrativo`, manteniendo la visibilidad de la pestaña para `reclutamiento`
+- [x] Endurecer la ficha previsional BUK para que Fonasa autocomplemente 7% y que Isapre exija `Plan Isapre UF`, reflejando la regla tanto en UI como en backend/payload de sincronización
+- [x] Agregar la nueva pestaña `Personal contratado`, retirar de `Personal a Contratar` a quienes ya fueron cargados en BUK y validar compilación/auditoría antes de versionar
+
+## Resultado de control enterprise de Personal a Contratar, Personal contratado y payload previsional BUK
+
+- La frontera operativa ahora quedó explícita: `ready_for_hire` representa personal pendiente de generar en BUK y `hired` queda reservado para el cierre sistémico posterior al éxito real en BUK.
+- La UI de Control de Contrataciones ya no permite mover manualmente desde `Listo para contratar` a `Contratado`; la nueva pestaña `Personal contratado` consume exclusivamente candidatos ya cerrados por el worker BUK.
+- `Personal a Contratar` sigue visible para `reclutamiento`, `administrativo` y `jefe_administrativo`, pero los botones `Generar en BUK` y `Exportar nómina` quedaron restringidos visualmente y en backend a `administrativo` y `jefe_administrativo`.
+- La ficha previsional BUK quedó endurecida en dos capas:
+  - Fonasa fuerza `Plan Isapre porcentual = 7%` y limpia planes incompatibles;
+  - Isapre exige `Plan Isapre UF` tanto al guardar como al construir checklist/payload de sincronización.
+- La sincronización BUK ahora cierra el job con una RPC específica que:
+  - marca `buk_sync_jobs` en `success`,
+  - mueve el candidato a `hired`,
+  - registra historial/auditoría,
+  - resincroniza el estado del caso de reclutamiento.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703033100_manage_buk_personnel_pipeline_and_plan_rules.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+  - `npx --yes supabase functions deploy sync-buk-candidates --project-ref pzblmbahnoyntrhistea --no-verify-jwt`
+  - `npx --yes supabase migration list --linked`, confirmando aplicada la migración `20260703033100_manage_buk_personnel_pipeline_and_plan_rules`
+
 ## Corrección enterprise de autenticación en generación BUK desde Personal a Contratar
 
 - [x] Auditar la cadena `enqueue -> edge worker -> payload BUK` para confirmar por qué el job falla con `Usuario no autenticado` aun cuando la cola se crea correctamente

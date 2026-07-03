@@ -5,7 +5,9 @@ import { formatRut, normalizeRut } from "../../../shared/lib/rut";
 import { bukEmployeeFieldOptions } from "../lib/bukEmployeeTemplate";
 import {
   applyCandidateBukWorkerDefaults,
-  collectCandidateBukWorkerMissingFields
+  collectCandidateBukWorkerMissingFields,
+  healthProviderRequiresPlan,
+  isFonasaBukHealthProvider
 } from "../lib/candidateBukWorkerRules";
 import {
   fetchCandidateBukProfile,
@@ -565,6 +567,9 @@ export function CandidateWorkerFileForm({
     setWorkerMessage("Ficha contractual BUK actualizada.");
     setIsWorkerSaving(false);
   };
+
+  const healthProviderRequiresUfPlan = healthProviderRequiresPlan(workerDraft.healthProvider);
+  const usesAutomaticFonasaPlan = isFonasaBukHealthProvider(workerDraft.healthProvider);
 
   return (
     <div className="control-detail-body">
@@ -1191,6 +1196,7 @@ export function CandidateWorkerFileForm({
             label="Plan Isapre UF"
             value={workerDraft.healthPlanUf}
             inputMode="decimal"
+            disabled={!healthProviderRequiresUfPlan}
             onChange={(event) =>
               setWorkerDraft((current) => ({ ...current, healthPlanUf: event.target.value }))
             }
@@ -1200,6 +1206,7 @@ export function CandidateWorkerFileForm({
             label="Plan Isapre pesos"
             value={workerDraft.healthPlanPesos}
             inputMode="decimal"
+            disabled
             onChange={(event) =>
               setWorkerDraft((current) => ({
                 ...current,
@@ -1212,6 +1219,7 @@ export function CandidateWorkerFileForm({
             label="Plan Isapre porcentual"
             value={workerDraft.healthPlanPercentage}
             inputMode="decimal"
+            disabled
             onChange={(event) =>
               setWorkerDraft((current) => ({
                 ...current,
@@ -1219,6 +1227,15 @@ export function CandidateWorkerFileForm({
               }))
             }
           />
+          <div className="control-span-full">
+            <p className="tracking-filter-caption">
+              {usesAutomaticFonasaPlan
+                ? "Fonasa se completa automáticamente con plan porcentual 7% para el envío a BUK."
+                : healthProviderRequiresUfPlan
+                  ? "Si el prestador es Isapre, Plan Isapre UF es obligatorio."
+                  : "Mutual y No Cotiza Salud no requieren plan adicional."}
+            </p>
+          </div>
           <SelectField
             id="candidate-afc-regime"
             label="AFC"

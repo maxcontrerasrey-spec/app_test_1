@@ -46,7 +46,7 @@ export function getNextStageOptions(
     case "document_review":
       return ["ready_for_hire", "rejected", "withdrawn"];
     case "ready_for_hire":
-      return ["hired", "rejected", "withdrawn"];
+      return ["rejected", "withdrawn"];
     case "rejected":
     case "withdrawn":
       return [];

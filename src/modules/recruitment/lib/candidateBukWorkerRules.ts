@@ -44,6 +44,10 @@ export function healthProviderRequiresPlan(value: string | null | undefined) {
   return !["fonasa", "mutual", "no cotiza salud", "no cotiza"].includes(normalized);
 }
 
+export function isFonasaBukHealthProvider(value: string | null | undefined) {
+  return normalizeBukText(value) === "fonasa";
+}
+
 export function hasAnyHealthPlanValue(draft: Pick<
   CandidateBukWorkerDraftLike,
   "healthPlanUf" | "healthPlanPesos" | "healthPlanPercentage"
@@ -55,6 +59,7 @@ export function hasAnyHealthPlanValue(draft: Pick<
 
 export function applyCandidateBukWorkerDefaults<T extends CandidateBukWorkerDraftLike>(draft: T): T {
   const requiresHealthPlan = healthProviderRequiresPlan(draft.healthProvider);
+  const isFonasa = isFonasaBukHealthProvider(draft.healthProvider);
   const isRetired = isAffirmativeBukValue(draft.retiredStatus);
   const pensionRegime = normalizeBukText(draft.pensionRegime);
   const paymentMethod = normalizeBukText(draft.paymentMethod);
@@ -74,8 +79,8 @@ export function applyCandidateBukWorkerDefaults<T extends CandidateBukWorkerDraf
     increaseQuoteOnePercent: draft.increaseQuoteOnePercent.trim() || "No",
     afcRegime: draft.afcRegime.trim() || "Menos de 11 Años",
     healthPlanUf: requiresHealthPlan ? draft.healthPlanUf : "",
-    healthPlanPesos: requiresHealthPlan ? draft.healthPlanPesos : "",
-    healthPlanPercentage: requiresHealthPlan ? draft.healthPlanPercentage : "",
+    healthPlanPesos: "",
+    healthPlanPercentage: isFonasa ? "7" : "",
     retirementRegime: isRetired ? draft.retirementRegime : ""
   };
 }
@@ -102,9 +107,9 @@ export function collectCandidateBukWorkerMissingFields(draft: CandidateBukWorker
 
   if (
     healthProviderRequiresPlan(normalizedDraft.healthProvider) &&
-    !hasAnyHealthPlanValue(normalizedDraft)
+    !normalizedDraft.healthPlanUf.trim()
   ) {
-    missingFields.push("Plan Isapre (UF, Pesos o Porcentual)");
+    missingFields.push("Plan Isapre UF");
   }
 
   return missingFields;
