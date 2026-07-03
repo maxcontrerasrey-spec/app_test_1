@@ -10,6 +10,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es tratar `company_name` como dato canónico del catálogo operativo cuando el negocio ya conoce la excepción.** Si un área/contrato fue auditado y tiene empresa jurídica explícita, el backend debe persistirla o resolverla por excepción antes de aplicar heurísticas por `company_id` o sufijo contractual.
 - **Cuando una clasificación contractual incorrecta ya generó requests productivos, la reparación debe incluir backfill sobre las entidades derivadas.** No basta con corregir el helper para nuevos casos: también hay que sanear `internal_mobility_requests` y cualquier snapshot visible que hoy siga induciendo a finiquito o cambio de empresa inexistente.
 
+## 194. Si la API BUK ya soporta `path` en upload documental, no dejar el worker ERP escribiendo por omisión en la carpeta raíz
+
+- **Que los documentos lleguen “correctamente” a BUK no significa que el contrato esté completo.** Si el worker llama `POST /employees/{id}/docs` sin `path`, BUK los guarda en la carpeta raíz del colaborador aunque el producto soporte carpetas semánticas como `Postulación`.
+- **La regla correcta es auditar el `apidocs` vivo del tenant antes de asumir límites de la integración.** En este caso, el tenant documenta explícitamente `path` como query param de upload; por tanto, el fix no era crear una postcapa manual ni mover archivos después, sino enviar el parámetro correcto en la creación.
+- **Cuando el integrador devuelve metadatos de folder, hay que persistirlos en la auditoría del job.** Guardar `employee_folder_id` o equivalente en `result_snapshot.documents` evita volver a discutir si el documento quedó realmente en `Postulación` o volvió a caer en raíz.
+
+## 193. Si `Personal a Contratar` ya usa un helper operativo propio, la autorización del job async BUK no puede seguir validando por gestión completa del caso
+
+- **Que el usuario pueda encolar un job no garantiza que la Edge Function pueda tomarlo.** Si `enqueue_buk_generation(...)` valida con `user_can_manage_recruitment_personnel_candidate(...)` pero `authorize_buk_sync_jobs(...)` sigue exigiendo `user_can_manage_recruitment_case(...)`, el flujo queda partido: la UI crea el job, pero `sync-buk-candidates` devuelve no-2xx antes del `claim` y deja la fila atascada en `pending`.
+- **La regla correcta es alinear síncrono y asíncrono con la misma frontera de autorización.** Todo lo que represente “operar un candidato pendiente BUK” debe aceptar el helper operativo del candidato, aunque el rol no tenga gestión completa del caso ni acceso al resumen general.
+- **Cuando una UI reporta “se encoló, pero la Edge Function devolvió no-2xx”, la primera prueba debe mirar si el job quedó `pending` con `started_at = null`.** Ese patrón apunta a fallo de autorización o bootstrap previo al worker, no a error del payload BUK ni de la integración externa.
+
 ## 192. El detalle operativo y el payload BUK deben compartir la misma frontera canónica de “pendiente de generación”, aunque el resumen general siga cerrado para `administrativo`
 
 - **Un rol puede no tener acceso al resumen del proceso y aun así necesitar operar el tramo BUK del caso.** Si `get_recruitment_case_detail(...)` arranca heredando `user_can_view_recruitment_process_summary(...)`, `administrativo` termina viendo la pestaña `Personal a Contratar` pero choca con `Sin permisos para ver este proceso de contratación` al abrir el caso.

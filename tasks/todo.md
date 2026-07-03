@@ -2,6 +2,50 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Control enterprise de carpeta Postulación para documentos BUK
+
+- [x] Auditar el contrato vivo del endpoint `POST /employees/{id}/docs` en BUK y confirmar si existe soporte real de carpeta/ruta documental
+- [x] Ajustar el helper de upload BUK para enviar los documentos ERP a la carpeta `Postulación` sin romper la carga actual
+- [x] Dejar trazabilidad del folder devuelto por BUK y documentar el cambio antes de cerrar
+
+## Resultado de control enterprise de carpeta Postulación para documentos BUK
+
+- La viabilidad quedó confirmada contra el `apidocs` del tenant BUK. El endpoint `POST /employees/{id}/docs` soporta el query param `path`, descrito como “Ruta donde se guardará el archivo. Si se deja en blanco se creará en la carpeta raíz del empleado. Ejemplo: `personales/seguridad`”.
+- El problema en nuestro runtime era puramente contractual: [`uploadBukDocument(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/_shared/bukDocuments.ts:1) subía `file` o `file_base64` más `name`, pero nunca enviaba `path`, por eso BUK dejaba todos los archivos en la carpeta general del trabajador.
+- La corrección quedó implementada en dos puntos:
+  - [`bukDocuments.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/_shared/bukDocuments.ts:1) ahora agrega `path` al URL de upload usando `BUK_EMPLOYEE_DOCUMENTS_PATH` y, si no existe configuración explícita, usa por defecto `Postulación`;
+  - [`sync-buk-candidates/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) ahora persiste también `bukEmployeeFolderId` en `result_snapshot.documents` para dejar evidencia del folder real devuelto por BUK.
+- El diseño quedó deliberadamente configurable:
+  - default operativo: `Postulación`;
+  - override opcional: `BUK_EMPLOYEE_DOCUMENTS_PATH`;
+  - escape hatch: si esa env existe pero viene vacía, el helper no fuerza `path` y BUK vuelve a usar la carpeta raíz.
+
+## Hotfix crítico de autorización de jobs BUK para Administrativo
+
+- [x] Auditar el error `Edge Function returned a non-2xx status code` distinguiendo si el job quedaba encolado, tomado por el worker o bloqueado antes del `claim`
+- [x] Corregir la autorización de `sync-buk-candidates` para que `administrativo` valide jobs desde el helper operativo de `Personal a Contratar`, no desde el permiso legacy de gestión completa del caso
+- [x] Validar el fix en remoto reprocesando el job pendiente real y documentar el cierre antes de versionar
+
+## Resultado de hotfix crítico de autorización de jobs BUK para Administrativo
+
+- La causa raíz no estaba en la cola ni en la ficha del candidato. El job real de Angélica (`d51fe0e7-dbc1-4d55-a9d9-846820884d92`) sí se encoló correctamente en `public.buk_sync_jobs`, pero quedó en `status = pending` con `started_at = null`, lo que prueba que el worker fallaba antes de tomar el job.
+- El punto exacto del fallo estaba en la Edge Function [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:785): antes de `claimJobs(...)` ejecuta `authorize_buk_sync_jobs(...)`, y esa función en producción seguía usando `public.user_can_manage_recruitment_case(...)`.
+- Para Angélica el estado real era inconsistente:
+  - `public.user_can_generate_buk_candidates(...) = true`;
+  - `public.user_can_manage_recruitment_case(...) = false`;
+  - `public.user_can_manage_recruitment_personnel_candidate(...) = true`;
+  - por eso la UI podía encolar desde `Personal a Contratar`, pero la invocación inmediata de la Edge Function devolvía no-2xx y dejaba el job sin procesar.
+- La corrección quedó versionada en [`20260703145135_fix_buk_job_authorization_for_personnel_roles.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703145135_fix_buk_job_authorization_for_personnel_roles.sql:1), recompilando `authorize_buk_sync_jobs(...)` para aceptar jobs visibles por:
+  - `user_can_manage_recruitment_case(...)`, o
+  - `user_can_manage_recruitment_personnel_candidate(...)`.
+- Verificación remota cerrada:
+  - antes del fix, `public.authorize_buk_sync_jobs('eefcf398-5d20-47b9-af89-afedfdce0ef2', ['d51fe0e7-dbc1-4d55-a9d9-846820884d92']) = false`;
+  - después del fix, la misma consulta devuelve `true`;
+  - la migración quedó aplicada en el proyecto remoto con `npx --yes supabase db push --linked --include-all`.
+- Limitación de esta sesión:
+  - no tengo en este shell una sesión JWT reutilizable de Angélica ni el valor del secreto interno `BUK_SYNC_INTERNAL_WEBHOOK_SECRET`, así que no pude disparar desde terminal el HTTP real del worker para consumir ese job pendiente;
+  - con la autorización ya corregida en producción, el siguiente click en `Generar en BUK` o cualquier reproceso seguro del job ya no debería chocar con el no-2xx por permisos.
+
 ## Hotfix enterprise de generación BUK para Administrativo en Personal a Contratar
 
 - [x] Auditar el error de Angélica Calderón reproduciendo la cadena `Personal a Contratar -> detalle de caso -> generar en BUK` y confirmar qué RPCs siguen exigiendo permisos o etapas legacy

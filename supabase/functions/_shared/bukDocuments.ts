@@ -7,6 +7,8 @@ function requireEnv(value: string | undefined, label: string) {
   return normalized;
 }
 
+const DEFAULT_BUK_DOCUMENTS_PATH = "Postulación";
+
 function normalizeDocumentsTemplate(template: string) {
   const trimmed = template.trim();
 
@@ -17,6 +19,16 @@ function normalizeDocumentsTemplate(template: string) {
   return trimmed
     .replace(/\{employee_id\}/g, "{id}")
     .replace(/\/documents(?=\/?$|\?)/g, "/docs");
+}
+
+function resolveBukDocumentsPath() {
+  const configuredPath = Deno.env.get("BUK_EMPLOYEE_DOCUMENTS_PATH");
+  if (configuredPath == null) {
+    return DEFAULT_BUK_DOCUMENTS_PATH;
+  }
+
+  const normalized = configuredPath.trim();
+  return normalized.length > 0 ? normalized : null;
 }
 
 function blobToBase64(blob: Blob) {
@@ -82,10 +94,17 @@ export function extractBukDocumentMetadata(payload: Record<string, unknown>) {
 
   const documentId = data?.id ?? payload.id ?? payload.document_id ?? null;
   const documentUrl = data?.url ?? payload.url ?? payload.document_url ?? null;
+  const folderId =
+    data?.employee_folder_id ??
+    data?.folder_id ??
+    payload.employee_folder_id ??
+    payload.folder_id ??
+    null;
 
   return {
     bukDocumentId: documentId ? String(documentId) : null,
-    bukDocumentUrl: documentUrl ? String(documentUrl) : null
+    bukDocumentUrl: documentUrl ? String(documentUrl) : null,
+    bukEmployeeFolderId: folderId != null ? String(folderId) : null
   };
 }
 
@@ -113,9 +132,24 @@ export function buildBukDocumentsUrl(employeeId: string | number) {
   return `${buildBukBaseUrl().replace(/\/+$/, "")}/${employeeIdToken}/docs`;
 }
 
+function appendBukDocumentsQuery(url: string, params: Record<string, string>) {
+  const parsedUrl = new URL(url);
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value.trim()) {
+      parsedUrl.searchParams.set(key, value);
+    }
+  }
+
+  return parsedUrl.toString();
+}
+
 export async function uploadBukDocument(employeeId: string, documentName: string, fileBlob: Blob) {
   const authToken = requireEnv(Deno.env.get("BUK_AUTH_TOKEN"), "BUK_AUTH_TOKEN");
-  const url = buildBukDocumentsUrl(employeeId);
+  const targetPath = resolveBukDocumentsPath();
+  const url = appendBukDocumentsQuery(buildBukDocumentsUrl(employeeId), {
+    ...(targetPath ? { path: targetPath } : {})
+  });
 
   const multipartFormData = new FormData();
   multipartFormData.append("file", fileBlob, documentName);

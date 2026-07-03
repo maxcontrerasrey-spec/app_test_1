@@ -636,7 +636,7 @@ async function processDocuments(
     const bukFileName = buildBukDocumentFileName(payload, document.document_name);
     const uploadResult = await uploadBukDocument(employeeId, bukFileName, fileData);
     const uploadPayload = uploadResult.payload;
-    const { bukDocumentId, bukDocumentUrl } = extractBukDocumentMetadata(uploadPayload);
+    const { bukDocumentId, bukDocumentUrl, bukEmployeeFolderId } = extractBukDocumentMetadata(uploadPayload);
 
     const { error: removeError } = await supabase.storage
       .from("candidate-docs")
@@ -652,6 +652,7 @@ async function processDocuments(
       sourceFilePath: document.file_path,
       bukDocumentId,
       bukDocumentUrl,
+      bukEmployeeFolderId,
       bukDocumentName: bukFileName,
       transport: uploadResult.transport,
       status: uploadResult.status,
