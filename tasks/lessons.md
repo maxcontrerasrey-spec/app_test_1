@@ -4,6 +4,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 199. En contratación BUK, el líquido ERP no debe mapearse como sueldo base del trabajo
+
+- **`salary_offer` o la renta líquida del requerimiento no equivalen al `wage` contractual que espera BUK.** Cuando la integración cargó ese valor como sueldo base, dejó contratos con una renta estructural que negocio no quería consolidar automáticamente y además mezcló dos conceptos distintos: renta ofrecida al candidato vs. base legal/operativa de remuneraciones.
+- **La regla correcta es dejar `wage = 0` si remuneraciones debe completar el sueldo base manualmente.** Si el proceso real exige validación posterior de renta en BUK, el worker debe crear el trabajo con base `0` y nunca inferir el sueldo base desde el líquido ERP.
+- **Si ya se publicaron trabajos BUK con la renta base incorrecta, la reparación debe incluir patch productivo sobre los `jobs` ya creados.** No basta con corregir el worker para futuras altas; también hay que sanear las fichas activas afectadas para no dejar remuneraciones trabajando con información falsa.
+
+## 198. Un rechazo WHO emitido por error no debe corregirse sobrescribiendo la fila rechazada; debe reabrirse con una nueva resolución auditada
+
+- **Cambiar `rejected` a `approved` sobre la misma fila destruye la evidencia del error original y deja la auditoría incoherente.** En la corrección de Rodolfo Francisco González Ortiz, la fila rechazada (`candidate_stage_approvals.id = 80`) debía seguir existiendo para explicar por qué el candidato salió del pipeline antes de ser reparado.
+- **La regla correcta es versionar una reapertura explícita del candidato y emitir una nueva resolución WHO.** Primero se reactiva `rejected -> lead`, luego se registra una nueva solicitud `lead -> who_pending` y finalmente una nueva aprobación `who_pending -> who_approved`, apuntando la aprobación final al usuario que asumió la corrección.
+- **Si la reparación crea varios eventos en el mismo instante, hay que normalizar el orden temporal de historial y auditoría.** Cuando reactivación, nueva solicitud y nueva aprobación comparten el mismo `created_at`, la UI puede mostrar la línea de tiempo fuera de orden; por eso la corrección debe dejar timestamps secuenciales y payloads consistentes entre tabla viva, stage history y audit log.
+
 ## 191. En catálogos operativos BUK, la empresa jurídica no puede inferirse solo desde el sufijo del `contract_number`
 
 ## 197. Una RPC interna service-role no puede reutilizar helpers de negocio que arrancan exigiendo `auth.uid()`

@@ -80,6 +80,7 @@ type BukCandidateSyncPayload = {
       increase_quote_one_percent: string | null;
       health_provider: string | null;
       health_plan_uf: number | null;
+      health_plan_pesos?: number | null;
       health_plan_percentage: number | null;
       afc_regime: string | null;
       retired_status: string | null;
@@ -121,6 +122,55 @@ type BukEmployeeRecord = {
   active_since?: string | null;
   code_sheet?: string | null;
   created_at?: string | null;
+  current_job?: Record<string, unknown> | null;
+};
+
+type LocalBukEmployeeRow = {
+  buk_employee_id: string | null;
+  status: string | null;
+  raw_payload: Record<string, unknown> | null;
+  updated_at: string | null;
+  area_code: string | null;
+  area_name: string | null;
+};
+
+type LocalBukJobSnapshot = {
+  companyId: number | null;
+  areaId: number | null;
+  roleId: number | null;
+  roleName: string | null;
+  costCenter: string | null;
+  weeklyHours: number | null;
+  workingScheduleType: string | null;
+  leaderId: number | null;
+};
+
+type BukRoleRecord = {
+  id: number | string;
+  code?: string | null;
+  name?: string | null;
+  area_ids?: Array<number | string> | null;
+};
+
+type CandidateSyncContext = {
+  areaCode: string;
+  areaName: string | null;
+  companyId: number;
+  areaId: number;
+  costCenter: string;
+  leaderId: number;
+  roleId: number;
+  roleName: string;
+  wage: number;
+  currency: "peso" | "uf" | "utm";
+  contractType: "Plazo fijo" | "Indefinido";
+  periodicity: "mensual" | "diaria" | "hora";
+  regularHours: number;
+  typeOfWorkingDay: string;
+  startDate: string;
+  endDate: string | null;
+  contractSubscriptionDate: string;
+  planPayload: Record<string, unknown>;
 };
 
 const corsHeaders = {
@@ -192,6 +242,184 @@ function extractDatePortion(value: string | null | undefined) {
   return normalized.slice(0, 10);
 }
 
+function normalizeCompactText(value: string | null | undefined) {
+  return normalizeText(value).replace(/[^a-z0-9]+/g, "");
+}
+
+function tokenizeBukLabel(value: string | null | undefined) {
+  return normalizeText(value)
+    .split(/[^a-z0-9]+/g)
+    .filter((token) => token && !["de", "del", "la", "las", "los", "el", "y"].includes(token));
+}
+
+function parseIntegerLike(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
+  }
+
+  return null;
+}
+
+function parseFiniteNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function parseBukBoolean(value: string | null | undefined) {
+  const normalized = normalizeText(value);
+  if (["si", "sí", "true", "1"].includes(normalized)) return true;
+  if (["no", "false", "0"].includes(normalized)) return false;
+  return null;
+}
+
+const BUK_FUND_QUOTE_MAP: Record<string, string> = {
+  capital: "capital",
+  cuprum: "cuprum",
+  habitat: "habitat",
+  modelo: "modelo",
+  planvital: "planvital",
+  provida: "provida",
+  uno: "uno",
+  serviciosdesegurosocialregimen1: "servicios_de_seguro_social_regimen_1",
+  empartregimen1: "empart_regimen_1",
+  capremerregimen1: "capremer_regimen_1",
+  triomarregimen1: "triomar_regimen_1",
+  canaempupublicosregimen1: "canaempu_publicos_regimen_1",
+  canaempupublicosregimen21: "canaempu_publicos_regimen_21",
+  eemunicipalesrepublicaregimen1: "ee_municipales_republica_regimen_1",
+  eemunicipalesrepublicaregimen2: "ee_municipales_republica_regimen_2",
+  eemunicipalesrepublicaregimen3: "ee_municipales_republica_regimen_3",
+  oomunicipalesrepublicaregimen1: "oo_municipales_republica_regimen_1",
+  oomunicipalesrepublicaregimen2: "oo_municipales_republica_regimen_2",
+  oomunicipalesrepublicaregimen3: "oo_municipales_republica_regimen_3",
+  empartregimen2: "empart_regimen_2",
+  serviciosdesegurosocialregimen2: "servicios_de_seguro_social_regimen_2",
+  cajaferrorregimen2: "caja_ferro_regimen_2"
+};
+
+const BUK_HEALTH_COMPANY_MAP: Record<string, string> = {
+  fonasa: "fonasa",
+  banmedica: "banmedica",
+  colmena: "colmena",
+  consalud: "consalud",
+  cruzblanca: "cruz_blanca",
+  nuevamasvida: "nueva_masvida",
+  vidatres: "vida_tres",
+  bancoestado: "banco_estado",
+  isaludisapredecodelco: "isalud_isapre_de_codelco",
+  esencial: "esencial",
+  cruznorte: "cruz_norte",
+  mutual: "mutual",
+  nocotizasalud: "no_cotiza_salud"
+};
+
+function mapBukPensionScheme(value: string | null | undefined) {
+  const normalized = normalizeText(value);
+  switch (normalized) {
+    case "afp":
+      return "afp";
+    case "ips":
+      return "ips";
+    case "no cotiza":
+    case "nocotiza":
+      return "no_cotiza";
+    default:
+      throw new Error(`Regimen previsional BUK no soportado: ${value ?? "sin valor"}`);
+  }
+}
+
+function mapBukFundQuote(value: string | null | undefined) {
+  const normalized = normalizeCompactText(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const mapped = BUK_FUND_QUOTE_MAP[normalized];
+  if (!mapped) {
+    throw new Error(`Fondo previsional BUK no soportado: ${value ?? "sin valor"}`);
+  }
+
+  return mapped;
+}
+
+function mapBukHealthCompany(value: string | null | undefined) {
+  const normalized = normalizeCompactText(value);
+  if (!normalized) {
+    throw new Error("La salud previsional BUK no tiene un valor informado.");
+  }
+
+  const mapped = BUK_HEALTH_COMPANY_MAP[normalized];
+  if (!mapped) {
+    throw new Error(`Salud previsional BUK no soportada: ${value ?? "sin valor"}`);
+  }
+
+  return mapped;
+}
+
+function mapBukAfc(value: string | null | undefined) {
+  const normalized = normalizeText(value);
+  switch (normalized) {
+    case "menos de 11 anos":
+      return "normal";
+    case "mas de 11 anos":
+      return "reducido";
+    case "no cotiza":
+    case "nocotiza":
+      return "no_cotiza";
+    default:
+      throw new Error(`Regimen AFC BUK no soportado: ${value ?? "sin valor"}`);
+  }
+}
+
+function mapBukCurrency(value: string | null | undefined): "peso" | "uf" | "utm" {
+  const normalized = normalizeText(value);
+  switch (normalized) {
+    case "":
+    case "clp":
+    case "peso":
+    case "pesos":
+      return "peso";
+    case "uf":
+      return "uf";
+    case "utm":
+      return "utm";
+    default:
+      return "peso";
+  }
+}
+
+function mapBukPeriodicity(value: string | null | undefined): "mensual" | "diaria" | "hora" {
+  const normalized = normalizeText(value);
+  switch (normalized) {
+    case "diaria":
+      return "diaria";
+    case "hora":
+      return "hora";
+    default:
+      return "mensual";
+  }
+}
+
+function buildBukTenantApiUrl(pathname: string) {
+  const url = new URL(buildBukBaseUrl());
+  url.pathname = pathname;
+  url.search = "";
+  return url.toString();
+}
+
 function parseEmployeeCodeSequence(value: string | null | undefined) {
   const match = (value ?? "").trim().match(/^F([0-9]+)$/i);
   if (!match) {
@@ -224,32 +452,28 @@ function resolvePrivateRole(value: string | null | undefined) {
 
 function buildBukHealthPlanPayload(worker: BukCandidateSyncPayload["profile"]["worker_file"]) {
   const provider = normalizeText(worker.health_provider);
-  const healthPlanUf =
-    typeof worker.health_plan_uf === "number" && Number.isFinite(worker.health_plan_uf)
-      ? worker.health_plan_uf
-      : null;
-  const healthPlanPercentage =
-    typeof worker.health_plan_percentage === "number" &&
-    Number.isFinite(worker.health_plan_percentage)
-      ? worker.health_plan_percentage
-      : null;
-
-  if (provider === "fonasa" && healthPlanPercentage != null) {
-    return {
-      health_company_plan: healthPlanPercentage,
-      health_company_plan_currency: "%",
-      health_company_plan_percentage: healthPlanPercentage
-    };
+  if (provider === "fonasa") {
+    return {};
   }
+
+  const healthPlanUf = parseFiniteNumber(worker.health_plan_uf);
+  const healthPlanPesos = parseFiniteNumber(worker.health_plan_pesos);
+  const healthPlanPercentage = parseFiniteNumber(worker.health_plan_percentage);
+  const payload: Record<string, number> = {};
 
   if (healthPlanUf != null) {
-    return {
-      health_company_plan: healthPlanUf,
-      health_company_plan_currency: "UF"
-    };
+    payload.health_company_plan = healthPlanUf;
   }
 
-  return {};
+  if (healthPlanPesos != null) {
+    payload.health_company_plan_currency = healthPlanPesos;
+  }
+
+  if (healthPlanPercentage != null) {
+    payload.health_company_plan_percentage = healthPlanPercentage;
+  }
+
+  return payload;
 }
 
 function resolveTargetStartDate(payload: BukCandidateSyncPayload) {
@@ -330,6 +554,28 @@ function isInactiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidat
   );
 }
 
+function isReusableIncompleteBukEmployee(
+  employee: BukEmployeeRecord,
+  payload: BukCandidateSyncPayload
+) {
+  if (!isInactiveBukEmployee(employee, payload)) {
+    return false;
+  }
+
+  const employeeStartDate = extractDatePortion(employee.active_since);
+  const targetStartDate = resolveTargetStartDate(payload);
+  if (!employeeStartDate || !targetStartDate || employeeStartDate !== targetStartDate) {
+    return false;
+  }
+
+  const targetEmployeeCode = resolveBukEmployeeCode(payload);
+  if (!targetEmployeeCode) {
+    return false;
+  }
+
+  return normalizeText(employee.code_sheet) === normalizeText(targetEmployeeCode);
+}
+
 function parseBukApiErrorPayload(message: string) {
   const match = message.match(/^Buk API \d+ [^:]+: ([\s\S]+)$/);
   if (!match) {
@@ -402,6 +648,122 @@ async function fetchBukJson(url: string, init: RequestInit = {}) {
   }
 
   return response.json();
+}
+
+async function fetchBukEmployeeByEmail(email: string | null | undefined) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  const url = new URL(buildBukBaseUrl());
+  url.searchParams.set("email", normalizedEmail);
+  url.searchParams.set("page", "1");
+  url.searchParams.set("page_size", "10");
+
+  const response = await fetchBukJson(url.toString());
+  const rows = Array.isArray(response.data) ? response.data : [];
+  const exactMatch = rows.find((entry) => {
+    if (!entry || typeof entry !== "object") return false;
+    return normalizeEmail((entry as Record<string, unknown>).email as string | undefined) === normalizedEmail;
+  });
+
+  if (exactMatch && typeof exactMatch === "object") {
+    return exactMatch as Record<string, unknown>;
+  }
+
+  const first = rows[0];
+  return first && typeof first === "object" ? (first as Record<string, unknown>) : null;
+}
+
+async function fetchBukRolesBySearch(search: string) {
+  const trimmed = search.trim();
+  if (!trimmed) {
+    return [] as BukRoleRecord[];
+  }
+
+  const url = new URL(buildBukTenantApiUrl("/api/v1/roles"));
+  url.searchParams.set("search", trimmed);
+  url.searchParams.set("page_size", "100");
+
+  const response = await fetchBukJson(url.toString());
+  const rows = Array.isArray(response.data) ? response.data : [];
+
+  return rows.filter(
+    (entry): entry is BukRoleRecord => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
+  );
+}
+
+async function fetchBukEmployeePlans(employeeId: string) {
+  const url = new URL(`${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/plans`);
+  url.searchParams.set("page", "1");
+  url.searchParams.set("page_size", "100");
+  const response = await fetchBukJson(url.toString());
+  return Array.isArray(response.data)
+    ? response.data.filter(
+        (entry): entry is Record<string, unknown> =>
+          Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
+      )
+    : [];
+}
+
+async function fetchBukEmployeeJobs(employeeId: string) {
+  const url = new URL(`${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/jobs`);
+  url.searchParams.set("page", "1");
+  url.searchParams.set("page_size", "100");
+  const response = await fetchBukJson(url.toString());
+  return Array.isArray(response.data)
+    ? response.data.filter(
+        (entry): entry is Record<string, unknown> =>
+          Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
+      )
+    : [];
+}
+
+async function createBukEmployeePlan(employeeId: string, payload: Record<string, unknown>) {
+  return fetchBukJson(`${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/plans`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+async function patchBukEmployeePlan(employeeId: string, planId: string | number, payload: Record<string, unknown>) {
+  return fetchBukJson(
+    `${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/plans/${encodeURIComponent(String(planId))}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+}
+
+async function createBukEmployeeJob(employeeId: string, payload: Record<string, unknown>) {
+  return fetchBukJson(`${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/jobs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+async function patchBukEmployeeJob(employeeId: string, jobId: string | number, payload: Record<string, unknown>) {
+  return fetchBukJson(
+    `${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/jobs/${encodeURIComponent(String(jobId))}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
 }
 
 async function lookupBukEmployeesByDocumentNumber(payload: BukCandidateSyncPayload) {
@@ -701,6 +1063,433 @@ function resolveLocationId(payload: BukCandidateSyncPayload, locations: BukLocat
   );
 }
 
+function extractCurrentJobSnapshot(rawPayload: Record<string, unknown> | null | undefined): LocalBukJobSnapshot {
+  const currentJob =
+    rawPayload?.current_job && typeof rawPayload.current_job === "object" && !Array.isArray(rawPayload.current_job)
+      ? (rawPayload.current_job as Record<string, unknown>)
+      : null;
+  const role =
+    currentJob?.role && typeof currentJob.role === "object" && !Array.isArray(currentJob.role)
+      ? (currentJob.role as Record<string, unknown>)
+      : null;
+  const boss =
+    currentJob?.boss && typeof currentJob.boss === "object" && !Array.isArray(currentJob.boss)
+      ? (currentJob.boss as Record<string, unknown>)
+      : null;
+
+  return {
+    companyId: parseIntegerLike(currentJob?.company_id),
+    areaId: parseIntegerLike(currentJob?.area_id),
+    roleId: parseIntegerLike(role?.id),
+    roleName: typeof role?.name === "string" ? role.name : null,
+    costCenter:
+      typeof currentJob?.cost_center === "string" && currentJob.cost_center.trim()
+        ? currentJob.cost_center.trim()
+        : null,
+    weeklyHours: parseFiniteNumber(currentJob?.weekly_hours),
+    workingScheduleType:
+      typeof currentJob?.working_schedule_type === "string" && currentJob.working_schedule_type.trim()
+        ? currentJob.working_schedule_type.trim()
+        : null,
+    leaderId: parseIntegerLike(boss?.id)
+  };
+}
+
+function sortLocalBukEmployees(rows: LocalBukEmployeeRow[]) {
+  return [...rows].sort((left, right) => {
+    const leftIsActive = normalizeBukEmployeeStatus(left.status) === "active";
+    const rightIsActive = normalizeBukEmployeeStatus(right.status) === "active";
+    if (leftIsActive !== rightIsActive) {
+      return leftIsActive ? -1 : 1;
+    }
+
+    return String(right.updated_at ?? "").localeCompare(String(left.updated_at ?? ""));
+  });
+}
+
+function scoreBukRoleCandidate(targetRoleName: string, areaId: number, candidate: BukRoleRecord) {
+  const candidateAreaIds = Array.isArray(candidate.area_ids)
+    ? candidate.area_ids
+        .map((area) => parseIntegerLike(area))
+        .filter((value): value is number => value != null)
+    : [];
+  if (!candidateAreaIds.includes(areaId)) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const targetCompact = normalizeCompactText(targetRoleName);
+  const candidateLabel = candidate.name ?? candidate.code ?? "";
+  const candidateCompact = normalizeCompactText(candidateLabel);
+  const targetTokens = tokenizeBukLabel(targetRoleName);
+  const candidateTokens = new Set(tokenizeBukLabel(candidateLabel));
+
+  let score = 0;
+  if (candidateCompact === targetCompact) {
+    score += 1000;
+  } else if (candidateCompact.includes(targetCompact) || targetCompact.includes(candidateCompact)) {
+    score += 500;
+  }
+
+  for (const token of targetTokens) {
+    if (candidateTokens.has(token)) {
+      score += 25;
+    }
+  }
+
+  return score;
+}
+
+async function loadLocalBukAreaEmployees(
+  supabase: ReturnType<typeof createClient>,
+  areaCode: string
+) {
+  const { data, error } = await supabase
+    .from("employees")
+    .select("buk_employee_id, status, raw_payload, updated_at, area_code, area_name")
+    .eq("area_code", areaCode)
+    .limit(200);
+
+  if (error) {
+    throw new Error(`No fue posible leer el cache local de empleados BUK por area ${areaCode}: ${error.message}`);
+  }
+
+  return ((data ?? []) as LocalBukEmployeeRow[]).filter((row) => row.raw_payload);
+}
+
+async function resolveBukRole(targetRoleName: string, areaId: number) {
+  const searchTerms = Array.from(
+    new Set([
+      targetRoleName.trim(),
+      ...tokenizeBukLabel(targetRoleName).slice(0, 1)
+    ].filter(Boolean))
+  );
+
+  const candidates = (
+    await Promise.all(searchTerms.map((term) => fetchBukRolesBySearch(term)))
+  ).flat();
+
+  const deduped = Array.from(
+    new Map(candidates.map((candidate) => [String(candidate.id), candidate])).values()
+  );
+
+  const scoredCandidates = deduped
+    .map((candidate) => ({
+      candidate,
+      score: scoreBukRoleCandidate(targetRoleName, areaId, candidate)
+    }))
+    .filter((entry) => Number.isFinite(entry.score) && entry.score > 0)
+    .sort((left, right) => right.score - left.score);
+
+  const bestMatch = scoredCandidates[0]?.candidate;
+  const roleId = parseIntegerLike(bestMatch?.id);
+  if (!bestMatch || roleId == null || !bestMatch.name) {
+    throw new Error(`No fue posible resolver el cargo BUK para "${targetRoleName}" en el area ${areaId}.`);
+  }
+
+  return {
+    roleId,
+    roleName: bestMatch.name
+  };
+}
+
+function buildBukPlanPayload(payload: BukCandidateSyncPayload) {
+  const worker = payload.profile.worker_file;
+  const pensionScheme = mapBukPensionScheme(worker.pension_regime);
+  const healthCompany = mapBukHealthCompany(worker.health_provider);
+  const afc = mapBukAfc(worker.afc_regime);
+  const quoteIncrease = parseBukBoolean(worker.increase_quote_one_percent);
+  const retired = parseBukBoolean(worker.retired_status);
+  const planPayload: Record<string, unknown> = {
+    pension_scheme: pensionScheme,
+    health_company: healthCompany,
+    afc,
+    retired: retired ?? false
+  };
+
+  const fundQuote = mapBukFundQuote(worker.contribution_fund || worker.afp_collection_entity);
+  if (fundQuote) {
+    planPayload.fund_quote = fundQuote;
+  }
+
+  if (worker.pension_regime && normalizeText(worker.pension_regime) === "ips") {
+    const collector = normalizeCompactText(worker.afp_collection_entity);
+    if (collector) {
+      planPayload.afp_collector = `recauda_${collector}`;
+    }
+  }
+
+  if (quoteIncrease != null) {
+    planPayload.quote_increase_one_percent = quoteIncrease;
+  }
+
+  if (retired) {
+    const regime = parseIntegerLike(worker.retirement_regime);
+    if (regime != null) {
+      planPayload.retirement_regime = regime;
+    }
+  }
+
+  return {
+    ...planPayload,
+    ...buildBukHealthPlanPayload(worker)
+  };
+}
+
+function buildBukJobPayload(context: CandidateSyncContext) {
+  const payload: Record<string, unknown> = {
+    company_id: context.companyId,
+    start_date: context.startDate,
+    type_of_contract: context.contractType,
+    area_id: context.areaId,
+    role_id: context.roleId,
+    leader_id: context.leaderId,
+    wage: 0,
+    currency: context.currency,
+    regular_hours: context.regularHours,
+    type_of_working_day: context.typeOfWorkingDay,
+    cost_center: context.costCenter,
+    contract_subscription_date: context.contractSubscriptionDate,
+    custom_attributes: {
+      "Bombero en ejercicio": "No",
+      Rol: "Rol General"
+    }
+  };
+
+  if (context.contractType === "Plazo fijo") {
+    payload.periodicity = context.periodicity;
+    if (context.endDate) {
+      payload.end_of_contract = context.endDate;
+    }
+  }
+
+  return payload;
+}
+
+function isEquivalentBukPlan(
+  existingPlan: Record<string, unknown>,
+  desiredPlan: Record<string, unknown>,
+  targetStartDate: string
+) {
+  return (
+    extractDatePortion(existingPlan.start_date as string | null | undefined) === targetStartDate &&
+    normalizeText(existingPlan.pension_scheme as string | undefined) ===
+      normalizeText(desiredPlan.pension_scheme as string | undefined) &&
+    normalizeText(existingPlan.health_company as string | undefined) ===
+      normalizeText(desiredPlan.health_company as string | undefined) &&
+    normalizeText(existingPlan.afc as string | undefined) === normalizeText(desiredPlan.afc as string | undefined)
+  );
+}
+
+function isEquivalentBukJob(
+  existingJob: Record<string, unknown>,
+  context: CandidateSyncContext
+) {
+  const existingRole =
+    existingJob.role && typeof existingJob.role === "object" && !Array.isArray(existingJob.role)
+      ? (existingJob.role as Record<string, unknown>)
+      : null;
+  const existingBoss =
+    existingJob.boss && typeof existingJob.boss === "object" && !Array.isArray(existingJob.boss)
+      ? (existingJob.boss as Record<string, unknown>)
+      : null;
+
+  return (
+    extractDatePortion(existingJob.start_date as string | null | undefined) === context.startDate &&
+    parseIntegerLike(existingJob.company_id) === context.companyId &&
+    parseIntegerLike(existingJob.area_id) === context.areaId &&
+    parseIntegerLike(existingRole?.id) === context.roleId &&
+    parseIntegerLike(existingBoss?.id) === context.leaderId
+  );
+}
+
+async function resolveCandidateSyncContext(
+  supabase: ReturnType<typeof createClient>,
+  payload: BukCandidateSyncPayload
+) {
+  const targetStartDate = resolveTargetStartDate(payload);
+  if (!targetStartDate) {
+    throw new Error("No fue posible resolver la fecha de inicio del trabajo BUK.");
+  }
+
+  const { data: caseRecord, error: caseError } = await supabase
+    .from("recruitment_cases")
+    .select("id, hiring_request_id, contract_id, contract_name, job_position_name")
+    .eq("id", payload.case.id)
+    .maybeSingle();
+
+  if (caseError || !caseRecord) {
+    throw new Error(`No fue posible cargar el caso de contratacion para sincronizar en BUK: ${caseError?.message ?? "sin caso"}`);
+  }
+
+  const { data: hiringRequest, error: hiringRequestError } = await supabase
+    .from("hiring_requests")
+    .select("id, requester_email, requester_name, contract_number, end_date")
+    .eq("id", caseRecord.hiring_request_id)
+    .maybeSingle();
+
+  if (hiringRequestError || !hiringRequest) {
+    throw new Error(`No fue posible cargar la solicitud aprobada de contratacion para BUK: ${hiringRequestError?.message ?? "sin solicitud"}`);
+  }
+
+  let contractMapping: {
+    buk_area_name: string | null;
+    buk_area_code: string | null;
+  } | null = null;
+
+  if (caseRecord.contract_id != null) {
+    const { data } = await supabase
+      .from("buk_contract_mappings")
+      .select("buk_area_name, buk_area_code")
+      .eq("contract_id", caseRecord.contract_id)
+      .limit(1)
+      .maybeSingle();
+    contractMapping = data;
+  }
+
+  if (!contractMapping && typeof hiringRequest.contract_number === "string" && hiringRequest.contract_number.trim()) {
+    const { data } = await supabase
+      .from("buk_contract_mappings")
+      .select("buk_area_name, buk_area_code")
+      .eq("contract_number", hiringRequest.contract_number.trim())
+      .limit(1)
+      .maybeSingle();
+    contractMapping = data;
+  }
+
+  const areaCode = contractMapping?.buk_area_code?.trim();
+  if (!areaCode) {
+    throw new Error(`No existe un mapping BUK con area operativa para el contrato ${caseRecord.contract_name ?? payload.case.contract_name ?? payload.case.case_code}.`);
+  }
+
+  const areaEmployees = sortLocalBukEmployees(await loadLocalBukAreaEmployees(supabase, areaCode));
+  const fallbackAreaSnapshot = areaEmployees
+    .map((row) => extractCurrentJobSnapshot(row.raw_payload))
+    .find((snapshot) => snapshot.areaId != null && snapshot.companyId != null && snapshot.costCenter);
+
+  if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
+    throw new Error(`No fue posible resolver area_id/company_id BUK desde el cache local del area operativa ${areaCode}.`);
+  }
+
+  const roleResolution = await resolveBukRole(
+    caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
+    fallbackAreaSnapshot.areaId
+  );
+
+  const matchingRoleSample = areaEmployees
+    .map((row) => extractCurrentJobSnapshot(row.raw_payload))
+    .find((snapshot) => snapshot.roleId === roleResolution.roleId);
+
+  const requesterBukEmployee = await fetchBukEmployeeByEmail(hiringRequest.requester_email);
+  const requesterCompanyId =
+    requesterBukEmployee && typeof requesterBukEmployee === "object"
+      ? parseIntegerLike(
+          requesterBukEmployee.current_job &&
+            typeof requesterBukEmployee.current_job === "object" &&
+            !Array.isArray(requesterBukEmployee.current_job)
+            ? (requesterBukEmployee.current_job as Record<string, unknown>).company_id
+            : null
+        )
+      : null;
+  const requesterLeaderId =
+    requesterBukEmployee && typeof requesterBukEmployee === "object"
+      ? parseIntegerLike(requesterBukEmployee.id)
+      : null;
+
+  const worker = payload.profile.worker_file;
+  return {
+    areaCode,
+    areaName: contractMapping?.buk_area_name ?? caseRecord.contract_name ?? payload.case.contract_name,
+    companyId: matchingRoleSample?.companyId ?? fallbackAreaSnapshot.companyId ?? requesterCompanyId ?? 0,
+    areaId: matchingRoleSample?.areaId ?? fallbackAreaSnapshot.areaId,
+    costCenter: matchingRoleSample?.costCenter ?? fallbackAreaSnapshot.costCenter,
+    leaderId: requesterLeaderId ?? matchingRoleSample?.leaderId ?? fallbackAreaSnapshot.leaderId ?? 0,
+    roleId: roleResolution.roleId,
+    roleName: roleResolution.roleName,
+    wage: 0,
+    currency: mapBukCurrency(worker.currency),
+    contractType: hiringRequest.end_date ? "Plazo fijo" : "Indefinido",
+    periodicity: mapBukPeriodicity(worker.payment_period),
+    regularHours: matchingRoleSample?.weeklyHours ?? fallbackAreaSnapshot.weeklyHours ?? 42,
+    typeOfWorkingDay:
+      matchingRoleSample?.workingScheduleType ??
+      fallbackAreaSnapshot.workingScheduleType ??
+      "ordinaria_art_22",
+    startDate: targetStartDate,
+    endDate: hiringRequest.end_date ?? null,
+    contractSubscriptionDate: targetStartDate,
+    planPayload: buildBukPlanPayload(payload)
+  } satisfies CandidateSyncContext;
+}
+
+async function ensureBukEmployeeSetup(
+  supabase: ReturnType<typeof createClient>,
+  payload: BukCandidateSyncPayload,
+  employeeId: string
+) {
+  const context = await resolveCandidateSyncContext(supabase, payload);
+  if (!context.companyId || !context.areaId || !context.leaderId) {
+    throw new Error("No fue posible resolver company_id, area_id o leader_id para crear el trabajo en BUK.");
+  }
+
+  const plans = await fetchBukEmployeePlans(employeeId);
+  const matchingPlan =
+    plans.find((plan) => isEquivalentBukPlan(plan, context.planPayload, context.startDate)) ??
+    plans.find((plan) => extractDatePortion(plan.start_date as string | null | undefined) === context.startDate) ??
+    null;
+
+  let planResponse: Record<string, unknown> | null = null;
+  if (!matchingPlan) {
+    const createdPlan = await createBukEmployeePlan(employeeId, context.planPayload);
+    planResponse =
+      createdPlan.data && typeof createdPlan.data === "object"
+        ? (createdPlan.data as Record<string, unknown>)
+        : createdPlan;
+  } else if (!isEquivalentBukPlan(matchingPlan, context.planPayload, context.startDate)) {
+    const patchedPlan = await patchBukEmployeePlan(employeeId, matchingPlan.id as string | number, context.planPayload);
+    planResponse =
+      patchedPlan.data && typeof patchedPlan.data === "object"
+        ? (patchedPlan.data as Record<string, unknown>)
+        : patchedPlan;
+  } else {
+    planResponse = matchingPlan;
+  }
+
+  const jobPayload = buildBukJobPayload(context);
+  const jobs = await fetchBukEmployeeJobs(employeeId);
+  const matchingJob =
+    jobs.find((job) => isEquivalentBukJob(job, context)) ??
+    jobs.find((job) => extractDatePortion(job.start_date as string | null | undefined) === context.startDate) ??
+    null;
+
+  let jobResponse: Record<string, unknown> | null = null;
+  if (!matchingJob) {
+    const createdJob = await createBukEmployeeJob(employeeId, jobPayload);
+    jobResponse =
+      createdJob.data && typeof createdJob.data === "object"
+        ? (createdJob.data as Record<string, unknown>)
+        : createdJob;
+  } else if (
+    !isEquivalentBukJob(matchingJob, context) ||
+    parseFiniteNumber(matchingJob.base_wage) !== 0
+  ) {
+    const patchedJob = await patchBukEmployeeJob(employeeId, matchingJob.id as string | number, jobPayload);
+    jobResponse =
+      patchedJob.data && typeof patchedJob.data === "object"
+        ? (patchedJob.data as Record<string, unknown>)
+        : patchedJob;
+  } else {
+    jobResponse = matchingJob;
+  }
+
+  return {
+    context,
+    planPayload: context.planPayload,
+    planResponse,
+    jobPayload,
+    jobResponse
+  };
+}
+
 function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: string | number) {
   const profile = payload.profile;
   const worker = payload.profile.worker_file;
@@ -864,6 +1653,15 @@ async function resolveBukEmployeeForSync(
       isInactiveBukEmployee(employee, payload)
     );
     if (inactiveEmployee) {
+      if (isReusableIncompleteBukEmployee(inactiveEmployee, payload)) {
+        return {
+          employeeId: String(inactiveEmployee.id),
+          employeePayload: null,
+          resolution: "reused_incomplete_existing",
+          matchedEmployee: inactiveEmployee
+        } as const;
+      }
+
       const cloned = await cloneBukEmployee(payload, inactiveEmployee, matchingEmployees);
       return {
         employeeId: cloned.employeeId,
@@ -1173,6 +1971,27 @@ Deno.serve(async (req) => {
           };
           await finalizeExistingActiveEmployeeJob(supabase, job.id, employeeId, jobResultSnapshot);
         } else {
+          const setupResult = await ensureBukEmployeeSetup(supabase, payload, employeeId);
+          jobResultSnapshot.plan = {
+            request: setupResult.planPayload,
+            response: setupResult.planResponse
+          };
+          jobResultSnapshot.job = {
+            request: setupResult.jobPayload,
+            response: setupResult.jobResponse,
+            resolvedContext: {
+              areaCode: setupResult.context.areaCode,
+              areaName: setupResult.context.areaName,
+              areaId: setupResult.context.areaId,
+              companyId: setupResult.context.companyId,
+              roleId: setupResult.context.roleId,
+              roleName: setupResult.context.roleName,
+              leaderId: setupResult.context.leaderId,
+              costCenter: setupResult.context.costCenter,
+              wage: setupResult.context.wage
+            }
+          };
+
           await processDocuments(
             supabase,
             payload,

@@ -2,6 +2,56 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Reparación auditada de rechazo WHO erróneo para Rodolfo Francisco González Ortiz
+
+- [x] Auditar el estado productivo del candidato, la aprobación WHO rechazada y el actor que debe quedar como aprobador final
+- [x] Versionar una reparación SQL que reactive la candidatura sin borrar la evidencia del rechazo original y la deje nuevamente en `who_approved`
+- [x] Aplicar la migración remota, verificar el estado final del candidato y documentar la lección operativa
+
+## Hotfix crítico de contratación efectiva BUK con plan, trabajo y sueldo base manual
+
+- [x] Verificar en producción por qué candidatos como Dayana Prevot quedaban creados en BUK pero sin información previsional efectiva ni trabajo asociado
+- [x] Corregir `sync-buk-candidates` para que, además del alta del empleado, cree o repare el plan previsional y el trabajo en BUK antes de cerrar el job como `success`
+- [x] Ajustar la renta base del trabajo BUK a `0` para que remuneraciones la complete manualmente, sin reutilizar el líquido ERP como sueldo base
+- [x] Reparar en producción los empleados ya cargados de forma incompleta o con sueldo base incorrecto
+
+## Resultado de hotfix crítico de contratación efectiva BUK con plan, trabajo y sueldo base manual
+
+- La causa raíz quedó confirmada en producción: el worker BUK estaba cerrando `success` después de `POST /employees` y upload documental, pero nunca creaba el `plan` ni el `job` reales en BUK; por eso los colaboradores quedaban `inactivos`, sin previsión visible y sin centro de costo/trabajo asignado.
+- La corrección quedó concentrada en [`sync-buk-candidates/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1):
+  - ahora resuelve el contexto operativo del contrato (`area`, `company`, `leader`, `role`) antes de cerrar el job;
+  - crea o repara `plans` y `jobs` en BUK para altas nuevas y para reintentos sobre fichas incompletas ya creadas;
+  - deja `wage = 0` en el trabajo BUK para que remuneraciones complete manualmente el sueldo base, en vez de mapear el líquido ERP como renta base;
+  - registra en `result_snapshot` el request/response del plan y del trabajo, además de la resolución usada sobre la ficha.
+- La reparación productiva inmediata quedó validada sobre los casos ya afectados:
+  - `41872` Dayana Carolina Prevot Santander quedó `activo`, con previsión `fonasa / afp / afc normal`, trabajo `CONDUCTOR DE TAXI BUS`, `company_id = 1`, `area_id = 406`, `cost_center = 108` y `base_wage = 0`;
+  - `41870` Víctor Antonio Muñoz Palma quedó `activo`, con trabajo `CONDUCTOR DE BUS`, `cost_center = 555` y `base_wage = 0`;
+  - `41871` Natalia Ortiz Casupa quedó `activa`, con trabajo `SECRETARIO TECNICO`, `company_id = 4`, `area_id = 405` y `base_wage = 0`;
+  - `41873` Sebastián Ignacio Leiva Muñoz quedó `activo`, con previsión `consalud`, trabajo `COORDINADOR DE SERVICIOS`, `company_id = 5`, `area_id = 736` y `base_wage = 0`;
+  - también se corrigió a `base_wage = 0` en `41874` Julio Nicolás Mancilla Flores y `41739` Luis Antonio Gutierrez Pizarro, que ya estaban activos pero con la renta base mal cargada.
+- Validación cerrada con:
+  - despliegue productivo de `sync-buk-candidates` vía `npx --yes supabase functions deploy sync-buk-candidates --use-api --yes`
+  - verificación directa por API BUK sobre los empleados reparados (`GET /employees/{id}`), confirmando `status = activo`, previsión visible y `current_job` presente con `base_wage = 0`
+
+## Resultado de reparación auditada de rechazo WHO erróneo para Rodolfo Francisco González Ortiz
+
+- La reparación quedó dividida en tres migraciones versionadas para mantener mínima superficie por cambio:
+  - [`20260703170500_repair_rodolfo_who_rejection_to_approved.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703170500_repair_rodolfo_who_rejection_to_approved.sql:1) reactiva la candidatura terminal, crea una nueva resolución WHO y la aprueba a nombre de `Maximiliano Contreras Rey` sin pisar la aprobación rechazada original.
+  - [`20260703171200_normalize_rodolfo_who_repair_timeline.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703171200_normalize_rodolfo_who_repair_timeline.sql:1) ordena en milisegundos la cronología `rejected -> lead -> who_pending -> who_approved` para que historial y auditoría no queden ambiguos por timestamps idénticos.
+  - [`20260703171800_align_rodolfo_who_repair_audit_payload.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703171800_align_rodolfo_who_repair_audit_payload.sql:1) alinea el `approved_at` del audit log con la fila aprobada final.
+- Estado productivo verificado después del despliegue:
+  - candidato `ef4064a2-d076-4258-9691-2d270e3c7d0b` quedó en `stage_code = who_approved`;
+  - la aprobación WHO original `id = 80` sigue en `status = rejected` con comentario `riesgo de demanda`;
+  - la nueva aprobación correctiva `id = 84` quedó en `status = approved`, `approved_by = 0de4ef6f-3e52-4bab-8042-ab04ea7763ae` y comentario `Corrección auditada de rechazo WHO emitido por error. Antecedentes aprobados.`;
+  - el historial quedó ordenado como `who_rejected` -> `candidate_reactivated_who_correction` -> `who_requested_repair` -> `who_approved`.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703170500_repair_rodolfo_who_rejection_to_approved.sql`
+  - `npm run audit:migrations -- --files supabase/migrations/20260703171200_normalize_rodolfo_who_repair_timeline.sql`
+  - `npm run audit:migrations -- --files supabase/migrations/20260703171800_align_rodolfo_who_repair_audit_payload.sql`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+  - verificación remota con `candidate_stage_approvals`, `recruitment_case_candidate_stage_history` y `recruitment_case_audit_log` sobre el candidato reparado
+
 ## Hotfix crítico de timeout aparente en generación masiva BUK
 
 - [x] Auditar si el error masivo `Edge Function returned a non-2xx status code` correspondía a fallo real o a timeout del request mientras la cola seguía procesando
