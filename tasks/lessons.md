@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es tratar `company_name` como dato canónico del catálogo operativo cuando el negocio ya conoce la excepción.** Si un área/contrato fue auditado y tiene empresa jurídica explícita, el backend debe persistirla o resolverla por excepción antes de aplicar heurísticas por `company_id` o sufijo contractual.
 - **Cuando una clasificación contractual incorrecta ya generó requests productivos, la reparación debe incluir backfill sobre las entidades derivadas.** No basta con corregir el helper para nuevos casos: también hay que sanear `internal_mobility_requests` y cualquier snapshot visible que hoy siga induciendo a finiquito o cambio de empresa inexistente.
 
+## 195. En generación masiva BUK, un timeout de la invocación HTTP no prueba que la cola haya fallado
+
+- **Si `generateCandidatesInBuk(...)` espera la respuesta completa de `sync-buk-candidates`, la UI puede marcar error aunque los jobs ya estén corriendo o incluso terminando bien.** En producción, una carga de 6 candidatos tardó varios minutos en cerrar por el trabajo serial del worker, pero `buk_sync_jobs` mostró `started_at` inmediato y resultados `success/error` reales mientras la app seguía mostrando “Edge Function returned a non-2xx status code”.
+- **La regla correcta es reconciliar el mensaje de UI con el estado canónico de la cola.** Ante un corte de la invocación larga, el frontend debe consultar `buk_sync_jobs` autorizados y distinguir entre `pending sin progreso` y `processing/success/error` ya observables antes de declarar fallo.
+- **Cuando un flujo async tiene cola autoritativa, el mensaje de error no puede depender solo del transporte HTTP.** El transporte puede cortar por timeout; la verdad funcional está en `status`, `started_at`, `finished_at` y `error_message` del job.
+
 ## 194. Si la API BUK ya soporta `path` en upload documental, no dejar el worker ERP escribiendo por omisión en la carpeta raíz
 
 - **Que los documentos lleguen “correctamente” a BUK no significa que el contrato esté completo.** Si el worker llama `POST /employees/{id}/docs` sin `path`, BUK los guarda en la carpeta raíz del colaborador aunque el producto soporte carpetas semánticas como `Postulación`.

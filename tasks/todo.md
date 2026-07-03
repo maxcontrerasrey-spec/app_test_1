@@ -2,6 +2,31 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix crítico de timeout aparente en generación masiva BUK
+
+- [x] Auditar si el error masivo `Edge Function returned a non-2xx status code` correspondía a fallo real o a timeout del request mientras la cola seguía procesando
+- [x] Corregir la conciliación frontend/backend para que la UI lea el estado real de `buk_sync_jobs` cuando la invocación larga corta por tiempo
+- [x] Validar la migración remota, la compilación y el caso real de carga masiva antes de versionar en `main`
+
+## Resultado de hotfix crítico de timeout aparente en generación masiva BUK
+
+- La causa raíz no era un fallo real de la cola BUK, sino una desalineación entre transporte HTTP y estado canónico del job. La carga masiva real de Angélica creó 6 jobs a las `15:05:43` UTC y todos partieron a las `15:05:45` UTC, pero la última respuesta terminó recién a las `15:08:23` UTC. En ese intervalo, la UI seguía dependiendo del resultado completo de `supabase.functions.invoke("sync-buk-candidates")`, por eso mostró `Edge Function returned a non-2xx status code` aunque la cola ya estaba avanzando.
+- La evidencia remota del caso real fue concluyente:
+  - `4` jobs terminaron en `success` con `buk_employee_id` válido (`41871`, `41872`, `41873`, `41874`);
+  - `2` jobs terminaron en `error` con rechazo real de BUK por duplicidad de `rut/email`;
+  - ninguno quedó bloqueado en `pending`, por lo que el mensaje anterior era un falso negativo del transporte.
+- La corrección quedó en dos capas:
+  - la migración [`20260703151109_reconcile_bulk_buk_sync_timeout_with_queue_status.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703151109_reconcile_bulk_buk_sync_timeout_with_queue_status.sql:1) agrega `public.get_buk_sync_jobs_status(...)`, una RPC auth-bound que permite al frontend leer el estado real de jobs visibles para RRHH administrativo;
+  - [`generateCandidatesInBuk(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) ahora, ante un corte de la invocación larga, consulta esa RPC y reconcilia la cola real antes de declarar error;
+  - [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) ahora informa resultados mixtos y procesamiento en segundo plano sin degradar todo a un único mensaje genérico.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703151109_reconcile_bulk_buk_sync_timeout_with_queue_status.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+  - verificación remota auth-bound de `public.get_buk_sync_jobs_status(...)` sobre los 6 jobs reales de Angélica, confirmando retorno `success/error` coherente con lo ocurrido en BUK
+
 ## Control enterprise de carpeta Postulación para documentos BUK
 
 - [x] Auditar el contrato vivo del endpoint `POST /employees/{id}/docs` en BUK y confirmar si existe soporte real de carpeta/ruta documental

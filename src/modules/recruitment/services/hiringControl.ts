@@ -1228,6 +1228,17 @@ type BukSyncQueueRow = {
   status: string;
 };
 
+type BukSyncQueueStatusRow = {
+  job_id: string;
+  recruitment_case_candidate_id: string;
+  status: "pending" | "processing" | "success" | "error";
+  buk_employee_id: string | null;
+  error_message: string | null;
+  attempts: number;
+  started_at: string | null;
+  finished_at: string | null;
+};
+
 type BukSyncProcessedRow = {
   jobId: string;
   candidateId: string;
@@ -1235,6 +1246,66 @@ type BukSyncProcessedRow = {
   bukEmployeeId?: string;
   error?: string;
 };
+
+async function fetchBukSyncJobsStatus(jobIds: string[]) {
+  if (!supabase) {
+    return {
+      data: [] as BukSyncQueueStatusRow[],
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const normalizedJobIds = Array.from(new Set(jobIds.map((jobId) => jobId.trim()).filter(Boolean)));
+  if (normalizedJobIds.length === 0) {
+    return {
+      data: [] as BukSyncQueueStatusRow[],
+      error: null
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_buk_sync_jobs_status", {
+    p_job_ids: normalizedJobIds
+  });
+
+  if (error) {
+    return {
+      data: [] as BukSyncQueueStatusRow[],
+      error: formatRpcError(error) || "No fue posible consultar el estado de la cola BUK."
+    };
+  }
+
+  return {
+    data: Array.isArray(data) ? (data as BukSyncQueueStatusRow[]) : [],
+    error: null
+  };
+}
+
+function mergeQueuedJobsWithStatus(
+  queuedJobs: BukSyncQueueRow[],
+  statusRows: BukSyncQueueStatusRow[]
+) {
+  const statusByJobId = new Map(statusRows.map((row) => [row.job_id, row]));
+
+  return queuedJobs.map((job) => ({
+    ...job,
+    status: statusByJobId.get(job.job_id)?.status ?? job.status
+  }));
+}
+
+function mapStatusRowsToProcessed(statusRows: BukSyncQueueStatusRow[]) {
+  return statusRows
+    .filter(
+      (row): row is BukSyncQueueStatusRow & { status: "success" | "error" } =>
+        row.status === "success" || row.status === "error"
+    )
+    .map((row) => ({
+      jobId: row.job_id,
+      candidateId: row.recruitment_case_candidate_id,
+      status: row.status,
+      bukEmployeeId: row.buk_employee_id ?? undefined,
+      error: row.error_message ?? undefined
+    }));
+}
 
 export async function generateCandidatesInBuk(candidateIds: string[]) {
   const queueResult = await enqueueCandidatesToBuk(candidateIds);
@@ -1275,6 +1346,25 @@ export async function generateCandidatesInBuk(candidateIds: string[]) {
   });
 
   if (error) {
+    const statusResult = await fetchBukSyncJobsStatus(pendingJobIds);
+    if (!statusResult.error) {
+      const hasProcessingEvidence = statusResult.data.some(
+        (job) =>
+          job.status !== "pending" ||
+          job.started_at !== null ||
+          job.finished_at !== null
+      );
+
+      if (hasProcessingEvidence) {
+        return {
+          data: mergeQueuedJobsWithStatus(queuedJobs, statusResult.data),
+          processed: mapStatusRowsToProcessed(statusResult.data),
+          error: null,
+          dispatchError: null
+        };
+      }
+    }
+
     return {
       data: queuedJobs,
       processed: [] as BukSyncProcessedRow[],

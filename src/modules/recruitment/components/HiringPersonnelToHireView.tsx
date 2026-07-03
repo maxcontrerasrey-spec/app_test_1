@@ -245,12 +245,14 @@ export function HiringPersonnelToHireView({
 
     setExportMessage(
       failedJobs.length > 0
-        ? `BUK procesó ${successCount} persona(s) correctamente y ${failedJobs.length} fallaron. ${failedJobs
+        ? `BUK procesó ${successCount} persona(s) correctamente, ${failedJobs.length} fallaron${
+            processingCount > 0 ? ` y ${processingCount} siguen en procesamiento` : ""
+          }. ${failedJobs
             .map((job) => job.error)
             .filter(Boolean)
             .join(" | ")}`
         : processingCount > 0
-          ? `BUK procesó ${successCount} persona(s). ${processingCount} ya estaban en procesamiento.`
+          ? `BUK procesó ${successCount} persona(s). ${processingCount} siguen en procesamiento en segundo plano.`
           : `BUK procesó ${successCount} persona(s) correctamente.`
     );
     setSelectedCandidateIds([]);
