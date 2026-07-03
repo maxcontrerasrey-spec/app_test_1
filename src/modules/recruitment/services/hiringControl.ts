@@ -149,6 +149,9 @@ export type RecruitmentCandidateControlRow = {
   is_contract_path_blocked: boolean;
   interview_notes: string | null;
   hired_at?: string | null;
+  buk_generated_at?: string | null;
+  buk_employee_id?: string | null;
+  has_buk_generation_success?: boolean;
 };
 
 export type RecruitmentPersonnelToHireRow = RecruitmentCandidateControlRow;

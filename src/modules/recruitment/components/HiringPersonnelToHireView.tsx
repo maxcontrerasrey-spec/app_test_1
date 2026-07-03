@@ -74,8 +74,8 @@ export function HiringPersonnelToHireView({
   const title = bucket === "to_hire" ? "Personal a Contratar" : "Personal contratado";
   const description =
     bucket === "to_hire"
-      ? "Candidatos listos para generar en BUK y cerrar su contratación."
-      : "Personal ya generado en BUK y retirado de la cola de contratación.";
+      ? "Candidatos pendientes de generación efectiva en BUK."
+      : "Personal con generación BUK confirmada y retirado de la cola pendiente.";
   const dateLabel =
     bucket === "to_hire" ? "Fecha listo para contratar" : "Fecha generación BUK";
   const emptyMessage =
@@ -369,7 +369,9 @@ export function HiringPersonnelToHireView({
                       <td>
                         {formatDateTimeValue(
                           bucket === "contracted"
-                            ? candidate.hired_at ?? candidate.stage_entered_at
+                            ? candidate.buk_generated_at ??
+                                candidate.hired_at ??
+                                candidate.stage_entered_at
                             : candidate.stage_entered_at
                         )}
                       </td>

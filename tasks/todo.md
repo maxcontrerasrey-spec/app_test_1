@@ -9,6 +9,28 @@
 - [x] Endurecer la ficha previsional BUK para que Fonasa autocomplemente 7% y que Isapre exija `Plan Isapre UF`, reflejando la regla tanto en UI como en backend/payload de sincronización
 - [x] Agregar la nueva pestaña `Personal contratado`, retirar de `Personal a Contratar` a quienes ya fueron cargados en BUK y validar compilación/auditoría antes de versionar
 
+## Corrección enterprise de buckets Personal a Contratar vs Personal contratado
+
+- [x] Auditar la clasificación vigente de ambas pestañas y corregir la deriva para que dependan de la generación efectiva en BUK, no solo de `stage_code`
+- [x] Ajustar la vista/contrato para que `Personal a Contratar` concentre pendientes de BUK y `Personal contratado` solo muestre fichas con job BUK exitoso
+- [x] Validar compilación, auditoría SQL, diff limpio y documentar el cierre antes de volver a versionar en `main`
+
+## Resultado de corrección enterprise de buckets Personal a Contratar vs Personal contratado
+
+- La causa raíz no estaba en los botones ni en el stage manual visible, sino en el criterio de clasificación de las pestañas: la RPC `get_recruitment_personnel_page_bucket(...)` seguía separando solo por `stage_code`, lo que permitía deriva con registros históricos o cierres no confirmados en BUK.
+- El contrato quedó corregido con la migración [`20260703044500_align_personnel_buckets_with_buk_success.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703044500_align_personnel_buckets_with_buk_success.sql:1):
+  - `Personal a Contratar` ahora agrupa candidatos sin generación BUK exitosa confirmada;
+  - `Personal contratado` solo muestra candidatos con `buk_sync_jobs.status = success` y `buk_employee_id` válido;
+  - la clasificación ya no depende exclusivamente de que el candidato tenga `stage_code = hired`.
+- La UI de [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) también quedó alineada con esa verdad canónica:
+  - el copy del bucket pendiente ahora habla explícitamente de “pendientes de generación efectiva en BUK”;
+  - la pestaña `Personal contratado` muestra como fecha principal `buk_generated_at`, con fallback seguro a `hired_at`.
+- Validación local cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703044500_align_personnel_buckets_with_buk_success.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+
 ## Resultado de control enterprise de Personal a Contratar, Personal contratado y payload previsional BUK
 
 - La frontera operativa ahora quedó explícita: `ready_for_hire` representa personal pendiente de generar en BUK y `hired` queda reservado para el cierre sistémico posterior al éxito real en BUK.

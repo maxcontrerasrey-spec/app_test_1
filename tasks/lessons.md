@@ -6,6 +6,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 181. En fichas BUK con columnas marcadas por plantilla, la obligatoriedad real debe gobernarse por contrato operativo y aplicabilidad de negocio
 
+## 187. Un bucket operativo no debe inferir “contratado en BUK” solo desde la etapa interna del candidato
+
+- **Que un candidato esté en `hired` no prueba por sí solo que ya exista en BUK.** Si la pestaña final se arma solo con `stage_code`, terminan mezclándose cierres internos, drift histórico y verdaderas altas ya emitidas al integrador.
+- **La regla correcta es clasificar por la señal canónica del sistema externo cuando el objetivo del bucket depende de ese sistema.** En reclutamiento BUK, `Personal contratado` debe depender de un `buk_sync_jobs.status = success` con `buk_employee_id` válido; el bucket pendiente debe mostrar a quienes aún no tienen esa confirmación, aunque arrastren una etapa interna adelantada.
+- **Cuando la UI expone una fecha de hito externo, esa fecha también debe salir de la fuente externa.** Para “Fecha generación BUK”, usa `finished_at`/timestamp del job exitoso antes que `hired_at`, porque `hired_at` puede venir de otra semántica o de datos históricos previos al endurecimiento del flujo.
+
 ## 185. En BUK, un caché geográfico “fresco” puede seguir siendo inválido si fue poblado con el nivel jerárquico equivocado
 
 - **Que `GET /locations` responda 200 y alimente el caché no significa que sirva para crear colaboradores.** En el tenant auditado, la llamada sin filtros devolvía solo 16 regiones `depth=1`; el alta de empleados necesitaba `location_id` de comuna (`depth=3`), por lo que el cache quedaba técnicamente fresco pero semánticamente inútil.
