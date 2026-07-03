@@ -15,6 +15,29 @@
 - [x] Ajustar la vista/contrato para que `Personal a Contratar` concentre pendientes de BUK y `Personal contratado` solo muestre fichas con job BUK exitoso
 - [x] Validar compilación, auditoría SQL, diff limpio y documentar el cierre antes de volver a versionar en `main`
 
+## Hotfix crítico de Control Documental en Personal a Contratar
+
+- [x] Auditar la RPC viva `get_candidate_checklist(...)` y confirmar por qué desaparecieron los documentos cargados en candidatos listos para migrar a BUK
+- [x] Restaurar el contrato backend correcto de checklist documental sin perder las reglas vigentes de ficha BUK
+- [x] Validar SQL, TypeScript y comportamiento derivado antes de aplicar en remoto y versionar en `main`
+
+## Resultado de hotfix crítico de Control Documental en Personal a Contratar
+
+- La causa raíz estaba íntegramente en backend. La migración [`20260703033100_manage_buk_personnel_pipeline_and_plan_rules.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703033100_manage_buk_personnel_pipeline_and_plan_rules.sql:1027) recompiló `get_candidate_checklist(...)` con dos drift simultáneos:
+  - consultó `jp.requires_driver_license` sobre `public.job_positions`, pero esa columna no existe en este esquema, provocando el `42703`;
+  - además cambió el payload de salida a claves como `checklist` y `semaphore_color`, mientras la UI sigue consumiendo `documents`, `semaphore` y `document_validation`.
+- Eso explica por qué los documentos “desaparecieron” en la pestaña `Control Documental`: no se borraron de `candidate_documents`; la RPC fallaba antes de construir la respuesta y, aun sin el error SQL, la forma del JSON ya no coincidía con [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:1).
+- La reparación quedó versionada en [`20260703053000_restore_candidate_checklist_contract_and_driver_resolution.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703053000_restore_candidate_checklist_contract_and_driver_resolution.sql:1), que:
+  - vuelve a resolver “conductor vs otros” con `public.is_driver_job_position(...)`, que sí es el helper canónico del módulo;
+  - restaura el shape JSON que consume el frontend documental;
+  - preserva la regla vigente de ficha BUK para salud: si el prestador exige plan, se controla específicamente `Plan Isapre UF`.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703053000_restore_candidate_checklist_contract_and_driver_resolution.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+
 ## Resultado de corrección enterprise de buckets Personal a Contratar vs Personal contratado
 
 - La causa raíz no estaba en los botones ni en el stage manual visible, sino en el criterio de clasificación de las pestañas: la RPC `get_recruitment_personnel_page_bucket(...)` seguía separando solo por `stage_code`, lo que permitía deriva con registros históricos o cierres no confirmados en BUK.

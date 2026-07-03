@@ -6,6 +6,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 181. En fichas BUK con columnas marcadas por plantilla, la obligatoriedad real debe gobernarse por contrato operativo y aplicabilidad de negocio
 
+## 188. Una RPC compartida no puede recompilarse contra columnas inexistentes ni cambiar su payload si la UI sigue consumiendo el contrato anterior
+
+- **En ERP versionado, “refactorizar” una función viva con atajos de esquema rompe más que el bug original.** En `get_candidate_checklist(...)`, reemplazar `public.is_driver_job_position(...)` por `job_positions.requires_driver_license` introdujo un `42703` inmediato porque esa columna nunca existió en `public.job_positions`.
+- **La regla correcta es reutilizar el helper semántico ya vigente antes de inventar una nueva dependencia de tabla.** Si la lógica del módulo distingue conductores por `is_driver_job_position(...)`, ese helper es el source of truth hasta que exista una migración explícita que cambie el esquema y todos sus consumidores.
+- **El contrato de salida de una RPC compartida también es parte del esquema.** Si React consume `documents`, `semaphore` y `document_validation`, no puedes publicar una recompilación que devuelva `checklist` y `semaphore_color` sin migrar coordinadamente la UI y cualquier otra función backend que lea ese JSON.
+
 ## 187. Un bucket operativo no debe inferir “contratado en BUK” solo desde la etapa interna del candidato
 
 - **Que un candidato esté en `hired` no prueba por sí solo que ya exista en BUK.** Si la pestaña final se arma solo con `stage_code`, terminan mezclándose cierres internos, drift histórico y verdaderas altas ya emitidas al integrador.
