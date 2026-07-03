@@ -37,6 +37,7 @@ type BukCandidateSyncPayload = {
     requested_entry_date: string | null;
   };
   profile: {
+    suggested_employee_code?: string | null;
     document_type: string | null;
     document_number: string | null;
     first_name: string | null;
@@ -110,6 +111,18 @@ type BukLocationCacheRow = {
   raw_payload?: Record<string, unknown> | null;
 };
 
+type BukEmployeeRecord = {
+  id: number | string;
+  status?: string | null;
+  email?: string | null;
+  personal_email?: string | null;
+  document_number?: string | null;
+  rut?: string | null;
+  active_since?: string | null;
+  code_sheet?: string | null;
+  created_at?: string | null;
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -166,6 +179,37 @@ function normalizeDocumentNumber(documentType: string | null | undefined, docume
   return raw;
 }
 
+function normalizeEmail(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function extractDatePortion(value: string | null | undefined) {
+  const normalized = (value ?? "").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.slice(0, 10);
+}
+
+function parseEmployeeCodeSequence(value: string | null | undefined) {
+  const match = (value ?? "").trim().match(/^F([0-9]+)$/i);
+  if (!match) {
+    return null;
+  }
+
+  const sequence = Number(match[1]);
+  return Number.isFinite(sequence) && sequence > 0 ? sequence : null;
+}
+
+function formatEmployeeCode(sequence: number | null) {
+  if (!sequence || !Number.isFinite(sequence) || sequence <= 0) {
+    return null;
+  }
+
+  return `F${Math.trunc(sequence)}`;
+}
+
 function resolveGender(value: string | null | undefined) {
   const normalized = normalizeText(value);
   if (normalized === "m" || normalized === "masculino" || normalized === "male") return "M";
@@ -208,6 +252,127 @@ function buildBukHealthPlanPayload(worker: BukCandidateSyncPayload["profile"]["w
   return {};
 }
 
+function resolveTargetStartDate(payload: BukCandidateSyncPayload) {
+  return (
+    extractDatePortion(payload.profile.worker_file.company_entry_date) ??
+    extractDatePortion(payload.case.requested_entry_date) ??
+    extractDatePortion(payload.candidate.hired_at)
+  );
+}
+
+function resolveBukEmployeeCode(payload: BukCandidateSyncPayload) {
+  return (
+    payload.profile.suggested_employee_code?.trim() ||
+    payload.profile.worker_file.employee_code?.trim() ||
+    null
+  );
+}
+
+function resolveNextBukEmployeeCode(
+  payload: BukCandidateSyncPayload,
+  employees: BukEmployeeRecord[]
+) {
+  const existingMaxSequence = employees.reduce((max, employee) => {
+    const sequence = parseEmployeeCodeSequence(employee.code_sheet);
+    return sequence && sequence > max ? sequence : max;
+  }, 0);
+  const suggestedSequence = parseEmployeeCodeSequence(payload.profile.suggested_employee_code);
+
+  return formatEmployeeCode(Math.max(existingMaxSequence + 1, suggestedSequence ?? 0));
+}
+
+function normalizeBukEmployeeStatus(value: string | null | undefined) {
+  const normalized = normalizeText(value);
+  if (normalized === "activo" || normalized === "active") return "active";
+  if (normalized === "inactivo" || normalized === "inactive") return "inactive";
+  return normalized || "unknown";
+}
+
+function matchesBukEmployeeIdentity(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  const targetDocumentNumber = normalizeDocumentNumber(
+    payload.profile.document_type,
+    payload.profile.document_number
+  );
+  const employeeDocumentNumber = normalizeDocumentNumber(
+    payload.profile.document_type,
+    employee.document_number ?? employee.rut ?? null
+  );
+  const targetEmail = normalizeEmail(payload.profile.email);
+  const targetPersonalEmail = normalizeEmail(payload.profile.personal_email);
+  const employeeEmail = normalizeEmail(employee.email);
+  const employeePersonalEmail = normalizeEmail(employee.personal_email);
+
+  return (
+    employeeDocumentNumber === targetDocumentNumber &&
+    (!targetEmail || employeeEmail === targetEmail) &&
+    (!targetPersonalEmail || employeePersonalEmail === targetPersonalEmail)
+  );
+}
+
+function isActiveBukEmployeeDuplicate(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  if (normalizeBukEmployeeStatus(employee.status) !== "active") {
+    return false;
+  }
+
+  if (!matchesBukEmployeeIdentity(employee, payload)) {
+    return false;
+  }
+
+  const employeeStartDate = extractDatePortion(employee.active_since);
+  const targetStartDate = resolveTargetStartDate(payload);
+  return !targetStartDate || employeeStartDate === targetStartDate;
+}
+
+function isInactiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  return (
+    normalizeBukEmployeeStatus(employee.status) === "inactive" &&
+    matchesBukEmployeeIdentity(employee, payload)
+  );
+}
+
+function parseBukApiErrorPayload(message: string) {
+  const match = message.match(/^Buk API \d+ [^:]+: ([\s\S]+)$/);
+  if (!match) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(match[1]) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function isBukDuplicateCreateError(error: unknown) {
+  const payload = parseBukApiErrorPayload(toErrorMessage(error));
+  const errors = payload?.errors;
+  if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
+    return false;
+  }
+
+  return ["rut", "email", "email_personal"].some((key) => {
+    const value = (errors as Record<string, unknown>)[key];
+    return Array.isArray(value) && value.some((entry) => normalizeText(String(entry)).includes("ya esta en uso"));
+  });
+}
+
+function compareBukEmployeePriority(left: BukEmployeeRecord, right: BukEmployeeRecord) {
+  const leftStatus = normalizeBukEmployeeStatus(left.status);
+  const rightStatus = normalizeBukEmployeeStatus(right.status);
+  if (leftStatus !== rightStatus) {
+    if (leftStatus === "active") return -1;
+    if (rightStatus === "active") return 1;
+  }
+
+  const leftSequence = parseEmployeeCodeSequence(left.code_sheet) ?? 0;
+  const rightSequence = parseEmployeeCodeSequence(right.code_sheet) ?? 0;
+  if (leftSequence !== rightSequence) {
+    return rightSequence - leftSequence;
+  }
+
+  return String(right.created_at ?? "").localeCompare(String(left.created_at ?? ""));
+}
+
 function buildBukLocationsUrl() {
   const customUrl = Deno.env.get("BUK_LOCATIONS_URL")?.trim();
   if (customUrl) {
@@ -237,6 +402,23 @@ async function fetchBukJson(url: string, init: RequestInit = {}) {
   }
 
   return response.json();
+}
+
+async function lookupBukEmployeesByDocumentNumber(payload: BukCandidateSyncPayload) {
+  const url = new URL(buildBukBaseUrl());
+  url.searchParams.set(
+    "document_number",
+    normalizeDocumentNumber(payload.profile.document_type, payload.profile.document_number)
+  );
+  url.searchParams.set("page_size", "100");
+  url.searchParams.set("page", "1");
+
+  const response = await fetchBukJson(url.toString());
+  const rows = Array.isArray(response.data) ? response.data : [];
+
+  return rows
+    .filter((entry): entry is BukEmployeeRecord => Boolean(entry) && typeof entry === "object")
+    .sort(compareBukEmployeePriority);
 }
 
 function parseBukLocations(rawData: unknown): BukLocation[] {
@@ -551,7 +733,7 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
     university: profile.education_institution || undefined,
     degree: profile.education_title || undefined,
     private_role: resolvePrivateRole(worker.private_role),
-    code_sheet: worker.employee_code,
+    code_sheet: resolveBukEmployeeCode(payload),
     health_company: worker.health_provider,
     pension_regime: worker.pension_regime,
     pension_fund: worker.contribution_fund || worker.afp_collection_entity || undefined,
@@ -567,6 +749,24 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
     active_since: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined,
     start_date: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined,
     ...buildBukHealthPlanPayload(worker)
+  };
+}
+
+function buildBukEmployeeClonePayload(
+  payload: BukCandidateSyncPayload,
+  employees: BukEmployeeRecord[]
+) {
+  const worker = payload.profile.worker_file;
+
+  return {
+    payment_method: worker.payment_method ?? undefined,
+    payment_period: worker.payment_period ?? undefined,
+    bank: worker.bank_name ?? undefined,
+    account_type: worker.bank_account_type ?? undefined,
+    account_number: worker.bank_account_number ?? undefined,
+    code_sheet: resolveNextBukEmployeeCode(payload, employees) ?? resolveBukEmployeeCode(payload) ?? undefined,
+    start_date: resolveTargetStartDate(payload) ?? undefined,
+    private_role: resolvePrivateRole(worker.private_role)
   };
 }
 
@@ -594,6 +794,91 @@ async function createBukEmployee(payload: BukCandidateSyncPayload, locations: Bu
     employeeId: String(employeeId),
     employeePayload
   };
+}
+
+async function cloneBukEmployee(
+  payload: BukCandidateSyncPayload,
+  referenceEmployee: BukEmployeeRecord,
+  employees: BukEmployeeRecord[]
+) {
+  const clonePayload = buildBukEmployeeClonePayload(payload, employees);
+  const response = await fetchBukJson(`${buildBukBaseUrl()}/${referenceEmployee.id}/clone`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(clonePayload)
+  });
+
+  const employeeId =
+    response.employee?.id ??
+    response.data?.id ??
+    response.id ??
+    null;
+
+  if (!employeeId) {
+    throw new Error("Buk no retornó el identificador de la ficha clonada");
+  }
+
+  return {
+    employeeId: String(employeeId),
+    employeePayload: clonePayload,
+    clonedFromEmployeeId: String(referenceEmployee.id)
+  };
+}
+
+async function resolveBukEmployeeForSync(
+  payload: BukCandidateSyncPayload,
+  locations: BukLocation[]
+) {
+  try {
+    const created = await createBukEmployee(payload, locations);
+    return {
+      employeeId: created.employeeId,
+      employeePayload: created.employeePayload,
+      resolution: "created"
+    } as const;
+  } catch (error) {
+    if (!isBukDuplicateCreateError(error)) {
+      throw error;
+    }
+
+    const matchingEmployees = await lookupBukEmployeesByDocumentNumber(payload);
+    if (matchingEmployees.length === 0) {
+      throw error;
+    }
+
+    const activeEmployee = matchingEmployees.find((employee) =>
+      isActiveBukEmployeeDuplicate(employee, payload)
+    );
+    if (activeEmployee) {
+      return {
+        employeeId: String(activeEmployee.id),
+        employeePayload: null,
+        resolution: "existing_active_duplicate",
+        matchedEmployee: activeEmployee
+      } as const;
+    }
+
+    const inactiveEmployee = matchingEmployees.find((employee) =>
+      isInactiveBukEmployee(employee, payload)
+    );
+    if (inactiveEmployee) {
+      const cloned = await cloneBukEmployee(payload, inactiveEmployee, matchingEmployees);
+      return {
+        employeeId: cloned.employeeId,
+        employeePayload: cloned.employeePayload,
+        resolution: "cloned_existing_inactive",
+        matchedEmployee: inactiveEmployee,
+        clonedFromEmployeeId: cloned.clonedFromEmployeeId
+      } as const;
+    }
+
+    const matchedEmployee = matchingEmployees[0];
+    throw new Error(
+      `El trabajador ya existe en BUK (ID ${matchedEmployee.id}, estado ${matchedEmployee.status ?? "desconocido"}) y no fue posible resolver la ficha automáticamente.`
+    );
+  }
 }
 
 function buildBukDocumentFileName(payload: BukCandidateSyncPayload, originalName: string) {
@@ -734,6 +1019,25 @@ async function finalizeSuccessfulJob(
   }
 }
 
+async function finalizeExistingActiveEmployeeJob(
+  supabase: ReturnType<typeof createClient>,
+  jobId: string,
+  employeeId: string,
+  resultSnapshot: Record<string, unknown>
+) {
+  const { error } = await supabase.rpc("finalize_buk_sync_job_existing_active_employee", {
+    p_job_id: jobId,
+    p_existing_buk_employee_id: employeeId,
+    p_result_snapshot: resultSnapshot
+  });
+
+  if (error) {
+    throw new Error(
+      `No fue posible cerrar el job BUK ${jobId} para un trabajador ya activo en BUK: ${error.message}`
+    );
+  }
+}
+
 async function claimJobs(
   supabase: ReturnType<typeof createClient>,
   request: SyncRequest
@@ -852,28 +1156,41 @@ Deno.serve(async (req) => {
 
       try {
         const payload = resolveAuthorizedPayload(job);
-        const { employeeId, employeePayload } = await createBukEmployee(payload, locations);
+        const resolvedEmployee = await resolveBukEmployeeForSync(payload, locations);
+        const employeeId = resolvedEmployee.employeeId;
         jobResultSnapshot.employee = {
           id: employeeId,
-          request: employeePayload
+          request: resolvedEmployee.employeePayload,
+          resolution: resolvedEmployee.resolution,
+          matchedEmployee: resolvedEmployee.matchedEmployee ?? null,
+          clonedFromEmployeeId: resolvedEmployee.clonedFromEmployeeId ?? null
         };
 
-        await processDocuments(
-          supabase,
-          payload,
-          employeeId,
-          uploadedDocuments,
-          alreadyUploadedDocumentIds
-        );
-        jobResultSnapshot.documents = uploadedDocuments;
+        if (resolvedEmployee.resolution === "existing_active_duplicate") {
+          jobResultSnapshot.erpAction = {
+            action: "cancel_request_existing_active_buk_employee",
+            comment: "El trabajador ya existe activo en BUK; la pedida ERP fue anulada."
+          };
+          await finalizeExistingActiveEmployeeJob(supabase, job.id, employeeId, jobResultSnapshot);
+        } else {
+          await processDocuments(
+            supabase,
+            payload,
+            employeeId,
+            uploadedDocuments,
+            alreadyUploadedDocumentIds
+          );
+          jobResultSnapshot.documents = uploadedDocuments;
 
-        await finalizeSuccessfulJob(supabase, job.id, employeeId, jobResultSnapshot);
+          await finalizeSuccessfulJob(supabase, job.id, employeeId, jobResultSnapshot);
+        }
 
         results.push({
           jobId: job.id,
           candidateId: job.recruitment_case_candidate_id,
           status: "success",
-          bukEmployeeId: employeeId
+          bukEmployeeId: employeeId,
+          resolution: resolvedEmployee.resolution
         });
       } catch (error) {
         const message = toErrorMessage(error);

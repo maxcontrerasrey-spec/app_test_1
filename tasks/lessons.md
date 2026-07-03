@@ -6,6 +6,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 191. En catálogos operativos BUK, la empresa jurídica no puede inferirse solo desde el sufijo del `contract_number`
 
+## 197. Una RPC interna service-role no puede reutilizar helpers de negocio que arrancan exigiendo `auth.uid()`
+
+- **Que una función esté marcada `security definer` y solo se otorgue a `service_role` no significa que todos los helpers que invoca sean aptos para ejecución interna.** En la reparación de duplicados activos BUK, `finalize_buk_sync_job_existing_active_employee(...)` falló con `Usuario no autenticado` porque delegó la cola documental a `enqueue_candidate_document_cleanup(...)`, helper pensado para sesiones humanas autenticadas.
+- **La regla correcta es que los side effects internos sean autocontenidos o tengan una variante interna explícita.** Si una RPC service-role necesita encolar limpieza, cambiar estados o dejar auditoría, debe escribir directamente sobre las tablas necesarias o llamar otra RPC diseñada también para contexto interno; no debe depender de un helper que vuelve a validar `auth.uid()` y permisos interactivos.
+- **Cuando una corrección interna falla con `Usuario no autenticado` pese a entrar por `service_role`, la auditoría debe seguir la cadena de funciones llamadas, no el grant inicial.** El grant puede estar bien; el problema real suele estar en un helper intermedio que aún asume contexto JWT de usuario final.
+
+## 196. En duplicados activos BUK, “ya existe” no equivale a contratación exitosa reutilizable dentro del ERP
+
+- **Si BUK rechaza la creación porque el trabajador ya existe activo, no basta con reutilizar su `buk_employee_id` y dejar al candidato en `hired`.** Eso convierte una duplicidad contractual en una falsa alta exitosa, deja `filled_vacancies` infladas y mantiene una solicitud viva donde el negocio en realidad quería anular la pedida.
+- **La regla correcta es separar dos ramas:** trabajador inactivo existente => nueva ficha correlativa (`F2`, `F3`, ...); trabajador activo existente => anulación ERP auditada, con retiro del candidato y cierre/cancelación del requerimiento cuando corresponda.
+- **La resolución debe quedar trazada en el job, en la historia del candidato y en la solicitud/caso.** El `result_snapshot` del job debe registrar la acción de negocio; el candidato debe salir de `hired`; y el folio/caso debe reflejar explícitamente que se cerró por duplicidad activa en BUK, no por una contratación nueva.
+
 - **Un mapping operativo 1:1 puede compartir sufijo contractual con otra empresa y aun así pertenecer a una razón social distinta.** `CODELCO - DSAL` usa `6170400011:0001`, pero en BUK corresponde a `Consorcio Andino SPA`; degradarlo por la regla genérica `:0001 => Buses JM Pullman S.A.` contaminó tanto el catálogo destino como solicitudes de movilidad ya persistidas.
 - **La regla correcta es tratar `company_name` como dato canónico del catálogo operativo cuando el negocio ya conoce la excepción.** Si un área/contrato fue auditado y tiene empresa jurídica explícita, el backend debe persistirla o resolverla por excepción antes de aplicar heurísticas por `company_id` o sufijo contractual.
 - **Cuando una clasificación contractual incorrecta ya generó requests productivos, la reparación debe incluir backfill sobre las entidades derivadas.** No basta con corregir el helper para nuevos casos: también hay que sanear `internal_mobility_requests` y cualquier snapshot visible que hoy siga induciendo a finiquito o cambio de empresa inexistente.

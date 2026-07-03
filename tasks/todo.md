@@ -8,6 +8,31 @@
 - [x] Corregir la conciliación frontend/backend para que la UI lea el estado real de `buk_sync_jobs` cuando la invocación larga corta por tiempo
 - [x] Validar la migración remota, la compilación y el caso real de carga masiva antes de versionar en `main`
 
+## Corrección enterprise de duplicados activos BUK y correlativo de ficha histórica
+
+- [x] Definir y versionar la salida canónica cuando la creación en BUK falla porque el trabajador ya existe activo: cancelar la pedida ERP de forma auditable en vez de marcar contratación exitosa
+- [x] Corregir el worker `sync-buk-candidates` para que use `suggested_employee_code` y clone fichas históricas con el correlativo siguiente (`F2`, `F3`, ...) en vez de reutilizar `F1`
+- [x] Validar localmente y aplicar la reparación remota sobre Mario Roberto Pizarro Fernández; además confirmar que José Patricio Méndez Díaz ya sale con `suggested_employee_code = F2` en el payload vivo del job
+
+## Resultado de corrección enterprise de duplicados activos BUK y correlativo de ficha histórica
+
+- La raíz del problema quedó partida en dos:
+  - el worker BUK ya resolvía el duplicado de identidad, pero seguía tratando al trabajador activo en BUK como “éxito reutilizable”, lo que dejaba al candidato en `hired` y al folio vivo aunque la contratación ya existía fuera del ERP;
+  - la ficha histórica seguía expuesta al riesgo de reutilizar `candidate_worker_files.employee_code = F1` si el worker no respetaba el `suggested_employee_code` calculado por backend.
+- La reparación productiva quedó en tres capas versionadas:
+  - [`20260703153711_handle_active_buk_duplicates_and_preserve_next_sheet_code.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703153711_handle_active_buk_duplicates_and_preserve_next_sheet_code.sql:1) introduce la finalización canónica `finalize_buk_sync_job_existing_active_employee(...)` para convertir el duplicado activo en anulación ERP auditada;
+  - [`20260703154216_fix_internal_active_buk_duplicate_cleanup_queue.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703154216_fix_internal_active_buk_duplicate_cleanup_queue.sql:1) y [`20260703154427_fix_active_buk_duplicate_cleanup_conflict_guard.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703154427_fix_active_buk_duplicate_cleanup_conflict_guard.sql:1) endurecen esa RPC para que su cola documental interna no dependa de `auth.uid()` ni de un `on conflict` ambiguo;
+  - [`sync-buk-candidates/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) ahora respeta `suggested_employee_code`, clona fichas históricas con el correlativo siguiente y deriva el duplicado activo a la nueva finalización ERP en vez de procesarlo como alta estándar.
+- La verificación remota cerrada sobre Mario Roberto Pizarro Fernández fue concluyente:
+  - job `a9601a88-f672-4fac-9ae7-ca8eac35a6cc` quedó `success` con `buk_employee_id = 41804` y snapshot `erpAction = cancel_request_existing_active_buk_employee`;
+  - candidato `30679184-d1a5-4bdd-a9c8-ff0895001f2d` pasó de `hired` a `withdrawn` con motivo explícito;
+  - caso `RC-0038` quedó `cancelled` con `filled_vacancies = 0`;
+  - solicitud `0038` quedó `closed`;
+  - la purga documental terminal quedó encolada en `candidate_document_cleanup_jobs`.
+- Sobre José Patricio Méndez Díaz, la validación backend relevante también quedó confirmada:
+  - el payload autorizado del job `7309322a-8937-465c-8148-e9be39e28b2a` ya contiene `profile.suggested_employee_code = F2` mientras `worker_file.employee_code` sigue en `F1`;
+  - eso prueba que el source of truth correcto para la nueva ficha ya está saliendo del ERP y que el worker corregido tomará el correlativo calculado por backend en vez de reutilizar `F1`.
+
 ## Resultado de hotfix crítico de timeout aparente en generación masiva BUK
 
 - La causa raíz no era un fallo real de la cola BUK, sino una desalineación entre transporte HTTP y estado canónico del job. La carga masiva real de Angélica creó 6 jobs a las `15:05:43` UTC y todos partieron a las `15:05:45` UTC, pero la última respuesta terminó recién a las `15:08:23` UTC. En ese intervalo, la UI seguía dependiendo del resultado completo de `supabase.functions.invoke("sync-buk-candidates")`, por eso mostró `Edge Function returned a non-2xx status code` aunque la cola ya estaba avanzando.
