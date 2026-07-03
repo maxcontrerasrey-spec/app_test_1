@@ -2,12 +2,65 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix de acceso operativo para Administrativo en Personal a Contratar
+
+- [x] Auditar y corregir la mezcla entre `candidate_control_access` y el subflujo operativo de `Personal a Contratar`, para que `administrativo`/`jefe_administrativo` puedan ver y operar solo los candidatos en buckets BUK sin recuperar visibilidad sobre `Control de candidatos`
+- [x] Retirar la capability heredada `candidate_control_access` de `administrativo`/`jefe_administrativo`, aislar un helper backend específico para personal listo/contratado y alinear `get_recruitment_personnel_page_bucket(...)`, `get_recruitment_case_detail(...)` y la ficha/checklist BUK
+- [x] Validar compilación, auditoría SQL, despliegue remoto y cerrar la incidencia de Angélica Calderón con evidencia auditable antes de versionar
+
+## Resultado de hotfix de acceso operativo para Administrativo en Personal a Contratar
+
+- La causa raíz no estaba en la cuenta de Angélica Calderón sino en la frontera de permisos. El despliegue previo había dejado dos drift simultáneos:
+  - `administrativo` y `jefe_administrativo` seguían heredando `candidate_control_access`, por eso todavía podían ver `Control de candidatos` en builds que usaban capability;
+  - las RPCs de `Personal a Contratar` seguían colgando de `candidate_control_access` y de `user_can_view_recruitment_case(...)`, helper que excluye a esos roles, por eso Angélica veía la pestaña pero quedaba sin candidatos.
+- La corrección quedó versionada en [`20260703132143_hotfix_personnel_access_without_candidate_control.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703132143_hotfix_personnel_access_without_candidate_control.sql:1), que:
+  - crea helpers específicos para el subflujo de personal listo/contratado (`user_can_access_recruitment_personnel(...)` y `user_can_manage_recruitment_personnel_candidate(...)`);
+  - retira `candidate_control_access` de `administrativo` y `jefe_administrativo`;
+  - recompila la lista de buckets, el detalle de caso, ficha BUK, checklist documental, edición de ficha/licencia/notas, carga/revisión documental y cola BUK para usar el helper operativo correcto sin reabrir `Control de candidatos`.
+- La verificación remota confirmó el estado esperado:
+  - `candidate_control_access` quedó solo en `reclutamiento` para este módulo;
+  - `administrativo` y `jefe_administrativo` mantienen `recruitment_personnel_to_hire` pero no `recruitment_candidate_control`;
+  - la cuenta `angelica.calderon@busesjm.com` sigue activa;
+  - producción mantiene `7` candidatos pendientes de generación BUK y `1` ya contratado en BUK, así que `Personal a Contratar` vuelve a tener datos reales para mostrar.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703132143_hotfix_personnel_access_without_candidate_control.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+
 ## Control enterprise de Personal a Contratar, Personal contratado y payload previsional BUK
 
 - [x] Auditar y corregir la frontera de negocio entre `ready_for_hire`, generación en BUK y `hired`, para que la gestión manual deje de usar la etapa Contratado y el éxito real en BUK mueva al candidato a Personal contratado
 - [x] Restringir la generación en BUK y la exportación de nómina a los roles `administrativo` y `jefe_administrativo`, manteniendo la visibilidad de la pestaña para `reclutamiento`
 - [x] Endurecer la ficha previsional BUK para que Fonasa autocomplemente 7% y que Isapre exija `Plan Isapre UF`, reflejando la regla tanto en UI como en backend/payload de sincronización
 - [x] Agregar la nueva pestaña `Personal contratado`, retirar de `Personal a Contratar` a quienes ya fueron cargados en BUK y validar compilación/auditoría antes de versionar
+
+## Control enterprise de tabs y notificaciones de Personal a Contratar
+
+- [x] Auditar y corregir la matriz de acceso para que `reclutamiento` conserve todas las pestañas y `administrativo`/`jefe_administrativo` queden limitados a Resumen, Personal a Contratar, Personal contratado y Movilidad Interna, sin deriva por capabilities heredadas
+- [x] Disparar un correo transaccional al entrar un candidato a `ready_for_hire` dirigido a todos los usuarios activos con rol `administrativo` y `jefe_administrativo`
+- [x] Programar recordatorios cada 24 horas mientras el candidato siga pendiente de generación efectiva en BUK y validar SQL, TypeScript y diffs antes de cerrar
+
+## Resultado de control enterprise de tabs y notificaciones de Personal a Contratar
+
+- La visibilidad de tabs quedó corregida sobre la capa de features y la UI viva en [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1):
+  - `reclutamiento` conserva acceso a todas las pestañas;
+  - `administrativo` y `jefe_administrativo` ya no ven `Control de candidatos`;
+  - mantienen `Resumen de procesos de contratación`, `Personal a Contratar`, `Personal contratado` y `Movilidad Interna`.
+- La migración [`20260703070000_add_personnel_to_hire_notifications_and_access_alignment.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703070000_add_personnel_to_hire_notifications_and_access_alignment.sql:1) dejó operativo el flujo transaccional para `Personal a Contratar`:
+  - al entrar un candidato a `ready_for_hire`, se encola un correo a todos los perfiles activos con rol `administrativo` y `jefe_administrativo`;
+  - si pasan 24 horas sin `buk_sync_jobs.status = success` con `buk_employee_id` válido, el cron horario vuelve a emitir recordatorio;
+  - el estado de aviso queda auditado en `recruitment_case_candidates.ready_for_buk_notified_at` y `ready_for_buk_last_reminder_sent_at`.
+- La edge function [`hiring-transactional-email`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/hiring-transactional-email/index.ts:1) ahora soporta el nuevo evento `personnel_to_hire`, con asunto diferenciado para aviso inicial y recordatorio.
+- Validación y despliegue cerrados con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703070000_add_personnel_to_hire_notifications_and_access_alignment.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+  - `npx --yes supabase migration list --linked`, confirmando aplicada `20260703070000_add_personnel_to_hire_notifications_and_access_alignment`
+  - `npx --yes supabase functions deploy hiring-transactional-email --project-ref pzblmbahnoyntrhistea --no-verify-jwt`
 
 ## Corrección enterprise de buckets Personal a Contratar vs Personal contratado
 

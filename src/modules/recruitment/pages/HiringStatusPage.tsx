@@ -43,7 +43,7 @@ const emptySummary: RecruitmentDashboardSummary = {
 };
 
 export function HiringStatusPage() {
-  const { accessibleFeatures, accessibleModules, hasCapability, isSuperAdmin, user } = useAuth();
+  const { accessibleFeatures, accessibleModules, isSuperAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [selectedCaseId, setSelectedCaseId] = useState("");
@@ -57,9 +57,7 @@ export function HiringStatusPage() {
     hasFeatureAccess(accessibleFeatures, "recruitment_processes_summary") ||
     hasModuleAccess(accessibleModules, "control_contrataciones");
   const canAccessCandidateControl =
-    isSuperAdmin ||
-    hasFeatureAccess(accessibleFeatures, "recruitment_candidate_control") ||
-    hasCapability("candidate_control_access");
+    isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_candidate_control");
   const canAccessPersonnelToHire =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_personnel_to_hire");
   const canAccessContractedPersonnel = canAccessPersonnelToHire;

@@ -120,7 +120,44 @@ type RejectionPayload = {
   route?: string | null;
 };
 
-type EmailPayload = PendingApprovalPayload | RecruitmentHandoffPayload | WhoApprovalPayload | RejectionPayload;
+type PersonnelToHirePayload = {
+  kind: "personnel_to_hire";
+  event_key: string;
+  is_reminder?: boolean;
+  to: Recipient[];
+  candidate: {
+    id: string;
+    full_name: string | null;
+    rut: string | null;
+    ready_for_hire_at: string | null;
+  };
+  case: {
+    id: string;
+    case_code: string | null;
+  };
+  request: {
+    id: string;
+    folio: string | number;
+    request_context?: "hiring" | "internal_mobility" | null;
+    module_label?: string | null;
+    requester_name: string | null;
+    requester_email: string | null;
+    contract_name: string | null;
+    job_position_name: string | null;
+    cost_center_code: string | null;
+    cost_center_name: string | null;
+    requested_entry_date: string | null;
+    owner_name?: string | null;
+  };
+  route?: string | null;
+};
+
+type EmailPayload =
+  | PendingApprovalPayload
+  | RecruitmentHandoffPayload
+  | WhoApprovalPayload
+  | RejectionPayload
+  | PersonnelToHirePayload;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -204,23 +241,23 @@ function buildEmailLayout(
               <tbody>
                 ${details
                   .map(
-                    ([label, value]) => \`
+                    ([label, value]) => `
                       <tr>
-                        <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 40%; vertical-align: top;">\${escapeHtml(label)}</td>
-                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 500; vertical-align: top;">\${escapeHtml(value)}</td>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 40%; vertical-align: top;">${escapeHtml(label)}</td>
+                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 500; vertical-align: top;">${escapeHtml(value)}</td>
                       </tr>
-                    \`
+                    `
                   )
                   .join("")}
               </tbody>
             </table>
           </div>
 
-          \${actionUrl ? \`
+          ${actionUrl ? `
             <div style="margin-top: 32px; text-align: center;">
-              <a href="\${escapeHtml(actionUrl)}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: #ffffff; text-decoration: none; font-weight: 500; font-size: 14px; border-radius: 6px;">\${escapeHtml(actionText)}</a>
+              <a href="${escapeHtml(actionUrl)}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: #ffffff; text-decoration: none; font-weight: 500; font-size: 14px; border-radius: 6px;">${escapeHtml(actionText)}</a>
             </div>
-          \` : ""}
+          ` : ""}
         </div>
 
         <div style="background-color: #f1f5f9; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
@@ -229,7 +266,7 @@ function buildEmailLayout(
         </div>
       </div>
     </div>
-  \`.trim();
+  `.trim();
 }
 
 function buildPendingApprovalEmail(payload: PendingApprovalPayload, actionUrl: string | null) {
@@ -393,6 +430,54 @@ function buildRejectionEmail(payload: RejectionPayload, actionUrl: string | null
   return { subject, html, text };
 }
 
+function buildPersonnelToHireEmail(payload: PersonnelToHirePayload, actionUrl: string | null) {
+  const subjectPrefix = payload.is_reminder
+    ? "RECORDATORIO: Pendiente generación en BUK"
+    : "Nuevo candidato listo para generar en BUK";
+  const subject = `${subjectPrefix}: ${payload.candidate.full_name || payload.candidate.rut || "No informado"}`;
+
+  const intro = payload.is_reminder
+    ? `El candidato ${payload.candidate.full_name || payload.candidate.rut || "No informado"} sigue pendiente de generación en BUK desde su ingreso a Personal a Contratar.`
+    : `El candidato ${payload.candidate.full_name || payload.candidate.rut || "No informado"} ingresó a Personal a Contratar y quedó disponible para gestión administrativa en BUK.`;
+
+  const details = [
+    ["Candidato", payload.candidate.full_name || "No informado"],
+    ["RUT", payload.candidate.rut || "No informado"],
+    ["Folio", payload.request.folio],
+    ["Caso", payload.case.case_code || "No informado"],
+    ["Solicitante", payload.request.requester_name || payload.request.requester_email || "No informado"],
+    ["Contrato", payload.request.contract_name || "No informado"],
+    ["Cargo", payload.request.job_position_name || "No informado"],
+    ["Centro de costo", payload.request.cost_center_name || payload.request.cost_center_code || "No informado"],
+    ["Listo para contratar desde", formatDate(payload.candidate.ready_for_hire_at)],
+    ["Ingreso solicitado", formatDate(payload.request.requested_entry_date)],
+    ["Owner", payload.request.owner_name || "No informado"],
+  ];
+
+  const html = buildEmailLayout(
+    `${payload.is_reminder ? "Recordatorio: " : ""}Personal a Contratar pendiente de BUK`,
+    intro,
+    details,
+    actionUrl,
+    "Abrir Personal a Contratar"
+  );
+
+  const text = [
+    intro,
+    ...details.map(([label, value]) => `${label}: ${value}`),
+    actionUrl ? `Abrir bandeja: ${actionUrl}` : null,
+    "",
+    "---",
+    "Este correo es de generación automática y no se debe responder.",
+    "Atte.,",
+    "Equipo de Excelencia Operacional"
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return { subject, html, text };
+}
+
 function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, actionUrl: string | null) {
   const isInternalMobility = payload.request.request_context === "internal_mobility";
   const subject = isInternalMobility
@@ -482,6 +567,10 @@ function buildEmail(payload: EmailPayload, appBaseUrl: string | null) {
     return buildRejectionEmail(payload, actionUrl);
   }
 
+  if (payload.kind === "personnel_to_hire") {
+    return buildPersonnelToHireEmail(payload, actionUrl);
+  }
+
   return buildRecruitmentHandoffEmail(payload, actionUrl);
 }
 
@@ -526,7 +615,16 @@ Deno.serve(async (req) => {
     const payload = (await req.json()) as EmailPayload;
     const recipients = normalizeRecipients(payload.to);
 
-    if (!payload?.kind || (payload.kind !== "pending_approval" && payload.kind !== "recruitment_handoff" && payload.kind !== "who_approval" && payload.kind !== "rejection")) {
+    if (
+      !payload?.kind ||
+      (
+        payload.kind !== "pending_approval" &&
+        payload.kind !== "recruitment_handoff" &&
+        payload.kind !== "who_approval" &&
+        payload.kind !== "rejection" &&
+        payload.kind !== "personnel_to_hire"
+      )
+    ) {
       return new Response(JSON.stringify({ error: "Payload invalido" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

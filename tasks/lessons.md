@@ -4,7 +4,19 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 190. Un tab visible de contratación no puede seguir dependiendo en backend de `candidate_control_access` ni de un helper de visibilidad de casos pensado para reclutamiento
+
+- **Ocultar `Control de candidatos` en UI no resuelve por sí solo el permiso operativo de `Personal a Contratar`.** Si la lista, el detalle, la ficha BUK o el checklist siguen llamando RPCs que arrancan con `assert_candidate_control_access(...)` o filtran por `user_can_view_recruitment_case(...)`, el rol `administrativo` queda con la pestaña visible pero sin datos ni operaciones reales.
+- **La regla correcta es separar el permiso por subflujo y por entidad.** `Control de candidatos` puede seguir gobernado por `candidate_control_access`, pero `Personal a Contratar` necesita su propio helper backend, acotado a candidatos en `ready_for_hire/hired`, para que RRHH administrativo opere solo el tramo BUK sin heredar acceso al pipeline completo.
+- **Cuando se retire una capability heredada de un rol, primero hay que recompilar todas las RPCs compartidas que la reutilizaban.** En este módulo, antes de borrar `candidate_control_access` de `administrativo`, hubo que aislar `get_recruitment_personnel_page_bucket(...)`, `get_recruitment_case_detail(...)`, ficha BUK, checklist documental, edición de ficha/licencia/notas y cola BUK; si no, el cambio vuelve a romper producción aunque la matriz de features esté correcta.
+
 ## 181. En fichas BUK con columnas marcadas por plantilla, la obligatoriedad real debe gobernarse por contrato operativo y aplicabilidad de negocio
+
+## 189. En Control de Contrataciones, la visibilidad de tabs y las capacidades operativas compartidas no pueden mezclarse en un mismo gatillo de UI
+
+- **Que una pestaña se oculte no significa que su capability backend deba desaparecer.** `Personal a Contratar` reutiliza ficha BUK, checklist documental, cola BUK y detalle de caso que históricamente colgaban de `candidate_control_access`; quitar ese permiso a `administrativo` sin separar la capa visual rompe el subflujo aunque la tab siga visible.
+- **La regla correcta es separar dos contratos:** `role_feature_access` decide qué tabs ve cada rol, mientras las capabilities o helpers backend sostienen las RPCs compartidas que siguen siendo necesarias dentro de otra pestaña. Si un rol debe operar `Personal a Contratar` pero no ver `Control de candidatos`, la UI debe filtrar por feature y el backend debe conservar explícitamente el permiso operativo requerido para la ficha/documental/BUK.
+- **Antes de tocar una matriz de tabs, hay que rastrear qué RPCs reutiliza cada subflujo real.** En este módulo, `get_recruitment_case_detail(...)`, `get_candidate_buk_profile(...)`, `get_candidate_checklist(...)` y la cola BUK comparten superficie entre tabs; si no se audita esa dependencia primero, el fix “visual” termina degradando la operación productiva.
 
 ## 188. Una RPC compartida no puede recompilarse contra columnas inexistentes ni cambiar su payload si la UI sigue consumiendo el contrato anterior
 
