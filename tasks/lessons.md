@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 191. En catálogos operativos BUK, la empresa jurídica no puede inferirse solo desde el sufijo del `contract_number`
+
+- **Un mapping operativo 1:1 puede compartir sufijo contractual con otra empresa y aun así pertenecer a una razón social distinta.** `CODELCO - DSAL` usa `6170400011:0001`, pero en BUK corresponde a `Consorcio Andino SPA`; degradarlo por la regla genérica `:0001 => Buses JM Pullman S.A.` contaminó tanto el catálogo destino como solicitudes de movilidad ya persistidas.
+- **La regla correcta es tratar `company_name` como dato canónico del catálogo operativo cuando el negocio ya conoce la excepción.** Si un área/contrato fue auditado y tiene empresa jurídica explícita, el backend debe persistirla o resolverla por excepción antes de aplicar heurísticas por `company_id` o sufijo contractual.
+- **Cuando una clasificación contractual incorrecta ya generó requests productivos, la reparación debe incluir backfill sobre las entidades derivadas.** No basta con corregir el helper para nuevos casos: también hay que sanear `internal_mobility_requests` y cualquier snapshot visible que hoy siga induciendo a finiquito o cambio de empresa inexistente.
+
 ## 190. Un tab visible de contratación no puede seguir dependiendo en backend de `candidate_control_access` ni de un helper de visibilidad de casos pensado para reclutamiento
 
 - **Ocultar `Control de candidatos` en UI no resuelve por sí solo el permiso operativo de `Personal a Contratar`.** Si la lista, el detalle, la ficha BUK o el checklist siguen llamando RPCs que arrancan con `assert_candidate_control_access(...)` o filtran por `user_can_view_recruitment_case(...)`, el rol `administrativo` queda con la pestaña visible pero sin datos ni operaciones reales.

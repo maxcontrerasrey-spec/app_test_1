@@ -2,6 +2,32 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección enterprise de empresa destino DSAL en Movilidad Interna
+
+- [x] Auditar la fuente canónica que resuelve `company_name` para `CODELCO - DSAL` y reproducir el desvío en producción entre `buk_contract_mappings`, contrato destino y solicitudes de movilidad
+- [x] Corregir el helper y el mapping persistido para que `6170400011:0001 / CODELCO - DSAL` resuelva `Consorcio Andino SPA` en vez de `Buses JM Pullman S.A.`
+- [x] Reparar las solicitudes de movilidad interna ya afectadas por el dato incorrecto y validar que ya no exijan cambio de empresa si el origen también es `Consorcio Andino SPA`
+- [x] Validar auditoría SQL, tipado, despliegue remoto y documentar el cierre antes de versionar en `main`
+
+## Resultado de corrección enterprise de empresa destino DSAL en Movilidad Interna
+
+- La causa raíz estaba en el contrato canónico de empresa para movilidad interna. `CODELCO - DSAL` fue sembrado como mapping operativo válido (`6170400011:0001`), pero al no tener `company_name` explícita terminó heredando el fallback genérico `:0001 => Buses JM Pullman S.A.`, aunque el contrato en BUK corresponde a `Consorcio Andino SPA`.
+- La reparación quedó versionada en [`20260703134355_fix_dsal_company_mapping_consorcio_andino.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703134355_fix_dsal_company_mapping_consorcio_andino.sql:1), que:
+  - endurece `resolve_known_company_name(...)` con la excepción explícita de `6170400011:0001`;
+  - corrige la fila persistida de `public.buk_contract_mappings` para `CODELCO - DSAL`;
+  - backfillea `public.internal_mobility_requests` afectados y su snapshot persistido para alinear `destination_company_name` y `requires_termination`.
+- La verificación remota sobre producción confirmó el cierre del caso:
+  - la fila `buk_contract_mappings.id = 94` quedó con `company_name = Consorcio Andino SPA` y `updated_at = 2026-07-03 13:47:05+00`;
+  - la movilidad `MI-0038`, creada el `2026-07-01`, quedó con `current_company_name = Consorcio Andino SPA`, `destination_company_name = Consorcio Andino SPA` y `requires_termination = false`;
+  - el snapshot `submitted` del mismo request también quedó corregido para no dejar mensajes contradictorios dentro del caso.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260703134355_fix_dsal_company_mapping_consorcio_andino.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --include-all`
+  - `npx --yes supabase migration list --linked`, confirmando aplicada `20260703134355_fix_dsal_company_mapping_consorcio_andino`
+
 ## Hotfix de acceso operativo para Administrativo en Personal a Contratar
 
 - [x] Auditar y corregir la mezcla entre `candidate_control_access` y el subflujo operativo de `Personal a Contratar`, para que `administrativo`/`jefe_administrativo` puedan ver y operar solo los candidatos en buckets BUK sin recuperar visibilidad sobre `Control de candidatos`
