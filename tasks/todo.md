@@ -2,6 +2,37 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix de pendientes BUK ya existentes
+
+- [x] Auditar por qué candidatos visibles en `Personal a Contratar` siguen pendientes aunque BUK ya tenga una ficha generada por el ERP
+- [x] Corregir el worker `sync-buk-candidates` para que recupere correctamente planes ya existentes y complete la generación efectiva sin dejar el job en `error`
+- [x] Validar con evidencia remota, revisión de diff y despliegue del worker antes de cerrar
+
+## Resultado de hotfix de pendientes BUK ya existentes
+
+- La causa raíz no estaba en la tabla `Personal a Contratar`, sino en la señal canónica que la alimenta. El bucket [`get_recruitment_personnel_page_bucket(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703044500_align_personnel_buckets_with_buk_success.sql:1) solo retira un candidato cuando existe `buk_sync_jobs.status = 'success'` con `buk_employee_id`, por lo que cualquier alta BUK incompleta o job terminado en `error` sigue apareciendo como pendiente.
+- La evidencia remota fue consistente en los tres casos visibles de `RC-0067`:
+  - Jorge Ricardo Orellana Coronado (`candidate_id = ebe77765-252c-43a2-a208-239a5259f60a`) quedó con jobs `error` y ficha BUK `41908`;
+  - Antonio Enrique Morales Gamboa (`candidate_id = 380dd752-b77d-4234-ab95-4404e4a7ac75`) quedó con job `error` y ficha BUK `41904`;
+  - Gregorio Patricio Callejas Bravo (`candidate_id = 713c2905-03d3-4191-94f3-e82530816220`) quedó con jobs `error` y ficha BUK `41905`.
+- En los tres, el patrón fue el mismo:
+  - la ficha `F2` ya existía en BUK y el worker la resolvía como `reused_incomplete_existing`;
+  - BUK respondía `Empleado Ya existe un plan para este Empleado`;
+  - como `sync-buk-candidates` no recuperaba bien la colección de planes existente, el job moría en `error` antes de crear/reparar el trabajo, por eso la ficha quedaba `inactivo`, sin `current_job`, y el bucket la seguía mostrando pendiente.
+- La corrección quedó concentrada en [`sync-buk-candidates/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1):
+  - agrega un parser reutilizable de colecciones BUK para tolerar respuestas con arrays en `data`, `plans`, `jobs`, `items` o `results`;
+  - reaprovecha ese parser en lookups de empleados, roles, planes y jobs;
+  - cuando `createBukEmployeePlan(...)` devuelve el duplicado `ya existe un plan`, reconsulta planes y degrada de forma segura a “plan existente recuperado” en vez de abortar el flujo completo.
+- El runtime quedó desplegado en el proyecto remoto `pzblmbahnoyntrhistea` con `npx --yes supabase functions deploy sync-buk-candidates --project-ref pzblmbahnoyntrhistea --use-api --yes`.
+- Validación cerrada con:
+  - evidencia remota vía Supabase sobre `candidate_profiles`, `recruitment_case_candidates` y `buk_sync_jobs` de los tres candidatos afectados;
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+- Limitación de esta sesión:
+  - este shell no tiene `deno`, así que no pude correr `deno check` del worker;
+  - tampoco tengo un JWT interactivo vigente ni el secreto interno del webhook BUK en esta terminal, así que no pude disparar desde shell el reproceso real de esos jobs después del deploy. El próximo `Generar en BUK` desde la UI ya correrá con el worker corregido.
+
 ## Hotfix de avance de etapa a listo para contratar
 
 - [x] Auditar el error `42703` al mover candidatos a `ready_for_hire` y confirmar si proviene del frontend o del trigger backend asociado

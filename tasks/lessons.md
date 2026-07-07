@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 205. En integraciones BUK, una ficha creada no debe salir del bucket pendiente hasta que el job canónico quede `success`, y eso exige parsers tolerantes del API externo
+
+- **Que BUK ya tenga una ficha `F2` no significa que la generación efectiva haya terminado para el ERP.** En `Personal a Contratar`, la salida del bucket depende de `buk_sync_jobs.status = 'success'` con `buk_employee_id`; si la ficha quedó creada pero el worker falló al reparar plan/trabajo, el candidato debe seguir visible porque aún no existe confirmación canónica de alta efectiva.
+- **La regla correcta es endurecer el worker, no maquillar el bucket.** Si `sync-buk-candidates` reusa una ficha incompleta y BUK responde `Ya existe un plan para este Empleado`, el fix no es esconder al candidato de la lista, sino recuperar el plan existente, completar el trabajo pendiente y recién entonces cerrar el job como `success`.
+- **Nunca asumas un único shape de colección en APIs externas cuando esa lectura decide estados terminales del ERP.** Si un endpoint BUK puede responder arrays en `data`, `plans`, `jobs`, `items` o `results`, el parser debe tolerarlo; de lo contrario, el worker concluye falsamente que “no hay plan/job”, intenta recrearlo y deja a la UI atrapada en un falso pendiente permanente.
+
 ## 204. Un trigger nuevo de contratación no puede copiar payloads de otros módulos ni de funciones previas sin verificar primero el esquema real de `hiring_requests`
 
 - **PostgreSQL permite crear funciones que referencian columnas inexistentes y recién falla cuando el trigger las ejecuta.** En `enqueue_personnel_to_hire_email(...)`, reutilizar `hr.request_context` y `hr.module_label` rompió el avance a `ready_for_hire` con `42703` aunque la migración hubiera aplicado sin errores.

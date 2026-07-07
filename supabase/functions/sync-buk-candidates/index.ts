@@ -589,6 +589,31 @@ function parseBukApiErrorPayload(message: string) {
   }
 }
 
+function extractBukApiErrorMessages(error: unknown) {
+  const payload = parseBukApiErrorPayload(toErrorMessage(error));
+  const errors = payload?.errors;
+
+  if (Array.isArray(errors)) {
+    return errors.map((entry) => String(entry));
+  }
+
+  if (errors && typeof errors === "object") {
+    return Object.values(errors).flatMap((value) =>
+      Array.isArray(value) ? value.map((entry) => String(entry)) : [String(value)]
+    );
+  }
+
+  return [] as string[];
+}
+
+function bukApiErrorIncludes(error: unknown, fragments: string[]) {
+  const messages = extractBukApiErrorMessages(error).map((message) => normalizeText(message));
+  return fragments.some((fragment) => {
+    const normalizedFragment = normalizeText(fragment);
+    return messages.some((message) => message.includes(normalizedFragment));
+  });
+}
+
 function isBukDuplicateCreateError(error: unknown) {
   const payload = parseBukApiErrorPayload(toErrorMessage(error));
   const errors = payload?.errors;
@@ -600,6 +625,64 @@ function isBukDuplicateCreateError(error: unknown) {
     const value = (errors as Record<string, unknown>)[key];
     return Array.isArray(value) && value.some((entry) => normalizeText(String(entry)).includes("ya esta en uso"));
   });
+}
+
+function isBukExistingPlanError(error: unknown) {
+  return bukApiErrorIncludes(error, [
+    "ya existe un plan para este empleado",
+    "empleado ya existe un plan para este empleado"
+  ]);
+}
+
+function extractBukObjectRows(
+  payload: unknown,
+  collectionKeys: string[] = ["data", "items", "results"]
+) {
+  const candidates: unknown[] = [payload];
+  const payloadRecord =
+    payload && typeof payload === "object" && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : null;
+
+  if (payloadRecord) {
+    for (const key of collectionKeys) {
+      if (key in payloadRecord) {
+        candidates.push(payloadRecord[key]);
+      }
+    }
+
+    const nestedData =
+      payloadRecord.data && typeof payloadRecord.data === "object" && !Array.isArray(payloadRecord.data)
+        ? (payloadRecord.data as Record<string, unknown>)
+        : null;
+
+    if (nestedData) {
+      for (const key of collectionKeys) {
+        if (key in nestedData) {
+          candidates.push(nestedData[key]);
+        }
+      }
+    }
+  }
+
+  let sawArray = false;
+  for (const candidate of candidates) {
+    if (!Array.isArray(candidate)) {
+      continue;
+    }
+
+    sawArray = true;
+    const rows = candidate.filter(
+      (entry): entry is Record<string, unknown> =>
+        Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
+    );
+
+    if (rows.length > 0) {
+      return rows;
+    }
+  }
+
+  return sawArray ? ([] as Record<string, unknown>[]) : [];
 }
 
 function compareBukEmployeePriority(left: BukEmployeeRecord, right: BukEmployeeRecord) {
@@ -687,9 +770,7 @@ async function fetchBukRolesBySearch(search: string) {
   url.searchParams.set("page_size", "100");
 
   const response = await fetchBukJson(url.toString());
-  const rows = Array.isArray(response.data) ? response.data : [];
-
-  return rows.filter(
+  return extractBukObjectRows(response).filter(
     (entry): entry is BukRoleRecord => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
   );
 }
@@ -699,12 +780,7 @@ async function fetchBukEmployeePlans(employeeId: string) {
   url.searchParams.set("page", "1");
   url.searchParams.set("page_size", "100");
   const response = await fetchBukJson(url.toString());
-  return Array.isArray(response.data)
-    ? response.data.filter(
-        (entry): entry is Record<string, unknown> =>
-          Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
-      )
-    : [];
+  return extractBukObjectRows(response, ["data", "plans", "items", "results"]);
 }
 
 async function fetchBukEmployeeJobs(employeeId: string) {
@@ -712,12 +788,7 @@ async function fetchBukEmployeeJobs(employeeId: string) {
   url.searchParams.set("page", "1");
   url.searchParams.set("page_size", "100");
   const response = await fetchBukJson(url.toString());
-  return Array.isArray(response.data)
-    ? response.data.filter(
-        (entry): entry is Record<string, unknown> =>
-          Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
-      )
-    : [];
+  return extractBukObjectRows(response, ["data", "jobs", "items", "results"]);
 }
 
 async function createBukEmployeePlan(employeeId: string, payload: Record<string, unknown>) {
@@ -776,9 +847,7 @@ async function lookupBukEmployeesByDocumentNumber(payload: BukCandidateSyncPaylo
   url.searchParams.set("page", "1");
 
   const response = await fetchBukJson(url.toString());
-  const rows = Array.isArray(response.data) ? response.data : [];
-
-  return rows
+  return extractBukObjectRows(response)
     .filter((entry): entry is BukEmployeeRecord => Boolean(entry) && typeof entry === "object")
     .sort(compareBukEmployeePriority);
 }
@@ -1439,11 +1508,31 @@ async function ensureBukEmployeeSetup(
 
   let planResponse: Record<string, unknown> | null = null;
   if (!matchingPlan) {
-    const createdPlan = await createBukEmployeePlan(employeeId, context.planPayload);
-    planResponse =
-      createdPlan.data && typeof createdPlan.data === "object"
-        ? (createdPlan.data as Record<string, unknown>)
-        : createdPlan;
+    try {
+      const createdPlan = await createBukEmployeePlan(employeeId, context.planPayload);
+      planResponse =
+        createdPlan.data && typeof createdPlan.data === "object"
+          ? (createdPlan.data as Record<string, unknown>)
+          : createdPlan;
+    } catch (error) {
+      if (!isBukExistingPlanError(error)) {
+        throw error;
+      }
+
+      const recoveredPlans = await fetchBukEmployeePlans(employeeId);
+      const recoveredPlan =
+        recoveredPlans.find((plan) => isEquivalentBukPlan(plan, context.planPayload, context.startDate)) ??
+        recoveredPlans.find((plan) => extractDatePortion(plan.start_date as string | null | undefined) === context.startDate) ??
+        null;
+
+      planResponse =
+        recoveredPlan ??
+        {
+          recoveredFromDuplicateError: true,
+          duplicateError: toErrorMessage(error),
+          start_date: context.startDate
+        };
+    }
   } else if (!isEquivalentBukPlan(matchingPlan, context.planPayload, context.startDate)) {
     const patchedPlan = await patchBukEmployeePlan(employeeId, matchingPlan.id as string | number, context.planPayload);
     planResponse =
