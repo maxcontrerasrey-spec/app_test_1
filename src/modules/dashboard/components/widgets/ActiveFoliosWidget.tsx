@@ -9,7 +9,8 @@ import {
 import {
   toRecruitmentCaseStatusLabel,
   type RecruitmentCaseDetail,
-  type RecruitmentCaseListRow
+  type RecruitmentCaseListRow,
+  type RecruitmentProcessesPageSummary
 } from "../../../recruitment/services/hiringControl";
 import type { DashboardDataBundle } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
@@ -44,29 +45,6 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     { key: "candidate_count", label: "Candidatos activos" },
     { key: "opened_at", label: "Días Abierto" }
   ] as const;
-  const folioKpis = [
-    {
-      label: "Folios activos en búsqueda",
-      tone: "warning" as const,
-      value: String(recruitmentSummary?.openProcesses ?? 0)
-    },
-    {
-      label: "Candidatos en curso",
-      tone: "info" as const,
-      value: String(recruitmentSummary?.inProgressCandidates ?? 0)
-    },
-    {
-      label: "Con candidato listo",
-      tone: "info" as const,
-      value: String(recruitmentSummary?.readyToHireCases ?? 0)
-    },
-    {
-      label: "Casos cubiertos",
-      tone: "success" as const,
-      value: String(recruitmentSummary?.filledCases ?? 0)
-    }
-  ];
-
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setDebouncedSearch(searchTerm.trim());
@@ -94,6 +72,48 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   );
   const totalCount = activeFoliosQuery.data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const folioSummary = useMemo<RecruitmentProcessesPageSummary>(
+    () =>
+      activeFoliosQuery.data?.summary ?? {
+        activeCases: recruitmentSummary?.openProcesses ?? 0,
+        requestedVacancies: recruitmentSummary?.requestedVacancies ?? 0,
+        inProgressCandidates: recruitmentSummary?.inProgressCandidates ?? 0,
+        readyToHireCases: recruitmentSummary?.readyToHireCases ?? 0,
+        filledCases: recruitmentSummary?.filledCases ?? 0,
+        hiredCandidates: recruitmentSummary?.hiredCandidates ?? 0
+      },
+    [activeFoliosQuery.data?.summary, recruitmentSummary]
+  );
+  const folioKpis = useMemo(
+    () => [
+      {
+        label: "Folios activos en búsqueda",
+        tone: "warning" as const,
+        value: String(folioSummary.activeCases)
+      },
+      {
+        label: "Requerimiento total",
+        tone: "neutral" as const,
+        value: String(folioSummary.requestedVacancies)
+      },
+      {
+        label: "Candidatos en curso",
+        tone: "info" as const,
+        value: String(folioSummary.inProgressCandidates)
+      },
+      {
+        label: "Con candidato listo",
+        tone: "info" as const,
+        value: String(folioSummary.readyToHireCases)
+      },
+      {
+        label: "Casos cubiertos",
+        tone: "success" as const,
+        value: String(folioSummary.filledCases)
+      }
+    ],
+    [folioSummary]
+  );
 
   const handleSort = (key: ActiveFoliosSortKey) => {
     if (sortConfig?.key === key) {
@@ -113,18 +133,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     return sortConfig.direction === "asc" ? <span> ↑</span> : <span> ↓</span>;
   };
 
-  const handleRowClick = async (caseId: string) => {
-    if (expandedCaseId === caseId) {
-      setExpandedCaseId(null);
-      return;
-    }
-
-    setExpandedCaseId(caseId);
-
-    if (caseDetailsCache[caseId]) {
-      return;
-    }
-
+  const fetchCaseDetail = async (caseId: string) => {
     setIsLoadingDetail(true);
     try {
       const data = await queryClient.fetchQuery(getRecruitmentCaseDetailQueryOptions(caseId));
@@ -137,6 +146,29 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
       }));
     }
     setIsLoadingDetail(false);
+  };
+
+  useEffect(() => {
+    if (!expandedCaseId) {
+      return;
+    }
+
+    void fetchCaseDetail(expandedCaseId);
+  }, [activeFoliosQuery.dataUpdatedAt, expandedCaseId]);
+
+  const handleRowClick = async (caseId: string) => {
+    if (expandedCaseId === caseId) {
+      setExpandedCaseId(null);
+      return;
+    }
+
+    setExpandedCaseId(caseId);
+
+    if (caseDetailsCache[caseId]) {
+      return;
+    }
+
+    await fetchCaseDetail(caseId);
   };
 
   return (
@@ -152,7 +184,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
             label="Buscar folio en curso"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Caso, contrato o centro de costo"
+            placeholder="Caso, contrato, cargo, gerencia o centro de costo"
             className="dashboard-folios-search"
           />
         </div>
@@ -227,7 +259,9 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                           {folio.cost_center_code ? `(${folio.cost_center_code})` : ""}
                         </td>
                         <td>
-                          {folio.filled_vacancies}/{folio.requested_vacancies}
+                          <span title="Cupos cubiertos / requeridos en el folio">
+                            {folio.filled_vacancies}/{folio.requested_vacancies}
+                          </span>
                         </td>
                         <td>
                           <div className="candidate-count-indicator">
@@ -239,6 +273,13 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                               {folio.ready_candidates}
                             </span>
                             <span className="candidate-circle-label">Listos</span>
+                            <span
+                              className="candidate-circle candidate-circle-filled"
+                              title="Contratados efectivos que ya consumieron cupo en el folio"
+                            >
+                              {folio.hired_candidates}
+                            </span>
+                            <span className="candidate-circle-label">Contrat.</span>
                             {folio.mobility_active_count ? (
                               <>
                                 <span

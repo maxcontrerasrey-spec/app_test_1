@@ -118,6 +118,15 @@ export type RecruitmentCaseListRow = {
   } | null;
 };
 
+export type RecruitmentProcessesPageSummary = {
+  activeCases: number;
+  requestedVacancies: number;
+  inProgressCandidates: number;
+  readyToHireCases: number;
+  filledCases: number;
+  hiredCandidates: number;
+};
+
 export type RecruitmentCandidateControlRow = {
   id: string;
   candidate_profile_id: string;
@@ -392,14 +401,16 @@ export type RecruitmentCaseDetail = {
   audit: RecruitmentCaseAuditRow[];
 };
 
-export type RecruitmentPagedResponse<T> = {
+export type RecruitmentPagedResponse<T, S = null> = {
   items: T[];
   totalCount: number;
+  summary: S | null;
 };
 
-type RecruitmentPagedPayload<T> = {
+type RecruitmentPagedPayload<T, S = null> = {
   items?: T[] | null;
   total_count?: number | null;
+  summary?: S | null;
 };
 
 function formatRpcError(error: {
@@ -446,12 +457,34 @@ export function toRecruitmentCandidateStageLabel(
   return "Lead";
 }
 
-function parsePagedPayload<T>(payload: unknown): RecruitmentPagedResponse<T> {
-  const parsed = (payload ?? {}) as RecruitmentPagedPayload<T>;
+function parsePagedPayload<T, S = null>(payload: unknown): RecruitmentPagedResponse<T, S> {
+  const parsed = (payload ?? {}) as RecruitmentPagedPayload<T, S>;
 
   return {
     items: Array.isArray(parsed.items) ? parsed.items : [],
-    totalCount: Number(parsed.total_count ?? 0)
+    totalCount: Number(parsed.total_count ?? 0),
+    summary: (parsed.summary ?? null) as S | null
+  };
+}
+
+function parseRecruitmentProcessesPagePayload(
+  payload: unknown
+): RecruitmentPagedResponse<RecruitmentCaseListRow, RecruitmentProcessesPageSummary> {
+  const parsed = parsePagedPayload<
+    RecruitmentCaseListRow,
+    Partial<RecruitmentProcessesPageSummary>
+  >(payload);
+
+  return {
+    ...parsed,
+    summary: {
+      activeCases: Number(parsed.summary?.activeCases ?? 0),
+      requestedVacancies: Number(parsed.summary?.requestedVacancies ?? 0),
+      inProgressCandidates: Number(parsed.summary?.inProgressCandidates ?? 0),
+      readyToHireCases: Number(parsed.summary?.readyToHireCases ?? 0),
+      filledCases: Number(parsed.summary?.filledCases ?? 0),
+      hiredCandidates: Number(parsed.summary?.hiredCandidates ?? 0)
+    }
   };
 }
 
@@ -547,7 +580,7 @@ export async function fetchRecruitmentProcessesPage(input: {
   }
 
   return {
-    data: parsePagedPayload<RecruitmentCaseListRow>(data),
+    data: parseRecruitmentProcessesPagePayload(data),
     error: null
   };
 }

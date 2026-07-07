@@ -4,6 +4,24 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 202. Un widget con tabla filtrada no puede mezclar KPIs globales de otra fuente si promete responder al mismo filtro
+
+- **Si la tabla viene de una RPC paginada/filtrada pero las tarjetas vienen del resumen global del dashboard, el usuario ve dos verdades distintas en la misma caja.** En `Folios en curso`, buscar por contrato o gerencia cambiaba las filas visibles, pero dejaba congelados `Folios activos`, `Candidatos en curso` y `Casos cubiertos`, haciendo parecer que el filtro no funcionaba.
+- **La regla correcta es sacar filas y KPIs del mismo conjunto filtrado.** Si el widget ya depende de `get_recruitment_processes_page(...)`, el backend debe devolver también un `summary` calculado desde el mismo `filtered` CTE en vez de pedirle al frontend que mezcle el bundle global con una query local.
+- **Cuando negocio pide filtrar por una dimensión verbal como “gerencia”, primero reutiliza la semántica canónica que ya existe en el módulo.** En este flujo la señal operativa vigente no era una columna `gerencia`, sino `cost_unit/cost_unit_name` y su alias visible vía `cost_center_name`; el search debe ampliarse sobre esa verdad existente antes de inventar una nueva dimensión paralela.
+
+## 201. Si una RPC v2 reemplaza una ruta viva de aprobación, debe preservar explícitamente los bypass y gates que la UI ya usa
+
+- **No basta con que la nueva RPC compile y cubra el caso feliz del aprobador asignado.** En `decide_hiring_request_approval_v2(...)`, quitar el bypass de `admin/superadmin` mientras el frontend seguía propagando `isAdmin` dejó a los administradores viendo la cola pero fallando al decidir.
+- **La regla correcta es auditar el contrato completo antes de sustituir una RPC anterior:** visibilidad de la cola, detalle, permiso de decisión y cualquier escape hatch operativo vigente. Si v1 permitía `user_is_admin(...)`, v2 debe preservarlo o la UI debe eliminar explícitamente ese camino en el mismo cambio.
+- **Cuando un prop o capability queda “preparado” en React pero no llega al punto de uso, eso es señal de drift contractual, no solo deuda cosmética.** Un `isAdmin` no cableado suele delatar que backend y frontend ya dejaron de hablar la misma verdad.
+
+## 200. En formularios con lookup/autocompletado por identidad, toda respuesta async debe validarse contra el input vigente antes de mutar estado
+
+- **Lanzar búsquedas paralelas por RUT sin token de vigencia ni comparación contra el valor actual deja el formulario expuesto a respuestas fuera de orden.** El resultado típico es autocompletar nombre/correo del candidato anterior o mostrar alertas BUK desfasadas mientras el usuario ya cambió el identificador.
+- **La regla correcta es invalidar búsquedas previas y limpiar estado derivado cuando cambia la identidad fuente.** Si el RUT deja de ser válido o cambia a otro valor, el sistema debe vaciar perfil encontrado, estado BUK y cualquier autofill asociado antes de aceptar una respuesta vieja.
+- **Los modales reutilizables siguen la misma norma.** Si el contexto entidad->destino cambia entre aperturas, `targetId`, comentarios y errores deben resetearse al abrir/cerrar para no arrastrar una decisión anterior a un candidato nuevo.
+
 ## 199. En contratación BUK, el líquido ERP no debe mapearse como sueldo base del trabajo
 
 - **`salary_offer` o la renta líquida del requerimiento no equivalen al `wage` contractual que espera BUK.** Cuando la integración cargó ese valor como sueldo base, dejó contratos con una renta estructural que negocio no quería consolidar automáticamente y además mezcló dos conceptos distintos: renta ofrecida al candidato vs. base legal/operativa de remuneraciones.

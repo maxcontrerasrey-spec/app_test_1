@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Dashboard de folios en curso con KPIs filtrados y búsqueda por gerencia
+
+- [x] Auditar el contrato actual entre `ActiveFoliosWidget`, `useRecruitmentProcessesPage(...)` y `get_recruitment_processes_page(...)` para unificar tabla y tarjetas sobre la misma fuente filtrada
+- [x] Versionar una migración que agregue al RPC el resumen filtrado del set visible, habilite búsqueda por gerencia y preserve el contrato actual de filas sin romper producción
+- [x] Ajustar el widget para consumir el resumen dinámico, agregar la tarjeta de requerimiento total y reflejar explícitamente los contratados dentro de los indicadores del folio
+- [x] Revalidar con `TypeScript`, build frontend, auditoría de migración y `git diff --check`; luego documentar el resultado en este archivo
+
+## Resultado de dashboard de folios en curso con KPIs filtrados y búsqueda por gerencia
+
+- La migración [`20260707145531_add_filtered_recruitment_dashboard_summary.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707145531_add_filtered_recruitment_dashboard_summary.sql:1) recompila [`get_recruitment_processes_page(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707145531_add_filtered_recruitment_dashboard_summary.sql:3) para que el mismo RPC devuelva:
+  - `items` paginados como hasta ahora;
+  - `summary` filtrado sobre el mismo CTE `filtered`, con `activeCases`, `requestedVacancies`, `inProgressCandidates`, `readyToHireCases`, `filledCases` y `hiredCandidates`;
+  - búsqueda por gerencia reutilizando `hiring_requests.cost_unit` y `hiring_requests.cost_unit_name` dentro del `search_haystack`;
+  - soporte efectivo de orden por `opened_at`, que la UI ya intentaba usar.
+- [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1) quedó alineado para tipar y normalizar ese `summary` nuevo sin romper las otras páginas paginadas que siguen usando `items` y `totalCount`.
+- [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1) ahora:
+  - hace dinámicas las tarjetas según el filtro de búsqueda activo;
+  - agrega la tarjeta `Requerimiento total`;
+  - amplía el placeholder para incluir búsqueda por gerencia;
+  - muestra una cápsula adicional de `Contrat.` para reflejar contrataciones efectivas y deja `filled_vacancies/requested_vacancies` explícito como cupos cubiertos/requeridos.
+- [`dashboard.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/styles/dashboard.css:1) y [`global.css`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/styles/global.css:1) ajustan el layout de cinco KPIs y el nuevo tono visual de contratados sin alterar el resto del dashboard.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npm run audit:migrations -- --files supabase/migrations/20260707145531_add_filtered_recruitment_dashboard_summary.sql`
+  - `git diff --check`
+
 ## Reparación auditada de rechazo WHO erróneo para Rodolfo Francisco González Ortiz
 
 - [x] Auditar el estado productivo del candidato, la aprobación WHO rechazada y el actor que debe quedar como aprobador final
@@ -4850,6 +4877,35 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`HumanResourcesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/pages/HumanResourcesDashboard.tsx:1) ahora permite la vista `Historial` también por rol base (`control_contratos` y `gerencia`) además del feature flag, evitando que una desalineación transitoria de `accessible_features` esconda la pestaña a usuarios que sí deben verla.
 - La migración [`20260630183500_restore_hr_incentives_history_access_for_management_roles.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260630183500_restore_hr_incentives_history_access_for_management_roles.sql:1) refuerza de forma idempotente `role_module_access` sobre `recursos_humanos` y `role_feature_access` sobre `hr_incentives_history` para `gerencia` y `control_contratos`, preservando que el historial siga completo y sin filtro extra por contrato.
 - Validación cerrada con `npm run audit:migrations -- --files supabase/migrations/20260630183500_restore_hr_incentives_history_access_for_management_roles.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npx --yes supabase db push --linked --dry-run`, `npx --yes supabase db push --linked --include-all` y `git diff --check`.
+
+## Auditoría completa de front y back con corrección conservadora
+
+- [x] Auditar el estado actual del repositorio, validar compilación y localizar fallas reproducibles o riesgos claros en frontend y backend sin tocar cambios ajenos ya pendientes
+- [x] Revisar contratos críticos de reclutamiento/aprobaciones/BUK entre React, servicios TypeScript, migraciones SQL y Edge Functions para detectar drift funcional
+- [x] Corregir únicamente los errores confirmados con cambios mínimos, versionables y seguros para producción
+- [x] Revalidar con `TypeScript`, build frontend y chequeos de consistencia aplicables; luego documentar hallazgos, correcciones y límites de la auditoría
+
+## Resultado de auditoría completa de front y back con corrección conservadora
+
+- Se corrigió un drift funcional real entre frontend y backend en aprobaciones de folios:
+  - [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1) y [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1) ahora propagan el estado de admin hasta [`ApprovalModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/ApprovalModal.tsx:1);
+  - la migración [`20260707130500_restore_admin_override_for_hiring_approval_v2.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707130500_restore_admin_override_for_hiring_approval_v2.sql:1) restaura en `decide_hiring_request_approval_v2(...)` el bypass explícito que el contrato legacy y la UI ya asumían para admin/superadmin.
+- Se corrigieron tres bugs P1 de estado stale en frontend:
+  - [`CandidateIntakeForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx:1) ahora invalida respuestas async fuera de orden, limpia autocompletado stale cuando cambia el RUT y evita mezclar datos del candidato anterior;
+  - [`TransferCandidateModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/TransferCandidateModal.tsx:1) resetea folio destino, comentario y error al reabrir o cambiar de candidato;
+  - [`DatePickerField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/DatePickerField.tsx:1) deja de bloquear fechas pasadas por default, y los flujos que sí debían seguir restringidos quedaron explicitados en [`OperationsBaseRegister.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsBaseRegister.tsx:1) y [`HiringRequestPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringRequestPage.tsx:1).
+- También se corrigió un riesgo de detalle stale en dashboard: [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1) ahora refresca el caso expandido cuando la lista principal se actualiza, evitando mostrar KPIs/listado nuevos con un detalle viejo del mismo folio.
+- Se endurecieron superficies backend sensibles de reclutamiento/BUK:
+  - [`check_buk_candidate/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/check_buk_candidate/index.ts:1) ahora exige bearer token válido y permiso real de `Control de candidatos` antes de consultar BUK;
+  - la migración [`20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql:1) mueve el gate de autorización al inicio de `get_candidate_buk_sync_payload(...)` y revoca ejecución directa a `authenticated` sobre helpers internos de personal/BUK para evitar oráculos y uso directo no deseado.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npm run audit:migrations -- --files supabase/migrations/20260707130500_restore_admin_override_for_hiring_approval_v2.sql supabase/migrations/20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql`
+  - `git diff --check`
+- Límite explícito de esta auditoría:
+  - no se aplicaron migraciones remotas ni se desplegaron Edge Functions desde esta sesión;
+  - se respetaron los tres SQL no versionados que ya estaban presentes en el worktree (`20260703170500`, `20260703171200`, `20260703171800`) sin modificarlos.
 
 ## Selector de contrato en reglas de monto de Incentivos
 

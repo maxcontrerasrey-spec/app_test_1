@@ -3529,6 +3529,11 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   color: #15803d;
 }
 
+.candidate-circle-filled {
+  background: #d1fae5;
+  color: #047857;
+}
+
 .candidate-circle-warning {
   background: #fef3c7;
   color: #b45309;
