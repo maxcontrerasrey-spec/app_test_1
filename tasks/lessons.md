@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 208. En aprobaciones 1:1 por contrato, el gerente de área no puede resolverse solo por `cost_center_code` cuando ese código colisiona entre gerencias
+
+- **Un `cost_center_code` compartido entre contratos distintos no alcanza para decidir quién aprueba una solicitud.** En contratación, `10111` existe tanto para `MANTENCION CALAMA` como para contratos de `RECURSOS HUMANOS`; si `submit_hiring_request(...)` mira solo `cost_center_approvers`, puede asignar al gerente correcto para un centro y al completamente equivocado para otro.
+- **La regla correcta es priorizar el match operativo 1:1 del contrato antes del catálogo global por centro de costo.** Si `buk_contract_mappings` ya define `manager_name` para un contrato `is_one_to_one = true` e `is_operational = true`, esa debe ser la fuente primaria del `area_manager`; `cost_center_approvers` queda como fallback para contratos sin mapping contractual resoluble.
+- **Cuando la UI muestra un aprobador “imposible”, primero audita la clave de resolución, no el modal.** Si el historial `hiring_request_approvals` trae un nombre ajeno al contrato, lo más probable es que el bug haya quedado en la función que construye el flujo, no en el componente que lo renderiza.
+
 ## 207. Si el ERP promete el siguiente correlativo de ficha BUK, esa resolución debe salir del registro vivo de fichas y no de un campo histórico local
 
 - **`candidate_worker_files.employee_code` es memoria transaccional, no la verdad final del trabajador en BUK.** Si el ERP calcula `F1/F2/F3...` solo desde ese campo, termina reciclando `F1` o ignorando fichas que ya fueron creadas por el propio runtime en BUK.

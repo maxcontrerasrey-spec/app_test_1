@@ -2,6 +2,30 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección de asignación de gerente de área en folios 1:1 con colisión de centro de costo
+
+- [x] Auditar por qué el folio `0077` de `MANTENCION CALAMA` resolvió a Andrés Madrid como `Gerente de area` pese a que el match 1:1 del contrato indica a Rodrigo Galdames
+- [x] Corregir la resolución backend de `submit_hiring_request(...)` para priorizar el gerente del mapping 1:1 del contrato antes de caer al catálogo global `cost_center_approvers`
+- [x] Verificar alcance del bug sobre aprobaciones `area_manager` pendientes y documentar el resultado antes de cerrar
+
+## Resultado de corrección de asignación de gerente de área en folios 1:1 con colisión de centro de costo
+
+- La causa raíz estuvo en backend, no en el modal de aprobación. El folio [`0077`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/ApprovalModal.tsx:148) se creó con contrato `MANTENCION CALAMA` (`contract_id = 62`, `cost_center_code = 10111`) y el match 1:1 de [`buk_contract_mappings`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260607230000_add_buk_contract_mapping_catalog.sql:202) sí lo deja explícito con `manager_name = Rodrigo Galdames`.
+- El desvío ocurrió porque [`submit_hiring_request(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260617215411_skip_redundant_area_manager_self_approval.sql:1) ignoraba ese `manager_name` contractual y resolvía `area_manager` únicamente desde `cost_center_approvers` por `cost_center_code`.
+- En este tenant, `cost_center_code` no es una clave segura para gerente:
+  - `10111` está compartido por `MANTENCION CALAMA` y por contratos de `RECURSOS HUMANOS`;
+  - `cost_center_approvers(10111)` hoy apunta a `Andres Madrid Maureira`, porque esa tabla quedó sembrada históricamente para `GERENCIA RECURSOS HUMANOS`;
+  - por eso el folio `0077` tomó a Andrés aunque el contrato 1:1 correcto fuese Rodrigo.
+- El problema no era aislado a `10111`. La auditoría encontró al menos otra colisión operativa relevante en `10114`, donde el catálogo 1:1 mezcla contratos de `Zona II` y `Zona III` con gerentes distintos, por lo que seguir resolviendo solo por centro de costo seguiría siendo estructuralmente frágil.
+- La corrección quedó versionada en [`20260707201000_fix_hiring_area_manager_resolution_from_contract_mapping.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707201000_fix_hiring_area_manager_resolution_from_contract_mapping.sql:1):
+  - `submit_hiring_request(...)` ahora intenta resolver primero el `manager_name` del match 1:1 operativo del contrato a un perfil activo;
+  - solo si eso no se puede resolver, degrada al catálogo global `cost_center_approvers`;
+  - con eso, contratos como `MANTENCION CALAMA` vuelven a usar a Rodrigo Galdames y, si el solicitante coincide con el gerente contractual, la autoaprobación vuelve a operar como estaba diseñada.
+- Estado del folio `0077` auditado:
+  - la solicitud quedó `pending_contracts_control`;
+  - la aprobación `area_manager` histórica quedó grabada con `approver_name = Andres Madrid Maureira`;
+  - no existen hoy aprobaciones `area_manager` pendientes mal asignadas por este bug, por lo que no fue necesario reparar cola viva adicional en esta pasada.
+
 ## Hotfix de pendientes BUK ya existentes
 
 - [x] Auditar por qué candidatos visibles en `Personal a Contratar` siguen pendientes aunque BUK ya tenga una ficha generada por el ERP
