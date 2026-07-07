@@ -2,6 +2,63 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste de indicadores por folio para separar movilidad interna de candidatos y contratados
+
+- [x] Auditar cómo se están mezclando hoy `activos`, `listos`, `contratados` y `movilidad interna` en las vistas de folios
+- [x] Reemplazar el bloque visual por `Activos`, `Contratados` y `Movilidad Interna`, manteniendo intacta la lógica de cupos consumidos
+- [x] Revalidar con tipado, build y diff; luego documentar el resultado y la regla aprendida
+
+## Resultado de ajuste de indicadores por folio para separar movilidad interna de candidatos y contratados
+
+- La causa raíz no estaba en CSS ni en una etiqueta aislada, sino en que las vistas estaban renderizando métricas “efectivas” como si fueran categorías puras:
+  - `candidate_count` ya venía mezclando candidatos activos + movilidad interna pendiente;
+  - `hired_candidates` ya venía mezclando contratados efectivos + movilidad interna aprobada;
+  - por eso mostrar `Activos / Listos / Contrat.` inducía a leer estados de negocio que no correspondían exactamente a esas cifras.
+- La regla backend de cupos no se tocó. [`get_recruitment_case_effective_metrics(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260622203000_harden_internal_mobility_vacancy_reservations.sql:1) sigue manteniendo que:
+  - los contratados efectivos consumen cupo;
+  - las movilidades internas aprobadas consumen cupo efectivo;
+  - las movilidades internas pendientes siguen reservando disponibilidad operativa.
+- La corrección quedó desacoplada y reutilizable en [`getRecruitmentCaseHeadcountBreakdown(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:111):
+  - `Activos` ahora muestra solo candidatos activos reales del pipeline;
+  - `Contratados` ahora muestra solo contrataciones efectivas externas;
+  - `Movilidad Interna` ahora suma las movilidades pendientes y aprobadas asociadas al folio, para no esconder la reserva/consumo de cupos en otra pelota.
+- El bloque visual quedó alineado en ambas superficies que mostraban esos contadores:
+  - inicio / centro de mando en [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1);
+  - control operativo en [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1).
+- La nueva semántica visible quedó así:
+  - `Activos` en azul;
+  - `Contratados` en verde;
+  - `Movilidad Interna` en amarillo;
+  - se elimina `Listos` de ese bloque.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+
+## Hotfix de enlace WHO hacia el centro de mando
+
+- [x] Auditar qué ruta se está encolando hoy en el correo de aprobación `who_pending` y qué navegación usa la UI para esas mismas tareas
+- [x] Corregir el enlace canónico para que las aprobaciones WHO abran el inicio (`/`) en vez de `Control de Contrataciones`
+- [x] Revalidar con pruebas locales de tipado/diff y documentar el resultado antes de cerrar
+
+## Resultado de hotfix de enlace WHO hacia el centro de mando
+
+- La causa raíz estaba desalineada en dos superficies que resolvían la misma tarea WHO con rutas distintas:
+  - el backend encolaba el correo de [`enqueue_who_pending_approval_email(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260618153004_fix_who_pending_email_capability_column.sql:1) con `route = '/control-contrataciones'`;
+  - la campana superior reutilizaba [`resolveTaskNavigationPath(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/lib/taskPresentation.ts:1) y también mandaba las tareas WHO a `Control de Contrataciones`.
+- Esa ruta ya no representa la superficie operativa real del flujo. Las aprobaciones WHO se ejecutan hoy desde el inicio, en el widget [`TasksWidget`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/TasksWidget.tsx:1) montado en [`DashboardHome`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/pages/DashboardHome.tsx:1).
+- La corrección quedó dividida así:
+  - backend: la migración [`20260707214500_route_who_emails_to_dashboard_home.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707214500_route_who_emails_to_dashboard_home.sql:1) recompila `enqueue_who_pending_approval_email(...)` para encolar `route = '/'`, de modo que los correos y recordatorios futuros abran el centro de mando correcto;
+  - frontend: [`taskPresentation.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/lib/taskPresentation.ts:1) ahora resuelve `who_approval` hacia `/`, alineando también la navegación de la campana con la misma superficie.
+- La migración quedó aplicada en el proyecto remoto enlazado con `npx --yes supabase db push --linked --include-all`, por lo que los próximos correos WHO ya deberían abrir el inicio.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npm run audit:migrations -- --files supabase/migrations/20260707214500_route_who_emails_to_dashboard_home.sql`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+
 ## Corrección de asignación de gerente de área en folios 1:1 con colisión de centro de costo
 
 - [x] Auditar por qué el folio `0077` de `MANTENCION CALAMA` resolvió a Andrés Madrid como `Gerente de area` pese a que el match 1:1 del contrato indica a Rodrigo Galdames

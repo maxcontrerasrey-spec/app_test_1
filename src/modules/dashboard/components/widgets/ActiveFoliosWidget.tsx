@@ -7,6 +7,7 @@ import {
   getRecruitmentCaseDetailQueryOptions
 } from "../../../recruitment/hooks/useRecruitmentQueries";
 import {
+  getRecruitmentCaseHeadcountBreakdown,
   toRecruitmentCaseStatusLabel,
   type RecruitmentCaseDetail,
   type RecruitmentCaseListRow,
@@ -260,6 +261,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                   const detailError = caseDetailErrors[folio.id] ?? null;
                   const hr = detail?.case?.hiring_request;
                   const approvalSummary = hr?.approval_summary;
+                  const headcount = getRecruitmentCaseHeadcountBreakdown(folio);
 
                   return (
                     <React.Fragment key={folio.id}>
@@ -299,31 +301,23 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                         <td>
                           <div className="candidate-count-indicator">
                             <span className="candidate-circle candidate-circle-neutral">
-                              {folio.candidate_count}
+                              {headcount.activeCandidates}
                             </span>
                             <span className="candidate-circle-label">Activos</span>
-                            <span className="candidate-circle candidate-circle-success">
-                              {folio.ready_candidates}
-                            </span>
-                            <span className="candidate-circle-label">Listos</span>
                             <span
                               className="candidate-circle candidate-circle-filled"
-                              title="Contratados efectivos que ya consumieron cupo en el folio"
+                              title="Contratados efectivos del folio que ya consumieron cupo"
                             >
-                              {folio.hired_candidates}
+                              {headcount.hiredCandidates}
                             </span>
-                            <span className="candidate-circle-label">Contrat.</span>
-                            {folio.mobility_active_count ? (
-                              <>
-                                <span
-                                  className="candidate-circle candidate-circle-warning"
-                                  title="Movilidades internas en aprobación asociadas al folio"
-                                >
-                                  {folio.mobility_active_count}
-                                </span>
-                                <span className="candidate-circle-label">Movilidad</span>
-                              </>
-                            ) : null}
+                            <span className="candidate-circle-label">Contratados</span>
+                            <span
+                              className="candidate-circle candidate-circle-warning"
+                              title="Movilidades internas pendientes o aprobadas asociadas al folio"
+                            >
+                              {headcount.internalMobility}
+                            </span>
+                            <span className="candidate-circle-label">Movilidad Interna</span>
                           </div>
                         </td>
                         <td>{getDaysSince(folio.opened_at) ?? "—"}</td>

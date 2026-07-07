@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
+  getRecruitmentCaseHeadcountBreakdown,
   toRecruitmentCaseStatusLabel,
   type RecruitmentCaseListRow,
 } from "../services/hiringControl";
@@ -305,6 +306,7 @@ export function HiringProcessesView({
                   const summaryCampamento = hr?.campamento ?? caseRow.campamento;
                   const summaryPasajes = hr?.pasajes ?? caseRow.pasajes;
                   const summaryBenefits = hr?.other_benefits ?? caseRow.other_benefits;
+                  const headcount = getRecruitmentCaseHeadcountBreakdown(caseRow);
 
                   return (
                     <Fragment key={caseRow.id}>
@@ -333,21 +335,23 @@ export function HiringProcessesView({
                         <td>
                           <div className="candidate-count-indicator">
                             <span className="candidate-circle candidate-circle-neutral" title="Candidatos activos en el proceso">
-                              {caseRow.candidate_count}
+                              {headcount.activeCandidates}
                             </span>
                             <span className="candidate-circle-label">Activos</span>
-                            <span className="candidate-circle candidate-circle-success" title="Candidatos listos para contratar">
-                              {caseRow.ready_candidates}
+                            <span
+                              className="candidate-circle candidate-circle-filled"
+                              title="Contratados efectivos del folio que ya consumieron cupo"
+                            >
+                              {headcount.hiredCandidates}
                             </span>
-                            <span className="candidate-circle-label">Listos</span>
-                            {caseRow.mobility_active_count ? (
-                              <>
-                                <span className="candidate-circle candidate-circle-warning" title="Movilidades internas en aprobación asociadas al folio">
-                                  {caseRow.mobility_active_count}
-                                </span>
-                                <span className="candidate-circle-label">Movilidad</span>
-                              </>
-                            ) : null}
+                            <span className="candidate-circle-label">Contratados</span>
+                            <span
+                              className="candidate-circle candidate-circle-warning"
+                              title="Movilidades internas pendientes o aprobadas asociadas al folio"
+                            >
+                              {headcount.internalMobility}
+                            </span>
+                            <span className="candidate-circle-label">Movilidad Interna</span>
                           </div>
                         </td>
                         <td>{caseRow.requester_name ?? "No disponible"}</td>

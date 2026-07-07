@@ -127,6 +127,30 @@ export type RecruitmentProcessesPageSummary = {
   hiredCandidates: number;
 };
 
+export type RecruitmentCaseHeadcountBreakdown = {
+  activeCandidates: number;
+  hiredCandidates: number;
+  internalMobility: number;
+};
+
+type RecruitmentCaseHeadcountSource = Pick<
+  RecruitmentCaseListRow,
+  "candidate_count" | "hired_candidates" | "mobility_active_count" | "mobility_approved_count"
+>;
+
+export function getRecruitmentCaseHeadcountBreakdown(
+  source: RecruitmentCaseHeadcountSource
+): RecruitmentCaseHeadcountBreakdown {
+  const pendingMobility = Math.max(source.mobility_active_count ?? 0, 0);
+  const approvedMobility = Math.max(source.mobility_approved_count ?? 0, 0);
+
+  return {
+    activeCandidates: Math.max((source.candidate_count ?? 0) - pendingMobility, 0),
+    hiredCandidates: Math.max((source.hired_candidates ?? 0) - approvedMobility, 0),
+    internalMobility: pendingMobility + approvedMobility
+  };
+}
+
 export type RecruitmentCandidateControlRow = {
   id: string;
   candidate_profile_id: string;

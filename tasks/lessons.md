@@ -10,6 +10,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es priorizar el match operativo 1:1 del contrato antes del catálogo global por centro de costo.** Si `buk_contract_mappings` ya define `manager_name` para un contrato `is_one_to_one = true` e `is_operational = true`, esa debe ser la fuente primaria del `area_manager`; `cost_center_approvers` queda como fallback para contratos sin mapping contractual resoluble.
 - **Cuando la UI muestra un aprobador “imposible”, primero audita la clave de resolución, no el modal.** Si el historial `hiring_request_approvals` trae un nombre ajeno al contrato, lo más probable es que el bug haya quedado en la función que construye el flujo, no en el componente que lo renderiza.
 
+## 209. Un correo transaccional de aprobación debe abrir la misma superficie operativa donde la tarea realmente se resuelve
+
+- **No basta con que la tarea exista en el dashboard si el enlace del correo sigue apuntando a un módulo histórico distinto.** En WHO, el usuario recibía el correo correcto pero aterrizaba en `Control de Contrataciones`, mientras la acción viva estaba en el widget de tareas del inicio.
+- **La regla correcta es alinear backend y frontend sobre una ruta canónica única por tipo de tarea.** Si `who_approval` se opera desde `DashboardHome`, entonces tanto `enqueue_who_pending_approval_email(...)` como cualquier helper de navegación UI deben resolver `route = '/'` antes de enviar al usuario a una bandeja secundaria.
+- **Cuando una aprobación “sí existe pero no se encuentra”, audita primero la URL de entrada antes de tocar permisos o visibilidad.** Un deep-link mal apuntado puede parecer un problema de acceso, aunque el usuario sí tenga la tarea cargada en otra superficie del sistema.
+
+## 210. Cuando el backend expone métricas efectivas de cupos, la UI no puede rotularlas como categorías puras de personas
+
+- **Un contador efectivo puede mezclar estados distintos por diseño operativo.** En reclutamiento, `candidate_count` ya incluye activos del pipeline y movilidad interna pendiente, mientras `hired_candidates` puede incluir contratados efectivos y movilidad aprobada porque ambos impactan la ocupación del folio.
+- **La regla correcta es derivar un breakdown visual explícito antes de renderizar pelotas por estado.** Si la pantalla necesita mostrar `Activos`, `Contratados` y `Movilidad Interna`, la UI debe restar de los contadores efectivos las porciones de movilidad que el backend agregó para lógica de cupos, en vez de mostrar esos totales como si fueran categorías limpias.
+- **La semántica de cupos no debe corregirse con maquillaje visual ni la visual con cambios de backend innecesarios.** Si la función de métricas ya mantiene bien la reserva/consumo de cupos, el fix correcto es separar la presentación con un helper reutilizable y aplicarlo en todas las vistas que compartan ese bloque.
+
 ## 207. Si el ERP promete el siguiente correlativo de ficha BUK, esa resolución debe salir del registro vivo de fichas y no de un campo histórico local
 
 - **`candidate_worker_files.employee_code` es memoria transaccional, no la verdad final del trabajador en BUK.** Si el ERP calcula `F1/F2/F3...` solo desde ese campo, termina reciclando `F1` o ignorando fichas que ya fueron creadas por el propio runtime en BUK.

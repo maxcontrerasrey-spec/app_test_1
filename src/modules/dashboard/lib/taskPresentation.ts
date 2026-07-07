@@ -49,6 +49,10 @@ export function isIncentiveSummaryItem(
 }
 
 export function resolveTaskNavigationPath(task: DashboardNotificationPreviewItem) {
+  if ("type" in task && task.type === "who_approval") {
+    return "/";
+  }
+
   if (task.module_code === "movilidad_interna") {
     return "/movilidad-interna";
   }
