@@ -72,17 +72,50 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   );
   const totalCount = activeFoliosQuery.data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const visibleSummary = useMemo<RecruitmentProcessesPageSummary>(
+    () => ({
+      activeCases: folios.length,
+      requestedVacancies: folios.reduce(
+        (total, folio) => total + Math.max(folio.requested_vacancies ?? 0, 0),
+        0
+      ),
+      inProgressCandidates: folios.reduce(
+        (total, folio) => total + Math.max(folio.candidate_count ?? 0, 0),
+        0
+      ),
+      readyToHireCases: folios.filter((folio) => (folio.ready_candidates ?? 0) > 0).length,
+      filledCases: folios.filter(
+        (folio) =>
+          (folio.requested_vacancies ?? 0) > 0 &&
+          (folio.filled_vacancies ?? 0) >= (folio.requested_vacancies ?? 0)
+      ).length,
+      hiredCandidates: folios.reduce(
+        (total, folio) => total + Math.max(folio.hired_candidates ?? 0, 0),
+        0
+      )
+    }),
+    [folios]
+  );
   const folioSummary = useMemo<RecruitmentProcessesPageSummary>(
-    () =>
-      activeFoliosQuery.data?.summary ?? {
-        activeCases: recruitmentSummary?.openProcesses ?? 0,
-        requestedVacancies: recruitmentSummary?.requestedVacancies ?? 0,
-        inProgressCandidates: recruitmentSummary?.inProgressCandidates ?? 0,
-        readyToHireCases: recruitmentSummary?.readyToHireCases ?? 0,
-        filledCases: recruitmentSummary?.filledCases ?? 0,
-        hiredCandidates: recruitmentSummary?.hiredCandidates ?? 0
-      },
-    [activeFoliosQuery.data?.summary, recruitmentSummary]
+    () => {
+      if (activeFoliosQuery.data?.summary) {
+        return activeFoliosQuery.data.summary;
+      }
+
+      if (!debouncedSearch && recruitmentSummary) {
+        return {
+          activeCases: recruitmentSummary.openProcesses ?? 0,
+          requestedVacancies: recruitmentSummary.requestedVacancies ?? 0,
+          inProgressCandidates: recruitmentSummary.inProgressCandidates ?? 0,
+          readyToHireCases: recruitmentSummary.readyToHireCases ?? 0,
+          filledCases: recruitmentSummary.filledCases ?? 0,
+          hiredCandidates: recruitmentSummary.hiredCandidates ?? 0
+        };
+      }
+
+      return visibleSummary;
+    },
+    [activeFoliosQuery.data?.summary, debouncedSearch, recruitmentSummary, visibleSummary]
   );
   const folioKpis = useMemo(
     () => [

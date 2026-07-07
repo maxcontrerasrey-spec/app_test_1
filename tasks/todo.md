@@ -2,6 +2,32 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix de tarjetas vacías en folios en curso
+
+- [x] Auditar por qué los KPIs del widget `Folios en curso` quedan en `0` aunque existan datos visibles en la tabla
+- [x] Corregir el fallback frontend para que no trate un `summary` ausente como un resumen válido de ceros
+- [x] Aplicar la migración remota necesaria para que producción entregue el `summary` filtrado real del RPC
+- [x] Revalidar con `TypeScript`, build frontend, auditoría de migración, `git diff --check` y comprobación remota de migraciones; luego documentar el resultado
+
+## Resultado de hotfix de tarjetas vacías en folios en curso
+
+- La causa raíz quedó partida en dos:
+  - el frontend estaba convirtiendo `summary` ausente en un objeto válido lleno de ceros dentro de [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1), por lo que [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1) nunca caía al fallback;
+  - en remoto todavía no estaban aplicadas las migraciones [`20260707130500_restore_admin_override_for_hiring_approval_v2.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707130500_restore_admin_override_for_hiring_approval_v2.sql:1), [`20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql:1) y [`20260707145531_add_filtered_recruitment_dashboard_summary.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707145531_add_filtered_recruitment_dashboard_summary.sql:1), así que producción seguía expuesta al contrato viejo sin `summary`.
+- La corrección frontend quedó en dos capas:
+  - [`parseRecruitmentProcessesPagePayload(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:469) ahora deja `summary = null` cuando el payload no lo trae realmente;
+  - [`ActiveFoliosWidget.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx:1) ahora degrada de forma segura a:
+    - resumen global del dashboard cuando no hay filtro y el RPC aún no expone `summary`;
+    - resumen calculado desde los folios visibles cuando sí hay filtro y el backend todavía no responde el bloque agregado.
+- La corrección remota quedó aplicada con `npx --yes supabase db push --linked --include-all`, publicando en el proyecto remoto las tres migraciones pendientes.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npm run audit:migrations -- --files supabase/migrations/20260707130500_restore_admin_override_for_hiring_approval_v2.sql supabase/migrations/20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql supabase/migrations/20260707145531_add_filtered_recruitment_dashboard_summary.sql`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - `git diff --check`
+
 ## Auditoría y versionado de cambios pendientes del worktree
 
 - [x] Auditar todos los cambios pendientes de frontend, Edge Function y migraciones para verificar que sigan alineados con el contrato actual del repositorio

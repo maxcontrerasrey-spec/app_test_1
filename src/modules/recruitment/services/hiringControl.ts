@@ -474,16 +474,24 @@ function parseRecruitmentProcessesPagePayload(
     RecruitmentCaseListRow,
     Partial<RecruitmentProcessesPageSummary>
   >(payload);
+  const rawSummary = parsed.summary;
+
+  if (!rawSummary || typeof rawSummary !== "object") {
+    return {
+      ...parsed,
+      summary: null
+    };
+  }
 
   return {
     ...parsed,
     summary: {
-      activeCases: Number(parsed.summary?.activeCases ?? 0),
-      requestedVacancies: Number(parsed.summary?.requestedVacancies ?? 0),
-      inProgressCandidates: Number(parsed.summary?.inProgressCandidates ?? 0),
-      readyToHireCases: Number(parsed.summary?.readyToHireCases ?? 0),
-      filledCases: Number(parsed.summary?.filledCases ?? 0),
-      hiredCandidates: Number(parsed.summary?.hiredCandidates ?? 0)
+      activeCases: Number(rawSummary.activeCases ?? 0),
+      requestedVacancies: Number(rawSummary.requestedVacancies ?? 0),
+      inProgressCandidates: Number(rawSummary.inProgressCandidates ?? 0),
+      readyToHireCases: Number(rawSummary.readyToHireCases ?? 0),
+      filledCases: Number(rawSummary.filledCases ?? 0),
+      hiredCandidates: Number(rawSummary.hiredCandidates ?? 0)
     }
   };
 }
