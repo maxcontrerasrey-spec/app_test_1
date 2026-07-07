@@ -2,6 +2,29 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Auditoría y versionado de cambios pendientes del worktree
+
+- [x] Auditar todos los cambios pendientes de frontend, Edge Function y migraciones para verificar que sigan alineados con el contrato actual del repositorio
+- [x] Corregir cualquier drift o riesgo de despliegue detectado antes de versionar
+- [x] Revalidar con `TypeScript`, build frontend, auditoría de migraciones, auditoría de seguridad Supabase y `git diff --check`
+- [x] Versionar únicamente después de cerrar los hallazgos y empujar el resultado a `main`
+
+## Resultado de auditoría y versionado de cambios pendientes del worktree
+
+- El paquete pendiente quedó auditado y aprobado para `main` en tres grupos:
+  - frontend de reclutamiento/operaciones: [`CandidateIntakeForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx:1), [`TransferCandidateModal.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/TransferCandidateModal.tsx:1), [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1), [`HiringStatusPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringStatusPage.tsx:1), [`DatePickerField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/DatePickerField.tsx:1), [`OperationsBaseRegister.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsBaseRegister.tsx:1) y [`HiringRequestPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/pages/HiringRequestPage.tsx:1);
+  - endurecimiento backend/BUK: [`check_buk_candidate/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/check_buk_candidate/index.ts:1) y las migraciones [`20260707130500_restore_admin_override_for_hiring_approval_v2.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707130500_restore_admin_override_for_hiring_approval_v2.sql:1) y [`20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql:1);
+  - reparación auditada WHO de Rodolfo: [`20260703170500_repair_rodolfo_who_rejection_to_approved.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703170500_repair_rodolfo_who_rejection_to_approved.sql:1), [`20260703171200_normalize_rodolfo_who_repair_timeline.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703171200_normalize_rodolfo_who_repair_timeline.sql:1) y [`20260703171800_align_rodolfo_who_repair_audit_payload.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703171800_align_rodolfo_who_repair_audit_payload.sql:1).
+- Hallazgo corregido durante la auditoría:
+  - las tres migraciones de reparación WHO estaban demasiado acopladas al caso productivo puntual y podían fallar al correr en otro entorno o sobre snapshots ya reparados;
+  - se endurecieron para que mantengan la validación estricta en el caso objetivo, pero hagan `raise notice` y `no-op` si el candidato o la aprobación objetivo no existen o ya quedaron corregidos.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npm run audit:migrations -- --files supabase/migrations/20260703170500_repair_rodolfo_who_rejection_to_approved.sql supabase/migrations/20260703171200_normalize_rodolfo_who_repair_timeline.sql supabase/migrations/20260703171800_align_rodolfo_who_repair_audit_payload.sql supabase/migrations/20260707130500_restore_admin_override_for_hiring_approval_v2.sql supabase/migrations/20260707133000_harden_recruitment_personnel_helpers_and_buk_payload.sql`
+  - `npm run audit:supabase-security`
+  - `git diff --check`
+
 ## Dashboard de folios en curso con KPIs filtrados y búsqueda por gerencia
 
 - [x] Auditar el contrato actual entre `ActiveFoliosWidget`, `useRecruitmentProcessesPage(...)` y `get_recruitment_processes_page(...)` para unificar tabla y tarjetas sobre la misma fuente filtrada

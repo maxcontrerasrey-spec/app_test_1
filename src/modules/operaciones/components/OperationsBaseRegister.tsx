@@ -1,5 +1,5 @@
 import { DatePickerField } from "../../../shared/ui";
-import { parseDateValue } from "../../../shared/lib/date";
+import { parseDateValue, toTodayDateValue } from "../../../shared/lib/date";
 import { OperationsDriverLookup } from "./OperationsDriverLookup";
 import type { ServiceDataRecord } from "../data/services-data";
 import type { Driver, Equipment, ServiceDraft } from "../types";
@@ -100,6 +100,7 @@ export function OperationsBaseRegister({
   filteredEquipment,
 }: OperationsBaseRegisterProps) {
   const selectedDate = selectedDateValue ? parseDateValue(selectedDateValue) : null;
+  const todayValue = toTodayDateValue();
   const shiftLabel = selectedShift ? selectedShift.toUpperCase() : "Sin turno";
 
   function markServiceAsNotPerformed(serviceId: number) {
@@ -134,7 +135,13 @@ export function OperationsBaseRegister({
         <section className="panel operations-panel jornada-panel">
           <p className="panel-label">Jornada</p>
           <div className="field-grid">
-            <DatePickerField id="selected-date-value" label="Fecha" value={selectedDateValue} onChange={setSelectedDateValue} />
+            <DatePickerField
+              id="selected-date-value"
+              label="Fecha"
+              value={selectedDateValue}
+              onChange={setSelectedDateValue}
+              minValue={todayValue}
+            />
             <label>
               <span>Turno</span>
               <select value={selectedShift} onChange={(event) => setSelectedShift(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.shift)}>

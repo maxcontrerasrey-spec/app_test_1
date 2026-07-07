@@ -326,6 +326,7 @@ export function HiringRequestPage() {
                 label="Fecha solicitada ingreso"
                 value={fechaSolicitadaIngreso}
                 onChange={setFechaSolicitadaIngreso}
+                minValue={todayValue}
               />
             </div>
 
@@ -355,6 +356,7 @@ export function HiringRequestPage() {
                 label="Fecha inicio"
                 value={fechaInicio}
                 onChange={setFechaInicio}
+                minValue={todayValue}
               />
 
               <TextField

@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es sacar filas y KPIs del mismo conjunto filtrado.** Si el widget ya depende de `get_recruitment_processes_page(...)`, el backend debe devolver también un `summary` calculado desde el mismo `filtered` CTE en vez de pedirle al frontend que mezcle el bundle global con una query local.
 - **Cuando negocio pide filtrar por una dimensión verbal como “gerencia”, primero reutiliza la semántica canónica que ya existe en el módulo.** En este flujo la señal operativa vigente no era una columna `gerencia`, sino `cost_unit/cost_unit_name` y su alias visible vía `cost_center_name`; el search debe ampliarse sobre esa verdad existente antes de inventar una nueva dimensión paralela.
 
+## 203. Una migración de reparación productiva puntual no puede romper otros entornos si el caso objetivo no existe o ya quedó saneado
+
+- **Versionar una reparación auditable no autoriza a acoplarla ciegamente a un único registro vivo.** Si la migración asume que un `candidate_id`, `approval_id` o estado exacto siempre existirá, `db push` sobre otro entorno o sobre un snapshot ya reparado termina fallando por una incidencia histórica que ya no aplica allí.
+- **La regla correcta es separar “objetivo ausente o ya corregido” de “objetivo presente pero inconsistente”.** Cuando el caso puntual no existe o ya fue saneado, la migración debe dejar `raise notice` y salir como `no-op`; solo debe levantar excepción si el caso sí existe pero rompe las invariantes que la reparación promete proteger.
+- **Toda reparación one-off que entra al repositorio debe ser portable antes de mergearse a `main`.** Aunque haya sido diseñada por una urgencia productiva, el estándar del repo sigue siendo que otra base pueda recorrer la historia de migraciones sin caerse por datos que nunca estuvieron ahí.
+
 ## 201. Si una RPC v2 reemplaza una ruta viva de aprobación, debe preservar explícitamente los bypass y gates que la UI ya usa
 
 - **No basta con que la nueva RPC compile y cubra el caso feliz del aprobador asignado.** En `decide_hiring_request_approval_v2(...)`, quitar el bypass de `admin/superadmin` mientras el frontend seguía propagando `isAdmin` dejó a los administradores viendo la cola pero fallando al decidir.

@@ -43,7 +43,8 @@ const emptySummary: RecruitmentDashboardSummary = {
 };
 
 export function HiringStatusPage() {
-  const { accessibleFeatures, accessibleModules, isSuperAdmin, user } = useAuth();
+  const { accessibleFeatures, accessibleModules, appRoles, isSuperAdmin, user } = useAuth();
+  const isAdmin = isSuperAdmin || appRoles.includes("admin");
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [selectedCaseId, setSelectedCaseId] = useState("");
@@ -371,6 +372,7 @@ export function HiringStatusPage() {
       isLoading={isLoading}
       pendingApprovalCount={summary.pending_approval_count ?? summary.pending_contracts_control}
       currentUserId={user?.id}
+      isAdmin={isAdmin}
       decisionMessage={decisionMessage}
       errorMessage={errorMessage}
       onApprovalSuccess={() => void invalidateRecruitmentCache()}

@@ -30,7 +30,7 @@ export function DatePickerField({
   maxValue
 }: DatePickerFieldProps) {
   const todayValue = toTodayDateValue();
-  const effectiveMinValue = minValue ?? todayValue;
+  const effectiveMinValue = minValue ?? "";
   const effectiveMaxValue = maxValue ?? "";
   const currentYear = new Date().getFullYear();
   const [isOpen, setIsOpen] = useState(false);

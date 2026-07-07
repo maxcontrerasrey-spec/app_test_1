@@ -35,6 +35,7 @@ type HiringProcessesViewProps = {
   isLoading: boolean;
   pendingApprovalCount: number;
   currentUserId?: string;
+  isAdmin?: boolean;
   decisionMessage: string;
   errorMessage: string;
   onApprovalSuccess: () => void;
@@ -45,6 +46,7 @@ export function HiringProcessesView({
   isLoading,
   pendingApprovalCount,
   currentUserId,
+  isAdmin = false,
   decisionMessage,
   errorMessage,
   onApprovalSuccess,
@@ -604,6 +606,7 @@ export function HiringProcessesView({
         isOpen={!!selectedApproval}
         approvalData={selectedApproval}
         currentUserId={currentUserId}
+        isAdmin={isAdmin}
         onClose={() => setSelectedApprovalId(null)}
         onSuccess={handleApprovalSuccess}
       />

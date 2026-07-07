@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import {
@@ -35,6 +35,16 @@ export function TransferCandidateModal({
         !["filled", "closed_unfilled", "cancelled"].includes(c.status)
     );
   }, [activeCases, candidate]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsLoading(false);
+    }
+
+    setTargetCaseId("");
+    setComment("");
+    setErrorMessage("");
+  }, [candidate?.id, isOpen]);
 
   if (!isOpen || !candidate) return null;
 

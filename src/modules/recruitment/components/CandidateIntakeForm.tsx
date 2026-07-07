@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { logger } from "../../../shared/lib/logger";
 import {
   addCandidateToRecruitmentCase,
@@ -66,7 +66,10 @@ export function CandidateIntakeForm({
   const [isSearchingCandidate, setIsSearchingCandidate] = useState(false);
   const [foundCandidateProfile, setFoundCandidateProfile] = useState<CandidateLookupProfile | null>(null);
   const [lastSearchedRut, setLastSearchedRut] = useState("");
-  
+  const lookupRequestIdRef = useRef(0);
+  const latestNationalIdRef = useRef("");
+  const autofilledRutRef = useRef("");
+
   // States for Buk lookup
   const [isSearchingBuk, setIsSearchingBuk] = useState(false);
   const [foundBukStatus, setFoundBukStatus] = useState<BukCandidateStatus | null>(null);
@@ -91,35 +94,73 @@ export function CandidateIntakeForm({
   const shouldShowCandidateRutError =
     candidateRutTouched && Boolean(candidateForm.nationalId) && !isCandidateRutValid;
 
+  useEffect(() => {
+    latestNationalIdRef.current = candidateForm.nationalId;
+  }, [candidateForm.nationalId]);
+
+  const resetLookupState = (clearAutofilledFields = false) => {
+    lookupRequestIdRef.current += 1;
+    setIsSearchingCandidate(false);
+    setIsSearchingBuk(false);
+    setFoundCandidateProfile(null);
+    setFoundBukStatus(null);
+    setLastSearchedRut("");
+    setCandidateFormStatus("");
+
+    if (!clearAutofilledFields) {
+      return;
+    }
+
+    autofilledRutRef.current = "";
+    setCandidateForm((current) => ({
+      ...current,
+      fullName: "",
+      email: "",
+      phone: ""
+    }));
+  };
+
   // Perform candidate lookup in background when RUT is valid
   useEffect(() => {
     const rut = candidateForm.nationalId;
+    const normalizedRut = normalizeRut(rut);
+    const lastNormalizedRut = normalizeRut(lastSearchedRut);
+
     if (validateRut(rut)) {
-      const normalized = normalizeRut(rut);
-      const lastNormalized = normalizeRut(lastSearchedRut);
-
-      if (normalized && normalized !== lastNormalized) {
+      if (normalizedRut && normalizedRut !== lastNormalizedRut) {
         setLastSearchedRut(rut);
-        void performCandidateLookup(rut);
+        void performCandidateLookup(rut, normalizedRut);
       }
-    } else {
-      // If the RUT is cleared or becomes invalid, reset lookup states
-      if (!rut && (foundCandidateProfile || foundBukStatus)) {
-        setFoundCandidateProfile(null);
-        setFoundBukStatus(null);
-        setLastSearchedRut("");
-        setCandidateForm((current) => ({
-          ...current,
-          fullName: "",
-          email: "",
-          phone: ""
-        }));
-        setCandidateFormStatus("");
-      }
+      return;
     }
-  }, [candidateForm.nationalId, lastSearchedRut, foundCandidateProfile, foundBukStatus]);
 
-  const performCandidateLookup = async (rut: string) => {
+    const shouldClearAutofilledFields =
+      Boolean(autofilledRutRef.current) && normalizedRut !== autofilledRutRef.current;
+
+    if (
+      lastNormalizedRut ||
+      autofilledRutRef.current ||
+      foundCandidateProfile ||
+      foundBukStatus ||
+      candidateFormStatus ||
+      isSearchingCandidate ||
+      isSearchingBuk
+    ) {
+      resetLookupState(shouldClearAutofilledFields);
+    }
+  }, [
+    candidateForm.nationalId,
+    lastSearchedRut,
+    foundCandidateProfile,
+    foundBukStatus,
+    candidateFormStatus,
+    isSearchingCandidate,
+    isSearchingBuk
+  ]);
+
+  const performCandidateLookup = async (rut: string, normalizedRut: string) => {
+    const requestId = lookupRequestIdRef.current + 1;
+    lookupRequestIdRef.current = requestId;
     setIsSearchingCandidate(true);
     setIsSearchingBuk(true);
     setCandidateFormError("");
@@ -130,6 +171,13 @@ export function CandidateIntakeForm({
       findCandidateProfileByRut(rut),
       checkCandidateInBukLive(rut)
     ]);
+
+    if (
+      requestId !== lookupRequestIdRef.current ||
+      normalizeRut(latestNationalIdRef.current) !== normalizedRut
+    ) {
+      return;
+    }
 
     setIsSearchingCandidate(false);
     setIsSearchingBuk(false);
@@ -143,6 +191,7 @@ export function CandidateIntakeForm({
     }
 
     if (localResponse.data) {
+      autofilledRutRef.current = normalizedRut;
       setFoundCandidateProfile(localResponse.data as CandidateLookupProfile);
       setCandidateForm((current) => ({
         ...current,
@@ -152,6 +201,7 @@ export function CandidateIntakeForm({
       }));
       setCandidateFormStatus("✓ Candidato registrado en el sistema local. Datos autocompletados.");
     } else {
+      autofilledRutRef.current = "";
       setFoundCandidateProfile(null);
       setCandidateFormStatus("");
     }
@@ -246,6 +296,7 @@ export function CandidateIntakeForm({
     });
     setFoundCandidateProfile(null);
     setLastSearchedRut("");
+    autofilledRutRef.current = "";
     setCandidateRutTouched(false);
     setCandidateFormStatus(
       candidateCanBeReactivated
