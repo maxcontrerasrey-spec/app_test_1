@@ -2,6 +2,28 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix de avance de etapa a listo para contratar
+
+- [x] Auditar el error `42703` al mover candidatos a `ready_for_hire` y confirmar si proviene del frontend o del trigger backend asociado
+- [x] Versionar una migración correctiva mínima que recomponga `enqueue_personnel_to_hire_email(...)` reutilizando el patrón vigente para notificaciones de contratación
+- [x] Revalidar con auditoría de migración, compilación relevante, `git diff --check` y dejar documentado el resultado antes de cerrar
+
+## Resultado de hotfix de avance de etapa a listo para contratar
+
+- La causa raíz quedó en backend, no en el modal. Al mover un candidato a `ready_for_hire`, el trigger `trg_recruitment_case_candidates_ready_for_buk_email_dispatch()` ejecutaba `enqueue_personnel_to_hire_email(...)`, función introducida en [`20260703070000_add_personnel_to_hire_notifications_and_access_alignment.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703070000_add_personnel_to_hire_notifications_and_access_alignment.sql:78) que volvía a leer `hr.request_context` y `hr.module_label` desde `public.hiring_requests`, columnas inexistentes en contratación.
+- La corrección quedó versionada en [`20260707153816_fix_personnel_to_hire_notification_missing_request_context.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707153816_fix_personnel_to_hire_notification_missing_request_context.sql:1), recompilando solo `public.enqueue_personnel_to_hire_email(...)` y reutilizando el patrón ya usado en otras notificaciones del módulo:
+  - elimina las columnas inexistentes del `select`;
+  - conserva intactos destinatarios, `event_key`, trigger y ruta funcional;
+  - fija `request_context = 'hiring'` y `module_label = 'Contratación'` en el payload del correo, que es la semántica correcta para este flujo.
+- La migración quedó aplicada también en el proyecto remoto enlazado con `npx --yes supabase db push --linked --include-all`, por lo que el error productivo `42703` ya no debería reaparecer al avanzar a `Listo para contratar`.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `npm run audit:migrations -- --files supabase/migrations/20260707153816_fix_personnel_to_hire_notification_missing_request_context.sql`
+  - `git diff --check`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+
 ## Hotfix de tarjetas vacías en folios en curso
 
 - [x] Auditar por qué los KPIs del widget `Folios en curso` quedan en `0` aunque existan datos visibles en la tabla

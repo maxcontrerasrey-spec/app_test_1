@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 204. Un trigger nuevo de contratación no puede copiar payloads de otros módulos ni de funciones previas sin verificar primero el esquema real de `hiring_requests`
+
+- **PostgreSQL permite crear funciones que referencian columnas inexistentes y recién falla cuando el trigger las ejecuta.** En `enqueue_personnel_to_hire_email(...)`, reutilizar `hr.request_context` y `hr.module_label` rompió el avance a `ready_for_hire` con `42703` aunque la migración hubiera aplicado sin errores.
+- **La regla correcta es auditar la tabla fuente real antes de clonar un `SELECT` o payload JSON de otra notificación.** Si el módulo es contratación, `public.hiring_requests` no expone por defecto las columnas semánticas que sí existen en movilidad interna; cuando el contexto es fijo, el payload debe usar literales canónicos como `request_context = 'hiring'` y `module_label = 'Contratación'`.
+- **Toda notificación disparada por cambio de etapa debe validarse como flujo ejecutado, no solo como SQL que compila o migra.** Si una función queda detrás de `after update of stage_code`, la prueba mínima de cierre debe incluir mover una candidatura por esa etapa o, al menos, revisar la función contra el patrón runtime ya endurecido en funciones hermanas.
+
 ## 202. Un widget con tabla filtrada no puede mezclar KPIs globales de otra fuente si promete responder al mismo filtro
 
 - **Si la tabla viene de una RPC paginada/filtrada pero las tarjetas vienen del resumen global del dashboard, el usuario ve dos verdades distintas en la misma caja.** En `Folios en curso`, buscar por contrato o gerencia cambiaba las filas visibles, pero dejaba congelados `Folios activos`, `Candidatos en curso` y `Casos cubiertos`, haciendo parecer que el filtro no funcionaba.
