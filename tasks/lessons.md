@@ -4,6 +4,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 207. Si el ERP promete el siguiente correlativo de ficha BUK, esa resolución debe salir del registro vivo de fichas y no de un campo histórico local
+
+- **`candidate_worker_files.employee_code` es memoria transaccional, no la verdad final del trabajador en BUK.** Si el ERP calcula `F1/F2/F3...` solo desde ese campo, termina reciclando `F1` o ignorando fichas que ya fueron creadas por el propio runtime en BUK.
+- **La regla correcta es resolver primero el último correlativo visible en la identidad real del trabajador.** Antes de devolver `suggested_employee_code`, el backend debe mirar el historial reciente de `buk_sync_jobs` y el registro vivo de `public.employees.raw_payload ->> 'code_sheet'` para el mismo RUT/documento; recién después puede usar `candidate_worker_files` como apoyo histórico.
+- **Cuando la verdad canónica cambie, el payload vivo y la ficha persistida deben quedar alineados en la misma pasada.** No basta con corregir la función resolutora: hay que hacer backfill de `candidate_worker_files.employee_code` y hacer que `get_candidate_buk_profile(...)` y las exportaciones consuman prioritariamente `suggested_employee_code`, o la UI sigue mostrando la ficha vieja aunque backend ya haya resuelto la nueva.
+
+## 206. En trabajos BUK con `working_schedule_type = 'otros'`, el subtipo `other_type_of_working_day` es obligatorio y debe viajar desde el contexto operativo canónico
+
+- **Copiar solo `working_schedule_type` desde un sample del área no alcanza cuando BUK clasifica la jornada como `otros`.** En ese caso el API también exige `other_type_of_working_day`; si el worker lo omite, deja fichas creadas y planes listos pero el job muere con `Otros Tipos de Jornada no puede estar en blanco`.
+- **La regla correcta es extraer el subtipo desde la misma fuente que resuelve `company_id`, `area_id`, `leader_id` y `weekly_hours`.** Si el contexto job se deriva de empleados activos del área, el snapshot local debe arrastrar también `other_type_of_working_day`; no hay que inventarlo en frontend ni hardcodearlo por contrato.
+- **Cuando un error externo habla de un campo BUK “en blanco”, primero valida si el worker ya estaba reconstruyendo solo la mitad de una enum compuesta.** Muchas configuraciones de BUK no son un único campo atómico; el tipo principal y su variante subordinada deben preservarse juntos o la integración parece correcta hasta el POST final.
+
 ## 205. En integraciones BUK, una ficha creada no debe salir del bucket pendiente hasta que el job canónico quede `success`, y eso exige parsers tolerantes del API externo
 
 - **Que BUK ya tenga una ficha `F2` no significa que la generación efectiva haya terminado para el ERP.** En `Personal a Contratar`, la salida del bucket depende de `buk_sync_jobs.status = 'success'` con `buk_employee_id`; si la ficha quedó creada pero el worker falló al reparar plan/trabajo, el candidato debe seguir visible porque aún no existe confirmación canónica de alta efectiva.

@@ -8,6 +8,41 @@
 - [x] Corregir el worker `sync-buk-candidates` para que recupere correctamente planes ya existentes y complete la generación efectiva sin dejar el job en `error`
 - [x] Validar con evidencia remota, revisión de diff y despliegue del worker antes de cerrar
 
+## Reparación de F2 interna creada por ERP que fue anulada como duplicado externo
+
+- [x] Corregir `sync-buk-candidates` para que una ficha activa que coincide con el `suggested_employee_code` del ERP se repare y reutilice, en vez de anular la pedida como duplicado externo
+- [x] Endurecer la resolución del contexto BUK para recuperar `buk_area_code` canónicamente cuando el mapping exista pero siga incompleto
+- [ ] Reparar el caso productivo de José Patricio Méndez Díaz (`RC-0013`) alineando BUK y ERP con validación remota completa
+
+## Resultado de reparación estructural de correlativo BUK y F2 internas
+
+- La raíz profunda sí estaba en el contrato backend del correlativo de ficha. [`20260707173500_fix_buk_employee_code_resolution_against_live_registry.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260707173500_fix_buk_employee_code_resolution_against_live_registry.sql:1) recompone `resolve_candidate_worker_employee_code(...)` para que el siguiente `F1/F2/F3...` salga del registro vivo de fichas BUK (`public.employees.raw_payload ->> 'code_sheet'`) y de los snapshots recientes de `buk_sync_jobs`, no solo del `candidate_worker_files.employee_code` viejo.
+- Esa misma migración dejó alineado el payload vivo de ficha BUK con la verdad canónica:
+  - `get_candidate_buk_profile(...)` ahora prioriza `suggested_employee_code`;
+  - `candidate_worker_files.employee_code` quedó backfilleado en remoto para los casos afectados, incluyendo José Patricio Méndez Díaz y los tres candidatos de `RC-0067`, todos ya con `F2`.
+- En runtime todavía quedaba un segundo bug que explicaba por qué los tres casos nuevos seguían fallando aun con la ficha correcta:
+  - el worker ya entraba por `reused_incomplete_existing`;
+  - pero al crear el trabajo BUK omitía `other_type_of_working_day` cuando la jornada del área resolvía `working_schedule_type = 'otros'`;
+  - BUK por eso respondía `Otros Tipos de Jornada no puede estar en blanco`.
+- La corrección final quedó en [`sync-buk-candidates/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1):
+  - reutiliza una ficha activa interna cuando coincide con el `suggested_employee_code` resuelto por ERP, en vez de cancelarla como duplicado externo;
+  - recupera `buk_area_code` por RPC cuando el mapping contractual existe pero sigue incompleto;
+  - arrastra también `other_type_of_working_day` desde el contexto operativo del área cuando la jornada BUK es `otros`.
+- El despliegue productivo quedó aplicado con:
+  - `npx --yes supabase db push --linked --include-all`
+  - `npx --yes supabase functions deploy sync-buk-candidates --project-ref pzblmbahnoyntrhistea --use-api --yes`
+- Reparación productiva confirmada sobre los tres casos vivos de `RC-0067`:
+  - Jorge Ricardo Orellana Coronado: job `1d0864cd-60bd-4076-b747-2ab4ec62ad72` -> `success`, ficha `41908`, trabajo BUK `141997`, `16` documentos subidos, candidato `hired`;
+  - Antonio Enrique Morales Gamboa: job `3058fa0c-a2e4-46d3-9478-279d1a0eacbf` -> `success`, ficha `41904`, trabajo BUK `141998`, `16` documentos subidos, candidato `hired`;
+  - Gregorio Patricio Callejas Bravo: job `b1fc23f6-9d42-4149-bc2b-c5ed5e2e847b` -> `success`, ficha `41905`, trabajo BUK `141999`, `16` documentos subidos, candidato `hired`.
+- La evidencia BUK final quedó alineada en los tres:
+  - `start_date = 2026-07-06`
+  - `working_schedule_type = 'otros'`
+  - `other_type_of_working_day = 'especial_art_25'`
+  - `base_wage = 0`
+  - `area_id = 2911`, `leader_id = 17716`
+- José Patricio Méndez Díaz no se marcó como resuelto en esta pasada. Su ficha `41875/F2` ya está identificada como interna y el correlativo quedó corregido, pero el caso quedó históricamente anulado como duplicado activo por un job `success` anterior; requiere una reparación adicional de estado ERP/caso antes de volver a dejarlo “como operamos ahora”.
+
 ## Resultado de hotfix de pendientes BUK ya existentes
 
 - La causa raíz no estaba en la tabla `Personal a Contratar`, sino en la señal canónica que la alimenta. El bucket [`get_recruitment_personnel_page_bucket(...)`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703044500_align_personnel_buckets_with_buk_success.sql:1) solo retira un candidato cuando existe `buk_sync_jobs.status = 'success'` con `buk_employee_id`, por lo que cualquier alta BUK incompleta o job terminado en `error` sigue apareciendo como pendiente.

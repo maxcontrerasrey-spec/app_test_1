@@ -157,7 +157,7 @@ function buildEmployeeRow({ candidate, bukProfile }: NominaSource) {
     "Depto / Oficina": bukProfile?.apartment_or_office ?? "",
     "Título": bukProfile?.education_title ?? "",
     Institución: bukProfile?.education_institution ?? "",
-    "Código de Ficha*": worker?.employee_code ?? bukProfile?.suggested_employee_code ?? "",
+    "Código de Ficha*": bukProfile?.suggested_employee_code ?? worker?.employee_code ?? "",
     "Ingreso Compañía*": toExcelDateValue(
       worker?.company_entry_date ?? candidate.hired_at ?? candidate.stage_entered_at
     ),

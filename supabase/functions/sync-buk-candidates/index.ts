@@ -142,6 +142,7 @@ type LocalBukJobSnapshot = {
   costCenter: string | null;
   weeklyHours: number | null;
   workingScheduleType: string | null;
+  otherTypeOfWorkingDay: string | null;
   leaderId: number | null;
 };
 
@@ -167,6 +168,7 @@ type CandidateSyncContext = {
   periodicity: "mensual" | "diaria" | "hora";
   regularHours: number;
   typeOfWorkingDay: string;
+  otherTypeOfWorkingDay: string | null;
   startDate: string;
   endDate: string | null;
   contractSubscriptionDate: string;
@@ -533,6 +535,24 @@ function matchesBukEmployeeIdentity(employee: BukEmployeeRecord, payload: BukCan
   );
 }
 
+function hasBukCurrentJob(employee: BukEmployeeRecord) {
+  return Boolean(
+    employee.current_job &&
+      typeof employee.current_job === "object" &&
+      !Array.isArray(employee.current_job) &&
+      Object.keys(employee.current_job).length > 0
+  );
+}
+
+function matchesResolvedBukEmployeeCode(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  const targetEmployeeCode = resolveBukEmployeeCode(payload);
+  if (!targetEmployeeCode) {
+    return false;
+  }
+
+  return normalizeText(employee.code_sheet) === normalizeText(targetEmployeeCode);
+}
+
 function isActiveBukEmployeeDuplicate(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
   if (normalizeBukEmployeeStatus(employee.status) !== "active") {
     return false;
@@ -545,6 +565,10 @@ function isActiveBukEmployeeDuplicate(employee: BukEmployeeRecord, payload: BukC
   const employeeStartDate = extractDatePortion(employee.active_since);
   const targetStartDate = resolveTargetStartDate(payload);
   return !targetStartDate || employeeStartDate === targetStartDate;
+}
+
+function isErpProvisionedActiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  return isActiveBukEmployeeDuplicate(employee, payload) && matchesResolvedBukEmployeeCode(employee, payload);
 }
 
 function isInactiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
@@ -1160,6 +1184,10 @@ function extractCurrentJobSnapshot(rawPayload: Record<string, unknown> | null | 
       typeof currentJob?.working_schedule_type === "string" && currentJob.working_schedule_type.trim()
         ? currentJob.working_schedule_type.trim()
         : null,
+    otherTypeOfWorkingDay:
+      typeof currentJob?.other_type_of_working_day === "string" && currentJob.other_type_of_working_day.trim()
+        ? currentJob.other_type_of_working_day.trim()
+        : null,
     leaderId: parseIntegerLike(boss?.id)
   };
 }
@@ -1324,6 +1352,16 @@ function buildBukJobPayload(context: CandidateSyncContext) {
     }
   };
 
+  if (normalizeText(context.typeOfWorkingDay) === "otros") {
+    if (!context.otherTypeOfWorkingDay) {
+      throw new Error(
+        "No fue posible resolver other_type_of_working_day para una jornada BUK de tipo 'otros'."
+      );
+    }
+
+    payload.other_type_of_working_day = context.otherTypeOfWorkingDay;
+  }
+
   if (context.contractType === "Plazo fijo") {
     payload.periodicity = context.periodicity;
     if (context.endDate) {
@@ -1401,6 +1439,7 @@ async function resolveCandidateSyncContext(
   }
 
   let contractMapping: {
+    id?: number | null;
     buk_area_name: string | null;
     buk_area_code: string | null;
   } | null = null;
@@ -1408,7 +1447,7 @@ async function resolveCandidateSyncContext(
   if (caseRecord.contract_id != null) {
     const { data } = await supabase
       .from("buk_contract_mappings")
-      .select("buk_area_name, buk_area_code")
+      .select("id, buk_area_name, buk_area_code")
       .eq("contract_id", caseRecord.contract_id)
       .limit(1)
       .maybeSingle();
@@ -1418,14 +1457,49 @@ async function resolveCandidateSyncContext(
   if (!contractMapping && typeof hiringRequest.contract_number === "string" && hiringRequest.contract_number.trim()) {
     const { data } = await supabase
       .from("buk_contract_mappings")
-      .select("buk_area_name, buk_area_code")
+      .select("id, buk_area_name, buk_area_code")
       .eq("contract_number", hiringRequest.contract_number.trim())
       .limit(1)
       .maybeSingle();
     contractMapping = data;
   }
 
-  const areaCode = contractMapping?.buk_area_code?.trim();
+  let areaCode = contractMapping?.buk_area_code?.trim() ?? null;
+  if (!areaCode) {
+    const areaName =
+      contractMapping?.buk_area_name?.trim() ??
+      caseRecord.contract_name?.trim() ??
+      payload.case.contract_name?.trim() ??
+      null;
+
+    if (areaName) {
+      const { data: resolvedAreaCode, error: resolvedAreaError } = await supabase.rpc(
+        "resolve_buk_area_code",
+        {
+          p_area_name: areaName
+        }
+      );
+
+      if (resolvedAreaError) {
+        throw new Error(
+          `No fue posible resolver el area operativa BUK para ${areaName}: ${resolvedAreaError.message}`
+        );
+      }
+
+      areaCode =
+        typeof resolvedAreaCode === "string" && resolvedAreaCode.trim()
+          ? resolvedAreaCode.trim()
+          : null;
+
+      if (areaCode && contractMapping?.id != null) {
+        await supabase
+          .from("buk_contract_mappings")
+          .update({ buk_area_code: areaCode })
+          .eq("id", contractMapping.id);
+      }
+    }
+  }
+
   if (!areaCode) {
     throw new Error(`No existe un mapping BUK con area operativa para el contrato ${caseRecord.contract_name ?? payload.case.contract_name ?? payload.case.case_code}.`);
   }
@@ -1483,6 +1557,10 @@ async function resolveCandidateSyncContext(
       matchingRoleSample?.workingScheduleType ??
       fallbackAreaSnapshot.workingScheduleType ??
       "ordinaria_art_22",
+    otherTypeOfWorkingDay:
+      matchingRoleSample?.otherTypeOfWorkingDay ??
+      fallbackAreaSnapshot.otherTypeOfWorkingDay ??
+      null,
     startDate: targetStartDate,
     endDate: hiringRequest.end_date ?? null,
     contractSubscriptionDate: targetStartDate,
@@ -1724,6 +1802,18 @@ async function resolveBukEmployeeForSync(
     const matchingEmployees = await lookupBukEmployeesByDocumentNumber(payload);
     if (matchingEmployees.length === 0) {
       throw error;
+    }
+
+    const erpProvisionedEmployee = matchingEmployees.find((employee) =>
+      isErpProvisionedActiveBukEmployee(employee, payload)
+    );
+    if (erpProvisionedEmployee) {
+      return {
+        employeeId: String(erpProvisionedEmployee.id),
+        employeePayload: null,
+        resolution: "reused_existing_active",
+        matchedEmployee: erpProvisionedEmployee
+      } as const;
     }
 
     const activeEmployee = matchingEmployees.find((employee) =>

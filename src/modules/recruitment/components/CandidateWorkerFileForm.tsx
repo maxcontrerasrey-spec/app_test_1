@@ -271,7 +271,7 @@ function buildWorkerDraft(
   const worker = bukProfile?.worker_file;
 
   return applyCandidateBukWorkerDefaults({
-    employeeCode: worker?.employee_code ?? bukProfile?.suggested_employee_code ?? "",
+    employeeCode: bukProfile?.suggested_employee_code ?? worker?.employee_code ?? "",
     projectName: worker?.project_name ?? caseDetail.case.contract_name ?? "",
     companyEntryDate:
       worker?.company_entry_date ??
