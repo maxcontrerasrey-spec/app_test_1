@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 211. Un `success` de cancelación ERP no es una generación efectiva en BUK y no puede alimentar buckets ni bloqueos de reproceso
+
+- **`buk_sync_jobs.status = 'success'` no basta por sí solo para concluir que el alta quedó operativamente resuelta.** En contratación, la rama `cancel_request_existing_active_buk_employee` marca el job como exitoso para auditar la anulación, pero ese éxito representa un retiro del candidato, no una contratación efectiva.
+- **La regla correcta es clasificar explícitamente qué tipos de `success` cuentan como alta real.** Si el snapshot trae `result_snapshot.erpAction.action = 'cancel_request_existing_active_buk_employee'`, ese job debe quedar fuera de `get_candidate_buk_sync_payload(...)`, `enqueue_buk_generation(...)`, buckets de `Personal a Contratar` y recordatorios automáticos; de lo contrario, el sistema esconde candidatos reactivables y bloquea su reparación.
+- **Cuando un caso histórico quedó mal anulado, conserva la auditoría del error y agrega una nueva reactivación canónica en vez de “borrar” el success viejo.** El fix correcto es introducir un helper semántico como `is_effective_buk_generation_success(...)`, revertir la etapa con un `reason_code` de reparación y generar un nuevo job efectivo sobre la ficha correcta (`F2`, `F3`, etc.), sin destruir la trazabilidad del falso duplicado original.
+
 ## 208. En aprobaciones 1:1 por contrato, el gerente de área no puede resolverse solo por `cost_center_code` cuando ese código colisiona entre gerencias
 
 - **Un `cost_center_code` compartido entre contratos distintos no alcanza para decidir quién aprueba una solicitud.** En contratación, `10111` existe tanto para `MANTENCION CALAMA` como para contratos de `RECURSOS HUMANOS`; si `submit_hiring_request(...)` mira solo `cost_center_approvers`, puede asignar al gerente correcto para un centro y al completamente equivocado para otro.

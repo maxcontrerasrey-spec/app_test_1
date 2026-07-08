@@ -93,7 +93,7 @@
 
 - [x] Corregir `sync-buk-candidates` para que una ficha activa que coincide con el `suggested_employee_code` del ERP se repare y reutilice, en vez de anular la pedida como duplicado externo
 - [x] Endurecer la resolución del contexto BUK para recuperar `buk_area_code` canónicamente cuando el mapping exista pero siga incompleto
-- [ ] Reparar el caso productivo de José Patricio Méndez Díaz (`RC-0013`) alineando BUK y ERP con validación remota completa
+- [x] Reparar el caso productivo de José Patricio Méndez Díaz (`RC-0013`) alineando BUK y ERP con validación remota completa
 
 ## Resultado de reparación estructural de correlativo BUK y F2 internas
 
@@ -122,7 +122,18 @@
   - `other_type_of_working_day = 'especial_art_25'`
   - `base_wage = 0`
   - `area_id = 2911`, `leader_id = 17716`
-- José Patricio Méndez Díaz no se marcó como resuelto en esta pasada. Su ficha `41875/F2` ya está identificada como interna y el correlativo quedó corregido, pero el caso quedó históricamente anulado como duplicado activo por un job `success` anterior; requiere una reparación adicional de estado ERP/caso antes de volver a dejarlo “como operamos ahora”.
+- José Patricio Méndez Díaz quedó reparado en una segunda pasada controlada:
+  - [`20260708101500_distinguish_buk_cancel_success_from_effective_generation.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260708101500_distinguish_buk_cancel_success_from_effective_generation.sql:1) introduce `public.is_effective_buk_generation_success(...)` y deja de tratar el `success` de cancelación (`erpAction = cancel_request_existing_active_buk_employee`) como si fuera alta efectiva en BUK.
+  - Ese helper se aplicó en `get_candidate_buk_sync_payload(...)`, `enqueue_buk_generation(...)`, `get_recruitment_personnel_page_bucket(...)` y en los recordatorios de `Personal a Contratar`, evitando que un falso duplicado interno bloquee el reproceso o esconda al candidato del bucket correcto.
+  - [`20260708104500_repair_jose_patricio_mendez_diaz_false_duplicate_withdrawal.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260708104500_repair_jose_patricio_mendez_diaz_false_duplicate_withdrawal.sql:1) revirtió a José desde `withdrawn` a `hired`, preservó la fecha original `2026-07-02 16:55:06.600384+00`, insertó la trazabilidad `buk_false_duplicate_repair` y dejó un job nuevo `pending` usando `F2/F2`.
+  - La ejecución final quedó cerrada sobre la misma ficha activa `41875/F2`:
+    - job ERP `29dd7b1f-7d5a-4240-9850-74282e59253d` -> `success`, `attempts = 1`, `resolution = reused_existing_active`;
+    - plan BUK reutilizado `48644`;
+    - trabajo BUK creado `142096`;
+    - verificación BUK directa: `current_job_id = 142096`, `current_job_start_date = 2026-07-01`, `current_job_area_id = 2909`, `current_job_role_id = 1`.
+  - El `success` histórico de cancelación `6350098c-916c-44cb-8b8e-4657dd8c1c41` ahora queda correctamente clasificado como `counts_as_effective_success = false`, por lo que ya no contamina el bucket ni bloquea reencolados futuros.
+  - Impacto final ERP: candidato `hired`, caso `RC-0013` sigue `partially_filled` pero sube de `filled_vacancies = 5` a `6`, solicitud `0013` continúa `approved`.
+  - Nota operativa: los 15 documentos originales ya habían sido purgados físicamente por `candidate_document_cleanup_jobs`, por lo que la regularización efectiva se cerró sin reupload documental; el objetivo de contratación quedó restituido sin inventar archivos inexistentes.
 
 ## Resultado de hotfix de pendientes BUK ya existentes
 
