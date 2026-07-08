@@ -2,6 +2,48 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Endurecimiento futuro de renta BUK y resumen contextual en listos para contratar
+
+- [x] Auditar por qué una ficha BUK generada por ERP puede seguir sin fijar explícitamente `base_wage = 0` aunque el job se encole con `wage = 0`
+- [x] Corregir el worker `sync-buk-candidates` para que las futuras altas y reparaciones envíen también `base_wage = 0`, sin tocar casos históricos ya creados
+- [x] Agregar un resumen visual pequeño del folio en el sidebar de candidato solo dentro de `Personal a Contratar`
+- [x] Auditar la sincronización del turno del folio hacia BUK y documentar una salida segura solo para futuros casos, sin implementarla si arriesga producción
+
+## Resultado de endurecimiento futuro de renta BUK y resumen contextual en listos para contratar
+
+- La auditoría del caso de José Patricio Méndez Díaz dejó clara la grieta exacta:
+  - el job canónico exitoso [`29dd7b1f-7d5a-4240-9850-74282e59253d`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/tasks/todo.md:157) sí quedó registrado con `job.request.wage = 0`;
+  - pero el snapshot no enviaba `job.request.base_wage`, por lo que la regla normativa de “renta base siempre en 0” no estaba reforzada de forma explícita sobre todos los caminos del API BUK.
+- La corrección quedó acotada solo hacia adelante en [`sync-buk-candidates/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1):
+  - `buildBukJobPayload(...)` ahora envía `base_wage = 0` además de `wage = 0`;
+  - la reparación/patched path también reintenta corregir jobs existentes del mismo candidato futuro cuando detecta `base_wage` o `wage` distinto de cero en la respuesta/job BUK;
+  - no se versionó ninguna migración correctiva histórica ni se tocó la ficha de José, por instrucción expresa del usuario.
+- El runtime productivo quedó actualizado con:
+  - `npx --yes supabase functions deploy sync-buk-candidates --project-ref pzblmbahnoyntrhistea --use-api --yes`
+- En frontend, el detalle del candidato ahora muestra un resumen operativo pequeño solo cuando:
+  - el sidebar está en `Personal a Contratar`;
+  - el candidato sigue en etapa `ready_for_hire`.
+- Ese resumen quedó montado en [`CandidateDetailSidebar.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDetailSidebar.tsx:1) y expone:
+  - contrato del folio;
+  - cargo del folio;
+  - renta líquida del folio;
+  - turno del folio.
+- Auditoría de turno BUK:
+  - hoy el worker sí recibe o puede recuperar `shift_name` del flujo ERP mediante `worker_file.shift_name`, como deja armado el payload SQL de [`20260703033100_manage_buk_personnel_pipeline_and_plan_rules.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260703033100_manage_buk_personnel_pipeline_and_plan_rules.sql:759);
+  - además existe catálogo ERP de turnos (`ART 22`, `7X7`, `14X14`, `10X10`, etc.) en [`public.shifts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260611220000_expand_internal_mobility_and_recruitment_stage_controls.sql:3);
+  - pero `sync-buk-candidates` hoy no consume ese turno del folio para crear el job BUK: resuelve `type_of_working_day` y `other_type_of_working_day` desde snapshots de empleados del área, no desde una traducción canónica del turno solicitado.
+- Decisión de esta sesión sobre turno:
+  - no se implementó un cambio productivo porque falta una tabla/regla puente auditable entre `shift_name` ERP (`7X7`, `14X14`, etc.) y los campos legales BUK (`type_of_working_day`, `other_type_of_working_day` y eventualmente `shift_name`);
+  - aplicar un mapeo improvisado hoy podría clasificar mal la jornada legal y romper altas futuras;
+  - la salida segura para una próxima iteración es crear primero un catálogo versionado de equivalencias ERP -> BUK y aplicarlo solo en nuevos `create/patch` de job, nunca como backfill automático sobre fichas ya creadas.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - despliegue remoto de `sync-buk-candidates`
+- Limitación conocida:
+  - este shell sigue sin `deno`, por lo que no pude ejecutar `deno check` del worker; la validación del runtime quedó apoyada en revisión de diff, tipado del repo y despliegue exitoso de la función.
+
 ## Cierre de alerta Supabase por RLS deshabilitado en tablas de feature access
 
 - [x] Auditar por qué `public.app_features` y `public.role_feature_access` seguían apareciendo en Supabase como tablas públicas sin RLS

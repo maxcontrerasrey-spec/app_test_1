@@ -1340,6 +1340,8 @@ function buildBukJobPayload(context: CandidateSyncContext) {
     area_id: context.areaId,
     role_id: context.roleId,
     leader_id: context.leaderId,
+    // Tenant rule: ERP liquid must never populate BUK base salary.
+    base_wage: 0,
     wage: 0,
     currency: context.currency,
     regular_hours: context.regularHours,
@@ -1407,6 +1409,24 @@ function isEquivalentBukJob(
     parseIntegerLike(existingRole?.id) === context.roleId &&
     parseIntegerLike(existingBoss?.id) === context.leaderId
   );
+}
+
+function hasNonZeroBukJobWage(job: Record<string, unknown> | null) {
+  if (!job) {
+    return false;
+  }
+
+  const compensation =
+    job.compensation && typeof job.compensation === "object" && !Array.isArray(job.compensation)
+      ? (job.compensation as Record<string, unknown>)
+      : null;
+
+  return [
+    parseFiniteNumber(job.base_wage),
+    parseFiniteNumber(job.wage),
+    parseFiniteNumber(compensation?.base_wage),
+    parseFiniteNumber(compensation?.wage)
+  ].some((value) => value != null && value !== 0);
 }
 
 async function resolveCandidateSyncContext(
@@ -1637,7 +1657,7 @@ async function ensureBukEmployeeSetup(
         : createdJob;
   } else if (
     !isEquivalentBukJob(matchingJob, context) ||
-    parseFiniteNumber(matchingJob.base_wage) !== 0
+    hasNonZeroBukJobWage(matchingJob)
   ) {
     const patchedJob = await patchBukEmployeeJob(employeeId, matchingJob.id as string | number, jobPayload);
     jobResponse =

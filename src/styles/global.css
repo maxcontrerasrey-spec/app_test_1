@@ -3808,6 +3808,38 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   border-bottom-color: var(--title);
 }
 
+.control-ready-summary-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(57, 109, 244, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(57, 109, 244, 0.08), rgba(255, 255, 255, 0.96));
+}
+
+.control-ready-summary-card div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.control-ready-summary-card small,
+.control-ready-summary-card strong {
+  font-family: var(--font-text);
+}
+
+.control-ready-summary-card small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.control-ready-summary-card strong {
+  font-size: 0.92rem;
+  color: var(--title);
+}
+
 .control-detail-body {
   display: flex;
   flex-direction: column;
@@ -4172,6 +4204,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 @media (max-width: 1024px) {
+  .control-ready-summary-card,
   .control-readonly-grid-triple,
   .mobility-comparison-grid {
     grid-template-columns: 1fr;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatCurrencyValue } from "../../../shared/lib/format";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import { useAuth } from "../../auth/context/AuthContext";
@@ -185,6 +186,12 @@ export function CandidateDetailSidebar({
   );
   const isDocumentValidationApproved =
     selectedCandidate.document_validation_status === "approved";
+  const shouldShowReadyForHireSummary =
+    mode === "personnel_to_hire" && selectedCandidate.stage_code === "ready_for_hire";
+  const readyForHireShift =
+    selectedCaseDetail.case.hiring_request.shift_name ??
+    selectedCandidate.worker_file?.shift_name ??
+    null;
 
   const handleWhoCauseDraftChange = (
     index: number,
@@ -255,6 +262,31 @@ export function CandidateDetailSidebar({
           Ficha del candidato
         </button>
       </div>
+
+      {shouldShowReadyForHireSummary ? (
+        <div className="control-ready-summary-card">
+          <div>
+            <small>Contrato del folio</small>
+            <strong>{selectedCaseDetail.case.contract_name}</strong>
+          </div>
+          <div>
+            <small>Cargo del folio</small>
+            <strong>{selectedCaseDetail.case.job_position_name}</strong>
+          </div>
+          <div>
+            <small>Renta líquida folio</small>
+            <strong>
+              {formatCurrencyValue(selectedCaseDetail.case.hiring_request.salary_offer, {
+                fallback: "No informada"
+              })}
+            </strong>
+          </div>
+          <div>
+            <small>Turno del folio</small>
+            <strong>{readyForHireShift || "No informado"}</strong>
+          </div>
+        </div>
+      ) : null}
 
       {activeTab === "pipeline" && (
         <div className="control-detail-body">

@@ -10,6 +10,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es clasificar explícitamente qué tipos de `success` cuentan como alta real.** Si el snapshot trae `result_snapshot.erpAction.action = 'cancel_request_existing_active_buk_employee'`, ese job debe quedar fuera de `get_candidate_buk_sync_payload(...)`, `enqueue_buk_generation(...)`, buckets de `Personal a Contratar` y recordatorios automáticos; de lo contrario, el sistema esconde candidatos reactivables y bloquea su reparación.
 - **Cuando un caso histórico quedó mal anulado, conserva la auditoría del error y agrega una nueva reactivación canónica en vez de “borrar” el success viejo.** El fix correcto es introducir un helper semántico como `is_effective_buk_generation_success(...)`, revertir la etapa con un `reason_code` de reparación y generar un nuevo job efectivo sobre la ficha correcta (`F2`, `F3`, etc.), sin destruir la trazabilidad del falso duplicado original.
 
+## 213. Cuando la regla de negocio exige renta base BUK en cero, no basta con enviar `wage = 0`; el payload y la detección de drift deben cubrir también `base_wage`
+
+- **Un job BUK puede quedar auditado como “salario cero” sin haber fijado explícitamente la base salarial que muestra la ficha.** Si el worker solo envía `wage = 0` pero omite `base_wage`, el ERP parece cumplir la norma en el snapshot del job y aun así deja margen para que BUK conserve o derive una renta base distinta de cero.
+- **La regla correcta es endurecer ambas capas:** el payload de creación/parche debe mandar `wage = 0` y `base_wage = 0`, y la lógica de reparación debe tratar como drift cualquier job que siga exponiendo `wage/base_wage` distinto de cero.
+- **Cuando el usuario pide “corrige solo hacia adelante”, la solución enterprise debe vivir en el runtime y no en una migración de backfill.** Ajusta `sync-buk-candidates` para futuras altas y futuros retries, documenta el histórico afectado como evidencia, pero no alteres fichas ya creadas si el usuario excluyó expresamente esa reparación.
+
+## 214. El turno ERP del folio no puede inyectarse a BUK sin una traducción canónica entre el catálogo de turnos y los campos legales del job
+
+- **`shift_name` del folio y `type_of_working_day` de BUK no son la misma dimensión.** En este ERP, valores como `7X7`, `14X14` o `10X10` existen como catálogo operativo de `public.shifts`, mientras el worker BUK hoy crea jobs con campos regulatorios como `ordinaria_art_22` u `otros` + `other_type_of_working_day`.
+- **La regla correcta es no inferir una jornada legal desde el nombre visual del turno sin una tabla puente versionada.** Si falta ese mapping ERP -> BUK, reutilizar el turno del folio directamente puede clasificar mal la jornada y romper altas productivas aunque el nombre “parezca obvio”.
+- **Si el cambio debe aplicar solo a casos futuros, la implementación segura empieza por el catálogo, no por un backfill.** Primero versiona la equivalencia canónica y úsala solo en nuevos `create/patch` del worker; recién después evalúa si tiene sentido corregir históricos.
+
 ## 212. Cuando una tabla nueva entra al esquema `public` como parte de la matriz de permisos, debe nacer con el mismo paquete completo de RLS que sus tablas hermanas
 
 - **Crear la tabla y poblarla no alcanza si el API de Supabase la expone por PostgREST.** En esta base, `app_features` y `role_feature_access` heredaron grants amplios del esquema expuesto y quedaron reportadas como `rls_disabled_in_public` solo porque la migración que las creó omitió `ENABLE ROW LEVEL SECURITY` y sus políticas `SELECT`.
