@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Cierre de alerta Supabase por RLS deshabilitado en tablas de feature access
+
+- [x] Auditar por qué `public.app_features` y `public.role_feature_access` seguían apareciendo en Supabase como tablas públicas sin RLS
+- [x] Versionar una migración mínima que habilite RLS y replique el patrón de políticas ya vigente en la matriz de acceso
+- [x] Aplicar la migración al proyecto remoto, revalidar con `db advisors` y documentar el resultado
+
+## Resultado de cierre de alerta Supabase por RLS deshabilitado en tablas de feature access
+
+- La causa raíz fue una omisión puntual en la migración [`20260629173000_implement_enterprise_access_matrix_features.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260629173000_implement_enterprise_access_matrix_features.sql:1):
+  - creó `public.app_features` y `public.role_feature_access`;
+  - pero nunca ejecutó `ENABLE ROW LEVEL SECURITY` ni creó sus políticas `SELECT` autenticadas;
+  - por eso Supabase seguía reportando `rls_disabled_in_public` en esas dos tablas, mientras las tablas hermanas `app_modules`, `app_roles`, `role_module_access`, `app_capabilities` y `role_capabilities` sí estaban protegidas.
+- La corrección quedó versionada en [`20260708135502_enable_rls_for_feature_access_tables.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260708135502_enable_rls_for_feature_access_tables.sql:1):
+  - habilita RLS en `public.app_features`;
+  - habilita RLS en `public.role_feature_access`;
+  - crea `app_features_select_authenticated` con `using (is_active = true)`;
+  - crea `role_feature_access_select_authenticated` con `using (true)`.
+- Se eligió este fix mínimo porque preserva el mismo contrato operativo ya usado por la matriz de acceso existente: lectura autenticada permitida bajo RLS y sin alterar aún la estrategia de grants histórica del proyecto.
+- La migración quedó aplicada en el proyecto remoto enlazado con `npx --yes supabase db push --linked --include-all`.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260708135502_enable_rls_for_feature_access_tables.sql`
+  - `npx --yes supabase db push --linked --dry-run`
+  - `npx --yes supabase db push --linked --include-all`
+  - `npx --yes supabase db advisors --linked`
+  - verificación remota de `relrowsecurity = true` y políticas activas sobre `app_features` y `role_feature_access`
+  - `git diff --check`
+
 ## Ajuste de indicadores por folio para separar movilidad interna de candidatos y contratados
 
 - [x] Auditar cómo se están mezclando hoy `activos`, `listos`, `contratados` y `movilidad interna` en las vistas de folios
