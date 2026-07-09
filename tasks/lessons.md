@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 224. Una integración externa nunca debe persistir ni renderizar cuerpos HTML crudos como error operativo
+
+- **Un 500 de proveedor puede devolver una página completa, no un JSON de API.** En generación de fichas BUK, la respuesta HTML del integrador terminó en `buk_sync_jobs.error_message` y luego en `Personal a Contratar`, rompiendo la legibilidad de la pantalla y exponiendo contenido interno del proveedor.
+- **La regla correcta es sanitizar en la frontera backend y volver a sanitizar al leer históricos.** La Edge Function debe guardar status, endpoint seguro y tipo de respuesta, pero no el cuerpo HTML; la UI debe protegerse igualmente ante mensajes antiguos o inesperados que ya estén persistidos.
+- **Los errores estructurados sí deben conservarse cuando son parte del contrato operativo.** Si BUK responde JSON con `errors`, ese payload puede seguir alimentando reglas como duplicado o plan existente; lo inseguro es tratar cualquier texto externo como mensaje listo para usuario.
+
 ## 218. Cuando se extrae un helper compartido de errores Supabase, el refactor no termina hasta migrar todos los call sites del dominio y cerrar con smoke real de rutas base
 
 - **Dejar convivir `formatSupabaseError(...) || fallback` y `error.message || fallback` dentro del mismo módulo reintroduce drift aunque el helper nuevo ya exista.** En este ERP, reclutamiento todavía mezclaba ambos patrones después de haber creado `getSupabaseErrorMessage(...)`, lo que dejaba mensajes resueltos por caminos distintos para operaciones cercanas.

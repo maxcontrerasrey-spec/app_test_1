@@ -182,9 +182,123 @@ const corsHeaders = {
 };
 
 const DEFAULT_BUK_LOCATIONS_CACHE_TTL_HOURS = 12;
+const MAX_EXTERNAL_ERROR_TEXT_LENGTH = 240;
+
+class BukApiError extends Error {
+  status: number;
+  statusText: string;
+  endpoint: string;
+  payload: Record<string, unknown> | null;
+  bodySnippet: string | null;
+
+  constructor(params: {
+    status: number;
+    statusText: string;
+    endpoint: string;
+    payload: Record<string, unknown> | null;
+    bodySnippet: string | null;
+  }) {
+    super(buildBukApiErrorMessage(params));
+    this.name = "BukApiError";
+    this.status = params.status;
+    this.statusText = params.statusText;
+    this.endpoint = params.endpoint;
+    this.payload = params.payload;
+    this.bodySnippet = params.bodySnippet;
+  }
+}
 
 function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function truncateExternalErrorText(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= MAX_EXTERNAL_ERROR_TEXT_LENGTH) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, MAX_EXTERNAL_ERROR_TEXT_LENGTH - 1).trim()}…`;
+}
+
+function stripHtmlTags(value: string) {
+  return value
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ");
+}
+
+function looksLikeHtml(value: string, contentType: string | null) {
+  const normalizedContentType = (contentType ?? "").toLowerCase();
+  const trimmed = value.trim().toLowerCase();
+  return normalizedContentType.includes("text/html") || trimmed.startsWith("<!doctype html") || trimmed.startsWith("<html");
+}
+
+function getSafeBukEndpoint(url: string) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.pathname}${parsed.search ? "?…" : ""}`;
+  } catch {
+    return "endpoint BUK";
+  }
+}
+
+function parseJsonObject(value: string) {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildBukApiErrorMessage(params: {
+  status: number;
+  statusText: string;
+  endpoint: string;
+  payload: Record<string, unknown> | null;
+  bodySnippet: string | null;
+}) {
+  const statusLabel = `${params.status} ${params.statusText}`.trim();
+  if (params.payload) {
+    return `Buk API ${statusLabel}: ${JSON.stringify(params.payload)}`;
+  }
+
+  const suffix = params.bodySnippet ? ` Detalle: ${params.bodySnippet}` : "";
+  return `BUK no pudo procesar la solicitud (${statusLabel}) en ${params.endpoint}. El proveedor devolvió una respuesta no JSON.${suffix}`;
+}
+
+function buildBukApiError(response: Response, url: string, body: string) {
+  const contentType = response.headers.get("content-type");
+  const payload = parseJsonObject(body);
+  const nonHtmlSnippet = !payload && !looksLikeHtml(body, contentType)
+    ? truncateExternalErrorText(stripHtmlTags(body))
+    : null;
+
+  return new BukApiError({
+    status: response.status,
+    statusText: response.statusText,
+    endpoint: getSafeBukEndpoint(url),
+    payload,
+    bodySnippet: nonHtmlSnippet
+  });
+}
+
+function buildBukErrorAudit(error: unknown) {
+  if (!(error instanceof BukApiError)) {
+    return null;
+  }
+
+  return {
+    provider: "buk",
+    status: error.status,
+    statusText: error.statusText,
+    endpoint: error.endpoint,
+    responseKind: error.payload ? "json" : "non_json",
+    bodySnippet: error.bodySnippet
+  };
 }
 
 function requireEnv(value: string | undefined, label: string) {
@@ -600,8 +714,12 @@ function isReusableIncompleteBukEmployee(
   return normalizeText(employee.code_sheet) === normalizeText(targetEmployeeCode);
 }
 
-function parseBukApiErrorPayload(message: string) {
-  const match = message.match(/^Buk API \d+ [^:]+: ([\s\S]+)$/);
+function parseBukApiErrorPayload(error: unknown) {
+  if (error instanceof BukApiError) {
+    return error.payload;
+  }
+
+  const match = toErrorMessage(error).match(/^Buk API \d+ [^:]+: ([\s\S]+)$/);
   if (!match) {
     return null;
   }
@@ -614,7 +732,7 @@ function parseBukApiErrorPayload(message: string) {
 }
 
 function extractBukApiErrorMessages(error: unknown) {
-  const payload = parseBukApiErrorPayload(toErrorMessage(error));
+  const payload = parseBukApiErrorPayload(error);
   const errors = payload?.errors;
 
   if (Array.isArray(errors)) {
@@ -639,7 +757,7 @@ function bukApiErrorIncludes(error: unknown, fragments: string[]) {
 }
 
 function isBukDuplicateCreateError(error: unknown) {
-  const payload = parseBukApiErrorPayload(toErrorMessage(error));
+  const payload = parseBukApiErrorPayload(error);
   const errors = payload?.errors;
   if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
     return false;
@@ -751,7 +869,7 @@ async function fetchBukJson(url: string, init: RequestInit = {}) {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Buk API ${response.status} ${response.statusText}: ${body}`);
+    throw buildBukApiError(response, url, body);
   }
 
   return response.json();
@@ -2213,6 +2331,10 @@ Deno.serve(async (req) => {
       } catch (error) {
         const message = toErrorMessage(error);
         jobResultSnapshot.error = message;
+        const errorAudit = buildBukErrorAudit(error);
+        if (errorAudit) {
+          jobResultSnapshot.errorAudit = errorAudit;
+        }
         await markJobState(supabase, job.id, {
           status: "error",
           error_message: message,

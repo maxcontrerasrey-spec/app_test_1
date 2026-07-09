@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix BUK: no exponer HTML interno cuando el API falla al crear fichas
+
+- [x] Confirmar el punto donde `sync-buk-candidates` convierte respuestas no JSON de BUK en `error_message` visible para la UI
+- [x] Sanitizar en backend las respuestas HTML/no JSON de BUK, preservando status, endpoint seguro y detalle estructurado cuando exista JSON
+- [x] Ajustar `Personal a Contratar` para no renderizar cuerpos HTML ni errores largos de integradores externos
+- [x] Ejecutar validaciones disponibles y desplegar la Edge Function si el fix queda acotado
+- [x] Documentar lección del bug y dejar commit/push auditado
+
+### Resultado esperado del hotfix BUK
+
+- `sync-buk-candidates` ya no debe persistir cuerpos HTML completos de BUK en `buk_sync_jobs.error_message` ni devolverlos en `processed[].error`.
+- Los errores JSON estructurados de BUK se mantienen para lógica operativa, como detección de duplicados o plan existente.
+- `Personal a Contratar` debe mostrar un mensaje corto y accionable incluso si el job histórico trae HTML crudo de un 500 anterior.
+- Producción quedó actualizada con deploy de `sync-buk-candidates` y migración [`20260709164949_sanitize_buk_sync_html_errors.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709164949_sanitize_buk_sync_html_errors.sql:1).
+
 ## Loop de hardening de seguridad ERP enterprise
 
 - [x] Auditar superficies críticas de autenticación, autorización, RLS, RPCs `SECURITY DEFINER`, Edge Functions, secretos/configuración y exposición de datos entre contratos/roles

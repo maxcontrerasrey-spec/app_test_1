@@ -1302,6 +1302,33 @@ type BukSyncProcessedRow = {
   error?: string;
 };
 
+const MAX_BUK_SYNC_ERROR_MESSAGE_LENGTH = 220;
+
+function sanitizeBukSyncErrorMessage(message: string | null | undefined) {
+  const normalized = (message ?? "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const lowerMessage = normalized.toLowerCase();
+  if (
+    lowerMessage.includes("<!doctype html") ||
+    lowerMessage.includes("<html") ||
+    lowerMessage.includes("</html>")
+  ) {
+    const statusMatch = normalized.match(/\b(Buk API\s+)?(\d{3})\s+([A-Za-z][A-Za-z ]{2,40})/i);
+    const statusText = statusMatch ? ` (${statusMatch[2]} ${statusMatch[3].trim()})` : "";
+    return `BUK no pudo procesar la solicitud${statusText}. El proveedor devolvió una respuesta interna no legible; revisa el job de sincronización y reintenta.`;
+  }
+
+  const withoutTags = normalized.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (withoutTags.length <= MAX_BUK_SYNC_ERROR_MESSAGE_LENGTH) {
+    return withoutTags;
+  }
+
+  return `${withoutTags.slice(0, MAX_BUK_SYNC_ERROR_MESSAGE_LENGTH - 1).trim()}…`;
+}
+
 async function fetchBukSyncJobsStatus(jobIds: string[]) {
   if (!supabase) {
     return {
@@ -1358,7 +1385,7 @@ function mapStatusRowsToProcessed(statusRows: BukSyncQueueStatusRow[]) {
       candidateId: row.recruitment_case_candidate_id,
       status: row.status,
       bukEmployeeId: row.buk_employee_id ?? undefined,
-      error: row.error_message ?? undefined
+      error: sanitizeBukSyncErrorMessage(row.error_message)
     }));
 }
 
@@ -1444,10 +1471,13 @@ export async function generateCandidatesInBuk(candidateIds: string[]) {
   return {
     data: queuedJobs,
     processed: Array.isArray(payload?.processed)
-      ? (payload.processed as BukSyncProcessedRow[])
+      ? (payload.processed as BukSyncProcessedRow[]).map((row) => ({
+          ...row,
+          error: sanitizeBukSyncErrorMessage(row.error)
+        }))
       : [],
     error: null,
-    dispatchError: functionError
+    dispatchError: sanitizeBukSyncErrorMessage(functionError) ?? null
   };
 }
 
