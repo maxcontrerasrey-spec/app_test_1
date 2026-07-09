@@ -12,6 +12,14 @@ export type RecruitmentCaseStatus =
   | "closed_unfilled"
   | "cancelled";
 
+export type RecruitmentProcessStatusFilter =
+  | null
+  | "open"
+  | "screening"
+  | "ready_to_hire"
+  | "filled"
+  | "cancelled";
+
 export type RecruitmentCandidateStage =
   | "lead"
   | "who_pending"
@@ -603,6 +611,64 @@ export async function fetchRecruitmentProcessesPage(input: {
     data: parseRecruitmentProcessesPagePayload(data),
     error: null
   };
+}
+
+export async function resolveRecruitmentProcessSearchFilter(search: string): Promise<{
+  data: RecruitmentProcessStatusFilter;
+  error: string | null;
+}> {
+  const normalizedSearch = search.trim();
+
+  if (!normalizedSearch) {
+    return { data: null, error: null };
+  }
+
+  const filters: RecruitmentProcessStatusFilter[] = [
+    null,
+    "open",
+    "screening",
+    "ready_to_hire",
+    "filled",
+    "cancelled"
+  ];
+  const results = await Promise.all(
+    filters.map(async (statusFilter) => ({
+      statusFilter,
+      result: await fetchRecruitmentProcessesPage({
+        search: normalizedSearch,
+        statusFilter,
+        sortColumn: "case_code",
+        sortDirection: "asc",
+        limit: 5,
+        offset: 0
+      })
+    }))
+  );
+
+  const firstError = results.find(({ result }) => result.error)?.result.error ?? null;
+
+  if (firstError) {
+    return { data: null, error: firstError };
+  }
+
+  const exactSearch = normalizedSearch.toLowerCase().replace(/^rc-/, "");
+  const exactMatch = results.find(({ result }) =>
+    result.data?.items.some((item) => {
+      const caseCode = item.case_code.toLowerCase();
+      const caseNumber = caseCode.replace(/^rc-/, "");
+      const folio = item.folio?.toLowerCase() ?? "";
+
+      return caseCode === normalizedSearch.toLowerCase() || caseNumber === exactSearch || folio === exactSearch;
+    })
+  );
+
+  if (exactMatch) {
+    return { data: exactMatch.statusFilter, error: null };
+  }
+
+  const firstVisibleMatch = results.find(({ result }) => (result.data?.totalCount ?? 0) > 0);
+
+  return { data: firstVisibleMatch?.statusFilter ?? null, error: null };
 }
 
 export async function fetchRecruitmentCandidatesPage(input: {

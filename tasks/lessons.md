@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 226. Una contratación BUK emitida sobre el folio equivocado debe repararse como trazabilidad cruzada ERP-BUK, no solo moviendo una fila
+
+- **Mover el candidato entre folios sin corregir BUK deja la operación incoherente.** En Domingo Enrique Catalán Vega, el ERP podía trasladar `recruitment_case_candidates` desde `RC-1749` a `RC-0082`, pero BUK conservaba job, activación y término contractual del folio equivocado; la reparación tuvo que patchar también empleado/job BUK.
+- **La reparación segura debe tener guards exactos y recálculo canónico de cupos.** Usa IDs, RUT, folios, estado del candidato y job BUK esperado antes de actualizar; después llama `sync_recruitment_case_status(...)` para que `filled_vacancies` y `status` vuelvan a la verdad calculada.
+- **Si la UI busca folios por estado, la búsqueda debe resolver la categoría real del resultado.** Un folio cubierto o cerrado puede quedar oculto por el chip actual; el frontend debe cambiar al filtro donde el caso existe en vez de obligar al usuario a adivinar la pestaña.
+
+---
+
 ## 225. En BUK jobs, un campo salarial soportado en lectura no necesariamente es aceptado en `POST /jobs`
 
 - **Que `current_job.base_wage` exista en snapshots BUK no prueba que el endpoint de creación acepte `base_wage`.** Al desplegar el worker actual, `POST /api/v1/chile/employees/{id}/jobs` empezó a enviar `base_wage: 0` además de `wage: 0` y BUK respondió `500 Internal Server Error` no JSON para una ficha que antes llegaba hasta creación de job.

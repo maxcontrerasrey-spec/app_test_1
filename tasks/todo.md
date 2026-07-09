@@ -2,6 +2,22 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección operacional: Domingo Catalán folio 1749 -> 0082 y búsqueda por pestaña
+
+- [x] Reconstruir evidencia productiva de folios `1749` y `0082`, candidato Domingo Enrique Catalán Vega, job BUK generado y estados/cupos afectados
+- [x] Diseñar reparación mínima y auditable para mover el candidato al folio correcto y devolver `RC-1749` a su estado natural sin borrar trazabilidad
+- [x] Aplicar reparación de datos solo si el destino `0082` y los efectos sobre BUK/ERP quedan validados
+- [x] Corregir búsqueda de folio/caso para que active automáticamente la pestaña correspondiente según estado (`activo`, `cubierto`, `cerrado`, etc.)
+- [x] Ejecutar validaciones disponibles: consultas de smoke productivo, TypeScript/build, diff check y verificación de working tree
+- [x] Documentar resultado final y aprendizaje si la corrección confirma una causa raíz reutilizable
+
+### Resultado de la corrección Domingo Catalán
+
+- Domingo Enrique Catalán Vega fue trasladado desde `RC-1749` al folio correcto `RC-0082` mediante [`20260709193545_repair_domingo_catalan_folio_0082.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709193545_repair_domingo_catalan_folio_0082.sql:1), con guards por IDs, RUT, folios y job BUK.
+- `RC-1749` quedó recalculado con `filled_vacancies = 0` y estado `screening`; `RC-0082` quedó `partially_filled`, `filled_vacancies = 1`, fecha interna `2026-07-20` y turno `10X5+5`.
+- En BUK se corrigió el empleado `41937` y job `142263`: inicio/activación `2026-07-20`, término contractual `2026-10-20`, salario base `0`; el segundo patch quedó auditado en [`20260709194225_record_domingo_catalan_buk_activation_repair.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709194225_record_domingo_catalan_buk_activation_repair.sql:1).
+- [`HiringProcessesView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringProcessesView.tsx:1) ahora resuelve el filtro correcto al buscar folios/casos y cambia automáticamente el chip de estado si el resultado está en otra categoría.
+
 ## Ajuste UI: resumen de ficha en Personal contratado
 
 - [x] Revisar el componente compartido de `Personal a Contratar` y `Personal contratado`

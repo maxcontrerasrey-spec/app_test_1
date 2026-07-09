@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { TextField } from "../../../shared/ui";
 import {
   getRecruitmentCaseHeadcountBreakdown,
+  resolveRecruitmentProcessSearchFilter,
   toRecruitmentCaseStatusLabel,
   type RecruitmentCaseListRow,
 } from "../services/hiringControl";
@@ -64,6 +65,7 @@ export function HiringProcessesView({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [casePage, setCasePage] = useState(0);
   const [approvalPage, setApprovalPage] = useState(0);
+  const searchFilterRequestIdRef = useRef(0);
   const processesQuery = useRecruitmentProcessesPage({
     search: debouncedSearchTerm,
     statusFilter: caseFilter,
@@ -107,6 +109,35 @@ export function HiringProcessesView({
   useEffect(() => {
     setCasePage(0);
   }, [debouncedSearchTerm, caseFilter, sortColumn, sortDirection]);
+
+  useEffect(() => {
+    const normalizedSearch = debouncedSearchTerm.trim();
+    const requestId = ++searchFilterRequestIdRef.current;
+
+    if (normalizedSearch.length < 2) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    resolveRecruitmentProcessSearchFilter(normalizedSearch)
+      .then((result) => {
+        if (isCancelled || requestId !== searchFilterRequestIdRef.current || result.error) {
+          return;
+        }
+
+        setCaseFilter((currentFilter) =>
+          currentFilter === result.data ? currentFilter : result.data
+        );
+      })
+      .catch(() => {
+        // The main paged query still owns user-visible errors.
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedSearchTerm]);
 
   useEffect(() => {
     setApprovalPage(0);
