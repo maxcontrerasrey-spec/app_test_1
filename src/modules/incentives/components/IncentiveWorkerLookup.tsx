@@ -1,4 +1,4 @@
-import { WorkerLookupField, buildWorkerLookupIdentityLine } from "../../../shared/ui";
+import { StandardWorkerLookupField } from "../../../shared/ui";
 import { useHrIncentiveWorkerSearch } from "../hooks/useIncentivesQueries";
 import type { HrIncentiveEligibleWorker } from "../types";
 
@@ -22,7 +22,7 @@ export function IncentiveWorkerLookup({
   excludeBukEmployeeId = null
 }: IncentiveWorkerLookupProps) {
   return (
-    <WorkerLookupField
+    <StandardWorkerLookupField
       id={id}
       label={label}
       placeholder={placeholder}
@@ -30,14 +30,6 @@ export function IncentiveWorkerLookup({
       onSelect={onSelect}
       disabled={disabled}
       useSearchQuery={useHrIncentiveWorkerSearch}
-      getWorkerId={(worker) => worker.bukEmployeeId}
-      getWorkerFullName={(worker) => worker.fullName}
-      renderWorkerSecondary={(worker) =>
-        buildWorkerLookupIdentityLine(worker.documentNumber, worker.jobTitle)
-      }
-      renderWorkerTertiary={(worker) =>
-        worker.areaName || worker.contractCode || "Sin contrato activo"
-      }
       loadingMessage="Buscando trabajadores elegibles..."
       filterResults={(workers) =>
         workers.filter((worker) => worker.bukEmployeeId !== excludeBukEmployeeId)

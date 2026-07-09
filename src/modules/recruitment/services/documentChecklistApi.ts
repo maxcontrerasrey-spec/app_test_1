@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase";
+import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
 
 type CandidateDocumentValidationSummary = {
   status: "pending" | "approved";
@@ -36,17 +37,6 @@ export type CandidateChecklistResult = {
   documents: CandidateDocumentRow[];
 };
 
-function formatRpcError(error: {
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}) {
-  return [error.message, error.details, error.hint, error.code ? `Codigo: ${error.code}` : ""]
-    .filter(Boolean)
-    .join(" · ");
-}
-
 export async function fetchCandidateChecklist(caseCandidateId: string) {
   if (!supabase) {
     return {
@@ -62,7 +52,7 @@ export async function fetchCandidateChecklist(caseCandidateId: string) {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar el checklist documental."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar el checklist documental.", "plain")
     };
   }
 
@@ -90,7 +80,9 @@ export async function uploadCandidateDocument(input: {
   });
 
   if (error) {
-    return { error: formatRpcError(error) || "No fue posible guardar el documento." };
+    return {
+      error: getSupabaseErrorMessage(error, "No fue posible guardar el documento.", "plain")
+    };
   }
 
   return { error: null };
@@ -114,7 +106,9 @@ export async function reviewCandidateDocument(input: {
   });
 
   if (error) {
-    return { error: formatRpcError(error) || "No fue posible revisar el documento." };
+    return {
+      error: getSupabaseErrorMessage(error, "No fue posible revisar el documento.", "plain")
+    };
   }
 
   return { error: null };
@@ -135,9 +129,11 @@ export async function approveCandidateDocumentation(input: {
 
   if (error) {
     return {
-      error:
-        formatRpcError(error) ||
-        "No fue posible aprobar la revision documental del candidato."
+      error: getSupabaseErrorMessage(
+        error,
+        "No fue posible aprobar la revision documental del candidato.",
+        "plain"
+      )
     };
   }
 

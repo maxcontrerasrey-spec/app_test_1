@@ -53,7 +53,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   minSearchLength = 2,
   onSearchChange,
   filterResults
-}: WorkerLookupFieldProps<TWorker>) {
+}: WorkerLookupFieldProps<TWorker, TSearchContext>) {
   const [searchValue, setSearchValue] = useState(
     selectedWorker ? getWorkerFullName(selectedWorker) : ""
   );

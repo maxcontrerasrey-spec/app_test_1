@@ -1,5 +1,6 @@
 import { supabase } from "../../../shared/lib/supabase";
 import { formatRut, normalizeRut } from "../../../shared/lib/rut";
+import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
 
 export type RecruitmentCaseStatus =
   | "open"
@@ -437,22 +438,6 @@ type RecruitmentPagedPayload<T, S = null> = {
   summary?: S | null;
 };
 
-function formatRpcError(error: {
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}) {
-  return [
-    error.message,
-    error.details ? `Detalles: ${error.details}` : "",
-    error.hint ? `Sugerencia: ${error.hint}` : "",
-    error.code ? `Código: ${error.code}` : ""
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
-
 export function toRecruitmentCaseStatusLabel(value: RecruitmentCaseStatus | string | null | undefined) {
   if (value === "open") return "Abierto";
   if (value === "sourcing") return "Búsqueda";
@@ -533,7 +518,10 @@ export async function fetchRecruitmentControlSummary() {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar el resumen de Control de Contrataciones."
+      error: getSupabaseErrorMessage(
+        error,
+        "No fue posible cargar el resumen de Control de Contrataciones."
+      )
     };
   }
 
@@ -570,7 +558,7 @@ export async function fetchRecruitmentPendingApprovalsPage(input: {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar la cola de aprobaciones."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar la cola de aprobaciones.")
     };
   }
 
@@ -607,7 +595,7 @@ export async function fetchRecruitmentProcessesPage(input: {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar los procesos de contratación."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar los procesos de contratación.")
     };
   }
 
@@ -640,7 +628,7 @@ export async function fetchRecruitmentCandidatesPage(input: {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar candidatos."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar candidatos.")
     };
   }
 
@@ -671,7 +659,7 @@ export async function fetchRecruitmentPersonnelToHirePage(input: {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar personal a contratar."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar personal a contratar.")
     };
   }
 
@@ -702,7 +690,7 @@ export async function fetchRecruitmentContractedPersonnelPage(input: {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar el personal contratado."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar el personal contratado.")
     };
   }
 
@@ -731,7 +719,7 @@ export async function fetchRecruitmentActiveCaseOptions(input: {
   if (error) {
     return {
       data: [] as RecruitmentCaseListRow[],
-      error: formatRpcError(error) || "No fue posible cargar folios disponibles."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar folios disponibles.")
     };
   }
 
@@ -756,7 +744,7 @@ export async function fetchRecruitmentCaseDetail(caseId: string) {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar el detalle del caso."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar el detalle del caso.")
     };
   }
 
@@ -792,7 +780,7 @@ export async function addCandidateToRecruitmentCase(input: {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible agregar el candidato."
+      error: getSupabaseErrorMessage(error, "No fue posible agregar el candidato.")
     };
   }
 
@@ -822,7 +810,7 @@ export async function transferCandidateToCase(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible trasladar al candidato."
+      error: getSupabaseErrorMessage(error, "No fue posible trasladar al candidato.")
     };
   }
 
@@ -849,7 +837,7 @@ export async function advanceRecruitmentCandidateStage(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible mover la etapa del candidato."
+      error: getSupabaseErrorMessage(error, "No fue posible mover la etapa del candidato.")
     };
   }
 
@@ -880,7 +868,7 @@ export async function requestCandidateStageWho(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible enviar la aprobación Who.",
+      error: getSupabaseErrorMessage(error, "No fue posible enviar la aprobación Who."),
       stageCode: null
     };
   }
@@ -908,7 +896,7 @@ export async function approveCandidateStageWho(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible aprobar la etapa Who."
+      error: getSupabaseErrorMessage(error, "No fue posible aprobar la etapa Who.")
     };
   }
 
@@ -930,7 +918,7 @@ export async function rejectCandidateStageWho(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible rechazar la aprobación Who."
+      error: getSupabaseErrorMessage(error, "No fue posible rechazar la aprobación Who.")
     };
   }
 
@@ -960,7 +948,7 @@ export async function updateCandidateDriverLicense(input: {
   });
 
   if (error) {
-    return { error: error.message || "No fue posible actualizar la licencia." };
+    return { error: getSupabaseErrorMessage(error, "No fue posible actualizar la licencia.", "message") };
   }
 
   return { error: null };
@@ -980,7 +968,9 @@ export async function updateCandidateInterviewNotes(input: {
   });
 
   if (error) {
-    return { error: error.message || "No fue posible actualizar las notas de entrevista." };
+    return {
+      error: getSupabaseErrorMessage(error, "No fue posible actualizar las notas de entrevista.", "message")
+    };
   }
 
   return { error: null };
@@ -1004,7 +994,7 @@ export async function fetchCandidateBukProfile(caseCandidateId: string): Promise
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible cargar la ficha BUK del candidato."
+      error: getSupabaseErrorMessage(error, "No fue posible cargar la ficha BUK del candidato.")
     };
   }
 
@@ -1126,7 +1116,7 @@ export async function updateCandidatePersonProfile(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible actualizar la ficha personal del candidato."
+      error: getSupabaseErrorMessage(error, "No fue posible actualizar la ficha personal del candidato.")
     };
   }
 
@@ -1234,7 +1224,7 @@ export async function updateCandidateWorkerFile(input: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible actualizar la ficha del ingreso actual."
+      error: getSupabaseErrorMessage(error, "No fue posible actualizar la ficha del ingreso actual.")
     };
   }
 
@@ -1271,7 +1261,7 @@ export async function enqueueCandidatesToBuk(candidateIds: string[]) {
   if (error) {
     return {
       data: [],
-      error: formatRpcError(error) || "No fue posible encolar la generación en BUK."
+      error: getSupabaseErrorMessage(error, "No fue posible encolar la generación en BUK.")
     };
   }
 
@@ -1335,7 +1325,7 @@ async function fetchBukSyncJobsStatus(jobIds: string[]) {
   if (error) {
     return {
       data: [] as BukSyncQueueStatusRow[],
-      error: formatRpcError(error) || "No fue posible consultar el estado de la cola BUK."
+      error: getSupabaseErrorMessage(error, "No fue posible consultar el estado de la cola BUK.")
     };
   }
 
@@ -1434,8 +1424,11 @@ export async function generateCandidatesInBuk(candidateIds: string[]) {
       data: queuedJobs,
       processed: [] as BukSyncProcessedRow[],
       error: null,
-      dispatchError:
-        error.message || "No fue posible ejecutar la sincronización automática con BUK."
+      dispatchError: getSupabaseErrorMessage(
+        error,
+        "No fue posible ejecutar la sincronización automática con BUK.",
+        "message"
+      )
     };
   }
 
@@ -1493,7 +1486,7 @@ export async function findCandidateProfileByRut(rut: string): Promise<{
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible buscar el candidato."
+      error: getSupabaseErrorMessage(error, "No fue posible buscar el candidato.")
     };
   }
 
@@ -1529,7 +1522,7 @@ export async function checkCandidateInBukLive(rut: string): Promise<{
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "No fue posible verificar el estado en BUK."
+      error: getSupabaseErrorMessage(error, "No fue posible verificar el estado en BUK.")
     };
   }
 

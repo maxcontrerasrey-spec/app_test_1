@@ -1,4 +1,13 @@
-import { supabase } from "../../../shared/lib/supabase";
+import {
+  asArray,
+  asRecord,
+  getSupabaseClientOrThrow as getSupabaseClient,
+  getSupabaseErrorMessage,
+  readBoolean,
+  readNumber,
+  readNullableText,
+  readText
+} from "../../../shared/lib/supabaseRpc";
 import type {
   AccreditationDashboardPayload,
   AccreditationDocumentStatus,
@@ -7,38 +16,6 @@ import type {
   AccreditationWorkerProfile,
   AccreditationWorkerRow
 } from "../types";
-
-function getSupabaseClient() {
-  if (!supabase) {
-    throw new Error("Supabase no esta configurado en este entorno.");
-  }
-
-  return supabase;
-}
-
-function asRecord(value: unknown) {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-}
-
-function asArray<T>(value: unknown) {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
-function readText(value: unknown) {
-  return typeof value === "string" ? value : "";
-}
-
-function readNullableText(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : null;
-}
-
-function readBoolean(value: unknown) {
-  return Boolean(value);
-}
-
-function readNumber(value: unknown) {
-  return typeof value === "number" ? value : Number(value ?? 0);
-}
 
 function mapSetupOption(item: Record<string, unknown>) {
   return {
@@ -268,7 +245,13 @@ export async function fetchAccreditationSetupCatalogs() {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("get_accreditation_setup_catalogs");
   if (error) {
-    throw new Error(error.message || "No fue posible cargar la configuracion de acreditacion.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible cargar la configuracion de acreditacion.",
+        "message"
+      )
+    );
   }
 
   return mapSetupCatalogs(data);
@@ -284,7 +267,9 @@ export async function fetchAccreditationDashboard(filters: {
     p_job_title: filters.jobTitle?.trim() ? filters.jobTitle.trim() : null
   });
   if (error) {
-    throw new Error(error.message || "No fue posible cargar el dashboard de acreditacion.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar el dashboard de acreditacion.", "message")
+    );
   }
 
   return mapDashboard(data);
@@ -304,7 +289,13 @@ export async function searchAccreditationWorkers(filters: {
     p_limit: filters.limit ?? 50
   });
   if (error) {
-    throw new Error(error.message || "No fue posible buscar trabajadores para acreditacion.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible buscar trabajadores para acreditacion.",
+        "message"
+      )
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(mapWorkerRow);
@@ -317,7 +308,9 @@ export async function fetchWorkerAccreditationProfile(bukEmployeeId: string, sit
     p_site_id: siteId
   });
   if (error) {
-    throw new Error(error.message || "No fue posible cargar el perfil de acreditacion.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar el perfil de acreditacion.", "message")
+    );
   }
 
   return mapWorkerProfile(data);
@@ -345,7 +338,13 @@ export async function saveAccreditationSite(input: {
     p_is_active: input.isActive ?? true
   });
   if (error) {
-    throw new Error(error.message || "No fue posible guardar la faena de acreditacion.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible guardar la faena de acreditacion.",
+        "message"
+      )
+    );
   }
 
   return String(data ?? "");
@@ -379,7 +378,9 @@ export async function saveAccreditationRequirement(input: {
     p_is_active: input.isActive ?? true
   });
   if (error) {
-    throw new Error(error.message || "No fue posible guardar el requisito.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar el requisito.", "message")
+    );
   }
 
   return String(data ?? "");
@@ -405,7 +406,9 @@ export async function saveAccreditationMatrixRule(input: {
     p_is_active: input.isActive ?? true
   });
   if (error) {
-    throw new Error(error.message || "No fue posible guardar la regla de matriz.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar la regla de matriz.", "message")
+    );
   }
 
   return String(data ?? "");
@@ -439,7 +442,13 @@ export async function saveWorkerAccreditationDocument(input: {
     p_metadata: input.metadata ?? {}
   });
   if (error) {
-    throw new Error(error.message || "No fue posible guardar el documento de acreditacion.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible guardar el documento de acreditacion.",
+        "message"
+      )
+    );
   }
 
   return String(data ?? "");
@@ -461,7 +470,9 @@ export async function uploadAccreditationDocumentToBuk(input: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible subir el archivo a BUK.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible subir el archivo a BUK.", "message")
+    );
   }
 
   const payload = asRecord(data);

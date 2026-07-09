@@ -1,4 +1,4 @@
-import { WorkerLookupField, buildWorkerLookupIdentityLine } from "../../../shared/ui";
+import { StandardWorkerLookupField } from "../../../shared/ui";
 import { useRosterWorkerSearch } from "../hooks/useRosterQueries";
 import type { RosterWorkerSearchItem } from "../types";
 
@@ -22,7 +22,7 @@ export function RosterWorkerLookup({
   disabled = false
 }: RosterWorkerLookupProps) {
   return (
-    <WorkerLookupField
+    <StandardWorkerLookupField
       id={id}
       label={label}
       placeholder={placeholder}
@@ -30,14 +30,6 @@ export function RosterWorkerLookup({
       onSelect={onSelect}
       disabled={disabled}
       useSearchQuery={useRosterWorkerSearch}
-      getWorkerId={(worker) => worker.bukEmployeeId}
-      getWorkerFullName={(worker) => worker.fullName}
-      renderWorkerSecondary={(worker) =>
-        buildWorkerLookupIdentityLine(worker.documentNumber, worker.jobTitle)
-      }
-      renderWorkerTertiary={(worker) =>
-        worker.areaName || worker.contractCode || "Sin contrato activo"
-      }
       loadingMessage="Buscando trabajadores..."
       onSearchChange={onSearchChange}
     />

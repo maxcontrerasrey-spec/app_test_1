@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase";
+import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
 
 export type HiringWorkflowStatus =
   | "pending_area_manager"
@@ -19,22 +20,6 @@ export function toTravelMethodologyLabel(value: TravelMethodology | string | nul
   if (value === "travel_allowance") return "Bono de traslado";
   if (value === "company_purchase") return "Compra Empresa";
   return "Sin definir";
-}
-
-function formatRpcError(error: {
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}) {
-  return [
-    error.message,
-    error.details ? `Detalles: ${error.details}` : "",
-    error.hint ? `Sugerencia: ${error.hint}` : "",
-    error.code ? `Código: ${error.code}` : ""
-  ]
-    .filter(Boolean)
-    .join(" · ");
 }
 
 export function toHiringStatusLabel(value: HiringWorkflowStatus | string | null | undefined) {
@@ -67,7 +52,7 @@ export async function decideHiringApproval(params: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible registrar la decisión."
+      error: getSupabaseErrorMessage(error, "No fue posible registrar la decisión.")
     };
   }
 
@@ -86,7 +71,7 @@ export async function getHiringApprovalDetails(approvalId: number) {
   if (error) {
     return {
       data: null,
-      error: formatRpcError(error) || "Error al cargar detalles de la aprobación."
+      error: getSupabaseErrorMessage(error, "Error al cargar detalles de la aprobación.")
     };
   }
 
@@ -106,10 +91,9 @@ export async function closeHiringRequest(params: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible cerrar la solicitud."
+      error: getSupabaseErrorMessage(error, "No fue posible cerrar la solicitud.")
     };
   }
 
   return { error: null };
 }
-

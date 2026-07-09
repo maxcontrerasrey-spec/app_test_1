@@ -1,4 +1,12 @@
-import { supabase } from "../../../shared/lib/supabase";
+import {
+  asArray,
+  getSupabaseErrorMessage,
+  getSupabaseClientOrThrow as getSupabaseClient,
+  readNullableNumber,
+  readNullableText,
+  readNullableTimestamp,
+  readText
+} from "../../../shared/lib/supabaseRpc";
 import type {
   CreateInternalMobilityRequestInput,
   CreateInternalMobilityRequestResult,
@@ -10,50 +18,6 @@ import type {
   InternalMobilitySetupCatalogs,
   InternalMobilityWorkerContext
 } from "../types";
-
-function getSupabaseClient() {
-  if (!supabase) {
-    throw new Error("Supabase no está configurado en este entorno.");
-  }
-
-  return supabase;
-}
-
-function asArray<T>(value: unknown) {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
-function readText(value: unknown, fallback = "") {
-  return String(value ?? fallback);
-}
-
-function readNullableText(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : null;
-}
-
-function readNullableNumber(value: unknown) {
-  return value === null || value === undefined ? null : Number(value);
-}
-
-function readNullableTimestamp(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : null;
-}
-
-function formatRpcError(error: {
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}) {
-  return [
-    error.message,
-    error.details ? `Detalles: ${error.details}` : "",
-    error.hint ? `Sugerencia: ${error.hint}` : "",
-    error.code ? `Código: ${error.code}` : ""
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
 
 function mapSetupCatalogs(payload: unknown): InternalMobilitySetupCatalogs {
   const source = (payload ?? {}) as Record<string, unknown>;
@@ -280,7 +244,13 @@ export async function fetchInternalMobilitySetupCatalogs() {
   const { data, error } = await client.rpc("get_internal_mobility_setup_catalogs");
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar catálogos de movilidad interna.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible cargar catálogos de movilidad interna.",
+        "message"
+      )
+    );
   }
 
   return mapSetupCatalogs(data);
@@ -294,7 +264,9 @@ export async function searchInternalMobilityWorkers(search: string, limit = 12) 
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible buscar trabajadores activos.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible buscar trabajadores activos.", "message")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(
@@ -324,7 +296,9 @@ export async function fetchInternalMobilityWorkerContext(bukEmployeeId: string) 
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar el contexto del trabajador.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar el contexto del trabajador.", "message")
+    );
   }
 
   return mapWorkerContext(data);
@@ -340,7 +314,7 @@ export async function createInternalMobilityRequest(input: CreateInternalMobilit
   });
 
   if (error) {
-    throw new Error(formatRpcError(error) || "No fue posible registrar la solicitud.");
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible registrar la solicitud."));
   }
 
   const row = asArray<Record<string, unknown>>(data)[0];
@@ -364,7 +338,9 @@ export async function fetchInternalMobilityRequests() {
   const { data, error } = await client.rpc("get_internal_mobility_requests");
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar solicitudes de movilidad.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar solicitudes de movilidad.", "message")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(mapRequestSummary);
@@ -377,7 +353,9 @@ export async function fetchInternalMobilityRequestDetail(requestId: string) {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar el detalle de la solicitud.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar el detalle de la solicitud.", "message")
+    );
   }
 
   return mapRequestDetail(data);
@@ -397,7 +375,7 @@ export async function decideInternalMobilityApproval(params: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible registrar la decisión."
+      error: getSupabaseErrorMessage(error, "No fue posible registrar la decisión.")
     };
   }
 
@@ -418,7 +396,7 @@ export async function setInternalMobilityHrExecutionStatus(params: {
 
   if (error) {
     return {
-      error: formatRpcError(error) || "No fue posible actualizar la ejecución RRHH."
+      error: getSupabaseErrorMessage(error, "No fue posible actualizar la ejecución RRHH.")
     };
   }
 

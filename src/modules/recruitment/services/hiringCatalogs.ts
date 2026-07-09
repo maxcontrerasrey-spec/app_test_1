@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase";
+import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
 
 export type HiringRole = {
   id: number;
@@ -91,11 +92,20 @@ export async function fetchHiringCatalogs() {
   ]);
 
   if (jobPositionsResponse.error || contractsResponse.error || shiftsResponse.error) {
+    const firstError =
+      jobPositionsResponse.error ?? contractsResponse.error ?? shiftsResponse.error;
+
     return {
       hiringRoles: [] as HiringRole[],
       contractCatalog: [] as ContractCatalogItem[],
       shiftCatalog: [] as ShiftCatalogItem[],
-      error: "No fue posible cargar los catálogos de contratación desde Supabase."
+      error: firstError
+        ? getSupabaseErrorMessage(
+            firstError,
+            "No fue posible cargar los catálogos de contratación desde Supabase.",
+            "message"
+          )
+        : "No fue posible cargar los catálogos de contratación desde Supabase."
     };
   }
 

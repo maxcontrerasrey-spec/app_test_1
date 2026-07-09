@@ -1,4 +1,4 @@
-import { WorkerLookupField, buildWorkerLookupIdentityLine } from "../../../shared/ui";
+import { StandardWorkerLookupField } from "../../../shared/ui";
 import { useInternalMobilityWorkerSearch } from "../hooks/useInternalMobilityQueries";
 import type { InternalMobilityEligibleWorker } from "../types";
 
@@ -20,7 +20,7 @@ export function InternalMobilityWorkerLookup({
   disabled = false
 }: InternalMobilityWorkerLookupProps) {
   return (
-    <WorkerLookupField
+    <StandardWorkerLookupField
       id={id}
       label={label}
       placeholder={placeholder}
@@ -28,17 +28,9 @@ export function InternalMobilityWorkerLookup({
       onSelect={onSelect}
       disabled={disabled}
       useSearchQuery={useInternalMobilityWorkerSearch}
-      getWorkerId={(worker) => worker.bukEmployeeId}
-      getWorkerFullName={(worker) => worker.fullName}
-      renderWorkerSecondary={(worker) =>
-        buildWorkerLookupIdentityLine(worker.documentNumber, worker.jobTitle)
-      }
-      renderWorkerTertiary={(worker) =>
-        `${worker.areaName || worker.contractCode || "Sin área activa"}${
-          worker.companyName ? ` · ${worker.companyName}` : ""
-        }`
-      }
       loadingMessage="Buscando trabajadores activos..."
+      fallbackLineLabel="Sin área activa"
+      includeCompanyName
     />
   );
 }

@@ -1,4 +1,9 @@
-import { supabase } from "../../../shared/lib/supabase";
+import {
+  asArray,
+  getSupabaseErrorMessage,
+  getSupabaseClientOrThrow as getSupabaseClient,
+  readNullableText
+} from "../../../shared/lib/supabaseRpc";
 import type {
   BulkHrIncentiveApprovalDecisionResult,
   CreateHrIncentiveRequestInput,
@@ -20,33 +25,6 @@ import type {
   HrIncentiveUnionStatus,
   HrIncentiveWorkerContext
 } from "../types";
-
-function getSupabaseClient() {
-  if (!supabase) {
-    throw new Error("Supabase no está configurado en este entorno.");
-  }
-
-  return supabase;
-}
-
-function asArray<T>(value: unknown) {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
-function readNullableText(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : null;
-}
-
-function formatRpcError(error: {
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}) {
-  return [error.message, error.details, error.hint, error.code ? `Código: ${error.code}` : ""]
-    .filter(Boolean)
-    .join(" · ");
-}
 
 function mapUnionStatus(value: unknown): HrIncentiveUnionStatus {
   return value === "unionized" || value === "non_unionized" ? value : "unknown";
@@ -647,7 +625,9 @@ export async function fetchHrIncentiveSetupCatalogs() {
   const { data, error } = await client.rpc("get_hr_incentive_setup_catalogs");
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar la configuración de incentivos.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar la configuración de incentivos.", "message")
+    );
   }
 
   return mapSetupCatalogs(data);
@@ -661,7 +641,9 @@ export async function searchHrIncentiveEligibleWorkers(search: string, limit = 1
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible buscar trabajadores elegibles.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible buscar trabajadores elegibles.", "message")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(
@@ -687,7 +669,9 @@ export async function fetchHrIncentiveWorkerContext(bukEmployeeId: string) {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar el contexto del trabajador.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar el contexto del trabajador.", "message")
+    );
   }
 
   return mapWorkerContext(data);
@@ -706,7 +690,9 @@ export async function fetchHrIncentiveEligibleTypes(params: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar los incentivos disponibles.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar los incentivos disponibles.", "message")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map((item) => ({
@@ -743,7 +729,9 @@ export async function fetchHrIncentivePreview(params: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible calcular el incentivo.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible calcular el incentivo.", "message")
+    );
   }
 
   return mapPreview(data);
@@ -760,7 +748,13 @@ export async function fetchHrIncentiveRosterSnapshot(params: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible consultar el estado operativo del trabajador.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible consultar el estado operativo del trabajador.",
+        "message"
+      )
+    );
   }
 
   const row = asArray<Record<string, unknown>>(data)[0];
@@ -801,7 +795,9 @@ export async function createHrIncentiveRequest(input: CreateHrIncentiveRequestIn
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible registrar el incentivo.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible registrar el incentivo.", "message")
+    );
   }
 
   const row = asArray<Record<string, unknown>>(data)[0];
@@ -830,7 +826,9 @@ export async function cancelHrIncentiveRequest(requestId: string, comment?: stri
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible anular el incentivo.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible anular el incentivo.", "message")
+    );
   }
 }
 
@@ -862,7 +860,9 @@ export async function fetchHrIncentiveRequests(filters: HrIncentiveRequestsFilte
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar los incentivos registrados.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar los incentivos registrados.", "message")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(mapRequestRow);
@@ -888,7 +888,7 @@ export async function fetchHrIncentiveRequestsPage(filters: HrIncentiveRequestsP
 
   if (error) {
     throw new Error(
-      formatRpcError(error) || "No fue posible cargar los incentivos registrados."
+      getSupabaseErrorMessage(error, "No fue posible cargar los incentivos registrados.", "plain")
     );
   }
 
@@ -935,7 +935,11 @@ export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFi
 
   if (error) {
     throw new Error(
-      formatRpcError(error) || "No fue posible cargar el dashboard analítico de incentivos."
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible cargar el dashboard analítico de incentivos.",
+        "plain"
+      )
     );
   }
 
@@ -961,7 +965,11 @@ export async function fetchHrIncentiveApprovalQueuePage(
 
   if (error) {
     throw new Error(
-      formatRpcError(error) || "No fue posible cargar la bandeja de aprobaciones de incentivos."
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible cargar la bandeja de aprobaciones de incentivos.",
+        "plain"
+      )
     );
   }
 
@@ -976,7 +984,7 @@ export async function fetchHrIncentiveRequestDetail(requestId: string) {
 
   if (error) {
     throw new Error(
-      formatRpcError(error) || "No fue posible cargar el detalle del incentivo."
+      getSupabaseErrorMessage(error, "No fue posible cargar el detalle del incentivo.", "plain")
     );
   }
 
@@ -996,7 +1004,9 @@ export async function decideHrIncentiveApproval(params: {
   });
 
   if (error) {
-    throw new Error(formatRpcError(error) || "No fue posible registrar la decisión.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible registrar la decisión.", "plain")
+    );
   }
 
   const row = asArray<Record<string, unknown>>(data)[0];
@@ -1021,7 +1031,9 @@ export async function bulkDecideHrIncentiveApprovals(params: {
   });
 
   if (error) {
-    throw new Error(formatRpcError(error) || "No fue posible procesar las aprobaciones.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible procesar las aprobaciones.", "plain")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(
@@ -1042,7 +1054,9 @@ export async function addHrIncentiveAllowedJobTitle(jobTitle: string) {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible guardar el cargo elegible.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar el cargo elegible.", "message")
+    );
   }
 
   return String(data ?? "");
@@ -1056,7 +1070,9 @@ export async function setHrIncentiveAllowedJobTitleStatus(jobTitleId: string, is
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible actualizar el cargo elegible.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible actualizar el cargo elegible.", "message")
+    );
   }
 }
 
@@ -1079,7 +1095,9 @@ export async function addHrIncentiveType(input: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible guardar el tipo de incentivo.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar el tipo de incentivo.", "message")
+    );
   }
 
   return String(data ?? "");
@@ -1093,7 +1111,9 @@ export async function setHrIncentiveTypeStatus(typeId: string, isActive: boolean
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible actualizar el tipo de incentivo.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible actualizar el tipo de incentivo.", "message")
+    );
   }
 }
 
@@ -1109,7 +1129,11 @@ export async function setHrIncentiveTypeRosterRequirement(
 
   if (error) {
     throw new Error(
-      error.message || "No fue posible actualizar la validación de descanso del incentivo."
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible actualizar la validación de descanso del incentivo.",
+        "message"
+      )
     );
   }
 }
@@ -1126,7 +1150,11 @@ export async function setHrIncentiveTypeManualAmountOption(
 
   if (error) {
     throw new Error(
-      error.message || "No fue posible actualizar la política de monto manual del incentivo."
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible actualizar la política de monto manual del incentivo.",
+        "message"
+      )
     );
   }
 }
@@ -1143,7 +1171,11 @@ export async function setHrIncentiveTypeHourRateStrategy(
 
   if (error) {
     throw new Error(
-      error.message || "No fue posible actualizar la estrategia horaria del incentivo."
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible actualizar la estrategia horaria del incentivo.",
+        "message"
+      )
     );
   }
 }
@@ -1179,7 +1211,9 @@ export async function addHrIncentiveRateRule(input: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible guardar la regla de monto.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar la regla de monto.", "message")
+    );
   }
 
   return String(data ?? "");
@@ -1193,6 +1227,8 @@ export async function setHrIncentiveRateRuleStatus(ruleId: string, isActive: boo
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible actualizar la regla de monto.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible actualizar la regla de monto.", "message")
+    );
   }
 }

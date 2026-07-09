@@ -2,6 +2,156 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Loop 3 ERP refactor enterprise inmediato: cerrar duplicidad residual en servicios de roster, accreditation, operaciones y BI
+
+## Loop 4 ERP refactor enterprise inmediato: unificar drift residual de errores Supabase y cerrar smoke operativo base
+
+- [x] Auditar los servicios de reclutamiento que todavía combinaban `formatSupabaseError(...) || fallback` y `error.message || fallback`
+- [x] Migrar esa capa residual a `getSupabaseErrorMessage(...)`, preservando los modos `annotated/plain/message` y los contratos públicos actuales
+- [x] Ejecutar smoke visual de las rutas base impactadas por la infraestructura compartida (`/`, `/reset-password`, guard de `/operaciones`)
+- [x] Limpiar la trazabilidad del loop y revalidar tipado, build y consistencia de diff antes de cerrar
+
+## Revisión previa del loop 4 ERP refactor enterprise inmediato
+
+- El riesgo pendiente ya no estaba en RPC names ni payloads: seguían existiendo call sites de reclutamiento con dos patrones de fallback distintos sobre errores de `Supabase`, lo que podía volver a introducir drift textual y semántico dentro del mismo dominio.
+- La corrección seguía siendo segura y acotada: solo se tocaría resolución de mensajes de error, sin alterar SQL, hooks, rutas, tipos compartidos ni shape de retorno.
+- Como los loops anteriores compactaron infraestructura transversal de UI y servicios, este cierre requería además una verificación operativa mínima de rutas base para confirmar que la app seguía montando correctamente.
+
+## Resultado del loop 4 ERP refactor enterprise inmediato
+
+- El drift residual de mensajes quedó absorbido en el helper compartido [`supabaseRpc.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/supabaseRpc.ts:1) sin ampliar superficie pública adicional: los servicios de reclutamiento ahora consumen consistentemente `getSupabaseErrorMessage(...)` en vez de mezclar `formatSupabaseError(...) || ...` y `error.message || ...`.
+- La migración quedó cerrada en las últimas superficies de reclutamiento que todavía mantenían el patrón anterior:
+  - [`documentChecklistApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/documentChecklistApi.ts:1)
+  - [`hiringWorkflow.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringWorkflow.ts:1)
+  - [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1)
+- Se preservó el contrato exacto por contexto:
+  - fallbacks `plain` siguen usándose donde la UI ya esperaba mensajes limpios;
+  - fallbacks anotados se mantienen donde el servicio ya devolvía detalle compuesto;
+  - los dos puntos que dependían de `error.message` (`update_candidate_driver_license`, `update_candidate_interview_notes`) quedaron expresados con modo `message` para no cambiar la semántica visible.
+- El cierre operativo se verificó con smoke visual real sobre `preview` local:
+  - `/` renderizó correctamente la pantalla de inicio de sesión;
+  - `/reset-password` renderizó correctamente el formulario de restablecimiento;
+  - `/operaciones` resolvió sin crash hacia la pantalla autenticada/guard esperada, redirigiendo a login al no existir sesión.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - smoke browser con capturas de `http://127.0.0.1:4173/`, `http://127.0.0.1:4173/reset-password` y `http://127.0.0.1:4173/operaciones`
+- Riesgo residual remanente:
+  - no quedó un riesgo funcional nuevo detectado en este frente;
+  - fuera de este loop, cualquier compactación futura de infraestructura compartida debería volver a cerrar con smoke de rutas críticas porque el repo aún no tiene cobertura E2E automática para login/guard/recuperación.
+
+- [x] Auditar la duplicidad residual en `rosterApi`, `accreditationApi`, `operacionesApi` y `biApi`, incluyendo guards de `Supabase` y lectores básicos de payload
+- [x] Ampliar los helpers compartidos solo donde haga falta para absorber esas variantes sin romper contratos existentes
+- [x] Migrar los cuatro servicios a los helpers compartidos, preservando sus retornos públicos y mensajes fallback
+- [x] Ejecutar validación local sobre tipado, build frontend y consistencia de diff
+- [x] Documentar el resultado y la regla reusable de este loop
+
+## Revisión previa del loop 3 ERP refactor enterprise inmediato
+
+- Este loop corrige el riesgo residual reportado en el cierre anterior: todavía quedaban módulos con helpers locales equivalentes a `getSupabaseClient`, `asArray`, `readNullableText` y variantes cercanas.
+- El alcance sigue siendo interno y compatible hacia atrás: no se tocarán hooks consumidores, RPC names, payload keys ni SQL.
+- Si hace falta ampliar `src/shared/lib/supabaseRpc.ts`, será con helpers aditivos (`asRecord`, `readBoolean`, `readNumber`) para absorber el patrón de `accreditation` sin forzar una reescritura mayor.
+
+## Resultado del loop 3 ERP refactor enterprise inmediato
+
+- El riesgo residual de duplicidad en servicios quedó absorbido en la capa compartida: [`supabaseRpc.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/supabaseRpc.ts:1) ahora también expone `asRecord(...)`, `readBoolean(...)` y `readNumber(...)`, además de los helpers ya unificados en el loop anterior.
+- La migración quedó aplicada en los módulos que todavía repetían infraestructura local:
+  - [`rosterApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/services/rosterApi.ts:1)
+  - [`accreditationApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/accreditation/services/accreditationApi.ts:1)
+  - [`operacionesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/services/operacionesApi.ts:1)
+  - [`biApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/services/biApi.ts:1)
+- El contrato externo se preservó:
+  - `roster`, `accreditation` y `bi` siguen lanzando errores en los mismos puntos;
+  - `operaciones` mantiene su contrato mixto: búsqueda con `throw` y batch con retorno `{ ok, error }`, por lo que el guard no-throw del batch se conservó deliberadamente.
+- La mejora no tocó RPC names, payload keys, hooks consumidores ni SQL; solo se removió infraestructura repetida local.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+- Riesgo residual remanente:
+  - a nivel de código, la duplicidad transversal detectada en servicios quedó razonablemente cubierta;
+  - sigue pendiente, si se quiere cerrar el riesgo UX, una pasada de smoke visual/manual sobre los módulos refactorizados porque este repo no tiene pruebas UI automáticas para foco/blur, mensajes y estados vacíos.
+
+## Loop 2 ERP refactor enterprise inmediato: adapter compartido para worker lookups
+
+- [x] Auditar el contrato de `WorkerLookupField`, los cuatro wrappers actuales y sus consumidores para fijar qué diferencias son reales y cuáles son solo duplicidad
+- [x] Extraer un adapter compartido en `src/shared/ui/forms` que concentre la presentación estándar de nombre, identidad y línea operativa del trabajador
+- [x] Migrar `RosterWorkerLookup`, `InternalMobilityWorkerLookup`, `IncentiveWorkerLookup` y `OperationsDriverLookup` para consumir el adapter sin cambiar sus props públicas
+- [x] Ejecutar validación local sobre tipado, build frontend y consistencia de diff
+- [x] Documentar resultado, riesgos remanentes y lección reusable del loop
+
+## Revisión previa del loop 2 ERP refactor enterprise inmediato
+
+- Este loop apunta a duplicidad frontend segura: cuatro wrappers casi idénticos encima de `WorkerLookupField`, con diferencias acotadas a hook, `id`, mensajes y algunos fallbacks visuales.
+- El cambio no debe alterar los consumidores ni su comportamiento: `onSearchChange` en roster, `filterResults` en incentivos, `serviceDate` en operaciones y el sufijo de empresa en movilidad interna siguen siendo obligatorios.
+- No se tocarán hooks de búsqueda, RPCs, tipos backend ni contratos SQL; el alcance queda limitado a UI compartida y wrappers.
+
+## Resultado del loop 2 ERP refactor enterprise inmediato
+
+- La duplicidad quedó compactada en [`StandardWorkerLookupField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/StandardWorkerLookupField.tsx:1), un adapter aditivo sobre [`WorkerLookupField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/WorkerLookupField.tsx:1) que centraliza:
+  - nombre completo;
+  - línea de identidad `RUT · cargo`;
+  - línea operativa `área/contrato`, con fallback configurable y sufijo opcional de empresa;
+  - `getWorkerId` configurable para soportar `bukEmployeeId` o `id`.
+- Los cuatro wrappers quedaron reducidos a declarar solo sus diferencias reales, manteniendo intactas sus props públicas:
+  - [`RosterWorkerLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/roster/components/RosterWorkerLookup.tsx:1)
+  - [`InternalMobilityWorkerLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/components/InternalMobilityWorkerLookup.tsx:1)
+  - [`IncentiveWorkerLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveWorkerLookup.tsx:1)
+  - [`OperationsDriverLookup.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsDriverLookup.tsx:1)
+- Se preservaron las diferencias de negocio/UI que sí importan:
+  - `onSearchChange` sigue vivo en roster;
+  - `filterResults` sigue excluyendo al mismo trabajador en incentivos;
+  - `searchContext={serviceDate}` sigue acotando conductores en operaciones;
+  - movilidad interna conserva el fallback `Sin área activa` y el sufijo de empresa.
+- Durante la implementación apareció una fragilidad de base en el componente compartido:
+  - [`WorkerLookupField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/WorkerLookupField.tsx:1) estaba tipando sus props sin propagar `TSearchContext` en la firma del componente;
+  - se corrigió para que el adapter y futuros consumers genéricos no vuelvan a chocar con inferencias inconsistentes.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+- Riesgo remanente controlado:
+  - todavía existe oportunidad de seguir compactando otros wrappers similares o extraer un patrón para search adapters, pero este loop se mantuvo acotado a los cuatro lookups existentes sin tocar consumidores ni hooks.
+
+## Loop 1 ERP refactor enterprise inmediato: helpers compartidos para contratos RPC y guards de servicios
+
+- [x] Auditar duplicidad real de guards `Supabase`, formateo de errores RPC y lectores de payload en servicios críticos (`recruitment`, `internal_mobility`, `incentives`)
+- [x] Extraer helpers compartidos mínimos y compatibles hacia atrás en `src/shared/lib` para reducir drift entre servicios sin alterar contratos de entrada/salida
+- [x] Refactorizar primero los servicios con mayor repetición para consumir esos helpers compartidos
+- [x] Ejecutar validación local sobre tipado, build frontend y consistencia de diff para asegurar que no se rompieron flujos existentes
+- [x] Documentar resultado, riesgos remanentes y lección reusable de este loop
+
+## Revisión previa del loop 1 ERP refactor enterprise inmediato
+
+- Se prioriza este loop porque reduce duplicidad transversal en la capa que conecta frontend con RPCs, mejora consistencia operativa y baja riesgo de drift sin tocar tablas, columnas, políticas, rutas ni contratos públicos.
+- El alcance queda acotado a helpers y consumo interno en servicios TypeScript; no se modifica SQL, RLS, migraciones ni nombres de RPC.
+- La implementación debe preservar los mismos fallbacks funcionales (`data/error`, `throw`, payload mapeado) para que el cambio sea fácilmente reversible.
+
+## Resultado del loop 1 ERP refactor enterprise inmediato
+
+- La duplicidad más rentable estaba en la frontera frontend/RPC, no en SQL: varios servicios repetían guards de `Supabase`, `formatRpcError(...)` con drift textual y lectores de payload básicos (`asArray`, `readNullableText`, `readNullableNumber`, `readText`).
+- La compactación quedó centralizada en [`src/shared/lib/supabaseRpc.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/lib/supabaseRpc.ts:1), que ahora concentra:
+  - `getSupabaseClientOrThrow(...)`;
+  - `formatSupabaseError(...)` con modo `annotated/plain`;
+  - `asArray(...)`, `readText(...)`, `readNullableText(...)`, `readNullableNumber(...)`, `readNullableTimestamp(...)`.
+- El consumo quedó migrado primero en los servicios con más repetición y mayor criticidad operativa:
+  - [`hiringControl.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringControl.ts:1)
+  - [`documentChecklistApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/documentChecklistApi.ts:1)
+  - [`hiringWorkflow.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/services/hiringWorkflow.ts:1)
+  - [`internalMobilityApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/internal_mobility/services/internalMobilityApi.ts:1)
+  - [`incentivesApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/services/incentivesApi.ts:1)
+- El contrato externo se preservó:
+  - reclutamiento sigue devolviendo `{ data, error }` donde ya lo hacía;
+  - movilidad interna e incentivos siguen lanzando `Error` donde ya lo hacían;
+  - no se tocaron nombres de RPC, payload keys, rutas ni hooks consumidores.
+- Validación cerrada con:
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+- Riesgo remanente controlado:
+  - todavía quedan otros módulos (`roster`, `accreditation`, `operaciones`, `bi`) con helpers locales equivalentes; este loop deja el patrón compartido listo para migrarlos sin inventar un refactor masivo.
+
 ## Endurecimiento futuro de renta BUK y resumen contextual en listos para contratar
 
 - [x] Auditar por qué una ficha BUK generada por ERP puede seguir sin fijar explícitamente `base_wage = 0` aunque el job se encole con `wage = 0`

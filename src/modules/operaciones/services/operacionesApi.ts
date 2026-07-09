@@ -1,4 +1,10 @@
 import { supabase } from "../../../shared/lib/supabase";
+import {
+  asArray,
+  getSupabaseErrorMessage,
+  getSupabaseClientOrThrow,
+  readNullableText
+} from "../../../shared/lib/supabaseRpc";
 import { validateServiceEntryPayload, type ServiceEntryPayload } from "../lib/service-entry";
 import type { Driver } from "../types";
 
@@ -28,27 +34,19 @@ type BackendBatchError = {
   field_errors?: Record<string, string>;
 };
 
-function asArray<T>(value: unknown) {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
-function readNullableText(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : null;
-}
-
 export async function searchOperationsDrivers(search: string, serviceDate: string, limit = 12) {
-  if (!supabase) {
-    throw new Error("Supabase no está configurado.");
-  }
+  const client = getSupabaseClientOrThrow("Supabase no está configurado.");
 
-  const { data, error } = await supabase.rpc("search_operations_drivers", {
+  const { data, error } = await client.rpc("search_operations_drivers", {
     p_search: search.trim() || null,
     p_service_date: serviceDate || null,
     p_limit: limit,
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible buscar conductores.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible buscar conductores.", "message")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(
@@ -121,7 +119,8 @@ export async function submitServiceEntriesBatch(
     };
   }
 
-  if (!supabase) {
+  const client = supabase;
+  if (!client) {
     return { ok: false, error: "Supabase no está configurado." };
   }
 
@@ -132,14 +131,14 @@ export async function submitServiceEntriesBatch(
     };
   }
 
-  const { data, error } = await supabase.rpc("submit_service_entries_batch", {
+  const { data, error } = await client.rpc("submit_service_entries_batch", {
     p_entries: cleanedEntries,
   });
 
   if (error) {
     return {
       ok: false,
-      error: error.message || "No fue posible guardar la planificación.",
+      error: getSupabaseErrorMessage(error, "No fue posible guardar la planificación.", "message"),
     };
   }
 

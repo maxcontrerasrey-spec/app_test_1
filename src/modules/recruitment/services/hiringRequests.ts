@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase";
+import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
 import type {
   ContractCatalogItem,
   HiringRole,
@@ -49,16 +50,13 @@ export async function createHiringRequest(input: CreateHiringRequestInput) {
   });
 
   if (error) {
-    const errorParts = [
-      error.message,
-      error.details ? `Detalles: ${error.details}` : "",
-      error.hint ? `Sugerencia: ${error.hint}` : "",
-      error.code ? `Código: ${error.code}` : ""
-    ].filter(Boolean);
-
     return {
       data: null,
-      error: `No fue posible guardar la solicitud en Supabase. ${errorParts.join(" · ")}`
+      error: getSupabaseErrorMessage(
+        error,
+        "No fue posible guardar la solicitud en Supabase.",
+        "annotated"
+      )
     };
   }
 

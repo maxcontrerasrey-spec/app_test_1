@@ -4,6 +4,30 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 218. Cuando se extrae un helper compartido de errores Supabase, el refactor no termina hasta migrar todos los call sites del dominio y cerrar con smoke real de rutas base
+
+- **Dejar convivir `formatSupabaseError(...) || fallback` y `error.message || fallback` dentro del mismo módulo reintroduce drift aunque el helper nuevo ya exista.** En este ERP, reclutamiento todavía mezclaba ambos patrones después de haber creado `getSupabaseErrorMessage(...)`, lo que dejaba mensajes resueltos por caminos distintos para operaciones cercanas.
+- **La regla correcta es expresar cada intención con un modo explícito del helper compartido.** Si la UI necesita mensaje limpio usa `plain`; si necesita detalle compuesto usa `annotated`; si el contrato previo dependía solo de `error.message`, usa `message` en vez de seguir leyendo el objeto a mano.
+- **Cuando el cambio toca infraestructura transversal de servicios o componentes compartidos, el cierre no puede quedarse solo en `tsc/build`.** Hace falta al menos un smoke browser de rutas base como login, recuperación de contraseña y un guard autenticado para demostrar que la compactación no dejó a la app montando pero rota al navegar.
+
+## 217. Cuando la unificación de helpers de servicios se abre por dominio, hay que cerrarla hasta cubrir todas las variantes equivalentes o el drift reaparece en los módulos que quedaron fuera
+
+- **Centralizar solo los primeros servicios no elimina la deuda si otros módulos siguen copiando la misma infraestructura.** En este ERP, después de unificar reclutamiento, movilidad interna e incentivos, todavía persistían copias equivalentes de `getSupabaseClient`, `asArray`, `readNullableText` y variantes cercanas en roster, accreditation, operaciones y BI.
+- **La regla correcta es extender el helper compartido con variantes aditivas y luego barrer los dominios restantes sin cambiar sus contratos públicos.** Si un módulo necesita `asRecord`, `readBoolean` o `readNumber`, agrégalos al helper común y migra el dominio; no inventes un segundo helper paralelo ni fuerces a todos a un mismo contrato de retorno.
+- **Los servicios con contrato mixto también deben respetarse durante la unificación.** Si un dominio como operaciones combina funciones que lanzan `Error` con otras que devuelven `{ ok, error }`, la extracción compartida debe compactar solo la infraestructura compatible y dejar intacta la frontera pública en vez de “normalizarla” por conveniencia.
+
+## 216. Cuando varios wrappers React solo cambian hook, `id` o fallbacks visuales, el refactor seguro es un adapter aditivo sobre el componente base, no una reescritura de consumidores
+
+- **Cuatro wrappers casi idénticos son deuda real aunque “se lean simples”.** En este ERP, los lookups de roster, movilidad interna, incentivos y operaciones repetían la misma estructura sobre `WorkerLookupField` y diferían solo en el hook de búsqueda, el identificador del trabajador, algunos mensajes y el fallback operativo mostrado al usuario.
+- **La regla correcta es extraer un adapter compartido que preserve las props públicas existentes y deje configurables solo las variaciones reales.** Nombre completo, línea `RUT · cargo` y línea `área/contrato` deben centralizarse; `onSearchChange`, `filterResults`, `searchContext`, fallback textual y sufijo de empresa deben seguir siendo opt-in por wrapper.
+- **Si el componente base ya es genérico, el refactor debe revalidar que la firma realmente propague todos sus genéricos.** En este caso, `WorkerLookupField` aceptaba `TSearchContext` en el type alias pero no lo trasladaba en la firma del componente, lo que recién apareció al crear un adapter más tipado encima; corregir esa base evita que la siguiente reutilización tropiece con el mismo bug.
+
+## 215. La capa de servicios que consume RPCs no debe seguir copiando guards de Supabase ni formateadores de error; debe centralizarlos en helpers compartidos y preservar el contrato externo de cada módulo
+
+- **La duplicidad pequeña en la frontera frontend/RPC se convierte rápido en drift operativo.** En este ERP, `formatRpcError(...)`, `asArray(...)`, `readNullableText(...)` y el guard de `Supabase` ya se habían replicado entre reclutamiento, movilidad interna e incentivos con diferencias de texto y fallback que no agregaban valor de dominio.
+- **La regla correcta es extraer helpers aditivos en `src/shared/lib` y migrar primero los servicios más repetidos, sin cambiar cómo responde cada módulo hacia sus hooks consumidores.** Si un servicio ya devuelve `{ data, error }`, debe seguir haciéndolo; si otro ya lanza `Error`, también. La unificación debe ocurrir por dentro, no romper contratos aguas arriba.
+- **Cuando el objetivo es compactar sin riesgo, centraliza solo la infraestructura repetida y deja local las validaciones de payload y mapping semántico.** Guards de cliente, formatters de error y lectores básicos sí son compartibles; `map*`, `require*Field` y reglas de negocio siguen perteneciendo al dominio que entiende ese RPC.
+
 ## 211. Un `success` de cancelación ERP no es una generación efectiva en BUK y no puede alimentar buckets ni bloqueos de reproceso
 
 - **`buk_sync_jobs.status = 'success'` no basta por sí solo para concluir que el alta quedó operativamente resuelta.** En contratación, la rama `cancel_request_existing_active_buk_employee` marca el job como exitoso para auditar la anulación, pero ese éxito representa un retiro del candidato, no una contratación efectiva.

@@ -1,4 +1,4 @@
-import { WorkerLookupField, buildWorkerLookupIdentityLine } from "../../../shared/ui";
+import { StandardWorkerLookupField } from "../../../shared/ui";
 import { useOperationsDriverSearch } from "../hooks/useOperationsQueries";
 import type { Driver } from "../types";
 
@@ -22,7 +22,7 @@ export function OperationsDriverLookup({
   disabled = false,
 }: OperationsDriverLookupProps) {
   return (
-    <WorkerLookupField
+    <StandardWorkerLookupField
       id={id}
       label={label}
       placeholder={placeholder}
@@ -32,13 +32,6 @@ export function OperationsDriverLookup({
       useSearchQuery={useOperationsDriverSearch}
       searchContext={serviceDate}
       getWorkerId={(worker) => worker.id}
-      getWorkerFullName={(worker) => worker.fullName}
-      renderWorkerSecondary={(worker) =>
-        buildWorkerLookupIdentityLine(worker.documentNumber, worker.jobTitle || "Sin cargo")
-      }
-      renderWorkerTertiary={(worker) =>
-        worker.areaName || worker.contractCode || "Sin contrato activo"
-      }
       loadingMessage="Buscando conductores..."
       emptyMessage="No hay conductores que coincidan con la búsqueda actual."
     />

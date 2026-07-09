@@ -1,4 +1,9 @@
-import { supabase } from "../../../shared/lib/supabase";
+import {
+  asArray,
+  getSupabaseClientOrThrow as getSupabaseClient,
+  getSupabaseErrorMessage,
+  readNullableText
+} from "../../../shared/lib/supabaseRpc";
 import type {
   RosterCalendarSummary,
   RosterExceptionType,
@@ -10,22 +15,6 @@ import type {
   WorkerScheduleDay,
   WorkerSchedulePayload
 } from "../types";
-
-function getSupabaseClient() {
-  if (!supabase) {
-    throw new Error("Supabase no está configurado en este entorno.");
-  }
-
-  return supabase;
-}
-
-function asArray<T>(value: unknown) {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
-function readNullableText(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : null;
-}
 
 function readRosterExceptionSource(value: unknown) {
   return value === "buk" || value === "incentive_auto" ? value : "manual";
@@ -158,7 +147,13 @@ export async function fetchRosterSetupCatalogs() {
   const { data, error } = await client.rpc("get_hr_roster_setup_catalogs");
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar la configuración de jornadas.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible cargar la configuración de jornadas.",
+        "message"
+      )
+    );
   }
 
   return mapSetupCatalogs(data);
@@ -182,7 +177,9 @@ export async function fetchRosterCalendarSummary(params: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar el resumen de jornadas.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar el resumen de jornadas.", "message")
+    );
   }
 
   return mapRosterCalendarSummary(data);
@@ -196,7 +193,9 @@ export async function searchRosterWorkers(search: string, limit = 12) {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible buscar trabajadores.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible buscar trabajadores.", "message")
+    );
   }
 
   return asArray<Record<string, unknown>>(data).map(
@@ -226,7 +225,9 @@ export async function fetchWorkerSchedule(params: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible cargar la pauta del trabajador.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible cargar la pauta del trabajador.", "message")
+    );
   }
 
   return mapWorkerSchedule(data);
@@ -253,7 +254,7 @@ export async function upsertShiftPattern(input: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible guardar la pauta.");
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible guardar la pauta.", "message"));
   }
 
   return String(data ?? "");
@@ -267,7 +268,9 @@ export async function setShiftPatternStatus(patternId: string, isActive: boolean
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible actualizar el estado de la pauta.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible actualizar el estado de la pauta.", "message")
+    );
   }
 }
 
@@ -288,7 +291,13 @@ export async function assignWorkerRoster(input: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible asignar la pauta al trabajador.");
+    throw new Error(
+      getSupabaseErrorMessage(
+        error,
+        "No fue posible asignar la pauta al trabajador.",
+        "message"
+      )
+    );
   }
 
   return String(data ?? "");
@@ -311,7 +320,9 @@ export async function upsertRosterException(input: {
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible guardar la excepción.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar la excepción.", "message")
+    );
   }
 
   return String(data ?? "");
@@ -325,6 +336,8 @@ export async function setRosterExceptionStatus(exceptionId: string, isActive: bo
   });
 
   if (error) {
-    throw new Error(error.message || "No fue posible actualizar la excepción.");
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible actualizar la excepción.", "message")
+    );
   }
 }
