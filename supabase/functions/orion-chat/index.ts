@@ -92,29 +92,13 @@ function buildSessionTitle(text: string) {
   return normalized.length > 48 ? `${normalized.slice(0, 48)}...` : normalized;
 }
 
-function decodeBase64Url(value: string) {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  return atob(padded);
-}
-
-function getUserIdFromAuthHeader(authHeader: string | null) {
+function getAccessTokenFromAuthHeader(authHeader: string | null) {
   if (!authHeader?.startsWith("Bearer ")) {
     return null;
   }
 
   const token = authHeader.slice("Bearer ".length).trim();
-  const parts = token.split(".");
-  if (parts.length < 2) {
-    return null;
-  }
-
-  try {
-    const payload = JSON.parse(decodeBase64Url(parts[1])) as { sub?: unknown };
-    return typeof payload.sub === "string" && payload.sub.trim() ? payload.sub : null;
-  } catch {
-    return null;
-  }
+  return token || null;
 }
 
 function sanitizeOutboundText(value: string) {
@@ -307,7 +291,7 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const authHeader = req.headers.get("Authorization");
-  const userId = getUserIdFromAuthHeader(authHeader);
+  const accessToken = getAccessTokenFromAuthHeader(authHeader);
 
   const orionLlmApiKey = Deno.env.get("ORION_LLM_API_KEY");
   const orionLlmBaseUrl = Deno.env.get("ORION_LLM_BASE_URL") || "https://api.groq.com/openai/v1";
@@ -320,7 +304,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!userId) {
+  if (!accessToken) {
     return new Response(JSON.stringify({ error: "Sesión inválida para ORION." }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -333,6 +317,20 @@ Deno.serve(async (req) => {
       autoRefreshToken: false
     }
   });
+
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser(accessToken);
+
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: "Sesión inválida para ORION." }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  const userId = user.id;
 
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {

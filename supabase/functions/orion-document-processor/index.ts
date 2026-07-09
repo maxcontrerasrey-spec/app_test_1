@@ -35,6 +35,56 @@ function chunkText(text: string, chunkSize = 1000, overlap = 200) {
   return chunks;
 }
 
+async function requireAuthorizedOrionUser(
+  supabase: ReturnType<typeof createClient>,
+  authHeader: string | null
+) {
+  const accessToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length).trim()
+    : "";
+
+  if (!accessToken) {
+    throw new Error("Unauthorized");
+  }
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(accessToken);
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: canAccess, error: accessError } = await supabase.rpc("user_is_admin", {
+    target_user_id: user.id,
+  });
+
+  if (accessError || canAccess !== true) {
+    throw new Error("Forbidden");
+  }
+
+  return user.id;
+}
+
+function normalizeStoragePath(value: unknown) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const normalized = value.trim().replace(/^\/+/, "");
+  if (
+    !normalized ||
+    normalized.includes("..") ||
+    normalized.length > 512 ||
+    /[\x00-\x1F\x7F]/.test(normalized)
+  ) {
+    return "";
+  }
+
+  return normalized;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -42,6 +92,16 @@ Deno.serve(async (req) => {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+      }
+    });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
       }
     });
   }
@@ -56,11 +116,12 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Use service role to bypass RLS for fetching the file and inserting into knowledge base
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { filePath } = await req.json();
+    const userId = await requireAuthorizedOrionUser(supabase, req.headers.get("Authorization"));
+    const { filePath: rawFilePath } = await req.json();
+    const filePath = normalizeStoragePath(rawFilePath);
 
     if (!filePath) {
       return new Response(JSON.stringify({ error: "filePath es requerido" }), {
@@ -69,7 +130,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Procesando documento: ${filePath}`);
+    console.log(`Procesando documento ORION autorizado para usuario ${userId}`);
 
     // 1. Descargar archivo
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -147,10 +208,12 @@ Deno.serve(async (req) => {
     );
   } catch (err: unknown) {
     console.error("Error procesando documento:", err);
+    const message = toErrorMessage(err);
+    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
     return new Response(
-      JSON.stringify({ error: toErrorMessage(err) }),
+      JSON.stringify({ error: status === 500 ? "No fue posible procesar el documento ORION." : message }),
       {
-        status: 500,
+        status,
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",

@@ -10,6 +10,36 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La regla correcta es expresar cada intención con un modo explícito del helper compartido.** Si la UI necesita mensaje limpio usa `plain`; si necesita detalle compuesto usa `annotated`; si el contrato previo dependía solo de `error.message`, usa `message` en vez de seguir leyendo el objeto a mano.
 - **Cuando el cambio toca infraestructura transversal de servicios o componentes compartidos, el cierre no puede quedarse solo en `tsc/build`.** Hace falta al menos un smoke browser de rutas base como login, recuperación de contraseña y un guard autenticado para demostrar que la compactación no dejó a la app montando pero rota al navegar.
 
+## 219. Un JWT válido no basta para usar `service_role`; la Edge Function debe validar también la autorización de dominio antes de saltarse RLS
+
+- **Supabase puede verificar el JWT de una Edge Function y aun así el código puede abrir un bypass si después usa `service_role` sin revisar permisos del módulo o rol.** En ORION, el procesador documental descargaba cualquier `filePath` del bucket y escribía embeddings con privilegios elevados; el control visible de UI no era una frontera de seguridad.
+- **La regla correcta es validar identidad y permiso backend antes de crear efectos privilegiados.** Primero se debe resolver el usuario con `auth.getUser(accessToken)`, luego exigir la capacidad real (`user_is_admin(...)`, `user_can_access_module(...)` o capability específica según el contrato), y recién después usar `service_role` para operaciones internas inevitables.
+- **Cuando la UI restringe una acción a superadmin, la RLS/storage/RPC debe decir lo mismo.** Si storage o tablas permiten `ai_assistant` pero los botones de upload/delete solo aparecen para superadmin, cualquier cliente alternativo puede saltarse la UI; el backend debe conservar la regla autoritativa.
+
+## 220. Una vista analítica heredada no puede seguir expuesta por PostgREST si ya existe una RPC autorizada para ese dominio
+
+- **Crear RPCs `SECURITY DEFINER` con gates de permiso no cierra la superficie si las vistas base siguen con `grant select to authenticated`.** En BI, el frontend consumía `get_bi_*`, pero las vistas `buk_bi_*` todavía podían consultarse directo y evitar `user_can_access_bi_analytics(...)`.
+- **La regla correcta es dejar una sola frontera pública para el dato sensible.** Si la API viva es la RPC autorizada, las vistas internas deben perder grants a `public`, `anon` y `authenticated`, salvo que exista un consumidor explícito y protegido que justifique otro contrato.
+- **Antes de revocar, demuestra compatibilidad con consumidores reales.** Hay que buscar usos directos en frontend, Edge Functions y scripts, y confirmar que las RPCs autorizadas siguen concedidas y validan rol/perfil internamente.
+
+## 221. Si una tabla operativa conserva JSON crudo de un proveedor, el primer cierre compatible es privilegio por columna antes que romper todo el contrato
+
+- **`raw_payload` no tiene el mismo nivel de exposición aceptable que las columnas operativas derivadas.** En trabajadores BUK, el JSON completo puede contener detalles laborales y personales que no deberían quedar consultables por cualquier rol que solo necesita nombre, cargo, contrato o RUT.
+- **La salida segura no siempre es revocar toda la tabla en el primer paso.** Si hay realtime, RPCs heredadas y lookups operativos, se puede revocar el `select` amplio y volver a conceder solo columnas explícitas, dejando el payload crudo para `service_role` y funciones backend controladas.
+- **Después de ocultar el payload crudo, el siguiente cierre debe ser de alcance, no de forma.** Todavía hay que definir filtros por contrato/área/rol sobre las columnas operativas, pero ese cambio debe hacerse con inventario de consumidores para no romper flujos productivos.
+
+## 222. En storage documental, poder ver un caso no equivale a poder mutar sus objetos
+
+- **Las policies de storage deben separar lectura de escritura aunque la tabla de metadata ya esté protegida.** En `candidate-docs`, la tabla `candidate_documents` exigía gestión para insertar/actualizar, pero el bucket permitía `insert/update/delete` a cualquiera que solo pudiera ver el caso.
+- **Si el frontend sube el archivo antes de llamar la RPC, storage es una frontera de seguridad real.** Un cliente alternativo puede saltarse el orden esperado de React y dejar objetos huérfanos, reemplazados o borrados si la policy del bucket es más laxa que la RPC.
+- **La RPC debe validar que el path pertenece al sujeto que recibe la metadata.** No basta con que el usuario gestione algún candidato; `upload_candidate_document(...)` tiene que rechazar rutas cuyo primer folder no sea el `p_case_candidate_id` exacto.
+
+## 223. Un helper genérico de permisos con `target_user_id` debe estar atado al actor o ser solo interno
+
+- **Las funciones como `user_has_capability(user, capability)` y `user_can_access_feature(user, feature)` pueden convertirse en oráculos de la matriz de seguridad.** Aunque no ejecuten la acción protegida, permiten enumerar qué puede hacer otro usuario si aceptan cualquier UUID desde un cliente autenticado.
+- **La regla segura es `auth.uid() = target_user_id` o admin.** Si el helper necesita seguir disponible para policies o RPCs de dominio, primero valida el actor; si no tiene contrato público, revoca ejecución directa y déjalo como helper interno de funciones `SECURITY DEFINER`.
+- **Los warnings de `target_user_id` no se resuelven renombrando parámetros.** La evidencia real es que la función bloquee la consulta cruzada antes de leer roles, capabilities o features.
+
 ## 217. Cuando la unificación de helpers de servicios se abre por dominio, hay que cerrarla hasta cubrir todas las variantes equivalentes o el drift reaparece en los módulos que quedaron fuera
 
 - **Centralizar solo los primeros servicios no elimina la deuda si otros módulos siguen copiando la misma infraestructura.** En este ERP, después de unificar reclutamiento, movilidad interna e incentivos, todavía persistían copias equivalentes de `getSupabaseClient`, `asArray`, `readNullableText` y variantes cercanas en roster, accreditation, operaciones y BI.
@@ -2013,3 +2043,51 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Cuando el ERP ya carga `contractOptions` desde backend, `Contrato (opcional)` no puede seguir como `TextField`.** Ese input abre códigos inválidos, diferencias de spelling y reglas que luego no matchean con el resto del sistema.
 - **La regla correcta es reutilizar el mismo catálogo compartido del módulo.** Si la pantalla ya tiene `setupCatalogsQuery.data.contractOptions`, el selector debe salir de ahí y no de una segunda fuente ni de escritura manual.
 - **En configuraciones enterprise, “opcional” no significa “texto libre”.** Significa permitir vacío para aplicar a todos, pero cuando el usuario sí selecciona un contrato debe ser uno de los contratos reales y activos del ERP.
+
+## 149. Un helper de permisos que recibe un UUID objetivo no puede ser ejecutable como oráculo de otros usuarios
+
+- **La autorización por dominio debe atarse al actor autenticado antes de consultar roles, módulos o features del UUID recibido.** Si `target_user_id` no coincide con `auth.uid()` y el actor no es admin, el helper debe devolver `false` sin mirar permisos del tercero.
+- **Un gate reusable no debe confiar en que la UI siempre pasa el usuario correcto.** Aunque los consumidores normales usen `auth.uid()`, un cliente alternativo puede invocar RPCs expuestas con IDs arbitrarios y convertir booleanos de acceso en un mapa de perfiles.
+- **El admin cross-user debe ser explícito y backend-authoritative.** Permitir inspección admin es válido, pero debe depender de `user_is_admin(auth.uid())`, no de que el UUID consultado sea admin.
+
+## 150. El padrón BUK no debe quedar abierto por PostgREST para sostener invalidaciones realtime
+
+- **Si el frontend ya consume trabajadores por RPCs autorizadas, no mantengas `SELECT` directo sobre `employees` o `employees_active_current`.** Aunque ocultes `raw_payload`, documento, email, contrato, cargo y área siguen siendo datos operativos sensibles que pueden cruzar contratos o áreas.
+- **Una suscripción realtime no justifica abrir lectura de una tabla sensible.** Si la tabla solo se usaba para invalidar un dashboard, se elimina esa dependencia o se reemplaza por una señal menos sensible; no se conserva el grant global.
+- **Las vistas deduplicadas de personal también son frontera de datos.** `employees_active_current` parece una vista operacional, pero sigue proyectando datos personales y laborales; debe consumirse desde RPCs con filtros de dominio, no como catálogo universal del cliente.
+
+## 151. Si un módulo ya tiene RPCs autorizadas, las tablas base no deben quedar abiertas por compatibilidad histórica
+
+- **No mantengas grants directos para que una RPC no `SECURITY DEFINER` pueda mutar tablas sensibles.** La frontera correcta es hacer la RPC `SECURITY DEFINER`, validar `auth.uid()` y permisos dentro, y revocar acceso directo a la tabla.
+- **Las tablas legacy sin consumidores vivos deben cerrarse junto con las tablas nuevas.** Si quedaron `onboarding_*` antiguas con grants amplios y el frontend ya no las usa, mantenerlas abiertas aumenta superficie sin aportar operación.
+- **Un helper de módulo con UUID objetivo debe seguir la misma regla actor-bound que los helpers de permisos generales.** El admin puede inspeccionar a terceros; un usuario normal no puede usar booleanos de acceso para perfilar otros usuarios.
+
+## 152. Un bucket sin flujo vivo no debe quedar abierto por anticipación
+
+- **No dejes policies de storage amplias esperando una UI futura.** Si no existe consumidor vivo, el bucket debe quedar cerrado hasta que el flujo real defina path, ownership y validación backend.
+- **La policy de storage debe validar más que `bucket_id` y módulo.** Para evidencias o documentos operacionales, el path debe estar atado a caso/tarea/candidato y la mutación debe replicar el permiso de escritura de la tabla asociada.
+- **Cerrar ahora es más seguro que prometer disciplina futura.** Cuando se implemente la carga, se agrega una RPC o Edge Function específica; mientras tanto, no hay razón para exponer `insert/update/delete/select` directo.
+
+## 153. Las tablas de asignación de roles no deben tener mutaciones directas desde `authenticated`
+
+- **RLS admin-only no reemplaza revocar privilegios SQL innecesarios.** Si el frontend no muta `user_roles`, el grant correcto para `authenticated` es lectura acotada, no `insert/update/delete`.
+- **La administración de roles debe pasar por migraciones, scripts con service role o RPCs administrativas auditables.** Dejar mutaciones directas aumenta el impacto de cualquier drift de policy.
+- **En matrices de autorización, los permisos de escritura deben ser más estrechos que los de lectura.** Ver el propio rol no implica poder enviar cambios directos a la tabla de asignación.
+
+## 154. Un trigger protector no reemplaza grants de columna mínimos en perfiles
+
+- **Si el cliente solo necesita actualizar una bandera, concede esa columna y nada más.** `profiles.update(...)` para limpiar `must_reset_password` no justifica `UPDATE` general sobre identidad, estado o privilegios.
+- **Las columnas de gobierno deben quedar bloqueadas por privilegio SQL antes que por lógica de trigger.** El trigger sigue siendo defensa en profundidad, pero el grant debe impedir que el cliente siquiera intente cambiar `is_super_admin`, `status` o datos administrativos.
+- **Cada update directo desde React debe mapearse a un grant de columna explícito o migrarse a RPC.** No aceptes permisos amplios porque el payload actual “se porta bien”.
+
+## 155. Los logs de seguridad no se exponen como tabla PostgREST directa
+
+- **Un log de auditoría puede revelar actores, eventos, horarios e IPs aunque solo lo lea admin.** Si no existe visor vivo, se revoca la lectura directa y se mantiene la escritura interna.
+- **El visor de logs debe ser una RPC administrativa paginada y filtrada.** Así se controla alcance, formato, retención y se evita que la tabla cruda sea una API accidental.
+- **RLS admin-only no es excusa para dejar datos forenses como catálogo directo.** La frontera de consulta debe ser intencional y trazable.
+
+## 156. Los módulos con RPCs de perfil no deben exponer sus tablas base en paralelo
+
+- **Si la pantalla ya consume una RPC `SECURITY DEFINER`, no mantengas `SELECT` directo sobre las tablas que alimentan esa RPC.** Eso evita que un cliente alternativo salte el shape, paginación y filtros del contrato backend.
+- **Los audit logs de módulo deben salir solo dentro de respuestas autorizadas y acotadas.** Un perfil de acreditación puede incluir su bitácora relevante; la tabla completa no debe quedar como API separada.
+- **Las Edge Functions con service role no necesitan grants a `authenticated` sobre tablas base.** Validan JWT y permisos en su entrada; el acceso interno privilegiado no debe confundirse con permisos de cliente.

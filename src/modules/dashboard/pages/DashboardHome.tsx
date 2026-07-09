@@ -31,7 +31,6 @@ export function DashboardHome() {
       { table: "recruitment_cases" },
       { table: "recruitment_case_candidates" },
       { table: "candidate_stage_approvals" },
-      { table: "employees" },
       { table: "hr_roster_exceptions" },
       { table: "hr_incentive_requests" }
     ],

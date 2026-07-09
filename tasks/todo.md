@@ -2,6 +2,288 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Loop de hardening de seguridad ERP enterprise
+
+- [x] Auditar superficies críticas de autenticación, autorización, RLS, RPCs `SECURITY DEFINER`, Edge Functions, secretos/configuración y exposición de datos entre contratos/roles
+- [x] Priorizar el riesgo real con mejor relación seguridad/compatibilidad y validar que no duplique el cierre reciente de RLS sobre `app_features` y `role_feature_access`
+- [x] Aplicar solo correcciones mínimas, backend-authoritative y compatibles, sin relajar políticas ni ampliar permisos globales
+- [x] Ejecutar validaciones disponibles: auditoría de migraciones, TypeScript/build, `git diff --check` y checks estáticos dirigidos por rol/superficie
+- [x] Documentar el resultado final del loop, riesgos corregidos, riesgos pendientes y siguiente loop recomendado
+
+## Revisión previa del loop de hardening de seguridad ERP enterprise
+
+- El scan formal `codex-security:security-scan` quedó en modo degradado porque el preflight no puede confirmar el cupo efectivo de subagentes, aunque sí detecta herramientas de delegación y goals disponibles; por tanto, este loop se ejecuta como hardening dirigido y auditable, no como certificación exhaustiva de cobertura total.
+- El cierre reciente de RLS en `app_features` y `role_feature_access` ya resolvió una alerta puntual de tablas públicas sin RLS; este loop debe buscar otra superficie de mayor impacto y evitar repetir el mismo cambio.
+- Las lecciones relevantes del repo apuntan a riesgos reales en tres frentes: RPCs `SECURITY DEFINER` con identificadores de usuario, Edge Functions con `verify_jwt = false` o secretos internos, y matrices de permisos cuya UI puede ocultar tabs sin que el backend replique la frontera.
+- La regla de implementación será conservadora: si el hallazgo afecta autorización o datos sensibles, la corrección debe vivir en SQL/RLS/RPC/Edge Function y no depender solo de React.
+
+## Resultado del loop de hardening de seguridad ERP enterprise
+
+- Se corrigió una fuga directa en Operaciones: [`20260709090000_scope_operations_service_entries_rls_to_owner.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709090000_scope_operations_service_entries_rls_to_owner.sql:1) reemplaza la policy de `public.service_entries` para que un usuario con módulo `operaciones` solo lea filas propias, salvo admin. Esto reduce exposición de conductor, documento, equipo, turno y contrato entre usuarios/contratos cuando la UI consulta/exporta directo desde PostgREST.
+- Se cerró un bypass cliente-servidor en ORION Knowledge: [`20260709091000_tighten_orion_knowledge_admin_write_surface.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709091000_tighten_orion_knowledge_admin_write_surface.sql:1) alinea RLS de `orion_knowledge_base` y storage `orion_knowledge` con la regla visible de UI: solo admin puede leer/borrar conocimiento documental o operar el bucket.
+- Se endureció [`orion-document-processor/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-document-processor/index.ts:1): antes de usar `service_role` ahora valida token con Supabase Auth, exige `user_is_admin(...)`, normaliza `filePath`, rechaza métodos no `POST` y devuelve errores controlados en vez de detalles internos.
+- Se endureció [`orion-chat/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/orion-chat/index.ts:1): deja de derivar identidad decodificando el JWT manualmente y usa `supabase.auth.getUser(accessToken)` antes de comparar ownership de sesión bajo `service_role`.
+- Validación cerrada con:
+  - `python3 .../config_preflight.py --profile security_scan ...` quedó `incomplete` solo por capacidad multiagente desconocida; se ejecutó loop dirigido, no certificación exhaustiva.
+  - `npm run audit:migrations -- --files supabase/migrations/20260709090000_scope_operations_service_entries_rls_to_owner.sql supabase/migrations/20260709091000_tighten_orion_knowledge_admin_write_surface.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npm run audit:supabase-security`
+- Limitación de validación: este shell no tiene `deno`, por lo que no se pudo ejecutar `deno check` sobre Edge Functions.
+- Riesgos pendientes priorizados para el próximo loop:
+  - `public.employees` y `employees_active_current` siguen siendo el mayor riesgo de exposición transversal por datos BUK/raw payload; debe cerrarse con RPCs/vistas safe o RLS por contrato antes de revocar consumidores.
+  - Las vistas BI `buk_bi_*` tienen grants directos a `authenticated`; conviene revocar acceso directo y forzar RPCs BI autorizadas.
+  - Storage `candidate-docs` permite mutaciones por un helper basado en visibilidad de caso; debe alinearse con permisos de escritura documental, no solo lectura.
+  - Onboarding operacional mantiene CRUD directo amplio para usuarios con el módulo; requiere rediseño por caso/contrato/responsable antes de endurecer sin romper operación.
+
+## Loop 2 de hardening de seguridad ERP enterprise: cerrar grants directos BI heredados
+
+- [x] Confirmar que el frontend BI consume RPCs autorizadas y no vistas `buk_bi_*` por PostgREST directo
+- [x] Revocar `SELECT` directo a `authenticated` sobre vistas BI heredadas que permiten inferencia operacional transversal
+- [x] Validar que las RPCs BI sigan concedidas a `authenticated` y contengan gate `user_can_access_bi_analytics(...)`
+- [x] Ejecutar auditoría de migraciones, TypeScript/build, diff check y documentar riesgos residuales
+
+## Revisión previa del loop 2 de hardening de seguridad ERP enterprise
+
+- La auditoría local muestra que [`biApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/services/biApi.ts:1) consume `get_bi_*` por RPC, no las vistas `buk_bi_*` directamente.
+- Las vistas `buk_bi_*` fueron creadas como `security_invoker` pero con `grant select ... to authenticated`; eso mantiene una superficie PostgREST paralela que evita el gate explícito de las RPCs BI.
+- La corrección mínima segura es revocar el grant directo de las vistas, sin tocar sus definiciones ni las RPCs que calculan BI; así no se relajan permisos ni cambia el contrato frontend.
+
+## Resultado del loop 2 de hardening de seguridad ERP enterprise
+
+- Se cerró una superficie BI paralela: [`20260709092000_revoke_direct_buk_bi_view_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709092000_revoke_direct_buk_bi_view_access.sql:1) revoca acceso directo `public`, `anon` y `authenticated` sobre 11 vistas `buk_bi_*`.
+- El contrato vivo del frontend se preserva porque [`biApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/bi/services/biApi.ts:1) consume RPCs `get_bi_*`; no se detectaron consumidores directos de vistas `buk_bi_*` en `src`, `supabase/functions` ni `scripts`.
+- Las RPCs BI autorizadas quedan como frontera obligatoria: siguen concedidas a `authenticated` y contienen gate explícito `user_can_access_bi_analytics(...)`, por lo que el acceso operativo pasa por autorización backend y no por vistas PostgREST heredadas.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260709090000_scope_operations_service_entries_rls_to_owner.sql supabase/migrations/20260709091000_tighten_orion_knowledge_admin_write_surface.sql supabase/migrations/20260709092000_revoke_direct_buk_bi_view_access.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npm run audit:supabase-security`
+- Nota de auditoría: `audit:supabase-security` termina con `exit_status=0` y mantiene warnings históricos; el warning nuevo sobre `20260709091000_tighten_orion_knowledge_admin_write_surface.sql` es un falso positivo del heurístico de storage porque la policy exige `bucket_id = 'orion_knowledge'` y `user_is_admin(auth.uid())`.
+- Riesgos pendientes priorizados para el siguiente loop:
+  - `public.employees` y `employees_active_current` siguen siendo la superficie más sensible por datos BUK/raw payload y exposición transversal potencial.
+  - Storage `candidate-docs` aún debe separar visibilidad de caso de permiso efectivo de escritura documental.
+  - Onboarding operacional mantiene CRUD directo amplio y requiere rediseño por caso/contrato/responsable antes de endurecer sin romper operación.
+  - `user_has_capability(...)` puede actuar como oráculo de permisos si se expone sin frontera de dominio más estrecha.
+
+## Loop 3 de hardening de seguridad ERP enterprise: ocultar payload crudo BUK en trabajadores
+
+- [x] Confirmar consumidores directos de `public.employees` y `public.employees_active_current`, distinguiendo lectura cliente de uso interno por RPC/Edge Function/script con service role
+- [x] Revocar lectura directa de `raw_payload` para `authenticated` sin romper columnas operativas explícitas ni RPCs `SECURITY DEFINER`
+- [x] Validar que los consumidores vivos sigan usando RPCs o columnas permitidas y que `raw_payload` quede solo para backend privilegiado
+- [x] Ejecutar auditoría de migraciones, TypeScript/build, diff check y documentar riesgos residuales
+
+## Revisión previa del loop 3 de hardening de seguridad ERP enterprise
+
+- `public.employees` contiene datos operativos y `raw_payload` BUK completo; la policy vigente permite `select` amplio a usuarios autenticados con módulos como `operaciones`, `control_contrataciones`, `certificados` y `seguimiento_certificados`.
+- La lectura directa desde frontend no consume `employees` para datos; el dashboard solo lo usa como tabla de invalidación realtime. Las pantallas de onboarding vigentes consumen RPCs `get_operational_onboarding_*`, no joins PostgREST directos.
+- Los consumidores que sí necesitan `raw_payload` son backend privilegiado o funciones SQL `SECURITY DEFINER`; por compatibilidad, el cambio mínimo no revoca todas las columnas, sino solo el payload crudo por privilegios de columna.
+
+## Resultado del loop 3 de hardening de seguridad ERP enterprise
+
+- Se redujo exposición de datos BUK crudos: [`20260709093000_restrict_buk_employee_raw_payload_direct_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709093000_restrict_buk_employee_raw_payload_direct_access.sql:1) revoca `select` amplio sobre `public.employees` y `public.employees_active_current` para `authenticated`, y vuelve a conceder solo columnas operativas explícitas, excluyendo `raw_payload`.
+- La compatibilidad se preserva porque el frontend no lee `raw_payload`; los usos vivos fuera de SQL son `sync-buk-employees`, `sync-buk-roster-absences` y `sync-buk-candidates`, todos ejecutados con `service_role` o como backend privilegiado.
+- Las RPCs `SECURITY DEFINER` que derivan cargo, empresa, sindicatos, jornada o BI desde `raw_payload` siguen funcionando como frontera backend; el cambio solo bloquea lectura directa del JSON por clientes autenticados vía PostgREST.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260709090000_scope_operations_service_entries_rls_to_owner.sql supabase/migrations/20260709091000_tighten_orion_knowledge_admin_write_surface.sql supabase/migrations/20260709092000_revoke_direct_buk_bi_view_access.sql supabase/migrations/20260709093000_restrict_buk_employee_raw_payload_direct_access.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npm run audit:supabase-security`
+- Riesgos pendientes priorizados para el siguiente loop:
+  - Aun con `raw_payload` oculto, `employees_active_current` mantiene lectura transversal de columnas operativas; cerrar por contrato/área requiere inventariar cada RPC/lookup antes de aplicar RLS más estricta.
+  - `candidate-docs` storage y onboarding operacional siguen bajo revisión lateral para separar visibilidad de caso, escritura documental y CRUD de operación.
+  - `user_has_capability(...)` sigue pendiente como posible oráculo de permisos si no se acota por dominio o se usa detrás de RPCs específicas.
+
+## Loop 4 de hardening de seguridad ERP enterprise: cerrar mutación indebida en candidate-docs
+
+- [x] Revisar policies de storage `candidate-docs`, RPC `upload_candidate_document(...)` y consumidores frontend/Edge Function antes de cambiar permisos
+- [x] Separar permiso de lectura de documentos visibles del permiso de insertar, actualizar o borrar objetos del bucket
+- [x] Validar en backend que `p_file_path` pertenezca al `p_case_candidate_id` antes de registrar el documento
+- [x] Ejecutar auditoría de migraciones, TypeScript/build, diff check y documentar riesgos residuales
+
+## Revisión previa del loop 4 de hardening de seguridad ERP enterprise
+
+- La RLS de `candidate_documents` exige gestión de caso/candidato para insertar o actualizar, pero las policies de storage `candidate-docs` usan `user_can_access_candidate_document_object(...)`, que solo valida visibilidad de caso.
+- El frontend sube al bucket antes de llamar `upload_candidate_document(...)`; por eso un cliente alternativo podía insertar, reemplazar o borrar objetos bajo un candidato visible aunque la RPC rechazara el registro.
+- El cambio mínimo compatible es mantener `select` por visibilidad, endurecer `insert/update/delete` del bucket al mismo gate de la RPC y agregar validación de path en `upload_candidate_document(...)`.
+
+## Resultado del loop 4 de hardening de seguridad ERP enterprise
+
+- Se cerró el bypass de mutación en `candidate-docs`: [`20260709094000_harden_candidate_docs_storage_mutation_gate.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709094000_harden_candidate_docs_storage_mutation_gate.sql:1) crea `user_can_manage_candidate_document_object(...)` y usa ese gate para `insert`, `update` y `delete` sobre `storage.objects`.
+- La lectura de documentos visibles se mantiene con `user_can_access_candidate_document_object(...)`, evitando romper descargas y signed URLs para usuarios que sí pueden ver el checklist.
+- `upload_candidate_document(...)` ahora valida que el primer segmento de `p_file_path` sea exactamente `p_case_candidate_id::text`, cerrando la posibilidad de registrar un objeto en una carpeta ajena aunque el usuario gestione otro candidato.
+- Edge Functions con `service_role` (`sync-buk-candidates`, `purge-candidate-documents`) no dependen de estas policies para su ejecución interna y conservan sus gates propios en modo interactivo.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260709090000_scope_operations_service_entries_rls_to_owner.sql supabase/migrations/20260709091000_tighten_orion_knowledge_admin_write_surface.sql supabase/migrations/20260709092000_revoke_direct_buk_bi_view_access.sql supabase/migrations/20260709093000_restrict_buk_employee_raw_payload_direct_access.sql supabase/migrations/20260709094000_harden_candidate_docs_storage_mutation_gate.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npm run audit:supabase-security`
+- Nota de auditoría: `audit:supabase-security` termina con `exit_status=0` y reporta un warning heurístico para `20260709094000_harden_candidate_docs_storage_mutation_gate.sql`; la revisión manual confirma que las policies no quedan solo por `bucket_id`, porque exigen `user_can_manage_candidate_document_object(name)`.
+- Riesgos pendientes priorizados para el siguiente loop:
+  - Onboarding operacional no muestra bypass actual si el módulo sigue solo en `admin`, pero antes de abrirlo a otros roles necesita helper por caso/contrato/responsable.
+  - `employees_active_current` aún expone columnas operativas transversalmente; ya no expone `raw_payload`, pero falta cierre por alcance.
+  - Quedan warnings históricos de `SECURITY DEFINER` con `p_user_id/target_user_id` que deben revisarse por familias de RPC.
+
+## Loop 5 de hardening de seguridad ERP enterprise: acotar oráculos de capacidades y features
+
+- [x] Auditar helpers genéricos `user_has_capability(...)` y `user_can_access_feature(...)`, grants y consumidores frontend/SQL
+- [x] Impedir que usuarios no admin consulten capacidades o features de otros usuarios mediante IDs arbitrarios
+- [x] Mantener compatibilidad de helpers de dominio que consultan `auth.uid()` o admins que revisan otro usuario
+- [x] Ejecutar auditoría de migraciones, TypeScript/build, diff check y documentar riesgos residuales
+
+## Revisión previa del loop 5 de hardening de seguridad ERP enterprise
+
+- `user_has_capability(target_user_id, target_capability_code)` tiene `execute` para `authenticated` y puede revelar capacidades de cualquier `target_user_id`.
+- `user_can_access_feature(target_user_id, target_feature_code)` no tiene consumidores frontend directos y funciona como helper SQL; si queda ejecutable por defecto, también puede actuar como oráculo de matriz de features.
+- La corrección mínima compatible es atar ambos helpers a `auth.uid()` salvo admin, preservando llamadas internas que ya pasan el usuario autenticado y escenarios admin explícitos.
+
+## Resultado del loop 5 de hardening de seguridad ERP enterprise
+
+- Se cerró un oráculo de permisos: [`20260709095000_bind_capability_feature_helpers_to_actor.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709095000_bind_capability_feature_helpers_to_actor.sql:1) redefine `user_has_capability(...)` y `user_can_access_feature(...)` para devolver `false` cuando `target_user_id` no coincide con `auth.uid()`, salvo que el actor sea admin.
+- `user_has_capability(...)` conserva `execute` para `authenticated` porque se usa en políticas y helpers de dominio, pero ya no revela capacidades de terceros a usuarios no admin.
+- `user_can_access_feature(...)` queda sin `execute` directo para `authenticated`; no hay consumidores frontend/Edge Function directos y los helpers SQL de dominio lo siguen usando internamente.
+- Validación cerrada con:
+  - `npm run audit:migrations -- --files supabase/migrations/20260709090000_scope_operations_service_entries_rls_to_owner.sql supabase/migrations/20260709091000_tighten_orion_knowledge_admin_write_surface.sql supabase/migrations/20260709092000_revoke_direct_buk_bi_view_access.sql supabase/migrations/20260709093000_restrict_buk_employee_raw_payload_direct_access.sql supabase/migrations/20260709094000_harden_candidate_docs_storage_mutation_gate.sql supabase/migrations/20260709095000_bind_capability_feature_helpers_to_actor.sql`
+  - `./node_modules/.bin/tsc -b --pretty false`
+  - `npm run build:frontend-check`
+  - `git diff --check`
+  - `npm run audit:supabase-security`
+- Nota de auditoría: `audit:supabase-security` termina con `exit_status=0` y reporta warning para `20260709095000_bind_capability_feature_helpers_to_actor.sql` por detectar `target_user_id`; la revisión manual confirma que el helper valida `current_user_id <> target_user_id and not user_is_admin(current_user_id)` antes de leer permisos.
+- Riesgos pendientes priorizados para el siguiente loop:
+  - Revisar por familias los RPCs `get_dashboard_*` que aceptan `p_user_id`, aunque varios ya tienen gate `auth.uid() = p_user_id or admin`.
+  - Completar cierre por alcance de `employees_active_current` sobre columnas operativas.
+  - Diseñar helper por caso/contrato/responsable antes de abrir onboarding operacional a roles no admin.
+
+## Loop 6 de hardening de seguridad ERP enterprise: acotar helpers de permiso por dominio al actor autenticado
+
+- [x] Revalidar RPCs dashboard con `p_user_id` y confirmar que `get_dashboard_tasks(...)` mantiene gate `auth.uid() = p_user_id` o admin
+- [x] Auditar helpers de dominio con UUID objetivo que podían exponer rol/perfil de otros usuarios
+- [x] Redefinir helpers de permiso para devolver `false` si el actor no es el usuario consultado ni admin
+- [x] Revalidar migraciones, TypeScript/build, diff check y documentar riesgos residuales
+
+## Revisión previa del loop 6 de hardening de seguridad ERP enterprise
+
+- La versión vigente de `get_dashboard_tasks(p_user_id)` ya bloquea consultas cruzadas con `auth.uid() <> p_user_id and not user_is_admin(auth.uid())`, por lo que no requiere relajar ni modificar el contrato dashboard.
+- El riesgo residual estaba en helpers de dominio ejecutables o reutilizables que aceptan `uuid` arbitrario y combinan `user_is_admin(...)`, `user_can_access_module(...)` o `user_can_access_feature(...)`; aunque el frontend normal pasa el usuario actual, un cliente alternativo podía intentar usarlos como oráculo de permisos.
+- La corrección mínima segura es actor-bound: conservar la semántica cuando `target_user_id = auth.uid()`, permitir inspección admin explícita, y devolver `false` para terceros no admin sin tocar permisos globales ni policies de negocio.
+
+## Resultado del loop 6 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709100000_bind_domain_permission_helpers_to_actor.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709100000_bind_domain_permission_helpers_to_actor.sql:1) para acotar `user_can_access_candidate_control(...)`, `user_can_manage_operations(...)`, `user_can_manage_accreditation(...)`, `user_can_manage_hr_incentives(...)`, `user_can_view_hr_incentive_analytics(...)` y `user_can_access_bi_analytics(...)`.
+- Estos helpers ahora devuelven `false` cuando el UUID consultado no coincide con `auth.uid()` y el actor no es admin, cerrando inferencias de perfil/módulo/capacidad entre usuarios.
+- `user_can_generate_buk_candidates(...)` queda reafirmado sin ejecución directa para `public`, `anon` ni `authenticated`; las rutas BUK deben pasar por RPCs o Edge Functions ya autorizadas.
+- La compatibilidad se preserva porque los consumidores vivos revisados pasan `auth.uid()` o `user.id` validado por Supabase Auth, incluyendo `upload-buk-accreditation-document`.
+
+## Loop 7 de hardening de seguridad ERP enterprise: cerrar acceso directo al padrón BUK de empleados
+
+- [x] Inventariar consumidores vivos de `employees` y `employees_active_current` en frontend, Edge Functions, scripts y RPCs
+- [x] Confirmar que las pantallas productivas usan RPCs de búsqueda/contexto y no PostgREST directo sobre `employees_active_current`
+- [x] Eliminar dependencia frontend de realtime directo sobre `employees`
+- [x] Revocar `SELECT` directo a `authenticated` sobre `employees` y `employees_active_current`
+- [ ] Ejecutar auditoría de migraciones, TypeScript/build, diff check y auditoría Supabase
+
+## Revisión previa del loop 7 de hardening de seguridad ERP enterprise
+
+- El frontend vivo consume trabajadores por RPCs (`search_hr_roster_workers`, `get_worker_schedule`, `search_internal_mobility_workers`, `get_internal_mobility_worker_context`, `search_hr_incentive_eligible_workers`, `get_hr_incentive_worker_context`, `search_accreditation_workers`, `get_worker_accreditation_profile`).
+- Los hooks de onboarding operacional también consumen RPCs (`get_operational_onboarding_cases`, `get_operational_onboarding_tasks`, `get_operational_onboarding_activity_log`), no joins PostgREST directos desde React.
+- El único uso directo en React era una suscripción realtime a `employees` para invalidar el dashboard; no justifica mantener lectura directa del padrón BUK completo o deduplicado.
+
+## Resultado del loop 7 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709101000_revoke_direct_employee_registry_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709101000_revoke_direct_employee_registry_access.sql:1) para revocar `SELECT` directo de `authenticated` sobre `public.employees` y `public.employees_active_current`.
+- [`DashboardHome.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/dashboard/pages/DashboardHome.tsx:1) deja de suscribirse a cambios directos de `employees`, eliminando la dependencia cliente que mantenía abierta esa superficie.
+- Las lecturas de trabajadores quedan detrás de RPCs autorizadas y Edge Functions/scripts con credenciales privilegiadas, reduciendo exposición transversal de documento, email, contrato, cargo, área y estado laboral.
+
+## Loop 8 de hardening de seguridad ERP enterprise: cerrar tablas directas de onboarding operacional
+
+- [x] Auditar consumidores React de onboarding operacional y confirmar uso de RPCs en vez de tablas directas
+- [x] Convertir mutaciones de plantilla a frontera `SECURITY DEFINER` para no depender de grants directos de tabla
+- [x] Acotar helpers de onboarding con UUID objetivo al actor autenticado o admin
+- [x] Revocar acceso directo `public`, `anon` y `authenticated` sobre tablas vivas y legacy de onboarding
+- [ ] Ejecutar auditoría de migraciones, TypeScript/build, diff check y auditoría Supabase
+
+## Revisión previa del loop 8 de hardening de seguridad ERP enterprise
+
+- `src/modules/operational_onboarding` consume templates, tareas, casos, candidatos y bitácora por RPCs (`get_operational_onboarding_*`, `create/update/upsert/delete_*`, `start_operational_onboarding`).
+- Las RPCs de lectura ya eran `SECURITY DEFINER` con gate interno, pero las mutaciones de plantilla originales no lo eran; eso hacía que el módulo dependiera de grants de tabla si se quería operar sin romper.
+- La corrección segura es mover esas mutaciones a `SECURITY DEFINER`, mantener sus validaciones internas y cerrar todos los grants directos sobre tablas de onboarding.
+
+## Resultado del loop 8 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709102000_harden_operational_onboarding_direct_table_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709102000_harden_operational_onboarding_direct_table_access.sql:1) para cerrar acceso directo a tablas de onboarding.
+- `user_can_access_operational_onboarding(...)` y `user_can_manage_operational_onboarding(...)` quedan actor-bound: devuelven `false` si el UUID consultado no coincide con `auth.uid()` y el actor no es admin.
+- Las mutaciones `create_operational_onboarding_template(...)`, `update_operational_onboarding_template(...)`, `upsert_operational_onboarding_template_task(...)` y `delete_operational_onboarding_template_task(...)` quedan `SECURITY DEFINER`.
+- Se revocó `all` para `public`, `anon` y `authenticated` sobre tablas vivas (`onboarding_templates`, `employee_onboarding_*`, `onboarding_template_activity_log`) y legacy (`onboarding_courses_catalog`, `onboarding_processes`, `onboarding_employee_courses`).
+
+## Loop 9 de hardening de seguridad ERP enterprise: cerrar bucket no usado de evidencias onboarding
+
+- [x] Auditar consumidores de `onboarding_evidence` en frontend, Edge Functions y scripts
+- [x] Confirmar ausencia de flujo vivo de subida/descarga de evidencias onboarding
+- [x] Eliminar policies directas del bucket hasta que exista una RPC/Edge Function con path binding por caso/tarea
+- [ ] Ejecutar auditoría de migraciones, TypeScript/build, diff check y auditoría Supabase
+
+## Resultado del loop 9 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709103000_close_unused_onboarding_evidence_storage_surface.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709103000_close_unused_onboarding_evidence_storage_surface.sql:1) para eliminar las policies `insert/select/update/delete` de `storage.objects` sobre el bucket `onboarding_evidence`.
+- No se detectaron consumidores vivos en `src`, `supabase/functions` ni `scripts`; por eso el cierre no rompe una pantalla actual y elimina una superficie de storage amplia basada solo en módulo.
+- Si el flujo de evidencias se implementa después, debe entrar por una RPC/Edge Function que valide `case_id`, `task_id`, ownership del path y permiso operacional antes de firmar/subir archivos.
+
+## Loop 10 de hardening de seguridad ERP enterprise: cerrar mutaciones directas de roles de usuario
+
+- [x] Auditar grants y policies de `public.user_roles`
+- [x] Confirmar que no hay consumidores frontend directos de mutación sobre `user_roles`
+- [x] Revocar `insert/update/delete` directo a `authenticated`, manteniendo lectura controlada por RLS
+- [ ] Ejecutar auditoría de migraciones, TypeScript/build, diff check y auditoría Supabase
+
+## Resultado del loop 10 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709104000_revoke_direct_user_role_mutations.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709104000_revoke_direct_user_role_mutations.sql:1) para revocar mutaciones directas sobre `public.user_roles`.
+- La lectura de roles sigue bajo RLS (`self` o admin), pero los clientes autenticados ya no tienen privilegio SQL directo para insertar, actualizar o borrar asignaciones de rol.
+- Los scripts administrativos existentes usan service role/admin client, por lo que no dependen del grant directo a `authenticated`.
+
+## Loop 11 de hardening de seguridad ERP enterprise: restringir columnas actualizables en profiles
+
+- [x] Auditar policy, trigger protector y consumidores frontend de `profiles.update(...)`
+- [x] Confirmar que el único update cliente vivo modifica `must_reset_password` y `updated_at` tras cambio de contraseña
+- [x] Revocar `UPDATE` general sobre `profiles` para `authenticated`
+- [x] Reotorgar solo `UPDATE (must_reset_password, updated_at)` a `authenticated`
+- [ ] Ejecutar auditoría de migraciones, TypeScript/build, diff check y auditoría Supabase
+
+## Resultado del loop 11 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709105000_restrict_profile_self_update_columns.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709105000_restrict_profile_self_update_columns.sql:1) para reemplazar el grant amplio `UPDATE` por permisos de columna mínimos.
+- `profiles` conserva RLS `self/admin` y el trigger `protect_profiles_sensitive_columns(...)`, pero ahora un cliente autenticado no tiene privilegio SQL para modificar columnas sensibles como `is_super_admin`, `status`, `email`, `full_name`, `job_title` o `employee_code`.
+- El flujo actual de recuperación/cambio de contraseña se preserva porque solo actualiza `must_reset_password` y `updated_at`.
+
+## Loop 12 de hardening de seguridad ERP enterprise: cerrar lectura directa de security_audit_logs
+
+- [x] Auditar consumidores vivos de `security_audit_logs`
+- [x] Confirmar que no hay visor frontend directo ni dependencia operacional actual
+- [x] Revocar `SELECT` directo a `authenticated`
+- [ ] Ejecutar auditoría de migraciones, TypeScript/build, diff check y auditoría Supabase
+
+## Resultado del loop 12 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709110000_revoke_direct_security_audit_log_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709110000_revoke_direct_security_audit_log_access.sql:1) para cerrar lectura PostgREST directa de `security_audit_logs`.
+- El log sigue disponible para escrituras internas por triggers/RPCs privilegiadas; si se necesita visor admin, debe implementarse como RPC paginada con filtros y trazabilidad, no como tabla directa.
+
+## Loop 13 de hardening de seguridad ERP enterprise: cerrar tablas directas de acreditación
+
+- [x] Auditar consumidores vivos de acreditación en frontend y Edge Functions
+- [x] Confirmar que el frontend usa RPCs `search_accreditation_workers(...)` y `get_worker_accreditation_profile(...)`
+- [x] Revocar `SELECT` directo sobre tablas base y audit log de acreditación
+- [ ] Ejecutar auditoría de migraciones, TypeScript/build, diff check y auditoría Supabase
+
+## Resultado del loop 13 de hardening de seguridad ERP enterprise
+
+- Se versionó [`20260709111000_revoke_direct_accreditation_table_access.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709111000_revoke_direct_accreditation_table_access.sql:1) para cerrar PostgREST directo sobre `accreditation_sites`, `accreditation_requirements`, `accreditation_matrix`, `worker_accreditations`, `worker_document_tracking` y `accreditation_audit_log`.
+- Las pantallas de acreditación siguen operando por RPCs `SECURITY DEFINER`; la Edge Function de subida valida JWT y permiso con `user_can_manage_accreditation(...)`.
+- El audit log de acreditación queda detrás de `get_worker_accreditation_profile(...)`, no como tabla consultable por cliente.
+
 ## Loop 3 ERP refactor enterprise inmediato: cerrar duplicidad residual en servicios de roster, accreditation, operaciones y BI
 
 ## Loop 4 ERP refactor enterprise inmediato: unificar drift residual de errores Supabase y cerrar smoke operativo base
