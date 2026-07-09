@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 225. En BUK jobs, un campo salarial soportado en lectura no necesariamente es aceptado en `POST /jobs`
+
+- **Que `current_job.base_wage` exista en snapshots BUK no prueba que el endpoint de creación acepte `base_wage`.** Al desplegar el worker actual, `POST /api/v1/chile/employees/{id}/jobs` empezó a enviar `base_wage: 0` además de `wage: 0` y BUK respondió `500 Internal Server Error` no JSON para una ficha que antes llegaba hasta creación de job.
+- **La regla operativa validada vuelve a ser enviar solo `wage = 0` en el payload de job mientras no exista prueba viva del contrato `base_wage`.** La regla de negocio de no cargar renta desde ERP se mantiene; lo que se revierte es el campo que rompe el integrador.
+- **No despliegues cambios dormidos de payload junto con hotfixes de observabilidad.** Si una función acumuló cambios no desplegados, antes del deploy hay que comparar el contrato efectivo remoto contra `HEAD` y separar saneamiento/logging de mutaciones de negocio hacia BUK.
+
 ## 224. Una integración externa nunca debe persistir ni renderizar cuerpos HTML crudos como error operativo
 
 - **Un 500 de proveedor puede devolver una página completa, no un JSON de API.** En generación de fichas BUK, la respuesta HTML del integrador terminó en `buk_sync_jobs.error_message` y luego en `Personal a Contratar`, rompiendo la legibilidad de la pantalla y exponiendo contenido interno del proveedor.

@@ -1458,8 +1458,7 @@ function buildBukJobPayload(context: CandidateSyncContext) {
     area_id: context.areaId,
     role_id: context.roleId,
     leader_id: context.leaderId,
-    // Tenant rule: ERP liquid must never populate BUK base salary.
-    base_wage: 0,
+    // Tenant rule: ERP liquid must never populate BUK salary.
     wage: 0,
     currency: context.currency,
     regular_hours: context.regularHours,

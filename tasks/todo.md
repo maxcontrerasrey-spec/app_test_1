@@ -17,6 +17,21 @@
 - `Personal a Contratar` debe mostrar un mensaje corto y accionable incluso si el job histórico trae HTML crudo de un 500 anterior.
 - Producción quedó actualizada con deploy de `sync-buk-candidates` y migración [`20260709164949_sanitize_buk_sync_html_errors.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260709164949_sanitize_buk_sync_html_errors.sql:1).
 
+## Hotfix BUK: restaurar contrato de creación de jobs tras 500 en jornada/ficha
+
+- [x] Consultar el job fallido `2bfb9098-928b-4cd1-a616-e5590d3b4d26` y confirmar que BUK falló en `POST /api/v1/chile/employees/41938/jobs`
+- [x] Comparar payloads exitosos recientes contra el worker desplegado y aislar diferencias de contrato
+- [x] Revertir el campo de mayor riesgo para volver al contrato operativo anterior sin tocar `wage = 0`
+- [x] Validar typecheck/build/diff y desplegar `sync-buk-candidates`
+- [x] Documentar la lección y dejar commit/push auditable
+
+### Resultado del hotfix BUK jobs
+
+- La evidencia productiva mostró que los jobs exitosos recientes enviaban `wage: 0` pero no `base_wage`; el deploy anterior activó `base_wage: 0` en `POST /jobs` y BUK respondió 500 no JSON.
+- Se restauró el contrato operativo del payload de job: el worker mantiene `wage: 0`, pero deja de enviar `base_wage` en creación/parche de jobs.
+- La jornada `7X7` del folio no se envía directamente a BUK; para `CODELCO DRT` el cache local de BUK muestra conductores con `type_of_working_day = ordinaria_art_22`.
+- `sync-buk-candidates` quedó desplegada nuevamente en producción tras validar TypeScript, build y diff check.
+
 ## Loop de hardening de seguridad ERP enterprise
 
 - [x] Auditar superficies críticas de autenticación, autorización, RLS, RPCs `SECURITY DEFINER`, Edge Functions, secretos/configuración y exposición de datos entre contratos/roles
