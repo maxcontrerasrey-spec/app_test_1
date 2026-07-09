@@ -2,6 +2,17 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste UI: resumen de ficha en Personal contratado
+
+- [x] Revisar el componente compartido de `Personal a Contratar` y `Personal contratado`
+- [x] Reutilizar el mismo cuadro de resumen del sidebar para candidatos contratados
+- [x] Validar TypeScript, build frontend y `git diff --check`
+
+### Resultado del ajuste UI
+
+- [`CandidateDetailSidebar.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDetailSidebar.tsx:1) ahora acepta el modo `personnel_contracted` y muestra el cuadro de resumen cuando el candidato está `hired`.
+- [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:1) envía ese modo cuando la pestaña activa es `Personal contratado`.
+
 ## Hotfix BUK: no exponer HTML interno cuando el API falla al crear fichas
 
 - [x] Confirmar el punto donde `sync-buk-candidates` convierte respuestas no JSON de BUK en `error_message` visible para la UI

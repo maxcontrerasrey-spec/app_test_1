@@ -26,7 +26,7 @@ import { CandidateDocumentChecklist } from "./CandidateDocumentChecklist";
 import { CandidateWorkerFileForm } from "./CandidateWorkerFileForm";
 
 type CandidateDetailSidebarProps = {
-  mode?: "candidate_control" | "personnel_to_hire";
+  mode?: "candidate_control" | "personnel_to_hire" | "personnel_contracted";
   isLoading: boolean;
   selectedCaseDetail: RecruitmentCaseDetail | null;
   selectedCandidate: RecruitmentCaseCandidateRow | null;
@@ -187,7 +187,8 @@ export function CandidateDetailSidebar({
   const isDocumentValidationApproved =
     selectedCandidate.document_validation_status === "approved";
   const shouldShowReadyForHireSummary =
-    mode === "personnel_to_hire" && selectedCandidate.stage_code === "ready_for_hire";
+    (mode === "personnel_to_hire" && selectedCandidate.stage_code === "ready_for_hire") ||
+    (mode === "personnel_contracted" && selectedCandidate.stage_code === "hired");
   const readyForHireShift =
     selectedCaseDetail.case.hiring_request.shift_name ??
     selectedCandidate.worker_file?.shift_name ??

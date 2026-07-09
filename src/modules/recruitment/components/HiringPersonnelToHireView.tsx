@@ -393,7 +393,7 @@ export function HiringPersonnelToHireView({
         </div>
 
         <CandidateDetailSidebar
-          mode="personnel_to_hire"
+          mode={bucket === "contracted" ? "personnel_contracted" : "personnel_to_hire"}
           isLoading={isLoading}
           selectedCaseDetail={selectedCaseDetail}
           selectedCandidate={selectedCandidate}
