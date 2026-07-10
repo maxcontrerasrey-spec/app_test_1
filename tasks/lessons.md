@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 233. En BI, una mejora visual de legibilidad debe aprovechar el motor del gráfico antes que forzar overflow externo
+
+- **Si el problema es que muchas categorías comprimen el eje, usa el mecanismo nativo del chart.** En `Cupos por Contrato`, `dataZoom` mantiene ejes, tooltip y resize consistentes; un `overflow-x` sobre el contenedor rompe con más facilidad la experiencia de exploración.
+- **Una línea de referencia puede salir del summary autoritativo si representa el total filtrado.** Para `Cupos requeridos`, el total ya calculado por el RPC BI es suficiente como umbral operativo global sin abrir una migración adicional.
+- **Los toggles de vista deben vivir en la cabecera del gráfico y no competir con la leyenda.** La cabecera controla la forma de leer el tiempo; la leyenda queda reservada para series de datos reales.
+
+---
+
 ## 232. Los correos de aprobación deben seguir la cadena operativa vigente, no una capability heredada más amplia
 
 - **Una capability útil para UI/RPC puede quedar demasiado amplia para una notificación si negocio cambia la cadena de aprobación.** En WHO, `gerente_general` seguía entrando porque el correo agregaba destinatarios desde `can_approve_who_stage`.

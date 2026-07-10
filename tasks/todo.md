@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste BI Reclutamiento: scroll de contratos y Pulso Operativo
+
+- [x] Agregar desplazamiento horizontal elegante al gráfico `Cupos por Contrato` sin romper tooltips ni resize
+- [x] Renombrar `Pulso Semanal Operativo` a `Pulso Operativo`
+- [x] Agregar selector visual `D / S / M / 6M` en la cabecera del pulso
+- [x] Eliminar la línea `Listos para contratar` del pulso
+- [x] Agregar línea `Cupos requeridos` desde el total filtrado del dashboard
+- [x] Validar TypeScript/build/diff check, commitear y pushear a `main`
+
+### Resultado del ajuste BI Reclutamiento
+
+- `Cupos por Contrato` usa `dataZoom` horizontal de ECharts para distribuir mejor los nombres de contratos y mantener la lectura limpia.
+- `Pulso Operativo` mantiene `Folios abiertos`, `Contratados`, `MI ejecutadas` y suma `Cupos requeridos` como referencia del requerimiento global filtrado.
+- El selector `D / S / M / 6M` queda integrado en la esquina superior derecha del gráfico con el mismo lenguaje visual de pestañas compactas del BI.
+
 ## Ajuste WHO: retirar gerente general de aprobación y correos
 
 - [x] Confirmar la fuente backend de autorización WHO y destinatarios de correo

@@ -53,7 +53,10 @@ function mapVacancyByContract(value: unknown): BiRecruitmentVacancyByContractDat
   };
 }
 
-function mapRecruitmentTimeline(value: unknown): BiRecruitmentTimelineDatum {
+function mapRecruitmentTimeline(
+  value: unknown,
+  fallbackRequestedVacancies = 0
+): BiRecruitmentTimelineDatum {
   const row = (value ?? {}) as Record<string, unknown>;
   return {
     bucketStart: String(row.bucketStart ?? ""),
@@ -61,7 +64,8 @@ function mapRecruitmentTimeline(value: unknown): BiRecruitmentTimelineDatum {
     openedFolios: Number(row.openedFolios ?? 0),
     readyCandidates: Number(row.readyCandidates ?? 0),
     hiredCandidates: Number(row.hiredCandidates ?? 0),
-    executedMobilities: Number(row.executedMobilities ?? 0)
+    executedMobilities: Number(row.executedMobilities ?? 0),
+    requestedVacancies: Number(row.requestedVacancies ?? fallbackRequestedVacancies)
   };
 }
 
@@ -70,6 +74,7 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
   const summary = (row.summary ?? {}) as Record<string, unknown>;
   const filterOptions = (row.filterOptions ?? {}) as Record<string, unknown>;
   const filledVacancies = Number(summary.filledVacancies ?? 0);
+  const requestedVacancies = Number(summary.requestedVacancies ?? 0);
   const filledMobilityApproved = Number(
     summary.filledMobilityApproved ??
       Number(summary.mobilityExecuted ?? 0) + Number(summary.mobilityPendingExecution ?? 0)
@@ -85,7 +90,7 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
     summary: {
       openFolios: Number(summary.openFolios ?? 0),
       openCases: Number(summary.openCases ?? 0),
-      requestedVacancies: Number(summary.requestedVacancies ?? 0),
+      requestedVacancies,
       filledVacancies,
       filledHiredCandidates: Number(
         summary.filledHiredCandidates ?? Math.max(filledVacancies - filledMobilityApproved, 0)
@@ -108,7 +113,9 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
     mobilityByStatus: Array.isArray(row.mobilityByStatus)
       ? row.mobilityByStatus.map(mapLabelValueDatum)
       : [],
-    timeline: Array.isArray(row.timeline) ? row.timeline.map(mapRecruitmentTimeline) : []
+    timeline: Array.isArray(row.timeline)
+      ? row.timeline.map((item) => mapRecruitmentTimeline(item, requestedVacancies))
+      : []
   };
 }
 

@@ -133,6 +133,7 @@ export interface BiRecruitmentTimelineDatum {
   readyCandidates: number;
   hiredCandidates: number;
   executedMobilities: number;
+  requestedVacancies: number;
 }
 
 export interface BiRecruitmentDashboard {

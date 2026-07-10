@@ -11,6 +11,7 @@ type BiRecruitmentAnalyticsViewProps = {
 };
 
 type FilledVacancyView = "total" | "hired" | "mobility";
+type OperationalPulseView = "daily" | "weekly" | "monthly" | "semester";
 
 const CANDIDATE_STAGE_ORDER = [
   "Lead",
@@ -26,8 +27,110 @@ const CANDIDATE_STAGE_ORDER_INDEX = new Map(
   CANDIDATE_STAGE_ORDER.map((stage, index) => [stage, index])
 );
 
+const OPERATIONAL_PULSE_VIEW_OPTIONS: Array<{
+  key: OperationalPulseView;
+  label: string;
+  shortLabel: string;
+}> = [
+  { key: "daily", label: "Diaria", shortLabel: "D" },
+  { key: "weekly", label: "Semanal", shortLabel: "S" },
+  { key: "monthly", label: "Mensual", shortLabel: "M" },
+  { key: "semester", label: "Semestral", shortLabel: "6M" }
+];
+
 function formatMetricValue(value: number) {
   return value.toLocaleString("es-CL");
+}
+
+function toMonthLabel(value: string) {
+  if (!value) {
+    return "Mes";
+  }
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    month: "short",
+    year: "2-digit"
+  })
+    .format(date)
+    .replace(".", "");
+}
+
+function aggregatePulseData(
+  timeline: BiRecruitmentDashboard["timeline"],
+  view: OperationalPulseView
+) {
+  if (view === "daily" || view === "weekly") {
+    return timeline;
+  }
+
+  if (view === "monthly") {
+    const totals = timeline.reduce(
+      (accumulator, item) => ({
+        openedFolios: accumulator.openedFolios + item.openedFolios,
+        hiredCandidates: accumulator.hiredCandidates + item.hiredCandidates,
+        executedMobilities: accumulator.executedMobilities + item.executedMobilities,
+        requestedVacancies: Math.max(accumulator.requestedVacancies, item.requestedVacancies)
+      }),
+      {
+        openedFolios: 0,
+        hiredCandidates: 0,
+        executedMobilities: 0,
+        requestedVacancies: 0
+      }
+    );
+
+    return [
+      {
+        bucketStart: timeline[0]?.bucketStart ?? "",
+        bucketLabel: toMonthLabel(timeline[0]?.bucketStart ?? ""),
+        readyCandidates: 0,
+        ...totals
+      }
+    ];
+  }
+
+  const groups = new Map<
+    string,
+    {
+      bucketStart: string;
+      bucketLabel: string;
+      openedFolios: number;
+      readyCandidates: number;
+      hiredCandidates: number;
+      executedMobilities: number;
+      requestedVacancies: number;
+    }
+  >();
+
+  timeline.forEach((item) => {
+    const monthKey = item.bucketStart.slice(0, 7) || item.bucketLabel;
+    const current = groups.get(monthKey);
+    if (current) {
+      current.openedFolios += item.openedFolios;
+      current.readyCandidates += item.readyCandidates;
+      current.hiredCandidates += item.hiredCandidates;
+      current.executedMobilities += item.executedMobilities;
+      current.requestedVacancies = Math.max(current.requestedVacancies, item.requestedVacancies);
+      return;
+    }
+
+    groups.set(monthKey, {
+      bucketStart: item.bucketStart,
+      bucketLabel: toMonthLabel(item.bucketStart),
+      openedFolios: item.openedFolios,
+      readyCandidates: item.readyCandidates,
+      hiredCandidates: item.hiredCandidates,
+      executedMobilities: item.executedMobilities,
+      requestedVacancies: item.requestedVacancies
+    });
+  });
+
+  return Array.from(groups.values()).slice(-6);
 }
 
 export function BiRecruitmentAnalyticsView({
@@ -37,6 +140,8 @@ export function BiRecruitmentAnalyticsView({
 }: BiRecruitmentAnalyticsViewProps) {
   const { theme } = useTheme();
   const [filledVacancyView, setFilledVacancyView] = useState<FilledVacancyView>("total");
+  const [operationalPulseView, setOperationalPulseView] =
+    useState<OperationalPulseView>("weekly");
 
   const isDark = theme === "dark";
   const textColor = isDark ? "#E2E8F0" : "#1E293B";
@@ -155,11 +260,34 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-      grid: { top: 16, right: 16, bottom: 88, left: 56 },
+      grid: { top: 16, right: 16, bottom: 108, left: 56 },
+      dataZoom: [
+        {
+          type: "slider",
+          bottom: 18,
+          height: 18,
+          start: 0,
+          end:
+            dashboard.vacanciesByContract.length > 14
+              ? Math.round((14 / dashboard.vacanciesByContract.length) * 100)
+              : 100,
+          brushSelect: false,
+          borderColor: isDark ? "rgba(148, 163, 184, 0.28)" : "rgba(148, 163, 184, 0.32)",
+          fillerColor: isDark ? "rgba(59, 130, 246, 0.18)" : "rgba(59, 130, 246, 0.14)",
+          handleStyle: { color: isDark ? "#94A3B8" : "#CBD5E1" },
+          moveHandleStyle: { color: isDark ? "#64748B" : "#E2E8F0" }
+        },
+        {
+          type: "inside",
+          zoomOnMouseWheel: false,
+          moveOnMouseMove: true,
+          moveOnMouseWheel: true
+        }
+      ],
       xAxis: {
         type: "category",
         data: dashboard.vacanciesByContract.map((item) => item.label),
-        axisLabel: { color: textColor, interval: 0, rotate: 24 },
+        axisLabel: { color: textColor, interval: 0, rotate: 20, width: 108, overflow: "truncate" },
         axisLine: { lineStyle: { color: axisColor } }
       },
       yAxis: {
@@ -219,13 +347,15 @@ export function BiRecruitmentAnalyticsView({
       return null;
     }
 
+    const pulseData = aggregatePulseData(dashboard.timeline, operationalPulseView);
+
     return {
       tooltip: { trigger: "axis" },
       legend: { bottom: 0, textStyle: { color: textColor } },
       grid: { top: 16, right: 16, bottom: 64, left: 56 },
       xAxis: {
         type: "category",
-        data: dashboard.timeline.map((item) => item.bucketLabel),
+        data: pulseData.map((item) => item.bucketLabel),
         axisLabel: { color: textColor },
         axisLine: { lineStyle: { color: axisColor } }
       },
@@ -239,29 +369,31 @@ export function BiRecruitmentAnalyticsView({
           name: "Folios abiertos",
           type: "line",
           smooth: true,
-          data: dashboard.timeline.map((item) => item.openedFolios)
-        },
-        {
-          name: "Listos para contratar",
-          type: "line",
-          smooth: true,
-          data: dashboard.timeline.map((item) => item.readyCandidates)
+          data: pulseData.map((item) => item.openedFolios)
         },
         {
           name: "Contratados",
           type: "line",
           smooth: true,
-          data: dashboard.timeline.map((item) => item.hiredCandidates)
+          data: pulseData.map((item) => item.hiredCandidates)
         },
         {
           name: "MI ejecutadas",
           type: "line",
           smooth: true,
-          data: dashboard.timeline.map((item) => item.executedMobilities)
+          data: pulseData.map((item) => item.executedMobilities)
+        },
+        {
+          name: "Cupos requeridos",
+          type: "line",
+          smooth: true,
+          symbol: "none",
+          lineStyle: { type: "dashed", width: 2 },
+          data: pulseData.map((item) => item.requestedVacancies)
         }
       ]
     };
-  }, [axisColor, dashboard, textColor]);
+  }, [axisColor, dashboard, operationalPulseView, textColor]);
 
   if (isLoading) {
     return <div className="bi-loading-state">Cargando analítica de reclutamiento...</div>;
@@ -345,7 +477,23 @@ export function BiRecruitmentAnalyticsView({
       </div>
 
       <div className="info-card">
-        <h3 className="bi-chart-title">Pulso Semanal Operativo</h3>
+        <div className="bi-chart-header">
+          <h3 className="bi-chart-title">Pulso Operativo</h3>
+          <div className="bi-pulse-view-tabs" aria-label="Vista temporal del pulso operativo">
+            {OPERATIONAL_PULSE_VIEW_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={option.key === operationalPulseView ? "is-active" : ""}
+                aria-pressed={option.key === operationalPulseView}
+                title={option.label}
+                onClick={() => setOperationalPulseView(option.key)}
+              >
+                {option.shortLabel}
+              </button>
+            ))}
+          </div>
+        </div>
         <EChartSurface
           height={340}
           option={timelineOption ?? {}}
