@@ -53,6 +53,17 @@ function mapVacancyByContract(value: unknown): BiRecruitmentVacancyByContractDat
   };
 }
 
+function normalizeRecruitmentLabel(label: string) {
+  const normalizedLabels: Record<string, string> = {
+    Busqueda: "Búsqueda",
+    "Examenes medicos": "Exámenes médicos",
+    "Revision documental": "Revisión documental",
+    "Pendiente ejecucion RRHH": "Pendiente ejecución RRHH"
+  };
+
+  return normalizedLabels[label] ?? label;
+}
+
 function mapRecruitmentTimeline(
   value: unknown,
   fallbackRequestedVacancies = 0
@@ -86,6 +97,9 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
       : [],
     availableContracts: Array.isArray(filterOptions.contracts)
       ? filterOptions.contracts.map(String)
+      : [],
+    availableJobs: Array.isArray(filterOptions.jobs)
+      ? filterOptions.jobs.map(String)
       : [],
     summary: {
       openFolios: Number(summary.openFolios ?? 0),
@@ -243,7 +257,7 @@ export function mapRecruitmentPipeline(row: Record<string, unknown>): BukBiRecru
 function mapLabelValueDatum(value: unknown): BiLabelValueDatum {
   const row = (value ?? {}) as Record<string, unknown>;
   return {
-    label: String(row.label ?? ""),
+    label: normalizeRecruitmentLabel(String(row.label ?? "")),
     value: Number(row.value ?? 0)
   };
 }
@@ -350,7 +364,8 @@ export async function fetchBiRecruitmentDashboard(filters?: BiFilters): Promise<
     p_period_code: normalized.periodCode ?? null,
     p_management_names:
       normalized.managementNames.length > 0 ? normalized.managementNames : null,
-    p_contract_names: normalized.contractCodes.length > 0 ? normalized.contractCodes : null
+    p_contract_names: normalized.contractCodes.length > 0 ? normalized.contractCodes : null,
+    p_job_position_names: normalized.jobTitles.length > 0 ? normalized.jobTitles : null
   };
   const { data, error } = await client.rpc("get_bi_recruitment_dashboard", recruitmentParams);
 

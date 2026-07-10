@@ -11,6 +11,7 @@ type BiRecruitmentAnalyticsViewProps = {
 };
 
 type FilledVacancyView = "total" | "hired" | "mobility";
+type RequestedVacancyView = "total" | "pending";
 type OperationalPulseView = "daily" | "weekly" | "monthly" | "semester";
 
 const CANDIDATE_STAGE_ORDER = [
@@ -205,6 +206,8 @@ export function BiRecruitmentAnalyticsView({
 }: BiRecruitmentAnalyticsViewProps) {
   const { theme } = useTheme();
   const [filledVacancyView, setFilledVacancyView] = useState<FilledVacancyView>("total");
+  const [requestedVacancyView, setRequestedVacancyView] =
+    useState<RequestedVacancyView>("total");
   const [operationalPulseView, setOperationalPulseView] =
     useState<OperationalPulseView>("weekly");
 
@@ -216,6 +219,28 @@ export function BiRecruitmentAnalyticsView({
     if (!dashboard) {
       return { primary: [] };
     }
+
+    const requestedVacancyOptions: Array<{
+      key: RequestedVacancyView;
+      label: string;
+      value: string;
+    }> = [
+      {
+        key: "total",
+        label: "Total",
+        value: formatMetricValue(dashboard.summary.requestedVacancies)
+      },
+      {
+        key: "pending",
+        label: "Faltante",
+        value: formatMetricValue(
+          Math.max(dashboard.summary.requestedVacancies - dashboard.summary.filledVacancies, 0)
+        )
+      }
+    ];
+    const selectedRequestedVacancy =
+      requestedVacancyOptions.find((option) => option.key === requestedVacancyView) ??
+      requestedVacancyOptions[0];
 
     const filledVacancyOptions: Array<{
       key: FilledVacancyView;
@@ -245,18 +270,29 @@ export function BiRecruitmentAnalyticsView({
     return {
       primary: [
         { title: "Folios Abiertos", value: formatMetricValue(dashboard.summary.openFolios), type: "bi-gray" },
-        { title: "Cupos Solicitados", value: formatMetricValue(dashboard.summary.requestedVacancies), type: "bi-yellow" },
+        {
+          title: "Cupos Solicitados",
+          value: selectedRequestedVacancy.value,
+          type: "bi-yellow",
+          segmentedOptions: requestedVacancyOptions,
+          activeSegmentKey: requestedVacancyView,
+          onSegmentSelect: (key: string) => setRequestedVacancyView(key as RequestedVacancyView),
+          segmentedControlLabel: "Detalle de cupos solicitados"
+        },
         {
           title: "Cupos Cubiertos",
           value: selectedFilledVacancy.value,
           type: "bi-green",
-          filledVacancyOptions
+          segmentedOptions: filledVacancyOptions,
+          activeSegmentKey: filledVacancyView,
+          onSegmentSelect: (key: string) => setFilledVacancyView(key as FilledVacancyView),
+          segmentedControlLabel: "Detalle de cupos cubiertos"
         },
         { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "bi-blue" },
         { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "pendiente" }
       ]
     };
-  }, [dashboard, filledVacancyView]);
+  }, [dashboard, filledVacancyView, requestedVacancyView]);
 
   const casesByStatusOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.casesByStatus.length === 0) {
@@ -509,20 +545,23 @@ export function BiRecruitmentAnalyticsView({
           <article
             key={card.title}
             className={`tracking-kpi-card tracking-kpi-card-${card.type} bi-overview-kpi-card ${
-              card.filledVacancyOptions ? "bi-filled-vacancy-card" : ""
+              card.segmentedOptions ? "bi-segmented-kpi-card" : ""
             }`}
           >
             <span>{card.title}</span>
             <strong>{card.value}</strong>
-            {card.filledVacancyOptions ? (
-              <div className="bi-card-segmented-control" aria-label="Detalle de cupos cubiertos">
-                {card.filledVacancyOptions.map((option) => (
+            {card.segmentedOptions ? (
+              <div
+                className={`bi-card-segmented-control bi-card-segmented-control-${card.segmentedOptions.length}`}
+                aria-label={card.segmentedControlLabel}
+              >
+                {card.segmentedOptions.map((option) => (
                   <button
                     key={option.key}
                     type="button"
-                    className={option.key === filledVacancyView ? "is-active" : ""}
-                    aria-pressed={option.key === filledVacancyView}
-                    onClick={() => setFilledVacancyView(option.key)}
+                    className={option.key === card.activeSegmentKey ? "is-active" : ""}
+                    aria-pressed={option.key === card.activeSegmentKey}
+                    onClick={() => card.onSegmentSelect(option.key)}
                   >
                     {option.label}
                   </button>

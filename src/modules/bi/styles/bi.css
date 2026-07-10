@@ -19,6 +19,10 @@
   width: 100%;
 }
 
+.bi-analytics-filters-recruitment {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) 3.2rem;
+}
+
 .bi-filter-reset-button {
   width: 3.2rem;
   height: 3.2rem;
@@ -128,19 +132,26 @@
   border-color: rgba(59, 130, 246, 0.28);
 }
 
-.bi-recruitment-kpi-row .bi-filled-vacancy-card {
+.bi-recruitment-kpi-row .bi-segmented-kpi-card {
   min-height: 98px;
 }
 
 .bi-card-segmented-control {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.24rem;
   margin-top: 0.18rem;
   padding: 0.18rem;
   border: 1px solid rgba(134, 190, 154, 0.28);
   border-radius: 7px;
   background: rgba(var(--surface-rgb), 0.55);
+}
+
+.bi-card-segmented-control-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bi-card-segmented-control-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .bi-card-segmented-control button {

@@ -4,6 +4,23 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 236. Cuando un KPI total incluye una parte cubierta, ofrece el faltante en la misma tarjeta
+
+- **Si `Total` y `Cubierto` conviven como tarjetas separadas, la brecha debe quedar calculable sin explicación externa.** En BI Reclutamiento, `Cupos Solicitados = 119` incluye `Cupos Cubiertos = 25`; mostrar `Faltante = 94` dentro de la misma tarjeta reduce ambigüedad.
+- **La mejor lectura no siempre es otra tarjeta.** Un selector interno mantiene jerarquía visual y evita aumentar la fila de KPIs.
+- **El cálculo debe derivar de los totales autoritativos ya filtrados.** `Faltante = max(requestedVacancies - filledVacancies, 0)` conserva compatibilidad con filtros y evita inconsistencias por fuente secundaria.
+
+---
+
+## 237. Un filtro BI visible debe existir en el contrato backend de todas las series que promete controlar
+
+- **Agregar un selector solo en React genera una falsa sensación de control si el RPC no recibe esa dimensión.** En BI Reclutamiento, `Cargo` debía viajar como `p_job_position_names` al dashboard y al timeline diario.
+- **Las opciones del filtro deben salir del mismo universo autorizado que alimenta las métricas.** `filterOptions.jobs` se deriva de folios activos visibles y respeta gerencia/contrato seleccionados.
+- **Si un gráfico comparte filtros globales, todas sus consultas hermanas deben aceptar la misma firma opcional.** El dashboard y `get_bi_recruitment_daily_timeline(...)` quedan alineados para evitar KPIs filtrados con pulso no filtrado.
+- **Los dropdowns compartidos no deben quedar con estilos inline antiguos si el sistema ya tiene lenguaje visual de navegación.** Mover `MultiSelectField` a clases compactas permite igualar densidad, sombras y tipografía sin repetir CSS por módulo.
+
+---
+
 ## 235. Una pestaña diaria no puede ser real si el backend solo entrega buckets semanales
 
 - **La granularidad visual debe existir en la fuente.** Si el RPC entrega `01/07`, `08/07`, `15/07`, la UI no puede prometer vista diaria sin inventar días; se debe exponer un timeline diario backend y agrupar hacia arriba en frontend.

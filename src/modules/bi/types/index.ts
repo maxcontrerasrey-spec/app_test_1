@@ -139,6 +139,7 @@ export interface BiRecruitmentTimelineDatum {
 export interface BiRecruitmentDashboard {
   availableManagements: string[];
   availableContracts: string[];
+  availableJobs: string[];
   summary: BiRecruitmentDashboardSummary;
   casesByStatus: BiLabelValueDatum[];
   candidatesByStage: BiLabelValueDatum[];

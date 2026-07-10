@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste BI Reclutamiento: filtro superior por cargo solicitado
+
+- [x] Agregar filtro `Cargo` en la cabecera de BI Reclutamiento
+- [x] Poblar opciones desde cargos solicitados visibles en folios activos
+- [x] Enviar `jobTitles` al RPC de dashboard y timeline diario
+- [x] Compactar estética de despliegues de filtros para acercarla al menú superior
+- [x] Mantener compatibilidad cuando no hay cargo seleccionado
+- [x] Validar TypeScript/build/diff check y aplicar migración remota
+
+### Resultado del ajuste BI Reclutamiento
+
+- BI Reclutamiento ahora filtra por periodo, gerencia, contrato y cargo solicitado.
+- El filtro `Cargo` afecta KPIs, gráficos de cupos, etapas, movilidad y `Pulso Operativo` desde el backend.
+- Los desplegables de filtros usan un panel compacto con fuente más pequeña y estilo consistente con navegación superior.
+
+## Ajuste BI Reclutamiento: selector de requerimiento total/faltante
+
+- [x] Agregar pestañas internas a `Cupos Solicitados` con `Total` y `Faltante`
+- [x] Calcular `Faltante` como `Cupos Solicitados - Cupos Cubiertos`
+- [x] Reutilizar la misma estética/funcionalidad del selector de `Cupos Cubiertos`
+- [x] Validar TypeScript/build/diff check
+
+### Resultado del ajuste BI Reclutamiento
+
+- `Cupos Solicitados` mantiene `Total` por defecto y permite cambiar a `Faltante`.
+- Con los datos actuales, `Faltante` muestra `94` porque `119 - 25 = 94`.
+
 ## Corrección BI Reclutamiento: lectura de KPIs, slider y timeline diario
 
 - [x] Confirmar que `Cupos Solicitados` representa requerimiento total vigente e incluye cupos ya cubiertos

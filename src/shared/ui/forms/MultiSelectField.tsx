@@ -63,66 +63,42 @@ export function MultiSelectField({
   };
 
   return (
-    <div className={`field-group ${className}`.trim()} ref={containerRef} style={{ position: "relative" }}>
+    <div className={`field-group multi-select-field ${className}`.trim()} ref={containerRef}>
       <label className="field-label" htmlFor={id}>
         {label}
       </label>
 
       <div
-        className={`text-field ${disabled ? "disabled" : ""}`}
+        className={`text-field multi-select-trigger ${disabled ? "disabled" : ""}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        style={{
-          minHeight: "3.2rem",
-          height: "auto",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "4px",
-          cursor: disabled ? "not-allowed" : "pointer",
-          padding: "4px 8px",
-          alignItems: "center"
-        }}
+        role="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={`${id}-options`}
       >
         {selectedOptions.length === 0 ? (
-          <span style={{ color: "#9ca3af", padding: "4px 0" }}>{placeholder}</span>
+          <span className="multi-select-placeholder">{placeholder}</span>
         ) : areAllSelected ? (
-          <span style={{ color: "#374151", padding: "4px 0", fontSize: "0.875rem" }}>
+          <span className="multi-select-summary">
             Todas las opciones ({selectedOptions.length})
           </span>
         ) : selectedOptions.length === 1 ? (
           <span
             key={selectedOptions[0].value}
-            style={{
-              backgroundColor: "#e5e7eb",
-              color: "#374151",
-              padding: "2px 8px",
-              borderRadius: "4px",
-              fontSize: "0.875rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px"
-            }}
+            className="multi-select-pill"
           >
             {selectedOptions[0].label}
             <button
               type="button"
               onClick={(e) => handleRemove(e, selectedOptions[0].value)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "0",
-                color: "#6b7280",
-                display: "flex",
-                alignItems: "center",
-                fontSize: "1rem",
-                lineHeight: 1
-              }}
+              className="multi-select-pill-remove"
+              aria-label={`Quitar ${selectedOptions[0].label}`}
             >
               &times;
             </button>
           </span>
         ) : (
-          <span style={{ color: "#374151", padding: "4px 0", fontSize: "0.875rem" }}>
+          <span className="multi-select-summary">
             Varios elementos ({selectedOptions.length})
           </span>
         )}
@@ -130,65 +106,27 @@ export function MultiSelectField({
 
       {isOpen && (
         <div
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            marginTop: "4px",
-            backgroundColor: "white",
-            border: "1px solid #d1d5db",
-            borderRadius: "0.375rem",
-            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-            zIndex: 50,
-            maxHeight: "200px",
-            overflowY: "auto"
-          }}
+          id={`${id}-options`}
+          className="multi-select-dropdown"
+          role="listbox"
+          aria-multiselectable="true"
         >
           {options.length === 0 ? (
-            <div style={{ padding: "8px 12px", color: "#6b7280" }}>No hay opciones</div>
+            <div className="multi-select-empty">No hay opciones</div>
           ) : (
             <>
-              <div
-                style={{
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 1,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "8px",
-                  padding: "8px 12px",
-                  backgroundColor: "#f8fafc",
-                  borderBottom: "1px solid #e5e7eb"
-                }}
-              >
+              <div className="multi-select-actions">
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  style={{
-                    border: "none",
-                    background: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    color: "#2563eb",
-                    fontSize: "0.875rem",
-                    fontWeight: 600
-                  }}
+                  className="multi-select-action-button multi-select-action-button-primary"
                 >
                   Seleccionar todos
                 </button>
                 <button
                   type="button"
                   onClick={handleClear}
-                  style={{
-                    border: "none",
-                    background: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    color: "#64748b",
-                    fontSize: "0.875rem",
-                    fontWeight: 600
-                  }}
+                  className="multi-select-action-button"
                 >
                   Limpiar
                 </button>
@@ -200,28 +138,17 @@ export function MultiSelectField({
                   <div
                     key={opt.value}
                     onClick={() => toggleOption(opt.value)}
-                    style={{
-                      padding: "8px 12px",
-                      cursor: "pointer",
-                      backgroundColor: isSelected ? "#f3f4f6" : "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f3f4f6";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = isSelected ? "#f3f4f6" : "transparent";
-                    }}
+                    className={`multi-select-option ${isSelected ? "is-selected" : ""}`}
+                    role="option"
+                    aria-selected={isSelected}
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
                       readOnly
-                      style={{ cursor: "pointer" }}
+                      className="multi-select-checkbox"
                     />
-                    <span style={{ color: "#374151" }}>{opt.label}</span>
+                    <span>{opt.label}</span>
                   </div>
                 );
               })}
