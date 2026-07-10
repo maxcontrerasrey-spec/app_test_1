@@ -2,6 +2,25 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste WHO: retirar gerente general de aprobación y correos
+
+- [x] Confirmar la fuente backend de autorización WHO y destinatarios de correo
+- [x] Revocar `can_approve_who_stage` para `gerente_general` sin afectar admin ni dirección de operaciones
+- [x] Redefinir `enqueue_who_pending_approval_email(...)` para destinatarios explícitos `admin` + `director_op`
+- [x] Ejecutar auditoría de migración, TypeScript/build, diff check y smoke SQL de matriz WHO
+
+### Resultado esperado del ajuste WHO
+
+- El gerente general no debe poder aprobar/rechazar WHO por capability efectiva.
+- Los correos de aprobación WHO no deben incluir gerente general ni depender de lógica anidada por capability amplia.
+- Admin y directores de operaciones conservan la operación WHO.
+
+### Resultado del ajuste WHO
+
+- [`20260710131242_remove_general_manager_from_who_approval.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260710131242_remove_general_manager_from_who_approval.sql:1) elimina `can_approve_who_stage` del rol `gerente_general`.
+- La función `enqueue_who_pending_approval_email(...)` deja de resolver destinatarios por capability amplia y usa una regla explícita: superadmin/admin y `director_op`.
+- La migración quedó aplicada en Supabase remoto; el smoke SQL confirmó que la capability WHO queda solo en `admin` y `director_op`, y que usuarios solo `gerente_general` no entran como destinatarios de correo WHO.
+
 ## Ajuste BI Reclutamiento: depurar redundancias y mejorar lectura de gráficos
 
 - [x] Eliminar la fila de tarjetas de movilidad interna porque duplica el donut operativo del BI

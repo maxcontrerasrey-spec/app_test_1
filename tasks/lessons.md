@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 232. Los correos de aprobación deben seguir la cadena operativa vigente, no una capability heredada más amplia
+
+- **Una capability útil para UI/RPC puede quedar demasiado amplia para una notificación si negocio cambia la cadena de aprobación.** En WHO, `gerente_general` seguía entrando porque el correo agregaba destinatarios desde `can_approve_who_stage`.
+- **Si la cadena real es acotada, el backend debe expresar esa lista explícitamente.** Para WHO, los destinatarios de correo deben salir de superadmin/admin y `director_op`, no de una consulta anidada sobre todos los roles con capability histórica.
+- **Revocar el permiso y filtrar el correo son dos cierres distintos.** Sacar `role_capabilities` impide decidir; redefinir el enqueue evita que recordatorios y tareas futuras sigan notificando al rol retirado.
+
+---
+
 ## 231. Un dashboard BI no debe duplicar un mismo estado en tarjeta y gráfico si el gráfico ya entrega el desglose operativo
 
 - **La densidad mejora cuando cada elemento responde una pregunta distinta.** Si el donut de movilidad interna ya muestra ejecutadas, pendientes y rechazadas con etiquetas de datos, una fila adicional de tarjetas para los mismos buckets agrega ruido y compite por atención.
