@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 234. Configurar una opción ECharts no basta si el runtime tree-shaken no registra el componente
+
+- **Cuando un control nativo no aparece, revisa primero `echarts.use(...)`.** `dataZoom` puede estar correctamente configurado en la opción y aun así no renderizar si `DataZoomComponent` no está incluido en el runtime compartido.
+- **Las líneas de meta no deben distorsionar la lectura de las series operativas.** Si el valor objetivo está en otra escala, usa un eje secundario oculto o una marca de referencia para que el eje visible siga representando el comportamiento real.
+- **Un slider de análisis debe tener contraste intencional.** En dashboards claros, un `dataZoom` demasiado bajo o translúcido puede existir pero parecer invisible; dale altura, track y handles distinguibles.
+
+---
+
 ## 233. En BI, una mejora visual de legibilidad debe aprovechar el motor del gráfico antes que forzar overflow externo
 
 - **Si el problema es que muchas categorías comprimen el eje, usa el mecanismo nativo del chart.** En `Cupos por Contrato`, `dataZoom` mantiene ejes, tooltip y resize consistentes; un `overflow-x` sobre el contenedor rompe con más facilidad la experiencia de exploración.

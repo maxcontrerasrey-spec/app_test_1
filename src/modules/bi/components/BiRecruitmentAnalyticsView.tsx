@@ -260,22 +260,33 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-      grid: { top: 16, right: 16, bottom: 108, left: 56 },
+      grid: { top: 16, right: 16, bottom: 126, left: 56 },
       dataZoom: [
         {
           type: "slider",
-          bottom: 18,
-          height: 18,
+          bottom: 24,
+          height: 28,
           start: 0,
           end:
             dashboard.vacanciesByContract.length > 14
               ? Math.round((14 / dashboard.vacanciesByContract.length) * 100)
               : 100,
           brushSelect: false,
-          borderColor: isDark ? "rgba(148, 163, 184, 0.28)" : "rgba(148, 163, 184, 0.32)",
-          fillerColor: isDark ? "rgba(59, 130, 246, 0.18)" : "rgba(59, 130, 246, 0.14)",
-          handleStyle: { color: isDark ? "#94A3B8" : "#CBD5E1" },
-          moveHandleStyle: { color: isDark ? "#64748B" : "#E2E8F0" }
+          showDetail: false,
+          showDataShadow: false,
+          borderColor: isDark ? "rgba(148, 163, 184, 0.44)" : "rgba(100, 116, 139, 0.38)",
+          fillerColor: isDark ? "rgba(59, 130, 246, 0.26)" : "rgba(59, 130, 246, 0.2)",
+          backgroundColor: isDark ? "rgba(15, 23, 42, 0.52)" : "rgba(226, 232, 240, 0.78)",
+          handleSize: "118%",
+          handleStyle: {
+            color: isDark ? "#CBD5E1" : "#64748B",
+            borderColor: isDark ? "#94A3B8" : "#475569"
+          },
+          moveHandleStyle: { color: isDark ? "#94A3B8" : "#CBD5E1" },
+          selectedDataBackground: {
+            lineStyle: { color: "rgba(59, 130, 246, 0.55)" },
+            areaStyle: { color: "rgba(59, 130, 246, 0.14)" }
+          }
         },
         {
           type: "inside",
@@ -348,6 +359,10 @@ export function BiRecruitmentAnalyticsView({
     }
 
     const pulseData = aggregatePulseData(dashboard.timeline, operationalPulseView);
+    const requestedGoalMax = Math.max(
+      ...pulseData.map((item) => item.requestedVacancies),
+      1
+    );
 
     return {
       tooltip: { trigger: "axis" },
@@ -359,36 +374,55 @@ export function BiRecruitmentAnalyticsView({
         axisLabel: { color: textColor },
         axisLine: { lineStyle: { color: axisColor } }
       },
-      yAxis: {
-        type: "value",
-        axisLabel: { color: textColor },
-        splitLine: { lineStyle: { color: axisColor } }
-      },
+      yAxis: [
+        {
+          type: "value",
+          axisLabel: { color: textColor },
+          splitLine: { lineStyle: { color: axisColor } }
+        },
+        {
+          type: "value",
+          min: 0,
+          max: requestedGoalMax,
+          show: false,
+          splitLine: { show: false }
+        }
+      ],
       series: [
         {
           name: "Folios abiertos",
           type: "line",
+          yAxisIndex: 0,
           smooth: true,
           data: pulseData.map((item) => item.openedFolios)
         },
         {
           name: "Contratados",
           type: "line",
+          yAxisIndex: 0,
           smooth: true,
           data: pulseData.map((item) => item.hiredCandidates)
         },
         {
           name: "MI ejecutadas",
           type: "line",
+          yAxisIndex: 0,
           smooth: true,
           data: pulseData.map((item) => item.executedMobilities)
         },
         {
-          name: "Cupos requeridos",
+          name: "Meta requerimiento",
           type: "line",
-          smooth: true,
+          yAxisIndex: 1,
+          smooth: false,
           symbol: "none",
-          lineStyle: { type: "dashed", width: 2 },
+          lineStyle: { type: "dashed", width: 2.4 },
+          label: {
+            show: true,
+            position: "right",
+            color: textColor,
+            formatter: "Meta {c}"
+          },
           data: pulseData.map((item) => item.requestedVacancies)
         }
       ]

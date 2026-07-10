@@ -2,6 +2,18 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección BI Reclutamiento: slider visible y meta sin distorsionar escala
+
+- [x] Registrar `DataZoomComponent` en el runtime compartido de ECharts
+- [x] Aumentar contraste, altura y espacio inferior del slider en `Cupos por Contrato`
+- [x] Convertir `Meta requerimiento` en línea con eje secundario oculto para no afectar escala principal
+- [x] Validar TypeScript/build/diff check, commitear y pushear a `main`
+
+### Resultado de la corrección BI Reclutamiento
+
+- El slider inferior de `Cupos por Contrato` se renderiza correctamente porque ECharts ya tiene registrado `DataZoomComponent`.
+- `Pulso Operativo` vuelve a escalar por las series reales del gráfico; la meta de requerimiento queda como línea de referencia independiente y no achica las curvas operativas.
+
 ## Ajuste BI Reclutamiento: scroll de contratos y Pulso Operativo
 
 - [x] Agregar desplazamiento horizontal elegante al gráfico `Cupos por Contrato` sin romper tooltips ni resize

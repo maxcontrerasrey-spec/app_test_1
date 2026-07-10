@@ -8,6 +8,7 @@ import {
   PieChart
 } from "echarts/charts";
 import {
+  DataZoomComponent,
   GeoComponent,
   GridComponent,
   LegendComponent,
@@ -23,6 +24,7 @@ echarts.use([
   LineChart,
   MapChart,
   PieChart,
+  DataZoomComponent,
   GeoComponent,
   GridComponent,
   LegendComponent,
