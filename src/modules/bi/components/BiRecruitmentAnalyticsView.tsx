@@ -60,12 +60,77 @@ function toMonthLabel(value: string) {
     .replace(".", "");
 }
 
+function toDayLabel(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "2-digit"
+  }).format(date);
+}
+
 function aggregatePulseData(
   timeline: BiRecruitmentDashboard["timeline"],
   view: OperationalPulseView
 ) {
-  if (view === "daily" || view === "weekly") {
+  if (view === "daily") {
     return timeline;
+  }
+
+  if (view === "weekly") {
+    const firstDate = new Date(`${timeline[0]?.bucketStart ?? ""}T00:00:00`);
+    if (timeline.length <= 6 || Number.isNaN(firstDate.getTime())) {
+      return timeline;
+    }
+
+    const groups = new Map<
+      number,
+      {
+        bucketStart: string;
+        bucketLabel: string;
+        readyCandidates: number;
+        openedFolios: number;
+        hiredCandidates: number;
+        executedMobilities: number;
+        requestedVacancies: number;
+      }
+    >();
+
+    timeline.forEach((item) => {
+      const currentDate = new Date(`${item.bucketStart}T00:00:00`);
+      const weekIndex = Number.isNaN(currentDate.getTime())
+        ? 0
+        : Math.floor((currentDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
+      const current = groups.get(weekIndex);
+
+      if (current) {
+        current.openedFolios += item.openedFolios;
+        current.readyCandidates += item.readyCandidates;
+        current.hiredCandidates += item.hiredCandidates;
+        current.executedMobilities += item.executedMobilities;
+        current.requestedVacancies = Math.max(current.requestedVacancies, item.requestedVacancies);
+        return;
+      }
+
+      groups.set(weekIndex, {
+        bucketStart: item.bucketStart,
+        bucketLabel: toDayLabel(item.bucketStart),
+        readyCandidates: item.readyCandidates,
+        openedFolios: item.openedFolios,
+        hiredCandidates: item.hiredCandidates,
+        executedMobilities: item.executedMobilities,
+        requestedVacancies: item.requestedVacancies
+      });
+    });
+
+    return Array.from(groups.values());
   }
 
   if (view === "monthly") {
@@ -179,15 +244,15 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       primary: [
-        { title: "Folios Abiertos", value: formatMetricValue(dashboard.summary.openFolios), type: "pendiente" },
-        { title: "Cupos Solicitados", value: formatMetricValue(dashboard.summary.requestedVacancies), type: "generado" },
+        { title: "Folios Abiertos", value: formatMetricValue(dashboard.summary.openFolios), type: "bi-gray" },
+        { title: "Cupos Solicitados", value: formatMetricValue(dashboard.summary.requestedVacancies), type: "bi-yellow" },
         {
           title: "Cupos Cubiertos",
           value: selectedFilledVacancy.value,
-          type: "generado",
+          type: "bi-green",
           filledVacancyOptions
         },
-        { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "en-proceso" },
+        { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "bi-blue" },
         { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "pendiente" }
       ]
     };
@@ -260,12 +325,12 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-      grid: { top: 16, right: 16, bottom: 126, left: 56 },
+      grid: { top: 16, right: 16, bottom: 104, left: 56 },
       dataZoom: [
         {
           type: "slider",
-          bottom: 24,
-          height: 28,
+          bottom: 20,
+          height: 14,
           start: 0,
           end:
             dashboard.vacanciesByContract.length > 14
@@ -275,9 +340,9 @@ export function BiRecruitmentAnalyticsView({
           showDetail: false,
           showDataShadow: false,
           borderColor: isDark ? "rgba(148, 163, 184, 0.44)" : "rgba(100, 116, 139, 0.38)",
-          fillerColor: isDark ? "rgba(59, 130, 246, 0.26)" : "rgba(59, 130, 246, 0.2)",
-          backgroundColor: isDark ? "rgba(15, 23, 42, 0.52)" : "rgba(226, 232, 240, 0.78)",
-          handleSize: "118%",
+          fillerColor: isDark ? "rgba(59, 130, 246, 0.22)" : "rgba(59, 130, 246, 0.16)",
+          backgroundColor: isDark ? "rgba(15, 23, 42, 0.42)" : "rgba(226, 232, 240, 0.52)",
+          handleSize: "190%",
           handleStyle: {
             color: isDark ? "#CBD5E1" : "#64748B",
             borderColor: isDark ? "#94A3B8" : "#475569"

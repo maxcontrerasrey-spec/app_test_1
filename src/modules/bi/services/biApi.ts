@@ -346,13 +346,30 @@ export async function fetchBiRecruitmentPipeline(filters?: BiFilters): Promise<B
 export async function fetchBiRecruitmentDashboard(filters?: BiFilters): Promise<BiRecruitmentDashboard> {
   const client = getSupabaseClient();
   const normalized = normalizeBiFilters(filters);
-  const { data, error } = await client.rpc("get_bi_recruitment_dashboard", {
+  const recruitmentParams = {
     p_period_code: normalized.periodCode ?? null,
     p_management_names:
       normalized.managementNames.length > 0 ? normalized.managementNames : null,
     p_contract_names: normalized.contractCodes.length > 0 ? normalized.contractCodes : null
-  });
+  };
+  const { data, error } = await client.rpc("get_bi_recruitment_dashboard", recruitmentParams);
 
   if (error) throw error;
-  return mapRecruitmentDashboard(data);
+
+  const dashboard = mapRecruitmentDashboard(data);
+  const { data: dailyTimelineData, error: dailyTimelineError } = await client.rpc(
+    "get_bi_recruitment_daily_timeline",
+    recruitmentParams
+  );
+
+  if (!dailyTimelineError && Array.isArray(dailyTimelineData)) {
+    return {
+      ...dashboard,
+      timeline: dailyTimelineData.map((item) =>
+        mapRecruitmentTimeline(item, dashboard.summary.requestedVacancies)
+      )
+    };
+  }
+
+  return dashboard;
 }

@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Corrección BI Reclutamiento: lectura de KPIs, slider y timeline diario
+
+- [x] Confirmar que `Cupos Solicitados` representa requerimiento total vigente e incluye cupos ya cubiertos
+- [x] Cambiar colores KPI: folios gris, solicitados amarillo, cubiertos verde, candidatos azul y listos sin cambio
+- [x] Adelgazar y estilizar el `dataZoom` de `Cupos por Contrato`
+- [x] Agregar RPC diario para que la vista `D` de `Pulso Operativo` muestre días reales
+- [x] Agrupar el timeline diario en frontend para vista semanal/mensual/semestral
+- [x] Auditar migración, aplicar remoto, validar TypeScript/build/diff check, commitear y pushear a `main`
+
+### Resultado de la corrección BI Reclutamiento
+
+- `119` es el total de cupos solicitados actuales de los folios abiertos filtrados; incluye los `25` cupos cubiertos, por lo que la brecha pendiente es `94`.
+- `Pulso Operativo` recibe datos diarios desde `get_bi_recruitment_daily_timeline(...)`; la pestaña `D` ya no depende de buckets semanales.
+- El slider de contratos queda más delgado y menos tosco, manteniendo exploración horizontal.
+
 ## Corrección BI Reclutamiento: slider visible y meta sin distorsionar escala
 
 - [x] Registrar `DataZoomComponent` en el runtime compartido de ECharts

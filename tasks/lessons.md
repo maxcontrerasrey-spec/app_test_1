@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 235. Una pestaña diaria no puede ser real si el backend solo entrega buckets semanales
+
+- **La granularidad visual debe existir en la fuente.** Si el RPC entrega `01/07`, `08/07`, `15/07`, la UI no puede prometer vista diaria sin inventar días; se debe exponer un timeline diario backend y agrupar hacia arriba en frontend.
+- **Los totales de requerimiento son inclusivos por definición.** `Cupos Solicitados` representa el universo requerido; `Cupos Cubiertos` es una parte de ese total, no un número adicional.
+- **Los cambios de color en KPIs compartidos deben ser scoped al módulo.** Si el ERP reutiliza `tracking-kpi-card-*`, las variantes de BI deben vivir bajo `.bi-recruitment-kpi-row` para no alterar otros tableros.
+
+---
+
 ## 234. Configurar una opción ECharts no basta si el runtime tree-shaken no registra el componente
 
 - **Cuando un control nativo no aparece, revisa primero `echarts.use(...)`.** `dataZoom` puede estar correctamente configurado en la opción y aun así no renderizar si `DataZoomComponent` no está incluido en el runtime compartido.
