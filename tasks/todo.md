@@ -10,6 +10,27 @@
 - [x] Compactar espaciado de header/toolbar sin perder labels accesibles para lectores de pantalla
 - [x] Validar TypeScript/build y diff check
 
+## Ajuste BI Reclutamiento: tarjetas compactas y movilidad reconciliada
+
+- [x] Revisar contrato de `get_bi_recruitment_dashboard(...)` y confirmar que `Folios Abiertos` y `Casos Abiertos` duplican el mismo conteo
+- [x] Validar composición productiva de movilidad interna para explicar el gap `31` vs `16 + 7 + 1`
+- [x] Eliminar tarjeta redundante de casos abiertos en BI Reclutamiento
+- [x] Agregar tarjeta de movilidad no ejecutada/rechazada para que el total cierre visualmente
+- [x] Reducir altura/padding de tarjetas BI sin afectar tarjetas operativas de otros módulos
+- [x] Ejecutar TypeScript/build/diff check y documentar resultado
+
+### Resultado esperado del ajuste BI Reclutamiento
+
+- La primera fila de BI debe quedar más baja y sin duplicar folios/casos.
+- La fila de movilidad debe cuadrar contra el total visible: ejecutadas + pendientes de ejecución + pendientes de aprobación + no ejecutadas.
+
+### Resultado del ajuste BI Reclutamiento
+
+- El RPC productivo mostró movilidad interna en cuatro buckets: `Ejecutadas = 16`, `Pendiente ejecución RRHH = 7`, `Rechazadas = 7`, `Pendiente control contratos = 1`; por eso `31` no cuadraba con solo tres tarjetas.
+- BI Reclutamiento ahora elimina `Casos Abiertos` porque duplicaba `Folios Abiertos` y agrega `Rechazadas / No ejecutadas` para reconciliar el total de movilidad.
+- Las tarjetas BI bajan de `130px` a `76px` de altura mínima con padding específico del módulo, sin tocar las tarjetas operativas compartidas.
+- Validación cerrada con TypeScript, build frontend y `git diff --check`; el smoke visual local no pudo ejecutarse porque Playwright no encontró Google Chrome instalado en `/Applications/Google Chrome.app`.
+
 ## Corrección KPI: alinear candidatos en curso entre Inicio y Control de Contrataciones
 
 - [x] Comparar semántica de `get_recruitment_processes_page(...)` contra `get_recruitment_control_summary()`

@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 229. En BI, una tarjeta total debe reconciliar visualmente todos sus buckets operativos visibles
+
+- **Mostrar un total sin todas sus categorías operativas genera una falsa inconsistencia aunque el backend esté correcto.** En BI Reclutamiento, `Movilidades Internas = 31` no cuadraba con `16 + 7 + 1` porque faltaba representar `Rechazadas = 7`.
+- **Si una categoría total incluye estados terminales, la UI debe decidir entre mostrar el bucket residual o cambiar el total.** Para analítica ejecutiva, mantener el total y agregar `Rechazadas / No ejecutadas` conserva trazabilidad y evita ocultar solicitudes que sí existieron.
+- **No dupliques tarjetas cuando el RPC expone dos nombres para el mismo conteo.** Si `open_folios` y `open_cases` salen del mismo `count(*)`, la pantalla debe escoger un solo rótulo operacional y liberar espacio para métricas que expliquen el negocio.
+
+---
+
 ## 228. Un summary filtrado debe distinguir contadores efectivos de cupos y contadores puros de personas
 
 - **Si `candidate_count` incluye movilidad interna pendiente para reservar cupos, no puede alimentar directamente una tarjeta rotulada como “Candidatos en curso”.** En `Folios en curso`, eso produjo 60 contra 59 en `Control de Contrataciones` porque el RPC sumaba `effective_active_candidates` y el control mostraba candidatos activos netos.

@@ -30,10 +30,17 @@ export function BiRecruitmentAnalyticsView({
       return { primary: [], mobility: [] };
     }
 
+    const mobilityNotExecuted = Math.max(
+      dashboard.summary.mobilityRequests -
+        dashboard.summary.mobilityExecuted -
+        dashboard.summary.mobilityPendingExecution -
+        dashboard.summary.mobilityPendingApproval,
+      0
+    );
+
     return {
       primary: [
         { title: "Folios Abiertos", value: formatMetricValue(dashboard.summary.openFolios), type: "pendiente" },
-        { title: "Casos Abiertos", value: formatMetricValue(dashboard.summary.openCases), type: "en-proceso" },
         { title: "Cupos Solicitados", value: formatMetricValue(dashboard.summary.requestedVacancies), type: "generado" },
         { title: "Cupos Cubiertos", value: formatMetricValue(dashboard.summary.filledVacancies), type: "generado" },
         { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "en-proceso" },
@@ -43,7 +50,8 @@ export function BiRecruitmentAnalyticsView({
         { title: "Movilidades Internas", value: formatMetricValue(dashboard.summary.mobilityRequests), type: "en-proceso" },
         { title: "Movilidades Ejecutadas", value: formatMetricValue(dashboard.summary.mobilityExecuted), type: "generado" },
         { title: "Pend. Ejecución RRHH", value: formatMetricValue(dashboard.summary.mobilityPendingExecution), type: "error" },
-        { title: "Pendiente de Aprobación", value: formatMetricValue(dashboard.summary.mobilityPendingApproval), type: "pendiente" }
+        { title: "Pendiente de Aprobación", value: formatMetricValue(dashboard.summary.mobilityPendingApproval), type: "pendiente" },
+        { title: "Rechazadas / No ejecutadas", value: formatMetricValue(mobilityNotExecuted), type: "error" }
       ]
     };
   }, [dashboard]);
