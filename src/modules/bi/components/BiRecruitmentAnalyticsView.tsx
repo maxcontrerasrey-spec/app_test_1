@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { useTheme } from "../../../shared/context/ThemeContext";
 import { EChartSurface } from "../../../shared/ui";
@@ -10,6 +10,8 @@ type BiRecruitmentAnalyticsViewProps = {
   isError: boolean;
 };
 
+type FilledVacancyView = "total" | "hired" | "mobility";
+
 function formatMetricValue(value: number) {
   return value.toLocaleString("es-CL");
 }
@@ -20,6 +22,7 @@ export function BiRecruitmentAnalyticsView({
   isError
 }: BiRecruitmentAnalyticsViewProps) {
   const { theme } = useTheme();
+  const [filledVacancyView, setFilledVacancyView] = useState<FilledVacancyView>("total");
 
   const isDark = theme === "dark";
   const textColor = isDark ? "#E2E8F0" : "#1E293B";
@@ -37,12 +40,41 @@ export function BiRecruitmentAnalyticsView({
         dashboard.summary.mobilityPendingApproval,
       0
     );
+    const filledVacancyOptions: Array<{
+      key: FilledVacancyView;
+      label: string;
+      value: string;
+    }> = [
+      {
+        key: "total",
+        label: "Todos",
+        value: formatMetricValue(dashboard.summary.filledVacancies)
+      },
+      {
+        key: "hired",
+        label: "Contratados",
+        value: formatMetricValue(dashboard.summary.filledHiredCandidates)
+      },
+      {
+        key: "mobility",
+        label: "Movilidad",
+        value: formatMetricValue(dashboard.summary.filledMobilityApproved)
+      }
+    ];
+    const selectedFilledVacancy =
+      filledVacancyOptions.find((option) => option.key === filledVacancyView) ??
+      filledVacancyOptions[0];
 
     return {
       primary: [
         { title: "Folios Abiertos", value: formatMetricValue(dashboard.summary.openFolios), type: "pendiente" },
         { title: "Cupos Solicitados", value: formatMetricValue(dashboard.summary.requestedVacancies), type: "generado" },
-        { title: "Cupos Cubiertos", value: formatMetricValue(dashboard.summary.filledVacancies), type: "generado" },
+        {
+          title: "Cupos Cubiertos",
+          value: selectedFilledVacancy.value,
+          type: "generado",
+          filledVacancyOptions
+        },
         { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "en-proceso" },
         { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "pendiente" }
       ],
@@ -54,7 +86,7 @@ export function BiRecruitmentAnalyticsView({
         { title: "Rechazadas / No ejecutadas", value: formatMetricValue(mobilityNotExecuted), type: "error" }
       ]
     };
-  }, [dashboard]);
+  }, [dashboard, filledVacancyView]);
 
   const casesByStatusOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.casesByStatus.length === 0) {
@@ -227,10 +259,27 @@ export function BiRecruitmentAnalyticsView({
         {summaryCardGroups.primary.map((card) => (
           <article
             key={card.title}
-            className={`tracking-kpi-card tracking-kpi-card-${card.type} bi-overview-kpi-card`}
+            className={`tracking-kpi-card tracking-kpi-card-${card.type} bi-overview-kpi-card ${
+              card.filledVacancyOptions ? "bi-filled-vacancy-card" : ""
+            }`}
           >
             <span>{card.title}</span>
             <strong>{card.value}</strong>
+            {card.filledVacancyOptions ? (
+              <div className="bi-card-segmented-control" aria-label="Detalle de cupos cubiertos">
+                {card.filledVacancyOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className={option.key === filledVacancyView ? "is-active" : ""}
+                    aria-pressed={option.key === filledVacancyView}
+                    onClick={() => setFilledVacancyView(option.key)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

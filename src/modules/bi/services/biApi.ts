@@ -69,6 +69,11 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
   const row = (payload ?? {}) as Record<string, unknown>;
   const summary = (row.summary ?? {}) as Record<string, unknown>;
   const filterOptions = (row.filterOptions ?? {}) as Record<string, unknown>;
+  const filledVacancies = Number(summary.filledVacancies ?? 0);
+  const filledMobilityApproved = Number(
+    summary.filledMobilityApproved ??
+      Number(summary.mobilityExecuted ?? 0) + Number(summary.mobilityPendingExecution ?? 0)
+  );
 
   return {
     availableManagements: Array.isArray(filterOptions.managements)
@@ -81,7 +86,11 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
       openFolios: Number(summary.openFolios ?? 0),
       openCases: Number(summary.openCases ?? 0),
       requestedVacancies: Number(summary.requestedVacancies ?? 0),
-      filledVacancies: Number(summary.filledVacancies ?? 0),
+      filledVacancies,
+      filledHiredCandidates: Number(
+        summary.filledHiredCandidates ?? Math.max(filledVacancies - filledMobilityApproved, 0)
+      ),
+      filledMobilityApproved,
       candidatesInProgress: Number(summary.candidatesInProgress ?? 0),
       readyCandidates: Number(summary.readyCandidates ?? 0),
       mobilityRequests: Number(summary.mobilityRequests ?? 0),

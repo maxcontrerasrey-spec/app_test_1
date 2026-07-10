@@ -88,6 +88,50 @@
   line-height: 1.05;
 }
 
+.bi-recruitment-kpi-row .bi-filled-vacancy-card {
+  min-height: 98px;
+}
+
+.bi-card-segmented-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.24rem;
+  margin-top: 0.18rem;
+  padding: 0.18rem;
+  border: 1px solid rgba(134, 190, 154, 0.28);
+  border-radius: 7px;
+  background: rgba(var(--surface-rgb), 0.55);
+}
+
+.bi-card-segmented-control button {
+  min-width: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1;
+  padding: 0.34rem 0.22rem;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.bi-card-segmented-control button:hover,
+.bi-card-segmented-control button:focus-visible {
+  color: var(--title);
+}
+
+.bi-card-segmented-control button:active {
+  transform: translateY(1px);
+}
+
+.bi-card-segmented-control button.is-active {
+  background: rgba(134, 190, 154, 0.18);
+  color: var(--title);
+}
+
 .bi-overview-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

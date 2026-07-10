@@ -31,6 +31,26 @@
 - Las tarjetas BI bajan de `130px` a `76px` de altura mínima con padding específico del módulo, sin tocar las tarjetas operativas compartidas.
 - Validación cerrada con TypeScript, build frontend y `git diff --check`; el smoke visual local no pudo ejecutarse porque Playwright no encontró Google Chrome instalado en `/Applications/Google Chrome.app`.
 
+## Ajuste BI Reclutamiento: desglose seleccionable de cupos cubiertos
+
+- [x] Confirmar que `Cupos Cubiertos` combina candidatos contratados y movilidad interna aprobada
+- [x] Versionar desglose backend aditivo en `get_bi_recruitment_dashboard(...)`: total, contratados y movilidad aprobada
+- [x] Agregar selector interno en la misma tarjeta para alternar `Todos`, `Contratados` y `Movilidad`
+- [x] Ejecutar auditoría de migración, TypeScript/build y diff check
+- [x] Dejar commit local sin push a `main`
+
+### Resultado esperado del desglose de cupos cubiertos
+
+- La tarjeta `Cupos Cubiertos` mantiene el total por defecto, pero permite leer el origen del cupo sin crear tarjetas adicionales.
+- El cambio debe funcionar con el payload nuevo del RPC y con fallback mientras la migración no esté aplicada.
+
+### Resultado del desglose de cupos cubiertos
+
+- [`20260710045620_add_bi_recruitment_filled_vacancy_breakdown.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260710045620_add_bi_recruitment_filled_vacancy_breakdown.sql:1) agrega al summary BI `filledHiredCandidates` y `filledMobilityApproved`.
+- El RPC remoto quedó aplicado y validado con `filledVacancies = 25`, `filledHiredCandidates = 9`, `filledMobilityApproved = 16`.
+- La UI mantiene una sola tarjeta `Cupos Cubiertos` con selector interno `Todos / Contratados / Movilidad`.
+- Se ejecutaron auditoría de migración, TypeScript, build frontend y `git diff --check`.
+
 ## Corrección KPI: alinear candidatos en curso entre Inicio y Control de Contrataciones
 
 - [x] Comparar semántica de `get_recruitment_processes_page(...)` contra `get_recruitment_control_summary()`

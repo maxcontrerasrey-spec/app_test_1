@@ -116,6 +116,8 @@ export interface BiRecruitmentDashboardSummary {
   openCases: number;
   requestedVacancies: number;
   filledVacancies: number;
+  filledHiredCandidates: number;
+  filledMobilityApproved: number;
   candidatesInProgress: number;
   readyCandidates: number;
   mobilityRequests: number;

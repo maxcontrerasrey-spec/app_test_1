@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 230. Un KPI combinado puede mantenerse en una sola tarjeta si el selector usa desglose backend autoritativo
+
+- **Separar visualmente no siempre exige crear más tarjetas.** Cuando negocio quiere conservar una lectura ejecutiva como `Cupos Cubiertos`, un selector interno `Todos / Contratados / Movilidad` mantiene el layout compacto y evita duplicar jerarquía.
+- **El desglose debe venir del mismo universo que construye el total.** Si `filled_vacancies` suma `hired_count + approved_mobility_count`, el RPC debe exponer también esas dos partes; derivarlas solo desde tarjetas de movilidad puede mezclar períodos o solicitudes no asociadas a folios activos.
+- **Cuando una migración aditiva todavía no está aplicada, el frontend puede tener fallback, pero debe quedar documentado como compatibilidad transitoria.** El contrato durable es el campo explícito del RPC, no una resta indefinida en React.
+
+---
+
 ## 229. En BI, una tarjeta total debe reconciliar visualmente todos sus buckets operativos visibles
 
 - **Mostrar un total sin todas sus categorías operativas genera una falsa inconsistencia aunque el backend esté correcto.** En BI Reclutamiento, `Movilidades Internas = 31` no cuadraba con `16 + 7 + 1` porque faltaba representar `Rechazadas = 7`.
