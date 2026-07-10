@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 231. Un dashboard BI no debe duplicar un mismo estado en tarjeta y gráfico si el gráfico ya entrega el desglose operativo
+
+- **La densidad mejora cuando cada elemento responde una pregunta distinta.** Si el donut de movilidad interna ya muestra ejecutadas, pendientes y rechazadas con etiquetas de datos, una fila adicional de tarjetas para los mismos buckets agrega ruido y compite por atención.
+- **Los gráficos de proceso deben respetar el orden operacional, no el ranking por tamaño.** En etapas de candidatos, ordenar por volumen oculta el flujo real del pipeline; el orden correcto debe venir de una lista canónica del dominio.
+- **Cuando dos barras representan parte y total, la geometría debe comunicar relación.** Para `Solicitados` vs `Cubiertos`, barras superpuestas con la misma forma son más legibles que stacks que dejan bordes y uniones visualmente inconsistentes.
+
+---
+
 ## 230. Un KPI combinado puede mantenerse en una sola tarjeta si el selector usa desglose backend autoritativo
 
 - **Separar visualmente no siempre exige crear más tarjetas.** Cuando negocio quiere conservar una lectura ejecutiva como `Cupos Cubiertos`, un selector interno `Todos / Contratados / Movilidad` mantiene el layout compacto y evita duplicar jerarquía.

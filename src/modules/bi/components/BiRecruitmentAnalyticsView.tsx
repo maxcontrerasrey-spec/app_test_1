@@ -12,6 +12,20 @@ type BiRecruitmentAnalyticsViewProps = {
 
 type FilledVacancyView = "total" | "hired" | "mobility";
 
+const CANDIDATE_STAGE_ORDER = [
+  "Lead",
+  "Who pendiente",
+  "Who aprobado",
+  "En proceso",
+  "Exámenes médicos",
+  "Revisión documental",
+  "Listos para contratar"
+];
+
+const CANDIDATE_STAGE_ORDER_INDEX = new Map(
+  CANDIDATE_STAGE_ORDER.map((stage, index) => [stage, index])
+);
+
 function formatMetricValue(value: number) {
   return value.toLocaleString("es-CL");
 }
@@ -30,16 +44,9 @@ export function BiRecruitmentAnalyticsView({
 
   const summaryCardGroups = useMemo(() => {
     if (!dashboard) {
-      return { primary: [], mobility: [] };
+      return { primary: [] };
     }
 
-    const mobilityNotExecuted = Math.max(
-      dashboard.summary.mobilityRequests -
-        dashboard.summary.mobilityExecuted -
-        dashboard.summary.mobilityPendingExecution -
-        dashboard.summary.mobilityPendingApproval,
-      0
-    );
     const filledVacancyOptions: Array<{
       key: FilledVacancyView;
       label: string;
@@ -77,13 +84,6 @@ export function BiRecruitmentAnalyticsView({
         },
         { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "en-proceso" },
         { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "pendiente" }
-      ],
-      mobility: [
-        { title: "Movilidades Internas", value: formatMetricValue(dashboard.summary.mobilityRequests), type: "en-proceso" },
-        { title: "Movilidades Ejecutadas", value: formatMetricValue(dashboard.summary.mobilityExecuted), type: "generado" },
-        { title: "Pend. Ejecución RRHH", value: formatMetricValue(dashboard.summary.mobilityPendingExecution), type: "error" },
-        { title: "Pendiente de Aprobación", value: formatMetricValue(dashboard.summary.mobilityPendingApproval), type: "pendiente" },
-        { title: "Rechazadas / No ejecutadas", value: formatMetricValue(mobilityNotExecuted), type: "error" }
       ]
     };
   }, [dashboard, filledVacancyView]);
@@ -95,12 +95,11 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       tooltip: { trigger: "item" },
-      legend: { bottom: 0, textStyle: { color: textColor } },
       series: [
         {
           type: "pie",
           radius: ["42%", "72%"],
-          center: ["50%", "45%"],
+          center: ["50%", "50%"],
           label: { formatter: "{b}\n{c}", color: textColor },
           data: dashboard.casesByStatus.map((item) => ({ name: item.label, value: item.value }))
         }
@@ -113,12 +112,23 @@ export function BiRecruitmentAnalyticsView({
       return null;
     }
 
+    const orderedStages = [...dashboard.candidatesByStage].sort((left, right) => {
+      const leftIndex = CANDIDATE_STAGE_ORDER_INDEX.get(left.label) ?? Number.MAX_SAFE_INTEGER;
+      const rightIndex = CANDIDATE_STAGE_ORDER_INDEX.get(right.label) ?? Number.MAX_SAFE_INTEGER;
+
+      if (leftIndex !== rightIndex) {
+        return leftIndex - rightIndex;
+      }
+
+      return left.label.localeCompare(right.label, "es-CL");
+    });
+
     return {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
       grid: { top: 16, right: 16, bottom: 72, left: 56 },
       xAxis: {
         type: "category",
-        data: dashboard.candidatesByStage.map((item) => item.label),
+        data: orderedStages.map((item) => item.label),
         axisLabel: { color: textColor, interval: 0, rotate: 24 },
         axisLine: { lineStyle: { color: axisColor } }
       },
@@ -131,7 +141,7 @@ export function BiRecruitmentAnalyticsView({
         {
           type: "bar",
           barMaxWidth: 40,
-          data: dashboard.candidatesByStage.map((item) => item.value),
+          data: orderedStages.map((item) => item.value),
           itemStyle: { borderRadius: [8, 8, 0, 0] }
         }
       ]
@@ -145,7 +155,6 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-      legend: { bottom: 0, textStyle: { color: textColor } },
       grid: { top: 16, right: 16, bottom: 88, left: 56 },
       xAxis: {
         type: "category",
@@ -162,19 +171,29 @@ export function BiRecruitmentAnalyticsView({
         {
           name: "Solicitados",
           type: "bar",
-          stack: "vacancies",
+          barWidth: 18,
+          barGap: "-100%",
+          z: 1,
           data: dashboard.vacanciesByContract.map((item) => item.requested),
-          itemStyle: { borderRadius: [8, 8, 0, 0] }
+          itemStyle: {
+            borderRadius: [8, 8, 0, 0],
+            color: isDark ? "rgba(96, 165, 250, 0.34)" : "rgba(59, 130, 246, 0.24)"
+          }
         },
         {
           name: "Cubiertos",
           type: "bar",
-          stack: "vacancies",
-          data: dashboard.vacanciesByContract.map((item) => item.filled)
+          barWidth: 18,
+          z: 2,
+          data: dashboard.vacanciesByContract.map((item) => item.filled),
+          itemStyle: {
+            borderRadius: [8, 8, 0, 0],
+            color: "#06B6D4"
+          }
         }
       ]
     };
-  }, [axisColor, dashboard, textColor]);
+  }, [axisColor, dashboard, isDark, textColor]);
 
   const mobilityStatusOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.mobilityByStatus.length === 0) {
@@ -183,12 +202,11 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       tooltip: { trigger: "item" },
-      legend: { bottom: 0, textStyle: { color: textColor } },
       series: [
         {
           type: "pie",
           radius: ["44%", "74%"],
-          center: ["50%", "45%"],
+          center: ["50%", "50%"],
           label: { formatter: "{b}\n{c}", color: textColor },
           data: dashboard.mobilityByStatus.map((item) => ({ name: item.label, value: item.value }))
         }
@@ -280,18 +298,6 @@ export function BiRecruitmentAnalyticsView({
                 ))}
               </div>
             ) : null}
-          </article>
-        ))}
-      </div>
-
-      <div className="tracking-kpi-row bi-recruitment-kpi-row">
-        {summaryCardGroups.mobility.map((card) => (
-          <article
-            key={card.title}
-            className={`tracking-kpi-card tracking-kpi-card-${card.type} bi-overview-kpi-card`}
-          >
-            <span>{card.title}</span>
-            <strong>{card.value}</strong>
           </article>
         ))}
       </div>

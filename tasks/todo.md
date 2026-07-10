@@ -2,6 +2,21 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste BI Reclutamiento: depurar redundancias y mejorar lectura de gráficos
+
+- [x] Eliminar la fila de tarjetas de movilidad interna porque duplica el donut operativo del BI
+- [x] Ordenar `Etapas de Candidatos` según secuencia real del pipeline y no por volumen
+- [x] Rediseñar `Cupos por Contrato` con barras superpuestas de geometría consistente para solicitados/cubiertos
+- [x] Quitar leyendas inferiores de donuts cuando las etiquetas ya muestran categoría y valor
+- [x] Ejecutar TypeScript/build/diff check, commitear y pushear a `main`
+
+### Resultado del ajuste visual BI Reclutamiento
+
+- BI Reclutamiento conserva la tarjeta ejecutiva de `Cupos Cubiertos` con selector `Todos / Contratados / Movilidad`, pero elimina la fila redundante de movilidad.
+- `Etapas de Candidatos` respeta el orden operacional `Lead -> Who pendiente -> Who aprobado -> En proceso -> Exámenes médicos -> Revisión documental -> Listos para contratar`.
+- `Cupos por Contrato` deja de apilar solicitado/cubierto y usa barras superpuestas con la misma forma, reduciendo ruido visual.
+- Los donuts de estado ya no muestran leyendas inferiores redundantes porque sus etiquetas externas contienen categoría y conteo.
+
 ## Ajuste dashboard: compactar widgets operativos sin textos auxiliares
 
 - [x] Quitar subtítulo de `Tareas Pendientes`
