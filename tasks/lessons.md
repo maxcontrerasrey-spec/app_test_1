@@ -4,6 +4,21 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 228. Un summary filtrado debe distinguir contadores efectivos de cupos y contadores puros de personas
+
+- **Si `candidate_count` incluye movilidad interna pendiente para reservar cupos, no puede alimentar directamente una tarjeta rotulada como “Candidatos en curso”.** En `Folios en curso`, eso produjo 60 contra 59 en `Control de Contrataciones` porque el RPC sumaba `effective_active_candidates` y el control mostraba candidatos activos netos.
+- **La regla correcta es corregir la fuente filtrada, no solo el componente que pinta la tarjeta.** `get_recruitment_processes_page(...)` debe exponer `inProgressCandidates` como `candidate_count - mobility_active_count` cuando el KPI promete candidatos activos; la movilidad se mantiene en el detalle y en los cálculos de cupos.
+- **Todo KPI duplicado entre Inicio y un módulo operativo debe tener una prueba de reconciliación.** La validación mínima es comparar casos activos, candidatos activos, movilidad pendiente y candidatos efectivos antes y después del cambio, con un usuario real o simulado por `auth.uid()`.
+
+---
+
+## 227. Los textos auxiliares de widgets operativos deben ser opcionales sin romper accesibilidad ni dejar aire muerto
+
+- **Eliminar copy visible no debe eliminar el nombre accesible del input.** Si una pantalla pide quitar labels como “Buscar aprobación en curso”, el campo debe conservar un label visualmente oculto en vez de depender solo del placeholder.
+- **Compactar el módulo exige revisar el layout residual.** Al quitar subtítulos o labels, también hay que ajustar `gap` y márgenes del header/toolbar; de lo contrario el texto desaparece pero queda el mismo alto visual.
+
+---
+
 ## 226. Una contratación BUK emitida sobre el folio equivocado debe repararse como trazabilidad cruzada ERP-BUK, no solo moviendo una fila
 
 - **Mover el candidato entre folios sin corregir BUK deja la operación incoherente.** En Domingo Enrique Catalán Vega, el ERP podía trasladar `recruitment_case_candidates` desde `RC-1749` a `RC-0082`, pero BUK conservaba job, activación y término contractual del folio equivocado; la reparación tuvo que patchar también empleado/job BUK.

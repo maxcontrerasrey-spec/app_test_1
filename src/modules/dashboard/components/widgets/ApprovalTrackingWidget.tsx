@@ -38,13 +38,13 @@ export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackin
   return (
     <DashboardWidgetFrame
       title={title}
-      subtitle="Solicitudes ya levantadas que aún recorren su flujo de aprobación."
       className="widget-tasks widget-fill-height"
     >
       <div className="dashboard-folios-toolbar">
         <TextField
           id="dashboard-approval-tracking-search"
           label="Buscar aprobación en curso"
+          hideLabel
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder="Folio, cargo, contrato o aprobador"

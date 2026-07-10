@@ -24,6 +24,7 @@ type TextFieldProps = {
   hasError?: boolean;
   className?: string;
   hint?: string;
+  hideLabel?: boolean;
 };
 
 export function TextField({
@@ -42,11 +43,12 @@ export function TextField({
   autoComplete,
   hasError = false,
   className = "",
-  hint
+  hint,
+  hideLabel = false
 }: TextFieldProps) {
   return (
     <div className={`field-group ${className}`.trim()}>
-      <label className="field-label" htmlFor={id}>
+      <label className={`field-label ${hideLabel ? "field-label-visually-hidden" : ""}`.trim()} htmlFor={id}>
         {label}
         <FieldHintIcon hint={hint} />
       </label>

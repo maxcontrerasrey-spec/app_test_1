@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Ajuste dashboard: compactar widgets operativos sin textos auxiliares
+
+- [x] Quitar subtítulo de `Tareas Pendientes`
+- [x] Quitar subtítulo y label visible de búsqueda en `Seguimiento de aprobaciones`
+- [x] Quitar subtítulo y label visible de búsqueda en `Folios en curso`
+- [x] Compactar espaciado de header/toolbar sin perder labels accesibles para lectores de pantalla
+- [x] Validar TypeScript/build y diff check
+
+## Corrección KPI: alinear candidatos en curso entre Inicio y Control de Contrataciones
+
+- [x] Comparar semántica de `get_recruitment_processes_page(...)` contra `get_recruitment_control_summary()`
+- [x] Validar en datos vivos si el gap 60 vs 59 corresponde a movilidad interna pendiente
+- [x] Corregir el summary filtrado del RPC para que `inProgressCandidates` excluya movilidad pendiente cuando el rótulo es candidatos activos/en curso
+- [x] Corregir el fallback frontend del widget `Folios en curso`
+- [x] Ejecutar auditoría de migración, TypeScript/build, diff check y consulta smoke del RPC
+
+### Resultado esperado de la corrección KPI
+
+- `Folios en curso` e `Control de Contrataciones` deben mostrar el mismo conteo para `Candidatos en curso` cuando ambos están midiendo candidatos activos, no reservas de movilidad.
+- La movilidad interna pendiente sigue contando para cupos efectivos del caso, pero no infla el KPI rotulado como candidatos en curso.
+
+### Resultado de la corrección KPI
+
+- La diferencia venía de `RC-0085`/folio `0085`: 0 candidatos activos y 1 movilidad interna pendiente. El summary antiguo sumaba `effective_active_candidates = 60`; Control de Contrataciones mostraba `active_candidate_count = 59`.
+- [`20260710042402_align_recruitment_processes_active_candidate_summary.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260710042402_align_recruitment_processes_active_candidate_summary.sql:1) redefine `get_recruitment_processes_page(...)` para que `inProgressCandidates` use candidatos activos netos.
+- Smoke productivo con usuario super admin devolvió `activeCases = 55`, `requestedVacancies = 119`, `inProgressCandidates = 59`.
+
 ## Corrección operacional: Domingo Catalán folio 1749 -> 0082 y búsqueda por pestaña
 
 - [x] Reconstruir evidencia productiva de folios `1749` y `0082`, candidato Domingo Enrique Catalán Vega, job BUK generado y estados/cupos afectados

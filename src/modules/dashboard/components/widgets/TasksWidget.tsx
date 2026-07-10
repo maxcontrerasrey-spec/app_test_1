@@ -126,7 +126,6 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
   return (
     <DashboardWidgetFrame
       title={title}
-      subtitle="Decisiones activas que bloquean operación o aprobaciones en curso."
       className="widget-tasks widget-fill-height"
     >
       <div className="tracking-table-wrap tracking-table-wrap-full">

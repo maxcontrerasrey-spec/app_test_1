@@ -661,6 +661,10 @@
   margin-bottom: 1rem;
 }
 
+.dashboard-folios-toolbar:has(.field-label-visually-hidden) {
+  margin-top: 0.2rem;
+}
+
 .dashboard-folios-toolbar-split {
   display: flex;
   justify-content: space-between;
@@ -702,6 +706,10 @@
 .widget-header-copy {
   display: grid;
   gap: 0.32rem;
+}
+
+.widget-header-copy:not(:has(.widget-subtitle)) {
+  gap: 0;
 }
 
 .widget-header-actions {

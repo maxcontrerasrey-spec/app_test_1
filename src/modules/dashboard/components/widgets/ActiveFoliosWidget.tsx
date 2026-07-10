@@ -81,7 +81,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
         0
       ),
       inProgressCandidates: folios.reduce(
-        (total, folio) => total + Math.max(folio.candidate_count ?? 0, 0),
+        (total, folio) => total + getRecruitmentCaseHeadcountBreakdown(folio).activeCandidates,
         0
       ),
       readyToHireCases: folios.filter((folio) => (folio.ready_candidates ?? 0) > 0).length,
@@ -208,7 +208,6 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   return (
     <DashboardWidgetFrame
       title={title}
-      subtitle="Búsquedas abiertas con KPIs de avance y detalle expandible por caso."
       className="widget-tasks widget-fill-height"
     >
       <div className="dashboard-folios-toolbar dashboard-folios-toolbar-split">
@@ -216,6 +215,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
           <TextField
             id="dashboard-folios-search"
             label="Buscar folio en curso"
+            hideLabel
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Caso, contrato, cargo, gerencia o centro de costo"
