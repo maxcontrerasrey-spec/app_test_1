@@ -2269,3 +2269,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No recalcules el mismo conjunto documental para JSON y métricas por separado.** En pantallas interactivas, duplicar joins sobre documentos puede terminar en timeouts cuando se combina con funciones de autorización.
 - **El índice debe calzar con la frontera de consulta real.** Para documentos de candidato, el acceso operativo se hace por `recruitment_case_id`, `candidate_profile_id` y `document_type_id`; ese orden necesita índice compuesto.
 - **La prueba de cierre debe medir el caso real.** Si el error viene de una pestaña concreta, valida la RPC con el candidato visible en pantalla y reporta tiempo de respuesta remoto.
+
+## 164. Una vista documental no debe calcular sugerencias BUK en caliente
+
+- **El checklist debe responder con estado documental, no con reconciliaciones externas.** Si una vista interactiva solo necesita saber si `Código de ficha` está persistido, no debe invocar helpers que buscan códigos sugeridos en empleados BUK o payloads históricos.
+- **Las sugerencias costosas deben quedarse en la ficha BUK o en el worker de generación.** Ahí aportan valor operativo; en una pestaña de control documental solo agregan latencia y riesgo de timeout.
+- **Los estados terminales deben cortar antes de llamar RPCs pesadas.** Si un candidato ya está `hired` y los documentos fueron transferidos a BUK, la UI debe mostrar el mensaje de resguardo sin intentar reconstruir el checklist local.

@@ -43,6 +43,13 @@ export function CandidateDocumentChecklist({
   const [modalState, setModalState] = useState<ChecklistModalState>({ mode: "closed" });
 
   async function loadChecklist() {
+    if (candidateStageCode === "hired") {
+      setChecklist(null);
+      setErrorMsg("");
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg("");
     const { data, error } = await fetchCandidateChecklist(caseCandidateId);
@@ -56,7 +63,7 @@ export function CandidateDocumentChecklist({
 
   useEffect(() => {
     void loadChecklist();
-  }, [caseCandidateId]);
+  }, [caseCandidateId, candidateStageCode]);
 
   async function handleRealUploadStart(doc: CandidateDocumentRow) {
     if (candidateStageCode === "hired") {
@@ -263,6 +270,23 @@ export function CandidateDocumentChecklist({
     }
   }
 
+  const isHiredCandidate = candidateStageCode === "hired";
+
+  if (isHiredCandidate) {
+    return (
+      <div className="control-detail-body document-checklist-container">
+        <div className="document-buk-archive-panel">
+          <small>Documentación resguardada en BUK</small>
+          <strong>Los documentos ya no son visibles desde el ERP</strong>
+          <p>
+            Este candidato ya fue contratado. La documentación fue transferida a BUK y el ERP no mantiene
+            copias operativas en esta instancia para evitar retención innecesaria de archivos sensibles.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading && !checklist) {
     return <div className="control-detail-body"><p className="tracking-filter-caption">Cargando control documental...</p></div>;
   }
@@ -284,22 +308,6 @@ export function CandidateDocumentChecklist({
   }[checklist.semaphore];
   const documentValidation = checklist.document_validation;
   const documentValidationApproved = documentValidation.status === "approved";
-  const isHiredCandidate = candidateStageCode === "hired";
-
-  if (isHiredCandidate) {
-    return (
-      <div className="control-detail-body document-checklist-container">
-        <div className="document-buk-archive-panel">
-          <small>Documentación resguardada en BUK</small>
-          <strong>Los documentos ya no son visibles desde el ERP</strong>
-          <p>
-            Este candidato ya fue contratado. La documentación fue transferida a BUK y el ERP no mantiene
-            copias operativas en esta instancia para evitar retención innecesaria de archivos sensibles.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="control-detail-body document-checklist-container">

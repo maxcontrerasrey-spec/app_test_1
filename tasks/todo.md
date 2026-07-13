@@ -6062,3 +6062,17 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`IncentiveSetupView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/incentives/components/IncentiveSetupView.tsx:1) dejó de usar un `TextField` libre para `Contrato (opcional)` en `Reglas de monto`.
 - El formulario ahora reutiliza `setupCatalogsQuery.data.contractOptions`, mostrando una lista desplegable con los contratos reales ya vigentes en el ERP y manteniendo `Todos los contratos` como opción vacía.
 - Validación cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+## Optimización adicional de carga en Control Documental
+
+- [x] Medir latencia sostenida de `get_candidate_checklist(...)` con el candidato real afectado y separar el costo de sus helpers internos.
+- [x] Eliminar del checklist documental la resolución pesada de código de ficha BUK, dejando esa sugerencia en los flujos BUK donde sí corresponde.
+- [x] Evitar que candidatos ya contratados ejecuten la RPC de checklist antes de mostrar el mensaje de documentación resguardada en BUK.
+- [x] Aplicar la migración remota, medir nuevamente la RPC y validar TypeScript/build/auditoría antes de versionar.
+
+## Resultado de optimización adicional de carga en Control Documental
+
+- La causa raíz de la demora residual era `resolve_candidate_worker_employee_code(...)`: la medición remota mostraba ~470 ms sostenidos por llamada y el checklist solo lo usaba para inferir `Código de ficha`.
+- Se versionó la migración [`20260713210607_remove_expensive_employee_code_resolution_from_checklist.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713210607_remove_expensive_employee_code_resolution_from_checklist.sql:1), que redefine `get_candidate_checklist(...)` para exigir el código persistido en la ficha laboral y no calcular sugerencias BUK en la vista documental.
+- [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:1) ahora corta temprano para candidatos `hired`, renderizando el panel BUK sin abrir la RPC documental.
+- La medición remota post-migración con el candidato `RC-0083` bajó de ~470 ms a 53,849 ms en primer hit y entre 0,648 ms y 2,326 ms en hits posteriores.
