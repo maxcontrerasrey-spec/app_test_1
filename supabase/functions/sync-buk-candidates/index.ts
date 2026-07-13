@@ -354,7 +354,16 @@ function normalizeDocumentNumber(documentType: string | null | undefined, docume
 }
 
 function normalizeEmail(value: string | null | undefined) {
-  return (value ?? "").trim().toLowerCase();
+  const normalized = (value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/,([a-z]{2,})(\s*)$/i, ".$1");
+
+  if (!normalized) {
+    return "";
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalized) ? normalized : "";
 }
 
 function extractDatePortion(value: string | null | undefined) {
@@ -2014,6 +2023,8 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
   const worker = payload.profile.worker_file;
 
   const documentType = normalizeText(profile.document_type) === "rut" ? "rut" : "otro";
+  const email = normalizeEmail(profile.email);
+  const personalEmail = normalizeEmail(profile.personal_email);
 
   return {
     first_name: profile.first_name,
@@ -2024,8 +2035,8 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
     nationality: profile.nationality,
     country_code: normalizeText(profile.country) === "chile" || !profile.country ? "CL" : profile.country,
     civil_status: profile.marital_status,
-    email: profile.email || undefined,
-    personal_email: profile.personal_email || undefined,
+    email: email || undefined,
+    personal_email: personalEmail || undefined,
     address: profile.address_line,
     street: profile.street_name || undefined,
     street_number: profile.street_number || undefined,

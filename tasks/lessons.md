@@ -2232,3 +2232,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Subir documentos a BUK no basta si las filas del ERP quedan vivas.** Cuando `sync-buk-candidates` termina exitosamente y el snapshot contiene los documentos transferidos, el backend debe encolar una purga auditada de `candidate_documents` para no retener datos sensibles sin necesidad operacional.
 - **La purga debe depender de evidencia backend, no del frontend.** Antes de borrar, `finalize_buk_sync_job_success` debe verificar que todos los documentos con archivo del candidato están representados en `result_snapshot.documents`; si falta alguno, no se encola limpieza.
 - **No mezcles terminalidad de proceso con causa de retención.** `rejected`, `withdrawn` y `hired` requieren la misma infraestructura de borrado, pero con causas auditables distintas para que privacidad, operación y trazabilidad sigan siendo claras.
+
+## 158. BUK no debe ser el primer validador de emails de candidatos
+
+- **Un typo simple como `gmail,com` no debe llegar al proveedor.** El payload BUK debe normalizar email en backend antes de encolar y el worker debe repetir esa normalización antes de llamar la API externa.
+- **Si el email personal queda no normalizable, el backend debe bloquear la generación con error operacional claro.** Es mejor dejar la ficha en ERP como incompleta que crear jobs BUK que fallan tarde y contaminan la cola.
+- **Al reabrir jobs fallidos, reabre solo el último intento activo del candidato.** Mantener varios jobs `pending` para el mismo candidato viola el índice de unicidad y borra trazabilidad de intentos previos.

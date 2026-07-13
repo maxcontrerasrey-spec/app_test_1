@@ -2,6 +2,26 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix BUK: emails invalidos en alta de personal
+
+- [x] Confirmar candidato/job que falla por email invalido y detectar jobs atascados del lote
+- [x] Corregir normalizacion backend para no enviar emails invalidos a BUK
+- [x] Sanear el dato puntual de Felipe Monterrey y resetear jobs atascados de forma auditable
+- [x] Aplicar migracion remota y desplegar worker BUK
+- [x] Validar ERP/payload remoto, typecheck/build/migraciones y dejar versionado
+
+### Criterio de cierre
+
+- BUK no debe recibir `email` ni `email_personal` con formato invalido; un typo recuperable como `gmail,com` debe normalizarse, y un email no confiable debe bloquearse en backend antes del proveedor.
+
+### Resultado del hotfix
+
+- El error era Felipe Andres Monterrey Monterrey con `monterey1978@gmail,com` en `email` y `personal_email`.
+- La migracion [`20260713174938_harden_buk_email_normalization.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713174938_harden_buk_email_normalization.sql:1) agrega normalizacion backend, sanea el perfil de Felipe y reabre solo el ultimo job fallido.
+- [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) normaliza emails antes de crear o buscar trabajadores en BUK.
+- Verificacion remota: los 4 jobs del lote quedaron `pending`, con `invalid_personal_email_jobs = 0` e `invalid_company_email_jobs = 0`.
+- No se reproceso desde esta maquina porque falta `BUK_SYNC_INTERNAL_WEBHOOK_SECRET`/JWT de usuario local; el siguiente click en `Generar en BUK` ejecuta esos jobs ya corregidos.
+
 ## Hotfix BUK: purga documental posterior a alta efectiva
 
 - [x] Verificar si el cierre exitoso BUK elimina filas y archivos de documentos del ERP
