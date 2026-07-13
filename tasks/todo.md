@@ -6076,3 +6076,16 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - Se versionó la migración [`20260713210607_remove_expensive_employee_code_resolution_from_checklist.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713210607_remove_expensive_employee_code_resolution_from_checklist.sql:1), que redefine `get_candidate_checklist(...)` para exigir el código persistido en la ficha laboral y no calcular sugerencias BUK en la vista documental.
 - [`CandidateDocumentChecklist.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateDocumentChecklist.tsx:1) ahora corta temprano para candidatos `hired`, renderizando el panel BUK sin abrir la RPC documental.
 - La medición remota post-migración con el candidato `RC-0083` bajó de ~470 ms a 53,849 ms en primer hit y entre 0,648 ms y 2,326 ms en hits posteriores.
+
+## Dirección base derivada en ficha BUK de candidato
+
+- [x] Auditar el origen de `Dirección base`, `Calle`, `Número de calle` y `Ciudad` en la ficha BUK.
+- [x] Convertir `Dirección base` en un valor derivado visible y no editable, ordenado como `Calle, #Número, Ciudad`.
+- [x] Endurecer `upsert_candidate_person_profile(...)` para que `address_line` se derive en backend y no pueda ser sobrescrito desde cliente.
+- [x] Validar SQL remoto, TypeScript, build frontend, auditoría de migración y `git diff --check`.
+
+## Resultado de dirección base derivada en ficha BUK de candidato
+
+- [`CandidateWorkerFileForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateWorkerFileForm.tsx:1) ahora calcula `Dirección base` desde `Calle`, `Número de calle` y `Ciudad`, mostrando el número como `#...` y dejando el campo en solo lectura para todos los usuarios.
+- La migración [`20260713212530_derive_candidate_address_line_from_structured_fields.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713212530_derive_candidate_address_line_from_structured_fields.sql:1) actualiza perfiles existentes con datos estructurados y redefine `upsert_candidate_person_profile(...)` para ignorar `p_address_line` enviado por cliente.
+- La validación remota se ejecutó en transacción con `ROLLBACK`: al enviar `p_address_line = 'CLIENTE NO AUTORIZADO'`, el backend resolvió `address_line = 'Calle QA, #123, Ciudad QA'`.

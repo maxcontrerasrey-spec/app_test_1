@@ -214,11 +214,42 @@ function normalizeLegacyMaritalStatus(value: string | null | undefined) {
   }
 }
 
+function normalizeAddressPart(value: string | null | undefined) {
+  return (value ?? "").trim().replace(/\s+/g, " ");
+}
+
+function formatStreetNumberForAddress(value: string | null | undefined) {
+  const normalized = normalizeAddressPart(value).replace(/^#+\s*/, "");
+  return normalized ? `#${normalized}` : "";
+}
+
+function buildDerivedAddressLine(input: {
+  streetName?: string | null;
+  streetNumber?: string | null;
+  currentCity?: string | null;
+}) {
+  return [
+    normalizeAddressPart(input.streetName),
+    formatStreetNumberForAddress(input.streetNumber),
+    normalizeAddressPart(input.currentCity)
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 function buildPersonDraft(
   candidate: RecruitmentCaseCandidateRow,
   bukProfile: CandidateBukProfileDetails | null
 ): PersonDraft {
   const fallbackName = splitFullName(candidate.full_name);
+  const currentCity = bukProfile?.current_city ?? candidate.current_city ?? "";
+  const streetName = bukProfile?.street_name ?? "";
+  const streetNumber = bukProfile?.street_number ?? "";
+  const addressLine =
+    buildDerivedAddressLine({ streetName, streetNumber, currentCity }) ||
+    bukProfile?.address_line ||
+    candidate.address_line ||
+    "";
 
   return {
     documentType: resolveDocumentType(bukProfile, candidate),
@@ -237,12 +268,12 @@ function buildPersonDraft(
     privatePhone: bukProfile?.phone ?? candidate.phone ?? "",
     officePhone: bukProfile?.office_phone ?? "",
     country: bukProfile?.country ?? "Chile",
-    addressLine: bukProfile?.address_line ?? candidate.address_line ?? "",
+    addressLine,
     districtOrCommune: bukProfile?.district_or_commune ?? candidate.district_or_commune ?? "",
-    currentCity: bukProfile?.current_city ?? candidate.current_city ?? "",
+    currentCity,
     region: bukProfile?.region ?? candidate.region ?? "",
-    streetName: bukProfile?.street_name ?? "",
-    streetNumber: bukProfile?.street_number ?? "",
+    streetName,
+    streetNumber,
     apartmentOrOffice: bukProfile?.apartment_or_office ?? "",
     educationTitle: bukProfile?.education_title ?? "",
     educationInstitution: bukProfile?.education_institution ?? "",
@@ -421,7 +452,12 @@ export function CandidateWorkerFileForm({
     setIsPersonSaving(true);
     setPersonMessage("");
 
-    const missingFields = collectMissingFields(personDraft, requiredPersonFields);
+    const derivedAddressLine = buildDerivedAddressLine(personDraft);
+    const normalizedPersonDraft = {
+      ...personDraft,
+      addressLine: derivedAddressLine
+    };
+    const missingFields = collectMissingFields(normalizedPersonDraft, requiredPersonFields);
     const companyEmailValidation = validateOptionalCandidateEmail(personDraft.companyEmail);
     const personalEmailValidation = validateOptionalCandidateEmail(personDraft.personalEmail);
 
@@ -447,6 +483,7 @@ export function CandidateWorkerFileForm({
 
     setPersonDraft((current) => ({
       ...current,
+      addressLine: derivedAddressLine,
       companyEmail: companyEmailValidation.normalized,
       personalEmail: personalEmailValidation.normalized
     }));
@@ -467,7 +504,7 @@ export function CandidateWorkerFileForm({
       privatePhone: personDraft.privatePhone,
       officePhone: personDraft.officePhone,
       country: personDraft.country,
-      addressLine: personDraft.addressLine,
+      addressLine: derivedAddressLine,
       districtOrCommune: personDraft.districtOrCommune,
       currentCity: personDraft.currentCity,
       region: personDraft.region,
@@ -608,6 +645,7 @@ export function CandidateWorkerFileForm({
     touchedPersonEmails.companyEmail && !companyEmailValidation.isValid;
   const shouldShowPersonalEmailError =
     touchedPersonEmails.personalEmail && !personalEmailValidation.isValid;
+  const derivedAddressLine = buildDerivedAddressLine(personDraft);
 
   return (
     <div className="control-detail-body">
@@ -822,10 +860,8 @@ export function CandidateWorkerFileForm({
           <TextField
             id="candidate-address-line"
             label="Dirección base"
-            value={personDraft.addressLine}
-            onChange={(event) =>
-              setPersonDraft((current) => ({ ...current, addressLine: event.target.value }))
-            }
+            value={derivedAddressLine || personDraft.addressLine}
+            readOnly
             className="control-span-full"
           />
           <SelectField

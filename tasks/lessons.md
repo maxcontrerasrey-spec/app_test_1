@@ -2275,3 +2275,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El checklist debe responder con estado documental, no con reconciliaciones externas.** Si una vista interactiva solo necesita saber si `Código de ficha` está persistido, no debe invocar helpers que buscan códigos sugeridos en empleados BUK o payloads históricos.
 - **Las sugerencias costosas deben quedarse en la ficha BUK o en el worker de generación.** Ahí aportan valor operativo; en una pestaña de control documental solo agregan latencia y riesgo de timeout.
 - **Los estados terminales deben cortar antes de llamar RPCs pesadas.** Si un candidato ya está `hired` y los documentos fueron transferidos a BUK, la UI debe mostrar el mensaje de resguardo sin intentar reconstruir el checklist local.
+
+## 165. Un campo derivado que alimenta BUK no se protege solo con `readOnly`
+
+- **Si un dato debe ser visible pero no editable, el backend debe ignorar el valor libre del cliente.** La UI puede mostrar `readOnly`, pero el RPC debe reconstruir el valor desde sus campos fuente para evitar bypass.
+- **La fuente estructurada manda sobre el texto compuesto.** Para direcciones, `Calle`, `Número de calle` y `Ciudad` son el contrato operativo; `Dirección base` es una presentación derivada.
+- **Los backfills deben acompañar el cambio de regla.** Si el payload BUK consume un campo persistido, la migración debe corregir registros existentes con datos estructurados para que la próxima generación no dependa de abrir y guardar la ficha.
