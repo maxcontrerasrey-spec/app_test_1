@@ -2238,3 +2238,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un typo simple como `gmail,com` no debe llegar al proveedor.** El payload BUK debe normalizar email en backend antes de encolar y el worker debe repetir esa normalización antes de llamar la API externa.
 - **Si el email personal queda no normalizable, el backend debe bloquear la generación con error operacional claro.** Es mejor dejar la ficha en ERP como incompleta que crear jobs BUK que fallan tarde y contaminan la cola.
 - **Al reabrir jobs fallidos, reabre solo el último intento activo del candidato.** Mantener varios jobs `pending` para el mismo candidato viola el índice de unicidad y borra trazabilidad de intentos previos.
+
+## 159. La UI que captura datos BUK debe validar el formato antes de guardar la ficha
+
+- **No esperes al sync para detectar errores de tipeo en datos de contacto.** Si una ficha permite editar email, debe normalizar y validar antes de persistir; BUK queda como defensa externa, no como primer control.
+- **La normalización debe ser compartida entre alta inicial y ficha BUK.** Si cada formulario inventa su regex, reaparece drift entre `Alta de candidato`, `Ficha personal BUK` y el worker.
+- **Autocorrige solo errores obvios y reversibles.** Cambiar `gmail,com` a `gmail.com` es razonable; cualquier formato ambiguo debe bloquearse con mensaje visible y no guardarse silenciosamente.

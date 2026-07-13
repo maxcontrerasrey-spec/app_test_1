@@ -9,6 +9,7 @@ import {
   healthProviderRequiresPlan,
   isFonasaBukHealthProvider
 } from "../lib/candidateBukWorkerRules";
+import { normalizeCandidateEmail, validateOptionalCandidateEmail } from "../lib/candidateEmail";
 import {
   fetchCandidateBukProfile,
   updateCandidatePersonProfile,
@@ -360,6 +361,10 @@ export function CandidateWorkerFileForm({
   const [isWorkerSaving, setIsWorkerSaving] = useState(false);
   const [personMessage, setPersonMessage] = useState("");
   const [workerMessage, setWorkerMessage] = useState("");
+  const [touchedPersonEmails, setTouchedPersonEmails] = useState({
+    companyEmail: false,
+    personalEmail: false
+  });
 
   const syncDraftsFromProfile = (
     profile: CandidateBukProfileDetails | null,
@@ -369,6 +374,7 @@ export function CandidateWorkerFileForm({
     setBukProfile(profile);
     setPersonDraft(buildPersonDraft(candidateRow, profile));
     setWorkerDraft(buildWorkerDraft(candidateRow, detail, profile));
+    setTouchedPersonEmails({ companyEmail: false, personalEmail: false });
   };
 
   const updateWorkerDraft = (patch: Partial<WorkerDraft>) => {
@@ -412,12 +418,27 @@ export function CandidateWorkerFileForm({
     setPersonMessage("");
 
     const missingFields = collectMissingFields(personDraft, requiredPersonFields);
+    const companyEmailValidation = validateOptionalCandidateEmail(personDraft.companyEmail);
+    const personalEmailValidation = validateOptionalCandidateEmail(personDraft.personalEmail);
 
     if (missingFields.length > 0) {
       setPersonMessage(`Completa campos BUK obligatorios: ${missingFields.join(", ")}.`);
       setIsPersonSaving(false);
       return;
     }
+
+    if (!companyEmailValidation.isValid || !personalEmailValidation.isValid) {
+      setTouchedPersonEmails({ companyEmail: true, personalEmail: true });
+      setPersonMessage("Corrige los correos de la ficha BUK antes de guardar.");
+      setIsPersonSaving(false);
+      return;
+    }
+
+    setPersonDraft((current) => ({
+      ...current,
+      companyEmail: companyEmailValidation.normalized,
+      personalEmail: personalEmailValidation.normalized
+    }));
 
     const { error } = await updateCandidatePersonProfile({
       caseCandidateId: candidate.id,
@@ -430,8 +451,8 @@ export function CandidateWorkerFileForm({
       birthDate: personDraft.birthDate || null,
       nationality: personDraft.nationality,
       maritalStatus: personDraft.maritalStatus,
-      companyEmail: personDraft.companyEmail,
-      personalEmail: personDraft.personalEmail,
+      companyEmail: companyEmailValidation.normalized,
+      personalEmail: personalEmailValidation.normalized,
       privatePhone: personDraft.privatePhone,
       officePhone: personDraft.officePhone,
       country: personDraft.country,
@@ -570,6 +591,12 @@ export function CandidateWorkerFileForm({
 
   const healthProviderRequiresUfPlan = healthProviderRequiresPlan(workerDraft.healthProvider);
   const usesAutomaticFonasaPlan = isFonasaBukHealthProvider(workerDraft.healthProvider);
+  const companyEmailValidation = validateOptionalCandidateEmail(personDraft.companyEmail);
+  const personalEmailValidation = validateOptionalCandidateEmail(personDraft.personalEmail);
+  const shouldShowCompanyEmailError =
+    touchedPersonEmails.companyEmail && !companyEmailValidation.isValid;
+  const shouldShowPersonalEmailError =
+    touchedPersonEmails.personalEmail && !personalEmailValidation.isValid;
 
   return (
     <div className="control-detail-body">
@@ -682,18 +709,64 @@ export function CandidateWorkerFileForm({
             label="Email corporativo"
             type="email"
             value={personDraft.companyEmail}
-            onChange={(event) =>
+            hasError={shouldShowCompanyEmailError}
+            onChange={(event) => {
               setPersonDraft((current) => ({ ...current, companyEmail: event.target.value }))
-            }
+              if (
+                touchedPersonEmails.companyEmail &&
+                validateOptionalCandidateEmail(event.target.value).isValid
+              ) {
+                setPersonMessage("");
+              }
+            }}
+            onBlur={(event) => {
+              const normalizedEmail = normalizeCandidateEmail(event.target.value);
+
+              setTouchedPersonEmails((current) => ({ ...current, companyEmail: true }));
+              setPersonDraft((current) => ({
+                ...current,
+                companyEmail: normalizedEmail
+              }));
+
+              if (!validateOptionalCandidateEmail(normalizedEmail).isValid) {
+                setPersonMessage("El email corporativo no tiene un formato valido.");
+                return;
+              }
+
+              setPersonMessage("");
+            }}
           />
           <TextField
             id="candidate-personal-email"
             label="Email personal"
             type="email"
             value={personDraft.personalEmail}
-            onChange={(event) =>
+            hasError={shouldShowPersonalEmailError}
+            onChange={(event) => {
               setPersonDraft((current) => ({ ...current, personalEmail: event.target.value }))
-            }
+              if (
+                touchedPersonEmails.personalEmail &&
+                validateOptionalCandidateEmail(event.target.value).isValid
+              ) {
+                setPersonMessage("");
+              }
+            }}
+            onBlur={(event) => {
+              const normalizedEmail = normalizeCandidateEmail(event.target.value);
+
+              setTouchedPersonEmails((current) => ({ ...current, personalEmail: true }));
+              setPersonDraft((current) => ({
+                ...current,
+                personalEmail: normalizedEmail
+              }));
+
+              if (!validateOptionalCandidateEmail(normalizedEmail).isValid) {
+                setPersonMessage("El email personal no tiene un formato valido.");
+                return;
+              }
+
+              setPersonMessage("");
+            }}
           />
           <TextField
             id="candidate-private-phone"

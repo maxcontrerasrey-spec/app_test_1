@@ -16,6 +16,7 @@ import { validateRut } from "../../../shared/lib/rut";
 import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
+import { normalizeCandidateEmail, validateOptionalCandidateEmail } from "../lib/candidateEmail";
 
 type CandidateIntakeFormProps = {
   initialCaseId: string;
@@ -58,6 +59,7 @@ export function CandidateIntakeForm({
     phone: ""
   });
   const [candidateRutTouched, setCandidateRutTouched] = useState(false);
+  const [candidateEmailTouched, setCandidateEmailTouched] = useState(false);
   const [candidateFormError, setCandidateFormError] = useState("");
   const [candidateFormStatus, setCandidateFormStatus] = useState("");
   const [isCandidateSaving, setIsCandidateSaving] = useState(false);
@@ -93,6 +95,11 @@ export function CandidateIntakeForm({
 
   const shouldShowCandidateRutError =
     candidateRutTouched && Boolean(candidateForm.nationalId) && !isCandidateRutValid;
+  const candidateEmailValidation = useMemo(
+    () => validateOptionalCandidateEmail(candidateForm.email),
+    [candidateForm.email]
+  );
+  const shouldShowCandidateEmailError = candidateEmailTouched && !candidateEmailValidation.isValid;
 
   useEffect(() => {
     latestNationalIdRef.current = candidateForm.nationalId;
@@ -266,6 +273,13 @@ export function CandidateIntakeForm({
       return;
     }
 
+    if (!candidateEmailValidation.isValid) {
+      setCandidateEmailTouched(true);
+      setCandidateFormError("El correo del candidato no tiene un formato válido.");
+      setCandidateFormStatus("");
+      return;
+    }
+
     setIsCandidateSaving(true);
     setCandidateFormError("");
     setCandidateFormStatus("");
@@ -274,7 +288,7 @@ export function CandidateIntakeForm({
       caseId: candidateForm.caseId,
       nationalId: candidateForm.nationalId,
       fullName: candidateForm.fullName,
-      email: candidateForm.email,
+      email: candidateEmailValidation.normalized,
       phone: candidateForm.phone
     });
 
@@ -298,6 +312,7 @@ export function CandidateIntakeForm({
     setLastSearchedRut("");
     autofilledRutRef.current = "";
     setCandidateRutTouched(false);
+    setCandidateEmailTouched(false);
     setCandidateFormStatus(
       candidateCanBeReactivated
         ? "Candidato reactivado en el caso seleccionado."
@@ -411,13 +426,35 @@ export function CandidateIntakeForm({
         <TextField
           id="candidate-email"
           label="Correo"
+          type="email"
           value={candidateForm.email}
-          onChange={(event) =>
+          hasError={shouldShowCandidateEmailError}
+          onChange={(event) => {
             setCandidateForm((current) => ({
               ...current,
               email: event.target.value
-            }))
-          }
+            }));
+
+            if (candidateEmailTouched && validateOptionalCandidateEmail(event.target.value).isValid) {
+              setCandidateFormError("");
+            }
+          }}
+          onBlur={(event) => {
+            const normalizedEmail = normalizeCandidateEmail(event.target.value);
+
+            setCandidateEmailTouched(true);
+            setCandidateForm((current) => ({
+              ...current,
+              email: normalizedEmail
+            }));
+
+            if (!validateOptionalCandidateEmail(normalizedEmail).isValid) {
+              setCandidateFormError("El correo del candidato no tiene un formato válido.");
+              return;
+            }
+
+            setCandidateFormError("");
+          }}
         />
 
         <TextField

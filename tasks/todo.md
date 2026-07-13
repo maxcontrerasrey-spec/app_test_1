@@ -2,6 +2,24 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Mejora fichas candidato: verificador de correo
+
+- [x] Crear helper compartido para normalizar y validar emails de candidatos
+- [x] Validar correo en alta inicial de candidato antes de registrar
+- [x] Validar email corporativo y personal en ficha personal BUK antes de guardar
+- [x] Autocorregir typos recuperables como `gmail,com` al salir del campo
+- [x] Ejecutar typecheck/build y versionar el cambio
+
+### Criterio de cierre
+
+- Ninguna ficha de candidato debe guardar correos con formato inválido si el usuario los ingresó en pantalla; el error debe verse antes de llegar al sync BUK.
+
+### Resultado de la mejora
+
+- Se agregó [`candidateEmail.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/candidateEmail.ts:1) como helper compartido para normalizar y validar correos de candidatos.
+- [`CandidateIntakeForm`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx:1) valida el correo opcional antes de registrar el candidato y autocorrige dominios con coma al salir del campo.
+- [`CandidateWorkerFileForm`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateWorkerFileForm.tsx:1) valida email corporativo y personal antes de guardar la ficha BUK, marcando visualmente el campo inválido.
+
 ## Hotfix BUK: emails invalidos en alta de personal
 
 - [x] Confirmar candidato/job que falla por email invalido y detectar jobs atascados del lote
