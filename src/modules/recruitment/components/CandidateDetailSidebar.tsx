@@ -784,6 +784,7 @@ export function CandidateDetailSidebar({
       {activeTab === "documents" && (
         <CandidateDocumentChecklist
           caseCandidateId={selectedCandidate.id}
+          candidateStageCode={selectedCandidate.stage_code}
           onChecklistUpdated={onCandidateFileUpdated}
         />
       )}

@@ -32,6 +32,26 @@
 - El Certificado de AFP incorrecto de Hector Villagra debe eliminarse junto con su objeto de Storage y quedar auditado.
 - Validacion remota: Hector quedo en `document_review`, solo conserva Cedula de identidad pendiente y el objeto AFP removido quedo con conteo 0 en Storage.
 
+## Control documental: reemplazo/eliminacion auditada
+
+- [x] Crear backend para eliminar documentos de candidato con validacion de rol, audit log y retorno seguro.
+- [x] Crear Edge Function que borre Storage con service role y luego borre/resetee el documento en DB.
+- [x] Exponer acciones UI para reemplazar y eliminar documentos cargados sin dejar archivos huerfanos.
+- [x] Mostrar estado informativo cuando el candidato ya esta contratado y los documentos residen en BUK.
+- [x] Desplegar, validar typecheck/build/migraciones y versionar en `main`.
+
+### Criterio de cierre
+
+- Reemplazar o eliminar un documento debe resetear la validacion documental, degradar `ready_for_hire` si aplica, limpiar Storage y dejar auditoria.
+- Un candidato `hired` no debe mostrar documentos ERP como si fueran disponibles si ya fueron transferidos/purgados hacia BUK.
+
+### Resultado aplicado
+
+- `remove-candidate-document` valida JWT, preautoriza en DB, borra Storage con service role y ejecuta borrado/auditoria en DB.
+- Las RPCs `authorize_candidate_document_removal` y `remove_candidate_document_record` quedaron ejecutables solo por `service_role`.
+- La UI permite reemplazar o eliminar documentos cargados con motivo obligatorio para eliminacion.
+- Los candidatos `hired` ven un panel informativo de documentos resguardados en BUK y no ven el checklist como disponible.
+
 ## Mejora fichas candidato: verificador de correo
 
 - [x] Crear helper compartido para normalizar y validar emails de candidatos

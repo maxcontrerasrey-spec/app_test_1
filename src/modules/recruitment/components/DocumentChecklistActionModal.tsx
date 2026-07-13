@@ -3,7 +3,7 @@ import type { CandidateDocumentRow } from "../services/documentChecklistApi";
 
 type DocumentChecklistActionModalProps = {
   isOpen: boolean;
-  mode: "upload" | "review" | "approve_validation";
+  mode: "upload" | "review" | "approve_validation" | "delete";
   title: string;
   description: string;
   confirmLabel: string;
@@ -149,7 +149,7 @@ export function DocumentChecklistActionModal({
           </button>
           <button
             type="button"
-            className="soft-primary-button approval-button-approve"
+            className={`soft-primary-button ${mode === "delete" ? "approval-button-reject" : "approval-button-approve"}`}
             onClick={() => void handleConfirm()}
             disabled={isSubmitting}
           >

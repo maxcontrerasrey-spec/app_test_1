@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import {
   fetchCandidateChecklist,
   uploadCandidateDocument,
+  removeCandidateDocument,
   reviewCandidateDocument,
   approveCandidateDocumentation,
   type CandidateChecklistResult,
@@ -15,15 +16,18 @@ type ChecklistModalState =
   | { mode: "closed" }
   | { mode: "upload"; document: CandidateDocumentRow }
   | { mode: "review"; document: CandidateDocumentRow; status: "approved" | "rejected" }
+  | { mode: "delete"; document: CandidateDocumentRow }
   | { mode: "approve_validation" };
 
 type CandidateDocumentChecklistProps = {
   caseCandidateId: string;
+  candidateStageCode?: string | null;
   onChecklistUpdated?: () => Promise<void>;
 };
 
 export function CandidateDocumentChecklist({
   caseCandidateId,
+  candidateStageCode,
   onChecklistUpdated
 }: CandidateDocumentChecklistProps) {
   const [checklist, setChecklist] = useState<CandidateChecklistResult | null>(null);
@@ -32,6 +36,7 @@ export function CandidateDocumentChecklist({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [isApprovingValidation, setIsApprovingValidation] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDocForUpload, setSelectedDocForUpload] = useState<CandidateDocumentRow | null>(null);
   const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
@@ -54,6 +59,11 @@ export function CandidateDocumentChecklist({
   }, [caseCandidateId]);
 
   async function handleRealUploadStart(doc: CandidateDocumentRow) {
+    if (candidateStageCode === "hired") {
+      setUploadError("Los documentos de candidatos contratados están resguardados en BUK.");
+      return;
+    }
+
     setSelectedDocForUpload(doc);
     fileInputRef.current?.click();
   }
@@ -194,6 +204,36 @@ export function CandidateDocumentChecklist({
     return true;
   }
 
+  async function submitRemoveDocument(doc: CandidateDocumentRow, notes: string) {
+    setIsRemoving(true);
+    setUploadError("");
+
+    try {
+      const { error } = await removeCandidateDocument({
+        caseCandidateId,
+        documentId: doc.id,
+        reason: notes
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      await loadChecklist();
+      await onChecklistUpdated?.();
+      return true;
+    } catch (err: unknown) {
+      setUploadError(
+        err instanceof Error
+          ? err.message
+          : "No fue posible eliminar el documento."
+      );
+      return false;
+    } finally {
+      setIsRemoving(false);
+    }
+  }
+
   async function submitApproveValidation(notes: string) {
     setIsApprovingValidation(true);
     setUploadError("");
@@ -244,6 +284,22 @@ export function CandidateDocumentChecklist({
   }[checklist.semaphore];
   const documentValidation = checklist.document_validation;
   const documentValidationApproved = documentValidation.status === "approved";
+  const isHiredCandidate = candidateStageCode === "hired";
+
+  if (isHiredCandidate) {
+    return (
+      <div className="control-detail-body document-checklist-container">
+        <div className="document-buk-archive-panel">
+          <small>Documentación resguardada en BUK</small>
+          <strong>Los documentos ya no son visibles desde el ERP</strong>
+          <p>
+            Este candidato ya fue contratado. La documentación fue transferida a BUK y el ERP no mantiene
+            copias operativas en esta instancia para evitar retención innecesaria de archivos sensibles.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="control-detail-body document-checklist-container">
@@ -364,6 +420,30 @@ export function CandidateDocumentChecklist({
                 </button>
               ) : null}
 
+              {doc.file_path && doc.status !== "pending" ? (
+                <button
+                  type="button"
+                  className="soft-primary-button soft-primary-button-sm soft-primary-button-neutral"
+                  onClick={() => void handleRealUploadStart(doc)}
+                  disabled={isUploading || isRemoving}
+                >
+                  {isUploading && selectedDocForUpload?.document_type_id === doc.document_type_id
+                    ? "Reemplazando..."
+                    : "Reemplazar"}
+                </button>
+              ) : null}
+
+              {doc.file_path ? (
+                <button
+                  type="button"
+                  className="soft-primary-button soft-primary-button-sm document-danger-button"
+                  onClick={() => setModalState({ mode: "delete", document: doc })}
+                  disabled={isUploading || isRemoving}
+                >
+                  Eliminar
+                </button>
+              ) : null}
+
               {doc.status === "uploaded" ? (
                 <>
                   <button 
@@ -448,6 +528,32 @@ export function CandidateDocumentChecklist({
             modalState.status,
             notes
           );
+          if (wasSuccessful) {
+            setModalState({ mode: "closed" });
+          }
+        }}
+      />
+
+      <DocumentChecklistActionModal
+        isOpen={modalState.mode === "delete"}
+        mode="delete"
+        title="Eliminar documento"
+        description="Esta acción elimina el archivo del ERP, resetea la revisión documental y deja auditoría."
+        confirmLabel="Eliminar documento"
+        isSubmitting={isRemoving}
+        document={modalState.mode === "delete" ? modalState.document : null}
+        requireNotes
+        onClose={() => {
+          if (!isRemoving) {
+            setModalState({ mode: "closed" });
+          }
+        }}
+        onConfirm={async ({ notes }) => {
+          if (modalState.mode !== "delete") {
+            return;
+          }
+
+          const wasSuccessful = await submitRemoveDocument(modalState.document, notes);
           if (wasSuccessful) {
             setModalState({ mode: "closed" });
           }

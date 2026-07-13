@@ -2257,3 +2257,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **`ready_for_hire` representa una condición completa, no una etiqueta histórica.** Si la documentación vuelve a `pending`, el candidato debe salir automáticamente de Listo para contratar y volver a `document_review`.
 - **La reparación de documentos incorrectos debe separar SQL de Storage API.** Supabase protege `storage.objects` contra borrado directo; elimina la fila documental en SQL y retira el archivo físico con la API de Storage usando service role.
 - **La auditoría debe mostrar ambos eventos.** La baja de etapa y la eliminación del documento incorrecto son acciones distintas y deben quedar con `old_values`, `new_values` y causa explícita.
+
+## 162. Las acciones manuales sobre documentos deben vivir detrás de una frontera backend
+
+- **El frontend puede iniciar la acción, pero no debe ser la autoridad de borrado.** Eliminar documentos sensibles debe validar JWT, permisos de caso/candidato y estado operacional antes de tocar Storage.
+- **Storage se limpia con API, no con SQL directo.** Las funciones SQL validan y auditan; una Edge Function con service role elimina el objeto físico para evitar archivos huérfanos y respetar la protección nativa de Supabase.
+- **Contratado cambia la semántica documental.** Si el candidato está `hired`, el ERP debe mostrar que los documentos están resguardados en BUK y no presentar el checklist como un repositorio disponible.

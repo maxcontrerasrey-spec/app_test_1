@@ -88,6 +88,32 @@ export async function uploadCandidateDocument(input: {
   return { error: null };
 }
 
+export async function removeCandidateDocument(input: {
+  caseCandidateId: string;
+  documentId: string;
+  reason: string;
+}) {
+  if (!supabase) {
+    return { error: "Supabase no esta configurado." };
+  }
+
+  const { error } = await supabase.functions.invoke("remove-candidate-document", {
+    body: {
+      caseCandidateId: input.caseCandidateId,
+      documentId: input.documentId,
+      reason: input.reason
+    }
+  });
+
+  if (error) {
+    return {
+      error: getSupabaseErrorMessage(error, "No fue posible eliminar el documento.", "plain")
+    };
+  }
+
+  return { error: null };
+}
+
 export async function reviewCandidateDocument(input: {
   caseCandidateId: string;
   documentId: string;

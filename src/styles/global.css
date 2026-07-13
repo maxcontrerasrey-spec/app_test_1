@@ -4077,6 +4077,39 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 .document-row.document-status-uploaded { border-left: 4px solid #F59E0B; }
 .document-row.document-status-pending { border-left: 4px solid var(--border-subtle); }
 
+.document-buk-archive-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.05);
+  font-family: var(--font-text);
+  color: var(--text);
+}
+
+.document-buk-archive-panel small {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.document-buk-archive-panel strong {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  color: var(--title);
+}
+
+.document-buk-archive-panel p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .document-info {
   display: flex;
   flex-direction: column;
@@ -4128,7 +4161,20 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .document-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.document-danger-button {
+  border-color: rgba(239, 68, 68, 0.24);
+  color: #B91C1C;
+  background: rgba(254, 226, 226, 0.7);
+}
+
+.document-danger-button:hover:not(:disabled) {
+  border-color: rgba(239, 68, 68, 0.42);
+  background: rgba(254, 226, 226, 0.95);
 }
 
 .document-validation-metrics,
