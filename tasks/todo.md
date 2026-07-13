@@ -52,6 +52,24 @@
 - La UI permite reemplazar o eliminar documentos cargados con motivo obligatorio para eliminacion.
 - Los candidatos `hired` ven un panel informativo de documentos resguardados en BUK y no ven el checklist como disponible.
 
+## Hotfix control documental: timeout al cargar checklist
+
+- [x] Reproducir el error `57014 canceling statement due to statement timeout` en `get_candidate_checklist`.
+- [x] Optimizar la lectura de documentos/checklist sin relajar RLS ni permisos.
+- [x] Validar el caso de Eduardo Francisco Brito Carvajal y tiempos de respuesta remotos.
+- [x] Ejecutar typecheck/build/auditoria de migraciones y versionar en `main`.
+
+### Criterio de cierre
+
+- Abrir Control Documental no debe ejecutar consultas que escaneen candidatos/documentos fuera del caso seleccionado.
+- El checklist debe cargar en tiempo operativo y mantener la misma respuesta funcional para la UI.
+
+### Resultado aplicado
+
+- `get_candidate_checklist` ahora usa una sola agregacion de documentos en vez de dos pasadas duplicadas.
+- Se agrego indice compuesto `idx_candidate_documents_case_profile_type` para el join por caso, perfil y tipo documental.
+- Validacion remota sobre Eduardo Francisco Brito Carvajal (`RC-0083`) respondio en 508.62 ms con 17 documentos y sin timeout.
+
 ## Mejora fichas candidato: verificador de correo
 
 - [x] Crear helper compartido para normalizar y validar emails de candidatos

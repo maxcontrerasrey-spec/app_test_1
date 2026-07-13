@@ -2263,3 +2263,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El frontend puede iniciar la acción, pero no debe ser la autoridad de borrado.** Eliminar documentos sensibles debe validar JWT, permisos de caso/candidato y estado operacional antes de tocar Storage.
 - **Storage se limpia con API, no con SQL directo.** Las funciones SQL validan y auditan; una Edge Function con service role elimina el objeto físico para evitar archivos huérfanos y respetar la protección nativa de Supabase.
 - **Contratado cambia la semántica documental.** Si el candidato está `hired`, el ERP debe mostrar que los documentos están resguardados en BUK y no presentar el checklist como un repositorio disponible.
+
+## 163. Los checklists operativos deben materializar una vez su scope crítico
+
+- **No recalcules el mismo conjunto documental para JSON y métricas por separado.** En pantallas interactivas, duplicar joins sobre documentos puede terminar en timeouts cuando se combina con funciones de autorización.
+- **El índice debe calzar con la frontera de consulta real.** Para documentos de candidato, el acceso operativo se hace por `recruitment_case_id`, `candidate_profile_id` y `document_type_id`; ese orden necesita índice compuesto.
+- **La prueba de cierre debe medir el caso real.** Si el error viene de una pestaña concreta, valida la RPC con el candidato visible en pantalla y reporta tiempo de respuesta remoto.
