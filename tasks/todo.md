@@ -8,6 +8,8 @@
 - [x] Evitar que `sync-buk-candidates` avance a BUK si falta un archivo de documento aprobado
 - [x] Reparar estado documental de Hector Villagra para que vuelva a requerir carga de Cedula de identidad
 - [x] Aplicar migracion, desplegar worker, validar estado remoto y versionar
+- [x] Corregir coherencia de etapa: documentacion pendiente no puede seguir en `ready_for_hire`
+- [x] Eliminar Certificado de AFP incorrecto de Hector Villagra y su archivo en Storage
 
 ### Criterio de cierre
 
@@ -23,6 +25,12 @@
 - Hector Villagra quedo con `document_validation_status = pending`, la Cedula de identidad en `pending` y `file_path = null`.
 - Los jobs BUK asociados quedaron en `error` con mensaje claro para recargar y aprobar la Cedula antes de volver a generar.
 - `sync-buk-candidates` quedo desplegado con preflight de Storage antes de resolver o crear fichas BUK.
+
+### Correccion complementaria
+
+- Si una validacion documental se resetea mientras el candidato esta `ready_for_hire`, debe volver a `document_review`.
+- El Certificado de AFP incorrecto de Hector Villagra debe eliminarse junto con su objeto de Storage y quedar auditado.
+- Validacion remota: Hector quedo en `document_review`, solo conserva Cedula de identidad pendiente y el objeto AFP removido quedo con conteo 0 en Storage.
 
 ## Mejora fichas candidato: verificador de correo
 

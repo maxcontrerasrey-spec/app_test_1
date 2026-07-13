@@ -2251,3 +2251,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La fila documental no es suficiente evidencia si el objeto de Storage desapareció.** Antes de resolver, crear o actualizar una ficha BUK, el worker debe validar que cada documento aprobado con `file_path` existe realmente en el bucket esperado.
 - **Si falta un archivo, el error debe volver a operación como una acción concreta.** El candidato debe quedar bloqueado con mensaje de recarga/aprobación del documento, no con `Object not found` ni con una ficha parcialmente avanzada en BUK.
 - **La reparación puntual debe resetear el estado documental con audit log.** Cuando se detecta una aprobación inválida por archivo ausente, el documento vuelve a `pending`, se limpia `file_path` y se registra la causa para trazabilidad.
+
+## 161. Resetear documentación aprobada debe degradar la etapa del candidato
+
+- **`ready_for_hire` representa una condición completa, no una etiqueta histórica.** Si la documentación vuelve a `pending`, el candidato debe salir automáticamente de Listo para contratar y volver a `document_review`.
+- **La reparación de documentos incorrectos debe separar SQL de Storage API.** Supabase protege `storage.objects` contra borrado directo; elimina la fila documental en SQL y retira el archivo físico con la API de Storage usando service role.
+- **La auditoría debe mostrar ambos eventos.** La baja de etapa y la eliminación del documento incorrecto son acciones distintas y deben quedar con `old_values`, `new_values` y causa explícita.
