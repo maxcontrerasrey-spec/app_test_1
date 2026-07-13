@@ -17,6 +17,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El RUT/documento exacto es la identidad primaria para fichas historicas inactivas.** Si BUK responde que el trabajador ya existe inactivo, exigir que el email laboral antiguo sea igual al email actual puede bloquear una clonacion valida aunque el documento sea inequivoco.
 - **La relajacion debe aplicar solo a la rama inactiva.** Los duplicados activos siguen requiriendo el match estricto existente; para fichas inactivas basta con documento exacto y compatibilidad de al menos un correo conocido cuando ambos lados informan correos.
 - **Los mappings BUK no deben depender de nombres si el worker consume codigos.** Si `buk_contract_mappings.cost_unit` contiene el codigo operativo maestro pero `buk_area_code` queda nulo, `sync-buk-candidates` no puede resolver contexto de job aunque el contrato exista visualmente.
+- **Un centro de costo no prueba por si solo el area operacional si el area no tiene empleados.** `SERCOING - DRT` no tenia dotacion en cache; usar `106` por matriz historica cargo a Puerto Terrestre. La resolucion correcta debe consultar BUK y confirmar `area_id`, sub-area, padre y `cost_center` antes de crear o reparar jobs.
 
 ---
 

@@ -27,9 +27,11 @@
 ### Resultado del hotfix BUK
 
 - El bloqueo de Laura venia de una ficha BUK inactiva con RUT coincidente, pero con email laboral historico distinto; el worker ahora acepta fichas inactivas por documento exacto y compatibilidad de cualquier correo conocido.
-- El bloqueo de Cecilia venia de `SERCOING - DRT`: el mapping existia, pero `buk_area_code` estaba nulo aunque su `cost_unit` maestro era `106`.
-- La migracion [`20260713083402_restore_sercoing_drt_buk_area_code.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713083402_restore_sercoing_drt_buk_area_code.sql:1) repone `buk_area_code = 106` solo para `SERCOING - DRT` con guards por contrato, numero y `contract_id`.
-- Produccion quedo actualizada con `sync-buk-candidates` version 25 y el mapping remoto confirmado con `buk_area_code = 106`.
+- El bloqueo de Cecilia venia de `SERCOING - DRT`: el mapping existia, pero `buk_area_code` estaba nulo. La primera reposicion a `106` fue incorrecta operacionalmente porque cargo a Puerto Terrestre.
+- BUK confirmo que `SERCOING - DRT` corresponde a sub-area `7606991001:0001`, `area_id = 2942`, centro de costo `719`, division `JM`.
+- La migracion [`20260713090047_fix_sercoing_drt_buk_area_code_719.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713090047_fix_sercoing_drt_buk_area_code_719.sql:1) corrige el mapping a `buk_area_code = 719`.
+- [`sync-buk-candidates`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/sync-buk-candidates/index.ts:1) ahora soporta areas BUK sin personal contratado: si no hay empleados en cache, resuelve el `area_id` desde BUK usando los `area_ids` de cargos y el centro de costo del mapping.
+- Cecilia Caceres quedo corregida en BUK: empleado `41969`, job `142427`, `area_id = 2942`, `cost_center = 719`, rol `CONDUCTOR DE BUS`; la auditoria ERP quedo registrada en [`20260713090308_record_cecilia_caceres_sercoing_buk_job_repair.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713090308_record_cecilia_caceres_sercoing_buk_job_repair.sql:1).
 
 ## Ajuste BI Reclutamiento: selector de requerimiento total/faltante
 

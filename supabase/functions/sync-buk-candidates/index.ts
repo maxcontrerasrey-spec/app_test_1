@@ -153,6 +153,14 @@ type BukRoleRecord = {
   area_ids?: Array<number | string> | null;
 };
 
+type BukAreaRecord = {
+  id: number;
+  name: string | null;
+  costCenter: string | null;
+  parentName: string | null;
+  departmentName: string | null;
+};
+
 type CandidateSyncContext = {
   areaCode: string;
   areaName: string | null;
@@ -1438,6 +1446,113 @@ async function resolveBukRole(targetRoleName: string, areaId: number) {
   };
 }
 
+async function fetchBukAreaById(areaId: number) {
+  const response = await fetchBukJson(buildBukTenantApiUrl(`/api/v1/chile/areas/${areaId}`));
+  const rawArea =
+    response.data && typeof response.data === "object" && !Array.isArray(response.data)
+      ? response.data as Record<string, unknown>
+      : response && typeof response === "object" && !Array.isArray(response)
+        ? response as Record<string, unknown>
+        : null;
+
+  if (!rawArea) {
+    return null;
+  }
+
+  const parentArea =
+    rawArea.parent_area && typeof rawArea.parent_area === "object" && !Array.isArray(rawArea.parent_area)
+      ? rawArea.parent_area as Record<string, unknown>
+      : null;
+  const department =
+    rawArea.department && typeof rawArea.department === "object" && !Array.isArray(rawArea.department)
+      ? rawArea.department as Record<string, unknown>
+      : null;
+  const parsedAreaId = parseIntegerLike(rawArea.id);
+  if (parsedAreaId == null) {
+    return null;
+  }
+
+  return {
+    id: parsedAreaId,
+    name: typeof rawArea.name === "string" ? rawArea.name : null,
+    costCenter:
+      typeof rawArea.cost_center === "string" && rawArea.cost_center.trim()
+        ? rawArea.cost_center.trim()
+        : null,
+    parentName: typeof parentArea?.name === "string" ? parentArea.name : null,
+    departmentName: typeof department?.name === "string" ? department.name : null
+  } satisfies BukAreaRecord;
+}
+
+function matchesBukAreaContext(
+  area: BukAreaRecord,
+  areaCode: string,
+  areaName: string | null,
+  contractNumber: string | null
+) {
+  if (area.costCenter !== areaCode) {
+    return false;
+  }
+
+  const expectedArea = normalizeText(areaName);
+  const expectedContractNumber = normalizeText(contractNumber);
+  const areaLabels = [
+    area.name,
+    area.parentName,
+    area.departmentName
+  ].map((value) => normalizeText(value));
+
+  if (expectedArea && areaLabels.some((label) => label === expectedArea)) {
+    return true;
+  }
+
+  if (expectedContractNumber && areaLabels.some((label) => label === expectedContractNumber)) {
+    return true;
+  }
+
+  return false;
+}
+
+async function resolveBukAreaFromRoleAreas(
+  targetRoleName: string,
+  areaCode: string,
+  areaName: string | null,
+  contractNumber: string | null
+) {
+  const searchTerms = Array.from(
+    new Set([
+      targetRoleName.trim(),
+      ...tokenizeBukLabel(targetRoleName).slice(0, 1)
+    ].filter(Boolean))
+  );
+  const roles = (
+    await Promise.all(searchTerms.map((term) => fetchBukRolesBySearch(term)))
+  ).flat();
+  const areaIds = Array.from(
+    new Set(
+      roles.flatMap((role) =>
+        Array.isArray(role.area_ids)
+          ? role.area_ids
+              .map((area) => parseIntegerLike(area))
+              .filter((value): value is number => value != null)
+          : []
+      )
+    )
+  );
+
+  const areaDetails = (await Promise.all(areaIds.map((areaId) => fetchBukAreaById(areaId))))
+    .filter((area): area is BukAreaRecord => area !== null);
+  const matchedArea = areaDetails.find((area) =>
+    matchesBukAreaContext(area, areaCode, areaName, contractNumber)
+  );
+
+  if (!matchedArea) {
+    return null;
+  }
+
+  return matchedArea;
+}
+
 function buildBukPlanPayload(payload: BukCandidateSyncPayload) {
   const worker = payload.profile.worker_file;
   const pensionScheme = mapBukPensionScheme(worker.pension_regime);
@@ -1673,22 +1788,9 @@ async function resolveCandidateSyncContext(
   }
 
   const areaEmployees = sortLocalBukEmployees(await loadLocalBukAreaEmployees(supabase, areaCode));
-  const fallbackAreaSnapshot = areaEmployees
+  let fallbackAreaSnapshot: LocalBukJobSnapshot | null = areaEmployees
     .map((row) => extractCurrentJobSnapshot(row.raw_payload))
     .find((snapshot) => snapshot.areaId != null && snapshot.companyId != null && snapshot.costCenter);
-
-  if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
-    throw new Error(`No fue posible resolver area_id/company_id BUK desde el cache local del area operativa ${areaCode}.`);
-  }
-
-  const roleResolution = await resolveBukRole(
-    caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
-    fallbackAreaSnapshot.areaId
-  );
-
-  const matchingRoleSample = areaEmployees
-    .map((row) => extractCurrentJobSnapshot(row.raw_payload))
-    .find((snapshot) => snapshot.roleId === roleResolution.roleId);
 
   const requesterBukEmployee = await fetchBukEmployeeByEmail(hiringRequest.requester_email);
   const requesterCompanyId =
@@ -1705,6 +1807,42 @@ async function resolveCandidateSyncContext(
     requesterBukEmployee && typeof requesterBukEmployee === "object"
       ? parseIntegerLike(requesterBukEmployee.id)
       : null;
+
+  if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
+    const resolvedBukArea = await resolveBukAreaFromRoleAreas(
+      caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
+      areaCode,
+      contractMapping?.buk_area_name ?? caseRecord.contract_name ?? payload.case.contract_name,
+      hiringRequest.contract_number
+    );
+
+    if (resolvedBukArea) {
+      fallbackAreaSnapshot = {
+        areaId: resolvedBukArea.id,
+        companyId: requesterCompanyId ?? 1,
+        costCenter: resolvedBukArea.costCenter ?? areaCode,
+        roleId: null,
+        roleName: null,
+        weeklyHours: null,
+        workingScheduleType: null,
+        otherTypeOfWorkingDay: null,
+        leaderId: requesterLeaderId
+      };
+    }
+  }
+
+  if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
+    throw new Error(`No fue posible resolver area_id/company_id BUK desde el cache local o catalogo BUK del area operativa ${areaCode}.`);
+  }
+
+  const roleResolution = await resolveBukRole(
+    caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
+    fallbackAreaSnapshot.areaId
+  );
+
+  const matchingRoleSample = areaEmployees
+    .map((row) => extractCurrentJobSnapshot(row.raw_payload))
+    .find((snapshot) => snapshot.roleId === roleResolution.roleId);
 
   const worker = payload.profile.worker_file;
   return {
