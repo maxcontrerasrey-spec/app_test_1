@@ -4,6 +4,15 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 239. Una ficha BUK activa sin `current_job` creada por el ERP no es un duplicado finalizado
+
+- **Si el ERP creó o clonó una ficha BUK y el job falló después, un reintento no debe cancelar el candidato por “duplicado activo”.** La señal crítica es `code_sheet` compatible con el ERP, documento/correo coincidente y `current_job` vacío; eso debe ir a reparación idempotente.
+- **Un éxito BUK efectivo debe reconciliar el pipeline aunque el flujo posterior falle.** `buk_sync_jobs` ahora tiene un trigger que, ante éxito efectivo, marca el candidato `hired`, recalcula el caso y deja historial/audit log; las cancelaciones por duplicado activo siguen excluidas por `is_effective_buk_generation_success(...)`.
+- **Los `area_ids` de cargos BUK pueden contener IDs históricos que devuelven 404.** La resolución debe ignorar solo áreas 404 y continuar hasta encontrar el área vigente que calza con `cost_center`, nombre de área/padre/departamento y contrato.
+- **El caché local de empleados no debe ganarle al catálogo BUK cuando existe un área remota compatible.** Si BUK confirma `area_id`, las muestras locales solo pueden aportar jornada/líder/cargo cuando pertenecen a esa misma área; así se evita cargar jobs en contratos o centros incorrectos.
+
+---
+
 ## 236. Cuando un KPI total incluye una parte cubierta, ofrece el faltante en la misma tarjeta
 
 - **Si `Total` y `Cubierto` conviven como tarjetas separadas, la brecha debe quedar calculable sin explicación externa.** En BI Reclutamiento, `Cupos Solicitados = 119` incluye `Cupos Cubiertos = 25`; mostrar `Faltante = 94` dentro de la misma tarjeta reduce ambigüedad.

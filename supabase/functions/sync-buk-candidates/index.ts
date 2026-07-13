@@ -720,7 +720,21 @@ function isActiveBukEmployeeDuplicate(employee: BukEmployeeRecord, payload: BukC
 }
 
 function isErpProvisionedActiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
-  return isActiveBukEmployeeDuplicate(employee, payload) && matchesResolvedBukEmployeeCode(employee, payload);
+  return (
+    isActiveBukEmployeeDuplicate(employee, payload) &&
+    matchesResolvedBukEmployeeCode(employee, payload) &&
+    hasBukCurrentJob(employee)
+  );
+}
+
+function isRepairableActiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  return (
+    normalizeBukEmployeeStatus(employee.status) === "active" &&
+    matchesBukEmployeeDocument(employee, payload) &&
+    hasCompatibleBukEmployeeContact(employee, payload) &&
+    matchesResolvedBukEmployeeCode(employee, payload) &&
+    !hasBukCurrentJob(employee)
+  );
 }
 
 function isInactiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
@@ -1361,6 +1375,19 @@ function sortLocalBukEmployees(rows: LocalBukEmployeeRow[]) {
   });
 }
 
+function findCompleteBukJobSnapshot(
+  snapshots: LocalBukJobSnapshot[],
+  areaId: number | null
+) {
+  return snapshots.find(
+    (snapshot) =>
+      snapshot.areaId != null &&
+      snapshot.companyId != null &&
+      snapshot.costCenter &&
+      (areaId == null || snapshot.areaId === areaId)
+  );
+}
+
 function scoreBukRoleCandidate(targetRoleName: string, areaId: number, candidate: BukRoleRecord) {
   const candidateAreaIds = Array.isArray(candidate.area_ids)
     ? candidate.area_ids
@@ -1447,7 +1474,17 @@ async function resolveBukRole(targetRoleName: string, areaId: number) {
 }
 
 async function fetchBukAreaById(areaId: number) {
-  const response = await fetchBukJson(buildBukTenantApiUrl(`/api/v1/chile/areas/${areaId}`));
+  let response: Record<string, unknown>;
+  try {
+    response = await fetchBukJson(buildBukTenantApiUrl(`/api/v1/chile/areas/${areaId}`));
+  } catch (error) {
+    if (error instanceof BukApiError && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+
   const rawArea =
     response.data && typeof response.data === "object" && !Array.isArray(response.data)
       ? response.data as Record<string, unknown>
@@ -1788,9 +1825,7 @@ async function resolveCandidateSyncContext(
   }
 
   const areaEmployees = sortLocalBukEmployees(await loadLocalBukAreaEmployees(supabase, areaCode));
-  let fallbackAreaSnapshot: LocalBukJobSnapshot | null = areaEmployees
-    .map((row) => extractCurrentJobSnapshot(row.raw_payload))
-    .find((snapshot) => snapshot.areaId != null && snapshot.companyId != null && snapshot.costCenter);
+  const localAreaSnapshots = areaEmployees.map((row) => extractCurrentJobSnapshot(row.raw_payload));
 
   const requesterBukEmployee = await fetchBukEmployeeByEmail(hiringRequest.requester_email);
   const requesterCompanyId =
@@ -1808,27 +1843,34 @@ async function resolveCandidateSyncContext(
       ? parseIntegerLike(requesterBukEmployee.id)
       : null;
 
-  if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
-    const resolvedBukArea = await resolveBukAreaFromRoleAreas(
-      caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
-      areaCode,
-      contractMapping?.buk_area_name ?? caseRecord.contract_name ?? payload.case.contract_name,
-      hiringRequest.contract_number
-    );
+  const resolvedBukArea = await resolveBukAreaFromRoleAreas(
+    caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
+    areaCode,
+    contractMapping?.buk_area_name ?? caseRecord.contract_name ?? payload.case.contract_name,
+    hiringRequest.contract_number
+  );
+  const resolvedAreaSnapshot = resolvedBukArea
+    ? findCompleteBukJobSnapshot(localAreaSnapshots, resolvedBukArea.id)
+    : null;
+  let fallbackAreaSnapshot: LocalBukJobSnapshot | null =
+    resolvedAreaSnapshot ?? findCompleteBukJobSnapshot(localAreaSnapshots, null) ?? null;
 
-    if (resolvedBukArea) {
-      fallbackAreaSnapshot = {
-        areaId: resolvedBukArea.id,
-        companyId: requesterCompanyId ?? 1,
-        costCenter: resolvedBukArea.costCenter ?? areaCode,
-        roleId: null,
-        roleName: null,
-        weeklyHours: null,
-        workingScheduleType: null,
-        otherTypeOfWorkingDay: null,
-        leaderId: requesterLeaderId
-      };
-    }
+  if (resolvedBukArea) {
+    fallbackAreaSnapshot = {
+      areaId: resolvedBukArea.id,
+      companyId: resolvedAreaSnapshot?.companyId ?? requesterCompanyId ?? fallbackAreaSnapshot?.companyId ?? 1,
+      costCenter: resolvedBukArea.costCenter ?? resolvedAreaSnapshot?.costCenter ?? areaCode,
+      roleId: resolvedAreaSnapshot?.roleId ?? null,
+      roleName: resolvedAreaSnapshot?.roleName ?? null,
+      weeklyHours: resolvedAreaSnapshot?.weeklyHours ?? null,
+      workingScheduleType: resolvedAreaSnapshot?.workingScheduleType ?? null,
+      otherTypeOfWorkingDay: resolvedAreaSnapshot?.otherTypeOfWorkingDay ?? null,
+      leaderId: requesterLeaderId ?? resolvedAreaSnapshot?.leaderId ?? null
+    };
+  }
+
+  if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
+    fallbackAreaSnapshot = findCompleteBukJobSnapshot(localAreaSnapshots, null);
   }
 
   if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
@@ -1842,7 +1884,11 @@ async function resolveCandidateSyncContext(
 
   const matchingRoleSample = areaEmployees
     .map((row) => extractCurrentJobSnapshot(row.raw_payload))
-    .find((snapshot) => snapshot.roleId === roleResolution.roleId);
+    .find(
+      (snapshot) =>
+        snapshot.areaId === fallbackAreaSnapshot.areaId &&
+        snapshot.roleId === roleResolution.roleId
+    );
 
   const worker = payload.profile.worker_file;
   return {
@@ -2119,6 +2165,18 @@ async function resolveBukEmployeeForSync(
         employeePayload: null,
         resolution: "reused_existing_active",
         matchedEmployee: erpProvisionedEmployee
+      } as const;
+    }
+
+    const repairableActiveEmployee = matchingEmployees.find((employee) =>
+      isRepairableActiveBukEmployee(employee, payload)
+    );
+    if (repairableActiveEmployee) {
+      return {
+        employeeId: String(repairableActiveEmployee.id),
+        employeePayload: null,
+        resolution: "reused_incomplete_existing_active",
+        matchedEmployee: repairableActiveEmployee
       } as const;
     }
 

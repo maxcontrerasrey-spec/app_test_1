@@ -2,6 +2,24 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix BUK: Bárbara Borda ficha activa sin contrato
+
+- [x] Buscar registro ERP de Bárbara Borda por nombre/RUT y confirmar caso/candidato/workfile
+- [x] Auditar jobs BUK previos y distinguir éxito efectivo de cancelación por duplicado activo
+- [x] Corregir `sync-buk-candidates` para reparar fichas activas creadas por ERP sin `current_job`
+- [x] Endurecer resolución de área/cargo para validar `area_id` desde BUK y tolerar áreas históricas 404
+- [x] Agregar trigger de reconciliación para que todo éxito efectivo BUK marque el candidato como contratado con historial/auditoría
+- [x] Reprocesar job de Bárbara con el worker productivo y validar ERP + snapshot BUK
+
+### Resultado del hotfix BUK
+
+- Bárbara Scarleth Borda González existía en ERP como `RC-0034`, `MANTENCION CALAMA CNN`, `SECRETARIO TECNICO`, pero había quedado `withdrawn` por un reintento que trató la ficha BUK `41907` como duplicado activo.
+- La ficha BUK `41907` fue creada por el ERP, estaba activa y sin `current_job`; ahora el worker la clasifica como `reused_incomplete_existing_active` y completa el setup.
+- El job BUK quedó exitoso: `buk_employee_id = 41907`, `buk_job_id = 142459`, `area_id = 1630`, `cost_center = 405`, `role_id = 52`, `wage = 0`.
+- El ERP quedó reconciliado: el candidato está `hired`, el caso `RC-0034` quedó `filled`, con historial y audit log de la reparación.
+- La migración [`20260713094508_reconcile_effective_buk_sync_success.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713094508_reconcile_effective_buk_sync_success.sql:1) agrega una red de seguridad para no perder candidatos cuando BUK sí queda generado.
+- La migración [`20260713094630_repair_barbara_borda_buk_generation.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713094630_repair_barbara_borda_buk_generation.sql:1) deja la reparación puntual versionada y auditada.
+
 ## Ajuste BI Reclutamiento: filtro superior por cargo solicitado
 
 - [x] Agregar filtro `Cargo` en la cabecera de BI Reclutamiento
