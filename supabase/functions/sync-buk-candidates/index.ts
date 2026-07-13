@@ -2246,6 +2246,46 @@ function buildBukDocumentFileName(payload: BukCandidateSyncPayload, originalName
   return `${stem || "documento"}_${documentNumber}${extension}`;
 }
 
+async function assertCandidateDocumentFilesExist(
+  supabase: ReturnType<typeof createClient>,
+  payload: BukCandidateSyncPayload,
+  alreadyUploadedDocumentIds: Set<string>
+) {
+  const missingDocuments: string[] = [];
+
+  for (const document of payload.documents) {
+    if (alreadyUploadedDocumentIds.has(document.id) || !document.file_path) {
+      continue;
+    }
+
+    const pathParts = document.file_path.split("/");
+    const fileName = pathParts.pop();
+    const directory = pathParts.join("/");
+
+    if (!fileName) {
+      missingDocuments.push(document.document_name);
+      continue;
+    }
+
+    const { data, error } = await supabase.storage
+      .from("candidate-docs")
+      .list(directory, {
+        search: fileName,
+        limit: 1
+      });
+
+    if (error || !data?.some((entry) => entry.name === fileName)) {
+      missingDocuments.push(document.document_name);
+    }
+  }
+
+  if (missingDocuments.length > 0) {
+    throw new Error(
+      `No es posible generar en BUK porque faltan archivos en Supabase para documentos aprobados: ${missingDocuments.join(", ")}. Vuelve a cargar y aprobar esos documentos antes de generar.`
+    );
+  }
+}
+
 async function processDocuments(
   supabase: ReturnType<typeof createClient>,
   payload: BukCandidateSyncPayload,
@@ -2508,6 +2548,7 @@ Deno.serve(async (req) => {
 
       try {
         const payload = resolveAuthorizedPayload(job);
+        await assertCandidateDocumentFilesExist(supabase, payload, alreadyUploadedDocumentIds);
         const resolvedEmployee = await resolveBukEmployeeForSync(payload, locations);
         const employeeId = resolvedEmployee.employeeId;
         jobResultSnapshot.employee = {

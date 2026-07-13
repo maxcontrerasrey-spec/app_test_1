@@ -2,6 +2,28 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix BUK: documento aprobado sin archivo en Storage
+
+- [x] Confirmar candidato, job y documento faltante que provoca `Object not found`
+- [x] Evitar que `sync-buk-candidates` avance a BUK si falta un archivo de documento aprobado
+- [x] Reparar estado documental de Hector Villagra para que vuelva a requerir carga de Cedula de identidad
+- [x] Aplicar migracion, desplegar worker, validar estado remoto y versionar
+
+### Criterio de cierre
+
+- Un candidato con fila documental aprobada pero archivo ausente no debe permanecer en cola BUK ni crear/reusar fichas antes de que se re-cargue el documento.
+
+### Resultado esperado
+
+- La cedula de Hector Villagra vuelve a estado pendiente si el objeto no existe en Storage, dejando audit log y mensaje operacional claro.
+- El worker BUK valida la existencia fisica de todos los documentos antes de resolver o crear ficha en BUK.
+
+### Resultado aplicado
+
+- Hector Villagra quedo con `document_validation_status = pending`, la Cedula de identidad en `pending` y `file_path = null`.
+- Los jobs BUK asociados quedaron en `error` con mensaje claro para recargar y aprobar la Cedula antes de volver a generar.
+- `sync-buk-candidates` quedo desplegado con preflight de Storage antes de resolver o crear fichas BUK.
+
 ## Mejora fichas candidato: verificador de correo
 
 - [x] Crear helper compartido para normalizar y validar emails de candidatos

@@ -2245,3 +2245,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La normalización debe ser compartida entre alta inicial y ficha BUK.** Si cada formulario inventa su regex, reaparece drift entre `Alta de candidato`, `Ficha personal BUK` y el worker.
 - **Autocorrige solo errores obvios y reversibles.** Cambiar `gmail,com` a `gmail.com` es razonable; cualquier formato ambiguo debe bloquearse con mensaje visible y no guardarse silenciosamente.
 - **Un bloqueo de formulario debe explicar la causa concreta.** Marcar el campo en rojo no basta; el mensaje debe decir qué regla falló y cómo corregirlo para que operación no tenga que adivinar.
+
+## 160. Un documento aprobado sin archivo físico no puede llegar al proveedor externo
+
+- **La fila documental no es suficiente evidencia si el objeto de Storage desapareció.** Antes de resolver, crear o actualizar una ficha BUK, el worker debe validar que cada documento aprobado con `file_path` existe realmente en el bucket esperado.
+- **Si falta un archivo, el error debe volver a operación como una acción concreta.** El candidato debe quedar bloqueado con mensaje de recarga/aprobación del documento, no con `Object not found` ni con una ficha parcialmente avanzada en BUK.
+- **La reparación puntual debe resetear el estado documental con audit log.** Cuando se detecta una aprobación inválida por archivo ausente, el documento vuelve a `pending`, se limpia `file_path` y se registra la causa para trazabilidad.
