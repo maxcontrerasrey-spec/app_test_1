@@ -17,6 +17,20 @@
 - El filtro `Cargo` afecta KPIs, gráficos de cupos, etapas, movilidad y `Pulso Operativo` desde el backend.
 - Los desplegables de filtros usan un panel compacto con fuente más pequeña y estilo consistente con navegación superior.
 
+## Hotfix BUK: fichas inactivas y mapping SERCOING - DRT
+
+- [x] Auditar los jobs fallidos de Laura Lopez y Cecilia Caceres contra BUK/cache local
+- [x] Corregir `sync-buk-candidates` para resolver fichas BUK inactivas por RUT exacto sin bloquearse por emails historicos
+- [x] Restaurar `buk_area_code` de `SERCOING - DRT` desde su `cost_unit` maestro con guards estrictos
+- [x] Aplicar migracion remota, desplegar worker y validar TypeScript/build/diff check
+
+### Resultado del hotfix BUK
+
+- El bloqueo de Laura venia de una ficha BUK inactiva con RUT coincidente, pero con email laboral historico distinto; el worker ahora acepta fichas inactivas por documento exacto y compatibilidad de cualquier correo conocido.
+- El bloqueo de Cecilia venia de `SERCOING - DRT`: el mapping existia, pero `buk_area_code` estaba nulo aunque su `cost_unit` maestro era `106`.
+- La migracion [`20260713083402_restore_sercoing_drt_buk_area_code.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713083402_restore_sercoing_drt_buk_area_code.sql:1) repone `buk_area_code = 106` solo para `SERCOING - DRT` con guards por contrato, numero y `contract_id`.
+- Produccion quedo actualizada con `sync-buk-candidates` version 25 y el mapping remoto confirmado con `buk_area_code = 106`.
+
 ## Ajuste BI Reclutamiento: selector de requerimiento total/faltante
 
 - [x] Agregar pestañas internas a `Cupos Solicitados` con `Total` y `Faltante`

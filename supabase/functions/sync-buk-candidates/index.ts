@@ -649,6 +649,36 @@ function matchesBukEmployeeIdentity(employee: BukEmployeeRecord, payload: BukCan
   );
 }
 
+function matchesBukEmployeeDocument(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  const targetDocumentNumber = normalizeDocumentNumber(
+    payload.profile.document_type,
+    payload.profile.document_number
+  );
+  const employeeDocumentNumber = normalizeDocumentNumber(
+    payload.profile.document_type,
+    employee.document_number ?? employee.rut ?? null
+  );
+
+  return Boolean(targetDocumentNumber) && employeeDocumentNumber === targetDocumentNumber;
+}
+
+function hasCompatibleBukEmployeeContact(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  const targetEmails = [
+    normalizeEmail(payload.profile.email),
+    normalizeEmail(payload.profile.personal_email)
+  ].filter(Boolean);
+  const employeeEmails = [
+    normalizeEmail(employee.email),
+    normalizeEmail(employee.personal_email)
+  ].filter(Boolean);
+
+  if (targetEmails.length === 0 || employeeEmails.length === 0) {
+    return true;
+  }
+
+  return targetEmails.some((targetEmail) => employeeEmails.includes(targetEmail));
+}
+
 function hasBukCurrentJob(employee: BukEmployeeRecord) {
   return Boolean(
     employee.current_job &&
@@ -688,7 +718,8 @@ function isErpProvisionedActiveBukEmployee(employee: BukEmployeeRecord, payload:
 function isInactiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
   return (
     normalizeBukEmployeeStatus(employee.status) === "inactive" &&
-    matchesBukEmployeeIdentity(employee, payload)
+    matchesBukEmployeeDocument(employee, payload) &&
+    hasCompatibleBukEmployeeContact(employee, payload)
   );
 }
 

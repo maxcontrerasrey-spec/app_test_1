@@ -12,6 +12,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 238. Un duplicado BUK inactivo debe resolverse por documento, no por email laboral historico exacto
+
+- **El RUT/documento exacto es la identidad primaria para fichas historicas inactivas.** Si BUK responde que el trabajador ya existe inactivo, exigir que el email laboral antiguo sea igual al email actual puede bloquear una clonacion valida aunque el documento sea inequivoco.
+- **La relajacion debe aplicar solo a la rama inactiva.** Los duplicados activos siguen requiriendo el match estricto existente; para fichas inactivas basta con documento exacto y compatibilidad de al menos un correo conocido cuando ambos lados informan correos.
+- **Los mappings BUK no deben depender de nombres si el worker consume codigos.** Si `buk_contract_mappings.cost_unit` contiene el codigo operativo maestro pero `buk_area_code` queda nulo, `sync-buk-candidates` no puede resolver contexto de job aunque el contrato exista visualmente.
+
+---
+
 ## 237. Un filtro BI visible debe existir en el contrato backend de todas las series que promete controlar
 
 - **Agregar un selector solo en React genera una falsa sensación de control si el RPC no recibe esa dimensión.** En BI Reclutamiento, `Cargo` debía viajar como `p_job_position_names` al dashboard y al timeline diario.
