@@ -2226,3 +2226,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si la pantalla ya consume una RPC `SECURITY DEFINER`, no mantengas `SELECT` directo sobre las tablas que alimentan esa RPC.** Eso evita que un cliente alternativo salte el shape, paginación y filtros del contrato backend.
 - **Los audit logs de módulo deben salir solo dentro de respuestas autorizadas y acotadas.** Un perfil de acreditación puede incluir su bitácora relevante; la tabla completa no debe quedar como API separada.
 - **Las Edge Functions con service role no necesitan grants a `authenticated` sobre tablas base.** Validan JWT y permisos en su entrada; el acceso interno privilegiado no debe confundirse con permisos de cliente.
+
+## 157. Un alta efectiva en BUK debe cerrar también la retención documental en Supabase
+
+- **Subir documentos a BUK no basta si las filas del ERP quedan vivas.** Cuando `sync-buk-candidates` termina exitosamente y el snapshot contiene los documentos transferidos, el backend debe encolar una purga auditada de `candidate_documents` para no retener datos sensibles sin necesidad operacional.
+- **La purga debe depender de evidencia backend, no del frontend.** Antes de borrar, `finalize_buk_sync_job_success` debe verificar que todos los documentos con archivo del candidato están representados en `result_snapshot.documents`; si falta alguno, no se encola limpieza.
+- **No mezcles terminalidad de proceso con causa de retención.** `rejected`, `withdrawn` y `hired` requieren la misma infraestructura de borrado, pero con causas auditables distintas para que privacidad, operación y trazabilidad sigan siendo claras.

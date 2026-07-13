@@ -2,6 +2,28 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix BUK: purga documental posterior a alta efectiva
+
+- [x] Verificar si el cierre exitoso BUK elimina filas y archivos de documentos del ERP
+- [x] Medir en producción candidatos con éxito efectivo BUK y documentos remanentes
+- [x] Extender la cola de limpieza para altas `hired` confirmadas por BUK sin romper terminales `rejected/withdrawn`
+- [x] Encolar purga documental desde `finalize_buk_sync_job_success` solo cuando los documentos del candidato quedaron cargados en BUK
+- [x] Ajustar la Edge Function de purga para aceptar `hired` como causa interna auditada
+- [x] Aplicar migración remota, desplegar función si cambia y ejecutar validaciones
+- [x] Ejecutar limpieza controlada de remanentes confirmados y registrar resultado
+
+### Criterio de cierre
+
+- Todo éxito efectivo BUK con documentos cargados debe dejar una cola auditable de purga documental, sin depender del frontend ni borrar documentos si el upload BUK no terminó correctamente.
+
+### Resultado del hotfix
+
+- Se confirmó que el sync BUK sí subía documentos a BUK y removía los objetos de storage durante el upload, pero no eliminaba las filas `candidate_documents` del ERP para candidatos `hired`.
+- La migración [`20260713114531_purge_candidate_documents_after_effective_buk_success.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713114531_purge_candidate_documents_after_effective_buk_success.sql:1) amplía la cola documental a `hired` y encola purga desde `finalize_buk_sync_job_success` solo si todos los documentos con archivo quedaron representados en el snapshot BUK.
+- La Edge Function [`purge-candidate-documents`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/purge-candidate-documents/index.ts:1) acepta ahora `hired` como causa interna auditada, manteniendo validación por candidato/caso/perfil antes de borrar.
+- Se procesó la limpieza histórica elegible: 19 jobs `hired` exitosos, 282 filas `candidate_documents` removidas y 282 rutas de storage depuradas.
+- Smoke remoto posterior: `effective_buk_candidates_with_remaining_documents = 0`; `finalize_buk_sync_job_success` queda ejecutable solo por `service_role` y `postgres`.
+
 ## Auditoría enterprise global ERP post hotfix BUK
 
 - [x] Auditar estado del repo, scripts de validación y superficie de configuración sensible

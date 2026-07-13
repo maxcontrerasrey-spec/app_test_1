@@ -12,7 +12,7 @@ type CleanupJobRow = {
   recruitment_case_candidate_id: string;
   recruitment_case_id: string;
   candidate_profile_id: string;
-  terminal_stage: "rejected" | "withdrawn";
+  terminal_stage: "rejected" | "withdrawn" | "hired";
   requested_by: string;
   attempts: number;
 };
