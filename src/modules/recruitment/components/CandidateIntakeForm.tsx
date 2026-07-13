@@ -16,7 +16,11 @@ import { validateRut } from "../../../shared/lib/rut";
 import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
-import { normalizeCandidateEmail, validateOptionalCandidateEmail } from "../lib/candidateEmail";
+import {
+  getCandidateEmailValidationMessage,
+  normalizeCandidateEmail,
+  validateOptionalCandidateEmail
+} from "../lib/candidateEmail";
 
 type CandidateIntakeFormProps = {
   initialCaseId: string;
@@ -275,7 +279,9 @@ export function CandidateIntakeForm({
 
     if (!candidateEmailValidation.isValid) {
       setCandidateEmailTouched(true);
-      setCandidateFormError("El correo del candidato no tiene un formato válido.");
+      setCandidateFormError(
+        getCandidateEmailValidationMessage("El correo del candidato", candidateForm.email)
+      );
       setCandidateFormStatus("");
       return;
     }
@@ -449,7 +455,9 @@ export function CandidateIntakeForm({
             }));
 
             if (!validateOptionalCandidateEmail(normalizedEmail).isValid) {
-              setCandidateFormError("El correo del candidato no tiene un formato válido.");
+              setCandidateFormError(
+                getCandidateEmailValidationMessage("El correo del candidato", normalizedEmail)
+              );
               return;
             }
 

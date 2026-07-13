@@ -8,6 +8,7 @@
 - [x] Validar correo en alta inicial de candidato antes de registrar
 - [x] Validar email corporativo y personal en ficha personal BUK antes de guardar
 - [x] Autocorregir typos recuperables como `gmail,com` al salir del campo
+- [x] Mostrar motivo concreto del bloqueo cuando el formato sigue invalido
 - [x] Ejecutar typecheck/build y versionar el cambio
 
 ### Criterio de cierre
@@ -19,6 +20,7 @@
 - Se agregó [`candidateEmail.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/lib/candidateEmail.ts:1) como helper compartido para normalizar y validar correos de candidatos.
 - [`CandidateIntakeForm`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateIntakeForm.tsx:1) valida el correo opcional antes de registrar el candidato y autocorrige dominios con coma al salir del campo.
 - [`CandidateWorkerFileForm`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateWorkerFileForm.tsx:1) valida email corporativo y personal antes de guardar la ficha BUK, marcando visualmente el campo inválido.
+- El mensaje de bloqueo indica que el correo debe incluir usuario, `@` y dominio, y pide revisar espacios, comas o puntos mal ubicados.
 
 ## Hotfix BUK: emails invalidos en alta de personal
 

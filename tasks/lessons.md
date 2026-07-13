@@ -2244,3 +2244,4 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No esperes al sync para detectar errores de tipeo en datos de contacto.** Si una ficha permite editar email, debe normalizar y validar antes de persistir; BUK queda como defensa externa, no como primer control.
 - **La normalización debe ser compartida entre alta inicial y ficha BUK.** Si cada formulario inventa su regex, reaparece drift entre `Alta de candidato`, `Ficha personal BUK` y el worker.
 - **Autocorrige solo errores obvios y reversibles.** Cambiar `gmail,com` a `gmail.com` es razonable; cualquier formato ambiguo debe bloquearse con mensaje visible y no guardarse silenciosamente.
+- **Un bloqueo de formulario debe explicar la causa concreta.** Marcar el campo en rojo no basta; el mensaje debe decir qué regla falló y cómo corregirlo para que operación no tenga que adivinar.

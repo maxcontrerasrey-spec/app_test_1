@@ -23,3 +23,16 @@ export function validateOptionalCandidateEmail(value: string | null | undefined)
     isValid: !normalized || isValidCandidateEmail(normalized)
   };
 }
+
+export function getCandidateEmailValidationMessage(
+  label: string,
+  value: string | null | undefined
+) {
+  const rawValue = (value ?? "").trim();
+
+  if (!rawValue || isValidCandidateEmail(rawValue)) {
+    return "";
+  }
+
+  return `${label} no tiene un formato valido. Debe incluir usuario, @ y dominio, por ejemplo nombre@dominio.com. Revisa espacios, comas o puntos mal ubicados.`;
+}

@@ -9,7 +9,11 @@ import {
   healthProviderRequiresPlan,
   isFonasaBukHealthProvider
 } from "../lib/candidateBukWorkerRules";
-import { normalizeCandidateEmail, validateOptionalCandidateEmail } from "../lib/candidateEmail";
+import {
+  getCandidateEmailValidationMessage,
+  normalizeCandidateEmail,
+  validateOptionalCandidateEmail
+} from "../lib/candidateEmail";
 import {
   fetchCandidateBukProfile,
   updateCandidatePersonProfile,
@@ -429,7 +433,14 @@ export function CandidateWorkerFileForm({
 
     if (!companyEmailValidation.isValid || !personalEmailValidation.isValid) {
       setTouchedPersonEmails({ companyEmail: true, personalEmail: true });
-      setPersonMessage("Corrige los correos de la ficha BUK antes de guardar.");
+      setPersonMessage(
+        [
+          getCandidateEmailValidationMessage("El email corporativo", personDraft.companyEmail),
+          getCandidateEmailValidationMessage("El email personal", personDraft.personalEmail)
+        ]
+          .filter(Boolean)
+          .join(" ")
+      );
       setIsPersonSaving(false);
       return;
     }
@@ -729,7 +740,9 @@ export function CandidateWorkerFileForm({
               }));
 
               if (!validateOptionalCandidateEmail(normalizedEmail).isValid) {
-                setPersonMessage("El email corporativo no tiene un formato valido.");
+                setPersonMessage(
+                  getCandidateEmailValidationMessage("El email corporativo", normalizedEmail)
+                );
                 return;
               }
 
@@ -761,7 +774,9 @@ export function CandidateWorkerFileForm({
               }));
 
               if (!validateOptionalCandidateEmail(normalizedEmail).isValid) {
-                setPersonMessage("El email personal no tiene un formato valido.");
+                setPersonMessage(
+                  getCandidateEmailValidationMessage("El email personal", normalizedEmail)
+                );
                 return;
               }
 
