@@ -4,6 +4,15 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 240. En Postgres/Supabase, crear `SECURITY DEFINER` sin revocar `PUBLIC` abre una superficie RPC aunque la función tenga checks internos
+
+- **El grant default de funciones es parte de la superficie de ataque.** Una función `SECURITY DEFINER` en `public` puede quedar ejecutable por `PUBLIC`, lo que implica también `anon`, aunque el desarrollador solo haya pensado en usuarios autenticados.
+- **La corrección segura no es relajar RLS ni borrar funciones históricas.** Revoca `PUBLIC/anon` sobre funciones privilegiadas, conserva grants explícitos para `authenticated/service_role` donde el contrato vivo lo requiere, y deja funciones trigger sin grants interactivos.
+- **El smoke importante es sobre el catálogo vivo, no solo sobre archivos SQL.** Después del hardening, verifica `has_function_privilege('anon', oid, 'EXECUTE') = false` para `SECURITY DEFINER` y que no existan tablas públicas expuestas sin RLS.
+- **Errores de integraciones y logs de Edge Functions deben ser sanitizados en la frontera.** No devuelvas cuerpos crudos de proveedores ni mensajes internos al cliente; conserva el detalle solo donde exista auditoría backend controlada.
+
+---
+
 ## 239. Una ficha BUK activa sin `current_job` creada por el ERP no es un duplicado finalizado
 
 - **Si el ERP creó o clonó una ficha BUK y el job falló después, un reintento no debe cancelar el candidato por “duplicado activo”.** La señal crítica es `code_sheet` compatible con el ERP, documento/correo coincidente y `current_job` vacío; eso debe ir a reparación idempotente.

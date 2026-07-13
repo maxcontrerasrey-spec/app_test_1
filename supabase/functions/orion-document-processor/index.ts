@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const userId = await requireAuthorizedOrionUser(supabase, req.headers.get("Authorization"));
+    await requireAuthorizedOrionUser(supabase, req.headers.get("Authorization"));
     const { filePath: rawFilePath } = await req.json();
     const filePath = normalizeStoragePath(rawFilePath);
 
@@ -129,8 +129,6 @@ Deno.serve(async (req) => {
         headers: { "Content-Type": "application/json" }
       });
     }
-
-    console.log(`Procesando documento ORION autorizado para usuario ${userId}`);
 
     // 1. Descargar archivo
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -164,11 +162,8 @@ Deno.serve(async (req) => {
       throw new Error("No se pudo extraer texto del documento");
     }
 
-    console.log(`Texto extraído, longitud: ${cleanText.length} caracteres`);
-
     // 3. Cortar en fragmentos (Chunks)
     const chunks = chunkText(cleanText, 1000, 200);
-    console.log(`Se generaron ${chunks.length} fragmentos`);
 
     // 4. Generar Vectores (Embeddings) e insertar
     const aiSession = new (getSupabaseAiRuntime().ai.Session)("gte-small");
@@ -187,7 +182,7 @@ Deno.serve(async (req) => {
         });
 
       if (insertError) {
-        console.error("Error insertando chunk:", insertError);
+        console.error("Error insertando chunk ORION");
       } else {
         insertedCount++;
       }
@@ -207,7 +202,7 @@ Deno.serve(async (req) => {
       }
     );
   } catch (err: unknown) {
-    console.error("Error procesando documento:", err);
+    console.error("Error procesando documento ORION");
     const message = toErrorMessage(err);
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
     return new Response(

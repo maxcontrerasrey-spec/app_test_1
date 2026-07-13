@@ -2,6 +2,28 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Auditoría enterprise global ERP post hotfix BUK
+
+- [x] Auditar estado del repo, scripts de validación y superficie de configuración sensible
+- [x] Escanear secretos, usos de `service_role`, `SECURITY DEFINER`, grants/RLS y endpoints críticos
+- [x] Revisar deuda real de código con foco en cambios mínimos, auditables y sin relajar permisos
+- [x] Corregir hallazgos seguros y documentar explícitamente riesgos no corregibles sin mayor alcance
+- [x] Ejecutar validaciones locales y remotas disponibles
+- [x] Commit y push a `main` con árbol limpio
+
+### Criterio de cierre
+
+- El cierre debe demostrar que no se introdujeron cambios inseguros, que no quedan archivos temporales, que los checks pasan y que cualquier ajuste aplicado reduce superficie de riesgo sin romper producción.
+
+### Resultado de la auditoría enterprise global
+
+- Se corrigió la vulnerabilidad de supply chain reportada por `npm audit`: `echarts` subió a `6.1.0` y `npm audit --omit=dev` queda sin vulnerabilidades.
+- Se aplicó [`20260713153606_harden_security_definer_execute_surface.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713153606_harden_security_definer_execute_surface.sql:1), que revoca ejecución `PUBLIC/anon` sobre funciones `SECURITY DEFINER`, conserva `authenticated/service_role` para funciones no-trigger y configura default privileges más restrictivos.
+- Smoke remoto posterior: `security_definer_anon_execute_count = 0`, `security_definer_public_execute_count = 0`, y `public_tables_without_rls_exposed = []`.
+- Se limpiaron respuestas/logs en Edge Functions para no devolver cuerpos crudos de proveedor ni mensajes internos: `orion-document-processor`, `hiring-transactional-email`, `orion-chat` y `check_buk_candidate`.
+- Las cuatro Edge Functions endurecidas quedaron desplegadas en Supabase; smokes negativos responden `401` sin detalle interno.
+- El auditor Supabase local queda sin hallazgos críticos; conserva warnings históricos de migraciones antiguas que requieren saneamiento progresivo por dominio, no una revocación global improvisada.
+
 ## Hotfix BUK: Bárbara Borda ficha activa sin contrato
 
 - [x] Buscar registro ERP de Bárbara Borda por nombre/RUT y confirmar caso/candidato/workfile

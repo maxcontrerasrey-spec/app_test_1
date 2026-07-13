@@ -135,10 +135,9 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error checking BUK candidate:", error);
-    const message = error instanceof Error ? error.message : "Error interno consultando BUK";
+    console.error("Error checking BUK candidate");
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: "Error interno consultando BUK" }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: resolveErrorStatus(error)

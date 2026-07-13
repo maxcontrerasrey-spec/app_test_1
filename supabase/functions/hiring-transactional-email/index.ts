@@ -657,11 +657,10 @@ Deno.serve(async (req) => {
 
     const resendBody = await resendResponse.text();
     if (!resendResponse.ok) {
-      console.error("Resend error", resendResponse.status, resendBody);
+      console.error("Resend error", resendResponse.status);
       return new Response(
         JSON.stringify({
           error: "Error enviando correo con Resend",
-          details: resendBody,
         }),
         {
           status: 502,
@@ -683,10 +682,10 @@ Deno.serve(async (req) => {
       },
     );
   } catch (error) {
-    console.error("transactional email error", error);
+    console.error("transactional email error");
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unexpected error",
+        error: "No fue posible procesar el correo transaccional",
       }),
       {
         status: 500,

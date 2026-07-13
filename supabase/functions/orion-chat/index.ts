@@ -734,10 +734,10 @@ ${buildOrionSchemaPrompt()}`;
       }
     );
   } catch (error) {
-    console.error("ORION chat error", error);
+    console.error("ORION chat error");
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Fallo interno de ORION."
+        error: "Fallo interno de ORION."
       }),
       {
         status: 500,
