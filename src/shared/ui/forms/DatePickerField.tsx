@@ -7,6 +7,7 @@ import {
   formatDateValue,
   buildCalendarDays
 } from "../../lib/date";
+import { SelectField } from "./SelectField";
 
 type DatePickerFieldProps = {
   id: string;
@@ -100,9 +101,13 @@ export function DatePickerField({
                 ‹
               </button>
               <div className="calendar-selectors">
-                <select
-                  className="calendar-select"
-                  value={viewDate.getMonth()}
+                <SelectField
+                  id={`${id}-month`}
+                  label="Mes"
+                  hideLabel
+                  includePlaceholder={false}
+                  className="calendar-select-field"
+                  value={String(viewDate.getMonth())}
                   onChange={(event) =>
                     setViewDate(
                       (current) =>
@@ -113,17 +118,19 @@ export function DatePickerField({
                         )
                     )
                   }
-                >
-                  {monthOptions.map((month, index) => (
-                    <option key={month} value={index}>
-                      {month}
-                    </option>
-                  ))}
-                </select>
+                  options={monthOptions.map((month, index) => ({
+                    value: String(index),
+                    label: month
+                  }))}
+                />
 
-                <select
-                  className="calendar-select"
-                  value={viewDate.getFullYear()}
+                <SelectField
+                  id={`${id}-year`}
+                  label="Año"
+                  hideLabel
+                  includePlaceholder={false}
+                  className="calendar-select-field"
+                  value={String(viewDate.getFullYear())}
                   onChange={(event) =>
                     setViewDate(
                       (current) =>
@@ -134,13 +141,11 @@ export function DatePickerField({
                         )
                     )
                   }
-                >
-                  {yearOptions.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+                  options={yearOptions.map((year) => ({
+                    value: String(year),
+                    label: String(year)
+                  }))}
+                />
               </div>
               <button
                 type="button"

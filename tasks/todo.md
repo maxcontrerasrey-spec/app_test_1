@@ -2,6 +2,26 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Refactor visual: desplegables ERP con estética Neomorphism topbar
+
+- [x] Auditar componentes compartidos y `<select>` nativos usados en módulos/submódulos.
+- [x] Convertir `SelectField` compartido a dropdown custom para heredar panel, sombra, radios y tipografía de la barra superior.
+- [x] Migrar `SearchableSelectField` desde estilos inline hacia clases CSS compartidas neumórficas.
+- [x] Alinear `MultiSelectField`, opciones, acciones, scrollbars y estados hover/selected con el mismo lenguaje visual.
+- [x] Reemplazar o envolver los `<select>` nativos fuera de los helpers compartidos.
+- [x] Validar TypeScript/build y smoke visual en desktop/móvil para detectar solapamientos o dropdowns cortados.
+
+### Criterio de cierre
+
+- Las listas desplegables del ERP deben compartir una estética consistente con la barra superior: panel neumórfico, fuente pequeña, opciones compactas, hover/selected elegantes y scroll interno pulido.
+- El cambio no debe romper formularios ni contratos `onChange` existentes.
+
+### Resultado aplicado
+
+- `SelectField`, `SearchableSelectField`, `MultiSelectField` y los selectores internos del calendario comparten el panel neumórfico, opciones compactas, scroll estilizado y estados selected/hover de la barra superior.
+- Se reemplazaron los `<select>` nativos restantes en Operaciones y Alta Operacional para evitar desplegables del navegador con estética inconsistente.
+- Validación local: `npm run build`, `git diff --check`, auditoría de `<select>` nativos y smoke visual desktop/móvil ejecutados correctamente.
+
 ## Alta usuario Laura Lopez con permisos de Paola Cisternas
 
 - [x] Confirmar el contrato actual de alta de usuarios en Supabase Auth, `profiles` y `user_roles`.

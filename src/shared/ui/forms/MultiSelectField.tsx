@@ -63,13 +63,13 @@ export function MultiSelectField({
   };
 
   return (
-    <div className={`field-group multi-select-field ${className}`.trim()} ref={containerRef}>
+    <div className={`field-group select-field multi-select-field ${isOpen ? "select-field-open" : ""} ${className}`.trim()} ref={containerRef}>
       <label className="field-label" htmlFor={id}>
         {label}
       </label>
 
       <div
-        className={`text-field multi-select-trigger ${disabled ? "disabled" : ""}`}
+        className={`text-field select-trigger multi-select-trigger ${disabled ? "disabled" : ""}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         role="button"
         aria-haspopup="listbox"

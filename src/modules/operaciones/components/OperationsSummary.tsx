@@ -1,4 +1,4 @@
-import { DatePickerField } from "../../../shared/ui";
+import { DatePickerField, SelectField } from "../../../shared/ui";
 import type { DashboardSummary } from "../types";
 
 interface OperationsSummaryProps {
@@ -41,17 +41,17 @@ export function OperationsSummary({
       <section className="operations-control-grid operations-control-grid--summary">
         <section className="panel operations-panel">
           <p className="panel-label">Resumen</p>
-          <label>
-            <span>Contrato</span>
-            <select value={dashboardContract} onChange={(event) => setDashboardContract(event.target.value)}>
-              <option value="">Todos los contratos</option>
-              {contractOptions.map((contract) => (
-                <option key={contract} value={contract}>
-                  {contract}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            id="operations-summary-contract"
+            label="Contrato"
+            value={dashboardContract}
+            onChange={(event) => setDashboardContract(event.target.value)}
+            placeholder="Todos los contratos"
+            options={contractOptions.map((contract) => ({
+              value: contract,
+              label: contract
+            }))}
+          />
           <div className="operations-inline-fields">
             <DatePickerField id="dashboard-date-from" label="Desde" value={dashboardDateFrom} onChange={setDashboardDateFrom} />
             <DatePickerField id="dashboard-date-to" label="Hasta" value={dashboardDateTo} onChange={setDashboardDateTo} />

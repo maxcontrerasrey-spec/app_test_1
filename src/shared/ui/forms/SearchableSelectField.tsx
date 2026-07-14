@@ -1,5 +1,5 @@
-import { ChangeEvent, useState, useRef, useEffect, KeyboardEvent } from "react";
-import type { SelectOption } from "./SelectField";
+import { ChangeEvent, KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { createSelectChangeEvent, type SelectOption } from "./SelectField";
 import { FieldHintIcon } from "./FieldHintIcon";
 
 type SelectFieldProps = {
@@ -11,7 +11,7 @@ type SelectFieldProps = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  renderOption?: (opt: SelectOption) => React.ReactNode;
+  renderOption?: (opt: SelectOption) => ReactNode;
   hint?: string;
 };
 
@@ -51,10 +51,7 @@ export function SearchableSelectField({
   }, []);
 
   const handleSelect = (selectedValue: string) => {
-    onChange({
-      target: { name: id, value: selectedValue, id },
-      currentTarget: { name: id, value: selectedValue, id }
-    } as unknown as ChangeEvent<HTMLSelectElement>);
+    onChange(createSelectChangeEvent(id, selectedValue));
     setIsOpen(false);
     setSearchTerm("");
     if (inputRef.current) {
@@ -73,20 +70,19 @@ export function SearchableSelectField({
   };
 
   return (
-    <div 
-      className={`field-group ${className}`.trim()} 
-      ref={containerRef} 
-      style={{ position: 'relative', zIndex: isOpen ? 9999 : undefined }}
+    <div
+      className={`field-group select-field searchable-select-field ${isOpen ? "select-field-open" : ""} ${className}`.trim()}
+      ref={containerRef}
     >
       <label className="field-label" htmlFor={id}>
         {label}
         <FieldHintIcon hint={hint} />
       </label>
-      <div style={{ position: 'relative' }}>
+      <div className="searchable-select-control">
         <input
           ref={inputRef}
           type="text"
-          className="text-field"
+          className="text-field select-search-input"
           id={id}
           value={displayValue}
           onChange={(e) => {
@@ -105,44 +101,24 @@ export function SearchableSelectField({
           placeholder={placeholder}
           onKeyDown={handleKeyDown}
           autoComplete="off"
-          style={{ 
-            width: '100%', 
-            cursor: disabled ? 'not-allowed' : 'text',
-            paddingRight: '32px' 
-          }}
         />
-        <svg 
-          style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} 
-          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        <span className="select-trigger-icon searchable-select-icon" aria-hidden="true">▾</span>
       </div>
 
       {isOpen && !disabled && (
-        <ul style={{ 
-          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, 
-          maxHeight: '220px', overflowY: 'auto', background: 'var(--surface)', 
-          border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', 
-          boxShadow: 'var(--shadow-popover)', marginTop: '4px', padding: '4px 0',
-          listStyle: 'none', marginBlockStart: '4px', marginBlockEnd: 0, marginInlineStart: 0, marginInlineEnd: 0, paddingInlineStart: 0
-        }}>
+        <ul className="select-dropdown searchable-select-dropdown" role="listbox">
           {filteredOptions.length === 0 ? (
-            <li style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>No se encontraron opciones</li>
+            <li className="select-empty">No se encontraron opciones</li>
           ) : (
             filteredOptions.map((opt) => (
-              <li 
-                key={opt.value} 
+              <li
+                key={opt.value}
                 onClick={() => handleSelect(opt.value)}
-                style={{ 
-                  padding: '8px 12px', cursor: 'pointer', fontSize: '0.92rem',
-                  background: opt.value === value ? 'var(--surface-muted)' : 'transparent',
-                  color: 'var(--title)',
-                  transition: 'background 0.1s'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-soft)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = opt.value === value ? 'var(--surface-muted)' : 'transparent')}
+                className={`select-option ${opt.value === value ? "is-selected" : ""}`}
+                role="option"
+                aria-selected={opt.value === value}
               >
+                <span className="select-option-check" aria-hidden="true">{opt.value === value ? "✓" : ""}</span>
                 {renderOption ? renderOption(opt) : opt.label}
               </li>
             ))

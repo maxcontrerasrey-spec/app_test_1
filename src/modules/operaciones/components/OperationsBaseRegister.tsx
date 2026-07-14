@@ -1,4 +1,4 @@
-import { DatePickerField } from "../../../shared/ui";
+import { DatePickerField, SelectField } from "../../../shared/ui";
 import { parseDateValue, toTodayDateValue } from "../../../shared/lib/date";
 import { OperationsDriverLookup } from "./OperationsDriverLookup";
 import type { ServiceDataRecord } from "../data/services-data";
@@ -142,14 +142,18 @@ export function OperationsBaseRegister({
               onChange={setSelectedDateValue}
               minValue={todayValue}
             />
-            <label>
-              <span>Turno</span>
-              <select value={selectedShift} onChange={(event) => setSelectedShift(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.shift)}>
-                <option value="">Selecciona turno</option>
-                <option value="am">AM</option>
-                <option value="pm">PM</option>
-              </select>
-            </label>
+            <SelectField
+              id="operations-shift"
+              label="Turno"
+              value={selectedShift}
+              onChange={(event) => setSelectedShift(event.target.value)}
+              aria-invalid={Boolean(submitState.fieldErrors.shift)}
+              placeholder="Selecciona turno"
+              options={[
+                { value: "am", label: "AM" },
+                { value: "pm", label: "PM" }
+              ]}
+            />
           </div>
           {submitState.fieldErrors.serviceDate || submitState.fieldErrors.shift ? (
             <div className="panel-inline-errors">
@@ -161,17 +165,18 @@ export function OperationsBaseRegister({
 
         <section className="panel operations-panel operations-panel--entry">
           <p className="panel-label">Ingreso</p>
-          <label>
-            <span>Contrato</span>
-            <select value={selectedContract} onChange={(event) => setSelectedContract(event.target.value)} aria-invalid={Boolean(submitState.fieldErrors.contractCode)}>
-              <option value="">Selecciona contrato</option>
-              {contractOptions.map((contract) => (
-                <option key={contract} value={contract}>
-                  {contract}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            id="operations-contract"
+            label="Contrato"
+            value={selectedContract}
+            onChange={(event) => setSelectedContract(event.target.value)}
+            aria-invalid={Boolean(submitState.fieldErrors.contractCode)}
+            placeholder="Selecciona contrato"
+            options={contractOptions.map((contract) => ({
+              value: contract,
+              label: contract
+            }))}
+          />
           {submitState.fieldErrors.contractCode ? <p className="field-error">{submitState.fieldErrors.contractCode}</p> : null}
         </section>
 

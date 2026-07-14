@@ -1,4 +1,4 @@
-import { DatePickerField } from "../../../shared/ui";
+import { DatePickerField, SelectField } from "../../../shared/ui";
 import type { ExportEntryRow } from "../types";
 
 interface OperationsExportProps {
@@ -60,17 +60,17 @@ export function OperationsExport({
       <section className="operations-control-grid operations-control-grid--export">
         <section className="panel operations-panel">
           <p className="panel-label">Exportador</p>
-          <label>
-            <span>Contrato</span>
-            <select value={exportContract} onChange={(event) => setExportContract(event.target.value)}>
-              <option value="">Todos los contratos</option>
-              {contractOptions.map((contract) => (
-                <option key={contract} value={contract}>
-                  {contract}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            id="operations-export-contract"
+            label="Contrato"
+            value={exportContract}
+            onChange={(event) => setExportContract(event.target.value)}
+            placeholder="Todos los contratos"
+            options={contractOptions.map((contract) => ({
+              value: contract,
+              label: contract
+            }))}
+          />
           <div className="operations-inline-fields">
             <DatePickerField id="export-date-from" label="Desde" value={exportDateFrom} onChange={setExportDateFrom} />
             <DatePickerField id="export-date-to" label="Hasta" value={exportDateTo} onChange={setExportDateTo} />

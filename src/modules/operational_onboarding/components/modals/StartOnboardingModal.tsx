@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SelectField } from "../../../../shared/ui";
 import { useTemplates } from "../../hooks/useTemplateQueries";
 import { useCandidateProfiles } from "../../hooks/useCandidateProfiles";
 import { useStartOnboardingCase } from "../../hooks/useStartOnboardingCase";
@@ -74,57 +75,33 @@ export function StartOnboardingModal({ onClose }: StartOnboardingModalProps) {
         </p>
 
         <div style={{ marginBottom: "1rem" }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-            }}
-          >
-            Seleccionar Candidato
-          </label>
-          <select
-            className="search-input"
-            style={{ width: "100%", padding: "0.5rem" }}
+          <SelectField
+            id="start-onboarding-candidate"
+            label="Seleccionar Candidato"
             value={selectedCandidate}
-            onChange={(e) => setSelectedCandidate(e.target.value)}
+            onChange={(event) => setSelectedCandidate(event.target.value)}
             disabled={candidatesLoading}
-          >
-            <option value="">-- Seleccione Candidato --</option>
-            {candidates?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.full_name} ({c.national_id || "Sin RUT"})
-              </option>
-            ))}
-          </select>
+            placeholder="Seleccione candidato"
+            options={(candidates ?? []).map((candidate) => ({
+              value: candidate.id,
+              label: `${candidate.full_name} (${candidate.national_id || "Sin RUT"})`
+            }))}
+          />
         </div>
 
         <div style={{ marginBottom: "2rem" }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-            }}
-          >
-            Plantilla de Workflow
-          </label>
-          <select
-            className="search-input"
-            style={{ width: "100%", padding: "0.5rem" }}
+          <SelectField
+            id="start-onboarding-template"
+            label="Plantilla de Workflow"
             value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value)}
+            onChange={(event) => setSelectedTemplate(event.target.value)}
             disabled={templatesLoading}
-          >
-            <option value="">-- Seleccione Plantilla --</option>
-            {activeTemplates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Seleccione plantilla"
+            options={activeTemplates.map((template) => ({
+              value: template.id,
+              label: template.name
+            }))}
+          />
         </div>
 
         {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}
