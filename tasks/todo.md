@@ -2,6 +2,28 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix solicitudes: cargos BUK completos sin dotacion activa
+
+- [x] Confirmar de donde sale el selector de cargos en solicitud de contratacion.
+- [x] Auditar si el catalogo local `job_positions` depende de empleados activos o de una sincronizacion incompleta.
+- [x] Corregir la fuente para incluir todos los cargos vigentes existentes en BUK, aunque no tengan trabajadores activos.
+- [x] Validar que `Operador Logistico Integral` quede disponible como opcion.
+- [x] Ejecutar build/smoke relevante y dejar resultado auditable.
+- [x] Commit y push a `main`.
+
+### Criterio de cierre
+
+- El formulario de solicitud de contratacion debe listar cargos BUK vigentes desde el catalogo de cargos, no desde dotacion activa.
+- El cambio no debe alterar aprobaciones, cupos, contratos ni el payload de generacion BUK salvo el cargo seleccionado.
+
+### Resultado aplicado
+
+- `fetchHiringCatalogs()` sincroniza cargos BUK en modo tolerante antes de leer `job_positions`, conservando el contrato actual del formulario y del RPC `submit_hiring_request`.
+- Se agregó la Edge Function `sync-buk-job-positions`, que valida usuario, consulta `/api/v1/roles` paginado en BUK y actualiza/inserta cargos locales por código o nombre.
+- Se desplegó la función en Supabase y se ejecutó sincronización productiva inicial: 220 roles leídos, 215 cargos únicos, 64 actualizados y 151 insertados.
+- Validación productiva: `OPERADOR LOGISTICO INTEGRAL` quedó activo en `job_positions` con `code = BUK-ROLE-1658`.
+- Validación local: `git diff --check` y `npm run build` ejecutados correctamente.
+
 ## Dark mode ERP Enterprise: normalizacion cromatica
 
 - [x] Auditar arquitectura de tema, tokens CSS y hardcodes de color en frontend.

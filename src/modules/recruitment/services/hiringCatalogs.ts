@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase";
+import { logger } from "../../../shared/lib/logger";
 import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
 
 export type HiringRole = {
@@ -59,6 +60,20 @@ type ShiftRow = {
   is_active: boolean;
 };
 
+async function syncBukJobPositionsBestEffort() {
+  if (!supabase) {
+    return;
+  }
+
+  const { error } = await supabase.functions.invoke("sync-buk-job-positions", {
+    body: {}
+  });
+
+  if (error) {
+    logger.warn("fetchHiringCatalogs syncBukJobPositions", error);
+  }
+}
+
 export async function fetchHiringCatalogs() {
   if (!supabase) {
     return {
@@ -68,6 +83,8 @@ export async function fetchHiringCatalogs() {
       error: "Supabase no está configurado en este entorno."
     };
   }
+
+  await syncBukJobPositionsBestEffort();
 
   const [jobPositionsResponse, contractsResponse, shiftsResponse] = await Promise.all([
     supabase

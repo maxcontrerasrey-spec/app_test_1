@@ -4,6 +4,14 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 242. Los catálogos BUK usados para crear solicitudes no pueden derivarse de dotación activa
+
+- **Un cargo vigente en BUK puede no tener trabajadores activos todavía.** Si el ERP alimenta `job_positions` desde empleados o muestras operativas, cargos nuevos como `OPERADOR LOGISTICO INTEGRAL` quedan invisibles aunque existan en BUK.
+- **La fuente correcta para el selector de cargo solicitado es `/api/v1/roles`.** El formulario puede seguir leyendo `job_positions`, pero esa tabla debe sincronizarse desde el catálogo de roles/cargos BUK y no desde `employees.current_job`.
+- **La validación backend debe conservar el catálogo local como frontera transaccional.** Antes de crear la solicitud, refresca el catálogo en modo tolerante y luego deja que `submit_hiring_request(...)` valide `job_positions.is_active`; no envíes nombres libres que rompan aprobaciones, folios o snapshots.
+
+---
+
 ## 241. Una corrección de nombre de usuario debe actualizar Auth metadata y `profiles`
 
 - **`profiles.full_name` no es la única fuente visible de identidad.** Si el alta de usuario se creó con `auth.admin.createUser(...)`, el nombre también queda en `auth.users.raw_user_meta_data` como `full_name`/`name`; corregir solo `profiles` puede dejar drift si el trigger de sincronización vuelve a ejecutarse.
