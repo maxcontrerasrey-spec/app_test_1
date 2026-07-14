@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiPresenceSummaryToday, useBiExceptionsToday } from "../hooks/useBiQueries";
-import { useTheme } from "../../../shared/context/ThemeContext";
-import { EChartSurface } from "../../../shared/ui";
+import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
 type BiPresenceAndExceptionsProps = {
@@ -12,10 +11,7 @@ type BiPresenceAndExceptionsProps = {
 export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProps) {
   const { data: presenceData, isLoading: isLoadingPresence } = useBiPresenceSummaryToday(filters);
   const { data: exceptionsData, isLoading: isLoadingExceptions } = useBiExceptionsToday(filters);
-  const { theme } = useTheme();
-
-  const isDark = theme === "dark";
-  const textColor = isDark ? "#E2E8F0" : "#1E293B";
+  const chartTheme = useChartTheme();
 
   const gaugeOption = useMemo<EChartsOption | null>(() => {
     if (!presenceData || presenceData.length === 0) {
@@ -36,8 +32,8 @@ export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProp
           max: 100,
           splitNumber: 10,
           itemStyle: {
-            color: overallPresencePct >= 90 ? "#10B981" : overallPresencePct >= 80 ? "#F59E0B" : "#EF4444",
-            shadowColor: "rgba(0,0,0,0.2)",
+            color: overallPresencePct >= 90 ? chartTheme.success : overallPresencePct >= 80 ? chartTheme.warning : chartTheme.danger,
+            shadowColor: "rgba(2, 6, 23, 0.2)",
             shadowBlur: 10,
             shadowOffsetX: 2,
             shadowOffsetY: 2
@@ -50,14 +46,14 @@ export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProp
             offsetCenter: [0, "-60%"],
             itemStyle: { color: "inherit" }
           },
-          axisLine: { roundCap: true, lineStyle: { width: 18, color: [[1, isDark ? "#334155" : "#E2E8F0"]] } },
+          axisLine: { roundCap: true, lineStyle: { width: 18, color: [[1, chartTheme.border]] } },
           axisTick: { show: false },
           splitLine: { show: false },
           axisLabel: { show: false },
           title: { show: false },
           detail: {
-            backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-            borderColor: overallPresencePct >= 90 ? "#10B981" : overallPresencePct >= 80 ? "#F59E0B" : "#EF4444",
+            backgroundColor: chartTheme.tooltipSurface,
+            borderColor: overallPresencePct >= 90 ? chartTheme.success : overallPresencePct >= 80 ? chartTheme.warning : chartTheme.danger,
             borderWidth: 2,
             width: "50%",
             lineHeight: 40,
@@ -69,15 +65,15 @@ export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProp
               return "{value|" + value.toFixed(1) + "}{unit|%}";
             },
             rich: {
-              value: { fontSize: 30, fontWeight: "bolder", color: textColor },
-              unit: { fontSize: 16, color: textColor, padding: [0, 0, -10, 5] }
+              value: { fontSize: 30, fontWeight: "bolder", color: chartTheme.text },
+              unit: { fontSize: 16, color: chartTheme.text, padding: [0, 0, -10, 5] }
             }
           },
           data: [{ value: Number(overallPresencePct.toFixed(1)) }]
         }
       ]
     };
-  }, [isDark, presenceData, textColor]);
+  }, [chartTheme, presenceData]);
 
   const exceptionsOption = useMemo<EChartsOption | null>(() => {
     if (!exceptionsData || exceptionsData.length === 0) {
@@ -95,8 +91,8 @@ export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProp
     }));
 
     return {
-      tooltip: { trigger: "item", backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
-      legend: { top: "5%", left: "center", textStyle: { color: textColor } },
+      tooltip: { trigger: "item", backgroundColor: chartTheme.tooltipSurface, textStyle: { color: chartTheme.tooltipText } },
+      legend: { top: "5%", left: "center", textStyle: { color: chartTheme.text } },
       series: [
         {
           name: "Excepciones",
@@ -104,14 +100,14 @@ export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProp
           radius: ["40%", "70%"],
           itemStyle: {
             borderRadius: 10,
-            borderColor: isDark ? "#0F172A" : "#FFFFFF",
+            borderColor: chartTheme.surface,
             borderWidth: 2
           },
           data: seriesData
         }
       ]
     };
-  }, [exceptionsData, isDark, textColor]);
+  }, [chartTheme, exceptionsData]);
 
   return (
     <div className="bi-chart-row">

@@ -442,3 +442,125 @@
   visibility: visible;
   opacity: 1;
 }
+
+[data-theme="dark"] .roster-calendar-dot--working {
+  background: var(--color-primary);
+}
+
+[data-theme="dark"] .roster-calendar-dot--resting {
+  background: var(--color-text-muted);
+}
+
+[data-theme="dark"] .roster-calendar-dot--vacation {
+  background: var(--color-warning);
+}
+
+[data-theme="dark"] .roster-calendar-dot--extra {
+  background: var(--color-danger);
+}
+
+[data-theme="dark"] .roster-calendar-day {
+  border-color: var(--color-border-subtle);
+  background: var(--color-bg-surface-elevated);
+}
+
+[data-theme="dark"] .roster-calendar-day:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-theme="dark"] .roster-calendar-day--selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+[data-theme="dark"] .roster-calendar-day--today {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 2px var(--color-danger-soft);
+}
+
+[data-theme="dark"] .roster-calendar-day--working {
+  background: linear-gradient(180deg, var(--color-primary-soft), var(--color-bg-surface));
+}
+
+[data-theme="dark"] .roster-calendar-day--resting {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.14), var(--color-bg-surface));
+}
+
+[data-theme="dark"] .roster-calendar-day--vacation {
+  background: linear-gradient(180deg, var(--color-warning-soft), var(--color-bg-surface));
+}
+
+[data-theme="dark"] .roster-calendar-day--absent,
+[data-theme="dark"] .roster-calendar-day--extra {
+  background: linear-gradient(180deg, var(--color-danger-soft), var(--color-bg-surface));
+}
+
+[data-theme="dark"] .roster-calendar-day--training {
+  background: linear-gradient(180deg, var(--color-info-soft), var(--color-bg-surface));
+}
+
+[data-theme="dark"] .roster-calendar-day--unassigned {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--color-bg-surface-elevated),
+    var(--color-bg-surface-elevated) 8px,
+    var(--color-bg-surface) 8px,
+    var(--color-bg-surface) 16px
+  );
+}
+
+[data-theme="dark"] .roster-day-detail-notes,
+[data-theme="dark"] .roster-list-item,
+[data-theme="dark"] .roster-inline-button {
+  background: var(--color-bg-surface-elevated);
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .roster-assignment-warning-card--warning {
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-text);
+}
+
+[data-theme="dark"] .roster-assignment-warning-card--danger {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger-text);
+}
+
+[data-theme="dark"] .roster-inline-button:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: var(--color-bg-surface-hover);
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .roster-inline-button--deactivate:hover:not(:disabled) {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+[data-theme="dark"] .roster-inline-button--activate:hover:not(:disabled) {
+  border-color: var(--color-success-border);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+[data-theme="dark"] .roster-inline-button--disabled {
+  background: var(--color-bg-surface);
+  color: var(--color-text-subtle);
+  border-color: var(--color-border-subtle);
+}
+
+[data-theme="dark"] .roster-info-tooltip {
+  background-color: var(--color-bg-surface-elevated);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+  box-shadow: var(--shadow-popover);
+}
+
+[data-theme="dark"] .roster-info-tooltip::after {
+  border-color: var(--color-bg-surface-elevated) transparent transparent transparent;
+}

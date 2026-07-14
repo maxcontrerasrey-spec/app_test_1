@@ -1115,6 +1115,46 @@
   margin-top: 0.9rem;
 }
 
+[data-theme="dark"] .task-decision-panel {
+  background-color: var(--color-bg-surface-elevated);
+  border-color: var(--color-border-subtle);
+}
+
+[data-theme="dark"] .task-decision-title {
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .task-decision-textarea {
+  background-color: var(--color-bg-surface);
+  border-color: var(--color-border-default);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .task-decision-textarea:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  outline: none;
+}
+
+[data-theme="dark"] .task-decision-error {
+  color: var(--color-danger);
+}
+
+[data-theme="dark"] .task-decision-button-reject {
+  background-color: var(--color-bg-surface-elevated);
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+
+[data-theme="dark"] .task-decision-button-approve {
+  background-color: var(--color-success);
+  color: var(--color-text-inverse);
+}
+
+[data-theme="dark"] .dashboard-pending-approvals-empty {
+  color: var(--color-text-muted);
+}
+
 /* Timeline Widget */
 .nx-timeline {
   display: flex;

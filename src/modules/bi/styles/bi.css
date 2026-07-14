@@ -113,23 +113,23 @@
 }
 
 [data-theme="dark"] .bi-recruitment-kpi-row .tracking-kpi-card-bi-gray {
-  background: rgba(148, 163, 184, 0.1);
-  border-color: rgba(148, 163, 184, 0.28);
+  background: color-mix(in srgb, var(--color-bg-surface-elevated) 86%, transparent);
+  border-color: var(--color-border-subtle);
 }
 
 [data-theme="dark"] .bi-recruitment-kpi-row .tracking-kpi-card-bi-yellow {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.3);
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning-border);
 }
 
 [data-theme="dark"] .bi-recruitment-kpi-row .tracking-kpi-card-bi-green {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.28);
+  background: var(--color-success-soft);
+  border-color: var(--color-success-border);
 }
 
 [data-theme="dark"] .bi-recruitment-kpi-row .tracking-kpi-card-bi-blue {
-  background: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.28);
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-border);
 }
 
 .bi-recruitment-kpi-row .bi-segmented-kpi-card {
@@ -351,4 +351,28 @@
 
 .bi-error-state {
   color: var(--danger-color);
+}
+
+[data-theme="dark"] .bi-stat-card,
+[data-theme="dark"] .bi-chart-container,
+[data-theme="dark"] .bi-card-segmented-control,
+[data-theme="dark"] .bi-pulse-view-tabs {
+  border-color: var(--color-border-subtle);
+  background: var(--color-bg-surface-elevated);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .bi-card-segmented-control button.is-active,
+[data-theme="dark"] .bi-pulse-view-tabs button.is-active {
+  background: var(--color-bg-surface-active);
+  color: var(--color-text-primary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .bi-stat-card::before {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-info));
+}
+
+[data-theme="dark"] .bi-error-state {
+  color: var(--color-danger-text);
 }

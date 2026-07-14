@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiExceptionsMonthly } from "../hooks/useBiQueries";
-import { useTheme } from "../../../shared/context/ThemeContext";
-import { EChartSurface } from "../../../shared/ui";
+import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
 type BiTrendingExceptionsChartProps = {
@@ -11,10 +10,7 @@ type BiTrendingExceptionsChartProps = {
 
 export function BiTrendingExceptionsChart({ filters }: BiTrendingExceptionsChartProps) {
   const { data, isLoading } = useBiExceptionsMonthly(filters);
-  const { theme } = useTheme();
-
-  const isDark = theme === "dark";
-  const textColor = isDark ? "#E2E8F0" : "#1E293B";
+  const chartTheme = useChartTheme();
 
   const chartOption = useMemo<EChartsOption | null>(() => {
     if (!data || data.length === 0) {
@@ -37,12 +33,12 @@ export function BiTrendingExceptionsChart({ filters }: BiTrendingExceptionsChart
     });
 
     return {
-      tooltip: { trigger: "axis", backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
-      legend: { data: ["Licencias Médicas", "Vacaciones", "Ausentismo %"], textStyle: { color: textColor } },
+      tooltip: { trigger: "axis", backgroundColor: chartTheme.tooltipSurface, textStyle: { color: chartTheme.tooltipText } },
+      legend: { data: ["Licencias Médicas", "Vacaciones", "Ausentismo %"], textStyle: { color: chartTheme.text } },
       grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-      xAxis: { type: "category", boundaryGap: false, data: months, axisLabel: { color: textColor } },
+      xAxis: { type: "category", boundaryGap: false, data: months, axisLabel: { color: chartTheme.text } },
       yAxis: [
-        { type: "value", splitLine: { lineStyle: { color: isDark ? "#334155" : "#E2E8F0" } } },
+        { type: "value", splitLine: { lineStyle: { color: chartTheme.border } } },
         { type: "value", min: 0, max: 100, axisLabel: { formatter: "{value}%" } }
       ],
       series: [
@@ -51,7 +47,7 @@ export function BiTrendingExceptionsChart({ filters }: BiTrendingExceptionsChart
           type: "line",
           areaStyle: { opacity: 0.3 },
           smooth: true,
-          itemStyle: { color: "#EF4444" },
+          itemStyle: { color: chartTheme.danger },
           data: medicalLeaves
         },
         {
@@ -59,7 +55,7 @@ export function BiTrendingExceptionsChart({ filters }: BiTrendingExceptionsChart
           type: "line",
           areaStyle: { opacity: 0.3 },
           smooth: true,
-          itemStyle: { color: "#3B82F6" },
+          itemStyle: { color: chartTheme.primary },
           data: vacations
         },
         {
@@ -67,12 +63,12 @@ export function BiTrendingExceptionsChart({ filters }: BiTrendingExceptionsChart
           type: "line",
           yAxisIndex: 1,
           smooth: true,
-          itemStyle: { color: "#F59E0B" },
+          itemStyle: { color: chartTheme.warning },
           data: absenteeismByMonth
         }
       ]
     };
-  }, [data, isDark, textColor]);
+  }, [chartTheme, data]);
 
   return (
     <div className="info-card">

@@ -2,6 +2,29 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Dark mode ERP Enterprise: normalizacion cromatica
+
+- [x] Auditar arquitectura de tema, tokens CSS y hardcodes de color en frontend.
+- [x] Centralizar la paleta dark enterprise sobre los tokens existentes sin afectar light/e-ink.
+- [x] Alinear superficies, navegación, dropdowns, formularios, tablas, modales y estados semánticos al sistema dark.
+- [x] Normalizar excepciones críticas de módulos con paletas locales: Operaciones, BI, Acreditación, Roster, Dashboard y ORION.
+- [x] Ajustar gráficos/ECharts para consumir tokens dark en vez de hex aislados cuando sea necesario.
+- [x] Validar build, lint visual estático, contraste base y smoke dark desktop/móvil.
+- [x] Commit y push a `main` con resultado auditable.
+
+### Criterio de cierre
+
+- El modo dark debe tener una fuente de verdad cromática coherente y no debe filtrar cambios al modo light.
+- El cambio no debe modificar layout, datos, rutas, permisos, Supabase ni contratos funcionales.
+
+### Resultado aplicado
+
+- Se centralizó la paleta dark enterprise en tokens semánticos globales y se mapearon los tokens heredados para conservar compatibilidad.
+- Se alinearon superficies, formularios, tablas, dropdowns, modales, navegación, scrollbar y estados semánticos del modo oscuro.
+- Se corrigieron excepciones locales en Operaciones, Acreditación, BI, Dashboard, Roster y ORION/AI Assistant sin cambiar layout ni contratos funcionales.
+- Los gráficos ECharts consumen un helper compartido de tema para texto, tooltip, bordes y paleta en vez de colores dark aislados.
+- Validación local: `git diff --check`, `npm run build`, auditoría estática de hardcodes dark, contraste base y smoke visual desktop/móvil sobre build preview.
+
 ## Refactor visual: desplegables ERP con estética Neomorphism topbar
 
 - [x] Auditar componentes compartidos y `<select>` nativos usados en módulos/submódulos.

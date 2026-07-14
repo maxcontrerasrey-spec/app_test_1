@@ -31,6 +31,86 @@
   --focus-ring: 0 0 0 3px rgba(45, 99, 255, 0.12);
 }
 
+[data-theme="dark"] .operations-theme {
+  --surface: var(--color-bg-surface);
+  --surface-page: var(--color-bg-app);
+  --surface-glow: var(--color-bg-header);
+  --surface-soft: var(--color-bg-surface-elevated);
+  --surface-accent: var(--color-primary-soft);
+  --surface-accent-deep: var(--color-bg-surface-active);
+  --card-surface: var(--color-bg-surface);
+  --card-surface-deep: var(--color-bg-surface-elevated);
+  --card-border: var(--color-border-subtle);
+  --border: var(--color-border-default);
+  --border-subtle: var(--color-border-subtle);
+  --accent: var(--color-primary);
+  --accent-deep: var(--color-primary-hover);
+  --text: var(--color-text-primary);
+  --text-base: var(--color-text-primary);
+  --muted: var(--color-text-muted);
+  --shadow-soft: 0 1px 2px var(--shadow-color-sm), 0 14px 34px -20px var(--shadow-color-lg);
+  --shadow-panel: 0 20px 54px -28px var(--shadow-color-lg);
+  --focus-ring: 0 0 0 3px var(--color-focus-ring);
+}
+
+[data-theme="dark"] .operations-theme .panel,
+[data-theme="dark"] .operations-theme .operations-panel,
+[data-theme="dark"] .operations-theme .dashboard-table-card,
+[data-theme="dark"] .operations-theme .operations-dashboard-card,
+[data-theme="dark"] .operations-theme .operations-entry-card,
+[data-theme="dark"] .operations-theme .export-empty-state,
+[data-theme="dark"] .operations-theme .equipment-search-panel,
+[data-theme="dark"] .operations-theme .service-card,
+[data-theme="dark"] .operations-theme .assignment-card {
+  border-color: var(--color-border-subtle);
+  background: linear-gradient(180deg, var(--color-bg-surface) 0%, var(--color-bg-surface-elevated) 100%);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-soft);
+}
+
+[data-theme="dark"] .operations-theme .dashboard-table__head,
+[data-theme="dark"] .operations-theme .dashboard-table__row,
+[data-theme="dark"] .operations-theme .operations-service-row,
+[data-theme="dark"] .operations-theme .operations-list-row {
+  border-color: var(--color-border-subtle);
+  background: color-mix(in srgb, var(--color-bg-surface-elevated) 86%, transparent);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .operations-theme .dashboard-table__row:hover,
+[data-theme="dark"] .operations-theme .operations-service-row:hover,
+[data-theme="dark"] .operations-theme .operations-list-row:hover {
+  background: var(--color-bg-surface-hover);
+}
+
+[data-theme="dark"] .operations-theme input,
+[data-theme="dark"] .operations-theme textarea,
+[data-theme="dark"] .operations-theme .search-input {
+  border-color: var(--color-border-default);
+  background: var(--color-bg-surface-elevated);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .operations-theme input:focus,
+[data-theme="dark"] .operations-theme textarea:focus,
+[data-theme="dark"] .operations-theme .search-input:focus {
+  border-color: var(--color-primary-border);
+  box-shadow: var(--focus-ring);
+}
+
+[data-theme="dark"] .operations-theme .field-error,
+[data-theme="dark"] .operations-theme .submit-feedback--error {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+}
+
+[data-theme="dark"] .operations-theme .submit-feedback--success {
+  border-color: var(--color-success-border);
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+}
+
 * {
   box-sizing: border-box;
 }

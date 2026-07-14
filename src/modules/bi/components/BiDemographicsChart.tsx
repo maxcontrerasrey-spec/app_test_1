@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiAgeDistribution, useBiHeadcountByContract } from "../hooks/useBiQueries";
 import { formatBiContractLabel } from "../lib/presentation";
-import { useTheme } from "../../../shared/context/ThemeContext";
-import { EChartSurface } from "../../../shared/ui";
+import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
 type BiDemographicsChartProps = {
@@ -13,10 +12,7 @@ type BiDemographicsChartProps = {
 export function BiDemographicsChart({ filters }: BiDemographicsChartProps) {
   const { data, isLoading } = useBiAgeDistribution(filters);
   const { data: contractsData } = useBiHeadcountByContract(filters);
-  const { theme } = useTheme();
-
-  const isDark = theme === "dark";
-  const textColor = isDark ? "#E2E8F0" : "#1E293B";
+  const chartTheme = useChartTheme();
 
   const chartOption = useMemo<EChartsOption | null>(() => {
     if (!data || data.length === 0) {
@@ -51,18 +47,18 @@ export function BiDemographicsChart({ filters }: BiDemographicsChartProps) {
     });
 
     return {
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
-      legend: { data: ageRanges, textStyle: { color: textColor } },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, backgroundColor: chartTheme.tooltipSurface, textStyle: { color: chartTheme.tooltipText } },
+      legend: { data: ageRanges, textStyle: { color: chartTheme.text } },
       grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-      xAxis: { type: "value", splitLine: { lineStyle: { color: isDark ? "#334155" : "#E2E8F0" } } },
+      xAxis: { type: "value", splitLine: { lineStyle: { color: chartTheme.border } } },
       yAxis: {
         type: "category",
         data: contracts.map((contractCode) => contractLabels.get(contractCode) ?? contractCode),
-        axisLabel: { color: textColor }
+        axisLabel: { color: chartTheme.text }
       },
       series: seriesData
     };
-  }, [contractsData, data, isDark, textColor]);
+  }, [chartTheme, contractsData, data]);
 
   return (
     <div className="info-card">

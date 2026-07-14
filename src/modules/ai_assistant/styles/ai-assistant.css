@@ -94,7 +94,7 @@
 }
 
 .orion-history-item:hover {
-  background: rgba(var(--surface-default), 0.6);
+  background: rgba(var(--surface-rgb), 0.6);
 }
 
 .orion-history-title {
@@ -508,12 +508,12 @@
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(27, 37, 59, 0.06);
-  background: rgba(var(--surface-default), 0.5);
+  background: rgba(var(--surface-rgb), 0.5);
   transition: background 0.2s;
 }
 
 .orion-doc-item:hover {
-  background: rgba(var(--surface-default), 0.9);
+  background: rgba(var(--surface-rgb), 0.9);
 }
 
 .orion-doc-icon {
@@ -630,5 +630,4 @@
   text-align: center;
   font-size: 0.85rem;
 }
-
 

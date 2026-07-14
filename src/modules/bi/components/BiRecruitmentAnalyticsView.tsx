@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
-import { useTheme } from "../../../shared/context/ThemeContext";
-import { EChartSurface } from "../../../shared/ui";
+import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiRecruitmentDashboard } from "../types";
 
 type BiRecruitmentAnalyticsViewProps = {
@@ -204,16 +203,15 @@ export function BiRecruitmentAnalyticsView({
   isLoading,
   isError
 }: BiRecruitmentAnalyticsViewProps) {
-  const { theme } = useTheme();
+  const chartTheme = useChartTheme();
   const [filledVacancyView, setFilledVacancyView] = useState<FilledVacancyView>("total");
   const [requestedVacancyView, setRequestedVacancyView] =
     useState<RequestedVacancyView>("total");
   const [operationalPulseView, setOperationalPulseView] =
     useState<OperationalPulseView>("weekly");
 
-  const isDark = theme === "dark";
-  const textColor = isDark ? "#E2E8F0" : "#1E293B";
-  const axisColor = isDark ? "rgba(148, 163, 184, 0.22)" : "rgba(148, 163, 184, 0.28)";
+  const textColor = chartTheme.text;
+  const axisColor = chartTheme.border;
 
   const summaryCardGroups = useMemo(() => {
     if (!dashboard) {
@@ -375,18 +373,18 @@ export function BiRecruitmentAnalyticsView({
           brushSelect: false,
           showDetail: false,
           showDataShadow: false,
-          borderColor: isDark ? "rgba(148, 163, 184, 0.44)" : "rgba(100, 116, 139, 0.38)",
-          fillerColor: isDark ? "rgba(59, 130, 246, 0.22)" : "rgba(59, 130, 246, 0.16)",
-          backgroundColor: isDark ? "rgba(15, 23, 42, 0.42)" : "rgba(226, 232, 240, 0.52)",
+          borderColor: chartTheme.border,
+          fillerColor: chartTheme.primary,
+          backgroundColor: chartTheme.surface,
           handleSize: "190%",
           handleStyle: {
-            color: isDark ? "#CBD5E1" : "#64748B",
-            borderColor: isDark ? "#94A3B8" : "#475569"
+            color: chartTheme.textMuted,
+            borderColor: chartTheme.border
           },
-          moveHandleStyle: { color: isDark ? "#94A3B8" : "#CBD5E1" },
+          moveHandleStyle: { color: chartTheme.textMuted },
           selectedDataBackground: {
-            lineStyle: { color: "rgba(59, 130, 246, 0.55)" },
-            areaStyle: { color: "rgba(59, 130, 246, 0.14)" }
+            lineStyle: { color: chartTheme.primary },
+            areaStyle: { color: chartTheme.primary }
           }
         },
         {
@@ -417,7 +415,7 @@ export function BiRecruitmentAnalyticsView({
           data: dashboard.vacanciesByContract.map((item) => item.requested),
           itemStyle: {
             borderRadius: [8, 8, 0, 0],
-            color: isDark ? "rgba(96, 165, 250, 0.34)" : "rgba(59, 130, 246, 0.24)"
+            color: chartTheme.primary
           }
         },
         {
@@ -428,12 +426,12 @@ export function BiRecruitmentAnalyticsView({
           data: dashboard.vacanciesByContract.map((item) => item.filled),
           itemStyle: {
             borderRadius: [8, 8, 0, 0],
-            color: "#06B6D4"
+            color: chartTheme.info
           }
         }
       ]
     };
-  }, [axisColor, dashboard, isDark, textColor]);
+  }, [axisColor, chartTheme, dashboard, textColor]);
 
   const mobilityStatusOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.mobilityByStatus.length === 0) {

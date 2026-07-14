@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiRecruitmentPipeline } from "../hooks/useBiQueries";
-import { useTheme } from "../../../shared/context/ThemeContext";
-import { EChartSurface } from "../../../shared/ui";
+import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
 type BiRecruitmentFunnelProps = {
@@ -11,10 +10,7 @@ type BiRecruitmentFunnelProps = {
 
 export function BiRecruitmentFunnel({ filters }: BiRecruitmentFunnelProps) {
   const { data, isLoading } = useBiRecruitmentPipeline(filters);
-  const { theme } = useTheme();
-
-  const isDark = theme === "dark";
-  const textColor = isDark ? "#E2E8F0" : "#1E293B";
+  const chartTheme = useChartTheme();
 
   const chartOption = useMemo<EChartsOption | null>(() => {
     if (!data || data.length === 0) {
@@ -44,8 +40,8 @@ export function BiRecruitmentFunnel({ filters }: BiRecruitmentFunnelProps) {
     ].sort((a, b) => b.value - a.value);
 
     return {
-      tooltip: { trigger: "item", formatter: "{a} <br/>{b} : {c}", backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
-      legend: { data: ["Aplicantes", "Entrevistados", "Ofertados", "Contratados"], textStyle: { color: textColor } },
+      tooltip: { trigger: "item", formatter: "{a} <br/>{b} : {c}", backgroundColor: chartTheme.tooltipSurface, textStyle: { color: chartTheme.tooltipText } },
+      legend: { data: ["Aplicantes", "Entrevistados", "Ofertados", "Contratados"], textStyle: { color: chartTheme.text } },
       series: [
         {
           name: "Pipeline",
@@ -57,13 +53,13 @@ export function BiRecruitmentFunnel({ filters }: BiRecruitmentFunnelProps) {
           gap: 2,
           label: { show: true, position: "inside" },
           labelLine: { length: 10, lineStyle: { width: 1, type: "solid" } },
-          itemStyle: { borderColor: "#fff", borderWidth: 1 },
+          itemStyle: { borderColor: chartTheme.surface, borderWidth: 1 },
           emphasis: { label: { fontSize: 20 } },
           data: funnelData
         }
       ]
     };
-  }, [data, isDark, textColor]);
+  }, [chartTheme, data]);
 
   return (
     <div className="info-card">

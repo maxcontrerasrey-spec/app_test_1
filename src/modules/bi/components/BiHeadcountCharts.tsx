@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiHeadcountByContract, useBiHeadcountByCity } from "../hooks/useBiQueries";
 import { formatBiContractLabel } from "../lib/presentation";
-import { useTheme } from "../../../shared/context/ThemeContext";
-import { EChartSurface } from "../../../shared/ui";
+import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 import { echarts } from "../../../shared/ui/charts/echartsRuntime";
 
@@ -14,11 +13,8 @@ type BiHeadcountChartsProps = {
 export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   const { data: contractData, isLoading: isLoadingContract } = useBiHeadcountByContract(filters);
   const { data: cityData, isLoading: isLoadingCity } = useBiHeadcountByCity(filters);
-  const { theme } = useTheme();
   const [isChileMapReady, setIsChileMapReady] = useState(() => Boolean(echarts.getMap("chile")));
-
-  const isDark = theme === "dark";
-  const textColor = isDark ? "#E2E8F0" : "#1E293B";
+  const chartTheme = useChartTheme();
 
   useEffect(() => {
     let isMounted = true;
@@ -75,7 +71,7 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
     });
 
     return {
-      tooltip: { trigger: "item", backgroundColor: isDark ? "#1E293B" : "#FFFFFF", textStyle: { color: textColor } },
+      tooltip: { trigger: "item", backgroundColor: chartTheme.tooltipSurface, textStyle: { color: chartTheme.tooltipText } },
       series: [
         {
           name: "Dotación",
@@ -95,7 +91,7 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         }
       ]
     };
-  }, [contractData, isDark, textColor]);
+  }, [chartTheme, contractData]);
 
   const mapChartOption = useMemo<EChartsOption | null>(() => {
     if (!isChileMapReady || !cityData || cityData.length === 0) {
@@ -123,8 +119,8 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
     return {
       tooltip: {
         trigger: "item",
-        backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-        textStyle: { color: textColor },
+        backgroundColor: chartTheme.tooltipSurface,
+        textStyle: { color: chartTheme.tooltipText },
         formatter: "{b}<br/>Dotación: {c}"
       },
       visualMap: {
@@ -134,9 +130,9 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         realtime: false,
         calculable: true,
         inRange: {
-          color: ["#E0F2FE", "#3B82F6", "#1E3A8A"]
+          color: [chartTheme.info, chartTheme.primary, chartTheme.text]
         },
-        textStyle: { color: textColor }
+        textStyle: { color: chartTheme.text }
       },
       series: [
         {
@@ -148,13 +144,13 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
             show: false
           },
           emphasis: {
-            label: { show: true, color: textColor }
+            label: { show: true, color: chartTheme.text }
           },
           data: [...totalsByRegion.entries()].map(([name, value]) => ({ name, value }))
         }
       ]
     };
-  }, [cityData, isChileMapReady, isDark, textColor]);
+  }, [chartTheme, cityData, isChileMapReady]);
 
   return (
     <div className="bi-chart-row">
