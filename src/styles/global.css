@@ -415,10 +415,17 @@ body {
 [data-theme="dark"] .candidate-detail-panel,
 [data-theme="dark"] .approval-modal-card,
 [data-theme="dark"] .document-buk-archive-panel {
-  background: linear-gradient(180deg, var(--color-bg-surface) 0%, var(--color-bg-surface-elevated) 100%);
+  background: linear-gradient(180deg, rgba(21, 30, 46, 0.98) 0%, rgba(17, 26, 41, 0.98) 100%);
   border-color: var(--color-border-subtle);
   color: var(--color-text-primary);
   box-shadow: var(--shadow-soft);
+}
+
+[data-theme="dark"] .tracking-panel,
+[data-theme="dark"] .dashboard-table-card {
+  background:
+    linear-gradient(180deg, rgba(31, 41, 58, 0.92) 0%, rgba(18, 28, 44, 0.98) 18%, rgba(17, 26, 41, 0.99) 100%);
+  box-shadow: 0 18px 42px -34px rgba(0, 0, 0, 0.64);
 }
 
 [data-theme="dark"] .top-user-menu,
@@ -487,8 +494,19 @@ body {
 
 [data-theme="dark"] .dashboard-table__head,
 [data-theme="dark"] .tracking-table-header {
-  background: var(--color-bg-header);
+  background: rgba(20, 30, 46, 0.98);
   color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .tracking-table-scroll {
+  border-color: var(--color-border-subtle);
+  background: rgba(15, 23, 42, 0.22);
+}
+
+[data-theme="dark"] .tracking-table th {
+  background: rgba(20, 30, 46, 0.98);
+  color: var(--color-text-muted);
+  box-shadow: inset 0 -1px 0 var(--color-border-subtle);
 }
 
 [data-theme="dark"] .dashboard-table__row,
@@ -3764,6 +3782,52 @@ details.mobility-detail-card[open] .mobility-detail-summary {
     inset 4px 4px 10px rgba(215, 223, 236, 0.34),
     inset -4px -4px 10px rgba(255, 255, 255, 0.84);
   opacity: 1;
+}
+
+[data-theme="dark"] .tracking-pagination {
+  border-top-color: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .tracking-pagination-button,
+[data-theme="dark"] .mobility-requests-pagination-button,
+[data-theme="dark"] .hr-incentives-pagination-button {
+  background: linear-gradient(180deg, rgba(24, 35, 53, 0.96), rgba(14, 23, 38, 0.98));
+  border-color: rgba(71, 85, 105, 0.72);
+  color: var(--color-text-secondary);
+  box-shadow:
+    0 14px 30px -24px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(148, 163, 184, 0.12);
+}
+
+[data-theme="dark"] .tracking-pagination-button:not(:disabled):hover,
+[data-theme="dark"] .mobility-requests-pagination-button:not(:disabled):hover,
+[data-theme="dark"] .hr-incentives-pagination-button:not(:disabled):hover {
+  background: linear-gradient(180deg, rgba(30, 43, 64, 0.98), rgba(18, 29, 47, 0.98));
+  border-color: rgba(96, 165, 250, 0.46);
+  color: var(--color-primary-hover);
+  box-shadow:
+    0 16px 34px -26px rgba(0, 0, 0, 0.76),
+    0 0 0 1px rgba(96, 165, 250, 0.08),
+    inset 0 1px 0 rgba(148, 163, 184, 0.14);
+}
+
+[data-theme="dark"] .tracking-pagination-button:not(:disabled):active,
+[data-theme="dark"] .mobility-requests-pagination-button:not(:disabled):active,
+[data-theme="dark"] .hr-incentives-pagination-button:not(:disabled):active {
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(148, 163, 184, 0.08);
+}
+
+[data-theme="dark"] .tracking-pagination-button:disabled,
+[data-theme="dark"] .mobility-requests-pagination-button:disabled,
+[data-theme="dark"] .hr-incentives-pagination-button:disabled {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.56), rgba(15, 23, 42, 0.72));
+  border-color: rgba(51, 65, 85, 0.66);
+  color: rgba(148, 163, 184, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(148, 163, 184, 0.08),
+    inset 0 -1px 0 rgba(2, 6, 23, 0.28);
 }
 
 .mobility-detail-copy {

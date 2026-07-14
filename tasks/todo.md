@@ -2,6 +2,24 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix dark mode: brillo excesivo en tablas y paginacion
+
+- [x] Ubicar los estilos que generan brillo fuerte en `tracking-table` y paginacion.
+- [x] Reducir gradientes y sombras en dark mode sin afectar light mode.
+- [x] Validar build y revisar diff final.
+
+### Criterio de cierre
+
+- Las tablas y botones de paginacion en modo oscuro deben verse sobrios, con contraste controlado y sin halos blancos intensos.
+- El cambio no debe tocar logica, datos, permisos ni contratos frontend/backend.
+
+### Resultado aplicado
+
+- Se redujo el gradiente claro de paneles `tracking-panel`/`dashboard-table-card` en dark mode para evitar la franja blanca superior.
+- Se ajustó el encabezado sticky de `tracking-table` a una superficie oscura plana con borde inferior sutil.
+- Se reemplazaron los halos blancos de paginación por sombras oscuras contenidas y estados hover/deshabilitado sobrios.
+- Validación local: `git diff --check` y `npm run build`.
+
 ## Hotfix solicitudes: cargos BUK completos sin dotacion activa
 
 - [x] Confirmar de donde sale el selector de cargos en solicitud de contratacion.
