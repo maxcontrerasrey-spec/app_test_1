@@ -189,6 +189,7 @@ export function CandidateDetailSidebar({
   const shouldShowReadyForHireSummary =
     (mode === "personnel_to_hire" && selectedCandidate.stage_code === "ready_for_hire") ||
     (mode === "personnel_contracted" && selectedCandidate.stage_code === "hired");
+  const isWorkerFileReadOnly = mode === "personnel_contracted";
   const readyForHireShift =
     selectedCaseDetail.case.hiring_request.shift_name ??
     selectedCandidate.worker_file?.shift_name ??
@@ -793,6 +794,7 @@ export function CandidateDetailSidebar({
         <CandidateWorkerFileForm
           candidate={selectedCandidate}
           caseDetail={selectedCaseDetail}
+          readOnly={isWorkerFileReadOnly}
           onSaved={onCandidateFileUpdated}
         />
       )}

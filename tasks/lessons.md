@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 241. Una corrección de nombre de usuario debe actualizar Auth metadata y `profiles`
+
+- **`profiles.full_name` no es la única fuente visible de identidad.** Si el alta de usuario se creó con `auth.admin.createUser(...)`, el nombre también queda en `auth.users.raw_user_meta_data` como `full_name`/`name`; corregir solo `profiles` puede dejar drift si el trigger de sincronización vuelve a ejecutarse.
+- **La corrección segura es idempotente y acotada al usuario.** Para cambios de display name, resuelve primero el usuario Auth por email, actualiza `user_metadata` y luego confirma `public.profiles.full_name`, sin tocar `user_roles` ni matrices globales de permisos.
+
+---
+
 ## 240. En Postgres/Supabase, crear `SECURITY DEFINER` sin revocar `PUBLIC` abre una superficie RPC aunque la función tenga checks internos
 
 - **El grant default de funciones es parte de la superficie de ataque.** Una función `SECURITY DEFINER` en `public` puede quedar ejecutable por `PUBLIC`, lo que implica también `anon`, aunque el desarrollador solo haya pensado en usuarios autenticados.

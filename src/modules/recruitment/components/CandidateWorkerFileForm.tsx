@@ -26,6 +26,7 @@ import {
 type CandidateWorkerFileFormProps = {
   candidate: RecruitmentCaseCandidateRow;
   caseDetail: RecruitmentCaseDetail;
+  readOnly?: boolean;
   onSaved?: () => Promise<void>;
 };
 
@@ -384,6 +385,7 @@ function collectMissingFields<T extends Record<string, string>>(
 export function CandidateWorkerFileForm({
   candidate,
   caseDetail,
+  readOnly = false,
   onSaved
 }: CandidateWorkerFileFormProps) {
   const [bukProfile, setBukProfile] = useState<CandidateBukProfileDetails | null>(null);
@@ -449,6 +451,8 @@ export function CandidateWorkerFileForm({
   }, [candidate, caseDetail]);
 
   const handlePersonSave = async () => {
+    if (readOnly) return;
+
     setIsPersonSaving(true);
     setPersonMessage("");
 
@@ -547,6 +551,8 @@ export function CandidateWorkerFileForm({
   };
 
   const handleWorkerSave = async () => {
+    if (readOnly) return;
+
     setIsWorkerSaving(true);
     setWorkerMessage("");
 
@@ -659,7 +665,14 @@ export function CandidateWorkerFileForm({
 
         {isProfileLoading ? <p className="tracking-filter-caption">Cargando ficha BUK...</p> : null}
 
-        <div className="control-edit-grid worker-file-grid">
+        {readOnly ? (
+          <p className="worker-file-readonly-notice">
+            Ficha bloqueada: el trabajador ya está en Personal contratado.
+          </p>
+        ) : null}
+
+        <fieldset className="worker-file-readonly-fieldset" disabled={readOnly}>
+          <div className="control-edit-grid worker-file-grid">
           <SelectField
             id="candidate-document-type"
             label="Tipo de documento"
@@ -845,7 +858,8 @@ export function CandidateWorkerFileForm({
               setPersonDraft((current) => ({ ...current, country: event.target.value }))
             }
           />
-        </div>
+          </div>
+        </fieldset>
       </section>
 
       <section className="worker-file-section">
@@ -856,7 +870,8 @@ export function CandidateWorkerFileForm({
           </div>
         </div>
 
-        <div className="control-edit-grid worker-file-grid">
+        <fieldset className="worker-file-readonly-fieldset" disabled={readOnly}>
+          <div className="control-edit-grid worker-file-grid">
           <TextField
             id="candidate-address-line"
             label="Dirección base"
@@ -1110,7 +1125,8 @@ export function CandidateWorkerFileForm({
               }
             />
           </div>
-        </div>
+          </div>
+        </fieldset>
 
         {personMessage ? (
           <p
@@ -1120,16 +1136,18 @@ export function CandidateWorkerFileForm({
           </p>
         ) : null}
 
-        <div className="worker-file-actions">
-          <button
-            type="button"
-            className="soft-primary-button approval-button-approve"
-            onClick={() => void handlePersonSave()}
-            disabled={isPersonSaving || isProfileLoading}
-          >
-            {isPersonSaving ? "Guardando..." : "Guardar ficha personal BUK"}
-          </button>
-        </div>
+        {!readOnly ? (
+          <div className="worker-file-actions">
+            <button
+              type="button"
+              className="soft-primary-button approval-button-approve"
+              onClick={() => void handlePersonSave()}
+              disabled={isPersonSaving || isProfileLoading}
+            >
+              {isPersonSaving ? "Guardando..." : "Guardar ficha personal BUK"}
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <section className="worker-file-section">
@@ -1140,7 +1158,8 @@ export function CandidateWorkerFileForm({
           </div>
         </div>
 
-        <div className="control-edit-grid worker-file-grid">
+        <fieldset className="worker-file-readonly-fieldset" disabled={readOnly}>
+          <div className="control-edit-grid worker-file-grid">
           <TextField
             id="candidate-employee-code"
             label="Código de ficha"
@@ -1523,7 +1542,8 @@ export function CandidateWorkerFileForm({
               }
             />
           </div>
-        </div>
+          </div>
+        </fieldset>
 
         {workerMessage ? (
           <p
@@ -1533,16 +1553,18 @@ export function CandidateWorkerFileForm({
           </p>
         ) : null}
 
-        <div className="worker-file-actions">
-          <button
-            type="button"
-            className="soft-primary-button approval-button-approve"
-            onClick={() => void handleWorkerSave()}
-            disabled={isWorkerSaving || isProfileLoading}
-          >
-            {isWorkerSaving ? "Guardando..." : "Guardar ficha contractual BUK"}
-          </button>
-        </div>
+        {!readOnly ? (
+          <div className="worker-file-actions">
+            <button
+              type="button"
+              className="soft-primary-button approval-button-approve"
+              onClick={() => void handleWorkerSave()}
+              disabled={isWorkerSaving || isProfileLoading}
+            >
+              {isWorkerSaving ? "Guardando..." : "Guardar ficha contractual BUK"}
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );

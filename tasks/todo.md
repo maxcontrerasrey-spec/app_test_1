@@ -2,6 +2,45 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Alta usuario Laura Lopez con permisos de Paola Cisternas
+
+- [x] Confirmar el contrato actual de alta de usuarios en Supabase Auth, `profiles` y `user_roles`.
+- [x] Auditar el perfil y roles efectivos de Paola Cisternas como fuente de verdad.
+- [x] Crear o reutilizar la cuenta Auth de Laura Lopez de forma idempotente.
+- [x] Crear/actualizar `profiles` para Laura con nombre, correo, cargo, estado activo y misma configuración operativa que Paola.
+- [x] Copiar exactamente los roles de Paola hacia Laura sin tocar permisos globales del rol.
+- [x] Verificar en remoto que Laura y Paola queden con roles/capabilities/features/módulos equivalentes.
+
+### Criterio de cierre
+
+- `laura.lopez@busesjm.com` debe existir como usuario activo y tener el mismo rol efectivo que Paola Cisternas.
+- La operación no debe modificar la contraseña ni permisos de Paola ni ampliar matrices globales (`app_roles`, `role_module_access`, `role_feature_access`, `role_capabilities`).
+
+### Resultado aplicado
+
+- Laura quedó creada en Supabase Auth con email confirmado y perfil activo.
+- Perfil creado y corregido: `Laura Lopez Amaya`, `laura.lopez@busesjm.com`, cargo `Psicologo Organizacional`.
+- Se copió desde Paola Cisternas el único rol efectivo: `reclutamiento`.
+- Verificación remota: roles, módulos, features y capabilities de Laura coinciden con Paola; además, Laura pudo iniciar sesión y resolver `get_my_effective_permissions()`.
+
+## Ficha candidato: solo lectura en Personal contratado
+
+- [x] Confirmar el flujo actual entre `Personal a Contratar`, `Personal contratado` y la pestaña `Ficha del candidato`.
+- [x] Agregar un modo de solo lectura para la ficha BUK cuando se abre desde `Personal contratado`.
+- [x] Bloquear edición y acciones de guardado de datos personales/contractuales sin cambiar la carga de datos ni el contrato backend.
+- [x] Validar TypeScript/build y revisar el diff final.
+
+### Criterio de cierre
+
+- Un candidato abierto desde `Personal contratado` debe permitir revisar la ficha del candidato, pero no editar campos ni ejecutar guardados desde esa sección.
+- El flujo de `Personal a Contratar` debe conservar la ficha editable para completar datos antes de generar en BUK.
+
+### Resultado aplicado
+
+- `Personal contratado` abre la ficha BUK en modo solo lectura: campos, selectores y observaciones quedan deshabilitados, y los botones de guardado no se renderizan.
+- `Personal a Contratar` mantiene el mismo formulario editable para completar la ficha antes del alta BUK.
+- Validación local: `npm run build` y `git diff --check` ejecutados correctamente.
+
 ## Hotfix BUK: documento aprobado sin archivo en Storage
 
 - [x] Confirmar candidato, job y documento faltante que provoca `Object not found`
