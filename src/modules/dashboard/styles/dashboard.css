@@ -640,6 +640,11 @@
   z-index: 0;
 }
 
+[data-theme="dark"] .widget-card::before {
+  background: linear-gradient(180deg, rgba(74, 92, 120, 0.18), rgba(15, 23, 42, 0));
+  opacity: 0.72;
+}
+
 .widget-card > * {
   position: relative;
   z-index: 1;

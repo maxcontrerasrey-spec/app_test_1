@@ -2,6 +2,40 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Hotfix dark mode: brillo blanco en tarjetas de inicio
+
+- [x] Ubicar la regla que genera la franja blanca superior en las tarjetas del inicio.
+- [x] Reemplazar el brillo por una elevacion oscura sutil sin afectar light mode.
+- [x] Validar CSS/build y revisar diff.
+
+### Criterio de cierre
+
+- Las tarjetas del inicio en modo oscuro deben verse sobrias, sin franja blanca/plateada dominante.
+- El cambio no debe tocar datos, permisos, rutas ni comportamiento.
+
+### Resultado aplicado
+
+- `widget-card::before` conserva el brillo blanco en light mode, pero en dark mode usa una veladura azul-gris oscura y contenida.
+- El ajuste aplica a las tarjetas del inicio que reutilizan `DashboardWidgetFrame`, incluyendo `Tareas Pendientes`, sin modificar datos ni componentes React.
+- Validacion local: `git diff --check` y `npm run build`.
+
+## Hotfix dark mode: fila seleccionada de candidatos ilegible
+
+- [x] Ubicar clase de selección en Control de candidatos.
+- [x] Reemplazar fondo claro por selección dark con texto legible.
+- [x] Validar CSS/build y revisar diff.
+
+### Criterio de cierre
+
+- Al seleccionar un candidato en modo oscuro, la fila debe conservar texto legible y un estado visual sutil.
+- El cambio no debe tocar lógica, datos ni flujos de selección.
+
+### Resultado aplicado
+
+- `tracking-row-selected` mantiene el fondo claro en light mode, pero en dark mode usa una selección azul oscura con acento lateral y texto legible.
+- El hover de la fila seleccionada conserva contraste sin volver a iluminar la fila.
+- Validación local: `git diff --check` y `npm run build`.
+
 ## Hotfix dark mode: brillo excesivo en tablas y paginacion
 
 - [x] Ubicar los estilos que generan brillo fuerte en `tracking-table` y paginacion.
