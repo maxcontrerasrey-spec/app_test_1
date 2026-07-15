@@ -2,6 +2,33 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Liberación módulo Operaciones por rol
+
+- [x] Auditar matriz viva de `app_modules`, `role_module_access`, `app_roles` y helper `user_can_manage_operations(...)`.
+- [x] Separar regla de vista del módulo Operaciones de la regla de ingreso/modificación operativa.
+- [x] Versionar migración idempotente que libere vista de Operaciones para los roles activos y mantenga escritura solo para `admin`, `operaciones_l_1` y `operaciones_l_2`.
+- [x] Ajustar UI de registro base para que roles solo vista no intenten ingresar planificación.
+- [x] Aplicar y validar en Supabase remoto, ejecutar checks locales y documentar resultado.
+
+### Criterio de cierre
+
+- Todos los roles activos de la matriz deben poder ver el módulo `operaciones`.
+- Solo `operaciones_l_1`, `operaciones_l_2` y `admin` deben poder buscar conductores y enviar registros de servicios.
+- La lectura histórica de `service_entries` debe usar acceso al módulo; la escritura debe seguir gobernada por RPC y helper backend.
+- El cambio no debe relajar `anon`, `public`, ni grants de ejecución sobre RPCs sensibles.
+
+### Resultado aplicado
+
+- Antes del cambio, solo `admin` tenía `can_view=true` sobre `operaciones` en `role_module_access`; `operaciones_l_1` y `operaciones_l_2` no podían entrar al módulo.
+- Se aplicó en Supabase remoto [`20260715162000_release_operations_module_role_matrix.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260715162000_release_operations_module_role_matrix.sql:1): todos los roles activos de `app_roles` quedaron con vista de `operaciones`.
+- `user_can_manage_operations(...)` quedó restringido a `admin`, `operaciones_l_1` y `operaciones_l_2`, con guard interno `auth.uid() = target_user_id` o admin para evitar consultas cruzadas.
+- La policy `operations_service_entries_select` ahora permite lectura a usuarios autenticados con módulo `operaciones`; la escritura sigue cerrada por RPC y helper backend.
+- Las RPC `search_operations_drivers`, `submit_service_entries_batch` y `user_can_manage_operations` conservan `EXECUTE` para `authenticated`, con `anon` y `public` sin ejecución.
+- La UI de `Registro de servicios base` muestra estado de solo lectura para roles sin permiso de ingreso; Resumen y Exportador quedan disponibles como vistas.
+- Smoke remoto por combinaciones reales de roles: L1/L2/admin gestionan; administrativo, gerencia, dirección, reclutamiento, control contratos y jefe administrativo ven sin gestionar.
+- Validación local: `npm run audit:migrations -- --files supabase/migrations/20260715162000_release_operations_module_role_matrix.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:supabase-security` y `git diff --check`.
+- Nota de seguridad: `npm run audit:supabase-security` queda en 99 advertencias históricas/estructurales; la nueva migración aparece por el patrón `SECURITY DEFINER` con `target_user_id`, pero el cuerpo validado ata el actor a `auth.uid()` o admin.
+
 ## Carga flota Operaciones desde Excel
 
 - [x] Inspeccionar `/Users/maximilianocontrerasrey/Downloads/Flota (1).xlsx` y confirmar columnas fuente para Operaciones.

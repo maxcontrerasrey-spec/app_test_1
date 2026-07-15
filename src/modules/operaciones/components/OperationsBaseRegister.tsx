@@ -7,6 +7,7 @@ import type { Driver, Equipment, ServiceDraft } from "../types";
 const DEFAULT_NOT_PERFORMED_NOTE = "Servicio no realizado";
 
 interface OperationsBaseRegisterProps {
+  canManageOperations: boolean;
   selectedDateValue: string;
   setSelectedDateValue: (value: string) => void;
   selectedShift: string;
@@ -74,6 +75,7 @@ function getDriverRosterTone(driver: Driver | null) {
 }
 
 export function OperationsBaseRegister({
+  canManageOperations,
   selectedDateValue,
   setSelectedDateValue,
   selectedShift,
@@ -102,6 +104,31 @@ export function OperationsBaseRegister({
   const selectedDate = selectedDateValue ? parseDateValue(selectedDateValue) : null;
   const todayValue = toTodayDateValue();
   const shiftLabel = selectedShift ? selectedShift.toUpperCase() : "Sin turno";
+
+  if (!canManageOperations) {
+    return (
+      <section className="operations-page-shell">
+        <section className="dashboard-hero operations-page-hero">
+          <div className="dashboard-hero__copy">
+            <h3>Registro de servicios base</h3>
+            <p>Tu rol tiene acceso de vista al módulo Operaciones.</p>
+          </div>
+        </section>
+
+        <article className="reference-card">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Solo lectura</p>
+              <h3>Ingreso reservado para Operaciones L1 y L2</h3>
+            </div>
+          </div>
+          <p className="helper-copy">
+            Revisa los registros desde Resumen o Exportador de Información. El ingreso de planificación queda bloqueado por permisos backend.
+          </p>
+        </article>
+      </section>
+    );
+  }
 
   function markServiceAsNotPerformed(serviceId: number) {
     const confirmed = window.confirm(

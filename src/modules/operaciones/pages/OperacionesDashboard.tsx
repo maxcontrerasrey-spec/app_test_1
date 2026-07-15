@@ -74,9 +74,14 @@ function sortOperationsContracts(contracts: string[]) {
 export function OperacionesDashboard() {
   const today = useMemo(() => new Date(), []);
   const todayStr = useMemo(() => toTodayDateValue(), []);
-  const { session, user } = useAuth();
+  const { appRoles, isSuperAdmin, session, user } = useAuth();
   const { view } = useParams();
   const activePage = view?.replace("-", "_") || "resumen";
+  const canManageOperations =
+    isSuperAdmin ||
+    appRoles.includes("admin") ||
+    appRoles.includes("operaciones_l_1") ||
+    appRoles.includes("operaciones_l_2");
 
   const [selectedContract, setSelectedContract] = useState("");
   const [selectedShift, setSelectedShift] = useState("");
@@ -662,6 +667,7 @@ export function OperacionesDashboard() {
 
         {activePage === "registros_base" && (
           <OperationsBaseRegister
+            canManageOperations={canManageOperations}
             selectedDateValue={selectedDateValue}
             setSelectedDateValue={setSelectedDateValue}
             selectedShift={selectedShift}
