@@ -2,6 +2,54 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Mejora BI Reclutamiento: paletas útiles y contraste por modo
+
+- [x] Auditar la paleta actual de gráficos y tarjetas BI contra el código vivo y la captura reportada.
+- [x] Definir una lógica de color consistente por significado: requerimiento, cobertura, folios, contratados, movilidad, pendientes y rechazados.
+- [x] Aplicar paletas armonizadas para modo claro, oscuro y e-ink sin cambiar contratos de datos.
+- [x] Cambiar `Estado de Casos` para mostrar porcentajes en etiquetas/tooltip en vez de cantidades visibles.
+- [x] Validar build, revisar diff, documentar resultado y versionar con commit/push a `main`.
+
+### Criterio de cierre
+
+- Las series de un mismo gráfico deben distinguirse sin depender solo del texto de la leyenda.
+- Los colores deben conservar lógica semántica equivalente en modo claro, nocturno y e-ink.
+- Las tarjetas superiores deben separarse visualmente del fondo sin introducir una paleta estridente.
+- La entrega debe quedar auditada en documentación, commit y push.
+
+### Resultado aplicado
+
+- `BiRecruitmentAnalyticsView` ahora usa una paleta semántica propia para light, dark y e-ink: requerimiento como base neutra, cobertura/contratados en verde, folios en azul, movilidad en violeta, pendientes/meta en ámbar y rechazo en rojo.
+- `Cupos por Contrato` separa visualmente `Solicitados` y `Cubiertos` con total neutro y cobertura verde, manteniendo la superposición parte/total.
+- `Pulso Operativo` fija color y trazo por serie: folios, contratados, movilidad y meta dejan de depender de la paleta global y no colisionan en modo oscuro.
+- `Estado de Casos` y `Estado de Movilidad Interna` asignan colores por etiqueta de estado y agregan borde de sector para mejorar lectura sobre fondos oscuros.
+- `Estado de Casos` muestra porcentajes visibles en las etiquetas y tooltip.
+- La tarjeta `Listos para Contratar` dejó de heredar el estilo neutral `pendiente` y ahora usa una variante BI propia con contraste en light, dark y e-ink.
+- Validación local: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations` y `git diff --check`.
+- Nota de validación visual: Playwright no pudo arrancar Chrome en esta máquina (`TargetClosedError`), por lo que la comprobación visual se hizo por revisión estática de paletas/CSS y build, no por captura automatizada.
+
+## Hotfix Control de candidatos: permisos RPC documental
+
+- [x] Confirmar permisos vivos de `get_recruitment_case_detail` y `get_candidate_checklist` en Supabase remoto.
+- [x] Reaplicar grants explícitos mínimos y recargar PostgREST sin relajar `anon` ni RLS.
+- [x] Versionar la corrección en una migración auditable.
+- [x] Validar permisos efectivos, contrato de función y build local.
+
+### Criterio de cierre
+
+- Usuarios autenticados deben poder ejecutar las RPC compartidas por Control de candidatos y Control Documental.
+- `anon`/`public` deben seguir sin `EXECUTE` directo sobre estas funciones `SECURITY DEFINER`.
+- El ajuste no debe cambiar payload, filtros internos ni permisos de negocio dentro de las RPC.
+
+### Resultado aplicado
+
+- Se aplicó en Supabase remoto el regrant explícito de `get_recruitment_case_detail(uuid)` y `get_candidate_checklist(uuid)` para `authenticated` y `service_role`, manteniendo revocado `public`/`anon`.
+- Se recargó PostgREST con `notify pgrst, 'reload schema'` para eliminar el estado que podía seguir devolviendo `permission denied for function ...` pese al contrato esperado.
+- Se versionó la corrección en [`20260715133500_restore_recruitment_document_rpc_grants.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260715133500_restore_recruitment_document_rpc_grants.sql:1).
+- Validación remota: `authenticated_execute = true`, `anon_execute = false` y `public_execute = false` para ambas RPCs.
+- Smoke remoto con sesión autenticada simulada de superadmin sobre Eduardo Francisco Brito Carvajal (`RC-0083`): `get_recruitment_case_detail` cargó el caso y `get_candidate_checklist` devolvió 17 documentos.
+- Validación local: `npm run audit:migrations`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Auditoría Supabase: consumo de base de datos y almacenamiento
 
 - [x] Medir tamaño real por tabla, índices y TOAST en Supabase para identificar los mayores consumidores.

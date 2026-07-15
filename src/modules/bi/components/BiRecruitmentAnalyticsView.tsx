@@ -38,8 +38,118 @@ const OPERATIONAL_PULSE_VIEW_OPTIONS: Array<{
   { key: "semester", label: "Semestral", shortLabel: "6M" }
 ];
 
+type BiChartPalette = {
+  requested: string;
+  covered: string;
+  folios: string;
+  hired: string;
+  mobility: string;
+  ready: string;
+  pending: string;
+  rejected: string;
+  partial: string;
+  screening: string;
+  open: string;
+  neutral: string;
+  stage: string[];
+};
+
+const BI_CHART_PALETTES: Record<"light" | "dark" | "e-ink", BiChartPalette> = {
+  light: {
+    requested: "#94a3b8",
+    covered: "#178463",
+    folios: "#2563eb",
+    hired: "#0f766e",
+    mobility: "#7c3aed",
+    ready: "#b45309",
+    pending: "#d97706",
+    rejected: "#a83b3b",
+    partial: "#c2410c",
+    screening: "#64748b",
+    open: "#2563eb",
+    neutral: "#64748b",
+    stage: ["#475569", "#d97706", "#0f766e", "#2563eb", "#0891b2", "#7c3aed", "#178463"]
+  },
+  dark: {
+    requested: "#64748b",
+    covered: "#5eead4",
+    folios: "#60a5fa",
+    hired: "#34d399",
+    mobility: "#c4b5fd",
+    ready: "#fbbf24",
+    pending: "#f59e0b",
+    rejected: "#fca5a5",
+    partial: "#fb923c",
+    screening: "#94a3b8",
+    open: "#60a5fa",
+    neutral: "#94a3b8",
+    stage: ["#94a3b8", "#f59e0b", "#34d399", "#60a5fa", "#22d3ee", "#c4b5fd", "#5eead4"]
+  },
+  "e-ink": {
+    requested: "#8c8679",
+    covered: "#4a6b52",
+    folios: "#355f75",
+    hired: "#4a6b52",
+    mobility: "#6a5a78",
+    ready: "#8a6a2a",
+    pending: "#8a6a2a",
+    rejected: "#8a3a3a",
+    partial: "#8a4f2a",
+    screening: "#6b665d",
+    open: "#355f75",
+    neutral: "#6b665d",
+    stage: ["#6b665d", "#8a6a2a", "#4a6b52", "#355f75", "#4f6f75", "#6a5a78", "#4a634e"]
+  }
+};
+
 function formatMetricValue(value: number) {
   return value.toLocaleString("es-CL");
+}
+
+function formatPercentValue(value: number) {
+  return `${value.toLocaleString("es-CL", {
+    maximumFractionDigits: value >= 10 ? 0 : 1
+  })}%`;
+}
+
+function getCaseStatusColor(label: string, palette: BiChartPalette) {
+  const normalized = label.toLowerCase();
+
+  if (normalized.includes("abierto")) {
+    return palette.open;
+  }
+
+  if (normalized.includes("screen")) {
+    return palette.screening;
+  }
+
+  if (normalized.includes("parcial")) {
+    return palette.partial;
+  }
+
+  if (normalized.includes("cerr") || normalized.includes("cancel") || normalized.includes("rech")) {
+    return palette.neutral;
+  }
+
+  return palette.mobility;
+}
+
+function getMobilityStatusColor(label: string, palette: BiChartPalette) {
+  const normalized = label.toLowerCase();
+
+  if (normalized.includes("ejecut")) {
+    return palette.hired;
+  }
+
+  if (normalized.includes("pend")) {
+    return palette.mobility;
+  }
+
+  if (normalized.includes("rech")) {
+    return palette.rejected;
+  }
+
+  return palette.neutral;
 }
 
 function toMonthLabel(value: string) {
@@ -212,6 +322,7 @@ export function BiRecruitmentAnalyticsView({
 
   const textColor = chartTheme.text;
   const axisColor = chartTheme.border;
+  const biPalette = BI_CHART_PALETTES[chartTheme.mode];
 
   const summaryCardGroups = useMemo(() => {
     if (!dashboard) {
@@ -287,7 +398,7 @@ export function BiRecruitmentAnalyticsView({
           segmentedControlLabel: "Detalle de cupos cubiertos"
         },
         { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "bi-blue" },
-        { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "pendiente" }
+        { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "bi-ready" }
       ]
     };
   }, [dashboard, filledVacancyView, requestedVacancyView]);
@@ -297,19 +408,51 @@ export function BiRecruitmentAnalyticsView({
       return null;
     }
 
+    const totalCases = dashboard.casesByStatus.reduce((sum, item) => sum + item.value, 0);
+
     return {
+      color: dashboard.casesByStatus.map((item) => getCaseStatusColor(item.label, biPalette)),
       tooltip: { trigger: "item" },
       series: [
         {
           type: "pie",
           radius: ["42%", "72%"],
           center: ["50%", "50%"],
-          label: { formatter: "{b}\n{c}", color: textColor },
-          data: dashboard.casesByStatus.map((item) => ({ name: item.label, value: item.value }))
+          itemStyle: {
+            borderColor: chartTheme.surface,
+            borderWidth: 2
+          },
+          label: {
+            formatter: (params) => {
+              const percent = typeof params.percent === "number"
+                ? params.percent
+                : totalCases > 0
+                  ? (Number(params.value ?? 0) / totalCases) * 100
+                  : 0;
+              return `${params.name}\n${formatPercentValue(percent)}`;
+            },
+            color: textColor
+          },
+          tooltip: {
+            valueFormatter: (value) => {
+              const numericValue = Number(value);
+              const percent = totalCases > 0 ? (numericValue / totalCases) * 100 : 0;
+              return formatPercentValue(percent);
+            }
+          },
+          data: dashboard.casesByStatus.map((item) => ({
+            name: item.label,
+            value: item.value,
+            itemStyle: {
+              color: getCaseStatusColor(item.label, biPalette),
+              borderColor: chartTheme.surface,
+              borderWidth: 2
+            }
+          }))
         }
       ]
     };
-  }, [dashboard, textColor]);
+  }, [biPalette, chartTheme.surface, dashboard, textColor]);
 
   const candidatesByStageOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.candidatesByStage.length === 0) {
@@ -345,12 +488,15 @@ export function BiRecruitmentAnalyticsView({
         {
           type: "bar",
           barMaxWidth: 40,
-          data: orderedStages.map((item) => item.value),
+          data: orderedStages.map((item, index) => ({
+            value: item.value,
+            itemStyle: { color: biPalette.stage[index % biPalette.stage.length] }
+          })),
           itemStyle: { borderRadius: [8, 8, 0, 0] }
         }
       ]
     };
-  }, [axisColor, dashboard, textColor]);
+  }, [axisColor, biPalette, dashboard, textColor]);
 
   const vacanciesByContractOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.vacanciesByContract.length === 0) {
@@ -374,7 +520,7 @@ export function BiRecruitmentAnalyticsView({
           showDetail: false,
           showDataShadow: false,
           borderColor: chartTheme.border,
-          fillerColor: chartTheme.primary,
+          fillerColor: biPalette.requested,
           backgroundColor: chartTheme.surface,
           handleSize: "190%",
           handleStyle: {
@@ -383,8 +529,8 @@ export function BiRecruitmentAnalyticsView({
           },
           moveHandleStyle: { color: chartTheme.textMuted },
           selectedDataBackground: {
-            lineStyle: { color: chartTheme.primary },
-            areaStyle: { color: chartTheme.primary }
+            lineStyle: { color: biPalette.requested },
+            areaStyle: { color: biPalette.requested }
           }
         },
         {
@@ -415,7 +561,7 @@ export function BiRecruitmentAnalyticsView({
           data: dashboard.vacanciesByContract.map((item) => item.requested),
           itemStyle: {
             borderRadius: [8, 8, 0, 0],
-            color: chartTheme.primary
+            color: biPalette.requested
           }
         },
         {
@@ -426,12 +572,12 @@ export function BiRecruitmentAnalyticsView({
           data: dashboard.vacanciesByContract.map((item) => item.filled),
           itemStyle: {
             borderRadius: [8, 8, 0, 0],
-            color: chartTheme.info
+            color: biPalette.covered
           }
         }
       ]
     };
-  }, [axisColor, chartTheme, dashboard, textColor]);
+  }, [axisColor, biPalette, chartTheme, dashboard, textColor]);
 
   const mobilityStatusOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.mobilityByStatus.length === 0) {
@@ -439,18 +585,31 @@ export function BiRecruitmentAnalyticsView({
     }
 
     return {
+      color: dashboard.mobilityByStatus.map((item) => getMobilityStatusColor(item.label, biPalette)),
       tooltip: { trigger: "item" },
       series: [
         {
           type: "pie",
           radius: ["44%", "74%"],
           center: ["50%", "50%"],
+          itemStyle: {
+            borderColor: chartTheme.surface,
+            borderWidth: 2
+          },
           label: { formatter: "{b}\n{c}", color: textColor },
-          data: dashboard.mobilityByStatus.map((item) => ({ name: item.label, value: item.value }))
+          data: dashboard.mobilityByStatus.map((item) => ({
+            name: item.label,
+            value: item.value,
+            itemStyle: {
+              color: getMobilityStatusColor(item.label, biPalette),
+              borderColor: chartTheme.surface,
+              borderWidth: 2
+            }
+          }))
         }
       ]
     };
-  }, [dashboard, textColor]);
+  }, [biPalette, chartTheme.surface, dashboard, textColor]);
 
   const timelineOption = useMemo<EChartsOption | null>(() => {
     if (!dashboard || dashboard.timeline.length === 0) {
@@ -464,6 +623,7 @@ export function BiRecruitmentAnalyticsView({
     );
 
     return {
+      color: [biPalette.folios, biPalette.hired, biPalette.mobility, biPalette.ready],
       tooltip: { trigger: "axis" },
       legend: { bottom: 0, textStyle: { color: textColor } },
       grid: { top: 16, right: 16, bottom: 64, left: 56 },
@@ -493,6 +653,9 @@ export function BiRecruitmentAnalyticsView({
           type: "line",
           yAxisIndex: 0,
           smooth: true,
+          symbolSize: 7,
+          lineStyle: { color: biPalette.folios, width: 2.8 },
+          itemStyle: { color: biPalette.folios },
           data: pulseData.map((item) => item.openedFolios)
         },
         {
@@ -500,6 +663,9 @@ export function BiRecruitmentAnalyticsView({
           type: "line",
           yAxisIndex: 0,
           smooth: true,
+          symbolSize: 7,
+          lineStyle: { color: biPalette.hired, width: 2.8 },
+          itemStyle: { color: biPalette.hired },
           data: pulseData.map((item) => item.hiredCandidates)
         },
         {
@@ -507,6 +673,10 @@ export function BiRecruitmentAnalyticsView({
           type: "line",
           yAxisIndex: 0,
           smooth: true,
+          symbol: "diamond",
+          symbolSize: 8,
+          lineStyle: { color: biPalette.mobility, width: 2.6, type: "dashed" },
+          itemStyle: { color: biPalette.mobility },
           data: pulseData.map((item) => item.executedMobilities)
         },
         {
@@ -515,18 +685,18 @@ export function BiRecruitmentAnalyticsView({
           yAxisIndex: 1,
           smooth: false,
           symbol: "none",
-          lineStyle: { type: "dashed", width: 2.4 },
+          lineStyle: { color: biPalette.ready, type: "dotted", width: 2.4 },
           label: {
             show: true,
             position: "right",
-            color: textColor,
+            color: biPalette.ready,
             formatter: "Meta {c}"
           },
           data: pulseData.map((item) => item.requestedVacancies)
         }
       ]
     };
-  }, [axisColor, dashboard, operationalPulseView, textColor]);
+  }, [axisColor, biPalette, dashboard, operationalPulseView, textColor]);
 
   if (isLoading) {
     return <div className="bi-loading-state">Cargando analítica de reclutamiento...</div>;

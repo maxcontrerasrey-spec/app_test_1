@@ -4,6 +4,22 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 245. En BI, los colores deben mapear significado operativo y no orden de serie
+
+- **La paleta global de ECharts sirve como fallback, no como contrato analítico.** Si `Solicitados`, `Cubiertos`, `Folios abiertos`, `Contratados` o `Movilidad` dependen del orden de `series`, dos métricas cercanas pueden terminar con azules indistinguibles o cambiar semántica al variar el payload.
+- **Cada gráfico ejecutivo debe fijar color por concepto y sostenerlo en light/dark/e-ink.** Requerimiento puede funcionar como base neutra, cobertura/contratados como avance verde, movilidad como violeta, pendientes/meta como ámbar y rechazo como rojo; el modo oscuro debe usar equivalentes legibles, no solo la misma paleta aclarada.
+- **Los donuts de estado necesitan colores por etiqueta y porcentaje visible cuando la pregunta es composición.** Mostrar cantidad en `Estado de Casos` compite con KPIs superiores; el donut debe comunicar proporción y conservar el conteo solo si se requiere en detalle contextual.
+
+---
+
+## 244. Recompilar una RPC compartida exige cerrar grants y recargar PostgREST como parte del contrato
+
+- **Un `CREATE OR REPLACE FUNCTION` exitoso no prueba que la RPC esté operativa desde PostgREST.** Si la función es `SECURITY DEFINER` y se endurecen grants, el cierre debe verificar `has_function_privilege(...)` para `public`, `anon`, `authenticated` y `service_role`.
+- **El hotfix seguro para `permission denied for function ...` no es abrir `PUBLIC`.** Reaplica grants mínimos a `authenticated`/`service_role`, conserva `public`/`anon` revocados y ejecuta `notify pgrst, 'reload schema'` para eliminar caché de esquema obsoleta.
+- **Las RPCs compartidas entre tabs deben validarse con el caso real que falla.** En Control de candidatos, `get_recruitment_case_detail(...)` y `get_candidate_checklist(...)` se deben probar juntas contra el candidato/caso afectado, porque el usuario ve ambos errores en el mismo panel.
+
+---
+
 ## 243. Los snapshots BUK no deben ser diarios ni conservar JSON crudo si el ERP no usa BI como fuente principal
 
 - **La dotación operativa vigente vive en `public.employees`.** El ERP necesita esa tabla para operación actual, búsqueda, contratos, incentivos y contexto BUK; no necesita duplicar el mismo payload completo en una foto diaria.

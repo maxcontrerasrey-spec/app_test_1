@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 export type EChartThemeTokens = {
+  mode: "light" | "dark" | "e-ink";
   text: string;
   textMuted: string;
   border: string;
@@ -25,6 +26,10 @@ export function readCssVariable(name: string, fallback: string) {
 }
 
 function resolveChartTheme(): EChartThemeTokens {
+  const rootTheme = typeof document === "undefined"
+    ? "light"
+    : document.documentElement.getAttribute("data-theme");
+  const mode = rootTheme === "dark" || rootTheme === "e-ink" ? rootTheme : "light";
   const primary = readCssVariable("--color-primary", readCssVariable("--primary", "#3b82f6"));
   const info = readCssVariable("--color-info", "#38bdf8");
   const warning = readCssVariable("--color-warning", "#f59e0b");
@@ -32,6 +37,7 @@ function resolveChartTheme(): EChartThemeTokens {
   const danger = readCssVariable("--color-danger", "#ef4444");
 
   return {
+    mode,
     text: readCssVariable("--color-text-primary", readCssVariable("--text", "#111827")),
     textMuted: readCssVariable("--color-text-muted", readCssVariable("--text-muted", "#64748b")),
     border: readCssVariable("--color-border-default", "rgba(148, 163, 184, 0.24)"),
