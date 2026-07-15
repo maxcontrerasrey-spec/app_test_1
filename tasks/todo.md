@@ -2,6 +2,30 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Carga flota Operaciones desde Excel
+
+- [x] Inspeccionar `/Users/maximilianocontrerasrey/Downloads/Flota (1).xlsx` y confirmar columnas fuente para Operaciones.
+- [x] Auditar contrato actual de `public.equipment`, selector de equipo y `submit_service_entries_batch(...)`.
+- [x] Generar migración idempotente que cargue flota activa desde el Excel sin relajar RLS ni permisos de cliente.
+- [x] Aplicar migración en Supabase remoto y validar conteos/campos principales.
+- [x] Ejecutar validaciones locales, documentar resultado, commit y push.
+
+### Criterio de cierre
+
+- El selector de equipo de Planificación de Servicios debe alimentarse con `N° Interno` como código visible y guardar ese mismo valor.
+- La tabla `public.equipment` debe contener patente, tipo y cliente actual desde las columnas T, U y N del Excel.
+- La carga debe quedar versionada, repetible e idempotente.
+- Cualquier duplicado o fila incompleta relevante debe quedar documentado en el cierre.
+
+### Resultado aplicado
+
+- El Excel `Flota (1).xlsx` se procesó desde la hoja `Flota`, usando `N° Interno` como `equipment_code`, `Placa` como `plate`, `Tipo` como `equipment_type` y `Cliente Actual` como `current_client`.
+- La base remota quedó cargada con 702 equipos activos únicos desde 703 filas activas del archivo; los 6 equipos semilla anteriores quedaron inactivos para no contaminar la operación real.
+- El duplicado activo `3004` quedó auditado en la migración; se conservó la fila 506 (`VRSC33`, `STATION WAGON`, `CODELCO ANDINA 2022`, año 2026) por ser la versión más completa y reciente frente a la fila 3.
+- Brechas de origen mantenidas tal como vienen del Excel: 15 equipos activos sin patente, 29 sin tipo y 0 sin cliente actual.
+- La carga queda versionada en `20260715151000_import_operations_fleet_from_excel.sql` y es idempotente mediante `upsert` por `equipment_code`.
+- Validación local: `npm run audit:migrations`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Mejora BI Reclutamiento: paletas útiles y contraste por modo
 
 - [x] Auditar la paleta actual de gráficos y tarjetas BI contra el código vivo y la captura reportada.
