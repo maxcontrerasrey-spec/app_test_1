@@ -5,9 +5,15 @@
 
 .roster-toolbar-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) auto minmax(0, 1.2fr);
-  gap: 0.75rem;
+  grid-template-columns: minmax(320px, 1.7fr) minmax(132px, 0.42fr) minmax(260px, 1.05fr);
+  gap: 0.9rem;
   align-items: end;
+}
+
+.roster-toolbar-grid > .field-group,
+.roster-toolbar-grid > .select-field,
+.roster-toolbar-grid > .hr-worker-lookup {
+  min-width: 0;
 }
 
 .roster-kpi-row {
@@ -379,20 +385,40 @@
 }
 
 .roster-filter-month {
-  max-width: 140px;
-  flex: none;
+  width: 100%;
 }
 
 .roster-filter-area {
-  min-width: 200px;
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 1180px) {
+  .roster-toolbar-grid {
+    grid-template-columns: minmax(360px, 1fr) minmax(132px, 0.38fr);
+  }
+
+  .roster-filter-area {
+    grid-column: 1 / -1;
+  }
+
+  .roster-content-grid,
+  .roster-pattern-grid,
+  .roster-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
   .roster-toolbar-grid,
   .roster-content-grid,
   .roster-pattern-grid,
   .roster-kpi-row {
     grid-template-columns: 1fr;
+  }
+
+  .roster-filter-area {
+    grid-column: auto;
   }
 }
 

@@ -1,3 +1,4 @@
+import { Fragment, useState } from "react";
 import { DatePickerField, SelectField } from "../../../shared/ui";
 import type { DashboardSummary } from "../types";
 
@@ -14,6 +15,39 @@ interface OperationsSummaryProps {
   dashboardError: string;
 }
 
+function formatShiftLabel(value: string | null) {
+  return value?.trim() || "Sin turno";
+}
+
+function formatDriverShiftStatus(value: string | null, serviceExecutionStatus: string | null) {
+  if (serviceExecutionStatus === "not_performed") {
+    return "Servicio no realizado";
+  }
+
+  if (value === "en_turno") {
+    return "En turno";
+  }
+
+  if (value === "fuera_de_turno") {
+    return "Fuera de turno";
+  }
+
+  return "Sin pauta";
+}
+
+function buildEquipmentLabel({
+  equipmentCode,
+  equipmentPlate,
+  equipmentType
+}: {
+  equipmentCode: string | null;
+  equipmentPlate: string | null;
+  equipmentType: string | null;
+}) {
+  const parts = [equipmentCode, equipmentPlate, equipmentType].map((item) => item?.trim()).filter(Boolean);
+  return parts.length > 0 ? parts.join(" / ") : "Sin equipo";
+}
+
 export function OperationsSummary({
   dashboardContract,
   setDashboardContract,
@@ -26,18 +60,24 @@ export function OperationsSummary({
   dashboardLoading,
   dashboardError
 }: OperationsSummaryProps) {
+  const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
   const dashboardCompletionRate =
     dashboardSummary.totalExpected > 0 ? Math.round((dashboardSummary.totalPlanned / dashboardSummary.totalExpected) * 100) : 0;
 
+  const toggleContract = (contractCode: string) => {
+    setExpandedContracts((current) => {
+      const next = new Set(current);
+      if (next.has(contractCode)) {
+        next.delete(contractCode);
+      } else {
+        next.add(contractCode);
+      }
+      return next;
+    });
+  };
+
   return (
     <section className="operations-page-shell">
-      <section className="dashboard-hero operations-page-hero">
-        <div className="dashboard-hero__copy">
-          <h3>Resumen</h3>
-          <p>Indicadores operacionales alimentados desde los registros históricos de planificación.</p>
-        </div>
-      </section>
-
       <section className="operations-control-grid operations-control-grid--summary">
         <section className="panel operations-panel">
           <p className="panel-label">Resumen</p>
@@ -79,33 +119,22 @@ export function OperationsSummary({
           <article className="dashboard-card">
             <span>Servicios planificados</span>
             <strong>{dashboardSummary.totalPlanned}</strong>
-            <small>Registros guardados en el rango seleccionado.</small>
           </article>
           <article className="dashboard-card">
             <span>Servicios base habilitados</span>
             <strong>{dashboardSummary.totalExpected}</strong>
-            <small>Servicios programables según periodicidad y contrato.</small>
           </article>
           <article className="dashboard-card">
             <span>Conductores en turno</span>
             <strong>{dashboardSummary.totalInTurn}</strong>
-            <small>Conductores distintos marcados como en turno.</small>
           </article>
           <article className="dashboard-card">
             <span>Conductores fuera de turno</span>
             <strong>{dashboardSummary.totalOutOfTurn}</strong>
-            <small>Conductores distintos marcados como fuera de turno.</small>
           </article>
         </section>
 
         <section className="dashboard-table-card">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Dashboard</p>
-              <h3>Servicios planificados vs base habilitada por contrato</h3>
-            </div>
-          </div>
-
           {dashboardError ? <p className="submit-feedback submit-feedback--error">{dashboardError}</p> : null}
 
           <div className="dashboard-table">
@@ -123,16 +152,69 @@ export function OperationsSummary({
                 <span>Cargando indicadores...</span>
               </div>
             ) : dashboardSummary.byContract.length > 0 ? (
-              dashboardSummary.byContract.map((item) => (
-                <div key={item.contractCode} className="dashboard-table__row">
-                  <strong>{item.contractCode}</strong>
-                  <span>{item.plannedServices}</span>
-                  <span>{item.expectedServices}</span>
-                  <span>{item.inTurnWorkers}</span>
-                  <span>{item.outOfTurnWorkers}</span>
-                  <span>{item.completionRate}%</span>
-                </div>
-              ))
+              dashboardSummary.byContract.map((item) => {
+                const isExpanded = expandedContracts.has(item.contractCode);
+
+                return (
+                  <Fragment key={item.contractCode}>
+                    <button
+                      className="dashboard-table__row dashboard-table__row--button"
+                      type="button"
+                      onClick={() => toggleContract(item.contractCode)}
+                      aria-expanded={isExpanded}
+                      aria-controls={`operations-summary-detail-${item.contractCode}`}
+                    >
+                      <strong>
+                        <span className="dashboard-table__chevron" aria-hidden="true">
+                          {isExpanded ? "-" : "+"}
+                        </span>
+                        {item.contractCode}
+                      </strong>
+                      <span>{item.plannedServices}</span>
+                      <span>{item.expectedServices}</span>
+                      <span>{item.inTurnWorkers}</span>
+                      <span>{item.outOfTurnWorkers}</span>
+                      <span>{item.completionRate}%</span>
+                    </button>
+
+                    {isExpanded ? (
+                      <div className="dashboard-table__detail" id={`operations-summary-detail-${item.contractCode}`}>
+                        {item.serviceDetails.length > 0 ? (
+                          <div className="dashboard-detail-table">
+                            <div className="dashboard-detail-table__head">
+                              <span>Servicio</span>
+                              <span>Conductor</span>
+                              <span>Equipo</span>
+                              <span>Turno</span>
+                            </div>
+                            {item.serviceDetails.map((detail) => (
+                              <div className="dashboard-detail-table__row" key={detail.key}>
+                                <div>
+                                  <strong>{detail.serviceName}</strong>
+                                  <small>
+                                    {detail.serviceDate} / {formatShiftLabel(detail.shift)}
+                                  </small>
+                                </div>
+                                <span>{detail.driverName?.trim() || "Sin conductor"}</span>
+                                <span>
+                                  {buildEquipmentLabel({
+                                    equipmentCode: detail.equipmentCode,
+                                    equipmentPlate: detail.equipmentPlate,
+                                    equipmentType: detail.equipmentType
+                                  })}
+                                </span>
+                                <span>{formatDriverShiftStatus(detail.driverShiftStatus, detail.serviceExecutionStatus)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="dashboard-table__detail-empty">Sin servicios planificados en el rango seleccionado.</p>
+                        )}
+                      </div>
+                    ) : null}
+                  </Fragment>
+                );
+              })
             ) : (
               <div className="dashboard-table__row dashboard-table__row--empty">
                 <span>No hay datos para el rango seleccionado.</span>

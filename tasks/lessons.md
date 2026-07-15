@@ -4,6 +4,23 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 247. Las cuentas compartidas necesitan identidad operativa auditada, no solo un usuario Auth común
+
+- **Si dos personas operan con el mismo correo, el login no identifica al operador real.** Para turno/contraturno, la cuenta Auth compartida debe abrir una instancia de selección obligatoria antes de entrar a la app.
+- **La selección debe validarse y auditarse en backend.** El frontend puede bloquear la navegación, pero la verdad durable es una RPC que confirme que el operador pertenece al correo autenticado y escriba usuario Auth, operador, sesión, user agent y fecha/hora.
+- **No crees usuarios Auth manualmente desde SQL para cerrar una pantalla.** Primero versiona las opciones y la auditoría; el alta de la cuenta debe seguir el flujo normal de provisión/password para no inventar credenciales ni romper triggers de `profiles`.
+- **Los resúmenes operativos expandibles deben usar la misma fuente que calcula los KPIs.** Si la cobertura sale de `service_entries` y base habilitada, el detalle por contrato debe derivarse de esos registros, no de un dataset paralelo que pueda quedar inconsistente.
+
+---
+
+## 246. Las grillas de filtros no pueden depender de que tres controles quepan en una sola fila hasta el breakpoint móvil
+
+- **La escala de Windows/Chrome puede revelar choques que no aparecen en el viewport ideal del desarrollador.** En Jornadas, `Trabajador`, `Mes` y `Contrato / Área` compartían una fila hasta 1180 px; con escala de pantalla, el label de contrato invadía el control de mes.
+- **Los filtros secundarios deben saltar de línea antes de que el layout se comprima.** Para toolbars operativas, usa columnas con mínimos reales y breakpoints intermedios donde los campos largos ocupen fila completa.
+- **La validación visual mínima debe medir intersecciones, no solo compilar.** Un smoke con los mismos selectores/clases en anchos 1366, 1100, 1024, 900 y móvil detecta si labels y controles se pisan antes de cerrar.
+
+---
+
 ## 245. En BI, los colores deben mapear significado operativo y no orden de serie
 
 - **La paleta global de ECharts sirve como fallback, no como contrato analítico.** Si `Solicitados`, `Cubiertos`, `Folios abiertos`, `Contratados` o `Movilidad` dependen del orden de `series`, dos métricas cercanas pueden terminar con azules indistinguibles o cambiar semántica al variar el payload.

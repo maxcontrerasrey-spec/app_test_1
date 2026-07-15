@@ -44,6 +44,19 @@ type EffectivePermissionsPayload = {
   is_super_admin?: boolean;
 };
 
+export type SharedOperatorOption = {
+  id: string;
+  selectionId?: string | null;
+  operatorKey: string;
+  operatorName: string;
+  operatorRole: string;
+  bukEmployeeId: string | null;
+  documentNumber: string | null;
+  contractCode: string | null;
+  areaName: string | null;
+  areaCode: string | null;
+};
+
 type AuthContextValue = {
   isConfigured: boolean;
   isLoading: boolean;
@@ -59,10 +72,14 @@ type AuthContextValue = {
   hasFeature: (feature: AppFeatureCode) => boolean;
   hasCapability: (capability: AppCapability) => boolean;
   isSuperAdmin: boolean;
+  operatorOptions: SharedOperatorOption[];
+  activeOperator: SharedOperatorOption | null;
+  requiresOperatorSelection: boolean;
   displayName: string;
   jobTitle: string;
   email: string;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  selectOperator: (operatorChoiceId: string) => Promise<{ error: string | null }>;
   sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   acceptAupPolicy: () => Promise<{ error: string | null }>;
@@ -71,6 +88,8 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
+const ACTIVE_OPERATOR_STORAGE_PREFIX = "app:active-operator:";
+const APP_SESSION_ID_STORAGE_KEY = "app:session-id";
 
 function buildDisplayName(user: User | null, profile: ProfileRecord | null) {
   if (profile?.full_name?.trim()) {
@@ -158,6 +177,105 @@ function normalizeProfileRecord(value: unknown): ProfileRecord | null {
   };
 }
 
+function readNullableString(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function normalizeSharedOperatorOption(value: unknown): SharedOperatorOption | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const id = readNullableString(record, "id");
+  const operatorKey = readNullableString(record, "operator_key");
+  const operatorName = readNullableString(record, "operator_name");
+  const operatorRole = readNullableString(record, "operator_role") ?? "supervisor";
+
+  if (!id || !operatorKey || !operatorName) {
+    return null;
+  }
+
+  return {
+    id,
+    selectionId: readNullableString(record, "selection_id"),
+    operatorKey,
+    operatorName,
+    operatorRole,
+    bukEmployeeId: readNullableString(record, "buk_employee_id"),
+    documentNumber: readNullableString(record, "document_number"),
+    contractCode: readNullableString(record, "contract_code"),
+    areaName: readNullableString(record, "area_name"),
+    areaCode: readNullableString(record, "area_code")
+  };
+}
+
+function normalizeSharedOperatorOptions(value: unknown): SharedOperatorOption[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => normalizeSharedOperatorOption(item))
+    .filter((item): item is SharedOperatorOption => item !== null);
+}
+
+function readStoredActiveOperator(userId: string, options: SharedOperatorOption[]) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const rawValue = window.sessionStorage.getItem(`${ACTIVE_OPERATOR_STORAGE_PREFIX}${userId}`);
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const stored = normalizeSharedOperatorOption(JSON.parse(rawValue));
+    if (!stored) {
+      return null;
+    }
+
+    const stillAvailable = options.some((option) => option.id === stored.id);
+    return stillAvailable ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeActiveOperator(userId: string, operator: SharedOperatorOption | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const storageKey = `${ACTIVE_OPERATOR_STORAGE_PREFIX}${userId}`;
+  if (!operator) {
+    window.sessionStorage.removeItem(storageKey);
+    return;
+  }
+
+  window.sessionStorage.setItem(storageKey, JSON.stringify(operator));
+}
+
+function getAppSessionId() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const currentValue = window.sessionStorage.getItem(APP_SESSION_ID_STORAGE_KEY);
+  if (currentValue) {
+    return currentValue;
+  }
+
+  const nextValue =
+    typeof window.crypto?.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  window.sessionStorage.setItem(APP_SESSION_ID_STORAGE_KEY, nextValue);
+  return nextValue;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -167,6 +285,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessibleModules, setAccessibleModules] = useState<AppModuleCode[]>([]);
   const [accessibleFeatures, setAccessibleFeatures] = useState<AppFeatureCode[]>([]);
   const [capabilities, setCapabilities] = useState<AppCapability[]>([]);
+  const [operatorOptions, setOperatorOptions] = useState<SharedOperatorOption[]>([]);
+  const [activeOperator, setActiveOperator] = useState<SharedOperatorOption | null>(null);
   const inactivityTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -194,6 +314,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessibleModules([]);
         setAccessibleFeatures([]);
         setCapabilities([]);
+        setOperatorOptions([]);
+        setActiveOperator(null);
         setIsLoading(false);
         return;
       }
@@ -238,6 +360,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .filter((featureCode): featureCode is AppFeatureCode => featureCode !== null);
 
         setAccessibleFeatures(Array.from(new Set(nextFeatures)));
+
+        const { data: operatorData, error: operatorError } = await supabaseClient.rpc(
+          "get_shared_login_operator_options"
+        );
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (operatorError) {
+          logger.error("AuthContext shared operator options", operatorError);
+          setOperatorOptions([]);
+          setActiveOperator(null);
+        } else {
+          const nextOperatorOptions = normalizeSharedOperatorOptions(operatorData);
+          setOperatorOptions(nextOperatorOptions);
+          setActiveOperator(readStoredActiveOperator(nextSession.user.id, nextOperatorOptions));
+        }
       } catch (err) {
         logger.error("AuthContext loadAuthorization catch", err);
       } finally {
@@ -355,6 +495,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const user = session?.user ?? null;
     const isSuperAdmin = profile?.is_super_admin ?? false;
     const appRole = resolvePrimaryRole(appRoles, isSuperAdmin);
+    const requiresOperatorSelection = operatorOptions.length > 0 && !activeOperator;
 
     return {
       isConfigured: isSupabaseConfigured,
@@ -371,6 +512,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasFeature: (feature) => accessibleFeatures.includes(feature),
       hasCapability: (capability) => capabilities.includes(capability),
       isSuperAdmin,
+      operatorOptions,
+      activeOperator,
+      requiresOperatorSelection,
       displayName: buildDisplayName(user, profile),
       jobTitle: buildJobTitle(profile),
       email: user?.email ?? "",
@@ -385,6 +529,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         return { error: error?.message ?? null };
+      },
+      selectOperator: async (operatorChoiceId) => {
+        if (!supabase) {
+          return { error: "Supabase no está configurado en este entorno." };
+        }
+
+        const currentUserId = user?.id ?? null;
+        if (!currentUserId) {
+          return { error: "Usuario no autenticado." };
+        }
+
+        const { data, error } = await supabase.rpc("select_shared_login_operator", {
+          p_operator_choice_id: operatorChoiceId,
+          p_app_session_id: getAppSessionId(),
+          p_user_agent: typeof window === "undefined" ? null : window.navigator.userAgent
+        });
+
+        if (error) {
+          return { error: error.message };
+        }
+
+        const selectedOperator = normalizeSharedOperatorOption(data);
+        if (!selectedOperator) {
+          return { error: "No fue posible confirmar el operador seleccionado." };
+        }
+
+        setActiveOperator(selectedOperator);
+        storeActiveOperator(currentUserId, selectedOperator);
+
+        return { error: null };
       },
       sendPasswordReset: async (email) => {
         if (!supabase) {
@@ -467,6 +641,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         await supabase.auth.signOut();
         setIsRecoveryMode(false);
+        if (user?.id) {
+          storeActiveOperator(user.id, null);
+        }
       }
     };
   }, [
@@ -474,8 +651,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     accessibleModules,
     appRoles,
     capabilities,
+    activeOperator,
     isLoading,
     isRecoveryMode,
+    operatorOptions,
     profile,
     session
   ]);

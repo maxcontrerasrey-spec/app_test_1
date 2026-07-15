@@ -40,7 +40,8 @@ import "../styles/operaciones.css";
 const PILOT_CONTRACTS = ["CODELCO DRT", "CODELCO DMH"];
 const EXPORT_PAGE_SIZE = 1000;
 const DASHBOARD_PAGE_SIZE = 1000;
-const DASHBOARD_ENTRY_SELECT = "contract_code, service_date, shift, driver_name, driver_shift_status, service_operational_name";
+const DASHBOARD_ENTRY_SELECT =
+  "contract_code, service_date, shift, driver_name, driver_shift_status, service_operational_name, service_execution_status, service_execution_note, equipment_code, equipment_plate, equipment_type";
 const EXPORT_ENTRY_SELECT =
   "service_date, shift, contract_code, service_operational_name, service_contractual_name, service_category, service_company, service_execution_status, service_execution_note, driver_name, driver_document, driver_area, driver_shift_status, equipment_code, equipment_plate, equipment_type, equipment_client, created_at";
 

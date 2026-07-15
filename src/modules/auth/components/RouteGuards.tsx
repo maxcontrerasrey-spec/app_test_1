@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { hasModuleAccess, type AppModuleCode, type AppRole } from "../config/access";
 import { useAuth } from "../context/AuthContext";
+import { OperatorSelectionGate } from "./OperatorSelectionGate";
 
 function AuthLoadingScreen() {
   return (
@@ -15,7 +16,7 @@ function AuthLoadingScreen() {
 }
 
 export function ProtectedRoute() {
-  const { isConfigured, isLoading, isRecoveryMode, profile, user } = useAuth();
+  const { isConfigured, isLoading, isRecoveryMode, profile, requiresOperatorSelection, user } = useAuth();
   const location = useLocation();
 
   if (!isConfigured) {
@@ -49,6 +50,10 @@ export function ProtectedRoute() {
         state={{ reason: "profile-status", status: profile.status }}
       />
     );
+  }
+
+  if (requiresOperatorSelection) {
+    return <OperatorSelectionGate />;
   }
 
   return <Outlet />;

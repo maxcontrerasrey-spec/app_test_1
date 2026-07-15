@@ -42,6 +42,7 @@ export interface ContractSummary {
   inTurnWorkers: number;
   outOfTurnWorkers: number;
   completionRate: number;
+  serviceDetails: DashboardServiceDetail[];
 }
 
 export interface DashboardSummary {
@@ -109,6 +110,25 @@ export interface DashboardEntryRow {
   driver_name: string | null;
   driver_shift_status: string | null;
   service_operational_name: string | null;
+  service_execution_status: string | null;
+  service_execution_note: string | null;
+  equipment_code: string | null;
+  equipment_plate: string | null;
+  equipment_type: string | null;
+}
+
+export interface DashboardServiceDetail {
+  key: string;
+  serviceDate: string;
+  shift: string | null;
+  serviceName: string;
+  driverName: string | null;
+  equipmentCode: string | null;
+  equipmentPlate: string | null;
+  equipmentType: string | null;
+  driverShiftStatus: string | null;
+  serviceExecutionStatus: string | null;
+  serviceExecutionNote: string | null;
 }
 
 export interface ExportEntryRow {

@@ -218,6 +218,35 @@ export function buildDashboardSummary({
         .map((entry) => normalizeText(entry.driver_name))
         .filter(Boolean)
     ).size;
+    const serviceDetails = contractEntries
+      .map((entry, index) => ({
+        key: [
+          contractCode,
+          entry.service_date,
+          entry.shift ?? "sin-turno",
+          entry.service_operational_name ?? "sin-servicio",
+          entry.driver_name ?? "sin-conductor",
+          entry.equipment_code ?? "sin-equipo",
+          index
+        ].join("::"),
+        serviceDate: entry.service_date,
+        shift: entry.shift,
+        serviceName: entry.service_operational_name?.trim() || "Servicio sin nombre",
+        driverName: entry.driver_name,
+        equipmentCode: entry.equipment_code,
+        equipmentPlate: entry.equipment_plate,
+        equipmentType: entry.equipment_type,
+        driverShiftStatus: entry.driver_shift_status,
+        serviceExecutionStatus: entry.service_execution_status,
+        serviceExecutionNote: entry.service_execution_note
+      }))
+      .sort((left, right) => {
+        const dateComparison = left.serviceDate.localeCompare(right.serviceDate);
+        if (dateComparison !== 0) return dateComparison;
+        const shiftComparison = (left.shift ?? "").localeCompare(right.shift ?? "", "es");
+        if (shiftComparison !== 0) return shiftComparison;
+        return left.serviceName.localeCompare(right.serviceName, "es");
+      });
 
     return {
       contractCode,
@@ -225,7 +254,8 @@ export function buildDashboardSummary({
       expectedServices,
       inTurnWorkers,
       outOfTurnWorkers,
-      completionRate: expectedServices > 0 ? Math.round((plannedServices / expectedServices) * 100) : 0
+      completionRate: expectedServices > 0 ? Math.round((plannedServices / expectedServices) * 100) : 0,
+      serviceDetails
     };
   });
 

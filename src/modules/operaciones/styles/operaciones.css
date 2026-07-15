@@ -1093,6 +1093,21 @@
   background: rgba(var(--surface-soft-rgb), 0.72);
 }
 
+.dashboard-table__row--button {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+}
+
+.dashboard-table__row--button:hover,
+.dashboard-table__row--button:focus-visible {
+  border-color: rgba(59, 130, 246, 0.34);
+  background: rgba(248, 250, 252, 0.94);
+  outline: none;
+}
+
 .dashboard-table__row strong,
 .dashboard-table__row span {
   min-width: 0;
@@ -1104,12 +1119,94 @@
 }
 
 .dashboard-table__row strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
+}
+
+.dashboard-table__chevron {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-base);
+  font-size: 0.86rem;
+  line-height: 1;
 }
 
 .dashboard-table__row--empty {
   grid-template-columns: minmax(0, 1fr);
   justify-items: start;
+}
+
+.dashboard-table__detail {
+  margin-top: -4px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  background: rgba(var(--surface-rgb), 0.84);
+}
+
+.dashboard-detail-table {
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-detail-table__head,
+.dashboard-detail-table__row {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.25fr) minmax(180px, 1fr) minmax(160px, 0.95fr) minmax(110px, 0.55fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.dashboard-detail-table__head {
+  padding: 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.dashboard-detail-table__row {
+  min-height: 54px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(var(--surface-soft-rgb), 0.68);
+}
+
+.dashboard-detail-table__row strong,
+.dashboard-detail-table__row span,
+.dashboard-detail-table__row small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-detail-table__row strong {
+  display: block;
+  color: var(--text-base);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.dashboard-detail-table__row span,
+.dashboard-detail-table__row small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.dashboard-table__detail-empty {
+  margin: 0;
+  padding: 8px 4px;
+  color: var(--muted);
+  font-size: 0.86rem;
 }
 
 .dashboard-table--export {
@@ -1961,8 +2058,20 @@
 
   .dashboard-cards,
   .dashboard-table__head,
-  .dashboard-table__row {
+  .dashboard-table__row,
+  .dashboard-detail-table__head,
+  .dashboard-detail-table__row {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-detail-table__head {
+    display: none;
+  }
+
+  .dashboard-detail-table__row strong,
+  .dashboard-detail-table__row span,
+  .dashboard-detail-table__row small {
+    white-space: normal;
   }
 
   .field-errors-grid--compact {

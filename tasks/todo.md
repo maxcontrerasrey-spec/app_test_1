@@ -2,6 +2,57 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Operaciones: operador compartido y resumen expandible
+
+- [x] Confirmar en datos vivos la identidad operativa de David Alvarez Alvarez y Sergio Alvarado Lopez para el correo compartido `supervisor.dmh@busesjm.com`.
+- [x] Versionar una instancia backend auditable para que cuentas compartidas seleccionen quién está operando al iniciar sesión.
+- [x] Integrar un bloqueo frontend post-login que obligue la selección cuando el correo tenga operadores configurados.
+- [x] Convertir la tabla de Resumen de Operaciones en filas expandibles con servicio, conductor, equipo y estado de turno.
+- [x] Limpiar la vista según captura: retirar el cuadro hero superior, el título "Servicios planificados vs base habilitada por contrato" y los textos inferiores de tarjetas informativas.
+- [x] Aplicar migración en Supabase remoto, validar permisos/RLS/RPC, compilar, revisar diff, commit y push a `main`.
+
+### Criterio de cierre
+
+- La cuenta compartida conserva un usuario Auth único, pero cada acceso exige elegir operador cuando existan opciones activas para ese correo.
+- La selección queda registrada en tabla auditada con usuario Auth, correo, operador, fecha/hora, sesión de app y user agent.
+- La selección solo puede hacerse sobre opciones activas vinculadas al mismo correo autenticado; no se permite seleccionar operadores de otro correo.
+- El detalle expandible del resumen usa `service_entries` y no cambia la fuente de datos ni la regla de cobertura.
+- La limpieza visual no debe eliminar filtros ni métricas necesarias para operar.
+
+### Resultado aplicado
+
+- En datos vivos, las opciones operativas se resolvieron como David Edgardo Alvarez Alvarez (`buk_employee_id=17225`) y Sergio Andres Alvarado Lopez (`buk_employee_id=14643`), ambos activos en el servicio CODELCO DMH.
+- Se aplicó en Supabase remoto [`20260715181635_add_shared_login_operator_selection.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260715181635_add_shared_login_operator_selection.sql:1), creando opciones de operador compartido y una tabla de selecciones auditadas.
+- La selección queda protegida por RPC: `get_shared_login_operator_options()` y `select_shared_login_operator(...)` solo ejecutan para `authenticated`; `anon` y `public` quedan sin `EXECUTE`.
+- Las tablas `shared_login_operator_choices` y `shared_login_operator_selections` tienen RLS habilitado y policies acotadas al correo/usuario autenticado.
+- Frontend: `AuthContext` carga opciones de operador, `OperatorSelectionGate` bloquea el ingreso cuando hay opciones activas y registra la selección con sesión de app y user agent.
+- Resumen de Operaciones: se retiró el cuadro hero superior, se eliminó el título "Servicios planificados vs base habilitada por contrato" y las tarjetas quedaron sin texto inferior.
+- La tabla de resumen ahora expande cada contrato para mostrar servicio, conductor, equipo y estado de turno derivados desde `service_entries`.
+- Estado de cuenta: `supervisor.dmh@busesjm.com` sigue sin usuario Auth ni perfil; la instancia queda lista para funcionar apenas la cuenta sea provisionada por el flujo normal de usuarios.
+- Validación local/remota: `npm run audit:migrations -- --files supabase/migrations/20260715181635_add_shared_login_operator_selection.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:supabase-security`, `git diff --check`, verificación remota de opciones, RLS y grants RPC.
+- Nota de seguridad: `npm run audit:supabase-security` conserva 99 advertencias históricas; la nueva migración no aparece en la lista de advertencias.
+
+## Hotfix UI Jornadas: filtros chocan en Windows
+
+- [x] Revisar captura Windows y localizar grilla de filtros del calendario.
+- [x] Ajustar layout de `Trabajador`, `Mes` y `Contrato / Área` para evitar solapamiento con zoom/escala.
+- [x] Validar TypeScript/build y, si es posible, revisar captura local en viewport equivalente.
+- [x] Documentar resultado y aprendizaje.
+
+### Criterio de cierre
+
+- Los labels y controles de `Mes` y `Contrato / Área` no deben montarse entre sí.
+- El selector de trabajador debe conservar prioridad visual, pero permitir que los filtros secundarios salten de línea antes de chocar.
+- El cambio debe quedar limitado a presentación de Jornadas, sin tocar datos ni permisos.
+
+### Resultado aplicado
+
+- La causa estaba en `.roster-toolbar-grid`: tres columnas permanecían en una sola fila hasta 1180 px, por lo que Windows con escala/zoom podía comprimir `Mes` y montar el label de `Contrato / Área`.
+- Se ajustó la grilla para usar anchos mínimos estables: trabajador ancho, mes compacto y contrato/área con ancho mínimo real.
+- En pantallas medianas, `Contrato / Área` baja a una fila completa antes de chocar; bajo 720 px los tres filtros quedan apilados.
+- Validación local: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `git diff --check`.
+- Validación visual aislada con Playwright CLI en 1366, 1100, 1024, 900 y 640 px: sin intersecciones entre `Trabajador`, `Mes` y `Contrato / Área`.
+
 ## Liberación módulo Operaciones por rol
 
 - [x] Auditar matriz viva de `app_modules`, `role_module_access`, `app_roles` y helper `user_can_manage_operations(...)`.
