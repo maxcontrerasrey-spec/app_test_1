@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DatePickerField, PageShell, SelectField, TextField } from "../../../shared/ui";
 import { formatRequestDate, formatPersonLabel } from "../../../shared/lib/format";
-import { addMonthsToDateValue, getDaysSince, toMonthInputValue, toTodayDateValue } from "../../../shared/lib/date";
+import { addMonthsToDateValue, toMonthInputValue, toTodayDateValue } from "../../../shared/lib/date";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { hasFeatureAccess } from "../../auth/config/access";
@@ -23,6 +23,7 @@ import type {
   RosterExceptionSource,
   RosterExceptionType,
   RosterWorkerSearchItem,
+  WorkerRosterException,
   WorkerScheduleDay
 } from "../types";
 import { RosterAssignmentDialog } from "../components/RosterAssignmentDialog";
@@ -68,6 +69,81 @@ function getExceptionSourceLabel(source: RosterExceptionSource | null) {
       : source === "manual"
         ? "Manual"
         : "";
+}
+
+type RosterExceptionGroup = {
+  key: string;
+  exceptions: WorkerRosterException[];
+  startDate: string;
+  endDate: string;
+  dayCount: number;
+  exceptionLabel: string;
+  exceptionSource: RosterExceptionSource;
+  notes: string | null;
+  isActive: boolean;
+};
+
+function getDateTime(dateValue: string) {
+  const [year, month, day] = dateValue.split("-").map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
+function getNextDateValue(dateValue: string) {
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + 1));
+  return date.toISOString().slice(0, 10);
+}
+
+function getExceptionGroupKey(exception: WorkerRosterException) {
+  return [
+    exception.exceptionType,
+    exception.exceptionLabel,
+    exception.exceptionSource,
+    exception.isActive ? "active" : "inactive",
+    exception.notes?.trim() ?? ""
+  ].join("|");
+}
+
+function groupRosterExceptions(exceptions: WorkerRosterException[]): RosterExceptionGroup[] {
+  return [...exceptions]
+    .sort((left, right) => getDateTime(left.exceptionDate) - getDateTime(right.exceptionDate))
+    .reduce<RosterExceptionGroup[]>((groups, exception) => {
+      const lastGroup = groups[groups.length - 1];
+      const groupKey = getExceptionGroupKey(exception);
+      const canAppend =
+        lastGroup?.key === groupKey &&
+        getNextDateValue(lastGroup.endDate) === exception.exceptionDate;
+
+      if (canAppend) {
+        lastGroup.exceptions.push(exception);
+        lastGroup.endDate = exception.exceptionDate;
+        lastGroup.dayCount += 1;
+        return groups;
+      }
+
+      groups.push({
+        key: groupKey,
+        exceptions: [exception],
+        startDate: exception.exceptionDate,
+        endDate: exception.exceptionDate,
+        dayCount: 1,
+        exceptionLabel: exception.exceptionLabel,
+        exceptionSource: exception.exceptionSource,
+        notes: exception.notes,
+        isActive: exception.isActive
+      });
+
+      return groups;
+    }, []);
+}
+
+function formatExceptionGroupRange(group: RosterExceptionGroup) {
+  const range =
+    group.startDate === group.endDate
+      ? formatRequestDate(group.startDate)
+      : `${formatRequestDate(group.startDate)} - ${formatRequestDate(group.endDate)}`;
+
+  return `${range} · ${group.dayCount === 1 ? "1 día" : `${group.dayCount} días`}`;
 }
 
 export function RosterPage() {
@@ -120,6 +196,10 @@ export function RosterPage() {
         (exception) => exception.exceptionDate === exceptionDate
       ) ?? null,
     [exceptionDate, workerScheduleQuery.data?.exceptions]
+  );
+  const exceptionGroups = useMemo(
+    () => groupRosterExceptions(workerScheduleQuery.data?.exceptions ?? []),
+    [workerScheduleQuery.data?.exceptions]
   );
 
   const refreshRoster = useCallback(async () => {
@@ -175,8 +255,8 @@ export function RosterPage() {
   });
 
   const toggleExceptionMutation = useMutation({
-    mutationFn: ({ exceptionId, isActive }: { exceptionId: string; isActive: boolean }) =>
-      setRosterExceptionStatus(exceptionId, isActive),
+    mutationFn: ({ exceptionIds, isActive }: { exceptionIds: string[]; isActive: boolean }) =>
+      Promise.all(exceptionIds.map((exceptionId) => setRosterExceptionStatus(exceptionId, isActive))),
     onSuccess: async () => {
       setErrorMessage("");
       setStatusMessage("Estado de excepción actualizado.");
@@ -521,52 +601,62 @@ export function RosterPage() {
                     </div>
 
                     <div className="roster-list">
-                      {(workerScheduleQuery.data.exceptions ?? []).length === 0 ? (
+                      {exceptionGroups.length === 0 ? (
                         <p className="tracking-filter-caption">No hay excepciones activas en este período.</p>
                       ) : null}
 
-                      {(workerScheduleQuery.data.exceptions ?? []).map((exception) => (
-                        <div key={exception.id} className="roster-list-item">
-                          <div>
-                            <strong>{exception.exceptionLabel}</strong>
-                            <span>
-                              {formatRequestDate(exception.exceptionDate)} ·{" "}
-                              {getDaysSince(exception.exceptionDate) === 0 ? "Hoy" : `${getDaysSince(exception.exceptionDate) ?? 0} días`}
-                            </span>
-                            <span>{`Origen: ${getExceptionSourceLabel(exception.exceptionSource)}`}</span>
-                            {exception.notes ? <small>{exception.notes}</small> : null}
-                          </div>
-                          <button
-                            type="button"
-                            className={
-                              exception.exceptionSource === "buk"
-                                || exception.exceptionSource === "incentive_auto"
-                                ? "roster-inline-button roster-inline-button--disabled"
-                                : `roster-inline-button ${exception.isActive ? "roster-inline-button--deactivate" : "roster-inline-button--activate"}`
-                            }
-                            disabled={
-                              !canAssignPattern ||
-                              toggleExceptionMutation.isPending ||
-                              exception.exceptionSource === "buk" ||
-                              exception.exceptionSource === "incentive_auto"
-                            }
-                            onClick={() =>
-                              toggleExceptionMutation.mutate({
-                                exceptionId: exception.id,
-                                isActive: !exception.isActive
-                              })
-                            }
+                      {exceptionGroups.map((group) => {
+                        const isExternalGroup =
+                          group.exceptionSource === "buk" ||
+                          group.exceptionSource === "incentive_auto";
+                        const canToggleGroup = group.exceptions.length > 0 && !isExternalGroup;
+
+                        return (
+                          <div
+                            key={`${group.key}-${group.startDate}-${group.endDate}`}
+                            className="roster-list-item"
                           >
-                            {exception.exceptionSource === "buk"
-                              ? "Gobernado por BUK"
-                              : exception.exceptionSource === "incentive_auto"
-                                ? "Gobernado por Incentivos"
-                              : exception.isActive
-                                ? "Desactivar"
-                                : "Activar"}
-                          </button>
-                        </div>
-                      ))}
+                            <div className="roster-list-item-copy">
+                              <div className="roster-list-item-header">
+                                <strong>{group.exceptionLabel}</strong>
+                                {group.dayCount > 1 ? (
+                                  <span className="roster-list-item-count">{`${group.dayCount} días`}</span>
+                                ) : null}
+                              </div>
+                              <span>{formatExceptionGroupRange(group)}</span>
+                              <span>{`Origen: ${getExceptionSourceLabel(group.exceptionSource)}`}</span>
+                              {group.notes ? <small>{group.notes}</small> : null}
+                            </div>
+                            <button
+                              type="button"
+                              className={
+                                isExternalGroup || !canToggleGroup
+                                  ? "roster-inline-button roster-inline-button--disabled"
+                                  : `roster-inline-button ${group.isActive ? "roster-inline-button--deactivate" : "roster-inline-button--activate"}`
+                              }
+                              disabled={
+                                !canAssignPattern ||
+                                toggleExceptionMutation.isPending ||
+                                !canToggleGroup
+                              }
+                              onClick={() =>
+                                toggleExceptionMutation.mutate({
+                                  exceptionIds: group.exceptions.map((exception) => exception.id),
+                                  isActive: !group.isActive
+                                })
+                              }
+                            >
+                              {group.exceptionSource === "buk"
+                                ? "Gobernado por BUK"
+                                : group.exceptionSource === "incentive_auto"
+                                  ? "Gobernado por Incentivos"
+                                : group.isActive
+                                  ? "Desactivar"
+                                  : "Activar"}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </section>
                 </section>

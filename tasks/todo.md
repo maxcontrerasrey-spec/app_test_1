@@ -27,6 +27,27 @@
 - Hay dos mecanismos relacionados al snapshot BUK: workflow GitHub `sync-buk.yml` y `pg_cron` `capture-buk-employee-daily-snapshot`; ambos sostienen el modelo de snapshot diario completo.
 - Escenarios medidos: borrar snapshots anteriores a 7 días retiraría ~560 MB de JSON crudo lógico; anteriores a 14 días retiraría ~371 MB. Para recuperar tamaño físico visible puede requerirse mantenimiento posterior de Postgres, no solo `DELETE`.
 
+## Mejora UI Jornadas: excepciones agrupadas y tarjetas compactas
+
+- [x] Ubicar el render actual de `Excepciones del mes` y confirmar por qué una licencia consecutiva se muestra como varias tarjetas.
+- [x] Agrupar excepciones consecutivas con mismo tipo, origen, estado y nota en una sola tarjeta resumida.
+- [x] Compactar densidad visual de las tarjetas sin perder origen, rango, duración ni bloqueo BUK/Incentivos.
+- [x] Validar TypeScript/build y documentar resultado.
+
+### Criterio de cierre
+
+- Una licencia o excepción consecutiva de la misma causa debe aparecer como un solo bloque.
+- Las tarjetas deben ocupar menos alto y verse más acordes al volumen de información.
+- No se deben tocar datos ni permisos; el cambio debe ser de presentación.
+
+### Resultado aplicado
+
+- `RosterPage` ahora agrupa excepciones consecutivas por tipo, etiqueta, origen, estado y nota; una licencia BUK de varios días se muestra como una sola tarjeta con rango y duración total.
+- La duración ya no usa "días desde la fecha"; ahora muestra duración real del grupo.
+- Las tarjetas de excepciones redujeron gap, padding, radio, tamaño tipográfico y agregaron una etiqueta compacta de cantidad de días.
+- Las excepciones BUK/Incentivos siguen bloqueadas y rotuladas como gobernadas por su fuente; las manuales conservan acción de activar/desactivar aunque estén agrupadas.
+- Validación local: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Hotfix performance: selector de cargos BUK e indicadores financieros
 
 - [x] Confirmar por código la causa de espera del selector de cargo solicitado.
