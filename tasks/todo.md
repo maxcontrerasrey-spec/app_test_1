@@ -32,6 +32,25 @@
 - Validación local/remota: `npm run audit:migrations -- --files supabase/migrations/20260715181635_add_shared_login_operator_selection.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:supabase-security`, `git diff --check`, verificación remota de opciones, RLS y grants RPC.
 - Nota de seguridad: `npm run audit:supabase-security` conserva 99 advertencias históricas; la nueva migración no aparece en la lista de advertencias.
 
+## Alta usuario compartido supervisor DMH
+
+- [x] Crear `supervisor.dmh@busesjm.com` en Supabase Auth por API administrativa, sin insertar directo en `auth.users`.
+- [x] Confirmar cargo de la cuenta y de las dos opciones de operador como `Supervisor de Operaciones`.
+- [x] Asignar rol `operaciones_l_2` confirmado para supervisores.
+- [x] Forzar cambio de contraseña en primer ingreso con `must_reset_password=true`.
+- [x] Validar login real, permisos efectivos, módulo Operaciones y opciones de operador.
+- [x] Versionar convergencia idempotente de perfil/rol/cargo en migración Supabase.
+
+### Resultado aplicado
+
+- `supervisor.dmh@busesjm.com` quedó creado en Supabase Auth, email confirmado y perfil activo.
+- Perfil: `Supervisores Operaciones DMH`, cargo `Supervisor de Operaciones`, departamento `Operaciones`.
+- Rol efectivo asignado: `operaciones_l_2`.
+- La cuenta quedó con `must_reset_password=true` para obligar cambio de contraseña al primer ingreso.
+- Las opciones David Edgardo Alvarez Alvarez y Sergio Andres Alvarado Lopez quedaron con cargo visible `Supervisor de Operaciones`.
+- Se versionó y aplicó en remoto [`20260715183122_align_supervisor_dmh_shared_login_role.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260715183122_align_supervisor_dmh_shared_login_role.sql:1), idempotente si la cuenta existe en el entorno.
+- Smoke real con login: `signedIn=true`, perfil `active`, `must_reset_password=true`, roles `["operaciones_l_2"]`, módulo `operaciones` disponible y 2 opciones de operador.
+
 ## Hotfix UI Jornadas: filtros chocan en Windows
 
 - [x] Revisar captura Windows y localizar grilla de filtros del calendario.

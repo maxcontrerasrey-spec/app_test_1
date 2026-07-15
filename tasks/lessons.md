@@ -9,6 +9,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si dos personas operan con el mismo correo, el login no identifica al operador real.** Para turno/contraturno, la cuenta Auth compartida debe abrir una instancia de selección obligatoria antes de entrar a la app.
 - **La selección debe validarse y auditarse en backend.** El frontend puede bloquear la navegación, pero la verdad durable es una RPC que confirme que el operador pertenece al correo autenticado y escriba usuario Auth, operador, sesión, user agent y fecha/hora.
 - **No crees usuarios Auth manualmente desde SQL para cerrar una pantalla.** Primero versiona las opciones y la auditoría; el alta de la cuenta debe seguir el flujo normal de provisión/password para no inventar credenciales ni romper triggers de `profiles`.
+- **No confundas cargo visible con rol de acceso.** Para supervisores de Operaciones DMH, el cargo funcional es `Supervisor de Operaciones`, pero la matriz de permisos usa `operaciones_l_2` para habilitar su operación.
 - **Los resúmenes operativos expandibles deben usar la misma fuente que calcula los KPIs.** Si la cobertura sale de `service_entries` y base habilitada, el detalle por contrato debe derivarse de esos registros, no de un dataset paralelo que pueda quedar inconsistente.
 
 ---
