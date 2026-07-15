@@ -2311,3 +2311,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con leer un advisor y asumir que todos los faltantes quedaron cubiertos.** Después de crear índices, valida en `pg_indexes` y cruza contra `pg_constraint`/`pg_index` hasta que el conteo de FK sin cobertura sea 0.
 - **`pg_index.indkey` necesita normalización explícita antes de comparar contra `pg_constraint.conkey`.** Una comparación mal casteada puede marcar falsos negativos aunque los índices existan.
 - **Si una migración aplicada deja un faltante, no reescribas el historial ya aplicado.** Crea una migración corta adicional con el cierre puntual para mantener trazabilidad limpia entre repo y Supabase remoto.
+
+## 167. Un catálogo crítico no debe esperar una sincronización live externa para pintar la UI
+
+- **El selector operativo debe abrir con el catálogo local autoritativo.** En solicitudes de contratación, `job_positions` es la frontera transaccional; refrescar BUK antes de mostrarlo convierte una mejora de frescura en bloqueo de operación.
+- **El refresh live debe correr en segundo plano y revalidar al terminar.** Si `/api/v1/roles` está lento o BUK demora, el usuario igual puede avanzar con los cargos ya sincronizados; cuando el refresh termina bien, React Query invalida y trae opciones nuevas.
+- **Los widgets de inicio no deben depender de un único proveedor externo sin fallback.** Para indicadores financieros, usa timeout corto, proveedor alternativo y último dato bueno en cache para evitar tarjetas rotas por caídas temporales de terceros.

@@ -27,6 +27,28 @@
 - Hay dos mecanismos relacionados al snapshot BUK: workflow GitHub `sync-buk.yml` y `pg_cron` `capture-buk-employee-daily-snapshot`; ambos sostienen el modelo de snapshot diario completo.
 - Escenarios medidos: borrar snapshots anteriores a 7 días retiraría ~560 MB de JSON crudo lógico; anteriores a 14 días retiraría ~371 MB. Para recuperar tamaño físico visible puede requerirse mantenimiento posterior de Postgres, no solo `DELETE`.
 
+## Hotfix performance: selector de cargos BUK e indicadores financieros
+
+- [x] Confirmar por código la causa de espera del selector de cargo solicitado.
+- [x] Cambiar la carga para que el selector use el catálogo local disponible inmediatamente y refresque BUK en segundo plano.
+- [x] Evitar bloqueos del formulario por fallas o latencia del refresco live BUK.
+- [x] Confirmar causa externa del widget financiero y agregar fallback resiliente.
+- [x] Validar TypeScript/build y documentar resultado.
+
+### Criterio de cierre
+
+- El selector de cargos debe estar disponible con el catálogo local sin esperar la Edge Function de sincronización BUK.
+- La sincronización live BUK debe seguir existiendo, pero como refresco no bloqueante.
+- El widget financiero debe mostrar UF, dólar, UTM e IPC aunque `mindicador.cl` esté caído o lento.
+
+### Resultado aplicado
+
+- La espera venía de `fetchHiringCatalogs()`: antes ejecutaba y esperaba `sync-buk-job-positions` antes de leer `job_positions`, contratos y turnos.
+- `fetchHiringCatalogs()` ahora carga solo el catálogo local transaccional; el selector queda disponible apenas responde Supabase.
+- `useHiringCatalogs()` dispara `sync-buk-job-positions` en segundo plano con ventana mínima de 10 minutos y revalida el catálogo solo si el refresco BUK termina bien.
+- El widget financiero dejó de depender de un único proveedor: intenta `findic.cl/api/`, mantiene `mindicador.cl/api` como respaldo, corta cada proveedor a los 4 segundos y conserva el último dato válido en `localStorage`.
+- Validación local: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
 ## Auditoría enterprise reclutamiento y RRHH full-stack
 
 - [x] Inventariar superficies frontend de reclutamiento y RRHH: páginas, componentes, hooks, servicios y estilos.

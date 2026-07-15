@@ -60,9 +60,9 @@ type ShiftRow = {
   is_active: boolean;
 };
 
-async function syncBukJobPositionsBestEffort() {
+export async function syncBukJobPositionsBestEffort() {
   if (!supabase) {
-    return;
+    return false;
   }
 
   const { error } = await supabase.functions.invoke("sync-buk-job-positions", {
@@ -71,7 +71,10 @@ async function syncBukJobPositionsBestEffort() {
 
   if (error) {
     logger.warn("fetchHiringCatalogs syncBukJobPositions", error);
+    return false;
   }
+
+  return true;
 }
 
 export async function fetchHiringCatalogs() {
@@ -83,8 +86,6 @@ export async function fetchHiringCatalogs() {
       error: "Supabase no está configurado en este entorno."
     };
   }
-
-  await syncBukJobPositionsBestEffort();
 
   const [jobPositionsResponse, contractsResponse, shiftsResponse] = await Promise.all([
     supabase

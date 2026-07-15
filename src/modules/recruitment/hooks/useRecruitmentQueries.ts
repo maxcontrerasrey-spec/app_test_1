@@ -1,4 +1,5 @@
-import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchRecruitmentActiveCaseOptions,
@@ -11,13 +12,18 @@ import {
   fetchRecruitmentProcessesPage,
   type RecruitmentCandidateStage
 } from "../services/hiringControl";
-import { fetchHiringCatalogs } from "../services/hiringCatalogs";
+import {
+  fetchHiringCatalogs,
+  syncBukJobPositionsBestEffort
+} from "../services/hiringCatalogs";
 
 const RECRUITMENT_DASHBOARD_STALE_TIME_MS = 20_000;
 const RECRUITMENT_CASE_DETAIL_STALE_TIME_MS = 60_000;
 const RECRUITMENT_CATALOGS_STALE_TIME_MS = 30 * 60_000;
 const RECRUITMENT_CACHE_GC_TIME_MS = 15 * 60_000;
 const RECRUITMENT_CATALOGS_GC_TIME_MS = 2 * 60 * 60_000;
+const BUK_JOB_POSITION_REFRESH_INTERVAL_MS = 10 * 60_000;
+let lastBukJobPositionRefreshAt = 0;
 
 export type RecruitmentProcessesPageFilters = {
   search?: string;
@@ -249,7 +255,31 @@ export function useRecruitmentCaseDetail(caseId: string, enabled = true) {
 }
 
 export function useHiringCatalogs() {
-  return useQuery(getHiringCatalogsQueryOptions());
+  const queryClient = useQueryClient();
+  const query = useQuery(getHiringCatalogsQueryOptions());
+
+  useEffect(() => {
+    if (!query.data || Date.now() - lastBukJobPositionRefreshAt < BUK_JOB_POSITION_REFRESH_INTERVAL_MS) {
+      return;
+    }
+
+    lastBukJobPositionRefreshAt = Date.now();
+    let isMounted = true;
+
+    void syncBukJobPositionsBestEffort().then((didSync) => {
+      if (didSync && isMounted) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.recruitment.hiringCatalogs()
+        });
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [query.data, query.dataUpdatedAt, queryClient]);
+
+  return query;
 }
 
 export async function invalidateRecruitmentControlQueries(
