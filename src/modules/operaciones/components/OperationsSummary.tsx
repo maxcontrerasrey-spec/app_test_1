@@ -115,25 +115,6 @@ export function OperationsSummary({
       </section>
 
       <section className="dashboard-shell">
-        <section className="dashboard-cards">
-          <article className="dashboard-card">
-            <span>Servicios planificados</span>
-            <strong>{dashboardSummary.totalPlanned}</strong>
-          </article>
-          <article className="dashboard-card">
-            <span>Servicios base habilitados</span>
-            <strong>{dashboardSummary.totalExpected}</strong>
-          </article>
-          <article className="dashboard-card">
-            <span>Conductores en turno</span>
-            <strong>{dashboardSummary.totalInTurn}</strong>
-          </article>
-          <article className="dashboard-card">
-            <span>Conductores fuera de turno</span>
-            <strong>{dashboardSummary.totalOutOfTurn}</strong>
-          </article>
-        </section>
-
         <section className="dashboard-table-card">
           {dashboardError ? <p className="submit-feedback submit-feedback--error">{dashboardError}</p> : null}
 

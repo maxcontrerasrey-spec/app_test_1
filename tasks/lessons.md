@@ -11,6 +11,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No crees usuarios Auth manualmente desde SQL para cerrar una pantalla.** Primero versiona las opciones y la auditoría; el alta de la cuenta debe seguir el flujo normal de provisión/password para no inventar credenciales ni romper triggers de `profiles`.
 - **No confundas cargo visible con rol de acceso.** Para supervisores de Operaciones DMH, el cargo funcional es `Supervisor de Operaciones`, pero la matriz de permisos usa `operaciones_l_2` para habilitar su operación.
 - **Los resúmenes operativos expandibles deben usar la misma fuente que calcula los KPIs.** Si la cobertura sale de `service_entries` y base habilitada, el detalle por contrato debe derivarse de esos registros, no de un dataset paralelo que pueda quedar inconsistente.
+- **No dupliques KPIs en tarjetas grandes si ya existen en el panel compacto.** En Resumen de Operaciones, repetir planificados/base/turno en una segunda fila de tarjetas agrega altura sin nueva información.
 
 ---
 

@@ -27,6 +27,7 @@
 - Las tablas `shared_login_operator_choices` y `shared_login_operator_selections` tienen RLS habilitado y policies acotadas al correo/usuario autenticado.
 - Frontend: `AuthContext` carga opciones de operador, `OperatorSelectionGate` bloquea el ingreso cuando hay opciones activas y registra la selección con sesión de app y user agent.
 - Resumen de Operaciones: se retiró el cuadro hero superior, se eliminó el título "Servicios planificados vs base habilitada por contrato" y las tarjetas quedaron sin texto inferior.
+- Ajuste posterior de densidad: se eliminaron completamente las cuatro tarjetas grandes de `Servicios planificados`, `Servicios base habilitados`, `Conductores en turno` y `Conductores fuera de turno`.
 - La tabla de resumen ahora expande cada contrato para mostrar servicio, conductor, equipo y estado de turno derivados desde `service_entries`.
 - Estado de cuenta: `supervisor.dmh@busesjm.com` sigue sin usuario Auth ni perfil; la instancia queda lista para funcionar apenas la cuenta sea provisionada por el flujo normal de usuarios.
 - Validación local/remota: `npm run audit:migrations -- --files supabase/migrations/20260715181635_add_shared_login_operator_selection.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:supabase-security`, `git diff --check`, verificación remota de opciones, RLS y grants RPC.
