@@ -320,28 +320,6 @@ function normalizeBukEmployee(employee, areaLookup = new Map()) {
   };
 }
 
-function buildSnapshotRow(employee, snapshotDate) {
-  return {
-    snapshot_date: snapshotDate,
-    buk_employee_id: employee.buk_employee_id,
-    full_name: employee.full_name,
-    email: employee.email,
-    job_title: employee.job_title,
-    contract_code: employee.contract_code,
-    area_name: employee.area_name,
-    area_code: employee.area_code,
-    document_number: employee.document_number,
-    document_type: employee.document_type ?? "rut",
-    birth_date: employee.birth_date,
-    hire_date: getHireDate(employee),
-    city_name: getCityName(employee),
-    region_name: getRegionName(employee),
-    status: employee.status,
-    is_active: employee.is_active,
-    raw_payload: employee.raw_payload,
-  };
-}
-
 async function fetchWithRetry(url, options, retries = 3) {
   let lastError;
 
@@ -584,7 +562,6 @@ async function main() {
   let hasMore = true;
   let synced = 0;
   let pagesProcessed = 0;
-  const snapshotDate = new Date().toISOString().slice(0, 10);
 
   while (hasMore) {
     const result = await fetchBukEmployeesPage(env, page);
@@ -597,17 +574,6 @@ async function main() {
         rows: employees,
         onConflict: "buk_employee_id",
         chunkSize: 25,
-        retries: 5,
-        baseDelayMs: 5000,
-        page,
-      });
-
-      const snapshotRows = employees.map((employee) => buildSnapshotRow(employee, snapshotDate));
-      await upsertInChunks(supabase, {
-        table: "buk_employees_daily_snapshot",
-        rows: snapshotRows,
-        onConflict: "snapshot_date,buk_employee_id",
-        chunkSize: 20,
         retries: 5,
         baseDelayMs: 5000,
         page,
@@ -654,10 +620,8 @@ async function main() {
         ok: true,
         pagesProcessed,
         synced,
-        snapshotDate,
         finalCount: count,
         activeCount,
-        snapshotRowsAffected: synced,
       },
       null,
       2,

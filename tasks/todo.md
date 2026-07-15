@@ -2,6 +2,57 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Auditoría Supabase: consumo de base de datos y almacenamiento
+
+- [x] Medir tamaño real por tabla, índices y TOAST en Supabase para identificar los mayores consumidores.
+- [x] Revisar Storage por bucket y por prefijo operativo, especialmente documentos de candidatos y artefactos ORION.
+- [x] Auditar colas, logs, snapshots y payloads JSON asociados a BUK/reclutamiento para detectar retención masiva innecesaria.
+- [x] Revisar señales de bloat/dead tuples y tablas con índices desproporcionados.
+- [x] Entregar ranking de consumo, causa probable y plan de limpieza/retención sin modificar datos durante la auditoría.
+
+### Criterio de cierre
+
+- La revisión debe explicar qué tablas, índices, blobs o procesos concentran el uso de GB, con evidencia cuantitativa de Supabase.
+- Cualquier acción correctiva debe quedar separada de la investigación y no debe ejecutarse sin confirmar el impacto.
+
+### Resultado de auditoría
+
+- La base Postgres remota mide 1024 MB; el uso visible superior se explica por base de datos más Storage/overhead de plataforma.
+- El consumidor dominante es `public.buk_employees_daily_snapshot`: 941 MB, equivalente a 93,25% de las relaciones medidas.
+- La causa raíz es el histórico diario de BUK: 146.936 filas desde 2026-06-18 a 2026-07-15, con 28 snapshots de ~5.2k empleados cada uno.
+- El peso no está en índices sino en TOAST de `raw_payload`: 878 MB de TOAST y 751 MB de JSON crudo medido por columna; los índices de la tabla suman ~21 MB.
+- `public.employees` ya conserva el JSON actual completo en ~27 MB, mientras `buk_employees_daily_snapshot` replica ese payload cada día.
+- Storage no explica el problema: `candidate-docs` tiene 59 objetos por 18 MB y `orion_knowledge` tiene 1 objeto por ~2,2 MB.
+- `buk_sync_jobs`, logs de auditoría, ORION y colas documentales están bajo el orden de MB, no de GB.
+- Hay dos mecanismos relacionados al snapshot BUK: workflow GitHub `sync-buk.yml` y `pg_cron` `capture-buk-employee-daily-snapshot`; ambos sostienen el modelo de snapshot diario completo.
+- Escenarios medidos: borrar snapshots anteriores a 7 días retiraría ~560 MB de JSON crudo lógico; anteriores a 14 días retiraría ~371 MB. Para recuperar tamaño físico visible puede requerirse mantenimiento posterior de Postgres, no solo `DELETE`.
+
+## Snapshot mensual BUK sin foto diaria
+
+- [x] Confirmar dependencias vivas sobre `buk_employees_daily_snapshot.raw_payload`.
+- [x] Crear migración auditada que elimine el JSON crudo diario y conserve solo una foto mensual de período cerrado.
+- [x] Ajustar `scripts/sync-buk-employees.mjs` para que la sincronización diaria BUK no escriba snapshots históricos.
+- [x] Reemplazar `capture_buk_employee_daily_snapshot(...)` por `capture_buk_employee_monthly_snapshot(...)` y programar captura mensual.
+- [x] Aplicar las migraciones en Supabase remoto y validar tamaño, filas, BI histórica y bloqueo de período parcial.
+- [x] Documentar resguardo, auditoría y resultado operativo.
+
+### Criterio de cierre
+
+- La tabla debe conservar solo snapshots normalizados mensuales de períodos cerrados, sin retener fotos diarias ni meses parciales.
+- El cambio debe dejar evidencia auditable de conteos, rango de fechas y tamaño antes/después.
+- La sincronización BUK debe seguir operativa y no debe reintroducir escrituras históricas diarias.
+
+### Resultado aplicado
+
+- Se aplicó `20260715103000_compact_buk_employee_daily_snapshot.sql`: eliminó la copia diaria del JSON crudo BUK y bajó `buk_employees_daily_snapshot` de 941 MB a ~45 MB conservando inicialmente las filas normalizadas.
+- Se aplicó `20260715111500_convert_buk_employee_snapshot_to_monthly.sql`: eliminó las fotos diarias y el mes parcial, dejando solo el cierre mensual disponible `2026-06-30`.
+- Después de `VACUUM FULL`, la tabla `buk_employees_daily_snapshot` quedó en 1.7 MB, con 5.244 filas y una sola fecha de snapshot.
+- La base Postgres bajó de 1024 MB a 85 MB.
+- El cron `capture-buk-employee-daily-snapshot` fue reemplazado por `capture-buk-employee-monthly-snapshot`, programado el día 1 a las 03:30 UTC para capturar el mes cerrado anterior.
+- `capture_buk_employee_monthly_snapshot(...)` bloquea capturas de períodos parciales; la prueba con `current_date` falló correctamente con `Solo se pueden capturar periodos BUK cerrados`.
+- `scripts/sync-buk-employees.mjs` ya solo sincroniza `public.employees`; no vuelve a escribir `buk_employees_daily_snapshot`.
+- Validación remota: BI con período cerrado `202606` y BI del período actual `202607` respondieron correctamente.
+
 ## Hotfix dark mode: brillo blanco en tarjetas de inicio
 
 - [x] Ubicar la regla que genera la franja blanca superior en las tarjetas del inicio.

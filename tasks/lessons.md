@@ -4,6 +4,15 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 243. Los snapshots BUK no deben ser diarios ni conservar JSON crudo si el ERP no usa BI como fuente principal
+
+- **La dotación operativa vigente vive en `public.employees`.** El ERP necesita esa tabla para operación actual, búsqueda, contratos, incentivos y contexto BUK; no necesita duplicar el mismo payload completo en una foto diaria.
+- **Si se conserva historia BUK, debe ser mensual y de período cerrado.** La regla actual es una foto normalizada por mes cerrado, sin meses parciales ni granularidad diaria.
+- **No guardes `raw_payload` histórico salvo que exista un consumidor operativo probado.** El JSON crudo de BUK creció de forma desproporcionada; si un proceso necesita campos históricos, primero se deben extraer columnas normalizadas específicas.
+- **La sincronización diaria BUK no debe escribir snapshots históricos.** El job diario actualiza `employees`; la captura mensual queda separada y programada después del cierre del mes.
+
+---
+
 ## 242. Los catálogos BUK usados para crear solicitudes no pueden derivarse de dotación activa
 
 - **Un cargo vigente en BUK puede no tener trabajadores activos todavía.** Si el ERP alimenta `job_positions` desde empleados o muestras operativas, cargos nuevos como `OPERADOR LOGISTICO INTEGRAL` quedan invisibles aunque existan en BUK.
