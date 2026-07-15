@@ -27,6 +27,33 @@
 - Hay dos mecanismos relacionados al snapshot BUK: workflow GitHub `sync-buk.yml` y `pg_cron` `capture-buk-employee-daily-snapshot`; ambos sostienen el modelo de snapshot diario completo.
 - Escenarios medidos: borrar snapshots anteriores a 7 días retiraría ~560 MB de JSON crudo lógico; anteriores a 14 días retiraría ~371 MB. Para recuperar tamaño físico visible puede requerirse mantenimiento posterior de Postgres, no solo `DELETE`.
 
+## Auditoría enterprise reclutamiento y RRHH full-stack
+
+- [x] Inventariar superficies frontend de reclutamiento y RRHH: páginas, componentes, hooks, servicios y estilos.
+- [x] Inventariar backend Supabase relacionado: migraciones, RPC, RLS, Storage, cron y Edge Functions de reclutamiento, BUK, RRHH, incentivos, roster, acreditación y movilidad interna.
+- [x] Ejecutar línea base de validación antes de tocar código: migraciones, seguridad Supabase, TypeScript, build frontend y revisión de diff.
+- [x] Corregir errores confirmados con cambios mínimos, backend-authoritative cuando afecten datos, permisos o procesos operativos.
+- [x] Reducir duplicación o costo de render/consulta solo donde haya evidencia clara y sin ampliar el alcance funcional.
+- [x] Repetir validación hasta dejar el alcance sin errores accionables nuevos.
+- [x] Documentar hallazgos, correcciones, validación final, commit y push a `main`.
+
+### Criterio de cierre
+
+- La revisión debe cubrir frontend y backend de los módulos solicitados, sin depender solo de inspección visual.
+- Toda corrección debe quedar versionada, auditada y validada antes del commit.
+- Las advertencias residuales deben diferenciarse de errores corregibles dentro del alcance.
+
+### Resultado aplicado
+
+- Se revisaron superficies frontend y contratos de servicio de `recruitment`, `incentives`, `roster`, `accreditation` e `internal_mobility`; no se detectaron errores TypeScript ni cambios funcionales necesarios en UI.
+- Se revisaron Edge Functions operativas (`sync-buk-candidates`, `check_buk_candidate`, `purge-candidate-documents`, `remove-candidate-document`, `sync-buk-job-positions`, `hiring-transactional-email`, `upload-buk-accreditation-document`) y las dependencias BUK vivas no vuelven a escribir foto diaria.
+- Supabase Advisor identificó oportunidades de performance en llaves foráneas sin índice y un índice duplicado en `recruitment_case_candidates`.
+- Se aplicó `20260715123000_harden_recruitment_hr_performance.sql`: 31 índices FK para acreditación, BUK sync, limpieza documental, incentivos, movilidad interna y candidatos; eliminó `idx_recruitment_candidates_case_stage` por duplicar `idx_recruitment_case_candidates_case_stage`; fijó `search_path = public` en funciones auxiliares de BUK/BI/incentivos.
+- Se aplicó `20260715124500_complete_accreditation_fk_indexes.sql`: cerró los 2 índices FK restantes de acreditación (`site_id`, `requirement_id`).
+- Validación remota: cobertura FK en tablas auditadas quedó con `missing_covering_indexes = 0`; el índice duplicado de reclutamiento quedó ausente; 13 funciones auxiliares quedaron con `search_path=public`.
+- Validación local: `npm run audit:migrations`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+- El escáner de seguridad conserva 98 advertencias históricas previas; las migraciones nuevas no agregaron advertencias.
+
 ## Snapshot mensual BUK sin foto diaria
 
 - [x] Confirmar dependencias vivas sobre `buk_employees_daily_snapshot.raw_payload`.

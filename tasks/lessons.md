@@ -2305,3 +2305,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si un dato debe ser visible pero no editable, el backend debe ignorar el valor libre del cliente.** La UI puede mostrar `readOnly`, pero el RPC debe reconstruir el valor desde sus campos fuente para evitar bypass.
 - **La fuente estructurada manda sobre el texto compuesto.** Para direcciones, `Calle`, `Número de calle` y `Ciudad` son el contrato operativo; `Dirección base` es una presentación derivada.
 - **Los backfills deben acompañar el cambio de regla.** Si el payload BUK consume un campo persistido, la migración debe corregir registros existentes con datos estructurados para que la próxima generación no dependa de abrir y guardar la ficha.
+
+## 166. La auditoría de índices FK debe verificar el catálogo con la forma correcta
+
+- **No basta con leer un advisor y asumir que todos los faltantes quedaron cubiertos.** Después de crear índices, valida en `pg_indexes` y cruza contra `pg_constraint`/`pg_index` hasta que el conteo de FK sin cobertura sea 0.
+- **`pg_index.indkey` necesita normalización explícita antes de comparar contra `pg_constraint.conkey`.** Una comparación mal casteada puede marcar falsos negativos aunque los índices existan.
+- **Si una migración aplicada deja un faltante, no reescribas el historial ya aplicado.** Crea una migración corta adicional con el cierre puntual para mantener trazabilidad limpia entre repo y Supabase remoto.
