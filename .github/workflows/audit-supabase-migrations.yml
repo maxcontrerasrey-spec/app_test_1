@@ -10,6 +10,7 @@ on:
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
       - "package.json"
@@ -23,6 +24,7 @@ on:
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
       - "package.json"
@@ -43,6 +45,9 @@ jobs:
 
       - name: Audit Enterprise documentation coverage
         run: npm run audit:enterprise-docs
+
+      - name: Smoke route and role guardrails
+        run: npm run audit:route-role-smoke
 
       - name: Enforce migration baseline
         run: npm run audit:migrations

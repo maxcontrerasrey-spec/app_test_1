@@ -21,6 +21,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La documentacion Enterprise debe tener un auditor minimo.** `audit:enterprise-docs` compara rutas/modulos activos contra `docs/module-map.md` y `docs/permissions-matrix.md` para evitar que un modulo nuevo exista en codigo pero no en la evidencia auditable.
 - **La traza del loop debe quedar en `tasks/todo.md`.** Cada ciclo debe indicar hallazgo, riesgo, causa raiz, cambio, validacion, resultado y proximo objetivo, no solo un resumen conversacional.
 
+## 253. El smoke de rutas y roles debe fallar antes de que el usuario descubra una pantalla visible pero inaccesible
+
+- **Navegacion, router, guard y preload son un mismo contrato operacional.** Si un item aparece en el menu, debe existir una ruta protegida, con el mismo `moduleCode` y con precarga lazy cubierta.
+- **Los roles visibles tambien se auditan.** `visibleForRoles` debe referenciar roles conocidos por `access.ts`; un typo ahi puede esconder o mostrar entradas sin que TypeScript lo capture si el patron cambia.
+- **Un smoke estatico no reemplaza login real, pero cierra drift barato y recurrente.** `audit:route-role-smoke` bloquea inconsistencias de routing/roles en CI y deja los E2E para validar sesiones, permisos backend y datos vivos.
+
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 
 - **No edites migraciones viejas aplicadas para hacer bajar el contador.** Para Operaciones, BI y ORION, el cierre seguro fue una migración forward-only que recompila helpers/policies vivos y deja `notify pgrst`.

@@ -7,10 +7,23 @@ Comandos minimos ya usados en cambios productivos:
 ```bash
 npm run audit:migrations
 npm run audit:enterprise-docs
+npm run audit:route-role-smoke
 npx tsc -b --pretty false
 npm run build:frontend-check
 git diff --check
 ```
+
+## Smoke automatizado actual
+
+`npm run audit:route-role-smoke` valida de forma estatica:
+
+- toda ruta con `RoleProtectedRoute` usa un `moduleCode` conocido por `src/modules/auth/config/access.ts`;
+- todo item de navegacion tiene ruta protegida real;
+- el `moduleCode` visible en navegacion coincide con el guard de la ruta mas especifica;
+- `visibleForRoles` solo referencia roles conocidos;
+- `routeModules.ts` precarga las rutas protegidas y rutas publicas principales.
+
+Este smoke no reemplaza pruebas E2E con login real, pero bloquea drift de contrato entre navegacion, routing, autorizacion frontend y lazy loading.
 
 Cuando hay SQL/RPCs nuevas o modificadas:
 
@@ -91,7 +104,7 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 ## Deuda actual
 
 - El repo no tiene aun `tests/smoke` ni Playwright/Cypress productivo.
-- La cobertura depende de build + humo SQL/manual.
+- La cobertura funcional aun depende de build + humo SQL/manual, pero rutas/roles/preloads ya tienen smoke estatico automatizado.
 
 ## Siguiente implementacion segura
 

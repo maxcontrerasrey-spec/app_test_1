@@ -104,6 +104,51 @@ La ejecucion del prompt deja una primera evidencia durable del loop global y un 
 
 Construir smoke tests automatizados por rol para los modulos criticos.
 
+## Loop Enterprise global - smoke rutas y roles
+
+- [x] Ejecutar segunda iteracion global del prompt Enterprise sobre smoke automatizado de rutas, roles y navegacion.
+- [x] Crear `npm run audit:route-role-smoke` para validar contrato entre `navigation.ts`, `AppRouter.tsx`, `routeModules.ts` y `access.ts`.
+- [x] Integrar `npm run audit:route-role-smoke` en GitHub Actions.
+- [x] Documentar el alcance del smoke y su riesgo residual en `docs/smoke-tests.md`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El plan Enterprise declaraba deuda de smoke tests por rol, pero el repositorio no tenia un control ejecutable que detectara drift basico entre menu, rutas protegidas, modulos autorizados y precarga lazy.
+
+#### Riesgo
+
+Una entrada de navegacion puede quedar visible con un `moduleCode` distinto al guard real, una ruta puede perder precarga o un rol visible puede escribirse mal. Eso genera pantallas visibles pero inaccesibles, rutas que cargan tarde o permisos frontend inconsistentes antes de llegar a la validacion backend.
+
+#### Causa raiz
+
+El contrato de routing/autorizacion frontend estaba repartido entre `src/shared/config/navigation.ts`, `src/app/router/AppRouter.tsx`, `src/app/router/routeModules.ts` y `src/modules/auth/config/access.ts`, sin un smoke transversal.
+
+#### Cambio implementado
+
+- `scripts/audit-route-role-smoke.mjs` valida rutas protegidas, modulos conocidos, navegacion, roles visibles y precargas.
+- `package.json` expone `npm run audit:route-role-smoke`.
+- `.github/workflows/audit-supabase-migrations.yml` ejecuta el smoke en CI ante cambios de rutas, docs, scripts o package.
+- `docs/smoke-tests.md` documenta el alcance y limite del smoke.
+- `tasks/lessons.md` registra el patron para futuras rutas/modulos.
+
+#### Validacion
+
+Validacion ejecutada: `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado
+
+El ERP ya tiene un smoke automatizado minimo para detectar inconsistencias de rutas/roles antes de que lleguen a usuarios o revisiones manuales.
+
+#### Riesgo residual
+
+El smoke es estatico: no inicia sesion ni prueba RLS/RPC con usuarios reales. El siguiente cierre Enterprise debe avanzar hacia smokes funcionales con usuarios controlados o harness backend acotado.
+
+#### Proximo objetivo
+
+Construir smoke funcional por rol para una ruta critica, empezando por `Inicio` o `Operaciones`, con evidencia de sesion/permisos reales.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.
