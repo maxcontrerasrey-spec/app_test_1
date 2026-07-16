@@ -2430,3 +2430,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Si BUK o Incentivos envían días consecutivos con la misma causa, la UI debe resumirlos como un período.** Repetir una licencia médica día por día aumenta ruido visual y hace parecer que son eventos distintos.
 - **La duración visible debe ser la del grupo, no los días transcurridos desde cada fecha.** Para jornadas, `10/07 - 14/07 · 5 días` es más claro que mostrar `10/07 · 4 días`, `11/07 · 3 días`, etc.
 - **La compactación debe preservar la autoridad de origen.** Aunque el bloque se agrupe, debe seguir indicando si está gobernado por BUK/Incentivos y mantener bloqueada la acción manual correspondiente.
+
+## 169. Los formularios operativos largos necesitan borrador local y batch set-based
+
+- **Un registro masivo no puede depender solo del estado en memoria de React.** Si el usuario puede tardar varios minutos cargando servicios, persiste un borrador acotado por usuario y limpia ese borrador solo después de un guardado exitoso.
+- **Un RPC de carga masiva no debe repetir la misma resolución por fila si el payload ya viene estructurado.** Contrato, servicio, equipo, conductor y permisos deben prepararse set-based y luego guardarse con un solo `INSERT ... ON CONFLICT DO UPDATE`.
+- **El warning budget es parte del cierre funcional.** Si una migración nueva sube el conteo de warnings, se corrige la migración antes de versionar aunque la lógica ya funcione.

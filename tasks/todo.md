@@ -7364,3 +7364,17 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`CandidateWorkerFileForm.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/CandidateWorkerFileForm.tsx:1) ahora calcula `Dirección base` desde `Calle`, `Número de calle` y `Ciudad`, mostrando el número como `#...` y dejando el campo en solo lectura para todos los usuarios.
 - La migración [`20260713212530_derive_candidate_address_line_from_structured_fields.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260713212530_derive_candidate_address_line_from_structured_fields.sql:1) actualiza perfiles existentes con datos estructurados y redefine `upsert_candidate_person_profile(...)` para ignorar `p_address_line` enviado por cliente.
 - La validación remota se ejecutó en transacción con `ROLLBACK`: al enviar `p_address_line = 'CLIENTE NO AUTORIZADO'`, el backend resolvió `address_line = 'Calle QA, #123, Ciudad QA'`.
+## Registro base de Operaciones: autosave y optimización de guardado
+
+- [x] Auditar el flujo actual de captura, reseteo de estado y RPC `submit_service_entries_batch(...)`.
+- [x] Implementar persistencia local acotada por usuario/contrato/turno/fecha para evitar pérdida de servicios ingresados en sesiones largas.
+- [x] Reemplazar el guardado backend fila por fila por una versión set-based que mantenga permisos, validaciones y auditoría operacional.
+- [x] Validar TypeScript, build frontend, migración, warning budget de Supabase y prueba remota de escritura con rollback.
+- [ ] Commit y push a `main` con cambios auditables.
+
+## Resultado de Registro base de Operaciones: autosave y optimización de guardado
+
+- [`OperacionesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/pages/OperacionesDashboard.tsx:1) ahora persiste localmente el borrador de Registro Base por usuario durante 72 horas, incluyendo contrato, turno, fecha, servicios completados y conductores seleccionados; al guardar correctamente limpia el borrador para no reabrir información ya enviada.
+- La migración [`20260716141754_optimize_operations_batch_submit_set_based.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716141754_optimize_operations_batch_submit_set_based.sql:1) reemplaza el procesamiento fila por fila de `submit_service_entries_batch(...)` por preparación set-based, validación agregada y un solo `INSERT ... ON CONFLICT DO UPDATE`, manteniendo `auth.uid()`, `user_can_manage_operations(...)` y `user_can_edit_operations_contract(...)`.
+- Validación remota con supervisor DMH simulando JWT: 33 servicios planificados CODELCO DMH quedaron en `ok: true`, `saved_count: 33`, en 130,341 ms medidos dentro de Postgres y con `ROLLBACK`.
+- `npm run audit:supabase-security` se mantiene en el máximo permitido: 82 warnings.

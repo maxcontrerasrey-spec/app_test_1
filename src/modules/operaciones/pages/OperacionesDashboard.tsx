@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
 import { validateServiceEntryPayload } from "../lib/service-entry";
@@ -45,11 +45,24 @@ const DASHBOARD_ENTRY_SELECT =
   "contract_code, service_date, shift, driver_name, driver_shift_status, service_operational_name, service_execution_status, service_execution_note, equipment_code, equipment_plate, equipment_type";
 const EXPORT_ENTRY_SELECT =
   "service_date, shift, contract_code, service_operational_name, service_contractual_name, service_category, service_company, service_execution_status, service_execution_note, driver_name, driver_document, driver_area, driver_shift_status, equipment_code, equipment_plate, equipment_type, equipment_client, created_at";
+const BASE_REGISTER_DRAFT_VERSION = 1;
+const BASE_REGISTER_DRAFT_TTL_MS = 1000 * 60 * 60 * 72;
 
 const LOCAL_NORMALIZED_DATA: OperationsServiceRecord[] = SERVICE_DATA.map((item) => ({
   ...item,
   normalizedSchedule: normalizeText(item.schedule),
 }));
+
+interface BaseRegisterDraftSnapshot {
+  version: typeof BASE_REGISTER_DRAFT_VERSION;
+  userId: string;
+  selectedContract: string;
+  selectedShift: string;
+  selectedDateValue: string;
+  serviceDrafts: Record<number, ServiceDraft>;
+  driverDirectory: Record<string, Driver>;
+  updatedAt: number;
+}
 
 function normalizeOperationsContractLabel(value: string | null | undefined) {
   const trimmed = (value ?? "").trim();
@@ -71,6 +84,60 @@ function sortOperationsContracts(contracts: string[]) {
 
     return left.localeCompare(right, "es");
   });
+}
+
+function getBaseRegisterDraftKey(userId: string) {
+  return `operations:base-register:draft:v${BASE_REGISTER_DRAFT_VERSION}:${userId}`;
+}
+
+function hasMeaningfulServiceDrafts(serviceDrafts: Record<number, ServiceDraft>) {
+  return Object.values(serviceDrafts).some((draft) =>
+    Boolean(
+      draft.driverId ||
+      draft.equipmentCode ||
+      draft.serviceExecutionNote ||
+      draft.serviceExecutionStatus === "not_performed"
+    )
+  );
+}
+
+function readBaseRegisterDraft(userId: string): BaseRegisterDraftSnapshot | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const rawSnapshot = window.localStorage.getItem(getBaseRegisterDraftKey(userId));
+    if (!rawSnapshot) return null;
+
+    const snapshot = JSON.parse(rawSnapshot) as Partial<BaseRegisterDraftSnapshot>;
+    if (
+      snapshot.version !== BASE_REGISTER_DRAFT_VERSION ||
+      snapshot.userId !== userId ||
+      typeof snapshot.updatedAt !== "number" ||
+      Date.now() - snapshot.updatedAt > BASE_REGISTER_DRAFT_TTL_MS
+    ) {
+      window.localStorage.removeItem(getBaseRegisterDraftKey(userId));
+      return null;
+    }
+
+    return {
+      version: BASE_REGISTER_DRAFT_VERSION,
+      userId,
+      selectedContract: String(snapshot.selectedContract ?? ""),
+      selectedShift: String(snapshot.selectedShift ?? ""),
+      selectedDateValue: String(snapshot.selectedDateValue ?? ""),
+      serviceDrafts: (snapshot.serviceDrafts ?? {}) as Record<number, ServiceDraft>,
+      driverDirectory: (snapshot.driverDirectory ?? {}) as Record<string, Driver>,
+      updatedAt: snapshot.updatedAt,
+    };
+  } catch {
+    window.localStorage.removeItem(getBaseRegisterDraftKey(userId));
+    return null;
+  }
+}
+
+function removeBaseRegisterDraft(userId: string | undefined) {
+  if (!userId || typeof window === "undefined") return;
+  window.localStorage.removeItem(getBaseRegisterDraftKey(userId));
 }
 
 export function OperacionesDashboard() {
@@ -124,6 +191,8 @@ export function OperacionesDashboard() {
     fieldErrors: {} as Record<string, string>,
     fieldErrorsByService: {} as Record<number, Record<string, string>>,
   });
+  const draftHydratedRef = useRef(false);
+  const skipNextDraftResetRef = useRef(false);
 
   const selectedDate = selectedDateValue ? parseDateValue(selectedDateValue) : null;
 
@@ -344,6 +413,55 @@ export function OperacionesDashboard() {
   }, [session]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
+    const snapshot = readBaseRegisterDraft(user.id);
+    if (snapshot) {
+      skipNextDraftResetRef.current = true;
+      setSelectedContract(snapshot.selectedContract);
+      setSelectedShift(snapshot.selectedShift);
+      setSelectedDateValue(snapshot.selectedDateValue || todayStr);
+      setServiceDrafts(snapshot.serviceDrafts);
+      setDriverDirectory(snapshot.driverDirectory);
+    }
+
+    draftHydratedRef.current = true;
+  }, [todayStr, user?.id]);
+
+  useEffect(() => {
+    if (!draftHydratedRef.current || !user?.id) return;
+
+    const hasSelection = Boolean(selectedContract || selectedShift || selectedDateValue !== todayStr);
+    const hasDrafts = hasMeaningfulServiceDrafts(serviceDrafts);
+    const selectedDriverIds = new Set(Object.values(serviceDrafts).map((draft) => draft.driverId).filter(Boolean));
+    const persistedDrivers = Object.fromEntries(
+      Object.entries(driverDirectory).filter(([driverId]) => selectedDriverIds.has(driverId))
+    );
+
+    const saveTimer = window.setTimeout(() => {
+      if (!hasSelection && !hasDrafts) {
+        removeBaseRegisterDraft(user.id);
+        return;
+      }
+
+      const snapshot: BaseRegisterDraftSnapshot = {
+        version: BASE_REGISTER_DRAFT_VERSION,
+        userId: user.id,
+        selectedContract,
+        selectedShift,
+        selectedDateValue,
+        serviceDrafts,
+        driverDirectory: persistedDrivers,
+        updatedAt: Date.now(),
+      };
+
+      window.localStorage.setItem(getBaseRegisterDraftKey(user.id), JSON.stringify(snapshot));
+    }, 350);
+
+    return () => window.clearTimeout(saveTimer);
+  }, [driverDirectory, selectedContract, selectedDateValue, selectedShift, serviceDrafts, todayStr, user?.id]);
+
+  useEffect(() => {
     const client = supabase;
     if (!session || !client) return;
 
@@ -402,6 +520,18 @@ export function OperacionesDashboard() {
   }, [dashboardContract, dashboardDateFrom, dashboardDateTo, session, submitState.success]);
 
   useEffect(() => {
+    if (skipNextDraftResetRef.current) {
+      skipNextDraftResetRef.current = false;
+      setSubmitState({
+        loading: false,
+        error: "",
+        success: "",
+        fieldErrors: {},
+        fieldErrorsByService: {},
+      });
+      return;
+    }
+
     setServiceDrafts({});
     setExpandedServiceId(null);
     setDriverDirectory({});
@@ -551,6 +681,12 @@ export function OperacionesDashboard() {
         fieldErrors: {},
         fieldErrorsByService: {},
       });
+      removeBaseRegisterDraft(user?.id);
+      setServiceDrafts({});
+      setExpandedServiceId(null);
+      setDriverDirectory({});
+      setEquipmentQuery("");
+      setOpenEquipmentServiceId(null);
     } catch (error) {
       setSubmitState({
         loading: false,
