@@ -25,6 +25,16 @@ git diff --check
 
 Este smoke no reemplaza pruebas E2E con login real, pero bloquea drift de contrato entre navegacion, routing, autorizacion frontend y lazy loading.
 
+`npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
+
+- `get_my_effective_permissions()` rechaza llamadas sin `auth.uid()`;
+- se selecciona un perfil activo con rol vigente, o se usa `SUPABASE_SMOKE_USER_ID` si esta definido;
+- se simula el claim `request.jwt.claim.sub` dentro de una transaccion `read only`;
+- `get_my_effective_permissions()` devuelve perfil, roles y modulos con estructura valida;
+- `get_dashboard_home_bundle(2)` devuelve el bundle de Inicio con arrays y resumen operacional esperados.
+
+Este smoke no escribe datos ni crea usuarios. Requiere que el proyecto este linkeado con Supabase CLI y que el operador tenga acceso para `supabase db query --linked`.
+
 Cuando hay SQL/RPCs nuevas o modificadas:
 
 ```bash
@@ -104,7 +114,7 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 ## Deuda actual
 
 - El repo no tiene aun `tests/smoke` ni Playwright/Cypress productivo.
-- La cobertura funcional aun depende de build + humo SQL/manual, pero rutas/roles/preloads ya tienen smoke estatico automatizado.
+- La cobertura funcional UI aun depende de build + humo SQL/manual, pero rutas/roles/preloads y RPCs base de Inicio ya tienen smoke automatizado.
 
 ## Siguiente implementacion segura
 

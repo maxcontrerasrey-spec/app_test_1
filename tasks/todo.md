@@ -149,6 +149,53 @@ El smoke es estatico: no inicia sesion ni prueba RLS/RPC con usuarios reales. El
 
 Construir smoke funcional por rol para una ruta critica, empezando por `Inicio` o `Operaciones`, con evidencia de sesion/permisos reales.
 
+## Loop Enterprise global - smoke funcional Inicio
+
+- [x] Ejecutar tercera iteracion global del prompt Enterprise sobre smoke funcional de RPCs de Inicio.
+- [x] Verificar contrato Supabase actual y confirmar que `get_dashboard_home_bundle(...)` requiere `auth.uid()`.
+- [x] Crear `npm run smoke:dashboard-rpc` con consulta remota read-only sobre el proyecto linkeado.
+- [x] Validar rechazo no autenticado de `get_my_effective_permissions()`.
+- [x] Validar `get_my_effective_permissions()` y `get_dashboard_home_bundle(2)` con claim autenticado simulado para un perfil activo con rol vigente.
+- [x] Documentar alcance, precondiciones y riesgo residual en `docs/smoke-tests.md`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El ERP ya tenia smoke estatico de rutas/roles, pero la ruta critica `Inicio` no tenia una prueba remota repetible que comprobara el contrato real de autenticacion y payload de sus RPCs base.
+
+#### Riesgo
+
+Una regresion en `get_my_effective_permissions()` o `get_dashboard_home_bundle(...)` podria compilar correctamente y pasar auditorias estaticas, pero romper el inicio de sesion o dejar el dashboard inicial sin datos estructurados.
+
+#### Causa raiz
+
+La validacion funcional remota existia como humo manual/SQL puntual, no como comando versionado. Ademas, las RPCs dependen de `auth.uid()`, por lo que un cliente service-role sin claim no prueba el flujo de usuario autenticado.
+
+#### Cambio implementado
+
+- `scripts/smoke-dashboard-rpc.mjs` ejecuta `supabase db query --linked` contra el proyecto remoto.
+- El smoke primero confirma que `get_my_effective_permissions()` rechaza llamadas sin `auth.uid()`.
+- Luego selecciona un perfil activo con rol vigente, o usa `SUPABASE_SMOKE_USER_ID`, simula `request.jwt.claim.sub` dentro de una transaccion `read only` y valida forma de payload de permisos e Inicio.
+- `package.json` expone `npm run smoke:dashboard-rpc`.
+- `docs/smoke-tests.md` y `tasks/lessons.md` documentan alcance y limite.
+
+#### Validacion
+
+Validacion ejecutada: `npm run smoke:dashboard-rpc`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado
+
+El ERP queda con un smoke funcional remoto para la ruta `Inicio`, sin escrituras y sin depender de credenciales interactivas de usuario.
+
+#### Riesgo residual
+
+El smoke simula el claim de usuario en SQL remoto y valida RPCs, pero no navega la UI ni prueba un login browser real. El siguiente cierre Enterprise debe cubrir una ruta operacional completa con Playwright o un harness equivalente.
+
+#### Proximo objetivo
+
+Construir smoke funcional de `Operaciones` con validacion read-only de contratos visibles/editables y resumen/exportador, sin crear `service_entries`.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

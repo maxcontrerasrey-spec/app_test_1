@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build:frontend-check": "node scripts/run-frontend-build.mjs",
     "preview": "vite preview",
+    "smoke:dashboard-rpc": "node scripts/smoke-dashboard-rpc.mjs",
     "audit:migrations": "node scripts/audit-supabase-migrations.mjs --enforce-baseline",
     "audit:migrations:write-baseline": "node scripts/audit-supabase-migrations.mjs --write-baseline",
     "audit:enterprise-docs": "node scripts/audit-enterprise-docs.mjs",

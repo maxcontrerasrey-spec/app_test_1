@@ -27,6 +27,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los roles visibles tambien se auditan.** `visibleForRoles` debe referenciar roles conocidos por `access.ts`; un typo ahi puede esconder o mostrar entradas sin que TypeScript lo capture si el patron cambia.
 - **Un smoke estatico no reemplaza login real, pero cierra drift barato y recurrente.** `audit:route-role-smoke` bloquea inconsistencias de routing/roles en CI y deja los E2E para validar sesiones, permisos backend y datos vivos.
 
+## 254. Un smoke funcional de RPC debe probar el contrato de autenticacion y la forma del payload
+
+- **Service role por PostgREST no equivale a usuario autenticado.** Para RPCs que dependen de `auth.uid()`, el smoke correcto debe validar rechazo sin claim y luego ejecutar con `request.jwt.claim.sub` controlado o con una sesion real.
+- **Las pruebas remotas de Inicio deben ser read-only.** `smoke:dashboard-rpc` usa `begin read only` y `rollback`; no crea usuarios, no modifica perfiles y no deja trazabilidad operacional falsa.
+- **Validar solo que la RPC no falle es debil.** El smoke debe comprobar forma de payload: perfil, roles, modulos, arrays de tareas/aprobaciones/folios/cumpleanos y resumen operacional.
+
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 
 - **No edites migraciones viejas aplicadas para hacer bajar el contador.** Para Operaciones, BI y ORION, el cierre seguro fue una migración forward-only que recompila helpers/policies vivos y deja `notify pgrst`.
