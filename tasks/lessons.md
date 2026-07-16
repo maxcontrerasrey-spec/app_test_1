@@ -38,6 +38,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Resumen/exportador pueden humearse sin crear `service_entries`.** Para Operaciones, el smoke seguro valida `base_services`, `user_contracts`, `operations_editable_contracts`, `contracts`, `equipment` y lecturas de `service_entries` en transaccion `read only`.
 - **La matriz editable se prioriza desde la tabla auditada, no desde la vista dependiente de `auth.uid()` antes de setear claim.** Para elegir usuario de smoke, usa `operations_contract_editors`; para validar el contrato final, usa `operations_editable_contracts` con claim simulado.
 - **El smoke de lectura no prueba guardado.** `submit_service_entries_batch(...)` debe mantenerse en una validacion separada con `ROLLBACK` explicito y payload operativo controlado para no mezclar cobertura de resumen/exportador con escritura.
+- **La escritura operacional puede probarse sin contaminar produccion.** El smoke de guardado debe elegir un slot futuro libre, llamar la RPC dos veces para cubrir insert/update, validar el delta dentro de la transaccion y confirmar despues del `ROLLBACK` que el conteo persistente no cambio.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 

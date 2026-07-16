@@ -244,6 +244,55 @@ El smoke no ejecuta `submit_service_entries_batch(...)` ni navega la UI. El guar
 
 Construir smoke de escritura controlada para `submit_service_entries_batch(...)` que ejecute insert/update dentro de transaccion con `ROLLBACK`, sin persistir planificaciones.
 
+## Loop Enterprise global - smoke escritura Operaciones
+
+- [x] Ejecutar quinta iteracion global del prompt Enterprise sobre guardado transaccional de Operaciones.
+- [x] Verificar contrato actual de `submit_service_entries_batch(...)` y payload usado por `OperacionesDashboard`.
+- [x] Crear `npm run smoke:operations-write-rpc` con transaccion remota y `ROLLBACK`.
+- [x] Seleccionar usuario L1/L2 con contrato editable activo y servicio base real.
+- [x] Ejecutar `submit_service_entries_batch(...)` dos veces sobre el mismo slot para cubrir insert/update.
+- [x] Verificar que dentro de la transaccion se cree una sola fila y que al finalizar no cambie el conteo persistente de `service_entries`.
+- [x] Documentar alcance, precondiciones y riesgo residual en `docs/smoke-tests.md`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El smoke read-only de Operaciones cubria vistas, catalogos y consultas de resumen/exportador, pero el caso original de carga quedaba sin prueba automatizada de la RPC que realmente guarda servicios.
+
+#### Riesgo
+
+Una regresion en `submit_service_entries_batch(...)`, en la matriz editable por contrato o en la llave de upsert podia volver a dejar la pantalla en estado de envio o responder errores de backend solo durante operacion real.
+
+#### Causa raiz
+
+El guardado mezcla autorizacion por `auth.uid()`, contrato editable, resolucion de servicio base, bloqueo por llave operacional e insert/update de `service_entries`. Esa frontera no puede inferirse desde TypeScript, build ni smokes de lectura.
+
+#### Cambio implementado
+
+- `scripts/smoke-operations-write-rpc.mjs` ejecuta `supabase db query --linked` contra el proyecto remoto.
+- El smoke selecciona un usuario activo L1/L2 con fila activa en `operations_contract_editors`, o usa `SUPABASE_OPERATIONS_SMOKE_USER_ID`.
+- Elige un servicio base activo del contrato editable y un slot futuro libre.
+- Simula `request.jwt.claim.sub`, llama `submit_service_entries_batch(...)` con `serviceExecutionStatus = not_performed`, valida insercion y repite la llamada para validar actualizacion sin duplicar.
+- Ejecuta `ROLLBACK` y compara el conteo persistente de `service_entries` antes/despues.
+- `package.json` expone `npm run smoke:operations-write-rpc`.
+
+#### Validacion
+
+Validacion ejecutada: `npm run smoke:operations-write-rpc`, `npm run smoke:operations-rpc`, `npm run smoke:dashboard-rpc`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado
+
+El ERP queda con un smoke funcional remoto para la escritura controlada de Operaciones: inserta y actualiza dentro de transaccion, ejecuta `ROLLBACK` y confirma que no cambia el conteo persistente de `service_entries`.
+
+#### Riesgo residual
+
+El smoke no navega la UI con una sesion browser real ni prueba el flujo `planned` con conductor/equipo. Cubre la frontera backend de escritura sin contaminar datos productivos.
+
+#### Proximo objetivo
+
+Construir un smoke browser acotado para una ruta critica, empezando por login/carga de Inicio u Operaciones, reutilizando una cuenta controlada si existe.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

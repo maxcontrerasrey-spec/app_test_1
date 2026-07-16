@@ -45,6 +45,17 @@ Este smoke no escribe datos ni crea usuarios. Requiere que el proyecto este link
 
 Este smoke no ejecuta `submit_service_entries_batch(...)` ni escribe `service_entries`.
 
+`npm run smoke:operations-write-rpc` valida de forma funcional el guardado de Operaciones contra el proyecto Supabase linkeado:
+
+- selecciona un usuario activo L1/L2 con contrato editable vigente, o usa `SUPABASE_OPERATIONS_SMOKE_USER_ID`;
+- selecciona un servicio base real del contrato editable;
+- simula `request.jwt.claim.sub` en una transaccion controlada;
+- ejecuta `submit_service_entries_batch(...)` dos veces con estado `not_performed` para cubrir insercion y actualizacion sobre la misma llave operacional;
+- confirma que dentro de la transaccion aparece exactamente una fila y que el segundo guardado actualiza sin duplicar;
+- ejecuta `ROLLBACK` y verifica desde una consulta posterior que el conteo persistente de `service_entries` no cambio.
+
+Este smoke prueba la frontera de escritura sin dejar planificaciones reales ni documentos operativos falsos.
+
 Cuando hay SQL/RPCs nuevas o modificadas:
 
 ```bash
@@ -124,7 +135,7 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 ## Deuda actual
 
 - El repo no tiene aun `tests/smoke` ni Playwright/Cypress productivo.
-- La cobertura funcional UI aun depende de build + humo SQL/manual, pero rutas/roles/preloads, RPCs base de Inicio y lecturas criticas de Operaciones ya tienen smoke automatizado.
+- La cobertura funcional UI aun depende de build + humo SQL/manual, pero rutas/roles/preloads, RPCs base de Inicio y lecturas/escritura transaccional de Operaciones ya tienen smoke automatizado.
 
 ## Siguiente implementacion segura
 
