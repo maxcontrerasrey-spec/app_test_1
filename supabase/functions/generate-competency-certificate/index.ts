@@ -113,6 +113,19 @@ function buildVerificationUrl(token: string) {
   return `${normalizedBase}/verificar/competencia/${encodeURIComponent(token)}`;
 }
 
+async function refreshPublicValidationSnapshot(
+  supabase: ReturnType<typeof createClient>,
+  certificateId: string
+) {
+  const { error } = await supabase.rpc("refresh_competency_certificate_public_snapshot", {
+    certificate_id_input: certificateId
+  });
+
+  if (error) {
+    throw new Error(`No fue posible actualizar el registro publico de validacion: ${error.message}`);
+  }
+}
+
 async function sha256Hex(bytes: Uint8Array) {
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest))
@@ -825,6 +838,8 @@ Deno.serve(async (req) => {
     }
 
     if (certificateRow.certificate_status === "uploaded_to_buk" && certificateRow.pdf_path) {
+      await refreshPublicValidationSnapshot(supabase, certificateRow.id);
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -962,6 +977,8 @@ Deno.serve(async (req) => {
     if (updateError) {
       throw new Error(`No fue posible actualizar el certificado: ${updateError.message}`);
     }
+
+    await refreshPublicValidationSnapshot(supabase, certificateRow.id);
 
     await supabase
       .from("competency_requests")

@@ -7407,3 +7407,21 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [x] Eliminar bordes laterales y separadores verticales de los cuadros de validacion y resumen, dejando solo lineas horizontales superior e inferior.
 - [x] Incorporar una fuente manuscrita OFL para la firma del instructor, con preview en Canvas y PDF productivo embebido via `fontkit`.
 - [x] Validar `TypeScript`, build frontend sin warnings nuevos, warning budget de Supabase, render visual local, deploy de Edge Function y rechazo `401` sin bearer.
+
+## Validacion publica de certificados de competencias
+
+- [x] Crear un registro publico minimo e inmutable para validar certificados por folio o token QR sin exponer tablas, Storage, BUK ni datos internos del ERP.
+- [x] Implementar una RPC interna segura que solo devuelva estado, vigencia, folio, trabajador certificado, instructor, equipos autorizados y huella del PDF.
+- [x] Exponer la validacion sin cuenta mediante Edge Function publica con service role, evitando grants SQL directos a `anon`.
+- [x] Actualizar la Edge Function productiva para guardar el snapshot de validacion al generar el certificado real y mantener compatibilidad con el QR existente.
+- [x] Crear la pagina publica `/verificar/competencia/:lookup?` fuera del login para validar por QR/link o por folio manual.
+- [x] Validar TypeScript, build frontend, migracion, warning budget de Supabase, prueba remota con rollback y despliegue de Edge Functions.
+
+### Resultado de validacion publica de certificados de competencias
+
+- La migracion [`20260716164726_add_public_competency_certificate_validation.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716164726_add_public_competency_certificate_validation.sql:1) agrega `public_validation_payload` y `public_validation_updated_at` a `competency_certificates`, mas funciones internas para construir/refrescar el snapshot publico y verificar por folio o token.
+- La RPC `verify_competency_certificate(text)` queda sin permisos para `anon`; solo `service_role` puede ejecutarla. El acceso sin cuenta lo entrega la nueva Edge Function publica [`verify-competency-certificate`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/verify-competency-certificate/index.ts:1), que responde solo con autenticidad, vigencia, folio, trabajador, instructor, equipos y huella SHA-256.
+- [`generate-competency-certificate`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/generate-competency-certificate/index.ts:1) refresca el snapshot publico al emitir o reabrir un certificado ya cargado a BUK, manteniendo el QR existente hacia `/verificar/competencia/:token`.
+- [`CompetencyVerificationPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/pages/CompetencyVerificationPage.tsx:1) queda disponible fuera de login en `/verificar/competencia` y `/verificar/competencia/:lookup`, con validacion manual por folio o automatica por QR/link.
+- La migracion se aplico en remoto con `supabase db query --linked --file` porque `supabase db push --linked --dry-run` esta bloqueado por historial remoto previo no presente localmente; no se reparo esa historia ajena.
+- Validacion cerrada con `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260716164726_add_public_competency_certificate_validation.sql`, `npm run audit:supabase-security` en 82 warnings, prueba remota positiva con `ROLLBACK`, despliegue de `verify-competency-certificate` y `generate-competency-certificate`, prueba HTTP publica de no encontrado y Playwright sobre la ruta publica sin warning nuevo del modulo.

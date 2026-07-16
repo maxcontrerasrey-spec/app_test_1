@@ -26,6 +26,7 @@ import type {
   CompetencyInstructor,
   CompetencyPreviewPdfInput,
   CompetencyPreviewPdfResult,
+  CompetencyPublicVerification,
   CompetencyRequestInput,
   CompetencyRequestResult,
   CompetencyWorker
@@ -159,6 +160,54 @@ function mapDashboard(payload: unknown): CompetencyDashboardPayload {
   };
 }
 
+function mapPublicVerification(payload: unknown): CompetencyPublicVerification {
+  const source = asRecord(payload);
+  const certificate = asRecord(source.certificate);
+  const worker = asRecord(source.worker);
+  const instructor = asRecord(source.instructor);
+  const training = asRecord(source.training);
+
+  return {
+    found: readBoolean(source.found),
+    isAuthentic: readBoolean(source.is_authentic),
+    isCurrent: readBoolean(source.is_current),
+    status: readText(source.status),
+    verifiedAt: readNullableText(source.verified_at),
+    snapshotUpdatedAt: readNullableText(source.snapshot_updated_at),
+    certificate: {
+      folio: readText(certificate.folio),
+      templateCode: readText(certificate.template_code),
+      templateVersion: readText(certificate.template_version),
+      certificateStatus: readText(certificate.certificate_status),
+      competencyStatus: readText(certificate.competency_status),
+      issuedAt: readNullableText(certificate.issued_at),
+      validFrom: readNullableText(certificate.valid_from),
+      validUntil: readNullableText(certificate.valid_until),
+      pdfSha256: readNullableText(certificate.pdf_sha256),
+      bukRegistered: readBoolean(certificate.buk_registered),
+      bukUploadedAt: readNullableText(certificate.buk_uploaded_at)
+    },
+    worker: {
+      fullName: readText(worker.full_name),
+      documentNumber: readText(worker.document_number),
+      jobTitle: readNullableText(worker.job_title)
+    },
+    instructor: {
+      fullName: readText(instructor.full_name),
+      documentNumber: readText(instructor.document_number),
+      profileCode: readText(instructor.profile_code)
+    },
+    training: {
+      trainingDate: readNullableText(training.training_date)
+    },
+    equipment: asArray<Record<string, unknown>>(source.equipment).map((item) => ({
+      brandName: readText(item.brand_name),
+      typeName: readText(item.type_name),
+      modelName: readText(item.model_name)
+    }))
+  };
+}
+
 async function sha256Hex(file: File) {
   const buffer = await file.arrayBuffer();
   const digest = await crypto.subtle.digest("SHA-256", buffer);
@@ -212,6 +261,21 @@ export async function fetchCompetencyDashboard() {
   }
 
   return mapDashboard(data);
+}
+
+export async function verifyCompetencyCertificate(lookupText: string) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.functions.invoke("verify-competency-certificate", {
+    body: {
+      lookup: lookupText.trim()
+    }
+  });
+
+  if (error) {
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible validar el certificado.", "message"));
+  }
+
+  return mapPublicVerification(data);
 }
 
 export async function uploadCompetencyEvaluationFile(file: File, userId: string): Promise<CompetencyEvaluationUpload> {

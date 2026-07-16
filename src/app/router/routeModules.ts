@@ -37,6 +37,9 @@ export const routeModuleImporters = {
   competencyCertificationPage: async () => ({
     default: (await import("../../modules/competencies/pages/CompetencyCertificationPage")).CompetencyCertificationPage
   }),
+  competencyVerificationPage: async () => ({
+    default: (await import("../../modules/competencies/pages/CompetencyVerificationPage")).CompetencyVerificationPage
+  }),
   aiAssistantHome: async () => ({
     default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
   }),
@@ -109,6 +112,10 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/certificados") || normalizedPath.startsWith("/seguimiento-certificados")) {
     return ["competencyCertificationPage"];
+  }
+
+  if (normalizedPath.startsWith("/verificar/competencia")) {
+    return ["competencyVerificationPage"];
   }
 
   if (normalizedPath.startsWith("/copiloto-ia")) {

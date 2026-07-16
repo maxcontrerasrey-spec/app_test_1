@@ -298,6 +298,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabaseClient = supabase;
     let isMounted = true;
     let currentSession: Session | null = null;
+    let safetyTimer: number | null = null;
+
+    const finishLoading = () => {
+      if (safetyTimer !== null) {
+        window.clearTimeout(safetyTimer);
+        safetyTimer = null;
+      }
+      setIsLoading(false);
+    };
 
     const loadAuthorization = async (nextSession: Session | null) => {
       if (!isMounted) {
@@ -316,7 +325,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCapabilities([]);
         setOperatorOptions([]);
         setActiveOperator(null);
-        setIsLoading(false);
+        finishLoading();
         return;
       }
 
@@ -329,7 +338,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           logger.error("AuthContext loadAuthorization", error);
-          setIsLoading(false);
+          finishLoading();
           return;
         }
 
@@ -382,16 +391,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logger.error("AuthContext loadAuthorization catch", err);
       } finally {
         if (isMounted) {
-          setIsLoading(false);
+          finishLoading();
         }
       }
     };
 
     // Safety timeout: if loading takes more than 10s, force exit loading state
-    const safetyTimer = window.setTimeout(() => {
+    safetyTimer = window.setTimeout(() => {
       if (isMounted) {
         logger.warn("AuthContext safety timeout");
-        setIsLoading(false);
+        finishLoading();
       }
     }, 10_000);
 
@@ -404,7 +413,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }).catch((err) => {
       logger.error("AuthContext getSession", err);
       if (isMounted) {
-        setIsLoading(false);
+        finishLoading();
       }
     });
 
@@ -435,7 +444,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
-      window.clearTimeout(safetyTimer);
+      if (safetyTimer !== null) {
+        window.clearTimeout(safetyTimer);
+      }
       subscription.unsubscribe();
     };
   }, []);

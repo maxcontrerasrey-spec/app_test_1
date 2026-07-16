@@ -147,3 +147,45 @@ export type CompetencyEvaluationUpload = {
   sizeBytes: number;
   sha256: string;
 };
+
+export type CompetencyPublicEquipment = {
+  brandName: string;
+  typeName: string;
+  modelName: string;
+};
+
+export type CompetencyPublicVerification = {
+  found: boolean;
+  isAuthentic: boolean;
+  isCurrent: boolean;
+  status: string;
+  verifiedAt: string | null;
+  snapshotUpdatedAt: string | null;
+  certificate: {
+    folio: string;
+    templateCode: string;
+    templateVersion: string;
+    certificateStatus: string;
+    competencyStatus: string;
+    issuedAt: string | null;
+    validFrom: string | null;
+    validUntil: string | null;
+    pdfSha256: string | null;
+    bukRegistered: boolean;
+    bukUploadedAt: string | null;
+  };
+  worker: {
+    fullName: string;
+    documentNumber: string;
+    jobTitle: string | null;
+  };
+  instructor: {
+    fullName: string;
+    documentNumber: string;
+    profileCode: string;
+  };
+  training: {
+    trainingDate: string | null;
+  };
+  equipment: CompetencyPublicEquipment[];
+};

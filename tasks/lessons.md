@@ -2448,3 +2448,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No importes `fontkit` estaticamente en React para resolver una firma.** Aunque funcione, puede subir el chunk del modulo y crear warnings nuevos de build; para preview usa Canvas con la fuente del asset y embebe la imagen resultante en el PDF.
 - **El PDF productivo puede usar `fontkit` en Edge Function porque queda fuera del bundle Vite.** Mantiene texto real y subset de fuente en el certificado final sin penalizar la carga del ERP.
 - **Los iconos usados por Edge Functions deben empaquetarse como base64 versionado.** Si el preview usa assets Vite, el generador productivo debe tener la misma fuente grafica en `logos.ts` o equivalente para evitar divergencia visual.
+
+## 172. La validacion publica de documentos no debe abrir SQL anonimo directo
+
+- **Una pagina publica no implica grants publicos a tablas o RPC sensibles.** Para validar certificados sin cuenta, expone una Edge Function publica y deja el SQL interno solo para `service_role`.
+- **El payload publico debe ser un snapshot minimo.** Devuelve autenticidad, vigencia, folio, identidad certificada, instructor, equipos y huella del PDF; no devuelvas `pdf_path`, URLs BUK, rutas de evaluacion, IDs internos ni payloads crudos.
+- **El QR debe validar el certificado, no descargar documentos.** La ruta publica debe confirmar estado y vigencia; la custodia documental sigue en BUK/Storage bajo fronteras autenticadas.
+- **El warning budget manda sobre la arquitectura.** Si una solucion funcional sube `audit:supabase-security`, cambia la frontera tecnica antes de cerrar aunque el flujo ya responda.

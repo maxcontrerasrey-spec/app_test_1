@@ -32,6 +32,10 @@ const CompetencyCertificationPage = lazyWithRetry(
   "competency-certification-page",
   routeModuleImporters.competencyCertificationPage
 );
+const CompetencyVerificationPage = lazyWithRetry(
+  "competency-verification-page",
+  routeModuleImporters.competencyVerificationPage
+);
 const AIAssistantHome = lazyWithRetry("ai-assistant-page", routeModuleImporters.aiAssistantHome);
 const OnboardingModuleLayout = lazyWithRetry(
   "onboarding-module-layout",
@@ -67,6 +71,8 @@ export function AppRouter() {
           <Route path="/login" element={<LoginPage />} />
         </Route>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verificar/competencia" element={<CompetencyVerificationPage />} />
+        <Route path="/verificar/competencia/:lookup" element={<CompetencyVerificationPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />
