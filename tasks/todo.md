@@ -56,6 +56,17 @@
 - [x] Ajustar layout final del PDF: tabla de equipos junto al parrafo de habilitacion, sin leyenda grande de vigencia, panel firma/QR al pie, vencimiento calculado desde fecha de habilitacion y etiqueta `Vencimiento de certificado`.
 - [x] Alinear la Edge Function productiva `generate-competency-certificate` con el mismo formato visual y reglas del PDF de prueba para que el documento cargado a BUK no use el layout legacy.
 - [x] Ajustar header del certificado para que los metadatos F-OPE-068 queden centrados, en gris tipo marca de agua y sin caja visible salvo la línea inferior.
+- [x] Corregir panel de validación del PDF para evitar solapamiento del título con QR y mover fecha de firma a la frase de firma electrónica.
+- [x] Cambiar codificación productiva del certificado a `DDMMAAAAHHMM` + correlativo desde `1151`.
+- [x] Validar migración, build, auditoría Supabase, generación/render del PDF, despliegue de Edge Function, commit y push a `main`.
+
+### Cierre productivo visual y codificación
+
+- Se agregó la migración [`20260716133501_competency_certificate_datetime_correlative_folio.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716133501_competency_certificate_datetime_correlative_folio.sql:1), que cambia el default de `competency_certificates.folio` a `DDMMAAAAHHMM` en horario `America/Santiago` + correlativo.
+- La secuencia remota `competency_certificate_folio_seq` quedó en `1150`, por lo que el próximo certificado real emitido será correlativo `1151` o superior.
+- La migración se aplicó vía `supabase db query --linked --file` porque `db push --dry-run` está bloqueado por versiones remotas históricas no presentes en el repo; la versión `20260716133501` quedó registrada manualmente en `supabase_migrations.schema_migrations`.
+- El PDF temporal renderizado localmente confirmó header sin caja derecha, línea inferior roja, metadatos centrados, QR legible y folio largo sin desborde; no se versionó el artefacto temporal.
+- La Edge Function `generate-competency-certificate` quedó desplegada nuevamente en el proyecto `pzblmbahnoyntrhistea`.
 
 ## Loop Enterprise global
 

@@ -469,6 +469,7 @@ function drawCertificateHeader(
   pageTotal: number
 ) {
   const border = rgb(0.16, 0.18, 0.22);
+  const accent = rgb(0.82, 0.03, 0.07);
   const watermark = rgb(0.48, 0.52, 0.58);
   const header = { x: 32, y: 721, width: 531, height: 101 };
   const logoCell = { x: 32, y: 721, width: 121, height: 101 };
@@ -480,7 +481,7 @@ function drawCertificateHeader(
   const logoHeight = logo.height * logoScale;
 
   page.drawLine({ start: { x: header.x, y: header.y + header.height }, end: { x: metadataCell.x, y: header.y + header.height }, thickness: 0.85, color: border });
-  page.drawLine({ start: { x: header.x, y: header.y }, end: { x: header.x + header.width, y: header.y }, thickness: 0.85, color: border });
+  page.drawLine({ start: { x: header.x, y: header.y }, end: { x: header.x + header.width, y: header.y }, thickness: 1, color: accent });
   page.drawLine({ start: { x: header.x, y: header.y }, end: { x: header.x, y: header.y + header.height }, thickness: 0.85, color: border });
   page.drawLine({ start: { x: 153, y: 721 }, end: { x: 153, y: 822 }, thickness: 0.65, color: border });
   page.drawImage(logo, {
@@ -492,20 +493,14 @@ function drawCertificateHeader(
   drawCenteredText(page, "Certificado de Acreditación", 153, 779, 301, fonts.bold, 19);
   drawCenteredText(page, "de Competencias", 153, 751, 301, fonts.bold, 19);
   const metadataRows: Array<[string, number]> = [
-    ["Código: F-OPE-068", 786],
-    ["Fecha: 01-08-2024", 764],
-    ["Version: 00", 742],
-    [`Página: ${pageNumber} de ${pageTotal}`, 724]
+    ["Código: F-OPE-068", 794],
+    ["Fecha: 01-08-2024", 776],
+    ["Version: 00", 758],
+    [`Página: ${pageNumber} de ${pageTotal}`, 740]
   ];
   metadataRows.forEach(([label, textY]) => {
     drawCenteredText(page, label, metadataCell.x + 7, textY, metadataCell.width - 14, fonts.regular, 8.1, watermark);
   });
-}
-
-function drawCalendarIcon(page: PDFPage, x: number, y: number) {
-  const red = rgb(0.82, 0.03, 0.07);
-  page.drawRectangle({ x, y, width: 12, height: 12, borderColor: red, borderWidth: 1 });
-  page.drawLine({ start: { x, y: y + 8 }, end: { x: x + 12, y: y + 8 }, thickness: 1, color: red });
 }
 
 function buildModelRowsFromSummary(modelSummary: string): AuthorizedModelRow[] {
@@ -576,17 +571,18 @@ function drawValidationPanel(page: PDFPage, input: {
   const lineColor = rgb(0.55, 0.59, 0.66);
   page.drawLine({ start: { x, y: y + height }, end: { x: x + width, y: y + height }, thickness: 0.7, color: lineColor });
   page.drawLine({ start: { x, y }, end: { x: x + width, y }, thickness: 0.7, color: lineColor });
+  const qrX = x + 342;
+  const qrY = y + 46;
+  const qrSize = 76;
   page.drawImage(input.validationBadge, { x: x + 14, y: y + height - 37, width: 18, height: 18 });
   page.drawText("VALIDACIÓN DEL CERTIFICADO", { x: x + 42, y: y + height - 28, size: 9.7, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
-  page.drawText("Verificación digital", { x: x + 332, y: y + height - 24, size: 9.2, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
-  page.drawText("Firmado electrónicamente por:", { x: x + 14, y: y + 94, size: 8.8, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+  drawCenteredText(page, "Verificación digital", x + 300, y + height - 27, 160, fonts.bold, 9.2);
+  page.drawText(`Firmado electrónicamente el ${formatLongDate(input.issuedDate)}, por:`, { x: x + 14, y: y + 94, size: 8.2, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
   drawScaledText(page, input.instructorName, { x: x + 14, y: y + 59, width: 245, size: 23, minSize: 14, font: fonts.signature });
   page.drawLine({ start: { x: x + 14, y: y + 53 }, end: { x: x + 238, y: y + 53 }, thickness: 0.6, color: rgb(0.78, 0.81, 0.86) });
   page.drawText("Instructor de Conductores", { x: x + 14, y: y + 39, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
   page.drawText(`RUT N. ${input.instructorDocumentNumber}`, { x: x + 14, y: y + 23, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  drawCalendarIcon(page, x + 14, y + 7);
-  page.drawText(`Fecha de emisión: ${formatLongDate(input.issuedDate)}`, { x: x + 36, y: y + 8, size: 8.2, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  page.drawImage(qrPng, { x: x + 331, y: y + 51, width: 82, height: 82 });
+  page.drawImage(qrPng, { x: qrX, y: qrY, width: qrSize, height: qrSize });
   drawCenteredText(page, "Escanee el codigo QR para verificar", x + 295, y + 36, 170, fonts.regular, 8);
   drawCenteredText(page, "la autenticidad, estado y vigencia", x + 295, y + 23, 170, fonts.regular, 8);
   drawCenteredText(page, "de este certificado.", x + 295, y + 10, 170, fonts.regular, 8);
@@ -608,7 +604,11 @@ function drawValidationPanel(page: PDFPage, input: {
     drawCenteredText(page, item[0], cellX, boxY + 22, cellW, fonts.bold, 8.4);
     const valueFont = index === 3 ? fonts.bold : fonts.regular;
     const valueColor = index === 3 ? red : rgb(0.07, 0.09, 0.16);
-    page.drawText(item[1], { x: cellX + (cellW - valueFont.widthOfTextAtSize(item[1], 8.2)) / 2, y: boxY + 8, size: 8.2, font: valueFont, color: valueColor });
+    let valueSize = 8.2;
+    while (valueSize > 5.8 && valueFont.widthOfTextAtSize(item[1], valueSize) > cellW - 12) {
+      valueSize -= 0.2;
+    }
+    page.drawText(item[1], { x: cellX + (cellW - valueFont.widthOfTextAtSize(item[1], valueSize)) / 2, y: boxY + 8, size: valueSize, font: valueFont, color: valueColor });
   });
 }
 
