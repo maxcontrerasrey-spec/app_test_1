@@ -440,6 +440,54 @@ Aun falta provisionar/configurar las cuentas controladas y secrets por rol en CI
 
 Definir el manifiesto operacional de cuentas controladas por rol y activar al menos un smoke browser autenticado de ruta concreta cuando existan secrets.
 
+## Loop Enterprise global - matriz de smokes autenticados por rol
+
+- [x] Ejecutar novena iteracion global del prompt Enterprise sobre matriz auditable de cuentas controladas.
+- [x] Crear manifiesto versionado de escenarios autenticados sin correos, passwords ni tokens.
+- [x] Cubrir escenarios iniciales `home-authenticated`, `operations-l1-summary`, `certificaciones-form` e `instructor-form`.
+- [x] Crear `npm run smoke:frontend-authenticated-matrix`.
+- [x] Reutilizar `smoke:frontend-authenticated` para ejecutar cada escenario provisionado.
+- [x] Integrar la matriz en GitHub Actions como paso siempre ejecutado, con escenarios `skipped` hasta que existan secrets.
+- [x] Documentar secrets esperados y modo `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El harness autenticado ya soportaba ruta, heading y acceso requerido, pero esas expectativas vivian como variables sueltas. Todavia faltaba una fuente versionada que dijera que rol/cuenta controlada debe probar que ruta.
+
+#### Riesgo
+
+Sin manifiesto de escenarios, cada configuracion de CI podia derivar en convenciones distintas o probar solo login generico. Eso deja sin trazabilidad que Operaciones, Certificaciones e Instructor tengan cobertura browser autenticada cuando se provisionen cuentas reales.
+
+#### Causa raiz
+
+El repo tenia comandos de smoke, pero no tenia un contrato declarativo de cuentas controladas por rol. Incluir credenciales en el repo esta prohibido; por lo tanto el contrato correcto debe versionar solo nombres de variables y expectativas de UI.
+
+#### Cambio implementado
+
+- `tests/smoke/frontend-authenticated.scenarios.json` declara escenarios, roles, rutas, headings y variables secretas esperadas.
+- `scripts/smoke-frontend-authenticated-matrix.mjs` valida el manifiesto y ejecuta solo escenarios con secrets completos.
+- `npm run smoke:frontend-authenticated-matrix` queda disponible localmente y en CI.
+- `.github/workflows/audit-supabase-migrations.yml` expone los secrets esperados por escenario y ejecuta la matriz.
+- `docs/smoke-tests.md` documenta los escenarios, variables y comportamiento `skipped`/`required`.
+
+#### Validacion
+
+Validacion ejecutada: `npm run smoke:frontend-authenticated-matrix`, `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1 npm run smoke:frontend-authenticated-matrix` como prueba negativa esperada, `npm run smoke:frontend-authenticated`, `npm run smoke:frontend-routes`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado esperado
+
+El ERP queda con un contrato auditable para activar smokes browser autenticados por rol sin filtrar credenciales ni inventar usuarios desde el codigo.
+
+#### Riesgo residual
+
+Los escenarios reales seguirán `skipped` hasta que se creen cuentas controladas y secrets por escenario en GitHub Actions. El manifiesto no provisiona cuentas ni passwords.
+
+#### Proximo objetivo
+
+Provisionar o designar las cuentas controladas, configurar secrets por escenario y activar `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1` en el ambiente donde todos los escenarios esten disponibles.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

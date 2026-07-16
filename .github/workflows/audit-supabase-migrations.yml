@@ -14,7 +14,9 @@ on:
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
       - "scripts/smoke-frontend-authenticated.mjs"
+      - "scripts/smoke-frontend-authenticated-matrix.mjs"
       - "scripts/smoke-frontend-routes.mjs"
+      - "tests/smoke/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/audit-supabase-migrations.yml"
@@ -31,7 +33,9 @@ on:
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
       - "scripts/smoke-frontend-authenticated.mjs"
+      - "scripts/smoke-frontend-authenticated-matrix.mjs"
       - "scripts/smoke-frontend-routes.mjs"
+      - "tests/smoke/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/audit-supabase-migrations.yml"
@@ -42,6 +46,14 @@ jobs:
     env:
       FRONTEND_AUTH_SMOKE_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_EMAIL }}
       FRONTEND_AUTH_SMOKE_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_PASSWORD }}
+      FRONTEND_AUTH_SMOKE_HOME_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_HOME_EMAIL }}
+      FRONTEND_AUTH_SMOKE_HOME_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_HOME_PASSWORD }}
+      FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL }}
+      FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD }}
+      FRONTEND_AUTH_SMOKE_CERTIFICACIONES_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_CERTIFICACIONES_EMAIL }}
+      FRONTEND_AUTH_SMOKE_CERTIFICACIONES_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_CERTIFICACIONES_PASSWORD }}
+      FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL }}
+      FRONTEND_AUTH_SMOKE_INSTRUCTOR_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_INSTRUCTOR_PASSWORD }}
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 
@@ -75,6 +87,9 @@ jobs:
           FRONTEND_AUTH_SMOKE_REQUIRED: "1"
           FRONTEND_AUTH_SMOKE_PATH: "/"
         run: npm run smoke:frontend-authenticated
+
+      - name: Smoke frontend authenticated scenario matrix
+        run: npm run smoke:frontend-authenticated-matrix
 
       - name: Enforce migration baseline
         run: npm run audit:migrations

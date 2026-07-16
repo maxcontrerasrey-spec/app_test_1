@@ -50,6 +50,15 @@ Este smoke no usa credenciales, no inicia sesion real y no toca datos productivo
 
 Este smoke no imprime contraseña ni tokens, no usa service role en el navegador y no crea usuarios. En CI queda condicionado a secretos/vars para que se active solo cuando exista una cuenta controlada de prueba.
 
+`npm run smoke:frontend-authenticated-matrix` valida el manifiesto `tests/smoke/frontend-authenticated.scenarios.json` y ejecuta los escenarios autenticados que tengan secrets configurados:
+
+- `home-authenticated`: usa `FRONTEND_AUTH_SMOKE_HOME_EMAIL/PASSWORD`, abre `/`, exige `/` y heading `Bienvenido`;
+- `operations-l1-summary`: usa `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL/PASSWORD`, abre `/operaciones/resumen`, exige acceso de modulo y ruta final exacta;
+- `certificaciones-form`: usa `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_EMAIL/PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`;
+- `instructor-form`: usa `FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL/PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`.
+
+El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. No debe contener correos reales, passwords, tokens ni sesiones. Si un escenario no tiene credenciales o faltan `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, queda `skipped`; con `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1`, cualquier escenario omitido falla la matriz completa. Este modo se reserva para ambientes donde todas las cuentas controladas ya esten provisionadas.
+
 `npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
 
 - `get_my_effective_permissions()` rechaza llamadas sin `auth.uid()`;
@@ -160,7 +169,7 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 ## Deuda actual
 
 - El repo no tiene aun fixtures versionados de usuarios controlados por rol.
-- La cobertura UI ya incluye un smoke browser acotado de rutas publicas/protegidas y un harness autenticado activable por secretos con expectativa de acceso/ruta/heading; la cobertura autenticada por rol aun depende de configurar cuentas de prueba controladas.
+- La cobertura UI ya incluye un smoke browser acotado de rutas publicas/protegidas y una matriz autenticada por escenarios/roles activable por secretos; la ejecucion real de cada escenario aun depende de configurar cuentas de prueba controladas.
 - Rutas/roles/preloads, RPCs base de Inicio y lecturas/escritura transaccional de Operaciones ya tienen smoke automatizado.
 
 ## Siguiente implementacion segura

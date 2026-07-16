@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "smoke:dashboard-rpc": "node scripts/smoke-dashboard-rpc.mjs",
     "smoke:frontend-authenticated": "node scripts/smoke-frontend-authenticated.mjs",
+    "smoke:frontend-authenticated-matrix": "node scripts/smoke-frontend-authenticated-matrix.mjs",
     "smoke:frontend-routes": "node scripts/smoke-frontend-routes.mjs",
     "smoke:operations-rpc": "node scripts/smoke-operations-rpc.mjs",
     "smoke:operations-write-rpc": "node scripts/smoke-operations-write-rpc.mjs",
