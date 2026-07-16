@@ -78,6 +78,15 @@ El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. 
 - no crea usuarios, no cambia passwords, no imprime tokens y enmascara el correo recomendado;
 - con `SUPABASE_AUTH_SMOKE_CANDIDATES_REQUIRED=1`, falla si algun escenario no tiene candidato elegible.
 
+`npm run audit:frontend-auth-smoke-secrets` consulta solo metadatos de GitHub Actions para confirmar si estan configurados los secrets y variables que habilitan la matriz autenticada:
+
+- lee `tests/smoke/frontend-authenticated.scenarios.json`;
+- deriva los secrets esperados desde `emailEnv` y `passwordEnv` de cada escenario;
+- exige como variables de repositorio `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`;
+- usa `gh secret list --app actions --json name` y `gh variable list --json name`;
+- no imprime valores de secrets, passwords, tokens ni variables, solo nombres faltantes;
+- con `FRONTEND_AUTH_SMOKE_SECRETS_REQUIRED=1`, falla si falta algun secret o variable requerida.
+
 `npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
 
 - `get_my_effective_permissions()` rechaza llamadas sin `auth.uid()`;

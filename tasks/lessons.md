@@ -52,6 +52,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La matriz de smokes por rol debe auditar su propia configuracion.** Si cambian escenarios, nombres de secrets o rutas, un auditor debe comprobar manifiesto, workflow y documentacion juntos para evitar una matriz declarada pero no ejecutable.
 - **Antes de pedir secrets, verifica que existan perfiles candidatos seguros.** Un smoke remoto read-only puede recomendar cuentas por rol validando estado activo, AUP aceptada, sin reset forzado, modulo requerido y precondiciones de dominio, sin imprimir passwords ni crear usuarios.
 - **Un smoke remoto opcional tambien necesita guardrail estatico.** Si CI no puede ejecutar una consulta remota por falta de link/credenciales, al menos debe auditar que el comando exista, este documentado y que el workflow observe cambios en su script.
+- **La presencia de secrets debe auditarse por nombre, nunca por valor.** Para GitHub Actions, usa `gh secret list` y `gh variable list` para detectar faltantes sin imprimir passwords, tokens ni variables sensibles.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 

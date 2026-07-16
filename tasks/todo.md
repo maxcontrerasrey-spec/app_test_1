@@ -632,6 +632,57 @@ La cobertura estatica no prueba conectividad remota ni existencia actual de cand
 
 Crear o asignar passwords controladas fuera del repositorio para los perfiles recomendados y configurar los secrets correspondientes en GitHub Actions.
 
+## Loop Enterprise global - auditoria de secrets para smokes autenticados
+
+- [x] Ejecutar decimotercera iteracion global del prompt Enterprise sobre provisionamiento auditable de secrets.
+- [x] Crear `npm run audit:frontend-auth-smoke-secrets`.
+- [x] Leer `tests/smoke/frontend-authenticated.scenarios.json` como fuente de secrets esperados.
+- [x] Consultar GitHub Actions via `gh secret list --app actions --json name` sin leer valores.
+- [x] Consultar variables de repositorio via `gh variable list --json name` sin imprimir valores.
+- [x] Reportar faltantes por escenario y modo required `FRONTEND_AUTH_SMOKE_SECRETS_REQUIRED=1`.
+- [x] Integrar el auditor al contrato estatico de `audit:frontend-auth-smoke-matrix`.
+- [x] Documentar alcance y limite en `docs/smoke-tests.md`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+La matriz autenticada ya tenia candidatos y guardrails, pero todavia no existia una forma versionada de verificar si GitHub Actions tenia configurados los secrets y variables necesarios para ejecutar esos escenarios.
+
+#### Riesgo
+
+El equipo podia creer que la matriz estaba lista por estar documentada, aunque GitHub Actions no tuviera los secrets por escenario o le faltara la variable publica requerida para conectar Supabase.
+
+#### Causa raiz
+
+La configuracion de GitHub Actions vive fuera del repositorio. Sin un auditor de metadatos, la ausencia de secrets solo se descubre cuando la matriz queda omitida o cuando se activa `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1`.
+
+#### Cambio implementado
+
+- `scripts/audit-frontend-auth-smoke-secrets.mjs` deriva los secrets esperados desde el manifiesto de escenarios.
+- El script usa solo metadatos de GitHub (`name`) para no exponer valores.
+- Valida los 8 secrets de email/password de los cuatro escenarios y las variables `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
+- `package.json` expone `npm run audit:frontend-auth-smoke-secrets`.
+- `scripts/audit-frontend-auth-smoke-matrix.mjs` exige que el auditor de secrets exista y este documentado.
+- `.github/workflows/audit-supabase-migrations.yml` observa cambios en el nuevo auditor.
+- `docs/smoke-tests.md` documenta el comando, precondiciones y modo required.
+
+#### Validacion
+
+Validacion ejecutada: `npm run audit:frontend-auth-smoke-secrets`, `FRONTEND_AUTH_SMOKE_SECRETS_REQUIRED=1 npm run audit:frontend-auth-smoke-secrets` como prueba negativa esperada, `npm run audit:frontend-auth-smoke-matrix`, `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado esperado
+
+El ERP ahora puede auditar el estado real de configuracion de GitHub Actions sin revelar credenciales. La validacion actual confirma que faltan los 8 secrets de la matriz (`HOME`, `OPERATIONS_L1`, `CERTIFICACIONES`, `INSTRUCTOR`) y falta la variable `VITE_SUPABASE_ANON_KEY`; `VITE_SUPABASE_URL` ya existe.
+
+#### Riesgo residual
+
+El auditor no puede crear ni asignar passwords. Solo prueba presencia de nombres de secrets/vars; la calidad de las credenciales se valida despues con `npm run smoke:frontend-authenticated-matrix`.
+
+#### Proximo objetivo
+
+Configurar fuera del repositorio `VITE_SUPABASE_ANON_KEY` y los secrets de los escenarios que ya tengan cuenta candidata; luego activar el modo required solo cuando los cuatro escenarios tengan cuenta controlada.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.
