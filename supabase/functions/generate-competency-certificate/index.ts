@@ -1,9 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import fontkit from "npm:@pdf-lib/fontkit@1.1.1";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "npm:pdf-lib@1.17.1";
 import QRCode from "npm:qrcode@1.5.4";
 import { extractBukDocumentMetadata, uploadBukDocument } from "../_shared/bukDocuments.ts";
 import {
+  CERTIFICATE_BUS_ICON_BASE64,
+  CERTIFICATE_SIGNATURE_FONT_BASE64,
+  CERTIFICATE_VALIDATION_BADGE_BASE64,
   CONSORCIO_ANDINO_LOGO_BASE64,
   CONSORCIO_NUEVO_NORTE_LOGO_BASE64,
   JM_LOGO_BASE64
@@ -465,18 +469,6 @@ function drawCertificateHeader(
   page.drawText(`Página: ${pageNumber} de ${pageTotal}`, { x: 466, y: 724, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
 }
 
-function drawBusIcon(page: PDFPage, x: number, y: number) {
-  page.drawCircle({ x: x + 14, y: y + 14, size: 14, color: rgb(0.82, 0.03, 0.07) });
-  page.drawRectangle({ x: x + 7, y: y + 8, width: 14, height: 15, borderColor: rgb(1, 1, 1), borderWidth: 1.2 });
-  page.drawLine({ start: { x: x + 10, y: y + 18 }, end: { x: x + 18, y: y + 18 }, thickness: 1, color: rgb(1, 1, 1) });
-  page.drawCircle({ x: x + 10, y: y + 7, size: 1.8, color: rgb(1, 1, 1) });
-  page.drawCircle({ x: x + 18, y: y + 7, size: 1.8, color: rgb(1, 1, 1) });
-}
-
-function drawShieldIcon(page: PDFPage, x: number, y: number, font: PDFFont) {
-  page.drawText("OK", { x, y, size: 8.5, font, color: rgb(0.82, 0.03, 0.07) });
-}
-
 function drawCalendarIcon(page: PDFPage, x: number, y: number) {
   const red = rgb(0.82, 0.03, 0.07);
   page.drawRectangle({ x, y, width: 12, height: 12, borderColor: red, borderWidth: 1 });
@@ -541,19 +533,21 @@ function drawValidationPanel(page: PDFPage, input: {
   folio: string;
   issuedDate: string;
   validUntil: string;
+  validationBadge: Awaited<ReturnType<PDFDocument["embedPng"]>>;
 }, qrPng: Awaited<ReturnType<PDFDocument["embedPng"]>>, fonts: { regular: PDFFont; bold: PDFFont; signature: PDFFont }) {
   const x = 54;
   const y = 108;
   const width = 487;
   const height = 154;
   const red = rgb(0.82, 0.03, 0.07);
-  page.drawRectangle({ x, y, width, height, borderColor: rgb(0.55, 0.59, 0.66), borderWidth: 0.7 });
-  page.drawLine({ start: { x: x + 274, y: y + 26 }, end: { x: x + 274, y: y + height - 38 }, thickness: 0.7, color: rgb(0.55, 0.59, 0.66) });
-  drawShieldIcon(page, x + 15, y + height - 30, fonts.bold);
+  const lineColor = rgb(0.55, 0.59, 0.66);
+  page.drawLine({ start: { x, y: y + height }, end: { x: x + width, y: y + height }, thickness: 0.7, color: lineColor });
+  page.drawLine({ start: { x, y }, end: { x: x + width, y }, thickness: 0.7, color: lineColor });
+  page.drawImage(input.validationBadge, { x: x + 14, y: y + height - 37, width: 18, height: 18 });
   page.drawText("VALIDACIÓN DEL CERTIFICADO", { x: x + 42, y: y + height - 28, size: 9.7, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
   page.drawText("Verificación digital", { x: x + 332, y: y + height - 24, size: 9.2, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
   page.drawText("Firmado electrónicamente por:", { x: x + 14, y: y + 94, size: 8.8, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  drawScaledText(page, input.instructorName, { x: x + 14, y: y + 62, width: 245, size: 18, minSize: 11, font: fonts.signature });
+  drawScaledText(page, input.instructorName, { x: x + 14, y: y + 59, width: 245, size: 23, minSize: 14, font: fonts.signature });
   page.drawLine({ start: { x: x + 14, y: y + 53 }, end: { x: x + 238, y: y + 53 }, thickness: 0.6, color: rgb(0.78, 0.81, 0.86) });
   page.drawText("Instructor de Conductores", { x: x + 14, y: y + 39, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
   page.drawText(`RUT N. ${input.instructorDocumentNumber}`, { x: x + 14, y: y + 23, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
@@ -568,10 +562,8 @@ function drawValidationPanel(page: PDFPage, input: {
   const boxH = 50;
   const boxW = 487;
   const cellW = boxW / 4;
-  page.drawRectangle({ x, y: boxY, width: boxW, height: boxH, borderColor: rgb(0.55, 0.59, 0.66), borderWidth: 0.7 });
-  for (let index = 1; index < 4; index += 1) {
-    page.drawLine({ start: { x: x + cellW * index, y: boxY }, end: { x: x + cellW * index, y: boxY + boxH }, thickness: 0.55, color: rgb(0.64, 0.67, 0.72) });
-  }
+  page.drawLine({ start: { x, y: boxY + boxH }, end: { x: x + boxW, y: boxY + boxH }, thickness: 0.7, color: lineColor });
+  page.drawLine({ start: { x, y: boxY }, end: { x: x + boxW, y: boxY }, thickness: 0.7, color: lineColor });
   const summary = [
     ["Código de certificado", input.folio],
     ["Código de perfil", input.instructorProfileCode],
@@ -587,8 +579,8 @@ function drawValidationPanel(page: PDFPage, input: {
   });
 }
 
-function drawEquipmentHeading(page: PDFPage, y: number, bold: PDFFont) {
-  drawBusIcon(page, 52, y - 18);
+function drawEquipmentHeading(page: PDFPage, y: number, bold: PDFFont, busIcon: Awaited<ReturnType<PDFDocument["embedPng"]>>) {
+  page.drawImage(busIcon, { x: 52, y: y - 20, width: 30, height: 30 });
   page.drawText("EQUIPOS AUTORIZADOS", { x: 94, y: y - 8, size: 11.2, font: bold, color: rgb(0.07, 0.09, 0.16) });
   page.drawLine({ start: { x: 258, y: y - 5 }, end: { x: 540, y: y - 5 }, thickness: 1, color: rgb(0.82, 0.03, 0.07) });
 }
@@ -609,14 +601,17 @@ async function buildCertificatePdf(input: {
 }) {
   const { request, instructor, certificate, issuedDate, validUntil, authorizedModels, workerCompanyName } = input;
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
   const modelRows = authorizedModels.length > 0 ? authorizedModels : buildModelRowsFromSummary(request.model_summary);
   const pageTotal = calculateCertificatePageCount(modelRows.length);
   let pageNumber = 1;
   let page = pdfDoc.addPage([595.28, 841.89]);
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const signatureFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+  const signatureFont = await pdfDoc.embedFont(dataUrlToBytes(CERTIFICATE_SIGNATURE_FONT_BASE64), { subset: true });
   const logo = await pdfDoc.embedPng(await readLogoBytes(workerCompanyName));
+  const busIcon = await pdfDoc.embedPng(dataUrlToBytes(CERTIFICATE_BUS_ICON_BASE64));
+  const validationBadge = await pdfDoc.embedPng(dataUrlToBytes(CERTIFICATE_VALIDATION_BADGE_BASE64));
   drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
 
   const bodyX = 64;
@@ -664,8 +659,8 @@ async function buildCertificatePdf(input: {
   const qrPng = await pdfDoc.embedPng(dataUrlToBytes(qrDataUrl));
   const firstPageRows = modelRows.slice(0, FIRST_PAGE_MODEL_CAPACITY);
   let remainingRows = modelRows.slice(FIRST_PAGE_MODEL_CAPACITY);
-  const sectionY = 452;
-  drawEquipmentHeading(page, sectionY, bold);
+  const sectionY = 430;
+  drawEquipmentHeading(page, sectionY, bold, busIcon);
   drawModelSummary(page, firstPageRows, { regular, bold }, sectionY - 22);
 
   const drawFinalBlocks = () => {
@@ -675,7 +670,8 @@ async function buildCertificatePdf(input: {
       instructorProfileCode: instructor.profile_code,
       folio: certificate.folio,
       issuedDate,
-      validUntil
+      validUntil,
+      validationBadge
     }, qrPng, { regular, bold, signature: signatureFont });
     drawCertificateFooter(page, regular);
   };
@@ -687,7 +683,7 @@ async function buildCertificatePdf(input: {
       pageNumber += 1;
       page = pdfDoc.addPage([595.28, 841.89]);
       drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
-      drawEquipmentHeading(page, 650, bold);
+      drawEquipmentHeading(page, 650, bold, busIcon);
       drawModelSummary(page, remainingRows.slice(0, CONTINUATION_PAGE_MODEL_CAPACITY), { regular, bold }, 628);
       remainingRows = remainingRows.slice(CONTINUATION_PAGE_MODEL_CAPACITY);
     }
@@ -695,7 +691,7 @@ async function buildCertificatePdf(input: {
     pageNumber += 1;
     page = pdfDoc.addPage([595.28, 841.89]);
     drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
-    drawEquipmentHeading(page, 650, bold);
+    drawEquipmentHeading(page, 650, bold, busIcon);
     drawModelSummary(page, remainingRows, { regular, bold }, 628);
     drawFinalBlocks();
   }

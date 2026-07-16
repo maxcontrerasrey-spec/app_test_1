@@ -16,6 +16,11 @@ declare module "*.png" {
   export default src;
 }
 
+declare module "*.ttf" {
+  const src: string;
+  export default src;
+}
+
 declare module "*.csv?raw" {
   const content: string;
   export default content;

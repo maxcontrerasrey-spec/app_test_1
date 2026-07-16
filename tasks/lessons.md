@@ -2442,3 +2442,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No uses bordes completos por defecto en PDFs formales.** Para certificados, una tabla de autorizaciones se lee mejor con encabezado fuerte, una sola linea separadora y filas limpias sin verticales ni bordes por cada registro.
 - **La paginacion debe ser parte del diseno, no un parche posterior.** Si el certificado puede incluir muchos equipos, calcula capacidad por pagina, repite cabecera y deja los bloques de firma/validacion solo en la ultima hoja.
 - **El preview y el generador productivo deben compartir las mismas decisiones visuales.** Cualquier ajuste de layout en `competencyApi.ts` debe replicarse en la Edge Function para que la previsualizacion no prometa un PDF distinto al que se carga a BUK.
+
+## 171. Las fuentes manuscritas de PDF no deben inflar el bundle frontend
+
+- **No importes `fontkit` estaticamente en React para resolver una firma.** Aunque funcione, puede subir el chunk del modulo y crear warnings nuevos de build; para preview usa Canvas con la fuente del asset y embebe la imagen resultante en el PDF.
+- **El PDF productivo puede usar `fontkit` en Edge Function porque queda fuera del bundle Vite.** Mantiene texto real y subset de fuente en el certificado final sin penalizar la carga del ERP.
+- **Los iconos usados por Edge Functions deben empaquetarse como base64 versionado.** Si el preview usa assets Vite, el generador productivo debe tener la misma fuente grafica en `logos.ts` o equivalente para evitar divergencia visual.

@@ -7399,3 +7399,11 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [x] Cambiar la tabla de equipos a una presentacion limpia: encabezado, una sola linea separadora y filas sin bordes internos visibles.
 - [x] Soportar certificados multipagina con el mismo header, numeracion y estetica en todas las hojas.
 - [x] Validar `TypeScript`, build frontend, warning budget de Supabase, render visual local y despliegue de Edge Function.
+
+## Ajuste de iconografia y firma del certificado de competencias
+
+- [x] Reemplazar el icono vectorial de equipos autorizados por el icono de bus redondo provisto, recoloreado a rojo corporativo y empaquetado como asset del modulo.
+- [x] Reemplazar el texto `OK` del panel de validacion por un badge grafico de verificacion sin desplazar los textos del bloque.
+- [x] Eliminar bordes laterales y separadores verticales de los cuadros de validacion y resumen, dejando solo lineas horizontales superior e inferior.
+- [x] Incorporar una fuente manuscrita OFL para la firma del instructor, con preview en Canvas y PDF productivo embebido via `fontkit`.
+- [x] Validar `TypeScript`, build frontend sin warnings nuevos, warning budget de Supabase, render visual local, deploy de Edge Function y rechazo `401` sin bearer.

@@ -28,6 +28,7 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@mylinkpi/xlsx": "^0.20.3",
+    "@pdf-lib/fontkit": "^1.1.1",
     "@supabase/supabase-js": "^2.108.1",
     "@tanstack/query-core": "^5.90.20",
     "@tanstack/react-query": "^5.90.20",
