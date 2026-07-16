@@ -196,6 +196,54 @@ El smoke simula el claim de usuario en SQL remoto y valida RPCs, pero no navega 
 
 Construir smoke funcional de `Operaciones` con validacion read-only de contratos visibles/editables y resumen/exportador, sin crear `service_entries`.
 
+## Loop Enterprise global - smoke funcional Operaciones
+
+- [x] Ejecutar cuarta iteracion global del prompt Enterprise sobre smoke funcional read-only de Operaciones.
+- [x] Verificar contrato frontend de Operaciones: `base_services`, `user_contracts`, `operations_editable_contracts`, `contracts`, `equipment` y `service_entries`.
+- [x] Crear `npm run smoke:operations-rpc` con consulta remota read-only sobre el proyecto linkeado.
+- [x] Validar que `user_contracts` y `operations_editable_contracts` no expongan filas sin `auth.uid()`.
+- [x] Validar con claim autenticado simulado que Operaciones lee contratos visibles/editables, servicios base, contratos activos, equipos activos y consultas de resumen/exportador.
+- [x] Documentar alcance, precondiciones y riesgo residual en `docs/smoke-tests.md`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+Operaciones tenia validaciones manuales remotas y smokes previos de escritura con `ROLLBACK`, pero no existia un comando repetible que validara las lecturas criticas de Resumen/Exportador/Registro Base sin tocar `service_entries`.
+
+#### Riesgo
+
+Una regresion en vistas dependientes de `auth.uid()`, contratos visibles/editables, catalogos de servicios base o equipos podia dejar Operaciones visible pero vacia, o romper resumen/exportador, sin ser detectada por build o auditorias estaticas.
+
+#### Causa raiz
+
+La pantalla mezcla lecturas PostgREST directas en `OperacionesDashboard.tsx` con servicios RPC para busqueda/guardado. Las lecturas de sesion y resumen no estaban cubiertas por un smoke funcional versionado.
+
+#### Cambio implementado
+
+- `scripts/smoke-operations-rpc.mjs` ejecuta `supabase db query --linked` contra el proyecto remoto.
+- El smoke confirma que `user_contracts` y `operations_editable_contracts` devuelven cero sin claim.
+- Selecciona un perfil activo con modulo `operaciones`, priorizando usuarios con fila activa en `operations_contract_editors`, o usa `SUPABASE_OPERATIONS_SMOKE_USER_ID`.
+- Simula `request.jwt.claim.sub` dentro de una transaccion `read only` y valida conteos de contratos visibles/editables, servicios base, contratos activos, equipos activos y lecturas de `service_entries`.
+- `package.json` expone `npm run smoke:operations-rpc`.
+- `docs/smoke-tests.md` y `tasks/lessons.md` documentan alcance y limite.
+
+#### Validacion
+
+Validacion ejecutada: `npm run smoke:operations-rpc`, `npm run smoke:dashboard-rpc`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado
+
+El ERP queda con un smoke funcional remoto para las lecturas criticas de Operaciones, sin escrituras y sin depender de credenciales interactivas de usuario.
+
+#### Riesgo residual
+
+El smoke no ejecuta `submit_service_entries_batch(...)` ni navega la UI. El guardado debe seguir validandose con un smoke separado en transaccion con `ROLLBACK` y payload controlado.
+
+#### Proximo objetivo
+
+Construir smoke de escritura controlada para `submit_service_entries_batch(...)` que ejecute insert/update dentro de transaccion con `ROLLBACK`, sin persistir planificaciones.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

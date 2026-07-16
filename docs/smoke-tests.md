@@ -35,6 +35,16 @@ Este smoke no reemplaza pruebas E2E con login real, pero bloquea drift de contra
 
 Este smoke no escribe datos ni crea usuarios. Requiere que el proyecto este linkeado con Supabase CLI y que el operador tenga acceso para `supabase db query --linked`.
 
+`npm run smoke:operations-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
+
+- `user_contracts` y `operations_editable_contracts` no exponen filas sin `auth.uid()`;
+- se selecciona un perfil activo con modulo `operaciones`, priorizando usuarios con matriz editable activa, o se usa `SUPABASE_OPERATIONS_SMOKE_USER_ID`;
+- se simula el claim `request.jwt.claim.sub` dentro de una transaccion `read only`;
+- el usuario autenticado ve contratos visibles, servicios base, contratos activos y equipos activos;
+- las consultas read-only de `service_entries` para resumen/exportador responden sin crear ni modificar planificaciones.
+
+Este smoke no ejecuta `submit_service_entries_batch(...)` ni escribe `service_entries`.
+
 Cuando hay SQL/RPCs nuevas o modificadas:
 
 ```bash
@@ -114,7 +124,7 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 ## Deuda actual
 
 - El repo no tiene aun `tests/smoke` ni Playwright/Cypress productivo.
-- La cobertura funcional UI aun depende de build + humo SQL/manual, pero rutas/roles/preloads y RPCs base de Inicio ya tienen smoke automatizado.
+- La cobertura funcional UI aun depende de build + humo SQL/manual, pero rutas/roles/preloads, RPCs base de Inicio y lecturas criticas de Operaciones ya tienen smoke automatizado.
 
 ## Siguiente implementacion segura
 
