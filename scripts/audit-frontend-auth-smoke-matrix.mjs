@@ -116,9 +116,15 @@ addCheck(
     "node scripts/audit-frontend-auth-smoke-matrix.mjs",
   "package.json expone audit:frontend-auth-smoke-matrix"
 );
+addCheck(
+  packageJson.scripts?.["smoke:frontend-auth-candidates"] ===
+    "node scripts/smoke-frontend-auth-candidates.mjs",
+  "package.json expone smoke:frontend-auth-candidates"
+);
 
 for (const requiredPath of [
   "scripts/audit-frontend-auth-smoke-matrix.mjs",
+  "scripts/smoke-frontend-auth-candidates.mjs",
   "scripts/smoke-frontend-authenticated-matrix.mjs",
   "tests/smoke/**"
 ]) {
@@ -166,6 +172,14 @@ for (const scenario of scenarios) {
 addCheck(
   docs.includes("FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1"),
   "docs/smoke-tests.md documenta modo required de matriz"
+);
+addCheck(
+  docs.includes("npm run smoke:frontend-auth-candidates"),
+  "docs/smoke-tests.md documenta smoke:frontend-auth-candidates"
+);
+addCheck(
+  docs.includes("SUPABASE_AUTH_SMOKE_CANDIDATES_REQUIRED=1"),
+  "docs/smoke-tests.md documenta modo required de candidatos"
 );
 
 const failedChecks = checks.filter((check) => !check.ok);

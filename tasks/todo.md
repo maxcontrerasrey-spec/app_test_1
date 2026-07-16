@@ -587,6 +587,51 @@ El script no valida passwords ni puede confirmar que el usuario recuerde su cred
 
 Crear o asignar passwords controladas fuera del repositorio para los perfiles recomendados y configurar los secrets correspondientes en GitHub Actions.
 
+## Loop Enterprise global - guardrail de candidatos para smokes autenticados
+
+- [x] Ejecutar duodecima iteracion global del prompt Enterprise sobre cobertura estatica del smoke de candidatos.
+- [x] Auditar si el script `smoke:frontend-auth-candidates` estaba cubierto por el workflow Enterprise.
+- [x] Hacer que `audit:frontend-auth-smoke-matrix` exija el script de candidatos en `package.json`.
+- [x] Hacer que `audit:frontend-auth-smoke-matrix` exija documentacion del comando y de `SUPABASE_AUTH_SMOKE_CANDIDATES_REQUIRED=1`.
+- [x] Hacer que el workflow Enterprise observe cambios en `scripts/smoke-frontend-auth-candidates.mjs`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El smoke remoto de candidatos quedo versionado, pero el workflow Enterprise no observaba cambios sobre su script y el auditor de matriz no exigia que el comando siguiera expuesto ni documentado.
+
+#### Riesgo
+
+Una modificacion futura podia romper, eliminar o desdocumentar el paso previo de seleccion de cuentas candidatas sin activar el guardrail de CI. Eso dejaba nuevamente el provisionamiento de secrets dependiendo de memoria operacional.
+
+#### Causa raiz
+
+El smoke de candidatos no se ejecuta en CI porque requiere proyecto Supabase linkeado, por lo que necesitaba una cobertura estatica explicita dentro del auditor ya existente.
+
+#### Cambio implementado
+
+- `scripts/audit-frontend-auth-smoke-matrix.mjs` ahora exige `smoke:frontend-auth-candidates` en `package.json`.
+- El mismo auditor exige que `docs/smoke-tests.md` documente el comando y el modo required de candidatos.
+- `.github/workflows/audit-supabase-migrations.yml` observa cambios en `scripts/smoke-frontend-auth-candidates.mjs` para push y pull request.
+- `tasks/lessons.md` registra que los smokes remotos opcionales necesitan guardrails estaticos cuando no pueden correr en CI.
+
+#### Validacion
+
+Validacion ejecutada: `npm run audit:frontend-auth-smoke-matrix`, `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado esperado
+
+El ERP mantiene el smoke remoto de candidatos como artefacto auditable: aunque CI no consulte Supabase, si el comando, workflow o documentacion se desalinean, el auditor falla.
+
+#### Riesgo residual
+
+La cobertura estatica no prueba conectividad remota ni existencia actual de candidatos. Esa verificacion sigue viviendo en `npm run smoke:frontend-auth-candidates` desde un entorno linkeado.
+
+#### Proximo objetivo
+
+Crear o asignar passwords controladas fuera del repositorio para los perfiles recomendados y configurar los secrets correspondientes en GitHub Actions.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.
