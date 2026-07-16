@@ -537,6 +537,56 @@ El auditor no puede crear cuentas ni secrets. La ejecucion real de escenarios si
 
 Provisionar las cuentas controladas o, si no estan disponibles, crear un chequeo remoto read-only que recomiende perfiles candidatos por rol sin exponer credenciales.
 
+## Loop Enterprise global - candidatos para cuentas controladas
+
+- [x] Ejecutar undecima iteracion global del prompt Enterprise sobre seleccion segura de cuentas candidatas.
+- [x] Crear `npm run smoke:frontend-auth-candidates`.
+- [x] Leer el manifiesto `tests/smoke/frontend-authenticated.scenarios.json` como fuente de escenarios.
+- [x] Consultar Supabase remoto en modo read-only via `supabase db query --linked`.
+- [x] Recomendar perfiles candidatos sin imprimir passwords, tokens ni sesiones.
+- [x] Validar por escenario rol requerido, modulo requerido, estado activo, AUP aceptada y sin reset forzado.
+- [x] Agregar precondicion de contrato editable para Operaciones L1.
+- [x] Agregar precondicion de instructor activo vinculado para escenario Instructor.
+- [x] Documentar modo `SUPABASE_AUTH_SMOKE_CANDIDATES_REQUIRED=1`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+La matriz autenticada ya tenia escenarios y auditor de configuracion, pero todavia no existia evidencia remota de que hubiera perfiles vivos aptos para convertirse en cuentas controladas de smoke.
+
+#### Riesgo
+
+Configurar secrets manualmente sin validar precondiciones podia activar cuentas que autentican pero quedan bloqueadas por reset de password, AUP pendiente, falta de modulo, falta de contrato editable o falta de vinculacion instructor.
+
+#### Causa raiz
+
+La seleccion de cuentas controladas dependia de conocimiento operacional externo. El repositorio ya podia ejecutar los smokes, pero no tenia un comando read-only para sugerir candidatos seguros desde la base viva.
+
+#### Cambio implementado
+
+- `scripts/smoke-frontend-auth-candidates.mjs` lee el manifiesto de escenarios y consulta perfiles remotos.
+- El script filtra perfiles activos, con `must_reset_password = false`, AUP aceptada, rol requerido y modulo requerido.
+- El escenario `operations-l1-summary` exige `operations_contract_editors` activo sobre contrato activo.
+- El escenario `instructor-form` exige fila activa en `competency_instructors` vinculada al usuario.
+- La salida enmascara el correo recomendado y no expone credenciales.
+
+#### Validacion
+
+Validacion ejecutada: `npm run smoke:frontend-auth-candidates`, `SUPABASE_AUTH_SMOKE_CANDIDATES_REQUIRED=1 npm run smoke:frontend-auth-candidates` como prueba negativa esperada por escenarios sin candidato, `npm run audit:frontend-auth-smoke-matrix`, `npm run smoke:frontend-authenticated-matrix`, `npm run smoke:frontend-authenticated`, `npm run smoke:frontend-routes`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado esperado
+
+El ERP queda con un paso auditable previo a configurar secrets: primero se confirma qué escenarios tienen perfiles elegibles y cuáles requieren provisionamiento. La validacion remota actual encontró candidatos para `home-authenticated` y `operations-l1-summary`; `certificaciones-form` e `instructor-form` siguen sin candidato elegible.
+
+#### Riesgo residual
+
+El script no valida passwords ni puede confirmar que el usuario recuerde su credencial. Solo confirma que el perfil y sus permisos de dominio son aptos para convertirse en cuenta controlada.
+
+#### Proximo objetivo
+
+Crear o asignar passwords controladas fuera del repositorio para los perfiles recomendados y configurar los secrets correspondientes en GitHub Actions.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

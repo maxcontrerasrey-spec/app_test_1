@@ -9,6 +9,7 @@
     "build:frontend-check": "node scripts/run-frontend-build.mjs",
     "preview": "vite preview",
     "smoke:dashboard-rpc": "node scripts/smoke-dashboard-rpc.mjs",
+    "smoke:frontend-auth-candidates": "node scripts/smoke-frontend-auth-candidates.mjs",
     "smoke:frontend-authenticated": "node scripts/smoke-frontend-authenticated.mjs",
     "smoke:frontend-authenticated-matrix": "node scripts/smoke-frontend-authenticated-matrix.mjs",
     "smoke:frontend-routes": "node scripts/smoke-frontend-routes.mjs",

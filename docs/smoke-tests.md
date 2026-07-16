@@ -68,6 +68,16 @@ El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. 
 - exige que el workflow permita activar `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED` desde variables de repositorio;
 - exige que `docs/smoke-tests.md` documente cada escenario, secret esperado, ruta y heading.
 
+`npm run smoke:frontend-auth-candidates` consulta Supabase remoto en modo read-only para recomendar perfiles candidatos por escenario antes de configurar secrets:
+
+- lee `tests/smoke/frontend-authenticated.scenarios.json`;
+- busca perfiles `active` que no esten forzados a resetear password y tengan AUP aceptada;
+- valida rol requerido y modulo requerido segun ruta;
+- para `operations-l1-summary`, exige al menos un contrato editable activo;
+- para `instructor-form`, exige instructor activo vinculado a la cuenta;
+- no crea usuarios, no cambia passwords, no imprime tokens y enmascara el correo recomendado;
+- con `SUPABASE_AUTH_SMOKE_CANDIDATES_REQUIRED=1`, falla si algun escenario no tiene candidato elegible.
+
 `npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
 
 - `get_my_effective_permissions()` rechaza llamadas sin `auth.uid()`;
