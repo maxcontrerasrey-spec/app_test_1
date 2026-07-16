@@ -63,6 +63,7 @@
 - [x] Endurecer ORION Storage con namespace `knowledge/` para nuevas cargas y compatibilidad controlada con archivos raíz existentes.
 - [x] Ajustar el auditor para descontar solo warnings históricos exactos cuando exista la migración de cierre aplicada.
 - [x] Aplicar la migración de cierre en Supabase remoto y validar local/remoto.
+- [x] Convertir el máximo global de `audit:supabase-security` en guardrail ejecutable: CI/local falla si el conteo supera 82 warnings.
 
 ### Resultado aplicado
 
@@ -72,6 +73,7 @@
 - ORION: las policies del bucket `orion_knowledge` quedaron recreadas con `name like 'knowledge/%'` para nuevas cargas y compatibilidad con objetos raíz existentes; el frontend ahora sube nuevos documentos bajo `knowledge/`.
 - ORION: los grants de `orion_sessions` y `orion_messages` quedaron reemitidos de forma granular, manteniendo RLS de dueño y sin grants a `public`/`anon`.
 - El auditor ahora baja de 100 a 82 warnings. Los 18 descontados son solo advertencias históricas exactas de Operaciones, BI y ORION con cierre verificado por la migración de seguimiento; el resto de deuda histórica sigue visible.
+- El auditor global ahora bloquea cualquier warning nuevo por sobre 82; el máximo no queda como criterio manual de revisión.
 - Validación local: `npm run audit:supabase-security`, `npm run audit:migrations -- --files supabase/migrations/20260716023011_add_operations_editable_contract_matrix.sql supabase/migrations/20260716025833_harden_operations_bi_orion_audit_followups.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
 - Validación remota: la migración de cierre aplicó correctamente; `operations_contract_editors` conserva 2 filas activas para `CONT-028`; ORION conserva 3 policies de Storage activas. Algunas consultas detalladas a `pg_policies`/catálogo se cortaron por latencia del cliente, no por error SQL.
 

@@ -19,6 +19,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **No edites migraciones viejas aplicadas para hacer bajar el contador.** Para Operaciones, BI y ORION, el cierre seguro fue una migración forward-only que recompila helpers/policies vivos y deja `notify pgrst`.
 - **El auditor debe descontar casos exactos, no patrones amplios.** Si un warning histórico queda supersedido, el script debe exigir archivo, mensaje y evidencia concreta en la migración de cierre; cualquier warning nuevo debe seguir apareciendo.
+- **El techo de warnings debe ser ejecutable, no una regla conversacional.** Si negocio fija `82` como máximo global de `audit:supabase-security`, el script compartido y CI deben fallar cuando el conteo sube, no solo reportarlo en consola.
 - **Renombrar parámetros de funciones en Postgres exige drop/recreate controlado.** `CREATE OR REPLACE FUNCTION` no permite cambiar nombres de argumentos; hay que bajar y recrear dependencias conocidas dentro de una transacción, sin usar `CASCADE` a ciegas.
 - **Las policies de Storage deben declarar alcance de ruta cuando el bucket comparte namespace.** ORION mantiene compatibilidad con archivos raíz existentes, pero las nuevas cargas van a `knowledge/` para que la policy no dependa solo de `bucket_id`.
 

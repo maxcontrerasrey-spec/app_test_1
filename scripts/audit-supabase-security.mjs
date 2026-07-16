@@ -21,6 +21,11 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 
 const findings = [];
+const GLOBAL_WARNING_LIMIT = 82;
+const configuredWarningLimit = Number.parseInt(process.env.SUPABASE_SECURITY_WARNING_LIMIT ?? "", 10);
+const warningLimit = Number.isFinite(configuredWarningLimit)
+  ? Math.min(configuredWarningLimit, GLOBAL_WARNING_LIMIT)
+  : GLOBAL_WARNING_LIMIT;
 const FOLLOWUP_MIGRATION = "supabase/migrations/20260716025833_harden_operations_bi_orion_audit_followups.sql";
 const SUPERSEDED_WARNING_KEYS = new Set([
   "supabase/migrations/20260609130000_add_orion_session_persistence.sql::SQL grants broad table privileges to authenticated.",
@@ -191,6 +196,15 @@ function main() {
   for (const finding of findings) {
     const detail = finding.detail ? ` ${finding.detail}` : "";
     console.log(`[${finding.severity}] ${finding.filePath}: ${finding.message}${detail}`);
+  }
+
+  const warningCount = grouped.warning ?? 0;
+  if (warningCount > warningLimit) {
+    console.error(
+      `Supabase security audit warning limit exceeded: ${warningCount}/${warningLimit}. ` +
+        "Corrige el warning nuevo antes de continuar.",
+    );
+    process.exitCode = 1;
   }
 
   if (findings.some((finding) => finding.severity === "critical")) {
