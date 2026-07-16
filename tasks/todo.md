@@ -7378,3 +7378,16 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - La migración [`20260716141754_optimize_operations_batch_submit_set_based.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716141754_optimize_operations_batch_submit_set_based.sql:1) reemplaza el procesamiento fila por fila de `submit_service_entries_batch(...)` por preparación set-based, validación agregada y un solo `INSERT ... ON CONFLICT DO UPDATE`, manteniendo `auth.uid()`, `user_can_manage_operations(...)` y `user_can_edit_operations_contract(...)`.
 - Validación remota con supervisor DMH simulando JWT: 33 servicios planificados CODELCO DMH quedaron en `ok: true`, `saved_count: 33`, en 130,341 ms medidos dentro de Postgres y con `ROLLBACK`.
 - `npm run audit:supabase-security` se mantiene en el máximo permitido: 82 warnings.
+## Certificado de Competencias PDF: formato operativo de referencia
+
+- [x] Auditar generador temporal y generador productivo para evitar divergencia entre preview y PDF BUK.
+- [x] Implementar layout A4 basado en la referencia: cabecera, texto certificante, equipos autorizados, validacion digital y resumen inferior.
+- [x] Mantener datos dinamicos desde la solicitud: instructor, trabajador, RUT, modelos, fechas, folio, perfil, logo y QR.
+- [x] Validar TypeScript, build y render visual del PDF de prueba antes de cerrar la iteracion.
+
+### Resultado de formato operativo de referencia
+
+- [`competencyApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/services/competencyApi.ts:1) actualiza la previsualizacion local con el formato de referencia: cabecera F-OPE-068, texto certificante, equipos autorizados, validacion digital y resumen inferior.
+- [`generate-competency-certificate/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/generate-competency-certificate/index.ts:1) replica el mismo layout para el PDF productivo que se genera con folio real, QR real y carga posterior a BUK.
+- La Edge Function `generate-competency-certificate` fue desplegada en Supabase remoto y conserva rechazo `401` sin bearer.
+- Validacion ejecutada: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:supabase-security`, `npm run audit:enterprise-docs`, `git diff --check` y render PNG local con Poppler.
