@@ -33,6 +33,14 @@
 - Validación remota: migración aplicada, versión registrada, función desplegada en `pzblmbahnoyntrhistea`, smoke RPC con admin simulado devolvió 19 modelos, 5 instructores, 3 trabajadores BUK y dashboard inicial en 0; la función remota devuelve `401` sin bearer.
 - Límite deliberado de validación: no se generó un certificado real de prueba para no subir documentos ficticios a BUK ni dejar trazabilidad operacional falsa.
 
+### Ajuste visual posterior según capturas
+
+- [x] Eliminar tarjetas informativas superiores `Total`, `Habilitados`, `BUK pendiente` y `Vencidos`.
+- [x] Eliminar el texto descriptivo bajo el titulo del modulo.
+- [x] Retirar la seccion derecha `Resumen y seguimiento`.
+- [x] Expandir `Nueva certificacion` a ancho completo para reducir compactacion.
+- [x] Reemplazar busqueda manual con boton por `StandardWorkerLookupField`, reutilizando el patron de Incentivos, Jornadas, Movilidad y Operaciones.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

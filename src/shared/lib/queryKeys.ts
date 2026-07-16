@@ -78,5 +78,8 @@ export const queryKeys = {
     workers: (filters: Record<string, unknown>) => ["accreditation", "workers", filters] as const,
     workerProfile: (bukEmployeeId: string, siteId: string) =>
       ["accreditation", "worker-profile", bukEmployeeId, siteId] as const
+  },
+  competencies: {
+    workerSearch: (search: string) => ["competencies", "worker-search", search] as const
   }
 };

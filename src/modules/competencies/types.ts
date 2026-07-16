@@ -36,7 +36,7 @@ export type CompetencyCatalogs = {
 export type CompetencyWorker = {
   bukEmployeeId: string;
   fullName: string;
-  documentNumber: string | null;
+  documentNumber: string;
   documentType: string;
   jobTitle: string | null;
   areaName: string | null;

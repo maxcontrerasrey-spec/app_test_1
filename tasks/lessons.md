@@ -10,6 +10,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un instructor sin usuario vinculado no puede ser usado por cualquier cuenta instructora.** Los catálogos heredados pueden existir como seed operativo, pero si `user_id` está nulo solo admin/certificaciones debe poder emitir en su nombre hasta completar la vinculación.
 - **La ejecución directa de SQL remoto exige registrar `schema_migrations`.** Si se usa `supabase db query --file` por drift de historial, hay que insertar la versión en `supabase_migrations.schema_migrations` para mantener producción auditable y evitar reaplicaciones futuras.
 - **No pruebes integraciones documentales creando certificados ficticios si eso contamina BUK.** La validación segura es probar catálogos/RPC/grants, despliegue, rechazo sin bearer y dejar la emisión real para un caso operativo controlado.
+- **Las busquedas de trabajadores deben reutilizar el lookup estandar del ERP.** Si un modulo nuevo necesita autocompletar personas BUK, usa `StandardWorkerLookupField` con un hook React Query propio; no vuelvas a crear botones manuales de busqueda ni listas paralelas.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 

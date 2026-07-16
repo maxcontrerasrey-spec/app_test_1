@@ -77,7 +77,7 @@ function mapWorker(item: Record<string, unknown>): CompetencyWorker {
   return {
     bukEmployeeId: readText(item.buk_employee_id),
     fullName: readText(item.full_name),
-    documentNumber: readNullableText(item.document_number),
+    documentNumber: readNullableText(item.document_number) ?? "",
     documentType: readText(item.document_type),
     jobTitle: readNullableText(item.job_title),
     areaName: readNullableText(item.area_name),

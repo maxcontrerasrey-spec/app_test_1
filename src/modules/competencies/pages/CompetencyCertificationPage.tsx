@@ -1,35 +1,18 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { PageShell, SelectField, TextField } from "../../../shared/ui";
+import { PageShell, SelectField, StandardWorkerLookupField, TextField } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   createCompetencyDocumentUrl,
   createCompetencyRequest,
   fetchCompetencyCatalogs,
-  fetchCompetencyDashboard,
   generateCompetencyCertificate,
-  searchCompetencyWorkers,
   uploadCompetencyEvaluationFile
 } from "../services/competencyApi";
-import type {
-  CompetencyCatalogs,
-  CompetencyDashboardPayload,
-  CompetencyGenerationResult,
-  CompetencyWorker
-} from "../types";
+import { useCompetencyWorkerSearch } from "../hooks/useCompetencyQueries";
+import type { CompetencyCatalogs, CompetencyGenerationResult, CompetencyWorker } from "../types";
 import "../styles/competencies.css";
 
-const emptyDashboard: CompetencyDashboardPayload = {
-  summary: {
-    total: 0,
-    enabled: 0,
-    pendingBuk: 0,
-    expired: 0
-  },
-  recent: []
-};
-
 type FormState = {
-  workerSearch: string;
   instructorId: string;
   brandId: string;
   typeId: string;
@@ -51,7 +34,6 @@ function todayDate() {
 
 function initialFormState(): FormState {
   return {
-    workerSearch: "",
     instructorId: "",
     brandId: "",
     typeId: "",
@@ -66,12 +48,6 @@ function initialFormState(): FormState {
     notes: "",
     declarationAccepted: false
   };
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) return "-";
-  const [year, month, day] = value.slice(0, 10).split("-");
-  return [day, month, year].filter(Boolean).join("-");
 }
 
 function statusLabel(value: string) {
@@ -99,13 +75,10 @@ function buildErrorMessage(error: unknown) {
 export function CompetencyCertificationPage() {
   const { user, isSuperAdmin } = useAuth();
   const [catalogs, setCatalogs] = useState<CompetencyCatalogs | null>(null);
-  const [dashboard, setDashboard] = useState<CompetencyDashboardPayload>(emptyDashboard);
   const [form, setForm] = useState<FormState>(() => initialFormState());
   const [selectedWorker, setSelectedWorker] = useState<CompetencyWorker | null>(null);
-  const [workerResults, setWorkerResults] = useState<CompetencyWorker[]>([]);
   const [evaluationFile, setEvaluationFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -119,15 +92,11 @@ export function CompetencyCertificationPage() {
       setErrorMessage(null);
 
       try {
-        const [nextCatalogs, nextDashboard] = await Promise.all([
-          fetchCompetencyCatalogs(),
-          fetchCompetencyDashboard()
-        ]);
+        const nextCatalogs = await fetchCompetencyCatalogs();
 
         if (!isMounted) return;
 
         setCatalogs(nextCatalogs);
-        setDashboard(nextDashboard);
         setForm((current) => ({
           ...current,
           instructorId:
@@ -201,34 +170,6 @@ export function CompetencyCertificationPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function handleWorkerSearch() {
-    const query = form.workerSearch.trim();
-    setSelectedWorker(null);
-    setLastGeneration(null);
-    setWorkerResults([]);
-
-    if (query.length < 3) {
-      setErrorMessage("Ingresa al menos 3 caracteres para buscar trabajador.");
-      return;
-    }
-
-    setIsSearching(true);
-    setErrorMessage(null);
-    setMessage(null);
-
-    try {
-      const results = await searchCompetencyWorkers(query);
-      setWorkerResults(results);
-      if (results.length === 0) {
-        setMessage("No se encontraron trabajadores activos sincronizados desde BUK.");
-      }
-    } catch (error) {
-      setErrorMessage(buildErrorMessage(error));
-    } finally {
-      setIsSearching(false);
-    }
-  }
-
   function toggleModel(modelId: string) {
     setForm((current) => {
       const exists = current.modelIds.includes(modelId);
@@ -244,11 +185,6 @@ export function CompetencyCertificationPage() {
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     setEvaluationFile(event.target.files?.[0] ?? null);
     setLastGeneration(null);
-  }
-
-  async function refreshDashboard() {
-    const nextDashboard = await fetchCompetencyDashboard();
-    setDashboard(nextDashboard);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -291,9 +227,7 @@ export function CompetencyCertificationPage() {
       );
       setForm(initialFormState());
       setSelectedWorker(null);
-      setWorkerResults([]);
       setEvaluationFile(null);
-      await refreshDashboard();
     } catch (error) {
       setErrorMessage(buildErrorMessage(error));
     } finally {
@@ -316,29 +250,7 @@ export function CompetencyCertificationPage() {
     <PageShell>
       <div className="minimal-page-header competency-header">
         <h1>Certificacion de Competencias</h1>
-        <p className="description">
-          Emision controlada de certificados para conductores, con evaluacion privada, folio, vigencia y carga documental a BUK.
-        </p>
       </div>
-
-      <section className="competency-summary-grid" aria-label="Resumen de certificaciones">
-        <article className="competency-metric">
-          <span>Total</span>
-          <strong>{dashboard.summary.total}</strong>
-        </article>
-        <article className="competency-metric">
-          <span>Habilitados</span>
-          <strong>{dashboard.summary.enabled}</strong>
-        </article>
-        <article className="competency-metric">
-          <span>BUK pendiente</span>
-          <strong>{dashboard.summary.pendingBuk}</strong>
-        </article>
-        <article className="competency-metric">
-          <span>Vencidos</span>
-          <strong>{dashboard.summary.expired}</strong>
-        </article>
-      </section>
 
       {errorMessage ? <div className="form-error competency-alert">{errorMessage}</div> : null}
       {message ? <div className="competency-alert competency-alert-info">{message}</div> : null}
@@ -351,44 +263,22 @@ export function CompetencyCertificationPage() {
           </div>
 
           <fieldset className="competency-fieldset" disabled={isLoading || isSubmitting || noInstructorConfigured}>
-            <div className="competency-worker-search">
-              <TextField
-                id="competency-worker-search"
-                label="Trabajador BUK"
-                value={form.workerSearch}
-                onChange={(event) => updateField("workerSearch", event.target.value)}
-                placeholder="Buscar por nombre, RUT, cargo o ID BUK"
-              />
-              <button
-                type="button"
-                className="primary-action-button competency-search-button"
-                onClick={handleWorkerSearch}
-                disabled={isSearching}
-              >
-                {isSearching ? "Buscando..." : "Buscar"}
-              </button>
-            </div>
-
-            {workerResults.length > 0 ? (
-              <div className="competency-worker-results" aria-label="Resultados de trabajadores">
-                {workerResults.map((worker) => (
-                  <button
-                    type="button"
-                    key={worker.bukEmployeeId}
-                    className={`competency-worker-row ${
-                      selectedWorker?.bukEmployeeId === worker.bukEmployeeId ? "is-selected" : ""
-                    }`}
-                    onClick={() => {
-                      setSelectedWorker(worker);
-                      updateField("workerSearch", worker.fullName);
-                    }}
-                  >
-                    <strong>{worker.fullName}</strong>
-                    <span>{[worker.documentNumber, worker.jobTitle, worker.areaName].filter(Boolean).join(" · ")}</span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
+            <StandardWorkerLookupField
+              id="competency-worker-search"
+              label="Trabajador BUK"
+              placeholder="Buscar por nombre, RUT, cargo o ID BUK"
+              selectedWorker={selectedWorker}
+              onSelect={(worker) => {
+                setSelectedWorker(worker);
+                setLastGeneration(null);
+                setMessage(null);
+              }}
+              disabled={isLoading || isSubmitting}
+              useSearchQuery={useCompetencyWorkerSearch}
+              loadingMessage="Buscando trabajadores BUK..."
+              emptyMessage="No hay trabajadores activos que coincidan con la busqueda actual."
+              minSearchLength={2}
+            />
 
             {selectedWorker ? (
               <div className="competency-selected-worker">
@@ -554,15 +444,6 @@ export function CompetencyCertificationPage() {
               No hay instructor activo vinculado a tu cuenta. Un administrador de certificaciones debe asignar el instructor antes de emitir.
             </div>
           ) : null}
-        </form>
-
-        <section className="competency-dashboard-panel">
-          <div className="competency-section-heading">
-            <h2>Resumen y seguimiento</h2>
-            <button type="button" className="secondary-action-button" onClick={refreshDashboard} disabled={isLoading}>
-              Actualizar
-            </button>
-          </div>
 
           {lastGeneration ? (
             <article className="competency-last-result">
@@ -575,54 +456,7 @@ export function CompetencyCertificationPage() {
               ) : null}
             </article>
           ) : null}
-
-          <div className="competency-table-wrapper">
-            <table className="competency-table">
-              <thead>
-                <tr>
-                  <th>Folio</th>
-                  <th>Trabajador</th>
-                  <th>Equipos</th>
-                  <th>Estado</th>
-                  <th>Vence</th>
-                  <th>PDF</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dashboard.recent.map((row) => (
-                  <tr key={row.certificateId}>
-                    <td>{row.folio}</td>
-                    <td>
-                      <strong>{row.workerFullName}</strong>
-                      <span>{row.workerDocumentNumber}</span>
-                    </td>
-                    <td>{row.modelSummary}</td>
-                    <td>
-                      <span className={`competency-status-pill competency-status-${row.bukUploadStatus}`}>
-                        {statusLabel(row.certificateStatus)}
-                      </span>
-                    </td>
-                    <td>{formatDate(row.validUntil)}</td>
-                    <td>
-                      {row.pdfPath ? (
-                        <button type="button" className="competency-link-button" onClick={() => handleDownload(row.pdfPath!)}>
-                          Abrir
-                        </button>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {dashboard.recent.length === 0 ? (
-                  <tr>
-                    <td colSpan={6}>Sin certificados emitidos para el alcance actual.</td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        </form>
       </div>
     </PageShell>
   );
