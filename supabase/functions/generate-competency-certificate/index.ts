@@ -263,13 +263,22 @@ function splitTextIntoLines(text: string, font: PDFFont, size: number, maxWidth:
   return lines;
 }
 
-function drawCenteredText(page: PDFPage, text: string, x: number, y: number, width: number, font: PDFFont, size: number) {
+function drawCenteredText(
+  page: PDFPage,
+  text: string,
+  x: number,
+  y: number,
+  width: number,
+  font: PDFFont,
+  size: number,
+  color = rgb(0.09, 0.09, 0.11)
+) {
   page.drawText(text, {
     x: x + (width - font.widthOfTextAtSize(text, size)) / 2,
     y,
     size,
     font,
-    color: rgb(0.09, 0.09, 0.11)
+    color
   });
 }
 
@@ -460,17 +469,20 @@ function drawCertificateHeader(
   pageTotal: number
 ) {
   const border = rgb(0.16, 0.18, 0.22);
+  const watermark = rgb(0.48, 0.52, 0.58);
   const header = { x: 32, y: 721, width: 531, height: 101 };
   const logoCell = { x: 32, y: 721, width: 121, height: 101 };
+  const metadataCell = { x: 454, y: 721, width: 109, height: 101 };
   const logoMaxWidth = 64;
   const logoMaxHeight = 64;
   const logoScale = Math.min(logoMaxWidth / logo.width, logoMaxHeight / logo.height);
   const logoWidth = logo.width * logoScale;
   const logoHeight = logo.height * logoScale;
 
-  page.drawRectangle({ ...header, borderColor: border, borderWidth: 0.85 });
+  page.drawLine({ start: { x: header.x, y: header.y + header.height }, end: { x: metadataCell.x, y: header.y + header.height }, thickness: 0.85, color: border });
+  page.drawLine({ start: { x: header.x, y: header.y }, end: { x: header.x + header.width, y: header.y }, thickness: 0.85, color: border });
+  page.drawLine({ start: { x: header.x, y: header.y }, end: { x: header.x, y: header.y + header.height }, thickness: 0.85, color: border });
   page.drawLine({ start: { x: 153, y: 721 }, end: { x: 153, y: 822 }, thickness: 0.65, color: border });
-  page.drawLine({ start: { x: 454, y: 721 }, end: { x: 454, y: 822 }, thickness: 0.65, color: border });
   page.drawImage(logo, {
     x: logoCell.x + (logoCell.width - logoWidth) / 2,
     y: logoCell.y + (logoCell.height - logoHeight) / 2,
@@ -479,10 +491,15 @@ function drawCertificateHeader(
   });
   drawCenteredText(page, "Certificado de Acreditación", 153, 779, 301, fonts.bold, 19);
   drawCenteredText(page, "de Competencias", 153, 751, 301, fonts.bold, 19);
-  page.drawText("Código: F-OPE-068", { x: 466, y: 789, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
-  page.drawText("Fecha: 01-08-2024", { x: 466, y: 766, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
-  page.drawText("Version: 00", { x: 466, y: 743, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
-  page.drawText(`Página: ${pageNumber} de ${pageTotal}`, { x: 466, y: 724, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
+  const metadataRows: Array<[string, number]> = [
+    ["Código: F-OPE-068", 786],
+    ["Fecha: 01-08-2024", 764],
+    ["Version: 00", 742],
+    [`Página: ${pageNumber} de ${pageTotal}`, 724]
+  ];
+  metadataRows.forEach(([label, textY]) => {
+    drawCenteredText(page, label, metadataCell.x + 7, textY, metadataCell.width - 14, fonts.regular, 8.1, watermark);
+  });
 }
 
 function drawCalendarIcon(page: PDFPage, x: number, y: number) {
