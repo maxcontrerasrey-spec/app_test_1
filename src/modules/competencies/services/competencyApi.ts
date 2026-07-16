@@ -17,6 +17,8 @@ import type {
   CompetencyEvaluationUpload,
   CompetencyGenerationResult,
   CompetencyInstructor,
+  CompetencyPreviewPdfInput,
+  CompetencyPreviewPdfResult,
   CompetencyRequestInput,
   CompetencyRequestResult,
   CompetencyWorker
@@ -294,4 +296,112 @@ export async function createCompetencyDocumentUrl(path: string) {
   }
 
   return data.signedUrl;
+}
+
+function sanitizePdfText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+}
+
+function formatPreviewDate(value: string) {
+  if (!value) return "";
+  const [year, month, day] = value.slice(0, 10).split("-");
+  return [day, month, year].filter(Boolean).join("-");
+}
+
+function wrapPreviewText(value: string, maxLength: number) {
+  const words = value.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxLength && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  return lines;
+}
+
+function buildPdfString(lines: string[]) {
+  const textCommands = lines
+    .map((line, index) => {
+      const y = 760 - index * 22;
+      const fontSize = index === 0 ? 18 : index <= 2 ? 12 : 10;
+      const font = index === 0 ? "/F2" : "/F1";
+      return `BT ${font} ${fontSize} Tf 50 ${y} Td (${sanitizePdfText(line)}) Tj ET`;
+    })
+    .join("\n");
+  const objects = [
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>\nendobj\n",
+    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n",
+    `6 0 obj\n<< /Length ${textCommands.length} >>\nstream\n${textCommands}\nendstream\nendobj\n`
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+
+  for (const object of objects) {
+    offsets.push(pdf.length);
+    pdf += object;
+  }
+
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (const offset of offsets.slice(1)) {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return pdf;
+}
+
+export function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfInput): CompetencyPreviewPdfResult {
+  const folio = `PRUEBA-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
+  const titleLines = [
+    "Certificado de Acreditacion de Competencias",
+    `Folio temporal: ${folio}`,
+    "DOCUMENTO DE PRUEBA - NO REGISTRADO EN ERP NI BUK",
+    "",
+    `Instructor: ${input.instructorName}`,
+    `RUT instructor: ${input.instructorDocumentNumber}`,
+    `Codigo perfil: ${input.instructorProfileCode}`,
+    "",
+    `Trabajador: ${input.workerName}`,
+    `RUT trabajador: ${input.workerDocumentNumber}`,
+    `Cargo trabajador: ${input.workerJobTitle}`,
+    "",
+    `Fecha capacitacion: ${formatPreviewDate(input.trainingDate)}`,
+    `Horario: ${input.trainingStartTime || "--:--"} a ${input.trainingEndTime || "--:--"}`,
+    "",
+    "Equipos autorizados:"
+  ];
+  const modelLines = wrapPreviewText(input.modelSummary || "Sin modelos seleccionados", 78);
+  const footerLines = [
+    "",
+    "Este PDF es una previsualizacion temporal para pruebas de flujo.",
+    "No guarda archivos, no crea folio definitivo y no carga documentos en BUK."
+  ];
+  const pdfText = buildPdfString([...titleLines, ...modelLines, ...footerLines]);
+  const blob = new Blob([pdfText], { type: "application/pdf" });
+
+  return {
+    folio,
+    objectUrl: URL.createObjectURL(blob)
+  };
 }

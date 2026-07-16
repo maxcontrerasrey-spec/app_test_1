@@ -41,6 +41,14 @@
 - [x] Expandir `Nueva certificacion` a ancho completo para reducir compactacion.
 - [x] Reemplazar busqueda manual con boton por `StandardWorkerLookupField`, reutilizando el patron de Incentivos, Jornadas, Movilidad y Operaciones.
 
+### Ajuste modo prueba certificado
+
+- [x] Reordenar el formulario en filas operativas: instructor/RUT/codigo perfil; trabajador/RUT/cargo; fecha/inicio/termino.
+- [x] Bloquear el instructor para cuentas instructor y mantener seleccion editable solo para administradores/certificaciones.
+- [x] Eliminar el campo `Lugar`.
+- [x] Retirar la exigencia temporal de respaldo de evaluacion para pruebas de interfaz.
+- [x] Cambiar `Generar certificado` a PDF temporal local, sin guardar en Storage, sin crear solicitud, sin emitir folio definitivo y sin cargar a BUK.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

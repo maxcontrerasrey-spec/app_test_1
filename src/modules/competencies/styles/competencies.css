@@ -60,6 +60,10 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.competency-worker-line {
+  align-items: start;
+}
+
 .competency-selected-worker span,
 .competency-file-field span,
 .competency-selection-summary {
@@ -169,6 +173,10 @@
 
 .competency-form-panel .hr-worker-lookup {
   max-width: none;
+}
+
+.competency-worker-line .hr-worker-lookup {
+  min-width: 0;
 }
 
 @media (max-width: 760px) {

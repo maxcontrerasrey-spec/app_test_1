@@ -11,6 +11,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La ejecución directa de SQL remoto exige registrar `schema_migrations`.** Si se usa `supabase db query --file` por drift de historial, hay que insertar la versión en `supabase_migrations.schema_migrations` para mantener producción auditable y evitar reaplicaciones futuras.
 - **No pruebes integraciones documentales creando certificados ficticios si eso contamina BUK.** La validación segura es probar catálogos/RPC/grants, despliegue, rechazo sin bearer y dejar la emisión real para un caso operativo controlado.
 - **Las busquedas de trabajadores deben reutilizar el lookup estandar del ERP.** Si un modulo nuevo necesita autocompletar personas BUK, usa `StandardWorkerLookupField` con un hook React Query propio; no vuelvas a crear botones manuales de busqueda ni listas paralelas.
+- **Un modo de prueba de certificados debe ser explicitamente no persistente.** Si se desactiva temporalmente respaldo, Storage, RPC y BUK para probar UI, el boton debe generar solo un PDF local/temporal y el texto visible debe dejar claro que no hay folio definitivo ni carga documental.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 

@@ -1,15 +1,17 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { PageShell, SelectField, StandardWorkerLookupField, TextField } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
-  createCompetencyDocumentUrl,
-  createCompetencyRequest,
   fetchCompetencyCatalogs,
-  generateCompetencyCertificate,
-  uploadCompetencyEvaluationFile
+  generateCompetencyPreviewPdf
 } from "../services/competencyApi";
 import { useCompetencyWorkerSearch } from "../hooks/useCompetencyQueries";
-import type { CompetencyCatalogs, CompetencyGenerationResult, CompetencyWorker } from "../types";
+import type {
+  CompetencyCatalogs,
+  CompetencyInstructor,
+  CompetencyPreviewPdfResult,
+  CompetencyWorker
+} from "../types";
 import "../styles/competencies.css";
 
 type FormState = {
@@ -20,7 +22,6 @@ type FormState = {
   trainingDate: string;
   trainingStartTime: string;
   trainingEndTime: string;
-  trainingLocation: string;
   theoreticalScore: string;
   practicalScore: string;
   finalScore: string;
@@ -41,7 +42,6 @@ function initialFormState(): FormState {
     trainingDate: todayDate(),
     trainingStartTime: "",
     trainingEndTime: "",
-    trainingLocation: "",
     theoreticalScore: "100",
     practicalScore: "100",
     finalScore: "100",
@@ -72,17 +72,20 @@ function buildErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function canManageInstructors(isSuperAdmin: boolean, catalogs: CompetencyCatalogs | null) {
+  return isSuperAdmin || catalogs?.permissions.canAdmin === true;
+}
+
 export function CompetencyCertificationPage() {
   const { user, isSuperAdmin } = useAuth();
   const [catalogs, setCatalogs] = useState<CompetencyCatalogs | null>(null);
   const [form, setForm] = useState<FormState>(() => initialFormState());
   const [selectedWorker, setSelectedWorker] = useState<CompetencyWorker | null>(null);
-  const [evaluationFile, setEvaluationFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [lastGeneration, setLastGeneration] = useState<CompetencyGenerationResult | null>(null);
+  const [lastGeneration, setLastGeneration] = useState<CompetencyPreviewPdfResult | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -139,6 +142,13 @@ export function CompetencyCertificationPage() {
     [catalogs]
   );
 
+  const selectedInstructor = useMemo<CompetencyInstructor | null>(
+    () => (catalogs?.instructors ?? []).find((instructor) => instructor.id === form.instructorId) ?? null,
+    [catalogs, form.instructorId]
+  );
+
+  const instructorIsEditable = canManageInstructors(isSuperAdmin, catalogs) && instructorOptions.length > 1;
+
   const visibleModels = useMemo(() => {
     const models = catalogs?.models ?? [];
     return models.filter((model) => {
@@ -162,8 +172,6 @@ export function CompetencyCertificationPage() {
     Boolean(form.instructorId) &&
     form.modelIds.length > 0 &&
     Boolean(form.trainingDate) &&
-    Boolean(evaluationFile) &&
-    form.declarationAccepted &&
     !isSubmitting;
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -182,65 +190,35 @@ export function CompetencyCertificationPage() {
     });
   }
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    setEvaluationFile(event.target.files?.[0] ?? null);
-    setLastGeneration(null);
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!user?.id || !selectedWorker || !evaluationFile) return;
+    if (!user?.id || !selectedWorker || !selectedInstructor) return;
 
     setIsSubmitting(true);
     setErrorMessage(null);
-    setMessage("Cargando evaluacion y generando certificado.");
+    setMessage("Generando PDF temporal de prueba.");
     setLastGeneration(null);
 
     try {
-      const uploadedEvaluation = await uploadCompetencyEvaluationFile(evaluationFile, user.id);
-      const request = await createCompetencyRequest({
-        workerBukEmployeeId: selectedWorker.bukEmployeeId,
-        instructorId: form.instructorId,
-        modelIds: form.modelIds,
+      const generation = generateCompetencyPreviewPdf({
+        instructorName: selectedInstructor.fullName,
+        instructorDocumentNumber: selectedInstructor.documentNumber,
+        instructorProfileCode: selectedInstructor.profileCode,
+        workerName: selectedWorker.fullName,
+        workerDocumentNumber: selectedWorker.documentNumber,
+        workerJobTitle: selectedWorker.jobTitle ?? "",
+        modelSummary: selectedModelNames.join(", "),
         trainingDate: form.trainingDate,
         trainingStartTime: form.trainingStartTime,
-        trainingEndTime: form.trainingEndTime,
-        trainingLocation: form.trainingLocation,
-        theoreticalScore: Number(form.theoreticalScore),
-        practicalScore: Number(form.practicalScore),
-        finalScore: Number(form.finalScore),
-        evaluationDate: new Date().toISOString(),
-        evaluationFilePath: uploadedEvaluation.path,
-        evaluationFileName: uploadedEvaluation.name,
-        evaluationMimeType: uploadedEvaluation.mimeType,
-        evaluationSizeBytes: uploadedEvaluation.sizeBytes,
-        evaluationSha256: uploadedEvaluation.sha256,
-        declarationAccepted: form.declarationAccepted,
-        notes: form.notes
+        trainingEndTime: form.trainingEndTime
       });
-      const generation = await generateCompetencyCertificate(request.requestId);
       setLastGeneration(generation);
-      setMessage(
-        generation.bukUploadStatus === "success"
-          ? `Certificado ${generation.folio} generado y cargado en BUK.`
-          : `Certificado ${generation.folio} generado; carga BUK pendiente de reintento.`
-      );
-      setForm(initialFormState());
-      setSelectedWorker(null);
-      setEvaluationFile(null);
+      setMessage(`PDF temporal ${generation.folio} generado sin guardar ni cargar a BUK.`);
+      window.open(generation.objectUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
       setErrorMessage(buildErrorMessage(error));
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  async function handleDownload(path: string) {
-    try {
-      const url = await createCompetencyDocumentUrl(path);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      setErrorMessage(buildErrorMessage(error));
     }
   }
 
@@ -259,45 +237,65 @@ export function CompetencyCertificationPage() {
         <form className="competency-form-panel" onSubmit={handleSubmit}>
           <div className="competency-section-heading">
             <h2>Nueva certificacion</h2>
-            <span>{isSuperAdmin || catalogs?.permissions.canAdmin ? "Modo administrador" : "Modo instructor"}</span>
+            <span>{canManageInstructors(isSuperAdmin, catalogs) ? "Modo administrador" : "Modo instructor"}</span>
           </div>
 
           <fieldset className="competency-fieldset" disabled={isLoading || isSubmitting || noInstructorConfigured}>
-            <StandardWorkerLookupField
-              id="competency-worker-search"
-              label="Trabajador BUK"
-              placeholder="Buscar por nombre, RUT, cargo o ID BUK"
-              selectedWorker={selectedWorker}
-              onSelect={(worker) => {
-                setSelectedWorker(worker);
-                setLastGeneration(null);
-                setMessage(null);
-              }}
-              disabled={isLoading || isSubmitting}
-              useSearchQuery={useCompetencyWorkerSearch}
-              loadingMessage="Buscando trabajadores BUK..."
-              emptyMessage="No hay trabajadores activos que coincidan con la busqueda actual."
-              minSearchLength={2}
-            />
-
-            {selectedWorker ? (
-              <div className="competency-selected-worker">
-                <strong>{selectedWorker.fullName}</strong>
-                <span>
-                  {[selectedWorker.documentNumber, selectedWorker.jobTitle, selectedWorker.contractCode].filter(Boolean).join(" · ")}
-                </span>
-              </div>
-            ) : null}
-
-            <div className="competency-grid-two">
+            <div className="competency-grid-three">
               <SelectField
                 id="competency-instructor"
                 label="Instructor"
                 value={form.instructorId}
                 onChange={(event) => updateField("instructorId", event.target.value)}
                 options={instructorOptions}
-                disabled={instructorOptions.length <= 1}
+                disabled={!instructorIsEditable}
               />
+              <TextField
+                id="competency-instructor-document"
+                label="RUT instructor"
+                value={selectedInstructor?.documentNumber ?? ""}
+                readOnly
+              />
+              <TextField
+                id="competency-instructor-profile"
+                label="Codigo perfil"
+                value={selectedInstructor?.profileCode ?? ""}
+                readOnly
+              />
+            </div>
+
+            <div className="competency-grid-three competency-worker-line">
+              <StandardWorkerLookupField
+                id="competency-worker-search"
+                label="Trabajador BUK"
+                placeholder="Buscar por nombre, RUT, cargo o ID BUK"
+                selectedWorker={selectedWorker}
+                onSelect={(worker) => {
+                  setSelectedWorker(worker);
+                  setLastGeneration(null);
+                  setMessage(null);
+                }}
+                disabled={isLoading || isSubmitting}
+                useSearchQuery={useCompetencyWorkerSearch}
+                loadingMessage="Buscando trabajadores BUK..."
+                emptyMessage="No hay trabajadores activos que coincidan con la busqueda actual."
+                minSearchLength={2}
+              />
+              <TextField
+                id="competency-worker-document"
+                label="RUT trabajador"
+                value={selectedWorker?.documentNumber ?? ""}
+                readOnly
+              />
+              <TextField
+                id="competency-worker-job"
+                label="Cargo trabajador"
+                value={selectedWorker?.jobTitle ?? ""}
+                readOnly
+              />
+            </div>
+
+            <div className="competency-grid-three">
               <TextField
                 id="competency-training-date"
                 label="Fecha de capacitacion"
@@ -305,9 +303,6 @@ export function CompetencyCertificationPage() {
                 value={form.trainingDate}
                 onChange={(event) => updateField("trainingDate", event.target.value)}
               />
-            </div>
-
-            <div className="competency-grid-two">
               <TextField
                 id="competency-training-start"
                 label="Inicio"
@@ -323,14 +318,6 @@ export function CompetencyCertificationPage() {
                 onChange={(event) => updateField("trainingEndTime", event.target.value)}
               />
             </div>
-
-            <TextField
-              id="competency-location"
-              label="Lugar"
-              value={form.trainingLocation}
-              onChange={(event) => updateField("trainingLocation", event.target.value)}
-              placeholder="Faena, terminal o sala de capacitacion"
-            />
 
             <div className="competency-grid-two">
               <SelectField
@@ -400,17 +387,6 @@ export function CompetencyCertificationPage() {
               />
             </div>
 
-            <div className="competency-file-field">
-              <label className="field-label" htmlFor="competency-evaluation-file">Evaluacion respaldada</label>
-              <input
-                id="competency-evaluation-file"
-                type="file"
-                accept="application/pdf,image/jpeg,image/png"
-                onChange={handleFileChange}
-              />
-              <span>{evaluationFile ? `${evaluationFile.name} · ${(evaluationFile.size / 1024 / 1024).toFixed(2)} MB` : "PDF, JPG o PNG hasta 15 MB."}</span>
-            </div>
-
             <label className="competency-declaration">
               <input
                 type="checkbox"
@@ -435,7 +411,7 @@ export function CompetencyCertificationPage() {
             ) : null}
 
             <button type="submit" className="primary-action-button competency-submit-button" disabled={!canSubmit}>
-              {isSubmitting ? "Generando..." : "Generar certificado y cargar a BUK"}
+              {isSubmitting ? "Generando..." : "Generar PDF de prueba"}
             </button>
           </fieldset>
 
@@ -448,12 +424,10 @@ export function CompetencyCertificationPage() {
           {lastGeneration ? (
             <article className="competency-last-result">
               <strong>{lastGeneration.folio}</strong>
-              <span>{statusLabel(lastGeneration.bukUploadStatus)}</span>
-              {lastGeneration.pdfPath ? (
-                <button type="button" onClick={() => handleDownload(lastGeneration.pdfPath)}>
-                  Abrir PDF
-                </button>
-              ) : null}
+              <span>{statusLabel("generated")} sin guardado ni carga BUK</span>
+              <button type="button" onClick={() => window.open(lastGeneration.objectUrl, "_blank", "noopener,noreferrer")}>
+                Abrir PDF
+              </button>
             </article>
           ) : null}
         </form>
