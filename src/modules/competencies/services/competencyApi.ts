@@ -336,22 +336,125 @@ function wrapPreviewText(value: string, maxLength: number) {
   return lines;
 }
 
-function buildPdfString(lines: string[]) {
-  const textCommands = lines
-    .map((line, index) => {
-      const y = 760 - index * 22;
-      const fontSize = index === 0 ? 18 : index <= 2 ? 12 : 10;
-      const font = index === 0 ? "/F2" : "/F1";
-      return `BT ${font} ${fontSize} Tf 50 ${y} Td (${sanitizePdfText(line)}) Tj ET`;
-    })
-    .join("\n");
+function addYears(dateValue: string, years: number) {
+  const source = new Date(`${dateValue || new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+  source.setUTCFullYear(source.getUTCFullYear() + years);
+  return source.toISOString().slice(0, 10);
+}
+
+function drawText(value: string, x: number, y: number, size = 10, font = "F1") {
+  return `BT /${font} ${size} Tf ${x} ${y} Td (${sanitizePdfText(value)}) Tj ET`;
+}
+
+function drawRect(x: number, y: number, width: number, height: number) {
+  return `${x} ${y} ${width} ${height} re S`;
+}
+
+function fillRect(x: number, y: number, width: number, height: number, color = "0.78 0.04 0.08") {
+  return `q ${color} rg ${x} ${y} ${width} ${height} re f Q`;
+}
+
+function drawLine(x1: number, y1: number, x2: number, y2: number) {
+  return `${x1} ${y1} m ${x2} ${y2} l S`;
+}
+
+function drawQrPlaceholder(x: number, y: number, size: number) {
+  const cell = size / 7;
+  const blocks: string[] = [`q 0 g ${x} ${y} ${size} ${size} re S`];
+  const filled = [
+    [0, 0], [1, 0], [2, 0], [4, 0], [6, 0],
+    [0, 1], [2, 1], [3, 1], [5, 1],
+    [0, 2], [1, 2], [4, 2], [6, 2],
+    [2, 3], [3, 3], [5, 3],
+    [0, 4], [2, 4], [4, 4], [5, 4],
+    [1, 5], [3, 5], [6, 5],
+    [0, 6], [2, 6], [3, 6], [5, 6], [6, 6]
+  ];
+
+  for (const [col, row] of filled) {
+    blocks.push(`${x + col * cell} ${y + row * cell} ${cell * 0.78} ${cell * 0.78} re f`);
+  }
+
+  blocks.push("Q");
+  return blocks.join("\n");
+}
+
+function buildCertificatePreviewCommands(input: CompetencyPreviewPdfInput, folio: string) {
+  const issuedDate = new Date().toISOString().slice(0, 10);
+  const validUntil = addYears(input.trainingDate, 2);
+  const commands: string[] = [
+    "0.05 0.05 0.05 RG 0.05 0.05 0.05 rg 0.6 w",
+    drawRect(35, 715, 525, 92),
+    drawRect(35, 715, 156, 92),
+    drawRect(466, 715, 94, 92),
+    fillRect(50, 754, 42, 42),
+    drawText("jm", 59, 766, 20, "F2"),
+    fillRect(103, 732, 40, 40),
+    drawText("CA", 113, 746, 12, "F2"),
+    fillRect(149, 732, 40, 40),
+    drawText("CP", 159, 746, 12, "F2"),
+    drawText("Certificado de Acreditacion de", 214, 772, 18, "F2"),
+    drawText("Competencias", 270, 744, 18, "F2"),
+    drawText("Codigo: F-OPE-068", 471, 790, 9),
+    drawText("Fecha: 01-08-2024", 471, 766, 9),
+    drawText("Version: 00", 471, 742, 9),
+    drawText("Pagina: 1 de 1", 471, 720, 9),
+    drawText("PREVISUALIZACION - NO REGISTRADO EN ERP NI BUK", 146, 690, 9, "F2")
+  ];
+
+  const body = [
+    `Sr. ${input.instructorName}, Rut ${input.instructorDocumentNumber}, Instructor de conductores, certifica que el conductor Sr. ${input.workerName}, Rut ${input.workerDocumentNumber}, ha realizado satisfactoriamente el proceso de capacitacion e induccion en conduccion y operacion de los equipos ${input.modelSummary}.`,
+    "Segun lo establecido por la empresa y de acuerdo con la evaluacion del examen Teorico y Practico de conduccion donde obtuvo una calificacion del 100%, se encuentra acreditado con las competencias especificas para conducir y operar el equipo senalado.",
+    `Con fecha ${formatPreviewDate(input.trainingDate)} queda HABILITADO para operar los equipos indicados.`
+  ];
+  let y = 625;
+
+  for (const paragraph of body) {
+    for (const line of wrapPreviewText(paragraph, 86)) {
+      commands.push(drawText(line, 83, y, 11));
+      y -= 16;
+    }
+    y -= 10;
+  }
+
+  commands.push(drawText("CERTIFICADO VALIDO POR 2 ANOS", 211, 402, 12, "F2"));
+  commands.push(drawRect(94, 166, 407, 210));
+  commands.push(drawLine(94, 352, 501, 352));
+  commands.push(drawLine(330, 166, 330, 376));
+  commands.push(drawText("Firma instructor", 172, 360, 12, "F2"));
+  commands.push(drawText("Codigo QR Instructor", 374, 360, 12, "F2"));
+  commands.push(drawText("Firmado digitalmente por:", 100, 320, 11, "F3"));
+  commands.push(drawText(input.instructorName, 100, 295, 11, "F3"));
+  commands.push(drawText(`el ${formatPreviewDate(issuedDate)}`, 100, 270, 11, "F3"));
+  commands.push(fillRect(294, 266, 22, 22, "0.22 0.63 0.91"));
+  commands.push(drawText("OK", 298, 272, 5.5, "F2"));
+  commands.push(drawQrPlaceholder(372, 223, 92));
+  commands.push(drawLine(94, 238, 501, 238));
+  commands.push(drawLine(94, 214, 501, 214));
+  commands.push(drawLine(94, 190, 501, 190));
+  commands.push(drawLine(225, 166, 225, 238));
+  commands.push(drawText("Codigo Perfil", 100, 222, 11, "F2"));
+  commands.push(drawText(input.instructorProfileCode, 234, 222, 10));
+  commands.push(drawText("Codigo Certificado", 100, 198, 11, "F2"));
+  commands.push(drawText(folio, 234, 198, 10));
+  commands.push(drawText("Vencimiento", 100, 174, 11, "F2"));
+  commands.push(drawText(formatPreviewDate(validUntil), 234, 174, 10));
+  commands.push("q 0.35 0.49 0.66 RG 42 33 50 50 re S Q");
+  commands.push(drawText("ISO", 58, 66, 8, "F2"));
+  commands.push(drawText("45001", 54, 55, 7));
+
+  return commands.join("\n");
+}
+
+function buildPdfString(contentCommands: string) {
   const objects = [
     "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
     "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 7 0 R >>\nendobj\n",
     "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
     "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n",
-    `6 0 obj\n<< /Length ${textCommands.length} >>\nstream\n${textCommands}\nendstream\nendobj\n`
+    "6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>\nendobj\n",
+    `7 0 obj\n<< /Length ${contentCommands.length} >>\nstream\n${contentCommands}\nendstream\nendobj\n`
   ];
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
@@ -373,31 +476,7 @@ function buildPdfString(lines: string[]) {
 
 export function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfInput): CompetencyPreviewPdfResult {
   const folio = `PRUEBA-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
-  const titleLines = [
-    "Certificado de Acreditacion de Competencias",
-    `Folio temporal: ${folio}`,
-    "DOCUMENTO DE PRUEBA - NO REGISTRADO EN ERP NI BUK",
-    "",
-    `Instructor: ${input.instructorName}`,
-    `RUT instructor: ${input.instructorDocumentNumber}`,
-    `Codigo perfil: ${input.instructorProfileCode}`,
-    "",
-    `Trabajador: ${input.workerName}`,
-    `RUT trabajador: ${input.workerDocumentNumber}`,
-    `Cargo trabajador: ${input.workerJobTitle}`,
-    "",
-    `Fecha capacitacion: ${formatPreviewDate(input.trainingDate)}`,
-    `Horario: ${input.trainingStartTime || "--:--"} a ${input.trainingEndTime || "--:--"}`,
-    "",
-    "Equipos autorizados:"
-  ];
-  const modelLines = wrapPreviewText(input.modelSummary || "Sin modelos seleccionados", 78);
-  const footerLines = [
-    "",
-    "Este PDF es una previsualizacion temporal para pruebas de flujo.",
-    "No guarda archivos, no crea folio definitivo y no carga documentos en BUK."
-  ];
-  const pdfText = buildPdfString([...titleLines, ...modelLines, ...footerLines]);
+  const pdfText = buildPdfString(buildCertificatePreviewCommands(input, folio));
   const blob = new Blob([pdfText], { type: "application/pdf" });
 
   return {

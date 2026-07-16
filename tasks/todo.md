@@ -48,6 +48,7 @@
 - [x] Eliminar el campo `Lugar`.
 - [x] Retirar la exigencia temporal de respaldo de evaluacion para pruebas de interfaz.
 - [x] Cambiar `Generar certificado` a PDF temporal local, sin guardar en Storage, sin crear solicitud, sin emitir folio definitivo y sin cargar a BUK.
+- [x] Ajustar el PDF temporal al formato operativo del certificado BUK: cabecera F-OPE-068, cuerpo certificante, bloque firma/QR, codigo perfil, folio temporal y vencimiento.
 
 ## Reparación warnings Operaciones, BI y ORION
 
