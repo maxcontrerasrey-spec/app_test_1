@@ -8,6 +8,7 @@ import {
   readNumber,
   readText
 } from "../../../shared/lib/supabaseRpc";
+import { buildPublicAppUrl } from "../../../shared/config/runtime";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import certificateBusIconUrl from "../assets/certificate-bus-icon.png";
 import certificateValidationBadgeUrl from "../assets/certificate-validation-badge.png";
@@ -225,6 +226,11 @@ function sanitizeFileName(name: string) {
     .replace(/^-+|-+$/g, "");
 
   return normalized || "evaluacion";
+}
+
+function buildPreviewVerificationUrl(folio: string) {
+  return buildPublicAppUrl(`/verificar/competencia/${encodeURIComponent(folio)}`) ??
+    `/verificar/competencia/${encodeURIComponent(folio)}`;
 }
 
 export async function fetchCompetencyCatalogs() {
@@ -865,15 +871,17 @@ function drawEquipmentHeading(page: PDFPage, y: number, bold: PDFFont, busIcon: 
   page.drawLine({ start: { x: 258, y: y - 5 }, end: { x: 540, y: y - 5 }, thickness: 1, color: rgb(0.82, 0.03, 0.07) });
 }
 
-function drawCertificateFooter(page: PDFPage, regular: PDFFont) {
-  drawCenteredText(page, "Este certificado es válido únicamente con firma electrónica y puede ser verificado a", 82, 22, 431, regular, 7.8);
-  drawCenteredText(page, "través del código QR o en el portal de validación del ERP.", 82, 10, 431, regular, 7.8);
+function drawCertificateFooter(page: PDFPage, regular: PDFFont, verificationUrl: string) {
+  drawCenteredText(page, "Este certificado es válido únicamente con firma electrónica y puede ser verificado en:", 74, 24, 447, regular, 7.4);
+  drawCenteredText(page, verificationUrl, 74, 13, 447, regular, 7.2);
+  drawCenteredText(page, "También puede escanear el código QR del certificado.", 74, 3, 447, regular, 7.2);
 }
 
 export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfInput): Promise<CompetencyPreviewPdfResult> {
   const folio = `CAC-${new Date().getFullYear()}-PREV`;
   const issuedDate = new Date().toISOString().slice(0, 10);
   const validUntil = addYears(input.trainingDate, 2);
+  const verificationUrl = buildPreviewVerificationUrl(folio);
   const pdfDoc = await PDFDocument.create();
   const modelRows = input.authorizedModels.length > 0 ? input.authorizedModels : [{ brandName: "", typeName: "", modelName: "" }];
   const pageTotal = calculateCertificatePageCount(modelRows.length);
@@ -932,7 +940,7 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
 
   if (remainingRows.length === 0) {
     drawValidationPanel(page, input, { regular, bold }, { folio, issuedDate, validUntil, validationBadge, signatureImage });
-    drawCertificateFooter(page, regular);
+    drawCertificateFooter(page, regular, verificationUrl);
   } else {
     while (remainingRows.length > LAST_PAGE_MODEL_CAPACITY) {
       pageNumber += 1;
@@ -949,7 +957,7 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     drawEquipmentHeading(page, 650, bold, busIcon);
     drawModelSummary(page, remainingRows, { regular, bold }, 628);
     drawValidationPanel(page, input, { regular, bold }, { folio, issuedDate, validUntil, validationBadge, signatureImage });
-    drawCertificateFooter(page, regular);
+    drawCertificateFooter(page, regular, verificationUrl);
   }
 
   const pdfBytes = await pdfDoc.save();

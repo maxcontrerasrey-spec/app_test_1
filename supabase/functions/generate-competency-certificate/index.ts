@@ -598,9 +598,10 @@ function drawEquipmentHeading(page: PDFPage, y: number, bold: PDFFont, busIcon: 
   page.drawLine({ start: { x: 258, y: y - 5 }, end: { x: 540, y: y - 5 }, thickness: 1, color: rgb(0.82, 0.03, 0.07) });
 }
 
-function drawCertificateFooter(page: PDFPage, regular: PDFFont) {
-  drawCenteredText(page, "Este certificado es válido únicamente con firma electrónica y puede ser verificado a", 82, 22, 431, regular, 7.8);
-  drawCenteredText(page, "través del código QR o en el portal de validación del ERP.", 82, 10, 431, regular, 7.8);
+function drawCertificateFooter(page: PDFPage, regular: PDFFont, verificationUrl: string) {
+  drawCenteredText(page, "Este certificado es válido únicamente con firma electrónica y puede ser verificado en:", 74, 24, 447, regular, 7.4);
+  drawCenteredText(page, verificationUrl, 74, 13, 447, regular, 7.2);
+  drawCenteredText(page, "También puede escanear el código QR del certificado.", 74, 3, 447, regular, 7.2);
 }
 
 async function buildCertificatePdf(input: {
@@ -664,7 +665,8 @@ async function buildCertificatePdf(input: {
     lineHeight: 16.6
   });
 
-  const qrDataUrl = await QRCode.toDataURL(buildVerificationUrl(certificate.verification_token), {
+  const verificationUrl = buildVerificationUrl(certificate.verification_token);
+  const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
     errorCorrectionLevel: "M",
     margin: 1,
     width: 150
@@ -686,7 +688,7 @@ async function buildCertificatePdf(input: {
       validUntil,
       validationBadge
     }, qrPng, { regular, bold, signature: signatureFont });
-    drawCertificateFooter(page, regular);
+    drawCertificateFooter(page, regular, verificationUrl);
   };
 
   if (remainingRows.length === 0) {
