@@ -403,6 +403,28 @@ function drawFittedText(page: PDFPage, text: string, options: {
   });
 }
 
+function drawScaledText(page: PDFPage, text: string, options: {
+  x: number;
+  y: number;
+  width: number;
+  font: PDFFont;
+  size: number;
+  minSize: number;
+}) {
+  let size = options.size;
+  while (size > options.minSize && options.font.widthOfTextAtSize(text, size) > options.width) {
+    size -= 0.5;
+  }
+
+  page.drawText(text, {
+    x: options.x,
+    y: options.y,
+    size,
+    font: options.font,
+    color: rgb(0.08, 0.09, 0.11)
+  });
+}
+
 function drawJustifiedLine(page: PDFPage, line: string, options: {
   x: number;
   y: number;
@@ -479,9 +501,8 @@ function drawParagraph(page: PDFPage, text: string, options: {
   return nextY - 8;
 }
 
-function drawModelSummary(page: PDFPage, input: CompetencyPreviewPdfInput, fonts: { regular: PDFFont; bold: PDFFont }) {
+function drawModelSummary(page: PDFPage, input: CompetencyPreviewPdfInput, fonts: { regular: PDFFont; bold: PDFFont }, tableY: number) {
   const tableX = 82;
-  const tableY = 365;
   const tableWidth = 431;
   const headerHeight = 22;
   const rowHeight = 20;
@@ -561,7 +582,7 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
   const page = pdfDoc.addPage([595.28, 841.89]);
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const serif = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const signatureFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
   const logo = await pdfDoc.embedPng(await fetchBytes(resolveLogoUrl(input.workerCompanyName)));
   const black = rgb(0.08, 0.09, 0.11);
   const border = rgb(0.25, 0.28, 0.33);
@@ -598,7 +619,7 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     size: 10.3,
     lineHeight: 15
   });
-  drawParagraph(page, `Con fecha ${formatPreviewDate(input.trainingDate)} queda HABILITADO para operar los equipos indicados.`, {
+  y = drawParagraph(page, `Con fecha ${formatPreviewDate(input.trainingDate)} queda HABILITADO para operar los equipos indicados.`, {
     x: bodyX,
     y,
     width: bodyWidth,
@@ -607,11 +628,10 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     lineHeight: 15
   });
 
-  const afterTableY = drawModelSummary(page, input, { regular, bold });
-  drawCenteredText(page, "CERTIFICADO VALIDO POR 2 ANOS", 82, afterTableY, 431, bold, 11.5);
+  drawModelSummary(page, input, { regular, bold }, y - 6);
 
   const panelX = 105;
-  const panelY = 118;
+  const panelY = 58;
   const panelW = 385;
   const panelH = 190;
   page.drawRectangle({ x: panelX, y: panelY, width: panelW, height: panelH, borderColor: border, borderWidth: 0.65 });
@@ -619,9 +639,16 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
   page.drawLine({ start: { x: panelX + 230, y: panelY + 58 }, end: { x: panelX + 230, y: panelY + panelH }, thickness: 0.5, color: border });
   drawCenteredText(page, "Firma instructor", panelX, panelY + panelH - 17, 230, bold, 11);
   drawCenteredText(page, "Codigo QR Instructor", panelX + 230, panelY + panelH - 17, 155, bold, 11);
-  page.drawText("Firmado digitalmente por:", { x: panelX + 12, y: panelY + 122, size: 10.2, font: serif, color: black });
-  page.drawText(input.instructorName, { x: panelX + 12, y: panelY + 96, size: 10.2, font: serif, color: muted });
-  page.drawText(`el ${formatPreviewDate(issuedDate)}`, { x: panelX + 12, y: panelY + 70, size: 10.2, font: serif, color: muted });
+  page.drawText("Firmado digitalmente por:", { x: panelX + 12, y: panelY + 122, size: 10.2, font: regular, color: black });
+  drawScaledText(page, input.instructorName, {
+    x: panelX + 12,
+    y: panelY + 92,
+    width: 202,
+    size: 18,
+    minSize: 12,
+    font: signatureFont
+  });
+  page.drawText(`el ${formatPreviewDate(issuedDate)}`, { x: panelX + 12, y: panelY + 70, size: 10.2, font: regular, color: muted });
   page.drawRectangle({ x: panelX + 188, y: panelY + 66, width: 18, height: 18, color: rgb(0.16, 0.58, 0.82) });
   page.drawText("OK", { x: panelX + 192, y: panelY + 72, size: 5.2, font: bold, color: rgb(1, 1, 1) });
   page.drawRectangle({ x: panelX + 267, y: panelY + 72, width: 78, height: 78, borderColor: border, borderWidth: 0.5 });
@@ -633,12 +660,12 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     }
   }
 
-  [["Codigo Perfil", input.instructorProfileCode], ["Codigo Certificado", folio], ["Vencimiento", formatPreviewDate(validUntil)]].forEach((row, index) => {
+  [["Codigo Perfil", input.instructorProfileCode], ["Codigo Certificado", folio], ["Vencimiento de certificado", formatPreviewDate(validUntil)]].forEach((row, index) => {
     const rowY = panelY + 38 - index * 20;
     page.drawLine({ start: { x: panelX, y: rowY + 20 }, end: { x: panelX + panelW, y: rowY + 20 }, thickness: 0.45, color: border });
-    page.drawLine({ start: { x: panelX + 132, y: rowY }, end: { x: panelX + 132, y: rowY + 20 }, thickness: 0.45, color: border });
+    page.drawLine({ start: { x: panelX + 172, y: rowY }, end: { x: panelX + 172, y: rowY + 20 }, thickness: 0.45, color: border });
     page.drawText(row[0], { x: panelX + 8, y: rowY + 6, size: 9.5, font: bold, color: black });
-    page.drawText(row[1], { x: panelX + 140, y: rowY + 6, size: 9.2, font: regular, color: black });
+    page.drawText(row[1], { x: panelX + 180, y: rowY + 6, size: 9.2, font: regular, color: black });
   });
 
   const pdfBytes = await pdfDoc.save();

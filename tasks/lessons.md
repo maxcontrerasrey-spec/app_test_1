@@ -13,6 +13,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Las busquedas de trabajadores deben reutilizar el lookup estandar del ERP.** Si un modulo nuevo necesita autocompletar personas BUK, usa `StandardWorkerLookupField` con un hook React Query propio; no vuelvas a crear botones manuales de busqueda ni listas paralelas.
 - **Un modo de prueba de certificados debe ser explicitamente no persistente.** Si se desactiva temporalmente respaldo, Storage, RPC y BUK para probar UI, el boton debe generar solo un PDF local/temporal y el texto visible debe dejar claro que no hay folio definitivo ni carga documental.
 - **Los certificados no deben renderizar logos o equipos como placeholders si ya existe fuente operacional.** La previsualizacion debe usar los assets corporativos reales, resolver empresa desde BUK y mostrar modelos autorizados en tabla estructurada con filtros dependientes marca/tipo/modelo.
+- **El layout del certificado debe fluir desde el texto, no desde coordenadas fijas aisladas.** La tabla de equipos debe anclarse al parrafo de habilitacion, y el bloque firma/QR debe permanecer al pie para evitar montajes cuando cambie la cantidad de modelos.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 

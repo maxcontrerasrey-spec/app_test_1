@@ -53,6 +53,7 @@
 - [x] Reemplazar el texto de modelos por una tabla de resumen `Marca / Tipo / Modelo autorizado`.
 - [x] Cambiar seleccion de modelos a lineas repetibles con boton `+`, filtrando `Tipo` segun la marca seleccionada.
 - [x] Exponer `company_name` en `search_competency_workers(...)` desde BUK para elegir logo `Consorcio Andino`, `Consorcio Nuevo Norte` o `JM`.
+- [x] Ajustar layout final del PDF: tabla de equipos junto al parrafo de habilitacion, sin leyenda grande de vigencia, panel firma/QR al pie, vencimiento calculado desde fecha de habilitacion y etiqueta `Vencimiento de certificado`.
 
 ## Reparación warnings Operaciones, BI y ORION
 
