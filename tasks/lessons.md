@@ -39,6 +39,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La matriz editable se prioriza desde la tabla auditada, no desde la vista dependiente de `auth.uid()` antes de setear claim.** Para elegir usuario de smoke, usa `operations_contract_editors`; para validar el contrato final, usa `operations_editable_contracts` con claim simulado.
 - **El smoke de lectura no prueba guardado.** `submit_service_entries_batch(...)` debe mantenerse en una validacion separada con `ROLLBACK` explicito y payload operativo controlado para no mezclar cobertura de resumen/exportador con escritura.
 - **La escritura operacional puede probarse sin contaminar produccion.** El smoke de guardado debe elegir un slot futuro libre, llamar la RPC dos veces para cubrir insert/update, validar el delta dentro de la transaccion y confirmar despues del `ROLLBACK` que el conteo persistente no cambio.
+- **Si el lookup ya entrega `driverBukEmployeeId`, la RPC no debe volver a resolver por busqueda amplia.** En batches de Operaciones, usar `employees_active_current` por cada servicio fuerza deduplicacion pesada; el camino canonico debe resolver directo por `employees.buk_employee_id` y dejar la busqueda textual solo como fallback legacy.
 
 ## 256. Un smoke browser sin credenciales debe probar montaje y guards, no fingir login real
 

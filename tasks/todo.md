@@ -808,6 +808,28 @@ Crear o asignar passwords controladas para las cuentas candidatas de Inicio y Op
 - Validación completada: prueba sintáctica TypeScript acotada de archivos editados, `npm run audit:migrations -- --files supabase/migrations/20260630170500_add_operations_not_performed_status.sql supabase/migrations/20260715162000_release_operations_module_role_matrix.sql`, `git diff --check`, pruebas remotas con `ROLLBACK` y verificación de que `service_entries` siguió en 0 tras la auditoría.
 - Límite de validación local: `tsc -b --pretty false` y `vite build` quedaron dormidos a 0% CPU en este entorno; se cortaron para no dejar procesos colgados.
 
+## Operaciones: timeout al enviar planificación base DMH
+
+- [x] Reproducir el timeout reportado por supervisor DMH con batch planificado realista.
+- [x] Identificar la causa raíz en `submit_service_entries_batch(...)`.
+- [x] Versionar migración forward-only sin relajar permisos ni RLS.
+- [x] Aplicar la corrección en Supabase remoto y registrar `schema_migrations`.
+- [x] Validar batch completo DMH con `ROLLBACK`, sin dejar registros persistidos.
+- [x] Mantener `audit:supabase-security` en el techo de 82 warnings.
+
+### Resultado aplicado
+
+- El problema no estaba en el botón React: el backend respondía `canceling statement due to statement timeout` porque la RPC resolvía conductor contra `employees_active_current` dos veces por cada servicio planificado.
+- `employees_active_current` deduplica con `row_number()` sobre la dotación; para un batch DMH de 33 servicios eso multiplicaba una consulta pesada aunque el frontend ya enviara `driverBukEmployeeId`.
+- Antes de corregir, 8 servicios planificados DMH demoraron ~16,2 segundos dentro de una transacción con `ROLLBACK`, proyectando timeout para el lote completo.
+- Se versionó y aplicó [`20260716140529_optimize_operations_submit_service_entries_batch.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716140529_optimize_operations_submit_service_entries_batch.sql:1).
+- La migración crea `resolve_operations_driver_candidates(...)` como helper interno sin `EXECUTE` para `authenticated`, `anon` ni `public`.
+- `submit_service_entries_batch(...)` conserva validación de rol, matriz editable, contrato, servicio, equipo, conductor, advisory lock e idempotencia; solo cambia la resolución de conductor para usar `employees.buk_employee_id` directo cuando el payload trae `driverBukEmployeeId`.
+- Validación post-fix: 8 servicios planificados DMH bajaron a ~5,6 segundos y el lote completo de 33 servicios DMH guardó `{ ok: true, saved_count: 33 }` en ~4,5 segundos dentro de `ROLLBACK`.
+- Validación de seguridad: el helper interno no es ejecutable por `authenticated` y la RPC viva referencia el helper exactamente dos veces.
+- Validación ejecutada: `npm run smoke:operations-write-rpc`, batch planificado DMH completo con `ROLLBACK`, `npm run audit:migrations -- --files supabase/migrations/20260716140529_optimize_operations_submit_service_entries_batch.sql`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+- Límite observado: `npm run smoke:operations-rpc` read-only quedó colgado y fue interrumpido; no bloquea esta corrección de escritura, pero queda como señal de latencia separada para auditar después.
+
 ## Operaciones: operador compartido y resumen expandible
 
 - [x] Confirmar en datos vivos la identidad operativa de David Alvarez Alvarez y Sergio Alvarado Lopez para el correo compartido `supervisor.dmh@busesjm.com`.
