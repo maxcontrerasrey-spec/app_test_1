@@ -394,6 +394,52 @@ Mientras no existan secretos `FRONTEND_AUTH_SMOKE_EMAIL/PASSWORD` y vars `VITE_S
 
 Definir/provisionar cuentas controladas de smoke por rol y activar el paso autenticado en CI para Inicio y Operaciones con rutas concretas.
 
+## Loop Enterprise global - expectativas de smoke autenticado por rol
+
+- [x] Ejecutar octava iteracion global del prompt Enterprise sobre falsos positivos en browser smoke autenticado.
+- [x] Revisar contrato actual de login, operador compartido y salida del smoke autenticado.
+- [x] Agregar `FRONTEND_AUTH_SMOKE_REQUIRE_MODULE_ACCESS` para fallar cuando una ruta esperada termina en `/sin-acceso`.
+- [x] Agregar `FRONTEND_AUTH_SMOKE_EXPECTED_PATH` para validar la ruta final de cuentas controladas.
+- [x] Agregar `FRONTEND_AUTH_SMOKE_EXPECTED_HEADING` para validar que la pantalla esperada renderiza un heading concreto.
+- [x] Documentar el contrato en `docs/smoke-tests.md` y capturar la leccion operativa.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El harness autenticado ya podia ejecutar login real con secretos, pero todavia aceptaba `/sin-acceso` como resultado valido para cualquier ruta. Eso era correcto para una prueba generica de sesion, pero debil para smokes por rol.
+
+#### Riesgo
+
+Al configurar cuentas controladas para Operaciones, Certificaciones o Inicio, una cuenta sin permisos podia autenticar correctamente, terminar en `/sin-acceso` y aun asi reportar exito. Ese falso positivo dejaria sin cobertura real la autorizacion UI por modulo.
+
+#### Causa raiz
+
+El smoke tenia un unico modo de resultado para login autenticado. No distinguia entre "la sesion existe" y "la cuenta tiene acceso al modulo/ruta que el smoke pretende probar".
+
+#### Cambio implementado
+
+- `FRONTEND_AUTH_SMOKE_REQUIRE_MODULE_ACCESS=1` hace que `/sin-acceso` sea error.
+- `FRONTEND_AUTH_SMOKE_EXPECTED_PATH` exige que la ruta final coincida exactamente.
+- `FRONTEND_AUTH_SMOKE_EXPECTED_HEADING` valida un titulo visible de la pantalla objetivo.
+- La salida JSON informa ruta/heading esperados y si se exigio acceso de modulo, sin imprimir credenciales ni tokens.
+
+#### Validacion
+
+Validacion ejecutada: `npm run smoke:frontend-authenticated`, `FRONTEND_AUTH_SMOKE_REQUIRED=1 npm run smoke:frontend-authenticated` como prueba negativa esperada, `npm run smoke:frontend-routes`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado esperado
+
+El ERP queda preparado para activar cuentas controladas por rol sin que una cuenta autenticada pero no autorizada pase el smoke de una ruta concreta.
+
+#### Riesgo residual
+
+Aun falta provisionar/configurar las cuentas controladas y secrets por rol en CI. Esta iteracion endurece el harness, pero no crea credenciales ni usuarios.
+
+#### Proximo objetivo
+
+Definir el manifiesto operacional de cuentas controladas por rol y activar al menos un smoke browser autenticado de ruta concreta cuando existan secrets.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

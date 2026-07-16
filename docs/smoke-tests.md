@@ -43,6 +43,9 @@ Este smoke no usa credenciales, no inicia sesion real y no toca datos productivo
 - inicia sesion con Supabase Auth desde Chromium, espera carga de Inicio y valida que no vuelva a `/login`;
 - si la cuenta es compartida y aparece el selector de operador, selecciona la opcion inicial y continua;
 - navega a `FRONTEND_AUTH_SMOKE_PATH` o `/` por defecto y acepta como resultado valido una ruta autenticada cargada o `/sin-acceso` controlado;
+- con `FRONTEND_AUTH_SMOKE_REQUIRE_MODULE_ACCESS=1`, falla si la ruta termina en `/sin-acceso`;
+- con `FRONTEND_AUTH_SMOKE_EXPECTED_PATH`, falla si la ruta final no coincide exactamente;
+- con `FRONTEND_AUTH_SMOKE_EXPECTED_HEADING`, falla si no renderiza ese titulo como heading;
 - con `FRONTEND_AUTH_SMOKE_REQUIRED=1`, falla si falta configuracion; sin esa variable, informa `skipped` sin bloquear.
 
 Este smoke no imprime contraseña ni tokens, no usa service role en el navegador y no crea usuarios. En CI queda condicionado a secretos/vars para que se active solo cuando exista una cuenta controlada de prueba.
@@ -157,7 +160,7 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 ## Deuda actual
 
 - El repo no tiene aun fixtures versionados de usuarios controlados por rol.
-- La cobertura UI ya incluye un smoke browser acotado de rutas publicas/protegidas y un harness autenticado activable por secretos; la cobertura autenticada por rol aun depende de configurar cuentas de prueba controladas.
+- La cobertura UI ya incluye un smoke browser acotado de rutas publicas/protegidas y un harness autenticado activable por secretos con expectativa de acceso/ruta/heading; la cobertura autenticada por rol aun depende de configurar cuentas de prueba controladas.
 - Rutas/roles/preloads, RPCs base de Inicio y lecturas/escritura transaccional de Operaciones ya tienen smoke automatizado.
 
 ## Siguiente implementacion segura
@@ -166,4 +169,5 @@ Crear una pasada separada con:
 
 1. `tests/smoke/` por rol principal.
 2. fixtures de usuarios controlados.
-3. validaciones RPC con cuentas reales de prueba o harness service-role acotado.
+3. variables seguras de CI para `FRONTEND_AUTH_SMOKE_EMAIL/PASSWORD` por cuenta controlada.
+4. validaciones RPC con cuentas reales de prueba o harness service-role acotado.

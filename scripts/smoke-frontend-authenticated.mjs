@@ -17,7 +17,10 @@ function readEnv() {
     email: process.env.FRONTEND_AUTH_SMOKE_EMAIL?.trim() ?? "",
     password: process.env.FRONTEND_AUTH_SMOKE_PASSWORD ?? "",
     required: process.env.FRONTEND_AUTH_SMOKE_REQUIRED === "1",
+    requireModuleAccess: process.env.FRONTEND_AUTH_SMOKE_REQUIRE_MODULE_ACCESS === "1",
     targetPath: process.env.FRONTEND_AUTH_SMOKE_PATH?.trim() || "/",
+    expectedPath: process.env.FRONTEND_AUTH_SMOKE_EXPECTED_PATH?.trim() || "",
+    expectedHeading: process.env.FRONTEND_AUTH_SMOKE_EXPECTED_HEADING?.trim() || "",
     baseUrl: process.env.FRONTEND_SMOKE_BASE_URL?.trim().replace(/\/$/, "") ?? "",
     supabaseUrl: process.env.VITE_SUPABASE_URL?.trim() || viteEnv.VITE_SUPABASE_URL?.trim() || "",
     supabaseAnonKey:
@@ -36,6 +39,10 @@ function maskEmail(value) {
 
 function normalizePath(pathname) {
   return pathname.startsWith("/") ? pathname : `/${pathname}`;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 async function createLocalServer(config) {
@@ -145,11 +152,28 @@ async function assertAuthenticatedState(page, baseUrl, config) {
   assert(currentPath !== "/login", "Authenticated smoke was redirected back to login.");
 
   if (currentPath === "/sin-acceso") {
+    assert(
+      !config.requireModuleAccess,
+      `Authenticated smoke reached /sin-acceso for ${targetPath}, but FRONTEND_AUTH_SMOKE_REQUIRE_MODULE_ACCESS=1.`
+    );
+
     await page.getByRole("heading", { name: "Sin acceso" }).waitFor({ timeout: DEFAULT_TIMEOUT_MS });
     return {
       target_result: "authenticated_but_without_module_access",
       final_path: currentPath
     };
+  }
+
+  const expectedPath = config.expectedPath ? normalizePath(config.expectedPath) : "";
+  assert(
+    !expectedPath || currentPath === expectedPath,
+    `Authenticated smoke expected final path ${expectedPath}, got ${currentPath}.`
+  );
+
+  if (config.expectedHeading) {
+    await page
+      .getByRole("heading", { name: new RegExp(escapeRegExp(config.expectedHeading), "i") })
+      .waitFor({ timeout: DEFAULT_TIMEOUT_MS });
   }
 
   await page.waitForLoadState("domcontentloaded", { timeout: DEFAULT_TIMEOUT_MS });
@@ -225,6 +249,9 @@ async function main() {
           base_url: server.baseUrl,
           user: maskEmail(config.email),
           target_path: normalizePath(config.targetPath),
+          expected_path: config.expectedPath ? normalizePath(config.expectedPath) : null,
+          expected_heading: config.expectedHeading || null,
+          require_module_access: config.requireModuleAccess,
           ...routeResult
         },
         null,

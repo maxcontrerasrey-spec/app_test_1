@@ -47,6 +47,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **CI debe instalar dependencias antes de ejecutar scripts.** Un workflow que corre `npm run` sin `npm ci` no es un guardrail real; si agrega Playwright, instala tambien Chromium de forma explicita.
 - **Un smoke de rutas protegidas necesita activar la rama configurada de auth sin usar secretos.** Si CI no tiene `.env.local`, inyecta placeholders publicos de `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` para probar guards sin sesion; no uses service role ni credenciales reales.
 - **El smoke autenticado debe ser secret-enabled, no hardcodeado.** La ruta correcta es un harness que use `FRONTEND_AUTH_SMOKE_EMAIL/PASSWORD`, falle solo cuando se marque required y nunca imprima tokens/contraseñas; la cuenta controlada se configura fuera del repo.
+- **Un smoke autenticado por rol no puede aceptar `/sin-acceso` como exito.** Para rutas concretas, exige `FRONTEND_AUTH_SMOKE_REQUIRE_MODULE_ACCESS=1` y valida ruta/heading esperados; asi una cuenta sin permisos no pasa como login correcto.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 
