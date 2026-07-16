@@ -71,6 +71,8 @@ type ActiveEmployeeCompanyRow = {
   area_name: string | null;
 };
 
+type CompanyResolutionClient = ReturnType<typeof createClient>;
+
 function requireEnv(value: string | undefined, label: string) {
   const normalized = value?.trim();
   if (!normalized) {
@@ -196,6 +198,27 @@ function resolveLogoBase64(companyName: string | null | undefined) {
 
 function readLogoBytes(companyName: string | null | undefined) {
   return dataUrlToBytes(resolveLogoBase64(companyName));
+}
+
+async function resolveWorkerCompanyName(
+  supabase: CompanyResolutionClient,
+  employeeRow: ActiveEmployeeCompanyRow | null | undefined
+) {
+  const fallbackCompanyName =
+    extractCompanyNameFromBukPayload(employeeRow?.raw_payload) ||
+    employeeRow?.area_name ||
+    null;
+
+  const { data, error } = await supabase.rpc("resolve_active_employee_company_name", {
+    p_payload: employeeRow?.raw_payload ?? {},
+    p_area_name: employeeRow?.area_name ?? null
+  });
+
+  if (error || typeof data !== "string" || !data.trim()) {
+    return fallbackCompanyName;
+  }
+
+  return data.trim();
 }
 
 function splitTextIntoLines(text: string, font: PDFFont, size: number, maxWidth: number) {
@@ -825,7 +848,7 @@ Deno.serve(async (req) => {
       .eq("buk_employee_id", requestRow.worker_buk_employee_id)
       .maybeSingle<ActiveEmployeeCompanyRow>();
 
-    const workerCompanyName = extractCompanyNameFromBukPayload(employeeCompanyRow?.raw_payload);
+    const workerCompanyName = await resolveWorkerCompanyName(supabase, employeeCompanyRow);
     const pdfBytes = await buildCertificatePdf({
       request: requestRow,
       instructor: instructorRow,
