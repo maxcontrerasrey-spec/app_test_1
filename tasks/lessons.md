@@ -15,6 +15,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los certificados no deben renderizar logos o equipos como placeholders si ya existe fuente operacional.** La previsualizacion debe usar los assets corporativos reales, resolver empresa desde BUK y mostrar modelos autorizados en tabla estructurada con filtros dependientes marca/tipo/modelo.
 - **El layout del certificado debe fluir desde el texto, no desde coordenadas fijas aisladas.** La tabla de equipos debe anclarse al parrafo de habilitacion, y el bloque firma/QR debe permanecer al pie para evitar montajes cuando cambie la cantidad de modelos.
 
+## 252. Un prompt Enterprise global debe dejar controles ejecutables y documentacion viva verificable
+
+- **Ejecutar el loop no significa solo corregir el ultimo modulo tocado.** Si el objetivo es global, cada iteracion debe cerrar una brecha transversal: mapa modular, matriz de permisos, seguridad, smoke plan, CI o deuda P0/P1.
+- **La documentacion Enterprise debe tener un auditor minimo.** `audit:enterprise-docs` compara rutas/modulos activos contra `docs/module-map.md` y `docs/permissions-matrix.md` para evitar que un modulo nuevo exista en codigo pero no en la evidencia auditable.
+- **La traza del loop debe quedar en `tasks/todo.md`.** Cada ciclo debe indicar hallazgo, riesgo, causa raiz, cambio, validacion, resultado y proximo objetivo, no solo un resumen conversacional.
+
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 
 - **No edites migraciones viejas aplicadas para hacer bajar el contador.** Para Operaciones, BI y ORION, el cierre seguro fue una migración forward-only que recompila helpers/policies vivos y deja `notify pgrst`.

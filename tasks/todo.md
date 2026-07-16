@@ -56,6 +56,54 @@
 - [x] Ajustar layout final del PDF: tabla de equipos junto al parrafo de habilitacion, sin leyenda grande de vigencia, panel firma/QR al pie, vencimiento calculado desde fecha de habilitacion y etiqueta `Vencimiento de certificado`.
 - [x] Alinear la Edge Function productiva `generate-competency-certificate` con el mismo formato visual y reglas del PDF de prueba para que el documento cargado a BUK no use el layout legacy.
 
+## Loop Enterprise global
+
+- [x] Ejecutar primera iteracion global del prompt Enterprise sobre documentacion viva, permisos, smoke plan y guardrails.
+- [x] Detectar drift entre rutas/modulos activos y evidencia documental.
+- [x] Actualizar mapa modular con `src/modules/competencies` y contrato operativo de certificacion.
+- [x] Actualizar matriz de permisos con `certificados` y `seguimiento_certificados`.
+- [x] Actualizar smoke plan para roles `certificaciones` e `instructor`.
+- [x] Crear `npm run audit:enterprise-docs` como control ejecutable de documentacion Enterprise.
+- [x] Integrar `npm run audit:enterprise-docs` en GitHub Actions.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El modulo de certificacion de competencias ya estaba routeado y operativo, pero la documentacion viva Enterprise no reflejaba completamente su existencia, rutas, guardias, roles ni smoke minimo.
+
+#### Riesgo
+
+Deriva entre codigo activo y evidencia auditable: un modulo puede existir en frontend/backend sin aparecer en mapa modular, matriz de permisos o smoke plan, debilitando revisiones futuras de arquitectura, autorizacion y QA.
+
+#### Causa raiz
+
+La documentacion Enterprise existia, pero no tenia un gate automatizado que comparara rutas reales (`AppRouter.tsx` / `routeModules.ts`) contra `docs/module-map.md` y `docs/permissions-matrix.md`.
+
+#### Cambio implementado
+
+- `scripts/audit-enterprise-docs.mjs` agrega un auditor local para documentos Enterprise.
+- `package.json` expone `npm run audit:enterprise-docs`.
+- `docs/module-map.md`, `docs/permissions-matrix.md`, `docs/security-review.md` y `docs/smoke-tests.md` quedan alineados con el modulo de certificacion y el nuevo control.
+- `.github/workflows/audit-supabase-migrations.yml` ahora corre `audit:enterprise-docs` y se activa ante cambios de rutas, docs, tareas o scripts de auditoria.
+- `tasks/lessons.md` registra la regla de que un prompt Enterprise global debe cerrar brechas transversales con evidencia ejecutable.
+
+#### Validacion
+
+Validacion ejecutada: `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado
+
+La ejecucion del prompt deja una primera evidencia durable del loop global y un guardrail para evitar que nuevas rutas/modulos queden fuera de la documentacion Enterprise.
+
+#### Riesgo residual
+
+`audit:enterprise-docs` valida cobertura documental minima, no prueba flujos E2E ni permisos reales por cuenta. El siguiente cierre de mayor valor sigue siendo avanzar hacia smoke tests por rol.
+
+#### Proximo objetivo
+
+Construir smoke tests automatizados por rol para los modulos criticos.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

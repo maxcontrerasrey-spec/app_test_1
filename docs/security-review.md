@@ -38,6 +38,12 @@ La base de seguridad actual es razonable para un ERP productivo: RLS, helpers `u
 - hoy no existe harness E2E o `tests/smoke`.
 - el control real depende de build, auditoria de migraciones y humo manual/SQL.
 
+### Medio: deriva posible de documentacion Enterprise
+
+- El mapa modular y matriz de permisos pueden quedar obsoletos si se agregan rutas/modulos sin actualizar documentacion viva.
+- Se incorpora `npm run audit:enterprise-docs` como guardrail local/CI-ready para exigir que los modulos routeados existan en `docs/permissions-matrix.md` y que los directorios lazy-loaded esten en `docs/module-map.md`.
+- Este control no reemplaza auditoria funcional, pero bloquea el drift basico entre rutas activas, permisos documentados y mapa modular.
+
 ### Medio: archivos gigantes en zonas criticas
 
 - `hiringControl.ts`, `incentivesApi.ts`, `CandidateWorkerFileForm.tsx`, `OperacionesDashboard.tsx`.
@@ -51,6 +57,7 @@ La base de seguridad actual es razonable para un ERP productivo: RLS, helpers `u
 ## Recomendacion priorizada
 
 1. Cerrar el legado de onboarding para que todo el dominio use solo `alta_operacional_personal` o helper dedicado.
-2. Implementar smoke tests por rol sobre rutas y RPCs mas criticas.
-3. Segmentar archivos frontend/backend mas grandes donde el cambio seguro ya es caro.
-4. Mantener la disciplina de migraciones canonicas y baseline congelada.
+2. Integrar `npm run audit:enterprise-docs` en CI junto a build, migraciones y seguridad.
+3. Implementar smoke tests por rol sobre rutas y RPCs mas criticas.
+4. Segmentar archivos frontend/backend mas grandes donde el cambio seguro ya es caro.
+5. Mantener la disciplina de migraciones canonicas y baseline congelada.

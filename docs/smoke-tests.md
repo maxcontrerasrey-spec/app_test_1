@@ -6,6 +6,7 @@ Comandos minimos ya usados en cambios productivos:
 
 ```bash
 npm run audit:migrations
+npm run audit:enterprise-docs
 npx tsc -b --pretty false
 npm run build:frontend-check
 git diff --check
@@ -56,6 +57,20 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 - acceso a resumenes/BI
 - bloqueo de acciones mutativas no autorizadas
 
+### `certificaciones`
+
+- acceso a `/certificados`
+- busqueda BUK por autocompletar estandar
+- seleccion editable de instructor cuando corresponde
+- generacion de PDF de prueba sin persistencia ni carga BUK
+
+### `instructor`
+
+- acceso a `/certificados`
+- instructor autocompletado desde la cuenta cuando existe vinculacion
+- campos de instructor bloqueados para edicion manual
+- generacion de PDF de prueba sin persistencia ni carga BUK
+
 ### `operaciones`
 
 - acceso a `/operaciones/*`
@@ -70,6 +85,7 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 - Incentivos: setup, registro, cola de aprobacion, analytics.
 - Roster: worker lookup, calendario y resumen mensual.
 - Acreditacion: dashboard, workers, settings y eventos auditables.
+- Certificacion de competencias: trabajador BUK, instructor, equipos autorizados, PDF temporal y Edge Function productiva con rechazo sin bearer.
 - Onboarding: templates, tasks, cases y activity log.
 
 ## Deuda actual

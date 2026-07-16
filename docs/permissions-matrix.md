@@ -21,6 +21,8 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `recursos_humanos` | `/recursos-humanos/*` | `RoleProtectedRoute` + roles para analytics |
 | `jornadas_turnos` | `/roster` | `RoleProtectedRoute` |
 | `acreditacion_personas` | `/recursos-humanos/acreditacion/*` | `RoleProtectedRoute` |
+| `certificados` | `/certificados` | `RoleProtectedRoute` |
+| `seguimiento_certificados` | `/seguimiento-certificados` | `RoleProtectedRoute` + redirect a `/certificados` |
 | `bi_analytics` | `/bi/*` | `RoleProtectedRoute` |
 | `ai_assistant` | `/copiloto-ia` | `AdminProtectedRoute` |
 
@@ -47,8 +49,8 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `operaciones_l_2` | solicitud, movilidad, roster, acreditacion |
 | `administrativo` | solicitud, movilidad, roster, acreditacion |
 | `jefe_administrativo` | union efectiva de `administrativo` + `reclutamiento` |
-| `certificaciones` | legado de certificados |
-| `instructor` | legado de certificados |
+| `certificaciones` | certificados y seguimiento de certificados; puede operar seleccion editable de instructor |
+| `instructor` | certificados y seguimiento de certificados; instructor autoseleccionado/no editable cuando la cuenta esta vinculada |
 
 ## Reglas de diseno vigentes
 
@@ -62,4 +64,5 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 - El frontend ya esta alineado con `accessible_modules`, no con allowlists por correo.
 - `jefe_administrativo` esta bien modelado como rol acumulativo en SQL.
 - El modulo AI sigue siendo admin-only en frontend; no existe una superficie productiva general para `ai_assistant`.
+- Certificacion de competencias usa modulos separados `certificados` y `seguimiento_certificados`; la pantalla viva redirige seguimiento al mismo modulo funcional mientras se consolida el flujo.
 - Sobrevive SQL legacy de onboarding con `user_can_access_module(..., 'reclutamiento')`; ese valor es un rol, no un modulo, y debe tratarse como deuda de seguridad/consistencia si ese bloque vuelve a usarse.

@@ -1,23 +1,35 @@
-name: Audit Supabase Migrations
+name: Audit Enterprise Guardrails
 
 on:
   push:
     paths:
+      - "docs/**"
       - "supabase/**"
+      - "tasks/todo.md"
+      - "tasks/lessons.md"
+      - "src/app/router/AppRouter.tsx"
+      - "src/app/router/routeModules.ts"
+      - "scripts/audit-enterprise-docs.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
       - "package.json"
       - ".github/workflows/audit-supabase-migrations.yml"
   pull_request:
     paths:
+      - "docs/**"
       - "supabase/**"
+      - "tasks/todo.md"
+      - "tasks/lessons.md"
+      - "src/app/router/AppRouter.tsx"
+      - "src/app/router/routeModules.ts"
+      - "scripts/audit-enterprise-docs.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
       - "package.json"
       - ".github/workflows/audit-supabase-migrations.yml"
 
 jobs:
-  audit-migrations:
+  audit-enterprise-guardrails:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +40,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Audit Enterprise documentation coverage
+        run: npm run audit:enterprise-docs
 
       - name: Enforce migration baseline
         run: npm run audit:migrations
