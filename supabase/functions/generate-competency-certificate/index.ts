@@ -21,6 +21,7 @@ const corsHeaders = {
 
 const BUCKET = "competency_documents";
 const BUK_FOLDER = "Competencias";
+const DEFAULT_PUBLIC_APP_BASE_URL = "https://gestion.busesjm.cl";
 
 type CompetencyRequestRow = {
   id: string;
@@ -109,7 +110,9 @@ function buildBukFileName(request: CompetencyRequestRow, certificate: Certificat
 
 function buildVerificationUrl(token: string) {
   const baseUrl = (Deno.env.get("PUBLIC_APP_URL") ?? Deno.env.get("APP_PUBLIC_URL") ?? "").trim();
-  const normalizedBase = baseUrl ? baseUrl.replace(/\/+$/, "") : "https://erp.busesjm.com";
+  const normalizedBase = baseUrl && !baseUrl.includes("pages.dev")
+    ? baseUrl.replace(/\/+$/, "")
+    : DEFAULT_PUBLIC_APP_BASE_URL;
   return `${normalizedBase}/verificar/competencia/${encodeURIComponent(token)}`;
 }
 
@@ -566,7 +569,7 @@ function drawValidationPanel(page: PDFPage, input: {
   page.drawText(`RUT N. ${input.instructorDocumentNumber}`, { x: x + 14, y: y + 23, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
   drawCalendarIcon(page, x + 14, y + 7);
   page.drawText(`Fecha de emisión: ${formatLongDate(input.issuedDate)}`, { x: x + 36, y: y + 8, size: 8.2, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  page.drawImage(qrPng, { x: x + 336, y: y + 56, width: 72, height: 72 });
+  page.drawImage(qrPng, { x: x + 331, y: y + 51, width: 82, height: 82 });
   drawCenteredText(page, "Escanee el codigo QR para verificar", x + 295, y + 36, 170, fonts.regular, 8);
   drawCenteredText(page, "la autenticidad, estado y vigencia", x + 295, y + 23, 170, fonts.regular, 8);
   drawCenteredText(page, "de este certificado.", x + 295, y + 10, 170, fonts.regular, 8);
@@ -668,8 +671,12 @@ async function buildCertificatePdf(input: {
   const verificationUrl = buildVerificationUrl(certificate.verification_token);
   const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
     errorCorrectionLevel: "M",
-    margin: 1,
-    width: 150
+    margin: 2,
+    width: 256,
+    color: {
+      dark: "#000000",
+      light: "#ffffff"
+    }
   });
   const qrPng = await pdfDoc.embedPng(dataUrlToBytes(qrDataUrl));
   const firstPageRows = modelRows.slice(0, FIRST_PAGE_MODEL_CAPACITY);

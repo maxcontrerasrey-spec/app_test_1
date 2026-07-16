@@ -10,6 +10,7 @@ import {
 } from "../../../shared/lib/supabaseRpc";
 import { buildPublicAppUrl } from "../../../shared/config/runtime";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import QRCode from "qrcode";
 import certificateBusIconUrl from "../assets/certificate-bus-icon.png";
 import certificateValidationBadgeUrl from "../assets/certificate-validation-badge.png";
 import certificateSignatureFontUrl from "../assets/fonts/DancingScript-Regular.ttf";
@@ -413,6 +414,26 @@ async function fetchBytes(url: string) {
   return new Uint8Array(await response.arrayBuffer());
 }
 
+function dataUrlToBytes(dataUrl: string) {
+  const dataUrlParts = dataUrl.split(",");
+  const base64 = dataUrl.includes(",") ? dataUrlParts[dataUrlParts.length - 1] ?? "" : dataUrl;
+  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+}
+
+async function renderQrImage(verificationUrl: string) {
+  const dataUrl = await QRCode.toDataURL(verificationUrl, {
+    errorCorrectionLevel: "M",
+    margin: 2,
+    width: 256,
+    color: {
+      dark: "#000000",
+      light: "#ffffff"
+    }
+  });
+
+  return dataUrlToBytes(dataUrl);
+}
+
 function splitTextIntoLines(text: string, font: PDFFont, size: number, maxWidth: number) {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -700,28 +721,6 @@ function drawCalendarIcon(page: PDFPage, x: number, y: number) {
   page.drawLine({ start: { x, y: y + 8 }, end: { x: x + 12, y: y + 8 }, thickness: 1, color: red });
 }
 
-function drawPseudoQr(page: PDFPage, x: number, y: number, size: number) {
-  const cell = size / 13;
-  page.drawRectangle({ x, y, width: size, height: size, borderColor: rgb(0.55, 0.58, 0.62), borderWidth: 0.5 });
-  for (let row = 0; row < 13; row += 1) {
-    for (let col = 0; col < 13; col += 1) {
-      const finder =
-        (row < 4 && col < 4) ||
-        (row < 4 && col > 8) ||
-        (row > 8 && col < 4);
-      if (finder || (row * 7 + col * 5 + row * col) % 4 === 0) {
-        page.drawRectangle({
-          x: x + col * cell + 1,
-          y: y + row * cell + 1,
-          width: Math.max(1.5, cell - 1.5),
-          height: Math.max(1.5, cell - 1.5),
-          color: rgb(0.02, 0.02, 0.02)
-        });
-      }
-    }
-  }
-}
-
 function drawModelSummary(page: PDFPage, rows: CompetencyPreviewPdfInput["authorizedModels"], fonts: { regular: PDFFont; bold: PDFFont }, tableY: number) {
   const tableX = 54;
   const tableWidth = 487;
@@ -819,6 +818,7 @@ function drawValidationPanel(page: PDFPage, input: CompetencyPreviewPdfInput, fo
   validUntil: string;
   validationBadge: Awaited<ReturnType<PDFDocument["embedPng"]>>;
   signatureImage: Awaited<ReturnType<PDFDocument["embedPng"]>>;
+  qrImage: Awaited<ReturnType<PDFDocument["embedPng"]>>;
 }) {
   const x = 54;
   const y = 108;
@@ -838,7 +838,7 @@ function drawValidationPanel(page: PDFPage, input: CompetencyPreviewPdfInput, fo
   page.drawText(`RUT N. ${input.instructorDocumentNumber}`, { x: x + 14, y: y + 23, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
   drawCalendarIcon(page, x + 14, y + 7);
   page.drawText(`Fecha de emisión: ${formatLongPreviewDate(options.issuedDate)}`, { x: x + 36, y: y + 8, size: 8.2, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  drawPseudoQr(page, x + 336, y + 56, 72);
+  page.drawImage(options.qrImage, { x: x + 331, y: y + 51, width: 82, height: 82 });
   drawCenteredText(page, "Escanee el codigo QR para verificar", x + 295, y + 36, 170, fonts.regular, 8);
   drawCenteredText(page, "la autenticidad, estado y vigencia", x + 295, y + 23, 170, fonts.regular, 8);
   drawCenteredText(page, "de este certificado.", x + 295, y + 10, 170, fonts.regular, 8);
@@ -892,6 +892,7 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
   const busIcon = await pdfDoc.embedPng(await fetchBytes(certificateBusIconUrl));
   const validationBadge = await pdfDoc.embedPng(await fetchBytes(certificateValidationBadgeUrl));
   const signatureImage = await pdfDoc.embedPng(await renderSignatureImage(input.instructorName));
+  const qrImage = await pdfDoc.embedPng(await renderQrImage(verificationUrl));
   drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
 
   const bodyX = 64;
@@ -938,7 +939,7 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
   drawModelSummary(page, firstPageRows, { regular, bold }, sectionY - 22);
 
   if (remainingRows.length === 0) {
-    drawValidationPanel(page, input, { regular, bold }, { folio, issuedDate, validUntil, validationBadge, signatureImage });
+    drawValidationPanel(page, input, { regular, bold }, { folio, issuedDate, validUntil, validationBadge, signatureImage, qrImage });
     drawCertificateFooter(page, regular, verificationUrl);
   } else {
     while (remainingRows.length > LAST_PAGE_MODEL_CAPACITY) {
@@ -955,7 +956,7 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
     drawEquipmentHeading(page, 650, bold, busIcon);
     drawModelSummary(page, remainingRows, { regular, bold }, 628);
-    drawValidationPanel(page, input, { regular, bold }, { folio, issuedDate, validUntil, validationBadge, signatureImage });
+    drawValidationPanel(page, input, { regular, bold }, { folio, issuedDate, validUntil, validationBadge, signatureImage, qrImage });
     drawCertificateFooter(page, regular, verificationUrl);
   }
 

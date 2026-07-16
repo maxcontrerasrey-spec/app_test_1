@@ -3,18 +3,16 @@ function sanitizeBaseUrl(value: string | undefined) {
   return trimmedValue ? trimmedValue.replace(/\/$/, "") : "";
 }
 
+const DEFAULT_PUBLIC_APP_BASE_URL = "https://gestion.busesjm.cl";
+
 export function getPublicAppBaseUrl() {
   const configuredUrl = sanitizeBaseUrl(import.meta.env.VITE_PUBLIC_APP_URL);
 
-  if (configuredUrl) {
+  if (configuredUrl && !configuredUrl.includes("pages.dev")) {
     return configuredUrl;
   }
 
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  return sanitizeBaseUrl(window.location.origin);
+  return DEFAULT_PUBLIC_APP_BASE_URL;
 }
 
 export function buildPublicAppUrl(pathname: string) {
