@@ -134,6 +134,17 @@ function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
           <path {...commonProps} d="m9 12 2 2 4-4" />
         </svg>
       );
+    case "certificate":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path {...commonProps} d="M6 3h10l4 4v14H6V3Z" />
+          <path {...commonProps} d="M16 3v5h4" />
+          <path {...commonProps} d="M9 9h5" />
+          <path {...commonProps} d="M9 12h6" />
+          <circle {...commonProps} cx="11" cy="16.5" r="2" />
+          <path {...commonProps} d="m9.6 18.1-.6 2.4 2-1 2 1-.6-2.4" />
+        </svg>
+      );
     case "document":
     default:
       return (

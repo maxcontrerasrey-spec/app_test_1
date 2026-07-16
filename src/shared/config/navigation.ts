@@ -11,7 +11,7 @@ export type NavigationItem = {
   label: string;
   description?: string;
   subgroup?: string;
-  iconKey?: "document" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up" | "badge-check" | "handshake";
+  iconKey?: "document" | "certificate" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up" | "badge-check" | "handshake";
   visibleForRoles?: AppRole[];
   items?: NavigationItem[];
 };
@@ -88,7 +88,7 @@ export const navigationModules: NavigationModule[] = [
         to: "/certificados",
         label: "Certificación de Competencias",
         description: "Emisión y seguimiento de competencias de conductores con carga a BUK.",
-        iconKey: "badge-check"
+        iconKey: "certificate"
       }
     ]
   },
