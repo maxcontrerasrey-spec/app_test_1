@@ -293,6 +293,56 @@ El smoke no navega la UI con una sesion browser real ni prueba el flujo `planned
 
 Construir un smoke browser acotado para una ruta critica, empezando por login/carga de Inicio u Operaciones, reutilizando una cuenta controlada si existe.
 
+## Loop Enterprise global - smoke browser rutas base
+
+- [x] Ejecutar sexta iteracion global del prompt Enterprise sobre smoke browser minimo.
+- [x] Verificar contrato de `AppRouter`, guards de autenticacion y pantalla `/login`.
+- [x] Agregar Playwright como devDependency versionada.
+- [x] Crear `npm run smoke:frontend-routes`.
+- [x] Validar `/login` en Chromium headless con controles criticos visibles.
+- [x] Validar que `/operaciones/resumen` sin sesion redirige a `/login`.
+- [x] Corregir workflow de guardrails para ejecutar `npm ci` antes de scripts.
+- [x] Integrar instalacion de Chromium y `smoke:frontend-routes` al workflow Enterprise.
+- [x] Documentar alcance, precondiciones y riesgo residual en `docs/smoke-tests.md`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El ERP ya tenia smokes estaticos y RPC, pero no existia una prueba browser versionada que demostrara que el bundle frontend monta, que `/login` renderiza y que una ruta protegida critica no queda accesible ni en blanco sin sesion.
+
+#### Riesgo
+
+Un cambio de router, lazy loading, auth provider o configuracion de Vite podia pasar TypeScript/build y aun asi dejar la app con pantalla rota, ruta protegida mal resuelta o login no operable en navegador real.
+
+#### Causa raiz
+
+Los controles previos validaban contratos de codigo y backend, pero no ejecutaban Chromium sobre la SPA. Ademas, el workflow Enterprise corria `npm run` sin un paso explicito de instalacion de dependencias.
+
+#### Cambio implementado
+
+- `scripts/smoke-frontend-routes.mjs` levanta Vite localmente, abre Chromium headless y valida `/login`.
+- El smoke verifica titulo, input de correo, input de contraseña, boton `Continuar` y accion de recuperacion.
+- El smoke navega `/operaciones/resumen` sin sesion y exige redireccion a `/login`.
+- `package.json` expone `npm run smoke:frontend-routes` y `package-lock.json` versiona Playwright.
+- `.github/workflows/audit-supabase-migrations.yml` instala dependencias con `npm ci`, instala Chromium y ejecuta el smoke browser.
+
+#### Validacion
+
+Validacion ejecutada: `npm ci`, `npm run smoke:frontend-routes`, `npm run smoke:operations-write-rpc`, `npm run smoke:operations-rpc`, `npm run smoke:dashboard-rpc`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado
+
+El ERP queda con un smoke browser versionado y ejecutado en CI para validar montaje de `/login` y guard de ruta protegida sin sesion, ademas de corregir el workflow Enterprise para instalar dependencias antes de ejecutar guardrails.
+
+#### Riesgo residual
+
+El smoke no inicia sesion con usuario real, no valida modulos autenticados renderizados ni prueba formularios browser con datos. El siguiente cierre debe usar una cuenta controlada o un harness de sesion seguro.
+
+#### Proximo objetivo
+
+Crear fixtures/cuentas controladas de smoke por rol o un mecanismo seguro de sesion de prueba que permita abrir Inicio/Operaciones autenticado sin exponer credenciales ni usar service role en el browser.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

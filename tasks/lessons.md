@@ -40,6 +40,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El smoke de lectura no prueba guardado.** `submit_service_entries_batch(...)` debe mantenerse en una validacion separada con `ROLLBACK` explicito y payload operativo controlado para no mezclar cobertura de resumen/exportador con escritura.
 - **La escritura operacional puede probarse sin contaminar produccion.** El smoke de guardado debe elegir un slot futuro libre, llamar la RPC dos veces para cubrir insert/update, validar el delta dentro de la transaccion y confirmar despues del `ROLLBACK` que el conteo persistente no cambio.
 
+## 256. Un smoke browser sin credenciales debe probar montaje y guards, no fingir login real
+
+- **Si no hay cuenta controlada versionada, no inventes credenciales.** El primer smoke browser seguro debe validar `/login`, controles visibles y redireccion de rutas protegidas sin sesion.
+- **`networkidle` no es una senal confiable para una SPA con Supabase.** Usa `domcontentloaded` y espera elementos de UI especificos; las conexiones de auth pueden mantener actividad de red sin que la pantalla este rota.
+- **CI debe instalar dependencias antes de ejecutar scripts.** Un workflow que corre `npm run` sin `npm ci` no es un guardrail real; si agrega Playwright, instala tambien Chromium de forma explicita.
+
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 
 - **No edites migraciones viejas aplicadas para hacer bajar el contador.** Para Operaciones, BI y ORION, el cierre seguro fue una migración forward-only que recompila helpers/policies vivos y deja `notify pgrst`.

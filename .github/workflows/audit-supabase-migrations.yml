@@ -13,7 +13,9 @@ on:
       - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
+      - "scripts/smoke-frontend-routes.mjs"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/audit-supabase-migrations.yml"
   pull_request:
     paths:
@@ -27,7 +29,9 @@ on:
       - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
+      - "scripts/smoke-frontend-routes.mjs"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/audit-supabase-migrations.yml"
 
 jobs:
@@ -43,11 +47,20 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Audit Enterprise documentation coverage
         run: npm run audit:enterprise-docs
 
       - name: Smoke route and role guardrails
         run: npm run audit:route-role-smoke
+
+      - name: Install Chromium for frontend smoke
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke frontend public and protected routes
+        run: npm run smoke:frontend-routes
 
       - name: Enforce migration baseline
         run: npm run audit:migrations

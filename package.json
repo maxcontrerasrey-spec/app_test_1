@@ -9,6 +9,7 @@
     "build:frontend-check": "node scripts/run-frontend-build.mjs",
     "preview": "vite preview",
     "smoke:dashboard-rpc": "node scripts/smoke-dashboard-rpc.mjs",
+    "smoke:frontend-routes": "node scripts/smoke-frontend-routes.mjs",
     "smoke:operations-rpc": "node scripts/smoke-operations-rpc.mjs",
     "smoke:operations-write-rpc": "node scripts/smoke-operations-write-rpc.mjs",
     "audit:migrations": "node scripts/audit-supabase-migrations.mjs --enforce-baseline",
@@ -41,6 +42,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.61.1",
     "typescript": "^5.6.3",
     "vite": "^6.4.3"
   }

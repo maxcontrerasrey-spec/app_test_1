@@ -8,6 +8,7 @@ Comandos minimos ya usados en cambios productivos:
 npm run audit:migrations
 npm run audit:enterprise-docs
 npm run audit:route-role-smoke
+npm run smoke:frontend-routes
 npx tsc -b --pretty false
 npm run build:frontend-check
 git diff --check
@@ -24,6 +25,15 @@ git diff --check
 - `routeModules.ts` precarga las rutas protegidas y rutas publicas principales.
 
 Este smoke no reemplaza pruebas E2E con login real, pero bloquea drift de contrato entre navegacion, routing, autorizacion frontend y lazy loading.
+
+`npm run smoke:frontend-routes` valida la app montada en Chromium headless:
+
+- levanta Vite en un puerto local libre, salvo que `FRONTEND_SMOKE_BASE_URL` apunte a un servidor existente;
+- abre `/login` y valida que rendericen titulo, correo, contraseña, accion principal y recuperacion de acceso;
+- abre `/operaciones/resumen` sin sesion y confirma redireccion segura a `/login`;
+- falla ante errores de pagina capturados por el navegador.
+
+Este smoke no usa credenciales, no inicia sesion real y no toca datos productivos. En CI requiere `npm ci` y `npx playwright install --with-deps chromium`.
 
 `npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
 
@@ -134,8 +144,9 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 
 ## Deuda actual
 
-- El repo no tiene aun `tests/smoke` ni Playwright/Cypress productivo.
-- La cobertura funcional UI aun depende de build + humo SQL/manual, pero rutas/roles/preloads, RPCs base de Inicio y lecturas/escritura transaccional de Operaciones ya tienen smoke automatizado.
+- El repo no tiene aun `tests/smoke` por rol ni fixtures de usuarios controlados.
+- La cobertura UI ya incluye un smoke browser acotado de rutas publicas/protegidas; la cobertura autenticada por rol aun depende de smokes RPC y validaciones manuales.
+- Rutas/roles/preloads, RPCs base de Inicio y lecturas/escritura transaccional de Operaciones ya tienen smoke automatizado.
 
 ## Siguiente implementacion segura
 
