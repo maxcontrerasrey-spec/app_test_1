@@ -54,6 +54,7 @@
 - [x] Cambiar seleccion de modelos a lineas repetibles con boton `+`, filtrando `Tipo` segun la marca seleccionada.
 - [x] Exponer `company_name` en `search_competency_workers(...)` desde BUK para elegir logo `Consorcio Andino`, `Consorcio Nuevo Norte` o `JM`.
 - [x] Ajustar layout final del PDF: tabla de equipos junto al parrafo de habilitacion, sin leyenda grande de vigencia, panel firma/QR al pie, vencimiento calculado desde fecha de habilitacion y etiqueta `Vencimiento de certificado`.
+- [x] Alinear la Edge Function productiva `generate-competency-certificate` con el mismo formato visual y reglas del PDF de prueba para que el documento cargado a BUK no use el layout legacy.
 
 ## Reparación warnings Operaciones, BI y ORION
 
