@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 251. Los certificados operacionales deben emitirse desde backend aunque el flujo nazca en una pantalla modular
+
+- **El frontend no debe inventar folio, vigencia, hash ni nombre documental.** Para competencias de conductores, React solo reúne trabajador, instructor, modelos y evaluación; la RPC/Edge Function crea folio, token, PDF, vencimiento, hash y estado BUK.
+- **Un instructor sin usuario vinculado no puede ser usado por cualquier cuenta instructora.** Los catálogos heredados pueden existir como seed operativo, pero si `user_id` está nulo solo admin/certificaciones debe poder emitir en su nombre hasta completar la vinculación.
+- **La ejecución directa de SQL remoto exige registrar `schema_migrations`.** Si se usa `supabase db query --file` por drift de historial, hay que insertar la versión en `supabase_migrations.schema_migrations` para mantener producción auditable y evitar reaplicaciones futuras.
+- **No pruebes integraciones documentales creando certificados ficticios si eso contamina BUK.** La validación segura es probar catálogos/RPC/grants, despliegue, rechazo sin bearer y dejar la emisión real para un caso operativo controlado.
+
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 
 - **No edites migraciones viejas aplicadas para hacer bajar el contador.** Para Operaciones, BI y ORION, el cierre seguro fue una migración forward-only que recompila helpers/policies vivos y deja `notify pgrst`.

@@ -2,6 +2,37 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Submódulo Certificación de Competencias BUK
+
+- [x] Implementar base backend auditable: rol/módulo, tablas, catálogos, RLS, storage privado, auditoría y RPCs.
+- [x] Reutilizar `employees_active_current` para selección de trabajadores sincronizados desde BUK.
+- [x] Reutilizar el cliente BUK existente para subir el certificado PDF generado a la carpeta documental `Competencias`.
+- [x] Generar PDF backend desde datos validados, con folio, vencimiento, hash, QR verificable y estado separado de carga BUK.
+- [x] Crear UI modular funcional en `/certificados` con búsqueda trabajador, selección equipo/modelos, carga evaluación 100%, emisión y dashboard.
+- [x] Validar migraciones, RLS/RPC, Edge Function, TypeScript, build, auditoría de seguridad y flujo remoto.
+- [x] Documentar resultados, aprendizajes, commit y push a `main`.
+
+### Criterio de cierre
+
+- El módulo debe operar sin Excel ni Power Automate como fuente transaccional.
+- No se debe generar certificado sin evaluación respaldada, archivo privado y nota final 100%.
+- El backend debe generar folio, token, nombre de documento, vencimiento y estados; el frontend no debe inventarlos.
+- La carga BUK debe ser idempotente y no debe duplicar folio ni documento ante reintentos.
+- El certificado generado debe quedar privado, hasheado, trazable, auditable y descargable solo por usuarios autorizados.
+- Los roles `admin`, `certificaciones` e `instructor` deben tener acceso según alcance, sin crear roles duplicados.
+
+### Resultado aplicado
+
+- Se aplicó en Supabase remoto [`20260716035000_add_competency_certification_module.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716035000_add_competency_certification_module.sql:1) y se registró la versión `20260716035000` en `supabase_migrations.schema_migrations`.
+- Backend: quedaron tablas `competency_*`, bucket privado `competency_documents`, folios con secuencia, token de verificación, auditoría, RLS y RPCs `get_competency_catalogs`, `search_competency_workers`, `create_competency_request` y `get_competency_dashboard`.
+- Catálogos remotos: 8 marcas, 4 tipos, 19 modelos de equipos y 5 instructores activos desde los CSV existentes.
+- Permisos remotos: `certificados` y `seguimiento_certificados` quedan visibles para `admin`, `certificaciones` e `instructor`; RPCs ejecutan solo para `authenticated`, con `anon` y `public` revocados.
+- Generación PDF: se desplegó la Edge Function `generate-competency-certificate`, que valida usuario, evaluación aprobada al 100%, archivo privado, genera PDF con folio/hash/QR/vencimiento y reutiliza el cliente BUK para cargar en carpeta `Competencias`.
+- UI: [`CompetencyCertificationPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/pages/CompetencyCertificationPage.tsx:1) quedó disponible en `/certificados`, con búsqueda BUK, selección de instructor/modelos, carga de evaluación, generación y dashboard/descarga con URL firmada.
+- Validación local: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260716035000_add_competency_certification_module.sql`, `npm run audit:supabase-security` y `git diff --check`.
+- Validación remota: migración aplicada, versión registrada, función desplegada en `pzblmbahnoyntrhistea`, smoke RPC con admin simulado devolvió 19 modelos, 5 instructores, 3 trabajadores BUK y dashboard inicial en 0; la función remota devuelve `401` sin bearer.
+- Límite deliberado de validación: no se generó un certificado real de prueba para no subir documentos ficticios a BUK ni dejar trazabilidad operacional falsa.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

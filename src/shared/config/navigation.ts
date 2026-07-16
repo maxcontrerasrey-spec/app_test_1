@@ -82,6 +82,13 @@ export const navigationModules: NavigationModule[] = [
         label: "Acreditación de Personas",
         description: "Matriz documental, vigencias y estado operacional por trabajador.",
         iconKey: "badge-check"
+      },
+      {
+        moduleCode: "certificados",
+        to: "/certificados",
+        label: "Certificación de Competencias",
+        description: "Emisión y seguimiento de competencias de conductores con carga a BUK.",
+        iconKey: "badge-check"
       }
     ]
   },

@@ -21,7 +21,12 @@ function normalizeDocumentsTemplate(template: string) {
     .replace(/\/documents(?=\/?$|\?)/g, "/docs");
 }
 
-function resolveBukDocumentsPath() {
+function resolveBukDocumentsPath(explicitPath?: string | null) {
+  const normalizedExplicitPath = explicitPath?.trim();
+  if (normalizedExplicitPath) {
+    return normalizedExplicitPath;
+  }
+
   const configuredPath = Deno.env.get("BUK_EMPLOYEE_DOCUMENTS_PATH");
   if (configuredPath == null) {
     return DEFAULT_BUK_DOCUMENTS_PATH;
@@ -144,9 +149,14 @@ function appendBukDocumentsQuery(url: string, params: Record<string, string>) {
   return parsedUrl.toString();
 }
 
-export async function uploadBukDocument(employeeId: string, documentName: string, fileBlob: Blob) {
+export async function uploadBukDocument(
+  employeeId: string,
+  documentName: string,
+  fileBlob: Blob,
+  options: { path?: string | null } = {}
+) {
   const authToken = requireEnv(Deno.env.get("BUK_AUTH_TOKEN"), "BUK_AUTH_TOKEN");
-  const targetPath = resolveBukDocumentsPath();
+  const targetPath = resolveBukDocumentsPath(options.path);
   const url = appendBukDocumentsQuery(buildBukDocumentsUrl(employeeId), {
     ...(targetPath ? { path: targetPath } : {})
   });

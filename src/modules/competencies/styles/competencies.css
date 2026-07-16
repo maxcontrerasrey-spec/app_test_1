@@ -1,0 +1,307 @@
+.competency-header {
+  max-width: 920px;
+}
+
+.competency-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.competency-metric {
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: var(--surface-card, #ffffff);
+  min-height: 82px;
+}
+
+.competency-metric span {
+  display: block;
+  color: var(--text-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.competency-metric strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-primary, #0f172a);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.competency-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 0.95fr) minmax(520px, 1.05fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.competency-form-panel,
+.competency-dashboard-panel {
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+  border-radius: 8px;
+  background: var(--surface-card, #ffffff);
+  padding: 18px;
+}
+
+.competency-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.competency-section-heading h2 {
+  margin: 0;
+  color: var(--text-primary, #0f172a);
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.competency-section-heading span {
+  color: var(--text-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.competency-fieldset {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.competency-grid-two,
+.competency-grid-three,
+.competency-worker-search {
+  display: grid;
+  gap: 12px;
+}
+
+.competency-grid-two,
+.competency-worker-search {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.competency-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.competency-search-button {
+  align-self: end;
+  min-height: 44px;
+}
+
+.competency-worker-results {
+  display: grid;
+  gap: 8px;
+  max-height: 236px;
+  overflow: auto;
+}
+
+.competency-worker-row {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-primary, #0f172a);
+  text-align: left;
+}
+
+.competency-worker-row.is-selected,
+.competency-worker-row:hover {
+  border-color: rgba(14, 116, 144, 0.55);
+  background: rgba(14, 116, 144, 0.07);
+}
+
+.competency-worker-row span,
+.competency-selected-worker span,
+.competency-file-field span,
+.competency-selection-summary {
+  color: var(--text-muted, #64748b);
+  font-size: 0.86rem;
+}
+
+.competency-selected-worker,
+.competency-last-result {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(14, 116, 144, 0.24);
+  border-radius: 8px;
+  background: rgba(14, 116, 144, 0.08);
+  padding: 12px;
+}
+
+.competency-model-box {
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.competency-model-box-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: var(--text-primary, #0f172a);
+}
+
+.competency-model-box-header span {
+  color: var(--text-muted, #64748b);
+  font-size: 0.86rem;
+}
+
+.competency-model-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.competency-model-option,
+.competency-declaration {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  color: var(--text-primary, #0f172a);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.competency-file-field,
+.competency-notes-field {
+  display: grid;
+  gap: 7px;
+}
+
+.competency-file-field input,
+.competency-notes-field textarea {
+  width: 100%;
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.14));
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-primary, #0f172a);
+  font: inherit;
+  padding: 10px 12px;
+}
+
+.competency-selection-summary {
+  margin: 0;
+}
+
+.competency-submit-button {
+  min-height: 46px;
+}
+
+.competency-alert {
+  border: 1px solid rgba(185, 28, 28, 0.22);
+  border-radius: 8px;
+  background: rgba(254, 242, 242, 0.95);
+  color: #991b1b;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.competency-alert-info {
+  border-color: rgba(14, 116, 144, 0.22);
+  background: rgba(236, 254, 255, 0.9);
+  color: #155e75;
+}
+
+.competency-table-wrapper {
+  overflow: auto;
+}
+
+.competency-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.competency-table th,
+.competency-table td {
+  border-bottom: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.1));
+  padding: 10px 8px;
+  color: var(--text-primary, #0f172a);
+  font-size: 0.88rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.competency-table th {
+  color: var(--text-muted, #64748b);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.competency-table td strong,
+.competency-table td span {
+  display: block;
+}
+
+.competency-table td span {
+  color: var(--text-muted, #64748b);
+  margin-top: 3px;
+}
+
+.competency-status-pill {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.competency-status-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.competency-status-failed {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.competency-link-button,
+.competency-last-result button {
+  border: 0;
+  background: transparent;
+  color: #0e7490;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  text-align: left;
+}
+
+@media (max-width: 1180px) {
+  .competency-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .competency-summary-grid,
+  .competency-grid-two,
+  .competency-grid-three,
+  .competency-worker-search,
+  .competency-model-list {
+    grid-template-columns: 1fr;
+  }
+}

@@ -28,6 +28,10 @@ const AccreditationPage = lazyWithRetry(
   "accreditation-page",
   routeModuleImporters.accreditationPage
 );
+const CompetencyCertificationPage = lazyWithRetry(
+  "competency-certification-page",
+  routeModuleImporters.competencyCertificationPage
+);
 const AIAssistantHome = lazyWithRetry("ai-assistant-page", routeModuleImporters.aiAssistantHome);
 const OnboardingModuleLayout = lazyWithRetry(
   "onboarding-module-layout",
@@ -207,6 +211,22 @@ export function AppRouter() {
               element={
                 <RoleProtectedRoute moduleCode="acreditacion_personas">
                   <LegacyAccreditationRedirect />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/certificados"
+              element={
+                <RoleProtectedRoute moduleCode="certificados">
+                  <CompetencyCertificationPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/seguimiento-certificados"
+              element={
+                <RoleProtectedRoute moduleCode="seguimiento_certificados">
+                  <Navigate to="/certificados" replace />
                 </RoleProtectedRoute>
               }
             />

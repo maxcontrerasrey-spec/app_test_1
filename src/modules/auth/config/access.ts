@@ -43,6 +43,8 @@ export type AppModuleCode =
   | "recursos_humanos"
   | "jornadas_turnos"
   | "acreditacion_personas"
+  | "certificados"
+  | "seguimiento_certificados"
   | "alta_operacional_personal"
   | "ai_assistant"
   | "bi_analytics";
@@ -97,6 +99,8 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "recursos_humanos",
   "jornadas_turnos",
   "acreditacion_personas",
+  "certificados",
+  "seguimiento_certificados",
   "alta_operacional_personal",
   "ai_assistant",
   "bi_analytics"
