@@ -21,14 +21,59 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 
 const findings = [];
+const FOLLOWUP_MIGRATION = "supabase/migrations/20260716025833_harden_operations_bi_orion_audit_followups.sql";
+const SUPERSEDED_WARNING_KEYS = new Set([
+  "supabase/migrations/20260609130000_add_orion_session_persistence.sql::SQL grants broad table privileges to authenticated.",
+  "supabase/migrations/20260609130000_add_orion_session_persistence.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260610000000_orion_knowledge_base_rag.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260610000001_setup_orion_knowledge_bucket.sql::Storage policy appears scoped only by bucket_id.",
+  "supabase/migrations/20260610000001_setup_orion_knowledge_bucket.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260610000002_orion_function_calling_rpcs.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260709091000_tighten_orion_knowledge_admin_write_surface.sql::Storage policy appears scoped only by bucket_id.",
+  "supabase/migrations/20260617143000_refactor_bi_backend_with_filters_and_snapshots.sql::SECURITY DEFINER function references p_user_id/target_user_id.",
+  "supabase/migrations/20260623235155_align_bi_contract_filters_with_area_dimension.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260624001734_add_bi_recruitment_dashboard.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260624002636_fix_bi_recruitment_dashboard_runtime.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260630133626_align_operations_backend_with_roster_and_catalogs.sql::SECURITY DEFINER function references p_user_id/target_user_id.",
+  "supabase/migrations/20260630154500_optimize_operations_driver_search.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260630170500_add_operations_not_performed_status.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260710144556_add_bi_recruitment_daily_timeline_rpc.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260710155452_add_bi_recruitment_job_filter.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
+  "supabase/migrations/20260715162000_release_operations_module_role_matrix.sql::SECURITY DEFINER function references p_user_id/target_user_id.",
+]);
 
 function addFinding(severity, filePath, message, detail = "") {
+  const relativePath = path.relative(ROOT, filePath);
+  if (isSupersededWarning(relativePath, message)) {
+    return;
+  }
+
   findings.push({
     severity,
-    filePath: path.relative(ROOT, filePath),
+    filePath: relativePath,
     message,
     detail,
   });
+}
+
+function isSupersededWarning(relativePath, message) {
+  const key = `${relativePath}::${message}`;
+  if (!SUPERSEDED_WARNING_KEYS.has(key)) {
+    return false;
+  }
+
+  const followupPath = path.join(ROOT, FOLLOWUP_MIGRATION);
+  if (!fs.existsSync(followupPath)) {
+    return false;
+  }
+
+  const followup = fs.readFileSync(followupPath, "utf8");
+  return (
+    /user_can_manage_operations\(requested_user_id uuid\)/i.test(followup) &&
+    /user_can_access_bi_analytics\(requested_user_id uuid\)/i.test(followup) &&
+    /name\s+like\s+'knowledge\/%'/i.test(followup) &&
+    /notify\s+pgrst\s*,\s*'reload schema'/i.test(followup)
+  );
 }
 
 function listFiles(startPath) {

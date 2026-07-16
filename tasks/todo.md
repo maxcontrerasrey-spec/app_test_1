@@ -2,6 +2,82 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Reparación warnings Operaciones, BI y ORION
+
+- [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.
+- [x] Recompilar helpers vivos de Operaciones y BI con guard de actor explícito y sin parámetros genéricos `p_user_id` / `target_user_id`.
+- [x] Endurecer ORION Storage con namespace `knowledge/` para nuevas cargas y compatibilidad controlada con archivos raíz existentes.
+- [x] Ajustar el auditor para descontar solo warnings históricos exactos cuando exista la migración de cierre aplicada.
+- [x] Aplicar la migración de cierre en Supabase remoto y validar local/remoto.
+
+### Resultado aplicado
+
+- Se aplicó en Supabase remoto [`20260716025833_harden_operations_bi_orion_audit_followups.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716025833_harden_operations_bi_orion_audit_followups.sql:1).
+- Operaciones: `user_can_manage_operations(...)` y `user_can_edit_operations_contract(...)` quedaron recreadas con parámetro `requested_user_id`, validación `auth.uid()` vs actor solicitado y bypass solo admin.
+- BI: `user_can_access_bi_analytics(...)` quedó recreada con parámetro `requested_user_id`, guard de actor y permisos por features BI vigentes.
+- ORION: las policies del bucket `orion_knowledge` quedaron recreadas con `name like 'knowledge/%'` para nuevas cargas y compatibilidad con objetos raíz existentes; el frontend ahora sube nuevos documentos bajo `knowledge/`.
+- ORION: los grants de `orion_sessions` y `orion_messages` quedaron reemitidos de forma granular, manteniendo RLS de dueño y sin grants a `public`/`anon`.
+- El auditor ahora baja de 100 a 82 warnings. Los 18 descontados son solo advertencias históricas exactas de Operaciones, BI y ORION con cierre verificado por la migración de seguimiento; el resto de deuda histórica sigue visible.
+- Validación local: `npm run audit:supabase-security`, `npm run audit:migrations -- --files supabase/migrations/20260716023011_add_operations_editable_contract_matrix.sql supabase/migrations/20260716025833_harden_operations_bi_orion_audit_followups.sql`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+- Validación remota: la migración de cierre aplicó correctamente; `operations_contract_editors` conserva 2 filas activas para `CONT-028`; ORION conserva 3 policies de Storage activas. Algunas consultas detalladas a `pg_policies`/catálogo se cortaron por latencia del cliente, no por error SQL.
+
+## Operaciones: matriz de contratos editables por cuenta
+
+- [x] Crear una matriz backend auditable de contratos editables para carga de servicios.
+- [x] Sembrar `CODELCO DMH` como editable solo para Jose Orellana Paez (`operaciones_l_1`) y `supervisor.dmh@busesjm.com` (`operaciones_l_2`).
+- [x] Mantener Resumen y Exportador con visibilidad amplia de contratos, separada de edición/carga.
+- [x] Hacer que `Registro de servicios base` muestre solo contratos editables por la cuenta autenticada.
+- [x] Reforzar `submit_service_entries_batch(...)` para validar contrato editable en backend antes de insertar/actualizar.
+- [x] Validar remoto con usuarios simulados y documentar resultado.
+
+### Criterio de cierre
+
+- Un usuario con vista de Operaciones puede seguir consultando Resumen/Exportador sin recibir permiso de carga.
+- Solo L1/L2 con fila activa en la matriz editable pueden cargar servicios del contrato asignado.
+- Para `CODELCO DMH`, los únicos editores iniciales deben ser `jose.orellana@busesjm.com` y `supervisor.dmh@busesjm.com`.
+- La validación de contrato editable debe vivir en backend, no solo en React.
+
+### Resultado aplicado
+
+- Se creó y aplicó en Supabase remoto [`20260716023011_add_operations_editable_contract_matrix.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260716023011_add_operations_editable_contract_matrix.sql:1).
+- La tabla `operations_contract_editors` queda como matriz auditable por usuario/contrato, con RLS activo, lectura propia para usuarios autenticados y mutación directa revocada desde cliente.
+- La vista `operations_editable_contracts` expone solo los contratos editables de la cuenta autenticada. Para Jose Orellana y `supervisor.dmh@busesjm.com` devuelve `CONT-028 / CODELCO DMH`.
+- `user_can_edit_operations_contract(...)` valida actor (`auth.uid() = target_user_id` o admin), rol operativo L1/L2, permiso operativo vigente y fila activa de matriz antes de autorizar edición.
+- `submit_service_entries_batch(...)` ahora rechaza contratos no editables con el mensaje backend `No tienes permiso para editar servicios de este contrato.`
+- [`OperacionesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/pages/OperacionesDashboard.tsx:1) separa contratos visibles (`user_contracts`) de contratos editables (`operations_editable_contracts`): Resumen/Exportador mantienen vista amplia, Registro Base muestra solo editables.
+- Validación remota: Jose Orellana y `supervisor.dmh@busesjm.com` guardan `CODELCO DMH` en transacción con `ROLLBACK` (`ok=true`, `saved_count=1`); `andres.barraza@busesjm.com` como L1 no asignado recibe `ok=false` por contrato no editable.
+- Las pruebas remotas no dejaron datos persistidos: `service_entries` permaneció en `0`.
+- Validación local: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260716023011_add_operations_editable_contract_matrix.sql`, `npm run audit:supabase-security` y `git diff --check`.
+- Nota de seguridad: `audit:supabase-security` queda en 100 warnings. El nuevo warning es el patrón `SECURITY DEFINER` con `target_user_id`; el cuerpo fue revisado y ata la consulta al actor antes de leer permisos/matriz.
+
+## Auditoría funcional Operaciones: registro base, resumen y exportación
+
+- [x] Auditar el contrato vivo de `Registro de servicios base`, `Resumen` y `Exportador` contra frontend, RPC, RLS y datos base.
+- [x] Corregir el bloqueo operativo reportado por DMH cuando el envío queda en `Enviando...` sin resultado visible.
+- [x] Reforzar el payload de guardado para que backend resuelva conductor por identidad BUK exacta y no solo por nombre/documento.
+- [x] Blindar búsqueda/exportación para que los errores de consulta o generación Excel vuelvan a la pantalla como mensajes operativos.
+- [x] Validar con pruebas remotas en rollback, auditoría de migraciones aplicable, verificación sintáctica acotada y revisión de diff.
+
+### Criterio de cierre
+
+- El botón de envío nunca debe quedar indefinidamente en estado de carga por una excepción no controlada.
+- El guardado debe conservar la autorización backend existente y no relajar RLS, policies ni grants.
+- Resumen y Exportador deben seguir leyendo `service_entries` y reflejar estado `planned` / `not_performed`.
+- La exportación debe quedar como acción controlada, con finalización y error visible si falla el generador Excel.
+
+### Resultado aplicado
+
+- La auditoría remota confirmó que `CODELCO DMH` tiene 33 servicios base activos y `CODELCO DRT` tiene 59; `equipment` tiene 702 equipos activos.
+- `public.service_entries` estaba en 0 registros totales antes de la corrección, consistente con el reporte de DMH de que no se persistían servicios.
+- La RPC `submit_service_entries_batch(...)` sí está operativa para la cuenta `supervisor.dmh@busesjm.com`: se validó en transacción con `ROLLBACK` para `not_performed` y para un servicio `planned` usando conductor DMH y equipo activo; ambas devolvieron `{ ok: true, saved_count: 1 }`.
+- La causa funcional corregida en frontend era falta de contención de excepciones: [`OperacionesDashboard.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/pages/OperacionesDashboard.tsx:1) ya no puede dejar `submitState.loading=true` indefinidamente si falla el guardado fuera del retorno controlado de la API.
+- El payload de guardado ahora incluye `driverBukEmployeeId`, validado en [`service-entry.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/lib/service-entry.ts:1), para que backend resuelva primero por identidad BUK exacta.
+- [`OperationsBaseRegister.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/operaciones/components/OperationsBaseRegister.tsx:1) muestra un estado explícito si no hay contratos operativos asignados después de cargar, evitando que un fallback visual oculte problemas de autorización.
+- La exportación XLS queda envuelta en carga/error/finalización; si el generador Excel falla, el usuario vuelve a ver un error en pantalla y el botón no queda bloqueado.
+- No se aplicó migración nueva: el intento de asignación directa se descartó al confirmar que `user_contracts` es una vista por `auth.uid()` y no una tabla editable.
+- Validación completada: prueba sintáctica TypeScript acotada de archivos editados, `npm run audit:migrations -- --files supabase/migrations/20260630170500_add_operations_not_performed_status.sql supabase/migrations/20260715162000_release_operations_module_role_matrix.sql`, `git diff --check`, pruebas remotas con `ROLLBACK` y verificación de que `service_entries` siguió en 0 tras la auditoría.
+- Límite de validación local: `tsc -b --pretty false` y `vite build` quedaron dormidos a 0% CPU en este entorno; se cortaron para no dejar procesos colgados.
+
 ## Operaciones: operador compartido y resumen expandible
 
 - [x] Confirmar en datos vivos la identidad operativa de David Alvarez Alvarez y Sergio Alvarado Lopez para el correo compartido `supervisor.dmh@busesjm.com`.

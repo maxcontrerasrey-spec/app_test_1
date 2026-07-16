@@ -38,18 +38,33 @@ export const orionKnowledgeService = {
       return [];
     }
 
-    const { data, error } = await supabase.storage.from("orion_knowledge").list("", {
+    const { data: rootData, error: rootError } = await supabase.storage.from("orion_knowledge").list("", {
       sortBy: { column: "created_at", order: "desc" }
     });
 
-    if (error) {
-      logger.error("ORION listDocuments", error);
+    if (rootError) {
+      logger.error("ORION listDocuments root", rootError);
       return [];
     }
 
-    return (data ?? [])
+    const { data: knowledgeData, error: knowledgeError } = await supabase.storage.from("orion_knowledge").list("knowledge", {
+      sortBy: { column: "created_at", order: "desc" }
+    });
+
+    if (knowledgeError) {
+      logger.error("ORION listDocuments knowledge", knowledgeError);
+    }
+
+    const rootFiles = (rootData ?? [])
       .filter((file) => file.name !== ".emptyFolderPlaceholder")
+      .filter((file) => file.name !== "knowledge" && !file.name.includes("/"))
       .map((file) => buildDocumentView(file.name, file.metadata?.size));
+
+    const knowledgeFiles = (knowledgeData ?? [])
+      .filter((file) => file.name !== ".emptyFolderPlaceholder")
+      .map((file) => buildDocumentView(`knowledge/${file.name}`, file.metadata?.size));
+
+    return [...knowledgeFiles, ...rootFiles];
   },
 
   async uploadDocument(file: File) {
@@ -57,7 +72,7 @@ export const orionKnowledgeService = {
       throw new Error("Supabase no está configurado.");
     }
 
-    const storagePath = `${Date.now()}_${file.name}`;
+    const storagePath = `knowledge/${Date.now()}_${file.name}`;
     const { data, error } = await supabase.storage
       .from("orion_knowledge")
       .upload(storagePath, file);

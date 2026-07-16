@@ -15,6 +15,7 @@ interface OperationsBaseRegisterProps {
   selectedContract: string;
   setSelectedContract: (value: string) => void;
   contractOptions: string[];
+  contractsLoading: boolean;
   eligibleServices: ServiceDataRecord[];
   categoriesCount: number;
   submitState: {
@@ -83,6 +84,7 @@ export function OperationsBaseRegister({
   selectedContract,
   setSelectedContract,
   contractOptions,
+  contractsLoading,
   eligibleServices,
   categoriesCount,
   submitState,
@@ -241,7 +243,17 @@ export function OperationsBaseRegister({
       </section>
 
       <section className="operation-workspace">
-        {eligibleServices.length === 0 ? (
+        {contractsLoading ? (
+          <article className="service-module service-module--empty">
+            <p className="helper-copy">Cargando contratos operativos...</p>
+          </article>
+        ) : contractOptions.length === 0 ? (
+          <article className="service-module service-module--empty">
+            <p className="helper-copy">
+              No tienes contratos asignados para registrar servicios. Solicita la asignación operativa antes de enviar planificación.
+            </p>
+          </article>
+        ) : eligibleServices.length === 0 ? (
           <article className="service-module service-module--empty">
             <p className="helper-copy">Selecciona contrato, fecha y turno para habilitar servicios operacionales.</p>
           </article>

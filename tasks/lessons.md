@@ -4,6 +4,25 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
+
+- **No edites migraciones viejas aplicadas para hacer bajar el contador.** Para Operaciones, BI y ORION, el cierre seguro fue una migración forward-only que recompila helpers/policies vivos y deja `notify pgrst`.
+- **El auditor debe descontar casos exactos, no patrones amplios.** Si un warning histórico queda supersedido, el script debe exigir archivo, mensaje y evidencia concreta en la migración de cierre; cualquier warning nuevo debe seguir apareciendo.
+- **Renombrar parámetros de funciones en Postgres exige drop/recreate controlado.** `CREATE OR REPLACE FUNCTION` no permite cambiar nombres de argumentos; hay que bajar y recrear dependencias conocidas dentro de una transacción, sin usar `CASCADE` a ciegas.
+- **Las policies de Storage deben declarar alcance de ruta cuando el bucket comparte namespace.** ORION mantiene compatibilidad con archivos raíz existentes, pero las nuevas cargas van a `knowledge/` para que la policy no dependa solo de `bucket_id`.
+
+## 249. Visibilidad de contrato y edición operativa deben ser matrices separadas
+
+- **Una vista amplia sirve para resumen/exportación, pero no para autorizar carga.** En Operaciones, `user_contracts` puede exponer contratos visibles por acceso al módulo; la carga de servicios necesita una matriz editable por cuenta y contrato.
+- **El filtro de edición debe existir en frontend y backend.** La UI debe mostrar solo contratos editables en Registro Base, pero `submit_service_entries_batch(...)` también debe rechazar cualquier contrato no autorizado para bloquear clientes alternativos.
+- **Los L1/L2 no son equivalentes a editar todos los contratos.** El rol habilita capacidad operativa general; la fila activa en `operations_contract_editors` decide el alcance contractual concreto.
+
+## 248. Un flujo operativo no puede depender de que todas las fallas vuelvan como `{ ok: false }`
+
+- **Si un botón queda en `Enviando...`, revisa primero los caminos sin `finally`.** En Operaciones, la RPC podía responder correctamente, pero una excepción fuera del retorno controlado dejaba `submitState.loading=true` sin recuperación visual.
+- **El identificador canónico debe viajar junto al dato humano mostrado.** Para conductores BUK, enviar solo nombre/documento obliga al backend a resolver por heurística; si la UI ya seleccionó un trabajador, también debe enviar `driverBukEmployeeId` para cerrar la identidad exacta.
+- **Las vistas dependientes de `auth.uid()` no se auditan con service role como si fueran tablas.** `user_contracts` puede devolver 0 con una consulta administrativa sin JWT y aun así funcionar para el usuario real; simula `request.jwt.claim.sub` o prueba con sesión antes de concluir que falta asignación.
+
 ## 247. Las cuentas compartidas necesitan identidad operativa auditada, no solo un usuario Auth común
 
 - **Si dos personas operan con el mismo correo, el login no identifica al operador real.** Para turno/contraturno, la cuenta Auth compartida debe abrir una instancia de selección obligatoria antes de entrar a la app.

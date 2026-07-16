@@ -103,6 +103,11 @@ export interface UserContractQueryRow {
   }> | null;
 }
 
+export interface OperationsEditableContractRow {
+  code: string | null;
+  contract_name: string | null;
+}
+
 export interface DashboardEntryRow {
   contract_code: string | null;
   service_date: string;
@@ -161,6 +166,7 @@ export interface PendingServiceSubmission {
     serviceExternalKey: number;
     serviceExecutionStatus: "planned" | "not_performed";
     serviceExecutionNote: string;
+    driverBukEmployeeId: string;
     driverName: string;
     driverDocument: string;
     driverArea: string;

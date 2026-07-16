@@ -5,6 +5,7 @@ export interface ServiceEntryPayload {
   serviceExternalKey?: number;
   serviceExecutionStatus?: "planned" | "not_performed" | string;
   serviceExecutionNote?: string;
+  driverBukEmployeeId?: string;
   driverName?: string;
   driverDocument?: string;
   driverArea?: string;
@@ -18,6 +19,7 @@ export interface CleanedServiceEntryPayload {
   serviceExternalKey: number;
   serviceExecutionStatus: "planned" | "not_performed";
   serviceExecutionNote: string;
+  driverBukEmployeeId: string;
   driverName: string;
   driverDocument: string;
   driverArea: string;
@@ -33,6 +35,7 @@ export interface ServiceEntryValidationResult {
 const SHIFT_OPTIONS = new Set(["am", "pm"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DRIVER_PATTERN = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.'\- ]{2,140}$/;
+const BUK_EMPLOYEE_ID_PATTERN = /^[A-Za-z0-9._\-]{1,40}$/;
 const EQUIPMENT_PATTERN = /^[A-Za-z0-9._\-\/ ]{2,50}$/;
 const EXECUTION_STATUS_OPTIONS = new Set(["planned", "not_performed"]);
 const DEFAULT_NOT_PERFORMED_NOTE = "Servicio no realizado";
@@ -72,6 +75,7 @@ export function validateServiceEntryPayload(payload: unknown): ServiceEntryValid
         ? "planned"
         : (normalizedExecutionStatus as CleanedServiceEntryPayload["serviceExecutionStatus"]),
     serviceExecutionNote: sanitizeText(record.serviceExecutionNote),
+    driverBukEmployeeId: sanitizeText(record.driverBukEmployeeId),
     driverName: sanitizeText(record.driverName),
     driverDocument: sanitizeText(record.driverDocument),
     driverArea: sanitizeText(record.driverArea),
@@ -102,12 +106,19 @@ export function validateServiceEntryPayload(payload: unknown): ServiceEntryValid
 
   if (cleaned.serviceExecutionStatus === "not_performed") {
     cleaned.serviceExecutionNote = cleaned.serviceExecutionNote || DEFAULT_NOT_PERFORMED_NOTE;
+    cleaned.driverBukEmployeeId = "";
     cleaned.driverName = "";
     cleaned.driverDocument = "";
     cleaned.driverArea = "";
     cleaned.equipmentCode = "";
-  } else if (!cleaned.driverName || !DRIVER_PATTERN.test(cleaned.driverName)) {
-    errors.driverName = "Selecciona un conductor válido.";
+  } else {
+    if (cleaned.driverBukEmployeeId && !BUK_EMPLOYEE_ID_PATTERN.test(cleaned.driverBukEmployeeId)) {
+      errors.driverBukEmployeeId = "Selecciona un conductor BUK válido.";
+    }
+
+    if (!cleaned.driverName || !DRIVER_PATTERN.test(cleaned.driverName)) {
+      errors.driverName = "Selecciona un conductor válido.";
+    }
   }
 
   if (cleaned.driverDocument.length > 50) {

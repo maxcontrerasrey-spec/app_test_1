@@ -25,6 +25,7 @@ import type {
   Equipment,
   EquipmentDirectoryRow,
   ExportEntryRow,
+  OperationsEditableContractRow,
   OperationsServiceRecord,
   PendingServiceSubmission,
   ServiceDraft,
@@ -107,7 +108,9 @@ export function OperacionesDashboard() {
   const [serviceDrafts, setServiceDrafts] = useState<Record<number, ServiceDraft>>({});
   const [expandedServiceId, setExpandedServiceId] = useState<number | null>(null);
 
-  const [userContracts, setUserContracts] = useState<string[]>([]);
+  const [visibleContracts, setVisibleContracts] = useState<string[]>([]);
+  const [editableContracts, setEditableContracts] = useState<string[]>([]);
+  const [sessionDataLoading, setSessionDataLoading] = useState(false);
 
   const [driverDirectory, setDriverDirectory] = useState<Record<string, Driver>>({});
   const [equipmentData, setEquipmentData] = useState<Equipment[]>([]);
@@ -127,7 +130,8 @@ export function OperacionesDashboard() {
   const availableContracts = useMemo(() => {
     return sortOperationsContracts(servicesData.map((item) => item.contract));
   }, [servicesData]);
-  const contractOptions = userContracts.length > 0 ? sortOperationsContracts(userContracts) : availableContracts;
+  const editableContractOptions = useMemo(() => sortOperationsContracts(editableContracts), [editableContracts]);
+  const contractOptions = visibleContracts.length > 0 ? sortOperationsContracts(visibleContracts) : availableContracts;
 
   const eligibleServices = useMemo(() => {
     if (!selectedContract || !selectedShift || !selectedDate) return [];
@@ -212,8 +216,9 @@ export function OperacionesDashboard() {
 
     async function loadSessionData() {
       if (!client || !session) return;
+      setSessionDataLoading(true);
       try {
-        const [servicesResponse, contractsResponse, contractsCatalogResponse, equipmentResponse] = await Promise.all([
+        const [servicesResponse, visibleContractsResponse, editableContractsResponse, contractsCatalogResponse, equipmentResponse] = await Promise.all([
           client
             .from("base_services")
             .select(
@@ -239,6 +244,9 @@ export function OperacionesDashboard() {
             )
             .eq("user_id", session.user.id),
           client
+            .from("operations_editable_contracts")
+            .select("code, contract_name"),
+          client
             .from("contracts")
             .select("id, code, contract_name")
             .eq("is_active", true),
@@ -252,7 +260,8 @@ export function OperacionesDashboard() {
         if (!active) return;
 
         const { data: rows, error: servicesError } = servicesResponse;
-        const { data: contractRows } = contractsResponse;
+        const { data: visibleContractRows } = visibleContractsResponse;
+        const { data: editableContractRows, error: editableContractsError } = editableContractsResponse;
         const { data: contractsCatalogRows } = contractsCatalogResponse;
         const { data: equipmentRows, error: equipmentError } = equipmentResponse;
 
@@ -293,13 +302,23 @@ export function OperacionesDashboard() {
           setServicesData(normalizedRemoteData);
         }
 
-        setUserContracts(
+        setVisibleContracts(
           sortOperationsContracts(
-            ((contractRows ?? []) as UserContractQueryRow[])
+            ((visibleContractRows ?? []) as UserContractQueryRow[])
               .flatMap((row) => row.contracts ?? [])
               .map((contract) => contract.contract_name || contract.code || "")
               .filter(Boolean)
           ),
+        );
+
+        setEditableContracts(
+          editableContractsError
+            ? []
+            : sortOperationsContracts(
+                ((editableContractRows ?? []) as OperationsEditableContractRow[])
+                  .map((contract) => contract.contract_name || contract.code || "")
+                  .filter(Boolean)
+              )
         );
 
         if (!equipmentError && (equipmentRows ?? []).length > 0) {
@@ -309,6 +328,10 @@ export function OperacionesDashboard() {
         if (active) {
           setDriverDirectory({});
           setEquipmentData([]);
+        }
+      } finally {
+        if (active) {
+          setSessionDataLoading(false);
         }
       }
     }
@@ -445,6 +468,7 @@ export function OperacionesDashboard() {
         serviceExternalKey: service.id,
         serviceExecutionStatus: draft.serviceExecutionStatus,
         serviceExecutionNote: draft.serviceExecutionNote,
+        driverBukEmployeeId: selectedDriver?.id ?? "",
         driverName: selectedDriver?.fullName ?? "",
         driverDocument: selectedDriver?.documentNumber ?? "",
         driverArea: selectedDriver?.areaName || selectedDriver?.areaCode || "",
@@ -501,31 +525,43 @@ export function OperacionesDashboard() {
       fieldErrorsByService: {},
     });
 
-    const response = await submitServiceEntriesBatch(entriesToSubmit, user?.id || "");
-    const apiFieldErrorsByService = response.fieldErrorsByService || {};
+    try {
+      const response = await submitServiceEntriesBatch(entriesToSubmit, user?.id || "");
+      const apiFieldErrorsByService = response.fieldErrorsByService || {};
 
-    if (!response.ok || Object.keys(apiFieldErrorsByService).length > 0) {
-      const [firstErrorServiceId] = Object.keys(apiFieldErrorsByService);
-      if (firstErrorServiceId) {
-        setExpandedServiceId(Number(firstErrorServiceId));
+      if (!response.ok || Object.keys(apiFieldErrorsByService).length > 0) {
+        const [firstErrorServiceId] = Object.keys(apiFieldErrorsByService);
+        if (firstErrorServiceId) {
+          setExpandedServiceId(Number(firstErrorServiceId));
+        }
+        setSubmitState({
+          loading: false,
+          error: response.error || "No fue posible guardar uno o más servicios.",
+          success: "",
+          fieldErrors: {},
+          fieldErrorsByService: apiFieldErrorsByService,
+        });
+        return;
       }
+
       setSubmitState({
         loading: false,
-        error: response.error || "No fue posible guardar uno o más servicios.",
+        error: "",
+        success: `${entriesToSubmit.length} servicio(s) guardados correctamente.`,
+        fieldErrors: {},
+        fieldErrorsByService: {},
+      });
+    } catch (error) {
+      setSubmitState({
+        loading: false,
+        error: error instanceof Error && error.message.trim()
+          ? error.message
+          : "No fue posible guardar la planificación. Intenta nuevamente.",
         success: "",
         fieldErrors: {},
-        fieldErrorsByService: apiFieldErrorsByService,
+        fieldErrorsByService: {},
       });
-      return;
     }
-
-    setSubmitState({
-      loading: false,
-      error: "",
-      success: `${entriesToSubmit.length} servicio(s) guardados correctamente.`,
-      fieldErrors: {},
-      fieldErrorsByService: {},
-    });
   }
 
 
@@ -581,59 +617,68 @@ export function OperacionesDashboard() {
   async function handleExportExcel() {
     if (exportRows.length === 0) return;
 
-    const { utils, writeFile } = await import("@mylinkpi/xlsx");
-    const workbook = utils.book_new();
-    const worksheetRows = exportRows.map((row) => ({
-      Fecha: row.service_date,
-      Turno: row.shift ? row.shift.toUpperCase() : "",
-      Contrato: row.contract_code ?? "",
-      Servicio: row.service_operational_name ?? "",
-      "Nombre contractual": row.service_contractual_name ?? "",
-      "Categoria contractual": row.service_category ?? "",
-      "Empresa usuaria": row.service_company ?? "",
-      "Estado servicio": row.service_execution_status === "not_performed" ? "Servicio no realizado" : "Planificado",
-      Observacion: row.service_execution_note ?? "",
-      Conductor: row.driver_name ?? "",
-      "RUT / Documento": row.driver_document ?? "",
-      Area: row.driver_area ?? "",
-      "Estado de turno":
-        row.driver_shift_status === "fuera_de_turno"
-          ? "Fuera de Turno"
-          : row.driver_shift_status === "en_turno"
-            ? "En Turno"
-            : "",
-      Equipo: row.equipment_code ?? "",
-      Patente: row.equipment_plate ?? "",
-      Tipo: row.equipment_type ?? "",
-      "Cliente actual": row.equipment_client ?? "",
-      "Fecha de registro": row.created_at ? new Date(row.created_at).toLocaleString("es-CL") : "",
-    }));
+    setExportLoading(true);
+    setExportError("");
 
-    const worksheet = utils.json_to_sheet(worksheetRows);
-    worksheet["!cols"] = [
-      { wch: 12 },
-      { wch: 8 },
-      { wch: 24 },
-      { wch: 28 },
-      { wch: 32 },
-      { wch: 26 },
-      { wch: 22 },
-      { wch: 18 },
-      { wch: 24 },
-      { wch: 30 },
-      { wch: 16 },
-      { wch: 28 },
-      { wch: 18 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 18 },
-      { wch: 22 },
-      { wch: 20 },
-    ];
-    utils.book_append_sheet(workbook, worksheet, "Planificacion");
+    try {
+      const { utils, writeFile } = await import("@mylinkpi/xlsx");
+      const workbook = utils.book_new();
+      const worksheetRows = exportRows.map((row) => ({
+        Fecha: row.service_date,
+        Turno: row.shift ? row.shift.toUpperCase() : "",
+        Contrato: row.contract_code ?? "",
+        Servicio: row.service_operational_name ?? "",
+        "Nombre contractual": row.service_contractual_name ?? "",
+        "Categoria contractual": row.service_category ?? "",
+        "Empresa usuaria": row.service_company ?? "",
+        "Estado servicio": row.service_execution_status === "not_performed" ? "Servicio no realizado" : "Planificado",
+        Observacion: row.service_execution_note ?? "",
+        Conductor: row.driver_name ?? "",
+        "RUT / Documento": row.driver_document ?? "",
+        Area: row.driver_area ?? "",
+        "Estado de turno":
+          row.driver_shift_status === "fuera_de_turno"
+            ? "Fuera de Turno"
+            : row.driver_shift_status === "en_turno"
+              ? "En Turno"
+              : "",
+        Equipo: row.equipment_code ?? "",
+        Patente: row.equipment_plate ?? "",
+        Tipo: row.equipment_type ?? "",
+        "Cliente actual": row.equipment_client ?? "",
+        "Fecha de registro": row.created_at ? new Date(row.created_at).toLocaleString("es-CL") : "",
+      }));
 
-    const filename = `planificacion-${exportContract ? normalizeText(exportContract).replace(/\s+/g, "-") : "todos"}-${exportDateFrom}-${exportDateTo}.xlsx`;
-    writeFile(workbook, filename);
+      const worksheet = utils.json_to_sheet(worksheetRows);
+      worksheet["!cols"] = [
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 24 },
+        { wch: 28 },
+        { wch: 32 },
+        { wch: 26 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 24 },
+        { wch: 30 },
+        { wch: 16 },
+        { wch: 28 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 22 },
+        { wch: 20 },
+      ];
+      utils.book_append_sheet(workbook, worksheet, "Planificacion");
+
+      const filename = `planificacion-${exportContract ? normalizeText(exportContract).replace(/\s+/g, "-") : "todos"}-${exportDateFrom}-${exportDateTo}.xlsx`;
+      writeFile(workbook, filename);
+    } catch {
+      setExportError("No fue posible generar el archivo Excel.");
+    } finally {
+      setExportLoading(false);
+    }
   }
 
   const categoriesCount = new Set(eligibleServices.map((item) => item.category)).size;
@@ -675,7 +720,8 @@ export function OperacionesDashboard() {
             setSelectedShift={setSelectedShift}
             selectedContract={selectedContract}
             setSelectedContract={setSelectedContract}
-            contractOptions={contractOptions}
+            contractOptions={editableContractOptions}
+            contractsLoading={sessionDataLoading}
             eligibleServices={eligibleServices}
             categoriesCount={categoriesCount}
             submitState={submitState}
