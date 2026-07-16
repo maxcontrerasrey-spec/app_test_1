@@ -3,6 +3,8 @@ import { createServer } from "vite";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const HOST = "127.0.0.1";
+const SMOKE_SUPABASE_URL = "http://127.0.0.1:54321";
+const SMOKE_SUPABASE_ANON_KEY = "frontend-route-smoke-anon-key";
 
 function assert(condition, message) {
   if (!condition) {
@@ -11,6 +13,10 @@ function assert(condition, message) {
 }
 
 async function createLocalServer() {
+  process.env.VITE_SUPABASE_URL = process.env.VITE_SUPABASE_URL || SMOKE_SUPABASE_URL;
+  process.env.VITE_SUPABASE_ANON_KEY =
+    process.env.VITE_SUPABASE_ANON_KEY || SMOKE_SUPABASE_ANON_KEY;
+
   const server = await createServer({
     server: {
       host: HOST,

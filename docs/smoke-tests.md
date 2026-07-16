@@ -29,11 +29,12 @@ Este smoke no reemplaza pruebas E2E con login real, pero bloquea drift de contra
 `npm run smoke:frontend-routes` valida la app montada en Chromium headless:
 
 - levanta Vite en un puerto local libre, salvo que `FRONTEND_SMOKE_BASE_URL` apunte a un servidor existente;
+- inyecta placeholders publicos `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` solo para el servidor local si no existen variables reales;
 - abre `/login` y valida que rendericen titulo, correo, contraseña, accion principal y recuperacion de acceso;
 - abre `/operaciones/resumen` sin sesion y confirma redireccion segura a `/login`;
 - falla ante errores de pagina capturados por el navegador.
 
-Este smoke no usa credenciales, no inicia sesion real y no toca datos productivos. En CI requiere `npm ci` y `npx playwright install --with-deps chromium`.
+Este smoke no usa credenciales, no inicia sesion real y no toca datos productivos. Los placeholders solo activan la rama de guard autenticado para probar la redireccion sin sesion. En CI requiere `npm ci` y `npx playwright install --with-deps chromium`.
 
 `npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
 

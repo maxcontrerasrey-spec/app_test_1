@@ -303,6 +303,7 @@ Construir un smoke browser acotado para una ruta critica, empezando por login/ca
 - [x] Validar que `/operaciones/resumen` sin sesion redirige a `/login`.
 - [x] Corregir workflow de guardrails para ejecutar `npm ci` antes de scripts.
 - [x] Integrar instalacion de Chromium y `smoke:frontend-routes` al workflow Enterprise.
+- [x] Hacer portable el smoke en CI sin `.env.local`, usando placeholders publicos de Supabase solo para activar guards sin sesion.
 - [x] Documentar alcance, precondiciones y riesgo residual en `docs/smoke-tests.md`.
 
 ### Entregable de iteracion
@@ -324,6 +325,7 @@ Los controles previos validaban contratos de codigo y backend, pero no ejecutaba
 - `scripts/smoke-frontend-routes.mjs` levanta Vite localmente, abre Chromium headless y valida `/login`.
 - El smoke verifica titulo, input de correo, input de contraseña, boton `Continuar` y accion de recuperacion.
 - El smoke navega `/operaciones/resumen` sin sesion y exige redireccion a `/login`.
+- Si no existen variables `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`, el smoke inyecta placeholders publicos para que `isSupabaseConfigured` sea verdadero sin usar secretos.
 - `package.json` expone `npm run smoke:frontend-routes` y `package-lock.json` versiona Playwright.
 - `.github/workflows/audit-supabase-migrations.yml` instala dependencias con `npm ci`, instala Chromium y ejecuta el smoke browser.
 
@@ -333,7 +335,7 @@ Validacion ejecutada: `npm ci`, `npm run smoke:frontend-routes`, `npm run smoke:
 
 #### Resultado
 
-El ERP queda con un smoke browser versionado y ejecutado en CI para validar montaje de `/login` y guard de ruta protegida sin sesion, ademas de corregir el workflow Enterprise para instalar dependencias antes de ejecutar guardrails.
+El ERP queda con un smoke browser versionado y ejecutado en CI para validar montaje de `/login` y guard de ruta protegida sin sesion, ademas de corregir el workflow Enterprise para instalar dependencias antes de ejecutar guardrails. El smoke no depende de `.env.local` ni de secretos para probar esa ruta.
 
 #### Riesgo residual
 
