@@ -63,7 +63,6 @@ export type CompetencyRequestInput = {
   evaluationSizeBytes: number;
   evaluationSha256: string;
   declarationAccepted: boolean;
-  notes: string;
 };
 
 export type CompetencyRequestResult = {

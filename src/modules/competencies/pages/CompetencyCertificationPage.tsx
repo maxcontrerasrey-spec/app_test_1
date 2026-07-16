@@ -23,7 +23,6 @@ type FormState = {
   theoreticalScore: string;
   practicalScore: string;
   finalScore: string;
-  notes: string;
   declarationAccepted: boolean;
 };
 
@@ -57,7 +56,6 @@ function initialFormState(): FormState {
     theoreticalScore: "100",
     practicalScore: "100",
     finalScore: "100",
-    notes: "",
     declarationAccepted: false
   };
 }
@@ -441,16 +439,6 @@ export function CompetencyCertificationPage() {
               />
               <span>Confirmo que la evaluacion teorica y practica fue aprobada con 100% y corresponde al trabajador seleccionado.</span>
             </label>
-
-            <div className="competency-notes-field">
-              <label className="field-label" htmlFor="competency-notes">Notas internas</label>
-              <textarea
-                id="competency-notes"
-                value={form.notes}
-                onChange={(event) => updateField("notes", event.target.value)}
-                rows={3}
-              />
-            </div>
 
             {selectedModelNames.length > 0 ? (
               <p className="competency-selection-summary">{selectedModelNames.join(" · ")}</p>

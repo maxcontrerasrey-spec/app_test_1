@@ -155,14 +155,12 @@
   line-height: 1.35;
 }
 
-.competency-file-field,
-.competency-notes-field {
+.competency-file-field {
   display: grid;
   gap: 7px;
 }
 
-.competency-file-field input,
-.competency-notes-field textarea {
+.competency-file-field input {
   width: 100%;
   border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.14));
   border-radius: 8px;

@@ -335,8 +335,7 @@ export async function createCompetencyRequest(input: CompetencyRequestInput) {
       evaluationMimeType: input.evaluationMimeType,
       evaluationSizeBytes: input.evaluationSizeBytes,
       evaluationSha256: input.evaluationSha256,
-      declarationAccepted: input.declarationAccepted,
-      notes: input.notes
+      declarationAccepted: input.declarationAccepted
     }
   });
 
