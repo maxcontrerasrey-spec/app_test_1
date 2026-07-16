@@ -41,6 +41,7 @@ export type CompetencyWorker = {
   jobTitle: string | null;
   areaName: string | null;
   contractCode: string | null;
+  companyName: string | null;
   displayLabel: string;
 };
 
@@ -92,7 +93,12 @@ export type CompetencyPreviewPdfInput = {
   workerName: string;
   workerDocumentNumber: string;
   workerJobTitle: string;
-  modelSummary: string;
+  workerCompanyName: string | null;
+  authorizedModels: Array<{
+    brandName: string;
+    typeName: string;
+    modelName: string;
+  }>;
   trainingDate: string;
   trainingStartTime: string;
   trainingEndTime: string;

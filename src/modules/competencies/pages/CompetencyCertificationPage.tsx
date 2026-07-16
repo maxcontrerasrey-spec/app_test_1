@@ -16,9 +16,7 @@ import "../styles/competencies.css";
 
 type FormState = {
   instructorId: string;
-  brandId: string;
-  typeId: string;
-  modelIds: string[];
+  modelRows: CompetencyModelRow[];
   trainingDate: string;
   trainingStartTime: string;
   trainingEndTime: string;
@@ -29,6 +27,22 @@ type FormState = {
   declarationAccepted: boolean;
 };
 
+type CompetencyModelRow = {
+  id: string;
+  brandId: string;
+  typeId: string;
+  modelId: string;
+};
+
+function createModelRow(): CompetencyModelRow {
+  return {
+    id: crypto.randomUUID(),
+    brandId: "",
+    typeId: "",
+    modelId: ""
+  };
+}
+
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -36,9 +50,7 @@ function todayDate() {
 function initialFormState(): FormState {
   return {
     instructorId: "",
-    brandId: "",
-    typeId: "",
-    modelIds: [],
+    modelRows: [createModelRow()],
     trainingDate: todayDate(),
     trainingStartTime: "",
     trainingEndTime: "",
@@ -148,29 +160,21 @@ export function CompetencyCertificationPage() {
   );
 
   const instructorIsEditable = canManageInstructors(isSuperAdmin, catalogs) && instructorOptions.length > 1;
-
-  const visibleModels = useMemo(() => {
-    const models = catalogs?.models ?? [];
-    return models.filter((model) => {
-      const matchesBrand = !form.brandId || model.brandId === form.brandId;
-      const matchesType = !form.typeId || model.typeId === form.typeId;
-      return matchesBrand && matchesType;
-    });
-  }, [catalogs, form.brandId, form.typeId]);
-
-  const selectedModelNames = useMemo(() => {
-    const modelMap = new Map((catalogs?.models ?? []).map((model) => [model.id, model]));
-    return form.modelIds
-      .map((id) => modelMap.get(id))
-      .filter(Boolean)
-      .map((model) => `${model?.brandName} ${model?.typeName} ${model?.name}`);
-  }, [catalogs, form.modelIds]);
+  const modelMap = useMemo(() => new Map((catalogs?.models ?? []).map((model) => [model.id, model])), [catalogs]);
+  const selectedModels = useMemo(
+    () => form.modelRows.map((row) => modelMap.get(row.modelId)).filter(Boolean),
+    [form.modelRows, modelMap]
+  );
+  const selectedModelNames = useMemo(
+    () => selectedModels.map((model) => `${model?.brandName} ${model?.typeName} ${model?.name}`),
+    [selectedModels]
+  );
 
   const canSubmit =
     Boolean(user?.id) &&
     Boolean(selectedWorker) &&
     Boolean(form.instructorId) &&
-    form.modelIds.length > 0 &&
+    selectedModels.length > 0 &&
     Boolean(form.trainingDate) &&
     !isSubmitting;
 
@@ -178,16 +182,33 @@ export function CompetencyCertificationPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function toggleModel(modelId: string) {
+  function updateModelRow(rowId: string, patch: Partial<Omit<CompetencyModelRow, "id">>) {
     setForm((current) => {
-      const exists = current.modelIds.includes(modelId);
       return {
         ...current,
-        modelIds: exists
-          ? current.modelIds.filter((id) => id !== modelId)
-          : [...current.modelIds, modelId]
+        modelRows: current.modelRows.map((row) =>
+          row.id === rowId
+            ? {
+                ...row,
+                ...patch,
+                typeId: patch.brandId !== undefined ? "" : patch.typeId ?? row.typeId,
+                modelId: patch.brandId !== undefined || patch.typeId !== undefined ? "" : patch.modelId ?? row.modelId
+              }
+            : row
+        )
       };
     });
+  }
+
+  function addModelRow() {
+    setForm((current) => ({ ...current, modelRows: [...current.modelRows, createModelRow()] }));
+  }
+
+  function removeModelRow(rowId: string) {
+    setForm((current) => ({
+      ...current,
+      modelRows: current.modelRows.length === 1 ? current.modelRows : current.modelRows.filter((row) => row.id !== rowId)
+    }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -200,14 +221,19 @@ export function CompetencyCertificationPage() {
     setLastGeneration(null);
 
     try {
-      const generation = generateCompetencyPreviewPdf({
+      const generation = await generateCompetencyPreviewPdf({
         instructorName: selectedInstructor.fullName,
         instructorDocumentNumber: selectedInstructor.documentNumber,
         instructorProfileCode: selectedInstructor.profileCode,
         workerName: selectedWorker.fullName,
         workerDocumentNumber: selectedWorker.documentNumber,
         workerJobTitle: selectedWorker.jobTitle ?? "",
-        modelSummary: selectedModelNames.join(", "),
+        workerCompanyName: selectedWorker.companyName,
+        authorizedModels: selectedModels.map((model) => ({
+          brandName: model?.brandName ?? "",
+          typeName: model?.typeName ?? "",
+          modelName: model?.name ?? ""
+        })),
         trainingDate: form.trainingDate,
         trainingStartTime: form.trainingStartTime,
         trainingEndTime: form.trainingEndTime
@@ -277,10 +303,11 @@ export function CompetencyCertificationPage() {
                 }}
                 disabled={isLoading || isSubmitting}
                 useSearchQuery={useCompetencyWorkerSearch}
-                loadingMessage="Buscando trabajadores BUK..."
-                emptyMessage="No hay trabajadores activos que coincidan con la busqueda actual."
-                minSearchLength={2}
-              />
+              loadingMessage="Buscando trabajadores BUK..."
+              emptyMessage="No hay trabajadores activos que coincidan con la busqueda actual."
+              minSearchLength={2}
+              includeCompanyName
+            />
               <TextField
                 id="competency-worker-document"
                 label="RUT trabajador"
@@ -319,42 +346,61 @@ export function CompetencyCertificationPage() {
               />
             </div>
 
-            <div className="competency-grid-two">
-              <SelectField
-                id="competency-brand"
-                label="Marca"
-                value={form.brandId}
-                onChange={(event) => updateField("brandId", event.target.value)}
-                options={brandOptions}
-                placeholder="Todas las marcas"
-              />
-              <SelectField
-                id="competency-type"
-                label="Tipo"
-                value={form.typeId}
-                onChange={(event) => updateField("typeId", event.target.value)}
-                options={typeOptions}
-                placeholder="Todos los tipos"
-              />
-            </div>
-
             <div className="competency-model-box">
               <div className="competency-model-box-header">
                 <strong>Modelos autorizados</strong>
-                <span>{form.modelIds.length} seleccionados</span>
+                <button type="button" className="competency-add-model-button" onClick={addModelRow}>
+                  + Agregar modelo
+                </button>
               </div>
-              <div className="competency-model-list">
-                {visibleModels.map((model) => (
-                  <label key={model.id} className="competency-model-option">
-                    <input
-                      type="checkbox"
-                      checked={form.modelIds.includes(model.id)}
-                      onChange={() => toggleModel(model.id)}
+              {form.modelRows.map((row, index) => {
+                const typeIdsForBrand = new Set(
+                  (catalogs?.models ?? [])
+                    .filter((model) => !row.brandId || model.brandId === row.brandId)
+                    .map((model) => model.typeId)
+                );
+                const filteredTypeOptions = typeOptions.filter((option) => typeIdsForBrand.has(option.value));
+                const filteredModelOptions = (catalogs?.models ?? [])
+                  .filter((model) => (!row.brandId || model.brandId === row.brandId) && (!row.typeId || model.typeId === row.typeId))
+                  .map((model) => ({ value: model.id, label: model.name }));
+
+                return (
+                  <div className="competency-model-row" key={row.id}>
+                    <SelectField
+                      id={`competency-brand-${row.id}`}
+                      label={index === 0 ? "Marca" : "Marca adicional"}
+                      value={row.brandId}
+                      onChange={(event) => updateModelRow(row.id, { brandId: event.target.value })}
+                      options={brandOptions}
                     />
-                    <span>{`${model.brandName} ${model.typeName} ${model.name}`}</span>
-                  </label>
-                ))}
-              </div>
+                    <SelectField
+                      id={`competency-type-${row.id}`}
+                      label="Tipo"
+                      value={row.typeId}
+                      onChange={(event) => updateModelRow(row.id, { typeId: event.target.value })}
+                      options={filteredTypeOptions}
+                      disabled={!row.brandId}
+                    />
+                    <SelectField
+                      id={`competency-model-${row.id}`}
+                      label="Modelo"
+                      value={row.modelId}
+                      onChange={(event) => updateModelRow(row.id, { modelId: event.target.value })}
+                      options={filteredModelOptions}
+                      disabled={!row.brandId || !row.typeId}
+                    />
+                    <button
+                      type="button"
+                      className="competency-remove-model-button"
+                      onClick={() => removeModelRow(row.id)}
+                      disabled={form.modelRows.length === 1}
+                      aria-label="Eliminar modelo autorizado"
+                    >
+                      -
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="competency-grid-three">

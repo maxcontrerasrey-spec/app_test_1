@@ -49,6 +49,10 @@
 - [x] Retirar la exigencia temporal de respaldo de evaluacion para pruebas de interfaz.
 - [x] Cambiar `Generar certificado` a PDF temporal local, sin guardar en Storage, sin crear solicitud, sin emitir folio definitivo y sin cargar a BUK.
 - [x] Ajustar el PDF temporal al formato operativo del certificado BUK: cabecera F-OPE-068, cuerpo certificante, bloque firma/QR, codigo perfil, folio temporal y vencimiento.
+- [x] Rediseñar la estetica del PDF de prueba con `pdf-lib`, margenes centrados, tipografia consistente y una sola imagen corporativa por empresa BUK.
+- [x] Reemplazar el texto de modelos por una tabla de resumen `Marca / Tipo / Modelo autorizado`.
+- [x] Cambiar seleccion de modelos a lineas repetibles con boton `+`, filtrando `Tipo` segun la marca seleccionada.
+- [x] Exponer `company_name` en `search_competency_workers(...)` desde BUK para elegir logo `Consorcio Andino`, `Consorcio Nuevo Norte` o `JM`.
 
 ## Reparación warnings Operaciones, BI y ORION
 

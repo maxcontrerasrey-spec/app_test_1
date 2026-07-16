@@ -108,6 +108,42 @@
   overflow: auto;
 }
 
+.competency-model-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) 40px;
+  gap: 12px;
+  align-items: end;
+}
+
+.competency-model-row + .competency-model-row {
+  margin-top: 12px;
+}
+
+.competency-add-model-button,
+.competency-remove-model-button {
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-primary, #0f172a);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.competency-add-model-button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.competency-remove-model-button {
+  min-height: 44px;
+}
+
+.competency-remove-model-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .competency-model-option,
 .competency-declaration {
   display: grid;
@@ -182,7 +218,8 @@
 @media (max-width: 760px) {
   .competency-grid-two,
   .competency-grid-three,
-  .competency-model-list {
+  .competency-model-list,
+  .competency-model-row {
     grid-template-columns: 1fr;
   }
 

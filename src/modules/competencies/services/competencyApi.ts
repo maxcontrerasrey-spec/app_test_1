@@ -8,6 +8,10 @@ import {
   readNumber,
   readText
 } from "../../../shared/lib/supabaseRpc";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import consorcioAndinoLogoUrl from "../assets/consorcio-andino.png";
+import consorcioNuevoNorteLogoUrl from "../assets/consorcio-nuevo-norte.png";
+import jmLogoUrl from "../assets/jm.png";
 import type {
   CompetencyCatalogOption,
   CompetencyCatalogs,
@@ -84,6 +88,7 @@ function mapWorker(item: Record<string, unknown>): CompetencyWorker {
     jobTitle: readNullableText(item.job_title),
     areaName: readNullableText(item.area_name),
     contractCode: readNullableText(item.contract_code),
+    companyName: readNullableText(item.company_name),
     displayLabel: readText(item.display_label)
   };
 }
@@ -298,42 +303,10 @@ export async function createCompetencyDocumentUrl(path: string) {
   return data.signedUrl;
 }
 
-function sanitizePdfText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x20-\x7E]/g, "")
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)");
-}
-
 function formatPreviewDate(value: string) {
   if (!value) return "";
   const [year, month, day] = value.slice(0, 10).split("-");
   return [day, month, year].filter(Boolean).join("-");
-}
-
-function wrapPreviewText(value: string, maxLength: number) {
-  const words = value.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length > maxLength && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = next;
-    }
-  }
-
-  if (current) {
-    lines.push(current);
-  }
-
-  return lines;
 }
 
 function addYears(dateValue: string, years: number) {
@@ -342,142 +315,336 @@ function addYears(dateValue: string, years: number) {
   return source.toISOString().slice(0, 10);
 }
 
-function drawText(value: string, x: number, y: number, size = 10, font = "F1") {
-  return `BT /${font} ${size} Tf ${x} ${y} Td (${sanitizePdfText(value)}) Tj ET`;
-}
+function resolveLogoUrl(companyName: string | null | undefined) {
+  const normalized = (companyName ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
-function drawRect(x: number, y: number, width: number, height: number) {
-  return `${x} ${y} ${width} ${height} re S`;
-}
-
-function fillRect(x: number, y: number, width: number, height: number, color = "0.78 0.04 0.08") {
-  return `q ${color} rg ${x} ${y} ${width} ${height} re f Q`;
-}
-
-function drawLine(x1: number, y1: number, x2: number, y2: number) {
-  return `${x1} ${y1} m ${x2} ${y2} l S`;
-}
-
-function drawQrPlaceholder(x: number, y: number, size: number) {
-  const cell = size / 7;
-  const blocks: string[] = [`q 0 g ${x} ${y} ${size} ${size} re S`];
-  const filled = [
-    [0, 0], [1, 0], [2, 0], [4, 0], [6, 0],
-    [0, 1], [2, 1], [3, 1], [5, 1],
-    [0, 2], [1, 2], [4, 2], [6, 2],
-    [2, 3], [3, 3], [5, 3],
-    [0, 4], [2, 4], [4, 4], [5, 4],
-    [1, 5], [3, 5], [6, 5],
-    [0, 6], [2, 6], [3, 6], [5, 6], [6, 6]
-  ];
-
-  for (const [col, row] of filled) {
-    blocks.push(`${x + col * cell} ${y + row * cell} ${cell * 0.78} ${cell * 0.78} re f`);
+  if (normalized.includes("consorcio andino")) {
+    return consorcioAndinoLogoUrl;
   }
 
-  blocks.push("Q");
-  return blocks.join("\n");
+  if (normalized.includes("consorcio nuevo norte")) {
+    return consorcioNuevoNorteLogoUrl;
+  }
+
+  return jmLogoUrl;
 }
 
-function buildCertificatePreviewCommands(input: CompetencyPreviewPdfInput, folio: string) {
+async function fetchBytes(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("No fue posible cargar el logo del certificado.");
+  }
+
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+function splitTextIntoLines(text: string, font: PDFFont, size: number, maxWidth: number) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(next, size) > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines;
+}
+
+function drawCenteredText(page: PDFPage, text: string, x: number, y: number, width: number, font: PDFFont, size: number) {
+  page.drawText(text, {
+    x: x + (width - font.widthOfTextAtSize(text, size)) / 2,
+    y,
+    size,
+    font,
+    color: rgb(0.09, 0.09, 0.11)
+  });
+}
+
+function drawFittedText(page: PDFPage, text: string, options: {
+  x: number;
+  y: number;
+  width: number;
+  font: PDFFont;
+  size: number;
+}) {
+  if (options.font.widthOfTextAtSize(text, options.size) <= options.width) {
+    page.drawText(text, {
+      x: options.x,
+      y: options.y,
+      size: options.size,
+      font: options.font,
+      color: rgb(0.11, 0.13, 0.16)
+    });
+    return;
+  }
+
+  const ellipsis = "...";
+  let fitted = text;
+  while (fitted.length > 1 && options.font.widthOfTextAtSize(`${fitted}${ellipsis}`, options.size) > options.width) {
+    fitted = fitted.slice(0, -1);
+  }
+
+  page.drawText(`${fitted.trimEnd()}${ellipsis}`, {
+    x: options.x,
+    y: options.y,
+    size: options.size,
+    font: options.font,
+    color: rgb(0.11, 0.13, 0.16)
+  });
+}
+
+function drawJustifiedLine(page: PDFPage, line: string, options: {
+  x: number;
+  y: number;
+  width: number;
+  font: PDFFont;
+  size: number;
+}) {
+  const words = line.split(/\s+/).filter(Boolean);
+  if (words.length < 2) {
+    page.drawText(line, {
+      x: options.x,
+      y: options.y,
+      size: options.size,
+      font: options.font,
+      color: rgb(0.12, 0.12, 0.14)
+    });
+    return;
+  }
+
+  const wordsWidth = words.reduce((total, word) => total + options.font.widthOfTextAtSize(word, options.size), 0);
+  const gap = (options.width - wordsWidth) / (words.length - 1);
+
+  if (!Number.isFinite(gap) || gap < 2 || gap > 9) {
+    page.drawText(line, {
+      x: options.x,
+      y: options.y,
+      size: options.size,
+      font: options.font,
+      color: rgb(0.12, 0.12, 0.14)
+    });
+    return;
+  }
+
+  let cursorX = options.x;
+  for (const word of words) {
+    page.drawText(word, {
+      x: cursorX,
+      y: options.y,
+      size: options.size,
+      font: options.font,
+      color: rgb(0.12, 0.12, 0.14)
+    });
+    cursorX += options.font.widthOfTextAtSize(word, options.size) + gap;
+  }
+}
+
+function drawParagraph(page: PDFPage, text: string, options: {
+  x: number;
+  y: number;
+  width: number;
+  font: PDFFont;
+  size: number;
+  lineHeight: number;
+}) {
+  const lines = splitTextIntoLines(text, options.font, options.size, options.width);
+  let nextY = options.y;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (index < lines.length - 1) {
+      drawJustifiedLine(page, line, { ...options, y: nextY });
+    } else {
+      page.drawText(line, {
+        x: options.x,
+        y: nextY,
+        size: options.size,
+        font: options.font,
+        color: rgb(0.12, 0.12, 0.14)
+      });
+    }
+    nextY -= options.lineHeight;
+  }
+
+  return nextY - 8;
+}
+
+function drawModelSummary(page: PDFPage, input: CompetencyPreviewPdfInput, fonts: { regular: PDFFont; bold: PDFFont }) {
+  const tableX = 82;
+  const tableY = 365;
+  const tableWidth = 431;
+  const headerHeight = 22;
+  const rowHeight = 20;
+  const columns = [128, 128, 175];
+  const rows = input.authorizedModels.slice(0, 7);
+
+  page.drawRectangle({
+    x: tableX,
+    y: tableY - headerHeight - rows.length * rowHeight,
+    width: tableWidth,
+    height: headerHeight + rows.length * rowHeight,
+    borderColor: rgb(0.28, 0.31, 0.36),
+    borderWidth: 0.7
+  });
+  page.drawRectangle({
+    x: tableX,
+    y: tableY - headerHeight,
+    width: tableWidth,
+    height: headerHeight,
+    color: rgb(0.95, 0.96, 0.97)
+  });
+
+  let x = tableX;
+  ["Marca", "Tipo", "Modelo autorizado"].forEach((label, index) => {
+    page.drawText(label, { x: x + 8, y: tableY - 15, size: 9, font: fonts.bold, color: rgb(0.17, 0.2, 0.25) });
+    if (index < columns.length - 1) {
+      page.drawLine({
+        start: { x: x + columns[index], y: tableY },
+        end: { x: x + columns[index], y: tableY - headerHeight - rows.length * rowHeight },
+        thickness: 0.5,
+        color: rgb(0.55, 0.58, 0.62)
+      });
+    }
+    x += columns[index];
+  });
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const y = tableY - headerHeight - (index + 1) * rowHeight;
+    page.drawLine({
+      start: { x: tableX, y: y + rowHeight },
+      end: { x: tableX + tableWidth, y: y + rowHeight },
+      thickness: 0.45,
+      color: rgb(0.74, 0.76, 0.8)
+    });
+    drawFittedText(page, row.brandName, {
+      x: tableX + 8,
+      y: y + 6,
+      width: columns[0] - 16,
+      size: 8.5,
+      font: fonts.regular
+    });
+    drawFittedText(page, row.typeName, {
+      x: tableX + columns[0] + 8,
+      y: y + 6,
+      width: columns[1] - 16,
+      size: 8.5,
+      font: fonts.regular
+    });
+    drawFittedText(page, row.modelName, {
+      x: tableX + columns[0] + columns[1] + 8,
+      y: y + 6,
+      width: columns[2] - 16,
+      size: 8.5,
+      font: fonts.regular
+    });
+  }
+
+  return tableY - headerHeight - rows.length * rowHeight - 24;
+}
+
+export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfInput): Promise<CompetencyPreviewPdfResult> {
+  const folio = `PRUEBA-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
   const issuedDate = new Date().toISOString().slice(0, 10);
   const validUntil = addYears(input.trainingDate, 2);
-  const commands: string[] = [
-    "0.05 0.05 0.05 RG 0.05 0.05 0.05 rg 0.6 w",
-    drawRect(35, 715, 525, 92),
-    drawRect(35, 715, 156, 92),
-    drawRect(466, 715, 94, 92),
-    fillRect(50, 754, 42, 42),
-    drawText("jm", 59, 766, 20, "F2"),
-    fillRect(103, 732, 40, 40),
-    drawText("CA", 113, 746, 12, "F2"),
-    fillRect(149, 732, 40, 40),
-    drawText("CP", 159, 746, 12, "F2"),
-    drawText("Certificado de Acreditacion de", 214, 772, 18, "F2"),
-    drawText("Competencias", 270, 744, 18, "F2"),
-    drawText("Codigo: F-OPE-068", 471, 790, 9),
-    drawText("Fecha: 01-08-2024", 471, 766, 9),
-    drawText("Version: 00", 471, 742, 9),
-    drawText("Pagina: 1 de 1", 471, 720, 9),
-    drawText("PREVISUALIZACION - NO REGISTRADO EN ERP NI BUK", 146, 690, 9, "F2")
-  ];
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.28, 841.89]);
+  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const serif = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const logo = await pdfDoc.embedPng(await fetchBytes(resolveLogoUrl(input.workerCompanyName)));
+  const black = rgb(0.08, 0.09, 0.11);
+  const border = rgb(0.25, 0.28, 0.33);
+  const muted = rgb(0.42, 0.45, 0.5);
 
-  const body = [
-    `Sr. ${input.instructorName}, Rut ${input.instructorDocumentNumber}, Instructor de conductores, certifica que el conductor Sr. ${input.workerName}, Rut ${input.workerDocumentNumber}, ha realizado satisfactoriamente el proceso de capacitacion e induccion en conduccion y operacion de los equipos ${input.modelSummary}.`,
-    "Segun lo establecido por la empresa y de acuerdo con la evaluacion del examen Teorico y Practico de conduccion donde obtuvo una calificacion del 100%, se encuentra acreditado con las competencias especificas para conducir y operar el equipo senalado.",
-    `Con fecha ${formatPreviewDate(input.trainingDate)} queda HABILITADO para operar los equipos indicados.`
-  ];
+  page.drawRectangle({ x: 52, y: 718, width: 491, height: 86, borderColor: border, borderWidth: 0.8 });
+  page.drawLine({ start: { x: 178, y: 718 }, end: { x: 178, y: 804 }, thickness: 0.6, color: border });
+  page.drawLine({ start: { x: 446, y: 718 }, end: { x: 446, y: 804 }, thickness: 0.6, color: border });
+  page.drawImage(logo, { x: 84, y: 734, width: 62, height: 62 });
+  drawCenteredText(page, "Certificado de Acreditacion de", 178, 770, 268, bold, 17);
+  drawCenteredText(page, "Competencias", 178, 742, 268, bold, 17);
+  page.drawText("Codigo: F-OPE-068", { x: 456, y: 785, size: 8.5, font: regular, color: black });
+  page.drawText("Fecha: 01-08-2024", { x: 456, y: 763, size: 8.5, font: regular, color: black });
+  page.drawText("Version: 00", { x: 456, y: 741, size: 8.5, font: regular, color: black });
+  page.drawText("Pagina: 1 de 1", { x: 456, y: 724, size: 8.5, font: regular, color: black });
+  drawCenteredText(page, "PREVISUALIZACION - NO REGISTRADO EN ERP NI BUK", 72, 685, 451, bold, 9);
+
+  const bodyX = 82;
+  const bodyWidth = 431;
   let y = 625;
+  y = drawParagraph(page, `Sr. ${input.instructorName}, Rut ${input.instructorDocumentNumber}, Instructor de conductores, certifica que el conductor Sr. ${input.workerName}, Rut ${input.workerDocumentNumber}, ha realizado satisfactoriamente el proceso de capacitacion e induccion en conduccion y operacion de los equipos detallados en el cuadro de autorizacion.`, {
+    x: bodyX,
+    y,
+    width: bodyWidth,
+    font: regular,
+    size: 10.3,
+    lineHeight: 15
+  });
+  y = drawParagraph(page, "Segun lo establecido por la empresa y de acuerdo con la evaluacion del examen Teorico y Practico de conduccion donde obtuvo una calificacion del 100%, se encuentra acreditado con las competencias especificas para conducir y operar los equipos senalados.", {
+    x: bodyX,
+    y,
+    width: bodyWidth,
+    font: regular,
+    size: 10.3,
+    lineHeight: 15
+  });
+  drawParagraph(page, `Con fecha ${formatPreviewDate(input.trainingDate)} queda HABILITADO para operar los equipos indicados.`, {
+    x: bodyX,
+    y,
+    width: bodyWidth,
+    font: regular,
+    size: 10.3,
+    lineHeight: 15
+  });
 
-  for (const paragraph of body) {
-    for (const line of wrapPreviewText(paragraph, 86)) {
-      commands.push(drawText(line, 83, y, 11));
-      y -= 16;
+  const afterTableY = drawModelSummary(page, input, { regular, bold });
+  drawCenteredText(page, "CERTIFICADO VALIDO POR 2 ANOS", 82, afterTableY, 431, bold, 11.5);
+
+  const panelX = 105;
+  const panelY = 118;
+  const panelW = 385;
+  const panelH = 190;
+  page.drawRectangle({ x: panelX, y: panelY, width: panelW, height: panelH, borderColor: border, borderWidth: 0.65 });
+  page.drawLine({ start: { x: panelX, y: panelY + panelH - 24 }, end: { x: panelX + panelW, y: panelY + panelH - 24 }, thickness: 0.5, color: border });
+  page.drawLine({ start: { x: panelX + 230, y: panelY + 58 }, end: { x: panelX + 230, y: panelY + panelH }, thickness: 0.5, color: border });
+  drawCenteredText(page, "Firma instructor", panelX, panelY + panelH - 17, 230, bold, 11);
+  drawCenteredText(page, "Codigo QR Instructor", panelX + 230, panelY + panelH - 17, 155, bold, 11);
+  page.drawText("Firmado digitalmente por:", { x: panelX + 12, y: panelY + 122, size: 10.2, font: serif, color: black });
+  page.drawText(input.instructorName, { x: panelX + 12, y: panelY + 96, size: 10.2, font: serif, color: muted });
+  page.drawText(`el ${formatPreviewDate(issuedDate)}`, { x: panelX + 12, y: panelY + 70, size: 10.2, font: serif, color: muted });
+  page.drawRectangle({ x: panelX + 188, y: panelY + 66, width: 18, height: 18, color: rgb(0.16, 0.58, 0.82) });
+  page.drawText("OK", { x: panelX + 192, y: panelY + 72, size: 5.2, font: bold, color: rgb(1, 1, 1) });
+  page.drawRectangle({ x: panelX + 267, y: panelY + 72, width: 78, height: 78, borderColor: border, borderWidth: 0.5 });
+  for (let row = 0; row < 7; row += 1) {
+    for (let col = 0; col < 7; col += 1) {
+      if ((row * 3 + col * 5) % 4 === 0 || (row + col) % 5 === 0) {
+        page.drawRectangle({ x: panelX + 270 + col * 10, y: panelY + 75 + row * 10, width: 7, height: 7, color: black });
+      }
     }
-    y -= 10;
   }
 
-  commands.push(drawText("CERTIFICADO VALIDO POR 2 ANOS", 211, 402, 12, "F2"));
-  commands.push(drawRect(94, 166, 407, 210));
-  commands.push(drawLine(94, 352, 501, 352));
-  commands.push(drawLine(330, 166, 330, 376));
-  commands.push(drawText("Firma instructor", 172, 360, 12, "F2"));
-  commands.push(drawText("Codigo QR Instructor", 374, 360, 12, "F2"));
-  commands.push(drawText("Firmado digitalmente por:", 100, 320, 11, "F3"));
-  commands.push(drawText(input.instructorName, 100, 295, 11, "F3"));
-  commands.push(drawText(`el ${formatPreviewDate(issuedDate)}`, 100, 270, 11, "F3"));
-  commands.push(fillRect(294, 266, 22, 22, "0.22 0.63 0.91"));
-  commands.push(drawText("OK", 298, 272, 5.5, "F2"));
-  commands.push(drawQrPlaceholder(372, 223, 92));
-  commands.push(drawLine(94, 238, 501, 238));
-  commands.push(drawLine(94, 214, 501, 214));
-  commands.push(drawLine(94, 190, 501, 190));
-  commands.push(drawLine(225, 166, 225, 238));
-  commands.push(drawText("Codigo Perfil", 100, 222, 11, "F2"));
-  commands.push(drawText(input.instructorProfileCode, 234, 222, 10));
-  commands.push(drawText("Codigo Certificado", 100, 198, 11, "F2"));
-  commands.push(drawText(folio, 234, 198, 10));
-  commands.push(drawText("Vencimiento", 100, 174, 11, "F2"));
-  commands.push(drawText(formatPreviewDate(validUntil), 234, 174, 10));
-  commands.push("q 0.35 0.49 0.66 RG 42 33 50 50 re S Q");
-  commands.push(drawText("ISO", 58, 66, 8, "F2"));
-  commands.push(drawText("45001", 54, 55, 7));
+  [["Codigo Perfil", input.instructorProfileCode], ["Codigo Certificado", folio], ["Vencimiento", formatPreviewDate(validUntil)]].forEach((row, index) => {
+    const rowY = panelY + 38 - index * 20;
+    page.drawLine({ start: { x: panelX, y: rowY + 20 }, end: { x: panelX + panelW, y: rowY + 20 }, thickness: 0.45, color: border });
+    page.drawLine({ start: { x: panelX + 132, y: rowY }, end: { x: panelX + 132, y: rowY + 20 }, thickness: 0.45, color: border });
+    page.drawText(row[0], { x: panelX + 8, y: rowY + 6, size: 9.5, font: bold, color: black });
+    page.drawText(row[1], { x: panelX + 140, y: rowY + 6, size: 9.2, font: regular, color: black });
+  });
 
-  return commands.join("\n");
-}
-
-function buildPdfString(contentCommands: string) {
-  const objects = [
-    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 7 0 R >>\nendobj\n",
-    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n",
-    "6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>\nendobj\n",
-    `7 0 obj\n<< /Length ${contentCommands.length} >>\nstream\n${contentCommands}\nendstream\nendobj\n`
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-
-  for (const object of objects) {
-    offsets.push(pdf.length);
-    pdf += object;
-  }
-
-  const xrefOffset = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n`;
-  pdf += "0000000000 65535 f \n";
-  for (const offset of offsets.slice(1)) {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  }
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-  return pdf;
-}
-
-export function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfInput): CompetencyPreviewPdfResult {
-  const folio = `PRUEBA-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
-  const pdfText = buildPdfString(buildCertificatePreviewCommands(input, folio));
-  const blob = new Blob([pdfText], { type: "application/pdf" });
+  const pdfBytes = await pdfDoc.save();
+  const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength);
+  new Uint8Array(pdfBuffer).set(pdfBytes);
+  const blob = new Blob([pdfBuffer], { type: "application/pdf" });
 
   return {
     folio,
