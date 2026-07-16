@@ -577,18 +577,49 @@ function drawRichParagraph(page: PDFPage, segments: Array<{ text: string; font: 
   return y - 12;
 }
 
-function drawCertificateHeader(page: PDFPage, logo: Awaited<ReturnType<PDFDocument["embedPng"]>>, fonts: { regular: PDFFont; bold: PDFFont }) {
+const FIRST_PAGE_MODEL_CAPACITY = 6;
+const CONTINUATION_PAGE_MODEL_CAPACITY = 18;
+const LAST_PAGE_MODEL_CAPACITY = 18;
+
+function calculateCertificatePageCount(modelCount: number) {
+  if (modelCount <= FIRST_PAGE_MODEL_CAPACITY) {
+    return 1;
+  }
+
+  return 1 + Math.ceil((modelCount - FIRST_PAGE_MODEL_CAPACITY) / CONTINUATION_PAGE_MODEL_CAPACITY);
+}
+
+function drawCertificateHeader(
+  page: PDFPage,
+  logo: Awaited<ReturnType<PDFDocument["embedPng"]>>,
+  fonts: { regular: PDFFont; bold: PDFFont },
+  pageNumber: number,
+  pageTotal: number
+) {
   const border = rgb(0.16, 0.18, 0.22);
-  page.drawRectangle({ x: 32, y: 721, width: 531, height: 101, borderColor: border, borderWidth: 0.85 });
+  const header = { x: 32, y: 721, width: 531, height: 101 };
+  const logoCell = { x: 32, y: 721, width: 121, height: 101 };
+  const logoMaxWidth = 64;
+  const logoMaxHeight = 64;
+  const logoScale = Math.min(logoMaxWidth / logo.width, logoMaxHeight / logo.height);
+  const logoWidth = logo.width * logoScale;
+  const logoHeight = logo.height * logoScale;
+
+  page.drawRectangle({ ...header, borderColor: border, borderWidth: 0.85 });
   page.drawLine({ start: { x: 153, y: 721 }, end: { x: 153, y: 822 }, thickness: 0.65, color: border });
   page.drawLine({ start: { x: 454, y: 721 }, end: { x: 454, y: 822 }, thickness: 0.65, color: border });
-  page.drawImage(logo, { x: 70, y: 740, width: 72, height: 72 });
-  drawCenteredText(page, "Certificado de Acreditación", 153, 778, 301, fonts.bold, 21);
-  drawCenteredText(page, "de Competencias", 153, 748, 301, fonts.bold, 21);
-  page.drawText("Código: F-OPE-068", { x: 466, y: 789, size: 9.2, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
-  page.drawText("Fecha: 01-08-2024", { x: 466, y: 766, size: 9.2, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
-  page.drawText("Version: 00", { x: 466, y: 743, size: 9.2, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
-  page.drawText("Página: 1 de 1", { x: 466, y: 724, size: 9.2, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
+  page.drawImage(logo, {
+    x: logoCell.x + (logoCell.width - logoWidth) / 2,
+    y: logoCell.y + (logoCell.height - logoHeight) / 2,
+    width: logoWidth,
+    height: logoHeight
+  });
+  drawCenteredText(page, "Certificado de Acreditación", 153, 779, 301, fonts.bold, 19);
+  drawCenteredText(page, "de Competencias", 153, 751, 301, fonts.bold, 19);
+  page.drawText("Código: F-OPE-068", { x: 466, y: 789, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
+  page.drawText("Fecha: 01-08-2024", { x: 466, y: 766, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
+  page.drawText("Version: 00", { x: 466, y: 743, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
+  page.drawText(`Página: ${pageNumber} de ${pageTotal}`, { x: 466, y: 724, size: 8.8, font: fonts.regular, color: rgb(0.04, 0.05, 0.08) });
 }
 
 function drawBusIcon(page: PDFPage, x: number, y: number) {
@@ -634,70 +665,52 @@ function drawPseudoQr(page: PDFPage, x: number, y: number, size: number) {
 function drawModelSummary(page: PDFPage, rows: CompetencyPreviewPdfInput["authorizedModels"], fonts: { regular: PDFFont; bold: PDFFont }, tableY: number) {
   const tableX = 54;
   const tableWidth = 487;
-  const headerHeight = 26;
-  const rowHeight = 27;
+  const headerHeight = 24;
+  const rowHeight = 22;
   const columns = [88, 185, 214];
-  const visibleRows = rows.slice(0, 6);
+  const visibleRows = rows;
   const totalHeight = headerHeight + visibleRows.length * rowHeight;
-
-  page.drawRectangle({
-    x: tableX,
-    y: tableY - totalHeight,
-    width: tableWidth,
-    height: totalHeight,
-    borderColor: rgb(0.35, 0.39, 0.46),
-    borderWidth: 0.65
-  });
-  page.drawRectangle({
-    x: tableX,
-    y: tableY - headerHeight,
-    width: tableWidth,
-    height: headerHeight,
-    color: rgb(0.96, 0.97, 0.98)
-  });
 
   let x = tableX;
   ["Marca", "Tipo de equipo", "Modelo / configuración autorizada"].forEach((label, index) => {
-    drawCenteredText(page, label, x, tableY - 17, columns[index], fonts.bold, 9.7);
-    if (index < columns.length - 1) {
-      page.drawLine({
-        start: { x: x + columns[index], y: tableY },
-        end: { x: x + columns[index], y: tableY - totalHeight },
-        thickness: 0.5,
-        color: rgb(0.64, 0.67, 0.72)
-      });
-    }
+    page.drawText(label, {
+      x: x + 2,
+      y: tableY - 14,
+      size: 9,
+      font: fonts.bold,
+      color: rgb(0.07, 0.09, 0.16)
+    });
     x += columns[index];
+  });
+  page.drawLine({
+    start: { x: tableX, y: tableY - headerHeight },
+    end: { x: tableX + tableWidth, y: tableY - headerHeight },
+    thickness: 0.65,
+    color: rgb(0.82, 0.84, 0.87)
   });
 
   for (let index = 0; index < visibleRows.length; index += 1) {
     const row = visibleRows[index];
     const y = tableY - headerHeight - (index + 1) * rowHeight;
-    page.drawLine({
-      start: { x: tableX, y: y + rowHeight },
-      end: { x: tableX + tableWidth, y: y + rowHeight },
-      thickness: 0.45,
-      color: rgb(0.74, 0.76, 0.8)
-    });
     drawFittedText(page, row.brandName, {
-      x: tableX + 10,
-      y: y + 9,
-      width: columns[0] - 20,
-      size: 10.3,
+      x: tableX + 2,
+      y: y + 7,
+      width: columns[0] - 14,
+      size: 9.5,
       font: fonts.regular
     });
     drawFittedText(page, row.typeName, {
-      x: tableX + columns[0] + 8,
-      y: y + 9,
-      width: columns[1] - 16,
-      size: 10.3,
+      x: tableX + columns[0] + 2,
+      y: y + 7,
+      width: columns[1] - 14,
+      size: 9.5,
       font: fonts.regular
     });
     drawFittedText(page, row.modelName, {
-      x: tableX + columns[0] + columns[1] + 8,
-      y: y + 9,
-      width: columns[2] - 16,
-      size: 10.3,
+      x: tableX + columns[0] + columns[1] + 2,
+      y: y + 7,
+      width: columns[2] - 14,
+      size: 9.5,
       font: fonts.regular
     });
   }
@@ -711,29 +724,29 @@ function drawValidationPanel(page: PDFPage, input: CompetencyPreviewPdfInput, fo
   validUntil: string;
 }) {
   const x = 54;
-  const y = 116;
+  const y = 108;
   const width = 487;
-  const height = 168;
+  const height = 154;
   const red = rgb(0.82, 0.03, 0.07);
   page.drawRectangle({ x, y, width, height, borderColor: rgb(0.55, 0.59, 0.66), borderWidth: 0.7 });
   page.drawLine({ start: { x: x + 274, y: y + 26 }, end: { x: x + 274, y: y + height - 38 }, thickness: 0.7, color: rgb(0.55, 0.59, 0.66) });
   drawShieldIcon(page, x + 15, y + height - 30, fonts.bold);
-  page.drawText("VALIDACIÓN DEL CERTIFICADO", { x: x + 42, y: y + height - 28, size: 10.8, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
-  page.drawText("Verificación digital", { x: x + 332, y: y + height - 28, size: 10.2, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
-  page.drawText("Firmado electrónicamente por:", { x: x + 14, y: y + 104, size: 10, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  drawScaledText(page, input.instructorName, { x: x + 14, y: y + 68, width: 245, size: 21, minSize: 13, font: fonts.signature });
-  page.drawLine({ start: { x: x + 14, y: y + 58 }, end: { x: x + 238, y: y + 58 }, thickness: 0.6, color: rgb(0.78, 0.81, 0.86) });
-  page.drawText("Instructor de Conductores", { x: x + 14, y: y + 42, size: 9.5, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  page.drawText(`RUT N. ${input.instructorDocumentNumber}`, { x: x + 14, y: y + 24, size: 9.5, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+  page.drawText("VALIDACIÓN DEL CERTIFICADO", { x: x + 42, y: y + height - 28, size: 9.7, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
+  page.drawText("Verificación digital", { x: x + 332, y: y + height - 24, size: 9.2, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
+  page.drawText("Firmado electrónicamente por:", { x: x + 14, y: y + 94, size: 8.8, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+  drawScaledText(page, input.instructorName, { x: x + 14, y: y + 62, width: 245, size: 18, minSize: 11, font: fonts.signature });
+  page.drawLine({ start: { x: x + 14, y: y + 53 }, end: { x: x + 238, y: y + 53 }, thickness: 0.6, color: rgb(0.78, 0.81, 0.86) });
+  page.drawText("Instructor de Conductores", { x: x + 14, y: y + 39, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+  page.drawText(`RUT N. ${input.instructorDocumentNumber}`, { x: x + 14, y: y + 23, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
   drawCalendarIcon(page, x + 14, y + 7);
-  page.drawText(`Fecha de emisión: ${formatLongPreviewDate(options.issuedDate)}`, { x: x + 36, y: y + 8, size: 9.2, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  drawPseudoQr(page, x + 333, y + 58, 82);
-  drawCenteredText(page, "Escanee el codigo QR para verificar", x + 295, y + 38, 170, fonts.regular, 8.8);
-  drawCenteredText(page, "la autenticidad, estado y vigencia", x + 295, y + 24, 170, fonts.regular, 8.8);
-  drawCenteredText(page, "de este certificado.", x + 295, y + 10, 170, fonts.regular, 8.8);
+  page.drawText(`Fecha de emisión: ${formatLongPreviewDate(options.issuedDate)}`, { x: x + 36, y: y + 8, size: 8.2, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+  drawPseudoQr(page, x + 336, y + 56, 72);
+  drawCenteredText(page, "Escanee el codigo QR para verificar", x + 295, y + 36, 170, fonts.regular, 8);
+  drawCenteredText(page, "la autenticidad, estado y vigencia", x + 295, y + 23, 170, fonts.regular, 8);
+  drawCenteredText(page, "de este certificado.", x + 295, y + 10, 170, fonts.regular, 8);
 
-  const boxY = 46;
-  const boxH = 58;
+  const boxY = 42;
+  const boxH = 50;
   const boxW = 487;
   const cellW = boxW / 4;
   page.drawRectangle({ x, y: boxY, width: boxW, height: boxH, borderColor: rgb(0.55, 0.59, 0.66), borderWidth: 0.7 });
@@ -748,11 +761,22 @@ function drawValidationPanel(page: PDFPage, input: CompetencyPreviewPdfInput, fo
   ];
   summary.forEach((item, index) => {
     const cellX = x + cellW * index;
-    drawCenteredText(page, item[0], cellX, boxY + 25, cellW, fonts.bold, 9.5);
+    drawCenteredText(page, item[0], cellX, boxY + 22, cellW, fonts.bold, 8.4);
     const valueFont = index === 3 ? fonts.bold : fonts.regular;
     const valueColor = index === 3 ? red : rgb(0.07, 0.09, 0.16);
-    page.drawText(item[1], { x: cellX + (cellW - valueFont.widthOfTextAtSize(item[1], 9.2)) / 2, y: boxY + 9, size: 9.2, font: valueFont, color: valueColor });
+    page.drawText(item[1], { x: cellX + (cellW - valueFont.widthOfTextAtSize(item[1], 8.2)) / 2, y: boxY + 8, size: 8.2, font: valueFont, color: valueColor });
   });
+}
+
+function drawEquipmentHeading(page: PDFPage, y: number, bold: PDFFont) {
+  drawBusIcon(page, 52, y - 18);
+  page.drawText("EQUIPOS AUTORIZADOS", { x: 94, y: y - 8, size: 11.2, font: bold, color: rgb(0.07, 0.09, 0.16) });
+  page.drawLine({ start: { x: 258, y: y - 5 }, end: { x: 540, y: y - 5 }, thickness: 1, color: rgb(0.82, 0.03, 0.07) });
+}
+
+function drawCertificateFooter(page: PDFPage, regular: PDFFont) {
+  drawCenteredText(page, "Este certificado es válido únicamente con firma electrónica y puede ser verificado a", 82, 22, 431, regular, 7.8);
+  drawCenteredText(page, "través del código QR o en el portal de validación del ERP.", 82, 10, 431, regular, 7.8);
 }
 
 export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfInput): Promise<CompetencyPreviewPdfResult> {
@@ -760,16 +784,19 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
   const issuedDate = new Date().toISOString().slice(0, 10);
   const validUntil = addYears(input.trainingDate, 2);
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595.28, 841.89]);
+  const modelRows = input.authorizedModels.length > 0 ? input.authorizedModels : [{ brandName: "", typeName: "", modelName: "" }];
+  const pageTotal = calculateCertificatePageCount(modelRows.length);
+  let pageNumber = 1;
+  let page = pdfDoc.addPage([595.28, 841.89]);
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const signatureFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
   const logo = await pdfDoc.embedPng(await fetchBytes(resolveLogoUrl(input.workerCompanyName)));
-  drawCertificateHeader(page, logo, { regular, bold });
+  drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
 
   const bodyX = 64;
   const bodyWidth = 467;
-  let y = 666;
+  let y = 674;
   y = drawRichParagraph(page, [
     { text: `Don ${input.instructorName}, RUT N. ${input.instructorDocumentNumber}, en su calidad de`, font: regular },
     { text: "Instructor de Conductores,", font: bold },
@@ -780,8 +807,8 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     x: bodyX,
     y,
     width: bodyWidth,
-    size: 12,
-    lineHeight: 20
+    size: 10.6,
+    lineHeight: 16.6
   });
   y = drawRichParagraph(page, [
     { text: "De acuerdo con los procedimientos y estándares definidos por la empresa, el trabajador obtuvo una calificación final de 100 %, acreditando los conocimientos, habilidades y competencias requeridas para conducir y operar los equipos señalados en el cuadro de autorización.", font: regular }
@@ -789,8 +816,8 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     x: bodyX,
     y,
     width: bodyWidth,
-    size: 12,
-    lineHeight: 20
+    size: 10.6,
+    lineHeight: 16.6
   });
   y = drawRichParagraph(page, [
     { text: "En virtud de lo anterior, el trabajador queda", font: regular },
@@ -800,18 +827,37 @@ export async function generateCompetencyPreviewPdf(input: CompetencyPreviewPdfIn
     x: bodyX,
     y,
     width: bodyWidth,
-    size: 12,
-    lineHeight: 20
+    size: 10.6,
+    lineHeight: 16.6
   });
 
-  const sectionY = Math.min(y + 4, 356);
-  drawBusIcon(page, 52, sectionY - 18);
-  page.drawText("EQUIPOS AUTORIZADOS", { x: 94, y: sectionY - 8, size: 12.2, font: bold, color: rgb(0.07, 0.09, 0.16) });
-  page.drawLine({ start: { x: 268, y: sectionY - 5 }, end: { x: 540, y: sectionY - 5 }, thickness: 1, color: rgb(0.82, 0.03, 0.07) });
-  drawModelSummary(page, input.authorizedModels, { regular, bold }, sectionY - 22);
-  drawValidationPanel(page, input, { regular, bold, signature: signatureFont }, { folio, issuedDate, validUntil });
-  drawCenteredText(page, "Este certificado es válido únicamente con firma electrónica y puede ser verificado a", 82, 24, 431, regular, 8.8);
-  drawCenteredText(page, "través del código QR o en el portal de validación del ERP.", 82, 10, 431, regular, 8.8);
+  const firstPageRows = modelRows.slice(0, FIRST_PAGE_MODEL_CAPACITY);
+  let remainingRows = modelRows.slice(FIRST_PAGE_MODEL_CAPACITY);
+  const sectionY = 452;
+  drawEquipmentHeading(page, sectionY, bold);
+  drawModelSummary(page, firstPageRows, { regular, bold }, sectionY - 22);
+
+  if (remainingRows.length === 0) {
+    drawValidationPanel(page, input, { regular, bold, signature: signatureFont }, { folio, issuedDate, validUntil });
+    drawCertificateFooter(page, regular);
+  } else {
+    while (remainingRows.length > LAST_PAGE_MODEL_CAPACITY) {
+      pageNumber += 1;
+      page = pdfDoc.addPage([595.28, 841.89]);
+      drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
+      drawEquipmentHeading(page, 650, bold);
+      drawModelSummary(page, remainingRows.slice(0, CONTINUATION_PAGE_MODEL_CAPACITY), { regular, bold }, 628);
+      remainingRows = remainingRows.slice(CONTINUATION_PAGE_MODEL_CAPACITY);
+    }
+
+    pageNumber += 1;
+    page = pdfDoc.addPage([595.28, 841.89]);
+    drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
+    drawEquipmentHeading(page, 650, bold);
+    drawModelSummary(page, remainingRows, { regular, bold }, 628);
+    drawValidationPanel(page, input, { regular, bold, signature: signatureFont }, { folio, issuedDate, validUntil });
+    drawCertificateFooter(page, regular);
+  }
 
   const pdfBytes = await pdfDoc.save();
   const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength);

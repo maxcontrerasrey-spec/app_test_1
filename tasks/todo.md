@@ -7391,3 +7391,11 @@ Este documento lleva el control de las tareas técnicas orientadas a construir l
 - [`generate-competency-certificate/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/generate-competency-certificate/index.ts:1) replica el mismo layout para el PDF productivo que se genera con folio real, QR real y carga posterior a BUK.
 - La Edge Function `generate-competency-certificate` fue desplegada en Supabase remoto y conserva rechazo `401` sin bearer.
 - Validacion ejecutada: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:supabase-security`, `npm run audit:enterprise-docs`, `git diff --check` y render PNG local con Poppler.
+
+## Ajuste visual y paginacion del certificado de competencias
+
+- [x] Centrar el logo dinamico dentro de su celda de cabecera sin romper la seleccion por empresa del trabajador evaluado.
+- [x] Reducir tipografia y compactar paneles inferiores para que el bloque de equipos autorizados tenga una posicion mas equilibrada.
+- [x] Cambiar la tabla de equipos a una presentacion limpia: encabezado, una sola linea separadora y filas sin bordes internos visibles.
+- [x] Soportar certificados multipagina con el mismo header, numeracion y estetica en todas las hojas.
+- [x] Validar `TypeScript`, build frontend, warning budget de Supabase, render visual local y despliegue de Edge Function.

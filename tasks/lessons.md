@@ -2436,3 +2436,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un registro masivo no puede depender solo del estado en memoria de React.** Si el usuario puede tardar varios minutos cargando servicios, persiste un borrador acotado por usuario y limpia ese borrador solo después de un guardado exitoso.
 - **Un RPC de carga masiva no debe repetir la misma resolución por fila si el payload ya viene estructurado.** Contrato, servicio, equipo, conductor y permisos deben prepararse set-based y luego guardarse con un solo `INSERT ... ON CONFLICT DO UPDATE`.
 - **El warning budget es parte del cierre funcional.** Si una migración nueva sube el conteo de warnings, se corrige la migración antes de versionar aunque la lógica ya funcione.
+
+## 170. Las tablas de certificados deben priorizar lectura editorial sobre grillas densas
+
+- **No uses bordes completos por defecto en PDFs formales.** Para certificados, una tabla de autorizaciones se lee mejor con encabezado fuerte, una sola linea separadora y filas limpias sin verticales ni bordes por cada registro.
+- **La paginacion debe ser parte del diseno, no un parche posterior.** Si el certificado puede incluir muchos equipos, calcula capacidad por pagina, repite cabecera y deja los bloques de firma/validacion solo en la ultima hoja.
+- **El preview y el generador productivo deben compartir las mismas decisiones visuales.** Cualquier ajuste de layout en `competencyApi.ts` debe replicarse en la Edge Function para que la previsualizacion no prometa un PDF distinto al que se carga a BUK.
