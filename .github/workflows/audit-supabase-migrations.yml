@@ -10,6 +10,7 @@ on:
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
@@ -29,6 +30,7 @@ on:
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
@@ -54,6 +56,7 @@ jobs:
       FRONTEND_AUTH_SMOKE_CERTIFICACIONES_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_CERTIFICACIONES_PASSWORD }}
       FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL }}
       FRONTEND_AUTH_SMOKE_INSTRUCTOR_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_INSTRUCTOR_PASSWORD }}
+      FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED: ${{ vars.FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED }}
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 
@@ -74,6 +77,9 @@ jobs:
 
       - name: Smoke route and role guardrails
         run: npm run audit:route-role-smoke
+
+      - name: Audit authenticated frontend smoke matrix
+        run: npm run audit:frontend-auth-smoke-matrix
 
       - name: Install Chromium for frontend smoke
         run: npx playwright install --with-deps chromium

@@ -8,6 +8,7 @@ Comandos minimos ya usados en cambios productivos:
 npm run audit:migrations
 npm run audit:enterprise-docs
 npm run audit:route-role-smoke
+npm run audit:frontend-auth-smoke-matrix
 npm run smoke:frontend-routes
 npx tsc -b --pretty false
 npm run build:frontend-check
@@ -52,12 +53,20 @@ Este smoke no imprime contraseña ni tokens, no usa service role en el navegador
 
 `npm run smoke:frontend-authenticated-matrix` valida el manifiesto `tests/smoke/frontend-authenticated.scenarios.json` y ejecuta los escenarios autenticados que tengan secrets configurados:
 
-- `home-authenticated`: usa `FRONTEND_AUTH_SMOKE_HOME_EMAIL/PASSWORD`, abre `/`, exige `/` y heading `Bienvenido`;
-- `operations-l1-summary`: usa `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL/PASSWORD`, abre `/operaciones/resumen`, exige acceso de modulo y ruta final exacta;
-- `certificaciones-form`: usa `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_EMAIL/PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`;
-- `instructor-form`: usa `FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL/PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`.
+- `home-authenticated`: usa `FRONTEND_AUTH_SMOKE_HOME_EMAIL` y `FRONTEND_AUTH_SMOKE_HOME_PASSWORD`, abre `/`, exige `/` y heading `Bienvenido`;
+- `operations-l1-summary`: usa `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD`, abre `/operaciones/resumen`, exige acceso de modulo y ruta final exacta;
+- `certificaciones-form`: usa `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_EMAIL` y `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`;
+- `instructor-form`: usa `FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL` y `FRONTEND_AUTH_SMOKE_INSTRUCTOR_PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`.
 
 El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. No debe contener correos reales, passwords, tokens ni sesiones. Si un escenario no tiene credenciales o faltan `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, queda `skipped`; con `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1`, cualquier escenario omitido falla la matriz completa. Este modo se reserva para ambientes donde todas las cuentas controladas ya esten provisionadas.
+
+`npm run audit:frontend-auth-smoke-matrix` bloquea drift entre el manifiesto, GitHub Actions y esta documentacion:
+
+- valida que el manifiesto no tenga campos `email`, `password` ni `token`;
+- valida que cada escenario use roles conocidos, rutas internas y `requireModuleAccess`;
+- exige que `.github/workflows/audit-supabase-migrations.yml` mapee cada secret declarado por el manifiesto;
+- exige que el workflow permita activar `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED` desde variables de repositorio;
+- exige que `docs/smoke-tests.md` documente cada escenario, secret esperado, ruta y heading.
 
 `npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
 

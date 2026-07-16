@@ -488,6 +488,55 @@ Los escenarios reales seguirán `skipped` hasta que se creen cuentas controladas
 
 Provisionar o designar las cuentas controladas, configurar secrets por escenario y activar `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1` en el ambiente donde todos los escenarios esten disponibles.
 
+## Loop Enterprise global - auditor de matriz autenticada
+
+- [x] Ejecutar decima iteracion global del prompt Enterprise sobre drift de configuracion de smokes autenticados.
+- [x] Crear `npm run audit:frontend-auth-smoke-matrix`.
+- [x] Validar que el manifiesto no versiona credenciales ni tokens.
+- [x] Validar que cada escenario use roles conocidos, rutas internas y acceso de modulo obligatorio.
+- [x] Validar que el workflow mapea todos los secrets declarados por el manifiesto.
+- [x] Validar que el workflow permite activar `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED` desde GitHub vars.
+- [x] Validar que `docs/smoke-tests.md` documenta escenarios, secrets, rutas y headings.
+- [x] Integrar el auditor al workflow Enterprise antes de ejecutar la matriz browser.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+La matriz autenticada ya existia, pero su configuracion dependia de mantener sincronizados manualmente tres superficies: manifiesto JSON, workflow de GitHub Actions y documentacion operativa.
+
+#### Riesgo
+
+Un escenario podia agregarse al manifiesto sin mapear secrets en CI, o un secret podia cambiar de nombre sin actualizar docs. En ambos casos, la matriz pareceria versionada pero quedaria omitida o mal provisionada sin evidencia clara.
+
+#### Causa raiz
+
+El runner validaba el manifiesto y ejecutaba escenarios disponibles, pero no auditaba la consistencia transversal entre repo, CI y documentacion. Esa brecha es de configuracion, no de Playwright.
+
+#### Cambio implementado
+
+- `scripts/audit-frontend-auth-smoke-matrix.mjs` audita manifiesto, workflow, `package.json` y `docs/smoke-tests.md`.
+- `package.json` expone `npm run audit:frontend-auth-smoke-matrix`.
+- `.github/workflows/audit-supabase-migrations.yml` ejecuta el auditor antes de instalar Chromium y correr los smokes browser.
+- El workflow ahora expone `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED` desde `vars.FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED`.
+- `docs/smoke-tests.md` documenta el nuevo auditor y su alcance.
+
+#### Validacion
+
+Validacion ejecutada: `npm run audit:frontend-auth-smoke-matrix`, `npm run smoke:frontend-authenticated-matrix`, `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED=1 npm run smoke:frontend-authenticated-matrix` como prueba negativa esperada, `npm run smoke:frontend-authenticated`, `npm run smoke:frontend-routes`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado esperado
+
+El ERP queda con una matriz de smokes autenticados auditable de punta a punta: declarar un escenario obliga a documentarlo y mapear sus secrets en CI.
+
+#### Riesgo residual
+
+El auditor no puede crear cuentas ni secrets. La ejecucion real de escenarios sigue dependiendo de que el ambiente tenga cuentas controladas y passwords configurados fuera del repo.
+
+#### Proximo objetivo
+
+Provisionar las cuentas controladas o, si no estan disponibles, crear un chequeo remoto read-only que recomiende perfiles candidatos por rol sin exponer credenciales.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.

@@ -17,6 +17,7 @@
     "audit:migrations": "node scripts/audit-supabase-migrations.mjs --enforce-baseline",
     "audit:migrations:write-baseline": "node scripts/audit-supabase-migrations.mjs --write-baseline",
     "audit:enterprise-docs": "node scripts/audit-enterprise-docs.mjs",
+    "audit:frontend-auth-smoke-matrix": "node scripts/audit-frontend-auth-smoke-matrix.mjs",
     "audit:route-role-smoke": "node scripts/audit-route-role-smoke.mjs",
     "audit:supabase-security": "node scripts/audit-supabase-security.mjs",
     "provision:hiring-approvers": "node scripts/provision-hiring-approvers.mjs",

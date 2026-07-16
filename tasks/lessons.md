@@ -49,6 +49,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El smoke autenticado debe ser secret-enabled, no hardcodeado.** La ruta correcta es un harness que use `FRONTEND_AUTH_SMOKE_EMAIL/PASSWORD`, falle solo cuando se marque required y nunca imprima tokens/contraseñas; la cuenta controlada se configura fuera del repo.
 - **Un smoke autenticado por rol no puede aceptar `/sin-acceso` como exito.** Para rutas concretas, exige `FRONTEND_AUTH_SMOKE_REQUIRE_MODULE_ACCESS=1` y valida ruta/heading esperados; asi una cuenta sin permisos no pasa como login correcto.
 - **Los escenarios autenticados por rol deben versionar expectativas, no credenciales.** Mantén IDs, roles, rutas, headings y nombres de variables en un manifiesto auditable; corre solo los escenarios con secrets presentes y usa modo required para ambientes completamente provisionados.
+- **La matriz de smokes por rol debe auditar su propia configuracion.** Si cambian escenarios, nombres de secrets o rutas, un auditor debe comprobar manifiesto, workflow y documentacion juntos para evitar una matriz declarada pero no ejecutable.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 
