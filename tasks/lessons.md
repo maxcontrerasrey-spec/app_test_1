@@ -53,6 +53,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Antes de pedir secrets, verifica que existan perfiles candidatos seguros.** Un smoke remoto read-only puede recomendar cuentas por rol validando estado activo, AUP aceptada, sin reset forzado, modulo requerido y precondiciones de dominio, sin imprimir passwords ni crear usuarios.
 - **Un smoke remoto opcional tambien necesita guardrail estatico.** Si CI no puede ejecutar una consulta remota por falta de link/credenciales, al menos debe auditar que el comando exista, este documentado y que el workflow observe cambios en su script.
 - **La presencia de secrets debe auditarse por nombre, nunca por valor.** Para GitHub Actions, usa `gh secret list` y `gh variable list` para detectar faltantes sin imprimir passwords, tokens ni variables sensibles.
+- **Configura solo credenciales que puedas probar sin inventar valores.** Es valido avanzar variables publicas y email secrets derivados de perfiles candidatos, pero las passwords controladas deben cargarse fuera del repo y validarse despues con el smoke browser real.
 
 ## 250. Un warning histórico solo se descuenta si una migración posterior lo reemplaza de forma verificable
 

@@ -683,6 +683,53 @@ El auditor no puede crear ni asignar passwords. Solo prueba presencia de nombres
 
 Configurar fuera del repositorio `VITE_SUPABASE_ANON_KEY` y los secrets de los escenarios que ya tengan cuenta candidata; luego activar el modo required solo cuando los cuatro escenarios tengan cuenta controlada.
 
+## Loop Enterprise global - provisionamiento parcial de GitHub Actions para smokes autenticados
+
+- [x] Ejecutar decimocuarta iteracion global del prompt Enterprise sobre configuracion externa verificable.
+- [x] Configurar `VITE_SUPABASE_ANON_KEY` como variable de GitHub Actions desde el entorno local sin imprimir su valor.
+- [x] Resolver desde Supabase remoto los candidatos vigentes para `home-authenticated` y `operations-l1-summary` sin imprimir correos.
+- [x] Configurar `FRONTEND_AUTH_SMOKE_HOME_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL` como secrets de GitHub Actions.
+- [x] Reauditar presencia de secrets/vars por nombre, sin leer valores.
+- [x] Mantener pendiente la carga de passwords controladas y los escenarios sin candidato.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El auditor de secrets confirmaba que faltaba `VITE_SUPABASE_ANON_KEY` y que no habia ningun secret de la matriz autenticada configurado en GitHub Actions.
+
+#### Riesgo
+
+Mientras faltara la variable anon y los email secrets, incluso los escenarios con candidato real no podian avanzar hacia ejecucion en CI. Activar modo required en ese estado solo produciria omisiones/fallas de configuracion.
+
+#### Causa raiz
+
+La matriz autenticada separa correctamente credenciales del repositorio, pero esa frontera exige un paso operacional externo. El repo ya podia detectar faltantes, pero aun no se habian cargado los valores disponibles.
+
+#### Cambio implementado
+
+- Se configuro `VITE_SUPABASE_ANON_KEY` como variable de GitHub Actions desde `.env.local`, sin mostrar el valor.
+- Se consulto Supabase remoto para resolver candidatos elegibles de `home-authenticated` y `operations-l1-summary`, sin imprimir correos.
+- Se configuraron los secrets `FRONTEND_AUTH_SMOKE_HOME_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL`.
+- No se inventaron ni cargaron passwords.
+- No se configuraron secrets para `certificaciones-form` ni `instructor-form` porque siguen sin candidato elegible.
+
+#### Validacion
+
+Validacion ejecutada: `npm run audit:frontend-auth-smoke-secrets`, `FRONTEND_AUTH_SMOKE_SECRETS_REQUIRED=1 npm run audit:frontend-auth-smoke-secrets` como prueba negativa esperada, `npm run audit:frontend-auth-smoke-matrix`, `npm run smoke:frontend-authenticated-matrix`, `npm run audit:enterprise-docs`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado esperado
+
+GitHub Actions queda parcialmente provisionado y auditable: las 2 variables requeridas ya estan presentes, y 2 de los 8 secrets esperados ya existen. Siguen faltando `FRONTEND_AUTH_SMOKE_HOME_PASSWORD`, `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD`, ambos secrets de `CERTIFICACIONES` y ambos secrets de `INSTRUCTOR`.
+
+#### Riesgo residual
+
+La matriz browser sigue sin poder ejecutar escenarios autenticados reales porque faltan passwords controladas. `certificaciones-form` e `instructor-form` ademas requieren primero crear o vincular cuentas candidatas.
+
+#### Proximo objetivo
+
+Crear o asignar passwords controladas para las cuentas candidatas de Inicio y Operaciones L1, cargarlas como secrets y ejecutar la matriz autenticada para esos escenarios antes de activar el modo required global.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.
