@@ -36,6 +36,17 @@ Este smoke no reemplaza pruebas E2E con login real, pero bloquea drift de contra
 
 Este smoke no usa credenciales, no inicia sesion real y no toca datos productivos. Los placeholders solo activan la rama de guard autenticado para probar la redireccion sin sesion. En CI requiere `npm ci` y `npx playwright install --with-deps chromium`.
 
+`npm run smoke:frontend-authenticated` valida login real solo cuando existen variables seguras:
+
+- requiere `FRONTEND_AUTH_SMOKE_EMAIL`, `FRONTEND_AUTH_SMOKE_PASSWORD`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`;
+- levanta Vite localmente, salvo que `FRONTEND_SMOKE_BASE_URL` apunte a un servidor existente;
+- inicia sesion con Supabase Auth desde Chromium, espera carga de Inicio y valida que no vuelva a `/login`;
+- si la cuenta es compartida y aparece el selector de operador, selecciona la opcion inicial y continua;
+- navega a `FRONTEND_AUTH_SMOKE_PATH` o `/` por defecto y acepta como resultado valido una ruta autenticada cargada o `/sin-acceso` controlado;
+- con `FRONTEND_AUTH_SMOKE_REQUIRED=1`, falla si falta configuracion; sin esa variable, informa `skipped` sin bloquear.
+
+Este smoke no imprime contraseña ni tokens, no usa service role en el navegador y no crea usuarios. En CI queda condicionado a secretos/vars para que se active solo cuando exista una cuenta controlada de prueba.
+
 `npm run smoke:dashboard-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
 
 - `get_my_effective_permissions()` rechaza llamadas sin `auth.uid()`;
@@ -145,8 +156,8 @@ npx --yes supabase functions deploy <function_name> --project-ref <ref> --use-ap
 
 ## Deuda actual
 
-- El repo no tiene aun `tests/smoke` por rol ni fixtures de usuarios controlados.
-- La cobertura UI ya incluye un smoke browser acotado de rutas publicas/protegidas; la cobertura autenticada por rol aun depende de smokes RPC y validaciones manuales.
+- El repo no tiene aun fixtures versionados de usuarios controlados por rol.
+- La cobertura UI ya incluye un smoke browser acotado de rutas publicas/protegidas y un harness autenticado activable por secretos; la cobertura autenticada por rol aun depende de configurar cuentas de prueba controladas.
 - Rutas/roles/preloads, RPCs base de Inicio y lecturas/escritura transaccional de Operaciones ya tienen smoke automatizado.
 
 ## Siguiente implementacion segura

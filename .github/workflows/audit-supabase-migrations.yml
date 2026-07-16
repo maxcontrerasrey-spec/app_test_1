@@ -13,6 +13,7 @@ on:
       - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
+      - "scripts/smoke-frontend-authenticated.mjs"
       - "scripts/smoke-frontend-routes.mjs"
       - "package.json"
       - "package-lock.json"
@@ -29,6 +30,7 @@ on:
       - "scripts/audit-route-role-smoke.mjs"
       - "scripts/audit-supabase-migrations.mjs"
       - "scripts/audit-supabase-security.mjs"
+      - "scripts/smoke-frontend-authenticated.mjs"
       - "scripts/smoke-frontend-routes.mjs"
       - "package.json"
       - "package-lock.json"
@@ -37,6 +39,11 @@ on:
 jobs:
   audit-enterprise-guardrails:
     runs-on: ubuntu-latest
+    env:
+      FRONTEND_AUTH_SMOKE_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_EMAIL }}
+      FRONTEND_AUTH_SMOKE_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 
     steps:
       - name: Checkout repository
@@ -61,6 +68,13 @@ jobs:
 
       - name: Smoke frontend public and protected routes
         run: npm run smoke:frontend-routes
+
+      - name: Smoke frontend authenticated route
+        if: ${{ env.FRONTEND_AUTH_SMOKE_EMAIL != '' && env.FRONTEND_AUTH_SMOKE_PASSWORD != '' && env.VITE_SUPABASE_URL != '' && env.VITE_SUPABASE_ANON_KEY != '' }}
+        env:
+          FRONTEND_AUTH_SMOKE_REQUIRED: "1"
+          FRONTEND_AUTH_SMOKE_PATH: "/"
+        run: npm run smoke:frontend-authenticated
 
       - name: Enforce migration baseline
         run: npm run audit:migrations

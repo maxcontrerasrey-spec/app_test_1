@@ -345,6 +345,55 @@ El smoke no inicia sesion con usuario real, no valida modulos autenticados rende
 
 Crear fixtures/cuentas controladas de smoke por rol o un mecanismo seguro de sesion de prueba que permita abrir Inicio/Operaciones autenticado sin exponer credenciales ni usar service role en el browser.
 
+## Loop Enterprise global - harness browser autenticado
+
+- [x] Ejecutar septima iteracion global del prompt Enterprise sobre smoke autenticado seguro.
+- [x] Verificar contrato de `AuthContext`, login real, operador compartido y rutas autenticadas.
+- [x] Crear `npm run smoke:frontend-authenticated`.
+- [x] Diseñar el smoke para usar solo `FRONTEND_AUTH_SMOKE_EMAIL/PASSWORD` y claves publicas de Supabase.
+- [x] Evitar service role, tokens hardcodeados o credenciales en el repo.
+- [x] Integrar el smoke al workflow Enterprise como paso condicional por secretos/vars.
+- [x] Documentar modo `skipped`, modo `required` y riesgo residual en `docs/smoke-tests.md`.
+
+### Entregable de iteracion
+
+#### Hallazgo
+
+El smoke browser base ya validaba login visible y guard sin sesion, pero no existia un mecanismo versionado para activar una prueba browser autenticada cuando existan credenciales controladas.
+
+#### Riesgo
+
+Sin harness autenticado, el ERP podia seguir dependiendo de smokes RPC para sesion real. Eso deja sin cobertura browser el flujo de login, carga de `AuthContext`, AUP/operador compartido y resolucion de ruta autenticada.
+
+#### Causa raiz
+
+No habia una cuenta de prueba controlada versionada ni una forma segura de consumir credenciales desde CI. Incrustar usuarios, passwords o service role en codigo habria creado una deuda de seguridad mayor que la cobertura ganada.
+
+#### Cambio implementado
+
+- `scripts/smoke-frontend-authenticated.mjs` levanta Vite o usa `FRONTEND_SMOKE_BASE_URL`.
+- El smoke requiere `FRONTEND_AUTH_SMOKE_EMAIL`, `FRONTEND_AUTH_SMOKE_PASSWORD`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` para ejecutar login real.
+- Sin variables, devuelve `status = skipped`; con `FRONTEND_AUTH_SMOKE_REQUIRED=1`, falla si falta configuracion.
+- El flujo inicia sesion por UI, espera Inicio, maneja selector de operador compartido si aparece y navega a `FRONTEND_AUTH_SMOKE_PATH` o `/`.
+- El workflow Enterprise ejecuta el smoke solo cuando existen secretos/vars configurados.
+- La salida enmascara el correo y no imprime password, token ni session payload.
+
+#### Validacion
+
+Validacion ejecutada: `npm run smoke:frontend-authenticated`, `FRONTEND_AUTH_SMOKE_REQUIRED=1 npm run smoke:frontend-authenticated` como prueba negativa esperada, `npm run smoke:frontend-routes`, `npm run smoke:operations-write-rpc`, `npm run smoke:operations-rpc`, `npm run smoke:dashboard-rpc`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run audit:supabase-security`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check` y `git diff --check`.
+
+#### Resultado
+
+El ERP queda con un harness browser autenticado seguro y activable por secretos, sin exponer credenciales ni usar service role en el navegador. En el entorno actual el smoke queda `skipped` por falta de email/password controlados, y el modo `required` falla correctamente cuando faltan variables.
+
+#### Riesgo residual
+
+Mientras no existan secretos `FRONTEND_AUTH_SMOKE_EMAIL/PASSWORD` y vars `VITE_SUPABASE_URL/ANON_KEY` en CI, el paso autenticado queda disponible pero omitido. Aun falta crear o designar cuentas controladas por rol.
+
+#### Proximo objetivo
+
+Definir/provisionar cuentas controladas de smoke por rol y activar el paso autenticado en CI para Inicio y Operaciones con rutas concretas.
+
 ## Reparación warnings Operaciones, BI y ORION
 
 - [x] Identificar los warnings exactos de Operaciones, BI y ORION en `audit:supabase-security`.
