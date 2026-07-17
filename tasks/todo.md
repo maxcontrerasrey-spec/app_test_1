@@ -4,6 +4,22 @@
 
 ## Cierre Certificados - generacion productiva BUK y header limpio
 
+- [x] Revisar duplicado real de Martin Ahumada en BUK/ERP y determinar folio valido.
+- [x] Mantener como vigente el folio reciente `1707202611471153` y reemplazar en ERP el folio antiguo `1707202611461152`.
+- [x] Verificar que el validador publico muestre el folio antiguo como `replaced` y no vigente, y el folio reciente como `valid`.
+- [x] Intentar eliminacion fisica BUK por IDs documentales exactos; BUK respondio `404` para `DELETE /employees/40022/docs/{file_id}` y no se forzo una ruta destructiva no documentada.
+- [x] Crear guarda backend transaccional para que `create_competency_request(...)` no cree certificados equivalentes para el mismo trabajador, instructor, fecha y set de modelos.
+- [x] Validar la guarda con smoke remoto en transaccion `ROLLBACK`.
+
+### Cierre duplicado operacional
+
+- Se agregó y aplicó [`20260717160245_prevent_duplicate_competency_certificates.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260717160245_prevent_duplicate_competency_certificates.sql:1).
+- El folio antiguo `1707202611461152` quedó `certificate_status = replaced`, `competency_status = revoked`, solicitud `cancelled` y `replaced_by_certificate_id` apuntando al folio reciente.
+- El folio reciente `1707202611471153` se mantiene `uploaded_to_buk`, `enabled` y `completed`.
+- El validador público responde `replaced / is_current=false` para el folio antiguo y `valid / is_current=true` para el folio reciente.
+- La nueva RPC ordena/deduplica modelos, toma `pg_advisory_xact_lock(...)` por llave operacional y rechaza solicitudes equivalentes antes de insertar una nueva solicitud/certificado.
+- Validación ejecutada: migración aplicada en remoto, versión registrada con `migration repair`, smoke de duplicado con `ROLLBACK`, verificación pública de ambos folios y confirmación de que el objeto Storage temporal no persistió.
+
 - [x] Confirmar causa raíz: la pantalla `/certificados` seguía invocando el generador temporal local aunque la Edge Function productiva ya cargaba a BUK.
 - [x] Reemplazar el submit temporal por flujo real: subir evaluación, crear solicitud backend, generar certificado productivo y cargar certificado/evaluación a BUK.
 - [x] Priorizar el enlace BUK al abrir el resultado, dejando URL firmada de Storage solo como fallback cuando BUK no queda en éxito.
