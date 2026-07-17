@@ -10,7 +10,6 @@ import type {
   CompetencyCatalogs,
   CompetencyInstructor,
   CompetencyModelWarning,
-  CompetencyPreviewPdfResult,
   CompetencyWorker
 } from "../types";
 import "../styles/competencies.css";
@@ -31,6 +30,13 @@ type CompetencyModelRow = {
   brandId: string;
   typeId: string;
   modelId: string;
+};
+
+type LastGeneration = {
+  folio: string;
+  documentUrl?: string | null;
+  bukUploadStatus: string;
+  bukDocumentUrl?: string | null;
 };
 
 function createModelRow(): CompetencyModelRow {
@@ -113,7 +119,7 @@ export function CompetencyCertificationPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [modelWarnings, setModelWarnings] = useState<CompetencyModelWarning[]>([]);
   const [warningError, setWarningError] = useState<string | null>(null);
-  const [lastGeneration, setLastGeneration] = useState<CompetencyPreviewPdfResult | null>(null);
+  const [lastGeneration, setLastGeneration] = useState<LastGeneration | null>(null);
   const [evaluationFile, setEvaluationFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -289,28 +295,51 @@ export function CompetencyCertificationPage() {
 
       validateEvaluationEvidence(evaluationFile);
 
-      setMessage("Generando PDF temporal de prueba.");
-      const { generateCompetencyPreviewPdf } = await import("../services/competencyApi");
-      const generation = await generateCompetencyPreviewPdf({
-        instructorName: selectedInstructor.fullName,
-        instructorDocumentNumber: selectedInstructor.documentNumber,
-        instructorProfileCode: selectedInstructor.profileCode,
-        workerName: selectedWorker.fullName,
-        workerDocumentNumber: selectedWorker.documentNumber,
-        workerJobTitle: selectedWorker.jobTitle ?? "",
-        workerCompanyName: selectedWorker.companyName,
-        authorizedModels: selectedModels.map((model) => ({
-          brandName: model?.brandName ?? "",
-          typeName: model?.typeName ?? "",
-          modelName: model?.name ?? ""
-        })),
+      if (!evaluationFile) {
+        throw new Error("Debes cargar el examen teorico/evaluacion respaldada antes de generar el certificado.");
+      }
+
+      setMessage("Cargando evaluación y generando certificado productivo.");
+      const {
+        createCompetencyDocumentUrl,
+        createCompetencyRequest,
+        generateCompetencyCertificate,
+        uploadCompetencyEvaluationFile
+      } = await import("../services/competencyApi");
+      const evaluationUpload = await uploadCompetencyEvaluationFile(evaluationFile, user.id);
+      const request = await createCompetencyRequest({
+        workerBukEmployeeId: selectedWorker.bukEmployeeId,
+        instructorId: selectedInstructor.id,
+        modelIds: selectedModelIds,
         trainingDate: form.trainingDate,
         trainingStartTime: form.trainingStartTime,
-        trainingEndTime: form.trainingEndTime
+        trainingEndTime: form.trainingEndTime,
+        trainingLocation: "",
+        theoreticalScore: Number(form.theoreticalScore),
+        practicalScore: Number(form.practicalScore),
+        finalScore: 100,
+        evaluationDate: new Date().toISOString(),
+        evaluationFilePath: evaluationUpload.path,
+        evaluationFileName: evaluationUpload.name,
+        evaluationMimeType: evaluationUpload.mimeType,
+        evaluationSizeBytes: evaluationUpload.sizeBytes,
+        evaluationSha256: evaluationUpload.sha256,
+        declarationAccepted: form.declarationAccepted
       });
-      setLastGeneration(generation);
-      setMessage(`PDF temporal ${generation.folio} generado sin guardar ni cargar a BUK.`);
-      window.open(generation.objectUrl, "_blank", "noopener,noreferrer");
+      const generation = await generateCompetencyCertificate(request.requestId);
+      let documentUrl = generation.bukDocumentUrl ?? null;
+      if (!documentUrl && generation.bukUploadStatus !== "success") {
+        documentUrl = await createCompetencyDocumentUrl(generation.pdfPath);
+      }
+      setLastGeneration({ ...generation, documentUrl });
+      setMessage(
+        generation.bukUploadStatus === "success"
+          ? `Certificado ${generation.folio} generado y cargado correctamente en BUK.`
+          : `Certificado ${generation.folio} generado. Revisa estado BUK: ${generation.bukUploadStatus}.`
+      );
+      if (documentUrl) {
+        window.open(documentUrl, "_blank", "noopener,noreferrer");
+      }
     } catch (error) {
       setErrorMessage(buildErrorMessage(error));
     } finally {
@@ -536,7 +565,7 @@ export function CompetencyCertificationPage() {
             ) : null}
 
             <button type="submit" className="primary-action-button competency-submit-button" disabled={!canSubmit}>
-              {isSubmitting ? "Generando..." : "Generar PDF de prueba"}
+              {isSubmitting ? "Generando..." : "Generar certificado y cargar a BUK"}
             </button>
           </fieldset>
 
@@ -549,10 +578,12 @@ export function CompetencyCertificationPage() {
           {lastGeneration ? (
             <article className="competency-last-result">
               <strong>{lastGeneration.folio}</strong>
-              <span>{statusLabel("generated")} sin guardado ni carga BUK</span>
-              <button type="button" onClick={() => window.open(lastGeneration.objectUrl, "_blank", "noopener,noreferrer")}>
-                Abrir PDF
-              </button>
+              <span>{lastGeneration.bukUploadStatus === "success" ? "Cargado en BUK" : statusLabel(lastGeneration.bukUploadStatus)}</span>
+              {lastGeneration.documentUrl ? (
+                <button type="button" onClick={() => window.open(lastGeneration.documentUrl ?? "", "_blank", "noopener,noreferrer")}>
+                  {lastGeneration.bukDocumentUrl ? "Abrir en BUK" : "Abrir PDF"}
+                </button>
+              ) : null}
             </article>
           ) : null}
         </form>

@@ -2,6 +2,23 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Cierre Certificados - generacion productiva BUK y header limpio
+
+- [x] Confirmar causa raíz: la pantalla `/certificados` seguía invocando el generador temporal local aunque la Edge Function productiva ya cargaba a BUK.
+- [x] Reemplazar el submit temporal por flujo real: subir evaluación, crear solicitud backend, generar certificado productivo y cargar certificado/evaluación a BUK.
+- [x] Priorizar el enlace BUK al abrir el resultado, dejando URL firmada de Storage solo como fallback cuando BUK no queda en éxito.
+- [x] Eliminar líneas/bordes negros superiores y separadores verticales del header en preview y Edge Function productiva.
+- [x] Evitar truncado de marcas/tipos/modelos en la tabla de equipos autorizados; el texto ahora se envuelve y pagina sin puntos suspensivos.
+- [x] Validar TypeScript, build frontend, Deno, auditorías, deploy de Edge Function, commit y push a `main`.
+
+### Resultado aplicado
+
+- [`CompetencyCertificationPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/pages/CompetencyCertificationPage.tsx:1) ya no muestra ni usa `PDF temporal ... generado sin guardar ni cargar a BUK`; ahora llama `uploadCompetencyEvaluationFile`, `createCompetencyRequest` y `generateCompetencyCertificate`.
+- La apertura del resultado usa `bukDocumentUrl` cuando BUK responde éxito, respetando la purga local de Storage posterior a la carga documental.
+- [`competencyApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/services/competencyApi.ts:1) y [`generate-competency-certificate/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/generate-competency-certificate/index.ts:1) dejan el header sin línea superior negra, sin borde izquierdo negro y sin divisor vertical negro.
+- La tabla `Marca / Tipo de equipo / Modelo` ya no usa el helper de truncado con `...`; amplía la columna de marca, envuelve texto y reduce capacidad por página para preservar lectura completa.
+- Validación ejecutada: `deno check`, `npx tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:route-role-smoke`, `npm run audit:supabase-security`, `git diff --check`, búsqueda estática de trazos negros removidos y smoke remoto `401` sin bearer tras desplegar `generate-competency-certificate`.
+
 ## Optimización global de chunks y búsquedas BUK
 
 - [x] Medir build actual y ubicar chunks grandes reales.

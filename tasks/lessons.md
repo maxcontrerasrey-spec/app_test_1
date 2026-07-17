@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 259. El cierre productivo de certificados debe revisar el entrypoint de la pantalla
+
+- **No basta con que la Edge Function productiva esté correcta.** Si el botón de la UI sigue llamando un generador temporal, el usuario verá folios locales y nunca llegará a BUK aunque el backend ya soporte la operación real.
+- **La purga de Storage cambia cómo se abre el resultado.** Cuando el éxito BUK elimina los objetos ERP, la pantalla debe priorizar el enlace documental de BUK y usar URL firmada local solo como fallback de error/pending.
+- **Los ajustes visuales del PDF se corrigen en preview y en producción.** Quitar líneas, bordes o separadores del certificado exige tocar `competencyApi.ts` y `generate-competency-certificate` para que el PDF real no conserve artefactos negros.
+- **Un certificado no debe ocultar datos con puntos suspensivos.** Marcas, tipos y modelos autorizados se deben envolver, paginar o reducir de forma controlada; truncarlos impide validar el alcance real de la acreditación.
+
 ## 258. El modo temporal de certificados no puede saltarse precondiciones productivas
 
 - **Un PDF de prueba no debe relajar restricciones de emisión.** Aunque no cree solicitud, folio productivo ni carga BUK, la UI debe seguir exigiendo examen/evaluación respaldada, notas teórica/práctica al 100% y declaración aceptada antes de generar.

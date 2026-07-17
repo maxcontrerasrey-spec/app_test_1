@@ -352,39 +352,6 @@ function drawCenteredText(
   });
 }
 
-function drawFittedText(page: PDFPage, text: string, options: {
-  x: number;
-  y: number;
-  width: number;
-  font: PDFFont;
-  size: number;
-}) {
-  if (options.font.widthOfTextAtSize(text, options.size) <= options.width) {
-    page.drawText(text, {
-      x: options.x,
-      y: options.y,
-      size: options.size,
-      font: options.font,
-      color: rgb(0.11, 0.13, 0.16)
-    });
-    return;
-  }
-
-  const ellipsis = "...";
-  let fitted = text;
-  while (fitted.length > 1 && options.font.widthOfTextAtSize(`${fitted}${ellipsis}`, options.size) > options.width) {
-    fitted = fitted.slice(0, -1);
-  }
-
-  page.drawText(`${fitted.trimEnd()}${ellipsis}`, {
-    x: options.x,
-    y: options.y,
-    size: options.size,
-    font: options.font,
-    color: rgb(0.11, 0.13, 0.16)
-  });
-}
-
 function drawScaledText(page: PDFPage, text: string, options: {
   x: number;
   y: number;
@@ -519,9 +486,9 @@ function drawRichParagraph(page: PDFPage, segments: Array<{ text: string; font: 
   return y - 12;
 }
 
-const FIRST_PAGE_MODEL_CAPACITY = 6;
-const CONTINUATION_PAGE_MODEL_CAPACITY = 18;
-const LAST_PAGE_MODEL_CAPACITY = 18;
+const FIRST_PAGE_MODEL_CAPACITY = 4;
+const CONTINUATION_PAGE_MODEL_CAPACITY = 10;
+const LAST_PAGE_MODEL_CAPACITY = 10;
 
 function calculateCertificatePageCount(modelCount: number) {
   if (modelCount <= FIRST_PAGE_MODEL_CAPACITY) {
@@ -538,7 +505,6 @@ function drawCertificateHeader(
   pageNumber: number,
   pageTotal: number
 ) {
-  const border = rgb(0.16, 0.18, 0.22);
   const accent = rgb(0.82, 0.03, 0.07);
   const watermark = rgb(0.48, 0.52, 0.58);
   const header = { x: 32, y: 721, width: 531, height: 101 };
@@ -550,10 +516,7 @@ function drawCertificateHeader(
   const logoWidth = logo.width * logoScale;
   const logoHeight = logo.height * logoScale;
 
-  page.drawLine({ start: { x: header.x, y: header.y + header.height }, end: { x: metadataCell.x, y: header.y + header.height }, thickness: 0.85, color: border });
   page.drawLine({ start: { x: header.x, y: header.y }, end: { x: header.x + header.width, y: header.y }, thickness: 1, color: accent });
-  page.drawLine({ start: { x: header.x, y: header.y }, end: { x: header.x, y: header.y + header.height }, thickness: 0.85, color: border });
-  page.drawLine({ start: { x: 153, y: 721 }, end: { x: 153, y: 822 }, thickness: 0.65, color: border });
   page.drawImage(logo, {
     x: logoCell.x + (logoCell.width - logoWidth) / 2,
     y: logoCell.y + (logoCell.height - logoHeight) / 2,
@@ -590,8 +553,10 @@ function drawModelSummary(
   const tableX = 54;
   const tableWidth = 487;
   const headerHeight = 24;
-  const rowHeight = 22;
-  const columns = [88, 185, 214];
+  const rowHeight = 40;
+  const columns = [118, 147, 222];
+  const rowFontSize = 8.6;
+  const lineHeight = 9.5;
   const visibleRows = rows;
   const totalHeight = headerHeight + visibleRows.length * rowHeight;
 
@@ -616,12 +581,63 @@ function drawModelSummary(
   for (let index = 0; index < visibleRows.length; index += 1) {
     const row = visibleRows[index];
     const y = tableY - headerHeight - (index + 1) * rowHeight;
-    drawFittedText(page, row.brand_name, { x: tableX + 2, y: y + 7, width: columns[0] - 14, size: 9.5, font: fonts.regular });
-    drawFittedText(page, row.type_name, { x: tableX + columns[0] + 2, y: y + 7, width: columns[1] - 14, size: 9.5, font: fonts.regular });
-    drawFittedText(page, row.model_name, { x: tableX + columns[0] + columns[1] + 2, y: y + 7, width: columns[2] - 14, size: 9.5, font: fonts.regular });
+    drawWrappedCellText(page, row.brand_name, { x: tableX + 2, y: y + 27, width: columns[0] - 8, size: rowFontSize, lineHeight, font: fonts.regular });
+    drawWrappedCellText(page, row.type_name, { x: tableX + columns[0] + 2, y: y + 27, width: columns[1] - 8, size: rowFontSize, lineHeight, font: fonts.regular });
+    drawWrappedCellText(page, row.model_name, { x: tableX + columns[0] + columns[1] + 2, y: y + 27, width: columns[2] - 8, size: rowFontSize, lineHeight, font: fonts.regular });
   }
 
   return tableY - totalHeight;
+}
+
+function drawWrappedCellText(page: PDFPage, text: string, options: {
+  x: number;
+  y: number;
+  width: number;
+  font: PDFFont;
+  size: number;
+  lineHeight: number;
+}) {
+  let size = options.size;
+  let lines = splitTextIntoCellLines(text, options.font, size, options.width);
+
+  while (size > 6.2 && lines.length > 4) {
+    size -= 0.2;
+    lines = splitTextIntoCellLines(text, options.font, size, options.width);
+  }
+
+  lines.forEach((line, index) => {
+    page.drawText(line, {
+      x: options.x,
+      y: options.y - index * options.lineHeight,
+      size,
+      font: options.font,
+      color: rgb(0.11, 0.13, 0.16)
+    });
+  });
+}
+
+function splitTextIntoCellLines(text: string, font: PDFFont, size: number, maxWidth: number) {
+  const chunks: string[] = [];
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (font.widthOfTextAtSize(word, size) <= maxWidth) {
+      chunks.push(word);
+      continue;
+    }
+
+    let current = "";
+    for (const char of word) {
+      const next = `${current}${char}`;
+      if (current && font.widthOfTextAtSize(next, size) > maxWidth) {
+        chunks.push(current);
+        current = char;
+      } else {
+        current = next;
+      }
+    }
+    if (current) chunks.push(current);
+  }
+
+  return splitTextIntoLines(chunks.join(" "), font, size, maxWidth);
 }
 
 function drawValidationPanel(page: PDFPage, input: {
