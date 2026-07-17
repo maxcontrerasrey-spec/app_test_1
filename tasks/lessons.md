@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 257. Super admin no puede depender de matrices operativas para ver o accionar
+
+- **Si un usuario es `admin/super admin`, el backend debe reconocerlo en lectura y escritura.** En Operaciones, el selector de contratos editables no puede depender de `operations_contract_editors` para administradores; debe exponer todos los contratos activos y conservar la matriz solo para roles operativos acotados.
+- **Una pantalla vacía para admin es un bug de autorización, no una falta de asignación.** Si el ERP muestra “sin contratos asignados” a un administrador, la revisión debe ir primero a vistas/RPC con `auth.uid()` y no a cargar filas manuales en matrices de alcance.
+- **El override admin debe probarse junto al caso restringido.** Cada corrección de este tipo debe demostrar que admin ve/edita todo lo activo y que `operaciones_l_1`/`operaciones_l_2` siguen limitados a sus contratos asignados.
+
 ## 251. Los certificados operacionales deben emitirse desde backend aunque el flujo nazca en una pantalla modular
 
 - **El frontend no debe inventar folio, vigencia, hash ni nombre documental.** Para competencias de conductores, React solo reúne trabajador, instructor, modelos y evaluación; la RPC/Edge Function crea folio, token, PDF, vencimiento, hash y estado BUK.

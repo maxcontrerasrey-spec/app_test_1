@@ -31,6 +31,29 @@
 
 Validación ejecutada: `npm run build:frontend-check`, `npm run smoke:frontend-routes`, `npm run audit:route-role-smoke` y `git diff --check`.
 
+## Corrección Operaciones - super admin sin contratos editables
+
+- [x] Confirmar causa raíz remota del selector vacío en Registro Base de Operaciones.
+- [x] Verificar que `maximiliano.contreras@busesjm.com` es usuario activo con rol `admin` y `public.user_is_admin(...) = true`.
+- [x] Crear migración forward-only para que `admin/super admin` pueda editar todos los contratos activos sin depender de `operations_contract_editors`.
+- [x] Mantener la matriz contractual obligatoria para `operaciones_l_1` y `operaciones_l_2`.
+- [x] Aplicar la migración en Supabase remoto y registrar la versión en `supabase_migrations.schema_migrations`.
+- [x] Validar con `auth.uid()` simulado que admin ve/edita todos los contratos activos y que un L1 sigue limitado a su contrato asignado.
+
+### Resultado aplicado
+
+- Se agregó y aplicó en remoto [`20260717142452_allow_admin_operations_contract_editing.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260717142452_allow_admin_operations_contract_editing.sql:1).
+- `public.user_can_edit_operations_contract(...)` ahora autoriza a usuarios admin sobre cualquier contrato activo.
+- `public.operations_editable_contracts` ahora retorna todos los contratos activos para admin/super admin y conserva la salida por matriz para usuarios operativos no admin.
+- El usuario admin `maximiliano.contreras@busesjm.com` pasó de no tener contratos editables a ver 110 contratos editables, igual al total activo remoto.
+- La cuenta `jose.orellana@busesjm.com` con `operaciones_l_1` se mantuvo limitada a `CONT-028 / CODELCO DMH` y no puede editar un contrato no asignado.
+
+### Validación remota
+
+- Admin simulado: `active_contracts = 110`, `visible_contracts = 110`, `editable_contracts = 110`.
+- Admin simulado: `user_can_edit_operations_contract(...) = true` para `CONT-028` y `CONT-001`.
+- L1 simulado: `editable_contracts = 1`, `can_edit_dmh = true`, `can_edit_unassigned = false`.
+
 ## Submódulo Certificación de Competencias BUK
 
 - [x] Implementar base backend auditable: rol/módulo, tablas, catálogos, RLS, storage privado, auditoría y RPCs.
