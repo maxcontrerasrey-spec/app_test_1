@@ -10,6 +10,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La purga de Storage cambia cómo se abre el resultado.** Cuando el éxito BUK elimina los objetos ERP, la pantalla debe priorizar el enlace documental de BUK y usar URL firmada local solo como fallback de error/pending.
 - **Los ajustes visuales del PDF se corrigen en preview y en producción.** Quitar líneas, bordes o separadores del certificado exige tocar `competencyApi.ts` y `generate-competency-certificate` para que el PDF real no conserve artefactos negros.
 - **Un certificado no debe ocultar datos con puntos suspensivos.** Marcas, tipos y modelos autorizados se deben envolver, paginar o reducir de forma controlada; truncarlos impide validar el alcance real de la acreditación.
+- **Los imports lazy de acciones críticas también necesitan retry.** `lazyWithRetry` cubre rutas, pero un `await import(...)` dentro de un botón puede fallar después de un deploy si el navegador conserva un bundle anterior; usa `importWithRetry` para recargar una vez y tomar los chunks vigentes.
 
 ## 258. El modo temporal de certificados no puede saltarse precondiciones productivas
 

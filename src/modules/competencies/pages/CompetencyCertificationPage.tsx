@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { PageShell, SelectField, StandardWorkerLookupField, TextField } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
+import { importWithRetry } from "../../../shared/lib/lazyWithRetry";
 import {
   fetchCompetencyModelWarnings,
   fetchCompetencyCatalogs
@@ -305,7 +306,7 @@ export function CompetencyCertificationPage() {
         createCompetencyRequest,
         generateCompetencyCertificate,
         uploadCompetencyEvaluationFile
-      } = await import("../services/competencyApi");
+      } = await importWithRetry("competency-api", () => import("../services/competencyApi"));
       const evaluationUpload = await uploadCompetencyEvaluationFile(evaluationFile, user.id);
       const request = await createCompetencyRequest({
         workerBukEmployeeId: selectedWorker.bukEmployeeId,

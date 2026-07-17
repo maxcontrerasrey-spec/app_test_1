@@ -53,3 +53,33 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     }
   });
 }
+
+export async function importWithRetry<T>(cacheKey: string, importer: () => Promise<T>): Promise<T> {
+  try {
+    const module = await importer();
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(`${RETRY_STORAGE_PREFIX}:${cacheKey}`);
+    }
+
+    return module;
+  } catch (error) {
+    if (typeof window === "undefined" || !isChunkLoadError(error)) {
+      throw error;
+    }
+
+    const storageKey = `${RETRY_STORAGE_PREFIX}:${cacheKey}`;
+    const hasRetried = window.sessionStorage.getItem(storageKey) === "1";
+
+    if (!hasRetried) {
+      window.sessionStorage.setItem(storageKey, "1");
+      window.location.reload();
+      return new Promise<never>(() => {
+        // The page is reloading. Keep the promise pending to avoid secondary crashes.
+      });
+    }
+
+    window.sessionStorage.removeItem(storageKey);
+    throw error;
+  }
+}
