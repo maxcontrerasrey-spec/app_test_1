@@ -48,7 +48,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   loadingMessage,
   emptyMessage = "No hay coincidencias para la búsqueda actual.",
   clearLabel = "Limpiar",
-  debounceMs = 150,
+  debounceMs = 250,
   disabled = false,
   minSearchLength = 2,
   onSearchChange,
@@ -86,9 +86,13 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
     onSearchChange?.(debouncedSearch);
   }, [debouncedSearch, onSearchChange]);
 
+  const hasSearchableText =
+    debouncedSearch.length >= minSearchLength ||
+    debouncedSearch.replace(/\D/g, "").length >= Math.max(4, minSearchLength);
+
   const workerSearchQuery = useSearchQuery(
     debouncedSearch,
-    !disabled && isOpen,
+    !disabled && isOpen && hasSearchableText,
     searchContext
   );
   const results = useMemo(() => {
@@ -145,7 +149,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
         ) : null}
       </div>
 
-      {isOpen && debouncedSearch.length >= minSearchLength ? (
+      {isOpen && hasSearchableText ? (
         <div className="hr-worker-lookup-results">
           {workerSearchQuery.isLoading ? (
             <div className="hr-worker-lookup-empty">{loadingMessage}</div>

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
-import { searchCompetencyWorkers } from "../services/competencyApi";
+import { searchCompetencyWorkers } from "../services/competencyCoreApi";
 
 const COMPETENCY_SEARCH_STALE_TIME_MS = 15_000;
 const COMPETENCY_SEARCH_GC_TIME_MS = 20 * 60_000;

@@ -2458,3 +2458,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El payload publico debe ser un snapshot minimo.** Devuelve autenticidad, vigencia, folio, identidad certificada, instructor, equipos y huella del PDF; no devuelvas `pdf_path`, URLs BUK, rutas de evaluacion, IDs internos ni payloads crudos.
 - **El QR debe validar el certificado, no descargar documentos.** La ruta publica debe confirmar estado y vigencia; la custodia documental sigue en BUK/Storage bajo fronteras autenticadas.
 - **El warning budget manda sobre la arquitectura.** Si una solucion funcional sube `audit:supabase-security`, cambia la frontera tecnica antes de cerrar aunque el flujo ya responda.
+
+## 173. Los módulos ERP no deben mezclar APIs livianas con generadores o exportadores pesados
+
+- **Un servicio compartido por pantallas y hooks debe mantenerse liviano.** Si una función de certificados solo busca catálogos, trabajadores BUK o verifica QR, no debe importar `pdf-lib`, `qrcode`, fuentes ni logos; esos recursos se cargan solo en el flujo que genera PDF.
+- **Los exportadores se cargan al ejecutar la acción, no al abrir el módulo.** XLSX y plantillas BUK deben quedar detrás de `await import(...)`, especialmente cuando la vista principal solo lista candidatos.
+- **Las listas desplegables BUK deben proteger al backend desde el componente común.** El lookup estándar debe usar debounce suficiente y no habilitar queries hasta superar el umbral de texto o dígitos de documento.
+- **Las exportaciones masivas no deben disparar perfiles BUK sin límite.** Si se necesita enriquecer N candidatos antes de generar un archivo, usa concurrencia acotada o una RPC batch; `Promise.all` directo contra dotación grande degrada PostgREST y la UI.
+- **No partas vendors por subcarpetas si Rollup reporta ciclos.** ECharts puede quedar como vendor lazy único si partir `core/chart/component` introduce circular chunks; la mejora real es no cargarlo fuera de pantallas con gráficos.
+
+## 174. Un certificado operacional solo está cerrado cuando BUK tiene todos los respaldos y Storage queda purgado
+
+- **Certificado y evaluación son un mismo paquete documental.** Si el ERP genera un PDF de competencia desde una evaluación respaldada, ambos archivos deben subirse a la carpeta BUK del trabajador antes de marcar el flujo como cerrado.
+- **El nombre BUK debe ser consistente entre módulos.** Reutiliza el estándar de `sync-buk-candidates`: base sanitizada en minúsculas, tipo/documento del trabajador y extensión; no inventes nombres largos distintos por módulo.
+- **La purga local depende de éxito doble en BUK.** No elimines Storage si solo subió el certificado o solo subió la evaluación; cuando ambos están en BUK, elimina los objetos físicos del bucket ERP y conserva solo metadata/hash/IDs BUK para auditoría.
+- **No borres filas transaccionales para ahorrar memoria.** La memoria relevante está en Storage; las filas de solicitud, evaluación y certificado sostienen folio, QR, auditoría, permisos y validación pública.

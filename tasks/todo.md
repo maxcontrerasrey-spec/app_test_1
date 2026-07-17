@@ -2,11 +2,40 @@
 
 > **REGLA FUNDACIONAL (Lección 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera acción obligatoria de cada sesión de trabajo, sin excepción.
 
+## Optimización global de chunks y búsquedas BUK
+
+- [x] Medir build actual y ubicar chunks grandes reales.
+- [x] Revisar lookups BUK compartidos y consumidores por módulo.
+- [x] Separar dependencias pesadas de PDF/competencias del chunk inicial del módulo.
+- [x] Endurecer el lookup estándar para no disparar consultas BUK por búsquedas bajo umbral.
+- [x] Ajustar partición de vendors cuando la medición lo justifique.
+- [x] Validar TypeScript/build/smokes estáticos y registrar resultado final.
+
+### Resultado aplicado
+
+- El servicio liviano [`competencyCoreApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/services/competencyCoreApi.ts:1) concentra catálogos, búsqueda BUK, advertencias y verificación pública sin arrastrar `pdf-lib`, `qrcode`, fuentes ni logos de certificado.
+- [`CompetencyCertificationPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/pages/CompetencyCertificationPage.tsx:264) carga `generateCompetencyPreviewPdf(...)` con import dinámico solo al presionar `Generar PDF de prueba`.
+- [`CompetencyVerificationPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/pages/CompetencyVerificationPage.tsx:3) ya no carga el generador PDF para validar QR públicos.
+- [`WorkerLookupField.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/shared/ui/forms/WorkerLookupField.tsx:51) sube el debounce estándar a 250 ms y no habilita consultas mientras el texto no cumpla el umbral real; esto aplica a los lookups BUK estándar de Operaciones, Incentivos, Jornadas, Movilidad y Certificados.
+- [`HiringPersonnelToHireView.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/recruitment/components/HiringPersonnelToHireView.tsx:20) limita a 5 consultas concurrentes de ficha BUK para exportar nómina y carga `bukEmployeeNomina` dinámicamente solo al exportar.
+- [`vite.config.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/vite.config.ts:16) separa `pdf-vendor` y `qrcode-vendor`; se evitó partir ECharts por subcarpetas porque Rollup detectó ciclos internos entre chunks.
+
+### Evidencia de build
+
+- Antes: `competencies` pesaba 471.96 kB y cargaba PDF/QR con la pantalla de certificados.
+- Después: `competencies` queda en 3.31 kB, `CompetencyCertificationPage` en 10.90 kB y el generador pesado queda lazy como `competencyApi` 19.86 kB + `pdf-vendor` 430.78 kB + `qrcode-vendor` 25.40 kB.
+- `bukEmployeeNomina` queda lazy en 7.32 kB; `xlsx-vendor` se mantiene lazy en 500.06 kB solo para exportaciones.
+- `echarts-vendor` se mantiene lazy en 512.50 kB; no se fuerza partición granular por ciclos internos.
+
+### Validación
+
+Validación ejecutada: `npm run build:frontend-check`, `npm run smoke:frontend-routes`, `npm run audit:route-role-smoke` y `git diff --check`.
+
 ## Submódulo Certificación de Competencias BUK
 
 - [x] Implementar base backend auditable: rol/módulo, tablas, catálogos, RLS, storage privado, auditoría y RPCs.
 - [x] Reutilizar `employees_active_current` para selección de trabajadores sincronizados desde BUK.
-- [x] Reutilizar el cliente BUK existente para subir el certificado PDF generado a la carpeta documental `Competencias`.
+- [x] Reutilizar el cliente BUK existente para subir el certificado PDF generado a la carpeta documental `Acreditacion`.
 - [x] Generar PDF backend desde datos validados, con folio, vencimiento, hash, QR verificable y estado separado de carga BUK.
 - [x] Crear UI modular funcional en `/certificados` con búsqueda trabajador, selección equipo/modelos, carga evaluación 100%, emisión y dashboard.
 - [x] Validar migraciones, RLS/RPC, Edge Function, TypeScript, build, auditoría de seguridad y flujo remoto.
@@ -27,7 +56,7 @@
 - Backend: quedaron tablas `competency_*`, bucket privado `competency_documents`, folios con secuencia, token de verificación, auditoría, RLS y RPCs `get_competency_catalogs`, `search_competency_workers`, `create_competency_request` y `get_competency_dashboard`.
 - Catálogos remotos: 8 marcas, 4 tipos, 19 modelos de equipos y 5 instructores activos desde los CSV existentes.
 - Permisos remotos: `certificados` y `seguimiento_certificados` quedan visibles para `admin`, `certificaciones` e `instructor`; RPCs ejecutan solo para `authenticated`, con `anon` y `public` revocados.
-- Generación PDF: se desplegó la Edge Function `generate-competency-certificate`, que valida usuario, evaluación aprobada al 100%, archivo privado, genera PDF con folio/hash/QR/vencimiento y reutiliza el cliente BUK para cargar en carpeta `Competencias`.
+- Generación PDF: se desplegó la Edge Function `generate-competency-certificate`, que valida usuario, evaluación aprobada al 100%, archivo privado, genera PDF con folio/hash/QR/vencimiento y reutiliza el cliente BUK para cargar en carpeta `Acreditacion`.
 - UI: [`CompetencyCertificationPage.tsx`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/pages/CompetencyCertificationPage.tsx:1) quedó disponible en `/certificados`, con búsqueda BUK, selección de instructor/modelos, carga de evaluación, generación y dashboard/descarga con URL firmada.
 - Validación local: `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:migrations -- --files supabase/migrations/20260716035000_add_competency_certification_module.sql`, `npm run audit:supabase-security` y `git diff --check`.
 - Validación remota: migración aplicada, versión registrada, función desplegada en `pzblmbahnoyntrhistea`, smoke RPC con admin simulado devolvió 19 modelos, 5 instructores, 3 trabajadores BUK y dashboard inicial en 0; la función remota devuelve `401` sin bearer.
@@ -74,6 +103,27 @@
 - [x] Mostrar advertencia roja no bloqueante antes de generar el PDF.
 - [x] Mantener bloqueo operativo cuando la evaluación teórica o práctica no es 100%.
 - [x] Eliminar el campo visual `Final %` del generador.
+
+### Retención documental BUK
+
+- [x] Verificar que la carga productiva de certificados no cumplía todavía la regla completa: subía solo el PDF a BUK, usaba carpeta `Competencias`, no subía la evaluación y no purgaba Storage del ERP.
+- [x] Crear migración forward-only [`20260717033300_competency_buk_document_retention.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260717033300_competency_buk_document_retention.sql:1) para trazabilidad de documento BUK y purga de Storage en certificados/evaluaciones.
+- [x] Cambiar `generate-competency-certificate` para cargar certificado PDF y evaluación respaldada a la carpeta BUK `Acreditacion`.
+- [x] Aplicar a ambos archivos el estándar de nombre usado por `sync-buk-candidates`: nombre base sanitizado en minúsculas + tipo/documento del trabajador + extensión.
+- [x] Crear la puerta de cierre: solo cuando certificado y evaluación se suben correctamente a BUK se eliminan los objetos `certificates/...` y `evaluations/...` de `competency_documents`.
+- [x] Registrar IDs, URLs, nombres BUK, carpeta, hash y estado de purga sin borrar filas transaccionales necesarias para auditoría, folio y validación pública.
+
+#### Validación
+
+Validación ejecutada: `deno check --config supabase/functions/generate-competency-certificate/deno.json supabase/functions/generate-competency-certificate/index.ts`, `npx tsc -b --pretty false`, `npm run build:frontend-check`, `npm run smoke:frontend-routes`, `npm run audit:route-role-smoke`, `npm run audit:migrations -- --files supabase/migrations/20260717033300_competency_buk_document_retention.sql`, `npm run audit:supabase-security`, `npx supabase db advisors --linked` y `git diff --check`. La migración remota quedó aplicada/registrada en `pzblmbahnoyntrhistea`, el esquema remoto expone metadata/purga para certificados y evaluaciones, y la Edge Function `generate-competency-certificate` quedó desplegada nuevamente como versión 15 después de pasar `deno check`.
+
+### Cierre operativo de migraciones pendientes
+
+- [x] Instalar `deno` localmente con Homebrew para validar Edge Functions.
+- [x] Ejecutar `supabase migration list --linked` y detectar 22 versiones locales pendientes en remoto.
+- [x] Aplicar y registrar las migraciones locales pendientes en `pzblmbahnoyntrhistea`; dos reparaciones históricas se registraron como estado supersedido/verificado para no retroceder producción (`20260713083402` y `20260713094630`).
+- [x] Confirmar que ya no quedan migraciones locales pendientes (`localPending: []`).
+- [x] Redeplegar `generate-competency-certificate` tras corregir tipado Deno.
 
 ## Loop Enterprise global
 

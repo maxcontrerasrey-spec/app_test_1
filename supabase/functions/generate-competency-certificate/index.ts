@@ -20,13 +20,14 @@ const corsHeaders = {
 };
 
 const BUCKET = "competency_documents";
-const BUK_FOLDER = "Competencias";
+const BUK_FOLDER = "Acreditacion";
 const DEFAULT_PUBLIC_APP_BASE_URL = "https://gestion.busesjm.cl";
 
 type CompetencyRequestRow = {
   id: string;
   worker_buk_employee_id: string;
   worker_document_number: string;
+  worker_document_type: string;
   worker_full_name: string;
   worker_job_title: string | null;
   worker_area_name: string | null;
@@ -53,7 +54,11 @@ type EvaluationRow = {
   evaluation_status: string;
   file_bucket: string;
   file_path: string;
+  file_original_name: string;
+  file_mime_type: string;
   file_sha256: string;
+  buk_document_id?: string | null;
+  storage_purge_status?: string | null;
 };
 
 type CertificateRow = {
@@ -63,6 +68,7 @@ type CertificateRow = {
   certificate_status: string;
   pdf_path: string | null;
   buk_upload_status: string;
+  storage_purge_status?: string | null;
 };
 
 type AuthorizedModelRow = {
@@ -76,7 +82,8 @@ type ActiveEmployeeCompanyRow = {
   area_name: string | null;
 };
 
-type CompanyResolutionClient = ReturnType<typeof createClient>;
+type EdgeSupabaseClient = ReturnType<typeof createClient<any, "public", any>>;
+type CompanyResolutionClient = EdgeSupabaseClient;
 
 function requireEnv(value: string | undefined, label: string) {
   const normalized = value?.trim();
@@ -101,11 +108,47 @@ function normalizeDocumentToken(value: string) {
     .toUpperCase();
 }
 
-function buildBukFileName(request: CompetencyRequestRow, certificate: CertificateRow) {
-  const rut = normalizeDocumentToken(request.worker_document_number);
-  const models = normalizeDocumentToken(request.model_summary).slice(0, 90);
-  const date = request.training_date.replace(/-/g, "");
-  return `COMPETENCIA_${rut}_${models}_${date}_${normalizeDocumentToken(certificate.folio)}.pdf`;
+function normalizeBukDocumentNumber(documentType: string | null | undefined, documentNumber: string | null | undefined) {
+  const raw = (documentNumber ?? "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  if (documentType?.trim().toLowerCase() === "rut") {
+    return raw.replace(/[.\-]/g, "");
+  }
+
+  return raw;
+}
+
+function buildBukDocumentFileName(documentType: string, documentNumber: string, originalName: string) {
+  const safeBaseName = originalName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+  const extension = safeBaseName.includes(".") ? safeBaseName.slice(safeBaseName.lastIndexOf(".")) : ".pdf";
+  const stem = safeBaseName.replace(/\.[^.]+$/, "");
+  const documentToken = normalizeBukDocumentNumber(documentType, documentNumber) || normalizeDocumentToken(documentNumber).toLowerCase();
+
+  return `${stem || "documento"}_${documentToken}${extension}`;
+}
+
+function buildCertificateBukFileName(request: CompetencyRequestRow, certificate: CertificateRow) {
+  return buildBukDocumentFileName(
+    request.worker_document_type,
+    request.worker_document_number,
+    `certificado_competencia_${certificate.folio}.pdf`
+  );
+}
+
+function buildEvaluationBukFileName(request: CompetencyRequestRow, evaluation: EvaluationRow) {
+  return buildBukDocumentFileName(
+    request.worker_document_type,
+    request.worker_document_number,
+    evaluation.file_original_name || "evaluacion_competencia.pdf"
+  );
 }
 
 function buildVerificationUrl(token: string) {
@@ -117,7 +160,7 @@ function buildVerificationUrl(token: string) {
 }
 
 async function refreshPublicValidationSnapshot(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeSupabaseClient,
   certificateId: string
 ) {
   const { error } = await supabase.rpc("refresh_competency_certificate_public_snapshot", {
@@ -129,11 +172,38 @@ async function refreshPublicValidationSnapshot(
   }
 }
 
+async function purgeCompetencyStorageObjects(
+  supabase: EdgeSupabaseClient,
+  certificate: CertificateRow,
+  evaluation: EvaluationRow
+) {
+  const paths = [certificate.pdf_path, evaluation.file_path]
+    .map((path) => path?.trim())
+    .filter((path): path is string => Boolean(path));
+
+  if (paths.length === 0) {
+    return { status: "skipped" as const, removedPaths: [] as string[] };
+  }
+
+  const { error } = await supabase.storage.from(BUCKET).remove(Array.from(new Set(paths)));
+  if (error) {
+    throw new Error(`Los documentos se cargaron en BUK, pero no se pudo limpiar Storage: ${error.message}`);
+  }
+
+  return { status: "success" as const, removedPaths: paths };
+}
+
 async function sha256Hex(bytes: Uint8Array) {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const digest = await crypto.subtle.digest("SHA-256", bytesToArrayBuffer(bytes));
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function bytesToArrayBuffer(bytes: Uint8Array) {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
 }
 
 function dataUrlToBytes(dataUrl: string) {
@@ -739,7 +809,7 @@ async function buildCertificatePdf(input: {
 }
 
 async function assertAuthorizedUser(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeSupabaseClient,
   accessToken: string,
   request: CompetencyRequestRow,
   instructor: InstructorRow
@@ -768,8 +838,8 @@ async function assertAuthorizedUser(
     .select("app_roles(code)")
     .eq("user_id", user.id);
 
-  const roleCodes = (roles ?? [])
-    .map((row: { app_roles?: { code?: string } | null }) => row.app_roles?.code)
+  const roleCodes = ((roles ?? []) as Array<{ app_roles?: { code?: string } | Array<{ code?: string }> | null }>)
+    .map((row) => Array.isArray(row.app_roles) ? row.app_roles[0]?.code : row.app_roles?.code)
     .filter(Boolean);
 
   if (roleCodes.includes("certificaciones")) {
@@ -804,7 +874,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
     const serviceRoleKey = requireEnv(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), "SUPABASE_SERVICE_ROLE_KEY");
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
 
     const { data: requestRow, error: requestError } = await supabase
       .from("competency_requests")
@@ -845,14 +915,6 @@ Deno.serve(async (req) => {
       throw new Error("La evaluacion aprobada debe tener nota final 100%.");
     }
 
-    const { error: evaluationDownloadError } = await supabase.storage
-      .from(evaluationRow.file_bucket || BUCKET)
-      .download(evaluationRow.file_path);
-
-    if (evaluationDownloadError) {
-      throw new Error(`No fue posible validar el archivo de evaluacion: ${evaluationDownloadError.message}`);
-    }
-
     const { data: certificateRow, error: certificateError } = await supabase
       .from("competency_certificates")
       .select("*")
@@ -864,7 +926,59 @@ Deno.serve(async (req) => {
     }
 
     if (certificateRow.certificate_status === "uploaded_to_buk" && certificateRow.pdf_path) {
+      if (
+        certificateRow.storage_purge_status !== "success" ||
+        evaluationRow.storage_purge_status !== "success"
+      ) {
+        try {
+          const purgeResult = await purgeCompetencyStorageObjects(supabase, certificateRow, evaluationRow);
+          const purgedAt = new Date().toISOString();
+          await supabase
+            .from("competency_certificates")
+            .update({
+              storage_purge_status: purgeResult.status,
+              storage_purged_at: purgeResult.status === "success" ? purgedAt : null,
+              storage_purge_error: null
+            })
+            .eq("id", certificateRow.id);
+          await supabase
+            .from("competency_evaluations")
+            .update({
+              storage_purge_status: purgeResult.status,
+              storage_purged_at: purgeResult.status === "success" ? purgedAt : null,
+              storage_purge_error: null
+            })
+            .eq("id", evaluationRow.id);
+        } catch (error) {
+          const purgeError = toErrorMessage(error);
+          await supabase
+            .from("competency_certificates")
+            .update({
+              storage_purge_status: "failed",
+              storage_purge_error: purgeError
+            })
+            .eq("id", certificateRow.id);
+          await supabase
+            .from("competency_evaluations")
+            .update({
+              storage_purge_status: "failed",
+              storage_purge_error: purgeError
+            })
+            .eq("id", evaluationRow.id);
+          throw error;
+        }
+      }
+
       await refreshPublicValidationSnapshot(supabase, certificateRow.id);
+
+      await supabase
+        .from("competency_requests")
+        .update({
+          request_status: "completed",
+          completed_at: new Date().toISOString(),
+          updated_by: actorId
+        })
+        .eq("id", requestId);
 
       return new Response(
         JSON.stringify({
@@ -887,6 +1001,14 @@ Deno.serve(async (req) => {
         generated_by: actorId
       })
       .eq("id", certificateRow.id);
+
+    const { data: evaluationFileData, error: evaluationDownloadError } = await supabase.storage
+      .from(evaluationRow.file_bucket || BUCKET)
+      .download(evaluationRow.file_path);
+
+    if (evaluationDownloadError || !evaluationFileData) {
+      throw new Error(`No fue posible validar el archivo de evaluacion: ${evaluationDownloadError?.message ?? "sin archivo"}`);
+    }
 
     const issuedDate = new Date().toISOString().slice(0, 10);
     const validUntil = addYears(requestRow.training_date, 2);
@@ -917,8 +1039,9 @@ Deno.serve(async (req) => {
       throw new Error(`No fue posible cargar detalle de modelos autorizados: ${modelsError.message}`);
     }
 
+    const modelRowsById = (modelRows ?? []) as Record<string, unknown>[];
     authorizedModels = modelIds
-      .map((modelId) => (modelRows ?? []).find((row: Record<string, unknown>) => row.id === modelId))
+      .map((modelId) => modelRowsById.find((row) => row.id === modelId))
       .filter((row): row is Record<string, unknown> => Boolean(row))
       .map((row) => {
         const brand = row.competency_equipment_brands as { name?: string } | null;
@@ -948,7 +1071,8 @@ Deno.serve(async (req) => {
     });
     const pdfHash = await sha256Hex(pdfBytes);
     const pdfPath = `certificates/${certificateRow.id}/${certificateRow.folio}.pdf`;
-    const bukFileName = buildBukFileName(requestRow, certificateRow);
+    const certificateBukFileName = buildCertificateBukFileName(requestRow, certificateRow);
+    const evaluationBukFileName = buildEvaluationBukFileName(requestRow, evaluationRow);
 
     const { error: uploadError } = await supabase.storage.from(BUCKET).upload(pdfPath, pdfBytes, {
       contentType: "application/pdf",
@@ -962,24 +1086,59 @@ Deno.serve(async (req) => {
     let bukUploadStatus: "success" | "failed" = "success";
     let bukDocumentId: string | null = null;
     let bukDocumentUrl: string | null = null;
+    let bukEmployeeFolderId: string | null = null;
+    let evaluationBukDocumentId: string | null = null;
+    let evaluationBukDocumentUrl: string | null = null;
+    let evaluationBukEmployeeFolderId: string | null = null;
     let bukError: string | null = null;
 
     try {
-      const uploadResult = await uploadBukDocument(
+      const certificateUploadResult = await uploadBukDocument(
         requestRow.worker_buk_employee_id,
-        bukFileName,
-        new Blob([pdfBytes], { type: "application/pdf" }),
+        certificateBukFileName,
+        new Blob([bytesToArrayBuffer(pdfBytes)], { type: "application/pdf" }),
         { path: BUK_FOLDER }
       );
-      const metadata = extractBukDocumentMetadata(uploadResult.payload);
-      bukDocumentId = metadata.bukDocumentId;
-      bukDocumentUrl = metadata.bukDocumentUrl;
+      const certificateMetadata = extractBukDocumentMetadata(certificateUploadResult.payload);
+      bukDocumentId = certificateMetadata.bukDocumentId;
+      bukDocumentUrl = certificateMetadata.bukDocumentUrl;
+      bukEmployeeFolderId = certificateMetadata.bukEmployeeFolderId;
+
+      const evaluationUploadResult = await uploadBukDocument(
+        requestRow.worker_buk_employee_id,
+        evaluationBukFileName,
+        evaluationFileData,
+        { path: BUK_FOLDER }
+      );
+      const evaluationMetadata = extractBukDocumentMetadata(evaluationUploadResult.payload);
+      evaluationBukDocumentId = evaluationMetadata.bukDocumentId;
+      evaluationBukDocumentUrl = evaluationMetadata.bukDocumentUrl;
+      evaluationBukEmployeeFolderId = evaluationMetadata.bukEmployeeFolderId;
     } catch (error) {
       bukUploadStatus = "failed";
       bukError = toErrorMessage(error);
     }
 
     const finalCertificateStatus = bukUploadStatus === "success" ? "uploaded_to_buk" : "buk_upload_failed";
+    let storagePurgeStatus: "pending" | "success" | "failed" = "pending";
+    let storagePurgeError: string | null = null;
+    let storagePurgedAt: string | null = null;
+
+    if (bukUploadStatus === "success") {
+      try {
+        await purgeCompetencyStorageObjects(
+          supabase,
+          { ...certificateRow, pdf_path: pdfPath },
+          evaluationRow
+        );
+        storagePurgeStatus = "success";
+        storagePurgedAt = new Date().toISOString();
+      } catch (error) {
+        storagePurgeStatus = "failed";
+        storagePurgeError = toErrorMessage(error);
+      }
+    }
+
     const { error: updateError } = await supabase
       .from("competency_certificates")
       .update({
@@ -994,16 +1153,46 @@ Deno.serve(async (req) => {
         pdf_size_bytes: pdfBytes.byteLength,
         buk_upload_status: bukUploadStatus,
         buk_folder_name: BUK_FOLDER,
+        buk_folder_id: bukEmployeeFolderId,
         buk_document_id: bukDocumentId,
         buk_document_url: bukDocumentUrl,
+        buk_document_name: certificateBukFileName,
         buk_uploaded_at: bukUploadStatus === "success" ? new Date().toISOString() : null,
         buk_last_error: bukError,
+        storage_purge_status: storagePurgeStatus,
+        storage_purged_at: storagePurgedAt,
+        storage_purge_error: storagePurgeError,
         generated_by: actorId
       })
       .eq("id", certificateRow.id);
 
     if (updateError) {
       throw new Error(`No fue posible actualizar el certificado: ${updateError.message}`);
+    }
+
+    if (bukUploadStatus === "success") {
+      const { error: evaluationUpdateError } = await supabase
+        .from("competency_evaluations")
+        .update({
+          buk_folder_name: BUK_FOLDER,
+          buk_folder_id: evaluationBukEmployeeFolderId,
+          buk_document_id: evaluationBukDocumentId,
+          buk_document_url: evaluationBukDocumentUrl,
+          buk_document_name: evaluationBukFileName,
+          buk_uploaded_at: new Date().toISOString(),
+          storage_purge_status: storagePurgeStatus,
+          storage_purged_at: storagePurgedAt,
+          storage_purge_error: storagePurgeError
+        })
+        .eq("id", evaluationRow.id);
+
+      if (evaluationUpdateError) {
+        throw new Error(`No fue posible actualizar la evaluacion: ${evaluationUpdateError.message}`);
+      }
+    }
+
+    if (bukUploadStatus === "success" && storagePurgeStatus !== "success") {
+      throw new Error(storagePurgeError || "Los documentos se cargaron en BUK, pero no fue posible limpiar Storage del ERP.");
     }
 
     await refreshPublicValidationSnapshot(supabase, certificateRow.id);
@@ -1031,6 +1220,11 @@ Deno.serve(async (req) => {
         pdf_sha256: pdfHash,
         buk_upload_status: bukUploadStatus,
         buk_document_id: bukDocumentId,
+        buk_document_name: certificateBukFileName,
+        evaluation_buk_document_id: evaluationBukDocumentId,
+        evaluation_buk_document_name: evaluationBukFileName,
+        buk_folder_name: BUK_FOLDER,
+        storage_purge_status: storagePurgeStatus,
         buk_error: bukError
       },
       actor_id: actorId
@@ -1046,7 +1240,9 @@ Deno.serve(async (req) => {
         bukUploadStatus,
         bukDocumentId,
         bukDocumentUrl,
-        bukError
+        bukError,
+        storagePurgeStatus,
+        storagePurgeError
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

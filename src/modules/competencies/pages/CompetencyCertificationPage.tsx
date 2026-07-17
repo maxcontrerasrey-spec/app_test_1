@@ -3,9 +3,8 @@ import { PageShell, SelectField, StandardWorkerLookupField, TextField } from "..
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   fetchCompetencyModelWarnings,
-  fetchCompetencyCatalogs,
-  generateCompetencyPreviewPdf
-} from "../services/competencyApi";
+  fetchCompetencyCatalogs
+} from "../services/competencyCoreApi";
 import { useCompetencyWorkerSearch } from "../hooks/useCompetencyQueries";
 import type {
   CompetencyCatalogs,
@@ -265,6 +264,7 @@ export function CompetencyCertificationPage() {
       }
 
       setMessage("Generando PDF temporal de prueba.");
+      const { generateCompetencyPreviewPdf } = await import("../services/competencyApi");
       const generation = await generateCompetencyPreviewPdf({
         instructorName: selectedInstructor.fullName,
         instructorDocumentNumber: selectedInstructor.documentNumber,

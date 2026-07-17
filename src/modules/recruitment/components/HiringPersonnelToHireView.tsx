@@ -14,10 +14,10 @@ import {
 } from "../hooks/useRecruitmentQueries";
 import { formatDateTimeValue } from "./hiringControlViewUtils";
 import { CandidateDetailSidebar } from "./CandidateDetailSidebar";
-import { exportBukNominaXls } from "../lib/bukEmployeeNomina";
 import { TrackingPagination } from "./TrackingPagination";
 
 const PERSONNEL_PAGE_SIZE = 50;
+const BUK_PROFILE_EXPORT_CONCURRENCY = 5;
 
 type PersonnelBucket = "to_hire" | "contracted";
 
@@ -32,6 +32,28 @@ type HiringPersonnelToHireViewProps = {
   onInterviewNotesUpdated: () => Promise<void>;
   onCandidateFileUpdated: () => Promise<void>;
 };
+
+async function mapWithConcurrency<TInput, TOutput>(
+  items: TInput[],
+  concurrency: number,
+  mapper: (item: TInput) => Promise<TOutput>
+) {
+  const results = new Array<TOutput>(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(Math.max(concurrency, 1), items.length);
+
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (nextIndex < items.length) {
+        const currentIndex = nextIndex;
+        nextIndex += 1;
+        results[currentIndex] = await mapper(items[currentIndex]);
+      }
+    })
+  );
+
+  return results;
+}
 
 export function HiringPersonnelToHireView({
   bucket = "to_hire",
@@ -171,8 +193,10 @@ export function HiringPersonnelToHireView({
     setExportMessage("");
 
     try {
-      const results = await Promise.all(
-        selectedPersonnel.map(async (candidate) => {
+      const results = await mapWithConcurrency(
+        selectedPersonnel,
+        BUK_PROFILE_EXPORT_CONCURRENCY,
+        async (candidate) => {
           const profileResult = await fetchCandidateBukProfile(candidate.id);
 
           return {
@@ -180,9 +204,10 @@ export function HiringPersonnelToHireView({
             bukProfile: profileResult.error ? null : profileResult.data,
             error: profileResult.error
           };
-        })
+        }
       );
 
+      const { exportBukNominaXls } = await import("../lib/bukEmployeeNomina");
       await exportBukNominaXls(
         results.map(({ candidate, bukProfile }) => ({
           candidate,
