@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { PageShell, SelectField, StandardWorkerLookupField, TextField } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
+  fetchCompetencyModelWarnings,
   fetchCompetencyCatalogs,
   generateCompetencyPreviewPdf
 } from "../services/competencyApi";
@@ -9,6 +10,7 @@ import { useCompetencyWorkerSearch } from "../hooks/useCompetencyQueries";
 import type {
   CompetencyCatalogs,
   CompetencyInstructor,
+  CompetencyModelWarning,
   CompetencyPreviewPdfResult,
   CompetencyWorker
 } from "../types";
@@ -22,7 +24,6 @@ type FormState = {
   trainingEndTime: string;
   theoreticalScore: string;
   practicalScore: string;
-  finalScore: string;
   declarationAccepted: boolean;
 };
 
@@ -55,7 +56,6 @@ function initialFormState(): FormState {
     trainingEndTime: "",
     theoreticalScore: "100",
     practicalScore: "100",
-    finalScore: "100",
     declarationAccepted: false
   };
 }
@@ -95,6 +95,8 @@ export function CompetencyCertificationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [modelWarnings, setModelWarnings] = useState<CompetencyModelWarning[]>([]);
+  const [warningError, setWarningError] = useState<string | null>(null);
   const [lastGeneration, setLastGeneration] = useState<CompetencyPreviewPdfResult | null>(null);
 
   useEffect(() => {
@@ -163,10 +165,49 @@ export function CompetencyCertificationPage() {
     () => form.modelRows.map((row) => modelMap.get(row.modelId)).filter(Boolean),
     [form.modelRows, modelMap]
   );
+  const selectedModelIds = useMemo(
+    () => form.modelRows.map((row) => row.modelId).filter(Boolean),
+    [form.modelRows]
+  );
   const selectedModelNames = useMemo(
     () => selectedModels.map((model) => `${model?.brandName} ${model?.typeName} ${model?.name}`),
     [selectedModels]
   );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadWarnings() {
+      if (!selectedWorker?.bukEmployeeId || selectedModelIds.length === 0 || !form.trainingDate) {
+        setModelWarnings([]);
+        setWarningError(null);
+        return;
+      }
+
+      try {
+        const warnings = await fetchCompetencyModelWarnings({
+          workerBukEmployeeId: selectedWorker.bukEmployeeId,
+          modelIds: selectedModelIds,
+          trainingDate: form.trainingDate
+        });
+
+        if (isMounted) {
+          setModelWarnings(warnings);
+          setWarningError(null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setModelWarnings([]);
+          setWarningError(buildErrorMessage(error));
+        }
+      }
+    }
+
+    loadWarnings();
+    return () => {
+      isMounted = false;
+    };
+  }, [form.trainingDate, selectedModelIds, selectedWorker?.bukEmployeeId]);
 
   const canSubmit =
     Boolean(user?.id) &&
@@ -215,10 +256,15 @@ export function CompetencyCertificationPage() {
 
     setIsSubmitting(true);
     setErrorMessage(null);
-    setMessage("Generando PDF temporal de prueba.");
+    setMessage(null);
     setLastGeneration(null);
 
     try {
+      if (Number(form.theoreticalScore) !== 100 || Number(form.practicalScore) !== 100) {
+        throw new Error("No se puede generar el certificado: la evaluacion teorica y practica deben ser 100%.");
+      }
+
+      setMessage("Generando PDF temporal de prueba.");
       const generation = await generateCompetencyPreviewPdf({
         instructorName: selectedInstructor.fullName,
         instructorDocumentNumber: selectedInstructor.documentNumber,
@@ -256,6 +302,16 @@ export function CompetencyCertificationPage() {
 
       {errorMessage ? <div className="form-error competency-alert">{errorMessage}</div> : null}
       {message ? <div className="competency-alert competency-alert-info">{message}</div> : null}
+      {modelWarnings.length > 0 ? (
+        <div className="competency-alert" role="alert">
+          Ya existe un certificado vigente para este trabajador en{" "}
+          {modelWarnings
+            .map((warning) => `${warning.brandName} ${warning.typeName} ${warning.modelName} (folio ${warning.folio}, vigente hasta ${warning.validUntil ?? "sin fecha"})`)
+            .join(" · ")}
+          . Puedes continuar, pero revisa si corresponde emitir un nuevo certificado.
+        </div>
+      ) : null}
+      {warningError ? <div className="competency-alert">{warningError}</div> : null}
 
       <div className="competency-layout">
         <form className="competency-form-panel" onSubmit={handleSubmit}>
@@ -298,6 +354,8 @@ export function CompetencyCertificationPage() {
                   setSelectedWorker(worker);
                   setLastGeneration(null);
                   setMessage(null);
+                  setModelWarnings([]);
+                  setWarningError(null);
                 }}
                 disabled={isLoading || isSubmitting}
                 useSearchQuery={useCompetencyWorkerSearch}
@@ -401,7 +459,7 @@ export function CompetencyCertificationPage() {
               })}
             </div>
 
-            <div className="competency-grid-three">
+            <div className="competency-grid-two">
               <TextField
                 id="competency-score-theoretical"
                 label="Teorico %"
@@ -419,15 +477,6 @@ export function CompetencyCertificationPage() {
                 step="1"
                 value={form.practicalScore}
                 onChange={(event) => updateField("practicalScore", event.target.value)}
-              />
-              <TextField
-                id="competency-score-final"
-                label="Final %"
-                type="number"
-                min="0"
-                step="1"
-                value={form.finalScore}
-                onChange={(event) => updateField("finalScore", event.target.value)}
               />
             </div>
 

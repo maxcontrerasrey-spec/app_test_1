@@ -26,6 +26,7 @@ import type {
   CompetencyEvaluationUpload,
   CompetencyGenerationResult,
   CompetencyInstructor,
+  CompetencyModelWarning,
   CompetencyPreviewPdfInput,
   CompetencyPreviewPdfResult,
   CompetencyPublicVerification,
@@ -106,6 +107,20 @@ function mapRequestResult(payload: unknown): CompetencyRequestResult {
     certificateId: readText(source.certificate_id),
     folio: readText(source.folio),
     verificationToken: readText(source.verification_token)
+  };
+}
+
+function mapModelWarning(item: Record<string, unknown>): CompetencyModelWarning {
+  return {
+    certificateId: readText(item.certificateId),
+    requestId: readText(item.requestId),
+    folio: readText(item.folio),
+    modelId: readText(item.modelId),
+    brandName: readText(item.brandName),
+    typeName: readText(item.typeName),
+    modelName: readText(item.modelName),
+    validFrom: readNullableText(item.validFrom),
+    validUntil: readNullableText(item.validUntil)
   };
 }
 
@@ -283,6 +298,29 @@ export async function verifyCompetencyCertificate(lookupText: string) {
   }
 
   return mapPublicVerification(data);
+}
+
+export async function fetchCompetencyModelWarnings(input: {
+  workerBukEmployeeId: string;
+  modelIds: string[];
+  trainingDate: string;
+}): Promise<CompetencyModelWarning[]> {
+  if (!input.workerBukEmployeeId || input.modelIds.length === 0 || !input.trainingDate) {
+    return [];
+  }
+
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("get_competency_certificate_model_warnings", {
+    p_worker_buk_employee_id: input.workerBukEmployeeId,
+    p_model_ids: input.modelIds,
+    p_training_date: input.trainingDate
+  });
+
+  if (error) {
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible validar advertencias de certificados vigentes.", "message"));
+  }
+
+  return asArray<Record<string, unknown>>(asRecord(data).conflicts).map(mapModelWarning);
 }
 
 export async function uploadCompetencyEvaluationFile(file: File, userId: string): Promise<CompetencyEvaluationUpload> {

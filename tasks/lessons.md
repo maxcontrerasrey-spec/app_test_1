@@ -16,6 +16,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El layout del certificado debe fluir desde el texto, no desde coordenadas fijas aisladas.** La tabla de equipos debe anclarse al parrafo de habilitacion, y el bloque firma/QR debe permanecer al pie para evitar montajes cuando cambie la cantidad de modelos.
 - **Cuando una celda del PDF debe perder su caja, no uses un rectangulo compartido como borde del header.** Dibuja lineas manuales por zona para evitar que el borde exterior o separadores sigan apareciendo en secciones que deben quedar solo con una linea inferior.
 - **La codificacion de certificados debe vivir en el default backend y no en el PDF.** Si negocio define `DDMMAAAAHHMM + correlativo`, la secuencia y el formato deben quedar en `competency_certificates.folio`; el PDF y el QR solo consumen ese folio autoritativo.
+- **Un certificado vigente para el mismo modelo puede ser advertencia, no siempre bloqueo.** Si negocio pide continuar pese al solape, muestra el folio vigente en rojo antes de generar, pero conserva bloqueos duros para integridad de evaluación como teórico/práctico al 100%.
 
 ## 252. Un prompt Enterprise global debe dejar controles ejecutables y documentacion viva verificable
 

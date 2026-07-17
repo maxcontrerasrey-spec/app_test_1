@@ -65,6 +65,18 @@ export type CompetencyRequestInput = {
   declarationAccepted: boolean;
 };
 
+export type CompetencyModelWarning = {
+  certificateId: string;
+  requestId: string;
+  folio: string;
+  modelId: string;
+  brandName: string;
+  typeName: string;
+  modelName: string;
+  validFrom: string | null;
+  validUntil: string | null;
+};
+
 export type CompetencyRequestResult = {
   requestId: string;
   certificateId: string;

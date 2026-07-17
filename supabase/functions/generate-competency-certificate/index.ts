@@ -903,30 +903,32 @@ Deno.serve(async (req) => {
       .map((row: { model_id?: string | null }) => row.model_id)
       .filter((modelId): modelId is string => Boolean(modelId));
 
-    let authorizedModels: AuthorizedModelRow[] = [];
-    if (modelIds.length > 0) {
-      const { data: modelRows, error: modelsError } = await supabase
-        .from("competency_equipment_models")
-        .select("id, name, competency_equipment_brands(name), competency_equipment_types(name)")
-        .in("id", modelIds);
-
-      if (modelsError) {
-        throw new Error(`No fue posible cargar detalle de modelos autorizados: ${modelsError.message}`);
-      }
-
-      authorizedModels = modelIds
-        .map((modelId) => (modelRows ?? []).find((row: Record<string, unknown>) => row.id === modelId))
-        .filter((row): row is Record<string, unknown> => Boolean(row))
-        .map((row) => {
-          const brand = row.competency_equipment_brands as { name?: string } | null;
-          const type = row.competency_equipment_types as { name?: string } | null;
-          return {
-            brand_name: brand?.name ?? "",
-            type_name: type?.name ?? "",
-            model_name: typeof row.name === "string" ? row.name : ""
-          };
-        });
+    if (modelIds.length === 0) {
+      throw new Error("La solicitud no tiene modelos autorizados para generar el certificado.");
     }
+
+    let authorizedModels: AuthorizedModelRow[] = [];
+    const { data: modelRows, error: modelsError } = await supabase
+      .from("competency_equipment_models")
+      .select("id, name, competency_equipment_brands(name), competency_equipment_types(name)")
+      .in("id", modelIds);
+
+    if (modelsError) {
+      throw new Error(`No fue posible cargar detalle de modelos autorizados: ${modelsError.message}`);
+    }
+
+    authorizedModels = modelIds
+      .map((modelId) => (modelRows ?? []).find((row: Record<string, unknown>) => row.id === modelId))
+      .filter((row): row is Record<string, unknown> => Boolean(row))
+      .map((row) => {
+        const brand = row.competency_equipment_brands as { name?: string } | null;
+        const type = row.competency_equipment_types as { name?: string } | null;
+        return {
+          brand_name: brand?.name ?? "",
+          type_name: type?.name ?? "",
+          model_name: typeof row.name === "string" ? row.name : ""
+        };
+      });
 
     const { data: employeeCompanyRow } = await supabase
       .from("employees_active_current")

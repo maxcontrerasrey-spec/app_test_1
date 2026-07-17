@@ -68,6 +68,13 @@
 - El PDF temporal renderizado localmente confirmó header sin caja derecha, línea inferior roja, metadatos centrados, QR legible y folio largo sin desborde; no se versionó el artefacto temporal.
 - La Edge Function `generate-competency-certificate` quedó desplegada nuevamente en el proyecto `pzblmbahnoyntrhistea`.
 
+### Advertencia por certificado vigente
+
+- [x] Agregar consulta backend auditable para detectar certificados vigentes del trabajador por marca/modelo seleccionado.
+- [x] Mostrar advertencia roja no bloqueante antes de generar el PDF.
+- [x] Mantener bloqueo operativo cuando la evaluación teórica o práctica no es 100%.
+- [x] Eliminar el campo visual `Final %` del generador.
+
 ## Loop Enterprise global
 
 - [x] Ejecutar primera iteracion global del prompt Enterprise sobre documentacion viva, permisos, smoke plan y guardrails.
