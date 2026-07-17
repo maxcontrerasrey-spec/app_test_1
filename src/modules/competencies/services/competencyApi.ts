@@ -684,9 +684,9 @@ function drawRichParagraph(page: PDFPage, segments: Array<{ text: string; font: 
   return y - 12;
 }
 
-const FIRST_PAGE_MODEL_CAPACITY = 4;
-const CONTINUATION_PAGE_MODEL_CAPACITY = 10;
-const LAST_PAGE_MODEL_CAPACITY = 10;
+const FIRST_PAGE_MODEL_CAPACITY = 5;
+const CONTINUATION_PAGE_MODEL_CAPACITY = 12;
+const LAST_PAGE_MODEL_CAPACITY = 12;
 
 function calculateCertificatePageCount(modelCount: number) {
   if (modelCount <= FIRST_PAGE_MODEL_CAPACITY) {
@@ -737,13 +737,24 @@ function drawCertificateHeader(
 function drawModelSummary(page: PDFPage, rows: CompetencyPreviewPdfInput["authorizedModels"], fonts: { regular: PDFFont; bold: PDFFont }, tableY: number) {
   const tableX = 54;
   const tableWidth = 487;
-  const headerHeight = 24;
-  const rowHeight = 40;
+  const headerHeight = 22;
+  const minRowHeight = 24;
   const columns = [118, 147, 222];
   const rowFontSize = 8.6;
-  const lineHeight = 9.5;
+  const lineHeight = 9.2;
   const visibleRows = rows;
-  const totalHeight = headerHeight + visibleRows.length * rowHeight;
+  const rowLayouts = visibleRows.map((row) => {
+    const cells = [
+      buildWrappedCellTextLayout(row.brandName, fonts.regular, rowFontSize, columns[0] - 8),
+      buildWrappedCellTextLayout(row.typeName, fonts.regular, rowFontSize, columns[1] - 8),
+      buildWrappedCellTextLayout(row.modelName, fonts.regular, rowFontSize, columns[2] - 8)
+    ];
+    return {
+      cells,
+      height: Math.max(minRowHeight, Math.max(...cells.map((cell) => cell.lines.length)) * lineHeight + 8)
+    };
+  });
+  const totalHeight = headerHeight + rowLayouts.reduce((sum, row) => sum + row.height, 0);
 
   let x = tableX;
   ["Marca", "Tipo de equipo", "Modelo / configuración autorizada"].forEach((label, index) => {
@@ -763,38 +774,41 @@ function drawModelSummary(page: PDFPage, rows: CompetencyPreviewPdfInput["author
     color: rgb(0.82, 0.84, 0.87)
   });
 
-  for (let index = 0; index < visibleRows.length; index += 1) {
-    const row = visibleRows[index];
-    const y = tableY - headerHeight - (index + 1) * rowHeight;
-    drawWrappedCellText(page, row.brandName, { x: tableX + 2, y: y + 27, width: columns[0] - 8, size: rowFontSize, lineHeight, font: fonts.regular });
-    drawWrappedCellText(page, row.typeName, { x: tableX + columns[0] + 2, y: y + 27, width: columns[1] - 8, size: rowFontSize, lineHeight, font: fonts.regular });
-    drawWrappedCellText(page, row.modelName, { x: tableX + columns[0] + columns[1] + 2, y: y + 27, width: columns[2] - 8, size: rowFontSize, lineHeight, font: fonts.regular });
+  let rowTop = tableY - headerHeight;
+  for (const row of rowLayouts) {
+    const textY = rowTop - 15;
+    drawWrappedCellText(page, row.cells[0], { x: tableX + 2, y: textY, lineHeight, font: fonts.regular });
+    drawWrappedCellText(page, row.cells[1], { x: tableX + columns[0] + 2, y: textY, lineHeight, font: fonts.regular });
+    drawWrappedCellText(page, row.cells[2], { x: tableX + columns[0] + columns[1] + 2, y: textY, lineHeight, font: fonts.regular });
+    rowTop -= row.height;
   }
 
   return tableY - totalHeight;
 }
 
-function drawWrappedCellText(page: PDFPage, text: string, options: {
-  x: number;
-  y: number;
-  width: number;
-  font: PDFFont;
-  size: number;
-  lineHeight: number;
-}) {
-  let size = options.size;
-  let lines = splitTextIntoCellLines(text, options.font, size, options.width);
+function buildWrappedCellTextLayout(text: string, font: PDFFont, initialSize: number, width: number) {
+  let size = initialSize;
+  let lines = splitTextIntoCellLines(text, font, size, width);
 
   while (size > 6.2 && lines.length > 4) {
     size -= 0.2;
-    lines = splitTextIntoCellLines(text, options.font, size, options.width);
+    lines = splitTextIntoCellLines(text, font, size, width);
   }
 
-  lines.forEach((line, index) => {
+  return { lines, size };
+}
+
+function drawWrappedCellText(page: PDFPage, layout: { lines: string[]; size: number }, options: {
+  x: number;
+  y: number;
+  lineHeight: number;
+  font: PDFFont;
+}) {
+  layout.lines.forEach((line, index) => {
     page.drawText(line, {
       x: options.x,
       y: options.y - index * options.lineHeight,
-      size,
+      size: layout.size,
       font: options.font,
       color: rgb(0.11, 0.13, 0.16)
     });
