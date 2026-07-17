@@ -142,41 +142,41 @@ function mapPublicVerification(payload: unknown): CompetencyPublicVerification {
 
   return {
     found: readBoolean(source.found),
-    isAuthentic: readBoolean(source.isAuthentic),
-    isCurrent: readBoolean(source.isCurrent),
+    isAuthentic: readBoolean(source.is_authentic ?? source.isAuthentic),
+    isCurrent: readBoolean(source.is_current ?? source.isCurrent),
     status: readText(source.status),
-    verifiedAt: readNullableText(source.verifiedAt),
-    snapshotUpdatedAt: readNullableText(source.snapshotUpdatedAt),
+    verifiedAt: readNullableText(source.verified_at ?? source.verifiedAt),
+    snapshotUpdatedAt: readNullableText(source.snapshot_updated_at ?? source.snapshotUpdatedAt),
     certificate: {
       folio: readText(certificate.folio),
-      templateCode: readText(certificate.templateCode),
-      templateVersion: readText(certificate.templateVersion),
-      certificateStatus: readText(certificate.certificateStatus),
-      competencyStatus: readText(certificate.competencyStatus),
-      issuedAt: readNullableText(certificate.issuedAt),
-      validFrom: readNullableText(certificate.validFrom),
-      validUntil: readNullableText(certificate.validUntil),
-      pdfSha256: readNullableText(certificate.pdfSha256),
-      bukRegistered: readBoolean(certificate.bukRegistered),
-      bukUploadedAt: readNullableText(certificate.bukUploadedAt)
+      templateCode: readText(certificate.template_code ?? certificate.templateCode),
+      templateVersion: readText(certificate.template_version ?? certificate.templateVersion),
+      certificateStatus: readText(certificate.certificate_status ?? certificate.certificateStatus),
+      competencyStatus: readText(certificate.competency_status ?? certificate.competencyStatus),
+      issuedAt: readNullableText(certificate.issued_at ?? certificate.issuedAt),
+      validFrom: readNullableText(certificate.valid_from ?? certificate.validFrom),
+      validUntil: readNullableText(certificate.valid_until ?? certificate.validUntil),
+      pdfSha256: readNullableText(certificate.pdf_sha256 ?? certificate.pdfSha256),
+      bukRegistered: readBoolean(certificate.buk_registered ?? certificate.bukRegistered),
+      bukUploadedAt: readNullableText(certificate.buk_uploaded_at ?? certificate.bukUploadedAt)
     },
     worker: {
-      fullName: readText(worker.fullName),
-      documentNumber: readText(worker.documentNumber),
-      jobTitle: readNullableText(worker.jobTitle)
+      fullName: readText(worker.full_name ?? worker.fullName),
+      documentNumber: readText(worker.document_number ?? worker.documentNumber),
+      jobTitle: readNullableText(worker.job_title ?? worker.jobTitle)
     },
     instructor: {
-      fullName: readText(instructor.fullName),
-      documentNumber: readText(instructor.documentNumber),
-      profileCode: readText(instructor.profileCode)
+      fullName: readText(instructor.full_name ?? instructor.fullName),
+      documentNumber: readText(instructor.document_number ?? instructor.documentNumber),
+      profileCode: readText(instructor.profile_code ?? instructor.profileCode)
     },
     training: {
-      trainingDate: readNullableText(training.trainingDate)
+      trainingDate: readNullableText(training.training_date ?? training.trainingDate)
     },
     equipment: asArray<Record<string, unknown>>(source.equipment).map((item) => ({
-      brandName: readText(item.brandName),
-      typeName: readText(item.typeName),
-      modelName: readText(item.modelName)
+      brandName: readText(item.brand_name ?? item.brandName),
+      typeName: readText(item.type_name ?? item.typeName),
+      modelName: readText(item.model_name ?? item.modelName)
     }))
   };
 }

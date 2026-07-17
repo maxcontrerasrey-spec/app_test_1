@@ -18,6 +18,7 @@
 - La apertura del resultado usa `bukDocumentUrl` cuando BUK responde éxito, respetando la purga local de Storage posterior a la carga documental.
 - [`competencyApi.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/src/modules/competencies/services/competencyApi.ts:1) y [`generate-competency-certificate/index.ts`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/generate-competency-certificate/index.ts:1) dejan el header sin línea superior negra, sin borde izquierdo negro y sin divisor vertical negro.
 - La tabla `Marca / Tipo de equipo / Modelo` ya no usa el helper de truncado con `...`; amplía la columna de marca, envuelve texto y reduce capacidad por página para preservar lectura completa.
+- El validador público corrige el mapper liviano de `verify-competency-certificate` para mostrar los campos `snake_case` que ya entrega Supabase: trabajador, RUT, vigencia, instructor, equipos, emisión, registro BUK y SHA-256.
 - Validación ejecutada: `deno check`, `npx tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:route-role-smoke`, `npm run audit:supabase-security`, `git diff --check`, búsqueda estática de trazos negros removidos y smoke remoto `401` sin bearer tras desplegar `generate-competency-certificate`.
 
 ## Optimización global de chunks y búsquedas BUK

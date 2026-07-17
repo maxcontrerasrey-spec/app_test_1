@@ -11,6 +11,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los ajustes visuales del PDF se corrigen en preview y en producción.** Quitar líneas, bordes o separadores del certificado exige tocar `competencyApi.ts` y `generate-competency-certificate` para que el PDF real no conserve artefactos negros.
 - **Un certificado no debe ocultar datos con puntos suspensivos.** Marcas, tipos y modelos autorizados se deben envolver, paginar o reducir de forma controlada; truncarlos impide validar el alcance real de la acreditación.
 - **Los imports lazy de acciones críticas también necesitan retry.** `lazyWithRetry` cubre rutas, pero un `await import(...)` dentro de un botón puede fallar después de un deploy si el navegador conserva un bundle anterior; usa `importWithRetry` para recargar una vez y tomar los chunks vigentes.
+- **El validador público debe mapear el contrato real de la Edge Function.** Si la función responde `snake_case`, el mapper liviano usado fuera de login debe leer `snake_case` aunque las vistas internas usen camelCase; una discrepancia deja QR válidos con tarjetas vacías.
 
 ## 258. El modo temporal de certificados no puede saltarse precondiciones productivas
 
