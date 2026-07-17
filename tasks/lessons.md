@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 258. El modo temporal de certificados no puede saltarse precondiciones productivas
+
+- **Un PDF de prueba no debe relajar restricciones de emisión.** Aunque no cree solicitud, folio productivo ni carga BUK, la UI debe seguir exigiendo examen/evaluación respaldada, notas teórica/práctica al 100% y declaración aceptada antes de generar.
+- **El guard backend no reemplaza la ergonomía del formulario.** `create_competency_request` bloquea sin archivo de evaluación en Storage, pero la pantalla debe pedir el archivo explícitamente para que el usuario entienda la precondición antes de llegar al backend.
+- **Toda excepción temporal debe tener retorno controlado.** Si se activa un modo no persistente para probar certificados, documenta qué se relaja y vuelve a cerrar los campos obligatorios apenas negocio confirme que son parte de la generación real.
+
 ## 257. Super admin no puede depender de matrices operativas para ver o accionar
 
 - **Si un usuario es `admin/super admin`, el backend debe reconocerlo en lectura y escritura.** En Operaciones, el selector de contratos editables no puede depender de `operations_contract_editors` para administradores; debe exponer todos los contratos activos y conservar la matriz solo para roles operativos acotados.

@@ -85,6 +85,23 @@ function canManageInstructors(isSuperAdmin: boolean, catalogs: CompetencyCatalog
   return isSuperAdmin || catalogs?.permissions.canAdmin === true;
 }
 
+const ALLOWED_EVALUATION_MIME_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const MAX_EVALUATION_SIZE_BYTES = 15 * 1024 * 1024;
+
+function validateEvaluationEvidence(file: File | null) {
+  if (!file) {
+    throw new Error("Debes cargar el examen teorico/evaluacion respaldada antes de generar el certificado.");
+  }
+
+  if (!ALLOWED_EVALUATION_MIME_TYPES.has(file.type)) {
+    throw new Error("Solo se permiten examenes o evaluaciones en PDF, JPG o PNG.");
+  }
+
+  if (file.size <= 0 || file.size > MAX_EVALUATION_SIZE_BYTES) {
+    throw new Error("El archivo de examen/evaluacion debe pesar entre 1 byte y 15 MB.");
+  }
+}
+
 export function CompetencyCertificationPage() {
   const { user, isSuperAdmin } = useAuth();
   const [catalogs, setCatalogs] = useState<CompetencyCatalogs | null>(null);
@@ -97,6 +114,7 @@ export function CompetencyCertificationPage() {
   const [modelWarnings, setModelWarnings] = useState<CompetencyModelWarning[]>([]);
   const [warningError, setWarningError] = useState<string | null>(null);
   const [lastGeneration, setLastGeneration] = useState<CompetencyPreviewPdfResult | null>(null);
+  const [evaluationFile, setEvaluationFile] = useState<File | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -214,6 +232,8 @@ export function CompetencyCertificationPage() {
     Boolean(form.instructorId) &&
     selectedModels.length > 0 &&
     Boolean(form.trainingDate) &&
+    Boolean(evaluationFile) &&
+    form.declarationAccepted &&
     !isSubmitting;
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -262,6 +282,12 @@ export function CompetencyCertificationPage() {
       if (Number(form.theoreticalScore) !== 100 || Number(form.practicalScore) !== 100) {
         throw new Error("No se puede generar el certificado: la evaluacion teorica y practica deben ser 100%.");
       }
+
+      if (!form.declarationAccepted) {
+        throw new Error("Debes confirmar que la evaluacion corresponde al trabajador seleccionado.");
+      }
+
+      validateEvaluationEvidence(evaluationFile);
 
       setMessage("Generando PDF temporal de prueba.");
       const { generateCompetencyPreviewPdf } = await import("../services/competencyApi");
@@ -480,9 +506,25 @@ export function CompetencyCertificationPage() {
               />
             </div>
 
+            <label className="competency-file-field" htmlFor="competency-evaluation-file">
+              <span>Examen teorico / evaluacion respaldada</span>
+              <input
+                id="competency-evaluation-file"
+                type="file"
+                accept="application/pdf,image/jpeg,image/png"
+                required
+                onChange={(event) => {
+                  setEvaluationFile(event.target.files?.[0] ?? null);
+                  setLastGeneration(null);
+                  setMessage(null);
+                }}
+              />
+            </label>
+
             <label className="competency-declaration">
               <input
                 type="checkbox"
+                required
                 checked={form.declarationAccepted}
                 onChange={(event) => updateField("declarationAccepted", event.target.checked)}
               />

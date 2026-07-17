@@ -70,6 +70,19 @@ Validación ejecutada: `npm run build:frontend-check`, `npm run smoke:frontend-r
 - Los cinco perfiles quedaron `active`, con rol `instructor`, un vínculo activo en `competency_instructors` y `profile_code = P-8549-2359-004-V01`.
 - Validación funcional: simulando a `marcelo.barrera@busesjm.com`, `user_can_access_competencies = true`, `user_can_admin_competencies = false`, `instructor_count = 1` e `instructor_name = Marcelo Barrera Acevedo`.
 
+## Corrección Certificados - examen/evaluación obligatoria en UI
+
+- [x] Confirmar que el backend `create_competency_request` sigue bloqueando sin evaluación cargada, notas 100%, hash y archivo en Storage.
+- [x] Detectar drift en `CompetencyCertificationPage`: el modo PDF temporal solo validaba notas 100% y no pedía archivo de examen/evaluación.
+- [x] Agregar input obligatorio `Examen teorico / evaluacion respaldada` con tipos PDF/JPG/PNG.
+- [x] Bloquear el botón si no existe archivo o no se aceptó la declaración.
+- [x] Revalidar en `handleSubmit` para evitar bypass visual del formulario.
+
+### Resultado aplicado
+
+- La pantalla de generación vuelve a exigir respaldo documental antes de generar PDF temporal.
+- La validación frontend queda alineada con el guard backend: evaluación teórica/práctica al 100%, declaración aceptada y archivo PDF/JPG/PNG de 1 byte a 15 MB.
+
 ## Submódulo Certificación de Competencias BUK
 
 - [x] Implementar base backend auditable: rol/módulo, tablas, catálogos, RLS, storage privado, auditoría y RPCs.
