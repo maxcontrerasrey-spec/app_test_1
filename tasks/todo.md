@@ -4,6 +4,22 @@
 
 ## Cierre Certificados - generacion productiva BUK y header limpio
 
+- [x] Implementar formalizacion por correo despues de carga exitosa de certificado en BUK.
+- [x] Reutilizar `transactional_email_dispatches` y `queue_transactional_email_notification(...)` con evento idempotente `competency_formalization`.
+- [x] Extender `hiring-transactional-email` para aceptar y renderizar payload de certificados de competencias.
+- [x] Validar con smoke remoto en `ROLLBACK` sin enviar correos reales y desplegar la Edge Function.
+
+### Cierre formalizacion por correo
+
+- Se agregó y aplicó en remoto [`20260717180842_competency_certificate_formalization_email.sql`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/migrations/20260717180842_competency_certificate_formalization_email.sql:1).
+- `transactional_email_dispatches` ahora acepta `competency_formalization` preservando los cinco eventos existentes.
+- `enqueue_competency_certificate_formalization_email(...)` encola solo certificados `uploaded_to_buk`, `buk_upload_status = success`, `buk_uploaded_at` informado y competencia `enabled`.
+- El trigger `trg_competency_certificate_formalization` dispara solo en la transición futura a carga BUK exitosa; el `event_key` por `certificate_id` mantiene idempotencia.
+- [`hiring-transactional-email`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/supabase/functions/hiring-transactional-email/index.ts:1) ya acepta `kind = competency_formalization`, renderiza el correo y prioriza enlace al validador público `/verificar/competencia/{token}`.
+- Destinatarios: instructor con usuario vinculado, roles activos `certificaciones` y `admin`; no se envía al trabajador hasta tener regla de negocio explícita sobre correo corporativo.
+- Validación ejecutada: `deno check --node-modules-dir=auto`, `npm run audit:migrations -- --files supabase/migrations/20260717180842_competency_certificate_formalization_email.sql`, migración remota aplicada/registrada, despliegue de `hiring-transactional-email`, smoke remoto `ROLLBACK` de constraint de evento, endpoint remoto responde `401` sin secreto y `npm run audit:supabase-security` se mantiene en baseline `82`.
+- Límite de validación: `.env.local` no contiene `INTERNAL_EMAIL_WEBHOOK_SECRET`, por lo que no se ejecutó un POST con secreto real y destinatarios vacíos; se evitó extraer o imprimir secretos remotos.
+
 - [x] Revisar duplicado real de Martin Ahumada en BUK/ERP y determinar folio valido.
 - [x] Mantener como vigente el folio reciente `1707202611471153` y reemplazar en ERP el folio antiguo `1707202611461152`.
 - [x] Verificar que el validador publico muestre el folio antiguo como `replaced` y no vigente, y el folio reciente como `valid`.

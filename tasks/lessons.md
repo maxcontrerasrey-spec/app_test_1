@@ -15,6 +15,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La tabla de equipos del certificado debe compactar filas simples y crecer solo cuando hay wrap.** Una altura fija conservadora protege textos largos, pero deja fuera de foco certificados con varios modelos de una línea; calcula altura por fila según líneas reales.
 - **La idempotencia por solicitud no evita duplicados operacionales.** Si dos submits crean solicitudes distintas para el mismo trabajador, instructor, fecha y modelos, la Edge Function solo protege cada `request_id`; el bloqueo debe vivir en `create_competency_request(...)` con llave normalizada y lock transaccional.
 - **No borres documentos BUK por rutas inferidas.** Aunque el listado entregue `file_id`, si `DELETE /employees/{id}/docs/{file_id}` responde `404`, se debe dejar el ERP/QR como fuente vigente reemplazando el folio duplicado y exigir endpoint BUK confirmado antes de eliminar fisicamente archivos del proveedor.
+- **Un nuevo correo transaccional exige SQL y runtime juntos.** Agregar `event_type` a `transactional_email_dispatches` no basta: la Edge Function debe aceptar el nuevo `kind`, tipar el payload, renderizar asunto/cuerpo y desplegarse; si no, la cola puede llenarse con eventos que terminan en `Payload invalido`.
 
 ## 258. El modo temporal de certificados no puede saltarse precondiciones productivas
 

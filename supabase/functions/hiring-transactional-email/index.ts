@@ -152,12 +152,47 @@ type PersonnelToHirePayload = {
   route?: string | null;
 };
 
+type CompetencyFormalizationPayload = {
+  kind: "competency_formalization";
+  event_key: string;
+  to: Recipient[];
+  certificate: {
+    id: string;
+    folio: string;
+    verification_token: string;
+    template_code: string | null;
+    template_version: string | null;
+    valid_from: string | null;
+    valid_until: string | null;
+    issued_at: string | null;
+    buk_document_url: string | null;
+    buk_document_name: string | null;
+    buk_uploaded_at: string | null;
+  };
+  worker: {
+    full_name: string | null;
+    document_number: string | null;
+    job_title: string | null;
+    area_name: string | null;
+    contract_code: string | null;
+  };
+  training: {
+    training_date: string | null;
+    model_summary: string | null;
+  };
+  instructor: {
+    full_name: string | null;
+  };
+  route?: string | null;
+};
+
 type EmailPayload =
   | PendingApprovalPayload
   | RecruitmentHandoffPayload
   | WhoApprovalPayload
   | RejectionPayload
-  | PersonnelToHirePayload;
+  | PersonnelToHirePayload
+  | CompetencyFormalizationPayload;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -223,7 +258,7 @@ function buildActionUrl(payload: EmailPayload, appBaseUrl: string | null): strin
 function buildEmailLayout(
   title: string,
   intro: string,
-  details: Array<[string, string | number | null | undefined]>,
+  details: Array<Array<string | number | null | undefined>>,
   actionUrl: string | null,
   actionText: string,
   isError: boolean = false
@@ -478,6 +513,49 @@ function buildPersonnelToHireEmail(payload: PersonnelToHirePayload, actionUrl: s
   return { subject, html, text };
 }
 
+function buildCompetencyFormalizationEmail(payload: CompetencyFormalizationPayload, actionUrl: string | null) {
+  const workerName = payload.worker.full_name || payload.worker.document_number || "Trabajador no informado";
+  const subject = `Certificado de competencia emitido: ${workerName} - folio ${payload.certificate.folio}`;
+  const intro = `El certificado de competencia de ${workerName} fue emitido correctamente, cargado en BUK y quedó disponible para validación operacional.`;
+  const verificationUrl = actionUrl || payload.certificate.buk_document_url || null;
+  const details = [
+    ["Trabajador", payload.worker.full_name || "No informado"],
+    ["RUT", payload.worker.document_number || "No informado"],
+    ["Cargo", payload.worker.job_title || "No informado"],
+    ["Área / contrato", payload.worker.area_name || payload.worker.contract_code || "No informado"],
+    ["Instructor firmante", payload.instructor.full_name || "No informado"],
+    ["Folio", payload.certificate.folio],
+    ["Vigencia", `${formatDate(payload.certificate.valid_from)} al ${formatDate(payload.certificate.valid_until)}`],
+    ["Equipos habilitados", payload.training.model_summary || "No informado"],
+    ["Registro BUK", payload.certificate.buk_document_name || "Documento cargado"],
+    ["Cargado en BUK", formatDate(payload.certificate.buk_uploaded_at)],
+  ];
+
+  const html = buildEmailLayout(
+    "Acreditación de competencias emitida",
+    intro,
+    details,
+    verificationUrl,
+    actionUrl ? "Validar certificado" : "Abrir documento BUK"
+  );
+
+  const text = [
+    intro,
+    ...details.map(([label, value]) => `${label}: ${value}`),
+    verificationUrl ? `Enlace: ${verificationUrl}` : null,
+    "",
+    "El documento cuenta con firma electrónica y código QR de validación.",
+    "---",
+    "Este correo es de generación automática y no se debe responder.",
+    "Atte.,",
+    "Equipo de Excelencia Operacional"
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return { subject, html, text };
+}
+
 function buildRecruitmentHandoffEmail(payload: RecruitmentHandoffPayload, actionUrl: string | null) {
   const isInternalMobility = payload.request.request_context === "internal_mobility";
   const subject = isInternalMobility
@@ -571,6 +649,10 @@ function buildEmail(payload: EmailPayload, appBaseUrl: string | null) {
     return buildPersonnelToHireEmail(payload, actionUrl);
   }
 
+  if (payload.kind === "competency_formalization") {
+    return buildCompetencyFormalizationEmail(payload, actionUrl);
+  }
+
   return buildRecruitmentHandoffEmail(payload, actionUrl);
 }
 
@@ -622,7 +704,8 @@ Deno.serve(async (req) => {
         payload.kind !== "recruitment_handoff" &&
         payload.kind !== "who_approval" &&
         payload.kind !== "rejection" &&
-        payload.kind !== "personnel_to_hire"
+        payload.kind !== "personnel_to_hire" &&
+        payload.kind !== "competency_formalization"
       )
     ) {
       return new Response(JSON.stringify({ error: "Payload invalido" }), {
