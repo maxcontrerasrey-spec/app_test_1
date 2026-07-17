@@ -54,6 +54,22 @@ Validación ejecutada: `npm run build:frontend-check`, `npm run smoke:frontend-r
 - Admin simulado: `user_can_edit_operations_contract(...) = true` para `CONT-028` y `CONT-001`.
 - L1 simulado: `editable_contracts = 1`, `can_edit_dmh = true`, `can_edit_unassigned = false`.
 
+## Alta cuentas instructor para certificados
+
+- [x] Auditar que el rol `instructor` ya tiene acceso a `certificados` y `seguimiento_certificados`.
+- [x] Confirmar que los cinco RUT de la captura existen como `competency_instructors` activos.
+- [x] Crear/provisionar cuentas Auth para los cinco instructores sin generar ni exponer contraseñas temporales.
+- [x] Sincronizar `profiles` activos, `user_roles.role_code = 'instructor'` y `competency_instructors.user_id`.
+- [x] Validar con `auth.uid()` simulado que una cuenta instructor ve solo su propio instructor en `get_competency_catalogs()`.
+
+### Resultado aplicado
+
+- Se agregó [`provision-competency-instructors.mjs`](/Users/maximilianocontrerasrey/Documents/GitHub/app_test_1/scripts/provision-competency-instructors.mjs:1) como script idempotente y auditable para provisionar instructores de certificación.
+- Cuentas creadas/activadas y vinculadas: `marcelo.barrera@busesjm.com`, `daniel.carvajal@busesjm.com`, `fernando.maza@busesjm.com`, `gilberto.urtubia@busesjm.com` y `guillermo.milla@busesjm.com`.
+- Marcelo y Daniel alcanzaron invitación Auth antes del rate limit de correo; Fernando, Gilberto y Guillermo quedaron creados como Auth confirmado sin envío de correo para evitar contraseñas inventadas.
+- Los cinco perfiles quedaron `active`, con rol `instructor`, un vínculo activo en `competency_instructors` y `profile_code = P-8549-2359-004-V01`.
+- Validación funcional: simulando a `marcelo.barrera@busesjm.com`, `user_can_access_competencies = true`, `user_can_admin_competencies = false`, `instructor_count = 1` e `instructor_name = Marcelo Barrera Acevedo`.
+
 ## Submódulo Certificación de Competencias BUK
 
 - [x] Implementar base backend auditable: rol/módulo, tablas, catálogos, RLS, storage privado, auditoría y RPCs.
