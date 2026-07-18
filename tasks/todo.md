@@ -46,6 +46,44 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - `tasks/lessons.md`
 - `tasks/todo.md`
 
+## Acreditacion de personas - estandares por faena y licencia interna
+
+- [x] Modelar estandares reutilizables por mandante/faena para evitar duplicar requisitos comunes en cada division.
+- [x] Versionar el estandar inicial `ECF 21` para Codelco Division Ministro Hales con requisitos de ingreso y control de vigencia.
+- [x] Separar el alcance operacional entre `acreditacion` para ingreso y `licencia_interna` para manejo dentro de dependencias.
+- [x] Mantener trabajadores desde `employees_active_current`, sin sembrar personas manualmente ni crear una fuente paralela.
+- [x] Mantener documentos sensibles fuera del ERP local: subir archivo a BUK y conservar solo metadata auditable.
+- [x] Aplicar migracion remota y validar RPCs autenticadas contra Supabase.
+
+### Contrato inicial DMH / ECF 21
+
+- Cedula identidad: acreditacion, requiere vencimiento.
+- Contrato de trabajo: acreditacion, sin vencimiento.
+- Anexo vinculacion: acreditacion, sin vencimiento.
+- Examen ocupacional: acreditacion, requiere vencimiento.
+- Induccion Hombre Nuevo: acreditacion, requiere vencimiento.
+- Anexo de exclusividad: acreditacion, sin vencimiento.
+- Autorizacion de uso y almacenamiento de datos Sucal: acreditacion, sin vencimiento.
+- Reglamento Interno: acreditacion, sin vencimiento.
+- Informacion de Riesgos Laborales IRL: acreditacion, sin vencimiento.
+
+### Resultado versionado
+
+- Se agrego la migracion `20260718031743_add_accreditation_standards_and_ecf21_dmh.sql` con tablas `accreditation_standards`, `accreditation_standard_requirements` y `accreditation_site_standards`.
+- `generate_worker_requirements(...)` ahora hereda requisitos desde reglas manuales y estandares asignados a la faena.
+- `get_accreditation_setup_catalogs()` expone estandares, reglas de estandar, asignaciones por faena y `process_scope`.
+- La pantalla de configuracion permite mantener estandares, vincular requisitos al estandar y asignar estandares a faenas.
+- La ficha del trabajador muestra si cada requisito aplica a ingreso, licencia interna o ambos.
+- Migraciones aplicadas en Supabase mediante conector auditado:
+  - `20260718031743_add_accreditation_standards_and_ecf21_dmh`
+  - `20260718032010_complete_accreditation_standard_rpc_contract`
+  - `20260718032056_drop_legacy_accreditation_requirement_rpc_overload`
+  - `20260718032252_add_process_scope_to_worker_accreditation_profile`
+- Validacion remota: historial de migraciones registra las cuatro versiones; seed DMH/ECF 21 quedo con 1 estandar, 1 faena, 9 requisitos, 9 reglas y 1 asignacion faena-estandar.
+- Validacion remota: `get_accreditation_setup_catalogs()` respondio con `standards`, `standard_requirement_rules`, `site_standard_rules`, `requirements`, `process_scopes`, `codelco_ecf_21` y `codelco_dmh`.
+- Validacion remota: `get_worker_accreditation_profile(...)` en transaccion con rollback devolvio 9 documentos DMH y todos incluyeron `process_scope`.
+- Validacion local: `npm run build`, `npm run audit:migrations`, `npm run audit:enterprise-docs`, `npm run audit:route-role-smoke` y `npm run audit:supabase-security` pasaron. El auditor de seguridad se mantuvo en 82 warnings.
+
 ## Cierre Certificados - generacion productiva BUK y header limpio
 
 - [x] Reemplazar el submit temporal por flujo real: subir evaluacion, crear solicitud backend, generar certificado productivo y cargar certificado/evaluacion a BUK.

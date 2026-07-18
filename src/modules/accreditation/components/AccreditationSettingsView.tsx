@@ -5,9 +5,20 @@ import { invalidateAccreditationQueries, useAccreditationSetupCatalogs } from ".
 import {
   saveAccreditationMatrixRule,
   saveAccreditationRequirement,
-  saveAccreditationSite
+  saveAccreditationSite,
+  saveAccreditationSiteStandard,
+  saveAccreditationStandard,
+  saveAccreditationStandardRequirement
 } from "../services/accreditationApi";
-import type { AccreditationFieldGuide, AccreditationMatrixRule, AccreditationRequirement, AccreditationSite } from "../types";
+import type {
+  AccreditationFieldGuide,
+  AccreditationMatrixRule,
+  AccreditationRequirement,
+  AccreditationSite,
+  AccreditationSiteStandardRule,
+  AccreditationStandard,
+  AccreditationStandardRequirementRule
+} from "../types";
 
 const defaultSiteForm = {
   siteId: "",
@@ -27,9 +38,33 @@ const defaultRequirementForm = {
   description: "",
   alertDaysBeforeExpiry: "30",
   validityDays: "",
+  processScope: "accreditation" as "accreditation" | "internal_license" | "both",
   requiresExpiryDate: false,
   isMandatory: true,
   blocksAccreditation: true
+};
+
+const defaultStandardForm = {
+  standardId: "",
+  code: "",
+  name: "",
+  ownerName: "",
+  description: ""
+};
+
+const defaultStandardRequirementForm = {
+  ruleId: "",
+  standardId: "",
+  requirementId: "",
+  sortOrder: "0",
+  notes: ""
+};
+
+const defaultSiteStandardForm = {
+  ruleId: "",
+  siteId: "",
+  standardId: "",
+  notes: ""
 };
 
 const defaultMatrixForm = {
@@ -58,6 +93,12 @@ const fallbackRequirementCategoryOptions: SelectOption[] = [
   { value: "habilitante", label: "Habilitante" }
 ];
 
+const fallbackProcessScopeOptions: SelectOption[] = [
+  { value: "accreditation", label: "Acreditacion ingreso" },
+  { value: "internal_license", label: "Licencia interna" },
+  { value: "both", label: "Ingreso y licencia interna" }
+];
+
 function getFieldHint(guides: AccreditationFieldGuide[], key: string, fallback?: string) {
   const guide = guides.find((item) => item.key === key);
   if (!guide) {
@@ -73,6 +114,9 @@ export function AccreditationSettingsView() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [siteForm, setSiteForm] = useState(defaultSiteForm);
   const [requirementForm, setRequirementForm] = useState(defaultRequirementForm);
+  const [standardForm, setStandardForm] = useState(defaultStandardForm);
+  const [standardRequirementForm, setStandardRequirementForm] = useState(defaultStandardRequirementForm);
+  const [siteStandardForm, setSiteStandardForm] = useState(defaultSiteStandardForm);
   const [matrixForm, setMatrixForm] = useState(defaultMatrixForm);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -103,6 +147,15 @@ export function AccreditationSettingsView() {
     [setupQuery.data?.requirements]
   );
 
+  const standardOptions = useMemo(
+    () =>
+      (setupQuery.data?.standards ?? []).map((standard) => ({
+        value: standard.id,
+        label: standard.ownerName ? `${standard.name} · ${standard.ownerName}` : standard.name
+      })),
+    [setupQuery.data?.standards]
+  );
+
   const requirementCategoryOptions = useMemo(() => {
     const options = setupQuery.data?.metadata.requirementCategories ?? [];
     if (!options.length) {
@@ -111,6 +164,15 @@ export function AccreditationSettingsView() {
 
     return options.map((option) => ({ value: option.value, label: option.label }));
   }, [setupQuery.data?.metadata.requirementCategories]);
+
+  const processScopeOptions = useMemo(() => {
+    const options = setupQuery.data?.metadata.processScopes ?? [];
+    if (!options.length) {
+      return fallbackProcessScopeOptions;
+    }
+
+    return options.map((option) => ({ value: option.value, label: option.label }));
+  }, [setupQuery.data?.metadata.processScopes]);
 
   const contractOptions = useMemo(() => {
     const sourceOptions = setupQuery.data?.contractOptions ?? [];
@@ -199,6 +261,7 @@ export function AccreditationSettingsView() {
         description: requirementForm.description || null,
         alertDaysBeforeExpiry: Number(requirementForm.alertDaysBeforeExpiry || 30),
         validityDays: requirementForm.validityDays ? Number(requirementForm.validityDays) : null,
+        processScope: requirementForm.processScope,
         requiresExpiryDate: requirementForm.requiresExpiryDate,
         isMandatory: requirementForm.isMandatory,
         blocksAccreditation: requirementForm.blocksAccreditation
@@ -206,6 +269,68 @@ export function AccreditationSettingsView() {
       await invalidateAccreditationQueries(queryClient);
       setRequirementForm(defaultRequirementForm);
       setFeedback("Requisito guardado.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleSaveStandard() {
+    setIsSaving(true);
+    setFeedback(null);
+    try {
+      await saveAccreditationStandard({
+        standardId: standardForm.standardId || null,
+        code: standardForm.code,
+        name: standardForm.name,
+        ownerName: standardForm.ownerName || null,
+        description: standardForm.description || null
+      });
+      await invalidateAccreditationQueries(queryClient);
+      setStandardForm(defaultStandardForm);
+      setFeedback("Estandar guardado.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleSaveStandardRequirement() {
+    setIsSaving(true);
+    setFeedback(null);
+    try {
+      await saveAccreditationStandardRequirement({
+        ruleId: standardRequirementForm.ruleId || null,
+        standardId: standardRequirementForm.standardId,
+        requirementId: standardRequirementForm.requirementId,
+        sortOrder: Number(standardRequirementForm.sortOrder || 0),
+        notes: standardRequirementForm.notes || null
+      });
+      await invalidateAccreditationQueries(queryClient);
+      setStandardRequirementForm(defaultStandardRequirementForm);
+      setFeedback("Requisito de estandar guardado.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleSaveSiteStandard() {
+    setIsSaving(true);
+    setFeedback(null);
+    try {
+      await saveAccreditationSiteStandard({
+        ruleId: siteStandardForm.ruleId || null,
+        siteId: siteStandardForm.siteId,
+        standardId: siteStandardForm.standardId,
+        notes: siteStandardForm.notes || null
+      });
+      await invalidateAccreditationQueries(queryClient);
+      setSiteStandardForm(defaultSiteStandardForm);
+      setFeedback("Estandar asignado a faena.");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : String(error));
     } finally {
@@ -256,6 +381,7 @@ export function AccreditationSettingsView() {
       description: requirement.description ?? "",
       alertDaysBeforeExpiry: String(requirement.alertDaysBeforeExpiry),
       validityDays: requirement.validityDays ? String(requirement.validityDays) : "",
+      processScope: requirement.processScope,
       requiresExpiryDate: requirement.requiresExpiryDate,
       isMandatory: requirement.isMandatory,
       blocksAccreditation: requirement.blocksAccreditation
@@ -270,6 +396,35 @@ export function AccreditationSettingsView() {
       contractCode,
       areaCode: suggestedAreaCode || current.areaCode
     }));
+  }
+
+  function loadStandard(standard: AccreditationStandard) {
+    setStandardForm({
+      standardId: standard.id,
+      code: standard.code,
+      name: standard.name,
+      ownerName: standard.ownerName ?? "",
+      description: standard.description ?? ""
+    });
+  }
+
+  function loadStandardRequirementRule(rule: AccreditationStandardRequirementRule) {
+    setStandardRequirementForm({
+      ruleId: rule.id,
+      standardId: rule.standardId,
+      requirementId: rule.requirementId,
+      sortOrder: String(rule.sortOrder),
+      notes: rule.notes ?? ""
+    });
+  }
+
+  function loadSiteStandardRule(rule: AccreditationSiteStandardRule) {
+    setSiteStandardForm({
+      ruleId: rule.id,
+      siteId: rule.siteId,
+      standardId: rule.standardId,
+      notes: rule.notes ?? ""
+    });
   }
 
   function loadMatrixRule(rule: AccreditationMatrixRule) {
@@ -411,6 +566,19 @@ export function AccreditationSettingsView() {
               onChange={(event) => setRequirementForm((current) => ({ ...current, description: event.target.value }))}
               hint={getFieldHint(requirementGuides, "description")}
             />
+            <SelectField
+              id="accreditation-requirement-process-scope"
+              label="Alcance"
+              value={requirementForm.processScope}
+              onChange={(event) =>
+                setRequirementForm((current) => ({
+                  ...current,
+                  processScope: event.target.value as "accreditation" | "internal_license" | "both"
+                }))
+              }
+              options={processScopeOptions}
+              hint={getFieldHint(requirementGuides, "process_scope")}
+            />
           </div>
           <div className="accreditation-toggle-row">
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -470,12 +638,155 @@ export function AccreditationSettingsView() {
                 onClick={() => loadRequirement(requirement)}
               >
                 <strong>{requirement.name}</strong>
-                <span>{requirement.category}</span>
+                <span>{requirement.category} · {requirement.processScope}</span>
               </button>
             ))}
           </div>
         </article>
       </div>
+
+      <div className="accreditation-settings-grid">
+        <article className="info-card accreditation-settings-card">
+          <h3>Estandares</h3>
+          <div className="field-grid">
+            <TextField
+              id="accreditation-standard-code"
+              label="Codigo"
+              value={standardForm.code}
+              onChange={(event) => setStandardForm((current) => ({ ...current, code: event.target.value }))}
+            />
+            <TextField
+              id="accreditation-standard-name"
+              label="Nombre"
+              value={standardForm.name}
+              onChange={(event) => setStandardForm((current) => ({ ...current, name: event.target.value }))}
+            />
+            <TextField
+              id="accreditation-standard-owner"
+              label="Mandante"
+              value={standardForm.ownerName}
+              onChange={(event) => setStandardForm((current) => ({ ...current, ownerName: event.target.value }))}
+            />
+            <TextField
+              id="accreditation-standard-description"
+              label="Descripcion"
+              value={standardForm.description}
+              onChange={(event) => setStandardForm((current) => ({ ...current, description: event.target.value }))}
+            />
+          </div>
+          <div className="action-row">
+            <button type="button" className="soft-primary-button soft-primary-button-success" onClick={() => void handleSaveStandard()} disabled={isSaving}>
+              Guardar estandar
+            </button>
+            <button type="button" className="soft-primary-button soft-primary-button-neutral" onClick={() => setStandardForm(defaultStandardForm)}>
+              Limpiar
+            </button>
+          </div>
+          <div className="accreditation-inline-list">
+            {(setupQuery.data?.standards ?? []).map((standard) => (
+              <button type="button" key={standard.id} className="accreditation-inline-list-item" onClick={() => loadStandard(standard)}>
+                <strong>{standard.name}</strong>
+                <span>{standard.ownerName ?? standard.code}</span>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="info-card accreditation-settings-card">
+          <h3>Requisitos por Estandar</h3>
+          <div className="field-grid">
+            <SelectField
+              id="accreditation-standard-requirement-standard"
+              label="Estandar"
+              value={standardRequirementForm.standardId}
+              onChange={(event) => setStandardRequirementForm((current) => ({ ...current, standardId: event.target.value }))}
+              options={standardOptions}
+              placeholder="Selecciona un estandar"
+            />
+            <SelectField
+              id="accreditation-standard-requirement-requirement"
+              label="Requisito"
+              value={standardRequirementForm.requirementId}
+              onChange={(event) => setStandardRequirementForm((current) => ({ ...current, requirementId: event.target.value }))}
+              options={requirementOptions}
+              placeholder="Selecciona un requisito"
+            />
+            <TextField
+              id="accreditation-standard-requirement-order"
+              label="Orden"
+              value={standardRequirementForm.sortOrder}
+              onChange={(event) => setStandardRequirementForm((current) => ({ ...current, sortOrder: event.target.value }))}
+              inputMode="numeric"
+            />
+            <TextField
+              id="accreditation-standard-requirement-notes"
+              label="Notas"
+              value={standardRequirementForm.notes}
+              onChange={(event) => setStandardRequirementForm((current) => ({ ...current, notes: event.target.value }))}
+            />
+          </div>
+          <div className="action-row">
+            <button type="button" className="soft-primary-button soft-primary-button-success" onClick={() => void handleSaveStandardRequirement()} disabled={isSaving}>
+              Guardar requisito
+            </button>
+            <button type="button" className="soft-primary-button soft-primary-button-neutral" onClick={() => setStandardRequirementForm(defaultStandardRequirementForm)}>
+              Limpiar
+            </button>
+          </div>
+          <div className="accreditation-inline-list">
+            {(setupQuery.data?.standardRequirementRules ?? []).map((rule) => (
+              <button type="button" key={rule.id} className="accreditation-inline-list-item" onClick={() => loadStandardRequirementRule(rule)}>
+                <strong>{rule.standardName}</strong>
+                <span>{rule.requirementName} · {rule.processScope}</span>
+              </button>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      <article className="info-card accreditation-settings-card">
+        <h3>Estandares por Faena</h3>
+        <div className="field-grid accreditation-matrix-form-grid">
+          <SelectField
+            id="accreditation-site-standard-site"
+            label="Faena"
+            value={siteStandardForm.siteId}
+            onChange={(event) => setSiteStandardForm((current) => ({ ...current, siteId: event.target.value }))}
+            options={siteOptions}
+            placeholder="Selecciona una faena"
+          />
+          <SelectField
+            id="accreditation-site-standard-standard"
+            label="Estandar"
+            value={siteStandardForm.standardId}
+            onChange={(event) => setSiteStandardForm((current) => ({ ...current, standardId: event.target.value }))}
+            options={standardOptions}
+            placeholder="Selecciona un estandar"
+          />
+          <TextField
+            id="accreditation-site-standard-notes"
+            label="Notas"
+            value={siteStandardForm.notes}
+            onChange={(event) => setSiteStandardForm((current) => ({ ...current, notes: event.target.value }))}
+          />
+        </div>
+        <div className="action-row">
+          <button type="button" className="soft-primary-button soft-primary-button-success" onClick={() => void handleSaveSiteStandard()} disabled={isSaving}>
+            Asignar estandar
+          </button>
+          <button type="button" className="soft-primary-button soft-primary-button-neutral" onClick={() => setSiteStandardForm(defaultSiteStandardForm)}>
+            Limpiar
+          </button>
+        </div>
+        <div className="accreditation-matrix-list">
+          {(setupQuery.data?.siteStandardRules ?? []).map((rule) => (
+            <button type="button" key={rule.id} className="accreditation-inline-list-item" onClick={() => loadSiteStandardRule(rule)}>
+              <strong>{rule.siteName}</strong>
+              <span>{rule.standardName}</span>
+            </button>
+          ))}
+        </div>
+      </article>
 
       <article className="info-card accreditation-settings-card">
         <h3>Matriz de Requisitos</h3>

@@ -23,6 +23,7 @@ export type AccreditationRequirement = {
   code: string;
   name: string;
   category: string;
+  processScope: "accreditation" | "internal_license" | "both";
   description: string | null;
   isMandatory: boolean;
   requiresExpiryDate: boolean;
@@ -32,12 +33,44 @@ export type AccreditationRequirement = {
   isActive: boolean;
 };
 
+export type AccreditationStandard = {
+  id: string;
+  code: string;
+  name: string;
+  ownerName: string | null;
+  description: string | null;
+  isActive: boolean;
+};
+
+export type AccreditationStandardRequirementRule = {
+  id: string;
+  standardId: string;
+  standardName: string;
+  requirementId: string;
+  requirementName: string;
+  processScope: "accreditation" | "internal_license" | "both";
+  sortOrder: number;
+  notes: string | null;
+  isActive: boolean;
+};
+
+export type AccreditationSiteStandardRule = {
+  id: string;
+  siteId: string;
+  siteName: string;
+  standardId: string;
+  standardName: string;
+  notes: string | null;
+  isActive: boolean;
+};
+
 export type AccreditationMatrixRule = {
   id: string;
   siteId: string;
   siteName: string;
   requirementId: string;
   requirementName: string;
+  processScope: "accreditation" | "internal_license" | "both";
   jobTitle: string | null;
   sortOrder: number;
   notes: string | null;
@@ -62,6 +95,7 @@ export type AccreditationFieldGuide = {
 export type AccreditationSetupMetadata = {
   siteTypes: AccreditationSetupOption[];
   requirementCategories: AccreditationSetupOption[];
+  processScopes: AccreditationSetupOption[];
   fieldGuides: {
     site: AccreditationFieldGuide[];
     requirement: AccreditationFieldGuide[];
@@ -72,6 +106,9 @@ export type AccreditationSetupMetadata = {
 export type AccreditationSetupCatalogs = {
   sites: AccreditationSite[];
   requirements: AccreditationRequirement[];
+  standards: AccreditationStandard[];
+  standardRequirementRules: AccreditationStandardRequirementRule[];
+  siteStandardRules: AccreditationSiteStandardRule[];
   matrixRules: AccreditationMatrixRule[];
   bukJobTitles: Array<{ value: string; label: string }>;
   contractOptions: Array<{ value: string; label: string; areaCode: string | null }>;
@@ -143,6 +180,7 @@ export type AccreditationProfileDocument = {
   requirementCode: string;
   requirementName: string;
   category: string;
+  processScope: "accreditation" | "internal_license" | "both";
   description: string | null;
   isMandatory: boolean;
   requiresExpiryDate: boolean;

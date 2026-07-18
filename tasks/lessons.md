@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 261. Los requisitos de acreditacion comunes deben vivir como estandares reutilizables
+
+- **Una division no debe copiar a mano todo el checklist si el mandante comparte un estandar.** Para Codelco, ECF 21 debe modelarse como estandar versionado y asignarse a cada faena o division que lo use.
+- **Ingreso y conduccion son habilitaciones distintas aunque compartan documentos.** El requisito debe declarar si aplica a `accreditation`, `internal_license` o `both` para no confundir "puede entrar" con "puede manejar dentro".
+- **El checklist del trabajador debe materializarse desde BUK + reglas vigentes.** La persona sale de `employees_active_current`; las filas transaccionales se crean al abrir/registrar la ficha y heredan requisitos desde matriz directa y estandares de faena.
+- **Los documentos siguen sin segunda bodega local.** La UI puede registrar metadata, vencimiento y revision, pero el archivo se sube a BUK y el ERP conserva solo referencias auditables.
+
 ## 260. La documentacion historica debe salir del repo cuando la fuente viva la reemplaza
 
 - **No todo registro antiguo es documentacion vigente.** Si un plan, propuesta, plantilla o archivo archivado ya no alimenta auditorias, CI, procesos activos ni decisiones operacionales, debe purgarse del repositorio en vez de seguir aumentando peso y ruido.

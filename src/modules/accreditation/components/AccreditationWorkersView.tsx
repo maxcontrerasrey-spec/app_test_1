@@ -370,7 +370,7 @@ export function AccreditationWorkersView() {
                   <div key={document.requirementId} className="accreditation-document-row">
                     <div>
                       <strong>{document.requirementName}</strong>
-                      <p>{document.category}</p>
+                      <p>{document.category} · {document.processScope}</p>
                       <small>
                         {document.bukDocumentName ?? "Sin archivo BUK"} · vence {document.expiryDate ?? "N/A"}
                       </small>

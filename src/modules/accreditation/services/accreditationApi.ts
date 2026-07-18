@@ -57,6 +57,7 @@ function mapSetupCatalogs(payload: unknown): AccreditationSetupCatalogs {
       code: readText(item.code),
       name: readText(item.name),
       category: readText(item.category),
+      processScope: readText(item.process_scope) as "accreditation" | "internal_license" | "both",
       description: readNullableText(item.description),
       isMandatory: readBoolean(item.is_mandatory),
       requiresExpiryDate: readBoolean(item.requires_expiry_date),
@@ -68,12 +69,41 @@ function mapSetupCatalogs(payload: unknown): AccreditationSetupCatalogs {
           : readNumber(item.validity_days),
       isActive: readBoolean(item.is_active)
     })),
+    standards: asArray<Record<string, unknown>>(source.standards).map((item) => ({
+      id: readText(item.id),
+      code: readText(item.code),
+      name: readText(item.name),
+      ownerName: readNullableText(item.owner_name),
+      description: readNullableText(item.description),
+      isActive: readBoolean(item.is_active)
+    })),
+    standardRequirementRules: asArray<Record<string, unknown>>(source.standard_requirement_rules).map((item) => ({
+      id: readText(item.id),
+      standardId: readText(item.standard_id),
+      standardName: readText(item.standard_name),
+      requirementId: readText(item.requirement_id),
+      requirementName: readText(item.requirement_name),
+      processScope: readText(item.process_scope) as "accreditation" | "internal_license" | "both",
+      sortOrder: readNumber(item.sort_order),
+      notes: readNullableText(item.notes),
+      isActive: readBoolean(item.is_active)
+    })),
+    siteStandardRules: asArray<Record<string, unknown>>(source.site_standard_rules).map((item) => ({
+      id: readText(item.id),
+      siteId: readText(item.site_id),
+      siteName: readText(item.site_name),
+      standardId: readText(item.standard_id),
+      standardName: readText(item.standard_name),
+      notes: readNullableText(item.notes),
+      isActive: readBoolean(item.is_active)
+    })),
     matrixRules: asArray<Record<string, unknown>>(source.matrix_rules).map((item) => ({
       id: readText(item.id),
       siteId: readText(item.site_id),
       siteName: readText(item.site_name),
       requirementId: readText(item.requirement_id),
       requirementName: readText(item.requirement_name),
+      processScope: readText(item.process_scope) as "accreditation" | "internal_license" | "both",
       jobTitle: readNullableText(item.job_title),
       sortOrder: readNumber(item.sort_order),
       notes: readNullableText(item.notes),
@@ -95,6 +125,7 @@ function mapSetupCatalogs(payload: unknown): AccreditationSetupCatalogs {
     metadata: {
       siteTypes: asArray<Record<string, unknown>>(metadata.site_types).map(mapSetupOption),
       requirementCategories: asArray<Record<string, unknown>>(metadata.requirement_categories).map(mapSetupOption),
+      processScopes: asArray<Record<string, unknown>>(metadata.process_scopes).map(mapSetupOption),
       fieldGuides: {
         site: asArray<Record<string, unknown>>(fieldGuides.site).map(mapFieldGuide),
         requirement: asArray<Record<string, unknown>>(fieldGuides.requirement).map(mapFieldGuide),
@@ -170,6 +201,7 @@ function mapProfileDocument(row: Record<string, unknown>): AccreditationProfileD
     requirementCode: readText(row.requirement_code),
     requirementName: readText(row.requirement_name),
     category: readText(row.category),
+    processScope: readText(row.process_scope) as "accreditation" | "internal_license" | "both",
     description: readNullableText(row.description),
     isMandatory: readBoolean(row.is_mandatory),
     requiresExpiryDate: readBoolean(row.requires_expiry_date),
@@ -361,6 +393,7 @@ export async function saveAccreditationRequirement(input: {
   alertDaysBeforeExpiry?: number;
   blocksAccreditation?: boolean;
   validityDays?: number | null;
+  processScope?: "accreditation" | "internal_license" | "both";
   isActive?: boolean;
 }) {
   const client = getSupabaseClient();
@@ -375,11 +408,88 @@ export async function saveAccreditationRequirement(input: {
     p_alert_days_before_expiry: input.alertDaysBeforeExpiry ?? 30,
     p_blocks_accreditation: input.blocksAccreditation ?? true,
     p_validity_days: input.validityDays ?? null,
+    p_process_scope: input.processScope ?? "accreditation",
     p_is_active: input.isActive ?? true
   });
   if (error) {
     throw new Error(
       getSupabaseErrorMessage(error, "No fue posible guardar el requisito.", "message")
+    );
+  }
+
+  return String(data ?? "");
+}
+
+export async function saveAccreditationStandard(input: {
+  standardId?: string | null;
+  code: string;
+  name: string;
+  ownerName?: string | null;
+  description?: string | null;
+  isActive?: boolean;
+}) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("upsert_accreditation_standard", {
+    p_standard_id: input.standardId ?? null,
+    p_code: input.code,
+    p_name: input.name,
+    p_owner_name: input.ownerName ?? null,
+    p_description: input.description ?? null,
+    p_is_active: input.isActive ?? true
+  });
+  if (error) {
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar el estandar.", "message")
+    );
+  }
+
+  return String(data ?? "");
+}
+
+export async function saveAccreditationStandardRequirement(input: {
+  ruleId?: string | null;
+  standardId: string;
+  requirementId: string;
+  sortOrder?: number;
+  notes?: string | null;
+  isActive?: boolean;
+}) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("upsert_accreditation_standard_requirement", {
+    p_rule_id: input.ruleId ?? null,
+    p_standard_id: input.standardId,
+    p_requirement_id: input.requirementId,
+    p_sort_order: input.sortOrder ?? 0,
+    p_notes: input.notes ?? null,
+    p_is_active: input.isActive ?? true
+  });
+  if (error) {
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible guardar el requisito del estandar.", "message")
+    );
+  }
+
+  return String(data ?? "");
+}
+
+export async function saveAccreditationSiteStandard(input: {
+  ruleId?: string | null;
+  siteId: string;
+  standardId: string;
+  notes?: string | null;
+  isActive?: boolean;
+}) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("upsert_accreditation_site_standard", {
+    p_rule_id: input.ruleId ?? null,
+    p_site_id: input.siteId,
+    p_standard_id: input.standardId,
+    p_notes: input.notes ?? null,
+    p_is_active: input.isActive ?? true
+  });
+  if (error) {
+    throw new Error(
+      getSupabaseErrorMessage(error, "No fue posible asignar el estandar a la faena.", "message")
     );
   }
 
