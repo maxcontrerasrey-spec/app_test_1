@@ -10,6 +10,7 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - [x] Eliminar documentacion sin enlace productivo ni control vigente.
 - [x] Conservar documentos auditados por CI y contratos operativos vivos.
 - [x] Validar auditorias/documentacion/build relevante y dejar evidencia de reduccion.
+- [x] Auditar binarios Office versionados y bloquear nuevos Word/Excel sin uso operativo.
 
 ### Resultado de limpieza documental
 
@@ -19,6 +20,8 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Se conservaron los documentos auditados por `npm run audit:enterprise-docs`: arquitectura, mapa modular, matriz de permisos, revision de seguridad, smoke tests, rollback, `tasks/todo.md` y `tasks/lessons.md`.
 - Se conservaron documentos legales/operativos vigentes: politicas ISO, Ley 19.628, deploy, audit logs, database model, brand kit y template Markdown de migracion de reclutamiento.
 - Se eliminaron `.DS_Store` locales ignorados por Git.
+- Auditoria posterior: no quedan archivos tracked ni locales `.doc`, `.docx`, `.docm`, `.xls`, `.xlsx` o `.xlsm`.
+- `.gitignore` bloquea nuevos binarios Word/Excel generados o recibidos fuera del runtime; cualquier excepcion futura debe forzarse y justificarse como operativa.
 
 ### Documentos productivos conservados
 

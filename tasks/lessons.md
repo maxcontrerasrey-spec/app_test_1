@@ -10,6 +10,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **`tasks/todo.md` debe ser estado vivo, no bodega historica.** Los cierres reutilizables pertenecen en `tasks/lessons.md`; el todo debe conservar tareas actuales, contratos vigentes y evidencias recientes que sigan guiando ejecucion.
 - **La limpieza documental debe respetar guardrails ejecutables.** Antes de borrar documentos, identifica que exige `audit:enterprise-docs` y conserva los archivos que sostienen mapa modular, permisos, seguridad, smoke tests y rollback.
 - **Las migraciones aplicadas son historia tecnica, no plantillas productivas.** Si una migracion antigua conserva una cadena como default o metadata, no implica que el archivo mencionado siga siendo una dependencia viva del ERP.
+- **Word/Excel binario no es fuente viva por defecto.** Si una plantilla o matriz se puede reconstruir desde codigo o Markdown, ignora `.doc/.docx/.xls/.xlsx` y versiona solo el contrato editable; una excepcion binaria debe entrar con `git add -f` y justificacion operacional explicita.
 
 ## 259. El cierre productivo de certificados debe revisar el entrypoint de la pantalla
 

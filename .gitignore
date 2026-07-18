@@ -9,3 +9,12 @@ vite.config.d.ts
 supabase/.temp/
 app_mobile/node_modules/
 app_mobile/.expo/
+
+# Office binaries generated or received outside the ERP runtime.
+# Keep operational contracts as source-controlled Markdown/code instead.
+*.doc
+*.docx
+*.docm
+*.xls
+*.xlsx
+*.xlsm
