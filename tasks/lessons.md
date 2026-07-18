@@ -10,6 +10,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Ingreso y conduccion son habilitaciones distintas aunque compartan documentos.** El requisito debe declarar si aplica a `accreditation`, `internal_license` o `both` para no confundir "puede entrar" con "puede manejar dentro".
 - **El checklist del trabajador debe materializarse desde BUK + reglas vigentes.** La persona sale de `employees_active_current`; las filas transaccionales se crean al abrir/registrar la ficha y heredan requisitos desde matriz directa y estandares de faena.
 - **Los documentos siguen sin segunda bodega local.** La UI puede registrar metadata, vencimiento y revision, pero el archivo se sube a BUK y el ERP conserva solo referencias auditables.
+- **Seleccionar una faena no debe poblar automaticamente una nomina.** Para acreditacion, la faena es contexto de requisitos; los trabajadores aparecen si ya tienen acreditacion creada o si el usuario los busca explicitamente desde BUK para incorporarlos.
 
 ## 260. La documentacion historica debe salir del repo cuando la fuente viva la reemplaza
 

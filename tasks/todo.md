@@ -84,6 +84,22 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Validacion remota: `get_worker_accreditation_profile(...)` en transaccion con rollback devolvio 9 documentos DMH y todos incluyeron `process_scope`.
 - Validacion local: `npm run build`, `npm run audit:migrations`, `npm run audit:enterprise-docs`, `npm run audit:route-role-smoke` y `npm run audit:supabase-security` pasaron. El auditor de seguridad se mantuvo en 82 warnings.
 
+## Correccion Acreditacion - DMH como unica faena y busqueda explicita de trabajadores
+
+- [x] Eliminar completamente del dominio de acreditacion las faenas distintas de `Codelco Division Ministro Hales`.
+- [x] Redefinir `search_accreditation_workers(...)` para que seleccionar una faena no liste automaticamente trabajadores BUK aun no seleccionados.
+- [x] Mantener busqueda explicita por nombre/RUT/cargo como mecanismo para incorporar candidatos desde `employees_active_current`.
+- [x] Aplicar migracion remota Supabase y validar catalogo, busqueda vacia DMH y busqueda explicita DMH.
+- [x] Validar build/auditorias locales y versionar el cierre.
+
+### Resultado aplicado
+
+- Se agrego la migracion `20260718034748_limit_accreditation_to_dmh_and_explicit_worker_search.sql`.
+- Supabase quedo con 1 faena activa: `Codelco Division Ministro Hales`; no quedan faenas distintas de `codelco_dmh`.
+- La purga dejo 0 acreditaciones transaccionales y 0 documentos de seguimiento, preservando el estandar ECF 21 con 9 reglas y 1 asignacion DMH-estandar.
+- Validacion RPC autenticada: `get_accreditation_setup_catalogs()` expone solo DMH; `search_accreditation_workers(null, DMH, ...)` devuelve 0; busqueda explicita DMH devuelve candidatos BUK.
+- Validacion local: `npm run build`, `npm run audit:migrations`, `npm run audit:enterprise-docs`, `npm run audit:route-role-smoke` y `npm run audit:supabase-security` pasaron. El auditor de seguridad se mantuvo en 82 warnings.
+
 ## Cierre Certificados - generacion productiva BUK y header limpio
 
 - [x] Reemplazar el submit temporal por flujo real: subir evaluacion, crear solicitud backend, generar certificado productivo y cargar certificado/evaluacion a BUK.

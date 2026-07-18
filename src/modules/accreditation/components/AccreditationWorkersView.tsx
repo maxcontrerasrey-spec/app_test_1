@@ -194,7 +194,7 @@ export function AccreditationWorkersView() {
 
       {!siteId ? (
         <p className="tracking-filter-caption">
-          Selecciona una faena para bootstrapear acreditaciones o busca un trabajador BUK por nombre o RUT.
+          Selecciona la faena y luego busca un trabajador BUK por nombre o RUT para incorporarlo a acreditacion.
         </p>
       ) : null}
       {feedback ? <p className="tracking-filter-caption">{feedback}</p> : null}
@@ -240,7 +240,11 @@ export function AccreditationWorkersView() {
               );
             })}
             {canQueryWorkers && (workerQuery.data ?? []).length === 0 && !workerQuery.isLoading ? (
-              <p className="tracking-filter-caption">No hay trabajadores para el filtro seleccionado.</p>
+              <p className="tracking-filter-caption">
+                {debouncedSearch
+                  ? "No hay trabajadores para el filtro seleccionado."
+                  : "Aun no hay trabajadores seleccionados para esta faena."}
+              </p>
             ) : null}
           </div>
         </article>
