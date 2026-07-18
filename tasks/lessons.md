@@ -11,6 +11,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El checklist del trabajador debe materializarse desde BUK + reglas vigentes.** La persona sale de `employees_active_current`; las filas transaccionales se crean al abrir/registrar la ficha y heredan requisitos desde matriz directa y estandares de faena.
 - **Los documentos siguen sin segunda bodega local.** La UI puede registrar metadata, vencimiento y revision, pero el archivo se sube a BUK y el ERP conserva solo referencias auditables.
 - **Seleccionar una faena no debe poblar automaticamente una nomina.** Para acreditacion, la faena es contexto de requisitos; los trabajadores aparecen si ya tienen acreditacion creada o si el usuario los busca explicitamente desde BUK para incorporarlos.
+- **Para DMH contrato 028, el CECO no es filtro suficiente.** `10114` agrupa contratos distintos; la carga de acreditacion debe usar el area BUK exacta `SERVICIO CODELCO DMH (6170400006:0004)` para no mezclar Aramark, Sotraser u otros servicios DMH.
 
 ## 260. La documentacion historica debe salir del repo cuando la fuente viva la reemplaza
 

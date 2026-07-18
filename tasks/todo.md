@@ -100,6 +100,23 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Validacion RPC autenticada: `get_accreditation_setup_catalogs()` expone solo DMH; `search_accreditation_workers(null, DMH, ...)` devuelve 0; busqueda explicita DMH devuelve candidatos BUK.
 - Validacion local: `npm run build`, `npm run audit:migrations`, `npm run audit:enterprise-docs`, `npm run audit:route-role-smoke` y `npm run audit:supabase-security` pasaron. El auditor de seguridad se mantuvo en 82 warnings.
 
+## Carga inicial Acreditacion - trabajadores BUK contrato 028 DMH
+
+- [x] Identificar en BUK vivo el alcance exacto de `CONT-028 / CODELCO DMH` sin mezclar otros contratos del CECO DMH.
+- [x] Cargar en `Codelco Division Ministro Hales` todos los trabajadores activos del area BUK `SERVICIO CODELCO DMH (6170400006:0004)`.
+- [x] Generar los requisitos ECF21 pendientes para cada trabajador cargado.
+- [x] Validar conteos remotos de trabajadores, documentos y visibilidad RPC autenticada.
+- [x] Validar build/auditorias locales y versionar el cierre.
+
+### Resultado aplicado
+
+- Se agrego la migracion `20260718035405_seed_dmh_accreditation_workers_from_buk_contract_028.sql`.
+- Fuente BUK usada: `employees_active_current.area_name = SERVICIO CODELCO DMH (6170400006:0004)`, equivalente operativo a `CONT-028 / CODELCO DMH`.
+- No se uso CECO `10114` como filtro porque mezcla otros contratos DMH como Aramark y Sotraser.
+- Validacion remota: 91 trabajadores fuente, 91 acreditaciones DMH creadas, 819 documentos generados y 91 trabajadores con los 9 requisitos ECF21.
+- Validacion RPC autenticada: `search_accreditation_workers(null, DMH, pending, 200)` devuelve 91 trabajadores pendientes.
+- Validacion local: `npm run build`, `npm run audit:migrations`, `npm run audit:enterprise-docs`, `npm run audit:route-role-smoke` y `npm run audit:supabase-security` pasaron. El auditor de seguridad se mantuvo en 82 warnings.
+
 ## Cierre Certificados - generacion productiva BUK y header limpio
 
 - [x] Reemplazar el submit temporal por flujo real: subir evaluacion, crear solicitud backend, generar certificado productivo y cargar certificado/evaluacion a BUK.
