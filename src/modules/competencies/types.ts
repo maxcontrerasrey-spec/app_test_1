@@ -144,8 +144,10 @@ export type CompetencyDashboardRow = {
 export type CompetencyDashboardPayload = {
   summary: {
     total: number;
+    generated: number;
     enabled: number;
     pendingBuk: number;
+    expiring30: number;
     expired: number;
   };
   recent: CompetencyDashboardRow[];

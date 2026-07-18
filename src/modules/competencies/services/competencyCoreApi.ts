@@ -105,9 +105,9 @@ function mapDashboardRow(item: Record<string, unknown>): CompetencyDashboardRow 
     workerJobTitle: readNullableText(item.worker_job_title),
     workerAreaName: readNullableText(item.worker_area_name),
     workerContractCode: readNullableText(item.worker_contract_code),
-    instructorFullName: readText(item.instructor_full_name),
+    instructorFullName: readText(item.instructor_full_name ?? item.instructor_name),
     modelSummary: readText(item.model_summary),
-    trainingDate: readText(item.training_date),
+    trainingDate: readText(item.training_date ?? item.issued_at ?? item.created_at),
     requestStatus: readText(item.request_status),
     certificateStatus: readText(item.certificate_status),
     competencyStatus: readText(item.competency_status),
@@ -125,8 +125,10 @@ function mapDashboard(payload: unknown): CompetencyDashboardPayload {
   return {
     summary: {
       total: readNumber(summary.total),
-      enabled: readNumber(summary.enabled),
+      generated: readNumber(summary.generated),
+      enabled: readNumber(summary.enabled ?? summary.generated),
       pendingBuk: readNumber(summary.pending_buk),
+      expiring30: readNumber(summary.expiring_30),
       expired: readNumber(summary.expired)
     },
     recent: asArray<Record<string, unknown>>(source.recent).map(mapDashboardRow)

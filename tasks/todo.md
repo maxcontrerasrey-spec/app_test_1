@@ -133,6 +133,20 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - `verify-competency-certificate` y la pagina publica `/verificar/competencia` muestran el snapshot publico completo.
 - `transactional_email_dispatches` acepta `competency_formalization` y `hiring-transactional-email` renderiza la notificacion.
 
+## UI Certificados - pestaña Resumen de Certificados
+
+- [x] Agregar pestañas en `/certificados` manteniendo `Nueva certificacion` como flujo de emision existente.
+- [x] Crear pestaña `Resumen de Certificados` con cuadro de resumen de certificados generados y vigencia.
+- [x] Reutilizar `get_competency_dashboard()` para conteos y certificados recientes sin inventar datos en frontend.
+- [x] Validar build local y dejar evidencia del resultado.
+
+### Resultado aplicado
+
+- La pantalla `/certificados` ahora muestra tabs `Nueva certificacion` y `Resumen de Certificados`.
+- `Resumen de Certificados` consume `get_competency_dashboard()` y muestra total, generados, por vencer en 30 dias, vencidos, pendientes BUK y ultimos certificados visibles por permisos.
+- El mapper frontend fue alineado al contrato vivo del RPC (`generated`, `expiring_30`, `instructor_name`, `valid_until`).
+- Validacion local: `npm run build`, `npm run audit:route-role-smoke` y `npm run smoke:frontend-routes` pasaron. Playwright confirmo que `/certificados` redirige a `/login` sin sesion y carga sin errores de consola.
+
 ## Duplicados de certificados de competencias
 
 - [x] Mantener como vigente el folio reciente `1707202611471153` y reemplazar en ERP el folio antiguo `1707202611461152`.
