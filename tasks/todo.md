@@ -147,6 +147,25 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - El mapper frontend fue alineado al contrato vivo del RPC (`generated`, `expiring_30`, `instructor_name`, `valid_until`).
 - Validacion local: `npm run build`, `npm run audit:route-role-smoke` y `npm run smoke:frontend-routes` pasaron. Playwright confirmo que `/certificados` redirige a `/login` sin sesion y carga sin errores de consola.
 
+## Correccion Certificados - estetica ERP y purga BUK de duplicado
+
+- [x] Reemplazar las pestañas locales de `/certificados` por el patron visual global del ERP.
+- [x] Registrar en `tasks/lessons.md` y memoria que toda implementacion UI debe respetar la estetica general del ERP.
+- [x] Auditar Swagger BUK y datos vivos del duplicado `1707202611461152` antes de eliminar documentos.
+- [ ] Eliminar en BUK el certificado duplicado y su evaluacion si el endpoint vivo lo permite, dejando evidencia sin exponer secretos.
+- [x] Validar build/auditorias relevantes, commitear y pushear a `main`.
+
+### Resultado parcial
+
+- Las tabs de `/certificados` ahora usan el patron global `approval-chip-row` / `approval-chip` / `tracking-kpi-card-active`.
+- Se agregaron lecciones vivas para estetica ERP y purga documental BUK.
+- Swagger BUK vivo (`/api/chile/es/api_docs`) no expone `DELETE` para documentos; solo `POST/GET /employees/{id}/docs`, `GET /employees/{id}/docs/{file_id}` y `GET /docs/{id}`.
+- En BUK trabajador `40022`, el duplicado fisico existe como `file_id = 145790` (`certificado_competencia_1707202611461152_114690783.pdf`) y la evaluacion original como `file_id = 145791` (`registro_capacitacion_corporativa_martin_ahumada_114690783.pdf`).
+- `GET /employees/40022/docs/{file_id}` responde 302 para ambos IDs, pero `DELETE /employees/40022/docs/{file_id}` y `DELETE /docs/{id}` devuelven 404 HTML; no se elimino ningun documento BUK por API.
+- Se corrigio `extractBukDocumentMetadata(...)` para capturar futuros IDs desde `employee_file.id` / `file_id`, que es la forma documentada de respuesta de carga.
+- `generate-competency-certificate` fue desplegada nuevamente para que futuras cargas persistan `file_id`.
+- Validacion local: `npm run build`, `npm run audit:route-role-smoke` y `git diff --check` pasaron.
+
 ## Duplicados de certificados de competencias
 
 - [x] Mantener como vigente el folio reciente `1707202611471153` y reemplazar en ERP el folio antiguo `1707202611461152`.

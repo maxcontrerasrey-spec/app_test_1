@@ -96,10 +96,31 @@ export function extractBukDocumentMetadata(payload: Record<string, unknown>) {
     payload.data && typeof payload.data === "object"
       ? (payload.data as Record<string, unknown>)
       : null;
+  const employeeFile =
+    payload.employee_file && typeof payload.employee_file === "object"
+      ? (payload.employee_file as Record<string, unknown>)
+      : data?.employee_file && typeof data.employee_file === "object"
+        ? (data.employee_file as Record<string, unknown>)
+        : null;
 
-  const documentId = data?.id ?? payload.id ?? payload.document_id ?? null;
-  const documentUrl = data?.url ?? payload.url ?? payload.document_url ?? null;
+  const documentId =
+    employeeFile?.id ??
+    employeeFile?.file_id ??
+    data?.id ??
+    data?.file_id ??
+    payload.id ??
+    payload.file_id ??
+    payload.document_id ??
+    null;
+  const documentUrl =
+    employeeFile?.url ??
+    data?.url ??
+    payload.url ??
+    payload.document_url ??
+    null;
   const folderId =
+    employeeFile?.employee_folder_id ??
+    employeeFile?.folder_id ??
     data?.employee_folder_id ??
     data?.folder_id ??
     payload.employee_folder_id ??

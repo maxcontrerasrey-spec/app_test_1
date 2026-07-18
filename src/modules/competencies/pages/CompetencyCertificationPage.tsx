@@ -548,12 +548,12 @@ export function CompetencyCertificationPage() {
       ) : null}
       {warningError ? <div className="competency-alert">{warningError}</div> : null}
 
-      <div className="competency-tabs" role="tablist" aria-label="Secciones de certificacion de competencias">
+      <div className="approval-chip-row competency-view-tabs" role="tablist" aria-label="Secciones de certificacion de competencias">
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "new"}
-          className={`competency-tab ${activeTab === "new" ? "competency-tab--active" : ""}`}
+          className={`approval-chip ${activeTab === "new" ? "tracking-kpi-card-active" : ""}`}
           onClick={() => setActiveTab("new")}
         >
           Nueva certificacion
@@ -562,7 +562,7 @@ export function CompetencyCertificationPage() {
           type="button"
           role="tab"
           aria-selected={activeTab === "summary"}
-          className={`competency-tab ${activeTab === "summary" ? "competency-tab--active" : ""}`}
+          className={`approval-chip ${activeTab === "summary" ? "tracking-kpi-card-active" : ""}`}
           onClick={() => setActiveTab("summary")}
         >
           Resumen de Certificados

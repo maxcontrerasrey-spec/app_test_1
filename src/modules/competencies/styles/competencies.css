@@ -9,40 +9,8 @@
   align-items: start;
 }
 
-.competency-tabs {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
-  border-radius: 8px;
-  background: rgba(248, 250, 252, 0.9);
-  padding: 4px;
+.competency-view-tabs {
   margin-bottom: 18px;
-}
-
-.competency-tab {
-  min-height: 38px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted, #64748b);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 800;
-  padding: 0 14px;
-  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
-}
-
-.competency-tab:hover,
-.competency-tab:focus-visible {
-  color: var(--text-primary, #0f172a);
-}
-
-.competency-tab--active {
-  background: #ffffff;
-  color: var(--text-primary, #0f172a);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .competency-form-panel,
@@ -410,10 +378,6 @@
   .competency-form-panel,
   .competency-summary-panel {
     padding: 18px;
-  }
-
-  .competency-tabs {
-    display: grid;
   }
 
   .competency-validity-card__header {

@@ -4,6 +4,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 263. La purga documental BUK exige endpoint real, no solo permisos
+
+- **Si BUK devuelve 404 en `DELETE` pero `GET` descarga el mismo `file_id`, no es una falta simple de permisos.** El Swagger vivo de BUK puede exponer `POST/GET /employees/{id}/docs`, `GET /employees/{id}/docs/{file_id}` y `GET /docs/{id}` sin exponer `DELETE` para documentos.
+- **El ERP debe persistir el `file_id` que devuelve BUK al cargar documentos.** La respuesta documentada de carga viene en `employee_file`; si el mapper solo lee `data.id`, `payload.id` o `document_id`, se pierden IDs fisicos y cualquier limpieza posterior queda obligada a resolver por nombre/listado.
+- **Distingue purga Storage de purga BUK.** `storage.remove(...)` elimina archivos locales del bucket ERP; no elimina documentos ya cargados en la ficha BUK del trabajador.
+
+## 262. Toda UI nueva debe heredar la estetica general del ERP
+
+- **No introduzcas un lenguaje visual local si el ERP ya tiene un patron global equivalente.** Antes de crear tabs, chips, filtros, tarjetas, botones o tablas, busca primero componentes/clases existentes como `approval-chip-row`, `approval-chip`, `tracking-kpi-card-active`, `control-tab` o el patron dominante del modulo.
+- **La consistencia visual es parte del contrato funcional.** Una pantalla puede compilar y consumir el RPC correcto, pero sigue incompleta si sus controles se ven ajenos al resto del ERP.
+- **Los cambios UI deben partir desde el sistema existente y solo agregar CSS local cuando falte una necesidad real.** Si se necesita CSS especifico, debe complementar el patron global sin reemplazarlo ni competir con el diseño base.
+
 ## 261. Los requisitos de acreditacion comunes deben vivir como estandares reutilizables
 
 - **Una division no debe copiar a mano todo el checklist si el mandante comparte un estandar.** Para Codelco, ECF 21 debe modelarse como estandar versionado y asignarse a cada faena o division que lo use.
