@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 260. La documentacion historica debe salir del repo cuando la fuente viva la reemplaza
+
+- **No todo registro antiguo es documentacion vigente.** Si un plan, propuesta, plantilla o archivo archivado ya no alimenta auditorias, CI, procesos activos ni decisiones operacionales, debe purgarse del repositorio en vez de seguir aumentando peso y ruido.
+- **`tasks/todo.md` debe ser estado vivo, no bodega historica.** Los cierres reutilizables pertenecen en `tasks/lessons.md`; el todo debe conservar tareas actuales, contratos vigentes y evidencias recientes que sigan guiando ejecucion.
+- **La limpieza documental debe respetar guardrails ejecutables.** Antes de borrar documentos, identifica que exige `audit:enterprise-docs` y conserva los archivos que sostienen mapa modular, permisos, seguridad, smoke tests y rollback.
+- **Las migraciones aplicadas son historia tecnica, no plantillas productivas.** Si una migracion antigua conserva una cadena como default o metadata, no implica que el archivo mencionado siga siendo una dependencia viva del ERP.
+
 ## 259. El cierre productivo de certificados debe revisar el entrypoint de la pantalla
 
 - **No basta con que la Edge Function productiva esté correcta.** Si el botón de la UI sigue llamando un generador temporal, el usuario verá folios locales y nunca llegará a BUK aunque el backend ya soporte la operación real.
