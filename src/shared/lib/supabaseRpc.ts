@@ -9,6 +9,63 @@ export type SupabaseRpcError = {
 
 export type SupabaseErrorFormatMode = "annotated" | "plain" | "message";
 
+const NETWORK_ERROR_MESSAGE =
+  "No fue posible conectar con Supabase. Revisa tu conexión e intenta nuevamente.";
+
+const NETWORK_ERROR_PATTERNS = [
+  /failed to fetch/i,
+  /fetch failed/i,
+  /load failed/i,
+  /networkerror/i,
+  /network request failed/i,
+  /the internet connection appears to be offline/i
+];
+
+const STACK_TRACE_PATTERN = /\s+at\s+(?:https?:\/\/|\/|[A-Za-z]:\\).*/s;
+
+function readErrorField(error: unknown, field: keyof SupabaseRpcError): string {
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const value = (error as Record<string, unknown>)[field];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeSupabaseError(error: unknown): SupabaseRpcError {
+  if (!error || typeof error !== "object") {
+    return {
+      message: typeof error === "string" ? error : ""
+    };
+  }
+
+  return {
+    message: readErrorField(error, "message"),
+    details: readErrorField(error, "details"),
+    hint: readErrorField(error, "hint"),
+    code: readErrorField(error, "code")
+  };
+}
+
+function sanitizeErrorPart(value?: string | null): string {
+  return value?.replace(STACK_TRACE_PATTERN, "").trim() ?? "";
+}
+
+function isNetworkSupabaseError(error: unknown) {
+  const normalized = normalizeSupabaseError(error);
+  const candidates = [
+    normalized.message,
+    normalized.details,
+    normalized.hint,
+    error instanceof Error ? error.name : "",
+    typeof error === "string" ? error : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(candidates));
+}
+
 export function getSupabaseClientOrThrow(
   errorMessage = "Supabase no está configurado en este entorno."
 ) {
@@ -52,31 +109,41 @@ export function readNullableTimestamp(value: unknown): string | null {
 }
 
 export function formatSupabaseError(
-  error: SupabaseRpcError,
+  error: unknown,
   mode: SupabaseErrorFormatMode = "annotated"
 ) {
-  if (mode === "message") {
-    return error.message?.trim() || "";
+  if (isNetworkSupabaseError(error)) {
+    return NETWORK_ERROR_MESSAGE;
   }
 
-  const details = error.details
-    ? mode === "annotated"
-      ? `Detalles: ${error.details}`
-      : error.details
-    : "";
-  const hint = error.hint
-    ? mode === "annotated"
-      ? `Sugerencia: ${error.hint}`
-      : error.hint
-    : "";
+  const normalized = normalizeSupabaseError(error);
+  const message = sanitizeErrorPart(normalized.message);
 
-  return [error.message, details, hint, error.code ? `Código: ${error.code}` : ""]
+  if (mode === "message") {
+    return message;
+  }
+
+  const rawDetails = sanitizeErrorPart(normalized.details);
+  const rawHint = sanitizeErrorPart(normalized.hint);
+  const details = rawDetails
+    ? mode === "annotated"
+      ? `Detalles: ${rawDetails}`
+      : rawDetails
+    : "";
+  const hint = rawHint
+    ? mode === "annotated"
+      ? `Sugerencia: ${rawHint}`
+      : rawHint
+    : "";
+  const code = sanitizeErrorPart(normalized.code);
+
+  return [message, details, hint, code ? `Código: ${code}` : ""]
     .filter(Boolean)
     .join(" · ");
 }
 
 export function getSupabaseErrorMessage(
-  error: SupabaseRpcError,
+  error: unknown,
   fallback: string,
   mode: SupabaseErrorFormatMode = "annotated"
 ) {

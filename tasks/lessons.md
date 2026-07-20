@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 266. Los errores Supabase/fetch deben sanitizarse antes de llegar a la UI
+
+- **Un `TypeError: Failed to fetch` es una excepcion de transporte, no un mensaje de negocio.** Si se muestra con stack trace del bundle (`assets/...js`), el problema es la frontera de manejo de errores aunque la RPC backend este sana.
+- **El helper compartido no debe concatenar `details` sin limpiar.** Supabase puede devolver detalles tecnicos o traces; `message/details/hint/code` deben pasar por una sanitizacion comun y mapear fallas de red a un texto operacional.
+- **Las mutaciones criticas deben usar `try/catch/finally`.** Aunque el servicio normalmente retorne `{ error }`, una falla de red puede lanzar antes de ese contrato; el boton debe apagar el estado de guardado y mostrar un error controlado.
+- **Valida backend y cliente por separado.** Para cambios de etapa, prueba grants/firma de RPC y un smoke con `rollback`; si eso pasa, no atribuyas el `Failed to fetch` a permisos SQL.
+
 ## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
 
 - **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.

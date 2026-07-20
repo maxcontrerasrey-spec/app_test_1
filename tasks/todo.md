@@ -215,6 +215,23 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Se conservaron 16 documentos `uploaded` y se elimino el job de limpieza documental pendiente del retiro.
 - El historial y audit log registran `withdrawn -> document_review` con `reason_code = terminal_reopen_to_document_review`.
 
+## Correccion Reclutamiento - error Failed to fetch al mover etapa
+
+- [x] Reproducir/aislar el contrato que falla al solicitar Who o mover etapa.
+- [x] Auditar el manejo frontend de excepciones Supabase/fetch en cambios de etapa de candidatos.
+- [x] Validar en Supabase remoto permisos, firma y smoke transaccional de `request_candidate_stage_who`.
+- [x] Implementar sanitizacion centralizada para que errores de red/stack trace no lleguen crudos a la UI.
+- [x] Validar build/auditorias, documentar aprendizaje, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- Se confirmo que `advance_recruitment_candidate_stage(uuid,text,text)` y `request_candidate_stage_who(uuid,text,jsonb)` siguen ejecutables para `authenticated`/`service_role` y cerradas para `anon`.
+- Smoke remoto con `rollback`: `advance_recruitment_candidate_stage(...)` desde `in_process` a `medical_exams` respondio `stage_code = medical_exams` sin persistir cambios.
+- Smoke remoto Who: `request_candidate_stage_who(...)` devolvio rechazo de negocio controlado al invocarse fuera de `lead`, confirmando que la RPC responde y no esta fallando por permisos/firma.
+- `getSupabaseErrorMessage(...)` ahora sanitiza stack traces y mapea fallas de red/fetch a un mensaje operacional.
+- El submit de cambio de etapa en Control de contrataciones usa `try/catch/finally`, apaga siempre el estado de guardado y evita mostrar errores tecnicos crudos.
+- Validacion local: `npm run build`, `npm run audit:route-role-smoke`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
+
 ## Optimizacion global de chunks y busquedas BUK
 
 - [x] Separar dependencias pesadas de PDF/competencias del chunk inicial del modulo.

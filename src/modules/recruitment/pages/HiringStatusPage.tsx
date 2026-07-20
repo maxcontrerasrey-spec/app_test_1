@@ -4,6 +4,7 @@ import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { hasFeatureAccess, hasModuleAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
+import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
 import {
   getRecruitmentCaseDetailQueryOptions,
   invalidateRecruitmentControlQueries,
@@ -219,53 +220,58 @@ export function HiringStatusPage() {
     setIsStageSaving(true);
     setDecisionMessage("");
 
-    let error: string | null = null;
-    let stageCode: string | null = null;
+    try {
+      let error: string | null = null;
+      let stageCode: string | null = null;
 
-    if (stageDraft === "who_pending") {
-      const result = await requestCandidateStageWho({
-        caseCandidateId: selectedCandidate.id,
-        comment: stageComment,
-        causes: whoCauses ?? []
-      });
-      error = result.error;
-      stageCode = result.stageCode;
-    } else {
-      const result = await advanceRecruitmentCandidateStage({
-        caseCandidateId: selectedCandidate.id,
-        toStage: stageDraft,
-        comment: stageComment
-      });
-      error = result.error;
-    }
+      if (stageDraft === "who_pending") {
+        const result = await requestCandidateStageWho({
+          caseCandidateId: selectedCandidate.id,
+          comment: stageComment,
+          causes: whoCauses ?? []
+        });
+        error = result.error;
+        stageCode = result.stageCode;
+      } else {
+        const result = await advanceRecruitmentCandidateStage({
+          caseCandidateId: selectedCandidate.id,
+          toStage: stageDraft,
+          comment: stageComment
+        });
+        error = result.error;
+      }
 
-    if (error) {
-      setDecisionMessage(error);
-      setIsStageSaving(false);
-      return;
-    }
+      if (error) {
+        setDecisionMessage(error);
+        return;
+      }
 
-    if (stageDraft === "who_pending") {
-      setDecisionMessage(
-        stageCode === "who_approved"
-          ? "Sin hallazgos: validación Who aprobada automáticamente."
-          : "Solicitud Who enviada a aprobación."
-      );
-    } else {
-      if (stageDraft === "rejected" || stageDraft === "withdrawn") {
+      if (stageDraft === "who_pending") {
+        setDecisionMessage(
+          stageCode === "who_approved"
+            ? "Sin hallazgos: validación Who aprobada automáticamente."
+            : "Solicitud Who enviada a aprobación."
+        );
+      } else if (stageDraft === "rejected" || stageDraft === "withdrawn") {
         setDecisionMessage(
           "Etapa del candidato actualizada. La limpieza documental quedó programada para la revisión automática nocturna de las 22:00."
         );
       } else {
         setDecisionMessage("Etapa del candidato actualizada.");
       }
-    }
-    setStageDraft("");
-    setStageComment("");
-    setIsStageSaving(false);
 
-    if (selectedCaseDetail) {
-      await invalidateRecruitmentCache(selectedCaseDetail.case.id);
+      setStageDraft("");
+      setStageComment("");
+
+      if (selectedCaseDetail) {
+        await invalidateRecruitmentCache(selectedCaseDetail.case.id);
+      }
+    } catch (error) {
+      setDecisionMessage(
+        getSupabaseErrorMessage(error, "No fue posible mover la etapa del candidato.")
+      );
+    } finally {
+      setIsStageSaving(false);
     }
   };
 
