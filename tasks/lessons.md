@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 264. El guardado masivo de Operaciones no debe preparar el mismo batch mas de una vez
+
+- **Si el payload ya trae IDs canonicos, el RPC debe priorizar esos IDs y no degradar a busquedas amplias.** `driverBukEmployeeId` y `equipmentCode` vienen del selector validado; la base puede validar existencia, pero no debe volver a resolver por texto como camino principal.
+- **Un helper set-based sigue siendo caro si se invoca dos veces en el mismo submit.** En `submit_service_entries_batch`, preparar filas para validacion y volver a llamar el mismo preparador para el upsert duplica joins laterales contra contrato, servicio, equipo, BUK y roster.
+- **Materializa una vez y reutiliza.** Para batches operacionales, usa un CTE `materialized` con el preparado y deriva de ahi tanto errores como escritura; mantiene la semantica transaccional y elimina trabajo repetido.
+- **Los smokes de escritura deben cubrir `planned`, no solo excepciones.** `not_performed` valida contrato/servicio/permisos, pero el caso real de la UI exige conductor BUK activo, equipo activo y lote de varios servicios dentro de `rollback`.
+
 ## 263. La purga documental BUK exige endpoint real, no solo permisos
 
 - **Si BUK devuelve 404 en `DELETE` pero `GET` descarga el mismo `file_id`, no es una falta simple de permisos.** El Swagger vivo de BUK puede exponer `POST/GET /employees/{id}/docs`, `GET /employees/{id}/docs/{file_id}` y `GET /docs/{id}` sin exponer `DELETE` para documentos.

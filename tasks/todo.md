@@ -185,6 +185,21 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - [x] Crear puerta de cierre: solo cuando certificado y evaluacion se suben correctamente a BUK se eliminan los objetos `certificates/...` y `evaluations/...` de `competency_documents`.
 - [x] Registrar IDs, URLs, nombres BUK, carpeta, hash y estado de purga sin borrar filas transaccionales necesarias para auditoria, folio y validacion publica.
 
+## Correccion Operaciones - timeout al guardar servicios
+
+- [x] Auditar el payload del Registro Base y confirmar que envia identificadores canonicos de conductor/equipo.
+- [x] Comparar la funcion remota `submit_service_entries_batch(jsonb)` con las migraciones locales para ubicar la causa real del timeout.
+- [x] Implementar una migracion forward-only que reduzca trabajo repetido y mantenga permisos/RLS sin relajarlos.
+- [x] Validar con smoke remoto transaccional con `rollback` y verificaciones locales.
+- [x] Documentar resultado final y aprendizaje para evitar repetir la falla.
+
+### Resultado aplicado
+
+- `submit_service_entries_batch(jsonb)` ahora materializa `prepare_operations_service_entry_batch(...)` una sola vez y reutiliza esas filas para validacion y upsert.
+- Se agrego indice parcial `idx_employees_active_buk_employee_id_recent` para resolver conductores por ID BUK activo sin escaneo innecesario.
+- Produccion quedo aplicada y registrada como migracion remota `20260720134318`.
+- Smokes remotos con `rollback`: `not_performed` insert/update, `planned` con conductor/equipo y batch de 5 servicios completos retornaron `ok: true`.
+
 ## Optimizacion global de chunks y busquedas BUK
 
 - [x] Separar dependencias pesadas de PDF/competencias del chunk inicial del modulo.
