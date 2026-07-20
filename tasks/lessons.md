@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
+
+- **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.
+- **Volver a `document_review` no puede dejar vivo el cleanup del cierre terminal.** Si existe un `candidate_document_cleanup_jobs` pendiente o en error para esa participacion, hay que retirarlo en la misma transaccion para que la limpieza nocturna no borre documentos de un candidato reabierto.
+- **La reparacion debe conservar la historia terminal.** No edites ni borres el rechazo/desistimiento original; registra una nueva fila de history/audit con `from_stage`, `to_stage`, `reason_code`, documentos conservados y cleanup cancelado.
+
 ## 264. El guardado masivo de Operaciones no debe preparar el mismo batch mas de una vez
 
 - **Si el payload ya trae IDs canonicos, el RPC debe priorizar esos IDs y no degradar a busquedas amplias.** `driverBukEmployeeId` y `equipmentCode` vienen del selector validado; la base puede validar existencia, pero no debe volver a resolver por texto como camino principal.

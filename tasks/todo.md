@@ -200,6 +200,21 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Produccion quedo aplicada y registrada como migracion remota `20260720134318`.
 - Smokes remotos con `rollback`: `not_performed` insert/update, `planned` con conductor/equipo y batch de 5 servicios completos retornaron `ok: true`.
 
+## Reparacion Reclutamiento - Carlos Salazar a control documental
+
+- [x] Identificar de forma unica al candidato Carlos Salazar en produccion.
+- [x] Revisar estado terminal, historial, documentos y jobs de limpieza documental asociados.
+- [x] Aplicar reparacion auditable para moverlo a `document_review` sin relajar permisos ni borrar historial.
+- [x] Validar estado final remoto y documentar resultado.
+
+### Resultado aplicado
+
+- Carlos Andres Salazar Espinoza, folio `1978` / `RC-1978`, estaba en `withdrawn` con motivo `Postulante desiste del proceso`.
+- Se aplico y registro en Supabase la migracion `20260720200022_repair_carlos_salazar_to_document_review`.
+- El candidato quedo en `document_review`, `document_validation_status = pending`, `withdrawal_reason = null`.
+- Se conservaron 16 documentos `uploaded` y se elimino el job de limpieza documental pendiente del retiro.
+- El historial y audit log registran `withdrawn -> document_review` con `reason_code = terminal_reopen_to_document_review`.
+
 ## Optimizacion global de chunks y busquedas BUK
 
 - [x] Separar dependencias pesadas de PDF/competencias del chunk inicial del modulo.
