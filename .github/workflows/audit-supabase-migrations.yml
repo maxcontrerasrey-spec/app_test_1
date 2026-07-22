@@ -10,6 +10,7 @@ on:
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-buk-sync-guards.mjs"
       - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-frontend-auth-smoke-secrets.mjs"
       - "scripts/audit-route-role-smoke.mjs"
@@ -32,6 +33,7 @@ on:
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-buk-sync-guards.mjs"
       - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-frontend-auth-smoke-secrets.mjs"
       - "scripts/audit-route-role-smoke.mjs"
@@ -76,8 +78,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       - name: Audit Enterprise documentation coverage
         run: npm run audit:enterprise-docs
+
+      - name: Audit BUK sync duplicate guards
+        run: npm run audit:buk-sync-guards
+
+      - name: Check BUK sync Edge Function
+        run: npm run check:edge:sync-buk-candidates
 
       - name: Smoke route and role guardrails
         run: npm run audit:route-role-smoke

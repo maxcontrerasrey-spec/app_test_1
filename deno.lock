@@ -1,0 +1,42 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@supabase/functions-js@*": "2.110.7"
+  },
+  "jsr": {
+    "@supabase/functions-js@2.110.7": {
+      "integrity": "07e0d01291f07ff34bbfbffdd567c2c32a5b3c5fbeacddc62f12f0147d7b5c3d"
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@fontsource/inter@^5.2.8",
+        "npm:@mylinkpi/xlsx@~0.20.3",
+        "npm:@pdf-lib/fontkit@^1.1.1",
+        "npm:@supabase/supabase-js@^2.108.1",
+        "npm:@tanstack/query-core@^5.90.20",
+        "npm:@tanstack/react-query@^5.90.20",
+        "npm:@types/qrcode@1.5.6",
+        "npm:@types/react-dom@^18.3.1",
+        "npm:@types/react@^18.3.12",
+        "npm:@vitejs/plugin-react@^4.3.4",
+        "npm:echarts-for-react@^3.0.6",
+        "npm:echarts@^6.1.0",
+        "npm:pdf-lib@^1.17.1",
+        "npm:pdf-parse@^2.4.5",
+        "npm:playwright@^1.61.1",
+        "npm:qrcode@1.5.4",
+        "npm:react-dom@^18.3.1",
+        "npm:react-is@^19.2.7",
+        "npm:react-markdown@^10.1.0",
+        "npm:react-router-dom@^6.30.4",
+        "npm:react@^18.3.1",
+        "npm:remark-gfm@^4.0.1",
+        "npm:typescript@^5.6.3",
+        "npm:unpdf@^1.6.2",
+        "npm:vite@^6.4.3"
+      ]
+    }
+  }
+}

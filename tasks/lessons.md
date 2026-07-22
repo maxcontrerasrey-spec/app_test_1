@@ -11,6 +11,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Las mutaciones criticas deben usar `try/catch/finally`.** Aunque el servicio normalmente retorne `{ error }`, una falla de red puede lanzar antes de ese contrato; el boton debe apagar el estado de guardado y mostrar un error controlado.
 - **Valida backend y cliente por separado.** Para cambios de etapa, prueba grants/firma de RPC y un smoke con `rollback`; si eso pasa, no atribuyas el `Failed to fetch` a permisos SQL.
 
+## 267. Una ficha BUK inactiva previa no debe depender del correo historico para repararse
+
+- **El documento exacto es la identidad primaria de una ficha BUK inactiva.** Si el trabajador ya existe inactivo, el worker debe reutilizar o clonar esa ficha por RUT/documento aunque el correo laboral historico haya cambiado.
+- **La igualdad estricta de correo pertenece al duplicado activo.** Para fichas activas se conserva la proteccion fuerte antes de cancelar la pedida ERP; para fichas inactivas el correo debe quedar como dato auditable, no como bloqueo terminal.
+- **BUK puede exponer estado en mas de un campo.** La clasificacion debe normalizar `status`, `employee_status`, `estado`, `active` e `is_active` antes de decidir si repara, clona o cancela.
+- **Cada regresion de duplicado BUK necesita guardrail ejecutable.** `audit:buk-sync-guards` debe fallar si desaparecen las ramas de ficha inactiva, ficha activa incompleta, cancelacion solo para activo confirmado o auditoria en `result_snapshot`.
+
 ## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
 
 - **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.

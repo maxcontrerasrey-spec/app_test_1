@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { SoftMetricCard, TextField } from "../../../../shared/ui";
+import { SelectField, SoftMetricCard, TextField } from "../../../../shared/ui";
 import { getDaysSince } from "../../../../shared/lib/date";
 import {
   useRecruitmentProcessesPage,
@@ -26,6 +26,10 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [shiftFilter, setShiftFilter] = useState("");
+  const [travelFilter, setTravelFilter] = useState("");
+  const [campFilter, setCampFilter] = useState("");
+  const [contractFilter, setContractFilter] = useState("");
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [caseDetailsCache, setCaseDetailsCache] = useState<Record<string, RecruitmentCaseDetail | null>>({});
@@ -56,50 +60,87 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
 
   useEffect(() => {
     setPage(0);
-  }, [debouncedSearch, sortConfig]);
+  }, [debouncedSearch, sortConfig, shiftFilter, travelFilter, campFilter, contractFilter]);
 
   const activeFoliosQuery = useRecruitmentProcessesPage({
     search: debouncedSearch || undefined,
     statusFilter: null,
     sortColumn: sortConfig?.key ?? null,
     sortDirection: sortConfig?.direction ?? "desc",
-    limit: pageSize,
-    offset: page * pageSize
+    limit: 250,
+    offset: 0
   });
 
-  const folios = useMemo<RecruitmentCaseListRow[]>(
+  const allFolios = useMemo<RecruitmentCaseListRow[]>(
     () => activeFoliosQuery.data?.items ?? [],
     [activeFoliosQuery.data]
   );
-  const totalCount = activeFoliosQuery.data?.totalCount ?? 0;
+
+  const shiftOptions = useMemo(
+    () =>
+      buildTextFilterOptions(
+        allFolios.map((folio) => normalizeFilterValue(folio.shift_name ?? folio.turno))
+      ),
+    [allFolios]
+  );
+  const contractOptions = useMemo(
+    () =>
+      buildTextFilterOptions(
+        allFolios.map((folio) => normalizeFilterValue(folio.contract_name))
+      ),
+    [allFolios]
+  );
+  const filteredFolios = useMemo(
+    () =>
+      allFolios.filter((folio) => {
+        const shiftValue = normalizeFilterValue(folio.shift_name ?? folio.turno);
+        const contractValue = normalizeFilterValue(folio.contract_name);
+        const travelValue = formatBooleanFilterValue(folio.pasajes);
+        const campValue = formatBooleanFilterValue(folio.campamento);
+
+        return (
+          (!shiftFilter || shiftValue === shiftFilter) &&
+          (!contractFilter || contractValue === contractFilter) &&
+          (!travelFilter || travelValue === travelFilter) &&
+          (!campFilter || campValue === campFilter)
+        );
+      }),
+    [allFolios, campFilter, contractFilter, shiftFilter, travelFilter]
+  );
+  const hasLocalFilters = Boolean(shiftFilter || travelFilter || campFilter || contractFilter);
+  const folios = useMemo<RecruitmentCaseListRow[]>(
+    () => filteredFolios.slice(page * pageSize, page * pageSize + pageSize),
+    [filteredFolios, page]
+  );
+  const totalCount = filteredFolios.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const visibleSummary = useMemo<RecruitmentProcessesPageSummary>(
     () => ({
-      activeCases: folios.length,
-      requestedVacancies: folios.reduce(
+      activeCases: filteredFolios.length,
+      requestedVacancies: filteredFolios.reduce(
         (total, folio) => total + Math.max(folio.requested_vacancies ?? 0, 0),
         0
       ),
-      inProgressCandidates: folios.reduce(
+      inProgressCandidates: filteredFolios.reduce(
         (total, folio) => total + getRecruitmentCaseHeadcountBreakdown(folio).activeCandidates,
         0
       ),
-      readyToHireCases: folios.filter((folio) => (folio.ready_candidates ?? 0) > 0).length,
-      filledCases: folios.filter(
+      readyToHireCases: filteredFolios.filter((folio) => (folio.ready_candidates ?? 0) > 0).length,
+      filledCases: filteredFolios.filter(
         (folio) =>
           (folio.requested_vacancies ?? 0) > 0 &&
           (folio.filled_vacancies ?? 0) >= (folio.requested_vacancies ?? 0)
       ).length,
-      hiredCandidates: folios.reduce(
+      hiredCandidates: filteredFolios.reduce(
         (total, folio) => total + Math.max(folio.hired_candidates ?? 0, 0),
         0
       )
     }),
-    [folios]
+    [filteredFolios]
   );
   const folioSummary = useMemo<RecruitmentProcessesPageSummary>(
     () => {
-      if (activeFoliosQuery.data?.summary) {
+      if (!hasLocalFilters && activeFoliosQuery.data?.summary) {
         return activeFoliosQuery.data.summary;
       }
 
@@ -116,7 +157,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
 
       return visibleSummary;
     },
-    [activeFoliosQuery.data?.summary, debouncedSearch, recruitmentSummary, visibleSummary]
+    [activeFoliosQuery.data?.summary, debouncedSearch, hasLocalFilters, recruitmentSummary, visibleSummary]
   );
   const folioKpis = useMemo(
     () => [
@@ -212,6 +253,48 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     >
       <div className="dashboard-folios-toolbar dashboard-folios-toolbar-split">
         <div className="dashboard-folios-toolbar-search">
+          <div className="dashboard-folios-filter-row">
+            <SelectField
+              id="dashboard-folios-shift-filter"
+              label="Turno"
+              hideLabel
+              value={shiftFilter}
+              onChange={(event) => setShiftFilter(event.target.value)}
+              placeholder="Turno"
+              options={shiftOptions}
+              className="dashboard-folios-filter"
+            />
+            <SelectField
+              id="dashboard-folios-travel-filter"
+              label="Pasajes"
+              hideLabel
+              value={travelFilter}
+              onChange={(event) => setTravelFilter(event.target.value)}
+              placeholder="Pasajes"
+              options={BOOLEAN_FILTER_OPTIONS}
+              className="dashboard-folios-filter"
+            />
+            <SelectField
+              id="dashboard-folios-camp-filter"
+              label="Alojamiento"
+              hideLabel
+              value={campFilter}
+              onChange={(event) => setCampFilter(event.target.value)}
+              placeholder="Alojamiento"
+              options={BOOLEAN_FILTER_OPTIONS}
+              className="dashboard-folios-filter"
+            />
+            <SelectField
+              id="dashboard-folios-contract-filter"
+              label="Contrato"
+              hideLabel
+              value={contractFilter}
+              onChange={(event) => setContractFilter(event.target.value)}
+              placeholder="Contrato"
+              options={contractOptions}
+              className="dashboard-folios-filter dashboard-folios-filter-contract"
+            />
+          </div>
           <TextField
             id="dashboard-folios-search"
             label="Buscar folio en curso"
@@ -509,3 +592,24 @@ type ActiveFoliosSortKey =
   | "vacancies"
   | "candidate_count"
   | "opened_at";
+
+const BOOLEAN_FILTER_OPTIONS = [
+  { value: "si", label: "Sí" },
+  { value: "no", label: "No" }
+];
+
+function normalizeFilterValue(value: string | null | undefined) {
+  return value?.trim() ?? "";
+}
+
+function formatBooleanFilterValue(value: boolean | null | undefined) {
+  if (value === true) return "si";
+  if (value === false) return "no";
+  return "";
+}
+
+function buildTextFilterOptions(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)))
+    .sort((left, right) => left.localeCompare(right, "es"))
+    .map((value) => ({ value, label: value }));
+}

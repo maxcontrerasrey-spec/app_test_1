@@ -218,6 +218,37 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 ## Correccion Reclutamiento - error Failed to fetch al mover etapa
 
 - [x] Reproducir/aislar el contrato que falla al solicitar Who o mover etapa.
+
+## Correccion Reclutamiento - ficha BUK previa y filtros de folios
+
+- [x] Auditar la regresion de fichas BUK previas/inactivas y ubicar la rama que vuelve a mostrar "no fue posible resolver la ficha automaticamente".
+- [x] Reforzar `sync-buk-candidates` para que una ficha BUK inactiva con documento exacto no caiga al error terminal y quede trazada en `result_snapshot`.
+- [x] Agregar un auditor ejecutable que verifique la existencia de las guardas de duplicado activo, ficha inactiva reutilizable/clonable y trazabilidad de resolucion BUK.
+- [x] Agregar filtros desplegables al widget de folios activos por turno, pasajes, alojamiento y contrato, sin ampliar el RPC si el payload ya trae esos campos.
+- [x] Validar build/auditorias relevantes y documentar resultado/lecciones para evitar repeticion.
+
+### Resultado aplicado
+
+- Causa raiz: `resolveBukEmployeeForSync(...)` encontraba fichas por documento, pero una ficha historica inactiva podia no entrar a la rama inactiva si el estado venia en campos alternativos o si el correo historico no coincidia con el correo nuevo.
+- `sync-buk-candidates` ahora resuelve estado desde `status`, `employee_status`, `estado`, `active` o `is_active`; para fichas inactivas usa documento exacto como identidad primaria y conserva el chequeo estricto de correo para duplicados activos.
+- La resolucion BUK deja `resolutionAudit` en exito y `employeeResolutionAudit` en error, evitando mensajes visibles extensos y manteniendo trazabilidad en `buk_sync_jobs.result_snapshot`.
+- Se agrego `scripts/audit-buk-sync-guards.mjs`, `npm run audit:buk-sync-guards` y ejecucion en GitHub Actions para bloquear regresiones de estas ramas.
+- El widget de folios activos del dashboard agrega filtros desplegables por turno, pasajes, alojamiento y contrato junto a la busqueda, usando `SelectField` compartido y filtrado local sobre campos ya entregados por `get_recruitment_processes_page`.
+- Validacion local: `npm run audit:buk-sync-guards`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:route-role-smoke`, `npm run audit:supabase-security`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run smoke:frontend-routes` y `git diff --check` pasaron.
+- Deploy remoto: `sync-buk-candidates` desplegada en Supabase project `pzblmbahnoyntrhistea` con `npx --yes supabase functions deploy sync-buk-candidates --use-api --yes`.
+
+## Saneamiento Reclutamiento - verificacion Deno de sync-buk-candidates
+
+- [x] Resolver la deuda de tipado que impedía usar `deno check` como verificacion limpia de `sync-buk-candidates`.
+- [x] Reemplazar `ReturnType<typeof createClient>` por un alias explicito `SupabaseAdminClient` para evitar inferencias `never` en tablas/RPC.
+- [x] Tipar fronteras puntuales (`response.data`, fallback de snapshot) sin cambiar logica de negocio.
+- [x] Agregar `npm run check:edge:sync-buk-candidates` y ejecutarlo en GitHub Actions con Deno.
+- [x] Revalidar build/auditorias, desplegar funcion y commitear/pushear a `main`.
+
+### Resultado aplicado
+
+- `npm run check:edge:sync-buk-candidates` pasa y queda como guardrail CI para la Edge Function BUK.
+- La correccion fue solo de tipos/fronteras: alias `SupabaseAdminClient`, tipado de filas BUK remotas y fallback null-safe de snapshot; no cambia la semantica de creacion/reparacion/cancelacion BUK.
 - [x] Auditar el manejo frontend de excepciones Supabase/fetch en cambios de etapa de candidatos.
 - [x] Validar en Supabase remoto permisos, firma y smoke transaccional de `request_candidate_stage_who`.
 - [x] Implementar sanitizacion centralizada para que errores de red/stack trace no lleguen crudos a la UI.

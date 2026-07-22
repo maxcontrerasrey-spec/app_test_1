@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
   buildBukBaseUrl,
   extractBukDocumentMetadata,
@@ -10,6 +10,8 @@ type SyncRequest = {
   jobIds?: string[];
   limit?: number;
 };
+
+type SupabaseAdminClient = SupabaseClient<any, "public", any>;
 
 type BukJobRow = {
   id: string;
@@ -115,6 +117,10 @@ type BukLocationCacheRow = {
 type BukEmployeeRecord = {
   id: number | string;
   status?: string | null;
+  employee_status?: string | null;
+  estado?: string | null;
+  active?: boolean | null;
+  is_active?: boolean | null;
   email?: string | null;
   personal_email?: string | null;
   document_number?: string | null;
@@ -213,6 +219,16 @@ class BukApiError extends Error {
     this.endpoint = params.endpoint;
     this.payload = params.payload;
     this.bodySnippet = params.bodySnippet;
+  }
+}
+
+class BukEmployeeResolutionError extends Error {
+  audit: Array<Record<string, unknown>>;
+
+  constructor(message: string, audit: Array<Record<string, unknown>>) {
+    super(message);
+    this.name = "BukEmployeeResolutionError";
+    this.audit = audit;
   }
 }
 
@@ -640,9 +656,26 @@ function resolveNextBukEmployeeCode(
 
 function normalizeBukEmployeeStatus(value: string | null | undefined) {
   const normalized = normalizeText(value);
-  if (normalized === "activo" || normalized === "active") return "active";
-  if (normalized === "inactivo" || normalized === "inactive") return "inactive";
+  if (["activo", "active", "vigente", "habilitado"].includes(normalized)) return "active";
+  if (["inactivo", "inactive", "desvinculado", "terminado", "finiquitado", "disabled"].includes(normalized)) return "inactive";
   return normalized || "unknown";
+}
+
+function resolveBukEmployeeStatus(employee: BukEmployeeRecord) {
+  const textualStatus =
+    employee.status ??
+    employee.employee_status ??
+    employee.estado ??
+    null;
+  const normalized = normalizeBukEmployeeStatus(textualStatus);
+  if (normalized !== "unknown") {
+    return normalized;
+  }
+
+  const activeFlag = employee.active ?? employee.is_active;
+  if (activeFlag === true) return "active";
+  if (activeFlag === false) return "inactive";
+  return normalized;
 }
 
 function matchesBukEmployeeIdentity(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
@@ -696,6 +729,26 @@ function hasCompatibleBukEmployeeContact(employee: BukEmployeeRecord, payload: B
   return targetEmails.some((targetEmail) => employeeEmails.includes(targetEmail));
 }
 
+function getBukEmployeeContactAudit(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  const targetEmails = [
+    normalizeEmail(payload.profile.email),
+    normalizeEmail(payload.profile.personal_email)
+  ].filter(Boolean);
+  const employeeEmails = [
+    normalizeEmail(employee.email),
+    normalizeEmail(employee.personal_email)
+  ].filter(Boolean);
+
+  return {
+    targetHasEmail: targetEmails.length > 0,
+    employeeHasEmail: employeeEmails.length > 0,
+    hasMatchingEmail:
+      targetEmails.length === 0 ||
+      employeeEmails.length === 0 ||
+      targetEmails.some((targetEmail) => employeeEmails.includes(targetEmail))
+  };
+}
+
 function hasBukCurrentJob(employee: BukEmployeeRecord) {
   return Boolean(
     employee.current_job &&
@@ -715,7 +768,7 @@ function matchesResolvedBukEmployeeCode(employee: BukEmployeeRecord, payload: Bu
 }
 
 function isActiveBukEmployeeDuplicate(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
-  if (normalizeBukEmployeeStatus(employee.status) !== "active") {
+  if (resolveBukEmployeeStatus(employee) !== "active") {
     return false;
   }
 
@@ -738,7 +791,7 @@ function isErpProvisionedActiveBukEmployee(employee: BukEmployeeRecord, payload:
 
 function isRepairableActiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
   return (
-    normalizeBukEmployeeStatus(employee.status) === "active" &&
+    resolveBukEmployeeStatus(employee) === "active" &&
     matchesBukEmployeeDocument(employee, payload) &&
     hasCompatibleBukEmployeeContact(employee, payload) &&
     matchesResolvedBukEmployeeCode(employee, payload) &&
@@ -748,9 +801,8 @@ function isRepairableActiveBukEmployee(employee: BukEmployeeRecord, payload: Buk
 
 function isInactiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
   return (
-    normalizeBukEmployeeStatus(employee.status) === "inactive" &&
-    matchesBukEmployeeDocument(employee, payload) &&
-    hasCompatibleBukEmployeeContact(employee, payload)
+    resolveBukEmployeeStatus(employee) === "inactive" &&
+    matchesBukEmployeeDocument(employee, payload)
   );
 }
 
@@ -774,6 +826,27 @@ function isReusableIncompleteBukEmployee(
   }
 
   return normalizeText(employee.code_sheet) === normalizeText(targetEmployeeCode);
+}
+
+function buildBukEmployeeResolutionAudit(
+  matchingEmployees: BukEmployeeRecord[],
+  payload: BukCandidateSyncPayload
+) {
+  return matchingEmployees.map((employee) => ({
+    id: employee.id,
+    status: resolveBukEmployeeStatus(employee),
+    rawStatus: employee.status ?? employee.employee_status ?? employee.estado ?? null,
+    activeFlag: employee.active ?? employee.is_active ?? null,
+    codeSheet: employee.code_sheet ?? null,
+    hasCurrentJob: hasBukCurrentJob(employee),
+    documentMatches: matchesBukEmployeeDocument(employee, payload),
+    identityMatches: matchesBukEmployeeIdentity(employee, payload),
+    contact: getBukEmployeeContactAudit(employee, payload),
+    matchesRequestedEmployeeCode: matchesResolvedBukEmployeeCode(employee, payload),
+    reusableIncomplete: isReusableIncompleteBukEmployee(employee, payload),
+    repairableActive: isRepairableActiveBukEmployee(employee, payload),
+    activeDuplicate: isActiveBukEmployeeDuplicate(employee, payload)
+  }));
 }
 
 function parseBukApiErrorPayload(error: unknown) {
@@ -949,8 +1022,8 @@ async function fetchBukEmployeeByEmail(email: string | null | undefined) {
   url.searchParams.set("page_size", "10");
 
   const response = await fetchBukJson(url.toString());
-  const rows = Array.isArray(response.data) ? response.data : [];
-  const exactMatch = rows.find((entry) => {
+  const rows = Array.isArray(response.data) ? response.data : [] as unknown[];
+  const exactMatch = rows.find((entry: unknown) => {
     if (!entry || typeof entry !== "object") return false;
     return normalizeEmail((entry as Record<string, unknown>).email as string | undefined) === normalizedEmail;
   });
@@ -1187,7 +1260,7 @@ function hasPreferredBukLocationDepth(rows: BukLocationCacheRow[]) {
   });
 }
 
-async function loadBukLocationsCache(supabase: ReturnType<typeof createClient>) {
+async function loadBukLocationsCache(supabase: SupabaseAdminClient) {
   const { data, error } = await supabase
     .from("buk_locations")
     .select("location_id, location_name, region_name, synced_at, raw_payload")
@@ -1201,7 +1274,7 @@ async function loadBukLocationsCache(supabase: ReturnType<typeof createClient>) 
 }
 
 async function writeBukLocationsCache(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   cachedRows: BukLocationCacheRow[],
   locations: BukLocation[]
 ) {
@@ -1249,7 +1322,7 @@ async function writeBukLocationsCache(
   }
 }
 
-async function resolveBukLocations(supabase: ReturnType<typeof createClient>) {
+async function resolveBukLocations(supabase: SupabaseAdminClient) {
   const cachedRows = await loadBukLocationsCache(supabase);
   const cachedLocations = mapBukLocationCacheRows(cachedRows);
 
@@ -1430,7 +1503,7 @@ function scoreBukRoleCandidate(targetRoleName: string, areaId: number, candidate
 }
 
 async function loadLocalBukAreaEmployees(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   areaCode: string
 ) {
   const { data, error } = await supabase
@@ -1739,7 +1812,7 @@ function hasNonZeroBukJobWage(job: Record<string, unknown> | null) {
 }
 
 async function resolveCandidateSyncContext(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   payload: BukCandidateSyncPayload
 ) {
   const targetStartDate = resolveTargetStartDate(payload);
@@ -1879,7 +1952,7 @@ async function resolveCandidateSyncContext(
   }
 
   if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
-    fallbackAreaSnapshot = findCompleteBukJobSnapshot(localAreaSnapshots, null);
+    fallbackAreaSnapshot = findCompleteBukJobSnapshot(localAreaSnapshots, null) ?? null;
   }
 
   if (!fallbackAreaSnapshot?.areaId || !fallbackAreaSnapshot.companyId || !fallbackAreaSnapshot.costCenter) {
@@ -1930,7 +2003,7 @@ async function resolveCandidateSyncContext(
 }
 
 async function ensureBukEmployeeSetup(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   payload: BukCandidateSyncPayload,
   employeeId: string
 ) {
@@ -2227,8 +2300,9 @@ async function resolveBukEmployeeForSync(
     }
 
     const matchedEmployee = matchingEmployees[0];
-    throw new Error(
-      `El trabajador ya existe en BUK (ID ${matchedEmployee.id}, estado ${matchedEmployee.status ?? "desconocido"}) y no fue posible resolver la ficha automáticamente.`
+    throw new BukEmployeeResolutionError(
+      `El trabajador ya existe en BUK (ID ${matchedEmployee.id}, estado ${resolveBukEmployeeStatus(matchedEmployee)}) y no fue posible resolver la ficha automáticamente.`,
+      buildBukEmployeeResolutionAudit(matchingEmployees, payload)
     );
   }
 }
@@ -2247,7 +2321,7 @@ function buildBukDocumentFileName(payload: BukCandidateSyncPayload, originalName
 }
 
 async function assertCandidateDocumentFilesExist(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   payload: BukCandidateSyncPayload,
   alreadyUploadedDocumentIds: Set<string>
 ) {
@@ -2287,7 +2361,7 @@ async function assertCandidateDocumentFilesExist(
 }
 
 async function processDocuments(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   payload: BukCandidateSyncPayload,
   employeeId: string,
   uploadedDocuments: Array<Record<string, unknown>>,
@@ -2380,7 +2454,7 @@ function resolveAuthorizedPayload(job: BukJobRow) {
 }
 
 async function markJobState(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   jobId: string,
   values: Record<string, unknown>
 ) {
@@ -2395,7 +2469,7 @@ async function markJobState(
 }
 
 async function finalizeSuccessfulJob(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   jobId: string,
   employeeId: string,
   resultSnapshot: Record<string, unknown>
@@ -2412,7 +2486,7 @@ async function finalizeSuccessfulJob(
 }
 
 async function finalizeExistingActiveEmployeeJob(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   jobId: string,
   employeeId: string,
   resultSnapshot: Record<string, unknown>
@@ -2431,7 +2505,7 @@ async function finalizeExistingActiveEmployeeJob(
 }
 
 async function claimJobs(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   request: SyncRequest
 ) {
   const normalizedLimit = Math.min(Math.max(request.limit ?? 10, 1), 50);
@@ -2453,7 +2527,7 @@ async function claimJobs(
 }
 
 async function authorizeRequestedJobs(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseAdminClient,
   actorUserId: string,
   request: SyncRequest
 ) {
@@ -2556,7 +2630,10 @@ Deno.serve(async (req) => {
           request: resolvedEmployee.employeePayload,
           resolution: resolvedEmployee.resolution,
           matchedEmployee: resolvedEmployee.matchedEmployee ?? null,
-          clonedFromEmployeeId: resolvedEmployee.clonedFromEmployeeId ?? null
+          clonedFromEmployeeId: resolvedEmployee.clonedFromEmployeeId ?? null,
+          resolutionAudit: resolvedEmployee.matchedEmployee
+            ? buildBukEmployeeResolutionAudit([resolvedEmployee.matchedEmployee], payload)[0]
+            : null
         };
 
         if (resolvedEmployee.resolution === "existing_active_duplicate") {
@@ -2612,6 +2689,9 @@ Deno.serve(async (req) => {
         const errorAudit = buildBukErrorAudit(error);
         if (errorAudit) {
           jobResultSnapshot.errorAudit = errorAudit;
+        }
+        if (error instanceof BukEmployeeResolutionError) {
+          jobResultSnapshot.employeeResolutionAudit = error.audit;
         }
         await markJobState(supabase, job.id, {
           status: "error",

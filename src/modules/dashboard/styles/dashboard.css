@@ -680,10 +680,28 @@
 
 .dashboard-folios-toolbar-search {
   flex: 1;
+  min-width: min(100%, 560px);
+  display: grid;
+  gap: 0.7rem;
 }
 
 .dashboard-folios-search {
   max-width: 420px;
+}
+
+.dashboard-folios-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(126px, 1fr));
+  gap: 0.6rem;
+  max-width: 760px;
+}
+
+.dashboard-folios-filter {
+  min-width: 0;
+}
+
+.dashboard-folios-filter-contract {
+  min-width: min(100%, 180px);
 }
 
 .dashboard-folios-kpis {
@@ -746,6 +764,10 @@
     width: 100%;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .dashboard-folios-filter-row {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -757,6 +779,14 @@
 
   .dashboard-folios-kpis {
     width: 100%;
+  }
+
+  .dashboard-folios-filter-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-folios-search {
+    max-width: none;
   }
 }
 
