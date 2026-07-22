@@ -418,6 +418,19 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - El boton limpia desplegables, busqueda y chip de estado, y cancela resoluciones automaticas de busqueda en curso.
 - Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
 
+## Ajuste Control Candidatos - modalidad de pasajes visible
+
+- [x] Verificar que la modalidad de pasajes ya viene en el contrato de datos de folios y detalle.
+- [x] Mostrar la definicion de Control de contratos en el detalle expandido de folios con pasajes.
+- [x] Validar frontend/documentacion, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- El detalle expandido de folios ahora muestra `Modalidad de pasajes` dentro de `Compensacion y beneficios`.
+- La vista reutiliza el label autoritativo `toTravelMethodologyLabel(...)`: `Bono de traslado`, `Compra Empresa` o `Sin definir`.
+- Si el folio no lleva pasajes, la modalidad se muestra como `No aplica`.
+- Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

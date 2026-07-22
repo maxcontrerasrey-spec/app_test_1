@@ -2590,3 +2590,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No interpretes "sacar filtros" como "sacar la tabla".** Antes de eliminar una superficie visible, separa filtros, busqueda, datos, paginacion y detalle; cambia solo el elemento pedido.
 - **Un exito BUK debe refrescar la cola aunque no haya ficha lateral seleccionada.** La invalidacion no puede depender de `selectedCandidateId`; las acciones masivas desde tabla tambien deben invalidar/refrescar su lista.
 - **El mensaje de exito no es suficiente evidencia visual.** Despues de procesar candidatos en BUK, fuerza la reconsulta del listado visible para que el candidato exitoso desaparezca de `Personal a Contratar`.
+
+## 176. Las decisiones de Control de contratos deben quedar visibles en folios
+
+- **Pasajes no basta como booleano.** Si Control de contratos define modalidad de pasajes, el resumen expandido del folio debe mostrar `travel_methodology` junto a `Pasajes`.
+- **No inventes labels en la vista.** Reutiliza `toTravelMethodologyLabel(...)` para mantener consistencia entre aprobaciones, tareas y control de candidatos.
+- **La ausencia tambien debe ser explicita.** Un folio sin pasajes debe mostrar `No aplica`; un folio con pasajes y sin modalidad debe quedar como `Sin definir` para activar correccion operacional.

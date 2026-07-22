@@ -6,6 +6,7 @@ import {
   toRecruitmentCaseStatusLabel,
   type RecruitmentCaseListRow,
 } from "../services/hiringControl";
+import { toTravelMethodologyLabel } from "../services/hiringWorkflow";
 import {
   useRecruitmentCaseDetail,
   useRecruitmentPendingApprovalsPage,
@@ -448,6 +449,7 @@ export function HiringProcessesView({
                   const summarySalaryOffer = hr?.salary_offer ?? caseRow.salary_offer;
                   const summaryCampamento = hr?.campamento ?? caseRow.campamento;
                   const summaryPasajes = hr?.pasajes ?? caseRow.pasajes;
+                  const summaryTravelMethodology = hr?.travel_methodology ?? caseRow.travel_methodology;
                   const summaryBenefits = hr?.other_benefits ?? caseRow.other_benefits;
                   const headcount = getRecruitmentCaseHeadcountBreakdown(caseRow);
 
@@ -562,6 +564,14 @@ export function HiringProcessesView({
                                       <strong>{summaryPasajes ? "Sí" : "No"}</strong>
                                     </div>
                                     <div>
+                                      <small>Modalidad de pasajes</small>
+                                      <strong>
+                                        {summaryPasajes
+                                          ? toTravelMethodologyLabel(summaryTravelMethodology)
+                                          : "No aplica"}
+                                      </strong>
+                                    </div>
+                                    <div>
                                       <small>Otros beneficios</small>
                                       <strong>{summaryBenefits?.trim() || "—"}</strong>
                                     </div>
@@ -661,6 +671,14 @@ export function HiringProcessesView({
                                     <div>
                                       <small>Pasajes</small>
                                       <strong>{summaryPasajes ? "Sí" : "No"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Modalidad de pasajes</small>
+                                      <strong>
+                                        {summaryPasajes
+                                          ? toTravelMethodologyLabel(summaryTravelMethodology)
+                                          : "No aplica"}
+                                      </strong>
                                     </div>
                                     <div>
                                       <small>Otros beneficios</small>
