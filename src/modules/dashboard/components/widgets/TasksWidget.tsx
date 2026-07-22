@@ -254,7 +254,7 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                                         : "No aplica"}
                                     </strong>
                                   </div>
-                                  <div>
+                                  <div className="expanded-detail-field-full">
                                     <small>Otros beneficios</small>
                                     <strong>{task.other_benefits ?? "—"}</strong>
                                   </div>

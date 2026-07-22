@@ -431,6 +431,18 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Si el folio no lleva pasajes, la modalidad se muestra como `No aplica`.
 - Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
 
+## Ajuste Resumen Folios - otros beneficios ancho completo
+
+- [x] Identificar los bloques de `Compensacion y beneficios` que muestran `Otros beneficios`.
+- [x] Hacer que `Otros beneficios` use el ancho completo de su seccion para evitar texto amontonado.
+- [x] Validar frontend/documentacion, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- `Otros beneficios` ahora ocupa toda la fila dentro de `Compensacion y beneficios` en Control de candidatos y widgets de resumen relacionados.
+- Se reutilizo la clase existente `expanded-detail-field-full`, sin agregar CSS nuevo ni alterar datos.
+- Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

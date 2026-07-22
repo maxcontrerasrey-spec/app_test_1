@@ -384,7 +384,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                                       <small>Pasajes</small>
                                       <strong>{hr?.pasajes ? "Sí" : "No"}</strong>
                                     </div>
-                                    <div>
+                                    <div className="expanded-detail-field-full">
                                       <small>Otros beneficios</small>
                                       <strong>{hr?.other_benefits ?? "—"}</strong>
                                     </div>

@@ -571,7 +571,7 @@ export function HiringProcessesView({
                                           : "No aplica"}
                                       </strong>
                                     </div>
-                                    <div>
+                                    <div className="expanded-detail-field-full">
                                       <small>Otros beneficios</small>
                                       <strong>{summaryBenefits?.trim() || "—"}</strong>
                                     </div>
@@ -680,7 +680,7 @@ export function HiringProcessesView({
                                           : "No aplica"}
                                       </strong>
                                     </div>
-                                    <div>
+                                    <div className="expanded-detail-field-full">
                                       <small>Otros beneficios</small>
                                       <strong>{summaryBenefits?.trim() || "—"}</strong>
                                     </div>
