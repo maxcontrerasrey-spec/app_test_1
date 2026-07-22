@@ -10,6 +10,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **`resolve_known_company_name(...)` tambien es fuente autoritativa.** Un contrato cuyo sufijo BUK parece `:0001` puede pertenecer operacionalmente a otra empresa; registra excepciones por `contract_number` exacto antes del fallback generico por sufijo.
 - **Corrige historico transaccional y snapshots juntos.** Para movilidades ya emitidas, actualiza `internal_mobility_requests`, `requires_termination` y `internal_mobility_request_snapshots.payload` en la misma migracion forward-only.
 - **Agrega guardrail para contratos criticos.** Si negocio corrige un contrato como CODELCO DRT, el auditor BUK debe bloquear que vuelva a quedar como Buses JM.
+- **No cierres drift BUK como caso puntual si el patron es general.** Recalcula la empresa dominante por `current_job.company_id` para todos los `buk_contract_mappings` operativos 1:1 y actualiza solo cuando BUK entregue una ganadora unica.
 
 ## 266. Los errores Supabase/fetch deben sanitizarse antes de llegar a la UI
 

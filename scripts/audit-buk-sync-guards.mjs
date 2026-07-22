@@ -67,6 +67,22 @@ addCheck(
     /internal_mobility_requests/.test(migrationSources),
   "CODELCO DRT queda mapeado a Consorcio nuevo norte en contratos BUK y movilidad interna"
 );
+addCheck(
+  /tmp_authoritative_buk_mapping_companies/.test(migrationSources) &&
+    /employees_active_current/.test(migrationSources) &&
+    /extract_buk_company_id/.test(migrationSources) &&
+    /rank\(\)\s+over[\s\S]*partition\s+by[\s\S]*mapping_id/.test(migrationSources) &&
+    /companies_with_same_sample_count\s*=\s*1/.test(migrationSources) &&
+    /update\s+public\.buk_contract_mappings/.test(migrationSources) &&
+    /update\s+public\.internal_mobility_requests/.test(migrationSources) &&
+    /update\s+public\.internal_mobility_request_snapshots/.test(migrationSources),
+  "empresas de contratos BUK se reconcilian contra BUK vivo de forma general y sin empates"
+);
+addCheck(
+  /create\s+or\s+replace\s+function\s+public\.resolve_known_company_name[\s\S]*from\s+public\.buk_contract_mappings/.test(migrationSources) &&
+    /language\s+sql\s+stable/.test(migrationSources),
+  "resolve_known_company_name prioriza el mapping BUK exacto antes del fallback por sufijo"
+);
 
 const failedChecks = checks.filter((check) => !check.ok);
 

@@ -481,6 +481,25 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Guardrail: `audit:buk-sync-guards` ahora bloquea que CODELCO DRT vuelva a quedar fuera de Consorcio Nuevo Norte.
 - Validacion local: `npm run guardian`, `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run audit:buk-sync-guards` y `git diff --check` pasaron.
 
+## Correccion Contratos - empresa BUK general
+
+- [x] Auditar todos los `buk_contract_mappings` operativos contra dotacion BUK viva por codigo/area BUK y empresa `current_job.company_id`.
+- [x] Identificar si existen otros contratos donde la empresa local difiere de la empresa dominante informada por BUK.
+- [x] Implementar reconciliacion forward-only general para mappings, movilidad interna y snapshots sin hardcodear solo CODELCO DRT.
+- [x] Reemplazar la guarda especifica por auditoria ejecutable de drift general ERP vs BUK.
+- [x] Ejecutar gates EEES/Supabase, documentar aprendizaje y dejar commit/push en `main`.
+
+### Resultado aplicado
+
+- La auditoria viva detecto 22 mappings operativos 1:1 donde `buk_contract_mappings.company_name` diferia de la empresa dominante de BUK por `current_job.company_id`.
+- Se agrego y aplico la migracion `20260722151708_reconcile_buk_contract_mapping_companies.sql`.
+- La reconciliacion actualiza solo mappings con empresa BUK ganadora unica; casos sin muestra o con empate quedan fuera para revision humana.
+- `resolve_known_company_name(null, contract_number)` ahora prioriza el mapping BUK exacto antes del fallback por sufijo.
+- Produccion fue aplicada por `supabase db query --file` y registrada en `supabase_migrations.schema_migrations` como `20260722151708`.
+- Validacion remota: la auditoria de drift ERP vs BUK regreso 0 filas corregibles.
+- Validacion puntual: CODELCO DRT, CODELCO DMH, CODELCO ANDINA, FLIX VIÑA DEL MAR, RRHH CNN y MANTENCION CALAMA CNN resuelven fallback igual al mapping reconciliado.
+- Validacion local: `npm run guardian`, `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run audit:buk-sync-guards`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 - [ ] EEES P1 - Cerrar smokes autenticados por rol y auditar deuda legacy de onboarding:
