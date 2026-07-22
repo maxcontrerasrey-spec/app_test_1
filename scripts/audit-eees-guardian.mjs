@@ -557,6 +557,7 @@ function runGates() {
   runCommand("audit:onboarding-legacy-guards", "npm", ["run", "audit:onboarding-legacy-guards"]);
   runCommand("audit:migrations", "npm", ["run", "audit:migrations"]);
   runCommand("audit:supabase-security", "npm", ["run", "audit:supabase-security"]);
+  runCommand("audit:competency-catalog-guards", "npm", ["run", "audit:competency-catalog-guards"]);
   runCommand("build:frontend-check", "npm", ["run", "build:frontend-check"]);
   runCommand("audit:performance-baseline", "npm", ["run", "audit:performance-baseline"]);
   runCommand("git diff --check", "git", ["diff", "--check"]);

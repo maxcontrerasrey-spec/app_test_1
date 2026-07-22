@@ -579,6 +579,25 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Validacion puntual: CODELCO DRT, CODELCO DMH, CODELCO ANDINA, FLIX VIÑA DEL MAR, RRHH CNN y MANTENCION CALAMA CNN resuelven fallback igual al mapping reconciliado.
 - Validacion local: `npm run guardian`, `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run audit:buk-sync-guards`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
 
+## Certificados - nuevos modelos solicitados por instructores
+
+- [x] Revisar contrato real de `get_competency_catalogs()` y tablas `competency_equipment_*`.
+- [x] Aterrizar nomenclatura del requerimiento a ERP: `Bus 1 Piso`, `Bus 1 1/2 Piso`, `Bus 2 Pisos`, `Mini Bus`.
+- [x] Agregar marcas/modelos solicitados sin duplicar codigos ni reactivar modelos erroneos.
+- [x] Corregir Yutong `ZK6709 H` para que aparezca como bus y no como taxibus en el generador.
+- [x] Aplicar migracion, validar catalogo remoto, ejecutar gates y publicar en `main`.
+
+### Resultado aplicado
+
+- Se agrego la migracion `20260722211032_add_instructor_requested_competency_models.sql`.
+- Nomenclatura ERP aplicada en catalogo: `Bus 1 Piso`, `Bus 1 1/2 Piso`, `Bus 2 Pisos`, `Mini Bus`.
+- Modelos agregados/normalizados: MERCEDES BENZ `O 500 RSD`; SCANIA `F 310 HB`, `K410 C`, `K 440 IB`, `K400 C`, `K 450-C`; VOLVO `B 450 R`; MAXUS `DELIBERY -9 - E DELIBERY -9`; KING LONG `XMQ6130 E`; YUTONG `ZK6709 H`.
+- YUTONG `ZK6709 H` fue reclasificado desde `Taxibus` a `Bus 1 Piso` conservando el codigo legacy `yutong-c9-zk6709h`.
+- Produccion fue aplicada por `supabase db query --file` y registrada en `supabase_migrations.schema_migrations` como `20260722211032`.
+- Guardrail: `audit:competency-catalog-guards` bloquea que desaparezcan los modelos/tipos solicitados o que Yutong vuelva a Taxibus.
+- Validacion remota: consulta directa a `competency_equipment_models` confirmo las 12 combinaciones solicitadas con tipo ERP correcto.
+- Validacion local: `npm run guardian`, `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run audit:competency-catalog-guards`, `npm run build:frontend-check`, `npm run audit:performance-baseline` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 ## Revision de errores GitHub Actions - 2026-07-22

@@ -24,6 +24,7 @@
     "audit:onboarding-legacy-guards": "node scripts/audit-onboarding-legacy-guards.mjs",
     "audit:route-role-smoke": "node scripts/audit-route-role-smoke.mjs",
     "audit:buk-sync-guards": "node scripts/audit-buk-sync-guards.mjs",
+    "audit:competency-catalog-guards": "node scripts/audit-competency-catalog-guards.mjs",
     "audit:performance-baseline": "node scripts/audit-performance-baseline.mjs",
     "audit:p4-operational-readiness": "node scripts/audit-p4-operational-readiness.mjs",
     "audit:enterprise-100-readiness": "node scripts/audit-enterprise-100-readiness.mjs",

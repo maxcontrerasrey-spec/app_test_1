@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 0
-- Info: 21
+- Info: 19
 
 ## Errores
 
@@ -46,9 +46,7 @@ PASS
 - audit:onboarding-legacy-guards: PASS
 - audit:migrations: PASS
 - audit:supabase-security: PASS
+- audit:competency-catalog-guards: PASS
 - build:frontend-check: PASS
 - audit:performance-baseline: PASS
 - git diff --check: PASS
-- test:coverage: PASS
-- smoke:frontend-routes: PASS
-- check:edge:sync-buk-candidates: PASS

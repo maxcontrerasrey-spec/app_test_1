@@ -11,6 +11,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un check de overlap sin serialización deja una carrera.** Bloquea por identidad de negocio antes de leer y escribir rangos.
 - **Las tablas audit-only también necesitan RLS.** Así una ampliación futura de grants no abre el dato por accidente.
 
+## 275. Catalogos de certificados deben traducir requerimientos a nomenclatura ERP
+
+- **Los instructores pueden enviar nombres coloquiales, pero el catálogo debe quedar en lenguaje ERP.** Normaliza `Un Piso` a `Bus 1 Piso`, `Un Piso y Medio` a `Bus 1 1/2 Piso`, `Bus Dos Pisos` a `Bus 2 Pisos` y `Mini Bus` antes de migrar.
+- **Corrige la clasificación en la fuente, no en el PDF.** Si un modelo como YUTONG `ZK6709 H` aparece como `Taxibus` pero está calificado como bus, cambia `competency_equipment_models.type_id` para que formulario, certificado y QR hereden la misma verdad.
+- **Cada alta de modelos solicitados necesita guardrail.** Un auditor estático debe bloquear que desaparezcan modelos críticos o que vuelva una clasificación operacional incorrecta.
+
 ## 273. La empresa de un contrato BUK debe corregirse en mapping y fallback
 
 - **El nombre visible en movilidad puede venir de `buk_contract_mappings.company_name`, no del contrato base.** Si una movilidad interna muestra empresa destino incorrecta, revisa el mapping BUK antes de tocar UI.
