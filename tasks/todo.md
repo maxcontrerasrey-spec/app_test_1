@@ -581,6 +581,23 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 
 ## Proximos objetivos vivos
 
+## Revision de errores GitHub Actions - 2026-07-22
+
+- [x] Inventariar ejecuciones fallidas recientes de `Audit Enterprise Guardrails` y revisar sus logs completos.
+- [x] Clasificar cada causa como activa, corregida o externa, con evidencia del commit afectado.
+- [x] Reproducir localmente cualquier fallo vigente y aplicar la correccion minima necesaria.
+- [x] Ejecutar Guardian, TypeScript, build y checks afectados.
+- [x] Confirmar workflow exitoso en `main`, documentar el resultado y publicar cambios si corresponden.
+
+### Resultado aplicado
+
+- Se revisaron las ultimas 100 ejecuciones del workflow: 8 fallos historicos y 0 fallos activos en la punta auditada de `main`.
+- Cinco fallos correspondian al mismo chequeo Deno sin instalacion automatica de dependencias npm; quedaron cerrados por `9fa904b` y el comando vigente `deno check --no-config --node-modules-dir=auto`.
+- Un fallo correspondia al timeout inicial del smoke de rutas sin configuracion Supabase portable; quedo cerrado por `76b77a1`.
+- Dos fallos correspondian al baseline de bundle medido sin las variables publicas del entorno CI; quedaron cerrados por `07ddfeb`.
+- Evidencia remota previa al cierre: run `29949601230` PASS, con `audit-enterprise-guardrails` y Cloudflare Pages exitosos sobre `07ddfeb`.
+- Revalidacion local con entorno CI: `npm run guardian:full` PASS con 0 errores/0 warnings, TypeScript PASS, build PASS y `git diff --check` PASS.
+
 ## CORE DATA INTEGRITY - certificacion transaccional adversarial
 
 - [x] Completar boot: objetivo, Books, baselines, matrices, hardening, certificaciones y contratos vivos.
