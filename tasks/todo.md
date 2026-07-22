@@ -393,6 +393,18 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - La caja de busqueda usa el mismo ancho de celda, padding y radio visual que las tarjetas informativas.
 - Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
 
+## Ajuste Inicio - color organico de busqueda en folios
+
+- [x] Igualar el fondo, sombra y borde de la busqueda con la base visual de las tarjetas informativas.
+- [x] Quitar el fondo/borde propio del input interno para que no parezca una caja separada.
+- [x] Validar frontend/documentacion, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- La busqueda usa el mismo gradiente, borde y sombra elevada de las tarjetas `SoftMetricCard`.
+- El input interno quedo transparente para integrarse a la tarjeta sin una segunda caja visual.
+- Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

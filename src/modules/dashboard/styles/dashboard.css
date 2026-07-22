@@ -677,12 +677,31 @@
   padding: 0.62rem 0.75rem;
   border-radius: 0.9rem;
   border: 1px solid var(--soft-border);
-  background: var(--soft-surface);
-  box-shadow: var(--shadow-soft);
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
+  box-shadow:
+    8px 8px 20px var(--soft-shadow-dark),
+    -8px -8px 20px var(--soft-shadow-light),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .dashboard-folios-search .text-field {
   min-height: 2.42rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--soft-text-primary);
+  font-weight: 600;
+}
+
+.dashboard-folios-search .text-field::placeholder {
+  color: var(--soft-text-muted);
+  opacity: 0.74;
+}
+
+.dashboard-folios-search .text-field:focus {
+  box-shadow: none;
 }
 
 .dashboard-folios-kpis {
