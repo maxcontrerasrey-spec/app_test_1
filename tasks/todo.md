@@ -338,6 +338,21 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - El auditor exige secciones minimas en `docs/security-review.md` y `docs/smoke-tests.md`.
 - El auditor exige que este archivo registre la iteracion activa `Loop Enterprise global`.
 
+## Correccion CI - Audit Enterprise Guardrails
+
+- [x] Inspeccionar las corridas fallidas de `Audit Enterprise Guardrails` en `main`.
+- [x] Reproducir el fallo de `deno check` en un arbol temporal limpio con `npm ci` y `DENO_DIR` nuevo.
+- [x] Corregir el comando Deno del guardrail para que el runner limpio resuelva dependencias npm transitivas del runtime Supabase Functions.
+- [x] Validar localmente el guardrail de BUK, el check Deno y los auditores ejecutados por el workflow.
+
+### Resultado aplicado
+
+- Los correos correspondian a fallos reales de CI en los commits `35dd71e`, `ef08f85`, `13dc02e`, `b36c717` y `40650c9`.
+- La causa raiz fue `deno check supabase/functions/sync-buk-candidates/index.ts`: en GitHub Actions, el runner limpio no podia resolver el tipo transitivo `npm:openai@^4.52.5` requerido por `jsr:@supabase/functions-js`.
+- Se ajusto `check:edge:sync-buk-candidates` a `deno check --no-config --node-modules-dir=auto ...` para que Deno materialice dependencias npm transitivas en CI sin agregarlas como dependencia frontend directa ni inflar el lock global.
+- Reproduccion limpia previa sin config: fallo con `Could not find a matching package for 'npm:openai@^4.52.5'`.
+- Reproduccion limpia posterior con la config: `deno check --no-config --node-modules-dir=auto supabase/functions/sync-buk-candidates/index.ts` paso.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

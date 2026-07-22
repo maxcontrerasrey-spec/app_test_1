@@ -41,6 +41,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Reencolar desde UI debe rescatar trabajos obsoletos.** `enqueue_buk_generation` no debe devolver indefinidamente un job `processing` vencido; debe resetearlo a `pending` con auditoria y permitir que el dispatch interactivo lo ejecute.
 - **La recuperacion debe quedar trazada en `result_snapshot`.** Usa un objeto como `staleProcessingRecovery` con origen, timestamps y attempts previos para distinguir reintentos operativos de jobs nuevos.
 
+## 272. Los checks Deno de Edge Functions deben pasar en runners limpios
+
+- **Un `deno check` local puede estar ocultando dependencias por cache o `node_modules/.deno`.** Si CI falla resolviendo un paquete `npm:` transitivo, reproduce con un arbol temporal limpio y `DENO_DIR` nuevo antes de cerrar.
+- **El runtime de Supabase Functions puede traer tipos JSR que dependen de npm.** El check de Edge Functions debe activar `--node-modules-dir=auto` y aislarse con `--no-config` para que Actions resuelva dependencias transitivas como `npm:openai` sin convertirlas en dependencia frontend ni inflar el lock global.
+- **Los correos de warning de GitHub Actions se auditan desde el run real.** No basta con que los guardrails pasen localmente; revisa `gh run view --log` para identificar el primer paso rojo y corregir la diferencia ambiente-local.
+
 ## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
 
 - **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.
