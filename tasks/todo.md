@@ -352,6 +352,7 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Se ajusto `check:edge:sync-buk-candidates` a `deno check --no-config --node-modules-dir=auto ...` para que Deno materialice dependencias npm transitivas en CI sin agregarlas como dependencia frontend directa ni inflar el lock global.
 - Reproduccion limpia previa sin config: fallo con `Could not find a matching package for 'npm:openai@^4.52.5'`.
 - Reproduccion limpia posterior con la config: `deno check --no-config --node-modules-dir=auto supabase/functions/sync-buk-candidates/index.ts` paso.
+- Se actualizo el workflow a `actions/checkout@v7.0.1`, `actions/setup-node@v7.0.0` y Node 24 para eliminar la anotacion residual de deprecacion de Node 20.
 
 ## Proximos objetivos vivos
 
