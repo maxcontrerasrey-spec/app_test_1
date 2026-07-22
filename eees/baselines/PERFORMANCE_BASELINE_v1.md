@@ -13,7 +13,7 @@ baseline_date: 2026-07-22
 
 ## Alcance medido
 
-Baseline inicial de performance P4 medido desde el build productivo local y smokes ejecutables. No define thresholds funcionales arbitrarios; registra el estado actual como control anti-regresion para que aumentos futuros se justifiquen con evidencia.
+Baseline inicial de performance P4 medido desde el build productivo y smokes ejecutables. El tamano canonico corresponde al artefacto de CI con `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` publicas inyectadas, igual que el despliegue. No define thresholds funcionales arbitrarios; registra el estado actual como control anti-regresion para que aumentos futuros se justifiquen con evidencia.
 
 ## Comandos ejecutados
 
@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo local y smok
 
 ## Bundle medido
 
-- dist total medido: 10,659,104 bytes.
-- JS total medido: 3,017,883 bytes.
-- `dist` total: 10,659,104 bytes.
+- dist total medido: 10,664,147 bytes.
+- JS total medido: 3,022,926 bytes.
+- `dist` total: 10,664,147 bytes.
 - Archivos JS: 51.
-- JS total: 3,017,883 bytes.
+- JS total: 3,022,926 bytes.
 - Archivos CSS: 10.
 - CSS total: 213,123 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -56,9 +56,9 @@ Baseline inicial de performance P4 medido desde el build productivo local y smok
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10659104,
+  "distTotalBytes": 10664147,
   "jsFileCount": 51,
-  "jsTotalBytes": 3017883,
+  "jsTotalBytes": 3022926,
   "cssFileCount": 10,
   "cssTotalBytes": 213123,
   "trackedAssets": [

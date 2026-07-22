@@ -23,6 +23,7 @@ CERTIFIED WITH EXTERNAL DEPENDENCIES.
 4. Reataque documental; detección y cierre de 5 P1 internos adicionales.
 5. Reataque remoto, despliegue de cuatro Edge Functions y ejecución completa de gates.
 6. Revisión independiente de implementación; corrección del contexto actor y lifecycle de idempotencia.
+7. Validación post-push; normalización del baseline de performance al artefacto real de CI y repetición de la cadena remota.
 
 ## Cambios ejecutados
 
@@ -52,3 +53,4 @@ CERTIFIED WITH EXTERNAL DEPENDENCIES.
 - Edge checks: cuatro funciones Deno PASS y cuatro despliegues ACTIVE.
 - Smokes afectados: rutas PASS; fronteras Edge retornan `401` controlado sin credenciales.
 - EEES Consistency y `git diff --check`: PASS.
+- CI de `main`: PASS sobre el commit certificado.

@@ -18,6 +18,7 @@ baseline_date: 2026-07-22
 - Se cierran mutaciones directas que evitaban RPCs canónicos y se activan constraints de metadata terminal.
 - Se agregan checkpoints documentales, timeout BUK, stale recovery y job durable de acreditación.
 - Guardian y CI incorporan auditoría y suites CORE de integridad, concurrencia e idempotencia.
+- El baseline de bundle queda normalizado al artefacto de CI con configuracion publica de despliegue inyectada.
 
 ## 1.4.0 - 2026-07-22
 

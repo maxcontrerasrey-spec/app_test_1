@@ -2662,3 +2662,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los artifacts ZIP versionados son duplicacion salvo que un proceso vivo los consuma.** Si solo empaquetan fuentes ya versionadas, elimina el binario y deja la trazabilidad en reportes Markdown.
 - **Las dependencias Edge con import `npm:` no son unused aunque no tengan imports Node.** Clasificalas como `KEEP_RUNTIME_DYNAMIC`; elimina solo dependencias directas sin uso real ni contrato runtime.
 - **Cada cleanup final necesita auditor anti-residuo.** Si ya identificaste scripts, assets o dependencias removidas, Guardian debe impedir que vuelvan sin una decision explicita.
+
+## 185. El baseline de bundle debe usar el mismo contexto de configuracion que CI
+
+- **Un build local sin variables `VITE_*` no representa el artefacto desplegable.** Mide y versiona el baseline con las variables publicas que CI inyecta, porque su contenido forma parte del JavaScript generado.
+- **Una diferencia reproducible de entorno no se resuelve agregando tolerancia arbitraria.** Registra el valor realmente medido en CI y documenta el contexto para que futuras comparaciones sean equivalentes.
