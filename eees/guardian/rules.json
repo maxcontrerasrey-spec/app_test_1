@@ -171,6 +171,24 @@
     "blocking": true
   },
   {
+    "id": "TST-003",
+    "title": "Smokes auth condicionados",
+    "severity": "ERROR",
+    "scope": "tests/smoke docs/smoke-tests.md .github/workflows",
+    "source_document": "eees/books/TESTING-AUTOMATION.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "TST-004",
+    "title": "CI reproduce gates locales",
+    "severity": "ERROR",
+    "scope": ".github/workflows scripts package.json",
+    "source_document": "eees/books/TESTING-AUTOMATION.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
     "id": "OBS-001",
     "title": "Errores con accion",
     "severity": "WARNING",

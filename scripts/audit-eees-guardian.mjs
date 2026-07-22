@@ -292,6 +292,7 @@ function runGates() {
   runCommand("audit:enterprise-docs", "npm", ["run", "audit:enterprise-docs"]);
   runCommand("audit:route-role-smoke", "npm", ["run", "audit:route-role-smoke"]);
   runCommand("audit:frontend-auth-smoke-matrix", "npm", ["run", "audit:frontend-auth-smoke-matrix"]);
+  runCommand("audit:onboarding-legacy-guards", "npm", ["run", "audit:onboarding-legacy-guards"]);
   runCommand("audit:migrations", "npm", ["run", "audit:migrations"]);
   runCommand("audit:supabase-security", "npm", ["run", "audit:supabase-security"]);
   runCommand("build:frontend-check", "npm", ["run", "build:frontend-check"]);

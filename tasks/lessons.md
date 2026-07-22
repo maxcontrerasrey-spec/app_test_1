@@ -2596,3 +2596,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Pasajes no basta como booleano.** Si Control de contratos define modalidad de pasajes, el resumen expandido del folio debe mostrar `travel_methodology` junto a `Pasajes`.
 - **No inventes labels en la vista.** Reutiliza `toTravelMethodologyLabel(...)` para mantener consistencia entre aprobaciones, tareas y control de candidatos.
 - **La ausencia tambien debe ser explicita.** Un folio sin pasajes debe mostrar `No aplica`; un folio con pasajes y sin modalidad debe quedar como `Sin definir` para activar correccion operacional.
+
+## 177. Los smokes autenticados por rol deben cerrar manifiesto, CI, docs y auditoria juntos
+
+- **Una matriz auth parcial no es un cierre P1.** Si el backlog pide smokes por rol, el auditor debe exigir cobertura minima por rol y no solo validar sintaxis del manifiesto.
+- **Los secrets son contrato, no valores versionados.** El repo debe versionar `*_EMAIL` y `*_PASSWORD` como nombres esperados en manifiesto, workflow y docs; nunca correos reales, passwords, tokens ni sesiones.
+- **La recomendacion de cuentas debe derivar el modulo desde rutas reales.** Si se agrega una ruta al smoke autenticado, `smoke:frontend-auth-candidates` debe resolver su `moduleCode` para no recomendar usuarios que pasan login pero caen en `/sin-acceso`.
+- **La deuda legacy contenida necesita un gate propio.** Cuando una migracion historica queda como evidencia, agrega un auditor que pruebe la superficie viva, la migracion correctiva y el hardening posterior en vez de borrar historia SQL.

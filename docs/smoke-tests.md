@@ -9,6 +9,7 @@ npm run audit:migrations
 npm run audit:enterprise-docs
 npm run audit:route-role-smoke
 npm run audit:frontend-auth-smoke-matrix
+npm run audit:onboarding-legacy-guards
 npm run smoke:frontend-routes
 npx tsc -b --pretty false
 npm run build:frontend-check
@@ -54,7 +55,19 @@ Este smoke no imprime contraseña ni tokens, no usa service role en el navegador
 `npm run smoke:frontend-authenticated-matrix` valida el manifiesto `tests/smoke/frontend-authenticated.scenarios.json` y ejecuta los escenarios autenticados que tengan secrets configurados:
 
 - `home-authenticated`: usa `FRONTEND_AUTH_SMOKE_HOME_EMAIL` y `FRONTEND_AUTH_SMOKE_HOME_PASSWORD`, abre `/`, exige `/` y heading `Bienvenido`;
+- `admin-bi-dotacion`: usa `FRONTEND_AUTH_SMOKE_ADMIN_BI_EMAIL` y `FRONTEND_AUTH_SMOKE_ADMIN_BI_PASSWORD`, abre `/bi/dotacion`, exige heading `Inteligencia de Negocios`;
+- `recruitment-request`: usa `FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_EMAIL` y `FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_PASSWORD`, abre `/solicitud-contrataciones`, exige heading `Solicitud de Contrataciones`;
+- `recruitment-control`: usa `FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_EMAIL` y `FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_PASSWORD`, abre `/control-contrataciones`, exige heading `Control de Contrataciones`;
+- `contracts-control-mobility`: usa `FRONTEND_AUTH_SMOKE_CONTROL_CONTRATOS_EMAIL` y `FRONTEND_AUTH_SMOKE_CONTROL_CONTRATOS_PASSWORD`, abre `/movilidad-interna`, exige heading `Movilidad Interna`;
+- `administrativo-control`: usa `FRONTEND_AUTH_SMOKE_ADMINISTRATIVO_EMAIL` y `FRONTEND_AUTH_SMOKE_ADMINISTRATIVO_PASSWORD`, abre `/control-contrataciones`, exige heading `Control de Contrataciones`;
+- `jefe-administrativo-control`: usa `FRONTEND_AUTH_SMOKE_JEFE_ADMINISTRATIVO_EMAIL` y `FRONTEND_AUTH_SMOKE_JEFE_ADMINISTRATIVO_PASSWORD`, abre `/control-contrataciones`, exige heading `Control de Contrataciones`;
+- `gerencia-bi-dotacion`: usa `FRONTEND_AUTH_SMOKE_GERENCIA_EMAIL` y `FRONTEND_AUTH_SMOKE_GERENCIA_PASSWORD`, abre `/bi/dotacion`, exige heading `Inteligencia de Negocios`;
+- `director-eje-bi-dotacion`: usa `FRONTEND_AUTH_SMOKE_DIRECTOR_EJE_EMAIL` y `FRONTEND_AUTH_SMOKE_DIRECTOR_EJE_PASSWORD`, abre `/bi/dotacion`, exige heading `Inteligencia de Negocios`;
+- `director-op-bi-dotacion`: usa `FRONTEND_AUTH_SMOKE_DIRECTOR_OP_EMAIL` y `FRONTEND_AUTH_SMOKE_DIRECTOR_OP_PASSWORD`, abre `/bi/dotacion`, exige heading `Inteligencia de Negocios`;
+- `gerente-general-bi-dotacion`: usa `FRONTEND_AUTH_SMOKE_GERENTE_GENERAL_EMAIL` y `FRONTEND_AUTH_SMOKE_GERENTE_GENERAL_PASSWORD`, abre `/bi/dotacion`, exige heading `Inteligencia de Negocios`;
+- `operaciones-accreditation`: usa `FRONTEND_AUTH_SMOKE_OPERACIONES_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERACIONES_PASSWORD`, abre `/recursos-humanos/acreditacion/dashboard`, exige heading `Acreditacion de Personas`;
 - `operations-l1-summary`: usa `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD`, abre `/operaciones/resumen`, exige acceso de modulo y ruta final exacta;
+- `operations-l2-summary`: usa `FRONTEND_AUTH_SMOKE_OPERATIONS_L2_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERATIONS_L2_PASSWORD`, abre `/operaciones/resumen`, exige acceso de modulo y ruta final exacta;
 - `certificaciones-form`: usa `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_EMAIL` y `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`;
 - `instructor-form`: usa `FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL` y `FRONTEND_AUTH_SMOKE_INSTRUCTOR_PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`.
 
@@ -64,6 +77,7 @@ El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. 
 
 - valida que el manifiesto no tenga campos `email`, `password` ni `token`;
 - valida que cada escenario use roles conocidos, rutas internas y `requireModuleAccess`;
+- exige cobertura P1 para `admin`, `reclutamiento`, `control_contratos`, `operaciones`, `gerencia`, `director_eje`, `director_op`, `gerente_general`, `operaciones_l_1`, `operaciones_l_2`, `administrativo`, `jefe_administrativo`, `certificaciones` e `instructor`;
 - exige que `.github/workflows/audit-supabase-migrations.yml` mapee cada secret declarado por el manifiesto;
 - exige que el workflow permita activar `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED` desde variables de repositorio;
 - exige que `docs/smoke-tests.md` documente cada escenario, secret esperado, ruta y heading.

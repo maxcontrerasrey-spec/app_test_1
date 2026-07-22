@@ -13,11 +13,142 @@
       "requireModuleAccess": true
     },
     {
+      "id": "admin-bi-dotacion",
+      "role": "admin",
+      "description": "Valida que una cuenta admin controlada pueda abrir BI de dotacion con acceso de modulo.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_ADMIN_BI_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_ADMIN_BI_PASSWORD",
+      "targetPath": "/bi/dotacion",
+      "expectedPath": "/bi/dotacion",
+      "expectedHeading": "Inteligencia de Negocios",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "recruitment-request",
+      "role": "reclutamiento",
+      "description": "Valida que Reclutamiento pueda abrir Solicitud de Contrataciones con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_PASSWORD",
+      "targetPath": "/solicitud-contrataciones",
+      "expectedPath": "/solicitud-contrataciones",
+      "expectedHeading": "Solicitud de Contrataciones",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "recruitment-control",
+      "role": "reclutamiento",
+      "description": "Valida que Reclutamiento pueda abrir Control de Contrataciones con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_RECLUTAMIENTO_PASSWORD",
+      "targetPath": "/control-contrataciones",
+      "expectedPath": "/control-contrataciones",
+      "expectedHeading": "Control de Contrataciones",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "contracts-control-mobility",
+      "role": "control_contratos",
+      "description": "Valida que Control de contratos pueda abrir Movilidad Interna con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_CONTROL_CONTRATOS_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_CONTROL_CONTRATOS_PASSWORD",
+      "targetPath": "/movilidad-interna",
+      "expectedPath": "/movilidad-interna",
+      "expectedHeading": "Movilidad Interna",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "administrativo-control",
+      "role": "administrativo",
+      "description": "Valida que Administrativo pueda abrir Control de Contrataciones con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_ADMINISTRATIVO_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_ADMINISTRATIVO_PASSWORD",
+      "targetPath": "/control-contrataciones",
+      "expectedPath": "/control-contrataciones",
+      "expectedHeading": "Control de Contrataciones",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "jefe-administrativo-control",
+      "role": "jefe_administrativo",
+      "description": "Valida que Jefe administrativo pueda abrir Control de Contrataciones con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_JEFE_ADMINISTRATIVO_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_JEFE_ADMINISTRATIVO_PASSWORD",
+      "targetPath": "/control-contrataciones",
+      "expectedPath": "/control-contrataciones",
+      "expectedHeading": "Control de Contrataciones",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "gerencia-bi-dotacion",
+      "role": "gerencia",
+      "description": "Valida que Gerencia pueda abrir BI de dotacion con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_GERENCIA_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_GERENCIA_PASSWORD",
+      "targetPath": "/bi/dotacion",
+      "expectedPath": "/bi/dotacion",
+      "expectedHeading": "Inteligencia de Negocios",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "director-eje-bi-dotacion",
+      "role": "director_eje",
+      "description": "Valida que Director de eje pueda abrir BI de dotacion con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_DIRECTOR_EJE_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_DIRECTOR_EJE_PASSWORD",
+      "targetPath": "/bi/dotacion",
+      "expectedPath": "/bi/dotacion",
+      "expectedHeading": "Inteligencia de Negocios",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "director-op-bi-dotacion",
+      "role": "director_op",
+      "description": "Valida que Director operacional pueda abrir BI de dotacion con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_DIRECTOR_OP_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_DIRECTOR_OP_PASSWORD",
+      "targetPath": "/bi/dotacion",
+      "expectedPath": "/bi/dotacion",
+      "expectedHeading": "Inteligencia de Negocios",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "gerente-general-bi-dotacion",
+      "role": "gerente_general",
+      "description": "Valida que Gerente general pueda abrir BI de dotacion con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_GERENTE_GENERAL_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_GERENTE_GENERAL_PASSWORD",
+      "targetPath": "/bi/dotacion",
+      "expectedPath": "/bi/dotacion",
+      "expectedHeading": "Inteligencia de Negocios",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "operaciones-accreditation",
+      "role": "operaciones",
+      "description": "Valida que Operaciones pueda abrir Acreditacion de Personas con cuenta controlada.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_OPERACIONES_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_OPERACIONES_PASSWORD",
+      "targetPath": "/recursos-humanos/acreditacion/dashboard",
+      "expectedPath": "/recursos-humanos/acreditacion/dashboard",
+      "expectedHeading": "Acreditacion de Personas",
+      "requireModuleAccess": true
+    },
+    {
       "id": "operations-l1-summary",
       "role": "operaciones_l_1",
       "description": "Valida que una cuenta L1 controlada pueda entrar a Resumen de Operaciones.",
       "emailEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL",
       "passwordEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD",
+      "targetPath": "/operaciones/resumen",
+      "expectedPath": "/operaciones/resumen",
+      "requireModuleAccess": true
+    },
+    {
+      "id": "operations-l2-summary",
+      "role": "operaciones_l_2",
+      "description": "Valida que una cuenta L2 controlada pueda entrar a Resumen de Operaciones.",
+      "emailEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L2_EMAIL",
+      "passwordEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L2_PASSWORD",
       "targetPath": "/operaciones/resumen",
       "expectedPath": "/operaciones/resumen",
       "requireModuleAccess": true

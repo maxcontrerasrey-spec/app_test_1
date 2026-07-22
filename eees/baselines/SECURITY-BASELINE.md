@@ -24,10 +24,11 @@ baseline_date: 2026-07-22
 - Service role reservado a scripts, CI y Edge Functions.
 - Smokes estaticos de rutas/roles.
 - Auditorias para secrets de smoke autenticado.
+- Auditor P1 de onboarding legacy valida que la superficie viva use `alta_operacional_personal` y que el legado no vuelva a depender de `reclutamiento` como modulo.
 
 ## Riesgos
 
-- Deuda legacy de onboarding con referencia historica a `reclutamiento` como modulo.
+- Deuda legacy de onboarding historica contenida y cubierta por `npm run audit:onboarding-legacy-guards`.
 - Muchas funciones `security definer` requieren disciplina de grants y search_path.
 - Smokes autenticados dependen de secrets externos.
 

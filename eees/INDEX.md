@@ -43,6 +43,7 @@ baseline_date: 2026-07-22
 
 ## Guardian y certificacion
 
+- [P1 Closure Report](audits/P1-CLOSURE-REPORT.md)
 - [Rules JSON](guardian/rules.json)
 - [Suppressions](guardian/suppressions.json)
 - [Regression Policy](guardian/REGRESSION-POLICY.md)

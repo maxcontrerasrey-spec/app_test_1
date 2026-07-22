@@ -21,6 +21,7 @@
     "audit:enterprise-docs": "node scripts/audit-enterprise-docs.mjs",
     "audit:frontend-auth-smoke-secrets": "node scripts/audit-frontend-auth-smoke-secrets.mjs",
     "audit:frontend-auth-smoke-matrix": "node scripts/audit-frontend-auth-smoke-matrix.mjs",
+    "audit:onboarding-legacy-guards": "node scripts/audit-onboarding-legacy-guards.mjs",
     "audit:route-role-smoke": "node scripts/audit-route-role-smoke.mjs",
     "audit:buk-sync-guards": "node scripts/audit-buk-sync-guards.mjs",
     "audit:supabase-security": "node scripts/audit-supabase-security.mjs",

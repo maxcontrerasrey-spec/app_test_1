@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 14
-- Info: 7
+- Info: 10
 
 ## Errores
 
@@ -47,7 +47,10 @@ PASS
 - audit:enterprise-docs: PASS
 - audit:route-role-smoke: PASS
 - audit:frontend-auth-smoke-matrix: PASS
+- audit:onboarding-legacy-guards: PASS
 - audit:migrations: PASS
 - audit:supabase-security: PASS
 - build:frontend-check: PASS
 - git diff --check: PASS
+- smoke:frontend-routes: PASS
+- check:edge:sync-buk-candidates: PASS

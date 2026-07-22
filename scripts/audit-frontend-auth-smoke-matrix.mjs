@@ -24,6 +24,22 @@ const knownRoles = new Set([
   "certificaciones",
   "instructor"
 ]);
+const minimumRoleCoverage = [
+  "admin",
+  "reclutamiento",
+  "control_contratos",
+  "operaciones",
+  "gerencia",
+  "director_eje",
+  "director_op",
+  "gerente_general",
+  "operaciones_l_1",
+  "operaciones_l_2",
+  "administrativo",
+  "jefe_administrativo",
+  "certificaciones",
+  "instructor"
+];
 
 function readFile(relativePath) {
   return fs.readFileSync(path.join(rootDir, relativePath), "utf8");
@@ -102,9 +118,14 @@ function parseManifest() {
 }
 
 const scenarios = parseManifest();
+const coveredRoles = new Set(scenarios.map((scenario) => scenario.role));
 const workflow = readFile(workflowPath);
 const docs = readFile(docsPath);
 const packageJson = JSON.parse(readFile(packagePath));
+
+for (const role of minimumRoleCoverage) {
+  addCheck(coveredRoles.has(role), `${manifestPath} cubre rol P1 ${role}`);
+}
 
 addCheck(
   packageJson.scripts?.["smoke:frontend-authenticated-matrix"] ===

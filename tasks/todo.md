@@ -463,6 +463,20 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 
 ## Proximos objetivos vivos
 
+- [ ] EEES P1 - Cerrar smokes autenticados por rol y auditar deuda legacy de onboarding:
+  - [x] Leer `eees/audits/FINAL-IMPLEMENTATION-REPORT.md`, `tasks/todo.md`, Boot Sequence y Books aplicables.
+  - [x] Inspeccionar manifiesto, scripts, workflow y documentacion de smokes autenticados.
+  - [x] Consolidar la matriz P1 de smokes autenticados por roles controlados sin versionar credenciales reales.
+  - [x] Auditar onboarding legacy y cerrar la parte tecnicamente ejecutable sin reactivar deuda historica.
+  - [x] Ejecutar `npm run guardian:full` y gates afectados.
+  - [x] Actualizar `tasks/todo.md`, `tasks/lessons.md`, auditorias EEES y generar reporte de cierre P1.
+
+  Resultado aplicado:
+  - `tests/smoke/frontend-authenticated.scenarios.json` ahora cubre 16 escenarios y roles P1 principales.
+  - `npm run audit:frontend-auth-smoke-matrix` exige cobertura P1 por rol, docs, workflow y ausencia de credenciales reales.
+  - `npm run audit:onboarding-legacy-guards` valida la frontera viva de alta operacional y las migraciones correctivas legacy.
+  - `npm run guardian:full` paso con 0 errores y 14 warnings historicos fuera de alcance P1.
+  - Reporte generado: `eees/audits/P1-CLOSURE-REPORT.md`.
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.
 - [ ] Mantener smokes autenticados por rol cuando existan credenciales controladas en secrets.
 - [ ] Evaluar activos no documentales pesados solo si el usuario autoriza optimizacion fuera de `docs/` y `tasks/`.

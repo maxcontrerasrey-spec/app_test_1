@@ -30,13 +30,14 @@ Construccion inicial de EEES desde el repositorio real. No existia carpeta `eees
 - Autorizacion real centrada en Supabase SQL/RPC/RLS.
 - Integracion BUK critica para trabajadores, cargos, areas, documentos y syncs.
 - Deuda tecnica principal: archivos grandes en reclutamiento, incentivos, competencias, operaciones y dashboard.
-- Deuda security legacy contenida: onboarding historico y necesidad de smokes autenticados por rol con secrets.
+- Deuda security legacy de onboarding contenida con auditor P1 dedicado.
+- Smokes autenticados por rol consolidados como matriz versionada, condicionados a secrets controlados para ejecucion real.
 
 ## Backlog
 
 - P0: Ningun blocker inicial sin clasificar.
-- P1: Cerrar deuda legacy de onboarding si se reactiva.
-- P1: Consolidar smokes autenticados por rol con cuentas controladas.
+- P1: Cerrar deuda legacy de onboarding si se reactiva. Estado: cerrado con `npm run audit:onboarding-legacy-guards`.
+- P1: Consolidar smokes autenticados por rol con cuentas controladas. Estado: cerrado como contrato versionado con `npm run audit:frontend-auth-smoke-matrix`; ejecucion real condicionada a secrets.
 - P2: Refactor progresivo de archivos sobre 800 lineas.
 - P3: Ampliar metricas de cobertura unitaria.
 
@@ -57,6 +58,7 @@ Construccion inicial de EEES desde el repositorio real. No existia carpeta `eees
 | `npm run audit:buk-sync-guards` | PASS |
 | `npm run audit:route-role-smoke` | PASS via Guardian |
 | `npm run audit:frontend-auth-smoke-matrix` | PASS via Guardian |
+| `npm run audit:onboarding-legacy-guards` | PASS via Guardian |
 | `npm run audit:migrations` | PASS via Guardian |
 | `npm run audit:supabase-security` | PASS via Guardian |
 | `npm run smoke:frontend-routes` | PASS via Guardian full |
@@ -67,4 +69,4 @@ Construccion inicial de EEES desde el repositorio real. No existia carpeta `eees
 
 - `src/modules/auth/context/AuthContext.tsx` mantiene acceso directo a Supabase en componente TSX; clasificado como WARNING por `FE-001`.
 - 13 archivos criticos superan 800 lineas; clasificados como WARNING por `PERF-001` y detallados en `eees/audits/CODE-REUSE-AND-COMPLEXITY-AUDIT.md`.
-- Smokes autenticados reales dependen de secrets de CI; la matriz y documentacion estan auditadas, pero algunos escenarios pueden saltarse sin credenciales.
+- Smokes autenticados reales dependen de secrets de CI; la matriz P1, workflow y documentacion estan auditadas, pero algunos escenarios pueden saltarse sin credenciales.

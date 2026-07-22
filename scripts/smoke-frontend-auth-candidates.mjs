@@ -64,8 +64,40 @@ function resolveRequiredModule(targetPath) {
     return "";
   }
 
+  if (targetPath.startsWith("/solicitud-contrataciones")) {
+    return "solicitud_contrataciones";
+  }
+
+  if (targetPath.startsWith("/movilidad-interna")) {
+    return "movilidad_interna";
+  }
+
+  if (targetPath.startsWith("/control-contrataciones")) {
+    return "control_contrataciones";
+  }
+
+  if (targetPath.startsWith("/alta-operacional")) {
+    return "alta_operacional_personal";
+  }
+
   if (targetPath.startsWith("/operaciones")) {
     return "operaciones";
+  }
+
+  if (targetPath.startsWith("/recursos-humanos/acreditacion") || targetPath.startsWith("/acreditacion")) {
+    return "acreditacion_personas";
+  }
+
+  if (targetPath.startsWith("/recursos-humanos")) {
+    return "recursos_humanos";
+  }
+
+  if (targetPath.startsWith("/roster")) {
+    return "jornadas_turnos";
+  }
+
+  if (targetPath.startsWith("/bi")) {
+    return "bi_analytics";
   }
 
   if (targetPath.startsWith("/certificados")) {
