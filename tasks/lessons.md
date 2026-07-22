@@ -29,6 +29,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No limites artificialmente un toolbar si el contenedor ofrece espacio lateral.** En filtros de folios, `Contrato` puede contener nombres largos; la grilla debe darle mayor proporcion y usar el ancho completo disponible.
 - **Compactar altura no debe sacrificar legibilidad horizontal.** Reducir `min-height` y padding ayuda a adelgazar modulos, pero los campos con texto operacional largo necesitan columnas mas anchas antes que truncado prematuro.
 
+## 270. Las KPI, filtros y tablas de un widget operativo no deben competir en la misma linea
+
+- **Las tarjetas resumen deben quedar en una fila propia bajo el titulo del widget.** Mezclarlas con filtros o busqueda rompe jerarquia visual y reduce espacio util de controles largos.
+- **Los dropdowns sobre tablas deben empujar contenido o reservar capa clara.** En widgets densos, un menu absoluto sobre filas produce texto mezclado; si el menu queda dentro de la tarjeta, debe abrirse en flujo para separar visualmente la tabla.
+- **El filtro `Contrato` necesita una columna prioritaria.** En reclutamiento, los contratos son datos operacionales largos; la grilla de filtros debe tratarlos como campo ancho, no como chip corto.
+
 ## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
 
 - **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.

@@ -251,61 +251,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
       title={title}
       className="widget-tasks widget-fill-height"
     >
-      <div className="dashboard-folios-toolbar dashboard-folios-toolbar-split">
-        <div className="dashboard-folios-toolbar-search">
-          <div className="dashboard-folios-filter-row">
-            <SelectField
-              id="dashboard-folios-shift-filter"
-              label="Turno"
-              hideLabel
-              value={shiftFilter}
-              onChange={(event) => setShiftFilter(event.target.value)}
-              placeholder="Turno"
-              options={shiftOptions}
-              className="dashboard-folios-filter"
-            />
-            <SelectField
-              id="dashboard-folios-travel-filter"
-              label="Pasajes"
-              hideLabel
-              value={travelFilter}
-              onChange={(event) => setTravelFilter(event.target.value)}
-              placeholder="Pasajes"
-              options={BOOLEAN_FILTER_OPTIONS}
-              className="dashboard-folios-filter"
-            />
-            <SelectField
-              id="dashboard-folios-camp-filter"
-              label="Alojamiento"
-              hideLabel
-              value={campFilter}
-              onChange={(event) => setCampFilter(event.target.value)}
-              placeholder="Alojamiento"
-              options={BOOLEAN_FILTER_OPTIONS}
-              className="dashboard-folios-filter"
-            />
-            <SelectField
-              id="dashboard-folios-contract-filter"
-              label="Contrato"
-              hideLabel
-              value={contractFilter}
-              onChange={(event) => setContractFilter(event.target.value)}
-              placeholder="Contrato"
-              options={contractOptions}
-              className="dashboard-folios-filter dashboard-folios-filter-contract"
-            />
-          </div>
-          <TextField
-            id="dashboard-folios-search"
-            label="Buscar folio en curso"
-            hideLabel
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Caso, contrato, cargo, gerencia o centro de costo"
-            className="dashboard-folios-search"
-          />
-        </div>
-
+      <div className="dashboard-folios-toolbar">
         <div className="tracking-kpi-row dashboard-folios-kpis">
           {folioKpis.map((kpi) => (
             <SoftMetricCard
@@ -316,6 +262,58 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
               value={kpi.value}
             />
           ))}
+        </div>
+
+        <div className="dashboard-folios-controls">
+          <SelectField
+            id="dashboard-folios-shift-filter"
+            label="Turno"
+            hideLabel
+            value={shiftFilter}
+            onChange={(event) => setShiftFilter(event.target.value)}
+            placeholder="Turno"
+            options={shiftOptions}
+            className="dashboard-folios-filter"
+          />
+          <SelectField
+            id="dashboard-folios-travel-filter"
+            label="Pasajes"
+            hideLabel
+            value={travelFilter}
+            onChange={(event) => setTravelFilter(event.target.value)}
+            placeholder="Pasajes"
+            options={BOOLEAN_FILTER_OPTIONS}
+            className="dashboard-folios-filter"
+          />
+          <SelectField
+            id="dashboard-folios-camp-filter"
+            label="Alojamiento"
+            hideLabel
+            value={campFilter}
+            onChange={(event) => setCampFilter(event.target.value)}
+            placeholder="Alojamiento"
+            options={BOOLEAN_FILTER_OPTIONS}
+            className="dashboard-folios-filter"
+          />
+          <SelectField
+            id="dashboard-folios-contract-filter"
+            label="Contrato"
+            hideLabel
+            value={contractFilter}
+            onChange={(event) => setContractFilter(event.target.value)}
+            placeholder="Contrato"
+            options={contractOptions}
+            className="dashboard-folios-filter dashboard-folios-filter-contract"
+          />
+          <TextField
+            id="dashboard-folios-search"
+            label="Buscar folio en curso"
+            hideLabel
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Caso, contrato, cargo, gerencia o centro de costo"
+            className="dashboard-folios-search"
+          />
         </div>
       </div>
 
