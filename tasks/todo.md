@@ -405,6 +405,19 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - El input interno quedo transparente para integrarse a la tarjeta sin una segunda caja visual.
 - Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
 
+## Ajuste Control Candidatos - limpiar filtros de folios
+
+- [x] Agregar boton sutil entre `Contrato` y `Buscar casos` para limpiar filtros.
+- [x] Limpiar turno, pasajes, alojamiento, contrato, busqueda y estado de folio a `Activos (Todos)`.
+- [x] Cancelar resoluciones automaticas de busqueda pendientes para que no reapliquen filtros despues de limpiar.
+- [x] Validar frontend/documentacion, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- Se agrego un boton compacto `×` entre el filtro `Contrato` y `Buscar casos`, con estilo suave y deshabilitado cuando no hay filtros activos.
+- El boton limpia desplegables, busqueda y chip de estado, y cancela resoluciones automaticas de busqueda en curso.
+- Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

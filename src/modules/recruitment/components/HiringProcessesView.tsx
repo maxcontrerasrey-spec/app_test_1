@@ -135,6 +135,15 @@ export function HiringProcessesView({
     approvalsQuery.error instanceof Error ? approvalsQuery.error.message : "";
   const combinedErrorMessage = errorMessage || processError || approvalError;
   const isProcessLoading = isLoading || processesQuery.isLoading;
+  const hasCaseSearchFilters = Boolean(
+    caseSearchTerm ||
+      debouncedSearchTerm ||
+      shiftFilter ||
+      travelFilter ||
+      campFilter ||
+      contractFilter ||
+      caseFilter
+  );
   const expandedCaseRow =
     activeCases.find((caseRow) => caseRow.id === expandedCaseId) ?? null;
   const expandedCaseDetailQuery = useRecruitmentCaseDetail(
@@ -224,6 +233,17 @@ export function HiringProcessesView({
       {sortColumn === column ? (sortDirection === "asc" ? "↑" : "↓") : "↕"}
     </span>
   );
+
+  const handleClearCaseSearchFilters = () => {
+    searchFilterRequestIdRef.current += 1;
+    setShiftFilter("");
+    setTravelFilter("");
+    setCampFilter("");
+    setContractFilter("");
+    setCaseSearchTerm("");
+    setDebouncedSearchTerm("");
+    setCaseFilter(null);
+  };
 
   const selectedApproval =
     pendingApprovals.find((approval) => approval.id === selectedApprovalId) ?? null;
@@ -353,6 +373,16 @@ export function HiringProcessesView({
               onChange={(event) => setContractFilter(event.target.value)}
               className="tracking-filter-select tracking-filter-select-contract"
             />
+            <button
+              type="button"
+              className="tracking-filter-clear-button"
+              onClick={handleClearCaseSearchFilters}
+              disabled={!hasCaseSearchFilters}
+              aria-label="Limpiar filtros y búsqueda"
+              title="Limpiar filtros y búsqueda"
+            >
+              ×
+            </button>
           </div>
           <TextField
             id="hiring-processes-search"
