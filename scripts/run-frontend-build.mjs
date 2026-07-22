@@ -64,7 +64,7 @@ function runStep(label, command, args) {
 async function main() {
   console.log(`[build-check] ${timestamp()} inicio de validacion frontend`);
 
-  await runStep("TypeScript", "npx", ["tsc", "-b", "--pretty", "false"]);
+  await runStep("TypeScript", "node", ["./node_modules/typescript/bin/tsc", "-b", "--pretty", "false"]);
   await runStep("Vite", "node", ["./node_modules/vite/bin/vite.js", "build", "--logLevel", "info"]);
 
   console.log(`[build-check] ${timestamp()} validacion frontend finalizada`);

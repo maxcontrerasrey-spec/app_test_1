@@ -13,7 +13,7 @@ baseline_date: 2026-07-22
 
 ## Inventario medido
 
-- Migraciones SQL: 343.
+- Migraciones SQL: 347.
 - Edge Functions con `index.ts`: 11.
 - Baseline de migraciones: `supabase/migration-baseline.json`.
 - Auditoria historica: `supabase/MIGRATIONS_AUDIT.md`.

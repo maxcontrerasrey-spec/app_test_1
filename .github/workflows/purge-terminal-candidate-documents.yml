@@ -15,6 +15,12 @@ on:
 jobs:
   purge:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    concurrency:
+      group: purge-terminal-candidate-documents-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - name: Resolve scheduled Santiago window
         id: local_window

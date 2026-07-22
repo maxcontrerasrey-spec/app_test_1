@@ -160,6 +160,11 @@ function validateRules() {
 
   const ids = new Map();
   const validPrefix = /^(ARCH|DB|SEC|FE|BE|MOD|QA|OBS|INT|DOC|TST|PERF|API|UX|DEP|CICD|DATA|REL|CONC|ERR|AI)-\d{3}$/;
+  const allowedSourceRoots = [
+    "eees/",
+    "docs/CODEX_OBJECTIVE_LOOP_EEES_100_PERCENT.md",
+    "docs/CODEX_OBJECTIVE_LOOP_ENTERPRISE_REPOSITORY_CLEANUP.md"
+  ];
 
   for (const rule of rules) {
     for (const key of ["id", "title", "severity", "scope", "source_document", "automatable", "blocking"]) {
@@ -180,8 +185,14 @@ function validateRules() {
       add("ERROR", "EEES-RULES", rulesPath, `severity invalida en ${rule.id}.`);
     }
 
-    if (typeof rule.source_document === "string" && !exists(rule.source_document)) {
-      add("ERROR", "EEES-RULES", rulesPath, `source_document inexistente en ${rule.id}: ${rule.source_document}.`);
+    if (typeof rule.source_document === "string") {
+      const sourceAllowed = allowedSourceRoots.some((allowed) => rule.source_document === allowed || rule.source_document.startsWith(allowed));
+      if (!sourceAllowed) {
+        add("ERROR", "EEES-RULES", rulesPath, `source_document fuera del alcance permitido en ${rule.id}: ${rule.source_document}.`);
+      }
+      if (!exists(rule.source_document)) {
+        add("ERROR", "EEES-RULES", rulesPath, `source_document inexistente en ${rule.id}: ${rule.source_document}.`);
+      }
     }
   }
 
@@ -211,6 +222,223 @@ function validateReferences() {
       if (!exists(resolved)) {
         add("ERROR", "EEES-REF", file, `Referencia rota: ${target}.`);
       }
+    }
+  }
+}
+
+function validateP3Artifacts() {
+  const requiredArtifacts = [
+    "eees/audits/P3-CLOSURE-REPORT.md",
+    "eees/audits/REGRESSION-COVERAGE-MATRIX.md",
+    "eees/baselines/TESTING_BASELINE_v1.md",
+    "vitest.config.ts",
+    "tests/unit",
+    "tests/contracts"
+  ];
+
+  for (const artifact of requiredArtifacts) {
+    requireFile(artifact, "TST-005");
+  }
+
+  if (exists("package.json")) {
+    const packageJson = JSON.parse(read("package.json"));
+    const scripts = packageJson.scripts ?? {};
+    for (const scriptName of ["test:unit", "test:contracts", "test:coverage"]) {
+      if (!scripts[scriptName]) {
+        add("ERROR", "TST-005", "package.json", `Falta script ${scriptName}.`);
+      }
+    }
+  }
+}
+
+function validateP4Artifacts() {
+  const requiredArtifacts = [
+    "eees/audits/P4-CLOSURE-REPORT.md",
+    "eees/baselines/PERFORMANCE_BASELINE_v1.md",
+    "eees/baselines/OBSERVABILITY-BASELINE.md",
+    "eees/certification/RELEASE-CHECKLIST.md",
+    "eees/playbooks/PRODUCTION-ROLLBACK.md",
+    "eees/playbooks/FAILED-MIGRATION.md",
+    "scripts/audit-performance-baseline.mjs",
+    "scripts/audit-p4-operational-readiness.mjs"
+  ];
+
+  for (const artifact of requiredArtifacts) {
+    requireFile(artifact, "REL-003");
+  }
+
+  if (exists("package.json")) {
+    const packageJson = JSON.parse(read("package.json"));
+    const scripts = packageJson.scripts ?? {};
+    for (const scriptName of ["audit:performance-baseline", "audit:p4-operational-readiness"]) {
+      if (!scripts[scriptName]) {
+        add("ERROR", "REL-003", "package.json", `Falta script ${scriptName}.`);
+      }
+    }
+  }
+}
+
+function validateEnterprise100Artifacts() {
+  const requiredArtifacts = [
+    "eees/baselines/PRODUCTION_READINESS_BASELINE_v1.md",
+    "eees/baselines/SRE_SLI_SLO_BASELINE_v1.md",
+    "eees/baselines/CAPACITY_BASELINE_v1.md",
+    "eees/audits/DISASTER-RECOVERY-READINESS.md",
+    "eees/audits/FAILURE-MODE-MATRIX.md",
+    "eees/audits/SECURITY-HARDENING-FINAL.md",
+    "eees/audits/DATABASE-HARDENING-FINAL.md",
+    "eees/audits/EEES-100-PERCENT-CLOSURE-REPORT.md",
+    "eees/audits/FINAL-RESIDUAL-RISK-REGISTER.md",
+    "eees/certification/ENTERPRISE-CERTIFICATION-FINAL.md",
+    "scripts/audit-enterprise-100-readiness.mjs"
+  ];
+
+  for (const artifact of requiredArtifacts) {
+    requireFile(artifact, "REL-004");
+  }
+
+  if (exists("package.json")) {
+    const packageJson = JSON.parse(read("package.json"));
+    const scripts = packageJson.scripts ?? {};
+    if (!scripts["audit:enterprise-100-readiness"]) {
+      add("ERROR", "REL-004", "package.json", "Falta script audit:enterprise-100-readiness.");
+    }
+  }
+
+  if (exists(".github/workflows/audit-supabase-migrations.yml")) {
+    const workflow = read(".github/workflows/audit-supabase-migrations.yml");
+    for (const command of [
+      "npm run guardian:full",
+      "npm run test:unit",
+      "npm run test:contracts",
+      "npm run test:coverage",
+      "npm run audit:enterprise-100-readiness",
+      "git diff --check"
+    ]) {
+      if (!workflow.includes(command)) {
+        add("ERROR", "REL-004", ".github/workflows/audit-supabase-migrations.yml", `CI no ejecuta ${command}.`);
+      }
+    }
+  }
+}
+
+function validateRepositoryCleanupArtifacts() {
+  const requiredArtifacts = [
+    "eees/baselines/REPOSITORY-CLEANUP-BASELINE_v1.md",
+    "eees/audits/REPOSITORY-CLEANUP-INVENTORY.md",
+    "eees/audits/REPOSITORY-CLEANUP-CLOSURE-REPORT.md",
+    "scripts/audit-repository-cleanup.mjs"
+  ];
+
+  for (const artifact of requiredArtifacts) {
+    requireFile(artifact, "REL-005");
+  }
+
+  if (exists("package.json")) {
+    const packageJson = JSON.parse(read("package.json"));
+    if (!packageJson.scripts?.["audit:repository-cleanup"]) {
+      add("ERROR", "REL-005", "package.json", "Falta script audit:repository-cleanup.");
+    }
+  }
+}
+
+function validateQueryKeyGovernance() {
+  requireFile("src/shared/lib/queryKeys.ts", "FE-002");
+
+  const sourceFiles = listFiles(
+    "src",
+    (file) => /\.(ts|tsx)$/.test(file) && file !== "src/shared/lib/queryKeys.ts"
+  );
+  const inlineQueryKeyPattern = /\bqueryKey\s*:\s*\[/g;
+  const inlineInvalidationPattern = /\binvalidateQueries\s*\(\s*\{\s*queryKey\s*:\s*\[/g;
+  const localFactoryPattern = /\b(?:const|let|var)\s+[A-Z0-9_]*QUERY_KEYS\b/g;
+
+  for (const file of sourceFiles) {
+    const content = read(file);
+    if (inlineQueryKeyPattern.test(content) || inlineInvalidationPattern.test(content)) {
+      add("ERROR", "FE-002", file, "Query key inline detectada; usar src/shared/lib/queryKeys.ts.");
+    }
+    if (localFactoryPattern.test(content)) {
+      add("ERROR", "FE-002", file, "Factory local de query keys detectada; centralizar por dominio.");
+    }
+  }
+}
+
+function validatePureLogicTestCoverage() {
+  const criticalCoverage = [
+    {
+      source: "src/modules/incentives/lib/incentiveRules.ts",
+      tests: ["tests/unit/incentive-rules.test.ts"]
+    },
+    {
+      source: "src/modules/incentives/lib/incentiveRegistrationHelpers.ts",
+      tests: ["tests/unit/incentive-registration-helpers.test.ts"]
+    },
+    {
+      source: "src/modules/incentives/services/incentivesApiMappers.ts",
+      tests: ["tests/contracts/incentives-rpc-contracts.test.ts"]
+    },
+    {
+      source: "src/modules/operaciones/lib/service-entry.ts",
+      tests: [
+        "tests/unit/operations-service-entry.test.ts",
+        "tests/contracts/operations-service-entry-contract.test.ts"
+      ]
+    },
+    {
+      source: "src/modules/operaciones/lib/transformers.ts",
+      tests: ["tests/unit/operations-transformers.test.ts"]
+    },
+    {
+      source: "src/modules/recruitment/lib/candidateBukWorkerRules.ts",
+      tests: ["tests/unit/recruitment-candidate-buk-worker-rules.test.ts"]
+    },
+    {
+      source: "src/modules/recruitment/lib/candidateEmail.ts",
+      tests: ["tests/unit/recruitment-email.test.ts"]
+    },
+    {
+      source: "src/modules/recruitment/lib/candidateWorkerFileFormHelpers.ts",
+      tests: ["tests/unit/recruitment-worker-file-form-helpers.test.ts"]
+    },
+    {
+      source: "src/modules/recruitment/lib/whoCauseDrafts.ts",
+      tests: ["tests/unit/recruitment-who-cause-drafts.test.ts"]
+    },
+    {
+      source: "src/shared/lib/supabaseRpc.ts",
+      tests: ["tests/unit/supabase-rpc-errors.test.ts"]
+    },
+    {
+      source: "src/shared/lib/queryKeys.ts",
+      tests: ["tests/unit/query-keys.test.ts"]
+    }
+  ];
+
+  for (const entry of criticalCoverage) {
+    if (!exists(entry.source)) {
+      add("ERROR", "TST-006", entry.source, "Fuente critica registrada no existe.");
+      continue;
+    }
+
+    for (const testPath of entry.tests) {
+      if (!exists(testPath)) {
+        add("ERROR", "TST-006", entry.source, `Falta test anti-regresion requerido: ${testPath}.`);
+      }
+    }
+  }
+}
+
+function validateExceptionExpiry() {
+  const exceptionFiles = listFiles(
+    "eees",
+    (file) => file.endsWith(".md") && /(^|\/)(exceptions?|suppressions?)(\/|$)/i.test(file)
+  );
+  const expiryPattern = /\b(expires_at|expiry|expires_on)\s*:\s*\d{4}-\d{2}-\d{2}\b/i;
+
+  for (const file of exceptionFiles) {
+    if (!expiryPattern.test(read(file))) {
+      add("ERROR", "REL-002", file, "Toda excepcion nueva debe declarar expiracion ISO yyyy-mm-dd.");
     }
   }
 }
@@ -289,16 +517,23 @@ function runCommand(name, command, args = []) {
 }
 
 function runGates() {
+  runCommand("test:unit", "npm", ["run", "test:unit"]);
+  runCommand("test:contracts", "npm", ["run", "test:contracts"]);
   runCommand("audit:enterprise-docs", "npm", ["run", "audit:enterprise-docs"]);
+  runCommand("audit:p4-operational-readiness", "npm", ["run", "audit:p4-operational-readiness"]);
+  runCommand("audit:enterprise-100-readiness", "npm", ["run", "audit:enterprise-100-readiness"]);
+  runCommand("audit:repository-cleanup", "npm", ["run", "audit:repository-cleanup"]);
   runCommand("audit:route-role-smoke", "npm", ["run", "audit:route-role-smoke"]);
   runCommand("audit:frontend-auth-smoke-matrix", "npm", ["run", "audit:frontend-auth-smoke-matrix"]);
   runCommand("audit:onboarding-legacy-guards", "npm", ["run", "audit:onboarding-legacy-guards"]);
   runCommand("audit:migrations", "npm", ["run", "audit:migrations"]);
   runCommand("audit:supabase-security", "npm", ["run", "audit:supabase-security"]);
   runCommand("build:frontend-check", "npm", ["run", "build:frontend-check"]);
+  runCommand("audit:performance-baseline", "npm", ["run", "audit:performance-baseline"]);
   runCommand("git diff --check", "git", ["diff", "--check"]);
 
   if (runFull) {
+    runCommand("test:coverage", "npm", ["run", "test:coverage"]);
     runCommand("smoke:frontend-routes", "npm", ["run", "smoke:frontend-routes"]);
     runCommand("check:edge:sync-buk-candidates", "npm", ["run", "check:edge:sync-buk-candidates"]);
   }
@@ -377,6 +612,13 @@ for (const file of [
 validateMetadata();
 validateRules();
 validateReferences();
+validateP3Artifacts();
+validateP4Artifacts();
+validateEnterprise100Artifacts();
+validateRepositoryCleanupArtifacts();
+validateQueryKeyGovernance();
+validatePureLogicTestCoverage();
+validateExceptionExpiry();
 validateArchitectureContracts();
 validateSecurityPatterns();
 validateOversizedFiles();

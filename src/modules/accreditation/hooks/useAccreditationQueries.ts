@@ -73,7 +73,7 @@ export function useWorkerAccreditationProfile(params: {
 
 export async function invalidateAccreditationQueries(queryClient: QueryClient) {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ["accreditation"] }),
-    queryClient.invalidateQueries({ queryKey: ["roster"] })
+    queryClient.invalidateQueries({ queryKey: queryKeys.accreditation.all() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.roster.all() })
   ]);
 }

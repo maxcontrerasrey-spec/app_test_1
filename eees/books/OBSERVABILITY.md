@@ -31,6 +31,9 @@ Definir reglas normativas para observability and operations book del ERP, deriva
 - **OBS-002. Jobs con recuperacion stale.** Jobs processing deben tener barrido o requeue cuando queden colgados.
 - **OBS-003. Auditoria por mutacion critica.** Cambios de estado, documentos, permisos y syncs deben dejar evidencia.
 - **OBS-004. Rollback documentado.** Cada release debe tener camino de rollback o forward-fix.
+- **OBS-005. Correlation ID operacional.** Jobs, Edge Functions y scripts con efectos externos deben poder correlacionar request/job/actor en logs o snapshots.
+- **OBS-006. Alertas accionables.** Cada alerta debe declarar senal, owner, impacto y accion inmediata; no se versionan alertas decorativas.
+- **OBS-007. Performance con baseline medido.** Cambios de build, rutas criticas o vendors deben contrastarse contra `eees/baselines/PERFORMANCE_BASELINE_v1.md`.
 
 ## Quality Gates
 

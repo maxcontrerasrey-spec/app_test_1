@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { supabase } from "../../../shared/lib/supabase";
 
 export type OnboardingTaskRow = {
@@ -40,7 +41,7 @@ export type OnboardingTaskRow = {
 
 export function useOnboardingTasks() {
   return useQuery({
-    queryKey: ["operational-onboarding-tasks"],
+    queryKey: queryKeys.operationalOnboarding.tasks(),
     queryFn: async () => {
       if (!supabase) throw new Error("Supabase is not configured");
 

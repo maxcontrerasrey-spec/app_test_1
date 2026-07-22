@@ -4,6 +4,64 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Enterprise Repository Cleanup - limpieza final post EEES 100
+
+- [x] Leer objetivo `docs/CODEX_OBJECTIVE_LOOP_ENTERPRISE_REPOSITORY_CLEANUP.md`, Boot Sequence y cierres EEES 100.
+- [x] Medir baseline previo de archivos, LOC, dependencias, scripts, rutas, modulos, tests, Edge Functions, RPC/functions, `dist` y Guardian.
+- [x] Generar inventario clasificado `eees/audits/REPOSITORY-CLEANUP-INVENTORY.md`.
+- [x] Eliminar/consolidar solo candidatos `REMOVE_CONFIRMED` o `CONSOLIDATE` con evidencia suficiente.
+- [x] Ejecutar validacion final completa: Guardian full, unit, contracts, coverage, TypeScript, build, smoke frontend, migrations, security, route/role, performance, operational/release readiness, EEES consistency y `git diff --check`.
+- [x] Generar `eees/audits/REPOSITORY-CLEANUP-CLOSURE-REPORT.md` y cerrar con 0 residuos confirmados pendientes.
+
+## EEES Enterprise 100% - Cierre operativo final
+
+- [x] Leer objetivo `docs/CODEX_OBJECTIVE_LOOP_EEES_100_PERCENT.md`, Boot Sequence, Books, baselines, auditorias, certificaciones y playbooks EEES vigentes.
+- [x] Medir y versionar baseline de production readiness, SRE/SLI/SLO, DR, failure modes y capacity sin inventar thresholds.
+- [x] Auditar brechas ejecutables de seguridad, database, contratos, CI/CD, release, observabilidad, idempotencia y documentacion governance.
+- [x] Implementar Guardian/scripts que impidan regresiones contra los artefactos finales EEES 100%.
+- [x] Ejecutar gates finales: Guardian full, unit, contracts, coverage, migrations, security, route/role, auth matrix, frontend smoke, Edge check, performance, operational/release readiness, TypeScript, build y `git diff --check`.
+- [x] Generar `eees/audits/EEES-100-PERCENT-CLOSURE-REPORT.md`, `eees/certification/ENTERPRISE-CERTIFICATION-FINAL.md` y `eees/audits/FINAL-RESIDUAL-RISK-REGISTER.md`.
+
+## EEES P3 - Testing, contratos y consistencia transversal
+
+- [x] Medir baseline actual de tests, cobertura, query keys, contratos frontend/RPC/Edge y regresiones historicas.
+- [x] Agregar suite unitaria real para helpers, mappers, normalizadores y transformadores criticos extraidos en P2.
+- [x] Agregar contract tests para payloads/retornos/errores criticos frontend ↔ RPC/Edge sin duplicar tipos manuales innecesarios.
+- [x] Auditar y migrar query keys inline a factories por dominio, sin alterar comportamiento funcional.
+- [x] Ampliar Guardian para query keys, baseline P3, tests faltantes de logica critica, excepciones sin expiracion y artefactos EEES requeridos.
+- [x] Crear `eees/baselines/TESTING_BASELINE_v1.md`, `eees/audits/REGRESSION-COVERAGE-MATRIX.md` y `eees/audits/P3-CLOSURE-REPORT.md`.
+- [x] Actualizar baselines, CHANGELOG EEES, lessons y todo con evidencia de cierre.
+- [x] Ejecutar validacion final P3 completa: unit tests, contract tests, coverage, guardian full, TypeScript, build, smokes/audits afectados y `git diff --check`.
+
+### Resultado P3
+
+- Tests nuevos: 38 assertions automatizadas en 12 archivos `tests/unit` y `tests/contracts`.
+- Contratos cubiertos: 6 contract tests para mappers RPC de incentivos y payload operacional.
+- Query keys migradas: 28 usos en BI dashboard, operational onboarding, accreditation y roster usan factories centralizadas.
+- Regresiones historicas protegidas: 12 entradas trazadas en `eees/audits/REGRESSION-COVERAGE-MATRIX.md`.
+- Coverage baseline: lines 49.22%, statements 47.71%, branches 42.30%, functions 42.52%.
+- Guardian P3: 0 errores, 0 warnings.
+
+## EEES P4 - Resiliencia operacional, performance, observabilidad y release engineering
+
+- [x] Medir baseline real de performance: build, bundle, chunks criticos, rutas smoke y superficie RPC/Edge critica.
+- [x] Auditar observabilidad operacional: logs sanitizados, audit trails, correlation IDs, jobs, Edge Functions y alertas accionables.
+- [x] Clasificar riesgos de concurrencia/idempotencia en mutaciones criticas, generacion documental, sync BUK, jobs y batch.
+- [x] Implementar guards/audits P4 donde el riesgo sea inequivoco, sin alterar comportamiento funcional.
+- [x] Formalizar release engineering: checklist, rollback productivo y migracion fallida.
+- [x] Ampliar Guardian para baseline performance, gaps observabilidad, idempotencia verificable y consistencia de release/playbooks.
+- [x] Crear `eees/baselines/PERFORMANCE_BASELINE_v1.md` y `eees/audits/P4-CLOSURE-REPORT.md`.
+- [x] Actualizar observability baseline/book, CHANGELOG, lessons y todo con evidencia de cierre.
+- [x] Ejecutar validacion final P4 completa: Guardian full, unit, contracts, coverage, TypeScript, build, smokes/audits/benchmarks afectados y `git diff --check`.
+
+### Resultado P4
+
+- Performance baseline: `dist` 10,725,235 bytes, JS 3,017,477 bytes, CSS 213,123 bytes.
+- Observability gaps cerrados: 3.
+- Concurrency/idempotency guards: 4.
+- Release/rollback controls: 4.
+- Guardian P4: 0 errores, 0 warnings.
+
 ## Reasignacion administracion de contratos - Oscar, Angel y Mario
 
 - [x] Confirmar el contrato vivo de administradores y roles antes de cambiar datos productivos.
@@ -479,7 +537,7 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Se agrego `npm run guardian` y `npm run guardian:full`.
 - Guardian quedo integrado al workflow `Audit Enterprise Guardrails` para cambios en `eees/**`.
 - Validacion local: `npx tsc -b --pretty false`, `npm run build`, `npm run guardian:full`, `npm run audit:buk-sync-guards` y `git diff --check` pasaron.
-- Artifact generado: `artifacts/EEES_ENTERPRISE_FINAL.zip`.
+- Artifact historico `artifacts/EEES_ENTERPRISE_FINAL.zip` removido del repo en cleanup final porque duplicaba fuentes EEES versionadas.
 - Cierre operativo: commit, push y verificacion CI ejecutados al finalizar la iteracion.
 
 ## Correccion Contratos - empresa CODELCO DRT

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { supabase } from "../../../shared/lib/supabase";
 
 type StartOnboardingArgs = {
@@ -29,13 +30,13 @@ export function useStartOnboardingCase() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["operational-onboarding-cases"],
+        queryKey: queryKeys.operationalOnboarding.cases(),
       });
       queryClient.invalidateQueries({
-        queryKey: ["operational-onboarding-tasks"],
+        queryKey: queryKeys.operationalOnboarding.tasks(),
       });
       queryClient.invalidateQueries({
-        queryKey: ["operational-onboarding-activity-log"],
+        queryKey: queryKeys.operationalOnboarding.activityLog(),
       });
     },
   });

@@ -9,6 +9,12 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    concurrency:
+      group: sync-buk-employees-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - name: Resolve scheduled Santiago window
         id: local_window

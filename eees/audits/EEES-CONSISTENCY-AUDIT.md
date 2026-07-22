@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 0
-- Info: 8
+- Info: 17
 
 ## Errores
 
@@ -31,11 +31,20 @@ PASS
 
 ## Gates informativos
 
+- test:unit: PASS
+- test:contracts: PASS
 - audit:enterprise-docs: PASS
+- audit:p4-operational-readiness: PASS
+- audit:enterprise-100-readiness: PASS
+- audit:repository-cleanup: PASS
 - audit:route-role-smoke: PASS
 - audit:frontend-auth-smoke-matrix: PASS
 - audit:onboarding-legacy-guards: PASS
 - audit:migrations: PASS
 - audit:supabase-security: PASS
 - build:frontend-check: PASS
+- audit:performance-baseline: PASS
 - git diff --check: PASS
+- test:coverage: PASS
+- smoke:frontend-routes: PASS
+- check:edge:sync-buk-candidates: PASS

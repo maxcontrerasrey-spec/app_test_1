@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { supabase } from "../../../shared/lib/supabase";
 
 export type OnboardingCaseRow = {
@@ -35,7 +36,7 @@ export type OnboardingCaseRow = {
 
 export function useOnboardingCases() {
   return useQuery({
-    queryKey: ["operational-onboarding-cases"],
+    queryKey: queryKeys.operationalOnboarding.cases(),
     queryFn: async () => {
       if (!supabase) {
         throw new Error("Supabase is not configured");

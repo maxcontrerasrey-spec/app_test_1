@@ -22,7 +22,7 @@ Construccion inicial de EEES desde el repositorio real. No existia carpeta `eees
 - Carpetas EEES creadas: foundation, baselines, audits, books, guardian, certification, playbooks, knowledge/adrs, codex.
 - Archivos EEES creados: 42.
 - Codigo/config modificado: `scripts/audit-eees-guardian.mjs`, `package.json`, `.github/workflows/audit-supabase-migrations.yml`, `AGENTS.md`, `tasks/todo.md`.
-- Artifact esperado: `artifacts/EEES_ENTERPRISE_FINAL.zip`.
+- Artifact historico de cierre inicial: removido del repo en cleanup final porque duplicaba fuentes EEES versionadas.
 
 ## Hallazgos principales
 

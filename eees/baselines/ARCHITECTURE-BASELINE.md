@@ -13,8 +13,8 @@ baseline_date: 2026-07-22
 
 ## Inventario medido
 
-- Archivos TypeScript/TSX en `src`: 182.
-- Lineas TS/TSX medidas: 43.676.
+- Archivos TypeScript/TSX en `src`: 200.
+- Lineas TS/TSX medidas: 44.250.
 - Dominios activos: recruitment, dashboard/home, internal_mobility, incentives, roster, accreditation, competencies, operaciones, bi, operational_onboarding, ai_assistant, auth.
 - Rutas protegidas: definidas en `src/app/router/AppRouter.tsx`.
 - Lazy imports: `src/app/router/routeModules.ts`.

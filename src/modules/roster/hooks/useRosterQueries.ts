@@ -90,6 +90,6 @@ export function useWorkerSchedule(params: {
 export async function invalidateRosterQueries(queryClient: QueryClient) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.roster.setupCatalogs() }),
-    queryClient.invalidateQueries({ queryKey: ["roster"] })
+    queryClient.invalidateQueries({ queryKey: queryKeys.roster.all() })
   ]);
 }

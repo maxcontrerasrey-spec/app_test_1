@@ -1,6 +1,49 @@
+type BiQueryFilters = {
+  periodCode?: string | null;
+  contractCodes?: Array<string | null | undefined> | null;
+  jobTitles?: Array<string | null | undefined> | null;
+  managementNames?: Array<string | null | undefined> | null;
+};
+
+function normalizeBiFilters(filters?: BiQueryFilters | null) {
+  return {
+    periodCode: filters?.periodCode?.trim() || "",
+    contractCodes: [...(filters?.contractCodes ?? [])].filter(Boolean).sort(),
+    jobTitles: [...(filters?.jobTitles ?? [])].filter(Boolean).sort(),
+    managementNames: [...(filters?.managementNames ?? [])].filter(Boolean).sort()
+  };
+}
+
 export const queryKeys = {
   dashboard: {
     home: (userId: string) => ["dashboard-home", userId] as const
+  },
+  bi: {
+    all: () => ["bi"] as const,
+    workforceOverview: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "workforceOverview", normalizeBiFilters(filters)] as const,
+    headcountByContract: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "headcountByContract", normalizeBiFilters(filters)] as const,
+    headcountByJobTitle: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "headcountByJobTitle", normalizeBiFilters(filters)] as const,
+    headcountByCity: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "headcountByCity", normalizeBiFilters(filters)] as const,
+    ageDistribution: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "ageDistribution", normalizeBiFilters(filters)] as const,
+    exceptionsToday: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "exceptionsToday", normalizeBiFilters(filters)] as const,
+    presenceSummaryToday: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "presenceSummaryToday", normalizeBiFilters(filters)] as const,
+    exceptionsMonthly: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "exceptionsMonthly", normalizeBiFilters(filters)] as const,
+    vacationForecast: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "vacationForecast", normalizeBiFilters(filters)] as const,
+    medicalLeaveByArea: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "medicalLeaveByArea", normalizeBiFilters(filters)] as const,
+    recruitmentPipeline: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "recruitmentPipeline", normalizeBiFilters(filters)] as const,
+    recruitmentDashboard: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "recruitmentDashboard", normalizeBiFilters(filters)] as const
   },
   recruitment: {
     controlSummary: () => ["recruitment", "control-summary"] as const,
@@ -61,6 +104,7 @@ export const queryKeys = {
     preview: (params: Record<string, unknown>) => ["incentives", "preview", params] as const
   },
   roster: {
+    all: () => ["roster"] as const,
     setupCatalogs: () => ["roster", "setup-catalogs"] as const,
     calendarSummary: (params: Record<string, unknown>) =>
       ["roster", "calendar-summary", params] as const,
@@ -73,6 +117,7 @@ export const queryKeys = {
       ["operations", "driver-search", params] as const
   },
   accreditation: {
+    all: () => ["accreditation"] as const,
     setupCatalogs: () => ["accreditation", "setup-catalogs"] as const,
     dashboard: (filters: Record<string, unknown>) => ["accreditation", "dashboard", filters] as const,
     workers: (filters: Record<string, unknown>) => ["accreditation", "workers", filters] as const,
@@ -81,5 +126,13 @@ export const queryKeys = {
   },
   competencies: {
     workerSearch: (search: string) => ["competencies", "worker-search", search] as const
+  },
+  operationalOnboarding: {
+    cases: () => ["operational-onboarding-cases"] as const,
+    tasks: () => ["operational-onboarding-tasks"] as const,
+    activityLog: () => ["operational-onboarding-activity-log"] as const,
+    candidateProfiles: () => ["candidate-profiles-list"] as const,
+    templates: () => ["onboarding_templates"] as const,
+    templateTasks: (templateId: string) => ["onboarding_template_tasks", templateId] as const
   }
 };

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchTemplates,
   createTemplate,
@@ -11,7 +12,7 @@ import type { OnboardingTemplateInput, OnboardingTemplateTaskInput } from "../ty
 
 export function useTemplates() {
   return useQuery({
-    queryKey: ["onboarding_templates"],
+    queryKey: queryKeys.operationalOnboarding.templates(),
     queryFn: fetchTemplates,
   });
 }
@@ -21,7 +22,7 @@ export function useCreateTemplate() {
   return useMutation({
     mutationFn: createTemplate,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding_templates"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operationalOnboarding.templates() });
     },
   });
 }
@@ -37,14 +38,14 @@ export function useUpdateTemplate() {
       template: OnboardingTemplateInput;
     }) => updateTemplate(id, template),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding_templates"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operationalOnboarding.templates() });
     },
   });
 }
 
 export function useTemplateTasks(templateId: string) {
   return useQuery({
-    queryKey: ["onboarding_template_tasks", templateId],
+    queryKey: queryKeys.operationalOnboarding.templateTasks(templateId),
     queryFn: () => fetchTemplateTasks(templateId),
     enabled: !!templateId,
   });
@@ -56,7 +57,7 @@ export function useUpsertTemplateTask() {
     mutationFn: (payload: OnboardingTemplateTaskInput) => upsertTemplateTask(payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["onboarding_template_tasks", variables.template_id],
+        queryKey: queryKeys.operationalOnboarding.templateTasks(variables.template_id),
       });
     },
   });
@@ -69,7 +70,7 @@ export function useDeleteTemplateTask() {
       deleteTemplateTask(id, comment),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["onboarding_template_tasks", variables.templateId],
+        queryKey: queryKeys.operationalOnboarding.templateTasks(variables.templateId),
       });
     },
   });

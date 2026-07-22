@@ -92,11 +92,11 @@
   {
     "id": "FE-002",
     "title": "Query keys centralizadas",
-    "severity": "WARNING",
+    "severity": "ERROR",
     "scope": "src/shared/lib/queryKeys.ts",
     "source_document": "eees/books/FRONTEND.md",
-    "automatable": false,
-    "blocking": false
+    "automatable": true,
+    "blocking": true
   },
   {
     "id": "BE-001",
@@ -189,6 +189,24 @@
     "blocking": true
   },
   {
+    "id": "TST-005",
+    "title": "Baseline testing P3 medido",
+    "severity": "ERROR",
+    "scope": "tests eees/baselines package.json vitest.config.ts",
+    "source_document": "eees/books/TESTING-AUTOMATION.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "TST-006",
+    "title": "Logica pura critica protegida",
+    "severity": "ERROR",
+    "scope": "src/modules tests/unit tests/contracts",
+    "source_document": "eees/books/TESTING-AUTOMATION.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
     "id": "OBS-001",
     "title": "Errores con accion",
     "severity": "WARNING",
@@ -211,6 +229,15 @@
     "title": "Main siempre verificable",
     "severity": "ERROR",
     "scope": ".github workflows",
+    "source_document": "eees/books/RELEASE-CICD.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "REL-002",
+    "title": "Excepciones con expiracion",
+    "severity": "ERROR",
+    "scope": "eees audits suppressions exceptions",
     "source_document": "eees/books/RELEASE-CICD.md",
     "automatable": true,
     "blocking": true
@@ -270,6 +297,15 @@
     "blocking": false
   },
   {
+    "id": "PERF-002",
+    "title": "Performance baseline sin regresion medible",
+    "severity": "ERROR",
+    "scope": "dist eees/baselines/PERFORMANCE_BASELINE_v1.md scripts/audit-performance-baseline.mjs",
+    "source_document": "eees/books/OBSERVABILITY.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
     "id": "CONC-001",
     "title": "Jobs atomicos",
     "severity": "WARNING",
@@ -277,6 +313,51 @@
     "source_document": "eees/books/BACKEND.md",
     "automatable": false,
     "blocking": false
+  },
+  {
+    "id": "CONC-002",
+    "title": "Mutaciones criticas idempotentes y auditadas",
+    "severity": "ERROR",
+    "scope": "supabase/functions supabase/migrations scripts",
+    "source_document": "eees/books/BACKEND.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "OBS-002",
+    "title": "Observabilidad operacional P4",
+    "severity": "ERROR",
+    "scope": "eees/baselines/OBSERVABILITY-BASELINE.md eees/books/OBSERVABILITY.md supabase/functions scripts",
+    "source_document": "eees/books/OBSERVABILITY.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "REL-003",
+    "title": "Release y rollback P4 completos",
+    "severity": "ERROR",
+    "scope": "eees/certification eees/playbooks scripts package.json",
+    "source_document": "eees/books/RELEASE-CICD.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "REL-004",
+    "title": "Certificacion EEES 100 ejecutable",
+    "severity": "ERROR",
+    "scope": "eees/baselines eees/audits eees/certification scripts .github/workflows",
+    "source_document": "docs/CODEX_OBJECTIVE_LOOP_EEES_100_PERCENT.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "REL-005",
+    "title": "Repository cleanup sin residuos confirmados",
+    "severity": "ERROR",
+    "scope": "eees/baselines eees/audits scripts package.json artifacts src public",
+    "source_document": "docs/CODEX_OBJECTIVE_LOOP_ENTERPRISE_REPOSITORY_CLEANUP.md",
+    "automatable": true,
+    "blocking": true
   },
   {
     "id": "AI-001",

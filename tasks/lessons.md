@@ -2618,3 +2618,40 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los servicios publicos deben conservar sus exports.** Si los consumidores importan desde un servicio historico, usa re-exports para no forzar cambios masivos en vistas y hooks.
 - **Valida TypeScript despues de cada lote pequeno.** Las extracciones mecanicas tienden a romper imports/tipos primero; corregir en lotes cortos evita mezclar errores reales con deuda de movimiento.
 - **Guardian no se silencia para cerrar deuda historica.** El cierre correcto es bajar warnings reales a 0 sin cambiar reglas, thresholds ni suppressions.
+
+## 179. Coverage P3 debe medir riesgo, no inflar porcentaje global
+
+- **Un baseline honesto puede incluir brechas en 0% si estan clasificadas.** Exportadores legacy BUK/XLSX no deben ocultarse ni cubrirse con tests triviales; se documentan y se cubren cuando se toquen.
+- **La logica pura critica necesita test nombrado por fuente.** Si P2 extrae reglas, mappers o transformadores, Guardian debe exigir un test asociado para evitar que la extraccion quede solo como ordenamiento de archivos.
+- **El runtime de testing es parte del contrato.** Si un Node local mata Vitest antes de ejecutar, registra el runtime validado y ejecuta las suites con un runtime reproducible.
+
+## 180. Las query keys son contrato transversal, no detalle de hook
+
+- **Listas, paginas y dashboards con payload distinto necesitan claves distintas.** Compartir arrays similares entre queries provoca caches cruzados y regresiones dificiles de leer.
+- **Las invalidaciones transversales deben usar roots de dominio.** `queryKeys.<dominio>.all()` hace explicita la frontera y permite auditar cambios sin buscar arrays sueltos.
+- **Guardian debe bloquear arrays inline nuevos en `src`.** La regla evita que la convencion dependa de memoria humana durante nuevas pantallas o hooks.
+
+## 181. Performance P4 debe versionar el baseline medido antes de optimizar
+
+- **No declares regresion ni mejora sin un artefacto comparable.** Bundle total, vendors criticos, JS/CSS y rutas smoke deben quedar medidos antes de tocar optimizaciones.
+- **Un vendor pesado puede ser aceptable si es lazy y esta clasificado.** PDF, XLSX y ECharts no se reducen por intuicion; se auditan contra su frontera de carga y se optimizan solo con beneficio probado.
+- **El build generado no se versiona, el baseline si.** `dist` y `coverage` son outputs locales; los numeros relevantes viven en `eees/baselines`.
+
+## 182. Release P4 necesita recuperacion verificable, no solo checklist humano
+
+- **Un checklist sin auditor no bloquea regresiones.** Si release exige rollback, coverage, performance y smokes, Guardian debe validar que esos artefactos y scripts existan.
+- **La idempotencia se prueba desde las colas reales.** Para jobs con efectos externos, busca `FOR UPDATE SKIP LOCKED`, recuperacion stale y snapshots parciales antes de autorizar retries.
+- **Los playbooks deben nombrar comandos y fronteras tecnicas.** Rollback frontend, forward-fix SQL, redeploy Edge Function y reload PostgREST son caminos distintos y deben estar escritos antes del incidente.
+
+## 183. Una certificacion Enterprise 100 debe ser ejecutable, no declarativa
+
+- **Si el objetivo exige 100%, crea un auditor que lo bloquee en Guardian.** DR, SRE, capacity, failure modes, residual risk y certificacion final no pueden depender de recordar revisar documentos a mano.
+- **`NO MEDIDO` es valido solo cuando la fuente real no existe en el repo.** Debe declarar dependencia externa, owner y condicion de cierre; no puede esconder una brecha interna automatizable.
+- **CI debe reproducir el cierre, no una version reducida.** Para certificacion final, el workflow enterprise debe ejecutar `guardian:full`, tests, coverage, auditorias finales, build y `git diff --check`.
+
+## 184. La limpieza de repositorio debe borrar solo residuos demostrados y agregar guardrail
+
+- **Un archivo sin import no siempre esta muerto, pero un script roto y sin consumidor si puede cerrarse.** Antes de borrar, cruza `package.json`, workflows, Guardian, docs, imports dinamicos y rutas; si la evidencia es parcial, clasifica `KEEP_UNCERTAIN`.
+- **Los artifacts ZIP versionados son duplicacion salvo que un proceso vivo los consuma.** Si solo empaquetan fuentes ya versionadas, elimina el binario y deja la trazabilidad en reportes Markdown.
+- **Las dependencias Edge con import `npm:` no son unused aunque no tengan imports Node.** Clasificalas como `KEEP_RUNTIME_DYNAMIC`; elimina solo dependencias directas sin uso real ni contrato runtime.
+- **Cada cleanup final necesita auditor anti-residuo.** Si ya identificaste scripts, assets o dependencias removidas, Guardian debe impedir que vuelvan sin una decision explicita.

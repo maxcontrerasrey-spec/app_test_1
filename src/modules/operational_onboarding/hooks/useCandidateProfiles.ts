@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { supabase } from "../../../shared/lib/supabase";
 
 export type CandidateProfileRow = {
@@ -10,7 +11,7 @@ export type CandidateProfileRow = {
 
 export function useCandidateProfiles() {
   return useQuery({
-    queryKey: ["candidate-profiles-list"],
+    queryKey: queryKeys.operationalOnboarding.candidateProfiles(),
     queryFn: async () => {
       if (!supabase) throw new Error("Supabase is not configured");
 

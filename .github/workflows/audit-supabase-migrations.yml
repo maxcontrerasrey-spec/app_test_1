@@ -12,7 +12,11 @@ on:
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
       - "scripts/audit-eees-guardian.mjs"
+      - "scripts/audit-enterprise-100-readiness.mjs"
+      - "scripts/audit-repository-cleanup.mjs"
       - "scripts/audit-buk-sync-guards.mjs"
+      - "scripts/audit-performance-baseline.mjs"
+      - "scripts/audit-p4-operational-readiness.mjs"
       - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-frontend-auth-smoke-secrets.mjs"
       - "scripts/audit-onboarding-legacy-guards.mjs"
@@ -24,6 +28,9 @@ on:
       - "scripts/smoke-frontend-authenticated-matrix.mjs"
       - "scripts/smoke-frontend-routes.mjs"
       - "tests/smoke/**"
+      - "tests/unit/**"
+      - "tests/contracts/**"
+      - "vitest.config.ts"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/audit-supabase-migrations.yml"
@@ -38,7 +45,11 @@ on:
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
       - "scripts/audit-eees-guardian.mjs"
+      - "scripts/audit-enterprise-100-readiness.mjs"
+      - "scripts/audit-repository-cleanup.mjs"
       - "scripts/audit-buk-sync-guards.mjs"
+      - "scripts/audit-performance-baseline.mjs"
+      - "scripts/audit-p4-operational-readiness.mjs"
       - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-frontend-auth-smoke-secrets.mjs"
       - "scripts/audit-onboarding-legacy-guards.mjs"
@@ -50,6 +61,9 @@ on:
       - "scripts/smoke-frontend-authenticated-matrix.mjs"
       - "scripts/smoke-frontend-routes.mjs"
       - "tests/smoke/**"
+      - "tests/unit/**"
+      - "tests/contracts/**"
+      - "vitest.config.ts"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/audit-supabase-migrations.yml"
@@ -57,6 +71,12 @@ on:
 jobs:
   audit-enterprise-guardrails:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    concurrency:
+      group: audit-enterprise-guardrails-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     env:
       FRONTEND_AUTH_SMOKE_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_EMAIL }}
       FRONTEND_AUTH_SMOKE_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_PASSWORD }}
@@ -114,6 +134,15 @@ jobs:
       - name: Audit Enterprise documentation coverage
         run: npm run audit:enterprise-docs
 
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Contract tests
+        run: npm run test:contracts
+
+      - name: Coverage gate
+        run: npm run test:coverage
+
       - name: Audit BUK sync duplicate guards
         run: npm run audit:buk-sync-guards
 
@@ -136,7 +165,13 @@ jobs:
         run: npm run smoke:frontend-routes
 
       - name: EEES Guardian
-        run: npm run guardian
+        run: npm run guardian:full
+
+      - name: EEES 100 readiness
+        run: npm run audit:enterprise-100-readiness
+
+      - name: Repository cleanup readiness
+        run: npm run audit:repository-cleanup
 
       - name: Smoke frontend authenticated route
         if: ${{ env.FRONTEND_AUTH_SMOKE_EMAIL != '' && env.FRONTEND_AUTH_SMOKE_PASSWORD != '' && env.VITE_SUPABASE_URL != '' && env.VITE_SUPABASE_ANON_KEY != '' }}
@@ -153,3 +188,12 @@ jobs:
 
       - name: Audit Supabase security patterns
         run: npm run audit:supabase-security
+
+      - name: TypeScript build
+        run: node ./node_modules/typescript/bin/tsc -b --pretty false
+
+      - name: Production build
+        run: npm run build
+
+      - name: Diff whitespace check
+        run: git diff --check
