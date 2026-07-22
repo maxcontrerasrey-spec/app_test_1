@@ -224,7 +224,7 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - [x] Auditar la regresion de fichas BUK previas/inactivas y ubicar la rama que vuelve a mostrar "no fue posible resolver la ficha automaticamente".
 - [x] Reforzar `sync-buk-candidates` para que una ficha BUK inactiva con documento exacto no caiga al error terminal y quede trazada en `result_snapshot`.
 - [x] Agregar un auditor ejecutable que verifique la existencia de las guardas de duplicado activo, ficha inactiva reutilizable/clonable y trazabilidad de resolucion BUK.
-- [x] Agregar filtros desplegables al widget de folios activos por turno, pasajes, alojamiento y contrato, sin ampliar el RPC si el payload ya trae esos campos.
+- [x] Agregar filtros desplegables a la vista `Resumen de procesos de contratación` por turno, pasajes, alojamiento y contrato, sin ampliar el RPC si el payload ya trae esos campos.
 - [x] Validar build/auditorias relevantes y documentar resultado/lecciones para evitar repeticion.
 
 ### Resultado aplicado
@@ -233,7 +233,8 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - `sync-buk-candidates` ahora resuelve estado desde `status`, `employee_status`, `estado`, `active` o `is_active`; para fichas inactivas usa documento exacto como identidad primaria y conserva el chequeo estricto de correo para duplicados activos.
 - La resolucion BUK deja `resolutionAudit` en exito y `employeeResolutionAudit` en error, evitando mensajes visibles extensos y manteniendo trazabilidad en `buk_sync_jobs.result_snapshot`.
 - Se agrego `scripts/audit-buk-sync-guards.mjs`, `npm run audit:buk-sync-guards` y ejecucion en GitHub Actions para bloquear regresiones de estas ramas.
-- El widget de folios activos del dashboard agrega filtros desplegables por turno, pasajes, alojamiento y contrato junto a la busqueda, usando `SelectField` compartido y filtrado local sobre campos ya entregados por `get_recruitment_processes_page`.
+- La vista `Resumen de procesos de contratación` agrega filtros desplegables por turno, pasajes, alojamiento y contrato junto a `Buscar casos`, usando `SelectField` compartido y filtrado local sobre campos ya entregados por `get_recruitment_processes_page`.
+- Correccion posterior: la primera version instalo filtros en el widget de dashboard equivocado; se corrigio la superficie real de la captura en `HiringProcessesView` y se documento la leccion para validar el heading/input exacto antes de cerrar UI.
 - Validacion local: `npm run audit:buk-sync-guards`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:route-role-smoke`, `npm run audit:supabase-security`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run smoke:frontend-routes` y `git diff --check` pasaron.
 - Deploy remoto: `sync-buk-candidates` desplegada en Supabase project `pzblmbahnoyntrhistea` con `npx --yes supabase functions deploy sync-buk-candidates --use-api --yes`.
 

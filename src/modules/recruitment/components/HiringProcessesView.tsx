@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from "react";
-import { TextField } from "../../../shared/ui";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { SelectField, TextField } from "../../../shared/ui";
 import {
   getRecruitmentCaseHeadcountBreakdown,
   resolveRecruitmentProcessSearchFilter,
@@ -21,7 +21,12 @@ import { TrackingPagination } from "./TrackingPagination";
 
 type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "requester_name";
 const PROCESS_PAGE_SIZE = 50;
+const PROCESS_FETCH_LIMIT = 500;
 const APPROVAL_PAGE_SIZE = 50;
+const BOOLEAN_FILTER_OPTIONS = [
+  { value: "si", label: "Sí" },
+  { value: "no", label: "No" }
+];
 
 const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
   { column: "case_code", label: "Caso" },
@@ -55,6 +60,10 @@ export function HiringProcessesView({
   onCloseRequest
 }: HiringProcessesViewProps) {
   const [caseSearchTerm, setCaseSearchTerm] = useState("");
+  const [shiftFilter, setShiftFilter] = useState("");
+  const [travelFilter, setTravelFilter] = useState("");
+  const [campFilter, setCampFilter] = useState("");
+  const [contractFilter, setContractFilter] = useState("");
   const [caseFilter, setCaseFilter] =
     useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
@@ -71,8 +80,8 @@ export function HiringProcessesView({
     statusFilter: caseFilter,
     sortColumn,
     sortDirection,
-    limit: PROCESS_PAGE_SIZE,
-    offset: casePage * PROCESS_PAGE_SIZE
+    limit: PROCESS_FETCH_LIMIT,
+    offset: 0
   });
   const approvalsQuery = useRecruitmentPendingApprovalsPage(
     {
@@ -81,9 +90,44 @@ export function HiringProcessesView({
     },
     isApprovalQueueExpanded
   );
-  const activeCases = processesQuery.data?.items ?? [];
+  const allActiveCases = processesQuery.data?.items ?? [];
+  const shiftOptions = useMemo(
+    () =>
+      buildTextFilterOptions(
+        allActiveCases.map((caseRow) => normalizeProcessFilterValue(caseRow.shift_name ?? caseRow.turno))
+      ),
+    [allActiveCases]
+  );
+  const contractOptions = useMemo(
+    () =>
+      buildTextFilterOptions(
+        allActiveCases.map((caseRow) => normalizeProcessFilterValue(caseRow.contract_name))
+      ),
+    [allActiveCases]
+  );
+  const filteredActiveCases = useMemo(
+    () =>
+      allActiveCases.filter((caseRow) => {
+        const shiftValue = normalizeProcessFilterValue(caseRow.shift_name ?? caseRow.turno);
+        const contractValue = normalizeProcessFilterValue(caseRow.contract_name);
+        const travelValue = formatBooleanFilterValue(caseRow.pasajes);
+        const campValue = formatBooleanFilterValue(caseRow.campamento);
+
+        return (
+          (!shiftFilter || shiftValue === shiftFilter) &&
+          (!contractFilter || contractValue === contractFilter) &&
+          (!travelFilter || travelValue === travelFilter) &&
+          (!campFilter || campValue === campFilter)
+        );
+      }),
+    [allActiveCases, campFilter, contractFilter, shiftFilter, travelFilter]
+  );
+  const activeCases = useMemo(
+    () => filteredActiveCases.slice(casePage * PROCESS_PAGE_SIZE, casePage * PROCESS_PAGE_SIZE + PROCESS_PAGE_SIZE),
+    [casePage, filteredActiveCases]
+  );
   const pendingApprovals = approvalsQuery.data?.items ?? [];
-  const processTotalCount = processesQuery.data?.totalCount ?? 0;
+  const processTotalCount = filteredActiveCases.length;
   const approvalTotalCount = approvalsQuery.data?.totalCount ?? pendingApprovalCount;
   const processError =
     processesQuery.error instanceof Error ? processesQuery.error.message : "";
@@ -108,7 +152,7 @@ export function HiringProcessesView({
 
   useEffect(() => {
     setCasePage(0);
-  }, [debouncedSearchTerm, caseFilter, sortColumn, sortDirection]);
+  }, [debouncedSearchTerm, caseFilter, sortColumn, sortDirection, shiftFilter, travelFilter, campFilter, contractFilter]);
 
   useEffect(() => {
     const normalizedSearch = debouncedSearchTerm.trim();
@@ -271,7 +315,49 @@ export function HiringProcessesView({
             operativo por folio.
           </span>
         </div>
-        <div className="tracking-filters">
+        <div className="tracking-filters tracking-filters-processes">
+          <div className="tracking-filter-select-row">
+            <SelectField
+              id="hiring-processes-shift-filter"
+              label="Turno"
+              hideLabel
+              value={shiftFilter}
+              placeholder="Turno"
+              options={shiftOptions}
+              onChange={(event) => setShiftFilter(event.target.value)}
+              className="tracking-filter-select"
+            />
+            <SelectField
+              id="hiring-processes-travel-filter"
+              label="Pasajes"
+              hideLabel
+              value={travelFilter}
+              placeholder="Pasajes"
+              options={BOOLEAN_FILTER_OPTIONS}
+              onChange={(event) => setTravelFilter(event.target.value)}
+              className="tracking-filter-select"
+            />
+            <SelectField
+              id="hiring-processes-camp-filter"
+              label="Alojamiento"
+              hideLabel
+              value={campFilter}
+              placeholder="Alojamiento"
+              options={BOOLEAN_FILTER_OPTIONS}
+              onChange={(event) => setCampFilter(event.target.value)}
+              className="tracking-filter-select"
+            />
+            <SelectField
+              id="hiring-processes-contract-filter"
+              label="Contrato"
+              hideLabel
+              value={contractFilter}
+              placeholder="Contrato"
+              options={contractOptions}
+              onChange={(event) => setContractFilter(event.target.value)}
+              className="tracking-filter-select tracking-filter-select-contract"
+            />
+          </div>
           <TextField
             id="hiring-processes-search"
             label="Buscar casos"
@@ -647,4 +733,20 @@ export function HiringProcessesView({
       />
     </>
   );
+}
+
+function normalizeProcessFilterValue(value: string | null | undefined) {
+  return value?.trim() ?? "";
+}
+
+function formatBooleanFilterValue(value: boolean | null | undefined) {
+  if (value === true) return "si";
+  if (value === false) return "no";
+  return "";
+}
+
+function buildTextFilterOptions(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)))
+    .sort((left, right) => left.localeCompare(right, "es"))
+    .map((value) => ({ value, label: value }));
 }

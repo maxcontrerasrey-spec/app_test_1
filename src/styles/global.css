@@ -4098,6 +4098,28 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   width: min(100%, 320px);
 }
 
+.tracking-filters-processes {
+  width: min(100%, 960px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  align-items: end;
+  gap: 0.7rem;
+}
+
+.tracking-filter-select-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(118px, 1fr));
+  gap: 0.6rem;
+}
+
+.tracking-filter-select {
+  min-width: 0;
+}
+
+.tracking-filter-select-contract {
+  min-width: min(100%, 180px);
+}
+
 .tracking-filters-inline {
   display: flex;
   align-items: end;
@@ -5513,6 +5535,14 @@ details.mobility-detail-card[open] .mobility-detail-summary {
     align-items: stretch;
   }
 
+  .tracking-filter-select-row {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+
+  .tracking-filters-processes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .tracking-filters-inline {
     min-width: 0;
     flex-direction: column;
@@ -5789,4 +5819,10 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+}
+
+@media (max-width: 420px) {
+  .tracking-filter-select-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

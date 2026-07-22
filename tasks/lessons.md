@@ -18,6 +18,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **BUK puede exponer estado en mas de un campo.** La clasificacion debe normalizar `status`, `employee_status`, `estado`, `active` e `is_active` antes de decidir si repara, clona o cancela.
 - **Cada regresion de duplicado BUK necesita guardrail ejecutable.** `audit:buk-sync-guards` debe fallar si desaparecen las ramas de ficha inactiva, ficha activa incompleta, cancelacion solo para activo confirmado o auditoria en `result_snapshot`.
 
+## 268. Los filtros visibles deben instalarse en la superficie exacta de la captura
+
+- **No confundas widgets de dashboard con vistas modulares que comparten vocabulario.** Si el usuario muestra `Resumen de procesos de contratación`, el cambio debe ubicarse en `HiringProcessesView`, no en un widget hermano de folios activos.
+- **Verifica el heading y el input visible antes de cerrar UI.** Buscar el texto exacto de la captura, como `Buscar casos`, evita dejar controles correctos en una pantalla que el usuario no esta mirando.
+- **Una correccion visual debe validarse contra el contenedor real.** Los filtros solicitados al lado izquierdo de la busqueda pertenecen al toolbar de esa tabla y deben convivir con su paginacion, busqueda y chips de estado existentes.
+
 ## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
 
 - **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.
