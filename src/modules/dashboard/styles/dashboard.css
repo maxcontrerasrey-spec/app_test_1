@@ -670,40 +670,13 @@
   z-index: 30;
 }
 
-.dashboard-folios-controls {
-  display: grid;
-  grid-template-columns:
-    minmax(8.75rem, 0.7fr)
-    minmax(9.25rem, 0.72fr)
-    minmax(11rem, 0.86fr)
-    minmax(28rem, 1.85fr)
-    minmax(30rem, 1.45fr);
-  align-items: start;
-  gap: 0.6rem;
-  width: 100%;
-  position: relative;
-  z-index: 40;
-  margin-top: 0.05rem;
-}
-
-.dashboard-folios-filter {
-  min-width: max-content;
-}
-
-.dashboard-folios-filter .select-dropdown {
-  position: static;
-  z-index: 360;
-  max-height: min(18rem, 42vh);
-  margin-top: 0.38rem;
-}
-
-.dashboard-folios-filter-contract {
-  min-width: 28rem;
-}
-
 .dashboard-folios-search {
   min-width: 30rem;
   max-width: none;
+}
+
+.dashboard-folios-summary-only {
+  margin-bottom: 0;
 }
 
 .dashboard-folios-kpis {
@@ -775,16 +748,6 @@
   .dashboard-folios-kpis {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-
-  .dashboard-folios-controls {
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
-  }
-
-  .dashboard-folios-filter,
-  .dashboard-folios-filter-contract,
-  .dashboard-folios-search {
-    min-width: 0;
-  }
 }
 
 @media (max-width: 760px) {
@@ -792,11 +755,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .dashboard-folios-controls {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dashboard-folios-filter-contract,
   .dashboard-folios-search {
     min-width: 0;
   }

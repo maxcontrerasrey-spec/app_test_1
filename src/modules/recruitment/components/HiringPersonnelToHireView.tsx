@@ -245,44 +245,52 @@ export function HiringPersonnelToHireView({
     setIsGeneratingBuk(true);
     setExportMessage("");
 
-    const { data, processed, error, dispatchError } = await generateCandidatesInBuk(
-      selectedPersonnel.map((candidate) => candidate.id)
-    );
-
-    if (error) {
-      setExportMessage(error);
-      setIsGeneratingBuk(false);
-      return;
-    }
-
-    const queuedCount = data.filter((job) => job.status === "pending").length;
-    const processingCount = data.filter((job) => job.status === "processing").length;
-    const successCount = processed.filter((job) => job.status === "success").length;
-    const failedJobs = processed.filter((job) => job.status === "error");
-
-    if (dispatchError) {
-      setExportMessage(
-        `Se encolaron ${queuedCount} persona(s), pero no se pudo ejecutar la sincronización automática con BUK. ${dispatchError}`
+    try {
+      const { data, processed, error, dispatchError } = await generateCandidatesInBuk(
+        selectedPersonnel.map((candidate) => candidate.id)
       );
-      setIsGeneratingBuk(false);
-      return;
-    }
 
-    setExportMessage(
-      failedJobs.length > 0
-        ? `BUK procesó ${successCount} persona(s) correctamente, ${failedJobs.length} fallaron${
-            processingCount > 0 ? ` y ${processingCount} siguen en procesamiento` : ""
-          }. ${failedJobs
-            .map((job) => job.error)
-            .filter(Boolean)
-            .join(" | ")}`
-        : processingCount > 0
-          ? `BUK procesó ${successCount} persona(s). ${processingCount} siguen en procesamiento en segundo plano.`
-          : `BUK procesó ${successCount} persona(s) correctamente.`
-    );
-    setSelectedCandidateIds([]);
-    await onCandidateFileUpdated();
-    setIsGeneratingBuk(false);
+      if (error) {
+        setExportMessage(error);
+        return;
+      }
+
+      const queuedCount = data.filter((job) => job.status === "pending").length;
+      const processingCount = data.filter((job) => job.status === "processing").length;
+      const successCount = processed.filter((job) => job.status === "success").length;
+      const failedJobs = processed.filter((job) => job.status === "error");
+
+      if (dispatchError) {
+        setExportMessage(
+          `Se encolaron ${queuedCount} persona(s), pero no se pudo ejecutar la sincronización automática con BUK. ${dispatchError}`
+        );
+        return;
+      }
+
+      setExportMessage(
+        failedJobs.length > 0
+          ? `BUK procesó ${successCount} persona(s) correctamente, ${failedJobs.length} fallaron${
+              processingCount > 0 ? ` y ${processingCount} siguen en procesamiento` : ""
+            }. ${failedJobs
+              .map((job) => job.error)
+              .filter(Boolean)
+              .join(" | ")}`
+          : processingCount > 0
+            ? `BUK procesó ${successCount} persona(s). ${processingCount} siguen en procesamiento en segundo plano.`
+            : `BUK procesó ${successCount} persona(s) correctamente.`
+      );
+      setSelectedCandidateIds([]);
+      await Promise.all([
+        onCandidateFileUpdated(),
+        personnelQuery.refetch()
+      ]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "No fue posible generar el personal en BUK.";
+      setExportMessage(`No fue posible generar el personal en BUK. ${message}`);
+    } finally {
+      setIsGeneratingBuk(false);
+    }
   };
 
   const emptyColSpan = showBukActions ? 7 : 6;

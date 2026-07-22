@@ -354,6 +354,20 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Reproduccion limpia posterior con la config: `deno check --no-config --node-modules-dir=auto supabase/functions/sync-buk-candidates/index.ts` paso.
 - Se actualizo el workflow a `actions/checkout@v7.0.1`, `actions/setup-node@v7.0.0` y Node 24 para eliminar la anotacion residual de deprecacion de Node 20.
 
+## Correccion Inicio y Personal a Contratar
+
+- [x] Quitar filtros y busqueda del widget de inicio `Folios en curso`, dejando solo tarjetas informativas.
+- [x] Revisar el flujo de generacion BUK en `Personal a Contratar` para que el candidato desaparezca de la lista despues de exito efectivo.
+- [x] Implementar refresco/invalidation sin alterar la generacion BUK ni relajar reglas backend.
+- [x] Validar build/auditorias relevantes, documentar aprendizaje, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- El widget de inicio `Folios en curso` quedo como resumen puro: solo renderiza las cinco tarjetas informativas desde `operationalSummaryData.recruitment`.
+- Se eliminaron del resumen de inicio los filtros, busqueda, tabla, paginacion y consultas propias de folios para no duplicar la vista operacional de control de candidatos.
+- La generacion BUK en `Personal a Contratar` ahora invalida cache aunque no exista una ficha lateral seleccionada y fuerza `refetch()` del listado despues del mensaje de exito.
+- Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs`, `npm run audit:buk-sync-guards`, `npm run check:edge:sync-buk-candidates`, `npm run audit:route-role-smoke`, `npm run audit:frontend-auth-smoke-matrix`, `npm run smoke:frontend-routes`, `npm run smoke:frontend-authenticated-matrix`, `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check` pasaron. La matriz autenticada quedo saltada localmente por falta de credenciales seguras, como en el contrato del workflow.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

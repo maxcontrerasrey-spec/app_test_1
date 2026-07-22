@@ -282,9 +282,7 @@ export function HiringStatusPage() {
   };
 
   const handleCandidateFileUpdated = async () => {
-    if (selectedCaseId && selectedCandidateId) {
-      await invalidateRecruitmentCache(selectedCaseId);
-    }
+    await invalidateRecruitmentCache(selectedCaseId || undefined);
   };
 
   const handleWhoApprovalRegistered = async () => {

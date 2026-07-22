@@ -2583,3 +2583,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El nombre BUK debe ser consistente entre módulos.** Reutiliza el estándar de `sync-buk-candidates`: base sanitizada en minúsculas, tipo/documento del trabajador y extensión; no inventes nombres largos distintos por módulo.
 - **La purga local depende de éxito doble en BUK.** No elimines Storage si solo subió el certificado o solo subió la evaluación; cuando ambos están en BUK, elimina los objetos físicos del bucket ERP y conserva solo metadata/hash/IDs BUK para auditoría.
 - **No borres filas transaccionales para ahorrar memoria.** La memoria relevante está en Storage; las filas de solicitud, evaluación y certificado sostienen folio, QR, auditoría, permisos y validación pública.
+
+## 175. Los resúmenes de inicio no deben mezclar controles operativos
+
+- **Si la captura corresponde al inicio, no dupliques filtros de la vista de trabajo.** `Folios en curso` debe resumir estado con tarjetas; los filtros viven en la seccion operacional donde el usuario actua sobre casos.
+- **Un exito BUK debe refrescar la cola aunque no haya ficha lateral seleccionada.** La invalidacion no puede depender de `selectedCandidateId`; las acciones masivas desde tabla tambien deben invalidar/refrescar su lista.
+- **El mensaje de exito no es suficiente evidencia visual.** Despues de procesar candidatos en BUK, fuerza la reconsulta del listado visible para que el candidato exitoso desaparezca de `Personal a Contratar`.
