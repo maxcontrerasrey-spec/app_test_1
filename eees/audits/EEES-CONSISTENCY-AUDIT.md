@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 0
-- Info: 10
+- Info: 8
 
 ## Errores
 
@@ -39,5 +39,3 @@ PASS
 - audit:supabase-security: PASS
 - build:frontend-check: PASS
 - git diff --check: PASS
-- smoke:frontend-routes: PASS
-- check:edge:sync-buk-candidates: PASS

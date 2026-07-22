@@ -4,6 +4,27 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Reasignacion administracion de contratos - Oscar, Angel y Mario
+
+- [x] Confirmar el contrato vivo de administradores y roles antes de cambiar datos productivos.
+- [x] Crear la cuenta Auth/Profile de Mario Pizarro Fernandez con rol minimo de administrador aprobador.
+- [x] Reasignar a Angel Guerra Basso los contratos administrados por Oscar Poblete Celedon, excluyendo Sierra Gorda.
+- [x] Reasignar a Mario Pizarro Fernandez los mappings Sierra Gorda actualmente asociados a Oscar o Angel.
+- [x] Validar en Supabase perfiles, roles aplicativos, mappings y ausencia de asignaciones residuales de Oscar.
+- [x] Ejecutar guardian/auditorias locales y documentar el cierre.
+
+### Resultado aplicado
+
+- Fuente autoritativa confirmada: `buk_contract_mappings.contract_admin_name`.
+- Cuenta Auth creada para `mario.pizarro@busesjm.com`; `profiles` quedo activo como `Mario Pizarro Fernandez`, `Administrador de Contratos`, con `must_reset_password = true`.
+- Angel Guerra Basso quedo activo con roles `operaciones_l_1` y `aprobador_folios`.
+- Mario Pizarro Fernandez quedo activo con rol `aprobador_folios`.
+- Oscar Poblete Celedon se mantiene inactivo y sin roles aplicativos.
+- Reasignacion productiva: Oscar quedo con 0 mappings; Angel quedo con 16 mappings no Sierra Gorda; Mario quedo con 2 mappings Sierra Gorda.
+- Los mappings Sierra Gorda reasignados a Mario son `ARAMARK SIERRA GORDA INTERNO` y `SIERRA GORDA OPERACIONES`.
+- Smoke autenticado de `get_my_effective_permissions()` no pudo ejecutarse desde SQL tool porque la conexion no permite simular `auth.uid()`; se valido contra las tablas autoritativas `profiles`, `user_roles` y `buk_contract_mappings`.
+- Validacion local: `git diff --check`, `npm run audit:migrations` y `npm run guardian` pasaron. Guardian cerro con 0 errores y 0 warnings.
+
 ## Limpieza documental productiva
 
 - [x] Medir peso actual de documentacion y detectar archivos historicos/duplicados.
