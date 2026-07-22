@@ -1,7 +1,7 @@
 ---
 document_id: EEES-AUDIT-CODE-REUSE
 title: Code Reuse and Complexity Audit
-version: 1.0.0
+version: 1.1.0
 status: Activo
 language: es-CL
 owner: Engineering
@@ -11,15 +11,41 @@ baseline_date: 2026-07-22
 
 # Auditoria de reutilizacion y complejidad
 
-| Archivo | Riesgo | Accion | Esfuerzo | Beneficio | Dependencia | Prueba requerida |
-| --- | --- | --- | --- | --- | --- | --- |
-| `src/modules/recruitment/services/hiringControl.ts` | 1647 lineas; mezcla contratos, mapping y acciones | Separar queries, mappers y acciones por subdominio | Alto | Menos regresiones en reclutamiento | Tests/smokes de folios y candidatos | `build:frontend-check`, smoke reclutamiento |
-| `src/modules/recruitment/components/CandidateWorkerFileForm.tsx` | 1571 lineas; formulario critico BUK | Extraer secciones y validadores | Medio | Mejor auditoria de payload BUK | Mantener contrato BUK | Build y flujo BUK |
-| `src/modules/incentives/services/incentivesApi.ts` | 1234 lineas; muchas RPCs | Dividir por setup, registro, aprobacion, analytics | Medio | Cambios mas seguros | Query keys | Build y smoke RRHH |
-| `src/modules/competencies/services/competencyApi.ts` | 1055 lineas; PDF/documentos/BUK | Mantener generadores pesados fuera del hot path | Medio | Bundle mas estable | Edge Function productiva | Build y certificado prueba |
-| `src/modules/operaciones/pages/OperacionesDashboard.tsx` | 906 lineas; pagina con responsabilidad amplia | Separar tabs y estado compartido | Medio | Menos regresiones UI | Smokes operaciones | `smoke:operations-rpc` |
-| `src/modules/dashboard/components/DashboardInfoCards.tsx` | 881 lineas; dashboard acoplado | Extraer widgets con contratos explicitos | Medio | Carga y lectura mas clara | `get_dashboard_home_bundle` | `smoke:dashboard-rpc` |
+## Baseline P2
 
-## Accion transversal
+- Archivos criticos iniciales sobre 800 lineas: 13.
+- Guardian inicial P2: 0 errores, 14 warnings historicos.
+- Guardian post P1: 0 errores, 14 warnings historicos.
+- Guardian post P2: 0 errores, 0 warnings.
 
-Guardian reporta archivos sobre 800 lineas como WARNING y no bloquea por deuda historica registrada.
+## Archivos criticos iniciales
+
+| Archivo | Lineas iniciales | Riesgo | Accion P2 | Estado |
+| --- | ---: | --- | --- | --- |
+| `src/modules/recruitment/services/hiringControl.ts` | 1647 | Servicio con tipos, acciones, perfil BUK y sync | Extraidos tipos a `hiringControlTypes.ts` y perfil/sync a `hiringBukProfile.ts` con re-export publico | Cerrado |
+| `src/modules/recruitment/components/CandidateWorkerFileForm.tsx` | 1571 | Formulario BUK critico con helpers y JSX extenso | Extraidos helpers, contenido visual y seccion contractual | Cerrado |
+| `src/modules/incentives/services/incentivesApi.ts` | 1234 | RPCs y mappers en un solo archivo | Extraidos mappers RPC a `incentivesApiMappers.ts` | Cerrado |
+| `src/modules/competencies/services/competencyApi.ts` | 1055 | API Supabase mezclada con generador PDF pesado | Extraido preview PDF a `competencyPreviewPdf.ts` | Cerrado |
+| `src/modules/operational_onboarding/pages/TemplateBuilderPage.tsx` | 1015 | Builder con formularios, handlers y tabla de tareas | Extraidos formularios y listado de tareas | Cerrado |
+| `src/modules/operaciones/pages/OperacionesDashboard.tsx` | 906 | Pagina con configuracion, draft local y mappers remotos | Extraida configuracion/draft/mappers a `operacionesDashboardConfig.ts` | Cerrado |
+| `src/modules/dashboard/components/DashboardInfoCards.tsx` | 881 | Tarjetas mezcladas con clima/geolocalizacion | Extraido hook y helpers de clima | Cerrado |
+| `src/modules/accreditation/components/AccreditationSettingsView.tsx` | 866 | Formularios por defecto mezclados con vista | Extraidos defaults/options a `settingsForms.ts` | Cerrado |
+| `src/modules/incentives/components/IncentiveRequestsView.tsx` | 844 | Vista mezclada con export XLSX | Extraida exportacion XLSX y labels de estado | Cerrado |
+| `src/modules/incentives/components/IncentiveRegistrationForm.tsx` | 835 | Formulario mezclado con alertas y helpers de regla | Extraidos helpers y alerta visual | Cerrado |
+| `src/modules/bi/components/BiRecruitmentAnalyticsView.tsx` | 812 | Vista mezclada con config de graficos | Extraida configuracion/formatters a `recruitmentAnalyticsChartConfig.ts` | Cerrado |
+| `src/modules/recruitment/components/CandidateDetailSidebar.tsx` | 803 | Sidebar con helpers WHO locales | Extraidos helpers de causa WHO | Cerrado |
+| `src/modules/competencies/pages/CompetencyCertificationPage.tsx` | 803 | Pagina con panel resumen embebido | Extraido `CompetencyCertificateSummaryPanel` | Cerrado |
+
+## Resultado
+
+- Archivos criticos restantes sobre 800 lineas: 0.
+- Duplicaciones eliminadas/cortadas: 13 superficies.
+- Accesos directos Supabase fuera de boundary advertidos por Guardian: 0.
+- Se mantuvieron exports publicos mediante re-export en servicios existentes cuando habia consumidores previos.
+- No se editaron migraciones historicas ni se flexibilizo Guardian.
+
+## Deuda residual clasificada
+
+- Los servicios nuevos `hiringBukProfile.ts`, `competencyPreviewPdf.ts` e `incentivesApiMappers.ts` quedan bajo 800 lineas, pero siguen siendo candidatos a tests unitarios focalizados si se agrega suite unitaria P3.
+- `AuthContext.tsx` conserva llamadas `supabase.auth.*` por ser boundary de ciclo de sesion; las llamadas RPC/tablas de perfil fueron movidas a `authApi.ts`.
+- No se normalizaron todas las query keys del ERP completo: no habia warning Guardian activo y hacerlo seria P3 por mayor superficie transversal.

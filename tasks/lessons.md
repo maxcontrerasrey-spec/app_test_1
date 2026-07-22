@@ -2611,3 +2611,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los secrets son contrato, no valores versionados.** El repo debe versionar `*_EMAIL` y `*_PASSWORD` como nombres esperados en manifiesto, workflow y docs; nunca correos reales, passwords, tokens ni sesiones.
 - **La recomendacion de cuentas debe derivar el modulo desde rutas reales.** Si se agrega una ruta al smoke autenticado, `smoke:frontend-auth-candidates` debe resolver su `moduleCode` para no recomendar usuarios que pasan login pero caen en `/sin-acceso`.
 - **La deuda legacy contenida necesita un gate propio.** Cuando una migracion historica queda como evidencia, agrega un auditor que pruebe la superficie viva, la migracion correctiva y el hardening posterior en vez de borrar historia SQL.
+
+## 178. Reducir complejidad no es mover lineas a otro archivo grande
+
+- **Cada extraccion P2 debe cerrar una responsabilidad completa.** Mover tipos, mappers, generadores PDF, exportadores XLSX o secciones visuales solo cuenta si el archivo destino queda bajo el umbral y tiene un contrato claro.
+- **Los servicios publicos deben conservar sus exports.** Si los consumidores importan desde un servicio historico, usa re-exports para no forzar cambios masivos en vistas y hooks.
+- **Valida TypeScript despues de cada lote pequeno.** Las extracciones mecanicas tienden a romper imports/tipos primero; corregir en lotes cortos evita mezclar errores reales con deuda de movimiento.
+- **Guardian no se silencia para cerrar deuda historica.** El cierre correcto es bajar warnings reales a 0 sin cambiar reglas, thresholds ni suppressions.

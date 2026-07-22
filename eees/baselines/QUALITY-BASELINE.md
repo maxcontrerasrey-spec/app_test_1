@@ -28,6 +28,7 @@ baseline_date: 2026-07-22
 - Scripts npm versionados: 28.
 - Scripts propios `.mjs`: 28.
 - Tests/smoke versionados: existe `tests/smoke/frontend-authenticated.scenarios.json`.
+- Guardian P2 complejidad/reutilizacion: 0 errores, 0 warnings despues de reducir 13 archivos criticos sobre 800 lineas.
 - Cobertura unitaria: NO MEDIDO.
 - Cobertura E2E autenticada real: matriz P1 por rol versionada y condicionada a secrets.
 

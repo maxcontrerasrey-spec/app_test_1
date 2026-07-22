@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { SearchableSelectField, SelectField, type SelectOption, TextField, FieldHintIcon } from "../../../shared/ui";
+import { SearchableSelectField, SelectField, TextField, FieldHintIcon } from "../../../shared/ui";
 import { invalidateAccreditationQueries, useAccreditationSetupCatalogs } from "../hooks/useAccreditationQueries";
 import {
   saveAccreditationMatrixRule,
@@ -19,85 +19,17 @@ import type {
   AccreditationStandard,
   AccreditationStandardRequirementRule
 } from "../types";
-
-const defaultSiteForm = {
-  siteId: "",
-  code: "",
-  name: "",
-  siteType: "contract",
-  contractCode: "",
-  areaCode: "",
-  description: ""
-};
-
-const defaultRequirementForm = {
-  requirementId: "",
-  code: "",
-  name: "",
-  category: "general",
-  description: "",
-  alertDaysBeforeExpiry: "30",
-  validityDays: "",
-  processScope: "accreditation" as "accreditation" | "internal_license" | "both",
-  requiresExpiryDate: false,
-  isMandatory: true,
-  blocksAccreditation: true
-};
-
-const defaultStandardForm = {
-  standardId: "",
-  code: "",
-  name: "",
-  ownerName: "",
-  description: ""
-};
-
-const defaultStandardRequirementForm = {
-  ruleId: "",
-  standardId: "",
-  requirementId: "",
-  sortOrder: "0",
-  notes: ""
-};
-
-const defaultSiteStandardForm = {
-  ruleId: "",
-  siteId: "",
-  standardId: "",
-  notes: ""
-};
-
-const defaultMatrixForm = {
-  ruleId: "",
-  siteId: "",
-  requirementId: "",
-  jobTitle: "",
-  sortOrder: "0",
-  notes: ""
-};
-
-const fallbackSiteTypeOptions: SelectOption[] = [
-  { value: "contract", label: "Contrato" },
-  { value: "cost_center", label: "Centro de costo" },
-  { value: "project", label: "Proyecto" },
-  { value: "site", label: "Instalacion" },
-  { value: "other", label: "Otro" }
-];
-
-const fallbackRequirementCategoryOptions: SelectOption[] = [
-  { value: "general", label: "General" },
-  { value: "documental", label: "Documental" },
-  { value: "seguridad", label: "Seguridad" },
-  { value: "salud", label: "Salud" },
-  { value: "operacional", label: "Operacional" },
-  { value: "habilitante", label: "Habilitante" }
-];
-
-const fallbackProcessScopeOptions: SelectOption[] = [
-  { value: "accreditation", label: "Acreditacion ingreso" },
-  { value: "internal_license", label: "Licencia interna" },
-  { value: "both", label: "Ingreso y licencia interna" }
-];
+import {
+  defaultMatrixForm,
+  defaultRequirementForm,
+  defaultSiteForm,
+  defaultSiteStandardForm,
+  defaultStandardForm,
+  defaultStandardRequirementForm,
+  fallbackProcessScopeOptions,
+  fallbackRequirementCategoryOptions,
+  fallbackSiteTypeOptions
+} from "../lib/settingsForms";
 
 function getFieldHint(guides: AccreditationFieldGuide[], key: string, fallback?: string) {
   const guide = guides.find((item) => item.key === key);

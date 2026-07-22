@@ -17,6 +17,12 @@ import {
   type WhoCauseType
 } from "../services/hiringControl";
 import {
+  buildEmptyWhoCauseDrafts,
+  isWhoCauseDraftComplete,
+  isWhoCauseDraftStarted,
+  type WhoCauseDraft
+} from "../lib/whoCauseDrafts";
+import {
   formatDateTimeValue,
   formatDateValue,
   getCandidateControlLockLabel,
@@ -45,25 +51,6 @@ type CandidateDetailSidebarProps = {
   onCandidateFileUpdated?: () => Promise<void>;
   onTransferCandidateRequested?: () => void;
 };
-
-type WhoCauseDraft = {
-  type: WhoCauseType | "";
-  year: string;
-  comment: string;
-};
-
-const isWhoCauseDraftStarted = (cause: WhoCauseDraft) =>
-  Boolean(cause.type || cause.year.trim() || cause.comment.trim());
-
-const isWhoCauseDraftComplete = (cause: WhoCauseDraft) =>
-  Boolean(cause.type && cause.year.trim() && cause.comment.trim());
-
-const buildEmptyWhoCauseDrafts = (): WhoCauseDraft[] =>
-  Array.from({ length: 4 }, () => ({
-    type: "",
-    year: "",
-    comment: ""
-  }));
 
 export function CandidateDetailSidebar({
   mode = "candidate_control",

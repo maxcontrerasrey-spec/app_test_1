@@ -502,6 +502,20 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 
 ## Proximos objetivos vivos
 
+- [x] EEES P2 - Complejidad, reutilizacion y mantenibilidad:
+  - [x] Leer reportes P1/P2, Boot Sequence, tasks, lessons y Books aplicables.
+  - [x] Medir baseline de archivos criticos, Guardian warnings y accesos directos Supabase.
+  - [x] Refactorizar incrementalmente archivos P2.1 de mayor riesgo sin cambiar comportamiento.
+  - [x] Reducir duplicacion real en helpers, hooks, services, mappings y query keys cuando exista mas de un consumidor o reduzca riesgo claro.
+  - [x] Cerrar accesos directos Supabase fuera de boundaries permitidos o clasificar excepciones tecnicamente justificadas.
+  - [x] Actualizar auditoria de complejidad, baselines, lessons y reporte P2.
+  - [x] Ejecutar `npm run guardian:full`, TypeScript, build, gates afectados y `git diff --check`.
+
+  Resultado aplicado:
+  - Se redujeron 13 archivos criticos sobre 800 lineas a 0 archivos restantes sobre el umbral.
+  - Guardian bajo de 14 warnings historicos a 0 warnings sin relajar reglas ni suppressions.
+  - Se extrajeron mappers, helpers, hooks, servicios y componentes visuales conservando exports publicos.
+  - Validacion final registrada en `eees/audits/P2-CLOSURE-REPORT.md`.
 - [ ] EEES P1 - Cerrar smokes autenticados por rol y auditar deuda legacy de onboarding:
   - [x] Leer `eees/audits/FINAL-IMPLEMENTATION-REPORT.md`, `tasks/todo.md`, Boot Sequence y Books aplicables.
   - [x] Inspeccionar manifiesto, scripts, workflow y documentacion de smokes autenticados.

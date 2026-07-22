@@ -16,145 +16,25 @@ import {
 } from "../hooks/useIncentivesQueries";
 import type {
   HrIncentiveEligibleWorker,
-  HrIncentiveRosterSnapshot,
   HrIncentiveSetupCatalogs
 } from "../types";
 import {
   resolveIncentiveContractMismatch,
   resolveIncentiveRegistrationWindow
 } from "../lib/incentiveRules";
+import {
+  buildAreaOptionValue,
+  buildHourlyRateBreakdownCopy,
+  isReplacementWorkerEligible,
+  resolveRosterStatusAppearance
+} from "../lib/incentiveRegistrationHelpers";
 import { IncentiveWorkerLookup } from "./IncentiveWorkerLookup";
 import { IncentiveOperationalFlags } from "./IncentiveOperationalFlags";
+import { IncentiveRuleAlert } from "./IncentiveRuleAlert";
 
 type IncentiveRegistrationFormProps = {
   setupCatalogsQuery: UseQueryResult<HrIncentiveSetupCatalogs, Error>;
 };
-
-function buildAreaOptionValue(
-  contractCode: string | null,
-  areaCode: string | null,
-  areaName: string | null
-) {
-  return [contractCode ?? "", areaCode ?? "", areaName ?? ""].join("::");
-}
-
-function EmergencyIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="hr-incentives-rule-alert-icon"
-      focusable="false"
-      viewBox="0 0 20 20"
-    >
-      <path
-        d="M10 1.75 3.15 4.1 1.75 10l1.4 5.9L10 18.25l6.85-2.35 1.4-5.9-1.4-5.9L10 1.75Zm.05 4.2c.5 0 .9.39.9.88v4.52a.9.9 0 0 1-1.8 0V6.83c0-.49.4-.88.9-.88Zm0 8.2a1.03 1.03 0 1 1 0-2.05 1.03 1.03 0 0 1 0 2.05Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function IncentiveRuleAlert({ children }: { children: string }) {
-  return (
-    <div className="hr-incentives-rule-alert" role="alert">
-      <div className="hr-incentives-rule-alert-icon-shell" aria-hidden="true">
-        <EmergencyIcon />
-      </div>
-      <div className="hr-incentives-rule-alert-copy">
-        <strong className="hr-incentives-rule-alert-title">Bloqueo operativo</strong>
-        <span>{children}</span>
-      </div>
-    </div>
-  );
-}
-
-function resolveRosterStatusAppearance(snapshot: HrIncentiveRosterSnapshot | null) {
-  if (!snapshot) {
-    return null;
-  }
-
-  if (snapshot.blockedByAbsence) {
-    return {
-      tone: "danger" as const,
-      title: snapshot.scheduleLabel ?? "Vacaciones o licencia médica",
-      description: "El sistema bloqueará el registro mientras este estado siga vigente."
-    };
-  }
-
-  if (snapshot.isRestDay) {
-    return {
-      tone: "warning" as const,
-      title: "En descanso",
-      description: "Si registras el incentivo, el calendario operativo quedará marcado como turno adicional."
-    };
-  }
-
-  if (snapshot.scheduleStatus === "working" || snapshot.scheduleStatus === "extra_shift") {
-    return {
-      tone: "success" as const,
-      title: snapshot.scheduleStatus === "extra_shift" ? "Turno adicional" : "En turno",
-      description: "El trabajador figura operativo para la fecha seleccionada."
-    };
-  }
-
-  if (snapshot.scheduleStatus === "training") {
-    return {
-      tone: "success" as const,
-      title: "Capacitación",
-      description: "El trabajador tiene una excepción operativa activa para esa fecha."
-    };
-  }
-
-  return {
-    tone: "neutral" as const,
-    title: snapshot.scheduleLabel ?? "Sin pauta",
-    description: "No existe una pauta operativa concluyente para la fecha seleccionada."
-  };
-}
-
-function isReplacementWorkerEligible(snapshot: HrIncentiveRosterSnapshot | null) {
-  if (!snapshot) {
-    return false;
-  }
-
-  return snapshot.scheduleStatus === "working" || snapshot.scheduleStatus === "extra_shift";
-}
-
-function buildHourlyRateBreakdownCopy(params: {
-  hourRateStrategy: "rule_amount" | "buk_overtime";
-  rateSource: "rule_amount" | "buk_payload" | "rule_fallback_salary";
-  rateRuleAmount: number;
-  rateBaseSalary: number | null;
-  rateWeeklyHours: number | null;
-  rateOvertimeMultiplier: number | null;
-}) {
-  const {
-    hourRateStrategy,
-    rateSource,
-    rateRuleAmount,
-    rateBaseSalary,
-    rateWeeklyHours,
-    rateOvertimeMultiplier
-  } = params;
-
-  if (hourRateStrategy !== "buk_overtime") {
-    return null;
-  }
-
-  if (rateSource === "buk_payload" && rateBaseSalary !== null && rateWeeklyHours !== null) {
-    return `Valor hora extra calculado desde BUK: ${formatCurrencyValue(rateRuleAmount)} (${formatCurrencyValue(rateBaseSalary)} base / ${rateWeeklyHours} hrs semanales x ${rateOvertimeMultiplier ?? 1.5}).`;
-  }
-
-  if (
-    rateSource === "rule_fallback_salary" &&
-    rateBaseSalary !== null &&
-    rateWeeklyHours !== null
-  ) {
-    return `Valor hora extra calculado desde fallback configurado: ${formatCurrencyValue(rateRuleAmount)} (${formatCurrencyValue(rateBaseSalary)} base / ${rateWeeklyHours} hrs semanales x ${rateOvertimeMultiplier ?? 1.5}).`;
-  }
-
-  return `No hubo datos salariales suficientes en BUK; se aplicó el valor hora de respaldo definido en la regla: ${formatCurrencyValue(rateRuleAmount)}.`;
-}
 
 export function IncentiveRegistrationForm({
   setupCatalogsQuery

@@ -44,6 +44,8 @@ baseline_date: 2026-07-22
 ## Guardian y certificacion
 
 - [P1 Closure Report](audits/P1-CLOSURE-REPORT.md)
+- [P2 Closure Report](audits/P2-CLOSURE-REPORT.md)
+- [Code Reuse and Complexity Audit](audits/CODE-REUSE-AND-COMPLEXITY-AUDIT.md)
 - [Rules JSON](guardian/rules.json)
 - [Suppressions](guardian/suppressions.json)
 - [Regression Policy](guardian/REGRESSION-POLICY.md)

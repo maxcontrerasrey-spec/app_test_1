@@ -19,9 +19,18 @@ import {
   type AppModuleCode,
   type AppRole
 } from "../config/access";
-import { buildPublicAppUrl } from "../../../shared/config/runtime";
 import { logger } from "../../../shared/lib/logger";
 import { isSupabaseConfigured, supabase } from "../../../shared/lib/supabase";
+import {
+  acceptAupPolicyForCurrentUser,
+  fetchEffectivePermissions,
+  fetchSharedLoginOperatorOptions,
+  markCurrentProfilePasswordResetComplete,
+  selectSharedLoginOperator,
+  sendPasswordResetEmail,
+  signInWithPassword,
+  updateCurrentUserPassword
+} from "../services/authApi";
 
 type ProfileRecord = {
   id: string;
@@ -127,10 +136,6 @@ function detectRecoveryMode() {
     hashParams.get("type") === "recovery" ||
     hashParams.get("recovery") === "1"
   );
-}
-
-function buildResetPasswordRedirectUrl() {
-  return buildPublicAppUrl("/reset-password");
 }
 
 function normalizeStringArray(value: unknown) {
@@ -330,7 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const { data, error } = await supabaseClient.rpc("get_my_effective_permissions");
+        const { data, error } = await fetchEffectivePermissions();
 
         if (!isMounted) {
           return;
@@ -370,9 +375,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setAccessibleFeatures(Array.from(new Set(nextFeatures)));
 
-        const { data: operatorData, error: operatorError } = await supabaseClient.rpc(
-          "get_shared_login_operator_options"
-        );
+        const { data: operatorData, error: operatorError } = await fetchSharedLoginOperatorOptions();
 
         if (!isMounted) {
           return;
@@ -534,12 +537,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: "Supabase no está configurado en este entorno." };
         }
 
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        return { error: error?.message ?? null };
+        return signInWithPassword(email, password);
       },
       selectOperator: async (operatorChoiceId) => {
         if (!supabase) {
@@ -551,14 +549,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: "Usuario no autenticado." };
         }
 
-        const { data, error } = await supabase.rpc("select_shared_login_operator", {
-          p_operator_choice_id: operatorChoiceId,
-          p_app_session_id: getAppSessionId(),
-          p_user_agent: typeof window === "undefined" ? null : window.navigator.userAgent
+        const { data, error } = await selectSharedLoginOperator({
+          operatorChoiceId,
+          appSessionId: getAppSessionId(),
+          userAgent: typeof window === "undefined" ? null : window.navigator.userAgent
         });
 
         if (error) {
-          return { error: error.message };
+          return { error: typeof error === "string" ? error : error.message };
         }
 
         const selectedOperator = normalizeSharedOperatorOption(data);
@@ -576,35 +574,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: "Supabase no está configurado en este entorno." };
         }
 
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: buildResetPasswordRedirectUrl()
-        });
-
-        return { error: error?.message ?? null };
+        return sendPasswordResetEmail(email);
       },
       updatePassword: async (password) => {
         if (!supabase) {
           return { error: "Supabase no está configurado en este entorno." };
         }
 
-        const { error } = await supabase.auth.updateUser({ password });
+        const { error } = await updateCurrentUserPassword(password);
         if (error) {
-          return { error: error.message };
+          return { error };
         }
 
         const currentUserId = user?.id ?? null;
 
         if (currentUserId) {
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .update({
-              must_reset_password: false,
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", currentUserId);
+          const { error: profileError } = await markCurrentProfilePasswordResetComplete(currentUserId);
 
           if (profileError) {
-            return { error: profileError.message };
+            return { error: profileError };
           }
 
           setProfile((currentProfile) =>
@@ -624,12 +612,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: "Supabase no está configurado en este entorno." };
         }
 
-        const { data, error } = await supabase.rpc("accept_aup_policy", {
-          p_ip_address: null
-        });
+        const { data, error } = await acceptAupPolicyForCurrentUser();
 
         if (error) {
-          return { error: error.message };
+          return { error: typeof error === "string" ? error : error.message };
         }
 
         const acceptedAt = typeof data === "string" ? data : new Date().toISOString();
