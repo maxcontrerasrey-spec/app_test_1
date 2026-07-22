@@ -356,17 +356,30 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 
 ## Correccion Inicio y Personal a Contratar
 
-- [x] Quitar filtros y busqueda del widget de inicio `Folios en curso`, dejando solo tarjetas informativas.
+- [x] Quitar solo los filtros desplegables del widget de inicio `Folios en curso`, conservando folios, busqueda, ordenamiento, detalle y paginacion.
 - [x] Revisar el flujo de generacion BUK en `Personal a Contratar` para que el candidato desaparezca de la lista despues de exito efectivo.
 - [x] Implementar refresco/invalidation sin alterar la generacion BUK ni relajar reglas backend.
 - [x] Validar build/auditorias relevantes, documentar aprendizaje, commitear y pushear a `main`.
 
 ### Resultado aplicado
 
-- El widget de inicio `Folios en curso` quedo como resumen puro: solo renderiza las cinco tarjetas informativas desde `operationalSummaryData.recruitment`.
-- Se eliminaron del resumen de inicio los filtros, busqueda, tabla, paginacion y consultas propias de folios para no duplicar la vista operacional de control de candidatos.
+- El widget de inicio `Folios en curso` conserva su vista natural de folios: tarjetas, busqueda, tabla, detalle expandible, ordenamiento y paginacion.
+- Se eliminaron solo los filtros desplegables de turno, pasajes, alojamiento y contrato del resumen de inicio para no duplicar controles operacionales.
 - La generacion BUK en `Personal a Contratar` ahora invalida cache aunque no exista una ficha lateral seleccionada y fuerza `refetch()` del listado despues del mensaje de exito.
 - Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs`, `npm run audit:buk-sync-guards`, `npm run check:edge:sync-buk-candidates`, `npm run audit:route-role-smoke`, `npm run audit:frontend-auth-smoke-matrix`, `npm run smoke:frontend-routes`, `npm run smoke:frontend-authenticated-matrix`, `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check` pasaron. La matriz autenticada quedo saltada localmente por falta de credenciales seguras, como en el contrato del workflow.
+
+## Correccion Inicio - restaurar folios y retirar solo filtros
+
+- [x] Restaurar los folios del widget de inicio que fueron eliminados por una interpretacion excesiva.
+- [x] Mantener las restricciones originales del widget: busqueda, query de procesos, detalle expandible, ordenamiento y paginacion.
+- [x] Eliminar solamente los desplegables de turno, pasajes, alojamiento y contrato en `Folios en curso`.
+- [x] Validar build/auditorias, documentar aprendizaje, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- Se restauro `ActiveFoliosWidget` con folios, tarjetas, busqueda, ordenamiento, detalle expandible y paginacion.
+- Se removieron solo los filtros desplegables y el filtrado local de turno, pasajes, alojamiento y contrato en el inicio.
+- Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs`, `npm run audit:route-role-smoke`, `npm run audit:buk-sync-guards`, `npm run check:edge:sync-buk-candidates`, `npm run audit:frontend-auth-smoke-matrix`, `npm run smoke:frontend-routes`, `npm run smoke:frontend-authenticated-matrix`, `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check` pasaron.
 
 ## Proximos objetivos vivos
 

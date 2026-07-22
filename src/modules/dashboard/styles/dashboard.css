@@ -675,8 +675,9 @@
   max-width: none;
 }
 
-.dashboard-folios-summary-only {
-  margin-bottom: 0;
+.dashboard-folios-search-row {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .dashboard-folios-kpis {

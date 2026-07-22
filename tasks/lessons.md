@@ -2586,6 +2586,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 175. Los resúmenes de inicio no deben mezclar controles operativos
 
-- **Si la captura corresponde al inicio, no dupliques filtros de la vista de trabajo.** `Folios en curso` debe resumir estado con tarjetas; los filtros viven en la seccion operacional donde el usuario actua sobre casos.
+- **Si la captura corresponde al inicio, no dupliques filtros de la vista de trabajo.** `Folios en curso` debe conservar sus folios naturales y retirar solo los controles desplegables que pertenecen a la seccion operacional.
+- **No interpretes "sacar filtros" como "sacar la tabla".** Antes de eliminar una superficie visible, separa filtros, busqueda, datos, paginacion y detalle; cambia solo el elemento pedido.
 - **Un exito BUK debe refrescar la cola aunque no haya ficha lateral seleccionada.** La invalidacion no puede depender de `selectedCandidateId`; las acciones masivas desde tabla tambien deben invalidar/refrescar su lista.
 - **El mensaje de exito no es suficiente evidencia visual.** Despues de procesar candidatos en BUK, fuerza la reconsulta del listado visible para que el candidato exitoso desaparezca de `Personal a Contratar`.
