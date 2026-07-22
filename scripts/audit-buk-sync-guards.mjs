@@ -4,6 +4,12 @@ import path from "node:path";
 const rootDir = process.cwd();
 const sourcePath = "supabase/functions/sync-buk-candidates/index.ts";
 const source = fs.readFileSync(path.join(rootDir, sourcePath), "utf8");
+const migrationsDir = path.join(rootDir, "supabase/migrations");
+const migrationSources = fs
+  .readdirSync(migrationsDir)
+  .filter((fileName) => fileName.endsWith(".sql"))
+  .map((fileName) => fs.readFileSync(path.join(migrationsDir, fileName), "utf8"))
+  .join("\n");
 
 const checks = [];
 
@@ -45,6 +51,13 @@ addCheck(
   /finalizeExistingActiveEmployeeJob/.test(source) &&
     /cancel_request_existing_active_buk_employee/.test(source),
   "solo el duplicado activo confirmado mantiene la cancelacion ERP"
+);
+addCheck(
+  /staleProcessingRecovery/.test(migrationSources) &&
+    /started_at\s*<\s*stale_cutoff/.test(migrationSources) &&
+    /source',\s*'claim_buk_sync_jobs'/.test(migrationSources) &&
+    /source',\s*'enqueue_buk_generation'/.test(migrationSources),
+  "jobs BUK processing obsoletos se recuperan al reclamar o reencolar"
 );
 
 const failedChecks = checks.filter((check) => !check.ok);

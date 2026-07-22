@@ -35,6 +35,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los dropdowns sobre tablas deben empujar contenido o reservar capa clara.** En widgets densos, un menu absoluto sobre filas produce texto mezclado; si el menu queda dentro de la tarjeta, debe abrirse en flujo para separar visualmente la tabla.
 - **El filtro `Contrato` necesita una columna prioritaria.** En reclutamiento, los contratos son datos operacionales largos; la grilla de filtros debe tratarlos como campo ancho, no como chip corto.
 
+## 271. Los jobs BUK en `processing` necesitan vencimiento y reintento
+
+- **`processing` no puede ser un estado terminal implicito.** Si una Edge Function termina sin finalizar el job, la cola debe recuperar registros con `started_at` antiguo y `finished_at` nulo.
+- **Reencolar desde UI debe rescatar trabajos obsoletos.** `enqueue_buk_generation` no debe devolver indefinidamente un job `processing` vencido; debe resetearlo a `pending` con auditoria y permitir que el dispatch interactivo lo ejecute.
+- **La recuperacion debe quedar trazada en `result_snapshot`.** Usa un objeto como `staleProcessingRecovery` con origen, timestamps y attempts previos para distinguir reintentos operativos de jobs nuevos.
+
 ## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
 
 - **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.
