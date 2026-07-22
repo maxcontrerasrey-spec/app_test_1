@@ -4,12 +4,14 @@ on:
   push:
     paths:
       - "docs/**"
+      - "eees/**"
       - "supabase/**"
       - "tasks/todo.md"
       - "tasks/lessons.md"
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-eees-guardian.mjs"
       - "scripts/audit-buk-sync-guards.mjs"
       - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-frontend-auth-smoke-secrets.mjs"
@@ -27,12 +29,14 @@ on:
   pull_request:
     paths:
       - "docs/**"
+      - "eees/**"
       - "supabase/**"
       - "tasks/todo.md"
       - "tasks/lessons.md"
       - "src/app/router/AppRouter.tsx"
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
+      - "scripts/audit-eees-guardian.mjs"
       - "scripts/audit-buk-sync-guards.mjs"
       - "scripts/audit-frontend-auth-smoke-matrix.mjs"
       - "scripts/audit-frontend-auth-smoke-secrets.mjs"
@@ -103,6 +107,9 @@ jobs:
 
       - name: Smoke frontend public and protected routes
         run: npm run smoke:frontend-routes
+
+      - name: EEES Guardian
+        run: npm run guardian
 
       - name: Smoke frontend authenticated route
         if: ${{ env.FRONTEND_AUTH_SMOKE_EMAIL != '' && env.FRONTEND_AUTH_SMOKE_PASSWORD != '' && env.VITE_SUPABASE_URL != '' && env.VITE_SUPABASE_ANON_KEY != '' }}

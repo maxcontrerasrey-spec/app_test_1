@@ -1,0 +1,272 @@
+[
+  {
+    "id": "ARCH-001",
+    "title": "Router protegido canonico",
+    "severity": "ERROR",
+    "scope": "src/app/router",
+    "source_document": "eees/books/ARCHITECTURE.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "ARCH-002",
+    "title": "Dominio antes que carpeta generica",
+    "severity": "WARNING",
+    "scope": "src/modules",
+    "source_document": "eees/books/ARCHITECTURE.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "ARCH-003",
+    "title": "Lazy loading por frontera de modulo",
+    "severity": "ERROR",
+    "scope": "src/app/router/routeModules.ts",
+    "source_document": "eees/books/ARCHITECTURE.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "DB-001",
+    "title": "Migraciones forward-only",
+    "severity": "ERROR",
+    "scope": "supabase/migrations",
+    "source_document": "eees/books/DATABASE.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "DB-002",
+    "title": "RLS por defecto",
+    "severity": "WARNING",
+    "scope": "supabase/migrations",
+    "source_document": "eees/books/DATABASE.md",
+    "automatable": true,
+    "blocking": false
+  },
+  {
+    "id": "DB-003",
+    "title": "RPC critica con grants explicitos",
+    "severity": "WARNING",
+    "scope": "supabase/migrations",
+    "source_document": "eees/books/DATABASE.md",
+    "automatable": true,
+    "blocking": false
+  },
+  {
+    "id": "SEC-001",
+    "title": "Service role fuera del navegador",
+    "severity": "ERROR",
+    "scope": "src",
+    "source_document": "eees/books/SECURITY.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "SEC-002",
+    "title": "Autorizacion backend autoritativa",
+    "severity": "ERROR",
+    "scope": "supabase/migrations",
+    "source_document": "eees/books/SECURITY.md",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "SEC-003",
+    "title": "Sin permisos por email",
+    "severity": "ERROR",
+    "scope": "src",
+    "source_document": "eees/books/SECURITY.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "FE-001",
+    "title": "Servicios de dominio para datos",
+    "severity": "WARNING",
+    "scope": "src/modules",
+    "source_document": "eees/books/FRONTEND.md",
+    "automatable": true,
+    "blocking": false
+  },
+  {
+    "id": "FE-002",
+    "title": "Query keys centralizadas",
+    "severity": "WARNING",
+    "scope": "src/shared/lib/queryKeys.ts",
+    "source_document": "eees/books/FRONTEND.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "BE-001",
+    "title": "Edge Functions con frontera explicita",
+    "severity": "ERROR",
+    "scope": "supabase/functions",
+    "source_document": "eees/books/BACKEND.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "BE-002",
+    "title": "Idempotencia en jobs",
+    "severity": "WARNING",
+    "scope": "supabase/functions scripts supabase/migrations",
+    "source_document": "eees/books/BACKEND.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "MOD-001",
+    "title": "Modulo routeado debe existir en matriz",
+    "severity": "ERROR",
+    "scope": "src/app/router docs/permissions-matrix.md",
+    "source_document": "eees/books/MODULE-STANDARD.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "MOD-002",
+    "title": "Nuevo modulo exige schema de autorizacion",
+    "severity": "ERROR",
+    "scope": "supabase/migrations src/modules",
+    "source_document": "eees/books/MODULE-STANDARD.md",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "INT-001",
+    "title": "BUK source of truth",
+    "severity": "ERROR",
+    "scope": "buk integrations",
+    "source_document": "eees/books/INTEGRATIONS.md",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "INT-002",
+    "title": "Sync auditable",
+    "severity": "WARNING",
+    "scope": "scripts supabase/functions",
+    "source_document": "eees/books/INTEGRATIONS.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "TST-001",
+    "title": "Bug critico exige guardrail",
+    "severity": "ERROR",
+    "scope": "tasks lessons tests scripts",
+    "source_document": "eees/books/TESTING-AUTOMATION.md",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "TST-002",
+    "title": "No declarar PASS sin ejecutar",
+    "severity": "ERROR",
+    "scope": "tasks docs eees",
+    "source_document": "eees/books/TESTING-AUTOMATION.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "OBS-001",
+    "title": "Errores con accion",
+    "severity": "WARNING",
+    "scope": "src shared",
+    "source_document": "eees/books/OBSERVABILITY.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "UX-001",
+    "title": "ERP denso y legible",
+    "severity": "WARNING",
+    "scope": "src styles",
+    "source_document": "eees/books/UX-DESIGN-SYSTEM.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "REL-001",
+    "title": "Main siempre verificable",
+    "severity": "ERROR",
+    "scope": ".github workflows",
+    "source_document": "eees/books/RELEASE-CICD.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "CICD-001",
+    "title": "Workflows con paths relevantes",
+    "severity": "ERROR",
+    "scope": ".github/workflows",
+    "source_document": "eees/books/RELEASE-CICD.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "DATA-001",
+    "title": "Datos personales minimizados",
+    "severity": "ERROR",
+    "scope": "public snapshots edge functions",
+    "source_document": "eees/books/DATA-DOCUMENTS.md",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "DOC-001",
+    "title": "Documentos privados por defecto",
+    "severity": "ERROR",
+    "scope": "storage buckets",
+    "source_document": "eees/books/DATA-DOCUMENTS.md",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "API-001",
+    "title": "Contratos de datos versionables",
+    "severity": "WARNING",
+    "scope": "services rpc edge",
+    "source_document": "eees/books/DATA-DOCUMENTS.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "ERR-001",
+    "title": "Errores UI sanitizados",
+    "severity": "ERROR",
+    "scope": "src/shared/lib/supabaseRpc.ts",
+    "source_document": "eees/books/SECURITY.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "PERF-001",
+    "title": "Archivos gigantes auditados",
+    "severity": "WARNING",
+    "scope": "src",
+    "source_document": "eees/audits/CODE-REUSE-AND-COMPLEXITY-AUDIT.md",
+    "automatable": true,
+    "blocking": false
+  },
+  {
+    "id": "CONC-001",
+    "title": "Jobs atomicos",
+    "severity": "WARNING",
+    "scope": "jobs queues",
+    "source_document": "eees/books/BACKEND.md",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "AI-001",
+    "title": "AI admin y conocimiento gobernado",
+    "severity": "WARNING",
+    "scope": "src/modules/ai_assistant supabase/functions/orion-chat",
+    "source_document": "eees/books/SECURITY.md",
+    "automatable": false,
+    "blocking": false
+  }
+]

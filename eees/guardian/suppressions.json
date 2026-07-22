@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "baseline_date": "2026-07-22",
+  "suppressions": [
+    {
+      "rule_id": "PERF-001",
+      "scope": "src/**/*.ts,src/**/*.tsx",
+      "reason": "Deuda historica de archivos grandes medida en baseline; warnings no bloqueantes hasta refactor progresivo.",
+      "expires_when": "Cada archivo critico tenga plan de extraccion o quede bajo 800 lineas."
+    },
+    {
+      "rule_id": "FE-001",
+      "scope": "src/modules/**/*.tsx",
+      "reason": "Existen accesos directos puntuales a Supabase en componentes historicos; Guardian reporta sin bloquear la reconstruccion inicial.",
+      "expires_when": "Cada acceso directo este migrado a servicio de dominio o justificado."
+    }
+  ]
+}

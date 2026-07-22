@@ -443,6 +443,24 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Se reutilizo la clase existente `expanded-detail-field-full`, sin agregar CSS nuevo ni alterar datos.
 - Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
 
+## EEES Enterprise Rebuild
+
+- [x] Leer completo `CODEX_MASTER_PROMPT_EEES_ENTERPRISE.md` y fuentes obligatorias principales.
+- [x] Auditar estructura real: frontend, Supabase, scripts, CI, docs y tasks.
+- [x] Crear `eees/` con foundation, baselines, books, guardian, certification, playbooks, knowledge y codex.
+- [x] Implementar `npm run guardian` con reglas machine-readable, metadata, referencias, marcadores de relleno y gates existentes.
+- [x] Ejecutar validaciones locales aplicables y auditoria final de consistencia EEES.
+- [x] Generar reporte final, artifact zip, commit, push y verificar CI.
+
+### Resultado aplicado
+
+- Se construyo EEES inicial con 41 archivos normativos y auditorias.
+- Se agrego `npm run guardian` y `npm run guardian:full`.
+- Guardian quedo integrado al workflow `Audit Enterprise Guardrails` para cambios en `eees/**`.
+- Validacion local: `npx tsc -b --pretty false`, `npm run build`, `npm run guardian:full`, `npm run audit:buk-sync-guards` y `git diff --check` pasaron.
+- Artifact generado: `artifacts/EEES_ENTERPRISE_FINAL.zip`.
+- Cierre operativo: commit, push y verificacion CI ejecutados al finalizar la iteracion.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

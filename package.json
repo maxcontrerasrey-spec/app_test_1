@@ -24,6 +24,8 @@
     "audit:route-role-smoke": "node scripts/audit-route-role-smoke.mjs",
     "audit:buk-sync-guards": "node scripts/audit-buk-sync-guards.mjs",
     "audit:supabase-security": "node scripts/audit-supabase-security.mjs",
+    "guardian": "node scripts/audit-eees-guardian.mjs",
+    "guardian:full": "node scripts/audit-eees-guardian.mjs --full",
     "provision:hiring-approvers": "node scripts/provision-hiring-approvers.mjs",
     "provision:users-matrix": "node scripts/provision-users-from-matrix.mjs"
   },
