@@ -381,6 +381,18 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Se removieron solo los filtros desplegables y el filtrado local de turno, pasajes, alojamiento y contrato en el inicio.
 - Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs`, `npm run audit:route-role-smoke`, `npm run audit:buk-sync-guards`, `npm run check:edge:sync-buk-candidates`, `npm run audit:frontend-auth-smoke-matrix`, `npm run smoke:frontend-routes`, `npm run smoke:frontend-authenticated-matrix`, `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check` pasaron.
 
+## Ajuste Inicio - busqueda junto a tarjetas de folios
+
+- [x] Mover la busqueda de `Folios en curso` a la grilla de tarjetas, junto a `Casos cubiertos`.
+- [x] Darle a la busqueda el mismo ancho de celda y altura visual que las tarjetas informativas.
+- [x] Validar frontend/documentacion, commitear y pushear a `main`.
+
+### Resultado aplicado
+
+- La busqueda ahora es el sexto elemento de la grilla de `Folios en curso`; en el layout de tres columnas queda a la derecha de `Casos cubiertos`.
+- La caja de busqueda usa el mismo ancho de celda, padding y radio visual que las tarjetas informativas.
+- Validacion local: `npm run build:frontend-check`, `npm run audit:enterprise-docs` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.

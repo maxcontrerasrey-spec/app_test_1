@@ -671,20 +671,25 @@
 }
 
 .dashboard-folios-search {
-  min-width: 30rem;
-  max-width: none;
+  min-width: 0;
+  width: 100%;
+  min-height: 0;
+  padding: 0.62rem 0.75rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--soft-border);
+  background: var(--soft-surface);
+  box-shadow: var(--shadow-soft);
 }
 
-.dashboard-folios-search-row {
-  display: flex;
-  justify-content: flex-start;
+.dashboard-folios-search .text-field {
+  min-height: 2.42rem;
 }
 
 .dashboard-folios-kpis {
   margin-top: 0;
   gap: 0.75rem;
   width: 100%;
-  grid-template-columns: repeat(5, minmax(132px, 1fr));
+  grid-template-columns: repeat(6, minmax(132px, 1fr));
 }
 
 .dashboard-folios-kpi-card {

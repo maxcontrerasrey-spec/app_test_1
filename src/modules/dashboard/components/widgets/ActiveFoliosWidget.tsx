@@ -208,9 +208,6 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
               value={kpi.value}
             />
           ))}
-        </div>
-
-        <div className="dashboard-folios-search-row">
           <TextField
             id="dashboard-folios-search"
             label="Buscar folio en curso"
