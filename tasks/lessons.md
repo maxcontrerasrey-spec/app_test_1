@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 273. La empresa de un contrato BUK debe corregirse en mapping y fallback
+
+- **El nombre visible en movilidad puede venir de `buk_contract_mappings.company_name`, no del contrato base.** Si una movilidad interna muestra empresa destino incorrecta, revisa el mapping BUK antes de tocar UI.
+- **`resolve_known_company_name(...)` tambien es fuente autoritativa.** Un contrato cuyo sufijo BUK parece `:0001` puede pertenecer operacionalmente a otra empresa; registra excepciones por `contract_number` exacto antes del fallback generico por sufijo.
+- **Corrige historico transaccional y snapshots juntos.** Para movilidades ya emitidas, actualiza `internal_mobility_requests`, `requires_termination` y `internal_mobility_request_snapshots.payload` en la misma migracion forward-only.
+- **Agrega guardrail para contratos criticos.** Si negocio corrige un contrato como CODELCO DRT, el auditor BUK debe bloquear que vuelva a quedar como Buses JM.
+
 ## 266. Los errores Supabase/fetch deben sanitizarse antes de llegar a la UI
 
 - **Un `TypeError: Failed to fetch` es una excepcion de transporte, no un mensaje de negocio.** Si se muestra con stack trace del bundle (`assets/...js`), el problema es la frontera de manejo de errores aunque la RPC backend este sana.

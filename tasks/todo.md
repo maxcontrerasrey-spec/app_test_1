@@ -461,6 +461,26 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Artifact generado: `artifacts/EEES_ENTERPRISE_FINAL.zip`.
 - Cierre operativo: commit, push y verificacion CI ejecutados al finalizar la iteracion.
 
+## Correccion Contratos - empresa CODELCO DRT
+
+- [x] Confirmar en Supabase vivo como esta modelado CODELCO DRT en `contracts`, `buk_contract_mappings`, contrataciones y movilidad interna.
+- [x] Identificar si la carga a Buses JM nace de datos del contrato, fallback `resolve_known_company_name(...)`, mapeo BUK o snapshot historico.
+- [x] Aplicar correccion forward-only para que CODELCO DRT resuelva empresa Consorcio Nuevo Norte sin relajar permisos/RLS.
+- [x] Validar contrataciones y movilidad interna con consultas remotas/smokes en rollback.
+- [x] Ejecutar gates EEES aplicables, documentar aprendizaje y dejar el cierre versionado.
+
+### Resultado aplicado
+
+- Causa raiz confirmada en produccion: `buk_contract_mappings.company_name` para `6170400010:0001 / CODELCO DRT` estaba como `Buses JM Pullman S.A.` y `resolve_known_company_name(null, '6170400010:0001')` devolvia el mismo valor.
+- Se agrego la migracion `20260722150218_fix_codelco_drt_company_consorcio_nuevo_norte.sql`.
+- La migracion corrige `resolve_known_company_name(...)`, `buk_contract_mappings`, movilidades internas historicas DRT y `internal_mobility_request_snapshots`.
+- Produccion fue aplicada por `supabase db query --file` y registrada en `supabase_migrations.schema_migrations` como `20260722150218`.
+- Validacion remota: `buk_contract_mappings` para `CODELCO DRT` quedo con `company_name = Consorcio nuevo norte SPA`; `resolve_known_company_name(...)` devuelve Consorcio Nuevo Norte para `6170400010:0001` y `6170400010:0004`.
+- Validacion remota: movilidad `MI-0050` quedo con `destination_company_name = Consorcio nuevo norte SPA` y `requires_termination = true`.
+- Validacion remota autenticada: `get_internal_mobility_setup_catalogs()` devuelve `CONT-029 · CODELCO DRT · Consorcio nuevo norte SPA`.
+- Guardrail: `audit:buk-sync-guards` ahora bloquea que CODELCO DRT vuelva a quedar fuera de Consorcio Nuevo Norte.
+- Validacion local: `npm run guardian`, `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run audit:buk-sync-guards` y `git diff --check` pasaron.
+
 ## Proximos objetivos vivos
 
 - [ ] EEES P1 - Cerrar smokes autenticados por rol y auditar deuda legacy de onboarding:

@@ -59,6 +59,14 @@ addCheck(
     /source',\s*'enqueue_buk_generation'/.test(migrationSources),
   "jobs BUK processing obsoletos se recuperan al reclamar o reencolar"
 );
+addCheck(
+  /6170400010:0001/.test(migrationSources) &&
+    /CODELCO DRT/.test(migrationSources) &&
+    /Consorcio nuevo norte SPA/.test(migrationSources) &&
+    /resolve_known_company_name/.test(migrationSources) &&
+    /internal_mobility_requests/.test(migrationSources),
+  "CODELCO DRT queda mapeado a Consorcio nuevo norte en contratos BUK y movilidad interna"
+);
 
 const failedChecks = checks.filter((check) => !check.ok);
 
