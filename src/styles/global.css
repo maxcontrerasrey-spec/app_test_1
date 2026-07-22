@@ -4075,9 +4075,16 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   flex-wrap: wrap;
 }
 
+.tracking-toolbar-processes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.55rem;
+}
+
 .tracking-toolbar-copy {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.12rem;
 }
 
 .tracking-toolbar-copy h3 {
@@ -4099,16 +4106,20 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 .tracking-filters-processes {
-  width: min(100%, 960px);
+  width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
   align-items: end;
-  gap: 0.7rem;
+  gap: 0.55rem;
 }
 
 .tracking-filter-select-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(118px, 1fr));
+  grid-template-columns:
+    minmax(110px, 0.75fr)
+    minmax(110px, 0.75fr)
+    minmax(132px, 0.9fr)
+    minmax(260px, 1.8fr);
   gap: 0.6rem;
 }
 
@@ -4116,8 +4127,23 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   min-width: 0;
 }
 
+.tracking-filters-processes .text-field {
+  min-height: 2.65rem;
+  padding-inline: 0.78rem;
+}
+
+.tracking-filters-processes .select-trigger {
+  padding-right: 0.58rem;
+}
+
+.tracking-filters-processes .select-trigger-icon {
+  width: 1.32rem;
+  height: 1.32rem;
+  font-size: 0.66rem;
+}
+
 .tracking-filter-select-contract {
-  min-width: min(100%, 180px);
+  min-width: 0;
 }
 
 .tracking-filters-inline {

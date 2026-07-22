@@ -307,13 +307,9 @@ export function HiringProcessesView({
         {decisionMessage ? <p className="form-status">{decisionMessage}</p> : null}
       </article>
 
-      <div className="tracking-toolbar">
+      <div className="tracking-toolbar tracking-toolbar-processes">
         <div className="tracking-toolbar-copy">
           <h3>Resumen de procesos de contratación</h3>
-          <span className="tracking-filter-caption">
-            Tabla de seguimiento de folios aprobados y activos en búsqueda, con volumen
-            operativo por folio.
-          </span>
         </div>
         <div className="tracking-filters tracking-filters-processes">
           <div className="tracking-filter-select-row">

@@ -235,6 +235,7 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - Se agrego `scripts/audit-buk-sync-guards.mjs`, `npm run audit:buk-sync-guards` y ejecucion en GitHub Actions para bloquear regresiones de estas ramas.
 - La vista `Resumen de procesos de contratación` agrega filtros desplegables por turno, pasajes, alojamiento y contrato junto a `Buscar casos`, usando `SelectField` compartido y filtrado local sobre campos ya entregados por `get_recruitment_processes_page`.
 - Correccion posterior: la primera version instalo filtros en el widget de dashboard equivocado; se corrigio la superficie real de la captura en `HiringProcessesView` y se documento la leccion para validar el heading/input exacto antes de cerrar UI.
+- Ajuste visual posterior: se elimino el texto descriptivo bajo el titulo, se compacto la altura de los desplegables y el toolbar usa todo el ancho disponible para dar mas espacio visible al filtro `Contrato`.
 - Validacion local: `npm run audit:buk-sync-guards`, `./node_modules/.bin/tsc -b --pretty false`, `npm run build:frontend-check`, `npm run audit:route-role-smoke`, `npm run audit:supabase-security`, `npm run audit:enterprise-docs`, `npm run audit:migrations`, `npm run smoke:frontend-routes` y `git diff --check` pasaron.
 - Deploy remoto: `sync-buk-candidates` desplegada en Supabase project `pzblmbahnoyntrhistea` con `npx --yes supabase functions deploy sync-buk-candidates --use-api --yes`.
 

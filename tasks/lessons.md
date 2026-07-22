@@ -24,6 +24,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Verifica el heading y el input visible antes de cerrar UI.** Buscar el texto exacto de la captura, como `Buscar casos`, evita dejar controles correctos en una pantalla que el usuario no esta mirando.
 - **Una correccion visual debe validarse contra el contenedor real.** Los filtros solicitados al lado izquierdo de la busqueda pertenecen al toolbar de esa tabla y deben convivir con su paginacion, busqueda y chips de estado existentes.
 
+## 269. Los filtros de valores largos deben usar el ancho disponible de la seccion
+
+- **No limites artificialmente un toolbar si el contenedor ofrece espacio lateral.** En filtros de folios, `Contrato` puede contener nombres largos; la grilla debe darle mayor proporcion y usar el ancho completo disponible.
+- **Compactar altura no debe sacrificar legibilidad horizontal.** Reducir `min-height` y padding ayuda a adelgazar modulos, pero los campos con texto operacional largo necesitan columnas mas anchas antes que truncado prematuro.
+
 ## 265. Reabrir descartados hacia control documental debe cancelar la limpieza pendiente
 
 - **`Descartados` agrupa `rejected` y `withdrawn`.** Antes de reparar, identifica el estado terminal real, el folio/caso, el RUT y el motivo; no asumas que todo descartado es `rejected`.
