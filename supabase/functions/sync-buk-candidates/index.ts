@@ -2362,6 +2362,8 @@ async function assertCandidateDocumentFilesExist(
 
 async function processDocuments(
   supabase: SupabaseAdminClient,
+  jobId: string,
+  jobResultSnapshot: Record<string, unknown>,
   payload: BukCandidateSyncPayload,
   employeeId: string,
   uploadedDocuments: Array<Record<string, unknown>>,
@@ -2369,6 +2371,14 @@ async function processDocuments(
 ) {
   for (const document of payload.documents) {
     if (alreadyUploadedDocumentIds.has(document.id)) {
+      if (document.file_path) {
+        const { error: cleanupError } = await supabase.storage
+          .from("candidate-docs")
+          .remove([document.file_path]);
+        if (cleanupError) {
+          throw new Error(`No fue posible completar la limpieza local de ${document.document_name}: ${cleanupError.message}`);
+        }
+      }
       continue;
     }
 
@@ -2389,14 +2399,6 @@ async function processDocuments(
     const uploadPayload = uploadResult.payload;
     const { bukDocumentId, bukDocumentUrl, bukEmployeeFolderId } = extractBukDocumentMetadata(uploadPayload);
 
-    const { error: removeError } = await supabase.storage
-      .from("candidate-docs")
-      .remove([document.file_path]);
-
-    if (removeError) {
-      throw new Error(`El documento se subió a Buk, pero no se pudo eliminar ${document.document_name} de Supabase Storage: ${removeError.message}`);
-    }
-
     uploadedDocuments.push({
       sourceDocumentId: document.id,
       sourceDocumentName: document.document_name,
@@ -2410,6 +2412,19 @@ async function processDocuments(
       response: uploadPayload
     });
     alreadyUploadedDocumentIds.add(document.id);
+    jobResultSnapshot.documents = uploadedDocuments;
+    await markJobState(supabase, jobId, {
+      status: "processing",
+      result_snapshot: jobResultSnapshot
+    });
+
+    const { error: removeError } = await supabase.storage
+      .from("candidate-docs")
+      .remove([document.file_path]);
+
+    if (removeError) {
+      throw new Error(`El documento se subió a Buk, pero no se pudo eliminar ${document.document_name} de Supabase Storage: ${removeError.message}`);
+    }
   }
 
   return uploadedDocuments;
@@ -2666,6 +2681,8 @@ Deno.serve(async (req) => {
 
           await processDocuments(
             supabase,
+            job.id,
+            jobResultSnapshot,
             payload,
             employeeId,
             uploadedDocuments,

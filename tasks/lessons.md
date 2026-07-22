@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 274. Reintentos transparentes también afectan RPC POST
+
+- **Una transacción no vuelve replay-safe una mutación.** El cliente puede reintentar después de un commit cuya respuesta se perdió.
+- **Las creaciones críticas necesitan una clave estable por invocación.** Impón unicidad por actor y resuelve el replay bajo lock transaccional.
+- **Un check de overlap sin serialización deja una carrera.** Bloquea por identidad de negocio antes de leer y escribir rangos.
+- **Las tablas audit-only también necesitan RLS.** Así una ampliación futura de grants no abre el dato por accidente.
+
 ## 273. La empresa de un contrato BUK debe corregirse en mapping y fallback
 
 - **El nombre visible en movilidad puede venir de `buk_contract_mappings.company_name`, no del contrato base.** Si una movilidad interna muestra empresa destino incorrecta, revisa el mapping BUK antes de tocar UI.

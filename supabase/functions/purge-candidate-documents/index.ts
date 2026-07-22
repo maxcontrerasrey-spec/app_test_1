@@ -38,6 +38,7 @@ type CandidateCleanupGuardRow = {
   candidate_profile_id: string;
   stage_code: string;
 };
+type EdgeClient = ReturnType<typeof createClient<any, "public", any>>;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,7 +76,7 @@ function resolveErrorStatus(error: unknown) {
 }
 
 async function markJobState(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   jobId: string,
   values: Record<string, unknown>
 ) {
@@ -90,7 +91,7 @@ async function markJobState(
 }
 
 async function claimJobs(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   request: CleanupRequest
 ) {
   const batchLimit = Math.min(Math.max(request.limit ?? 25, 1), 250);
@@ -112,7 +113,7 @@ async function claimJobs(
 }
 
 async function authorizeInteractiveCleanup(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   actorUserId: string,
   request: CleanupRequest
 ) {
@@ -143,7 +144,7 @@ async function authorizeInteractiveCleanup(
 }
 
 async function enqueueSweepJobs(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   request: CleanupRequest
 ) {
   const batchLimit = Math.min(Math.max(request.limit ?? 25, 1), 250);
@@ -202,7 +203,7 @@ async function enqueueSweepJobs(
 }
 
 async function fetchCandidateDocuments(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   job: CleanupJobRow
 ) {
   const { data, error } = await supabase
@@ -219,7 +220,7 @@ async function fetchCandidateDocuments(
 }
 
 async function assertCandidateCleanupStillApplicable(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   job: CleanupJobRow
 ) {
   const { data, error } = await supabase
@@ -259,7 +260,7 @@ async function assertCandidateCleanupStillApplicable(
 }
 
 async function purgeCandidateDocuments(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   job: CleanupJobRow
 ) {
   await assertCandidateCleanupStillApplicable(supabase, job);
@@ -268,6 +269,17 @@ async function purgeCandidateDocuments(
   const filePaths = Array.from(
     new Set(documents.map((document) => document.file_path?.trim() ?? "").filter(Boolean))
   );
+
+  await markJobState(supabase, job.id, {
+    status: "processing",
+    result_snapshot: {
+      phase: "purge_intent_recorded",
+      terminal_stage: job.terminal_stage,
+      document_ids: documents.map((document) => document.id),
+      storage_paths: filePaths,
+      recorded_at: new Date().toISOString()
+    }
+  });
 
   if (filePaths.length > 0) {
     const { error: removeError } = await supabase.storage
@@ -335,7 +347,7 @@ Deno.serve(async (req) => {
       "SUPABASE_SERVICE_ROLE_KEY"
     );
     const internalWebhookSecret = (Deno.env.get("CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET") ?? "").trim();
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
     const authHeader = req.headers.get("Authorization") ?? "";
     const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
     const suppliedWebhookSecret = (req.headers.get("x-internal-webhook-secret") ?? "").trim();

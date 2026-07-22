@@ -140,6 +140,18 @@ jobs:
       - name: Contract tests
         run: npm run test:contracts
 
+      - name: CORE integrity tests
+        run: npm run test:integrity
+
+      - name: CORE concurrency tests
+        run: npm run test:concurrency
+
+      - name: CORE idempotency tests
+        run: npm run test:idempotency
+
+      - name: Audit CORE data integrity
+        run: npm run audit:core-data-integrity
+
       - name: Coverage gate
         run: npm run test:coverage
 

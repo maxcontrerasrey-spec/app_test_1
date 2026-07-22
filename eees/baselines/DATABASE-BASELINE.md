@@ -11,6 +11,14 @@ baseline_date: 2026-07-22
 
 # Database Baseline
 
+## Extensión CORE 2026-07-22
+
+- Mutaciones de contratación, documentos candidato y onboarding: RPC/Edge canónico, sin grants de escritura cliente.
+- Creación de contratación e incentivos: idempotency key única por actor.
+- Asignación de jornadas: serializada por trabajador.
+- Snapshot mensual BUK: append-once y exclusivo de service role.
+- Metadata terminal de contratación/candidatos: constraints de base de datos.
+
 ## Inventario medido
 
 - Migraciones SQL: 347.

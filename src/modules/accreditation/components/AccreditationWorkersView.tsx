@@ -108,39 +108,30 @@ export function AccreditationWorkersView() {
     setFeedback(null);
 
     try {
-      let bukDocumentId: string | null = null;
-      let bukDocumentUrl: string | null = null;
-      let bukDocumentName: string | null = null;
-      let uploadPayload: Record<string, unknown> = {};
-
       if (selectedFile) {
-        const uploadResult = await uploadAccreditationDocumentToBuk({
+        await uploadAccreditationDocumentToBuk({
           employeeId: selectedBukEmployeeId,
           documentName: selectedFile.name,
-          file: selectedFile
+          file: selectedFile,
+          siteId: selectedSiteId,
+          requirementId: documentForm.requirementId,
+          status: documentForm.status,
+          issueDate: documentForm.issueDate || null,
+          expiryDate: documentForm.expiryDate || null,
+          reviewerNotes: documentForm.reviewerNotes || null
         });
-        bukDocumentId = uploadResult.bukDocumentId;
-        bukDocumentUrl = uploadResult.bukDocumentUrl;
-        bukDocumentName = uploadResult.documentName;
-        uploadPayload = uploadResult.payload;
+      } else {
+        await saveWorkerAccreditationDocument({
+          bukEmployeeId: selectedBukEmployeeId,
+          siteId: selectedSiteId,
+          requirementId: documentForm.requirementId,
+          status: documentForm.status,
+          issueDate: documentForm.issueDate || null,
+          expiryDate: documentForm.expiryDate || null,
+          reviewerNotes: documentForm.reviewerNotes || null,
+          metadata: { upload_source: "manual_registry" }
+        });
       }
-
-      await saveWorkerAccreditationDocument({
-        bukEmployeeId: selectedBukEmployeeId,
-        siteId: selectedSiteId,
-        requirementId: documentForm.requirementId,
-        status: documentForm.status,
-        issueDate: documentForm.issueDate || null,
-        expiryDate: documentForm.expiryDate || null,
-        bukDocumentId,
-        bukDocumentName,
-        bukDocumentUrl,
-        reviewerNotes: documentForm.reviewerNotes || null,
-        metadata: {
-          upload_source: selectedFile ? "buk_edge_function" : "manual_registry",
-          buk_payload: uploadPayload
-        }
-      });
 
       await invalidateAccreditationQueries(queryClient);
       setSelectedFile(null);

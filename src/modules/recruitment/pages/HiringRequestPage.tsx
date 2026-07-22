@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   type ContractCatalogItem,
@@ -65,6 +65,7 @@ function formatCurrencyDisplay(value: string) {
 }
 
 export function HiringRequestPage() {
+  const submitIdempotencyKeyRef = useRef<string | null>(null);
   const { displayName, jobTitle, email } = useAuth();
   const todayValue = toTodayDateValue();
   const currentYear = new Date().getFullYear();
@@ -203,6 +204,7 @@ export function HiringRequestPage() {
     }
 
     setIsSavingRequest(true);
+    submitIdempotencyKeyRef.current ??= crypto.randomUUID();
     const creationResult = await createHiringRequest({
       requestedEntryDate: fechaSolicitadaIngreso,
       jobPosition: selectedJobPosition,
@@ -216,7 +218,7 @@ export function HiringRequestPage() {
       salaryOffer: Number(rentaLiquidaOfrecida),
       shift: selectedShift,
       requesterSigned: solicitanteFirmado
-    });
+    }, submitIdempotencyKeyRef.current);
 
     if (creationResult.error || !creationResult.data) {
       setGeneratedRequest(null);
@@ -254,6 +256,7 @@ export function HiringRequestPage() {
     };
 
     setGeneratedRequest(request);
+    submitIdempotencyKeyRef.current = null;
     setLocalStatus(
       `Solicitud ${creationResult.data.folio} guardada en Supabase. Quedó enviada a Gerente de Area como primera etapa de aprobación.`
     );

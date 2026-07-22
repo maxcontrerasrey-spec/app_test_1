@@ -11,6 +11,12 @@ baseline_date: 2026-07-22
 
 # Testing Baseline P3 v1
 
+## Extensión CORE 2026-07-22
+
+- Suites dedicadas: `test:integrity`, `test:concurrency`, `test:idempotency`.
+- Auditoría estructural: `audit:core-data-integrity`.
+- CI y Guardian ejecutan los cuatro controles y bloquean pérdida de artefactos o guards CORE.
+
 ## Alcance medido
 
 Baseline inicial medido para logica critica extraida y contratos frontend con RPC/servicios de dominio. No define meta global de cobertura del ERP; define una base reproducible para dominios criticos P3.

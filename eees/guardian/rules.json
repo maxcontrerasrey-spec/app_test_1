@@ -324,6 +324,24 @@
     "blocking": true
   },
   {
+    "id": "DATA-002",
+    "title": "Integridad transaccional CORE certificada",
+    "severity": "ERROR",
+    "scope": "supabase/migrations src/modules tests scripts eees/audits eees/certification",
+    "source_document": "docs/CODEX_OBJECTIVE_LOOP_CORE_DATA_INTEGRITY.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "CONC-003",
+    "title": "Replay y carreras CORE protegidos",
+    "severity": "ERROR",
+    "scope": "supabase/migrations tests/concurrency tests/idempotency",
+    "source_document": "docs/CODEX_OBJECTIVE_LOOP_CORE_DATA_INTEGRITY.md",
+    "automatable": true,
+    "blocking": true
+  },
+  {
     "id": "OBS-002",
     "title": "Observabilidad operacional P4",
     "severity": "ERROR",

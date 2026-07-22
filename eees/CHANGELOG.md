@@ -11,6 +11,14 @@ baseline_date: 2026-07-22
 
 # Control de cambios
 
+## 1.5.0 - 2026-07-22
+
+- Se certifica CORE Data Integrity con 15 flujos, 37 invariantes y 16 gaps P1 internos cerrados.
+- Se agregan idempotencia para contratación e incentivos, serialización de jornadas e inmutabilidad de snapshots BUK.
+- Se cierran mutaciones directas que evitaban RPCs canónicos y se activan constraints de metadata terminal.
+- Se agregan checkpoints documentales, timeout BUK, stale recovery y job durable de acreditación.
+- Guardian y CI incorporan auditoría y suites CORE de integridad, concurrencia e idempotencia.
+
 ## 1.4.0 - 2026-07-22
 
 - Se ejecuta Enterprise Repository Cleanup post EEES 100 sin alterar comportamiento funcional.

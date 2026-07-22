@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { DatePickerField, SelectField, TextField } from "../../../shared/ui";
 import { formatCurrencyValue } from "../../../shared/lib/format";
@@ -40,6 +40,7 @@ export function IncentiveRegistrationForm({
   setupCatalogsQuery
 }: IncentiveRegistrationFormProps) {
   const queryClient = useQueryClient();
+  const submitIdempotencyKeyRef = useRef<string | null>(null);
   const [selectedWorker, setSelectedWorker] = useState<HrIncentiveEligibleWorker | null>(null);
   const [selectedAreaValue, setSelectedAreaValue] = useState("");
   const [selectedIncentiveTypeId, setSelectedIncentiveTypeId] = useState("");
@@ -213,8 +214,12 @@ export function IncentiveRegistrationForm({
   });
 
   const createRequestMutation = useMutation({
-    mutationFn: createHrIncentiveRequest,
+    mutationFn: (input: Parameters<typeof createHrIncentiveRequest>[0]) => {
+      submitIdempotencyKeyRef.current ??= crypto.randomUUID();
+      return createHrIncentiveRequest(input, submitIdempotencyKeyRef.current);
+    },
     onSuccess: async (result) => {
+      submitIdempotencyKeyRef.current = null;
       setFormError("");
       setFormMessage(
         `Incentivo ${result.folio} registrado correctamente por ${formatCurrencyValue(

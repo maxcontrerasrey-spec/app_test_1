@@ -163,7 +163,8 @@ function validateRules() {
   const allowedSourceRoots = [
     "eees/",
     "docs/CODEX_OBJECTIVE_LOOP_EEES_100_PERCENT.md",
-    "docs/CODEX_OBJECTIVE_LOOP_ENTERPRISE_REPOSITORY_CLEANUP.md"
+    "docs/CODEX_OBJECTIVE_LOOP_ENTERPRISE_REPOSITORY_CLEANUP.md",
+    "docs/CODEX_OBJECTIVE_LOOP_CORE_DATA_INTEGRITY.md"
   ];
 
   for (const rule of rules) {
@@ -338,6 +339,30 @@ function validateRepositoryCleanupArtifacts() {
     const packageJson = JSON.parse(read("package.json"));
     if (!packageJson.scripts?.["audit:repository-cleanup"]) {
       add("ERROR", "REL-005", "package.json", "Falta script audit:repository-cleanup.");
+    }
+  }
+}
+
+function validateCoreDataIntegrityArtifacts() {
+  const requiredArtifacts = [
+    "eees/audits/CORE-TRANSACTION-MAP.md",
+    "eees/audits/DOMAIN-INVARIANT-MATRIX.md",
+    "eees/audits/CORE-DATA-INTEGRITY-FINDINGS.md",
+    "eees/audits/CORE-DATA-INTEGRITY-CLOSURE-REPORT.md",
+    "eees/certification/CORE-DATA-INTEGRITY-CERTIFICATION.md",
+    "eees/adr/ADR-0006-CORE-MUTATION-IDEMPOTENCY.md",
+    "scripts/audit-core-data-integrity.mjs",
+    "tests/integrity/core-data-integrity.test.ts",
+    "tests/concurrency/core-data-concurrency.test.ts",
+    "tests/idempotency/core-data-idempotency.test.ts"
+  ];
+
+  for (const artifact of requiredArtifacts) requireFile(artifact, "DATA-002");
+
+  if (exists("package.json")) {
+    const scripts = JSON.parse(read("package.json")).scripts ?? {};
+    for (const scriptName of ["audit:core-data-integrity", "test:integrity", "test:concurrency", "test:idempotency"]) {
+      if (!scripts[scriptName]) add("ERROR", "DATA-002", "package.json", `Falta script ${scriptName}.`);
     }
   }
 }
@@ -523,6 +548,10 @@ function runGates() {
   runCommand("audit:p4-operational-readiness", "npm", ["run", "audit:p4-operational-readiness"]);
   runCommand("audit:enterprise-100-readiness", "npm", ["run", "audit:enterprise-100-readiness"]);
   runCommand("audit:repository-cleanup", "npm", ["run", "audit:repository-cleanup"]);
+  runCommand("audit:core-data-integrity", "npm", ["run", "audit:core-data-integrity"]);
+  runCommand("test:integrity", "npm", ["run", "test:integrity"]);
+  runCommand("test:concurrency", "npm", ["run", "test:concurrency"]);
+  runCommand("test:idempotency", "npm", ["run", "test:idempotency"]);
   runCommand("audit:route-role-smoke", "npm", ["run", "audit:route-role-smoke"]);
   runCommand("audit:frontend-auth-smoke-matrix", "npm", ["run", "audit:frontend-auth-smoke-matrix"]);
   runCommand("audit:onboarding-legacy-guards", "npm", ["run", "audit:onboarding-legacy-guards"]);
@@ -616,6 +645,7 @@ validateP3Artifacts();
 validateP4Artifacts();
 validateEnterprise100Artifacts();
 validateRepositoryCleanupArtifacts();
+validateCoreDataIntegrityArtifacts();
 validateQueryKeyGovernance();
 validatePureLogicTestCoverage();
 validateExceptionExpiry();

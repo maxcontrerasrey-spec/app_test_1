@@ -186,7 +186,10 @@ export async function fetchHrIncentiveRosterSnapshot(params: {
   return mapRosterSnapshotRow(row);
 }
 
-export async function createHrIncentiveRequest(input: CreateHrIncentiveRequestInput) {
+export async function createHrIncentiveRequest(
+  input: CreateHrIncentiveRequestInput,
+  idempotencyKey: string
+) {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("create_hr_incentive_request", {
     p_buk_employee_id: input.bukEmployeeId,
@@ -200,7 +203,8 @@ export async function createHrIncentiveRequest(input: CreateHrIncentiveRequestIn
     p_motive: input.motive ?? null,
     p_description: input.description ?? null,
     p_replacement_buk_employee_id: input.replacementBukEmployeeId ?? null,
-    p_declared_rest_day: input.declaredRestDay
+    p_declared_rest_day: input.declaredRestDay,
+    p_idempotency_key: idempotencyKey
   });
 
   if (error) {

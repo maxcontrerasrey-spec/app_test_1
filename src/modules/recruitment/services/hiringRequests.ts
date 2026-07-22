@@ -26,7 +26,7 @@ type CreateHiringRequestRpcResponse = {
   folio: string;
 };
 
-export async function createHiringRequest(input: CreateHiringRequestInput) {
+export async function createHiringRequest(input: CreateHiringRequestInput, idempotencyKey: string) {
   if (!supabase) {
     return {
       data: null,
@@ -46,7 +46,8 @@ export async function createHiringRequest(input: CreateHiringRequestInput) {
     p_other_benefits: input.otherBenefits || null,
     p_salary_offer: input.salaryOffer,
     p_shift_id: input.shift.id,
-    p_requester_signed: input.requesterSigned
+    p_requester_signed: input.requesterSigned,
+    p_idempotency_key: idempotencyKey
   });
 
   if (error) {

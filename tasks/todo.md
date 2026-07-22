@@ -581,6 +581,28 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 
 ## Proximos objetivos vivos
 
+## CORE DATA INTEGRITY - certificacion transaccional adversarial
+
+- [x] Completar boot: objetivo, Books, baselines, matrices, hardening, certificaciones y contratos vivos.
+- [x] Construir `CORE-TRANSACTION-MAP.md` para todos los flujos criticos.
+- [x] Extraer y clasificar invariantes en `DOMAIN-INVARIANT-MATRIX.md`.
+- [x] Atacar state machines, atomicidad, concurrencia, idempotencia, integridad referencial y autorizacion.
+- [x] Auditar RPC/RLS, BUK/integraciones, documentos/Storage, jobs, reglas temporales y numericas.
+- [x] Corregir todos los gaps internos P0/P1 con cambios forward-only y proteccion anti-regresion.
+- [x] Extender Guardian solo con controles verificables de integridad de alto valor.
+- [x] Repetir el mapa, ataques y auditorias hasta que no queden gaps internos ejecutables.
+- [x] Generar findings, closure report y certificacion CORE DATA INTEGRITY.
+- [x] Ejecutar Guardian full, suites unit/contract/integrity/concurrency/idempotency, migrations, security, route/role, TypeScript, build, smokes, EEES consistency y `git diff --check`.
+- [x] Versionar y publicar el cierre solo si el arbol final y todos los gates quedan consistentes.
+
+### Resultado aplicado
+
+- Se mapearon 15 flujos y 37 invariantes criticas.
+- Se cerraron 16 gaps P1 internos en 6 ciclos adversariales; quedan 0 P0/P1 internos.
+- Cinco migraciones CORE quedaron aplicadas y alineadas con Supabase remoto.
+- Cuatro Edge Functions documentales quedaron desplegadas con checkpoints, retry y autenticacion verificados.
+- Dependencia externa residual: BUK no ofrece transaccion distribuida ni clave idempotente para reconciliar un POST aceptado cuya respuesta se corta.
+
 - [x] EEES P2 - Complejidad, reutilizacion y mantenibilidad:
   - [x] Leer reportes P1/P2, Boot Sequence, tasks, lessons y Books aplicables.
   - [x] Medir baseline de archivos criticos, Guardian warnings y accesos directos Supabase.

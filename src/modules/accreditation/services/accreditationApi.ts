@@ -568,12 +568,24 @@ export async function uploadAccreditationDocumentToBuk(input: {
   employeeId: string;
   documentName: string;
   file: File;
+  siteId: string;
+  requirementId: string;
+  status: AccreditationDocumentStatus;
+  issueDate?: string | null;
+  expiryDate?: string | null;
+  reviewerNotes?: string | null;
 }) {
   const client = getSupabaseClient();
   const formData = new FormData();
   formData.append("employeeId", input.employeeId);
   formData.append("documentName", input.documentName);
   formData.append("file", input.file);
+  formData.append("siteId", input.siteId);
+  formData.append("requirementId", input.requirementId);
+  formData.append("status", input.status);
+  formData.append("issueDate", input.issueDate ?? "");
+  formData.append("expiryDate", input.expiryDate ?? "");
+  formData.append("reviewerNotes", input.reviewerNotes ?? "");
 
   const { data, error } = await client.functions.invoke("upload-buk-accreditation-document", {
     body: formData

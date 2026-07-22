@@ -58,6 +58,10 @@ type EvaluationRow = {
   file_mime_type: string;
   file_sha256: string;
   buk_document_id?: string | null;
+  buk_document_url?: string | null;
+  buk_document_name?: string | null;
+  buk_folder_id?: string | null;
+  buk_uploaded_at?: string | null;
   storage_purge_status?: string | null;
 };
 
@@ -68,6 +72,11 @@ type CertificateRow = {
   certificate_status: string;
   pdf_path: string | null;
   buk_upload_status: string;
+  buk_document_id?: string | null;
+  buk_document_url?: string | null;
+  buk_document_name?: string | null;
+  buk_folder_id?: string | null;
+  buk_uploaded_at?: string | null;
   storage_purge_status?: string | null;
 };
 
@@ -1114,36 +1123,67 @@ Deno.serve(async (req) => {
     }
 
     let bukUploadStatus: "success" | "failed" = "success";
-    let bukDocumentId: string | null = null;
-    let bukDocumentUrl: string | null = null;
-    let bukEmployeeFolderId: string | null = null;
-    let evaluationBukDocumentId: string | null = null;
-    let evaluationBukDocumentUrl: string | null = null;
-    let evaluationBukEmployeeFolderId: string | null = null;
+    let bukDocumentId: string | null = certificateRow.buk_document_id ?? null;
+    let bukDocumentUrl: string | null = certificateRow.buk_document_url ?? null;
+    let bukEmployeeFolderId: string | null = certificateRow.buk_folder_id ?? null;
+    let evaluationBukDocumentId: string | null = evaluationRow.buk_document_id ?? null;
+    let evaluationBukDocumentUrl: string | null = evaluationRow.buk_document_url ?? null;
+    let evaluationBukEmployeeFolderId: string | null = evaluationRow.buk_folder_id ?? null;
+    let certificateUploadedAt: string | null = certificateRow.buk_uploaded_at ?? null;
     let bukError: string | null = null;
 
     try {
-      const certificateUploadResult = await uploadBukDocument(
-        requestRow.worker_buk_employee_id,
-        certificateBukFileName,
-        new Blob([bytesToArrayBuffer(pdfBytes)], { type: "application/pdf" }),
-        { path: BUK_FOLDER }
-      );
-      const certificateMetadata = extractBukDocumentMetadata(certificateUploadResult.payload);
-      bukDocumentId = certificateMetadata.bukDocumentId;
-      bukDocumentUrl = certificateMetadata.bukDocumentUrl;
-      bukEmployeeFolderId = certificateMetadata.bukEmployeeFolderId;
+      if (!certificateRow.buk_uploaded_at) {
+        const certificateUploadResult = await uploadBukDocument(
+          requestRow.worker_buk_employee_id,
+          certificateBukFileName,
+          new Blob([bytesToArrayBuffer(pdfBytes)], { type: "application/pdf" }),
+          { path: BUK_FOLDER }
+        );
+        const certificateMetadata = extractBukDocumentMetadata(certificateUploadResult.payload);
+        bukDocumentId = certificateMetadata.bukDocumentId;
+        bukDocumentUrl = certificateMetadata.bukDocumentUrl;
+        bukEmployeeFolderId = certificateMetadata.bukEmployeeFolderId;
+        certificateUploadedAt = new Date().toISOString();
+        const { error: checkpointError } = await supabase
+          .from("competency_certificates")
+          .update({
+            buk_upload_status: "queued",
+            buk_folder_name: BUK_FOLDER,
+            buk_folder_id: bukEmployeeFolderId,
+            buk_document_id: bukDocumentId,
+            buk_document_url: bukDocumentUrl,
+            buk_document_name: certificateBukFileName,
+            buk_uploaded_at: certificateUploadedAt
+          })
+          .eq("id", certificateRow.id);
+        if (checkpointError) throw new Error(`No fue posible persistir checkpoint BUK del certificado: ${checkpointError.message}`);
+      }
 
-      const evaluationUploadResult = await uploadBukDocument(
-        requestRow.worker_buk_employee_id,
-        evaluationBukFileName,
-        evaluationFileData,
-        { path: BUK_FOLDER }
-      );
-      const evaluationMetadata = extractBukDocumentMetadata(evaluationUploadResult.payload);
-      evaluationBukDocumentId = evaluationMetadata.bukDocumentId;
-      evaluationBukDocumentUrl = evaluationMetadata.bukDocumentUrl;
-      evaluationBukEmployeeFolderId = evaluationMetadata.bukEmployeeFolderId;
+      if (!evaluationRow.buk_uploaded_at) {
+        const evaluationUploadResult = await uploadBukDocument(
+          requestRow.worker_buk_employee_id,
+          evaluationBukFileName,
+          evaluationFileData,
+          { path: BUK_FOLDER }
+        );
+        const evaluationMetadata = extractBukDocumentMetadata(evaluationUploadResult.payload);
+        evaluationBukDocumentId = evaluationMetadata.bukDocumentId;
+        evaluationBukDocumentUrl = evaluationMetadata.bukDocumentUrl;
+        evaluationBukEmployeeFolderId = evaluationMetadata.bukEmployeeFolderId;
+        const { error: evaluationCheckpointError } = await supabase
+          .from("competency_evaluations")
+          .update({
+            buk_folder_name: BUK_FOLDER,
+            buk_folder_id: evaluationBukEmployeeFolderId,
+            buk_document_id: evaluationBukDocumentId,
+            buk_document_url: evaluationBukDocumentUrl,
+            buk_document_name: evaluationBukFileName,
+            buk_uploaded_at: new Date().toISOString()
+          })
+          .eq("id", evaluationRow.id);
+        if (evaluationCheckpointError) throw new Error(`No fue posible persistir checkpoint BUK de la evaluacion: ${evaluationCheckpointError.message}`);
+      }
     } catch (error) {
       bukUploadStatus = "failed";
       bukError = toErrorMessage(error);
@@ -1187,7 +1227,7 @@ Deno.serve(async (req) => {
         buk_document_id: bukDocumentId,
         buk_document_url: bukDocumentUrl,
         buk_document_name: certificateBukFileName,
-        buk_uploaded_at: bukUploadStatus === "success" ? new Date().toISOString() : null,
+        buk_uploaded_at: certificateUploadedAt,
         buk_last_error: bukError,
         storage_purge_status: storagePurgeStatus,
         storage_purged_at: storagePurgedAt,

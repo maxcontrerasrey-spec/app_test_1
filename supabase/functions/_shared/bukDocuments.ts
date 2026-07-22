@@ -8,6 +8,7 @@ function requireEnv(value: string | undefined, label: string) {
 }
 
 const DEFAULT_BUK_DOCUMENTS_PATH = "Postulación";
+const BUK_DOCUMENT_UPLOAD_TIMEOUT_MS = 30_000;
 
 function normalizeDocumentsTemplate(template: string) {
   const trimmed = template.trim();
@@ -75,14 +76,27 @@ async function parseBukResponse(response: Response) {
 }
 
 async function sendDocumentRequest(url: string, authToken: string, formData: FormData) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      auth_token: authToken
-    },
-    body: formData
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BUK_DOCUMENT_UPLOAD_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        auth_token: authToken
+      },
+      body: formData,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Buk document upload timeout; el resultado remoto debe reconciliarse antes de reintentar");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const parsed = await parseBukResponse(response);
   return {
@@ -195,7 +209,7 @@ export async function uploadBukDocument(
     };
   }
 
-  if (![400, 409, 415, 422].includes(primaryAttempt.response.status)) {
+  if (![400, 415, 422].includes(primaryAttempt.response.status)) {
     throw new Error(
       `Buk document upload ${primaryAttempt.response.status} ${primaryAttempt.response.statusText}: ${primaryAttempt.rawBody}`
     );

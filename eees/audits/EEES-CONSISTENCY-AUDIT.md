@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 0
-- Info: 17
+- Info: 21
 
 ## Errores
 
@@ -37,6 +37,10 @@ PASS
 - audit:p4-operational-readiness: PASS
 - audit:enterprise-100-readiness: PASS
 - audit:repository-cleanup: PASS
+- audit:core-data-integrity: PASS
+- test:integrity: PASS
+- test:concurrency: PASS
+- test:idempotency: PASS
 - audit:route-role-smoke: PASS
 - audit:frontend-auth-smoke-matrix: PASS
 - audit:onboarding-legacy-guards: PASS

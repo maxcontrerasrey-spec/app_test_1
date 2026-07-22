@@ -282,7 +282,7 @@ export async function assignWorkerRoster(input: {
   notes?: string | null;
 }) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("assign_hr_worker_roster", {
+  const { data, error } = await client.rpc("assign_hr_worker_roster_v2", {
     p_buk_employee_id: input.bukEmployeeId,
     p_pattern_id: input.patternId,
     p_start_date: input.startDate,

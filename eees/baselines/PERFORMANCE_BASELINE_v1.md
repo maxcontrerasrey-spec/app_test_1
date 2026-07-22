@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo local y smok
 
 ## Bundle medido
 
-- dist total medido: 10,725,235 bytes.
-- JS total medido: 3,017,477 bytes.
-- `dist` total: 10,725,235 bytes.
+- dist total medido: 10,659,104 bytes.
+- JS total medido: 3,017,883 bytes.
+- `dist` total: 10,659,104 bytes.
 - Archivos JS: 51.
-- JS total: 3,017,477 bytes.
+- JS total: 3,017,883 bytes.
 - Archivos CSS: 10.
 - CSS total: 213,123 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -56,9 +56,9 @@ Baseline inicial de performance P4 medido desde el build productivo local y smok
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10725235,
+  "distTotalBytes": 10659104,
   "jsFileCount": 51,
-  "jsTotalBytes": 3017477,
+  "jsTotalBytes": 3017883,
   "cssFileCount": 10,
   "cssTotalBytes": 213123,
   "trackedAssets": [
