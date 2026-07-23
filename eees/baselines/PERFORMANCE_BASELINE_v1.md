@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.0
+version: 1.0.1
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,9 +24,9 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,665,572 bytes.
+- dist total medido: 10,666,243 bytes.
 - JS total medido: 3,022,926 bytes.
-- `dist` total: 10,665,572 bytes.
+- `dist` total: 10,666,243 bytes.
 - Archivos JS: 51.
 - JS total: 3,022,926 bytes.
 - Archivos CSS: 10.
@@ -38,6 +38,8 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 - PDF lazy: `pdf-vendor`, 430,776 bytes.
 - Supabase vendor: `supabase-vendor`, 221,867 bytes.
 - App framework: `app-framework`, 208,819 bytes.
+
+Revision 2026-07-23: el total global sube 671 bytes por el helper testeado que calcula `Tiempo Abierto` en reclutamiento desde `opened_at`. No agrega vendors, rutas lazy ni CSS; los limites especificos de JS, CSS y assets trackeados permanecen bajo baseline.
 
 ## Rutas criticas smoke
 
@@ -56,7 +58,7 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10665572,
+  "distTotalBytes": 10666243,
   "jsFileCount": 51,
   "jsTotalBytes": 3022926,
   "cssFileCount": 10,

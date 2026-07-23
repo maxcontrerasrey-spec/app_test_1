@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 277. Las columnas de tiempo operativo deben derivar desde timestamps backend ya auditados
+
+- **No recalcules el origen de una fecha si el RPC ya entrega el hito autoritativo.** En `Resumen de procesos de contratación`, `get_recruitment_processes_page` ya expone `opened_at` y soporta ordenamiento por ese campo.
+- **El label visible puede cambiar sin borrar el dato operacional de detalle.** La tabla muestra `Tiempo Abierto`, pero el solicitante queda disponible al expandir la fila en `Solicitud original`.
+- **Las duraciones deben vivir en helpers testeables.** Evita diferencias por calculos inline; una funcion compartida permite validar años, meses, dias, nulos y fechas futuras.
+
 ## 276. Ciudad BUK es campo obligatorio separado de direccion base
 
 - **`Dirección base` no debe absorber la ciudad.** En ficha BUK de candidatos, `address_line` se deriva solo desde `street_name` y `street_number`; `current_city` vive como campo propio.

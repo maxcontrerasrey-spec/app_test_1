@@ -19,8 +19,9 @@ import {
 } from "./hiringControlViewUtils";
 import { ApprovalModal } from "./ApprovalModal";
 import { TrackingPagination } from "./TrackingPagination";
+import { formatOpenDuration } from "../lib/openDuration";
 
-type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "requester_name";
+type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "opened_at";
 const PROCESS_PAGE_SIZE = 50;
 const PROCESS_FETCH_LIMIT = 500;
 const APPROVAL_PAGE_SIZE = 50;
@@ -36,7 +37,7 @@ const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
   { column: "contract_name", label: "Contrato" },
   { column: "vacancies", label: "Cupos" },
   { column: "candidate_count", label: "Candidatos activos" },
-  { column: "requester_name", label: "Solicitó" }
+  { column: "opened_at", label: "Tiempo Abierto" }
 ];
 
 type HiringProcessesViewProps = {
@@ -499,7 +500,7 @@ export function HiringProcessesView({
                             <span className="candidate-circle-label">Movilidad Interna</span>
                           </div>
                         </td>
-                        <td>{caseRow.requester_name ?? "No disponible"}</td>
+                        <td>{formatOpenDuration(caseRow.opened_at)}</td>
                       </tr>
                       {isExpanded ? (
                         <tr className="tracking-table-expanded-row">

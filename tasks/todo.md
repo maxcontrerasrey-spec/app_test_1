@@ -17,6 +17,20 @@ Resultado:
 - Validacion remota: `ARAMARK SIERRA GORDA INTERNO` queda asignado a Angel Guerra Basso.
 - La migracion local `20260723152941_fix_mario_pizarro_sierra_gorda_contract_scope.sql` versiona el guardrail aplicado para reproducibilidad y auditoria.
 
+## Reclutamiento - tiempo abierto en resumen de procesos
+
+- [x] Ubicar la tabla `Resumen de procesos de contratación` y el contrato RPC/frontend que alimenta la columna `Solicitó`.
+- [x] Confirmar el campo autoritativo de aprobación completa del folio para calcular tiempo abierto.
+- [x] Reemplazar `Solicitó` por `Tiempo Abierto` mostrando años, meses y días transcurridos.
+- [x] Agregar cobertura focalizada y ejecutar gates frontend/enterprise.
+
+Resultado:
+- La tabla corresponde a `HiringProcessesView` y consume `get_recruitment_processes_page`.
+- El contrato backend ya entrega `opened_at` para casos de reclutamiento y permite ordenar por `opened_at`; no requiere migracion SQL.
+- La columna visible cambia de `Solicitó` a `Tiempo Abierto` y muestra duracion calendario desde `opened_at` como años, meses y dias.
+- Validacion: `tests/unit/recruitment-open-duration.test.ts`, `tsc -b --pretty false`, `npm run build:frontend-check` y `npm run guardian` pasan.
+- Baseline performance versionado en `1.0.1`: +671 bytes globales justificados por helper funcional testeado, sin nuevos vendors ni aumento de limites JS/CSS/assets trackeados.
+
 ## Correos Resend - auditoria y limitacion a eventos criticos
 
 - [x] Auditar Edge Functions, triggers SQL, cron y tabla `transactional_email_dispatches`.
