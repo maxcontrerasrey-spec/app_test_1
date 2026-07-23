@@ -38,6 +38,7 @@ Resultado:
 - [x] Validar con smoke remoto en rollback y gates SQL/Guardian antes de versionar.
 - [x] Auditar el segundo fallo productivo por `company_id`, `area_id` o `leader_id` despues de restaurar el mapping JM.
 - [x] Corregir la resolucion de solicitante BUK cuando el email ERP no coincide con el email vigente del snapshot BUK.
+- [x] Desplegar `sync-buk-candidates` en Supabase productivo y reintentar el job real de Cristopher.
 
 Resultado:
 - El job BUK `33458800-64cb-4511-ae26-6cc93f6c2dff` fallo despues de reutilizar la ficha inactiva `42266`: `No existe un mapping BUK con area operativa para el contrato ZONA II CONTRATISTAS`.
@@ -51,6 +52,9 @@ Resultado:
 - El retry productivo posterior fallo en el job `487f5e26-1a06-45e9-862b-8a45d9b00dc7` despues de reutilizar la ficha BUK `42266`: ya resolvia contrato `0000000168:0001`, area `721` y rol, pero no podia completar `leader_id`.
 - Causa raiz: la solicitud usa `requester_email = manuel.parra@busesjm.com`, mientras el snapshot BUK activo de Manuel Enrique Parra Soto tiene email `parrasotomanuelenrique@gmail.com`, `buk_employee_id = 19687` y `company_id = 1`; buscar solo por email dejaba `leader_id = 0`.
 - Correccion aplicada: `sync-buk-candidates` mantiene la busqueda viva por email y agrega fallback auditado al cache local BUK por email exacto y por nombre del solicitante con coincidencia estricta de tokens, sin modificar maestros BUK ni crear datos sinteticos.
+- Incidente persistente posterior: los jobs `12b3c8e6-1737-46cd-b448-581fad6d1a97` y `942cb0da-bb0e-415c-afd2-4311e69fe7be` fallaron porque la Edge Function productiva aun no tenia desplegado el commit `9beefaf`.
+- Despliegue aplicado: `npx --yes supabase functions deploy sync-buk-candidates --project-ref pzblmbahnoyntrhistea --use-api --yes`; la funcion remota queda activa en version `34`.
+- Smoke real productivo: reintento controlado del job `942cb0da-bb0e-415c-afd2-4311e69fe7be` termino `success`, BUK employee `42266`, job BUK `143977`, `company_id = 1`, `area_id = 3008`, `leader_id = 19687`, `role_id = 167`, `cost_center = 721`.
 
 ## Reclutamiento - tiempo abierto en resumen de procesos
 
