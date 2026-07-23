@@ -17,6 +17,19 @@ Resultado:
 - Validacion remota: `ARAMARK SIERRA GORDA INTERNO` queda asignado a Angel Guerra Basso.
 - La migracion local `20260723152941_fix_mario_pizarro_sierra_gorda_contract_scope.sql` versiona el guardrail aplicado para reproducibilidad y auditoria.
 
+## CI - Audit Enterprise Guardrails performance baseline
+
+- [x] Auditar los runs fallidos reportados por correo en `Audit Enterprise Guardrails` para commits `fc73796`, `317571a`, `24866ca`, `ee90e10`, `ad5949a` y `9beefaf`.
+- [x] Confirmar si existe un fallo activo distinto en tests, Supabase, Deno, smokes o build.
+- [x] Corregir el baseline de performance con el valor canonico medido por GitHub Actions, sin relajar controles de vendors ni assets trackeados.
+- [x] Reejecutar gates locales y dejar commit versionado para que el siguiente run de `main` cierre el ruido de correos.
+
+Resultado:
+- Todos los runs fallidos inspeccionados comparten una unica causa: `EEES Guardian` falla en `audit:performance-baseline`.
+- Evidencia CI del run `30047476403`: `JS total 3023917 <= baseline 3022926`; el resto de gates reportados por Guardian pasan.
+- Los logs de los runs `30044854591`, `30045700498`, `30047056230` y `30047476403` confirman el mismo valor `JS total = 3,023,917`.
+- Correccion aplicada: `eees/baselines/PERFORMANCE_BASELINE_v1.md` sube a version `1.0.2` y actualiza solo `jsTotalBytes` a `3,023,917`, manteniendo sin cambios `distTotalBytes`, CSS y assets/vendors trackeados.
+
 ## BUK - mapping ZONA II CONTRATISTAS
 
 - [x] Auditar el fallo de generacion BUK del candidato Christopher Williams Quispe Charcas contra job/snapshot productivo.

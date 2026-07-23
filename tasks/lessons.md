@@ -11,6 +11,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Antes de cambiar empresa por una captura, confirma la intencion operacional.** Una misma etiqueta puede existir bajo JM, SIMSA y CNN; el ERP debe seguir la empresa destino del contrato, no solo el sufijo visible mas reciente.
 - **El solicitante ERP puede no tener el mismo email en BUK.** Para resolver `leader_id`, primero intenta email vivo, pero si falla usa el snapshot local BUK por email exacto y nombre con tokens estrictos; no inventes empleados ni cambies maestros para completar el alta.
 
+## 279. El baseline de performance debe cerrarse contra CI, no solo contra build local
+
+- **Si GitHub Actions mide un JS total mayor que local, CI manda para el baseline canonico.** El guardrail compara el artefacto generado en el runner; cerrar local verde con un baseline menor produce correos repetidos por cada push.
+- **Ajusta solo el limite que fallo y conserva los controles finos.** Subir `jsTotalBytes` no debe cambiar vendors, CSS ni assets trackeados si esos checks pasaron.
+- **Cuando el workflow falla en Guardian por performance, revisa logs de varios commits antes de tocar codigo.** Si todos caen con el mismo numero, es drift de baseline; si el numero crece por commit, hay que optimizar o justificar el cambio funcional.
+
 ## 277. Las columnas de tiempo operativo deben derivar desde timestamps backend ya auditados
 
 - **No recalcules el origen de una fecha si el RPC ya entrega el hito autoritativo.** En `Resumen de procesos de contratación`, `get_recruitment_processes_page` ya expone `opened_at` y soporta ordenamiento por ese campo.
