@@ -192,6 +192,35 @@ function normalizeAddressPart(value: string | null | undefined) {
   return (value ?? "").trim().replace(/\s+/g, " ");
 }
 
+function stripAddressLocationSuffix(
+  value: string | null | undefined,
+  ...locations: Array<string | null | undefined>
+) {
+  let normalized = normalizeAddressPart(value);
+
+  for (const rawLocation of locations) {
+    const location = normalizeAddressPart(rawLocation);
+
+    if (!normalized || !location) {
+      continue;
+    }
+
+    const normalizedLower = normalized.toLowerCase();
+    const locationLower = location.toLowerCase();
+    const suffixLength = normalizedLower.endsWith(`, ${locationLower}`)
+      ? location.length + 2
+      : normalizedLower.endsWith(`,${locationLower}`)
+        ? location.length + 1
+        : 0;
+
+    if (suffixLength > 0) {
+      normalized = normalized.slice(0, normalized.length - suffixLength).trim();
+    }
+  }
+
+  return normalized;
+}
+
 function formatStreetNumberForAddress(value: string | null | undefined) {
   const normalized = normalizeAddressPart(value).replace(/^#+\s*/, "");
   return normalized ? `#${normalized}` : "";
@@ -200,9 +229,11 @@ function formatStreetNumberForAddress(value: string | null | undefined) {
 export function buildDerivedAddressLine(input: {
   streetName?: string | null;
   streetNumber?: string | null;
+  currentCity?: string | null;
+  districtOrCommune?: string | null;
 }) {
   return [
-    normalizeAddressPart(input.streetName),
+    stripAddressLocationSuffix(input.streetName, input.currentCity, input.districtOrCommune),
     formatStreetNumberForAddress(input.streetNumber)
   ]
     .filter(Boolean)
@@ -214,14 +245,22 @@ export function buildPersonDraft(
   bukProfile: CandidateBukProfileDetails | null
 ): PersonDraft {
   const fallbackName = splitFullName(candidate.full_name);
+  const districtOrCommune = bukProfile?.district_or_commune ?? candidate.district_or_commune ?? "";
   const currentCity = bukProfile?.current_city ?? candidate.current_city ?? "";
-  const streetName = bukProfile?.street_name ?? "";
+  const streetName = stripAddressLocationSuffix(
+    bukProfile?.street_name ?? "",
+    currentCity,
+    districtOrCommune
+  );
   const streetNumber = bukProfile?.street_number ?? "";
+  const fallbackAddressLine = stripAddressLocationSuffix(
+    bukProfile?.address_line || candidate.address_line || "",
+    currentCity,
+    districtOrCommune
+  );
   const addressLine =
-    buildDerivedAddressLine({ streetName, streetNumber }) ||
-    bukProfile?.address_line ||
-    candidate.address_line ||
-    "";
+    buildDerivedAddressLine({ streetName, streetNumber, currentCity, districtOrCommune }) ||
+    fallbackAddressLine;
 
   return {
     documentType: resolveDocumentType(bukProfile, candidate),
@@ -241,7 +280,7 @@ export function buildPersonDraft(
     officePhone: bukProfile?.office_phone ?? "",
     country: bukProfile?.country ?? "Chile",
     addressLine,
-    districtOrCommune: bukProfile?.district_or_commune ?? candidate.district_or_commune ?? "",
+    districtOrCommune,
     currentCity,
     region: bukProfile?.region ?? candidate.region ?? "",
     streetName,

@@ -24,9 +24,9 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,665,252 bytes.
+- dist total medido: 10,665,572 bytes.
 - JS total medido: 3,022,926 bytes.
-- `dist` total: 10,665,252 bytes.
+- `dist` total: 10,665,572 bytes.
 - Archivos JS: 51.
 - JS total: 3,022,926 bytes.
 - Archivos CSS: 10.
@@ -56,7 +56,7 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10665252,
+  "distTotalBytes": 10665572,
   "jsFileCount": 51,
   "jsTotalBytes": 3022926,
   "cssFileCount": 10,

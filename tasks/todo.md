@@ -31,6 +31,22 @@ Resultado:
 - Validacion remota: ciudades no normalizadas = 0; direcciones estructuradas que aun contienen ciudad = 0; RPC rechaza `Ciudad es obligatoria` sin ciudad y normaliza `san pedro de atacama` a `San Pedro De Atacama` con `address_line = Petrohue Sur, #3213` en rollback.
 - Validacion local: unitarias de reclutamiento, TypeScript, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `audit:performance-baseline`, `guardian` y `git diff --check` pasaron.
 
+## Reclutamiento - cierre regresion direccion base en candidatos por etapa
+
+- [x] Auditar candidatos por etapa contra Supabase productivo y distinguir datos persistidos, RPC y fallback UI.
+- [x] Limpiar datos legacy donde la ciudad quedo al final de `address_line` o `street_name`, sin tocar direcciones que solo contienen el texto de la ciudad en otra posicion.
+- [x] Recompilar `upsert_candidate_person_profile(...)` para impedir que futuras ediciones persistan la ciudad dentro de calle/direccion base.
+- [x] Endurecer el helper frontend para que el fallback inicial de la ficha tampoco muestre `, Ciudad`.
+- [x] Ejecutar smokes remotos por etapa/candidato afectado y gates enterprise antes de versionar.
+
+Resultado:
+- La auditoria remota por etapa quedo con `address_trailing_city = 0` y `street_trailing_city = 0` para `hired`, `in_process`, `lead`, `medical_exams`, `ready_for_hire`, `rejected`, `who_approved` y `withdrawn`.
+- El candidato de la captura, Osman Daniel Godoy Carrizo, devuelve por tabla y `get_candidate_buk_profile(...)` `address_line = SENDERO DEL SOL 585 DPTO A-42 CONDOMINIO PLAZA NORTE III` y `current_city = Antofagasta`, sin ciudad concatenada en direccion base.
+- El unico caso legacy detectado con ciudad al final de `street_name` quedo corregido: Felipe Emmanuel Bravo Jofre mantiene `address_line = Avenida Santa Cruz 490, casa 98` y `current_city = La Cruz`.
+- La migracion productiva quedo registrada por Supabase como `20260723204155_strip_candidate_address_location_suffixes`; el archivo local usa la misma version para evitar drift.
+- Smoke RPC con rollback: guardar `street_name = Avenida Santa Cruz 490, casa 98, La Cruz` persiste dentro de la transaccion `street_name/address_line = Avenida Santa Cruz 490, casa 98` y `current_city = La Cruz`.
+- Performance: se actualizo solo `distTotalBytes` de 10,665,252 a 10,665,572 bytes por la sanitizacion frontend del fallback legacy; JS/CSS y assets pesados trackeados permanecen bajo baseline.
+
 ## Certificados - correccion etiqueta MAXUS DELIBERY 9
 
 - [x] Confirmar fila MAXUS visible en `competency_equipment_models`.

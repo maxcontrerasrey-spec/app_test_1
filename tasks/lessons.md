@@ -9,6 +9,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **`Dirección base` no debe absorber la ciudad.** En ficha BUK de candidatos, `address_line` se deriva solo desde `street_name` y `street_number`; `current_city` vive como campo propio.
 - **La ciudad se exige en el contrato autoritativo.** El frontend puede advertir campos faltantes, pero `upsert_candidate_person_profile(...)` debe rechazar guardados sin `current_city`.
 - **La capitalización pertenece al backend cuando afecta datos persistidos.** Normaliza `current_city` en RPC/migración para que cualquier entrypoint quede cubierto y el refresco de ficha devuelva `Calama`, no `calama`.
+- **Los snapshots y fallbacks tambien deben respetar la separacion.** Aunque tabla/RPC estén limpias, la ficha puede renderizar `candidate.address_line` antes de refrescar el perfil; sanitiza sufijos exactos `, Ciudad`/`, Comuna` en frontend y en datos legacy.
+- **`street_name` puede traer una direccion completa legacy.** Si la ciudad quedo al final de `street_name`, derivar `address_line` desde campos estructurados vuelve a propagarla; la RPC debe quitar ese sufijo antes de construir direccion base.
 
 ## 274. Reintentos transparentes también afectan RPC POST
 

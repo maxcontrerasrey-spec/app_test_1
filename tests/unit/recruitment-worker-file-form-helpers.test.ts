@@ -55,9 +55,86 @@ describe("candidateWorkerFileFormHelpers", () => {
     expect(
       buildDerivedAddressLine({
         streetName: " Av. Balmaceda ",
-        streetNumber: "#123"
+        streetNumber: "#123",
+        currentCity: "Calama"
       })
     ).toBe("Av. Balmaceda, #123");
+  });
+
+  it("elimina solo ciudad o comuna como sufijo exacto de la direccion", () => {
+    expect(
+      buildDerivedAddressLine({
+        streetName: "SENDERO DEL SOL 585 DPTO A-42 CONDOMINIO PLAZA NORTE III, Antofagasta",
+        currentCity: "Antofagasta"
+      })
+    ).toBe("SENDERO DEL SOL 585 DPTO A-42 CONDOMINIO PLAZA NORTE III");
+    expect(
+      buildDerivedAddressLine({
+        streetName: "Antofagasta 123, Torre A",
+        currentCity: "Antofagasta"
+      })
+    ).toBe("Antofagasta 123, Torre A");
+  });
+
+  it("construye persona sin ciudad aunque el fallback legacy la traiga en address_line", () => {
+    const draft = buildPersonDraft(
+      {
+        ...candidate,
+        current_city: "Antofagasta",
+        district_or_commune: "Antofagasta",
+        address_line: "SENDERO DEL SOL 585 DPTO A-42 CONDOMINIO PLAZA NORTE III, Antofagasta"
+      } as never,
+      null
+    );
+
+    expect(draft.addressLine).toBe("SENDERO DEL SOL 585 DPTO A-42 CONDOMINIO PLAZA NORTE III");
+  });
+
+  it("construye persona sin ciudad cuando el street_name legacy incluye la ciudad", () => {
+    const draft = buildPersonDraft(candidate, {
+      document_type: "",
+      document_number: "123456785",
+      first_name: null,
+      last_name: null,
+      second_last_name: null,
+      gender: null,
+      birth_date: null,
+      nationality: null,
+      marital_status: null,
+      email: null,
+      personal_email: null,
+      phone: null,
+      office_phone: null,
+      country: null,
+      address_line: "Avenida Santa Cruz 490, casa 98, La Cruz",
+      district_or_commune: "La Cruz",
+      current_city: "La Cruz",
+      region: null,
+      street_name: "Avenida Santa Cruz 490, casa 98, La Cruz",
+      street_number: null,
+      apartment_or_office: null,
+      education_title: null,
+      education_institution: null,
+      emergency_contact_name: null,
+      emergency_contact_phone: null,
+      emergency_contact_relationship: null,
+      disability_status: null,
+      disability_notice_date: null,
+      invalidity_status: null,
+      invalidity_notice_date: null,
+      inclusion_notes: null,
+      labor_inclusion: null,
+      firefighter_status: null,
+      foreign_worker: null,
+      shirt_size: null,
+      pants_size: null,
+      shoe_size: null,
+      worker_file: null,
+      suggested_employee_code: null
+    } as never);
+
+    expect(draft.streetName).toBe("Avenida Santa Cruz 490, casa 98");
+    expect(draft.addressLine).toBe("Avenida Santa Cruz 490, casa 98");
   });
 
   it("construye persona priorizando perfil BUK y normalizando estado civil legado", () => {
