@@ -9,6 +9,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Distingue area visible, numero de contrato y cost center BUK.** `ZONA II CONTRATISTAS` existe en varias ramas; para Buses JM la hija correcta es `0000000168:0001`, pero el worker necesita el `cost_center` operativo `721`.
 - **El generador BUK resuelve primero por `contract_id`.** Si `buk_contract_mappings` tiene `buk_area_code = null`, falla antes de intentar crear el trabajo aunque el nombre del area exista en BUK.
 - **Antes de cambiar empresa por una captura, confirma la intencion operacional.** Una misma etiqueta puede existir bajo JM, SIMSA y CNN; el ERP debe seguir la empresa destino del contrato, no solo el sufijo visible mas reciente.
+- **El solicitante ERP puede no tener el mismo email en BUK.** Para resolver `leader_id`, primero intenta email vivo, pero si falla usa el snapshot local BUK por email exacto y nombre con tokens estrictos; no inventes empleados ni cambies maestros para completar el alta.
 
 ## 277. Las columnas de tiempo operativo deben derivar desde timestamps backend ya auditados
 

@@ -133,7 +133,10 @@ type BukEmployeeRecord = {
 
 type LocalBukEmployeeRow = {
   buk_employee_id: string | null;
+  full_name?: string | null;
+  email?: string | null;
   status: string | null;
+  is_active?: boolean | null;
   raw_payload: Record<string, unknown> | null;
   updated_at: string | null;
   area_code: string | null;
@@ -1519,6 +1522,98 @@ async function loadLocalBukAreaEmployees(
   return ((data ?? []) as LocalBukEmployeeRow[]).filter((row) => row.raw_payload);
 }
 
+function buildLocalBukEmployeePayload(row: LocalBukEmployeeRow | null | undefined) {
+  if (!row) {
+    return null;
+  }
+
+  const rawPayload =
+    row.raw_payload && typeof row.raw_payload === "object" && !Array.isArray(row.raw_payload)
+      ? { ...row.raw_payload }
+      : {};
+  const bukEmployeeId = parseIntegerLike(rawPayload.id) ?? parseIntegerLike(row.buk_employee_id);
+  if (bukEmployeeId == null) {
+    return null;
+  }
+
+  rawPayload.id = rawPayload.id ?? bukEmployeeId;
+  rawPayload.full_name = rawPayload.full_name ?? row.full_name ?? null;
+  rawPayload.email = rawPayload.email ?? row.email ?? null;
+  return rawPayload;
+}
+
+function isRequesterNameMatch(
+  employeeName: string | null | undefined,
+  requesterName: string | null | undefined
+) {
+  const requesterTokens = tokenizeBukLabel(requesterName);
+  if (requesterTokens.length < 2) {
+    return false;
+  }
+
+  const employeeTokens = new Set(tokenizeBukLabel(employeeName));
+  return requesterTokens.every((token) => employeeTokens.has(token));
+}
+
+async function fetchLocalBukEmployeeByRequesterIdentity(
+  supabase: SupabaseAdminClient,
+  requesterEmail: string | null | undefined,
+  requesterName: string | null | undefined
+) {
+  const normalizedEmail = normalizeEmail(requesterEmail);
+  const baseSelect = "buk_employee_id, full_name, email, status, is_active, raw_payload, updated_at, area_code, area_name";
+
+  if (normalizedEmail) {
+    const { data, error } = await supabase
+      .from("employees")
+      .select(baseSelect)
+      .eq("email", normalizedEmail)
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .limit(5);
+
+    if (error) {
+      throw new Error(`No fue posible leer el cache local BUK del solicitante ${normalizedEmail}: ${error.message}`);
+    }
+
+    const exactEmailMatch = ((data ?? []) as LocalBukEmployeeRow[]).find(
+      (row) => normalizeEmail(row.email) === normalizedEmail
+    );
+    const payload = buildLocalBukEmployeePayload(exactEmailMatch);
+    if (payload) {
+      return payload;
+    }
+  }
+
+  const requesterTokens = tokenizeBukLabel(requesterName);
+  if (requesterTokens.length < 2) {
+    return null;
+  }
+
+  const anchorToken = [...requesterTokens].sort((left, right) => right.length - left.length)[0];
+  const { data, error } = await supabase
+    .from("employees")
+    .select(baseSelect)
+    .ilike("full_name", `%${anchorToken}%`)
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(50);
+
+  if (error) {
+    throw new Error(`No fue posible leer el cache local BUK por nombre de solicitante ${requesterName ?? ""}: ${error.message}`);
+  }
+
+  const matchedRequester = ((data ?? []) as LocalBukEmployeeRow[]).find((row) => {
+    const rawName =
+      row.raw_payload?.full_name && typeof row.raw_payload.full_name === "string"
+        ? row.raw_payload.full_name
+        : null;
+    return isRequesterNameMatch(row.full_name ?? rawName, requesterName);
+  });
+
+  return buildLocalBukEmployeePayload(matchedRequester);
+}
+
 async function resolveBukRole(targetRoleName: string, areaId: number) {
   const searchTerms = Array.from(
     new Set([
@@ -1909,7 +2004,13 @@ async function resolveCandidateSyncContext(
   const areaEmployees = sortLocalBukEmployees(await loadLocalBukAreaEmployees(supabase, areaCode));
   const localAreaSnapshots = areaEmployees.map((row) => extractCurrentJobSnapshot(row.raw_payload));
 
-  const requesterBukEmployee = await fetchBukEmployeeByEmail(hiringRequest.requester_email);
+  const requesterBukEmployee =
+    (await fetchBukEmployeeByEmail(hiringRequest.requester_email)) ??
+    (await fetchLocalBukEmployeeByRequesterIdentity(
+      supabase,
+      hiringRequest.requester_email,
+      hiringRequest.requester_name
+    ));
   const requesterCompanyId =
     requesterBukEmployee && typeof requesterBukEmployee === "object"
       ? parseIntegerLike(

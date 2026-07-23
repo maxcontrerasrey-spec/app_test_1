@@ -23,6 +23,8 @@ Resultado:
 - [x] Confirmar contrato, numero BUK y area destino esperada para `ZONA II CONTRATISTAS`.
 - [x] Corregir mapping de contrato/area con migracion forward-only si falta el enlace interno.
 - [x] Validar con smoke remoto en rollback y gates SQL/Guardian antes de versionar.
+- [x] Auditar el segundo fallo productivo por `company_id`, `area_id` o `leader_id` despues de restaurar el mapping JM.
+- [x] Corregir la resolucion de solicitante BUK cuando el email ERP no coincide con el email vigente del snapshot BUK.
 
 Resultado:
 - El job BUK `33458800-64cb-4511-ae26-6cc93f6c2dff` fallo despues de reutilizar la ficha inactiva `42266`: `No existe un mapping BUK con area operativa para el contrato ZONA II CONTRATISTAS`.
@@ -33,6 +35,9 @@ Resultado:
 - Validacion remota posterior: `CONT-092` y mapping quedan con `contract_number = 0000000168:0001`, `buk_area_code = 721`, empresa resuelta `Buses JM Pullman S.A.`.
 - Validacion BUK: el rol `PREVENCIONISTA DE RIESGOS` incluye `area_id = 3008`, por lo que el mapping ya no deberia fallar por area operativa.
 - Validacion local: `audit:migrations`, `audit:supabase-security`, `git diff --check` y `guardian` pasan con la restauracion JM.
+- El retry productivo posterior fallo en el job `487f5e26-1a06-45e9-862b-8a45d9b00dc7` despues de reutilizar la ficha BUK `42266`: ya resolvia contrato `0000000168:0001`, area `721` y rol, pero no podia completar `leader_id`.
+- Causa raiz: la solicitud usa `requester_email = manuel.parra@busesjm.com`, mientras el snapshot BUK activo de Manuel Enrique Parra Soto tiene email `parrasotomanuelenrique@gmail.com`, `buk_employee_id = 19687` y `company_id = 1`; buscar solo por email dejaba `leader_id = 0`.
+- Correccion aplicada: `sync-buk-candidates` mantiene la busqueda viva por email y agrega fallback auditado al cache local BUK por email exacto y por nombre del solicitante con coincidencia estricta de tokens, sin modificar maestros BUK ni crear datos sinteticos.
 
 ## Reclutamiento - tiempo abierto en resumen de procesos
 
