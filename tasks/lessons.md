@@ -4,11 +4,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
-## 278. Un area visible en BUK no basta si el mapping ERP no tiene area operativa y rol habilitado
+## 278. Un area visible en BUK no basta si el mapping ERP no tiene area operativa
 
-- **Distingue area visible, numero de contrato y cost center BUK.** `ZONA II CONTRATISTAS` existe en varias ramas; para CNN la hija visible es `0000000168:0004`, pero el worker necesita el `cost_center` operativo `723`.
+- **Distingue area visible, numero de contrato y cost center BUK.** `ZONA II CONTRATISTAS` existe en varias ramas; para Buses JM la hija correcta es `0000000168:0001`, pero el worker necesita el `cost_center` operativo `721`.
 - **El generador BUK resuelve primero por `contract_id`.** Si `buk_contract_mappings` tiene `buk_area_code = null`, falla antes de intentar crear el trabajo aunque el nombre del area exista en BUK.
-- **Antes de reprocesar, valida tambien rol contra area.** El mapping puede quedar correcto, pero BUK debe tener el cargo asociado al `area_id` destino; si no, el siguiente error sera de resolucion cargo/area.
+- **Antes de cambiar empresa por una captura, confirma la intencion operacional.** Una misma etiqueta puede existir bajo JM, SIMSA y CNN; el ERP debe seguir la empresa destino del contrato, no solo el sufijo visible mas reciente.
 
 ## 277. Las columnas de tiempo operativo deben derivar desde timestamps backend ya auditados
 

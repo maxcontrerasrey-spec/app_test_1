@@ -26,12 +26,13 @@ Resultado:
 
 Resultado:
 - El job BUK `33458800-64cb-4511-ae26-6cc93f6c2dff` fallo despues de reutilizar la ficha inactiva `42266`: `No existe un mapping BUK con area operativa para el contrato ZONA II CONTRATISTAS`.
-- Produccion tenia `CONT-092` y `buk_contract_mappings.id = 92` en `0000000168:0001` con `buk_area_code = null`; BUK muestra la rama correcta `0000000168:0004`.
-- El catalogo BUK confirma `ZONA II CONTRATISTAS` bajo `CONSORCIO NUEVO NORTE SPA` con area hija `id = 3012`, `name = 0000000168:0004`, `cost_center = 723`.
-- La migracion productiva `20260723211426_fix_zona_ii_contratistas_buk_area_mapping` corrige `contracts` y `buk_contract_mappings` a `0000000168:0004`, `buk_area_code = 723`, `company_name = Consorcio nuevo norte SPA`.
-- Validacion remota posterior: `CONT-092` y mapping quedan con `contract_number = 0000000168:0004`, `buk_area_code = 723`, empresa resuelta `Consorcio nuevo norte SPA`.
-- Bloqueo externo detectado antes de reprocesar: en BUK, los roles `PREVENCIONISTA DE RIESGOS` encontrados no incluyen `area_id = 3012`; si se reintenta sin habilitar ese cargo en esa area, el siguiente bloqueo probable sera resolucion de cargo/area BUK.
-- Validacion local: `audit:migrations`, `audit:supabase-security`, `git diff --check` y `guardian` pasan.
+- Produccion tenia `CONT-092` y `buk_contract_mappings.id = 92` en `0000000168:0001` pero con `buk_area_code = null`; por eso el worker no podia resolver el area operativa aunque la rama existiera en BUK.
+- El catalogo BUK confirma `ZONA II CONTRATISTAS` bajo `JM` con area hija `id = 3008`, `name = 0000000168:0001`, `cost_center = 721`.
+- La migracion productiva `20260723211426_fix_zona_ii_contratistas_buk_area_mapping` llevo temporalmente el mapping a CNN `0000000168:0004`; la aclaracion operacional posterior confirma que el destino correcto es Buses JM `0000000168:0001`.
+- La migracion productiva correctiva `20260723213807_restore_zona_ii_contratistas_jm_buk_mapping` restaura `contracts` y `buk_contract_mappings` a `0000000168:0001`, `buk_area_code = 721`, `company_name = Buses JM Pullman S.A.`.
+- Validacion remota posterior: `CONT-092` y mapping quedan con `contract_number = 0000000168:0001`, `buk_area_code = 721`, empresa resuelta `Buses JM Pullman S.A.`.
+- Validacion BUK: el rol `PREVENCIONISTA DE RIESGOS` incluye `area_id = 3008`, por lo que el mapping ya no deberia fallar por area operativa.
+- Validacion local: `audit:migrations`, `audit:supabase-security`, `git diff --check` y `guardian` pasan con la restauracion JM.
 
 ## Reclutamiento - tiempo abierto en resumen de procesos
 
