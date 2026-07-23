@@ -17,6 +17,23 @@ Resultado:
 - Validacion remota: `ARAMARK SIERRA GORDA INTERNO` queda asignado a Angel Guerra Basso.
 - La migracion local `20260723152941_fix_mario_pizarro_sierra_gorda_contract_scope.sql` versiona el guardrail aplicado para reproducibilidad y auditoria.
 
+## Correos Resend - auditoria y limitacion a eventos criticos
+
+- [x] Auditar Edge Functions, triggers SQL, cron y tabla `transactional_email_dispatches`.
+- [x] Medir volumen productivo por tipo de evento y destinatario.
+- [x] Agregar control backend auditable por tipo de evento y recordatorios.
+- [x] Aplicar configuracion productiva para permitir solo eventos criticos.
+- [x] Validar que eventos no criticos no llamen Resend y que eventos criticos sigan encolando.
+
+Resultado:
+- Unica Edge Function que llama Resend: `hiring-transactional-email`.
+- Configuracion productiva activa: `is_enabled = true`, `enabled_event_types = {pending_approval, who_approval, rejection}`, `reminders_enabled = false`.
+- La migracion productiva quedo registrada por Supabase como `20260723205243_limit_resend_email_events_to_critical`; el archivo local usa la misma version.
+- Volumen historico por destinatario: `recruitment_handoff` 432 envios-recipient, `pending_approval` 232, `personnel_to_hire` 210, `who_approval` 172, `competency_formalization` 42, `rejection` 21.
+- Volumen ultimos 7 dias antes del corte: `personnel_to_hire` 95 envios-recipient, `recruitment_handoff` 60, `who_approval` 58, `competency_formalization` 42, `pending_approval` 42, `rejection` 2.
+- Top destinatarios 14 dias: Maximiliano Contreras 64, Diego Lazcano 34, equipo administrativo de Personal a Contratar 32 cada uno, Maria Jesus Lagos 32, equipo Reclutamiento 15 cada uno.
+- Smoke remoto sin consumir Resend: `personnel_to_hire` y `pending_approval` con `is_reminder = true` quedaron en 0 nuevos dispatches; la funcion conserva controles `enabled_event_types` y `reminders_enabled`, y no es ejecutable por `public`, `anon` ni `authenticated`.
+
 ## Reclutamiento - ciudad obligatoria y direccion base sin ciudad
 
 - [x] Confirmar contrato vivo de ficha BUK candidato, helper frontend y RPC `upsert_candidate_person_profile`.
