@@ -136,7 +136,8 @@ export const requiredPersonFields: Array<{ key: keyof PersonDraft; label: string
   { key: "personalEmail", label: "Email personal" },
   { key: "addressLine", label: "Dirección" },
   { key: "region", label: "Región" },
-  { key: "districtOrCommune", label: "Comuna" }
+  { key: "districtOrCommune", label: "Comuna" },
+  { key: "currentCity", label: "Ciudad" }
 ];
 
 function splitFullName(fullName: string) {
@@ -199,12 +200,10 @@ function formatStreetNumberForAddress(value: string | null | undefined) {
 export function buildDerivedAddressLine(input: {
   streetName?: string | null;
   streetNumber?: string | null;
-  currentCity?: string | null;
 }) {
   return [
     normalizeAddressPart(input.streetName),
-    formatStreetNumberForAddress(input.streetNumber),
-    normalizeAddressPart(input.currentCity)
+    formatStreetNumberForAddress(input.streetNumber)
   ]
     .filter(Boolean)
     .join(", ");
@@ -219,7 +218,7 @@ export function buildPersonDraft(
   const streetName = bukProfile?.street_name ?? "";
   const streetNumber = bukProfile?.street_number ?? "";
   const addressLine =
-    buildDerivedAddressLine({ streetName, streetNumber, currentCity }) ||
+    buildDerivedAddressLine({ streetName, streetNumber }) ||
     bukProfile?.address_line ||
     candidate.address_line ||
     "";

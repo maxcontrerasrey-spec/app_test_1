@@ -51,14 +51,13 @@ const caseDetail = {
 } as never;
 
 describe("candidateWorkerFileFormHelpers", () => {
-  it("deriva direccion compacta sin duplicar numeral", () => {
+  it("deriva direccion compacta sin duplicar numeral y sin ciudad", () => {
     expect(
       buildDerivedAddressLine({
         streetName: " Av. Balmaceda ",
-        streetNumber: "#123",
-        currentCity: " Calama "
+        streetNumber: "#123"
       })
-    ).toBe("Av. Balmaceda, #123, Calama");
+    ).toBe("Av. Balmaceda, #123");
   });
 
   it("construye persona priorizando perfil BUK y normalizando estado civil legado", () => {
@@ -111,7 +110,8 @@ describe("candidateWorkerFileFormHelpers", () => {
       lastName: "Soto",
       secondLastName: "Perez",
       maritalStatus: "Soltero",
-      addressLine: "Av. Balmaceda, #123, Calama"
+      addressLine: "Av. Balmaceda, #123",
+      currentCity: "Calama"
     });
   });
 

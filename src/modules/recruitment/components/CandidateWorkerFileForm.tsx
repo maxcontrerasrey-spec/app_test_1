@@ -142,7 +142,6 @@ export function CandidateWorkerFileForm({
 
     setPersonDraft((current) => ({
       ...current,
-      addressLine: derivedAddressLine,
       companyEmail: companyEmailValidation.normalized,
       personalEmail: personalEmailValidation.normalized
     }));

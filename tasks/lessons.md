@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 276. Ciudad BUK es campo obligatorio separado de direccion base
+
+- **`Dirección base` no debe absorber la ciudad.** En ficha BUK de candidatos, `address_line` se deriva solo desde `street_name` y `street_number`; `current_city` vive como campo propio.
+- **La ciudad se exige en el contrato autoritativo.** El frontend puede advertir campos faltantes, pero `upsert_candidate_person_profile(...)` debe rechazar guardados sin `current_city`.
+- **La capitalización pertenece al backend cuando afecta datos persistidos.** Normaliza `current_city` en RPC/migración para que cualquier entrypoint quede cubierto y el refresco de ficha devuelva `Calama`, no `calama`.
+
 ## 274. Reintentos transparentes también afectan RPC POST
 
 - **Una transacción no vuelve replay-safe una mutación.** El cliente puede reintentar después de un commit cuya respuesta se perdió.

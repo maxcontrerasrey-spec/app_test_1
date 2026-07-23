@@ -4,6 +4,33 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Administradores de contratos - alcance Mario Sierra Gorda
+
+- [x] Revisar `buk_contract_mappings` para Mario, Angel y Jose en Sierra Gorda/DMH.
+- [x] Corregir a Mario para que conserve solo `SIERRA GORDA OPERACIONES`.
+- [x] Devolver `ARAMARK SIERRA GORDA INTERNO` a Angel Guerra y validar DMH.
+- [x] Ejecutar gates SQL/Guardian y commitear/pushear a `main`.
+
+Resultado:
+- La migracion remota `20260723152941_fix_mario_pizarro_sierra_gorda_contract_scope` quedo registrada en `supabase_migrations.schema_migrations`.
+- Validacion remota: Mario Pizarro Fernandez queda con 0 mappings DMH/Ministro Hales y 1 mapping `SIERRA GORDA OPERACIONES`.
+- Validacion remota: `ARAMARK SIERRA GORDA INTERNO` queda asignado a Angel Guerra Basso.
+- La migracion local `20260723152941_fix_mario_pizarro_sierra_gorda_contract_scope.sql` versiona el guardrail aplicado para reproducibilidad y auditoria.
+
+## Reclutamiento - ciudad obligatoria y direccion base sin ciudad
+
+- [x] Confirmar contrato vivo de ficha BUK candidato, helper frontend y RPC `upsert_candidate_person_profile`.
+- [x] Ajustar direccion derivada para usar solo calle y numero, dejando ciudad como campo separado obligatorio.
+- [x] Normalizar automaticamente ciudad a capitalizacion por palabra en backend autoritativo.
+- [x] Agregar pruebas unitarias/migracion forward-only y ejecutar validaciones frontend/SQL relevantes.
+
+Resultado:
+- `Dirección base` queda derivada desde `Calle` y `Número de calle`; no concatena `Ciudad`.
+- `Ciudad` queda obligatoria en la validacion de ficha personal BUK.
+- La migracion `20260723161000_require_candidate_city_and_omit_city_from_address.sql` fue aplicada en Supabase, normaliza `current_city` con primera letra mayuscula por palabra, recompila `upsert_candidate_person_profile` para exigir ciudad y mantiene `address_line` sin ciudad.
+- Validacion remota: ciudades no normalizadas = 0; direcciones estructuradas que aun contienen ciudad = 0; RPC rechaza `Ciudad es obligatoria` sin ciudad y normaliza `san pedro de atacama` a `San Pedro De Atacama` con `address_line = Petrohue Sur, #3213` en rollback.
+- Validacion local: unitarias de reclutamiento, TypeScript, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `audit:performance-baseline`, `guardian` y `git diff --check` pasaron.
+
 ## Certificados - correccion etiqueta MAXUS DELIBERY 9
 
 - [x] Confirmar fila MAXUS visible en `competency_equipment_models`.
