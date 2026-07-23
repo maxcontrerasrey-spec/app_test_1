@@ -4,6 +4,19 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Control de jornadas 4X3 - correccion ciclo Mario Pizarro
+
+- [x] Confirmar trabajador unico Mario Roberto Pizarro Fernandez en BUK/ERP y su asignacion vigente 4X3.
+- [x] Corregir el ancla del ciclo desde 2026-07-22 a 2026-07-20 solo para BUK 41804.
+- [x] Validar resolucion diaria 2026-07-20 a 2026-07-27 y registrar evidencia.
+- [x] Ejecutar gates de migracion/seguridad y commitear/pushear a `main`.
+
+Resultado:
+- Mario Roberto Pizarro Fernandez fue identificado como BUK `41804`, RUT `10.864.096-0`, con una unica asignacion `4X3 Ordinaria`.
+- La migracion `20260723030646_fix_mario_pizarro_4x3_cycle_start.sql` ajusto `hr_worker_rosters.start_date` desde `2026-07-22` a `2026-07-20`, manteniendo `end_date = 2026-07-27`.
+- Validacion de ciclo: `2026-07-20` a `2026-07-23` quedan en turno, `2026-07-24` a `2026-07-26` en descanso y `2026-07-27` vuelve a turno.
+- Gates: `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run guardian` y `git diff --check` pasaron.
+
 ## Enterprise Repository Cleanup - limpieza final post EEES 100
 
 - [x] Leer objetivo `docs/CODEX_OBJECTIVE_LOOP_ENTERPRISE_REPOSITORY_CLEANUP.md`, Boot Sequence y cierres EEES 100.

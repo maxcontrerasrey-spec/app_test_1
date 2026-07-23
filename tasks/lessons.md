@@ -2673,3 +2673,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Un build local sin variables `VITE_*` no representa el artefacto desplegable.** Mide y versiona el baseline con las variables publicas que CI inyecta, porque su contenido forma parte del JavaScript generado.
 - **Una diferencia reproducible de entorno no se resuelve agregando tolerancia arbitraria.** Registra el valor realmente medido en CI y documenta el contexto para que futuras comparaciones sean equivalentes.
+
+## 186. El ancla de ciclo es la fuente de verdad en Control de Jornadas 4X3
+
+- **Corregir una jornada 4X3 no es cambiar el nombre del turno.** En `hr_worker_rosters`, `start_date` define el dia 1 del ciclo; desplazarlo dos dias cambia todos los estados futuros de turno/descanso.
+- **Toda correccion manual debe amarrarse a identidad estable y rango esperado.** Usa `buk_employee_id`, RUT, patron, `start_date` y `end_date` esperados para evitar afectar a homonimos u otras pautas superpuestas.
+- **La evidencia debe mostrar el calendario resultante.** Despues del update, valida dias 1-4 como turno, 5-7 como descanso y el reinicio del ciclo antes de cerrar.
