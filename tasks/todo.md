@@ -17,6 +17,22 @@ Resultado:
 - Validacion remota: `ARAMARK SIERRA GORDA INTERNO` queda asignado a Angel Guerra Basso.
 - La migracion local `20260723152941_fix_mario_pizarro_sierra_gorda_contract_scope.sql` versiona el guardrail aplicado para reproducibilidad y auditoria.
 
+## BUK - mapping ZONA II CONTRATISTAS
+
+- [x] Auditar el fallo de generacion BUK del candidato Christopher Williams Quispe Charcas contra job/snapshot productivo.
+- [x] Confirmar contrato, numero BUK y area destino esperada para `ZONA II CONTRATISTAS`.
+- [x] Corregir mapping de contrato/area con migracion forward-only si falta el enlace interno.
+- [x] Validar con smoke remoto en rollback y gates SQL/Guardian antes de versionar.
+
+Resultado:
+- El job BUK `33458800-64cb-4511-ae26-6cc93f6c2dff` fallo despues de reutilizar la ficha inactiva `42266`: `No existe un mapping BUK con area operativa para el contrato ZONA II CONTRATISTAS`.
+- Produccion tenia `CONT-092` y `buk_contract_mappings.id = 92` en `0000000168:0001` con `buk_area_code = null`; BUK muestra la rama correcta `0000000168:0004`.
+- El catalogo BUK confirma `ZONA II CONTRATISTAS` bajo `CONSORCIO NUEVO NORTE SPA` con area hija `id = 3012`, `name = 0000000168:0004`, `cost_center = 723`.
+- La migracion productiva `20260723211426_fix_zona_ii_contratistas_buk_area_mapping` corrige `contracts` y `buk_contract_mappings` a `0000000168:0004`, `buk_area_code = 723`, `company_name = Consorcio nuevo norte SPA`.
+- Validacion remota posterior: `CONT-092` y mapping quedan con `contract_number = 0000000168:0004`, `buk_area_code = 723`, empresa resuelta `Consorcio nuevo norte SPA`.
+- Bloqueo externo detectado antes de reprocesar: en BUK, los roles `PREVENCIONISTA DE RIESGOS` encontrados no incluyen `area_id = 3012`; si se reintenta sin habilitar ese cargo en esa area, el siguiente bloqueo probable sera resolucion de cargo/area BUK.
+- Validacion local: `audit:migrations`, `audit:supabase-security`, `git diff --check` y `guardian` pasan.
+
 ## Reclutamiento - tiempo abierto en resumen de procesos
 
 - [x] Ubicar la tabla `Resumen de procesos de contratación` y el contrato RPC/frontend que alimenta la columna `Solicitó`.

@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 278. Un area visible en BUK no basta si el mapping ERP no tiene area operativa y rol habilitado
+
+- **Distingue area visible, numero de contrato y cost center BUK.** `ZONA II CONTRATISTAS` existe en varias ramas; para CNN la hija visible es `0000000168:0004`, pero el worker necesita el `cost_center` operativo `723`.
+- **El generador BUK resuelve primero por `contract_id`.** Si `buk_contract_mappings` tiene `buk_area_code = null`, falla antes de intentar crear el trabajo aunque el nombre del area exista en BUK.
+- **Antes de reprocesar, valida tambien rol contra area.** El mapping puede quedar correcto, pero BUK debe tener el cargo asociado al `area_id` destino; si no, el siguiente error sera de resolucion cargo/area.
+
 ## 277. Las columnas de tiempo operativo deben derivar desde timestamps backend ya auditados
 
 - **No recalcules el origen de una fecha si el RPC ya entrega el hito autoritativo.** En `Resumen de procesos de contratación`, `get_recruitment_processes_page` ya expone `opened_at` y soporta ordenamiento por ese campo.
