@@ -4,6 +4,19 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Certificados - correccion etiqueta MAXUS DELIBERY 9
+
+- [x] Confirmar fila MAXUS visible en `competency_equipment_models`.
+- [x] Corregir la primera opcion desde `DELIBERY -9 - E DELIBERY -9` a `DELIBERY 9` sin tocar `E DELIBERY 9`.
+- [x] Actualizar guardrail de catalogo y validar contra base productiva.
+- [x] Commit y push a `main`.
+
+Resultado:
+- La opcion `maxus-delibery-9-e-delibery-9` quedo visible como `DELIBERY 9`.
+- La opcion separada `maxus-e-delibery-9` se mantiene como `E DELIBERY 9`.
+- La migracion remota quedo registrada como `20260723132022_fix_maxus_delibery_9_label`.
+- Validacion: `audit:competency-catalog-guards`, `audit:migrations`, `audit:supabase-security`, `guardian` y `git diff --check` pasaron.
+
 ## Control de jornadas 4X3 - correccion ciclo Mario Pizarro
 
 - [x] Confirmar trabajador unico Mario Roberto Pizarro Fernandez en BUK/ERP y su asignacion vigente 4X3.

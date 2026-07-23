@@ -29,7 +29,7 @@ for (const expectedModel of [
   "K400 C",
   "K 450-C",
   "B 450 R",
-  "DELIBERY -9 - E DELIBERY -9",
+  "DELIBERY 9",
   "XMQ6130 E",
   "ZK6709 H"
 ]) {
