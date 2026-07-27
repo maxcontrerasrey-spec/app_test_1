@@ -10,6 +10,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El denominador debe venir del mismo contrato filtrado que las tarjetas.** Si una tarjeta se filtra por periodo, gerencia, contrato y cargo, el grafico hermano debe consumir los mismos campos `summary` del RPC filtrado, no una serie secundaria con otra semantica.
 - **Los tooltips operativos deben explicar la composicion del numero.** Para cupos cubiertos, mostrar solo el total oculta si la cobertura viene por contratacion o movilidad interna; el desglose debe salir del backend autoritativo cuando ya existe.
 - **Un porcentaje de cobertura no debe perder conteos reales.** La dona puede limitar visualmente la porcion cubierta al total solicitado para mantener 100%, pero el tooltip debe conservar el total cubierto real y la base usada para calcular el porcentaje.
+- **No asumas columnas gemelas en tablas de permisos.** `role_feature_access` tiene `updated_at`, pero `role_module_access` no; las migraciones de acceso deben inspeccionar columnas reales antes de usar `on conflict do update`.
 
 ## 278. Un area visible en BUK no basta si el mapping ERP no tiene area operativa
 

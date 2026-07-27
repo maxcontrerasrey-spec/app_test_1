@@ -21,8 +21,7 @@ join public.app_modules am
  and am.is_active = true
 on conflict (role_code, module_code)
 do update set
-  can_view = true,
-  updated_at = timezone('utc', now());
+  can_view = true;
 
 with target_roles(role_code) as (
   values
