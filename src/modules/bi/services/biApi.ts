@@ -59,6 +59,8 @@ function normalizeRecruitmentLabel(label: string) {
   const normalizedLabels: Record<string, string> = {
     Busqueda: "Búsqueda",
     "Examenes medicos": "Exámenes médicos",
+    medical_contraindication_resolution: "Levantamiento de Contraindicación",
+    "Levantamiento de Contraindicacion": "Levantamiento de Contraindicación",
     "Revision documental": "Revisión documental",
     "Pendiente ejecucion RRHH": "Pendiente ejecución RRHH"
   };

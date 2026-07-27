@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.7
+version: 1.0.8
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,13 +24,13 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,672,311 bytes.
-- JS total medido: 3,024,941 bytes.
-- `dist` total: 10,672,311 bytes.
-- Archivos JS: 51.
-- JS total: 3,024,941 bytes.
+- dist total medido: 10,675,656 bytes.
+- JS total medido: 3,027,361 bytes.
+- `dist` total: 10,675,656 bytes.
+- Archivos JS: 52.
+- JS total: 3,027,361 bytes.
 - Archivos CSS: 10.
-- CSS total: 213,123 bytes.
+- CSS total: 214,048 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
 - Mayor mapa: `dist/maps/chile.json`, 1,454,860 bytes.
 - Mayor vendor JS: `echarts-vendor`, 512,504 bytes.
@@ -53,6 +53,8 @@ Revision 2026-07-27 BI jornada: el total global sube 1,182 bytes, JS sube 958 by
 
 Revision 2026-07-27 BI jornada cache: el total global sube 39 bytes y JS sube 39 bytes por incluir `shiftNames` en la query key normalizada de BI. No agrega vendors, rutas lazy ni CSS; corrige el refetch de tarjetas y graficos al cambiar Jornada.
 
+Revision 2026-07-27 control filtros: el total global sube 2,124 bytes, JS sube 1,423 bytes y CSS sube 701 bytes por extender `MultiSelectField` con busqueda digitada y aplicar multiseleccion en filtros de Control de Contrataciones. No agrega vendors ni rutas lazy; los assets trackeados permanecen bajo baseline.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -70,11 +72,11 @@ Revision 2026-07-27 BI jornada cache: el total global sube 39 bytes y JS sube 39
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10673532,
-  "jsFileCount": 51,
-  "jsTotalBytes": 3025938,
+  "distTotalBytes": 10675656,
+  "jsFileCount": 52,
+  "jsTotalBytes": 3027361,
   "cssFileCount": 10,
-  "cssTotalBytes": 213347,
+  "cssTotalBytes": 214048,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

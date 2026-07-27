@@ -4,6 +4,20 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Control de Contrataciones - filtros multiples y contraindicacion medica
+
+- [x] Convertir filtros de procesos a seleccion multiple, con busqueda digitada al menos en Turno y Contrato.
+- [x] Agregar etapa opcional `Levantamiento de Contraindicacion` entre Examenes Medicos y Revision Documental.
+- [x] Actualizar contratos frontend/backend, labels, constraints y transiciones sin romper etapas existentes.
+- [x] Validar localmente, aplicar migracion productiva y versionar en `main`.
+
+Resultado:
+- `Control de Contrataciones` usa `MultiSelectField` para Turno, Pasajes, Alojamiento y Contrato; Turno y Contrato permiten digitar para acortar busqueda y todos aceptan mas de una seleccion.
+- Se agrega la etapa opcional `medical_contraindication_resolution` con label `Levantamiento de Contraindicación`: desde `medical_exams` se puede ir a esa etapa o directo a `document_review`; desde la nueva etapa solo se puede continuar a documental o cerrar la participacion.
+- La migracion `20260727203203_add_medical_contraindication_resolution_stage` actualiza constraint, RPC `advance_recruitment_candidate_stage`, grants y reload de PostgREST sin relajar permisos.
+- Migracion remota aplicada y registrada. Smoke productivo transaccional: candidato `d0b89e6f-cbae-44c6-8fb6-a4ce3d07c793` avanzo a `medical_contraindication_resolution` dentro de `begin/rollback` y luego quedo confirmado nuevamente en `medical_exams`.
+- Validacion: unitarias, contratos, integridad, TypeScript directo, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `audit:performance-baseline`, `git diff --check` y `guardian:full` pasan con 0 errores y 0 warnings.
+
 ## Business Intelligence - gerencia sin data en Reclutamiento
 
 - [x] Confirmar matriz productiva de `bi_analytics`/`bi_reclutamiento` para roles gerenciales.

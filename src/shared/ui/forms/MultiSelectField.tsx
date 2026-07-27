@@ -8,6 +8,9 @@ type MultiSelectFieldProps = {
   onChange: (values: string[]) => void;
   options: SelectOption[];
   placeholder?: string;
+  searchPlaceholder?: string;
+  searchable?: boolean;
+  hideLabel?: boolean;
   disabled?: boolean;
   className?: string;
 };
@@ -19,18 +22,29 @@ export function MultiSelectField({
   onChange,
   options,
   placeholder = "Seleccione opciones",
+  searchPlaceholder = "Buscar opciones",
+  searchable = false,
+  hideLabel = false,
   disabled = false,
   className = ""
 }: MultiSelectFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const hasOptions = options.length > 0;
   const areAllSelected = hasOptions && value.length === options.length;
+  const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase("es-CL");
+  const visibleOptions = normalizedSearchTerm
+    ? options.filter((option) =>
+        `${option.label} ${option.value}`.toLocaleLowerCase("es-CL").includes(normalizedSearchTerm)
+      )
+    : options;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setSearchTerm("");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -54,7 +68,8 @@ export function MultiSelectField({
 
   const handleSelectAll = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onChange(options.map((option) => option.value));
+    const visibleValues = visibleOptions.map((option) => option.value);
+    onChange(Array.from(new Set([...value, ...visibleValues])));
   };
 
   const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -64,7 +79,7 @@ export function MultiSelectField({
 
   return (
     <div className={`field-group select-field multi-select-field ${isOpen ? "select-field-open" : ""} ${className}`.trim()} ref={containerRef}>
-      <label className="field-label" htmlFor={id}>
+      <label className={`field-label ${hideLabel ? "field-label-visually-hidden" : ""}`} htmlFor={id}>
         {label}
       </label>
 
@@ -115,6 +130,21 @@ export function MultiSelectField({
             <div className="multi-select-empty">No hay opciones</div>
           ) : (
             <>
+              {searchable ? (
+                <div className="multi-select-search-wrap">
+                  <input
+                    id={`${id}-search`}
+                    className="multi-select-search-input"
+                    type="search"
+                    value={searchTerm}
+                    placeholder={searchPlaceholder}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onClick={(event) => event.stopPropagation()}
+                    autoComplete="off"
+                  />
+                </div>
+              ) : null}
+
               <div className="multi-select-actions">
                 <button
                   type="button"
@@ -132,7 +162,11 @@ export function MultiSelectField({
                 </button>
               </div>
 
-              {options.map((opt) => {
+              {visibleOptions.length === 0 ? (
+                <div className="multi-select-empty">Sin coincidencias</div>
+              ) : null}
+
+              {visibleOptions.map((opt) => {
                 const isSelected = value.includes(opt.value);
                 return (
                   <div

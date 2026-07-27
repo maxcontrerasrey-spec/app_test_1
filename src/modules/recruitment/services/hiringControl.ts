@@ -77,6 +77,7 @@ export function toRecruitmentCandidateStageLabel(
   if (value === "who_approved") return "Who Aprobado";
   if (value === "in_process") return "En Proceso";
   if (value === "medical_exams") return "Exámenes Médicos";
+  if (value === "medical_contraindication_resolution") return "Levantamiento de Contraindicación";
   if (value === "document_review") return "Revisión Documental";
   if (value === "ready_for_hire") return "Listo para contratar";
   if (value === "hired") return "Contratado";

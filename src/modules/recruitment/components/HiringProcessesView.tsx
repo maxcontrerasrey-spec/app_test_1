@@ -1,22 +1,9 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { SelectField, TextField } from "../../../shared/ui";
-import {
-  getRecruitmentCaseHeadcountBreakdown,
-  resolveRecruitmentProcessSearchFilter,
-  toRecruitmentCaseStatusLabel,
-  type RecruitmentCaseListRow,
-} from "../services/hiringControl";
+import { MultiSelectField, TextField } from "../../../shared/ui";
+import { getRecruitmentCaseHeadcountBreakdown, resolveRecruitmentProcessSearchFilter, toRecruitmentCaseStatusLabel, type RecruitmentCaseListRow } from "../services/hiringControl";
 import { toTravelMethodologyLabel } from "../services/hiringWorkflow";
-import {
-  useRecruitmentCaseDetail,
-  useRecruitmentPendingApprovalsPage,
-  useRecruitmentProcessesPage
-} from "../hooks/useRecruitmentQueries";
-import {
-  caseFilterOptions,
-  formatDateValue,
-  formatDateTimeValue
-} from "./hiringControlViewUtils";
+import { useRecruitmentCaseDetail, useRecruitmentPendingApprovalsPage, useRecruitmentProcessesPage } from "../hooks/useRecruitmentQueries";
+import { caseFilterOptions, formatDateValue, formatDateTimeValue } from "./hiringControlViewUtils";
 import { ApprovalModal } from "./ApprovalModal";
 import { TrackingPagination } from "./TrackingPagination";
 import { formatOpenDuration } from "../lib/openDuration";
@@ -62,10 +49,10 @@ export function HiringProcessesView({
   onCloseRequest
 }: HiringProcessesViewProps) {
   const [caseSearchTerm, setCaseSearchTerm] = useState("");
-  const [shiftFilter, setShiftFilter] = useState("");
-  const [travelFilter, setTravelFilter] = useState("");
-  const [campFilter, setCampFilter] = useState("");
-  const [contractFilter, setContractFilter] = useState("");
+  const [shiftFilter, setShiftFilter] = useState<string[]>([]);
+  const [travelFilter, setTravelFilter] = useState<string[]>([]);
+  const [campFilter, setCampFilter] = useState<string[]>([]);
+  const [contractFilter, setContractFilter] = useState<string[]>([]);
   const [caseFilter, setCaseFilter] =
     useState<(typeof caseFilterOptions)[number]["key"]>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
@@ -116,10 +103,10 @@ export function HiringProcessesView({
         const campValue = formatBooleanFilterValue(caseRow.campamento);
 
         return (
-          (!shiftFilter || shiftValue === shiftFilter) &&
-          (!contractFilter || contractValue === contractFilter) &&
-          (!travelFilter || travelValue === travelFilter) &&
-          (!campFilter || campValue === campFilter)
+          matchesSelectedProcessFilter(shiftValue, shiftFilter) &&
+          matchesSelectedProcessFilter(contractValue, contractFilter) &&
+          matchesSelectedProcessFilter(travelValue, travelFilter) &&
+          matchesSelectedProcessFilter(campValue, campFilter)
         );
       }),
     [allActiveCases, campFilter, contractFilter, shiftFilter, travelFilter]
@@ -140,10 +127,10 @@ export function HiringProcessesView({
   const hasCaseSearchFilters = Boolean(
     caseSearchTerm ||
       debouncedSearchTerm ||
-      shiftFilter ||
-      travelFilter ||
-      campFilter ||
-      contractFilter ||
+      shiftFilter.length > 0 ||
+      travelFilter.length > 0 ||
+      campFilter.length > 0 ||
+      contractFilter.length > 0 ||
       caseFilter
   );
   const expandedCaseRow =
@@ -238,10 +225,10 @@ export function HiringProcessesView({
 
   const handleClearCaseSearchFilters = () => {
     searchFilterRequestIdRef.current += 1;
-    setShiftFilter("");
-    setTravelFilter("");
-    setCampFilter("");
-    setContractFilter("");
+    setShiftFilter([]);
+    setTravelFilter([]);
+    setCampFilter([]);
+    setContractFilter([]);
     setCaseSearchTerm("");
     setDebouncedSearchTerm("");
     setCaseFilter(null);
@@ -335,44 +322,48 @@ export function HiringProcessesView({
         </div>
         <div className="tracking-filters tracking-filters-processes">
           <div className="tracking-filter-select-row">
-            <SelectField
+            <MultiSelectField
               id="hiring-processes-shift-filter"
               label="Turno"
               hideLabel
               value={shiftFilter}
               placeholder="Turno"
+              searchPlaceholder="Buscar turno"
+              searchable
               options={shiftOptions}
-              onChange={(event) => setShiftFilter(event.target.value)}
+              onChange={setShiftFilter}
               className="tracking-filter-select"
             />
-            <SelectField
+            <MultiSelectField
               id="hiring-processes-travel-filter"
               label="Pasajes"
               hideLabel
               value={travelFilter}
               placeholder="Pasajes"
               options={BOOLEAN_FILTER_OPTIONS}
-              onChange={(event) => setTravelFilter(event.target.value)}
+              onChange={setTravelFilter}
               className="tracking-filter-select"
             />
-            <SelectField
+            <MultiSelectField
               id="hiring-processes-camp-filter"
               label="Alojamiento"
               hideLabel
               value={campFilter}
               placeholder="Alojamiento"
               options={BOOLEAN_FILTER_OPTIONS}
-              onChange={(event) => setCampFilter(event.target.value)}
+              onChange={setCampFilter}
               className="tracking-filter-select"
             />
-            <SelectField
+            <MultiSelectField
               id="hiring-processes-contract-filter"
               label="Contrato"
               hideLabel
               value={contractFilter}
               placeholder="Contrato"
+              searchPlaceholder="Buscar contrato"
+              searchable
               options={contractOptions}
-              onChange={(event) => setContractFilter(event.target.value)}
+              onChange={setContractFilter}
               className="tracking-filter-select tracking-filter-select-contract"
             />
             <button
@@ -785,13 +776,14 @@ function normalizeProcessFilterValue(value: string | null | undefined) {
 }
 
 function formatBooleanFilterValue(value: boolean | null | undefined) {
-  if (value === true) return "si";
-  if (value === false) return "no";
-  return "";
+  return value === true ? "si" : value === false ? "no" : "";
 }
 
+const matchesSelectedProcessFilter = (value: string, selectedValues: string[]) =>
+  selectedValues.length === 0 || selectedValues.includes(value);
+
 function buildTextFilterOptions(values: string[]) {
-  return Array.from(new Set(values.filter(Boolean)))
-    .sort((left, right) => left.localeCompare(right, "es"))
-    .map((value) => ({ value, label: value }));
+  return Array.from(new Set(values.filter(Boolean))).sort((left, right) =>
+    left.localeCompare(right, "es")
+  ).map((value) => ({ value, label: value }));
 }

@@ -16,6 +16,7 @@ export const candidateStageFilterOptions = [
   { key: "who_pending", label: "Who Pendiente" },
   { key: "in_process", label: "En Proceso" },
   { key: "medical_exams", label: "Exámenes Médicos" },
+  { key: "medical_contraindication_resolution", label: "Levantamiento de Contraindicación" },
   { key: "document_review", label: "Revisión Documental" },
   { key: "ready_for_hire", label: "Listos para contratar" },
   { key: "discarded", label: "Descartados" }
@@ -42,6 +43,8 @@ export function getNextStageOptions(
     case "in_process":
       return ["medical_exams", "rejected", "withdrawn"];
     case "medical_exams":
+      return ["medical_contraindication_resolution", "document_review", "rejected", "withdrawn"];
+    case "medical_contraindication_resolution":
       return ["document_review", "rejected", "withdrawn"];
     case "document_review":
       return ["ready_for_hire", "rejected", "withdrawn"];

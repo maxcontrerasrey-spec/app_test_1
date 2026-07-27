@@ -1282,6 +1282,41 @@ textarea {
   background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
 }
 
+.multi-select-search-wrap {
+  position: sticky;
+  top: -0.45rem;
+  z-index: 2;
+  margin: -0.45rem -0.45rem 0;
+  padding: 0.5rem 0.65rem 0.35rem;
+  border-bottom: 1px solid var(--soft-border);
+  border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
+}
+
+.multi-select-search-wrap + .multi-select-actions {
+  top: 2.65rem;
+  margin-top: 0;
+  border-radius: 0;
+}
+
+.multi-select-search-input {
+  width: 100%;
+  min-height: 2.15rem;
+  border: 1px solid var(--soft-border);
+  border-radius: 0.68rem;
+  background: rgba(var(--surface-rgb), 0.68);
+  color: var(--soft-text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  outline: none;
+  padding: 0.35rem 0.55rem;
+}
+
+.multi-select-search-input:focus {
+  border-color: var(--soft-accent);
+  box-shadow: 0 0 0 2px rgba(45, 99, 255, 0.12);
+}
+
 .multi-select-action-button {
   border: 0;
   background: transparent;

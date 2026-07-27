@@ -22,6 +22,7 @@ export type RecruitmentCandidateStage =
   | "who_approved"
   | "in_process"
   | "medical_exams"
+  | "medical_contraindication_resolution"
   | "document_review"
   | "ready_for_hire"
   | "hired"

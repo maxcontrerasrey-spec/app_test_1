@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 282. Una etapa opcional debe existir en UI, constraint y RPC al mismo tiempo
+
+- **No basta con agregar el label en frontend.** Si una etapa nueva no esta en el check constraint de `recruitment_case_candidates.stage_code`, cualquier guardado productivo va a fallar aunque el selector la muestre.
+- **Las bifurcaciones opcionales deben mantener el camino directo.** En reclutamiento, `Levantamiento de Contraindicación` se ofrece desde `medical_exams`, pero no debe obligar a todos los candidatos a pasar por ella antes de `document_review`.
+- **El smoke productivo debe ser transaccional cuando toca candidatos reales.** Para validar una transicion nueva, usa `begin/rollback`, confirma la respuesta del RPC y luego consulta que la etapa original se mantuvo.
+- **Los filtros operativos no deben volver a selectores simples por comodidad.** Si negocio necesita digitar y seleccionar multiples contratos, reutiliza el componente multiseleccion y extiendelo con busqueda en vez de duplicar un selector artesanal.
+
 ## 281. Los graficos BI deben responder a la metrica pedida, no al titulo historico del widget
 
 - **No reutilices un grafico de estados si negocio pide cobertura.** En BI Reclutamiento, `Estado de Casos` podia parecer cercano visualmente, pero la metrica correcta era `Cupos cubiertos / Cupos solicitados`.
