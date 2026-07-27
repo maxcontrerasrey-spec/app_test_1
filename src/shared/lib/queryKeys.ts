@@ -3,14 +3,23 @@ type BiQueryFilters = {
   contractCodes?: Array<string | null | undefined> | null;
   jobTitles?: Array<string | null | undefined> | null;
   managementNames?: Array<string | null | undefined> | null;
+  shiftNames?: Array<string | null | undefined> | null;
 };
+
+function normalizeTextArray(values?: Array<string | null | undefined> | null) {
+  return [...(values ?? [])]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value))
+    .sort();
+}
 
 function normalizeBiFilters(filters?: BiQueryFilters | null) {
   return {
     periodCode: filters?.periodCode?.trim() || "",
-    contractCodes: [...(filters?.contractCodes ?? [])].filter(Boolean).sort(),
-    jobTitles: [...(filters?.jobTitles ?? [])].filter(Boolean).sort(),
-    managementNames: [...(filters?.managementNames ?? [])].filter(Boolean).sort()
+    contractCodes: normalizeTextArray(filters?.contractCodes),
+    jobTitles: normalizeTextArray(filters?.jobTitles),
+    managementNames: normalizeTextArray(filters?.managementNames),
+    shiftNames: normalizeTextArray(filters?.shiftNames)
   };
 }
 

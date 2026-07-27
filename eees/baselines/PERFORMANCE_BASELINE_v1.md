@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.6
+version: 1.0.7
 status: Activo
 language: es-CL
 owner: Quality
@@ -51,6 +51,8 @@ Revision 2026-07-27 BI cobertura: el total global sube 413 bytes y JS sube 413 b
 
 Revision 2026-07-27 BI jornada: el total global sube 1,182 bytes, JS sube 958 bytes y CSS sube 224 bytes por agregar el filtro Jornada en BI Reclutamiento y formatear `Tiempo Medio de Contratacion` como años, meses y dias. No agrega vendors ni rutas lazy; los assets trackeados permanecen bajo baseline.
 
+Revision 2026-07-27 BI jornada cache: el total global sube 39 bytes y JS sube 39 bytes por incluir `shiftNames` en la query key normalizada de BI. No agrega vendors, rutas lazy ni CSS; corrige el refetch de tarjetas y graficos al cambiar Jornada.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -68,9 +70,9 @@ Revision 2026-07-27 BI jornada: el total global sube 1,182 bytes, JS sube 958 by
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10673493,
+  "distTotalBytes": 10673532,
   "jsFileCount": 51,
-  "jsTotalBytes": 3025899,
+  "jsTotalBytes": 3025938,
   "cssFileCount": 10,
   "cssTotalBytes": 213347,
   "trackedAssets": [

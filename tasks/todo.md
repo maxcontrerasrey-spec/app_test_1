@@ -4,6 +4,19 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - Jornada no refresca indicadores
+
+- [x] Corregir query key BI para que `shiftNames` cambie cache/refetch de tarjetas y graficos.
+- [x] Confirmar que el backend productivo ya cambia metricas cuando recibe `p_shift_names`.
+- [x] Agregar tests contra regresion de filtros BI y validar Guardian antes de versionar.
+
+Resultado:
+- Causa raiz: `queryKeys.bi.recruitmentDashboard(filters)` no incluia `shiftNames`; al cambiar Jornada React Query mantenia la misma cache key y no reconsultaba tarjetas/graficos.
+- `get_bi_recruitment_dashboard('current', ..., array['7X7'])` en produccion devuelve metricas filtradas, por lo que no se requiere nueva migracion SQL para este bug.
+- El embudo `BiRecruitmentFunnel` pertenece a Dotacion y no recibe el filtro Jornada visible en Reclutamiento; no es parte de la correccion de esta pestaña.
+- Se agrega test de regresion para que `shiftNames` forme parte de la key y se mantiene normalizacion estable por orden/espacios.
+- Validacion: unitarias, TypeScript, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `audit:performance-baseline`, `git diff --check` y `guardian:full` pasan.
+
 ## Business Intelligence - filtro jornada y formato tiempo medio
 
 - [x] Confirmar fuente real de jornada/turno para BI Reclutamiento y valores productivos.

@@ -2729,4 +2729,5 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Un filtro nuevo no es solo UI.** Debe existir como parametro del RPC, normalizarse con el mismo contrato que los filtros vigentes y aplicarse a resumen, graficos, timeline y movilidad si participan en la metrica.
 - **Las opciones del filtro deben venir de la misma poblacion visible.** Si `Jornada` sale desde `hiring_requests.shift_name`, el RPC debe devolver `filterOptions.shifts` ya limitado por permisos y por los otros filtros activos.
+- **La query key es parte del contrato del filtro.** Todo filtro que cambia un RPC debe existir tambien en `queryKeys`; si queda fuera, React Query reutiliza cache y la UI parece no responder aunque backend filtre correctamente.
 - **Las tarjetas con duraciones deben hablar en unidades operativas.** Promedios en dias pueden calcularse numericamente, pero la vista debe formatear años, meses y dias omitiendo unidades en cero para lectura gerencial.
