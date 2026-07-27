@@ -25,11 +25,13 @@ function normalizeBiFilters(filters?: BiFilters) {
   const periodCode = filters?.periodCode?.trim() || undefined;
   const contractCodes = filters?.contractCodes?.map((value) => value.trim()).filter(Boolean) ?? [];
   const jobTitles = filters?.jobTitles?.map((value) => value.trim()).filter(Boolean) ?? [];
+  const shiftNames = filters?.shiftNames?.map((value) => value.trim()).filter(Boolean) ?? [];
 
   return {
     periodCode,
     contractCodes,
     jobTitles,
+    shiftNames,
     managementNames: filters?.managementNames?.map((value) => value.trim()).filter(Boolean) ?? []
   };
 }
@@ -104,6 +106,9 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
       : [],
     availableJobs: Array.isArray(filterOptions.jobs)
       ? filterOptions.jobs.map(String)
+      : [],
+    availableShifts: Array.isArray(filterOptions.shifts)
+      ? filterOptions.shifts.map(String)
       : [],
     summary: {
       openFolios: Number(summary.openFolios ?? 0),
@@ -373,7 +378,8 @@ export async function fetchBiRecruitmentDashboard(filters?: BiFilters): Promise<
     p_management_names:
       normalized.managementNames.length > 0 ? normalized.managementNames : null,
     p_contract_names: normalized.contractCodes.length > 0 ? normalized.contractCodes : null,
-    p_job_position_names: normalized.jobTitles.length > 0 ? normalized.jobTitles : null
+    p_job_position_names: normalized.jobTitles.length > 0 ? normalized.jobTitles : null,
+    p_shift_names: normalized.shiftNames.length > 0 ? normalized.shiftNames : null
   };
   const { data, error } = await client.rpc("get_bi_recruitment_dashboard", recruitmentParams);
 

@@ -21,13 +21,30 @@ type BiRecruitmentAnalyticsViewProps = {
   isError: boolean;
 };
 
-function formatAverageHiringDays(value: number | null) {
+export function formatAverageHiringDuration(value: number | null) {
   if (value === null || !Number.isFinite(value)) {
     return "Sin datos";
   }
 
-  const roundedDays = Math.round(value);
-  return `${formatMetricValue(roundedDays)} ${roundedDays === 1 ? "día" : "días"}`;
+  const totalDays = Math.max(Math.round(value), 0);
+  const years = Math.floor(totalDays / 365);
+  const months = Math.floor((totalDays % 365) / 30);
+  const days = totalDays - years * 365 - months * 30;
+  const parts: string[] = [];
+
+  if (years > 0) {
+    parts.push(`${formatMetricValue(years)} ${years === 1 ? "año" : "años"}`);
+  }
+
+  if (months > 0) {
+    parts.push(`${formatMetricValue(months)} ${months === 1 ? "mes" : "meses"}`);
+  }
+
+  if (days > 0 || parts.length === 0) {
+    parts.push(`${formatMetricValue(days)} ${days === 1 ? "día" : "días"}`);
+  }
+
+  return parts.join(" ");
 }
 
 export function BiRecruitmentAnalyticsView({
@@ -122,7 +139,7 @@ export function BiRecruitmentAnalyticsView({
         { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "bi-blue" },
         {
           title: "Tiempo Medio de Contratación",
-          value: formatAverageHiringDays(dashboard.summary.averageHiringDays),
+          value: formatAverageHiringDuration(dashboard.summary.averageHiringDays),
           type: "bi-ready"
         }
       ]

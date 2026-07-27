@@ -4,6 +4,21 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - filtro jornada y formato tiempo medio
+
+- [x] Confirmar fuente real de jornada/turno para BI Reclutamiento y valores productivos.
+- [x] Extender RPC y tipos frontend para filtrar por jornada con opciones dinamicas.
+- [x] Ajustar layout de filtros: periodo mas pequeno y cinco filtros ordenados sin amontonamiento.
+- [x] Cambiar `Tiempo Medio de Contratacion` a formato años, meses y dias omitiendo unidades en cero.
+- [x] Validar localmente, versionar y aplicar migracion productiva si corresponde.
+
+Resultado:
+- La fuente productiva de Jornada es `hiring_requests.shift_name`; movilidad interna usa fallback `internal_mobility_requests.destination_shift_name` cuando corresponde.
+- `get_bi_recruitment_dashboard` y `get_bi_recruitment_daily_timeline` tienen overload compatible con `p_shift_names`, aplicado a resumen, graficos, timeline, movilidad y opciones del filtro.
+- El frontend agrega filtro `Jornada`, achica `Periodo` en el grid de Reclutamiento y limpia selecciones que ya no existen al cambiar filtros.
+- `Tiempo Medio de Contratacion` ahora muestra años, meses y dias, omitiendo unidades en cero; por ejemplo `99.1` dias se muestra como `3 meses 9 días`.
+- Validacion local: unitarias, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `audit:performance-baseline`, `git diff --check` y `guardian:full` pasan. Migracion remota `20260727191632_add_bi_recruitment_shift_filter` aplicada y registrada; smoke productivo confirma catalogo de jornadas y filtro `7X7`.
+
 ## Business Intelligence - grafico cobertura cupos local pendiente
 
 - [x] Confirmar fuente actual del grafico `Estado de Casos` y campos disponibles en `summary`.

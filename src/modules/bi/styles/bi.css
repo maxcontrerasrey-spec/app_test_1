@@ -20,7 +20,11 @@
 }
 
 .bi-analytics-filters-recruitment {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) 3.2rem;
+  grid-template-columns: minmax(8.75rem, 0.62fr) repeat(4, minmax(10.75rem, 1fr)) 3.2rem;
+}
+
+.bi-filter-period-field {
+  min-width: 0;
 }
 
 .bi-filter-reset-button {
@@ -49,6 +53,12 @@
 @media (max-width: 860px) {
   .bi-analytics-filters {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1180px) {
+  .bi-analytics-filters-recruitment {
+    grid-template-columns: minmax(8.75rem, 0.7fr) repeat(2, minmax(11rem, 1fr)) 3.2rem;
   }
 }
 

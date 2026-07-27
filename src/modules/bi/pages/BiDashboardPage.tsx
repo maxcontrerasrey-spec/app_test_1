@@ -84,6 +84,7 @@ export function BiDashboardPage() {
   const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
   const [jobTitleFilter, setJobTitleFilter] = useState<string[]>([]);
   const [managementFilter, setManagementFilter] = useState<string[]>([]);
+  const [shiftNameFilter, setShiftNameFilter] = useState<string[]>([]);
   const dotacionFilters = useMemo<BiFilters>(
     () => ({
       periodCode: debouncedPeriodCode || undefined,
@@ -97,9 +98,10 @@ export function BiDashboardPage() {
       periodCode: debouncedPeriodCode || undefined,
       managementNames: managementFilter,
       contractCodes: contractCodeFilter,
-      jobTitles: jobTitleFilter
+      jobTitles: jobTitleFilter,
+      shiftNames: shiftNameFilter
     }),
-    [contractCodeFilter, debouncedPeriodCode, jobTitleFilter, managementFilter]
+    [contractCodeFilter, debouncedPeriodCode, jobTitleFilter, managementFilter, shiftNameFilter]
   );
 
   const { data: contractsData } = useBiHeadcountByContract(undefined, activeView === "dotacion");
@@ -241,6 +243,15 @@ export function BiDashboardPage() {
     [recruitmentAnalytics.data?.availableJobs]
   );
 
+  const recruitmentShiftOptions = useMemo(
+    () =>
+      (recruitmentAnalytics.data?.availableShifts ?? []).map((item) => ({
+        label: item,
+        value: item
+      })),
+    [recruitmentAnalytics.data?.availableShifts]
+  );
+
   const contractOptions =
     activeView === "reclutamiento" ? recruitmentContractOptions : dotacionContractOptions;
   const secondaryOptions =
@@ -269,6 +280,19 @@ export function BiDashboardPage() {
     const allowedJobs = new Set(recruitmentJobOptions.map((item) => item.value));
     setJobTitleFilter((current) => current.filter((jobTitle) => allowedJobs.has(jobTitle)));
   }, [activeView, recruitmentAnalytics.isLoading, recruitmentJobOptions]);
+
+  useEffect(() => {
+    if (activeView !== "reclutamiento") {
+      return;
+    }
+
+    if (recruitmentAnalytics.isLoading) {
+      return;
+    }
+
+    const allowedShifts = new Set(recruitmentShiftOptions.map((item) => item.value));
+    setShiftNameFilter((current) => current.filter((shiftName) => allowedShifts.has(shiftName)));
+  }, [activeView, recruitmentAnalytics.isLoading, recruitmentShiftOptions]);
 
   useEffect(() => {
     if (activeView === "reclutamiento" && recruitmentAnalytics.isLoading) {
@@ -337,6 +361,7 @@ export function BiDashboardPage() {
                   value={periodCodeFilter}
                   onChange={(e) => setPeriodCodeFilter(e.target.value)}
                   inputMode="numeric"
+                  className="bi-filter-period-field"
                 />
 
                 <MultiSelectField
@@ -390,14 +415,25 @@ export function BiDashboardPage() {
                 />
 
                 {activeView === "reclutamiento" && (
-                  <MultiSelectField
-                    id="hr-bi-analytics-job"
-                    label="Cargo"
-                    options={recruitmentJobOptions}
-                    value={jobTitleFilter}
-                    onChange={setJobTitleFilter}
-                    placeholder="Todos los cargos"
-                  />
+                  <>
+                    <MultiSelectField
+                      id="hr-bi-analytics-shift"
+                      label="Jornada"
+                      options={recruitmentShiftOptions}
+                      value={shiftNameFilter}
+                      onChange={setShiftNameFilter}
+                      placeholder="Todas las jornadas"
+                    />
+
+                    <MultiSelectField
+                      id="hr-bi-analytics-job"
+                      label="Cargo"
+                      options={recruitmentJobOptions}
+                      value={jobTitleFilter}
+                      onChange={setJobTitleFilter}
+                      placeholder="Todos los cargos"
+                    />
+                  </>
                 )}
 
                 <button
@@ -408,6 +444,7 @@ export function BiDashboardPage() {
                     setContractCodeFilter([]);
                     setJobTitleFilter([]);
                     setManagementFilter([]);
+                    setShiftNameFilter([]);
                   }}
                   className="bi-filter-reset-button"
                 >

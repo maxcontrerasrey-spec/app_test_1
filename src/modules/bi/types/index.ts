@@ -3,6 +3,7 @@ export interface BiFilters {
   contractCodes?: string[];
   jobTitles?: string[];
   managementNames?: string[];
+  shiftNames?: string[];
 }
 
 export interface BukBiWorkforceOverview {
@@ -141,6 +142,7 @@ export interface BiRecruitmentDashboard {
   availableManagements: string[];
   availableContracts: string[];
   availableJobs: string[];
+  availableShifts: string[];
   summary: BiRecruitmentDashboardSummary;
   casesByStatus: BiLabelValueDatum[];
   candidatesByStage: BiLabelValueDatum[];

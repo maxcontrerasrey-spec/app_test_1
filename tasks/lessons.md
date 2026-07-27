@@ -2724,3 +2724,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Corregir una jornada 4X3 no es cambiar el nombre del turno.** En `hr_worker_rosters`, `start_date` define el dia 1 del ciclo; desplazarlo dos dias cambia todos los estados futuros de turno/descanso.
 - **Toda correccion manual debe amarrarse a identidad estable y rango esperado.** Usa `buk_employee_id`, RUT, patron, `start_date` y `end_date` esperados para evitar afectar a homonimos u otras pautas superpuestas.
 - **La evidencia debe mostrar el calendario resultante.** Despues del update, valida dias 1-4 como turno, 5-7 como descanso y el reinicio del ciclo antes de cerrar.
+
+## 187. BI Reclutamiento debe filtrar desde backend y mantener options consistentes
+
+- **Un filtro nuevo no es solo UI.** Debe existir como parametro del RPC, normalizarse con el mismo contrato que los filtros vigentes y aplicarse a resumen, graficos, timeline y movilidad si participan en la metrica.
+- **Las opciones del filtro deben venir de la misma poblacion visible.** Si `Jornada` sale desde `hiring_requests.shift_name`, el RPC debe devolver `filterOptions.shifts` ya limitado por permisos y por los otros filtros activos.
+- **Las tarjetas con duraciones deben hablar en unidades operativas.** Promedios en dias pueden calcularse numericamente, pero la vista debe formatear años, meses y dias omitiendo unidades en cero para lectura gerencial.

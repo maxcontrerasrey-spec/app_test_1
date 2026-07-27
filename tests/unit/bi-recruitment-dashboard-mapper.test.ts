@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { formatAverageHiringDuration } from "../../src/modules/bi/components/BiRecruitmentAnalyticsView";
 import { mapRecruitmentDashboard } from "../../src/modules/bi/services/biApi";
 
 describe("mapRecruitmentDashboard", () => {
@@ -24,5 +25,14 @@ describe("mapRecruitmentDashboard", () => {
     });
 
     expect(dashboard.summary.averageHiringDays).toBeNull();
+  });
+});
+
+describe("formatAverageHiringDuration", () => {
+  it("formatea dias promedio como años, meses y dias omitiendo unidades en cero", () => {
+    expect(formatAverageHiringDuration(99.1)).toBe("3 meses 9 días");
+    expect(formatAverageHiringDuration(395)).toBe("1 año 1 mes");
+    expect(formatAverageHiringDuration(12)).toBe("12 días");
+    expect(formatAverageHiringDuration(null)).toBe("Sin datos");
   });
 });
