@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { queryKeys } from "../../src/shared/lib/queryKeys";
+import { INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS } from "../../src/modules/internal_mobility/hooks/useInternalMobilityQueries";
 
 describe("queryKeys", () => {
   it("normaliza filtros BI para que el orden de arrays no duplique cache", () => {
@@ -32,5 +33,13 @@ describe("queryKeys", () => {
       "onboarding_template_tasks",
       "tpl-1"
     ]);
+  });
+
+  it("mantiene dinamico el catalogo de folios de movilidad interna", () => {
+    expect(queryKeys.internalMobility.setupCatalogs()).toEqual([
+      "internal-mobility",
+      "setup-catalogs"
+    ]);
+    expect(INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS).toBeLessThanOrEqual(20_000);
   });
 });

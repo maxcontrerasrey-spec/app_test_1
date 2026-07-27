@@ -12,6 +12,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El solicitante ERP puede no tener el mismo email en BUK.** Para resolver `leader_id`, primero intenta email vivo, pero si falla usa el snapshot local BUK por email exacto y nombre con tokens estrictos; no inventes empleados ni cambies maestros para completar el alta.
 - **Una correccion de Edge Function no existe en produccion hasta desplegarla.** Despues de cambiar `sync-buk-candidates`, ejecuta `supabase functions deploy` y un smoke real o autorizado del job afectado; un commit verde solo valida el codigo fuente.
 
+## 280. Los folios operacionales no pueden cachearse como catalogos estaticos
+
+- **Un selector con cupos/folios disponibles es dato transaccional.** En movilidad interna, `eligible_folios` depende de aprobaciones, estados y cupos; no debe quedar fresco por minutos largos si el usuario espera ver un folio recien aprobado.
+- **La correccion debe combinar invalidacion y refetch por interaccion.** Suscribirse por Realtime a `recruitment_cases`, `hiring_requests`, `hiring_request_approvals` y refetchear al abrir el selector evita depender de recargar pagina.
+- **No deshabilites el selector solo porque la lista actual esta vacia.** Si el control queda bloqueado, el usuario no puede disparar una recarga manual contextual; el estado vacio debe poder abrirse y pedir datos frescos.
+- **Protege el contrato con una prueba de cache.** Un test simple sobre el stale time del catalogo evita que vuelva a quedar tratado como maestro estatico de 15 minutos.
+
 ## 279. El baseline de performance debe cerrarse contra CI, no solo contra build local
 
 - **Si GitHub Actions mide un JS total mayor que local, CI manda para el baseline canonico.** El guardrail compara el artefacto generado en el runner; cerrar local verde con un baseline menor produce correos repetidos por cada push.

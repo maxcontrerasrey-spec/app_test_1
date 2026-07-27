@@ -4,6 +4,24 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Auditoria integral ERP front/back - 2026-07-27
+
+- [x] Levantar estado limpio del repositorio, contratos vivos y puertas enterprise actuales.
+- [x] Ejecutar auditorias de seguridad, migraciones, dependencias, build, tests y Guardian sin relajar controles.
+- [x] Revisar funcionamiento critico pendiente: movilidad interna debe refrescar folios destino automaticamente sin recargar pagina.
+- [x] Corregir solo hallazgos con causa raiz clara, de bajo riesgo operacional y trazabilidad backend/frontend.
+- [x] Validar con gates locales completos y dejar versionado/push si el sistema queda estable.
+
+Resultado:
+- Estado inicial limpio en `main...origin/main`.
+- `audit:migrations` pasa con 360 migraciones canonicas y sin duplicados.
+- `audit:supabase-security` pasa sin errores; conserva 82 warnings historicos baselineados que no se corrigieron relajando ni reescribiendo permisos sin causa raiz.
+- `npm audit` detecto 1 vulnerabilidad alta en `postcss` y 2 moderadas en `react-router`/`react-router-dom`; se actualizo `postcss` a `8.5.18` y la vulnerabilidad alta queda eliminada.
+- React Router queda como riesgo moderado residual: npm solo ofrece `react-router-dom@7.18.1` con cambio semver-major; la app usa rutas internas constantes y no SSR hydration, por lo que no se aplica migracion major dentro de esta correccion segura.
+- Movilidad interna: `eligible_folios` deja de cachearse 15 minutos; ahora refetchea al montar, foco, reconexion, Realtime de folios/aprobaciones y apertura del selector `Folio destino`.
+- `build:frontend-check`, `npm run build`, unitarias, TypeScript directo, smoke de rutas y `git diff --check` pasan. El baseline performance final medido por Guardian full sube `distTotalBytes` a `10,671,549` y `jsTotalBytes` a `3,024,179`; CSS/vendors/assets trackeados quedan intactos.
+- `guardian:full` pasa con 0 errores y 0 warnings.
+
 ## Administradores de contratos - alcance Mario Sierra Gorda
 
 - [x] Revisar `buk_contract_mappings` para Mario, Angel y Jose en Sierra Gorda/DMH.

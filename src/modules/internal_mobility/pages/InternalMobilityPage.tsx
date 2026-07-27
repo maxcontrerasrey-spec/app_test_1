@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { formatDateTimeLabel } from "../../../shared/lib/format";
@@ -28,6 +28,13 @@ const UNRESOLVED_COMPANY_LABEL = "No resuelta";
 const UNRESOLVED_SHIFT_LABEL = "No resuelto";
 const PENDING_LABEL = "Pendiente";
 const REQUESTS_PAGE_SIZE = 7;
+const INTERNAL_MOBILITY_REALTIME_SUBSCRIPTIONS = [
+  { table: "recruitment_cases" },
+  { table: "hiring_requests" },
+  { table: "hiring_request_approvals" },
+  { table: "internal_mobility_requests" },
+  { table: "internal_mobility_request_approvals" }
+];
 
 function resolveWorkerCompanyLabel(value: string | null | undefined) {
   return value ?? UNRESOLVED_COMPANY_LABEL;
@@ -76,21 +83,24 @@ export function InternalMobilityPage() {
     Boolean(selectedRequestId)
   );
 
-  const mobilityRequestsKey = queryKeys.internalMobility.requests();
-  const selectedRequestDetailKey = selectedRequestId
-    ? queryKeys.internalMobility.requestDetail(selectedRequestId)
-    : null;
+  const mobilityRealtimeQueryKeys = useMemo(() => {
+    const keys: QueryKey[] = [
+      queryKeys.internalMobility.setupCatalogs(),
+      queryKeys.internalMobility.requests()
+    ];
+
+    if (selectedRequestId) {
+      keys.push(queryKeys.internalMobility.requestDetail(selectedRequestId));
+    }
+
+    return keys;
+  }, [selectedRequestId]);
 
   useRealtimeQueryInvalidation({
     channelName: `internal-mobility:${user?.id ?? "anonymous"}`,
     enabled: Boolean(user?.id),
-    subscriptions: [
-      { table: "internal_mobility_requests" },
-      { table: "internal_mobility_request_approvals" }
-    ],
-    queryKeys: selectedRequestDetailKey
-      ? [mobilityRequestsKey, selectedRequestDetailKey]
-      : [mobilityRequestsKey]
+    subscriptions: INTERNAL_MOBILITY_REALTIME_SUBSCRIPTIONS,
+    queryKeys: mobilityRealtimeQueryKeys
   });
 
   const setupCatalogs = setupCatalogsQuery.data;
@@ -268,7 +278,10 @@ export function InternalMobilityPage() {
                 label="Folio destino"
                 value={selectedFolioId}
                 onChange={(event) => setSelectedFolioId(event.target.value)}
-                disabled={setupCatalogsQuery.isLoading || eligibleFolios.length === 0}
+                onOpen={() => {
+                  void setupCatalogsQuery.refetch();
+                }}
+                disabled={setupCatalogsQuery.isLoading}
                 options={eligibleFolios.map((folio) => ({
                   value: folio.recruitmentCaseId,
                   label: folio.label

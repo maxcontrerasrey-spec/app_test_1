@@ -8,7 +8,7 @@ import {
   searchInternalMobilityWorkers
 } from "../services/internalMobilityApi";
 
-const INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS = 15 * 60_000;
+export const INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS = 20_000;
 const INTERNAL_MOBILITY_REQUESTS_STALE_TIME_MS = 20_000;
 const INTERNAL_MOBILITY_REQUESTS_REFETCH_MS = 5 * 60_000;
 const INTERNAL_MOBILITY_WORKER_CONTEXT_STALE_TIME_MS = 60_000;
@@ -20,7 +20,10 @@ export function useInternalMobilitySetupCatalogs() {
     queryKey: queryKeys.internalMobility.setupCatalogs(),
     queryFn: fetchInternalMobilitySetupCatalogs,
     staleTime: INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS,
-    gcTime: INTERNAL_MOBILITY_CACHE_GC_TIME_MS
+    gcTime: INTERNAL_MOBILITY_CACHE_GC_TIME_MS,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true
   });
 }
 

@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 0
-- Info: 19
+- Info: 22
 
 ## Errores
 
@@ -50,3 +50,6 @@ PASS
 - build:frontend-check: PASS
 - audit:performance-baseline: PASS
 - git diff --check: PASS
+- test:coverage: PASS
+- smoke:frontend-routes: PASS
+- check:edge:sync-buk-candidates: PASS

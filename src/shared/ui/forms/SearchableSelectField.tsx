@@ -13,6 +13,7 @@ type SelectFieldProps = {
   className?: string;
   renderOption?: (opt: SelectOption) => ReactNode;
   hint?: string;
+  onOpen?: () => void;
 };
 
 export function SearchableSelectField({
@@ -25,7 +26,8 @@ export function SearchableSelectField({
   disabled = false,
   className = "",
   renderOption,
-  hint
+  hint,
+  onOpen
 }: SelectFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,6 +40,16 @@ export function SearchableSelectField({
   const filteredOptions = options.filter(opt => 
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const openDropdown = () => {
+    if (isOpen) {
+      return;
+    }
+
+    setIsOpen(true);
+    setSearchTerm("");
+    onOpen?.();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -90,12 +102,10 @@ export function SearchableSelectField({
             setIsOpen(true);
           }}
           onFocus={() => {
-            setIsOpen(true);
-            setSearchTerm("");
+            openDropdown();
           }}
           onClick={() => {
-            setIsOpen(true);
-            setSearchTerm("");
+            openDropdown();
           }}
           disabled={disabled}
           placeholder={placeholder}
