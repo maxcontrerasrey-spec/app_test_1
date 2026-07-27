@@ -4,6 +4,21 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - gerencia sin data en Reclutamiento
+
+- [x] Confirmar matriz productiva de `bi_analytics`/`bi_reclutamiento` para roles gerenciales.
+- [x] Confirmar causa raiz de datos vacios para usuarios `gerencia` sin centro de costo asociado.
+- [x] Ajustar RPCs de BI Reclutamiento para que `bi_reclutamiento` habilite alcance BI completo sin relajar pantallas operativas.
+- [x] Validar localmente, aplicar migracion remota y smoke por rol gerencial real.
+- [x] Versionar y pushear a `main` si Guardian queda limpio.
+
+Resultado:
+- La matriz productiva tiene `bi_analytics` y `bi_reclutamiento` activos para `admin`, `reclutamiento`, `control_contratos`, `director_eje`, `gerente_general`, `director_op` y `gerencia`.
+- Causa raiz: usuarios `gerencia` puros tenian acceso a la pestaña, pero `user_can_view_hiring_request_process_summary` les devolvia 0 filas si no estaban configurados como aprobadores de centro de costo.
+- La migracion `20260727201912_allow_bi_recruitment_feature_full_data_scope` ajusta solo los RPC BI `get_bi_recruitment_dashboard` y `get_bi_recruitment_daily_timeline`: si el usuario tiene feature `bi_reclutamiento`, ve el universo BI completo; no cambia permisos operativos de folios.
+- Smoke productivo con `alan.brain@busesjm.com` (`gerencia` puro): dashboard actual devuelve 52 folios abiertos, 112 cupos solicitados y 91 candidatos en curso; con Jornada `7X7` devuelve 4 folios y 7 cupos; timeline `7X7` devuelve 31 dias.
+- Validacion: unitarias, TypeScript, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `git diff --check` y `guardian:full` pasan. Migracion remota aplicada y registrada en `supabase_migrations.schema_migrations`.
+
 ## Business Intelligence - Jornada no refresca indicadores
 
 - [x] Corregir query key BI para que `shiftNames` cambie cache/refetch de tarjetas y graficos.
