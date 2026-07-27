@@ -90,6 +90,10 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
     summary.filledMobilityApproved ??
       Number(summary.mobilityExecuted ?? 0) + Number(summary.mobilityPendingExecution ?? 0)
   );
+  const averageHiringDays =
+    summary.averageHiringDays === null || summary.averageHiringDays === undefined
+      ? null
+      : Number(summary.averageHiringDays);
 
   return {
     availableManagements: Array.isArray(filterOptions.managements)
@@ -112,6 +116,10 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
       filledMobilityApproved,
       candidatesInProgress: Number(summary.candidatesInProgress ?? 0),
       readyCandidates: Number(summary.readyCandidates ?? 0),
+      averageHiringDays:
+        averageHiringDays !== null && Number.isFinite(averageHiringDays)
+          ? averageHiringDays
+          : null,
       mobilityRequests: Number(summary.mobilityRequests ?? 0),
       mobilityPendingExecution: Number(summary.mobilityPendingExecution ?? 0),
       mobilityExecuted: Number(summary.mobilityExecuted ?? 0),

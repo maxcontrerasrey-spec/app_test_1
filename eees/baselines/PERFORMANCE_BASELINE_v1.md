@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.3
+version: 1.0.5
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,671,549 bytes.
-- JS total medido: 3,024,179 bytes.
-- `dist` total: 10,671,549 bytes.
+- dist total medido: 10,672,311 bytes.
+- JS total medido: 3,024,941 bytes.
+- `dist` total: 10,672,311 bytes.
 - Archivos JS: 51.
-- JS total: 3,024,179 bytes.
+- JS total: 3,024,941 bytes.
 - Archivos CSS: 10.
 - CSS total: 213,123 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -44,6 +44,10 @@ Revision 2026-07-23: el total global sube 671 bytes por el helper testeado que c
 Revision 2026-07-23 CI: GitHub Actions `Audit Enterprise Guardrails` midio `JS total = 3,023,917` en el run `30047476403` con Node 24 y variables publicas de Supabase inyectadas. Se actualiza solo el limite global JS para alinear el baseline canonico al artefacto CI; vendors, CSS y assets trackeados no cambian.
 
 Revision 2026-07-27: el total global sube 5,306 bytes y JS sube 262 bytes por el refetch defensivo del catalogo de folios destino en movilidad interna medido desde Guardian full. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
+
+Revision 2026-07-27 BI: el total global sube 349 bytes y JS sube 349 bytes por el indicador `Tiempo Medio de Contratacion` en BI Reclutamiento y el mapeo typed del nuevo campo RPC. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
+
+Revision 2026-07-27 BI cobertura: el total global sube 413 bytes y JS sube 413 bytes por reemplazar el grafico de estado por cobertura de cupos con tooltip desglosado entre contratacion y movilidad interna. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
 
 ## Rutas criticas smoke
 
@@ -62,9 +66,9 @@ Revision 2026-07-27: el total global sube 5,306 bytes y JS sube 262 bytes por el
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10671549,
+  "distTotalBytes": 10672311,
   "jsFileCount": 51,
-  "jsTotalBytes": 3024179,
+  "jsTotalBytes": 3024941,
   "cssFileCount": 10,
   "cssTotalBytes": 213123,
   "trackedAssets": [

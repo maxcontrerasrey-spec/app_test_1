@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 281. Los graficos BI deben responder a la metrica pedida, no al titulo historico del widget
+
+- **No reutilices un grafico de estados si negocio pide cobertura.** En BI Reclutamiento, `Estado de Casos` podia parecer cercano visualmente, pero la metrica correcta era `Cupos cubiertos / Cupos solicitados`.
+- **El denominador debe venir del mismo contrato filtrado que las tarjetas.** Si una tarjeta se filtra por periodo, gerencia, contrato y cargo, el grafico hermano debe consumir los mismos campos `summary` del RPC filtrado, no una serie secundaria con otra semantica.
+- **Los tooltips operativos deben explicar la composicion del numero.** Para cupos cubiertos, mostrar solo el total oculta si la cobertura viene por contratacion o movilidad interna; el desglose debe salir del backend autoritativo cuando ya existe.
+- **Un porcentaje de cobertura no debe perder conteos reales.** La dona puede limitar visualmente la porcion cubierta al total solicitado para mantener 100%, pero el tooltip debe conservar el total cubierto real y la base usada para calcular el porcentaje.
+
 ## 278. Un area visible en BUK no basta si el mapping ERP no tiene area operativa
 
 - **Distingue area visible, numero de contrato y cost center BUK.** `ZONA II CONTRATISTAS` existe en varias ramas; para Buses JM la hija correcta es `0000000168:0001`, pero el worker necesita el `cost_center` operativo `721`.

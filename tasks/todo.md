@@ -4,6 +4,44 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - grafico cobertura cupos local pendiente
+
+- [x] Confirmar fuente actual del grafico `Estado de Casos` y campos disponibles en `summary`.
+- [x] Cambiar el grafico a porcentaje de cobertura entre cupos solicitados y cubiertos.
+- [x] Mostrar en tooltip de cupos cubiertos desglose por contratacion y movilidad interna.
+- [x] Validar TypeScript, build/performance y diff sin commit ni push a `main`.
+
+Resultado:
+- El grafico izquierdo de BI Reclutamiento pasa de `Estado de Casos` a `Cobertura de Cupos`.
+- La dona muestra `Cupos cubiertos` versus `Cupos faltantes`, calculados desde `requestedVacancies` y `filledVacancies`, ambos ya filtrados por el RPC del dashboard.
+- El tooltip de `Cupos cubiertos` muestra cobertura porcentual, total cubierto, contratacion, movilidad interna y cupos solicitados.
+- Validacion local: TypeScript directo, `build:frontend-check`, `audit:performance-baseline` y `git diff --check` pasan. Sin commit ni push a `main`.
+
+## Business Intelligence - tiempo medio de contratacion local pendiente
+
+- [x] Confirmar contrato vigente de tarjetas BI Reclutamiento y RPC filtrado.
+- [x] Calcular `Tiempo Medio de Contratacion` desde aprobacion del folio hasta primera contratacion real, sujeto a filtros BI.
+- [x] Reemplazar la tarjeta `Listos para Contratar` por el nuevo indicador sin commit ni push a `main`.
+- [x] Validar migraciones, seguridad Supabase, TypeScript, build, performance y diff limpio.
+
+Resultado:
+- El RPC `get_bi_recruitment_dashboard` entrega `summary.averageHiringDays` calculado por folio desde `recruitment_cases.opened_at` hasta la primera candidatura en `hired`.
+- El indicador respeta permisos BI y filtros de gerencia, contrato y cargo; cuando hay periodo seleccionado, considera contrataciones cuya primera fecha de contratacion cae dentro del periodo.
+- La tarjeta final de BI Reclutamiento cambia de `Listos para Contratar` a `Tiempo Medio de Contratacion` y muestra dias; sin contrataciones validas para el filtro muestra `Sin datos`.
+- Validacion local: unitarias, `audit:migrations`, `audit:supabase-security`, TypeScript directo, `build:frontend-check`, `audit:performance-baseline` y `git diff --check` pasan. Sin commit ni push a `main`.
+
+## Business Intelligence - visibilidad Reclutamiento local pendiente
+
+- [x] Confirmar matriz real de `bi_analytics` y feature `bi_reclutamiento`.
+- [x] Dar acceso a pestaña BI Reclutamiento para `reclutamiento`, roles gerenciales y administradores de contratos.
+- [x] Validar migraciones, seguridad Supabase y TypeScript sin push a `main`.
+
+Resultado:
+- La ruta BI sigue gobernada por `role_module_access` sobre `bi_analytics`; la pestaña `Reclutamiento` sigue gobernada por `role_feature_access` sobre `bi_reclutamiento`.
+- Migracion local `20260727184624_grant_bi_recruitment_access_roles.sql`: afirma `bi_analytics` y `bi_reclutamiento` para `admin`, `reclutamiento`, `control_contratos`, `director_eje`, `gerente_general`, `director_op` y `gerencia`.
+- No se agrego bypass frontend: `BiDashboardPage` conserva el gating por `accessibleFeatures`, que es el contrato auditable devuelto por backend.
+- Validacion local: `audit:migrations`, `audit:supabase-security`, TypeScript directo y `git diff --check` pasan. Sin commit ni push a `main`.
+
 ## Auditoria integral ERP front/back - 2026-07-27
 
 - [x] Levantar estado limpio del repositorio, contratos vivos y puertas enterprise actuales.

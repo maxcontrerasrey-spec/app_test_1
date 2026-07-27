@@ -120,6 +120,7 @@ export interface BiRecruitmentDashboardSummary {
   filledMobilityApproved: number;
   candidatesInProgress: number;
   readyCandidates: number;
+  averageHiringDays: number | null;
   mobilityRequests: number;
   mobilityPendingExecution: number;
   mobilityExecuted: number;

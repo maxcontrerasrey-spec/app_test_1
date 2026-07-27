@@ -462,9 +462,11 @@ export function IncentiveAnalyticsView() {
         label: {
           show: true,
           position: "insideLeft",
-          color: "#ffffff",
+          color: "#0f172a",
           fontSize: 11.5,
-          fontWeight: 600,
+          fontWeight: 700,
+          textBorderColor: "rgba(255, 255, 255, 0.88)",
+          textBorderWidth: 3,
           formatter: (params: { data?: unknown }) => {
             const data = getChartDataRecord(params.data);
             return truncateLabel(String(data.contractLabel ?? ""), 34);

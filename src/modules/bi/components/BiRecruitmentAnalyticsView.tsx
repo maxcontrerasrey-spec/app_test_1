@@ -8,7 +8,6 @@ import {
   CANDIDATE_STAGE_ORDER_INDEX,
   formatMetricValue,
   formatPercentValue,
-  getCaseStatusColor,
   getMobilityStatusColor,
   OPERATIONAL_PULSE_VIEW_OPTIONS,
   type FilledVacancyView,
@@ -22,6 +21,15 @@ type BiRecruitmentAnalyticsViewProps = {
   isError: boolean;
 };
 
+function formatAverageHiringDays(value: number | null) {
+  if (value === null || !Number.isFinite(value)) {
+    return "Sin datos";
+  }
+
+  const roundedDays = Math.round(value);
+  return `${formatMetricValue(roundedDays)} ${roundedDays === 1 ? "día" : "días"}`;
+}
+
 export function BiRecruitmentAnalyticsView({
   dashboard,
   isLoading,
@@ -30,7 +38,7 @@ export function BiRecruitmentAnalyticsView({
   const chartTheme = useChartTheme();
   const [filledVacancyView, setFilledVacancyView] = useState<FilledVacancyView>("total");
   const [requestedVacancyView, setRequestedVacancyView] =
-    useState<RequestedVacancyView>("total");
+    useState<RequestedVacancyView>("pending");
   const [operationalPulseView, setOperationalPulseView] =
     useState<OperationalPulseView>("weekly");
 
@@ -112,21 +120,79 @@ export function BiRecruitmentAnalyticsView({
           segmentedControlLabel: "Detalle de cupos cubiertos"
         },
         { title: "Candidatos en Curso", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "bi-blue" },
-        { title: "Listos para Contratar", value: formatMetricValue(dashboard.summary.readyCandidates), type: "bi-ready" }
+        {
+          title: "Tiempo Medio de Contratación",
+          value: formatAverageHiringDays(dashboard.summary.averageHiringDays),
+          type: "bi-ready"
+        }
       ]
     };
   }, [dashboard, filledVacancyView, requestedVacancyView]);
 
-  const casesByStatusOption = useMemo<EChartsOption | null>(() => {
-    if (!dashboard || dashboard.casesByStatus.length === 0) {
+  const vacancyCoverageOption = useMemo<EChartsOption | null>(() => {
+    if (!dashboard || dashboard.summary.requestedVacancies <= 0) {
       return null;
     }
 
-    const totalCases = dashboard.casesByStatus.reduce((sum, item) => sum + item.value, 0);
+    const requestedVacancies = dashboard.summary.requestedVacancies;
+    const filledVacancies = dashboard.summary.filledVacancies;
+    const visualFilledVacancies = Math.min(filledVacancies, requestedVacancies);
+    const pendingVacancies = Math.max(requestedVacancies - filledVacancies, 0);
+    const coveragePercent = requestedVacancies > 0
+      ? (filledVacancies / requestedVacancies) * 100
+      : 0;
+    const chartData = [
+      {
+        name: "Cupos cubiertos",
+        value: visualFilledVacancies,
+        rawValue: filledVacancies,
+        itemStyle: {
+          color: biPalette.covered,
+          borderColor: chartTheme.surface,
+          borderWidth: 2
+        }
+      },
+      {
+        name: "Cupos faltantes",
+        value: pendingVacancies,
+        rawValue: pendingVacancies,
+        itemStyle: {
+          color: biPalette.pending,
+          borderColor: chartTheme.surface,
+          borderWidth: 2
+        }
+      }
+    ];
 
     return {
-      color: dashboard.casesByStatus.map((item) => getCaseStatusColor(item.label, biPalette)),
-      tooltip: { trigger: "item" },
+      color: [biPalette.covered, biPalette.pending],
+      tooltip: {
+        trigger: "item",
+        formatter: (params) => {
+          const point = Array.isArray(params) ? params[0] : params;
+          const data = point.data as { name?: string; rawValue?: number; value?: number } | undefined;
+          const name = data?.name ?? String(point.name ?? "");
+          const rawValue = Number(data?.rawValue ?? data?.value ?? 0);
+
+          if (name === "Cupos cubiertos") {
+            return [
+              `<strong>${name}</strong>`,
+              `Cobertura: ${formatPercentValue(coveragePercent)}`,
+              `Total cubiertos: ${formatMetricValue(rawValue)}`,
+              `Contratación: ${formatMetricValue(dashboard.summary.filledHiredCandidates)}`,
+              `Movilidad interna: ${formatMetricValue(dashboard.summary.filledMobilityApproved)}`,
+              `Cupos solicitados: ${formatMetricValue(requestedVacancies)}`
+            ].join("<br/>");
+          }
+
+          return [
+            `<strong>${name}</strong>`,
+            `Faltantes: ${formatMetricValue(rawValue)}`,
+            `Cupos solicitados: ${formatMetricValue(requestedVacancies)}`,
+            `Cobertura actual: ${formatPercentValue(coveragePercent)}`
+          ].join("<br/>");
+        }
+      },
       series: [
         {
           type: "pie",
@@ -140,29 +206,14 @@ export function BiRecruitmentAnalyticsView({
             formatter: (params) => {
               const percent = typeof params.percent === "number"
                 ? params.percent
-                : totalCases > 0
-                  ? (Number(params.value ?? 0) / totalCases) * 100
+                : requestedVacancies > 0
+                  ? (Number(params.value ?? 0) / requestedVacancies) * 100
                   : 0;
               return `${params.name}\n${formatPercentValue(percent)}`;
             },
             color: textColor
           },
-          tooltip: {
-            valueFormatter: (value) => {
-              const numericValue = Number(value);
-              const percent = totalCases > 0 ? (numericValue / totalCases) * 100 : 0;
-              return formatPercentValue(percent);
-            }
-          },
-          data: dashboard.casesByStatus.map((item) => ({
-            name: item.label,
-            value: item.value,
-            itemStyle: {
-              color: getCaseStatusColor(item.label, biPalette),
-              borderColor: chartTheme.surface,
-              borderWidth: 2
-            }
-          }))
+          data: chartData
         }
       ]
     };
@@ -456,12 +507,12 @@ export function BiRecruitmentAnalyticsView({
 
       <div className="bi-chart-row">
         <div className="info-card">
-          <h3 className="bi-chart-title">Estado de Casos</h3>
+          <h3 className="bi-chart-title">Cobertura de Cupos</h3>
           <EChartSurface
             height={320}
-            option={casesByStatusOption ?? {}}
-            empty={!casesByStatusOption}
-            emptyMessage="Sin casos visibles para el filtro."
+            option={vacancyCoverageOption ?? {}}
+            empty={!vacancyCoverageOption}
+            emptyMessage="Sin cupos solicitados para el filtro."
           />
         </div>
         <div className="info-card">
