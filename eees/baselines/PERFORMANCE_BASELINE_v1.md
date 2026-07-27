@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.8
+version: 1.0.9
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,675,656 bytes.
-- JS total medido: 3,027,361 bytes.
-- `dist` total: 10,675,656 bytes.
+- dist total medido: 10,675,968 bytes.
+- JS total medido: 3,027,673 bytes.
+- `dist` total: 10,675,968 bytes.
 - Archivos JS: 52.
-- JS total: 3,027,361 bytes.
+- JS total: 3,027,673 bytes.
 - Archivos CSS: 10.
 - CSS total: 214,048 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -55,6 +55,8 @@ Revision 2026-07-27 BI jornada cache: el total global sube 39 bytes y JS sube 39
 
 Revision 2026-07-27 control filtros: el total global sube 2,124 bytes, JS sube 1,423 bytes y CSS sube 701 bytes por extender `MultiSelectField` con busqueda digitada y aplicar multiseleccion en filtros de Control de Contrataciones. No agrega vendors ni rutas lazy; los assets trackeados permanecen bajo baseline.
 
+Revision 2026-07-27 BI paleta: el total global sube 312 bytes y JS sube 312 bytes por separar colores de pendientes en movilidad interna, usar rojo opaco para cupos faltantes y ordenar la etapa `Levantamiento de Contraindicación`. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -72,9 +74,9 @@ Revision 2026-07-27 control filtros: el total global sube 2,124 bytes, JS sube 1
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10675656,
+  "distTotalBytes": 10675968,
   "jsFileCount": 52,
-  "jsTotalBytes": 3027361,
+  "jsTotalBytes": 3027673,
   "cssFileCount": 10,
   "cssTotalBytes": 214048,
   "trackedAssets": [

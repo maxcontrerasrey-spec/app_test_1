@@ -174,7 +174,7 @@ export function BiRecruitmentAnalyticsView({
         value: pendingVacancies,
         rawValue: pendingVacancies,
         itemStyle: {
-          color: biPalette.pending,
+          color: biPalette.missingVacancies,
           borderColor: chartTheme.surface,
           borderWidth: 2
         }
@@ -182,7 +182,7 @@ export function BiRecruitmentAnalyticsView({
     ];
 
     return {
-      color: [biPalette.covered, biPalette.pending],
+      color: [biPalette.covered, biPalette.missingVacancies],
       tooltip: {
         trigger: "item",
         formatter: (params) => {

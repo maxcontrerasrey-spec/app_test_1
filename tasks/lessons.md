@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 283. Los colores de BI deben distinguir semantica, no solo familia visual
+
+- **Dos estados operativos distintos no deben compartir color aunque ambos sean pendientes.** En movilidad interna, `Pendiente ejecución RRHH` y `Pendiente control contratos` comunican cuellos de botella distintos; si usan el mismo color, el grafico pierde valor diagnostico.
+- **Un faltante no es un pendiente generico.** `Cupos faltantes` necesita un color propio de alerta moderada, no el naranja de workflow pendiente ni un rojo saturado que compita con rechazo.
+- **Cuando se agrega una etapa al flujo, tambien se agrega al orden analitico.** Si BI no conoce `Levantamiento de Contraindicación`, la dona o barra de etapas puede mostrarla fuera de secuencia aunque el backend ya la acepte.
+
 ## 282. Una etapa opcional debe existir en UI, constraint y RPC al mismo tiempo
 
 - **No basta con agregar el label en frontend.** Si una etapa nueva no esta en el check constraint de `recruitment_case_candidates.stage_code`, cualquier guardado productivo va a fallar aunque el selector la muestre.

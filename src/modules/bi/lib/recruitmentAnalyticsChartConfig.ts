@@ -10,6 +10,7 @@ export const CANDIDATE_STAGE_ORDER = [
   "Who aprobado",
   "En proceso",
   "Exámenes médicos",
+  "Levantamiento de Contraindicación",
   "Revisión documental",
   "Listos para contratar"
 ];
@@ -32,9 +33,11 @@ export const OPERATIONAL_PULSE_VIEW_OPTIONS: Array<{
 export type BiChartPalette = {
   requested: string;
   covered: string;
+  missingVacancies: string;
   folios: string;
   hired: string;
   mobility: string;
+  mobilityPendingControl: string;
   ready: string;
   pending: string;
   rejected: string;
@@ -49,9 +52,11 @@ export const BI_CHART_PALETTES: Record<"light" | "dark" | "e-ink", BiChartPalett
   light: {
     requested: "#94a3b8",
     covered: "#178463",
+    missingVacancies: "#b95a4f",
     folios: "#2563eb",
     hired: "#0f766e",
     mobility: "#7c3aed",
+    mobilityPendingControl: "#4f46e5",
     ready: "#b45309",
     pending: "#d97706",
     rejected: "#a83b3b",
@@ -59,14 +64,16 @@ export const BI_CHART_PALETTES: Record<"light" | "dark" | "e-ink", BiChartPalett
     screening: "#64748b",
     open: "#2563eb",
     neutral: "#64748b",
-    stage: ["#475569", "#d97706", "#0f766e", "#2563eb", "#0891b2", "#7c3aed", "#178463"]
+    stage: ["#475569", "#d97706", "#0f766e", "#2563eb", "#0891b2", "#a855f7", "#7c3aed", "#178463"]
   },
   dark: {
     requested: "#64748b",
     covered: "#5eead4",
+    missingVacancies: "#f87171",
     folios: "#60a5fa",
     hired: "#34d399",
     mobility: "#c4b5fd",
+    mobilityPendingControl: "#818cf8",
     ready: "#fbbf24",
     pending: "#f59e0b",
     rejected: "#fca5a5",
@@ -74,14 +81,16 @@ export const BI_CHART_PALETTES: Record<"light" | "dark" | "e-ink", BiChartPalett
     screening: "#94a3b8",
     open: "#60a5fa",
     neutral: "#94a3b8",
-    stage: ["#94a3b8", "#f59e0b", "#34d399", "#60a5fa", "#22d3ee", "#c4b5fd", "#5eead4"]
+    stage: ["#94a3b8", "#f59e0b", "#34d399", "#60a5fa", "#22d3ee", "#d8b4fe", "#c4b5fd", "#5eead4"]
   },
   "e-ink": {
     requested: "#8c8679",
     covered: "#4a6b52",
+    missingVacancies: "#8a4b46",
     folios: "#355f75",
     hired: "#4a6b52",
     mobility: "#6a5a78",
+    mobilityPendingControl: "#515b78",
     ready: "#8a6a2a",
     pending: "#8a6a2a",
     rejected: "#8a3a3a",
@@ -89,7 +98,7 @@ export const BI_CHART_PALETTES: Record<"light" | "dark" | "e-ink", BiChartPalett
     screening: "#6b665d",
     open: "#355f75",
     neutral: "#6b665d",
-    stage: ["#6b665d", "#8a6a2a", "#4a6b52", "#355f75", "#4f6f75", "#6a5a78", "#4a634e"]
+    stage: ["#6b665d", "#8a6a2a", "#4a6b52", "#355f75", "#4f6f75", "#7a5f82", "#6a5a78", "#4a634e"]
   }
 };
 
@@ -120,6 +129,7 @@ export function getMobilityStatusColor(label: string, palette: BiChartPalette) {
   const normalized = label.toLowerCase();
 
   if (normalized.includes("ejecut")) return palette.hired;
+  if (normalized.includes("control")) return palette.mobilityPendingControl;
   if (normalized.includes("pend")) return palette.mobility;
   if (normalized.includes("rech")) return palette.rejected;
 

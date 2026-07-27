@@ -4,6 +4,19 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - paleta cobertura y movilidad
+
+- [x] Cambiar `Cupos faltantes` a rojo opaco, sin usar naranja chillón.
+- [x] Separar colores de `Pendiente ejecución RRHH` y `Pendiente control contratos` en movilidad interna.
+- [x] Alinear orden/paleta de etapas BI con `Levantamiento de Contraindicación`.
+- [x] Validar frontend, tests unitarios, performance y Guardian antes de versionar.
+
+Resultado:
+- `Cupos faltantes` usa `missingVacancies` (`#b95a4f` en tema claro), separado del naranja general `pending`.
+- `Pendiente ejecución RRHH` mantiene morado de movilidad y `Pendiente control contratos` usa indigo propio, evitando dos criterios con el mismo color.
+- El orden de etapas BI incorpora `Levantamiento de Contraindicación` entre `Exámenes médicos` y `Revisión documental`.
+- Validacion: TypeScript directo, unitarias, `build:frontend-check`, `audit:performance-baseline`, `git diff --check` y `guardian` pasan.
+
 ## Control de Contrataciones - filtros multiples y contraindicacion medica
 
 - [x] Convertir filtros de procesos a seleccion multiple, con busqueda digitada al menos en Turno y Contrato.
