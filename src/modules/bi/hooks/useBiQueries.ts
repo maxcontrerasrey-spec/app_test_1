@@ -17,6 +17,8 @@ import {
 } from "../services/biApi";
 
 const BI_STALE_TIME = 1000 * 60 * 5; // 5 minutos, según lección 48 no ahogar Supabase con polling
+export const BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS = 0;
+export const BI_RECRUITMENT_DASHBOARD_GC_TIME_MS = 0;
 
 export function useBiWorkforceOverview(filters?: BiFilters) {
   return useQuery({
@@ -112,7 +114,9 @@ export function useBiRecruitmentDashboard(filters?: BiFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.bi.recruitmentDashboard(filters),
     queryFn: () => fetchBiRecruitmentDashboard(filters),
-    staleTime: BI_STALE_TIME,
+    staleTime: BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS,
+    gcTime: BI_RECRUITMENT_DASHBOARD_GC_TIME_MS,
+    refetchOnMount: "always",
     enabled
   });
 }

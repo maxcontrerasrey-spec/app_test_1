@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { queryKeys } from "../../src/shared/lib/queryKeys";
 import { INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS } from "../../src/modules/internal_mobility/hooks/useInternalMobilityQueries";
+import {
+  BI_RECRUITMENT_DASHBOARD_GC_TIME_MS,
+  BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS
+} from "../../src/modules/bi/hooks/useBiQueries";
 
 describe("queryKeys", () => {
   it("normaliza filtros BI para que el orden de arrays no duplique cache", () => {
@@ -61,5 +65,10 @@ describe("queryKeys", () => {
       "setup-catalogs"
     ]);
     expect(INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS).toBeLessThanOrEqual(20_000);
+  });
+
+  it("mantiene BI Reclutamiento fresco cuando cambian filtros ejecutivos", () => {
+    expect(BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS).toBe(0);
+    expect(BI_RECRUITMENT_DASHBOARD_GC_TIME_MS).toBe(0);
   });
 });

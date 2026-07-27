@@ -2751,3 +2751,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La query key es parte del contrato del filtro.** Todo filtro que cambia un RPC debe existir tambien en `queryKeys`; si queda fuera, React Query reutiliza cache y la UI parece no responder aunque backend filtre correctamente.
 - **El alcance ejecutivo BI no debe depender del alcance operacional de folios.** Si un rol tiene `bi_reclutamiento`, los RPC de indicadores pueden ampliar visibilidad para analitica sin cambiar `user_can_view_hiring_request_process_summary` ni permisos de pantallas transaccionales.
 - **Las tarjetas con duraciones deben hablar en unidades operativas.** Promedios en dias pueden calcularse numericamente, pero la vista debe formatear años, meses y dias omitiendo unidades en cero para lectura gerencial.
+
+## 188. Los filtros ejecutivos de BI no pueden mostrar metricas stale
+
+- **Un dashboard gerencial filtrable no debe heredar caches largos de vistas estables.** Si un filtro cambia tarjetas ejecutivas, el hook debe forzar frescura o invalidacion inmediata; 5 minutos de `staleTime` hacen que la UI parezca ignorar el filtro.
+- **Durante un refetch de indicadores no muestres el resumen anterior como si fuera vigente.** Estados como `isFetching` deben bloquear o marcar las tarjetas mientras llega el nuevo payload, especialmente en metricas agregadas como `Tiempo Medio de Contratacion`.
+- **El smoke de filtros debe comparar usuario real, sin filtro y con al menos dos valores.** Si el RPC devuelve valores distintos para el mismo usuario, la causa raiz esta en cache/envio/render frontend y no en permisos o calculo backend.

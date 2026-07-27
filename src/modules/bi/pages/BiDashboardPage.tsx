@@ -478,7 +478,7 @@ export function BiDashboardPage() {
       {activeView === "reclutamiento" && (
         <BiRecruitmentAnalyticsView
           dashboard={recruitmentAnalytics.data ?? null}
-          isLoading={recruitmentAnalytics.isLoading}
+          isLoading={recruitmentAnalytics.isLoading || recruitmentAnalytics.isFetching}
           isError={recruitmentAnalytics.isError}
         />
       )}

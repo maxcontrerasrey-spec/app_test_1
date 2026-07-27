@@ -4,6 +4,20 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - filtros Jornada no refrescan tarjetas para Manuel Parra
+
+- [x] Reproducir con usuario Manuel Parra si el RPC BI cambia `summary` y `averageHiringDays` al recibir `p_shift_names`.
+- [x] Confirmar si el problema esta en envio frontend, cache/query key, normalizacion de jornada o calculo backend.
+- [x] Corregir causa raiz sin relajar permisos BI ni romper filtros de gerencia/contrato/cargo.
+- [x] Validar produccion, TypeScript, unitarias, build, performance y Guardian antes de versionar.
+
+Resultado:
+- Smoke productivo transaccional con `manuel.parra@busesjm.com`: sin filtro Jornada el RPC devuelve `averageHiringDays = 99.1`; con `7X7` devuelve `143.7`; con `10X5+5` devuelve `19.8`. El backend y permisos BI para gerencia si filtran correctamente.
+- Causa raiz frontend: BI Reclutamiento heredaba `staleTime` de 5 minutos y podia mantener tarjetas antiguas visibles durante el refetch, por eso `Tiempo Medio de Contratacion` seguia mostrando `3 meses 9 dias`.
+- `useBiRecruitmentDashboard` ahora fuerza datos frescos (`staleTime = 0`, `gcTime = 0`, `refetchOnMount = "always"`) y la vista considera `isFetching` como carga para no presentar indicadores obsoletos mientras cambia Jornada.
+- Se agrega test de regresion para que el dashboard BI Reclutamiento conserve esta politica de frescura.
+- Validacion: TypeScript directo, unitarias, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `audit:performance-baseline`, `git diff --check` y `guardian` pasan. No requirio migracion SQL.
+
 ## Business Intelligence - estetica de graficos Reclutamiento
 
 - [x] Homologar las donas de Reclutamiento al estilo visual e interactivo de Incentivos, manteniendo colores propios.
