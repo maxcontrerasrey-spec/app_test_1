@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 284. Homologar graficos implica geometria e interaccion, no copiar paletas
+
+- **Cuando negocio pide la estetica de otro modulo, separa forma de color.** En BI, Reclutamiento debe conservar su semantica cromatica propia, pero puede compartir radio de dona, leyenda, truncado, sombra y tooltips con Incentivos.
+- **La leyenda inferior evita sobrecargar labels externos.** Si las etiquetas largas quedan fuera de la dona, trunca en el label y deja el detalle completo para leyenda/tooltip.
+- **Los tooltips deben usar el mismo contenedor visual si el usuario compara modulos.** Reutilizar `.chart-tooltip` mantiene una interaccion consistente sin tocar los datos ni los colores.
+
 ## 283. Los colores de BI deben distinguir semantica, no solo familia visual
 
 - **Dos estados operativos distintos no deben compartir color aunque ambos sean pendientes.** En movilidad interna, `Pendiente ejecución RRHH` y `Pendiente control contratos` comunican cuellos de botella distintos; si usan el mismo color, el grafico pierde valor diagnostico.

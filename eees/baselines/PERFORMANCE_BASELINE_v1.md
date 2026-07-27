@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.9
+version: 1.0.10
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,675,968 bytes.
-- JS total medido: 3,027,673 bytes.
-- `dist` total: 10,675,968 bytes.
+- dist total medido: 10,676,754 bytes.
+- JS total medido: 3,028,459 bytes.
+- `dist` total: 10,676,754 bytes.
 - Archivos JS: 52.
-- JS total: 3,027,673 bytes.
+- JS total: 3,028,459 bytes.
 - Archivos CSS: 10.
 - CSS total: 214,048 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -57,6 +57,8 @@ Revision 2026-07-27 control filtros: el total global sube 2,124 bytes, JS sube 1
 
 Revision 2026-07-27 BI paleta: el total global sube 312 bytes y JS sube 312 bytes por separar colores de pendientes en movilidad interna, usar rojo opaco para cupos faltantes y ordenar la etapa `Levantamiento de Contraindicación`. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
 
+Revision 2026-07-27 BI donas: el total global sube 786 bytes y JS sube 786 bytes por homologar las donas de Reclutamiento al estilo de Incentivos: labels truncados, leyenda inferior, separacion entre segmentos, borde redondeado, sombra suave y tooltips estructurados. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -74,9 +76,9 @@ Revision 2026-07-27 BI paleta: el total global sube 312 bytes y JS sube 312 byte
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10675968,
+  "distTotalBytes": 10676754,
   "jsFileCount": 52,
-  "jsTotalBytes": 3027673,
+  "jsTotalBytes": 3028459,
   "cssFileCount": 10,
   "cssTotalBytes": 214048,
   "trackedAssets": [

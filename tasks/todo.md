@@ -4,6 +4,20 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - estetica de graficos Reclutamiento
+
+- [x] Homologar las donas de Reclutamiento al estilo visual e interactivo de Incentivos, manteniendo colores propios.
+- [x] Aplicar labels truncados, separacion entre segmentos, sombra suave y leyenda inferior con iconos circulares.
+- [x] Mantener tooltips operativos actuales de cobertura y movilidad.
+- [x] Validar TypeScript, unitarias, build frontend, performance y Guardian antes de versionar.
+
+Resultado:
+- Las donas `Cobertura de Cupos` y `Estado de Movilidad Interna` usan radio `50%/75%`, centro superior, `padAngle`, borde redondeado, sombra suave y leyenda inferior con icono circular, homologadas con Incentivos.
+- Los colores siguen siendo los propios de Reclutamiento; no se mezclo paleta con Incentivos.
+- Los tooltips pasan al formato `.chart-tooltip` y conservan la informacion operativa de cobertura, contratacion, movilidad, faltantes y solicitudes.
+- La ruta local `/bi/reclutamiento` redirige a `/login` sin sesion, por lo que la verificacion visual navegada quedo limitada a autenticacion; build y Guardian validan render sin errores.
+- Validacion: TypeScript directo, unitarias, `build:frontend-check`, `audit:performance-baseline`, `git diff --check` y `guardian` pasan.
+
 ## Business Intelligence - paleta cobertura y movilidad
 
 - [x] Cambiar `Cupos faltantes` a rojo opaco, sin usar naranja chillón.

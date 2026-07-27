@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   BI_CHART_PALETTES,
   CANDIDATE_STAGE_ORDER,
-  getMobilityStatusColor
+  RECRUITMENT_DONUT_CHART_STYLE,
+  getMobilityStatusColor,
+  truncateRecruitmentChartLabel
 } from "../../src/modules/bi/lib/recruitmentAnalyticsChartConfig";
 
 describe("recruitment analytics chart config", () => {
@@ -34,5 +36,19 @@ describe("recruitment analytics chart config", () => {
       "Revisión documental",
       "Listos para contratar"
     ]);
+  });
+
+  it("homologa las donas de reclutamiento al estilo visual de incentivos", () => {
+    expect(RECRUITMENT_DONUT_CHART_STYLE).toMatchObject({
+      radius: ["50%", "75%"],
+      center: ["50%", "45%"],
+      padAngle: 3,
+      labelMaxLength: 16
+    });
+  });
+
+  it("trunca labels de dona para no saturar el grafico", () => {
+    expect(truncateRecruitmentChartLabel("Pendiente control contratos")).toBe("Pendiente contro…");
+    expect(truncateRecruitmentChartLabel("Ejecutadas")).toBe("Ejecutadas");
   });
 });

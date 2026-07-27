@@ -19,6 +19,14 @@ export const CANDIDATE_STAGE_ORDER_INDEX = new Map(
   CANDIDATE_STAGE_ORDER.map((stage, index) => [stage, index])
 );
 
+export const RECRUITMENT_DONUT_CHART_STYLE = {
+  radius: ["50%", "75%"],
+  center: ["50%", "45%"],
+  padAngle: 3,
+  labelMaxLength: 16,
+  shadowColor: "rgba(0, 0, 0, 0.08)"
+} as const;
+
 export const OPERATIONAL_PULSE_VIEW_OPTIONS: Array<{
   key: OperationalPulseView;
   label: string;
@@ -110,6 +118,11 @@ export function formatPercentValue(value: number) {
   return `${value.toLocaleString("es-CL", {
     maximumFractionDigits: value >= 10 ? 0 : 1
   })}%`;
+}
+
+export function truncateRecruitmentChartLabel(value: string, maxLength = RECRUITMENT_DONUT_CHART_STYLE.labelMaxLength) {
+  if (!value) return "";
+  return value.length > maxLength ? `${value.substring(0, maxLength)}…` : value;
 }
 
 export function getCaseStatusColor(label: string, palette: BiChartPalette) {

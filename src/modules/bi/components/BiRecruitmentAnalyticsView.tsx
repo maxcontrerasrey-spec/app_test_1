@@ -6,10 +6,12 @@ import {
   aggregatePulseData,
   BI_CHART_PALETTES,
   CANDIDATE_STAGE_ORDER_INDEX,
+  RECRUITMENT_DONUT_CHART_STYLE,
   formatMetricValue,
   formatPercentValue,
   getMobilityStatusColor,
   OPERATIONAL_PULSE_VIEW_OPTIONS,
+  truncateRecruitmentChartLabel,
   type FilledVacancyView,
   type OperationalPulseView,
   type RequestedVacancyView
@@ -45,6 +47,14 @@ export function formatAverageHiringDuration(value: number | null) {
   }
 
   return parts.join(" ");
+}
+
+function buildRecruitmentTooltip(title: string, rows: Array<[string, string]>) {
+  return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list">${
+    rows
+      .map(([label, value]) => `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">${label}</span><strong>${value}</strong></div>`)
+      .join("")
+  }</div></div>`;
 }
 
 export function BiRecruitmentAnalyticsView({
@@ -192,42 +202,40 @@ export function BiRecruitmentAnalyticsView({
           const rawValue = Number(data?.rawValue ?? data?.value ?? 0);
 
           if (name === "Cupos cubiertos") {
-            return [
-              `<strong>${name}</strong>`,
-              `Cobertura: ${formatPercentValue(coveragePercent)}`,
-              `Total cubiertos: ${formatMetricValue(rawValue)}`,
-              `Contratación: ${formatMetricValue(dashboard.summary.filledHiredCandidates)}`,
-              `Movilidad interna: ${formatMetricValue(dashboard.summary.filledMobilityApproved)}`,
-              `Cupos solicitados: ${formatMetricValue(requestedVacancies)}`
-            ].join("<br/>");
+            return buildRecruitmentTooltip(name, [
+              ["Cobertura", formatPercentValue(coveragePercent)],
+              ["Total cubiertos", formatMetricValue(rawValue)],
+              ["Contratación", formatMetricValue(dashboard.summary.filledHiredCandidates)],
+              ["Movilidad interna", formatMetricValue(dashboard.summary.filledMobilityApproved)],
+              ["Cupos solicitados", formatMetricValue(requestedVacancies)]
+            ]);
           }
 
-          return [
-            `<strong>${name}</strong>`,
-            `Faltantes: ${formatMetricValue(rawValue)}`,
-            `Cupos solicitados: ${formatMetricValue(requestedVacancies)}`,
-            `Cobertura actual: ${formatPercentValue(coveragePercent)}`
-          ].join("<br/>");
+          return buildRecruitmentTooltip(name, [
+            ["Faltantes", formatMetricValue(rawValue)],
+            ["Cupos solicitados", formatMetricValue(requestedVacancies)],
+            ["Cobertura actual", formatPercentValue(coveragePercent)]
+          ]);
         }
       },
+      legend: { bottom: 0, icon: "circle", type: "scroll", textStyle: { color: textColor } },
       series: [
         {
           type: "pie",
-          radius: ["42%", "72%"],
-          center: ["50%", "50%"],
+          radius: [...RECRUITMENT_DONUT_CHART_STYLE.radius],
+          center: [...RECRUITMENT_DONUT_CHART_STYLE.center],
+          padAngle: RECRUITMENT_DONUT_CHART_STYLE.padAngle,
           itemStyle: {
             borderColor: chartTheme.surface,
-            borderWidth: 2
+            borderRadius: 8,
+            borderWidth: 2,
+            shadowBlur: 10,
+            shadowColor: RECRUITMENT_DONUT_CHART_STYLE.shadowColor,
+            shadowOffsetX: 2,
+            shadowOffsetY: 2
           },
           label: {
-            formatter: (params) => {
-              const percent = typeof params.percent === "number"
-                ? params.percent
-                : requestedVacancies > 0
-                  ? (Number(params.value ?? 0) / requestedVacancies) * 100
-                  : 0;
-              return `${params.name}\n${formatPercentValue(percent)}`;
-            },
+            formatter: ({ name }: { name: string }) => truncateRecruitmentChartLabel(name),
             color: textColor
           },
           data: chartData
@@ -368,17 +376,35 @@ export function BiRecruitmentAnalyticsView({
 
     return {
       color: dashboard.mobilityByStatus.map((item) => getMobilityStatusColor(item.label, biPalette)),
-      tooltip: { trigger: "item" },
+      tooltip: {
+        trigger: "item",
+        formatter: (params) => {
+          const point = Array.isArray(params) ? params[0] : params;
+          return buildRecruitmentTooltip(String(point.name ?? "Estado"), [
+            ["Solicitudes", formatMetricValue(Number(point.value ?? 0))]
+          ]);
+        }
+      },
+      legend: { bottom: 0, icon: "circle", type: "scroll", textStyle: { color: textColor } },
       series: [
         {
           type: "pie",
-          radius: ["44%", "74%"],
-          center: ["50%", "50%"],
+          radius: [...RECRUITMENT_DONUT_CHART_STYLE.radius],
+          center: [...RECRUITMENT_DONUT_CHART_STYLE.center],
+          padAngle: RECRUITMENT_DONUT_CHART_STYLE.padAngle,
           itemStyle: {
             borderColor: chartTheme.surface,
-            borderWidth: 2
+            borderRadius: 8,
+            borderWidth: 2,
+            shadowBlur: 10,
+            shadowColor: RECRUITMENT_DONUT_CHART_STYLE.shadowColor,
+            shadowOffsetX: 2,
+            shadowOffsetY: 2
           },
-          label: { formatter: "{b}\n{c}", color: textColor },
+          label: {
+            formatter: ({ name }: { name: string }) => truncateRecruitmentChartLabel(name),
+            color: textColor
+          },
           data: dashboard.mobilityByStatus.map((item) => ({
             name: item.label,
             value: item.value,
