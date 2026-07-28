@@ -462,14 +462,17 @@ export function IncentiveAnalyticsView() {
         label: {
           show: true,
           position: "insideLeft",
-          color: "#0f172a",
-          fontSize: 11.5,
+          distance: 8,
+          color: "rgba(15, 23, 42, 0.88)",
+          fontSize: 12,
           fontWeight: 700,
-          textBorderColor: "rgba(255, 255, 255, 0.88)",
-          textBorderWidth: 3,
+          lineHeight: 16,
+          width: 220,
+          overflow: "truncate",
+          ellipsis: "…",
           formatter: (params: { data?: unknown }) => {
             const data = getChartDataRecord(params.data);
-            return truncateLabel(String(data.contractLabel ?? ""), 34);
+            return String(data.contractLabel ?? "");
           }
         }
       }

@@ -4,6 +4,17 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Business Intelligence - nitidez etiquetas Inversion por contrato
+
+- [x] Ubicar el render real del grafico `Inversión por contrato` en Incentivos BI.
+- [x] Corregir estilo de texto dentro de barras para eliminar contorno/fondo blanco pixelado.
+- [x] Validar TypeScript, build frontend, performance y Guardian antes de cerrar.
+
+Resultado:
+- El grafico `Inversión por contrato` estaba renderizando labels con `textBorderWidth = 3` y borde blanco, lo que generaba un halo pixelado tipo fondo blanco sobre la barra.
+- Se elimina el contorno blanco y se deja texto oscuro semitransparente, `12px`, peso 700, distancia interna estable y truncado nativo por ancho para conservar nitidez y evitar cajas artificiales.
+- Validacion: TypeScript directo, `build:frontend-check`, `audit:performance-baseline`, `git diff --check` y `guardian` pasan.
+
 ## Business Intelligence - filtros Jornada no refrescan tarjetas para Manuel Parra
 
 - [x] Reproducir con usuario Manuel Parra si el RPC BI cambia `summary` y `averageHiringDays` al recibir `p_shift_names`.

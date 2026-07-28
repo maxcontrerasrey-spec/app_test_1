@@ -2757,3 +2757,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un dashboard gerencial filtrable no debe heredar caches largos de vistas estables.** Si un filtro cambia tarjetas ejecutivas, el hook debe forzar frescura o invalidacion inmediata; 5 minutos de `staleTime` hacen que la UI parezca ignorar el filtro.
 - **Durante un refetch de indicadores no muestres el resumen anterior como si fuera vigente.** Estados como `isFetching` deben bloquear o marcar las tarjetas mientras llega el nuevo payload, especialmente en metricas agregadas como `Tiempo Medio de Contratacion`.
 - **El smoke de filtros debe comparar usuario real, sin filtro y con al menos dos valores.** Si el RPC devuelve valores distintos para el mismo usuario, la causa raiz esta en cache/envio/render frontend y no en permisos o calculo backend.
+
+## 189. Las etiquetas sobre canvas deben privilegiar nitidez real sobre contraste artificial
+
+- **No uses bordes blancos gruesos para hacer legible texto dentro de barras.** En ECharts/Canvas, `textBorderWidth` alto se rasteriza como halo pixelado y parece una caja blanca mal integrada.
+- **El contraste debe venir de color, peso y ubicacion.** En barras claras, usa texto oscuro semitransparente, ancho controlado y truncado nativo antes de agregar fondos o contornos.
+- **Los labels de dashboard deben escalar bien fuera de Retina.** Si algo se ve aceptable en Mac pero dentado en pantallas normales, elimina sombras/contornos agresivos y valida con build visual antes de cerrar.

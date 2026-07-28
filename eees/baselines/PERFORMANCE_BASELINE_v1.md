@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.11
+version: 1.0.12
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,676,813 bytes.
-- JS total medido: 3,028,518 bytes.
-- `dist` total: 10,676,813 bytes.
+- dist total medido: 10,676,827 bytes.
+- JS total medido: 3,028,532 bytes.
+- `dist` total: 10,676,827 bytes.
 - Archivos JS: 52.
-- JS total: 3,028,518 bytes.
+- JS total: 3,028,532 bytes.
 - Archivos CSS: 10.
 - CSS total: 214,048 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -61,6 +61,8 @@ Revision 2026-07-27 BI donas: el total global sube 786 bytes y JS sube 786 bytes
 
 Revision 2026-07-27 BI jornada freshness: el total global sube 59 bytes y JS sube 59 bytes por forzar frescura del dashboard BI Reclutamiento y evitar mostrar tarjetas antiguas mientras cambia el filtro Jornada. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
 
+Revision 2026-07-28 BI incentivos labels: el total global sube 14 bytes y JS sube 14 bytes por mejorar la nitidez de las etiquetas dentro de barras en `Inversión por contrato`, eliminando el contorno blanco pixelado. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -78,9 +80,9 @@ Revision 2026-07-27 BI jornada freshness: el total global sube 59 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10676813,
+  "distTotalBytes": 10676827,
   "jsFileCount": 52,
-  "jsTotalBytes": 3028518,
+  "jsTotalBytes": 3028532,
   "cssFileCount": 10,
   "cssTotalBytes": 214048,
   "trackedAssets": [
