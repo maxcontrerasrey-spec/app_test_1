@@ -55,6 +55,57 @@ async function mapWithConcurrency<TInput, TOutput>(
   return results;
 }
 
+function getBukAvailableVacancies(candidate: RecruitmentPersonnelToHireRow) {
+  if (candidate.buk_available_vacancies == null) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const available = Number(candidate.buk_available_vacancies);
+  return Number.isFinite(available) ? Math.max(available, 0) : 0;
+}
+
+function getBukGenerationBlockReason(candidate: RecruitmentPersonnelToHireRow) {
+  if (candidate.buk_generation_blocked) {
+    return candidate.buk_generation_block_reason || "El caso no tiene cupos disponibles para generar en BUK.";
+  }
+
+  if (getBukAvailableVacancies(candidate) <= 0) {
+    return "El caso no tiene cupos disponibles para generar en BUK.";
+  }
+
+  return "";
+}
+
+function buildBukGeneratableSelection(
+  candidates: RecruitmentPersonnelToHireRow[],
+  candidateIds: string[]
+) {
+  const requestedIds = new Set(candidateIds);
+  const selectedByCase = new Map<string, number>();
+  const selectedIds: string[] = [];
+  const omittedIds: string[] = [];
+
+  for (const candidate of candidates) {
+    if (!requestedIds.has(candidate.id)) {
+      continue;
+    }
+
+    const availableVacancies = getBukAvailableVacancies(candidate);
+    const selectedCountForCase = selectedByCase.get(candidate.recruitment_case_id) ?? 0;
+    const blockReason = getBukGenerationBlockReason(candidate);
+
+    if (blockReason || selectedCountForCase >= availableVacancies) {
+      omittedIds.push(candidate.id);
+      continue;
+    }
+
+    selectedByCase.set(candidate.recruitment_case_id, selectedCountForCase + 1);
+    selectedIds.push(candidate.id);
+  }
+
+  return { selectedIds, omittedIds };
+}
+
 export function HiringPersonnelToHireView({
   bucket = "to_hire",
   isParentLoading,
@@ -118,10 +169,29 @@ export function HiringPersonnelToHireView({
     [personnelToHire, selectedCandidateIds]
   );
 
+  const generatableSelection = useMemo(
+    () => buildBukGeneratableSelection(personnelToHire, selectedCandidateIds),
+    [personnelToHire, selectedCandidateIds]
+  );
+
+  const selectedGeneratablePersonnel = useMemo(
+    () => personnelToHire.filter((candidate) => generatableSelection.selectedIds.includes(candidate.id)),
+    [generatableSelection.selectedIds, personnelToHire]
+  );
+
+  const allGeneratableIds = useMemo(
+    () =>
+      buildBukGeneratableSelection(
+        personnelToHire,
+        personnelToHire.map((candidate) => candidate.id)
+      ).selectedIds,
+    [personnelToHire]
+  );
+
   const allFilteredSelected =
     showBukActions &&
-    personnelToHire.length > 0 &&
-    personnelToHire.every((candidate) => selectedCandidateIds.includes(candidate.id));
+    allGeneratableIds.length > 0 &&
+    allGeneratableIds.every((candidateId) => selectedCandidateIds.includes(candidateId));
 
   const visibleSelectedCount = personnelToHire.filter((candidate) =>
     selectedCandidateIds.includes(candidate.id)
@@ -145,9 +215,13 @@ export function HiringPersonnelToHireView({
       return;
     }
 
-    setSelectedCandidateIds((current) =>
-      current.filter((candidateId) => personnelToHire.some((candidate) => candidate.id === candidateId))
-    );
+    setSelectedCandidateIds((current) => {
+      const visibleIds = new Set(personnelToHire.map((candidate) => candidate.id));
+      return buildBukGeneratableSelection(
+        personnelToHire,
+        current.filter((candidateId) => visibleIds.has(candidateId))
+      ).selectedIds;
+    });
   }, [personnelToHire, showBukActions]);
 
   const toggleCandidateSelection = (candidateId: string) => {
@@ -155,11 +229,18 @@ export function HiringPersonnelToHireView({
       return;
     }
 
-    setSelectedCandidateIds((current) =>
-      current.includes(candidateId)
-        ? current.filter((id) => id !== candidateId)
-        : [...current, candidateId]
-    );
+    const candidate = personnelToHire.find((item) => item.id === candidateId);
+    if (!candidate) {
+      return;
+    }
+
+    setSelectedCandidateIds((current) => {
+      if (current.includes(candidateId)) {
+        return current.filter((id) => id !== candidateId);
+      }
+
+      return buildBukGeneratableSelection(personnelToHire, [...current, candidateId]).selectedIds;
+    });
   };
 
   const toggleSelectAllFiltered = () => {
@@ -167,14 +248,17 @@ export function HiringPersonnelToHireView({
       return;
     }
 
-    const filteredIds = personnelToHire.map((candidate) => candidate.id);
+    const filteredIds = allGeneratableIds;
 
     setSelectedCandidateIds((current) => {
       if (filteredIds.every((id) => current.includes(id))) {
         return current.filter((id) => !filteredIds.includes(id));
       }
 
-      return Array.from(new Set([...current, ...filteredIds]));
+      return buildBukGeneratableSelection(
+        personnelToHire,
+        Array.from(new Set([...current, ...filteredIds]))
+      ).selectedIds;
     });
   };
 
@@ -237,7 +321,7 @@ export function HiringPersonnelToHireView({
       return;
     }
 
-    if (selectedPersonnel.length === 0) {
+    if (selectedGeneratablePersonnel.length === 0) {
       setExportMessage("Selecciona al menos una persona para generar en BUK.");
       return;
     }
@@ -247,7 +331,7 @@ export function HiringPersonnelToHireView({
 
     try {
       const { data, processed, error, dispatchError } = await generateCandidatesInBuk(
-        selectedPersonnel.map((candidate) => candidate.id)
+        selectedGeneratablePersonnel.map((candidate) => candidate.id)
       );
 
       if (error) {
@@ -279,6 +363,11 @@ export function HiringPersonnelToHireView({
             ? `BUK procesó ${successCount} persona(s). ${processingCount} siguen en procesamiento en segundo plano.`
             : `BUK procesó ${successCount} persona(s) correctamente.`
       );
+      if (generatableSelection.omittedIds.length > 0) {
+        setExportMessage((previous) =>
+          `${previous} Se omitieron ${generatableSelection.omittedIds.length} candidato(s) porque el cupo del caso ya estaba tomado.`
+        );
+      }
       setSelectedCandidateIds([]);
       await Promise.all([
         onCandidateFileUpdated(),
@@ -319,11 +408,11 @@ export function HiringPersonnelToHireView({
                 type="button"
                 className="soft-primary-button approval-button-approve"
                 onClick={() => void handleGenerateBuk()}
-                disabled={isGeneratingBuk || selectedPersonnel.length === 0}
+                disabled={isGeneratingBuk || selectedGeneratablePersonnel.length === 0}
               >
                 {isGeneratingBuk
                   ? "Generando..."
-                  : `Generar en BUK (${selectedPersonnel.length})`}
+                  : `Generar en BUK (${selectedGeneratablePersonnel.length})`}
               </button>
               <button
                 type="button"
@@ -373,20 +462,26 @@ export function HiringPersonnelToHireView({
               </thead>
               <tbody>
                 {personnelToHire.length > 0 ? (
-                  personnelToHire.map((candidate) => (
-                    <tr
-                      key={candidate.id}
-                      className={
-                        candidate.id === selectedCandidateBoardRow?.id ? "tracking-row-selected" : ""
-                      }
-                      onClick={() => onSelectCandidate(candidate.id, candidate.recruitment_case_id)}
-                    >
+                  personnelToHire.map((candidate) => {
+                    const blockReason = showBukActions ? getBukGenerationBlockReason(candidate) : "";
+                    const isSelectionDisabled = showBukActions && Boolean(blockReason);
+
+                    return (
+                      <tr
+                        key={candidate.id}
+                        className={
+                          candidate.id === selectedCandidateBoardRow?.id ? "tracking-row-selected" : ""
+                        }
+                        onClick={() => onSelectCandidate(candidate.id, candidate.recruitment_case_id)}
+                      >
                       {showBukActions ? (
                         <td className="tracking-selection-cell">
                           <input
                             type="checkbox"
                             checked={selectedCandidateIds.includes(candidate.id)}
                             aria-label={`Seleccionar ${candidate.full_name}`}
+                            title={blockReason || undefined}
+                            disabled={isSelectionDisabled}
                             onClick={(event) => event.stopPropagation()}
                             onChange={() => toggleCandidateSelection(candidate.id)}
                           />
@@ -400,7 +495,12 @@ export function HiringPersonnelToHireView({
                       </td>
                       <td>{candidate.case_code}</td>
                       <td>{candidate.job_position_name}</td>
-                      <td>{candidate.contract_name}</td>
+                      <td>
+                        {candidate.contract_name}
+                        {blockReason ? (
+                          <div className="tracking-filter-caption">{blockReason}</div>
+                        ) : null}
+                      </td>
                       <td>
                         {formatDateTimeValue(
                           bucket === "contracted"
@@ -411,8 +511,9 @@ export function HiringPersonnelToHireView({
                         )}
                       </td>
                       <td>{candidate.owner_name ?? "No asignado"}</td>
-                    </tr>
-                  ))
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td className="tracking-empty-state" colSpan={emptyColSpan}>

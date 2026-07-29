@@ -59,4 +59,25 @@ describe("CORE data integrity", () => {
     expect(uploadMigration).toContain("enable row level security");
     expect(uploadMigration).toContain("from public, anon, authenticated");
   });
+
+  it("blocks BUK generation when a recruitment case has no available vacancies", () => {
+    const bukCapacityMigration = read(
+      "supabase/migrations/20260729150153_guard_buk_generation_vacancy_overfill.sql"
+    );
+
+    expect(bukCapacityMigration).toContain(
+      "create or replace function public.get_recruitment_case_buk_capacity_snapshot"
+    );
+    expect(bukCapacityMigration).toContain("p_excluded_candidate_id uuid default null");
+    expect(bukCapacityMigration).toContain("public.is_effective_buk_generation_success");
+    expect(bukCapacityMigration).toContain("bsj.status = 'processing'");
+    expect(bukCapacityMigration).toContain("bsj.status in ('pending', 'processing')");
+    expect(bukCapacityMigration).toContain("p_include_pending_jobs and bsj.status = 'pending'");
+    expect(bukCapacityMigration).toContain(
+      "public.get_recruitment_case_buk_capacity_snapshot(\n        candidate_row.recruitment_case_id,\n        candidate_row.id,\n        true\n      )"
+    );
+    expect(bukCapacityMigration).toContain(
+      "No hay cupos disponibles para generar en BUK en el caso %"
+    );
+  });
 });

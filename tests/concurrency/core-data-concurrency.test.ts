@@ -37,4 +37,18 @@ describe("CORE concurrency guards", () => {
       expect(sql).toContain("staleProcessingRecovery");
     }
   });
+
+  it("claims BUK jobs under the vacancy cap per recruitment case", () => {
+    const sql = fs.readFileSync(
+      path.join(root, "supabase/migrations/20260729150153_guard_buk_generation_vacancy_overfill.sql"),
+      "utf8"
+    );
+
+    expect(sql).toContain("create or replace function public.claim_buk_sync_jobs");
+    expect(sql).toContain("for update of bsj skip locked");
+    expect(sql).toContain("partition by cp.recruitment_case_id");
+    expect(sql).toContain("ranked_pool.case_queue_position > ranked_pool.available_for_pool");
+    expect(sql).toContain("No hay cupos disponibles para generar este candidato en BUK.");
+    expect(sql).toContain("source', 'claim_buk_sync_jobs'");
+  });
 });

@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.12
+version: 1.0.13
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,676,827 bytes.
-- JS total medido: 3,028,532 bytes.
-- `dist` total: 10,676,827 bytes.
+- dist total medido: 10,678,177 bytes.
+- JS total medido: 3,029,882 bytes.
+- `dist` total: 10,678,177 bytes.
 - Archivos JS: 52.
-- JS total: 3,028,532 bytes.
+- JS total: 3,029,882 bytes.
 - Archivos CSS: 10.
 - CSS total: 214,048 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -63,6 +63,8 @@ Revision 2026-07-27 BI jornada freshness: el total global sube 59 bytes y JS sub
 
 Revision 2026-07-28 BI incentivos labels: el total global sube 14 bytes y JS sube 14 bytes por mejorar la nitidez de las etiquetas dentro de barras en `Inversión por contrato`, eliminando el contorno blanco pixelado. No agrega vendors, rutas lazy ni CSS; los assets trackeados permanecen bajo baseline.
 
+Revision 2026-07-29 BUK cupos: el total global sube 1,350 bytes y JS sube 1,350 bytes por la seleccion defensiva de `Personal a Contratar` segun cupos disponibles por caso. No agrega vendors, rutas lazy ni CSS; el control autoritativo queda en backend y los assets trackeados permanecen bajo baseline.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -80,9 +82,9 @@ Revision 2026-07-28 BI incentivos labels: el total global sube 14 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10676827,
+  "distTotalBytes": 10678177,
   "jsFileCount": 52,
-  "jsTotalBytes": 3028532,
+  "jsTotalBytes": 3029882,
   "cssFileCount": 10,
   "cssTotalBytes": 214048,
   "trackedAssets": [

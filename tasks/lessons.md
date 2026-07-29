@@ -2763,3 +2763,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No uses bordes blancos gruesos para hacer legible texto dentro de barras.** En ECharts/Canvas, `textBorderWidth` alto se rasteriza como halo pixelado y parece una caja blanca mal integrada.
 - **El contraste debe venir de color, peso y ubicacion.** En barras claras, usa texto oscuro semitransparente, ancho controlado y truncado nativo antes de agregar fondos o contornos.
 - **Los labels de dashboard deben escalar bien fuera de Retina.** Si algo se ve aceptable en Mac pero dentado en pantallas normales, elimina sombras/contornos agresivos y valida con build visual antes de cerrar.
+
+## 190. Los cupos BUK se controlan en backend, no por conteo visual de candidatos
+
+- **`ready_for_hire` no consume cupo por si solo; BUK efectivo y reservas si.** Un caso puede tener mas candidatos listos que cupos, pero solo deben reservar contratados, jobs BUK `pending/processing`, exitos efectivos y movilidades vigentes.
+- **El boton masivo nunca es autoridad.** La UI puede filtrar y omitir excedentes, pero `enqueue_buk_generation` debe bloquear sobrecupo con lock del caso y reserva por lote.
+- **La cola tambien debe repetir el guardrail.** `claim_buk_sync_jobs` debe recalcular capacidad antes de procesar para cubrir jobs antiguos, retries, concurrencia y llamadas directas a la Edge Function.
+- **Los sobrecupos historicos son deuda operativa, no migracion automatica.** Si ya existen trabajadores BUK efectivos por sobre cupo, reportalos con evidencia y no los borres ni cambies de estado sin decision de negocio.

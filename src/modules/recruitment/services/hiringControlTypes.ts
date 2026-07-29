@@ -191,6 +191,11 @@ export type RecruitmentCandidateControlRow = {
   buk_generated_at?: string | null;
   buk_employee_id?: string | null;
   has_buk_generation_success?: boolean;
+  requested_vacancies?: number | null;
+  buk_occupied_vacancies?: number | null;
+  buk_available_vacancies?: number | null;
+  buk_generation_blocked?: boolean | null;
+  buk_generation_block_reason?: string | null;
 };
 
 export type RecruitmentPersonnelToHireRow = RecruitmentCandidateControlRow;

@@ -4,6 +4,24 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Reclutamiento/BUK - bloqueo estructural de sobrecupo
+
+- [x] Auditar flujo completo de cupos: paso a `ready_for_hire`, encolado `enqueue_buk_generation`, exito BUK y movilidad interna.
+- [x] Definir regla backend autoritativa que reserve cupos por caso con contratados, BUK efectivo, jobs BUK `pending/processing` y movilidad interna vigente, sin bloquear al propio candidato.
+- [x] Corregir RPCs/migraciones para impedir que BUK genere candidatos por sobre `requested_vacancies` aunque la UI seleccione de mas.
+- [x] Ajustar UI de `Personal a Contratar` para mostrar y evitar selección de candidatos bloqueados por sobrecupo.
+- [x] Validar con smoke SQL productivo, tests, build, auditorias Supabase, performance y Guardian.
+
+Resultado:
+- Se agrego `get_recruitment_case_buk_capacity_snapshot` como regla backend unica de capacidad por caso: suma contratados/BUK efectivo, jobs `pending/processing` y movilidades internas pendientes o aprobadas en ejecucion.
+- `enqueue_buk_generation` bloquea el encolado sobre cupo con lock del caso y reserva por lote, por lo que una seleccion masiva no puede encolar mas personas que cupos disponibles.
+- `claim_buk_sync_jobs` vuelve a validar capacidad antes de procesar y marca jobs excedentes como `error` con `vacancyGuard`, cubriendo jobs antiguos, retries y concurrencia.
+- `Personal a Contratar` consume `buk_available_vacancies` y deshabilita candidatos cuyo caso ya no tiene cupo; al seleccionar todo solo toma los primeros candidatos que caben por caso.
+- Migracion remota aplicada en Supabase como `20260729150153_guard_buk_generation_vacancy_overfill`.
+- Smoke productivo de solo lectura: funciones `SECURITY DEFINER` y grants esperados; cola BUK actual en 0 `pending` y 0 `processing`; `claim_buk_sync_jobs(1, null)` retorna 0 sin error.
+- Deuda historica detectada: `RC-0052` ya tiene 3 BUK efectivos para 2 cupos antes de este guardrail. No se corrige automaticamente porque son trabajadores ya generados en BUK.
+- Validacion local: TypeScript directo, `test:integrity`, `test:concurrency`, `audit:migrations`, `audit:supabase-security`, `check:edge:sync-buk-candidates`, `build:frontend-check`, `audit:buk-sync-guards`, `audit:performance-baseline`, `git diff --check` y `guardian` pasan.
+
 ## Business Intelligence - nitidez etiquetas Inversion por contrato
 
 - [x] Ubicar el render real del grafico `Inversión por contrato` en Incentivos BI.
