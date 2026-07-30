@@ -137,7 +137,10 @@ export const requiredPersonFields: Array<{ key: keyof PersonDraft; label: string
   { key: "addressLine", label: "Dirección" },
   { key: "region", label: "Región" },
   { key: "districtOrCommune", label: "Comuna" },
-  { key: "currentCity", label: "Ciudad" }
+  { key: "currentCity", label: "Ciudad" },
+  { key: "shoeSize", label: "Número calzado" },
+  { key: "pantsSize", label: "Talla pantalón" },
+  { key: "shirtSize", label: "Talla polera" }
 ];
 
 function splitFullName(fullName: string) {

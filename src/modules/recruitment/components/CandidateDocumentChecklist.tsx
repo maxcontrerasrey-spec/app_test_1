@@ -308,6 +308,10 @@ export function CandidateDocumentChecklist({
   }[checklist.semaphore];
   const documentValidation = checklist.document_validation;
   const documentValidationApproved = documentValidation.status === "approved";
+  const missingCandidateFileFields = [
+    ...checklist.missing_person_fields,
+    ...checklist.missing_worker_fields
+  ];
 
   return (
     <div className="control-detail-body document-checklist-container">
@@ -348,7 +352,10 @@ export function CandidateDocumentChecklist({
           <>
             {!checklist.worker_file_complete ? (
               <p className="document-validation-warning">
-                Es necesario completar la ficha del candidato y cargar la documentación.
+                Falta completar la ficha del candidato
+                {missingCandidateFileFields.length > 0
+                  ? `: ${missingCandidateFileFields.join(", ")}.`
+                  : "."}
               </p>
             ) : null}
 

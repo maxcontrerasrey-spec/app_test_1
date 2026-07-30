@@ -20,6 +20,20 @@ Resultado:
 - Validacion: `build:frontend-check`, `git diff --check`, Playwright en 390x844 y 1280x800, y `guardian` pasan. El baseline performance sube solo por la capa responsive medida: +2,464 bytes total, +38 JS, +2,426 CSS; sin vendors ni assets nuevos.
 - Reapertura corregida: el panel movil ahora se renderiza como `top-nav-mobile-panel` fuera del scroller `.top-nav-stage`; el dropdown desktop queda oculto en movil con `top-nav-dropdown-panel--desktop`. Playwright con saludo/dashboard y ORION `z-index: 9999` confirma que el elemento superior bajo el punto del panel abierto pertenece al menu.
 
+## Reclutamiento - ficha candidato obligatoria antes de Listo para contratar
+
+- [x] Confirmar contrato vivo de `get_candidate_checklist(...)`, ficha BUK candidato y `advance_recruitment_candidate_stage(...)`.
+- [x] Hacer obligatoria la ficha del candidato antes de avanzar a `ready_for_hire`, incluyendo numero calzado, talla pantalon y talla polera.
+- [x] Entregar mensajes claros con campos faltantes cuando la ficha no este completa.
+- [x] Validar con pruebas focalizadas, auditorias SQL/frontend y diff limpio.
+
+Resultado:
+- La migracion `20260730211444_require_candidate_buk_file_before_ready_for_hire` recompila `get_candidate_checklist(...)` para incluir `Ciudad`, `Número calzado`, `Talla pantalón` y `Talla polera` en la completitud de ficha.
+- `advance_recruitment_candidate_stage(...)` recalcula el checklist antes de pasar a `ready_for_hire`; si falta ficha, bloquea con mensaje claro y lista de campos pendientes, aunque la revision documental haya sido aprobada antes.
+- Control Documental muestra los campos concretos faltantes de la ficha del candidato.
+- La validacion remota fue transaccional con `ROLLBACK`: un candidato no terminal con tallas vacias fue puesto temporalmente en `document_review` aprobado y la RPC rechazo el avance por ficha incompleta; luego se confirmo que su etapa y validacion documental originales permanecieron intactas.
+- Validacion local: unitarias, TypeScript, `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `audit:performance-baseline`, `guardian` y `git diff --check` pasan.
+
 ## Reclutamiento/BUK - bloqueo estructural de sobrecupo
 
 - [x] Auditar flujo completo de cupos: paso a `ready_for_hire`, encolado `enqueue_buk_generation`, exito BUK y movilidad interna.

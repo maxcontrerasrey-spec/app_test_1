@@ -5,7 +5,8 @@ import {
   buildWorkerDraft,
   collectMissingFields,
   parseNullableInteger,
-  parseNullableNumber
+  parseNullableNumber,
+  requiredPersonFields
 } from "../../src/modules/recruitment/lib/candidateWorkerFileFormHelpers";
 
 const candidate = {
@@ -214,5 +215,13 @@ describe("candidateWorkerFileFormHelpers", () => {
     expect(collectMissingFields({ name: "", rut: "123" }, [{ key: "name", label: "Nombre" }])).toEqual([
       "Nombre"
     ]);
+  });
+
+  it("exige tallas de uniforme dentro de la ficha personal obligatoria", () => {
+    const requiredLabels = requiredPersonFields.map((field) => field.label);
+
+    expect(requiredLabels).toEqual(
+      expect.arrayContaining(["Número calzado", "Talla pantalón", "Talla polera"])
+    );
   });
 });

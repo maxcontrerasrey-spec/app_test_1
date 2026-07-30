@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Valida contra capas reales, no solo contra contenido simple.** Si el ERP tiene saludo, widgets de dashboard u ORION con `z-index` alto, la prueba debe comprobar `elementFromPoint` sobre el panel abierto y confirmar que el elemento superior es una opcion del menu.
 - **La flecha abierta no prueba que el menu sea usable.** Para cerrar un bug tactil, mide visibilidad, display, posicion, ancho, scroll y capa del panel, y verifica que escritorio conserve su dropdown original.
 
+## 286. Listo para contratar debe recalcular ficha BUK obligatoria en backend
+
+- **La aprobacion documental previa no basta si la ficha BUK cambia de contrato obligatorio.** Antes de mover a `ready_for_hire`, la RPC debe recalcular `get_candidate_checklist(...)` y bloquear si faltan campos de ficha, incluso cuando `document_validation_status` ya estaba `approved`.
+- **Los campos faltantes deben salir del mismo checklist que usa la UI.** Control Documental y el error de `advance_recruitment_candidate_stage(...)` deben listar las mismas etiquetas pendientes para que el usuario sepa exactamente que completar.
+- **Las tallas operativas son parte de la ficha del candidato.** `Número calzado`, `Talla pantalón` y `Talla polera` no pueden quedar solo como datos opcionales de exportacion; si negocio las exige antes de contratar, entran en la completitud backend y en la validacion del formulario.
+
 ## 284. Homologar graficos implica geometria e interaccion, no copiar paletas
 
 - **Cuando negocio pide la estetica de otro modulo, separa forma de color.** En BI, Reclutamiento debe conservar su semantica cromatica propia, pero puede compartir radio de dona, leyenda, truncado, sombra y tooltips con Incentivos.

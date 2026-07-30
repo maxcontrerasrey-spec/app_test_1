@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.15
+version: 1.0.16
 status: Activo
 language: es-CL
 owner: Quality
@@ -69,6 +69,8 @@ Revision 2026-07-30 navegacion movil: el total global sube 2,464 bytes, JS sube 
 
 Revision 2026-07-30 navegacion movil reapertura: el total global sube 330 bytes, JS sube 199 bytes y CSS sube 131 bytes por renderizar el panel movil como hermano directo del header, fuera del scroller horizontal, y elevarlo sobre widgets flotantes como ORION. No agrega vendors, rutas lazy ni assets trackeados.
 
+Revision 2026-07-30 ficha BUK obligatoria: el total global sube 189 bytes y JS sube 189 bytes por mostrar campos faltantes de la ficha del candidato y exigir tallas antes de habilitar el avance a `Listo para contratar`. No agrega vendors, rutas lazy, CSS ni assets trackeados.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -86,9 +88,9 @@ Revision 2026-07-30 navegacion movil reapertura: el total global sube 330 bytes,
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10680971,
+  "distTotalBytes": 10681160,
   "jsFileCount": 52,
-  "jsTotalBytes": 3030119,
+  "jsTotalBytes": 3030308,
   "cssFileCount": 10,
   "cssTotalBytes": 216605,
   "trackedAssets": [
