@@ -4,6 +4,19 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Navegacion superior ERP - responsivo celular
+
+- [x] Reproducir/inspeccionar contrato real del `AppShell` y CSS global del topnav.
+- [x] Corregir el menu desplegable en móvil para que quede por encima del contenido y se pueda tocar/scrollear sin quedar tapado.
+- [x] Mantener intacto el comportamiento desktop mediante media queries acotadas a pantallas chicas.
+- [x] Validar frontend, diff y, si es posible, navegación móvil con browser local.
+
+Resultado:
+- `AppShell` marca el header con `top-shell--nav-open` mientras un modulo esta desplegado.
+- En celular (`max-width: 768px`) el header queda sticky, la barra conserva logo/nav/acciones en una fila compacta, el nav permite scroll horizontal tactil y el dropdown abre como panel fijo sobre el contenido, con ancho de viewport, `z-index` superior y scroll vertical.
+- En escritorio el dropdown conserva su contrato anterior: header `relative` y panel `absolute`.
+- Validacion: `build:frontend-check`, `git diff --check`, Playwright en 390x844 y 1280x800, y `guardian` pasan. El baseline performance sube solo por la capa responsive medida: +2,464 bytes total, +38 JS, +2,426 CSS; sin vendors ni assets nuevos.
+
 ## Reclutamiento/BUK - bloqueo estructural de sobrecupo
 
 - [x] Auditar flujo completo de cupos: paso a `ready_for_hire`, encolado `enqueue_buk_generation`, exito BUK y movilidad interna.

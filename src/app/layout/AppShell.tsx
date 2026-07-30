@@ -388,7 +388,10 @@ export function AppShell() {
 
   return (
     <div className="app-shell app-shell-topnav">
-      <header className="top-shell" ref={navMenuRef}>
+      <header
+        className={openModule ? "top-shell top-shell--nav-open" : "top-shell"}
+        ref={navMenuRef}
+      >
         <div className="top-shell-bar">
           <NavLink
             aria-label="Ir al inicio"
