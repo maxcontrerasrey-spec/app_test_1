@@ -1402,6 +1402,10 @@ textarea {
   display: flex;
 }
 
+.top-nav-mobile-panel {
+  display: none;
+}
+
 .top-nav-mega-grid {
   width: 100%;
   margin: 0 auto;
@@ -5941,7 +5945,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   }
 
   .top-shell--nav-open {
-    z-index: 1300;
+    z-index: 10010;
   }
 
   .top-shell-bar {
@@ -6005,7 +6009,12 @@ details.mobility-detail-card[open] .mobility-detail-summary {
     font-size: 0.62rem;
   }
 
-  .top-nav-dropdown-panel {
+  .top-nav-dropdown-panel--desktop {
+    display: none;
+  }
+
+  .top-nav-mobile-panel {
+    display: flex;
     position: fixed;
     top: calc(4.35rem + env(safe-area-inset-top));
     left: 0.7rem;
@@ -6019,9 +6028,10 @@ details.mobility-detail-card[open] .mobility-detail-summary {
     gap: 0.35rem;
     padding: 0.65rem;
     border-radius: 1.1rem;
+    border: 1px solid var(--soft-border);
     background: linear-gradient(135deg, var(--soft-surface), var(--soft-surface-alt));
     box-shadow: 0 22px 52px -24px rgba(var(--shadow-rgb), 0.42);
-    z-index: 1310;
+    z-index: 10020;
   }
 
   .top-nav-dropdown-link {
@@ -6076,7 +6086,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
     right: 0.7rem;
     left: 0.7rem;
     width: auto;
-    z-index: 1320;
+    z-index: 10030;
   }
 
   .main-content,

@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.14
+version: 1.0.15
 status: Activo
 language: es-CL
 owner: Quality
@@ -67,6 +67,8 @@ Revision 2026-07-29 BUK cupos: el total global sube 1,350 bytes y JS sube 1,350 
 
 Revision 2026-07-30 navegacion movil: el total global sube 2,464 bytes, JS sube 38 bytes y CSS sube 2,426 bytes por convertir el topnav en una experiencia tactil en celular: header sticky, dropdown fijo sobre el contenido, scroll horizontal del nav y panel scrolleable. No agrega vendors, rutas lazy ni assets trackeados.
 
+Revision 2026-07-30 navegacion movil reapertura: el total global sube 330 bytes, JS sube 199 bytes y CSS sube 131 bytes por renderizar el panel movil como hermano directo del header, fuera del scroller horizontal, y elevarlo sobre widgets flotantes como ORION. No agrega vendors, rutas lazy ni assets trackeados.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -84,11 +86,11 @@ Revision 2026-07-30 navegacion movil: el total global sube 2,464 bytes, JS sube 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10680641,
+  "distTotalBytes": 10680971,
   "jsFileCount": 52,
-  "jsTotalBytes": 3029920,
+  "jsTotalBytes": 3030119,
   "cssFileCount": 10,
-  "cssTotalBytes": 216474,
+  "cssTotalBytes": 216605,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

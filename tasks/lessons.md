@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 285. Menus moviles globales deben salir del scroller y superar widgets flotantes
+
+- **Un dropdown de topnav no debe vivir dentro del carril horizontal en celular.** Aunque `position: fixed` parezca suficiente, el menu puede quedar afectado por `overflow`, stacking contexts o la geometria del scroller; renderiza el panel movil como hermano directo del header.
+- **Valida contra capas reales, no solo contra contenido simple.** Si el ERP tiene saludo, widgets de dashboard u ORION con `z-index` alto, la prueba debe comprobar `elementFromPoint` sobre el panel abierto y confirmar que el elemento superior es una opcion del menu.
+- **La flecha abierta no prueba que el menu sea usable.** Para cerrar un bug tactil, mide visibilidad, display, posicion, ancho, scroll y capa del panel, y verifica que escritorio conserve su dropdown original.
+
 ## 284. Homologar graficos implica geometria e interaccion, no copiar paletas
 
 - **Cuando negocio pide la estetica de otro modulo, separa forma de color.** En BI, Reclutamiento debe conservar su semantica cromatica propia, pero puede compartir radio de dona, leyenda, truncado, sombra y tooltips con Incentivos.

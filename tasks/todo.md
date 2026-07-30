@@ -10,12 +10,15 @@ Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia
 - [x] Corregir el menu desplegable en móvil para que quede por encima del contenido y se pueda tocar/scrollear sin quedar tapado.
 - [x] Mantener intacto el comportamiento desktop mediante media queries acotadas a pantallas chicas.
 - [x] Validar frontend, diff y, si es posible, navegación móvil con browser local.
+- [x] Corregir reapertura productiva: flecha cambia en celular, pero las opciones siguen ocultas bajo saludo/widget.
+- [x] Validar que el panel móvil queda fuera del scroller del topnav y sobre ORION/widget.
 
 Resultado:
 - `AppShell` marca el header con `top-shell--nav-open` mientras un modulo esta desplegado.
 - En celular (`max-width: 768px`) el header queda sticky, la barra conserva logo/nav/acciones en una fila compacta, el nav permite scroll horizontal tactil y el dropdown abre como panel fijo sobre el contenido, con ancho de viewport, `z-index` superior y scroll vertical.
 - En escritorio el dropdown conserva su contrato anterior: header `relative` y panel `absolute`.
 - Validacion: `build:frontend-check`, `git diff --check`, Playwright en 390x844 y 1280x800, y `guardian` pasan. El baseline performance sube solo por la capa responsive medida: +2,464 bytes total, +38 JS, +2,426 CSS; sin vendors ni assets nuevos.
+- Reapertura corregida: el panel movil ahora se renderiza como `top-nav-mobile-panel` fuera del scroller `.top-nav-stage`; el dropdown desktop queda oculto en movil con `top-nav-dropdown-panel--desktop`. Playwright con saludo/dashboard y ORION `z-index: 9999` confirma que el elemento superior bajo el punto del panel abierto pertenece al menu.
 
 ## Reclutamiento/BUK - bloqueo estructural de sobrecupo
 
