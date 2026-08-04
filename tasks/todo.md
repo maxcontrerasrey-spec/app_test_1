@@ -24,7 +24,7 @@ Resultado:
 - Universo productivo: 56 en `Personal contratado`; 53 emitibles y 3 RC-0067 bloqueados porque siguen `pending` y no tienen validador/fecha. No se inventaron firmas.
 - Canario RC-0105 y 52 restantes procesados secuencialmente en 6 lotes de hasta 10: 53 `generated/success`, 53 QR `valid`, 53 hashes/tamanos completos, 0 fallidos y 0 `reconciliation_required`.
 - Los 53 PDFs fueron enviados directamente a `Postulación` en BUK. El cierre transaccional guarda metadata minima, purga el snapshot privado y audita la carga; `storage.objects` contiene 0 archivos `SC-AAAA-NNNNNN.pdf`.
-- Migraciones productivas `20260804145954_add_hiring_document_backfill` y `20260804151115_harden_hiring_document_backfill_finalization`; `sync-buk-candidates` v40 activo. La credencial temporal del backfill fue eliminada al terminar.
+- Migraciones productivas `20260804145954_add_hiring_document_backfill` y `20260804151115_harden_hiring_document_backfill_finalization`; `sync-buk-candidates` v41 activo. La credencial temporal del backfill fue eliminada al terminar.
 - Verificacion: Edge logs del backfill HTTP 200, source jobs con 0 checkpoints nuevos, RPC privadas solo `service_role`, 9 pruebas focalizadas y Guardian completo sin errores ni warnings.
 
 ## Solicitud de Contratacion ERP y carga documental BUK - 2026-08-04
