@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.16
+version: 1.0.18
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,18 +24,17 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,678,177 bytes.
-- JS total medido: 3,029,882 bytes.
-- `dist` total: 10,678,177 bytes.
-- Archivos JS: 52.
-- JS total: 3,029,882 bytes.
+- dist total medido: 10,052,403 bytes.
+- JS total medido: 2,565,732 bytes.
+- `dist` total: 10,052,403 bytes.
+- Archivos JS: 51.
+- JS total: 2,565,732 bytes.
 - Archivos CSS: 10.
-- CSS total: 214,048 bytes.
+- CSS total: 216,605 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
 - Mayor mapa: `dist/maps/chile.json`, 1,454,860 bytes.
 - Mayor vendor JS: `echarts-vendor`, 512,504 bytes.
 - Exportador XLSX lazy: `xlsx-vendor`, 500,059 bytes.
-- PDF lazy: `pdf-vendor`, 430,776 bytes.
 - Supabase vendor: `supabase-vendor`, 221,867 bytes.
 - App framework: `app-framework`, 208,819 bytes.
 
@@ -71,9 +70,14 @@ Revision 2026-07-30 navegacion movil reapertura: el total global sube 330 bytes,
 
 Revision 2026-07-30 ficha BUK obligatoria: el total global sube 189 bytes y JS sube 189 bytes por mostrar campos faltantes de la ficha del candidato y exigir tallas antes de habilitar el avance a `Listo para contratar`. No agrega vendors, rutas lazy, CSS ni assets trackeados.
 
+Revision 2026-08-03 auditoria integral: se eliminan el generador PDF local sin consumidores, cinco lecturas duplicadas del servicio de competencias y las dependencias frontend PDF/QR asociadas. El cambio reduce 903 lineas de codigo, 642,227 bytes de `dist`, 478,046 bytes de JS y tres chunks respecto del baseline machine-readable anterior. La generacion de certificados permanece en su Edge Function con dependencias propias y el frontend conserva ECharts/XLSX lazy.
+
+Revision 2026-08-04 Solicitud de Contratacion: el total y JS suben 13,470 bytes en la medicion canonica de Guardian full por la nueva ruta publica lazy `/verificar/documento`, su mapeo allowlist y los estados de autenticidad/conciliacion. No agrega vendors, CSS ni assets; el PDF y QR permanecen en Edge Functions. El smoke de rutas valida que el verificador sea publico sin debilitar las rutas autenticadas.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
+- `/verificar/documento`: verificador publico de Solicitud de Contratacion, lazy y sin datos privados.
 - `/operaciones/resumen`: ruta protegida valida redirect a `/login` sin sesion.
 - Resultado smoke: PASS.
 
@@ -81,16 +85,16 @@ Revision 2026-07-30 ficha BUK obligatoria: el total global sube 189 bytes y JS s
 
 - Queries costosas ya optimizadas y protegidas: `submit_service_entries_batch(jsonb)` usa preparacion set-based materializada una vez; `search` operacional BUK limita por texto y ranking antes de enriquecer.
 - RPCs criticas con smokes/audits: operaciones batch, dashboard/auth routes, migraciones, seguridad Supabase, sync BUK Edge Function.
-- Vendors pesados esperados fuera del entry inicial: ECharts, XLSX, PDF y QR siguen lazy por modulo/accion.
+- Vendors pesados esperados fuera del entry inicial: ECharts y XLSX siguen lazy por modulo/accion; PDF/QR se generan en la Edge Function de certificados y ya no forman parte del bundle frontend.
 
 ## Control machine-readable
 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10681160,
-  "jsFileCount": 52,
-  "jsTotalBytes": 3030308,
+  "distTotalBytes": 10052403,
+  "jsFileCount": 51,
+  "jsTotalBytes": 2565732,
   "cssFileCount": 10,
   "cssTotalBytes": 216605,
   "trackedAssets": [
@@ -98,7 +102,6 @@ Revision 2026-07-30 ficha BUK obligatoria: el total global sube 189 bytes y JS s
     { "match": "maps/chile.json", "maxBytes": 1454860 },
     { "match": "echarts-vendor", "maxBytes": 512504 },
     { "match": "xlsx-vendor", "maxBytes": 500059 },
-    { "match": "pdf-vendor", "maxBytes": 430776 },
     { "match": "supabase-vendor", "maxBytes": 221867 },
     { "match": "app-framework", "maxBytes": 208819 }
   ]

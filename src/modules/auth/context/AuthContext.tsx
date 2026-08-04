@@ -20,7 +20,13 @@ import {
   type AppRole
 } from "../config/access";
 import { logger } from "../../../shared/lib/logger";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { isSupabaseConfigured, supabase } from "../../../shared/lib/supabase";
+import {
+  didSessionIdentityChange,
+  isCurrentAuthorizationLoad,
+  resetSessionScopedQueries
+} from "../lib/authSessionLifecycle";
 import {
   acceptAupPolicyForCurrentUser,
   fetchEffectivePermissions,
@@ -303,6 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabaseClient = supabase;
     let isMounted = true;
     let currentSession: Session | null = null;
+    let authorizationLoadGeneration = 0;
     let safetyTimer: number | null = null;
 
     const finishLoading = () => {
@@ -313,31 +320,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     };
 
+    const clearAuthorizationState = () => {
+      setProfile(null);
+      setAppRoles([]);
+      setAccessibleModules([]);
+      setAccessibleFeatures([]);
+      setCapabilities([]);
+      setOperatorOptions([]);
+      setActiveOperator(null);
+    };
+
     const loadAuthorization = async (nextSession: Session | null) => {
       if (!isMounted) {
         return;
+      }
+
+      const previousUserId = currentSession?.user?.id ?? null;
+      const nextUserId = nextSession?.user?.id ?? null;
+      const loadGeneration = ++authorizationLoadGeneration;
+
+      if (didSessionIdentityChange(previousUserId, nextUserId)) {
+        resetSessionScopedQueries(queryClient);
+        clearAuthorizationState();
       }
 
       currentSession = nextSession;
       setSession(nextSession);
       setIsRecoveryMode((prev) => prev || detectRecoveryMode());
 
+      const isCurrentLoad = () =>
+        isMounted &&
+        isCurrentAuthorizationLoad(
+          loadGeneration,
+          authorizationLoadGeneration,
+          nextUserId,
+          currentSession?.user?.id ?? null
+        );
+
       if (!nextSession?.user) {
-        setProfile(null);
-        setAppRoles([]);
-        setAccessibleModules([]);
-        setAccessibleFeatures([]);
-        setCapabilities([]);
-        setOperatorOptions([]);
-        setActiveOperator(null);
-        finishLoading();
+        if (isCurrentLoad()) {
+          clearAuthorizationState();
+          finishLoading();
+        }
         return;
       }
 
       try {
         const { data, error } = await fetchEffectivePermissions();
 
-        if (!isMounted) {
+        if (!isCurrentLoad()) {
           return;
         }
 
@@ -377,7 +408,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: operatorData, error: operatorError } = await fetchSharedLoginOperatorOptions();
 
-        if (!isMounted) {
+        if (!isCurrentLoad()) {
           return;
         }
 
@@ -391,9 +422,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setActiveOperator(readStoredActiveOperator(nextSession.user.id, nextOperatorOptions));
         }
       } catch (err) {
-        logger.error("AuthContext loadAuthorization catch", err);
+        if (isCurrentLoad()) {
+          logger.error("AuthContext loadAuthorization catch", err);
+        }
       } finally {
-        if (isMounted) {
+        if (isCurrentLoad()) {
           finishLoading();
         }
       }

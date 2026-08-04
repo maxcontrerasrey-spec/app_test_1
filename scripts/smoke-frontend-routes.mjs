@@ -100,6 +100,19 @@ async function assertProtectedRouteRedirects(page, baseUrl) {
     .waitFor({ timeout: DEFAULT_TIMEOUT_MS });
 }
 
+async function assertHiringDocumentVerifierIsPublic(page, baseUrl) {
+  await page.goto(`${baseUrl}/verificar/documento`, {
+    waitUntil: "domcontentloaded",
+    timeout: DEFAULT_TIMEOUT_MS
+  });
+
+  await page
+    .getByRole("heading", { name: "Validación de Solicitud de Contratación" })
+    .waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  await expectVisible(page.locator("#hiring-document-public-lookup"), "hiring document verification token input");
+  assert(!page.url().endsWith("/login"), "Hiring document verification route must remain public.");
+}
+
 async function expectVisible(locator, label) {
   await locator.waitFor({
     state: "visible",
@@ -124,6 +137,7 @@ async function main() {
 
   try {
     await assertLoginPage(page, server.baseUrl);
+    await assertHiringDocumentVerifierIsPublic(page, server.baseUrl);
     await assertProtectedRouteRedirects(page, server.baseUrl);
 
     assert(pageErrors.length === 0, `Frontend smoke captured page errors: ${pageErrors.join(" | ")}`);
@@ -135,7 +149,7 @@ async function main() {
           smoke: "frontend-routes",
           browser: "chromium",
           base_url: server.baseUrl,
-          checked_routes: ["/login", "/operaciones/resumen"],
+          checked_routes: ["/login", "/verificar/documento", "/operaciones/resumen"],
           protected_route_result: "/operaciones/resumen redirected to /login without session"
         },
         null,

@@ -62,7 +62,6 @@ const recruitmentTables = {
       "hiring_request_id",
       "step_code",
       "step_name",
-      "approver_name",
       "status",
       "decision",
       "acted_at"
@@ -95,8 +94,7 @@ const recruitmentTables = {
       "contract_name",
       "job_position_name",
       "requested_vacancies",
-      "filled_vacancies",
-      "owner_name"
+      "filled_vacancies"
     ],
     searchableColumns: ["code", "title", "contract_name", "job_position_name", "owner_name"],
     exactMatchColumns: ["id", "code", "hiring_request_id"],
@@ -126,7 +124,6 @@ const recruitmentTables = {
     ],
     defaultColumns: [
       "recruitment_case_id",
-      "candidate_profile_id",
       "stage_code",
       "suitability_status",
       "is_selected",
@@ -138,23 +135,6 @@ const recruitmentTables = {
     exactMatchColumns: ["id", "recruitment_case_id", "candidate_profile_id"],
     orderBy: { column: "updated_at", ascending: false },
     maxLimit: 30
-  },
-  candidate_profiles: {
-    description: "Perfil base del candidato.",
-    columns: [
-      "id",
-      "full_name",
-      "national_id",
-      "email",
-      "phone",
-      "created_at",
-      "updated_at"
-    ],
-    defaultColumns: ["full_name", "national_id", "email", "phone", "updated_at"],
-    searchableColumns: ["full_name", "national_id", "email", "phone"],
-    exactMatchColumns: ["id", "national_id"],
-    orderBy: { column: "updated_at", ascending: false },
-    maxLimit: 20
   },
   candidate_stage_approvals: {
     description: "Aprobaciones pendientes o resueltas de etapas especiales como Who.",
@@ -176,9 +156,7 @@ const recruitmentTables = {
       "case_candidate_id",
       "approval_type",
       "status",
-      "requested_by_name",
       "requested_at",
-      "approved_by_name",
       "approved_at"
     ],
     searchableColumns: ["approval_type", "status", "requested_by_name", "approved_by_name", "request_comment", "approval_comment"],
@@ -231,7 +209,6 @@ const recruitmentTables = {
     ],
     defaultColumns: [
       "case_candidate_id",
-      "employee_code",
       "project_name",
       "company_entry_date",
       "shift_name",
@@ -280,9 +257,6 @@ const hrTables = {
       "updated_at"
     ],
     defaultColumns: [
-      "buk_employee_id",
-      "full_name",
-      "national_id",
       "status",
       "job_title",
       "area_name",
@@ -312,9 +286,6 @@ const hrTables = {
       "updated_at"
     ],
     defaultColumns: [
-      "buk_employee_id",
-      "worker_name",
-      "worker_rut",
       "selected_area_name",
       "incentive_type_name",
       "status",
@@ -336,7 +307,7 @@ const hrTables = {
       "comment",
       "created_at"
     ],
-    defaultColumns: ["request_id", "action", "actor_name", "comment", "created_at"],
+    defaultColumns: ["request_id", "action", "created_at"],
     searchableColumns: ["action", "actor_name", "comment"],
     exactMatchColumns: ["id", "request_id"],
     orderBy: { column: "created_at", ascending: false },
@@ -482,6 +453,10 @@ export const ORION_READABLE_TABLES = {
   ...hrTables,
   ...catalogTables
 } as const satisfies Record<string, OrionReadableTableConfig>;
+
+export const ORION_PROVIDER_SAFE_FIELDS = new Set(
+  Object.values(ORION_READABLE_TABLES).flatMap((config) => [...config.defaultColumns])
+);
 
 export type OrionReadableTableName = keyof typeof ORION_READABLE_TABLES;
 

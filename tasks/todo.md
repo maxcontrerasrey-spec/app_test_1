@@ -4,6 +4,49 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Solicitud de Contratacion ERP y carga documental BUK - 2026-08-04
+
+- [x] Inspeccionar las referencias visuales, el generador productivo de certificados, el contrato real de RC-0105 y el catalogo documental vigente.
+- [x] Presentar una maqueta A4 deterministica con datos reales anonimizables, marca de muestra y la estetica del certificado de competencias.
+- [x] Obtener aprobacion visual explicita antes de modificar el generador o el flujo BUK.
+- [x] Disenar el contrato backend autoritativo: snapshot, folio/token, logo por empresa, firma electronica visual y estados de carga BUK idempotentes.
+- [x] Implementar con migracion forward-only, Edge Function y reutilizacion del upload documental existente, sin relajar RLS, grants ni autenticacion.
+- [x] Validar generacion, QR/verificacion, carga en BUK, reintentos/idempotencia, auditorias Supabase, Guardian y smoke productivo controlado.
+
+Resultado:
+- La Solicitud se genera dentro de `sync-buk-candidates` despues de crear/configurar al trabajador y antes de cargar sus documentos; se sube como PDF a la carpeta BUK `Postulación` junto con los documentos del candidato.
+- El PDF A4 usa formato `F-RH-010`, logo variable por empresa, 10 antecedentes de contratacion, los 17 tipos documentales activos con `SI`/`N/A`, firma del validador ERP y QR token-only hacia `/verificar/documento/:token`.
+- El backend congela snapshot y hash, reserva folio unico y separa el payload publico: no expone sueldo, adjuntos, URL BUK ni RUN completo. Tablas y RPC quedan sin acceso `anon`/`authenticated`, con RLS deny y ejecucion exclusiva `service_role`.
+- Los estados ambiguos de carga BUK se bloquean como `reconciliation_required`; un `processing` heredado tampoco se reintenta a ciegas. El checkpoint BUK queda persistido en el job antes de cerrar el documento.
+- Produccion: migraciones `20260804141923_add_hiring_request_documents` y `20260804142435_index_hiring_request_document_foreign_keys`; Edge Functions `verify-hiring-document` v1, `verify-competency-certificate` v2 y `sync-buk-candidates` v35 `ACTIVE`.
+- Smoke productivo transaccional sobre RC-0105 valido snapshot, folio, 17 documentos y verificacion previa, y `ROLLBACK` confirmo 0 documentos persistidos. Los dos verificadores respondieron HTTP 200; competencias devuelve RUN de trabajador e instructor enmascarados.
+- Validacion local: PDF real renderizado A4 de una pagina, Deno checks, idempotencia, build, rutas publicas/protegidas, migraciones, seguridad, performance, `git diff --check` y Guardian full pasan con 26 gates, 0 errores y 0 warnings. Advisors sin hallazgos de seguridad nuevos; los nueve indices FK sugeridos quedaron aplicados.
+
+## Auditoria integral de codigo, logs y seguridad - 2026-08-03
+
+- [x] Levantar baseline reproducible del repositorio: estado Git, dependencias, TypeScript, build, tests, Guardian y auditorias EEES/Supabase.
+- [x] Revisar en paralelo frontend/runtime, backend Supabase/Edge Functions, seguridad/autorizacion y complejidad/duplicacion contra contratos vivos.
+- [x] Inspeccionar logs disponibles de CI y Supabase, separando incidentes activos de warnings historicos baselineados.
+- [x] Corregir solo hallazgos confirmados con causa raiz y cambio minimo; usar migraciones forward-only y no relajar RLS/grants.
+- [x] Reducir codigo repetido solo cuando preserve contratos publicos y quede cubierto por pruebas o gates existentes.
+- [x] Reejecutar validacion proporcional al cambio, Guardian y `git diff --check`; documentar hallazgos, riesgos residuales y resultado final.
+
+Estado inicial:
+- `main` limpio y alineado con `origin/main` en `aeb0861`.
+- La auditoria parte desde EEES, contratos reales y el baseline historico de seguridad; no se consideran corregibles los 82 warnings historicos sin evidencia nueva de explotabilidad.
+- Breaking changes Supabase revisados al 2026-08-03: vigilar versionado explicito de extensiones desde 2026-08-05 y exposicion Data API de tablas nuevas; no se asumira que una tabla `public` nueva queda accesible sin grants/RLS explicitos.
+
+Resultado:
+- Seguridad de sesion: `AuthContext` cancela y limpia React Query y el estado de autorizacion al cambiar identidad; las respuestas asincronas antiguas ya no pueden sobrescribir la sesion nueva.
+- Privacidad: Operaciones deja de persistir el directorio de conductores en `localStorage` y purga snapshots v1; ORION aplica allowlist recursiva y redaccion de RUT, correo y telefono antes de entregar resultados de herramientas al proveedor externo.
+- Exactitud: las fechas SQL `YYYY-MM-DD` se formatean como fechas calendario UTC, evitando el desplazamiento al dia anterior en Chile.
+- Edge Functions: se corrigieron errores reales de `deno check` en ORION, procesador de documentos y sincronizacion de cargos BUK; los cuatro checks Edge quedaron incorporados al Guardian full.
+- Reduccion: `competencyApi.ts` conserva solo cuatro escrituras y delega lecturas al boundary existente; se elimina el preview PDF sin consumidores y cinco dependencias frontend asociadas. Son 903 lineas productivas menos, 642,227 bytes menos en `dist`, 478,046 bytes menos de JS y tres chunks menos.
+- Logs: GitHub Actions no mostro fallas funcionales activas; el ultimo fallo del commit auditado era solo el baseline JS (+2,530 bytes) y queda absorbido por la reduccion medida. Auth/Storage Supabase no mostraron errores activos; los conectores de logs API/Postgres/Edge no respondieron y quedan como limitacion de evidencia, no como PASS inferido.
+- Produccion: `orion-chat` desplegada como version 30 `ACTIVE`, manteniendo `verify_jwt=false` porque valida el bearer dentro de la funcion. Smoke sin token responde `401` con `Sesion invalida para ORION`; la fuente remota contiene `privacy.ts` y la metrica de redaccion.
+- Validacion: Guardian full PASS con 25 gates, 0 errores y 0 warnings; 64 unitarias, contratos, integridad, concurrencia, idempotencia, cobertura, TypeScript, build, rutas, migraciones, seguridad Supabase, performance, cuatro checks Edge y `git diff --check` pasan.
+- Riesgos residuales: `npm audit --omit=dev` mantiene dos moderadas de React Router cuya unica correccion disponible es el salto mayor a v7; no se fuerza en esta auditoria para evitar una migracion de routing no acotada. Los 82 warnings historicos Supabase siguen baselineados y no se detectaron nuevas exposiciones anonimas/RLS.
+
 ## Navegacion superior ERP - responsivo celular
 
 - [x] Reproducir/inspeccionar contrato real del `AppShell` y CSS global del topnav.

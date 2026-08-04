@@ -11,6 +11,13 @@ const requestDateFormatter = new Intl.DateTimeFormat("es-CL", {
   year: "numeric",
 });
 
+const calendarDateFormatter = new Intl.DateTimeFormat("es-CL", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 const dateTimeFormatter = new Intl.DateTimeFormat("es-CL", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -31,6 +38,26 @@ const weekdayShortFormatter = new Intl.DateTimeFormat("es-CL", {
  */
 export function formatRequestDate(value: string | null | undefined): string {
   if (!value) return "";
+
+  const calendarMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (calendarMatch) {
+    const [, yearText, monthText, dayText] = calendarMatch;
+    const year = Number(yearText);
+    const month = Number(monthText);
+    const day = Number(dayText);
+    const calendarDate = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+      calendarDate.getUTCFullYear() !== year ||
+      calendarDate.getUTCMonth() !== month - 1 ||
+      calendarDate.getUTCDate() !== day
+    ) {
+      return "";
+    }
+
+    return calendarDateFormatter.format(calendarDate);
+  }
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return requestDateFormatter.format(date);

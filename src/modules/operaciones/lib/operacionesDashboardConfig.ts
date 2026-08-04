@@ -1,10 +1,11 @@
 import { SERVICE_DATA } from "../data/services-data";
-import type { BaseServiceQueryRow, Driver, OperationsServiceRecord, ServiceDraft } from "../types";
+import type { BaseServiceQueryRow, OperationsServiceRecord, ServiceDraft } from "../types";
 import { normalizeText } from "./transformers";
 
 const PILOT_CONTRACTS = ["CODELCO DRT", "CODELCO DMH"];
-export const BASE_REGISTER_DRAFT_VERSION = 1;
+export const BASE_REGISTER_DRAFT_VERSION = 2;
 const BASE_REGISTER_DRAFT_TTL_MS = 1000 * 60 * 60 * 72;
+const LEGACY_BASE_REGISTER_DRAFT_PREFIX = "operations:base-register:draft:v1:";
 
 export const EXPORT_PAGE_SIZE = 1000;
 export const DASHBOARD_PAGE_SIZE = 1000;
@@ -25,7 +26,6 @@ export interface BaseRegisterDraftSnapshot {
   selectedShift: string;
   selectedDateValue: string;
   serviceDrafts: Record<number, ServiceDraft>;
-  driverDirectory: Record<string, Driver>;
   updatedAt: number;
 }
 
@@ -103,6 +103,13 @@ export function readBaseRegisterDraft(userId: string): BaseRegisterDraftSnapshot
   if (typeof window === "undefined") return null;
 
   try {
+    for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith(LEGACY_BASE_REGISTER_DRAFT_PREFIX)) {
+        window.localStorage.removeItem(key);
+      }
+    }
+
     const rawSnapshot = window.localStorage.getItem(getBaseRegisterDraftKey(userId));
     if (!rawSnapshot) return null;
 
@@ -124,7 +131,6 @@ export function readBaseRegisterDraft(userId: string): BaseRegisterDraftSnapshot
       selectedShift: String(snapshot.selectedShift ?? ""),
       selectedDateValue: String(snapshot.selectedDateValue ?? ""),
       serviceDrafts: (snapshot.serviceDrafts ?? {}) as Record<number, ServiceDraft>,
-      driverDirectory: (snapshot.driverDirectory ?? {}) as Record<string, Driver>,
       updatedAt: snapshot.updatedAt,
     };
   } catch {
@@ -136,4 +142,5 @@ export function readBaseRegisterDraft(userId: string): BaseRegisterDraftSnapshot
 export function removeBaseRegisterDraft(userId: string | undefined) {
   if (!userId || typeof window === "undefined") return;
   window.localStorage.removeItem(getBaseRegisterDraftKey(userId));
+  window.localStorage.removeItem(`${LEGACY_BASE_REGISTER_DRAFT_PREFIX}${userId}`);
 }

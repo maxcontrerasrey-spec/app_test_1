@@ -311,7 +311,6 @@ export function OperacionesDashboard() {
       setSelectedShift(snapshot.selectedShift);
       setSelectedDateValue(snapshot.selectedDateValue || todayStr);
       setServiceDrafts(snapshot.serviceDrafts);
-      setDriverDirectory(snapshot.driverDirectory);
     }
 
     draftHydratedRef.current = true;
@@ -322,11 +321,6 @@ export function OperacionesDashboard() {
 
     const hasSelection = Boolean(selectedContract || selectedShift || selectedDateValue !== todayStr);
     const hasDrafts = hasMeaningfulServiceDrafts(serviceDrafts);
-    const selectedDriverIds = new Set(Object.values(serviceDrafts).map((draft) => draft.driverId).filter(Boolean));
-    const persistedDrivers = Object.fromEntries(
-      Object.entries(driverDirectory).filter(([driverId]) => selectedDriverIds.has(driverId))
-    );
-
     const saveTimer = window.setTimeout(() => {
       if (!hasSelection && !hasDrafts) {
         removeBaseRegisterDraft(user.id);
@@ -340,7 +334,6 @@ export function OperacionesDashboard() {
         selectedShift,
         selectedDateValue,
         serviceDrafts,
-        driverDirectory: persistedDrivers,
         updatedAt: Date.now(),
       };
 
@@ -348,7 +341,7 @@ export function OperacionesDashboard() {
     }, 350);
 
     return () => window.clearTimeout(saveTimer);
-  }, [driverDirectory, selectedContract, selectedDateValue, selectedShift, serviceDrafts, todayStr, user?.id]);
+  }, [selectedContract, selectedDateValue, selectedShift, serviceDrafts, todayStr, user?.id]);
 
   useEffect(() => {
     const client = supabase;

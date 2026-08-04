@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 import { buildBukBaseUrl } from "../_shared/bukDocuments.ts";
 
 const corsHeaders = {
@@ -19,6 +19,8 @@ type ExistingJobPosition = {
   code: string;
   name: string;
 };
+
+type EdgeClient = ReturnType<typeof createClient<any, "public", any>>;
 
 function requireEnv(value: string | undefined, label: string) {
   const normalized = value?.trim();
@@ -214,7 +216,7 @@ async function fetchAllBukRoles() {
 async function assertCatalogSyncAccess(accessToken: string) {
   const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
   const serviceRoleKey = requireEnv(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), "SUPABASE_SERVICE_ROLE_KEY");
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
   const {
     data: { user },
     error: authError
@@ -250,7 +252,7 @@ async function assertCatalogSyncAccess(accessToken: string) {
 }
 
 async function syncJobPositions(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   positions: JobPositionPayload[]
 ) {
   if (positions.length === 0) {

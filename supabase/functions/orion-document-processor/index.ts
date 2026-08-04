@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { extractText, getDocumentProxy } from "npm:unpdf";
+import { createClient } from "npm:@supabase/supabase-js@2.111.0";
+import { extractText, getDocumentProxy } from "npm:unpdf@1.8.0";
 
 type EmbeddingRunOptions = {
   mean_pool: boolean;
@@ -17,8 +17,10 @@ type SupabaseAiRuntime = {
   };
 };
 
+type EdgeClient = ReturnType<typeof createClient<any, "public", any>>;
+
 function getSupabaseAiRuntime() {
-  return Supabase as unknown as SupabaseAiRuntime;
+  return (globalThis as typeof globalThis & { Supabase: SupabaseAiRuntime }).Supabase;
 }
 
 function toErrorMessage(error: unknown) {
@@ -36,7 +38,7 @@ function chunkText(text: string, chunkSize = 1000, overlap = 200) {
 }
 
 async function requireAuthorizedOrionUser(
-  supabase: ReturnType<typeof createClient>,
+  supabase: EdgeClient,
   authHeader: string | null
 ) {
   const accessToken = authHeader?.startsWith("Bearer ")
@@ -116,7 +118,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient<any, "public", any>(supabaseUrl, supabaseServiceKey);
 
   try {
     await requireAuthorizedOrionUser(supabase, req.headers.get("Authorization"));

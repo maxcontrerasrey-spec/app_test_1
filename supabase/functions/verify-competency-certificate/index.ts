@@ -20,6 +20,26 @@ function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function maskDocumentNumber(value: unknown) {
+  if (typeof value !== "string") return "***";
+  const normalized = value.replace(/[^0-9Kk]/g, "").toUpperCase();
+  return normalized.length < 4 ? "***" : `***.***.${normalized.slice(-4)}`;
+}
+
+function sanitizePublicPayload(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const payload = structuredClone(value as Record<string, unknown>);
+  for (const sectionName of ["worker", "instructor"] as const) {
+    const section = payload[sectionName];
+    if (section && typeof section === "object" && !Array.isArray(section)) {
+      const record = section as Record<string, unknown>;
+      record.document_number = maskDocumentNumber(record.document_number);
+      if ("documentNumber" in record) record.documentNumber = maskDocumentNumber(record.documentNumber);
+    }
+  }
+  return payload;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -65,13 +85,14 @@ Deno.serve(async (req) => {
       throw new Error(error.message);
     }
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(sanitizePublicPayload(data)), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: toErrorMessage(error) }), {
-      status: 400,
+    console.error("verify-competency-certificate failed", { message: toErrorMessage(error) });
+    return new Response(JSON.stringify({ error: "No fue posible validar el certificado." }), {
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }

@@ -7,6 +7,12 @@ verify_jwt = false
 [functions.sync-buk-candidates]
 verify_jwt = false
 
+[functions.verify-competency-certificate]
+verify_jwt = true
+
+[functions.verify-hiring-document]
+verify_jwt = true
+
 [functions.generate-competency-certificate]
 enabled = true
 verify_jwt = false

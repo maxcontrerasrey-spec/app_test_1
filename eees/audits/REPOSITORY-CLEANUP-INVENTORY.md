@@ -54,9 +54,8 @@ baseline_date: 2026-07-22
 
 ## KEEP_RUNTIME_DYNAMIC
 
-- `@pdf-lib/fontkit`: usado por Edge Function con import `npm:@pdf-lib/fontkit`.
-- `unpdf`: usado por Edge Function con import `npm:unpdf`.
-- `@types/qrcode`, `@vitest/coverage-v8`, `@vitejs/plugin-react`, Vite, Vitest, Playwright y vendors lazy, porque sostienen gates, build o imports dinamicos.
+- `@pdf-lib/fontkit` y `unpdf`: usados directamente por Edge Functions mediante imports npm y locks Deno propios; no requieren dependencias duplicadas en el paquete frontend.
+- `@vitest/coverage-v8`, `@vitejs/plugin-react`, Vite, Vitest, Playwright y vendors lazy, porque sostienen gates, build o imports dinamicos.
 
 ## KEEP_HISTORICAL
 

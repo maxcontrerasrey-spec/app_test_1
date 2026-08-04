@@ -1,10 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 import {
   buildOrionSchemaPrompt,
   ORION_READABLE_TABLES,
+  type OrionReadableTableConfig,
   type OrionReadableTableName
 } from "./erpSchema.ts";
+import { redactProviderText, redactProviderToolPayload } from "./privacy.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,12 +77,23 @@ type GroqChatMessage = {
   name?: string;
 };
 
+type EdgeClient = ReturnType<typeof createClient<any, "public", any>>;
+
 function getSupabaseAiRuntime() {
-  return Supabase as unknown as SupabaseAiRuntime;
+  return (globalThis as typeof globalThis & { Supabase: SupabaseAiRuntime }).Supabase;
 }
 
 function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function resolveProviderFailureReason(error: unknown) {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return "timeout";
+  }
+
+  const status = toErrorMessage(error).match(/status\s+(\d{3})/i)?.[1];
+  return status ? `http_${status}` : "request_failed";
 }
 
 function buildSessionTitle(text: string) {
@@ -102,8 +115,7 @@ function getAccessTokenFromAuthHeader(authHeader: string | null) {
 }
 
 function sanitizeOutboundText(value: string) {
-  return value
-    .replace(/\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/g, "[rut]")
+  return redactProviderText(value)
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, MAX_MESSAGE_CHARS);
@@ -131,7 +143,7 @@ function resolveSelectedColumns(
   requestedColumns: string[] | undefined,
   tableName: OrionReadableTableName
 ) {
-  const config = ORION_READABLE_TABLES[tableName];
+  const config: OrionReadableTableConfig = ORION_READABLE_TABLES[tableName];
   if (!requestedColumns?.length) {
     return [...config.defaultColumns];
   }
@@ -146,7 +158,7 @@ async function requestGroqChatCompletion(params: {
   apiKey: string;
   baseUrl: string;
   model: string;
-  messages: Array<Record<string, unknown>>;
+  messages: GroqChatMessage[];
   tools?: Array<Record<string, unknown>>;
   toolChoice?: "auto" | "none";
   timeoutMs?: number;
@@ -173,8 +185,7 @@ async function requestGroqChatCompletion(params: {
     });
 
     if (!groqResponse.ok) {
-      const errText = await groqResponse.text();
-      throw new Error(`Groq API returned status ${groqResponse.status}: ${errText}`);
+      throw new Error(`Groq API returned status ${groqResponse.status}`);
     }
 
     return await groqResponse.json();
@@ -184,7 +195,7 @@ async function requestGroqChatCompletion(params: {
 }
 
 async function executeOrionDatabaseSearch(
-  client: ReturnType<typeof createClient>,
+  client: EdgeClient,
   args: OrionDatabaseSearchArgs
 ) {
   const tableName = args.table?.trim();
@@ -192,7 +203,7 @@ async function executeOrionDatabaseSearch(
     throw new Error("La tabla solicitada no está habilitada para lectura desde ORION.");
   }
 
-  const config = ORION_READABLE_TABLES[tableName];
+  const config: OrionReadableTableConfig = ORION_READABLE_TABLES[tableName];
   const selectedColumns = resolveSelectedColumns(args.columns, tableName);
   const limit = clampResultLimit(args.limit, config.maxLimit);
 
@@ -311,7 +322,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  const supabase = createClient<any, "public", any>(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
@@ -333,7 +344,7 @@ Deno.serve(async (req) => {
   const userId = user.id;
 
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-  const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
+  const supabaseUserClient = createClient<any, "public", any>(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader || "" } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
@@ -413,23 +424,14 @@ Deno.serve(async (req) => {
       .filter(Boolean);
 
     // Prepare message history for LLM (oldest to newest)
-    const llmMessages = [...(contextRows ?? [])].reverse().map((row) => ({
+    const llmMessages: GroqChatMessage[] = [...(contextRows ?? [])].reverse().map((row) => ({
       role: row.sender === "user" ? "user" : "assistant",
       content: sanitizeOutboundText(row.content)
     }));
 
-    // --- RAG IS NOW A TOOL, REMOVED INLINE RAG ---
-    const { data: profileRow } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", userId)
-      .single();
-    
-    const userFullName = profileRow?.full_name || "Usuario";
-
     const sanitizedUserMessage = sanitizeOutboundText(message);
     const systemPrompt = `Eres ORION, el asistente de inteligencia artificial exclusivo de JM (empresa de transporte de pasajeros del sector minero).
-Estás conversando con: ${userFullName}. Si el usuario te saluda o hace una pregunta cordial, respóndele de manera empática, humana y amigable usando su nombre. Actúa como un compañero de trabajo de JM.
+Estás conversando con una persona usuaria autenticada del ERP. Si te saluda o hace una pregunta cordial, responde de manera empática, humana y amigable. Actúa como un compañero de trabajo de JM.
 
 Sin embargo, cuando se trate de evaluar información operacional, financiera o contractual, tu función es ser objetivo y crítico.
 
@@ -455,7 +457,7 @@ IMPORTANTE:
 MAPA DE TABLAS PERMITIDAS:
 ${buildOrionSchemaPrompt()}`;
     
-    const messagesToSend = [
+    const messagesToSend: GroqChatMessage[] = [
       { role: "system", content: systemPrompt },
       ...llmMessages,
       { role: "user", content: sanitizedUserMessage }
@@ -464,6 +466,15 @@ ${buildOrionSchemaPrompt()}`;
     let normalizedAssistantText = "";
     let vendor = "local-safe";
     let modelUsed: string | null = null;
+    let toolPayloadsProcessed = 0;
+    let droppedToolFields = 0;
+
+    const serializeProviderToolPayload = (value: unknown) => {
+      const result = redactProviderToolPayload(value);
+      toolPayloadsProcessed += 1;
+      droppedToolFields += result.droppedFields;
+      return JSON.stringify(result.value);
+    };
 
     let fallbackReason = "unknown";
     if (orionLlmApiKey) {
@@ -581,14 +592,14 @@ ${buildOrionSchemaPrompt()}`;
                 if (funcName === "orion_get_hiring_summary") {
                   const { data, error } = await supabaseUserClient.rpc("orion_get_hiring_summary");
                   if (error) throw error;
-                  funcResult = JSON.stringify(data);
+                  funcResult = serializeProviderToolPayload(data);
                 } else if (funcName === "orion_search_candidate") {
                   const { data, error } = await supabaseUserClient.rpc("orion_search_candidate", { query_text: args.query_text });
                   if (error) throw error;
-                  funcResult = JSON.stringify(data);
+                  funcResult = serializeProviderToolPayload(data);
                 } else if (funcName === "orion_database_search") {
                   const data = await executeOrionDatabaseSearch(supabaseUserClient, args as OrionDatabaseSearchArgs);
-                  funcResult = JSON.stringify(data);
+                  funcResult = serializeProviderToolPayload(data);
                 } else if (funcName === "orion_search_documents") {
                   // --- RAG TOOL LOGIC ---
                   const aiSession = new (getSupabaseAiRuntime().ai.Session)("gte-small");
@@ -601,13 +612,13 @@ ${buildOrionSchemaPrompt()}`;
                     match_count: 2
                   });
                   if (ragError) throw ragError;
-                  funcResult = JSON.stringify(ragDocs || []);
+                  funcResult = serializeProviderToolPayload(ragDocs || []);
                 } else {
-                  funcResult = JSON.stringify({ error: "Herramienta desconocida" });
+                  funcResult = serializeProviderToolPayload({ error: "Herramienta desconocida" });
                 }
               } catch (err: unknown) {
-                console.error("Tool execution error:", err);
-                funcResult = JSON.stringify({ error: toErrorMessage(err) });
+                console.error("Tool execution error");
+                funcResult = serializeProviderToolPayload({ error: toErrorMessage(err) });
               }
 
               currentMessages.push({
@@ -652,9 +663,9 @@ ${buildOrionSchemaPrompt()}`;
           modelUsed = orionLlmModel;
         }
       } catch (e: unknown) {
-        console.error("Failed to fetch from Groq, using fallback:", e);
-        fallbackReason = toErrorMessage(e);
-        normalizedAssistantText = `[MODO SEGURO] Error de Groq: ${fallbackReason}. ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
+        fallbackReason = resolveProviderFailureReason(e);
+        console.error(`Groq request failed: ${fallbackReason}`);
+        normalizedAssistantText = `[MODO SEGURO] Proveedor no disponible (${fallbackReason}). ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
       }
     } else {
       fallbackReason = "no_api_key";
@@ -720,7 +731,9 @@ ${buildOrionSchemaPrompt()}`;
           model: modelUsed
         },
         privacy: {
-          sanitized: true,
+          toolPayloadRedactionApplied: toolPayloadsProcessed > 0,
+          processedToolPayloads: toolPayloadsProcessed,
+          droppedToolFields,
           outboundContextMessages: outboundContextRows.length,
           maxMessageChars: MAX_MESSAGE_CHARS
         }

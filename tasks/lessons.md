@@ -4,6 +4,18 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 288. Una carga externa sin checkpoint confirmado no se reintenta a ciegas
+
+- **`processing` persistente despues de reiniciar no significa que el efecto externo no ocurrio.** Si BUK pudo recibir el PDF antes de que el ERP guardara la respuesta, el siguiente job debe pasar a conciliacion y no volver a cargar.
+- **El checkpoint del job se persiste antes de cerrar el estado de dominio.** Primero conserva ID, URL, carpeta y hash devueltos por BUK; luego marca la Solicitud como cargada para que una falla intermedia sea recuperable sin duplicar.
+- **Una verificacion publica usa snapshot allowlist separado.** El documento privado puede contener sueldo y adjuntos, pero el QR solo publica identidad enmascarada, cargo, empresa, validador, folio y hash.
+
+## 287. Igualar un certificado exige copiar su reticula real, no reinterpretar el encabezado
+
+- **Si el usuario pide el mismo formato visual de un certificado existente, el header productivo es el contrato.** No agregar recuadros, divisiones o celdas aunque la referencia historica los muestre; primero replica logo libre, titulo centrado, metadata lateral y linea de acento del documento que el usuario identifica como vigente.
+- **Una maqueta aprobada por secciones debe corregirse de forma localizada.** Si el cuerpo y la firma ya fueron aceptados, cambia solo el encabezado observado y evita redisenar nuevamente todo el documento.
+- **La maqueta debe seguir marcada como no valida sin contaminar el layout solicitado.** Prefiere una marca de agua tenue en el cuerpo antes que una etiqueta adicional dentro del encabezado contractual.
+
 ## 285. Menus moviles globales deben salir del scroller y superar widgets flotantes
 
 - **Un dropdown de topnav no debe vivir dentro del carril horizontal en celular.** Aunque `position: fixed` parezca suficiente, el menu puede quedar afectado por `overflow`, stacking contexts o la geometria del scroller; renderiza el panel movil como hermano directo del header.

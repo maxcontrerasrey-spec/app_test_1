@@ -14,14 +14,6 @@ export default defineConfig({
         manualChunks(id) {
           const has = (segment: string) => id.indexOf(segment) !== -1;
 
-          if (has("/node_modules/pdf-lib/")) {
-            return "pdf-vendor";
-          }
-
-          if (has("/node_modules/qrcode/")) {
-            return "qrcode-vendor";
-          }
-
           if (has("/node_modules/@mylinkpi/xlsx/dist/cpexcel")) {
             return "xlsx-codepage-vendor";
           }

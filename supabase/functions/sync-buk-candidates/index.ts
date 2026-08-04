@@ -5,6 +5,11 @@ import {
   extractBukDocumentMetadata,
   uploadBukDocument
 } from "../_shared/bukDocuments.ts";
+import {
+  buildRecruitmentHiringDocumentPdf,
+  buildRecruitmentHiringPublicSnapshot,
+  type RecruitmentHiringDocumentRow
+} from "../_shared/recruitmentHiringDocument.ts";
 
 type SyncRequest = {
   jobIds?: string[];
@@ -237,6 +242,19 @@ class BukEmployeeResolutionError extends Error {
 
 function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function bytesToArrayBuffer(bytes: Uint8Array) {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
+async function sha256Hex(bytes: Uint8Array) {
+  const digest = await crypto.subtle.digest("SHA-256", bytesToArrayBuffer(bytes));
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function truncateExternalErrorText(value: string) {
@@ -2461,6 +2479,238 @@ async function assertCandidateDocumentFilesExist(
   }
 }
 
+async function recordHiringDocumentAudit(
+  supabase: SupabaseAdminClient,
+  input: {
+    documentId: string;
+    jobId: string;
+    eventType: string;
+    summary: string;
+    payload?: Record<string, unknown>;
+  }
+) {
+  const { error } = await supabase.from("recruitment_hiring_document_audit_log").insert({
+    document_id: input.documentId,
+    buk_sync_job_id: input.jobId,
+    event_type: input.eventType,
+    event_summary: input.summary,
+    payload: input.payload ?? {}
+  });
+  if (error) {
+    throw new Error(`No fue posible auditar la Solicitud de Contratación: ${error.message}`);
+  }
+}
+
+function readHiringDocumentCheckpoint(snapshot: Record<string, unknown>) {
+  const value = snapshot.hiringRequestDocument;
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+async function persistHiringDocumentBukSuccess(
+  supabase: SupabaseAdminClient,
+  row: RecruitmentHiringDocumentRow,
+  employeeId: string,
+  checkpoint: Record<string, unknown>
+) {
+  const uploadedAt = typeof checkpoint.bukUploadedAt === "string"
+    ? checkpoint.bukUploadedAt
+    : new Date().toISOString();
+  const { error } = await supabase
+    .from("recruitment_hiring_documents")
+    .update({
+      buk_employee_id: employeeId,
+      buk_folder_id: typeof checkpoint.bukEmployeeFolderId === "string" ? checkpoint.bukEmployeeFolderId : null,
+      buk_document_id: typeof checkpoint.bukDocumentId === "string" ? checkpoint.bukDocumentId : null,
+      buk_document_url: typeof checkpoint.bukDocumentUrl === "string" ? checkpoint.bukDocumentUrl : null,
+      buk_document_name: typeof checkpoint.bukDocumentName === "string" ? checkpoint.bukDocumentName : row.buk_document_name,
+      buk_upload_status: "success",
+      buk_uploaded_at: uploadedAt,
+      buk_last_error: null
+    })
+    .eq("id", row.id);
+  if (error) {
+    throw new Error(`No fue posible persistir el checkpoint BUK de la Solicitud de Contratación: ${error.message}`);
+  }
+}
+
+async function processRecruitmentHiringDocument(
+  supabase: SupabaseAdminClient,
+  job: BukJobRow,
+  jobResultSnapshot: Record<string, unknown>,
+  employeeId: string
+) {
+  const { data, error } = await supabase.rpc("ensure_recruitment_hiring_document", {
+    p_case_candidate_id: job.recruitment_case_candidate_id,
+    p_buk_sync_job_id: job.id
+  });
+  if (error || !data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(`No fue posible reservar la Solicitud de Contratación: ${error?.message ?? "respuesta inválida"}`);
+  }
+
+  const row = data as RecruitmentHiringDocumentRow;
+  if (row.buk_upload_status === "reconciliation_required") {
+    throw new Error("La carga BUK de la Solicitud de Contratación requiere conciliación manual antes de reintentar.");
+  }
+  if (row.buk_upload_status === "processing") {
+    const reconciliationMessage = "Se detectó una carga BUK anterior sin resultado confirmado; se bloqueó el reintento automático.";
+    const { error: reconciliationError } = await supabase
+      .from("recruitment_hiring_documents")
+      .update({
+        buk_upload_status: "reconciliation_required",
+        buk_last_error: reconciliationMessage
+      })
+      .eq("id", row.id)
+      .eq("buk_upload_status", "processing");
+    if (reconciliationError) {
+      throw new Error(`No fue posible bloquear el reintento BUK incierto: ${reconciliationError.message}`);
+    }
+    await recordHiringDocumentAudit(supabase, {
+      documentId: row.id,
+      jobId: job.id,
+      eventType: "buk_reconciliation_required",
+      summary: "Se detectó una carga BUK anterior sin checkpoint confirmado",
+      payload: { previous_status: "processing" }
+    });
+    throw new Error("La carga BUK anterior de la Solicitud de Contratación quedó inconclusa y requiere conciliación manual.");
+  }
+  if (row.buk_upload_status === "success") {
+    if (row.buk_employee_id && row.buk_employee_id !== employeeId) {
+      throw new Error("La Solicitud de Contratación ya está asociada a otra ficha BUK.");
+    }
+    const checkpoint = {
+      documentId: row.id,
+      folio: row.folio,
+      pdfSha256: row.pdf_sha256,
+      bukDocumentId: row.buk_document_id,
+      bukDocumentUrl: row.buk_document_url,
+      bukEmployeeFolderId: row.buk_folder_id,
+      bukDocumentName: row.buk_document_name,
+      bukUploadedAt: row.buk_uploaded_at,
+      status: "success"
+    };
+    jobResultSnapshot.hiringRequestDocument = checkpoint;
+    return checkpoint;
+  }
+
+  const pdfBytes = await buildRecruitmentHiringDocumentPdf(row);
+  const pdfHash = await sha256Hex(pdfBytes);
+  if (row.pdf_sha256 && row.pdf_sha256 !== pdfHash) {
+    throw new Error("La Solicitud de Contratación regenerada no coincide con la huella PDF reservada.");
+  }
+  const issuedAt = row.issued_at ?? new Date().toISOString();
+  const fileName = row.pdf_file_name ?? `${row.folio}.pdf`;
+  const publicSnapshot = buildRecruitmentHiringPublicSnapshot(row, issuedAt, pdfHash);
+  const { error: generatedError } = await supabase
+    .from("recruitment_hiring_documents")
+    .update({
+      generation_status: "generated",
+      pdf_file_name: fileName,
+      pdf_sha256: pdfHash,
+      pdf_size_bytes: pdfBytes.byteLength,
+      issued_at: issuedAt,
+      generated_by: row.validated_by,
+      public_validation_payload: publicSnapshot,
+      public_validation_updated_at: new Date().toISOString(),
+      buk_employee_id: employeeId,
+      buk_document_name: fileName
+    })
+    .eq("id", row.id);
+  if (generatedError) {
+    throw new Error(`No fue posible persistir el PDF de Solicitud de Contratación: ${generatedError.message}`);
+  }
+
+  const existingCheckpoint = readHiringDocumentCheckpoint(jobResultSnapshot);
+  if (
+    existingCheckpoint?.status === "success" &&
+    existingCheckpoint.documentId === row.id
+  ) {
+    await persistHiringDocumentBukSuccess(supabase, row, employeeId, existingCheckpoint);
+    return existingCheckpoint;
+  }
+
+  const startedAt = new Date().toISOString();
+  const { error: processingError } = await supabase
+    .from("recruitment_hiring_documents")
+    .update({
+      buk_upload_status: "processing",
+      buk_upload_started_at: startedAt,
+      buk_upload_attempts: (Number(row.buk_upload_attempts) || 0) + 1,
+      buk_last_error: null
+    })
+    .eq("id", row.id);
+  if (processingError) {
+    throw new Error(`No fue posible iniciar la carga BUK de la Solicitud de Contratación: ${processingError.message}`);
+  }
+
+  try {
+    const uploadResult = await uploadBukDocument(
+      employeeId,
+      fileName,
+      new Blob([bytesToArrayBuffer(pdfBytes)], { type: "application/pdf" }),
+      { path: "Postulación" }
+    );
+    const metadata = extractBukDocumentMetadata(uploadResult.payload);
+    const uploadedAt = new Date().toISOString();
+    const checkpoint = {
+      documentId: row.id,
+      folio: row.folio,
+      pdfSha256: pdfHash,
+      bukDocumentId: metadata.bukDocumentId,
+      bukDocumentUrl: metadata.bukDocumentUrl,
+      bukEmployeeFolderId: metadata.bukEmployeeFolderId,
+      bukDocumentName: fileName,
+      bukUploadedAt: uploadedAt,
+      transport: uploadResult.transport,
+      responseStatus: uploadResult.status,
+      status: "success"
+    };
+
+    jobResultSnapshot.hiringRequestDocument = checkpoint;
+    await markJobState(supabase, job.id, {
+      status: "processing",
+      result_snapshot: jobResultSnapshot
+    });
+    await persistHiringDocumentBukSuccess(supabase, row, employeeId, checkpoint);
+    await recordHiringDocumentAudit(supabase, {
+      documentId: row.id,
+      jobId: job.id,
+      eventType: "buk_uploaded",
+      summary: "Solicitud de Contratación generada y cargada en BUK",
+      payload: {
+        folio: row.folio,
+        pdf_sha256: pdfHash,
+        buk_document_id: metadata.bukDocumentId,
+        buk_folder_id: metadata.bukEmployeeFolderId,
+        transport: uploadResult.transport
+      }
+    });
+    return checkpoint;
+  } catch (uploadError) {
+    const message = toErrorMessage(uploadError);
+    const requiresReconciliation = message.toLowerCase().includes("timeout")
+      || message.toLowerCase().includes("reconciliar");
+    await supabase
+      .from("recruitment_hiring_documents")
+      .update({
+        buk_upload_status: requiresReconciliation ? "reconciliation_required" : "failed",
+        buk_last_error: message
+      })
+      .eq("id", row.id);
+    await recordHiringDocumentAudit(supabase, {
+      documentId: row.id,
+      jobId: job.id,
+      eventType: requiresReconciliation ? "buk_reconciliation_required" : "buk_upload_failed",
+      summary: requiresReconciliation
+        ? "Carga BUK incierta; se bloqueó el reintento automático"
+        : "Falló la carga BUK de la Solicitud de Contratación",
+      payload: { error: message.slice(0, 500) }
+    });
+    throw uploadError;
+  }
+}
+
 async function processDocuments(
   supabase: SupabaseAdminClient,
   jobId: string,
@@ -2541,6 +2791,39 @@ function extractUploadedDocumentsFromSnapshot(snapshot: Record<string, unknown> 
     (entry): entry is Record<string, unknown> =>
       Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
   );
+}
+
+async function loadUploadedDocumentsAcrossJobs(
+  supabase: SupabaseAdminClient,
+  job: BukJobRow
+) {
+  const current = extractUploadedDocumentsFromSnapshot(job.result_snapshot);
+  const { data, error } = await supabase
+    .from("buk_sync_jobs")
+    .select("result_snapshot")
+    .eq("recruitment_case_candidate_id", job.recruitment_case_candidate_id)
+    .neq("id", job.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) {
+    throw new Error(`No fue posible recuperar checkpoints documentales BUK previos: ${error.message}`);
+  }
+
+  const bySourceId = new Map<string, Record<string, unknown>>();
+  for (const entry of current) {
+    if (typeof entry.sourceDocumentId === "string") bySourceId.set(entry.sourceDocumentId, entry);
+  }
+  for (const row of data ?? []) {
+    const snapshot = row.result_snapshot && typeof row.result_snapshot === "object"
+      ? row.result_snapshot as Record<string, unknown>
+      : null;
+    for (const entry of extractUploadedDocumentsFromSnapshot(snapshot)) {
+      if (typeof entry.sourceDocumentId === "string" && !bySourceId.has(entry.sourceDocumentId)) {
+        bySourceId.set(entry.sourceDocumentId, entry);
+      }
+    }
+  }
+  return Array.from(bySourceId.values());
 }
 
 function resolveAuthorizedPayload(job: BukJobRow) {
@@ -2723,7 +3006,7 @@ Deno.serve(async (req) => {
     const results: Array<Record<string, unknown>> = [];
 
     for (const job of jobs) {
-      const uploadedDocuments = extractUploadedDocumentsFromSnapshot(job.result_snapshot);
+      const uploadedDocuments = await loadUploadedDocumentsAcrossJobs(supabase, job);
       const alreadyUploadedDocumentIds = new Set(
         uploadedDocuments
           .map((entry) =>
@@ -2732,6 +3015,7 @@ Deno.serve(async (req) => {
           .filter((value): value is string => Boolean(value))
       );
       const jobResultSnapshot: Record<string, unknown> = {
+        ...(job.result_snapshot ?? {}),
         syncedAt: new Date().toISOString(),
         documents: uploadedDocuments
       };
@@ -2779,6 +3063,13 @@ Deno.serve(async (req) => {
               wage: setupResult.context.wage
             }
           };
+
+          await processRecruitmentHiringDocument(
+            supabase,
+            job,
+            jobResultSnapshot,
+            employeeId
+          );
 
           await processDocuments(
             supabase,

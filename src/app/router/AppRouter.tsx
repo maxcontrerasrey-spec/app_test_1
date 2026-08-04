@@ -36,6 +36,10 @@ const CompetencyVerificationPage = lazyWithRetry(
   "competency-verification-page",
   routeModuleImporters.competencyVerificationPage
 );
+const HiringDocumentVerificationPage = lazyWithRetry(
+  "hiring-document-verification-page",
+  routeModuleImporters.hiringDocumentVerificationPage
+);
 const AIAssistantHome = lazyWithRetry("ai-assistant-page", routeModuleImporters.aiAssistantHome);
 const OnboardingModuleLayout = lazyWithRetry(
   "onboarding-module-layout",
@@ -73,6 +77,8 @@ export function AppRouter() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verificar/competencia" element={<CompetencyVerificationPage />} />
         <Route path="/verificar/competencia/:lookup" element={<CompetencyVerificationPage />} />
+        <Route path="/verificar/documento" element={<HiringDocumentVerificationPage />} />
+        <Route path="/verificar/documento/:lookup" element={<HiringDocumentVerificationPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />
