@@ -2,7 +2,6 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchHrIncentivesAnalytics,
-  fetchHrIncentiveApprovalQueue,
   fetchHrIncentiveApprovalQueuePage,
   fetchHrIncentiveEligibleTypes,
   fetchHrIncentivePreview,
@@ -61,18 +60,6 @@ export function useHrIncentiveRequestsPage(filters: HrIncentiveRequestsPageFilte
     refetchOnReconnect: false,
     placeholderData: (previous) => previous,
     enabled
-  });
-}
-
-export function useHrIncentiveApprovalQueue() {
-  return useQuery({
-    queryKey: queryKeys.incentives.approvalsQueueList({}),
-    queryFn: fetchHrIncentiveApprovalQueue,
-    staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
-    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
-    refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false
   });
 }
 

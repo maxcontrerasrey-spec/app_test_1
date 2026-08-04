@@ -12,8 +12,6 @@ import type {
   BukBiExceptionsToday,
   BukBiPresenceSummaryToday,
   BukBiExceptionsMonthly,
-  BukBiVacationForecast,
-  BukBiMedicalLeaveByArea,
   BukBiRecruitmentPipeline,
   BiLabelValueDatum,
   BiRecruitmentDashboard,
@@ -235,29 +233,6 @@ export function mapExceptionsMonthly(row: Record<string, unknown>): BukBiExcepti
   };
 }
 
-export function mapVacationForecast(row: Record<string, unknown>): BukBiVacationForecast {
-  return {
-    contractCode: String(row.contract_code ?? ""),
-    exceptionDate: String(row.exception_date ?? ""),
-    yearMonth: String(row.year_month ?? ""),
-    vacationingEmployees: Number(row.vacationing_employees ?? 0)
-  };
-}
-
-export function mapMedicalLeaveByArea(row: Record<string, unknown>): BukBiMedicalLeaveByArea {
-  return {
-    contractCode: String(row.contract_code ?? ""),
-    areaName: String(row.area_name ?? ""),
-    monthStart: String(row.month_start ?? ""),
-    yearMonth: String(row.year_month ?? ""),
-    medicalLeaveDays: Number(row.medical_leave_days ?? 0),
-    uniqueEmployees: Number(row.unique_employees ?? 0),
-    fteHeadcountEquivalent: Number(row.fte_headcount_equivalent ?? 0),
-    headcountBase: Number(row.headcount_base ?? 0),
-    absenteeismPct: Number(row.absenteeism_pct ?? 0)
-  };
-}
-
 export function mapRecruitmentPipeline(row: Record<string, unknown>): BukBiRecruitmentPipeline {
   return {
     caseStatus: String(row.case_status ?? ""),
@@ -349,20 +324,6 @@ export async function fetchBiExceptionsMonthly(filters?: BiFilters): Promise<Buk
   const { data, error } = await client.rpc("get_bi_exceptions_monthly", buildBiRpcParams(filters));
   if (error) throw error;
   return asArray<Record<string, unknown>>(data).map((row) => mapExceptionsMonthly(row));
-}
-
-export async function fetchBiVacationForecast(filters?: BiFilters): Promise<BukBiVacationForecast[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_vacation_forecast", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapVacationForecast(row));
-}
-
-export async function fetchBiMedicalLeaveByArea(filters?: BiFilters): Promise<BukBiMedicalLeaveByArea[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_medical_leave_by_area", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapMedicalLeaveByArea(row));
 }
 
 export async function fetchBiRecruitmentPipeline(filters?: BiFilters): Promise<BukBiRecruitmentPipeline[]> {

@@ -4,6 +4,54 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Certificados de competencias - nuevos modelos 4x4 - 2026-08-04
+
+- [x] Auditar el contrato real del catálogo y confirmar marcas, tipos, modelos y códigos existentes para evitar duplicados.
+- [x] Confirmar el catálogo productivo vivo y resolver si `Hilux / Fortuner 4x4` corresponde a una opción combinada o modelos separados.
+- [x] Crear migración forward-only e idempotente para los cuatro registros solicitados, sin alterar opciones vigentes.
+- [x] Extender el guardrail del catálogo con marca, tipo, modelo visible y estado activo esperados.
+- [x] Aplicar en producción y validar RPC/catálogo visible con consulta directa.
+- [x] Ejecutar auditorías de migración, seguridad, catálogo, build/Guardian y documentar el cierre.
+
+Solicitud visual:
+- Toyota · Camioneta · `Hilux / Fortuner 4x4`.
+- Mitsubishi · Camioneta · `L200 4X4`.
+- Maxus · Camioneta · `T60 4X4`.
+- Mercedes Benz · Minibus · `Sprinter 516 4x4`.
+
+Resultado:
+- El catálogo productivo no tenía Toyota, Mitsubishi, el tipo `Camioneta` ni equivalentes semánticos de los cuatro modelos. Maxus, Mercedes Benz y `Mini Bus` fueron reutilizados sin modificar opciones existentes.
+- La fuente visual se respetó como una opción combinada `Hilux / Fortuner 4x4`; no se inventaron dos modelos separados.
+- Migración productiva `20260804164148_add_competency_4x4_models`: agrega `Camioneta`, TOYOTA, MITSUBISHI y los cuatro modelos mediante upserts idempotentes con postcondición SQL.
+- `db push --dry-run` quedó bloqueado por versiones legacy remotas sin archivo local; se aplicó el SQL verificado con `supabase db query --linked` y se registró únicamente `20260804164148` como aplicada mediante `migration repair`.
+- Smoke transaccional previo confirmó las cuatro tuplas y `ROLLBACK` dejó 0 filas; después de aplicar, consulta directa y `get_competency_catalogs()` autenticado devolvieron las cuatro opciones activas con marca/tipo correctos.
+- RLS, grants, RPC y Edge Function no cambiaron. Los advisors mantienen hallazgos históricos, sin uno nuevo derivado de este cambio de catálogo.
+- Validación final: migraciones, seguridad Supabase, guardrail de catálogo, TypeScript/build, smokes, pruebas y Guardian full con 27 gates pasan; 0 errores y 0 warnings.
+
+## Limpieza profunda de duplicados y residuos locales - 2026-08-04
+
+- [x] Confirmar el origen, contenido y alcance de las carpetas con sufijo ` 2` dentro de `node_modules`.
+- [x] Respaldar de forma recuperable la instalacion local completa y reconstruirla exclusivamente desde `package-lock.json`.
+- [x] Auditar duplicados versionados, codigo huerfano, documentos, binarios, caches y artefactos fuera de `node_modules`.
+- [x] Eliminar solo residuos confirmados, conservando archivos con contrato runtime, operativo, legal o de auditoria.
+- [x] Validar dependencias, TypeScript, build frontend, pruebas afectadas, auditoria de limpieza, Guardian y estado Git.
+- [x] Documentar conteos, decisiones de conservacion, ubicacion del respaldo y cierre verificable.
+
+Estado inicial:
+- Las 16 carpetas `node_modules/@types/* 2` reportadas originalmente fueron movidas a `/tmp/app-test-types-duplicates.G6aHbQ`; las 16 estan vacias y no pertenecen al codigo versionado.
+- Persisten 184 carpetas `* 2` vacias en el resto de `node_modules`, junto con residuos `extraneous` de una instalacion Deno/npm mixta. La evidencia de nombres, fechas y atributos macOS indica una colision local de copia o sincronizacion, no paquetes creados por npm.
+- `node_modules/` esta ignorado y Git no versiona ningun archivo bajo esa ruta.
+
+Resultado:
+- La instalacion completa corrupta quedo respaldada en `/tmp/app-test-node-modules-backup.EZdr3z/node_modules` (280 MB) y fue reconstruida con `npm ci`; `npm ls --depth=0` pasa y quedan 0 rutas con sufijo ` 2`.
+- Como macOS rehidrato copias vacias antiguas durante validaciones posteriores, la instalacion activa se movio fuera de `Documents` a `/Users/maximilianocontrerasrey/.codex/cache/app_test_1-runtime-20260804/node_modules` y el repo conserva un enlace `node_modules` ignorado. Node, Vitest, TypeScript, Deno y Guardian full quedaron validados con esa estructura.
+- Se retiraron 21 MB de `dist`, cobertura, `tsbuildinfo`, `.DS_Store`, temporales Supabase y outputs de validacion a `/tmp/app-test-generated-artifacts-backup.UvijoE`; seis copias conflictivas `.git/index|refs N` quedaron en ese mismo respaldo.
+- Se eliminaron ocho APIs frontend sin referencias y sus cadenas privadas; dos bloques identicos de normalizacion de candidato se consolidaron. Reduccion neta en `src`: 242 lineas.
+- El unico duplicado binario tracked es `app-logo.png` en `public` y `src/assets`; se conserva porque sostiene favicon publico e import Vite. No hay documentos Markdown identicos, Office, PDF, ZIP, dumps ni logs tracked.
+- PostCSS se actualizo de 8.5.18 a 8.5.25 y `npm audit` bajo de 3 a 2 moderadas. Las restantes son React Router y solo se corrigen con el salto mayor a v7.
+- Seguridad local: `.env.local` quedo en modo `0600` y se retiro `VITE_GROQ_API_KEY` sin consumidor. Los seeds SharePoint con PII quedan bajo revision de gobierno porque borrarlos sin purgar historial Git no elimina la exposicion historica.
+- Validacion: 64 unitarias, 6 contratos, TypeScript/build, auditoria de limpieza y Guardian full con 27 gates pasan; 0 errores y 0 warnings.
+
 ## Backfill Solicitud de Contratacion para trabajadores ya creados en BUK - 2026-08-04
 
 - [x] Auditar el contrato productivo, resolver universo elegible y confirmar que cada candidato tenga ficha BUK efectiva.

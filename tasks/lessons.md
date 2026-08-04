@@ -2803,3 +2803,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El boton masivo nunca es autoridad.** La UI puede filtrar y omitir excedentes, pero `enqueue_buk_generation` debe bloquear sobrecupo con lock del caso y reserva por lote.
 - **La cola tambien debe repetir el guardrail.** `claim_buk_sync_jobs` debe recalcular capacidad antes de procesar para cubrir jobs antiguos, retries, concurrencia y llamadas directas a la Edge Function.
 - **Los sobrecupos historicos son deuda operativa, no migracion automatica.** Si ya existen trabajadores BUK efectivos por sobre cupo, reportalos con evidencia y no los borres ni cambies de estado sin decision de negocio.
+
+## 191. Carpetas `* 2` en dependencias indican una instalacion local corrupta
+
+- **No limpies solo el primer conteo reportado.** Si aparecen paquetes con espacio y sufijo numerico, audita recursivamente toda la instalacion, el contenido, Git y los metadatos antes de concluir alcance.
+- **Carpetas vacias `paquete 2` no son versiones npm.** Respaldar `node_modules` completo y reconstruir con `npm ci` es mas determinista que borrar copias una por una y tambien elimina dependencias `extraneous`.
+- **Separa residuos locales de duplicacion productiva.** `node_modules`, `dist`, cobertura, `tsbuildinfo` y temporales no son codigo versionado; los duplicados tracked deben revisarse por consumidor antes de eliminarse.
+- **Un archivo identico puede sostener dos contratos.** Favicon publico y asset importado pueden compartir bytes pero diferir en URL, hashing y cache; no se consolidan solo por checksum.
+- **Los secrets locales tambien requieren higiene.** Un `.env.local` con credenciales debe usar permisos `0600`, y una variable `VITE_*` sin consumidor debe retirarse y rotarse si pudo entrar a un build.
+- **Las copias conflictivas pueden reaparecer por hidratacion tardia de macOS.** Ejecuta el guardrail de duplicados despues del ultimo build/Guardian, no solo inmediatamente despues de `npm ci`.
+- **Si reaparecen, saca la instalacion del arbol sincronizado sin romper la resolucion Node.** El destino externo debe conservar la forma `<runtime>/node_modules`; enlazar directamente a una carpeta con otro nombre rompe la busqueda ESM de dependencias hermanas.

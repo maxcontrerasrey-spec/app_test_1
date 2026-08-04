@@ -77,29 +77,6 @@ export function formatDateTimeLabel(
   return dateTimeFormatter.format(date);
 }
 
-/**
- * Calculates and formats the number of days elapsed since a given ISO date.
- * Returns "Hoy" for same-day, "1 dia" for yesterday, "N dias" otherwise.
- */
-export function formatDaysSince(value: string | null | undefined): string {
-  if (!value) return "No disponible";
-  const createdAt = new Date(value);
-  if (Number.isNaN(createdAt.getTime())) return "No disponible";
-
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const startOfCreatedDay = new Date(createdAt);
-  startOfCreatedDay.setHours(0, 0, 0, 0);
-
-  const diffInMs = startOfToday.getTime() - startOfCreatedDay.getTime();
-  const diffInDays = Math.max(0, Math.floor(diffInMs / 86_400_000));
-
-  if (diffInDays === 0) return "Hoy";
-  if (diffInDays === 1) return "1 dia";
-  return `${diffInDays} dias`;
-}
-
 export function formatNumberValue(
   value: number | null | undefined,
   fallback = "No disponible"
@@ -158,16 +135,6 @@ export function formatCurrencyValue(
     minimumFractionDigits: options?.minimumFractionDigits ?? 0,
     maximumFractionDigits: options?.maximumFractionDigits ?? 0,
   }).format(value);
-}
-
-/**
- * Formats a boolean value to a human-readable label.
- * Returns "Si" for true, "No" for false, "No disponible" for null/undefined.
- */
-export function formatBooleanLabel(value: boolean | null | undefined): string {
-  if (value === true) return "Si";
-  if (value === false) return "No";
-  return "No disponible";
 }
 
 /**

@@ -73,25 +73,6 @@ export interface BukBiExceptionsMonthly {
   absenteeismPct: number;
 }
 
-export interface BukBiVacationForecast {
-  contractCode: string;
-  exceptionDate: string;
-  yearMonth: string;
-  vacationingEmployees: number;
-}
-
-export interface BukBiMedicalLeaveByArea {
-  contractCode: string;
-  areaName: string;
-  monthStart: string;
-  yearMonth: string;
-  medicalLeaveDays: number;
-  uniqueEmployees: number;
-  fteHeadcountEquivalent: number;
-  headcountBase: number;
-  absenteeismPct: number;
-}
-
 export interface BukBiRecruitmentPipeline {
   caseStatus: string;
   stageCode: string;

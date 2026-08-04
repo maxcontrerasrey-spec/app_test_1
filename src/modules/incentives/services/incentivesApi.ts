@@ -359,11 +359,6 @@ export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFi
   return mapAnalyticsPayload(data);
 }
 
-export async function fetchHrIncentiveApprovalQueue() {
-  const result = await fetchHrIncentiveApprovalQueuePage({});
-  return result.items;
-}
-
 export async function fetchHrIncentiveApprovalQueuePage(
   filters: HrIncentiveApprovalQueuePageFilters
 ) {

@@ -71,3 +71,22 @@ baseline_date: 2026-07-22
 
 - `REMOVE_CONFIRMED` pendientes: 0.
 - `CONSOLIDATE` pendientes dentro del alcance seguro: 0.
+
+## Revision profunda 2026-08-04
+
+### REMOVE_CONFIRMED cerrado
+
+- Instalacion local corrupta: 16 carpetas `@types/* 2` y otras 184 carpetas `* 2`, todas vacias y no versionadas. Se respaldo la instalacion completa y se reconstruyo con `npm ci`; el conteo posterior es 0.
+- Residuos regenerables ignorados: `dist/`, `coverage/`, ambos `*.tsbuildinfo`, `public/.DS_Store` y `supabase/.temp/`.
+- Seis copias conflictivas locales no usadas por Git: `.git/index 2`, `.git/index 3` y `.git/info/refs 2..5`.
+- Ocho APIs frontend sin consumidores y sus cadenas privadas de tipos, mappers y query keys.
+- Duplicacion exacta de `splitFullName` y `normalizeLegacyMaritalStatus`, consolidada en un helper compartido de reclutamiento.
+- PostCSS 8.5.18 vulnerable, actualizado por lockfile a 8.5.25 sin cambio mayor.
+
+### KEEP verificado
+
+- Los 94 documentos Markdown/EEES no tienen duplicados binarios y varios forman parte de contratos Guardian, seguridad, rollback o historia forward-only.
+- `public/app-logo.png` y `src/assets/app-logo.png` son el unico par versionado byte a byte identico, pero se conservan porque uno es favicon publico y el otro asset importado/hashado por Vite.
+- `src/assets/fondo.png` y `public/maps/chile.json` son grandes pero tienen consumidores runtime y baseline de performance.
+- `supabase/functions/check_buk_candidate` queda `KEEP_UNCERTAIN`: parece supersedida en el repositorio, pero no se retira sin confirmar consumidores y despliegue productivo.
+- `data/seed/sharepoint/*.csv` queda `KEEP_HISTORICAL_REVIEW`: no tiene consumidor runtime y contiene datos personales historicos; requiere una purga de gobierno e historial Git separada para que una eliminacion sea efectiva.

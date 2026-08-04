@@ -8,14 +8,6 @@ import {
 import { validateServiceEntryPayload, type ServiceEntryPayload } from "../lib/service-entry";
 import type { Driver } from "../types";
 
-export interface SubmitServiceEntryResult {
-  ok: boolean;
-  error?: string;
-  fieldErrors?: Record<string, string>;
-  mode?: "inserted" | "updated";
-  message?: string;
-}
-
 export interface SubmitServiceEntryBatchItem {
   serviceId: number;
   payload: ServiceEntryPayload;
@@ -67,27 +59,6 @@ export async function searchOperationsDrivers(search: string, serviceDate: strin
       isActive: true,
     })
   );
-}
-
-export async function submitServiceEntry(
-  payload: ServiceEntryPayload,
-  userId: string
-): Promise<SubmitServiceEntryResult> {
-  const response = await submitServiceEntriesBatch([{ serviceId: 0, payload }], userId);
-
-  if (response.ok) {
-    return {
-      ok: true,
-      mode: "updated",
-      message: "Planificación guardada correctamente.",
-    };
-  }
-
-  return {
-    ok: false,
-    error: response.error,
-    fieldErrors: response.fieldErrorsByService?.[0],
-  };
 }
 
 export async function submitServiceEntriesBatch(

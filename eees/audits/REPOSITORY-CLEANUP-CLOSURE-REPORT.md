@@ -61,3 +61,13 @@ COMPLETE.
 ## Cierre
 
 No quedan candidatos `REMOVE_CONFIRMED` ni `CONSOLIDATE` seguros pendientes. Los elementos conservados por incertidumbre o contrato dinamico se registran en `eees/audits/REPOSITORY-CLEANUP-INVENTORY.md`.
+
+## Actualizacion 2026-08-04
+
+- `node_modules` se reconstruyo desde `package-lock.json`: 200 carpetas conflictivas vacias antes, 0 despues; `npm ls --depth=0` queda consistente.
+- Se retiraron de forma recuperable 10 MB de builds, cobertura, caches y metadatos locales, mas seis copias conflictivas internas de Git.
+- Se redujeron 242 lineas netas de `src`: ocho APIs sin consumidores y dos implementaciones duplicadas consolidadas, sin eliminar ningun modulo frontend completo.
+- PostCSS quedo en 8.5.25 y `npm audit` bajo de 3 a 2 vulnerabilidades moderadas; las dos restantes pertenecen a React Router y exigen migracion mayor a v7.
+- El auditor de limpieza ahora detecta copias numericas nuevas bajo `node_modules` y `.git/info`.
+- Se conservaron por contrato los dos logos identicos, los assets runtime, los documentos EEES unicos, las migraciones forward-only y los seeds historicos sujetos a revision de privacidad.
+- La instalacion activa se aloja fuera del arbol sincronizado de `Documents` y `node_modules` es un enlace local ignorado; esto evita que macOS rehidrate nuevamente copias conflictivas, preservando la resolucion Node al mantener un directorio padre real con hijo `node_modules`.

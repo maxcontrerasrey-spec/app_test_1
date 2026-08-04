@@ -45,10 +45,6 @@ export const queryKeys = {
       [...queryKeys.bi.all(), "presenceSummaryToday", normalizeBiFilters(filters)] as const,
     exceptionsMonthly: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "exceptionsMonthly", normalizeBiFilters(filters)] as const,
-    vacationForecast: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "vacationForecast", normalizeBiFilters(filters)] as const,
-    medicalLeaveByArea: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "medicalLeaveByArea", normalizeBiFilters(filters)] as const,
     recruitmentPipeline: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "recruitmentPipeline", normalizeBiFilters(filters)] as const,
     recruitmentDashboard: (filters?: BiQueryFilters | null) =>
@@ -97,8 +93,6 @@ export const queryKeys = {
     analyticsRoot: () => ["incentives", "analytics"] as const,
     analytics: (filters: Record<string, unknown>) => ["incentives", "analytics", filters] as const,
     approvalsRoot: () => ["incentives", "approvals"] as const,
-    approvalsQueueList: (filters: Record<string, unknown>) =>
-      ["incentives", "approvals", "queue", "list", filters] as const,
     approvalsQueuePage: (filters: Record<string, unknown>) =>
       ["incentives", "approvals", "queue", "page", filters] as const,
     requestDetailRoot: () => ["incentives", "request-detail"] as const,

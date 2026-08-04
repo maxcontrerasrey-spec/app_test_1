@@ -23,6 +23,30 @@ function trackedFiles() {
     .filter(Boolean);
 }
 
+function findNumericConflictCopies(relativeRoot) {
+  const absoluteRoot = path.join(repoRoot, relativeRoot);
+  if (!fs.existsSync(absoluteRoot)) {
+    return [];
+  }
+
+  const matches = [];
+  const pending = [absoluteRoot];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const absolutePath = path.join(current, entry.name);
+      if (/ \d+(?:\.[^/]+)?$/.test(entry.name)) {
+        matches.push(path.relative(repoRoot, absolutePath));
+      }
+      if (entry.isDirectory()) {
+        pending.push(absolutePath);
+      }
+    }
+  }
+
+  return matches;
+}
+
 const removedFiles = [
   "artifacts/EEES_ENTERPRISE_FINAL.zip",
   "scripts/fix-migrations.mjs",
@@ -91,6 +115,27 @@ for (const file of tracked) {
 addCheck(trackedZipCount === 0, "0 zip versionados activos");
 addCheck(trackedDsStoreCount === 0, "0 .DS_Store versionados activos");
 addCheck(trackedTsBuildInfoCount === 0, "0 tsbuildinfo versionados activos");
+
+const localConflictCopies = [
+  ...findNumericConflictCopies("node_modules"),
+  ...findNumericConflictCopies(".git/info")
+];
+for (const entry of fs.readdirSync(repoRoot)) {
+  if (/^node_modules \d+$/.test(entry)) {
+    localConflictCopies.push(entry);
+  }
+}
+for (const file of localConflictCopies) {
+  addCheck(false, `${file} parece una copia conflictiva local`);
+}
+for (const entry of fs.existsSync(path.join(repoRoot, ".git"))
+  ? fs.readdirSync(path.join(repoRoot, ".git"))
+  : []) {
+  if (/^index \d+$/.test(entry)) {
+    addCheck(false, `.git/${entry} parece una copia conflictiva local`);
+  }
+}
+addCheck(localConflictCopies.length === 0, "0 copias numericas locales en node_modules/.git/info");
 
 for (const required of [
   "eees/baselines/REPOSITORY-CLEANUP-BASELINE_v1.md",

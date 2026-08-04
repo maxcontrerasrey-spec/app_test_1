@@ -10,8 +10,6 @@ import {
   fetchBiExceptionsToday,
   fetchBiPresenceSummaryToday,
   fetchBiExceptionsMonthly,
-  fetchBiVacationForecast,
-  fetchBiMedicalLeaveByArea,
   fetchBiRecruitmentPipeline,
   fetchBiRecruitmentDashboard
 } from "../services/biApi";
@@ -82,22 +80,6 @@ export function useBiExceptionsMonthly(filters?: BiFilters) {
   return useQuery({
     queryKey: queryKeys.bi.exceptionsMonthly(filters),
     queryFn: () => fetchBiExceptionsMonthly(filters),
-    staleTime: BI_STALE_TIME
-  });
-}
-
-export function useBiVacationForecast(filters?: BiFilters) {
-  return useQuery({
-    queryKey: queryKeys.bi.vacationForecast(filters),
-    queryFn: () => fetchBiVacationForecast(filters),
-    staleTime: BI_STALE_TIME
-  });
-}
-
-export function useBiMedicalLeaveByArea(filters?: BiFilters) {
-  return useQuery({
-    queryKey: queryKeys.bi.medicalLeaveByArea(filters),
-    queryFn: () => fetchBiMedicalLeaveByArea(filters),
     staleTime: BI_STALE_TIME
   });
 }
