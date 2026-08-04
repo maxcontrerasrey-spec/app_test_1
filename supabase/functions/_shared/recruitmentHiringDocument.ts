@@ -23,6 +23,7 @@ type JsonRecord = Record<string, unknown>;
 
 export type RecruitmentHiringDocumentRow = {
   id: string;
+  buk_sync_job_id: string;
   folio: string;
   verification_token: string;
   template_code: string;
@@ -45,6 +46,7 @@ export type RecruitmentHiringDocumentRow = {
   buk_document_name: string | null;
   buk_upload_status: string;
   buk_upload_attempts: number;
+  buk_upload_started_at: string | null;
   buk_uploaded_at: string | null;
 };
 

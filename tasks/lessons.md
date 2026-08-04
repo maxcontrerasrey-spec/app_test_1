@@ -4,10 +4,19 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 289. Un documento laboral generado por el ERP puede tener metadata durable sin custodia binaria local
+
+- **Si BUK es la custodia final, el PDF no debe pasar por Supabase Storage.** La Edge Function lo construye en memoria, lo envia a BUK y descarta los bytes; el ERP conserva solo folio, hash, token, estado e IDs/URL de reconciliacion.
+- **Backfill historico no significa incluir todo candidato con un job o ficha suficiente.** Para la Solicitud de Contratacion, debe partir exclusivamente del mismo bucket backend de `Personal contratado`: `stage_code = 'hired'`, exito BUK efectivo y `buk_employee_id` confirmado; luego ejecuta solo la carga documental faltante sin recrear trabajadores.
+- **Entrar a `Personal a Contratar` habilita la accion, pero no genera el documento por si solo.** La Solicitud se crea dentro de `Generar en BUK`, despues de confirmar la ficha BUK efectiva; nunca antes, durante Control de candidatos o por un mero cambio a `ready_for_hire`.
+- **La ausencia de binarios necesita guardrail ejecutable.** Tests y auditorias deben impedir que la tabla o el flujo incorporen `pdf_bucket`, `pdf_path`, base64 o una escritura a Storage para esta Solicitud.
+
 ## 288. Una carga externa sin checkpoint confirmado no se reintenta a ciegas
 
 - **`processing` persistente despues de reiniciar no significa que el efecto externo no ocurrio.** Si BUK pudo recibir el PDF antes de que el ERP guardara la respuesta, el siguiente job debe pasar a conciliacion y no volver a cargar.
 - **El checkpoint del job se persiste antes de cerrar el estado de dominio.** Primero conserva ID, URL, carpeta y hash devueltos por BUK; luego marca la Solicitud como cargada para que una falla intermedia sea recuperable sin duplicar.
+- **Una carga BUK 2xx debe cerrarse con una transaccion local unica.** Estado `success`, purga del snapshot privado y auditoria se escriben en la misma RPC; si ese cierre falla despues del POST, el registro queda en conciliacion y nunca vuelve a `failed` reintentable.
+- **Un `processing` reciente pertenece a otra ejecucion, no es abandono.** El claim CAS impide un segundo POST y solo un lease envejecido puede escalarse a `reconciliation_required`.
 - **Una verificacion publica usa snapshot allowlist separado.** El documento privado puede contener sueldo y adjuntos, pero el QR solo publica identidad enmascarada, cargo, empresa, validador, folio y hash.
 
 ## 287. Igualar un certificado exige copiar su reticula real, no reinterpretar el encabezado

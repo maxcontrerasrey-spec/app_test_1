@@ -14,6 +14,9 @@ import {
 type SyncRequest = {
   jobIds?: string[];
   limit?: number;
+  mode?: "sync" | "hiring_document_backfill";
+  candidateIds?: string[];
+  dryRun?: boolean;
 };
 
 type SupabaseAdminClient = SupabaseClient<any, "public", any>;
@@ -25,6 +28,12 @@ type BukJobRow = {
   attempts: number;
   payload_snapshot: Record<string, unknown> | null;
   result_snapshot: Record<string, unknown> | null;
+};
+
+type HiringDocumentBackfillRow = {
+  recruitment_case_candidate_id: string;
+  buk_sync_job_id: string;
+  buk_employee_id: string;
 };
 
 type BukCandidateSyncPayload = {
@@ -200,7 +209,7 @@ type CandidateSyncContext = {
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-webhook-secret"
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-webhook-secret, x-hiring-document-backfill-secret"
 };
 
 const DEFAULT_BUK_LOCATIONS_CACHE_TTL_HOURS = 12;
@@ -352,6 +361,26 @@ function requireEnv(value: string | undefined, label: string) {
     throw new Error(`Missing ${label}`);
   }
   return normalized;
+}
+
+function safeSecretEquals(left: string, right: string) {
+  if (left.length !== right.length || left.length === 0) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+function requiresBukUploadReconciliation(error: unknown) {
+  const message = toErrorMessage(error).toLowerCase();
+  const explicitStatus = error instanceof BukApiError
+    ? error.status
+    : Number(message.match(/buk document upload\s+(\d{3})/)?.[1] ?? NaN);
+  if (Number.isFinite(explicitStatus)) {
+    return explicitStatus === 408 || explicitStatus === 429 || explicitStatus >= 500;
+  }
+  return true;
 }
 
 function resolveErrorStatus(error: unknown) {
@@ -2514,22 +2543,15 @@ async function persistHiringDocumentBukSuccess(
   employeeId: string,
   checkpoint: Record<string, unknown>
 ) {
-  const uploadedAt = typeof checkpoint.bukUploadedAt === "string"
-    ? checkpoint.bukUploadedAt
-    : new Date().toISOString();
-  const { error } = await supabase
-    .from("recruitment_hiring_documents")
-    .update({
-      buk_employee_id: employeeId,
-      buk_folder_id: typeof checkpoint.bukEmployeeFolderId === "string" ? checkpoint.bukEmployeeFolderId : null,
-      buk_document_id: typeof checkpoint.bukDocumentId === "string" ? checkpoint.bukDocumentId : null,
-      buk_document_url: typeof checkpoint.bukDocumentUrl === "string" ? checkpoint.bukDocumentUrl : null,
-      buk_document_name: typeof checkpoint.bukDocumentName === "string" ? checkpoint.bukDocumentName : row.buk_document_name,
-      buk_upload_status: "success",
-      buk_uploaded_at: uploadedAt,
-      buk_last_error: null
-    })
-    .eq("id", row.id);
+  const { error } = await supabase.rpc(
+    "finalize_recruitment_hiring_document_buk_success",
+    {
+      p_document_id: row.id,
+      p_buk_sync_job_id: row.buk_sync_job_id,
+      p_buk_employee_id: employeeId,
+      p_checkpoint: checkpoint
+    }
+  );
   if (error) {
     throw new Error(`No fue posible persistir el checkpoint BUK de la Solicitud de Contratación: ${error.message}`);
   }
@@ -2539,8 +2561,14 @@ async function processRecruitmentHiringDocument(
   supabase: SupabaseAdminClient,
   job: BukJobRow,
   jobResultSnapshot: Record<string, unknown>,
-  employeeId: string
+  employeeId: string,
+  options: {
+    persistSourceJobCheckpoint?: boolean;
+    origin?: "generate_in_buk" | "historical_backfill";
+  } = {}
 ) {
+  const persistSourceJobCheckpoint = options.persistSourceJobCheckpoint ?? true;
+  const origin = options.origin ?? "generate_in_buk";
   const { data, error } = await supabase.rpc("ensure_recruitment_hiring_document", {
     p_case_candidate_id: job.recruitment_case_candidate_id,
     p_buk_sync_job_id: job.id
@@ -2554,6 +2582,15 @@ async function processRecruitmentHiringDocument(
     throw new Error("La carga BUK de la Solicitud de Contratación requiere conciliación manual antes de reintentar.");
   }
   if (row.buk_upload_status === "processing") {
+    const processingStartedAt = row.buk_upload_started_at
+      ? new Date(row.buk_upload_started_at).getTime()
+      : Number.NaN;
+    if (
+      Number.isFinite(processingStartedAt)
+      && Date.now() - processingStartedAt < 30 * 60 * 1000
+    ) {
+      throw new Error("La Solicitud de Contratación ya está siendo procesada por otra ejecución.");
+    }
     const reconciliationMessage = "Se detectó una carga BUK anterior sin resultado confirmado; se bloqueó el reintento automático.";
     const { error: reconciliationError } = await supabase
       .from("recruitment_hiring_documents")
@@ -2631,7 +2668,7 @@ async function processRecruitmentHiringDocument(
   }
 
   const startedAt = new Date().toISOString();
-  const { error: processingError } = await supabase
+  const { data: claimedDocument, error: processingError } = await supabase
     .from("recruitment_hiring_documents")
     .update({
       buk_upload_status: "processing",
@@ -2639,18 +2676,66 @@ async function processRecruitmentHiringDocument(
       buk_upload_attempts: (Number(row.buk_upload_attempts) || 0) + 1,
       buk_last_error: null
     })
-    .eq("id", row.id);
+    .eq("id", row.id)
+    .in("buk_upload_status", ["pending", "failed"])
+    .select("id")
+    .maybeSingle();
   if (processingError) {
     throw new Error(`No fue posible iniciar la carga BUK de la Solicitud de Contratación: ${processingError.message}`);
   }
+  if (!claimedDocument) {
+    const { data: currentDocument, error: currentDocumentError } = await supabase
+      .from("recruitment_hiring_documents")
+      .select("buk_upload_status")
+      .eq("id", row.id)
+      .maybeSingle();
+    if (currentDocumentError) {
+      throw new Error(`No fue posible reconciliar el claim de la Solicitud de Contratación: ${currentDocumentError.message}`);
+    }
+    throw new Error(
+      currentDocument?.buk_upload_status === "success"
+        ? "La Solicitud de Contratación fue completada por otra ejecución; vuelve a consultar el estado."
+        : "La Solicitud de Contratación ya está siendo procesada o requiere conciliación manual."
+    );
+  }
 
+  let uploadResult: Awaited<ReturnType<typeof uploadBukDocument>>;
   try {
-    const uploadResult = await uploadBukDocument(
+    uploadResult = await uploadBukDocument(
       employeeId,
       fileName,
       new Blob([bytesToArrayBuffer(pdfBytes)], { type: "application/pdf" }),
       { path: "Postulación" }
     );
+  } catch (uploadError) {
+    const message = toErrorMessage(uploadError);
+    const requiresReconciliation = requiresBukUploadReconciliation(uploadError);
+    const nextStatus = requiresReconciliation ? "reconciliation_required" : "failed";
+    await supabase
+      .from("recruitment_hiring_documents")
+      .update({
+        buk_upload_status: nextStatus,
+        buk_last_error: message
+      })
+      .eq("id", row.id)
+      .eq("buk_upload_status", "processing");
+    try {
+      await recordHiringDocumentAudit(supabase, {
+        documentId: row.id,
+        jobId: job.id,
+        eventType: requiresReconciliation ? "buk_reconciliation_required" : "buk_upload_failed",
+        summary: requiresReconciliation
+          ? "Carga BUK incierta; se bloqueó el reintento automático"
+          : "BUK rechazó la carga de la Solicitud de Contratación",
+        payload: { error: message.slice(0, 500), origin }
+      });
+    } catch (auditError) {
+      console.error("No fue posible auditar el fallo de carga BUK", toErrorMessage(auditError));
+    }
+    throw uploadError;
+  }
+
+  try {
     const metadata = extractBukDocumentMetadata(uploadResult.payload);
     const uploadedAt = new Date().toISOString();
     const checkpoint = {
@@ -2664,50 +2749,30 @@ async function processRecruitmentHiringDocument(
       bukUploadedAt: uploadedAt,
       transport: uploadResult.transport,
       responseStatus: uploadResult.status,
+      origin,
       status: "success"
     };
 
     jobResultSnapshot.hiringRequestDocument = checkpoint;
-    await markJobState(supabase, job.id, {
-      status: "processing",
-      result_snapshot: jobResultSnapshot
-    });
     await persistHiringDocumentBukSuccess(supabase, row, employeeId, checkpoint);
-    await recordHiringDocumentAudit(supabase, {
-      documentId: row.id,
-      jobId: job.id,
-      eventType: "buk_uploaded",
-      summary: "Solicitud de Contratación generada y cargada en BUK",
-      payload: {
-        folio: row.folio,
-        pdf_sha256: pdfHash,
-        buk_document_id: metadata.bukDocumentId,
-        buk_folder_id: metadata.bukEmployeeFolderId,
-        transport: uploadResult.transport
-      }
-    });
+    if (persistSourceJobCheckpoint) {
+      await markJobState(supabase, job.id, {
+        status: "processing",
+        result_snapshot: jobResultSnapshot
+      });
+    }
     return checkpoint;
-  } catch (uploadError) {
-    const message = toErrorMessage(uploadError);
-    const requiresReconciliation = message.toLowerCase().includes("timeout")
-      || message.toLowerCase().includes("reconciliar");
+  } catch (finalizationError) {
+    const message = toErrorMessage(finalizationError);
     await supabase
       .from("recruitment_hiring_documents")
       .update({
-        buk_upload_status: requiresReconciliation ? "reconciliation_required" : "failed",
+        buk_upload_status: "reconciliation_required",
         buk_last_error: message
       })
-      .eq("id", row.id);
-    await recordHiringDocumentAudit(supabase, {
-      documentId: row.id,
-      jobId: job.id,
-      eventType: requiresReconciliation ? "buk_reconciliation_required" : "buk_upload_failed",
-      summary: requiresReconciliation
-        ? "Carga BUK incierta; se bloqueó el reintento automático"
-        : "Falló la carga BUK de la Solicitud de Contratación",
-      payload: { error: message.slice(0, 500) }
-    });
-    throw uploadError;
+      .eq("id", row.id)
+      .eq("buk_upload_status", "processing");
+    throw finalizationError;
   }
 }
 
@@ -2952,6 +3017,110 @@ async function authorizeRequestedJobs(
   }
 }
 
+function normalizeCandidateIds(values: string[] | undefined) {
+  return Array.from(
+    new Set((values ?? []).map((value) => value.trim()).filter((value) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    ))
+  ).slice(0, 25);
+}
+
+async function loadHiringDocumentBackfillCandidates(
+  supabase: SupabaseAdminClient,
+  request: SyncRequest
+) {
+  const candidateIds = normalizeCandidateIds(request.candidateIds);
+  const normalizedLimit = Math.min(Math.max(request.limit ?? 10, 1), 25);
+  const { data, error } = await supabase.rpc(
+    "get_recruitment_hiring_document_backfill_candidates",
+    {
+      p_candidate_ids: candidateIds.length > 0 ? candidateIds : null,
+      p_limit: normalizedLimit
+    }
+  );
+  if (error) {
+    throw new Error(`No fue posible resolver el backfill de Solicitudes de Contratación: ${error.message}`);
+  }
+  return (data ?? []) as HiringDocumentBackfillRow[];
+}
+
+async function runHiringDocumentBackfill(
+  supabase: SupabaseAdminClient,
+  request: SyncRequest
+) {
+  const candidateIds = normalizeCandidateIds(request.candidateIds);
+  const dryRun = request.dryRun !== false;
+  if (!dryRun && candidateIds.length === 0) {
+    throw new Error("Debe indicar candidateIds explícitos para ejecutar el backfill de Solicitudes.");
+  }
+
+  const candidates = await loadHiringDocumentBackfillCandidates(supabase, {
+    ...request,
+    candidateIds: candidateIds.length > 0 ? candidateIds : undefined
+  });
+  if (dryRun) {
+    return {
+      mode: "hiring_document_backfill",
+      dryRun: true,
+      pageCount: candidates.length,
+      candidates: candidates.map((candidate) => ({
+        candidateId: candidate.recruitment_case_candidate_id,
+        sourceJobId: candidate.buk_sync_job_id,
+        bukEmployeeId: candidate.buk_employee_id
+      }))
+    };
+  }
+
+  const processed: Array<Record<string, unknown>> = [];
+  for (const candidate of candidates) {
+    const sourceJob: BukJobRow = {
+      id: candidate.buk_sync_job_id,
+      recruitment_case_candidate_id: candidate.recruitment_case_candidate_id,
+      status: "success",
+      attempts: 0,
+      payload_snapshot: null,
+      result_snapshot: null
+    };
+    try {
+      const checkpoint = await processRecruitmentHiringDocument(
+        supabase,
+        sourceJob,
+        {},
+        candidate.buk_employee_id,
+        {
+          persistSourceJobCheckpoint: false,
+          origin: "historical_backfill"
+        }
+      );
+      processed.push({
+        candidateId: candidate.recruitment_case_candidate_id,
+        sourceJobId: candidate.buk_sync_job_id,
+        bukEmployeeId: candidate.buk_employee_id,
+        status: "success",
+        documentId: checkpoint.documentId,
+        folio: checkpoint.folio
+      });
+    } catch (error) {
+      processed.push({
+        candidateId: candidate.recruitment_case_candidate_id,
+        sourceJobId: candidate.buk_sync_job_id,
+        bukEmployeeId: candidate.buk_employee_id,
+        status: "error",
+        error: toErrorMessage(error)
+      });
+      break;
+    }
+  }
+
+  return {
+    mode: "hiring_document_backfill",
+    dryRun: false,
+    requestedCount: candidateIds.length,
+    eligibleCount: candidates.length,
+    processed
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -2971,9 +3140,34 @@ Deno.serve(async (req) => {
     const suppliedWebhookSecret = (req.headers.get("x-internal-webhook-secret") ?? "").trim();
     const isInternalInvocation =
       internalWebhookSecret.length > 0 && suppliedWebhookSecret === internalWebhookSecret;
+    const backfillSecret = (Deno.env.get("HIRING_DOCUMENT_BACKFILL_SECRET") ?? "").trim();
+    const suppliedBackfillSecret = (req.headers.get("x-hiring-document-backfill-secret") ?? "").trim();
+    const isBackfillSecretInvocation = safeSecretEquals(suppliedBackfillSecret, backfillSecret);
     const requestBody = req.method === "POST" ? ((await req.json().catch(() => ({}))) as SyncRequest) : {};
+    const isServiceRoleInvocation = safeSecretEquals(accessToken, serviceRoleKey);
+    const mode = requestBody.mode ?? "sync";
 
-    if (!isInternalInvocation) {
+    if (mode === "hiring_document_backfill") {
+      if (!isInternalInvocation && !isServiceRoleInvocation && !isBackfillSecretInvocation) {
+        return new Response(JSON.stringify({ error: "Sin permisos para ejecutar el backfill documental." }), {
+          status: 403,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json"
+          }
+        });
+      }
+      const result = await runHiringDocumentBackfill(supabase, requestBody);
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      });
+    }
+
+    if (!isInternalInvocation && !isServiceRoleInvocation) {
       if (!accessToken) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,

@@ -4,6 +4,29 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Backfill Solicitud de Contratacion para trabajadores ya creados en BUK - 2026-08-04
+
+- [x] Auditar el contrato productivo, resolver universo elegible y confirmar que cada candidato tenga ficha BUK efectiva.
+- [x] Diseñar un backfill backend autoritativo e idempotente, con confirmacion previa de cantidad y sin reintentos ciegos.
+- [x] Mantener BUK como unica custodia del PDF: generar en memoria y persistir en Supabase solo metadata, hash, token, estados y referencias BUK.
+- [x] Implementar migracion/Edge Function y pruebas que impidan incorporar bucket/path/binario del PDF al ERP.
+- [x] Ejecutar Guardian y smokes controlados antes de desplegar.
+- [x] Confirmar universo final, desplegar y ejecutar backfill productivo por lotes con reconciliacion y evidencia.
+
+Estado inicial:
+- La generacion forward-only ya sube el PDF directamente a `Postulación` en BUK mediante un `Blob` en memoria; no crea objetos en Supabase Storage.
+- El backfill historico se limita exactamente al bucket productivo `Personal contratado`: `stage_code = 'hired'` y exito BUK efectivo. No incluye candidatos de otras etapas aunque tengan datos completos o jobs antiguos.
+- El levantamiento previo detecto 56 personas en ese bucket: 54 con checkpoints documentales historicos y 2 sin evidencia documental; antes de ejecutar existian 0 Solicitudes historicas.
+- En el flujo futuro, la Solicitud solo puede reservarse y generarse despues de que el candidato ingresa a `Personal a Contratar` y la accion `Generar en BUK` obtiene una ficha BUK efectiva; nunca durante Control de candidatos ni por el solo cambio de etapa.
+
+Resultado:
+- El selector backend usa exactamente `stage_code = 'hired'` mas `is_effective_buk_generation_success(...)`; no reencola ni modifica jobs historicos y reconstruye `SI`/`N/A` desde payloads/checkpoints BUK 2xx.
+- Universo productivo: 56 en `Personal contratado`; 53 emitibles y 3 RC-0067 bloqueados porque siguen `pending` y no tienen validador/fecha. No se inventaron firmas.
+- Canario RC-0105 y 52 restantes procesados secuencialmente en 6 lotes de hasta 10: 53 `generated/success`, 53 QR `valid`, 53 hashes/tamanos completos, 0 fallidos y 0 `reconciliation_required`.
+- Los 53 PDFs fueron enviados directamente a `Postulación` en BUK. El cierre transaccional guarda metadata minima, purga el snapshot privado y audita la carga; `storage.objects` contiene 0 archivos `SC-AAAA-NNNNNN.pdf`.
+- Migraciones productivas `20260804145954_add_hiring_document_backfill` y `20260804151115_harden_hiring_document_backfill_finalization`; `sync-buk-candidates` v40 activo. La credencial temporal del backfill fue eliminada al terminar.
+- Verificacion: Edge logs del backfill HTTP 200, source jobs con 0 checkpoints nuevos, RPC privadas solo `service_role`, 9 pruebas focalizadas y Guardian completo sin errores ni warnings.
+
 ## Solicitud de Contratacion ERP y carga documental BUK - 2026-08-04
 
 - [x] Inspeccionar las referencias visuales, el generador productivo de certificados, el contrato real de RC-0105 y el catalogo documental vigente.
