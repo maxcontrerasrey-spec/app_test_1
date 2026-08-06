@@ -4,6 +4,19 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Cierre de los dos riesgos residuales de seguridad frontend - 2026-08-05
+
+- [x] **Residual 1 — advisories de React Router: CERRADO.** Se migro a React `19.2.7`, React DOM `19.2.7` y React Router `8.3.0`; `npm audit` y `npm audit --omit=dev` reportan 0 vulnerabilidades.
+- [x] **Residual 2 — headers de seguridad no desplegados: CERRADO.** Cloudflare produccion sirve CSP, `X-Frame-Options: DENY`, HSTS y `Permissions-Policy`; los assets versionados usan cache inmutable.
+- [x] Corregir las referencias historicas que todavia presentaban React Router como un riesgo abierto.
+- [x] Registrar ambos cierres en el registro EEES de riesgos residuales y agregar el aprendizaje de reconciliacion documental.
+- [x] Validar la documentacion con `audit:enterprise-docs`, Guardian y `git diff --check`.
+
+Evidencia:
+- PR tecnico: `#1`; merge productivo: `547a1268fa9a41e08b06d7fda683692f6f36ba46`.
+- Deployment Cloudflare: `44d70579-9768-4427-91ad-ab2b9e8deaf4`.
+- Estado vigente: **2 de 2 riesgos residuales cerrados**; los riesgos externos del registro EEES no corresponden a estos dos hallazgos frontend.
+
 ## Certificados de competencias - nuevos modelos 4x4 - 2026-08-04
 
 - [x] Auditar el contrato real del catálogo y confirmar marcas, tipos, modelos y códigos existentes para evitar duplicados.
@@ -116,7 +129,7 @@ Resultado:
 - Logs: GitHub Actions no mostro fallas funcionales activas; el ultimo fallo del commit auditado era solo el baseline JS (+2,530 bytes) y queda absorbido por la reduccion medida. Auth/Storage Supabase no mostraron errores activos; los conectores de logs API/Postgres/Edge no respondieron y quedan como limitacion de evidencia, no como PASS inferido.
 - Produccion: `orion-chat` desplegada como version 30 `ACTIVE`, manteniendo `verify_jwt=false` porque valida el bearer dentro de la funcion. Smoke sin token responde `401` con `Sesion invalida para ORION`; la fuente remota contiene `privacy.ts` y la metrica de redaccion.
 - Validacion: Guardian full PASS con 25 gates, 0 errores y 0 warnings; 64 unitarias, contratos, integridad, concurrencia, idempotencia, cobertura, TypeScript, build, rutas, migraciones, seguridad Supabase, performance, cuatro checks Edge y `git diff --check` pasan.
-- Riesgos residuales: `npm audit --omit=dev` mantiene dos moderadas de React Router cuya unica correccion disponible es el salto mayor a v7; no se fuerza en esta auditoria para evitar una migracion de routing no acotada. Los 82 warnings historicos Supabase siguen baselineados y no se detectaron nuevas exposiciones anonimas/RLS.
+- Estado historico al 2026-08-03: `npm audit --omit=dev` mantenia dos moderadas de React Router cuya unica correccion disponible entonces era un salto mayor. **Este riesgo fue cerrado el 2026-08-05** mediante la migracion validada a React Router `8.3.0`; los 82 warnings historicos Supabase siguen baselineados y no se detectaron nuevas exposiciones anonimas/RLS.
 
 ## Navegacion superior ERP - responsivo celular
 
@@ -326,7 +339,7 @@ Resultado:
 - `audit:migrations` pasa con 360 migraciones canonicas y sin duplicados.
 - `audit:supabase-security` pasa sin errores; conserva 82 warnings historicos baselineados que no se corrigieron relajando ni reescribiendo permisos sin causa raiz.
 - `npm audit` detecto 1 vulnerabilidad alta en `postcss` y 2 moderadas en `react-router`/`react-router-dom`; se actualizo `postcss` a `8.5.18` y la vulnerabilidad alta queda eliminada.
-- React Router queda como riesgo moderado residual: npm solo ofrece `react-router-dom@7.18.1` con cambio semver-major; la app usa rutas internas constantes y no SSR hydration, por lo que no se aplica migracion major dentro de esta correccion segura.
+- Estado historico al 2026-07-27: React Router quedo temporalmente como riesgo moderado residual porque la correccion disponible exigia un cambio semver-major. **Este riesgo fue cerrado el 2026-08-05** mediante la migracion validada a React Router `8.3.0`.
 - Movilidad interna: `eligible_folios` deja de cachearse 15 minutos; ahora refetchea al montar, foco, reconexion, Realtime de folios/aprobaciones y apertura del selector `Folio destino`.
 - `build:frontend-check`, `npm run build`, unitarias, TypeScript directo, smoke de rutas y `git diff --check` pasan. El baseline performance final medido por Guardian full sube `distTotalBytes` a `10,671,549` y `jsTotalBytes` a `3,024,179`; CSS/vendors/assets trackeados quedan intactos.
 - `guardian:full` pasa con 0 errores y 0 warnings.
