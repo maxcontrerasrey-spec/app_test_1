@@ -78,6 +78,8 @@ Revision 2026-08-05 seguridad frontend: el total sube 53,027 bytes y JS sube 58,
 
 Revision 2026-08-05 seguridad frontend CI: GitHub Actions `Audit Enterprise Guardrails` run `31066781865`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,113,208 bytes totales y 2,632,397 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS y todos los vendors trackeados, incluido `app-framework`, conservan los limites medidos localmente.
 
+Revision 2026-08-06 recuperacion Auth: el total y JS suben 1,271 bytes por conservar `code`/`status` de Supabase Auth, bloquear solicitudes concurrentes y aplicar cooldown de recuperacion ante 429. No agrega vendors, CSS ni rutas; los assets trackeados conservan sus limites.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -96,9 +98,9 @@ Revision 2026-08-05 seguridad frontend CI: GitHub Actions `Audit Enterprise Guar
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10113208,
+  "distTotalBytes": 10114479,
   "jsFileCount": 51,
-  "jsTotalBytes": 2632397,
+  "jsTotalBytes": 2633668,
   "cssFileCount": 10,
   "cssTotalBytes": 216605,
   "trackedAssets": [

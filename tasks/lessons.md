@@ -2820,3 +2820,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Las referencias historicas deben llevar fecha y estado posterior.** Conserva la evidencia original, pero agrega un marcador explicito de cierre para que una busqueda no confunda historia con riesgo vigente.
 - **Antes de declarar cierre, busca todas las menciones del residual.** Revisa roadmap, auditorias, registro EEES y resumen final; el resultado debe mostrar el mismo conteo y estado en todas las fuentes.
 - **Un worktree sucio no justifica omitir la trazabilidad.** Si la documentacion se mezcla con cambios ajenos, usa un worktree limpio y publica una reconciliacion acotada antes de afirmar que el trabajo quedo completamente cerrado.
+
+## 193. Una rotacion masiva de credenciales necesita capacidad de recuperacion verificada
+
+- **No invalides cuentas en produccion sin probar primero el camino de retorno.** Antes de rotar passwords o sesiones, confirma SMTP productivo, cuota disponible, redirect permitido, plantilla, enlace de un solo uso y un canario completo.
+- **La cuota de correo Auth es un recurso compartido.** El SMTP incorporado de Supabase permite solo dos correos por hora para todo el proyecto; una recuperacion masiva convierte una correccion de seguridad en una interrupcion operacional.
+- **El rollout debe separar preparar, canario y lote.** Configura capacidad, notifica, recupera una cuenta, verifica cambio real de password y solo entonces procesa el universo restante con conteo e idempotencia.
+- **No confundas `429` con ban de cuenta.** Revisa `banned_until`, estado del perfil, sesiones, `must_reset_password` y el `error.code` de Auth antes de intervenir datos.
+- **Nunca soluciones disponibilidad reintroduciendo una credencial comprometida.** Usa enlaces individuales de un solo uso o SMTP productivo; no restaures passwords compartidas ni limpies el flag sin cambio real de contraseña.
+- **La UI debe conservar errores estructurados y frenar repeticion.** Mapea `status`/`code`, evita mostrar mensajes crudos, bloquea doble submit y no reintentes 429 automaticamente.

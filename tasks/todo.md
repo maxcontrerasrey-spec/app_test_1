@@ -4,6 +4,24 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Incidente Auth: recuperacion bloqueada por rate limit - 2026-08-06
+
+- [x] Correlacionar la rotacion de cuentas del 2026-08-05 con logs Auth y estado productivo de Laura Lopez.
+- [x] Confirmar el universo afectado y distinguir cuentas baneadas de credenciales rotadas sin sesion.
+- [x] Restaurar la recuperacion inmediata sin reintroducir la password compartida ni quitar flags manualmente.
+- [x] Configurar SMTP productivo para eliminar la cuota global de prueba de 2 correos por hora.
+- [x] Corregir el frontend para preservar `status`/`code`, bloquear doble envio y aplicar cooldown ante 429.
+- [x] Validar pruebas focalizadas, TypeScript/build, Guardian y estado productivo posterior.
+
+Resultado:
+- Causa raiz: la auditoria roto 23 cuentas que aun usaban una password temporal publica, pero el proyecto seguia usando SMTP incorporado de Supabase, limitado globalmente a 2 correos por hora. Dos recuperaciones exitosas consumieron la cuota y los siguientes usuarios recibieron `429 over_email_send_rate_limit` incluso en su primer intento.
+- Laura Lopez estaba activa, confirmada y sin ban; tenia `must_reset_password = true`, 0 sesiones y password aleatoria desde `2026-08-06 02:23:57Z`.
+- Recuperacion inmediata: 22 cuentas activas recibieron enlaces individuales de un solo uso mediante el canal Resend ya verificado; Laura fue el canario. Resultado `22 sent`, `0 failed`, `0 skipped`.
+- Supabase Auth quedo con SMTP Resend productivo (`smtp.resend.com:465`), remitente `ERP Buses JM` y `rate_limit_email_sent = 30`; antes no habia SMTP custom y el limite era 2.
+- Las dos Edge Functions temporales y sus cuatro secrets de incidente fueron eliminados despues de la ejecucion; no queda endpoint administrativo temporal activo.
+- El frontend deja de mostrar el error crudo, conserva `code`/`status`, no reintenta automaticamente, bloquea doble click y aplica 60 segundos de cooldown tras solicitar recuperacion o recibir 429.
+- Validacion focalizada: 6 pruebas Auth y `build:frontend-check` pasan; la validacion Enterprise final se registra antes del merge.
+
 ## Cierre de los dos riesgos residuales de seguridad frontend - 2026-08-05
 
 - [x] **Residual 1 — advisories de React Router: CERRADO.** Se migro a React `19.2.7`, React DOM `19.2.7` y React Router `8.3.0`; `npm audit` y `npm audit --omit=dev` reportan 0 vulnerabilidades.
