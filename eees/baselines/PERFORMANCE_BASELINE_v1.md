@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,105,430 bytes.
-- JS total medido: 2,624,619 bytes.
-- `dist` total: 10,105,430 bytes.
+- dist total medido: 10,113,208 bytes.
+- JS total medido: 2,632,397 bytes.
+- `dist` total: 10,113,208 bytes.
 - Archivos JS: 51.
-- JS total: 2,624,619 bytes.
+- JS total: 2,632,397 bytes.
 - Archivos CSS: 10.
 - CSS total: 216,605 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -76,6 +76,8 @@ Revision 2026-08-04 Solicitud de Contratacion: el total y JS suben 13,470 bytes 
 
 Revision 2026-08-05 seguridad frontend: el total sube 53,027 bytes y JS sube 58,887 bytes por migrar React 18.3/React Router 6.30 a React 19.2.7/React Router 8.3.0. El salto elimina todos los advisories npm del router; la ultima v7 corregia los avisos originales pero incorporaba un advisory RSC alto. El ERP mantiene modo declarativo, no agrega SSR/RSC ni rutas eager, y `app-framework` queda en 276,291 bytes minificados / 86,148 bytes gzip. Build, smoke de rutas y auditoria npm pasan.
 
+Revision 2026-08-05 seguridad frontend CI: GitHub Actions `Audit Enterprise Guardrails` run `31066781865`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,113,208 bytes totales y 2,632,397 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS y todos los vendors trackeados, incluido `app-framework`, conservan los limites medidos localmente.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -94,9 +96,9 @@ Revision 2026-08-05 seguridad frontend: el total sube 53,027 bytes y JS sube 58,
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10105430,
+  "distTotalBytes": 10113208,
   "jsFileCount": 51,
-  "jsTotalBytes": 2624619,
+  "jsTotalBytes": 2632397,
   "cssFileCount": 10,
   "cssTotalBytes": 216605,
   "trackedAssets": [
