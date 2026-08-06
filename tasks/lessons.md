@@ -2829,3 +2829,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No confundas `429` con ban de cuenta.** Revisa `banned_until`, estado del perfil, sesiones, `must_reset_password` y el `error.code` de Auth antes de intervenir datos.
 - **Nunca soluciones disponibilidad reintroduciendo una credencial comprometida.** Usa enlaces individuales de un solo uso o SMTP productivo; no restaures passwords compartidas ni limpies el flag sin cambio real de contraseña.
 - **La UI debe conservar errores estructurados y frenar repeticion.** Mapea `status`/`code`, evita mostrar mensajes crudos, bloquea doble submit y no reintentes 429 automaticamente.
+
+## 194. Los enlaces Auth de un solo uso deben sobrevivir a scanners corporativos
+
+- **Un correo aceptado no demuestra que el usuario pueda usar el enlace.** Correlaciona `/recover`, `/verify`, IP, agente y clic humano; Microsoft Safe Links puede consumir el token antes de que la persona abra el mensaje.
+- **No apuntes una plantilla corporativa directamente a `/verify`.** Usa una landing intermedia que no canjee el token al cargar y exige una accion humana explicita antes de llamar `verifyOtp`.
+- **Una credencial temporal de contingencia exige orden y evidencia.** Cambia la password Auth, valida login sin imprimirla, revoca la sesion tecnica y deja `must_reset_password = true` al final, porque el trigger de cambio de password libera el flag.
+- **Las contraseñas temporales nunca se serializan en resultados.** Genera una distinta por cuenta con CSPRNG, enviala solo al correo corporativo y retorna unicamente conteos, IDs tecnicos y etapas de fallo.
+- **El canario debe completar el flujo humano.** No amplifiques el lote hasta comprobar correo recibido, login, cambio personal, invalidacion de la temporal y estado final del flag/sesiones.

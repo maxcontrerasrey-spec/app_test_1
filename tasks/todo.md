@@ -4,6 +4,30 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Incidente Auth: enlaces consumidos y credenciales temporales unicas - 2026-08-06
+
+- [x] Confirmar en Auth logs la causa de los enlaces invalidos y el universo exacto pendiente.
+- [x] Preparar un despachador temporal acotado que genere una clave fuerte distinta por cuenta sin registrarla.
+- [x] Ejecutar canario con Laura Lopez, validar login tecnico, correo y cambio obligatorio.
+- [x] Procesar solo las cuentas activas pendientes, con conteo de enviados/fallidos y sin reintentos ciegos.
+- [x] Eliminar funcion y secret temporales y reconciliar cuentas, sesiones y flags en produccion.
+- [x] Validar el flujo ERP, Guardian y documentar el cierre sin versionar credenciales.
+
+Condiciones de seguridad:
+- Cada contraseña temporal es aleatoria, exclusiva por cuenta y se entrega solo al correo corporativo.
+- Ninguna contraseña puede aparecer en logs, respuestas, archivos, commits o trazas de CI.
+- El usuario debe quedar con `must_reset_password = true` y ser dirigido a `/reset-password` despues del primer login.
+- No se restaura la contraseña compartida comprometida ni se relajan RLS, grants o validaciones Auth.
+
+Resultado:
+- Los logs Auth demostraron que Microsoft Safe Links/Defender consumia los enlaces de un solo uso entre 21 y 27 segundos despues del envio; el clic humano posterior encontraba `One-time token not found`.
+- Universo procesado: 21 cuentas activas pendientes. Laura fue el canario y las otras 20 se procesaron solo despues de un dry-run que confirmo el conteo.
+- Cada cuenta recibio por correo corporativo una contraseña temporal criptografica y exclusiva de 21 caracteres. Ninguna contraseña fue retornada, registrada o persistida fuera de Auth y el correo individual.
+- Resultado tecnico: `21 password_updated`, `21 login_smoke`, `21 sent`, `0 failed`. Despues de cada lote se repuso `must_reset_password = true` y se eliminaron las sesiones del smoke.
+- Laura completo el flujo real a las `2026-08-06 14:16:42Z`: cambio su contraseña personal, el trigger autoritativo libero el flag y quedaron 0 sesiones residuales.
+- Reconciliacion inmediata: 20 cuentas siguen pendientes de completar su cambio, 0 estan baneadas y 0 tienen sesiones activas. La Edge Function y el secret temporales fueron eliminados.
+- La recuperacion futura por enlace requiere una landing intermedia scanner-safe; no se deben reenviar enlaces directos `/verify` como solucion a este incidente.
+
 ## Incidente Auth: recuperacion bloqueada por rate limit - 2026-08-06
 
 - [x] Correlacionar la rotacion de cuentas del 2026-08-05 con logs Auth y estado productivo de Laura Lopez.
