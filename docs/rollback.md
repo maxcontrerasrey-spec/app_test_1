@@ -12,9 +12,11 @@ En este repo, el rollback preferido no es editar historia SQL. El camino seguro 
 
 ### Frontend sin cambio SQL
 
-- usar `git revert <commit>`;
-- validar `tsc`, build y diff limpio;
-- redeploy frontend.
+- identificar y registrar el deployment productivo anterior en Cloudflare Pages;
+- ante una regresion activa, usar primero `Deployments > Rollback to this deployment` para restaurar el artefacto anterior sin esperar un build nuevo;
+- verificar login, rutas criticas y headers sobre el dominio productivo despues del rollback;
+- ejecutar despues `git revert <commit>`, validar `tsc`, build y diff limpio, y redeploy para alinear Git con el artefacto restaurado;
+- considerar que HSTS puede seguir cacheado en navegadores aunque el deployment restaurado ya no emita el header.
 
 ### RPC/SQL con error no destructivo
 

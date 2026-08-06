@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { supabase } from "../../../shared/lib/supabase";
 import {
   DASHBOARD_ENTRY_SELECT,

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import logo from "../../../assets/app-logo.png";
 import { useAuth } from "../context/AuthContext";
 

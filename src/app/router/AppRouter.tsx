@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router";
 import { AppShell } from "../layout/AppShell";
 import { lazyWithRetry } from "../../shared/lib/lazyWithRetry";
 import { routeModuleImporters } from "./routeModules";

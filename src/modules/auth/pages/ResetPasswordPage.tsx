@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import logo from "../../../assets/app-logo.png";
 import { useAuth } from "../context/AuthContext";
 

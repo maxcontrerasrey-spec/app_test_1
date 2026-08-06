@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { verifyCompetencyCertificate } from "../services/competencyCoreApi";
 import type { CompetencyPublicVerification } from "../types";
 import jmLogoUrl from "../assets/jm.png";

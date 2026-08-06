@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.18
+version: 1.0.19
 status: Activo
 language: es-CL
 owner: Quality
@@ -24,11 +24,11 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,052,403 bytes.
-- JS total medido: 2,565,732 bytes.
-- `dist` total: 10,052,403 bytes.
+- dist total medido: 10,105,430 bytes.
+- JS total medido: 2,624,619 bytes.
+- `dist` total: 10,105,430 bytes.
 - Archivos JS: 51.
-- JS total: 2,565,732 bytes.
+- JS total: 2,624,619 bytes.
 - Archivos CSS: 10.
 - CSS total: 216,605 bytes.
 - Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
@@ -36,7 +36,7 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 - Mayor vendor JS: `echarts-vendor`, 512,504 bytes.
 - Exportador XLSX lazy: `xlsx-vendor`, 500,059 bytes.
 - Supabase vendor: `supabase-vendor`, 221,867 bytes.
-- App framework: `app-framework`, 208,819 bytes.
+- App framework: `app-framework`, 276,291 bytes (86,148 bytes gzip).
 
 Revision 2026-07-23: el total global sube 671 bytes por el helper testeado que calcula `Tiempo Abierto` en reclutamiento desde `opened_at`. No agrega vendors, rutas lazy ni CSS; los limites especificos de JS, CSS y assets trackeados permanecen bajo baseline.
 
@@ -74,6 +74,8 @@ Revision 2026-08-03 auditoria integral: se eliminan el generador PDF local sin c
 
 Revision 2026-08-04 Solicitud de Contratacion: el total y JS suben 13,470 bytes en la medicion canonica de Guardian full por la nueva ruta publica lazy `/verificar/documento`, su mapeo allowlist y los estados de autenticidad/conciliacion. No agrega vendors, CSS ni assets; el PDF y QR permanecen en Edge Functions. El smoke de rutas valida que el verificador sea publico sin debilitar las rutas autenticadas.
 
+Revision 2026-08-05 seguridad frontend: el total sube 53,027 bytes y JS sube 58,887 bytes por migrar React 18.3/React Router 6.30 a React 19.2.7/React Router 8.3.0. El salto elimina todos los advisories npm del router; la ultima v7 corregia los avisos originales pero incorporaba un advisory RSC alto. El ERP mantiene modo declarativo, no agrega SSR/RSC ni rutas eager, y `app-framework` queda en 276,291 bytes minificados / 86,148 bytes gzip. Build, smoke de rutas y auditoria npm pasan.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -92,9 +94,9 @@ Revision 2026-08-04 Solicitud de Contratacion: el total y JS suben 13,470 bytes 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10052403,
+  "distTotalBytes": 10105430,
   "jsFileCount": 51,
-  "jsTotalBytes": 2565732,
+  "jsTotalBytes": 2624619,
   "cssFileCount": 10,
   "cssTotalBytes": 216605,
   "trackedAssets": [
@@ -103,7 +105,7 @@ Revision 2026-08-04 Solicitud de Contratacion: el total y JS suben 13,470 bytes 
     { "match": "echarts-vendor", "maxBytes": 512504 },
     { "match": "xlsx-vendor", "maxBytes": 500059 },
     { "match": "supabase-vendor", "maxBytes": 221867 },
-    { "match": "app-framework", "maxBytes": 208819 }
+    { "match": "app-framework", "maxBytes": 276291 }
   ]
 }
 ```

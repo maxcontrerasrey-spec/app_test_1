@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router";
 import { PageShell } from "../../../shared/ui";
 import { hasFeatureAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";

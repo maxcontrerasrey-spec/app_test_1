@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import jmLogoUrl from "../../competencies/assets/jm.png";
 import "../../competencies/styles/competencies.css";
 import {

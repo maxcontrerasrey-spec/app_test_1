@@ -37,7 +37,7 @@ export default defineConfig({
           if (
             has("/node_modules/react/") ||
             has("/node_modules/react-dom/") ||
-            has("/node_modules/react-router-dom/") ||
+            has("/node_modules/react-router/") ||
             has("/node_modules/@tanstack/")
           ) {
             return "app-framework";
