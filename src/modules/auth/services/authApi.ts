@@ -1,5 +1,6 @@
 import { buildPublicAppUrl } from "../../../shared/config/runtime";
 import { supabase } from "../../../shared/lib/supabase";
+import { normalizeAuthOperationError } from "../lib/authErrors";
 
 function buildResetPasswordRedirectUrl() {
   return buildPublicAppUrl("/reset-password");
@@ -7,7 +8,9 @@ function buildResetPasswordRedirectUrl() {
 
 export async function signInWithPassword(email: string, password: string) {
   if (!supabase) {
-    return { error: "Supabase no está configurado en este entorno." };
+    return {
+      error: normalizeAuthOperationError("Supabase no está configurado en este entorno.")
+    };
   }
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -15,7 +18,7 @@ export async function signInWithPassword(email: string, password: string) {
     password
   });
 
-  return { error: error?.message ?? null };
+  return { error: normalizeAuthOperationError(error) };
 }
 
 export async function fetchEffectivePermissions() {
@@ -56,14 +59,16 @@ export async function selectSharedLoginOperator(params: {
 
 export async function sendPasswordResetEmail(email: string) {
   if (!supabase) {
-    return { error: "Supabase no está configurado en este entorno." };
+    return {
+      error: normalizeAuthOperationError("Supabase no está configurado en este entorno.")
+    };
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: buildResetPasswordRedirectUrl()
   });
 
-  return { error: error?.message ?? null };
+  return { error: normalizeAuthOperationError(error) };
 }
 
 export async function updateCurrentUserPassword(password: string) {

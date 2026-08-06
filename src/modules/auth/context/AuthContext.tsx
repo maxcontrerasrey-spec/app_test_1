@@ -27,6 +27,7 @@ import {
   isCurrentAuthorizationLoad,
   resetSessionScopedQueries
 } from "../lib/authSessionLifecycle";
+import { normalizeAuthOperationError, type AuthOperationError } from "../lib/authErrors";
 import {
   acceptAupPolicyForCurrentUser,
   fetchEffectivePermissions,
@@ -93,9 +94,9 @@ type AuthContextValue = {
   displayName: string;
   jobTitle: string;
   email: string;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthOperationError | null }>;
   selectOperator: (operatorChoiceId: string) => Promise<{ error: string | null }>;
-  sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  sendPasswordReset: (email: string) => Promise<{ error: AuthOperationError | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   acceptAupPolicy: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -567,7 +568,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: user?.email ?? "",
       signIn: async (email, password) => {
         if (!supabase) {
-          return { error: "Supabase no está configurado en este entorno." };
+          return {
+            error: normalizeAuthOperationError("Supabase no está configurado en este entorno.")
+          };
         }
 
         return signInWithPassword(email, password);
@@ -604,7 +607,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       sendPasswordReset: async (email) => {
         if (!supabase) {
-          return { error: "Supabase no está configurado en este entorno." };
+          return {
+            error: normalizeAuthOperationError("Supabase no está configurado en este entorno.")
+          };
         }
 
         return sendPasswordResetEmail(email);

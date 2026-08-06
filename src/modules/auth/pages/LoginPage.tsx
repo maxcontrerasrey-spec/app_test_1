@@ -1,7 +1,14 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
 import logo from "../../../assets/app-logo.png";
 import { useAuth } from "../context/AuthContext";
+import {
+  getPasswordResetErrorMessage,
+  getSignInErrorMessage,
+  isAuthRateLimitError
+} from "../lib/authErrors";
+
+const PASSWORD_RESET_COOLDOWN_SECONDS = 60;
 
 export function LoginPage() {
   const { isConfigured, sendPasswordReset, signIn } = useAuth();
@@ -15,15 +22,29 @@ export function LoginPage() {
       : ""
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resetCooldownSeconds, setResetCooldownSeconds] = useState(0);
+  const authRequestInFlightRef = useRef(false);
 
   const isSubmitEnabled = email.trim().length > 0 && password.trim().length > 0;
+
+  useEffect(() => {
+    if (resetCooldownSeconds <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setResetCooldownSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [resetCooldownSeconds]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
     setInfoMessage("");
 
-    if (!isSubmitEnabled) {
+    if (!isSubmitEnabled || authRequestInFlightRef.current) {
       return;
     }
 
@@ -32,18 +53,26 @@ export function LoginPage() {
       return;
     }
 
+    authRequestInFlightRef.current = true;
     setIsSubmitting(true);
-    const { error } = await signIn(email.trim(), password);
-    setIsSubmitting(false);
-
-    if (error) {
-      setErrorMessage("No fue posible iniciar sesión. Revisa tus credenciales.");
+    try {
+      const { error } = await signIn(email.trim(), password);
+      if (error) {
+        setErrorMessage(getSignInErrorMessage(error));
+      }
+    } finally {
+      authRequestInFlightRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
   const handlePasswordReset = async () => {
     setErrorMessage("");
     setInfoMessage("");
+
+    if (authRequestInFlightRef.current || resetCooldownSeconds > 0) {
+      return;
+    }
 
     if (!isConfigured) {
       setErrorMessage("El entorno no tiene configurado el acceso a Supabase.");
@@ -55,18 +84,26 @@ export function LoginPage() {
       return;
     }
 
+    authRequestInFlightRef.current = true;
     setIsSubmitting(true);
-    const { error } = await sendPasswordReset(email.trim());
-    setIsSubmitting(false);
+    try {
+      const { error } = await sendPasswordReset(email.trim());
+      if (error) {
+        if (isAuthRateLimitError(error)) {
+          setResetCooldownSeconds(PASSWORD_RESET_COOLDOWN_SECONDS);
+        }
+        setErrorMessage(getPasswordResetErrorMessage(error));
+        return;
+      }
 
-    if (error) {
-      setErrorMessage(error);
-      return;
+      setResetCooldownSeconds(PASSWORD_RESET_COOLDOWN_SECONDS);
+      setInfoMessage(
+        "Si el correo existe, recibirás un enlace para restablecer la contraseña."
+      );
+    } finally {
+      authRequestInFlightRef.current = false;
+      setIsSubmitting(false);
     }
-
-    setInfoMessage(
-      "Si el correo existe, recibirás un enlace para restablecer la contraseña."
-    );
   };
 
   return (
@@ -141,9 +178,11 @@ export function LoginPage() {
             className="login-inline-link"
             type="button"
             onClick={() => void handlePasswordReset()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || resetCooldownSeconds > 0}
           >
-            ¿Olvidaste tu contraseña? Recuperar acceso
+            {resetCooldownSeconds > 0
+              ? `Recuperación solicitada · ${resetCooldownSeconds}s`
+              : "¿Olvidaste tu contraseña? Recuperar acceso"}
           </button>
         </div>
       </div>
