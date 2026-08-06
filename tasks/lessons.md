@@ -2813,3 +2813,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los secrets locales tambien requieren higiene.** Un `.env.local` con credenciales debe usar permisos `0600`, y una variable `VITE_*` sin consumidor debe retirarse y rotarse si pudo entrar a un build.
 - **Las copias conflictivas pueden reaparecer por hidratacion tardia de macOS.** Ejecuta el guardrail de duplicados despues del ultimo build/Guardian, no solo inmediatamente despues de `npm ci`.
 - **Si reaparecen, saca la instalacion del arbol sincronizado sin romper la resolucion Node.** El destino externo debe conservar la forma `<runtime>/node_modules`; enlazar directamente a una carpeta con otro nombre rompe la busqueda ESM de dependencias hermanas.
+
+## 192. Un fix productivo no cierra un residual si el registro versionado sigue abierto
+
+- **El cierre debe ser tecnico, operacional y documental en la misma entrega.** Corregir dependencias o desplegar configuracion no basta si `tasks/todo.md` o el registro de riesgos todavia muestran el hallazgo como pendiente.
+- **Las referencias historicas deben llevar fecha y estado posterior.** Conserva la evidencia original, pero agrega un marcador explicito de cierre para que una busqueda no confunda historia con riesgo vigente.
+- **Antes de declarar cierre, busca todas las menciones del residual.** Revisa roadmap, auditorias, registro EEES y resumen final; el resultado debe mostrar el mismo conteo y estado en todas las fuentes.
+- **Un worktree sucio no justifica omitir la trazabilidad.** Si la documentacion se mezcla con cambios ajenos, usa un worktree limpio y publica una reconciliacion acotada antes de afirmar que el trabajo quedo completamente cerrado.
