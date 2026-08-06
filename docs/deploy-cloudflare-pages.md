@@ -32,6 +32,7 @@ Para este proyecto el despliegue correcto es `Pages` puro, publicando `dist/`.
 
 - `Build command`: `npm run build`
 - `Build output directory`: `dist`
+- `Node.js`: `22.22.0` (fijado en `.node-version`; no depender del default de la imagen)
 
 ### No usar
 
@@ -74,7 +75,7 @@ resuelvan correctamente en un despliegue estático.
 Además, la política de caché queda intencionalmente separada:
 
 - `/*` se sirve con `Cache-Control: no-cache, must-revalidate`
-- `/assets/*` se sirve con `Cache-Control: public, max-age=31536000, immutable`
+- `/assets/*` desacopla primero el header general con `! Cache-Control` y se sirve con `Cache-Control: public, max-age=31536000, immutable`
 
 Esto reduce el riesgo de que una pestaña vieja conserve `index.html` apuntando a chunks hasheados que ya cambiaron después de un deploy automático.
 
@@ -85,6 +86,7 @@ Esto reduce el riesgo de que una pestaña vieja conserve `index.html` apuntando 
 3. Configurar:
    - `Build command`: `npm run build`
    - `Build output directory`: `dist`
+   - confirmar que el log de build selecciona Node.js `22.22.0`
 4. Cargar variables:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
@@ -95,7 +97,7 @@ Esto reduce el riesgo de que una pestaña vieja conserve `index.html` apuntando 
    - login real contra Supabase
    - navegación a rutas internas
    - lectura de módulos autorizados
-   - recuperación de contraseña aterrizando en `https://app-test-1-2ao.pages.dev/reset-password`
+   - recuperación de contraseña aterrizando en `https://gestion.busesjm.cl/reset-password`
 
 ## Qué revisar si vuelve a fallar
 

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DatePickerField, PageShell, SelectField, TextField } from "../../../shared/ui";
 import { formatRequestDate, formatPersonLabel } from "../../../shared/lib/format";

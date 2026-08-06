@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../auth/context/AuthContext";
 import { PageShell } from "../../../shared/ui/layout/PageShell";
 import { PeopleTab } from "../components/tabs/PeopleTab";

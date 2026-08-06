@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { RefObject } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { DashboardTaskItem } from "../../modules/dashboard/types";
 import {
   buildNotificationPreview,
@@ -13,7 +13,7 @@ type TopNotificationsMenuProps = {
   onToggle: () => void;
   onClose: () => void;
   tasks: DashboardTaskItem[];
-  containerRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLDivElement | null>;
 };
 
 export function TopNotificationsMenu({

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { hasModuleAccess, type AppModuleCode, type AppRole } from "../config/access";
 import { useAuth } from "../context/AuthContext";
 import { OperatorSelectionGate } from "./OperatorSelectionGate";

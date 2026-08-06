@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { PageShell } from "../../../shared/ui";
 import { AccreditationDashboardView } from "../components/AccreditationDashboardView";
 import { AccreditationSettingsView } from "../components/AccreditationSettingsView";
