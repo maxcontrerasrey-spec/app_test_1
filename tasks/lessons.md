@@ -4,6 +4,28 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 292. El codigo de ficha BUK deja de ser una etiqueta cuando ya existe historia contractual
+
+- **Una ficha BUK es un contenedor contractual, no solo un correlativo visible.** Antes de corregir `F2` a `F1`, inventaria planes, trabajos, liquidaciones, documentos y firmas asociados al `employee_id` vivo.
+- **Que la API permita `PATCH code_sheet` no demuestra inocuidad historica.** El contrato debe garantizar expresamente el impacto sobre liquidaciones cerradas, LRE, PDFs firmados e importadores; si no lo hace, conserva la ficha y escala al proveedor.
+- **Los documentos firmados no deben reescribirse para hacer coincidir una etiqueta.** Si archivos historicos ya contienen `F2`, renombrar solo la ficha crea inconsistencia; recrearlos o reemplazarlos puede comprometer su integridad y trazabilidad.
+- **Una eventual normalizacion debe mantener el mismo `buk_employee_id` y reconciliar todas las memorias internas.** Espejo, worker file y reserva confirmada cambian coordinadamente; snapshots historicos quedan inmutables como evidencia.
+
+## 291. Corregir primero la causa forward-only antes de reparar fichas BUK historicas
+
+- **Levanta primero el universo completo en modo solo lectura.** Ante una F2/F3 inconsistente, separa evidencia ERP, snapshot del job y estado BUK antes de intervenir personas.
+- **No repares historia mientras la regla pueda repetir el defecto.** Primero endurece, prueba y despliega el camino futuro; la regularizacion productiva viene despues como una fase independiente.
+- **Distingue historia real, candidato actual y reserva de retry.** Un snapshot antiguo no puede convertirse indefinidamente en autoridad sin validar su procedencia y estado.
+- **Prueba las ramas peligrosas expresamente.** Primer ingreso F1, recontratacion F2, retries, snapshots obsoletos y concurrencia deben quedar cubiertos antes de tocar produccion.
+
+## 290. Un campo obligatorio ERP no esta operativo hasta que el sistema destino lo confirma
+
+- **Guardar y validar un dato local no demuestra integracion.** Si una ficha BUK exige tallas, el payload externo debe incluirlas y el job debe leer BUK despues para confirmar el valor real.
+- **Los atributos personalizados pertenecen a su entidad exacta.** Las tallas son `employee.custom_attributes`; no deben confundirse con `current_job.custom_attributes` aunque ambos objetos compartan nombre.
+- **Una integracion externa idempotente empieza leyendo.** Antes de un PATCH, compara el estado remoto; si una respuesta anterior se perdio pero BUK aplico el cambio, el reintento debe detectar convergencia y evitar otra escritura.
+- **Un PATCH parcial necesita canario de preservacion.** Antes de regularizar un lote, demuestra que el tenant conserva atributos ajenos y verifica nuevamente las claves no modificadas despues de escribir.
+- **No marques exito por HTTP 2xx solamente.** La sincronizacion termina cuando BUK devuelve las tres tallas esperadas; si no las confirma o cambia otro atributo, el job queda en error y conserva evidencia operativa.
+
 ## 289. Un documento laboral generado por el ERP puede tener metadata durable sin custodia binaria local
 
 - **Si BUK es la custodia final, el PDF no debe pasar por Supabase Storage.** La Edge Function lo construye en memoria, lo envia a BUK y descarta los bytes; el ERP conserva solo folio, hash, token, estado e IDs/URL de reconciliacion.

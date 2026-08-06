@@ -53,11 +53,49 @@ addCheck(
   "solo el duplicado activo confirmado mantiene la cancelacion ERP"
 );
 addCheck(
+  /shoeSize:\s*"Numero Calzado"/.test(source) &&
+    /pantsSize:\s*"Talla Pantalón"/.test(source) &&
+    /shirtSize:\s*"Talla Polera"/.test(source) &&
+    /custom_attributes:\s*buildBukUniformSizeAttributes\(payload\)/.test(source),
+  "creacion y clonacion BUK reciben las tres tallas como atributos personalizados"
+);
+addCheck(
+  /async function syncBukEmployeeUniformSizes[\s\S]*?employeeBefore = await fetchBukEmployeeById[\s\S]*?hasExpectedBukAttributes[\s\S]*?changed:\s*false[\s\S]*?method:\s*"PATCH"[\s\S]*?hasPreservedBukAttributes[\s\S]*?verifiedAt/.test(source) &&
+    /const uniformSizes = await syncBukEmployeeUniformSizes\(payload, employeeId\)/.test(source) &&
+    source.indexOf("const uniformSizes = await syncBukEmployeeUniformSizes(payload, employeeId)") <
+      source.indexOf("const setupResult = await ensureBukEmployeeSetup", source.indexOf("const uniformSizes = await syncBukEmployeeUniformSizes(payload, employeeId)")),
+  "el job hace GET previo, evita PATCH redundante y verifica tallas y atributos ajenos antes de finalizar"
+);
+addCheck(
   /staleProcessingRecovery/.test(migrationSources) &&
     /started_at\s*<\s*stale_cutoff/.test(migrationSources) &&
     /source',\s*'claim_buk_sync_jobs'/.test(migrationSources) &&
     /source',\s*'enqueue_buk_generation'/.test(migrationSources),
   "jobs BUK processing obsoletos se recuperan al reclamar o reencolar"
+);
+addCheck(
+  /create table if not exists private\.buk_employee_code_reservations/.test(migrationSources) &&
+    /uq_buk_employee_code_reservations_active_code/.test(migrationSources) &&
+    /pg_advisory_xact_lock/.test(migrationSources) &&
+    /'buk-sheet:' \|\| normalized_identity/.test(migrationSources),
+  "codigos F1/F2 se reservan de forma unica y serializada por documento"
+);
+addCheck(
+  /trg_buk_sync_jobs_reserve_employee_code/.test(migrationSources) &&
+    /reserved_employee_code/.test(migrationSources) &&
+    /revoke all on function public\.resolve_candidate_worker_employee_code\(uuid\)[\s\S]*?from public, anon, authenticated, service_role/.test(migrationSources),
+  "todo job congela una reserva autoritativa y el resolver interno no queda expuesto"
+);
+addCheck(
+  /reconcileBukEmployeeCodeBeforeWrite/.test(source) &&
+    /reconcile_buk_employee_code_reservation/.test(source) &&
+    /verifyAndConfirmBukEmployeeCode/.test(source) &&
+    /confirm_buk_employee_code_reservation/.test(source) &&
+    source.indexOf("reconcileBukEmployeeCodeBeforeWrite") <
+      source.indexOf("resolveBukEmployeeForSync(payload, locations)") &&
+    source.indexOf("verifyAndConfirmBukEmployeeCode") <
+      source.indexOf("syncBukEmployeeUniformSizes(payload, employeeId)"),
+  "la Edge reconcilia BUK antes del POST y confirma code_sheet antes de efectos posteriores"
 );
 addCheck(
   /6170400010:0001/.test(migrationSources) &&

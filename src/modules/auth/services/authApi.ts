@@ -80,22 +80,6 @@ export async function updateCurrentUserPassword(password: string) {
   return { error: error?.message ?? null };
 }
 
-export async function markCurrentProfilePasswordResetComplete(userId: string) {
-  if (!supabase) {
-    return { error: "Supabase no está configurado en este entorno." };
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      must_reset_password: false,
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", userId);
-
-  return { error: error?.message ?? null };
-}
-
 export async function acceptAupPolicyForCurrentUser() {
   if (!supabase) {
     return { data: null, error: "Supabase no está configurado en este entorno." };

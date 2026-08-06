@@ -59,6 +59,103 @@ Evidencia:
 - Deployment Cloudflare: `44d70579-9768-4427-91ad-ab2b9e8deaf4`.
 - Estado vigente: **2 de 2 riesgos residuales cerrados**; los riesgos externos del registro EEES no corresponden a estos dos hallazgos frontend.
 
+## Reclutamiento BUK - evaluacion segura de fichas F2 historicas - 2026-08-06
+
+- [x] Revisar documentacion oficial BUK sobre identidad de empleado, `code_sheet`, liquidaciones y documentos firmados.
+- [x] Inventariar en solo lectura las dependencias productivas de BUK `41903`, `41904`, `41905`, `41906` y `41908`.
+- [x] Confirmar que claves usa el ERP para sincronizaciones futuras y que riesgo tendria renombrar `F2` a `F1`.
+- [x] Comparar alternativas y documentar una recomendacion que preserve produccion, historial laboral y documentos legales.
+
+Condiciones de seguridad:
+- No modificar BUK, Supabase ni documentos historicos durante esta investigacion.
+- No asumir que `code_sheet` es una etiqueta editable: toda conclusion debe apoyarse en contrato oficial y evidencia productiva.
+- Si BUK no documenta expresamente el impacto sobre liquidaciones o firma, tratarlo como riesgo no resuelto y exigir validacion formal del proveedor antes de intervenir.
+
+Resultado:
+- BUK define la ficha como una relacion contractual que contiene trabajo, planes, documentos y liquidaciones. La API permite editar `code_sheet` mediante `PATCH /employees/{id}`, pero su contrato publico no garantiza que el cambio reconcilie documentos firmados, PDFs historicos, liquidaciones cerradas, LRE o integraciones basadas en codigo de ficha.
+- Verificacion viva por API, sin escrituras: los cinco `employee_id` siguen activos con `F2`, un plan previsional y un trabajo vigente cada uno. Conservan 25 a 27 documentos por ficha; entre 6 y 9 archivos por persona ya incorporan `F2` en el nombre, incluyendo contratos, anexos, IRL y documentos de firma electronica.
+- El ERP usa `buk_employee_id` como identidad estable para espejo, documentos, competencias y operacion. `code_sheet` se usa durante provision y como selector en importadores/modificadores BUK; cambiar solo BUK dejaria deriva con `candidate_worker_files`, reservas y snapshots, ademas de inconsistencia visual con documentos historicos inmutables.
+- Recomendacion de menor riesgo: conservar estas cinco fichas historicas como `F2` y tratarlas como excepcion documentada. No crear, clonar, mover, borrar ni renombrar fichas; la prevencion forward-only ya evita nuevos casos.
+- Si negocio exige normalizar a `F1`, no hacerlo como correccion directa: requerir confirmacion escrita de soporte BUK sobre nomina, LRE, firma y documentos; probar primero en sandbox; inventariar importadores externos; y ejecutar un canary coordinado que preserve el mismo `employee_id`, reconcilie espejo/worker file/reserva y valide por lectura posterior todos los IDs documentales y periodos de remuneraciones.
+
+## Reclutamiento BUK - prevencion definitiva de fichas F2 falsas - 2026-08-06
+
+- [x] Auditar en produccion, solo lectura, el universo de candidatos con ficha sugerida o creada superior a su historial real.
+- [x] Confirmar el contrato canonico vigente entre `candidate_worker_files`, jobs BUK, espejo local BUK y la Edge Function.
+- [x] Corregir la asignacion de ficha para excluir autoconteo, validar el formato, preservar reintentos legitimos y serializar decisiones concurrentes.
+- [x] Agregar pruebas de regresion para primer ingreso F1, recontratacion F2, snapshot de retry, snapshot obsoleto y concurrencia.
+- [x] Ejecutar auditorias SQL/seguridad, pruebas focalizadas, Guardian y smoke transaccional antes de aplicar en produccion.
+- [x] Aplicar la correccion forward-only y verificar en produccion que nuevos casos no puedan reproducir el defecto.
+- [x] Documentar por separado los casos historicos detectados; no modificar fichas BUK en esta fase.
+
+Condiciones de seguridad:
+- Primero se corrige y valida la causa raiz; ninguna ficha historica en ERP o BUK se modifica durante el inventario.
+- Los jobs exitosos conservan su evidencia inmutable. Una reserva de retry solo puede reutilizarse si pertenece al mismo candidato y cumple el contrato valido.
+- No se relajan RLS, grants ni controles de actor para resolver la asignacion.
+
+Resultado:
+- Auditoria de 135 jobs con ambos codigos: 27 jobs mostraron F1 a F2 y correspondieron a 14 personas. Solo cinco personas tuvieron impacto real por creacion directa F2 sin historia previa; no existen F3+ por este defecto, doble creacion por RUT ni carrera concurrente materializada. BUK `41903`, `41904`, `41905`, `41906` y `41908` quedan inventariados, sin cambios historicos en esta fase.
+- La migracion `20260806205622_prevent_false_buk_employee_codes` crea reservas privadas unicas por documento y secuencia, serializadas con advisory lock. El resolver deja de leer snapshots y worker files como autoridad; un trigger congela la reserva en todo job y reemplaza cualquier snapshot manual/obsoleto antes de entrar a la cola.
+- La Edge Function consulta BUK vivo antes de cualquier escritura, reconcilia la reserva, bloquea retries ambiguos y relee el empleado despues de crear/clonar/reutilizar. Solo confirma la reserva si BUK devuelve exactamente el `code_sheet` reservado; plan, cargo, documentos y cierre quedan bloqueados ante discrepancia.
+- Seguridad productiva: `authenticated` ya no puede ejecutar el resolver ni las RPC internas; reconciliacion/confirmacion quedan solo para `service_role`. La tabla privada tiene RLS, sin grants Data API, formato `F[1-9][0-9]*` y unicidad activa por documento/correlativo.
+- Produccion: migracion aplicada y registrada; `sync-buk-candidates` v55 `ACTIVE`; llamada sin autenticacion devuelve 401. Smoke transaccional prueba primer ingreso F1, retry sobre la misma reserva y reemplazo de snapshot F99 por F1; `ROLLBACK` deja 0 jobs y 0 reservas. La cola estaba y permanece en 0 pending/processing.
+- Validacion: 72 unitarias, 6 contratos, 8 integridad, 8 concurrencia, Deno check, auditorias BUK/migraciones/seguridad, `git diff --check` y Guardian full con 27 gates pasan; 0 errores y 0 warnings. `npm audit` retorna 0 vulnerabilidades.
+
+## Auditoria profunda de seguridad y hardening - 2026-08-05
+
+- [x] Levantar baseline reproducible de dependencias, secretos, Auth, RLS, grants, RPC, Storage y Edge Functions sin alterar produccion.
+- [x] Contrastar el estado vivo productivo con migraciones/configuracion y advisors, priorizando hallazgos explotables sobre warnings historicos.
+- [x] Revisar en paralelo SQL/Supabase, Edge Functions/integraciones y frontend/supply-chain/privacidad.
+- [x] Corregir vulnerabilidades confirmadas con cambios minimos, forward-only y backend autoritativo, sin relajar RLS ni permisos.
+- [x] Ejecutar smokes de abuso y permisos, auditorias focalizadas, Guardian y validaciones proporcionales.
+- [x] Aplicar/desplegar solo correcciones verificadas, reconciliar produccion y documentar riesgos residuales.
+
+Resultado:
+- Se revoco en produccion el `EXECUTE` autenticado de finalizadores BUK, reset documental, poblacion BI, preparacion operacional y helpers de correo. La fuga BI reproducible de 1.580 personas y las mutaciones privilegiadas ya no son invocables por `authenticated`.
+- El reset obligatorio de password quedo autoritativo en `auth.users`: el trigger solo libera `must_reset_password` cuando cambia `encrypted_password`; la policy impide actualizar una fila cuyo flag siga activo y solo admite el no-op compatible despues del cambio real. Smokes transaccionales de trigger y RLS con rollback pasaron.
+- La clave `service_role` expuesta en el historial publico fue migrada a `sb_secret`, actualizada en GitHub y en 11 Edge Functions; se desactivaron las API keys legacy y se revoco la signing key HS256 anterior. La prueba administrativa con la clave filtrada paso de HTTP 200 a 401.
+- Se detectaron 23 cuentas que aun usaban la password temporal publica: se reemplazo por valores aleatorios unicos, se revocaron sus sesiones y se forzo recuperacion/reset. La reconciliacion posterior devuelve 0 cuentas afectadas.
+- La carga documental de acreditacion ahora hace preflight actor-scoped antes de BUK, valida magic bytes PDF/JPEG/PNG y no retorna el payload crudo del proveedor. La generacion de certificados autentica antes de leer recursos y usa claim atomico con lease para evitar duplicados concurrentes.
+- Las funciones Edge usan `SUPABASE_SECRET_KEYS`/`SUPABASE_PUBLISHABLE_KEYS`; 11 despliegues quedaron `ACTIVE`, todas rechazan llamadas sin auth con 401. Se eliminaron dos stubs productivos no versionados que respondian 410 y `config.toml` refleja las 12 funciones vigentes.
+- CI ya no entrega credenciales smoke a pasos de pull request; provisioning elimina la password compartida; logout borra drafts operacionales sensibles; headers anti-clickjacking/HSTS quedan listos para el siguiente deploy frontend.
+- Leaked Password Protection quedo habilitada. GitHub secret/variable usan claves modernas y el dry-run remoto de roster BUK concluyo exitoso.
+- Validacion: 69 unitarias, 376 migraciones canonicas, Deno check de funciones afectadas, TypeScript/build, auditorias focalizadas, smokes productivos y Guardian pasan sin errores.
+- Riesgos residuales: `react-router`/`react-router-dom` mantienen dos advisories moderados sin vector controlable confirmado; el fix disponible exige migracion mayor v7. Los headers web preparados requieren el proximo deploy/commit del frontend para reflejarse en `gestion.busesjm.cl`.
+
+## Acceso operacional Andres Barraza - Zona Norte 2 - 2026-08-05
+
+- [x] Confirmar en produccion la identidad unica de Andres Barraza, su perfil y sus roles aplicativos vigentes.
+- [x] Inspeccionar el contrato autoritativo de gerencias/zonas y la regla backend que limita la visibilidad de folios.
+- [x] Medir el universo exacto de folios asociados a Zona Norte 2 antes de modificar datos.
+- [x] Asignar el cargo `Subgerente de Operaciones`, el rol efectivo equivalente a gerente de zona y el alcance Zona Norte 2 con cambio minimo y auditable.
+- [x] Verificar por lectura posterior que Andres ve el universo completo esperado y que no recibe alcance sobre otras gerencias.
+- [x] Ejecutar gates proporcionales, registrar evidencia y documentar el cierre.
+
+Resultado:
+- Perfil productivo unico `andres.barraza@busesjm.com` actualizado a `Subgerente de Operaciones`; conserva `operaciones_l_1` y suma `gerencia` + `aprobador_folios` para no perder acceso operativo.
+- Las tres variantes CECO de Zona Norte 2 (`10114`, `20114`, `40114`) quedaron activas en `cost_center_approvers` con Andres como responsable.
+- Los 30 mappings BUK de esos CECO quedaron con `manager_name = Andres Barraza Mera`, por lo que las solicitudes futuras resuelven al nuevo responsable y no solo cambian visibilidad historica.
+- Universo verificado: 72 folios de la zona, 72 visibles y 0 ocultos; fuera de la zona no ve folios ajenos, salvo 5 solicitudes propias cubiertas por la regla normal de requester.
+- No existian aprobaciones `area_manager` pendientes que requirieran reasignacion retroactiva.
+- Migracion productiva `20260805192058_assign_andres_barraza_zona_norte_2` aplicada y registrada. `audit:migrations`, `audit:supabase-security`, smoke transaccional con rollback, lectura posterior, Guardian y `git diff --check` pasan.
+
+## Reclutamiento BUK - sincronizacion operativa de tallas - 2026-08-04
+
+- [x] Confirmar el contrato vivo de atributos personalizados de empleado en BUK y el universo productivo afectado.
+- [x] Incorporar numero de calzado, talla de pantalon y talla de polera en creacion, clonacion y reconciliacion de fichas BUK.
+- [x] Verificar por lectura posterior que BUK persiste exactamente los tres valores antes de finalizar el job como exitoso.
+- [x] Agregar guardrails y pruebas para impedir que las tallas vuelvan a quedar solo en el snapshot ERP.
+- [x] Desplegar la Edge Function, ejecutar un canario controlado y regularizar los trabajadores historicos afectados con trazabilidad.
+- [x] Reconciliar ERP versus BUK, ejecutar Guardian y documentar el cierre productivo.
+
+Resultado:
+- `sync-buk-candidates` envia `Numero Calzado`, `Talla Pantalón` y `Talla Polera` como `custom_attributes` de empleado tanto en alta como en clonacion.
+- Antes de continuar con plan, cargo, documentos y cierre exitoso, la funcion lee la ficha BUK; solo ejecuta `PATCH /employees/{id}` si existe drift y luego confirma las tres tallas y la preservacion de atributos ajenos.
+- El PATCH de tallas tiene timeout de 15 segundos. Una respuesta ambigua deja el job en error; el reintento comienza con GET y no vuelve a escribir si BUK ya quedo alineado.
+- Canario productivo: tres tallas actualizadas y seis atributos personalizados ajenos preservados exactamente antes de abrir el lote.
+- Historico desde la obligatoriedad: 11 fichas elegibles, 1 ya alineada por canario y 10 regularizadas; 11/11 coinciden ERP-BUK y 11/11 conservan checkpoint verificado sin duplicar los valores en la evidencia.
+- Produccion: `sync-buk-candidates` v42 `ACTIVE`; smoke sin autenticacion responde 401. Guardrails BUK, integridad, Deno check, Guardian y reconciliacion directa pasan sin errores.
+
 ## Certificados de competencias - nuevos modelos 4x4 - 2026-08-04
 
 - [x] Auditar el contrato real del catálogo y confirmar marcas, tipos, modelos y códigos existentes para evitar duplicados.

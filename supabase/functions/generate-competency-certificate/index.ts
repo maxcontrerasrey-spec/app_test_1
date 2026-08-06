@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "npm:pdf-lib@1.17.1";
 import QRCode from "npm:qrcode@1.5.4";
 import { extractBukDocumentMetadata, uploadBukDocument } from "../_shared/bukDocuments.ts";
+import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 import {
   CERTIFICATE_BUS_ICON_BASE64,
   CERTIFICATE_SIGNATURE_FONT_BASE64,
@@ -912,8 +913,13 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
-    const serviceRoleKey = requireEnv(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), "SUPABASE_SERVICE_ROLE_KEY");
+    const serviceRoleKey = getSupabaseSecretKey();
     const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
+
+    const { data: authenticatedUser, error: authenticationError } = await supabase.auth.getUser(accessToken);
+    if (authenticationError || !authenticatedUser.user) {
+      throw new Error("Unauthorized");
+    }
 
     const { data: requestRow, error: requestError } = await supabase
       .from("competency_requests")
@@ -1031,15 +1037,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    await supabase
-      .from("competency_certificates")
-      .update({
-        certificate_status: "generating",
-        buk_attempt_count: (certificateRow.buk_upload_status === "failed" ? 1 : 0) + 1,
-        buk_last_error: null,
-        generated_by: actorId
-      })
-      .eq("id", certificateRow.id);
+    const { data: generationClaimed, error: claimError } = await supabase.rpc(
+      "claim_competency_certificate_generation",
+      {
+        p_certificate_id: certificateRow.id,
+        p_actor_id: actorId
+      }
+    );
+    if (claimError) {
+      throw new Error(`No fue posible reclamar la generación: ${claimError.message}`);
+    }
+    if (generationClaimed !== true) {
+      throw new Error("La generación de este certificado ya está en proceso.");
+    }
 
     const { data: evaluationFileData, error: evaluationDownloadError } = await supabase.storage
       .from(evaluationRow.file_bucket || BUCKET)

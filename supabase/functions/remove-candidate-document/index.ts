@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getSupabasePublishableKey, getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 type RemoveCandidateDocumentRequest = {
   caseCandidateId?: string;
@@ -64,8 +65,8 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
-    const anonKey = requireEnv(Deno.env.get("SUPABASE_ANON_KEY"), "SUPABASE_ANON_KEY");
-    const serviceRoleKey = requireEnv(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), "SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = getSupabasePublishableKey();
+    const serviceRoleKey = getSupabaseSecretKey();
     const authorization = req.headers.get("Authorization") ?? "";
 
     if (!authorization.startsWith("Bearer ")) {

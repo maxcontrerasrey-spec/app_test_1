@@ -50,6 +50,29 @@ describe("CORE data integrity", () => {
     expect(removal).toBeGreaterThan(checkpoint);
   });
 
+  it("does not finish BUK hiring jobs before uniform sizes are persisted and verified", () => {
+    const sync = read("supabase/functions/sync-buk-candidates/index.ts");
+    const reconciliation = sync.indexOf(
+      "const uniformSizes = await syncBukEmployeeUniformSizes(payload, employeeId)"
+    );
+    const setup = sync.indexOf("const setupResult = await ensureBukEmployeeSetup", reconciliation);
+    const finalization = sync.indexOf("await finalizeSuccessfulJob", reconciliation);
+
+    expect(sync).toContain('shoeSize: "Numero Calzado"');
+    expect(sync).toContain('pantsSize: "Talla Pantalón"');
+    expect(sync).toContain('shirtSize: "Talla Polera"');
+    expect(sync.match(/custom_attributes: buildBukUniformSizeAttributes\(payload\)/g)).toHaveLength(2);
+    expect(reconciliation).toBeGreaterThan(0);
+    expect(setup).toBeGreaterThan(reconciliation);
+    expect(finalization).toBeGreaterThan(setup);
+    expect(sync).toContain('method: "PATCH"');
+    expect(sync).toContain("const employeeBefore = await fetchBukEmployeeById(employeeId)");
+    expect(sync).toContain("if (hasExpectedBukAttributes(attributesBefore, customAttributes))");
+    expect(sync).toContain("hasPreservedBukAttributes(attributesBefore, verifiedAttributes)");
+    expect(sync).toContain("signal: AbortSignal.timeout(15_000)");
+    expect(sync).toContain("const employee = await fetchBukEmployeeById(employeeId)");
+  });
+
   it("persists accreditation upload operations behind RLS", () => {
     const uploadMigration = read(
       "supabase/migrations/20260722184849_add_accreditation_document_upload_jobs.sql"

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.8.0";
+import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 type EmbeddingRunOptions = {
   mean_pool: boolean;
@@ -109,7 +110,7 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseServiceKey = getSupabaseSecretKey();
 
   if (!supabaseUrl || !supabaseServiceKey) {
     return new Response(JSON.stringify({ error: "Supabase no configurado" }), {

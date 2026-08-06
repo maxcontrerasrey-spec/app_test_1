@@ -1,11 +1,29 @@
+[functions.orion-chat]
+verify_jwt = false
+
+[functions.check_buk_candidate]
+verify_jwt = false
+
+[functions.orion-document-processor]
+verify_jwt = true
+
 [functions.hiring-transactional-email]
 verify_jwt = false
 
 [functions.purge-candidate-documents]
 verify_jwt = false
 
+[functions.remove-candidate-document]
+verify_jwt = true
+
 [functions.sync-buk-candidates]
 verify_jwt = false
+
+[functions.sync-buk-job-positions]
+verify_jwt = true
+
+[functions.upload-buk-accreditation-document]
+verify_jwt = true
 
 [functions.verify-competency-certificate]
 verify_jwt = true

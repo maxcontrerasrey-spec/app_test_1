@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,7 +45,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL"),
-      requireEnv(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), "SUPABASE_SERVICE_ROLE_KEY"),
+      getSupabaseSecretKey(),
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
     const { data, error } = await supabase.rpc("verify_recruitment_hiring_document", {

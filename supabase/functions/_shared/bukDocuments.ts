@@ -210,9 +210,7 @@ export async function uploadBukDocument(
   }
 
   if (![400, 415, 422].includes(primaryAttempt.response.status)) {
-    throw new Error(
-      `Buk document upload ${primaryAttempt.response.status} ${primaryAttempt.response.statusText}: ${primaryAttempt.rawBody}`
-    );
+    throw new Error(`Buk document upload failed (${primaryAttempt.response.status})`);
   }
 
   const base64FormData = new FormData();
@@ -224,9 +222,7 @@ export async function uploadBukDocument(
 
   const fallbackAttempt = await sendDocumentRequest(url, authToken, base64FormData);
   if (!fallbackAttempt.response.ok) {
-    throw new Error(
-      `Buk document upload ${fallbackAttempt.response.status} ${fallbackAttempt.response.statusText}: ${fallbackAttempt.rawBody}`
-    );
+    throw new Error(`Buk document upload failed (${fallbackAttempt.response.status})`);
   }
 
   return {

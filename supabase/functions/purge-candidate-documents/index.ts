@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 type CleanupRequest = {
   candidateIds?: string[];
@@ -342,10 +343,7 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
-    const serviceRoleKey = requireEnv(
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-      "SUPABASE_SERVICE_ROLE_KEY"
-    );
+    const serviceRoleKey = getSupabaseSecretKey();
     const internalWebhookSecret = (Deno.env.get("CANDIDATE_DOCUMENT_CLEANUP_WEBHOOK_SECRET") ?? "").trim();
     const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
     const authHeader = req.headers.get("Authorization") ?? "";

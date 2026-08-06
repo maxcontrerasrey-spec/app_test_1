@@ -7,6 +7,7 @@ import {
   type OrionReadableTableName
 } from "./erpSchema.ts";
 import { redactProviderText, redactProviderToolPayload } from "./privacy.ts";
+import { getSupabasePublishableKey, getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -300,7 +301,7 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseServiceRoleKey = getSupabaseSecretKey();
   const authHeader = req.headers.get("Authorization");
   const accessToken = getAccessTokenFromAuthHeader(authHeader);
 
@@ -343,7 +344,7 @@ Deno.serve(async (req) => {
 
   const userId = user.id;
 
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  const supabaseAnonKey = getSupabasePublishableKey();
   const supabaseUserClient = createClient<any, "public", any>(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader || "" } },
     auth: { persistSession: false, autoRefreshToken: false }

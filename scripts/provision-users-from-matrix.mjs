@@ -1,11 +1,11 @@
 import fs from "fs";
+import crypto from "node:crypto";
 
 import { createClient } from "@supabase/supabase-js";
 import XLSX from "@mylinkpi/xlsx";
 
 const DEFAULT_INPUT_PATH = "/Users/maximilianocontrerasrey/Documents/GitHub/usuarios_busesjm.xlsx";
 const DEFAULT_SHEET_NAME = "usuarios";
-const DEFAULT_PASSWORD = "Bjm2026*";
 
 function readEnvFile() {
   try {
@@ -29,7 +29,6 @@ function parseArgs(argv) {
   const options = {
     file: DEFAULT_INPUT_PATH,
     sheet: DEFAULT_SHEET_NAME,
-    password: DEFAULT_PASSWORD,
     dryRun: false,
   };
 
@@ -53,10 +52,6 @@ function parseArgs(argv) {
       continue;
     }
 
-    if (arg === "--password") {
-      options.password = argv[index + 1];
-      index += 1;
-    }
   }
 
   return options;
@@ -149,7 +144,11 @@ async function listAuthUsersByEmail(adminClient) {
   return byEmail;
 }
 
-async function createMissingUsers(adminClient, entries, password, dryRun) {
+function generateOneTimePassword() {
+  return `${crypto.randomBytes(24).toString("base64url")}Aa1!`;
+}
+
+async function createMissingUsers(adminClient, entries, dryRun) {
   const existingUsersByEmail = await listAuthUsersByEmail(adminClient);
   const created = [];
   const skipped = [];
@@ -167,7 +166,7 @@ async function createMissingUsers(adminClient, entries, password, dryRun) {
 
     const { data, error } = await adminClient.auth.admin.createUser({
       email: entry.email,
-      password,
+      password: generateOneTimePassword(),
       email_confirm: true,
       user_metadata: {
         full_name: entry.fullName,
@@ -210,7 +209,7 @@ async function main() {
     },
   });
 
-  const result = await createMissingUsers(adminClient, entries, options.password, options.dryRun);
+  const result = await createMissingUsers(adminClient, entries, options.dryRun);
 
   console.log(
     JSON.stringify(

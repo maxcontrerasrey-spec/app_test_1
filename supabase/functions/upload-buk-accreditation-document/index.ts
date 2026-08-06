@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractBukDocumentMetadata, uploadBukDocument } from "../_shared/bukDocuments.ts";
+import { getSupabasePublishableKey, getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,16 @@ const ALLOWED_FILE_TYPES = new Set([
   "image/jpeg",
   "image/png"
 ]);
+
+function hasExpectedFileSignature(bytes: Uint8Array, mimeType: string) {
+  const startsWith = (signature: number[]) =>
+    signature.every((value, index) => bytes[index] === value);
+
+  if (mimeType === "application/pdf") return startsWith([0x25, 0x50, 0x44, 0x46, 0x2d]);
+  if (mimeType === "image/jpeg") return startsWith([0xff, 0xd8, 0xff]);
+  if (mimeType === "image/png") return startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  return false;
+}
 type EdgeClient = ReturnType<typeof createClient<any, "public", any>>;
 
 function requireEnv(value: string | undefined, label: string) {
@@ -116,11 +127,8 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
-    const serviceRoleKey = requireEnv(
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-      "SUPABASE_SERVICE_ROLE_KEY"
-    );
-    const anonKey = requireEnv(Deno.env.get("SUPABASE_ANON_KEY"), "SUPABASE_ANON_KEY");
+    const serviceRoleKey = getSupabaseSecretKey();
+    const anonKey = getSupabasePublishableKey();
     const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
     const actorSupabase = createClient<any, "public", any>(supabaseUrl, anonKey, {
       global: { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -163,6 +171,23 @@ Deno.serve(async (req) => {
     }
 
     const fileBuffer = await file.arrayBuffer();
+    if (!hasExpectedFileSignature(new Uint8Array(fileBuffer), file.type)) {
+      throw new Error("El contenido del archivo no coincide con su formato PDF, PNG o JPG.");
+    }
+
+    const { error: preflightError } = await actorSupabase.rpc(
+      "validate_worker_accreditation_document_upload",
+      {
+        p_buk_employee_id: employeeId,
+        p_site_id: siteId,
+        p_requirement_id: requirementId,
+        p_status: status
+      }
+    );
+    if (preflightError) {
+      throw new Error(`Carga de acreditación rechazada: ${preflightError.message}`);
+    }
+
     const fileSha256 = await sha256Hex(fileBuffer);
     const operationKey = await sha256Hex(
       [employeeId, siteId, requirementId, status, issueDate ?? "", expiryDate ?? "", fileSha256].join(":")
@@ -266,7 +291,11 @@ Deno.serve(async (req) => {
         success: true,
         persisted: true,
         operationKey,
-        ...uploadSnapshot
+        transport: uploadSnapshot.transport,
+        bukStatus: uploadSnapshot.bukStatus,
+        bukDocumentId: uploadSnapshot.bukDocumentId,
+        bukDocumentUrl: uploadSnapshot.bukDocumentUrl,
+        documentName: uploadSnapshot.documentName
       }),
       {
         status: 200,

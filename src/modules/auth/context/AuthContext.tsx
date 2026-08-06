@@ -23,6 +23,7 @@ import { logger } from "../../../shared/lib/logger";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { isSupabaseConfigured, supabase } from "../../../shared/lib/supabase";
 import {
+  clearSensitiveLocalStateForUser,
   didSessionIdentityChange,
   isCurrentAuthorizationLoad,
   resetSessionScopedQueries
@@ -32,7 +33,6 @@ import {
   acceptAupPolicyForCurrentUser,
   fetchEffectivePermissions,
   fetchSharedLoginOperatorOptions,
-  markCurrentProfilePasswordResetComplete,
   selectSharedLoginOperator,
   sendPasswordResetEmail,
   signInWithPassword,
@@ -624,15 +624,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error };
         }
 
-        const currentUserId = user?.id ?? null;
-
-        if (currentUserId) {
-          const { error: profileError } = await markCurrentProfilePasswordResetComplete(currentUserId);
-
-          if (profileError) {
-            return { error: profileError };
-          }
-
+        if (user?.id) {
           setProfile((currentProfile) =>
             currentProfile
               ? {
@@ -674,6 +666,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        clearSensitiveLocalStateForUser(user?.id);
         await supabase.auth.signOut();
         setIsRecoveryMode(false);
         if (user?.id) {

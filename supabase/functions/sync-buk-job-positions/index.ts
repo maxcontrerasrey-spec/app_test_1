@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 import { buildBukBaseUrl } from "../_shared/bukDocuments.ts";
+import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -215,7 +216,7 @@ async function fetchAllBukRoles() {
 
 async function assertCatalogSyncAccess(accessToken: string) {
   const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
-  const serviceRoleKey = requireEnv(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), "SUPABASE_SERVICE_ROLE_KEY");
+  const serviceRoleKey = getSupabaseSecretKey();
   const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
   const {
     data: { user },
