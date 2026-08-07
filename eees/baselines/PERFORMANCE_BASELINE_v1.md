@@ -98,9 +98,9 @@ Revision 2026-08-06 recuperacion Auth: el total y JS suben 1,271 bytes por conse
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10127521,
+  "distTotalBytes": 10136191,
   "jsFileCount": 51,
-  "jsTotalBytes": 2643651,
+  "jsTotalBytes": 2652321,
   "cssFileCount": 10,
   "cssTotalBytes": 219660,
   "trackedAssets": [
