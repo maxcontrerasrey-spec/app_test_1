@@ -167,6 +167,10 @@ addCheck(
   "workflow ejecuta smoke:frontend-authenticated-matrix"
 );
 addCheck(
+  workflow.includes("FRONTEND_AUTH_SMOKE_REQUIRED: ${{ vars.FRONTEND_AUTH_SMOKE_REQUIRED }}"),
+  "workflow permite activar FRONTEND_AUTH_SMOKE_REQUIRED desde vars"
+);
+addCheck(
   workflow.includes("FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED: ${{ vars.FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED }}"),
   "workflow permite activar FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED desde vars"
 );

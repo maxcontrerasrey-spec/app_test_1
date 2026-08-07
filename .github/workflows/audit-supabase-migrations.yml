@@ -158,7 +158,7 @@ jobs:
         env:
           FRONTEND_AUTH_SMOKE_EMAIL: ${{ secrets.FRONTEND_AUTH_SMOKE_EMAIL }}
           FRONTEND_AUTH_SMOKE_PASSWORD: ${{ secrets.FRONTEND_AUTH_SMOKE_PASSWORD }}
-          FRONTEND_AUTH_SMOKE_REQUIRED: "1"
+          FRONTEND_AUTH_SMOKE_REQUIRED: ${{ vars.FRONTEND_AUTH_SMOKE_REQUIRED }}
           FRONTEND_AUTH_SMOKE_PATH: "/"
         run: npm run smoke:frontend-authenticated
 
