@@ -106,6 +106,15 @@ export const queryKeys = {
       ["incentives", "roster-snapshot", params] as const,
     preview: (params: Record<string, unknown>) => ["incentives", "preview", params] as const
   },
+  sanctions: {
+    setupCatalogs: () => ["sanctions", "setup-catalogs"] as const,
+    workerSearch: (search: string) => ["sanctions", "worker-search", search] as const,
+    requestsRoot: () => ["sanctions", "requests"] as const,
+    requestsPage: (filters: Record<string, unknown>) =>
+      ["sanctions", "requests", "page", filters] as const,
+    requestDetailRoot: () => ["sanctions", "request-detail"] as const,
+    requestDetail: (requestId: string) => ["sanctions", "request-detail", requestId] as const
+  },
   roster: {
     all: () => ["roster"] as const,
     setupCatalogs: () => ["roster", "setup-catalogs"] as const,

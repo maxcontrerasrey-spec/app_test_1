@@ -36,6 +36,7 @@ export type AppFeatureCode =
 
 export type AppModuleCode =
   | "solicitud_contrataciones"
+  | "solicitud_sanciones"
   | "movilidad_interna"
   | "control_contrataciones"
 
@@ -92,6 +93,7 @@ const KNOWN_FEATURE_CODES = new Set<AppFeatureCode>([
 
 const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "solicitud_contrataciones",
+  "solicitud_sanciones",
   "movilidad_interna",
   "control_contrataciones",
 

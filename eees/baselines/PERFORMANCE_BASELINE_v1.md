@@ -98,11 +98,11 @@ Revision 2026-08-06 recuperacion Auth: el total y JS suben 1,271 bytes por conse
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10114479,
+  "distTotalBytes": 10127521,
   "jsFileCount": 51,
-  "jsTotalBytes": 2633668,
+  "jsTotalBytes": 2643651,
   "cssFileCount": 10,
-  "cssTotalBytes": 216605,
+  "cssTotalBytes": 219660,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

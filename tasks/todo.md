@@ -4,6 +4,32 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
+
+- [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.
+- [x] Inspeccionar rutas, permisos, patrones RRHH, contratos BUK/Storage y tablas vivas antes de implementar.
+- [x] Crear modelo backend autoritativo para causales, medidas, solicitudes, documentos, historial y KPIs con RLS estricta.
+- [x] Registrar acceso del modulo en `app_modules`, `role_module_access`, tipos frontend y navegacion RRHH sin romper incentivos.
+- [x] Implementar UI inicial para crear solicitudes, revisar historial/control y visualizar KPIs operativos.
+- [x] Agregar pruebas focalizadas de contrato, permisos y render basico.
+- [x] Validar TypeScript/build, auditorias Supabase proporcionales, Guardian y `git diff --check`.
+
+Condiciones de seguridad:
+- Los antecedentes disciplinarios son informacion sensible: no exponer tablas directas sin RLS, no usar `TO authenticated` sin predicado de autorizacion y no relajar permisos para acelerar UI.
+- Los adjuntos deben quedar en bucket privado con rutas vinculadas a la solicitud y acceso por RPC/politicas actor-scoped.
+- La carga a BUK y la generacion/envio de PDF solo se consideran cerradas si se verifica el contrato vivo del proveedor y/o Edge Function correspondiente; si no, deben quedar como estado trazado y no como simulacion silenciosa.
+- Las cartas tipo deben transformarse a plantillas con variables y catalogo versionado de causales/articulos, no texto libre oculto en frontend.
+- Mientras el modulo siga en desarrollo, la visibilidad queda limitada a admin/superadmin.
+
+Resultado:
+- Implementacion completada en `supabase/migrations/20260807230621_add_hr_sanctions_module.sql` y `src/modules/sanctions`.
+- El backend registra el modulo `solicitud_sanciones`, bucket privado `hr-sanctions`, causales/medidas desde el correo, solicitudes con folio, historial, documentos, transiciones y KPIs. Las tablas quedan con RLS y sin acceso directo a `authenticated`; el acceso ocurre por RPCs con `auth.uid()` y chequeo de modulo/rol.
+- La UI queda disponible como vista `Sanciones` dentro de Recursos Humanos, con ingreso de solicitud, buscador de trabajador BUK activo, adjuntos privados, control de estados y KPIs; el menu queda visible solo para `admin` durante desarrollo.
+- Validacion local: `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, `git diff --check`, tests focalizados `hr-sanctions-integrity`/`query-keys` y Guardian full pasan con 0 errores y 0 warnings.
+- Supabase produccion: migracion aplicada con `supabase db query --linked --file` por bloqueo legacy de `db push`; version `20260807230621` registrada como `applied` con `supabase migration repair --linked --status applied`.
+- Smoke productivo: modulo activo, bucket `hr-sanctions` privado, 9 causales, 5 medidas, RLS activo en las 5 tablas y `role_module_access` solo contiene `admin` para `solicitud_sanciones`. Smoke transaccional con rollback valido que un usuario RRHH no-admin no accede a catalogos, admin crea/lee detalle, y quedan 0 filas `SMOKE-ERP` persistidas.
+- Pendiente fase 2: generacion PDF, envio/carga BUK y reconciliacion de carpeta `Amonestaciones` solo despues de validar contrato vivo BUK.
+
 ## Dashboard clima - geolocalizacion bloqueada por headers - 2026-08-07
 
 - [x] Confirmar el contrato actual del widget de clima y la rama que muestra fallback por IP.

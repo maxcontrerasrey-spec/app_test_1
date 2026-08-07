@@ -48,6 +48,9 @@ describe("queryKeys", () => {
     expect(queryKeys.incentives.requestsList({ status: "P" })).not.toEqual(
       queryKeys.incentives.requestsPage({ status: "P" })
     );
+    expect(queryKeys.sanctions.requestsRoot()).not.toEqual(
+      queryKeys.sanctions.requestsPage({ status: "submitted" })
+    );
   });
 
   it("expone roots de dominios usados por invalidaciones transversales", () => {

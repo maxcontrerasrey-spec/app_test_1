@@ -1,0 +1,188 @@
+.sanctions-module {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.sanctions-form,
+.sanctions-control-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.sanctions-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sanctions-section-heading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+}
+
+.sanctions-section-heading p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  max-width: 68ch;
+}
+
+.sanctions-form-grid,
+.sanctions-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.sanctions-form-grid label,
+.sanctions-toolbar label,
+.sanctions-full-field {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.sanctions-form-grid input,
+.sanctions-form-grid select,
+.sanctions-toolbar input,
+.sanctions-toolbar select,
+.sanctions-full-field input,
+.sanctions-full-field textarea {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  padding: 0.78rem 0.9rem;
+  font: inherit;
+}
+
+.sanctions-full-field small {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sanctions-worker-card,
+.sanctions-cause-context,
+.sanctions-rule-alert {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface-muted);
+  padding: 0.9rem 1rem;
+}
+
+.sanctions-worker-card span,
+.sanctions-cause-context span {
+  color: var(--text-secondary);
+}
+
+.sanctions-rule-alert {
+  border-color: rgba(217, 119, 6, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--text-primary);
+}
+
+.sanctions-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sanctions-kpi-row {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.sanctions-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+}
+
+.sanctions-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.sanctions-table th,
+.sanctions-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+
+.sanctions-table th {
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sanctions-table td {
+  color: var(--text-primary);
+}
+
+.sanctions-table td strong,
+.sanctions-table td span,
+.sanctions-table td small {
+  display: block;
+}
+
+.sanctions-table td small {
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
+.sanctions-table select {
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+}
+
+.sanctions-status-pill {
+  display: inline-flex !important;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.2rem 0.62rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: rgba(100, 116, 139, 0.14);
+  color: var(--text-primary);
+}
+
+.sanctions-status-closed {
+  background: rgba(22, 163, 74, 0.16);
+  color: #15803d;
+}
+
+.sanctions-status-rejected,
+.sanctions-status-expired,
+.sanctions-status-cancelled {
+  background: rgba(220, 38, 38, 0.14);
+  color: #b91c1c;
+}
+
+.sanctions-status-under_review,
+.sanctions-status-issued,
+.sanctions-status-pending_signature,
+.sanctions-status-pending_certified_mail,
+.sanctions-status-pending_dt_filing {
+  background: rgba(217, 119, 6, 0.16);
+  color: #b45309;
+}
+
+@media (max-width: 820px) {
+  .sanctions-form-grid,
+  .sanctions-toolbar,
+  .sanctions-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
