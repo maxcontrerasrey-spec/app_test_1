@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 195. Un header de seguridad debe validar los APIs del navegador que el ERP usa
+
+- **`Permissions-Policy` puede romper funcionalidad aunque parezca un hardening conservador.** Si un widget usa `navigator.geolocation`, `geolocation=()` deshabilita la API a nivel navegador y fuerza fallback aunque el usuario tenga permisos.
+- **Bloquea solo capacidades no usadas y declara excepciones explicitas.** Para el dashboard de clima, camara y microfono pueden seguir en `()`, pero geolocalizacion debe quedar limitada a `(self)`.
+- **Todo header desplegable necesita prueba de contrato funcional.** El test debe fallar si se vuelve a negar una API usada por la UI, no solo comprobar que exista el header.
+- **La verificacion productiva debe leer headers reales.** Ante regresiones web, compara `public/_headers`, `dist/_headers` y `curl -I` del dominio publicado antes de atribuir el fallo al navegador o al usuario.
+
 ## 292. El codigo de ficha BUK deja de ser una etiqueta cuando ya existe historia contractual
 
 - **Una ficha BUK es un contenedor contractual, no solo un correlativo visible.** Antes de corregir `F2` a `F1`, inventaria planes, trabajos, liquidaciones, documentos y firmas asociados al `employee_id` vivo.

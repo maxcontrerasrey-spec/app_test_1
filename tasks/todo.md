@@ -4,6 +4,25 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Dashboard clima - geolocalizacion bloqueada por headers - 2026-08-07
+
+- [x] Confirmar el contrato actual del widget de clima y la rama que muestra fallback por IP.
+- [x] Revisar los headers web desplegables para identificar si geolocalizacion queda bloqueada a nivel navegador.
+- [x] Corregir el header de `Permissions-Policy` preservando el hardening de camara/microfono.
+- [x] Agregar prueba de regresion para que el dashboard pueda solicitar ubicacion del mismo origen.
+- [x] Validar build, pruebas focalizadas, Guardian y diff final.
+
+Condiciones de seguridad:
+- No relajar camara, microfono, CSP, XFO ni HSTS.
+- La geolocalizacion solo puede quedar habilitada para el origen propio del ERP.
+- Si el navegador niega permisos o no tiene ubicacion disponible, el fallback por IP debe seguir funcionando.
+
+Resultado:
+- Causa raiz confirmada en produccion: `gestion.busesjm.cl` estaba sirviendo `Permissions-Policy: camera=(), microphone=(), geolocation=()`, lo que bloquea `navigator.geolocation` para el propio ERP. Por eso el widget caia a IP fallback y mostraba Antofagasta con `Última ubicación aproximada (Ubicación no disponible)`.
+- Correccion: `public/_headers` conserva `camera=()` y `microphone=()`, pero cambia a `geolocation=(self)` para permitir ubicacion solo desde el origen del ERP.
+- Regresion cubierta en `frontend-security-residuals`: el test exige `geolocation=(self)` y falla si vuelve `geolocation=()`.
+- Verificacion: `dist/_headers` generado contiene `geolocation=(self)`, `test:unit`, `build:frontend-check`, `git diff --check` y Guardian pasan con 0 errores y 0 warnings. `npm ci` reconstruyo dependencias locales para eliminar copias conflictivas `node_modules/* 2|3`.
+
 ## Incidente Auth: enlaces consumidos y credenciales temporales unicas - 2026-08-06
 
 - [x] Confirmar en Auth logs la causa de los enlaces invalidos y el universo exacto pendiente.

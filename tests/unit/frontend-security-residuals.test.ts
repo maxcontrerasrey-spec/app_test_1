@@ -42,6 +42,8 @@ describe("frontend security residuals", () => {
     );
     expect(headers).toContain("X-Frame-Options: DENY");
     expect(headers).toContain("Strict-Transport-Security: max-age=31536000");
+    expect(headers).toContain("Permissions-Policy: camera=(), microphone=(), geolocation=(self)");
+    expect(headers).not.toContain("geolocation=()");
     expect(headers).not.toContain("includeSubDomains");
     expect(headers).not.toContain("preload");
     expect(headers).toContain("/assets/*\n  ! Cache-Control\n  Cache-Control: public");
