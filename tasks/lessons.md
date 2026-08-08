@@ -24,6 +24,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Mantener la bienvenida como texto amplio y legible antes del formulario, sin convertirla en una tarjeta lateral que estreche el contenido principal.
 - Validar que el ancho adicional se traduzca en mejor lectura en notebook y que el mensaje siga siendo compacto en celular.
 
+## 298. La validacion publica debe coincidir con el contrato del ERP
+
+- El RUT debe validarse por digito verificador en frontend y RPC; bloquear el boton no reemplaza la validacion server-side.
+- Para telefonos chilenos, mostrar `+56 9` como prefijo fijo, pedir solo los 8 digitos locales y persistir una forma canonica unica.
+- La normalizacion de nombres, direccion, ciudad y comentarios debe ejecutarse tambien al enviar, porque el usuario puede saltarse el blur o llamar el RPC directamente.
+- Correo debe normalizarse a minusculas y exigir `@` mas al menos una extension de dominio valida en frontend y backend.
+
 ## 292. El codigo de ficha BUK deja de ser una etiqueta cuando ya existe historia contractual
 
 - **Una ficha BUK es un contenedor contractual, no solo un correlativo visible.** Antes de corregir `F2` a `F1`, inventaria planes, trabajos, liquidaciones, documentos y firmas asociados al `employee_id` vivo.

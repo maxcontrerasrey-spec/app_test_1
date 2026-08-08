@@ -53,6 +53,21 @@ Resultado:
 - Playwright valido 1366, 1024, 390 y 360 px: copy nuevo presente, copy anterior ausente y sin overflow horizontal.
 - `build:frontend-check`, `npm run guardian` y `git diff --check` pasan. El baseline se actualizo solo por los 5 bytes medidos del bundle JS.
 
+### Validacion y normalizacion de datos pagina publica DSAL - 2026-08-08
+
+- [x] Confirmar el contrato vigente de RUT, email y telefono en frontend, RPC y ficha ERP.
+- [x] Normalizar visualmente los campos de texto segun el formato recibido por el ERP.
+- [x] Restringir telefono a 8 digitos con prefijo fijo `+56 9` y validar la forma canonica en backend.
+- [x] Reforzar validacion y normalizacion de correo en frontend y backend.
+- [x] Validar casos validos/invalidos, build, auditorias Supabase, render responsivo, Guardian y produccion.
+
+Resultado:
+- El RUT mantiene validacion de digito verificador en navegador, RPC y smoke productivo.
+- Nombres, apellidos, direccion, ciudad y comentarios se normalizan a formato tipo ERP; email queda en minusculas y exige `@` y dominio con extension.
+- El telefono se captura como 8 digitos con prefijo fijo visible `+56 9` y se persiste como `+569XXXXXXXX`.
+- Migracion `20260808025221_harden_dsal_precandidate_contact_normalization` aplicada al Supabase vinculado; smoke valido rechazo de telefono/email invalidos, persistencia normalizada y rollback sin filas.
+- `test:unit` (78), `build:frontend-check`, auditorias Supabase, Playwright responsive y Guardian pasan.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.

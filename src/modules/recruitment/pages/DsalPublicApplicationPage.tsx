@@ -4,6 +4,12 @@ import { MultiSelectField, SelectField, TextField } from "../../../shared/ui";
 import { formatRut, validateRut } from "../../../shared/lib/rut";
 import { bukEmployeeFieldOptions } from "../lib/bukEmployeeTemplate";
 import {
+  isValidDsalEmail,
+  normalizeDsalDisplayText,
+  normalizeDsalEmail,
+  normalizeDsalPhoneDigits
+} from "../lib/dsalPrecandidateFormatting";
+import {
   dsalLicenseOptions,
   dsalRoleOptions,
   submitDsalPrecandidateApplication
@@ -39,10 +45,6 @@ const initialDraft: ApplicationDraft = {
   comments: ""
 };
 
-function isEmailValid(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-}
-
 export function DsalPublicApplicationPage() {
   const [draft, setDraft] = useState<ApplicationDraft>(initialDraft);
   const [rutTouched, setRutTouched] = useState(false);
@@ -56,7 +58,7 @@ export function DsalPublicApplicationPage() {
     [draft.nationalId]
   );
   const emailIsValid = useMemo(
-    () => !draft.personalEmail || isEmailValid(draft.personalEmail),
+    () => !draft.personalEmail || isValidDsalEmail(draft.personalEmail),
     [draft.personalEmail]
   );
   const requiredFieldsReady = Boolean(
@@ -72,13 +74,18 @@ export function DsalPublicApplicationPage() {
       draft.dsalRole.trim() &&
       draft.phone.trim() &&
       draft.personalEmail.trim() &&
-      isEmailValid(draft.personalEmail)
+      draft.phone.length === 8 &&
+      isValidDsalEmail(draft.personalEmail)
   );
 
   const updateDraft = (patch: Partial<ApplicationDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
     setFormError("");
     setFormMessage("");
+  };
+
+  const normalizeTextField = (field: keyof ApplicationDraft, value: string) => {
+    updateDraft({ [field]: normalizeDsalDisplayText(value) } as Partial<ApplicationDraft>);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -195,6 +202,7 @@ export function DsalPublicApplicationPage() {
                 value={draft.firstName}
                 autoComplete="given-name"
                 onChange={(event) => updateDraft({ firstName: event.target.value })}
+                onBlur={(event) => normalizeTextField("firstName", event.target.value)}
               />
               <TextField
                 id="dsal-public-last-name"
@@ -202,12 +210,14 @@ export function DsalPublicApplicationPage() {
                 value={draft.lastName}
                 autoComplete="family-name"
                 onChange={(event) => updateDraft({ lastName: event.target.value })}
+                onBlur={(event) => normalizeTextField("lastName", event.target.value)}
               />
               <TextField
                 id="dsal-public-second-last-name"
                 label="Apellido materno"
                 value={draft.secondLastName}
                 onChange={(event) => updateDraft({ secondLastName: event.target.value })}
+                onBlur={(event) => normalizeTextField("secondLastName", event.target.value)}
               />
             </div>
           </section>
@@ -228,6 +238,7 @@ export function DsalPublicApplicationPage() {
                 placeholder="Calle, número, departamento o referencia"
                 className="control-span-full"
                 onChange={(event) => updateDraft({ addressLine: event.target.value })}
+                onBlur={(event) => normalizeTextField("addressLine", event.target.value)}
               />
               <SelectField
                 id="dsal-public-region"
@@ -242,6 +253,7 @@ export function DsalPublicApplicationPage() {
                 label="Ciudad"
                 value={draft.currentCity}
                 onChange={(event) => updateDraft({ currentCity: event.target.value })}
+                onBlur={(event) => normalizeTextField("currentCity", event.target.value)}
               />
             </div>
           </section>
@@ -291,14 +303,24 @@ export function DsalPublicApplicationPage() {
               </div>
             </div>
             <div className="control-edit-grid public-application-grid">
-              <TextField
-                id="dsal-public-phone"
-                label="Número de teléfono"
-                value={draft.phone}
-                inputMode="tel"
-                autoComplete="tel"
-                onChange={(event) => updateDraft({ phone: event.target.value })}
-              />
+              <label className="field-group" htmlFor="dsal-public-phone">
+                <span className="field-label">Número de teléfono</span>
+                <span className="public-phone-input">
+                  <span className="public-phone-prefix" aria-hidden="true">+56 9</span>
+                  <input
+                    id="dsal-public-phone"
+                    className="text-field public-phone-number"
+                    value={draft.phone}
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    maxLength={8}
+                    placeholder="12345678"
+                    aria-describedby="dsal-public-phone-hint"
+                    onChange={(event) => updateDraft({ phone: normalizeDsalPhoneDigits(event.target.value) })}
+                  />
+                </span>
+                <span id="dsal-public-phone-hint" className="field-hint">Ingresa solo los 8 dígitos siguientes.</span>
+              </label>
               <TextField
                 id="dsal-public-email"
                 label="Email personal"
@@ -306,7 +328,7 @@ export function DsalPublicApplicationPage() {
                 value={draft.personalEmail}
                 autoComplete="email"
                 hasError={emailTouched && Boolean(draft.personalEmail) && !emailIsValid}
-                onChange={(event) => updateDraft({ personalEmail: event.target.value })}
+                onChange={(event) => updateDraft({ personalEmail: normalizeDsalEmail(event.target.value) })}
                 onBlur={() => setEmailTouched(true)}
               />
               {emailTouched && draft.personalEmail && !emailIsValid ? (
@@ -333,6 +355,7 @@ export function DsalPublicApplicationPage() {
                 value={draft.comments}
                 rows={4}
                 onChange={(event) => updateDraft({ comments: event.target.value })}
+                onBlur={(event) => updateDraft({ comments: normalizeDsalDisplayText(event.target.value) })}
               />
             </label>
           </section>

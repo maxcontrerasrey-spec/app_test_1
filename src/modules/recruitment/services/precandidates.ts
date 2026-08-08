@@ -1,6 +1,11 @@
 import { supabase } from "../../../shared/lib/supabase";
 import { formatRut, normalizeRut } from "../../../shared/lib/rut";
 import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
+import {
+  normalizeDsalDisplayText,
+  normalizeDsalEmail,
+  normalizeDsalPhone
+} from "../lib/dsalPrecandidateFormatting";
 
 export const dsalLicenseOptions = [
   { value: "A1 (Ley 18.290)", label: "A1 (Ley 18.290)" },
@@ -93,17 +98,17 @@ export async function submitDsalPrecandidateApplication(input: {
 
   const { data, error } = await supabase.rpc("submit_dsal_precandidate_application", {
     p_national_id: normalizeRut(input.nationalId),
-    p_first_name: input.firstName,
-    p_last_name: input.lastName,
-    p_second_last_name: input.secondLastName,
-    p_address_line: input.addressLine,
+    p_first_name: normalizeDsalDisplayText(input.firstName),
+    p_last_name: normalizeDsalDisplayText(input.lastName),
+    p_second_last_name: normalizeDsalDisplayText(input.secondLastName),
+    p_address_line: normalizeDsalDisplayText(input.addressLine),
     p_region: input.region,
-    p_current_city: input.currentCity,
+    p_current_city: normalizeDsalDisplayText(input.currentCity),
     p_driver_license_classes: input.driverLicenseClasses,
     p_dsal_role: input.dsalRole,
-    p_phone: input.phone,
-    p_personal_email: input.personalEmail,
-    p_comments: input.comments?.trim() ? input.comments.trim() : null
+    p_phone: normalizeDsalPhone(input.phone),
+    p_personal_email: normalizeDsalEmail(input.personalEmail),
+    p_comments: input.comments?.trim() ? normalizeDsalDisplayText(input.comments) : null
   });
 
   if (error) {

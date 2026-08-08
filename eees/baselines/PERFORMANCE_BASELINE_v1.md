@@ -86,6 +86,8 @@ Revision 2026-08-08 estetica postulacion DSAL: el total sube 4,040 bytes, JS sub
 
 Revision 2026-08-08 copy postulacion DSAL: JS sube 5 bytes por reemplazar el bloque de introduccion y resumen por la bienvenida institucional solicitada. No agrega vendors, rutas ni assets.
 
+Revision 2026-08-08 validacion DSAL: el total sube 1,117 bytes y JS sube 1,226 bytes por agregar normalizacion visible de texto, formato de telefono y validacion de correo en la pagina publica. No agrega vendors ni assets.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -105,9 +107,9 @@ Revision 2026-08-08 copy postulacion DSAL: JS sube 5 bytes por reemplazar el blo
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10163207,
+  "distTotalBytes": 10164324,
   "jsFileCount": 54,
-  "jsTotalBytes": 2663357,
+  "jsTotalBytes": 2664583,
   "cssFileCount": 10,
   "cssTotalBytes": 225082,
   "trackedAssets": [

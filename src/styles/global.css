@@ -4853,6 +4853,37 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   margin: 0;
 }
 
+.public-phone-input {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 2.65rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.public-phone-prefix {
+  padding: 0 0.72rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.public-phone-number {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding-left: 0.2rem;
+}
+
+.public-phone-input:focus-within {
+  border-color: var(--color-focus-ring);
+  box-shadow: var(--focus-ring);
+}
+
 .public-application-textarea {
   min-height: 6.8rem;
 }
