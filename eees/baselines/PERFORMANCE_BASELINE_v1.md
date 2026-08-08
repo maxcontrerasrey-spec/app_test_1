@@ -90,6 +90,8 @@ Revision 2026-08-08 validacion DSAL: el total sube 1,117 bytes y JS sube 1,226 b
 
 Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes por exigir folio con cupo en la aprobacion de precandidatos y mostrar la instruccion operativa cuando no hay destino habilitado. No agrega vendors, CSS ni assets.
 
+Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sube 1,866 bytes por ampliar la autoridad del flujo a gerente de área DSAL, Director de Operaciones y Reclutamiento, además de incorporar el detalle expandible de cada precandidato. No agrega vendors, CSS ni assets.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -109,9 +111,9 @@ Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10164743,
+  "distTotalBytes": 10166609,
   "jsFileCount": 54,
-  "jsTotalBytes": 2665002,
+  "jsTotalBytes": 2666868,
   "cssFileCount": 10,
   "cssTotalBytes": 225082,
   "trackedAssets": [

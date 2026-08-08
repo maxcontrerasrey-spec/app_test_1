@@ -63,7 +63,9 @@ export function HiringStatusPage() {
   const canAccessCandidateControl =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_candidate_control");
   const canAccessPrecandidates =
-    canAccessCandidateControl || hasModuleAccess(accessibleModules, "control_contrataciones");
+    canAccessCandidateControl ||
+    hasModuleAccess(accessibleModules, "control_contrataciones") ||
+    appRoles.some((role) => ["gerencia", "director_op", "reclutamiento"].includes(role));
   const canAccessPersonnelToHire =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_personnel_to_hire");
   const canAccessContractedPersonnel = canAccessPersonnelToHire;

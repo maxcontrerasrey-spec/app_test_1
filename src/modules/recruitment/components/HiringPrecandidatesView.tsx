@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TextField } from "../../../shared/ui";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
@@ -56,6 +56,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
   const [reviewComment, setReviewComment] = useState<Record<string, string>>({});
   const [rowMessage, setRowMessage] = useState<Record<string, string>>({});
   const [savingRowId, setSavingRowId] = useState("");
+  const [expandedPrecandidateId, setExpandedPrecandidateId] = useState<string | null>(null);
 
   const precandidatesQuery = useRecruitmentPrecandidatesPage({
     search: debouncedSearchTerm,
@@ -74,6 +75,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
         (caseRow) =>
           !["filled", "closed_unfilled", "cancelled"].includes(caseRow.status) &&
           Boolean(caseRow.folio?.trim()) &&
+          caseRow.contract_name.toUpperCase().includes("DSAL") &&
           caseRow.requested_vacancies > caseRow.filled_vacancies
       ),
     [activeCaseOptionsQuery.data]
@@ -232,101 +234,154 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
             </thead>
             <tbody>
               {precandidates.length > 0 ? (
-                precandidates.map((precandidate) => (
-                  <tr key={precandidate.id}>
-                    <td>
-                      <strong>{precandidate.full_name}</strong>
-                      <div className="tracking-filter-caption">
-                        {formatRut(precandidate.national_id)}
-                      </div>
-                      <div className="tracking-filter-caption">
-                        Ingreso: {formatRequestDate(precandidate.submitted_at)}
-                      </div>
-                    </td>
-                    <td>
-                      <strong>{precandidate.phone}</strong>
-                      <div className="tracking-filter-caption">{precandidate.personal_email}</div>
-                    </td>
-                    <td>
-                      <strong>{precandidate.current_city}</strong>
-                      <div className="tracking-filter-caption">{precandidate.region}</div>
-                      <div className="tracking-filter-caption">{precandidate.address_line}</div>
-                    </td>
-                    <td>{precandidate.driver_license_classes.join(", ")}</td>
-                    <td>{precandidate.dsal_role}</td>
-                    <td className="precandidate-review-cell">
-                      <span className={`tracking-status-pill tracking-status-${precandidate.status}`}>
-                        {getPrecandidateStatusLabel(precandidate.status)}
-                      </span>
-                      {precandidate.status === "pending" ? (
-                        <div className="precandidate-review-stack">
-                          <SelectField
-                            id={`precandidate-case-${precandidate.id}`}
-                            label="Folio de contratación destino"
-                            value={caseSelection[precandidate.id] ?? ""}
-                            options={caseOptions}
-                            placeholder="Selecciona un folio con cupo"
-                            onChange={(event) =>
-                              setCaseSelection((current) => ({
-                                ...current,
-                                [precandidate.id]: event.target.value
-                              }))
-                            }
-                          />
-                          <label className="field-group" htmlFor={`precandidate-comment-${precandidate.id}`}>
-                            <span className="field-label">Comentario de revisión</span>
-                            <textarea
-                              id={`precandidate-comment-${precandidate.id}`}
-                              className="control-textarea"
-                              value={reviewComment[precandidate.id] ?? ""}
-                              onChange={(event) =>
-                                setReviewComment((current) => ({
-                                  ...current,
-                                  [precandidate.id]: event.target.value
-                                }))
-                              }
-                              rows={3}
-                            />
-                          </label>
-                          {caseOptions.length === 0 && !activeCaseOptionsQuery.isLoading ? (
-                            <p className="form-status form-status-error">
-                              No hay folios de contratación aprobados con cupo disponible. Solicita a la
-                              gerencia respectiva la creación y aprobación del folio antes de convertir este
-                              precandidato en candidato.
-                            </p>
-                          ) : null}
-                          <div className="approval-action-row">
-                            <button
-                              type="button"
-                              className="soft-primary-button approval-button-approve"
-                              disabled={savingRowId === precandidate.id || caseOptions.length === 0}
-                              onClick={() => void handleApprove(precandidate)}
-                            >
-                              {savingRowId === precandidate.id ? "Aprobando..." : "Aprobar"}
-                            </button>
-                            <button
-                              type="button"
-                              className="soft-primary-button approval-button-reject"
-                              disabled={savingRowId === precandidate.id}
-                              onClick={() => void handleReject(precandidate)}
-                            >
-                              Rechazar
-                            </button>
+                precandidates.map((precandidate) => {
+                  const isExpanded = expandedPrecandidateId === precandidate.id;
+
+                  return (
+                    <Fragment key={precandidate.id}>
+                      <tr
+                        className={`tracking-table-row-clickable ${isExpanded ? "tracking-table-row-expanded" : ""}`}
+                        onClick={() => setExpandedPrecandidateId(isExpanded ? null : precandidate.id)}
+                        aria-expanded={isExpanded}
+                      >
+                        <td>
+                          <span className="case-code-toggle">
+                            <span className={`expand-chevron ${isExpanded ? "expand-chevron-open" : ""}`}>▸</span>
+                            <strong>{precandidate.full_name}</strong>
+                          </span>
+                          <div className="tracking-filter-caption">
+                            {formatRut(precandidate.national_id)}
                           </div>
-                          {rowMessage[precandidate.id] ? (
-                            <p className="form-status form-status-error">
-                              {rowMessage[precandidate.id]}
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <div className="tracking-filter-caption">
-                          {precandidate.review_comment || "Sin comentario de revisión."}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                          <div className="tracking-filter-caption">
+                            Ingreso: {formatRequestDate(precandidate.submitted_at)}
+                          </div>
+                        </td>
+                        <td>
+                          <strong>{precandidate.phone}</strong>
+                          <div className="tracking-filter-caption">{precandidate.personal_email}</div>
+                        </td>
+                        <td>
+                          <strong>{precandidate.current_city}</strong>
+                          <div className="tracking-filter-caption">{precandidate.region}</div>
+                          <div className="tracking-filter-caption">{precandidate.address_line}</div>
+                        </td>
+                        <td>{precandidate.driver_license_classes.join(", ")}</td>
+                        <td>{precandidate.dsal_role}</td>
+                        <td className="precandidate-review-cell">
+                          <span className={`tracking-status-pill tracking-status-${precandidate.status}`}>
+                            {getPrecandidateStatusLabel(precandidate.status)}
+                          </span>
+                        </td>
+                      </tr>
+                      {isExpanded ? (
+                        <tr className="tracking-table-expanded-row">
+                          <td colSpan={6}>
+                            <div className="expanded-case-detail-grid expanded-case-detail-grid-vertical precandidate-expanded-detail">
+                              <div className="expanded-detail-section">
+                                <h4>Antecedentes de postulación</h4>
+                                <div className="expanded-detail-fields">
+                                  <div>
+                                    <small>Comentario del postulante</small>
+                                    <strong>{precandidate.comments?.trim() || "Sin comentarios registrados"}</strong>
+                                  </div>
+                                  <div>
+                                    <small>Última revisión</small>
+                                    <strong>{formatRequestDate(precandidate.reviewed_at)}</strong>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="expanded-detail-section">
+                                <h4>Resolución y destino</h4>
+                                <div className="expanded-detail-fields">
+                                  <div>
+                                    <small>Estado</small>
+                                    <strong>{getPrecandidateStatusLabel(precandidate.status)}</strong>
+                                  </div>
+                                  <div>
+                                    <small>Folio de destino</small>
+                                    <strong>{precandidate.approved_folio || "Pendiente de asignación"}</strong>
+                                  </div>
+                                  <div className="expanded-detail-field-full">
+                                    <small>Comentario de revisión</small>
+                                    <strong>{precandidate.review_comment?.trim() || "Sin comentario de revisión"}</strong>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {precandidate.status === "pending" ? (
+                                <div
+                                  className="expanded-detail-section expanded-detail-section-full"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  <h4>Revisión</h4>
+                                  <div className="precandidate-review-stack">
+                                    <SelectField
+                                      id={`precandidate-case-${precandidate.id}`}
+                                      label="Folio de contratación DSAL destino"
+                                      value={caseSelection[precandidate.id] ?? ""}
+                                      options={caseOptions}
+                                      placeholder="Selecciona un folio con cupo"
+                                      onChange={(event) =>
+                                        setCaseSelection((current) => ({
+                                          ...current,
+                                          [precandidate.id]: event.target.value
+                                        }))
+                                      }
+                                    />
+                                    <label className="field-group" htmlFor={`precandidate-comment-${precandidate.id}`}>
+                                      <span className="field-label">Comentario de revisión</span>
+                                      <textarea
+                                        id={`precandidate-comment-${precandidate.id}`}
+                                        className="control-textarea"
+                                        value={reviewComment[precandidate.id] ?? ""}
+                                        onChange={(event) =>
+                                          setReviewComment((current) => ({
+                                            ...current,
+                                            [precandidate.id]: event.target.value
+                                          }))
+                                        }
+                                        rows={3}
+                                      />
+                                    </label>
+                                    {caseOptions.length === 0 && !activeCaseOptionsQuery.isLoading ? (
+                                      <p className="form-status form-status-error">
+                                        No hay folios DSAL aprobados con cupo disponible. Solicita a la gerencia
+                                        respectiva la creación y aprobación del folio antes de convertir este
+                                        precandidato en candidato.
+                                      </p>
+                                    ) : null}
+                                    <div className="approval-action-row">
+                                      <button
+                                        type="button"
+                                        className="soft-primary-button approval-button-approve"
+                                        disabled={savingRowId === precandidate.id || caseOptions.length === 0}
+                                        onClick={() => void handleApprove(precandidate)}
+                                      >
+                                        {savingRowId === precandidate.id ? "Aprobando..." : "Aprobar"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="soft-primary-button approval-button-reject"
+                                        disabled={savingRowId === precandidate.id}
+                                        onClick={() => void handleReject(precandidate)}
+                                      >
+                                        Rechazar
+                                      </button>
+                                    </div>
+                                    {rowMessage[precandidate.id] ? (
+                                      <p className="form-status form-status-error">{rowMessage[precandidate.id]}</p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })
               ) : (
                 <tr>
                   <td className="tracking-empty-state" colSpan={6}>

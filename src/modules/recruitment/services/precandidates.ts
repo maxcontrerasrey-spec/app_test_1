@@ -46,6 +46,7 @@ export type DsalPrecandidate = {
   review_comment: string | null;
   approved_recruitment_case_id: string | null;
   approved_case_candidate_id: string | null;
+  approved_folio: string | null;
 };
 
 export type DsalPrecandidatesSummary = {

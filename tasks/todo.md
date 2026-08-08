@@ -83,6 +83,21 @@ Resultado:
 - [x] Produccion: RLS de precandidatos activo; `anon` puede ejecutar solo el intake publico, no aprobar; `authenticated` conserva la RPC de aprobacion. Hay 1 precandidato pendiente, 48 casos activos con folio y 0 casos activos sin folio.
 - [x] Validacion: prueba de integridad DSAL, build frontend, auditorias de migraciones/seguridad y Guardian pasan; Guardian finaliza con 0 errores y 0 warnings. La aprobacion autenticada de un registro real no se ejecuto para no alterar datos productivos sin un canario autorizado.
 
+### Permisos y filas expandibles de precandidatos DSAL - 2026-08-08
+
+- [x] Confirmar el contrato vigente de autorizacion para gerente de area DSAL, Director de Operaciones y Reclutamiento.
+- [x] Aplicar la autorizacion especifica a listar, aprobar y rechazar precandidatos sin ampliar permisos de otros modulos.
+- [x] Reorganizar cada precandidato como fila compacta expandible siguiendo el patron existente de Control de Contrataciones.
+- [x] Mantener ocultos hasta expandir el folio destino, comentarios y resolucion; incluir pruebas de contrato y responsive.
+- [x] Ejecutar build, auditorias, Guardian, smoke productivo y publicar en `main`.
+
+Resultado:
+- [x] La autoridad DSAL se resuelve por `cost_center_approvers` del contrato DSAL y se complementa con `director_op`, `reclutamiento`, `candidate_control_access` y administrador; la RPC valida el actor contra `auth.uid()`.
+- [x] Listado, aprobacion y rechazo usan la nueva guardia especifica. La aprobacion solo acepta folios del contrato DSAL, mantiene el bloqueo de cupo y no relaja RLS.
+- [x] La fila muestra solo identidad, contacto, domicilio, licencias, rol y estado. Folio, comentarios, fecha de revision y acciones aparecen dentro del detalle expandido con el mismo patron de `tracking-table-row-clickable` y `expanded-case-detail-grid` del ERP.
+- [x] Produccion: RLS activo, payload incluye `approved_folio`, existen 4 casos DSAL activos con folio y la migracion `20260808032030_allow_dsal_precandidate_reviewers_and_expand_details` esta aplicada.
+- [x] `test:integrity`, `build:frontend-check`, auditorias de migraciones/seguridad, baseline y Guardian pasan con 0 errores y 0 warnings.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.

@@ -2885,6 +2885,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La ausencia de destino requiere una instruccion operativa visible.** Un boton deshabilitado sin explicar que la gerencia debe crear y aprobar el folio deja el proceso sin salida accionable.
 - **El registro debe cerrar en tres puntos trazables.** La aprobacion debe conservar el enlace entre precandidato, `candidate_profiles` y `recruitment_case_candidates`, y dejar la fuente DSAL junto con los datos transferidos.
 
+## 196. Los revisores de un flujo acotado deben resolverse por autoridad de negocio
+
+- **Un permiso general de candidato no expresa por si solo la autoridad del contrato.** Para DSAL, el gerente de area se resuelve desde `cost_center_approvers` y el caso DSAL; Director de Operaciones y Reclutamiento se expresan por sus roles vigentes.
+- **La lista y la mutacion deben usar la misma guardia backend.** Mostrar la pestaña por rol no basta si aprobar/rechazar conserva otra autoridad; las tres RPC deben compartir el chequeo actor-scoped.
+- **El detalle de una fila operativa debe seguir el patron del ERP.** La vista compacta debe reservar el espacio para identidad y estado, y mover folio, comentarios y acciones a una fila expandida con `aria-expanded` y los estilos existentes.
+
 ## 194. Los enlaces Auth de un solo uso deben sobrevivir a scanners corporativos
 
 - **Un correo aceptado no demuestra que el usuario pueda usar el enlace.** Correlaciona `/recover`, `/verify`, IP, agente y clic humano; Microsoft Safe Links puede consumir el token antes de que la persona abra el mensaje.
