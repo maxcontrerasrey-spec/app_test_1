@@ -134,20 +134,21 @@ export function DsalPublicApplicationPage() {
           </div>
         </header>
 
-        <div className="public-application-intro">
-          <div className="public-application-heading">
-            <span className="micro-label">Implementación DSAL</span>
-            <h1>Postulación trabajadores actuales</h1>
-            <p>
-              Completa esta ficha para que el equipo de reclutamiento pueda validar tus datos,
-              licencias y rol actual antes de contactarte.
-            </p>
-          </div>
-          <aside className="public-application-summary" aria-label="Resumen de la postulación">
-            <span>Ingreso sin cuenta ERP</span>
-            <strong>La información quedará en Precandidatos.</strong>
-            <p>Después de la revisión interna puede pasar al Control de candidatos.</p>
-          </aside>
+        <div className="public-application-welcome">
+          <h1>Estimado(a) postulante:</h1>
+          <p>Agradecemos su interés en formar parte de nuestro equipo.</p>
+          <p>
+            Para facilitar el proceso de evaluación y permitir que nuestro equipo de Reclutamiento
+            y Selección pueda contactarlo oportunamente, le solicitamos completar el siguiente
+            formulario con la información requerida.
+          </p>
+          <p>
+            Una vez recibida su postulación, revisaremos sus antecedentes y, si su perfil se ajusta
+            a las vacantes disponibles, nos pondremos en contacto con usted a la brevedad.
+          </p>
+          <p>
+            ¡Le deseamos mucho éxito y agradecemos su interés en ser parte de nuestra organización!
+          </p>
         </div>
 
         <form className="public-application-form tracking-panel" onSubmit={handleSubmit}>

@@ -40,6 +40,19 @@ Resultado:
 - La funcionalidad, RPCs y permisos backend no cambian en esta correccion.
 - Validacion final: `build:frontend-check` y `guardian` pasan con 0 errores y 0 warnings. El baseline P4 se actualizo solo por el aumento medido del CSS/JS de esta correccion visual, sin vendors ni assets nuevos.
 
+### Ajuste de copy y espacios pagina publica DSAL - 2026-08-08
+
+- [x] Retirar el titulo operativo, la bajada anterior y el cuadro de resumen de acceso/precandidatos.
+- [x] Incorporar el mensaje institucional entregado por negocio como bienvenida de la postulacion.
+- [x] Redistribuir el ancho y los espacios del encabezado, bienvenida y formulario en notebook y celular.
+- [x] Validar copy, build, render responsivo, `git diff --check` y Guardian.
+
+Resultado:
+- La pagina publica conserva el logo y estado de Consorcio Andino/Codelco DSAL, pero ya no muestra los textos operativos ni el cuadro lateral solicitado.
+- La bienvenida institucional se muestra antes del formulario con una anchura legible en notebook y un apilado compacto en celular.
+- Playwright valido 1366, 1024, 390 y 360 px: copy nuevo presente, copy anterior ausente y sin overflow horizontal.
+- `build:frontend-check`, `npm run guardian` y `git diff --check` pasan. El baseline se actualizo solo por los 5 bytes medidos del bundle JS.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.

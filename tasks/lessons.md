@@ -18,6 +18,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La responsividad se valida por geometria, no por compilacion.** En notebook y celular debe comprobarse que logo, encabezado, secciones, selects multivalor, mensajes y boton de envio no se sobrepongan ni parezcan landing page ajena.
 - **El copy publico debe ser operacional y breve.** Evita hero amplio y textos promocionales; prioriza instrucciones concretas, jerarquia baja y una ficha limpia que parezca parte natural del ERP.
 
+## 297. La bienvenida institucional debe priorizar el formulario
+
+- En una ficha publica de postulacion, retirar titulos operativos y cuadros auxiliares cuando negocio entregue un mensaje institucional explicito.
+- Mantener la bienvenida como texto amplio y legible antes del formulario, sin convertirla en una tarjeta lateral que estreche el contenido principal.
+- Validar que el ancho adicional se traduzca en mejor lectura en notebook y que el mensaje siga siendo compacto en celular.
+
 ## 292. El codigo de ficha BUK deja de ser una etiqueta cuando ya existe historia contractual
 
 - **Una ficha BUK es un contenedor contractual, no solo un correlativo visible.** Antes de corregir `F2` a `F1`, inventaria planes, trabajos, liquidaciones, documentos y firmas asociados al `employee_id` vivo.

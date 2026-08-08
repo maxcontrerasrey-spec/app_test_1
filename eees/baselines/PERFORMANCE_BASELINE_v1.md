@@ -84,6 +84,8 @@ Revision 2026-08-08 postulacion DSAL: el total sube 22,976 bytes, JS sube 9,505 
 
 Revision 2026-08-08 estetica postulacion DSAL: el total sube 4,040 bytes, JS sube 1,526 bytes y CSS sube 2,514 bytes por alinear la pagina publica `/postulacion-dsal` al lenguaje visual compacto del ERP en notebook y celular. No agrega vendors ni assets; mantiene la ruta lazy y reutiliza controles globales existentes.
 
+Revision 2026-08-08 copy postulacion DSAL: JS sube 5 bytes por reemplazar el bloque de introduccion y resumen por la bienvenida institucional solicitada. No agrega vendors, rutas ni assets.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -105,7 +107,7 @@ Revision 2026-08-08 estetica postulacion DSAL: el total sube 4,040 bytes, JS sub
 {
   "distTotalBytes": 10163207,
   "jsFileCount": 54,
-  "jsTotalBytes": 2663352,
+  "jsTotalBytes": 2663357,
   "cssFileCount": 10,
   "cssTotalBytes": 225082,
   "trackedAssets": [
