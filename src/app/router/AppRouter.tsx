@@ -15,6 +15,10 @@ const HomePage = lazyWithRetry("home-page", routeModuleImporters.homePage);
 const HiringRequestPage = lazyWithRetry("hiring-request-page", routeModuleImporters.hiringRequestPage);
 const InternalMobilityPage = lazyWithRetry("internal-mobility-page", routeModuleImporters.internalMobilityPage);
 const HiringStatusPage = lazyWithRetry("hiring-status-page", routeModuleImporters.hiringStatusPage);
+const DsalPublicApplicationPage = lazyWithRetry(
+  "dsal-public-application-page",
+  routeModuleImporters.dsalPublicApplicationPage
+);
 const LoginPage = lazyWithRetry("login-page", routeModuleImporters.loginPage);
 const ResetPasswordPage = lazyWithRetry("reset-password-page", routeModuleImporters.resetPasswordPage);
 const AccessDeniedPage = lazyWithRetry("access-denied-page", routeModuleImporters.accessDeniedPage);
@@ -79,6 +83,7 @@ export function AppRouter() {
         <Route path="/verificar/competencia/:lookup" element={<CompetencyVerificationPage />} />
         <Route path="/verificar/documento" element={<HiringDocumentVerificationPage />} />
         <Route path="/verificar/documento/:lookup" element={<HiringDocumentVerificationPage />} />
+        <Route path="/postulacion-dsal" element={<DsalPublicApplicationPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />

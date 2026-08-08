@@ -4,6 +4,30 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Reclutamiento DSAL - postulacion publica y precandidatos - 2026-08-08
+
+- [x] Consolidar el contrato funcional desde la captura y validar los patrones actuales de Control de Contrataciones, ficha BUK y RUT.
+- [x] Crear backend autoritativo para precandidatos DSAL con insercion publica acotada, RLS estricta, deduplicacion por RUT y RPCs autenticadas de listado/aprobacion.
+- [x] Implementar pagina publica libre de login con logo Consorcio Andino, mensaje de bienvenida mejorado, RUT autocorregido/validado, campos separados, licencias multiseleccion y rol DSAL uniseleccion.
+- [x] Insertar la pestaña interna `Precandidatos` entre `Resumen de procesos de contratación` y `Control de candidatos`, con revision/aprobacion hacia el pipeline real.
+- [x] Agregar pruebas/auditorias focalizadas para RUT, contrato SQL/RLS/RPC y rutas publicas.
+- [x] Validar TypeScript/build, auditorias Supabase proporcionales, Guardian y `git diff --check`.
+
+Condiciones de seguridad:
+- La pagina publica solo puede insertar postulaciones; no debe listar, aprobar ni leer datos de terceros con `anon`.
+- La aprobacion debe requerir usuario autenticado con acceso real a Control de Contrataciones y debe reutilizar el ingreso al pipeline para conservar auditoria.
+- No relajar RLS, grants ni permisos de candidatos existentes para hacer funcionar la UI publica.
+- La migracion debe preservar candidatos y postulaciones historicas; si el RUT ya existe en precandidatos, se actualiza la postulacion pendiente en vez de duplicar filas.
+
+Resultado:
+- Ruta publica nueva `/postulacion-dsal`, fuera de `ProtectedRoute`, con logo Consorcio Andino, mensaje de bienvenida DSAL, RUT autocorregido/validado, nombres separados, domicilio separado en direccion/region/ciudad, licencias multiseleccion y rol DSAL uniseleccion.
+- Backend en `20260808015748_add_dsal_precandidates_intake`: tabla `recruitment_precandidates`, RLS sin lectura/escritura directa, RPC publico `submit_dsal_precandidate_application` con validacion server-side y upsert atomico por RUT pendiente, y RPCs autenticadas para listar/aprobar/rechazar.
+- `Control de Contrataciones` suma la pestaña `Precandidatos` entre resumen y candidatos. La aprobacion exige seleccionar un caso activo y reutiliza `add_candidate_to_recruitment_case`, luego completa datos base del perfil para que aparezca en Control de candidatos.
+- El auditor Supabase permite solo este RPC anonimo especifico, sin subir el limite global de seguridad.
+- Produccion Supabase: migracion `20260808015748_add_dsal_precandidates_intake` aplicada con `supabase db query --linked --file` por bloqueo legacy de `db push`; version `20260808015748` registrada como `applied` con `supabase migration repair --linked --status applied`.
+- Smoke productivo: tabla existe, RLS activo, `anon` no tiene `select` ni `insert` directo sobre `recruitment_precandidates`, `anon` solo ejecuta `submit_dsal_precandidate_application`, y `authenticated` ejecuta listado/aprobacion/rechazo. Insercion publica de smoke con RUT valido dentro de transaccion dejo 0 filas despues de `ROLLBACK`.
+- Validacion: `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, SQL transaccional remoto con `ROLLBACK`, Playwright desktop/mobile de `/postulacion-dsal`, `audit:performance-baseline`, `git diff --check` y `guardian` pasan. `db push --dry-run --linked` sigue bloqueado por deuda legacy remota ya conocida, por eso se aplico/verifico con `supabase db query --linked`.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.

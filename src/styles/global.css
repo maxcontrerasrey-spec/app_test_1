@@ -4684,6 +4684,161 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   border-bottom-color: var(--title);
 }
 
+.public-application-page {
+  min-height: 100dvh;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background:
+    linear-gradient(135deg, rgba(246, 248, 244, 0.96), rgba(232, 239, 236, 0.92)),
+    var(--app-bg);
+  color: var(--text);
+}
+
+.public-application-shell {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 1.2rem;
+}
+
+.public-application-header {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 4vw, 3rem);
+  padding: clamp(1rem, 4vw, 2rem) 0 0;
+}
+
+.public-application-logo {
+  width: min(220px, 52vw);
+  height: auto;
+  object-fit: contain;
+}
+
+.public-application-heading {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.public-application-heading h1 {
+  margin: 0;
+  color: var(--title);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.public-application-heading p {
+  margin: 0;
+  max-width: 66ch;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.public-application-form {
+  display: grid;
+  gap: 0.9rem;
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: rgba(var(--surface-rgb), 0.94);
+  box-shadow:
+    18px 18px 38px -34px var(--soft-shadow-dark),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.public-application-section {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.public-application-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.public-application-section h2 {
+  margin: 0.35rem 0 0;
+  color: var(--title);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.public-application-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  background: rgba(18, 89, 71, 0.1);
+  color: #125947;
+  font-weight: 700;
+}
+
+.public-application-grid {
+  align-items: start;
+}
+
+.public-application-alert,
+.public-application-submit-message {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.public-application-textarea {
+  min-height: 8rem;
+}
+
+.public-application-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.public-application-submit {
+  min-width: min(100%, 220px);
+}
+
+.precandidate-review-cell {
+  min-width: 340px;
+}
+
+.precandidate-review-stack {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+}
+
+.tracking-kpi-row-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tracking-status-pending {
+  background: rgba(196, 125, 35, 0.12);
+  color: #9a5d12;
+}
+
+.tracking-status-approved {
+  background: rgba(27, 128, 91, 0.12);
+  color: #0f6847;
+}
+
+.tracking-status-rejected {
+  background: rgba(185, 60, 58, 0.12);
+  color: #9b2d2b;
+}
+
+.tracking-status-archived {
+  background: rgba(89, 98, 112, 0.12);
+  color: #4b5563;
+}
+
 .control-ready-summary-card {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6092,5 +6247,52 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   .main-content,
   .main-content-topnav {
     padding: 0.7rem 0.85rem 2rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .public-application-page {
+    padding: 0.85rem;
+  }
+
+  .public-application-header,
+  .public-application-section {
+    grid-template-columns: 1fr;
+  }
+
+  .public-application-header {
+    gap: 1rem;
+  }
+
+  .public-application-logo {
+    width: min(190px, 72vw);
+  }
+
+  .public-application-heading h1 {
+    font-size: 2.15rem;
+  }
+
+  .public-application-form {
+    padding: 0.95rem;
+  }
+
+  .public-application-section {
+    gap: 0.8rem;
+  }
+
+  .public-application-actions {
+    justify-content: stretch;
+  }
+
+  .public-application-submit {
+    width: 100%;
+  }
+
+  .tracking-kpi-row-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .precandidate-review-cell {
+    min-width: 280px;
   }
 }

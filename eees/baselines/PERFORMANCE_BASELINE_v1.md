@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.19
+version: 1.0.20
 status: Activo
 language: es-CL
 owner: Quality
@@ -80,9 +80,12 @@ Revision 2026-08-05 seguridad frontend CI: GitHub Actions `Audit Enterprise Guar
 
 Revision 2026-08-06 recuperacion Auth: el total y JS suben 1,271 bytes por conservar `code`/`status` de Supabase Auth, bloquear solicitudes concurrentes y aplicar cooldown de recuperacion ante 429. No agrega vendors, CSS ni rutas; los assets trackeados conservan sus limites.
 
+Revision 2026-08-08 postulacion DSAL: el total sube 22,976 bytes, JS sube 9,505 bytes y CSS sube 2,908 bytes por agregar la ruta publica lazy `/postulacion-dsal`, el formulario DSAL con logo Consorcio Andino, la bandeja interna `Precandidatos` y los RPCs asociados. No agrega vendors ni assets pesados; reutiliza el logo existente de Consorcio Andino.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
+- `/postulacion-dsal`: postulacion publica DSAL, lazy y sin lectura de datos privados.
 - `/verificar/documento`: verificador publico de Solicitud de Contratacion, lazy y sin datos privados.
 - `/operaciones/resumen`: ruta protegida valida redirect a `/login` sin sesion.
 - Resultado smoke: PASS.
@@ -98,11 +101,11 @@ Revision 2026-08-06 recuperacion Auth: el total y JS suben 1,271 bytes por conse
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10136191,
-  "jsFileCount": 51,
-  "jsTotalBytes": 2652321,
+  "distTotalBytes": 10159167,
+  "jsFileCount": 54,
+  "jsTotalBytes": 2661826,
   "cssFileCount": 10,
-  "cssTotalBytes": 219660,
+  "cssTotalBytes": 222568,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

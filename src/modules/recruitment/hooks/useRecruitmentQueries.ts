@@ -13,6 +13,10 @@ import {
   type RecruitmentCandidateStage
 } from "../services/hiringControl";
 import {
+  fetchDsalPrecandidatesPage,
+  type DsalPrecandidateStatus
+} from "../services/precandidates";
+import {
   fetchHiringCatalogs,
   syncBukJobPositionsBestEffort
 } from "../services/hiringCatalogs";
@@ -37,6 +41,13 @@ export type RecruitmentProcessesPageFilters = {
 export type RecruitmentCandidatesPageFilters = {
   search?: string;
   stageFilter?: RecruitmentCandidateStage | "active" | "discarded";
+  limit: number;
+  offset: number;
+};
+
+export type RecruitmentPrecandidatesPageFilters = {
+  search?: string;
+  status?: DsalPrecandidateStatus | "all";
   limit: number;
   offset: number;
 };
@@ -178,6 +189,30 @@ export function useRecruitmentCandidatesPage(
   });
 }
 
+export function useRecruitmentPrecandidatesPage(
+  filters: RecruitmentPrecandidatesPageFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: queryKeys.recruitment.precandidates(filters),
+    queryFn: async () => {
+      const result = await fetchDsalPrecandidatesPage(filters);
+
+      if (result.error || !result.data) {
+        throw new Error(result.error ?? "No fue posible cargar precandidatos.");
+      }
+
+      return result.data;
+    },
+    staleTime: RECRUITMENT_DASHBOARD_STALE_TIME_MS,
+    gcTime: RECRUITMENT_CACHE_GC_TIME_MS,
+    refetchInterval: enabled ? 5 * 60_000 : false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled
+  });
+}
+
 export function useRecruitmentPersonnelToHirePage(
   filters: RecruitmentPersonnelPageFilters,
   enabled = true
@@ -291,6 +326,7 @@ export async function invalidateRecruitmentControlQueries(
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.approvalsRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.processesRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.candidatesRoot() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.precandidatesRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.personnelRoot() }),
     queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.contractedPersonnelRoot() }),
     queryClient.invalidateQueries({

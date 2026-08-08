@@ -61,6 +61,9 @@ export const queryKeys = {
     candidatesRoot: () => ["recruitment", "candidates"] as const,
     candidates: (filters: Record<string, unknown>) =>
       ["recruitment", "candidates", filters] as const,
+    precandidatesRoot: () => ["recruitment", "precandidates"] as const,
+    precandidates: (filters: Record<string, unknown>) =>
+      ["recruitment", "precandidates", filters] as const,
     personnelRoot: () => ["recruitment", "personnel-to-hire"] as const,
     personnel: (filters: Record<string, unknown>) =>
       ["recruitment", "personnel-to-hire", filters] as const,

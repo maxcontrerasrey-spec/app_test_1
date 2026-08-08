@@ -11,6 +11,9 @@ export const routeModuleImporters = {
   hiringStatusPage: async () => ({
     default: (await import("../../modules/recruitment/pages/HiringStatusPage")).HiringStatusPage
   }),
+  dsalPublicApplicationPage: async () => ({
+    default: (await import("../../modules/recruitment/pages/DsalPublicApplicationPage")).DsalPublicApplicationPage
+  }),
   loginPage: async () => ({
     default: (await import("../../modules/auth/pages/LoginPage")).LoginPage
   }),
@@ -87,6 +90,10 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/control-contrataciones")) {
     return ["hiringStatusPage"];
+  }
+
+  if (normalizedPath.startsWith("/postulacion-dsal")) {
+    return ["dsalPublicApplicationPage"];
   }
 
   if (normalizedPath.startsWith("/alta-operacional")) {

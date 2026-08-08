@@ -50,6 +50,12 @@ const SUPERSEDED_WARNING_KEYS = new Set([
   "supabase/migrations/20260710155452_add_bi_recruitment_job_filter.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
   "supabase/migrations/20260715162000_release_operations_module_role_matrix.sql::SECURITY DEFINER function references p_user_id/target_user_id.",
 ]);
+const ALLOWED_ANON_EXECUTE_GRANTS = new Map([
+  [
+    "supabase/migrations/20260808015748_add_dsal_precandidates_intake.sql",
+    ["submit_dsal_precandidate_application"],
+  ],
+]);
 
 function addFinding(severity, filePath, message, detail = "") {
   const relativePath = path.relative(ROOT, filePath);
@@ -147,7 +153,10 @@ function decodeJwtPayload(token) {
 function auditSql(filePath, content) {
   if (!filePath.endsWith(".sql")) return;
 
-  if (/\bgrant\s+execute\b[\s\S]{0,160}\bto\s+(public|anon)\b/i.test(content)) {
+  if (
+    /\bgrant\s+execute\b[\s\S]{0,160}\bto\s+(public|anon)\b/i.test(content) &&
+    !hasOnlyAllowedAnonExecuteGrants(filePath, content)
+  ) {
     addFinding("warning", filePath, "SQL grants EXECUTE to public or anon.");
   }
 
@@ -179,6 +188,23 @@ function auditSql(filePath, content) {
   if (changesPostgrestSurface && !/notify\s+pgrst\s*,\s*'reload schema'/i.test(content)) {
     addFinding("warning", filePath, "Migration changes RPC/policy/grants without notify pgrst reload schema.");
   }
+}
+
+function hasOnlyAllowedAnonExecuteGrants(filePath, content) {
+  const relativePath = path.relative(ROOT, filePath);
+  const allowedFunctions = ALLOWED_ANON_EXECUTE_GRANTS.get(relativePath);
+
+  if (!allowedFunctions) {
+    return false;
+  }
+
+  const grantMatches = [...content.matchAll(/\bgrant\s+execute\s+on\s+function\s+public\.([a-z0-9_]+)[\s\S]{0,220}?\bto\s+([^;]+);/gi)];
+  const anonGrantMatches = grantMatches.filter((match) => /\b(public|anon)\b/i.test(match[2]));
+
+  return (
+    anonGrantMatches.length > 0 &&
+    anonGrantMatches.every((match) => allowedFunctions.includes(match[1]))
+  );
 }
 
 function main() {
