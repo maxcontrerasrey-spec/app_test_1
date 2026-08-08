@@ -68,6 +68,21 @@ Resultado:
 - Migracion `20260808025221_harden_dsal_precandidate_contact_normalization` aplicada al Supabase vinculado; smoke valido rechazo de telefono/email invalidos, persistencia normalizada y rollback sin filas.
 - `test:unit` (78), `build:frontend-check`, auditorias Supabase, Playwright responsive y Guardian pasan.
 
+### Auditoria funcional y operativa DSAL - 2026-08-08
+
+- [x] Confirmar que la aprobacion de un precandidato copia los datos publicos a la ficha y al pipeline del candidato.
+- [x] Hacer autoritativa la exigencia de folio de contratacion y cupo disponible al aprobar, con bloqueo transaccional.
+- [x] Mostrar en Control de Contrataciones una instruccion accionable cuando no existan folios habilitados.
+- [x] Auditar intake anonimo, deduplicacion, RLS, permisos de aprobacion, trazabilidad y registro final en ERP.
+- [x] Ejecutar pruebas, build, auditorias, Guardian, smoke productivo y verificar commit/push alineados con `main`.
+
+Resultado:
+- [x] La aprobacion ahora valida dentro de la misma transaccion que el caso tenga folio no vacio, estado habilitado y cupo efectivo disponible; bloquea el caso con `FOR UPDATE` antes de ingresar al pipeline.
+- [x] La UI solo ofrece folios con cupo y muestra la instruccion para solicitar a la gerencia la creacion y aprobacion del folio cuando no existe un destino habilitado.
+- [x] La aprobacion conserva el ingreso por `add_candidate_to_recruitment_case`, actualiza `candidate_profiles` con identidad, contacto, domicilio, ciudad, region y licencias, registra la fuente DSAL y enlaza `recruitment_precandidates` con el caso y candidato creados.
+- [x] Produccion: RLS de precandidatos activo; `anon` puede ejecutar solo el intake publico, no aprobar; `authenticated` conserva la RPC de aprobacion. Hay 1 precandidato pendiente, 48 casos activos con folio y 0 casos activos sin folio.
+- [x] Validacion: prueba de integridad DSAL, build frontend, auditorias de migraciones/seguridad y Guardian pasan; Guardian finaliza con 0 errores y 0 warnings. La aprobacion autenticada de un registro real no se ejecuto para no alterar datos productivos sin un canario autorizado.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.

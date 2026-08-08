@@ -88,6 +88,8 @@ Revision 2026-08-08 copy postulacion DSAL: JS sube 5 bytes por reemplazar el blo
 
 Revision 2026-08-08 validacion DSAL: el total sube 1,117 bytes y JS sube 1,226 bytes por agregar normalizacion visible de texto, formato de telefono y validacion de correo en la pagina publica. No agrega vendors ni assets.
 
+Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes por exigir folio con cupo en la aprobacion de precandidatos y mostrar la instruccion operativa cuando no hay destino habilitado. No agrega vendors, CSS ni assets.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -107,9 +109,9 @@ Revision 2026-08-08 validacion DSAL: el total sube 1,117 bytes y JS sube 1,226 b
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10164324,
+  "distTotalBytes": 10164743,
   "jsFileCount": 54,
-  "jsTotalBytes": 2664583,
+  "jsTotalBytes": 2665002,
   "cssFileCount": 10,
   "cssTotalBytes": 225082,
   "trackedAssets": [

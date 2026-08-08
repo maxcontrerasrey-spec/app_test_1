@@ -37,8 +37,13 @@ function getPrecandidateStatusLabel(status: DsalPrecandidateStatus) {
   return "Archivado";
 }
 
-function buildCaseOptionLabel(caseCode: string, contractName: string, jobPositionName: string) {
-  return `${caseCode} · ${contractName} · ${jobPositionName}`;
+function buildCaseOptionLabel(
+  folio: string | null | undefined,
+  caseCode: string,
+  contractName: string,
+  jobPositionName: string
+) {
+  return `Folio ${folio} · ${caseCode} · ${contractName} · ${jobPositionName}`;
 }
 
 export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandidatesViewProps) {
@@ -66,13 +71,21 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
   const activeCases = useMemo(
     () =>
       (activeCaseOptionsQuery.data ?? []).filter(
-        (caseRow) => !["filled", "closed_unfilled", "cancelled"].includes(caseRow.status)
+        (caseRow) =>
+          !["filled", "closed_unfilled", "cancelled"].includes(caseRow.status) &&
+          Boolean(caseRow.folio?.trim()) &&
+          caseRow.requested_vacancies > caseRow.filled_vacancies
       ),
     [activeCaseOptionsQuery.data]
   );
   const caseOptions = activeCases.map((caseRow) => ({
     value: caseRow.id,
-    label: buildCaseOptionLabel(caseRow.case_code, caseRow.contract_name, caseRow.job_position_name),
+    label: buildCaseOptionLabel(
+      caseRow.folio,
+      caseRow.case_code,
+      caseRow.contract_name,
+      caseRow.job_position_name
+    ),
     raw: caseRow
   }));
 
@@ -249,10 +262,10 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                         <div className="precandidate-review-stack">
                           <SelectField
                             id={`precandidate-case-${precandidate.id}`}
-                            label="Caso destino"
+                            label="Folio de contratación destino"
                             value={caseSelection[precandidate.id] ?? ""}
                             options={caseOptions}
-                            placeholder="Selecciona caso activo"
+                            placeholder="Selecciona un folio con cupo"
                             onChange={(event) =>
                               setCaseSelection((current) => ({
                                 ...current,
@@ -275,6 +288,13 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                               rows={3}
                             />
                           </label>
+                          {caseOptions.length === 0 && !activeCaseOptionsQuery.isLoading ? (
+                            <p className="form-status form-status-error">
+                              No hay folios de contratación aprobados con cupo disponible. Solicita a la
+                              gerencia respectiva la creación y aprobación del folio antes de convertir este
+                              precandidato en candidato.
+                            </p>
+                          ) : null}
                           <div className="approval-action-row">
                             <button
                               type="button"

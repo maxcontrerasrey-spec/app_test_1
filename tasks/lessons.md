@@ -2879,6 +2879,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Nunca soluciones disponibilidad reintroduciendo una credencial comprometida.** Usa enlaces individuales de un solo uso o SMTP productivo; no restaures passwords compartidas ni limpies el flag sin cambio real de contraseña.
 - **La UI debe conservar errores estructurados y frenar repeticion.** Mapea `status`/`code`, evita mostrar mensajes crudos, bloquea doble submit y no reintentes 429 automaticamente.
 
+## 195. La conversion de precandidato debe validar folio y cupo en la misma transaccion
+
+- **Filtrar folios en la UI no es autoridad suficiente.** La RPC de aprobacion debe volver a comprobar folio no vacio, estado y cupo efectivo despues de bloquear el caso, porque otro operador puede consumir el cupo entre la carga y el clic.
+- **La ausencia de destino requiere una instruccion operativa visible.** Un boton deshabilitado sin explicar que la gerencia debe crear y aprobar el folio deja el proceso sin salida accionable.
+- **El registro debe cerrar en tres puntos trazables.** La aprobacion debe conservar el enlace entre precandidato, `candidate_profiles` y `recruitment_case_candidates`, y dejar la fuente DSAL junto con los datos transferidos.
+
 ## 194. Los enlaces Auth de un solo uso deben sobrevivir a scanners corporativos
 
 - **Un correo aceptado no demuestra que el usuario pueda usar el enlace.** Correlaciona `/recover`, `/verify`, IP, agente y clic humano; Microsoft Safe Links puede consumir el token antes de que la persona abra el mensaje.
