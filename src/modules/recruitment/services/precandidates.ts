@@ -47,6 +47,17 @@ export type DsalPrecandidate = {
   approved_recruitment_case_id: string | null;
   approved_case_candidate_id: string | null;
   approved_folio: string | null;
+  criminal_cause_count: number;
+  labor_cause_count: number;
+  criminal_cause_details: Array<{ description: string; date: string | null }>;
+  labor_cause_details: Array<{ description: string; date: string | null }>;
+};
+
+export type DsalRosterIdentity = {
+  found: boolean;
+  first_name?: string;
+  last_name?: string;
+  second_last_name?: string;
 };
 
 export type DsalPrecandidatesSummary = {
@@ -119,7 +130,26 @@ export async function submitDsalPrecandidateApplication(input: {
     };
   }
 
-  return { data: data as { id: string; status: "received" | "updated" }, error: null };
+  return { data: data as { id: string; status: "received" }, error: null };
+}
+
+export async function fetchDsalRosterIdentity(nationalId: string) {
+  if (!supabase) {
+    return { data: null, error: "Supabase no está configurado en este entorno." };
+  }
+
+  const { data, error } = await supabase.rpc("get_dsal_roster_identity", {
+    p_national_id: normalizeRut(nationalId)
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: getSupabaseErrorMessage(error, "No fue posible validar el RUT en la nómina DSAL.")
+    };
+  }
+
+  return { data: (data ?? { found: false }) as DsalRosterIdentity, error: null };
 }
 
 export async function fetchDsalPrecandidatesPage(input: {
@@ -155,7 +185,6 @@ export async function fetchDsalPrecandidatesPage(input: {
 export async function approveDsalPrecandidate(input: {
   precandidateId: string;
   caseId: string;
-  reviewComment?: string;
 }) {
   if (!supabase) {
     return {
@@ -166,8 +195,7 @@ export async function approveDsalPrecandidate(input: {
 
   const { data, error } = await supabase.rpc("approve_recruitment_precandidate", {
     p_precandidate_id: input.precandidateId,
-    p_case_id: input.caseId,
-    p_review_comment: input.reviewComment?.trim() ? input.reviewComment.trim() : null
+    p_case_id: input.caseId
   });
 
   if (error) {
@@ -185,15 +213,13 @@ export async function approveDsalPrecandidate(input: {
 
 export async function rejectDsalPrecandidate(input: {
   precandidateId: string;
-  reviewComment?: string;
 }) {
   if (!supabase) {
     return { error: "Supabase no está configurado en este entorno." };
   }
 
   const { error } = await supabase.rpc("reject_recruitment_precandidate", {
-    p_precandidate_id: input.precandidateId,
-    p_review_comment: input.reviewComment?.trim() ? input.reviewComment.trim() : null
+    p_precandidate_id: input.precandidateId
   });
 
   if (error) {

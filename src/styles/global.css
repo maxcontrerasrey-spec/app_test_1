@@ -4919,6 +4919,84 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   margin-top: 0.75rem;
 }
 
+.precandidate-resolution-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.precandidate-judicial-bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.precandidate-judicial-bubble {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.72rem;
+  border-radius: 999px;
+  cursor: help;
+  outline: none;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.precandidate-judicial-bubble strong {
+  min-width: 1.25rem;
+  text-align: center;
+  font-size: 0.86rem;
+}
+
+.precandidate-judicial-bubble-criminal {
+  color: #9f2727;
+  background: #fde2e2;
+}
+
+.precandidate-judicial-bubble-laboral {
+  color: #8a5b00;
+  background: #fff0c2;
+}
+
+.precandidate-judicial-bubble-label {
+  white-space: nowrap;
+}
+
+.precandidate-judicial-tooltip {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  bottom: calc(100% + 0.55rem);
+  display: grid;
+  gap: 0.35rem;
+  width: min(31rem, 70vw);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-size: 0.73rem;
+  font-weight: 500;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.25rem);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.precandidate-judicial-tooltip span {
+  display: block;
+}
+
+.precandidate-judicial-bubble:hover .precandidate-judicial-tooltip,
+.precandidate-judicial-bubble:focus-visible .precandidate-judicial-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .tracking-kpi-row-compact {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -6041,6 +6119,10 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
   .approval-action-row .soft-primary-button {
     width: 100%;
+  }
+
+  .precandidate-resolution-fields {
+    grid-template-columns: 1fr;
   }
 
   .top-nav-link {

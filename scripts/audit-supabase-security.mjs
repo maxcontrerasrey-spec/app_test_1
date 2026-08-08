@@ -55,6 +55,10 @@ const ALLOWED_ANON_EXECUTE_GRANTS = new Map([
     "supabase/migrations/20260808015748_add_dsal_precandidates_intake.sql",
     ["submit_dsal_precandidate_application"],
   ],
+  [
+    "supabase/migrations/20260808040122_add_dsal_roster_judicial_data.sql",
+    ["get_dsal_roster_identity", "submit_dsal_precandidate_application"],
+  ],
 ]);
 
 function addFinding(severity, filePath, message, detail = "") {

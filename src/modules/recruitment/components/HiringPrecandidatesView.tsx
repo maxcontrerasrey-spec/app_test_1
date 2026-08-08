@@ -46,6 +46,37 @@ function buildCaseOptionLabel(
   return `Folio ${folio} · ${caseCode} · ${contractName} · ${jobPositionName}`;
 }
 
+function JudicialBubble({
+  label,
+  count,
+  details,
+  tone
+}: {
+  label: string;
+  count: number;
+  details: Array<{ description: string; date: string | null }>;
+  tone: "criminal" | "laboral";
+}) {
+  return (
+    <span className={`precandidate-judicial-bubble precandidate-judicial-bubble-${tone}`} tabIndex={0}>
+      <span className="precandidate-judicial-bubble-label">{label}</span>
+      <strong>{count}</strong>
+      <span className="precandidate-judicial-tooltip" role="tooltip">
+        {details.length > 0 ? (
+          details.map((detail, index) => (
+            <span key={`${detail.description}-${detail.date ?? "sin-fecha"}-${index}`}>
+              {detail.description}
+              {detail.date ? ` · ${detail.date}` : " · Fecha no informada"}
+            </span>
+          ))
+        ) : (
+          <span>{count > 0 ? "Detalle no disponible" : "Sin causas registradas"}</span>
+        )}
+      </span>
+    </span>
+  );
+}
+
 export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandidatesViewProps) {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,7 +84,6 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
   const [statusFilter, setStatusFilter] = useState<DsalPrecandidateStatus | "all">("pending");
   const [page, setPage] = useState(0);
   const [caseSelection, setCaseSelection] = useState<Record<string, string>>({});
-  const [reviewComment, setReviewComment] = useState<Record<string, string>>({});
   const [rowMessage, setRowMessage] = useState<Record<string, string>>({});
   const [savingRowId, setSavingRowId] = useState("");
   const [expandedPrecandidateId, setExpandedPrecandidateId] = useState<string | null>(null);
@@ -131,8 +161,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
 
     const result = await approveDsalPrecandidate({
       precandidateId: precandidate.id,
-      caseId: selectedCaseId,
-      reviewComment: reviewComment[precandidate.id]
+      caseId: selectedCaseId
     });
 
     setSavingRowId("");
@@ -154,8 +183,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
     setRowMessage((current) => ({ ...current, [precandidate.id]: "" }));
 
     const result = await rejectDsalPrecandidate({
-      precandidateId: precandidate.id,
-      reviewComment: reviewComment[precandidate.id]
+      precandidateId: precandidate.id
     });
 
     setSavingRowId("");
@@ -292,8 +320,26 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                               </div>
 
                               <div className="expanded-detail-section">
+                                <h4>Información judicial</h4>
+                                <div className="precandidate-judicial-bubbles" aria-label="Información judicial del precandidato">
+                                  <JudicialBubble
+                                    label="Causas criminales"
+                                    count={precandidate.criminal_cause_count}
+                                    details={precandidate.criminal_cause_details}
+                                    tone="criminal"
+                                  />
+                                  <JudicialBubble
+                                    label="Causas laborales"
+                                    count={precandidate.labor_cause_count}
+                                    details={precandidate.labor_cause_details}
+                                    tone="laboral"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="expanded-detail-section">
                                 <h4>Resolución y destino</h4>
-                                <div className="expanded-detail-fields">
+                                <div className="expanded-detail-fields precandidate-resolution-fields">
                                   <div>
                                     <small>Estado</small>
                                     <strong>{getPrecandidateStatusLabel(precandidate.status)}</strong>
@@ -302,7 +348,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                                     <small>Folio de destino</small>
                                     <strong>{precandidate.approved_folio || "Pendiente de asignación"}</strong>
                                   </div>
-                                  <div className="expanded-detail-field-full">
+                                  <div>
                                     <small>Comentario de revisión</small>
                                     <strong>{precandidate.review_comment?.trim() || "Sin comentario de revisión"}</strong>
                                   </div>
@@ -329,21 +375,6 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                                         }))
                                       }
                                     />
-                                    <label className="field-group" htmlFor={`precandidate-comment-${precandidate.id}`}>
-                                      <span className="field-label">Comentario de revisión</span>
-                                      <textarea
-                                        id={`precandidate-comment-${precandidate.id}`}
-                                        className="control-textarea"
-                                        value={reviewComment[precandidate.id] ?? ""}
-                                        onChange={(event) =>
-                                          setReviewComment((current) => ({
-                                            ...current,
-                                            [precandidate.id]: event.target.value
-                                          }))
-                                        }
-                                        rows={3}
-                                      />
-                                    </label>
                                     {caseOptions.length === 0 && !activeCaseOptionsQuery.isLoading ? (
                                       <p className="form-status form-status-error">
                                         No hay folios DSAL aprobados con cupo disponible. Solicita a la gerencia

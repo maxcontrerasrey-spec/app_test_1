@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import consorcioAndinoLogo from "../../competencies/assets/consorcio-andino.png";
 import { MultiSelectField, SelectField, TextField } from "../../../shared/ui";
 import { formatRut, validateRut } from "../../../shared/lib/rut";
@@ -12,6 +12,7 @@ import {
 import {
   dsalLicenseOptions,
   dsalRoleOptions,
+  fetchDsalRosterIdentity,
   submitDsalPrecandidateApplication
 } from "../services/precandidates";
 
@@ -52,6 +53,8 @@ export function DsalPublicApplicationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMessage, setFormMessage] = useState("");
   const [formError, setFormError] = useState("");
+  const [rosterLookupStatus, setRosterLookupStatus] = useState<"idle" | "loading" | "found" | "not_found" | "error">("idle");
+  const rosterRequestRef = useRef(0);
 
   const rutIsValid = useMemo(
     () => !draft.nationalId || validateRut(draft.nationalId),
@@ -62,8 +65,9 @@ export function DsalPublicApplicationPage() {
     [draft.personalEmail]
   );
   const requiredFieldsReady = Boolean(
-    draft.nationalId &&
+      draft.nationalId &&
       validateRut(draft.nationalId) &&
+      rosterLookupStatus === "found" &&
       draft.firstName.trim() &&
       draft.lastName.trim() &&
       draft.secondLastName.trim() &&
@@ -77,6 +81,42 @@ export function DsalPublicApplicationPage() {
       draft.phone.length === 8 &&
       isValidDsalEmail(draft.personalEmail)
   );
+
+  const lookupRosterIdentity = async (nationalId: string) => {
+    const requestId = rosterRequestRef.current + 1;
+    rosterRequestRef.current = requestId;
+
+    if (!validateRut(nationalId)) {
+      setRosterLookupStatus("idle");
+      setDraft((current) => ({ ...current, firstName: "", lastName: "", secondLastName: "" }));
+      return;
+    }
+
+    setRosterLookupStatus("loading");
+    const result = await fetchDsalRosterIdentity(nationalId);
+    if (requestId !== rosterRequestRef.current) return;
+
+    if (result.error || !result.data) {
+      setRosterLookupStatus("error");
+      setFormError(result.error ?? "No fue posible validar el RUT en la nómina DSAL.");
+      return;
+    }
+
+    if (!result.data.found) {
+      setRosterLookupStatus("not_found");
+      setDraft((current) => ({ ...current, firstName: "", lastName: "", secondLastName: "" }));
+      setFormError("El RUT no se encuentra en la nómina vigente del contrato DSAL.");
+      return;
+    }
+
+    setRosterLookupStatus("found");
+    setDraft((current) => ({
+      ...current,
+      firstName: result.data?.first_name ?? "",
+      lastName: result.data?.last_name ?? "",
+      secondLastName: result.data?.second_last_name ?? ""
+    }));
+  };
 
   const updateDraft = (patch: Partial<ApplicationDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -114,11 +154,8 @@ export function DsalPublicApplicationPage() {
     setDraft(initialDraft);
     setRutTouched(false);
     setEmailTouched(false);
-    setFormMessage(
-      result.data?.status === "updated"
-        ? "Actualizamos tu postulación pendiente. Reclutamiento revisará tus datos."
-        : "Recibimos tu postulación. Reclutamiento revisará tus datos y te contactará si corresponde."
-    );
+    setRosterLookupStatus("idle");
+    setFormMessage("Recibimos tu postulación. Reclutamiento revisará tus datos y te contactará si corresponde.");
   };
 
   return (
@@ -174,15 +211,40 @@ export function DsalPublicApplicationPage() {
               onChange={(event) => {
                 const nextRut = formatRut(event.target.value);
                 updateDraft({ nationalId: nextRut });
+                if (!validateRut(nextRut)) {
+                  rosterRequestRef.current += 1;
+                  setRosterLookupStatus("idle");
+                  setDraft((current) => ({
+                    ...current,
+                    firstName: "",
+                    lastName: "",
+                    secondLastName: ""
+                  }));
+                } else {
+                  void lookupRosterIdentity(nextRut);
+                }
                 if (nextRut) {
                   setRutTouched(true);
                 }
               }}
-              onBlur={() => setRutTouched(true)}
+              onBlur={() => {
+                setRutTouched(true);
+                if (rutIsValid) void lookupRosterIdentity(draft.nationalId);
+              }}
             />
             {rutTouched && draft.nationalId && !rutIsValid ? (
               <p className="form-status form-status-error public-application-alert" role="alert">
                 El RUT ingresado no es válido. Corrígelo para enviar la postulación.
+              </p>
+            ) : null}
+            {rosterLookupStatus === "not_found" ? (
+              <p className="form-status form-status-error public-application-alert" role="alert">
+                Este RUT no está habilitado para postular en el contrato DSAL.
+              </p>
+            ) : null}
+            {rosterLookupStatus === "loading" ? (
+              <p className="field-hint public-application-roster-status" role="status">
+                Validando RUT en la nómina vigente...
               </p>
             ) : null}
           </section>
@@ -200,6 +262,7 @@ export function DsalPublicApplicationPage() {
                 id="dsal-public-first-name"
                 label="Nombres"
                 value={draft.firstName}
+                disabled={rosterLookupStatus === "found" || rosterLookupStatus === "loading"}
                 autoComplete="given-name"
                 onChange={(event) => updateDraft({ firstName: event.target.value })}
                 onBlur={(event) => normalizeTextField("firstName", event.target.value)}
@@ -208,6 +271,7 @@ export function DsalPublicApplicationPage() {
                 id="dsal-public-last-name"
                 label="Apellido paterno"
                 value={draft.lastName}
+                disabled={rosterLookupStatus === "found" || rosterLookupStatus === "loading"}
                 autoComplete="family-name"
                 onChange={(event) => updateDraft({ lastName: event.target.value })}
                 onBlur={(event) => normalizeTextField("lastName", event.target.value)}
@@ -216,6 +280,7 @@ export function DsalPublicApplicationPage() {
                 id="dsal-public-second-last-name"
                 label="Apellido materno"
                 value={draft.secondLastName}
+                disabled={rosterLookupStatus === "found" || rosterLookupStatus === "loading"}
                 onChange={(event) => updateDraft({ secondLastName: event.target.value })}
                 onBlur={(event) => normalizeTextField("secondLastName", event.target.value)}
               />

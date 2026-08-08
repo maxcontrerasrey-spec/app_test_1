@@ -15,6 +15,18 @@ const statusPage = fs.readFileSync(
   path.join(root, "src/modules/recruitment/pages/HiringStatusPage.tsx"),
   "utf8"
 );
+const duplicateSubmissionMigration = fs.readFileSync(
+  path.join(root, "supabase/migrations/20260808033755_prevent_duplicate_dsal_precandidate_submissions.sql"),
+  "utf8"
+);
+const rosterJudicialMigration = fs.readFileSync(
+  path.join(root, "supabase/migrations/20260808040122_add_dsal_roster_judicial_data.sql"),
+  "utf8"
+);
+const publicApplication = fs.readFileSync(
+  path.join(root, "src/modules/recruitment/pages/DsalPublicApplicationPage.tsx"),
+  "utf8"
+);
 
 describe("DSAL precandidate approval contract", () => {
   it("enforces folio ownership, effective capacity and transactional approval", () => {
@@ -41,6 +53,38 @@ describe("DSAL precandidate approval contract", () => {
     expect(approvalView).toContain("expandedPrecandidateId");
     expect(approvalView).toContain("expanded-case-detail-grid");
     expect(approvalView).toContain("approved_folio");
+    expect(approvalView).not.toContain("reviewComment");
+    expect(approvalView).not.toContain("id={`precandidate-comment-");
+    expect(approvalView).toContain("precandidate-resolution-fields");
     expect(statusPage).toContain('"gerencia", "director_op", "reclutamiento"');
+  });
+
+  it("blocks a second submission by RUT at the database boundary", () => {
+    expect(duplicateSubmissionMigration).toContain(
+      "idx_recruitment_precandidates_national_id_all"
+    );
+    expect(duplicateSubmissionMigration).toContain(
+      "Este RUT ya registra una postulación y no puede volver a enviarse"
+    );
+    expect(duplicateSubmissionMigration).not.toContain("on conflict (national_id) where status = 'pending'");
+    expect(duplicateSubmissionMigration).toContain("when unique_violation then");
+  });
+
+  it("keeps roster identity and judicial data backend-authoritative", () => {
+    expect(rosterJudicialMigration).toContain("create table if not exists public.recruitment_dsal_roster");
+    expect(rosterJudicialMigration).toContain("get_dsal_roster_identity");
+    expect(rosterJudicialMigration).toContain("El RUT no se encuentra en la nómina vigente del contrato DSAL");
+    expect(rosterJudicialMigration).toContain("roster_record.first_name");
+    expect(rosterJudicialMigration).toContain("recruitment_dsal_judicial_summary");
+    expect(rosterJudicialMigration).toContain("recruitment_dsal_judicial_causes");
+    expect(rosterJudicialMigration).toContain("criminal_cause_count");
+    expect(rosterJudicialMigration).toContain("criminal_cause_details");
+    expect(rosterJudicialMigration).toContain("using (false) with check (false)");
+    expect(publicApplication).toContain("fetchDsalRosterIdentity");
+    expect(publicApplication).toContain('disabled={rosterLookupStatus === "found" || rosterLookupStatus === "loading"}');
+    expect(publicApplication).toContain("rosterLookupStatus === \"found\"");
+    expect(approvalView).toContain("precandidate-judicial-bubble-${tone}");
+    expect(approvalView).toContain("Causas criminales");
+    expect(approvalView).toContain("Causas laborales");
   });
 });

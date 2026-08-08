@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 299. El autocompletado autoritativo debe quedar bloqueado despues de resolver
+
+- Una consulta de identidad puede completar correctamente los datos y aun así dejar los inputs editables si la condición de `disabled` se interpreta al revés.
+- La prueba responsive debe comprobar el estado visible y también el atributo interactivo de los campos despues de una respuesta real del backend.
+- El backend debe volver a imponer la identidad de nómina al insertar, porque el navegador no es una frontera de seguridad.
+
 ## 195. Un header de seguridad debe validar los APIs del navegador que el ERP usa
 
 - **`Permissions-Policy` puede romper funcionalidad aunque parezca un hardening conservador.** Si un widget usa `navigator.geolocation`, `geolocation=()` deshabilita la API a nivel navegador y fuerza fallback aunque el usuario tenga permisos.

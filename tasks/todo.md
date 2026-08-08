@@ -98,6 +98,23 @@ Resultado:
 - [x] Produccion: RLS activo, payload incluye `approved_folio`, existen 4 casos DSAL activos con folio y la migracion `20260808032030_allow_dsal_precandidate_reviewers_and_expand_details` esta aplicada.
 - [x] `test:integrity`, `build:frontend-check`, auditorias de migraciones/seguridad, baseline y Guardian pasan con 0 errores y 0 warnings.
 
+### Nómina DSAL y antecedentes judiciales de precandidatos - 2026-08-08
+
+- [x] Extraer y auditar `nomina base.xlsx` e `info judicial.xlsx` con `artifact-tool`, validando RUT, duplicados, conteos y detalle de causas.
+- [x] Crear tablas protegidas y RPCs backend para consulta exacta de identidad de nómina y enriquecimiento judicial solo para revisores DSAL autenticados.
+- [x] Sembrar la nómina vigente y los conteos/detalles judiciales en una migración reproducible, preservando trazabilidad de origen.
+- [x] Implementar autocompletado bloqueado por RUT en la página pública y bloquear postulaciones cuyo RUT no pertenezca a la nómina vigente.
+- [x] Mostrar burbujas judiciales roja/amarilla y tooltips por causa en la fila expandida de Precandidatos, manteniendo el patrón visual ERP y responsive.
+- [x] Ejecutar pruebas, build, auditorías, Guardian, smoke remoto transaccional y revisión de seguridad de datos sensibles.
+- [ ] Verificar commit, push y alineación efectiva con `main`.
+
+Resultado parcial:
+- `nomina base.xlsx`: 156 RUT únicos, sin duplicados.
+- `info judicial.xlsx`: 195 resúmenes, 81 causas criminales y 43 laborales; se conservó el resumen oficial y el detalle completo.
+- Producción Supabase: migraciones `20260808033755` y `20260808040122` aplicadas y registradas; tablas judiciales sin `select` directo para `anon`/`authenticated`.
+- Smoke transaccional: la consulta pública resolvió una identidad conocida, rechazó una desconocida y al enviar nombres falsos persistió la identidad oficial de nómina; la transacción fue revertida.
+- Validación: 78 pruebas unitarias, prueba focalizada DSAL, build frontend, auditorías y Guardian pasan con 0 errores y 0 warnings. Playwright validó autocompletado bloqueado y render móvil sin cambios visuales ajenos al ERP.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.
