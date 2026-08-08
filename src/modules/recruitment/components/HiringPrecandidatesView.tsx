@@ -313,27 +313,22 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                                     <strong>{precandidate.comments?.trim() || "Sin comentarios registrados"}</strong>
                                   </div>
                                   <div>
-                                    <small>Última revisión</small>
-                                    <strong>{formatRequestDate(precandidate.reviewed_at)}</strong>
+                                    <small>Información judicial</small>
+                                    <div className="precandidate-judicial-bubbles" aria-label="Información judicial del precandidato">
+                                      <JudicialBubble
+                                        label="Causas criminales"
+                                        count={precandidate.criminal_cause_count}
+                                        details={precandidate.criminal_cause_details}
+                                        tone="criminal"
+                                      />
+                                      <JudicialBubble
+                                        label="Causas laborales"
+                                        count={precandidate.labor_cause_count}
+                                        details={precandidate.labor_cause_details}
+                                        tone="laboral"
+                                      />
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-
-                              <div className="expanded-detail-section">
-                                <h4>Información judicial</h4>
-                                <div className="precandidate-judicial-bubbles" aria-label="Información judicial del precandidato">
-                                  <JudicialBubble
-                                    label="Causas criminales"
-                                    count={precandidate.criminal_cause_count}
-                                    details={precandidate.criminal_cause_details}
-                                    tone="criminal"
-                                  />
-                                  <JudicialBubble
-                                    label="Causas laborales"
-                                    count={precandidate.labor_cause_count}
-                                    details={precandidate.labor_cause_details}
-                                    tone="laboral"
-                                  />
                                 </div>
                               </div>
 

@@ -179,15 +179,19 @@ export function DsalPublicApplicationPage() {
         </header>
 
         <div className="public-application-welcome">
-          <h1>Estimado(a) postulante:</h1>
-          <p>Agradecemos su interés en formar parte de nuestro equipo.</p>
+          <h1>¡Bienvenido(a)!</h1>
+          <p>Nos alegra contar con tu interés en continuar formando parte de este gran equipo.</p>
           <p>
-            Para facilitar el proceso de evaluación y permitir que nuestro equipo de Reclutamiento
-            y Selección pueda contactarlo oportunamente, le solicitamos completar el siguiente
-            formulario con la información requerida.
+            Para facilitar el proceso de traspaso y mantener actualizados tus antecedentes, te
+            invitamos a completar el siguiente formulario con la información solicitada.
           </p>
           <p>
-            ¡Le deseamos mucho éxito y agradecemos su interés en ser parte de nuestra organización!
+            Una vez recibidos tus datos, nuestro equipo revisará la información y se pondrá en
+            contacto contigo en caso de ser necesario.
+          </p>
+          <p>
+            Agradecemos tu compromiso y disposición durante este proceso. ¡Esperamos seguir
+            contando contigo!
           </p>
         </div>
 
