@@ -143,10 +143,6 @@ export function DsalPublicApplicationPage() {
             formulario con la información requerida.
           </p>
           <p>
-            Una vez recibida su postulación, revisaremos sus antecedentes y, si su perfil se ajusta
-            a las vacantes disponibles, nos pondremos en contacto con usted a la brevedad.
-          </p>
-          <p>
             ¡Le deseamos mucho éxito y agradecemos su interés en ser parte de nuestra organización!
           </p>
         </div>
