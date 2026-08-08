@@ -11,6 +11,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Todo header desplegable necesita prueba de contrato funcional.** El test debe fallar si se vuelve a negar una API usada por la UI, no solo comprobar que exista el header.
 - **La verificacion productiva debe leer headers reales.** Ante regresiones web, compara `public/_headers`, `dist/_headers` y `curl -I` del dominio publicado antes de atribuir el fallo al navegador o al usuario.
 
+## 296. Una pagina publica del ERP tambien debe verse como ERP
+
+- **Libre acceso no significa micrositio externo.** Aunque una ruta quede fuera de `ProtectedRoute`, debe conservar superficies, tipografia, densidad, botones y campos del sistema visual ERP.
+- **El primer diseno debe compararse contra pantallas vivas del modulo.** Antes de cerrar una pagina publica de reclutamiento, revisa `control-edit-grid`, `field-group`, `form-status`, `tracking-panel`, `approval-chip` y el ritmo compacto usado por Control de Contrataciones.
+- **La responsividad se valida por geometria, no por compilacion.** En notebook y celular debe comprobarse que logo, encabezado, secciones, selects multivalor, mensajes y boton de envio no se sobrepongan ni parezcan landing page ajena.
+- **El copy publico debe ser operacional y breve.** Evita hero amplio y textos promocionales; prioriza instrucciones concretas, jerarquia baja y una ficha limpia que parezca parte natural del ERP.
+
 ## 292. El codigo de ficha BUK deja de ser una etiqueta cuando ya existe historia contractual
 
 - **Una ficha BUK es un contenedor contractual, no solo un correlativo visible.** Antes de corregir `F2` a `F1`, inventaria planes, trabajos, liquidaciones, documentos y firmas asociados al `employee_id` vivo.

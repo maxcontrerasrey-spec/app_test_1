@@ -82,6 +82,8 @@ Revision 2026-08-06 recuperacion Auth: el total y JS suben 1,271 bytes por conse
 
 Revision 2026-08-08 postulacion DSAL: el total sube 22,976 bytes, JS sube 9,505 bytes y CSS sube 2,908 bytes por agregar la ruta publica lazy `/postulacion-dsal`, el formulario DSAL con logo Consorcio Andino, la bandeja interna `Precandidatos` y los RPCs asociados. No agrega vendors ni assets pesados; reutiliza el logo existente de Consorcio Andino.
 
+Revision 2026-08-08 estetica postulacion DSAL: el total sube 4,040 bytes, JS sube 1,526 bytes y CSS sube 2,514 bytes por alinear la pagina publica `/postulacion-dsal` al lenguaje visual compacto del ERP en notebook y celular. No agrega vendors ni assets; mantiene la ruta lazy y reutiliza controles globales existentes.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -101,11 +103,11 @@ Revision 2026-08-08 postulacion DSAL: el total sube 22,976 bytes, JS sube 9,505 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10159167,
+  "distTotalBytes": 10163207,
   "jsFileCount": 54,
-  "jsTotalBytes": 2661826,
+  "jsTotalBytes": 2663352,
   "cssFileCount": 10,
-  "cssTotalBytes": 222568,
+  "cssTotalBytes": 225082,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

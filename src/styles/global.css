@@ -4686,73 +4686,147 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .public-application-page {
   min-height: 100dvh;
-  padding: clamp(1rem, 3vw, 2.5rem);
-  background:
-    linear-gradient(135deg, rgba(246, 248, 244, 0.96), rgba(232, 239, 236, 0.92)),
-    var(--app-bg);
+  padding: 1.15rem;
+  background: var(--app-bg);
   color: var(--text);
 }
 
 .public-application-shell {
-  width: min(1040px, 100%);
+  width: min(980px, 100%);
   margin: 0 auto;
   display: grid;
-  gap: 1.2rem;
+  gap: 0.85rem;
 }
 
 .public-application-header {
-  display: grid;
-  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  gap: clamp(1rem, 4vw, 3rem);
-  padding: clamp(1rem, 4vw, 2rem) 0 0;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: rgba(var(--surface-rgb), 0.94);
+  box-shadow:
+    14px 14px 28px -30px var(--soft-shadow-dark),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.public-application-brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.8rem;
 }
 
 .public-application-logo {
-  width: min(220px, 52vw);
+  width: 7.6rem;
+  max-width: 42vw;
   height: auto;
   object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.public-application-brand div {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.public-application-brand span,
+.public-application-status span,
+.public-application-summary span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.public-application-brand strong {
+  color: var(--title);
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.public-application-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.85rem;
+  padding: 0 0.72rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  white-space: nowrap;
+}
+
+.public-application-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 300px);
+  gap: 1rem;
+  align-items: end;
+  padding: 0.35rem 0.15rem 0.1rem;
 }
 
 .public-application-heading {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.35rem;
 }
 
 .public-application-heading h1 {
   margin: 0;
   color: var(--title);
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 1;
+  font-size: clamp(1.55rem, 2.3vw, 2.1rem);
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
 .public-application-heading p {
   margin: 0;
-  max-width: 66ch;
+  max-width: 62ch;
   color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.92rem;
+  line-height: 1.48;
+}
+
+.public-application-summary {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.78rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(var(--surface-rgb), 0.72);
+}
+
+.public-application-summary strong {
+  color: var(--title);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.public-application-summary p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.36;
 }
 
 .public-application-form {
   display: grid;
-  gap: 0.9rem;
-  padding: clamp(1rem, 3vw, 1.4rem);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  background: rgba(var(--surface-rgb), 0.94);
-  box-shadow:
-    18px 18px 38px -34px var(--soft-shadow-dark),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  gap: 0;
+  padding: 1rem 1.05rem 1.05rem;
 }
 
 .public-application-section {
   display: grid;
-  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
-  gap: 1rem;
-  padding: 1rem 0;
+  grid-template-columns: minmax(155px, 200px) minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 0.82rem 0;
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -4761,28 +4835,47 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   padding-top: 0;
 }
 
+.public-application-section-title {
+  display: grid;
+  grid-template-columns: 1.45rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.55rem;
+}
+
 .public-application-section h2 {
-  margin: 0.35rem 0 0;
+  margin: 0;
   color: var(--title);
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 0.94rem;
   letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.public-application-section-title p {
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.28;
 }
 
 .public-application-step {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: 0.02rem;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(18, 89, 71, 0.1);
-  color: #125947;
-  font-weight: 700;
+  background: var(--surface-soft);
+  color: var(--title);
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .public-application-grid {
   align-items: start;
+  gap: 0.75rem;
 }
 
 .public-application-alert,
@@ -4792,17 +4885,28 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 .public-application-textarea {
-  min-height: 8rem;
+  min-height: 6.8rem;
 }
 
 .public-application-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 0.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.public-application-actions p {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
 }
 
 .public-application-submit {
-  min-width: min(100%, 220px);
+  min-width: min(100%, 190px);
 }
 
 .precandidate-review-cell {
@@ -6252,36 +6356,83 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 @media (max-width: 760px) {
   .public-application-page {
-    padding: 0.85rem;
+    padding: 0.7rem;
+  }
+
+  .public-application-shell {
+    gap: 0.7rem;
   }
 
   .public-application-header,
+  .public-application-intro,
   .public-application-section {
     grid-template-columns: 1fr;
   }
 
   .public-application-header {
-    gap: 1rem;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.72rem;
+  }
+
+  .public-application-brand {
+    gap: 0.65rem;
   }
 
   .public-application-logo {
-    width: min(190px, 72vw);
+    width: min(7.1rem, 44vw);
+  }
+
+  .public-application-status {
+    min-height: 1.65rem;
+    padding: 0 0.55rem;
+  }
+
+  .public-application-status span {
+    font-size: 0.66rem;
+  }
+
+  .public-application-intro {
+    gap: 0.7rem;
+    padding: 0.15rem 0;
   }
 
   .public-application-heading h1 {
-    font-size: 2.15rem;
+    font-size: 1.55rem;
+    line-height: 1.12;
+  }
+
+  .public-application-heading p {
+    font-size: 0.88rem;
   }
 
   .public-application-form {
-    padding: 0.95rem;
+    padding: 0.8rem;
   }
 
   .public-application-section {
-    gap: 0.8rem;
+    gap: 0.62rem;
+    padding: 0.78rem 0;
+  }
+
+  .public-application-section-title {
+    grid-template-columns: 1.35rem minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .public-application-section-title p {
+    font-size: 0.74rem;
+  }
+
+  .public-application-grid,
+  .control-edit-grid.public-application-grid {
+    grid-template-columns: 1fr;
+    gap: 0.62rem;
   }
 
   .public-application-actions {
-    justify-content: stretch;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
   .public-application-submit {
@@ -6294,5 +6445,20 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
   .precandidate-review-cell {
     min-width: 280px;
+  }
+}
+
+@media (max-width: 420px) {
+  .public-application-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .public-application-status {
+    justify-self: start;
+  }
+
+  .public-application-logo {
+    width: min(6.7rem, 48vw);
   }
 }

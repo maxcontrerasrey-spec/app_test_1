@@ -28,6 +28,18 @@ Resultado:
 - Smoke productivo: tabla existe, RLS activo, `anon` no tiene `select` ni `insert` directo sobre `recruitment_precandidates`, `anon` solo ejecuta `submit_dsal_precandidate_application`, y `authenticated` ejecuta listado/aprobacion/rechazo. Insercion publica de smoke con RUT valido dentro de transaccion dejo 0 filas despues de `ROLLBACK`.
 - Validacion: `build:frontend-check`, `audit:migrations`, `audit:supabase-security`, SQL transaccional remoto con `ROLLBACK`, Playwright desktop/mobile de `/postulacion-dsal`, `audit:performance-baseline`, `git diff --check` y `guardian` pasan. `db push --dry-run --linked` sigue bloqueado por deuda legacy remota ya conocida, por eso se aplico/verifico con `supabase db query --linked`.
 
+### Correccion estetica pagina publica DSAL - 2026-08-08
+
+- [x] Auditar la pagina publica contra la estetica real del ERP y clases globales existentes.
+- [x] Rehacer layout/CSS para que sea limpio, minimalista, compacto y consistente en notebook y celular.
+- [x] Validar render responsivo real, build frontend, Guardian y `git diff --check`.
+
+Resultado:
+- Se reemplazo el tratamiento tipo landing/hero por una ficha publica de lenguaje ERP: header compacto con logo Consorcio Andino, intro breve, superficie `tracking-panel`, divisores finos, numeracion sobria y controles existentes (`TextField`, `SelectField`, `MultiSelectField`, `control-edit-grid`, `form-status`, `soft-primary-button`).
+- Playwright local valido notebook 1366, notebook 1024, mobile 390 y mobile 360 sin overflow horizontal. Capturas revisadas visualmente en notebook y celular.
+- La funcionalidad, RPCs y permisos backend no cambian en esta correccion.
+- Validacion final: `build:frontend-check` y `guardian` pasan con 0 errores y 0 warnings. El baseline P4 se actualizo solo por el aumento medido del CSS/JS de esta correccion visual, sin vendors ni assets nuevos.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.

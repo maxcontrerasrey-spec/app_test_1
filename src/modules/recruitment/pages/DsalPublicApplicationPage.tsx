@@ -109,8 +109,8 @@ export function DsalPublicApplicationPage() {
     setEmailTouched(false);
     setFormMessage(
       result.data?.status === "updated"
-        ? "Actualizamos tu postulación pendiente. El equipo de reclutamiento revisará tus datos."
-        : "Recibimos tu postulación. El equipo de reclutamiento revisará tus datos y te contactará si corresponde."
+        ? "Actualizamos tu postulación pendiente. Reclutamiento revisará tus datos."
+        : "Recibimos tu postulación. Reclutamiento revisará tus datos y te contactará si corresponde."
     );
   };
 
@@ -118,58 +118,78 @@ export function DsalPublicApplicationPage() {
     <main className="public-application-page">
       <section className="public-application-shell">
         <header className="public-application-header">
-          <img
-            src={consorcioAndinoLogo}
-            alt="Consorcio Andino"
-            className="public-application-logo"
-          />
-          <div className="public-application-heading">
-            <span className="micro-label">Codelco DSAL · Consorcio Andino</span>
-            <h1>Postulación trabajadores actuales</h1>
-            <p>
-              Gracias por tu interés en participar en la etapa de implementación DSAL.
-              Completa tus datos personales y de licencia para que el equipo de reclutamiento
-              pueda revisar tu información y contactarte con mayor rapidez.
-            </p>
+          <div className="public-application-brand">
+            <img
+              src={consorcioAndinoLogo}
+              alt="Consorcio Andino"
+              className="public-application-logo"
+            />
+            <div>
+              <span>Consorcio Andino</span>
+              <strong>Codelco DSAL</strong>
+            </div>
+          </div>
+          <div className="public-application-status">
+            <span>Postulación pública</span>
           </div>
         </header>
 
-        <form className="public-application-form" onSubmit={handleSubmit}>
-          <section className="public-application-section">
-            <div>
+        <div className="public-application-intro">
+          <div className="public-application-heading">
+            <span className="micro-label">Implementación DSAL</span>
+            <h1>Postulación trabajadores actuales</h1>
+            <p>
+              Completa esta ficha para que el equipo de reclutamiento pueda validar tus datos,
+              licencias y rol actual antes de contactarte.
+            </p>
+          </div>
+          <aside className="public-application-summary" aria-label="Resumen de la postulación">
+            <span>Ingreso sin cuenta ERP</span>
+            <strong>La información quedará en Precandidatos.</strong>
+            <p>Después de la revisión interna puede pasar al Control de candidatos.</p>
+          </aside>
+        </div>
+
+        <form className="public-application-form tracking-panel" onSubmit={handleSubmit}>
+          <section className="public-application-section public-application-section-identification">
+            <div className="public-application-section-title">
               <span className="public-application-step">1</span>
-              <h2>Identificación</h2>
+              <div>
+                <h2>Identificación</h2>
+                <p>Usa tu RUT chileno vigente.</p>
+              </div>
             </div>
-            <div className="control-edit-grid public-application-grid">
-              <TextField
-                id="dsal-public-rut"
-                label="RUT"
-                value={draft.nationalId}
-                inputMode="text"
-                autoComplete="off"
-                placeholder="12.345.678-K"
-                hasError={rutTouched && Boolean(draft.nationalId) && !rutIsValid}
-                onChange={(event) => {
-                  const nextRut = formatRut(event.target.value);
-                  updateDraft({ nationalId: nextRut });
-                  if (nextRut) {
-                    setRutTouched(true);
-                  }
-                }}
-                onBlur={() => setRutTouched(true)}
-              />
-              {rutTouched && draft.nationalId && !rutIsValid ? (
-                <p className="form-status form-status-error public-application-alert" role="alert">
-                  El RUT ingresado no es válido. Corrígelo para poder enviar la postulación.
-                </p>
-              ) : null}
-            </div>
+            <TextField
+              id="dsal-public-rut"
+              label="RUT"
+              value={draft.nationalId}
+              inputMode="text"
+              autoComplete="off"
+              placeholder="12.345.678-K"
+              hasError={rutTouched && Boolean(draft.nationalId) && !rutIsValid}
+              onChange={(event) => {
+                const nextRut = formatRut(event.target.value);
+                updateDraft({ nationalId: nextRut });
+                if (nextRut) {
+                  setRutTouched(true);
+                }
+              }}
+              onBlur={() => setRutTouched(true)}
+            />
+            {rutTouched && draft.nationalId && !rutIsValid ? (
+              <p className="form-status form-status-error public-application-alert" role="alert">
+                El RUT ingresado no es válido. Corrígelo para enviar la postulación.
+              </p>
+            ) : null}
           </section>
 
           <section className="public-application-section">
-            <div>
+            <div className="public-application-section-title">
               <span className="public-application-step">2</span>
-              <h2>Nombre legal</h2>
+              <div>
+                <h2>Nombre legal</h2>
+                <p>Debe coincidir con tus documentos.</p>
+              </div>
             </div>
             <div className="control-edit-grid public-application-grid">
               <TextField
@@ -196,9 +216,12 @@ export function DsalPublicApplicationPage() {
           </section>
 
           <section className="public-application-section">
-            <div>
+            <div className="public-application-section-title">
               <span className="public-application-step">3</span>
-              <h2>Domicilio</h2>
+              <div>
+                <h2>Domicilio</h2>
+                <p>Separado según la ficha ERP.</p>
+              </div>
             </div>
             <div className="control-edit-grid public-application-grid">
               <TextField
@@ -227,9 +250,12 @@ export function DsalPublicApplicationPage() {
           </section>
 
           <section className="public-application-section">
-            <div>
+            <div className="public-application-section-title">
               <span className="public-application-step">4</span>
-              <h2>Licencias</h2>
+              <div>
+                <h2>Licencias</h2>
+                <p>Puedes seleccionar más de una.</p>
+              </div>
             </div>
             <MultiSelectField
               id="dsal-public-licenses"
@@ -242,9 +268,12 @@ export function DsalPublicApplicationPage() {
           </section>
 
           <section className="public-application-section">
-            <div>
+            <div className="public-application-section-title">
               <span className="public-application-step">5</span>
-              <h2>Rol actual DSAL</h2>
+              <div>
+                <h2>Rol actual DSAL</h2>
+                <p>Selecciona una sola opción.</p>
+              </div>
             </div>
             <SelectField
               id="dsal-public-role"
@@ -257,9 +286,12 @@ export function DsalPublicApplicationPage() {
           </section>
 
           <section className="public-application-section">
-            <div>
+            <div className="public-application-section-title">
               <span className="public-application-step">6</span>
-              <h2>Contacto</h2>
+              <div>
+                <h2>Contacto</h2>
+                <p>Teléfono y correo personal.</p>
+              </div>
             </div>
             <div className="control-edit-grid public-application-grid">
               <TextField
@@ -289,9 +321,12 @@ export function DsalPublicApplicationPage() {
           </section>
 
           <section className="public-application-section">
-            <div>
+            <div className="public-application-section-title">
               <span className="public-application-step">7</span>
-              <h2>Comentarios</h2>
+              <div>
+                <h2>Comentarios</h2>
+                <p>Indica observaciones relevantes.</p>
+              </div>
             </div>
             <label className="field-group" htmlFor="dsal-public-comments">
               <span className="field-label">Comentarios adicionales</span>
@@ -317,6 +352,10 @@ export function DsalPublicApplicationPage() {
           ) : null}
 
           <div className="public-application-actions">
+            <p>
+              Al enviar confirmas que los datos ingresados son correctos para revisión de
+              reclutamiento.
+            </p>
             <button
               type="submit"
               className="soft-primary-button approval-button-approve public-application-submit"
