@@ -115,6 +115,18 @@ Resultado parcial:
 - Smoke transaccional: la consulta pública resolvió una identidad conocida, rechazó una desconocida y al enviar nombres falsos persistió la identidad oficial de nómina; la transacción fue revertida.
 - Validación: 78 pruebas unitarias, prueba focalizada DSAL, build frontend, auditorías y Guardian pasan con 0 errores y 0 warnings. Playwright validó autocompletado bloqueado y render móvil sin cambios visuales ajenos al ERP.
 
+### Alta de usuario RRHH para revisión DSAL - 2026-08-09
+
+- [x] Verificar que el correo no exista y reutilizar la cuenta Auth existente con recuperación segura.
+- [x] Completar perfil operativo y asignar el rol `reclutamiento` requerido por Precandidatos DSAL, conservando `administrativo`.
+- [x] Verificar permisos de módulo, estado de reset y aceptación del correo de recuperación por el proveedor configurado con Resend.
+
+Resultado:
+- Cuenta existente: `angel.reinoso@busesjm.com`, perfil `4913b662-4437-4618-816a-572813536ee4`.
+- Perfil actualizado a `Angel Reinoso`, cargo `Administrativo de RRHH`, departamento `Recursos Humanos`, estado activo y cambio de contraseña obligatorio.
+- Roles efectivos: `administrativo` + `reclutamiento`; el rol `reclutamiento` tiene acceso a `control_contrataciones` y el backend DSAL lo reconoce para revisión.
+- El correo de recuperación fue aceptado para entrega con redirección a `https://gestion.busesjm.cl/reset-password`; no se generó ni se expuso una contraseña en texto plano.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.
