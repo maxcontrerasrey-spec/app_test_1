@@ -27,6 +27,10 @@ const publicApplication = fs.readFileSync(
   path.join(root, "src/modules/recruitment/pages/DsalPublicApplicationPage.tsx"),
   "utf8"
 );
+const nonRosterMigration = fs.readFileSync(
+  path.join(root, "supabase/migrations/20260809161820_allow_non_roster_dsal_precandidate_submissions.sql"),
+  "utf8"
+);
 
 describe("DSAL precandidate approval contract", () => {
   it("enforces folio ownership, effective capacity and transactional approval", () => {
@@ -86,5 +90,16 @@ describe("DSAL precandidate approval contract", () => {
     expect(approvalView).toContain("precandidate-judicial-bubble-${tone}");
     expect(approvalView).toContain("Causas criminales");
     expect(approvalView).toContain("Causas laborales");
+  });
+
+  it("allows valid non-roster RUTs while preserving normalization and roster locking", () => {
+    expect(nonRosterMigration).toContain("Los RUT que no aparecen en la nomina vigente");
+    expect(nonRosterMigration).toContain("roster_match := roster_record.national_id is not null");
+    expect(nonRosterMigration).toContain("if roster_match then");
+    expect(nonRosterMigration).toContain("normalized_first_name := roster_record.first_name");
+    expect(nonRosterMigration).toContain("normalized_first_name text := public.normalize_dsal_precandidate_name(p_first_name)");
+    expect(nonRosterMigration).not.toContain("raise exception 'El RUT no se encuentra en la nómina vigente del contrato DSAL'");
+    expect(publicApplication).toContain('(rosterLookupStatus === "found" || rosterLookupStatus === "not_found")');
+    expect(publicApplication).toContain("Puedes continuar: completa tus nombres y apellidos");
   });
 });

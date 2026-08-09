@@ -10,6 +10,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - La prueba responsive debe comprobar el estado visible y también el atributo interactivo de los campos despues de una respuesta real del backend.
 - El backend debe volver a imponer la identidad de nómina al insertar, porque el navegador no es una frontera de seguridad.
 
+## 300. La nómina debe ser autoridad de identidad, no una barrera de captación
+
+- La nómina vigente debe bloquear la edición solo cuando existe coincidencia, para preservar la identidad oficial.
+- Un RUT válido fuera de la nómina debe poder continuar como precandidato y completar sus nombres manualmente; el backend debe normalizar esos nombres y conservar el indicador de no coincidencia.
+- Las reglas de ambos caminos deben probarse en frontend, RPC y smoke transaccional, porque una validación exclusiva del navegador puede impedir postulaciones legítimas.
+
 ## 195. Un header de seguridad debe validar los APIs del navegador que el ERP usa
 
 - **`Permissions-Policy` puede romper funcionalidad aunque parezca un hardening conservador.** Si un widget usa `navigator.geolocation`, `geolocation=()` deshabilita la API a nivel navegador y fuerza fallback aunque el usuario tenga permisos.

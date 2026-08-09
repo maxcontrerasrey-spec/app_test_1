@@ -127,6 +127,14 @@ Resultado:
 - Roles efectivos: `administrativo` + `reclutamiento`; el rol `reclutamiento` tiene acceso a `control_contrataciones` y el backend DSAL lo reconoce para revisión.
 - El correo de recuperación fue aceptado para entrega con redirección a `https://gestion.busesjm.cl/reset-password`; no se generó ni se expuso una contraseña en texto plano.
 
+### Excepción de nómina para postulaciones DSAL - 2026-08-09
+
+- [x] Permitir que RUT válidos fuera de la nómina continúen como precandidatos.
+- [x] Mantener autocompletado y bloqueo solo para RUT encontrados en la nómina.
+- [x] Normalizar nombres ingresados manualmente y aplicar la misma regla en backend.
+- [x] Probar ambos caminos, aplicar migración remota, auditar y publicar en `main`.
+- Resultado: `20260809161820_allow_non_roster_dsal_precandidate_submissions.sql` aplicado y registrado en producción. El RUT `17.451.540-9` fue validado como no perteneciente a la nómina y aceptado transaccionalmente con nombres normalizados; un RUT de nómina conservó sus nombres oficiales. Ambos smoke tests fueron revertidos con `ROLLBACK`.
+
 ## Recursos Humanos - Solicitud de Sanciones - 2026-08-07
 
 - [x] Consolidar el contrato funcional desde el correo `RE: [Desarrollo] Modulo Cartas de Amonestacion.eml` y sus 7 cartas tipo.

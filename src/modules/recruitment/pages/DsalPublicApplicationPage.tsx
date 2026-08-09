@@ -67,7 +67,7 @@ export function DsalPublicApplicationPage() {
   const requiredFieldsReady = Boolean(
       draft.nationalId &&
       validateRut(draft.nationalId) &&
-      rosterLookupStatus === "found" &&
+      (rosterLookupStatus === "found" || rosterLookupStatus === "not_found") &&
       draft.firstName.trim() &&
       draft.lastName.trim() &&
       draft.secondLastName.trim() &&
@@ -105,7 +105,7 @@ export function DsalPublicApplicationPage() {
     if (!result.data.found) {
       setRosterLookupStatus("not_found");
       setDraft((current) => ({ ...current, firstName: "", lastName: "", secondLastName: "" }));
-      setFormError("El RUT no se encuentra en la nómina vigente del contrato DSAL.");
+      setFormError("");
       return;
     }
 
@@ -242,8 +242,8 @@ export function DsalPublicApplicationPage() {
               </p>
             ) : null}
             {rosterLookupStatus === "not_found" ? (
-              <p className="form-status form-status-error public-application-alert" role="alert">
-                Este RUT no está habilitado para postular en el contrato DSAL.
+              <p className="field-hint public-application-roster-status" role="status">
+                No encontramos este RUT en la nómina vigente. Puedes continuar: completa tus nombres y apellidos.
               </p>
             ) : null}
             {rosterLookupStatus === "loading" ? (
