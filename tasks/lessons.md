@@ -2970,3 +2970,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un RPC puede tener `EXECUTE` correcto y aun fallar antes de su logica de negocio.** Con `set search_path = public`, funciones como `digest` instaladas en `extensions` no se resuelven si se invocan sin esquema.
 - **El smoke debe distinguir permisos de errores internos.** Un `42501` visible en la interfaz puede ocultar un fallo de resolucion o runtime; hay que invocar el RPC y conservar el codigo/mensaje original antes de cambiar grants.
 - **Los nombres de variables no deben colisionar con columnas usadas en SQL dinamico o PL/pgSQL.** Una RPC puede superar autenticacion y hash, pero fallar al consultar la sesion con `column reference ... is ambiguous`; los parametros y variables deben usar nombres distintivos como `session_token_hash`.
+
+## 204. La carga BUK contingente no equivale a contratación ERP
+
+- **La contingencia debe ser una autorización separada.** Exige permisos RRHH, motivo, cupo y mapping operativo; no debe relajar la ficha contractual crítica ni los estados terminales.
+- **El worker debe tolerar la etapa previa sin saltarse auditoría.** Una carga contingente puede crear ficha, plan, cargo y documentos BUK, pero la Solicitud de Contratación y la aprobación documental quedan para regularización.
+- **Los triggers de éxito también son parte del contrato.** Si un job contingente queda en `success`, la reconciliación automática no puede promover al candidato a `hired`; debe conservar la etapa ERP y registrar el motivo.

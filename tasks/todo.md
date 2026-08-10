@@ -1598,3 +1598,18 @@ Resultado:
 - [ ] Convertir la purga documental en rutina periodica: revisar archivos grandes versionados y referencias huerfanas antes de cada cierre mayor.
 - [ ] Mantener smokes autenticados por rol cuando existan credenciales controladas en secrets.
 - [ ] Evaluar activos no documentales pesados solo si el usuario autoriza optimizacion fuera de `docs/` y `tasks/`.
+
+## Carga BUK en contingencia - Ricardo Cortez - 2026-08-10
+- [x] Auditar candidato, ficha contractual, documentos cargados y ruta operativa BUK DSAL.
+- [x] Diseñar una autorización backend explícita para contingencia, con motivo obligatorio y trazabilidad, sin marcar documentos como aprobados.
+- [x] Implementar el flujo backend/worker para encolar y ejecutar la carga contingente, manteniendo capacidad, mapping, rol y datos críticos.
+- [x] Ejecutar smoke transaccional y procesar a Ricardo: BUK confirmó ficha 42629, ruta DSAL y 9 documentos.
+- [x] Ejecutar Guardian, documentar resultado, commit y push a main.
+
+### Resultado aplicado
+
+- Ricardo Manuel Cortés Valdés (`17.295.826-5`) quedó en BUK como empleado `42629` con área `CODELCO - DSAL`, area_id `2911`, company_id `5`, cost center `718`, role `CONDUCTOR DE MINIBUS 4X4`, plan y job BUK confirmados.
+- Se transfirieron 9 documentos del ERP a BUK con respuestas `201`; la documentación ERP sigue `pending` y no fue marcada como aprobada.
+- La Solicitud de Contratación quedó explícitamente omitida para regularización posterior; el job contingente conserva motivo, usuario, fecha y respuestas del proveedor.
+- La reconciliación automática fue ajustada para no transformar una carga contingente en contratación ERP; Ricardo permanece en etapa `lead`.
+- Guardian final: PASS, 0 errores y 0 warnings; migraciones, seguridad, integridad, concurrencia, idempotencia, build y diff check aprobados.

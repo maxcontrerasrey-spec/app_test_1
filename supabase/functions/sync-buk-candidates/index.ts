@@ -122,6 +122,11 @@ type BukCandidateSyncPayload = {
     file_path: string | null;
     status: string;
   }>;
+  contingency?: {
+    reason: string;
+    requested_by: string;
+    requested_at: string;
+  };
 };
 
 type BukLocation = {
@@ -3589,12 +3594,20 @@ Deno.serve(async (req) => {
             }
           };
 
-          await processRecruitmentHiringDocument(
-            supabase,
-            job,
-            jobResultSnapshot,
-            employeeId
-          );
+          if (payload.contingency) {
+            jobResultSnapshot.hiringRequestDocument = {
+              status: "skipped_contingency",
+              reason: payload.contingency.reason,
+              detail: "La Solicitud de Contratación se regulariza después de completar la etapa normal del candidato."
+            };
+          } else {
+            await processRecruitmentHiringDocument(
+              supabase,
+              job,
+              jobResultSnapshot,
+              employeeId
+            );
+          }
 
           await processDocuments(
             supabase,
