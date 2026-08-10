@@ -2932,6 +2932,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No se debe reutilizar el area de otro contrato parecido.** El mapping debe usar el codigo entregado para el contrato exacto, mantener `is_operational` e `is_one_to_one`, y conservar una sola fila activa.
 - **La configuracion y la creacion de la persona son validaciones distintas.** El mapping puede verificarse sin mutar personas, pero la prueba final de sincronizacion debe ejecutarse con un candidato autorizado y auditar el resultado real en BUK.
 
+## 199. El codigo visible de una subarea BUK no siempre es su cost center interno
+
+- **No compares siempre el codigo del mapping contra `cost_center`.** BUK puede mostrar el numero de contrato como identificador de subarea y devolver otro codigo interno en el detalle del area.
+- **La resolucion debe exigir contexto exacto, no igualdad accidental.** Para codigos con formato de contrato, valida nombre o numero de contrato exacto contra el area BUK y usa el `cost_center` entregado por BUK para construir el payload.
+- **El error posterior al mapping distingue dos fallas diferentes.** “No existe mapping” apunta al catalogo ERP; “no fue posible resolver area_id/company_id” apunta al catalogo/cache de areas o a la comparacion del identificador interno.
+
 ## 194. Los enlaces Auth de un solo uso deben sobrevivir a scanners corporativos
 
 - **Un correo aceptado no demuestra que el usuario pueda usar el enlace.** Correlaciona `/recover`, `/verify`, IP, agente y clic humano; Microsoft Safe Links puede consumir el token antes de que la persona abra el mensaje.

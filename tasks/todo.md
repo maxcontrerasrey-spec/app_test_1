@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Resolucion de area BUK para subareas por codigo de contrato - 2026-08-10
+
+- [x] Reproducir el fallo posterior al mapping y confirmar la condicion de resolucion que lo provoca.
+- [x] Permitir que una subarea BUK se resuelva por etiqueta exacta cuando su codigo visible no coincide con el cost center interno.
+- [x] Desplegar la Edge Function, validar Guardian y comprobar la definicion publicada.
+- [x] Commit y push a `main`.
+
+Resultado: `sync-buk-candidates` ahora acepta el codigo visible de subarea con formato de contrato cuando el nombre o numero de contrato coincide exactamente con el area BUK; el payload usa el `cost_center` devuelto por BUK. La Edge Function fue desplegada y Guardian finalizo con 0 errores y 0 advertencias.
+
 ## Mapping BUK Acciona Tranque Talabre - 2026-08-10
 
 - [x] Confirmar el contrato y el codigo de subarea BUK informado por el correo.

@@ -2041,10 +2041,6 @@ function matchesBukAreaContext(
   areaName: string | null,
   contractNumber: string | null
 ) {
-  if (area.costCenter !== areaCode) {
-    return false;
-  }
-
   const expectedArea = normalizeText(areaName);
   const expectedContractNumber = normalizeText(contractNumber);
   const areaLabels = [
@@ -2052,16 +2048,22 @@ function matchesBukAreaContext(
     area.parentName,
     area.departmentName
   ].map((value) => normalizeText(value));
+  const labelMatches = Boolean(
+    (expectedArea && areaLabels.some((label) => label === expectedArea)) ||
+      (expectedContractNumber && areaLabels.some((label) => label === expectedContractNumber))
+  );
 
-  if (expectedArea && areaLabels.some((label) => label === expectedArea)) {
+  if (!labelMatches) {
+    return false;
+  }
+
+  if (area.costCenter === areaCode) {
     return true;
   }
 
-  if (expectedContractNumber && areaLabels.some((label) => label === expectedContractNumber)) {
-    return true;
-  }
-
-  return false;
+  // BUK can expose the contract number as the subarea identifier while the
+  // area detail returns a different internal cost center.
+  return /^\d+:\d+$/.test(areaCode.trim()) && Boolean(expectedContractNumber);
 }
 
 async function resolveBukAreaFromRoleAreas(
