@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.21
+version: 1.0.22
 status: Activo
 language: es-CL
 owner: Quality
@@ -111,9 +111,9 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10171405,
+  "distTotalBytes": 10171539,
   "jsFileCount": 54,
-  "jsTotalBytes": 2670269,
+  "jsTotalBytes": 2670403,
   "cssFileCount": 10,
   "cssTotalBytes": 226363,
   "trackedAssets": [
@@ -130,6 +130,8 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 Revision 2026-08-08 DSAL nómina y antecedentes: el total global sube 3,345 bytes, JS sube 1,951 bytes y CSS sube 1,280 bytes por integrar el autocompletado autoritativo de nómina, las burbujas judiciales y tooltips de causas en Precandidatos. No agrega vendors, rutas lazy ni assets trackeados; las tablas judiciales permanecen protegidas y el enriquecimiento ocurre solo en la RPC autenticada de revisión.
 
 Revision 2026-08-10 sanciones como módulo propio: el total global sube 1,451 bytes, JS sube 1,450 bytes y CSS sube 1 byte por separar Sanciones en una ruta lazy y un contenedor propio fuera de Incentivos. No agrega vendors ni assets trackeados; la nueva ruta usa el módulo y guard `solicitud_sanciones`.
+
+Revision 2026-08-10 recuperación de contraseña: el total global y JS suben 134 bytes por reconocer los formatos `code` y tokens hash de recuperación de Supabase y conservar el modo de recuperación durante `SIGNED_IN`. No agrega vendors, CSS ni assets trackeados.
 
 ## Politica de actualizacion
 

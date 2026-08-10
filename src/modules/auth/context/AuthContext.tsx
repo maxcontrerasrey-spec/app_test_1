@@ -140,8 +140,13 @@ function detectRecoveryMode() {
   return (
     queryParams.get("type") === "recovery" ||
     queryParams.get("recovery") === "1" ||
+    queryParams.has("code") ||
+    queryParams.has("access_token") ||
+    queryParams.has("refresh_token") ||
     hashParams.get("type") === "recovery" ||
-    hashParams.get("recovery") === "1"
+    hashParams.get("recovery") === "1" ||
+    hashParams.has("access_token") ||
+    hashParams.has("refresh_token")
   );
 }
 
@@ -472,7 +477,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
       }
       
-      if (event === "PASSWORD_RECOVERY") {
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && detectRecoveryMode())) {
         setIsRecoveryMode(true);
       }
       

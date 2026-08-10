@@ -46,6 +46,16 @@ describe("security hardening", () => {
     expect(provisioner).not.toContain('arg === "--password"');
   });
 
+  it("keeps both Supabase recovery URL formats in recovery mode", () => {
+    const authContext = read("src/modules/auth/context/AuthContext.tsx");
+
+    expect(authContext).toContain('queryParams.has("code")');
+    expect(authContext).toContain('hashParams.has("access_token")');
+    expect(authContext).toContain(
+      'event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && detectRecoveryMode())'
+    );
+  });
+
   it("does not expose authenticated smoke credentials to pull-request steps", () => {
     const workflow = read(".github/workflows/audit-supabase-migrations.yml");
     const jobEnv = workflow.slice(workflow.indexOf("    env:"), workflow.indexOf("    steps:"));
