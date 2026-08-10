@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Normalizacion de cargo Conductor de Bus - 2026-08-10
+
+- [x] Confirmar el catalogo canonico y medir todos los registros productivos que usan `CONDUCTOR BUS`.
+- [x] Consolidar catalogo, referencias por ID y nombres persistidos hacia `CONDUCTOR DE BUS`, sin tocar otros cargos ni historiales no afectados.
+- [x] Desactivar la opcion duplicada para impedir nuevos procesos con el nombre incorrecto.
+- [x] Aplicar la migracion remota, verificar conteos antes/despues y asegurar que las vistas del ERP reflejen el cargo canonico.
+- [x] Ejecutar Guardian, build, auditorias, pruebas de integridad, diff check, commit y push a `main`.
+
+Resultado: la migracion `20260810161527_normalize_conductor_de_bus_title` dejo activo solo `CARGO-035 / CONDUCTOR DE BUS`, movio solicitudes/procesos/movilidades al ID y nombre canonicos, y agrego restricciones para impedir nuevos valores legacy. Produccion quedo sin valores ni referencias `CONDUCTOR BUS`.
+
 ## Ajuste de catalogos y valores por defecto ficha BUK publica - 2026-08-10
 
 - [x] Dejar `Transferencia Bancaria` como forma de pago inicial y valor de respaldo del backend.

@@ -2920,6 +2920,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La lista y la mutacion deben usar la misma guardia backend.** Mostrar la pestaña por rol no basta si aprobar/rechazar conserva otra autoridad; las tres RPC deben compartir el chequeo actor-scoped.
 - **El detalle de una fila operativa debe seguir el patron del ERP.** La vista compacta debe reservar el espacio para identidad y estado, y mover folio, comentarios y acciones a una fila expandida con `aria-expanded` y los estilos existentes.
 
+## 197. Los cargos duplicados deben corregirse contra el catalogo canonico
+
+- **No basta con cambiar el texto de una fila.** Cuando existen dos cargos equivalentes, hay que migrar tambien las referencias por ID y los nombres persistidos para que procesos, folios, movilidades y vistas BI mantengan una sola identidad.
+- **La opcion legacy debe dejar de estar disponible.** Conserva el codigo anterior para trazabilidad, pero marca el registro inactivo y agrega restricciones backend que impidan volver a guardar la variante incorrecta.
+- **La validacion de cierre debe buscar el valor en todas las superficies relevantes.** Confirma cero valores y referencias legacy, un unico registro canonico activo y que las vistas derivadas reflejen el cambio.
+
 ## 194. Los enlaces Auth de un solo uso deben sobrevivir a scanners corporativos
 
 - **Un correo aceptado no demuestra que el usuario pueda usar el enlace.** Correlaciona `/recover`, `/verify`, IP, agente y clic humano; Microsoft Safe Links puede consumir el token antes de que la persona abra el mensaje.
