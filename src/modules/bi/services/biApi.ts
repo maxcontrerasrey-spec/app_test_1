@@ -344,15 +344,15 @@ export async function fetchBiRecruitmentDashboard(filters?: BiFilters): Promise<
     p_job_position_names: normalized.jobTitles.length > 0 ? normalized.jobTitles : null,
     p_shift_names: normalized.shiftNames.length > 0 ? normalized.shiftNames : null
   };
-  const { data, error } = await client.rpc("get_bi_recruitment_dashboard", recruitmentParams);
+  const [dashboardResponse, dailyTimelineResponse] = await Promise.all([
+    client.rpc("get_bi_recruitment_dashboard", recruitmentParams),
+    client.rpc("get_bi_recruitment_daily_timeline", recruitmentParams)
+  ]);
 
-  if (error) throw error;
+  if (dashboardResponse.error) throw dashboardResponse.error;
 
-  const dashboard = mapRecruitmentDashboard(data);
-  const { data: dailyTimelineData, error: dailyTimelineError } = await client.rpc(
-    "get_bi_recruitment_daily_timeline",
-    recruitmentParams
-  );
+  const dashboard = mapRecruitmentDashboard(dashboardResponse.data);
+  const { data: dailyTimelineData, error: dailyTimelineError } = dailyTimelineResponse;
 
   if (!dailyTimelineError && Array.isArray(dailyTimelineData)) {
     return {

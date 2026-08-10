@@ -2945,3 +2945,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Una credencial temporal de contingencia exige orden y evidencia.** Cambia la password Auth, valida login sin imprimirla, revoca la sesion tecnica y deja `must_reset_password = true` al final, porque el trigger de cambio de password libera el flag.
 - **Las contraseñas temporales nunca se serializan en resultados.** Genera una distinta por cuenta con CSPRNG, enviala solo al correo corporativo y retorna unicamente conteos, IDs tecnicos y etapas de fallo.
 - **El canario debe completar el flujo humano.** No amplifiques el lote hasta comprobar correo recibido, login, cambio personal, invalidacion de la temporal y estado final del flag/sesiones.
+
+## 200. BI debe priorizar tiempo interactivo antes de montar visualizaciones secundarias
+
+- **No montes todos los graficos al entrar a la vista.** Cada componente puede disparar un RPC y ECharts puede bloquear el hilo principal; difiere las visualizaciones secundarias hasta despues del primer render.
+- **Una pestaña ejecutiva no debe perder su cache al navegar.** Usa `staleTime` y `gcTime` explicitos, y evita `refetchOnMount: "always"` cuando el dato puede reutilizarse durante una ventana operativa corta.
+- **Consultas independientes deben ejecutarse en paralelo cuando el contrato lo permite.** En dashboards, cargar el resumen y el timeline con `Promise.all` reduce la latencia percibida sin cambiar permisos ni forma de respuesta.
+- **Los indices se agregan con evidencia.** Primero mide filas y revisa los planes/catalogo; para una carga pequeña con indices existentes, reducir el trabajo inicial del frontend tiene menor riesgo que sumar indices especulativos.

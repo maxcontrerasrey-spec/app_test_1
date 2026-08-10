@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Optimizacion fuerte Business Intelligence - 2026-08-10
+
+- [x] Medir el contrato actual de queries, renderizado y cambio de vistas del modulo BI.
+- [x] Optimizar cache, paralelizar RPC de Reclutamiento y evitar refetches innecesarios.
+- [x] Diferir el montaje de graficos pesados y mantener navegacion fluida entre pestañas.
+- [x] Auditar backend BI y confirmar que sus indices actuales cubren la carga observada; no agregar indices sin evidencia.
+- [x] Validar rendimiento, funcionalidad, permisos, build, Guardian, commit y push a `main`.
+
+Resultado: el dashboard de Reclutamiento conserva datos recientes en cache por 2 minutos y durante 15 minutos sin uso, sus dos RPC se ejecutan en paralelo y Dotacion monta los graficos secundarios despues del primer render. La auditoria productiva confirmo 1.582 empleados activos, 5.244 filas de snapshot y 111 casos, con indices existentes para las rutas consultadas.
+
 ## Resolucion de area BUK para subareas por codigo de contrato - 2026-08-10
 
 - [x] Reproducir el fallo posterior al mapping y confirmar la condicion de resolucion que lo provoca.

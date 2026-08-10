@@ -70,8 +70,8 @@ describe("queryKeys", () => {
     expect(INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS).toBeLessThanOrEqual(20_000);
   });
 
-  it("mantiene BI Reclutamiento fresco cuando cambian filtros ejecutivos", () => {
-    expect(BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS).toBe(0);
-    expect(BI_RECRUITMENT_DASHBOARD_GC_TIME_MS).toBe(0);
+  it("mantiene BI Reclutamiento en cache durante la navegacion ejecutiva", () => {
+    expect(BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS).toBe(120_000);
+    expect(BI_RECRUITMENT_DASHBOARD_GC_TIME_MS).toBe(900_000);
   });
 });
