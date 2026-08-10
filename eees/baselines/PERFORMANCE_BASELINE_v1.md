@@ -111,9 +111,9 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10187763,
+  "distTotalBytes": 10187881,
   "jsFileCount": 54,
-  "jsTotalBytes": 2686212,
+  "jsTotalBytes": 2686330,
   "cssFileCount": 10,
   "cssTotalBytes": 226778,
   "trackedAssets": [
@@ -134,6 +134,8 @@ Revision 2026-08-10 sanciones como módulo propio: el total global sube 1,451 by
 Revision 2026-08-10 recuperación de contraseña: el total global y JS suben 134 bytes por reconocer los formatos `code` y tokens hash de recuperación de Supabase y conservar el modo de recuperación durante `SIGNED_IN`. No agrega vendors, CSS ni assets trackeados.
 
 Revision 2026-08-10 ficha BUK publica DSAL: el total global sube 16,224 bytes, JS sube 15,809 bytes y CSS sube 415 bytes por agregar la ruta lazy `/ficha-buk-dsal`, el formulario de sesión temporal y la captura publica de datos personales/previsionales. No agrega vendors ni assets trackeados; el acceso se limita a candidatos DSAL aprobados mediante RPC anonima acotada.
+
+Revision 2026-08-10 catalogos BUK ficha publica: el total global y JS suben 118 bytes por usar el selector ERP de comunas y fijar valores iniciales de transferencia bancaria y periodo mensual. No agrega vendors, CSS ni assets.
 
 ## Politica de actualizacion
 

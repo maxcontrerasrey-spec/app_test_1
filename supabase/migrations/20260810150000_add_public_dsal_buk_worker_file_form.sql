@@ -209,8 +209,8 @@ declare
       then replace(trim(p_payload ->> 'health_plan_uf'), ',', '.')::numeric
     else null
   end;
-  payment_method text := nullif(trim(coalesce(p_payload ->> 'payment_method', '')), '');
-  payment_period text := nullif(trim(coalesce(p_payload ->> 'payment_period', '')), '');
+  payment_method text := coalesce(nullif(trim(coalesce(p_payload ->> 'payment_method', '')), ''), 'Transferencia Bancaria');
+  payment_period text := coalesce(nullif(trim(coalesce(p_payload ->> 'payment_period', '')), ''), 'Mensual');
   pension_regime text := nullif(trim(coalesce(p_payload ->> 'pension_regime', '')), '');
   retired_status text := nullif(trim(coalesce(p_payload ->> 'retired_status', '')), '');
   normalized_first_name text;

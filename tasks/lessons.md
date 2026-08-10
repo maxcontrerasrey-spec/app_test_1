@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 303. Los formularios publicos BUK deben heredar catalogos y defaults del template ERP
+
+- Los campos con catalogo vigente, como comuna, banco, forma de pago, regimen previsional, salud y tallas, deben usar las mismas opciones del template BUK en vez de listas locales.
+- Los valores por defecto deben existir en frontend y backend para que una llamada directa no deje datos incompletos; en DSAL la forma inicial es `Transferencia Bancaria` y el periodo `Mensual`.
+- Los campos sin catalogo ERP, como numero de cuenta, telefono, calle y plan UF, deben conservar validacion de formato y permanecer editables como texto o numero.
+
 ## 299. El autocompletado autoritativo debe quedar bloqueado despues de resolver
 
 - Una consulta de identidad puede completar correctamente los datos y aun así dejar los inputs editables si la condición de `disabled` se interpreta al revés.

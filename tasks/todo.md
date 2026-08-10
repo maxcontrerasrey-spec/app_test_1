@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Ajuste de catalogos y valores por defecto ficha BUK publica - 2026-08-10
+
+- [x] Dejar `Transferencia Bancaria` como forma de pago inicial y valor de respaldo del backend.
+- [x] Dejar `Mensual` como periodo de pago inicial y valor de respaldo del backend.
+- [x] Cambiar comuna a selector alimentado por el catalogo vigente del ERP.
+- [x] Aplicar migracion remota, compilar y validar auditorias.
+
+Resultado: la ficha publica usa los formatos y catalogos vigentes de BUK; los campos libres permanecen como texto solo cuando el template ERP no define un catalogo.
+
 ## Formulario publico de ficha BUK para candidatos DSAL - 2026-08-10
 
 - [x] Confirmar campos personales y previsionales que puede completar el candidato y estados validos de elegibilidad.

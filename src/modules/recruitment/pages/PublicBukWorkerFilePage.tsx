@@ -33,8 +33,8 @@ const emptyDraft: PublicBukWorkerFileDraft = {
   shirtSize: "",
   pantsSize: "",
   shoeSize: "",
-  paymentMethod: "",
-  paymentPeriod: "",
+  paymentMethod: "Transferencia Bancaria",
+  paymentPeriod: "Mensual",
   bankName: "",
   bankAccountType: "",
   bankAccountNumber: "",
@@ -189,7 +189,7 @@ export function PublicBukWorkerFilePage() {
                 <TextField id="public-buk-street-number" label="Número" value={draft.streetNumber} onChange={(event) => updateText("streetNumber", event.target.value)} />
                 <TextField id="public-buk-apartment" label="Depto / Oficina" value={draft.apartmentOrOffice} onChange={(event) => updateText("apartmentOrOffice", event.target.value)} />
                 <SelectField id="public-buk-region" label="Región" value={draft.region} options={bukEmployeeFieldOptions.region} placeholder="Selecciona región" onChange={(event) => updateDraftValue(setDraft, "region", event.target.value)} />
-                <TextField id="public-buk-commune" label="Comuna" value={draft.districtOrCommune} onChange={(event) => updateText("districtOrCommune", event.target.value)} />
+                <SelectField id="public-buk-commune" label="Comuna" value={draft.districtOrCommune} options={bukEmployeeFieldOptions.commune} placeholder="Selecciona comuna" onChange={(event) => updateDraftValue(setDraft, "districtOrCommune", event.target.value)} />
                 <TextField id="public-buk-city" label="Ciudad" value={draft.currentCity} onChange={(event) => updateText("currentCity", event.target.value)} />
                 <label className="field-group" htmlFor="public-buk-phone"><span className="field-label">Teléfono particular</span><span className="public-phone-input"><span className="public-phone-prefix">+56 9</span><input id="public-buk-phone" className="text-field public-phone-number" inputMode="numeric" maxLength={8} value={draft.phone} placeholder="12345678" onChange={(event) => updateDraftValue(setDraft, "phone", event.target.value.replace(/\D/g, "").slice(0, 8))} /></span></label>
                 <TextField id="public-buk-personal-email" label="Correo personal" type="email" value={draft.personalEmail} disabled />
