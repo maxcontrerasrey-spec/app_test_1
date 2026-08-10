@@ -11,7 +11,6 @@ import { IncentiveRegistrationForm } from "../components/IncentiveRegistrationFo
 import { IncentiveApprovalsView } from "../components/IncentiveApprovalsView";
 import { IncentiveRequestsView } from "../components/IncentiveRequestsView";
 import { IncentiveSetupView } from "../components/IncentiveSetupView";
-import { SanctionsModuleView } from "../../sanctions/components/SanctionsModuleView";
 import "../styles/incentives.css";
 
 const HUMAN_RESOURCES_VIEWS = [
@@ -36,11 +35,6 @@ const HUMAN_RESOURCES_VIEWS = [
     label: "Configuración base",
     description: "Administra cargos elegibles, tipos de incentivo y reglas de cálculo."
   },
-  {
-    key: "sanciones",
-    label: "Sanciones",
-    description: "Ingresa, revisa y cierra solicitudes de sanciones disciplinarias."
-  }
 ] as const;
 
 type HumanResourcesViewKey = (typeof HUMAN_RESOURCES_VIEWS)[number]["key"];
@@ -83,10 +77,6 @@ export function HumanResourcesDashboard() {
           );
         }
 
-        if (item.key === "sanciones") {
-          return hasModuleAccess(accessibleModules, "solicitud_sanciones");
-        }
-
         return hasFeatureAccess(accessibleFeatures, "hr_incentives_configuration");
       }),
     [accessibleFeatures, accessibleModules, canAccessHistoryByRole, isSuperAdmin]
@@ -97,14 +87,6 @@ export function HumanResourcesDashboard() {
       (activeView === "incentivos" || activeView === "solicitudes" || activeView === "configuracion")
   );
   const incentivesRealtimeSubscriptions = useMemo(() => {
-    if (activeView === "sanciones") {
-      return [
-        { table: "hr_sanction_requests" },
-        { table: "hr_sanction_documents" },
-        { table: "hr_sanction_request_history" }
-      ];
-    }
-
     if (activeView === "configuracion" || activeView === "incentivos") {
       return [
         { table: "hr_incentive_allowed_job_titles" },
@@ -121,12 +103,6 @@ export function HumanResourcesDashboard() {
   }, [activeView]);
 
   const invalidateIncentives = useCallback(async () => {
-    if (activeView === "sanciones") {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.sanctions.requestsRoot() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.sanctions.requestDetailRoot() });
-      return;
-    }
-
     if (activeView === "configuracion" || activeView === "incentivos") {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.incentives.setupCatalogs()
@@ -169,7 +145,7 @@ export function HumanResourcesDashboard() {
   return (
     <PageShell>
       <div className="minimal-page-header">
-        <h1>{activeView === "sanciones" ? "Solicitud de Sanciones" : "Incentivos Extraordinarios"}</h1>
+        <h1>Incentivos Extraordinarios</h1>
       </div>
 
       <section className="tracking-panel">
@@ -200,7 +176,6 @@ export function HumanResourcesDashboard() {
           <IncentiveSetupView setupCatalogsQuery={setupCatalogsQuery} />
         ) : null}
 
-        {activeView === "sanciones" ? <SanctionsModuleView /> : null}
       </section>
     </PageShell>
   );

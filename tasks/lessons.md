@@ -22,6 +22,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Para tablas privadas, encapsular la consulta de la politica en una funcion `SECURITY DEFINER` con `search_path` fijo y mantener revocados los privilegios directos.
 - Probar el bucket afectado y otro bucket existente con el mismo rol, porque el error puede aparecer en un flujo distinto al modulo que introdujo la politica.
 
+## 302. Un modulo de RRHH no debe compartir contenedor con otro dominio
+
+- Tener una ruta distinta no basta si el componente, la pestaña, el `moduleCode` y el guard siguen perteneciendo a Incentivos.
+- Para separar dominios, la navegación, la ruta protegida, la precarga, realtime y el contenedor visual deben tener una frontera propia; el backend puede conservar sus RPCs y permisos existentes.
+
 ## 195. Un header de seguridad debe validar los APIs del navegador que el ERP usa
 
 - **`Permissions-Policy` puede romper funcionalidad aunque parezca un hardening conservador.** Si un widget usa `navigator.geolocation`, `geolocation=()` deshabilita la API a nivel navegador y fuerza fallback aunque el usuario tenga permisos.

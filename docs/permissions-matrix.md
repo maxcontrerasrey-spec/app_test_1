@@ -19,6 +19,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `alta_operacional_personal` | `/alta-operacional` | `RoleProtectedRoute` |
 | `operaciones` | `/operaciones/*` | `RoleProtectedRoute` |
 | `recursos_humanos` | `/recursos-humanos/*` | `RoleProtectedRoute` + roles para analytics |
+| `solicitud_sanciones` | `/recursos-humanos/sanciones` | `RoleProtectedRoute` |
 | `jornadas_turnos` | `/roster` | `RoleProtectedRoute` |
 | `acreditacion_personas` | `/recursos-humanos/acreditacion/*` | `RoleProtectedRoute` |
 | `certificados` | `/certificados` | `RoleProtectedRoute` |

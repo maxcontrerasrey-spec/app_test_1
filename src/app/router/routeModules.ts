@@ -31,6 +31,9 @@ export const routeModuleImporters = {
       await import("../../modules/incentives/pages/HumanResourcesDashboard")
     ).HumanResourcesDashboard
   }),
+  sanctionsPage: async () => ({
+    default: (await import("../../modules/sanctions/pages/SanctionsPage")).SanctionsPage
+  }),
   rosterPage: async () => ({
     default: (await import("../../modules/roster/pages/RosterPage")).RosterPage
   }),
@@ -106,6 +109,10 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/recursos-humanos/acreditacion")) {
     return ["accreditationPage"];
+  }
+
+  if (normalizedPath.startsWith("/recursos-humanos/sanciones")) {
+    return ["sanctionsPage"];
   }
 
   if (normalizedPath.startsWith("/recursos-humanos")) {

@@ -11,6 +11,14 @@ const storagePolicyFix = fs.readFileSync(
   path.join(root, "supabase/migrations/20260810131746_fix_hr_sanctions_storage_policy_table_access.sql"),
   "utf8"
 );
+const navigation = fs.readFileSync(
+  path.join(root, "src/shared/config/navigation.ts"),
+  "utf8"
+);
+const incentivesDashboard = fs.readFileSync(
+  path.join(root, "src/modules/incentives/pages/HumanResourcesDashboard.tsx"),
+  "utf8"
+);
 
 describe("HR sanctions integrity", () => {
   it("registers the module and keeps disciplinary tables behind RPCs", () => {
@@ -54,5 +62,12 @@ describe("HR sanctions integrity", () => {
     expect(storagePolicyFix).toContain(
       "revoke all on function public.user_can_view_hr_sanction_document_object(text)"
     );
+  });
+
+  it("exposes sanctions as an independent HR module instead of an incentives tab", () => {
+    expect(navigation).toContain('moduleCode: "solicitud_sanciones"');
+    expect(navigation).toContain('to: "/recursos-humanos/sanciones"');
+    expect(incentivesDashboard).not.toContain('key: "sanciones"');
+    expect(incentivesDashboard).not.toContain("SanctionsModuleView");
   });
 });

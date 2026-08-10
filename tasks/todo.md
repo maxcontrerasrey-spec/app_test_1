@@ -4,6 +4,13 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Separacion del modulo de sanciones - 2026-08-10
+
+- [x] Retirar Sanciones de las vistas/pestañas de Incentivos.
+- [x] Crear ruta y pagina propia protegida por `solicitud_sanciones`.
+- [x] Mantener navegación, precarga de ruta, realtime y permisos del módulo sin compartir el contenedor de Incentivos.
+- Resultado: `/recursos-humanos/sanciones` queda como módulo independiente dentro de Recursos Humanos; Incentivos conserva solo sus vistas propias.
+
 ## Correccion enlaces de documentos de candidatos - 2026-08-10
 
 - [x] Identificar la interferencia de la politica Storage de sanciones con el bucket `candidate-docs`.

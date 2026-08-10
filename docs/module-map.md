@@ -42,6 +42,16 @@
 - Servicio: `src/modules/incentives/services/incentivesApi.ts`
 - Riesgo: servicio y vistas grandes; mezcla setup, analytics, cola y registro
 
+### Solicitud de sanciones
+
+- Ruta: `/recursos-humanos/sanciones`
+- Pagina: `src/modules/sanctions/pages/SanctionsPage.tsx`
+- Componentes: `src/modules/sanctions/components/SanctionsModuleView.tsx`, `src/modules/sanctions/components/SanctionRequestForm.tsx`, `src/modules/sanctions/components/SanctionsControlView.tsx`
+- Hooks: `src/modules/sanctions/hooks/useSanctionsQueries.ts`
+- Servicio: `src/modules/sanctions/services/sanctionsApi.ts`
+- Guardia: `RoleProtectedRoute` con el modulo `solicitud_sanciones`
+- Frontera: módulo independiente de Incentivos; usa sus propios RPCs, realtime y contenedor visual.
+
 ### Jornadas y turnos
 
 - Ruta: `/roster`

@@ -77,7 +77,7 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "wallet"
       },
       {
-        moduleCode: "recursos_humanos",
+        moduleCode: "solicitud_sanciones",
         to: "/recursos-humanos/sanciones",
         label: "Solicitud de Sanciones",
         description: "Ingreso, revisión y cierre trazable de sanciones disciplinarias.",
