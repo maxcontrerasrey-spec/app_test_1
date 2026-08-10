@@ -4117,29 +4117,34 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 }
 
 .precandidate-summary-tooltip {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 0.6rem);
-  left: 0;
-  width: min(19rem, calc(100vw - 2rem));
+  position: static;
+  width: 100%;
+  box-sizing: border-box;
   display: grid;
   gap: 0.45rem;
-  padding: 0.75rem 0.85rem;
-  border: 1px solid var(--soft-border-strong);
+  max-height: 0;
+  margin-top: 0;
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--title);
   box-shadow: 0 16px 30px -18px var(--soft-shadow-dark);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-0.25rem);
-  transition: opacity 140ms ease, transform 140ms ease;
+  overflow: hidden;
+  transform: none;
+  transition: max-height 180ms ease, margin-top 180ms ease, padding 180ms ease, opacity 140ms ease;
 }
 
 .precandidate-summary-card:hover .precandidate-summary-tooltip,
 .precandidate-summary-card:focus-visible .precandidate-summary-tooltip {
+  max-height: 30rem;
+  margin-top: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  border-color: var(--soft-border-strong);
   opacity: 1;
-  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .precandidate-summary-tooltip-title {

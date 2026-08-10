@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección tooltip de roles en Precandidatos - 2026-08-10
+
+- [x] Identificar que el popup absoluto se superponía a la tabla y podía quedar cortado.
+- [x] Cambiar el popup a expansión en flujo para reservar espacio y empujar el contenido inferior.
+- [x] Validar build, responsive, Guardian, commit y push a `main`.
+
+Resultado: el detalle por rol ahora se expande dentro de la tarjeta y empuja la tabla inferior; no se superpone ni queda cortado. Build y Guardian pasan sin errores ni advertencias.
+
 ## Desglose de precandidatos por rol en tarjetas - 2026-08-10
 
 - [x] Extender el resumen autenticado de precandidatos con conteos por rol para cada estado.

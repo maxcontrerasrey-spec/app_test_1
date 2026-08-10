@@ -2986,3 +2986,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **No derives un tooltip de los registros de la página actual.** La paginación y los filtros pueden ocultar roles; el resumen debe calcularse en el RPC con el alcance completo del estado.
 - **Los KPI deben seguir siendo accesibles sin mouse.** La tarjeta debe poder enfocarse y mostrar el mismo detalle por teclado, manteniendo el patrón visual existente.
+
+## 207. Un tooltip de KPI que tapa la tabla debe expandir el layout
+
+- **No uses posicionamiento absoluto para contenido variable sobre una tabla.** Si el texto puede envolver o crecer por rol, el popup debe reservar altura en el flujo para que se vea completo y no oculte filas.
