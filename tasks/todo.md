@@ -1484,6 +1484,20 @@ Resultado:
 
 ## Proximos objetivos vivos
 
+## Correccion acceso ficha BUK publica DSAL - 2026-08-10
+
+- [x] Reproducir el error de acceso mediante el RPC publico con el RUT y correo reportados.
+- [x] Identificar que la funcion se ejecuta, pero falla al resolver `digest(bytea,text)` bajo `search_path = public`.
+- [x] Preparar una migracion forward-only que califique `extensions.digest` en las funciones de inicio y envio, conservando los grants anonimos existentes.
+- [x] Validar sintaxis de migraciones, seguridad Supabase, Guardian, build y `git diff --check`.
+- [ ] Aplicar la migracion en Supabase remoto y repetir el RPC con el RUT/correo de prueba.
+
+### Estado de cierre de esta iteracion
+
+- La reproduccion remota anonima confirma que el grant de la RPC existe y que el fallo actual es `digest(bytea, unknown) does not exist` dentro de la funcion publicada.
+- La migracion `20260810134000_fix_public_dsal_buk_digest_resolution` recalifica `digest` como `extensions.digest` en las funciones de inicio y envio, sin abrir tablas ni relajar RLS.
+- El despliegue SQL remoto no se pudo ejecutar desde este entorno porque Supabase CLI no tiene proyecto vinculado ni token/sesion disponible; queda pendiente aplicar la migracion antes de validar el acceso real.
+
 ## Auditoria y correccion de bloqueo en Business Intelligence - 2026-08-10
 
 - [x] Auditar el montaje de BI, consultas, importaciones pesadas y navegacion entre modulos.

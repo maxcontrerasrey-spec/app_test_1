@@ -2964,3 +2964,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Un tick no es carga progresiva.** Si todos los graficos se montan en el callback inmediato, las RPCs, ECharts y mapas siguen compitiendo por el hilo principal y la navegación puede quedar bloqueada.
 - **La salida de la ruta debe cancelar trabajo pendiente.** Los temporizadores, `requestIdleCallback` y fetches de mapas deben limpiarse o abortarse al cambiar de modulo para no seguir consumiendo recursos de una vista abandonada.
 - **Los runtimes pesados deben importarse donde se usan.** El mapa no debe importar ECharts al montar la pagina; debe cargarlo solo cuando su bloque progresivo llegue a esa etapa.
+
+## 203. Las funciones `SECURITY DEFINER` deben calificar extensiones fuera de `public`
+
+- **Un RPC puede tener `EXECUTE` correcto y aun fallar antes de su logica de negocio.** Con `set search_path = public`, funciones como `digest` instaladas en `extensions` no se resuelven si se invocan sin esquema.
+- **El smoke debe distinguir permisos de errores internos.** Un `42501` visible en la interfaz puede ocultar un fallo de resolucion o runtime; hay que invocar el RPC y conservar el codigo/mensaje original antes de cambiar grants.
