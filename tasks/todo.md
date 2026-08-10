@@ -4,6 +4,13 @@
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.
 
+## Correccion enlaces de documentos de candidatos - 2026-08-10
+
+- [x] Identificar la interferencia de la politica Storage de sanciones con el bucket `candidate-docs`.
+- [x] Encapsular la consulta a `hr_sanction_documents` en una funcion `SECURITY DEFINER` sin abrir permisos directos.
+- [x] Aplicar la migracion `20260810131746_fix_hr_sanctions_storage_policy_table_access` y verificar acceso transaccional como Thania.
+- Resultado: el bucket `candidate-docs` vuelve a resolver objetos visibles para usuarios autorizados; las tablas `hr_sanction_documents` siguen sin privilegios directos para `authenticated`.
+
 ## Reclutamiento DSAL - postulacion publica y precandidatos - 2026-08-08
 
 - [x] Consolidar el contrato funcional desde la captura y validar los patrones actuales de Control de Contrataciones, ficha BUK y RUT.

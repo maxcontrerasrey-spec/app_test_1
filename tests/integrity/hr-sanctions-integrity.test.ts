@@ -7,6 +7,10 @@ const migration = fs.readFileSync(
   path.join(root, "supabase/migrations/20260807230621_add_hr_sanctions_module.sql"),
   "utf8"
 );
+const storagePolicyFix = fs.readFileSync(
+  path.join(root, "supabase/migrations/20260810131746_fix_hr_sanctions_storage_policy_table_access.sql"),
+  "utf8"
+);
 
 describe("HR sanctions integrity", () => {
   it("registers the module and keeps disciplinary tables behind RPCs", () => {
@@ -36,5 +40,19 @@ describe("HR sanctions integrity", () => {
     expect(migration).toContain("public.user_can_manage_hr_sanctions(current_user_id)");
     expect(migration).toContain("constraint hr_sanction_requests_idempotency_unique");
     expect(migration).not.toContain("auth.role()");
+  });
+
+  it("keeps the Storage policy from querying restricted sanction tables as the caller", () => {
+    expect(storagePolicyFix).toContain(
+      "create or replace function public.user_can_view_hr_sanction_document_object(p_object_name text)"
+    );
+    expect(storagePolicyFix).toContain("security definer");
+    expect(storagePolicyFix).toContain("from public.hr_sanction_documents hsd");
+    expect(storagePolicyFix).toContain(
+      "public.user_can_view_hr_sanction_document_object(name)"
+    );
+    expect(storagePolicyFix).toContain(
+      "revoke all on function public.user_can_view_hr_sanction_document_object(text)"
+    );
   });
 });

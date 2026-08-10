@@ -16,6 +16,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Un RUT válido fuera de la nómina debe poder continuar como precandidato y completar sus nombres manualmente; el backend debe normalizar esos nombres y conservar el indicador de no coincidencia.
 - Las reglas de ambos caminos deben probarse en frontend, RPC y smoke transaccional, porque una validación exclusiva del navegador puede impedir postulaciones legítimas.
 
+## 301. Las politicas de Storage no deben consultar tablas restringidas como invocador
+
+- Las politicas de `storage.objects` se evaluan en el contexto del usuario autenticado; una subconsulta directa a una tabla con `revoke all` puede romper buckets no relacionados y devolver `permission denied`.
+- Para tablas privadas, encapsular la consulta de la politica en una funcion `SECURITY DEFINER` con `search_path` fijo y mantener revocados los privilegios directos.
+- Probar el bucket afectado y otro bucket existente con el mismo rol, porque el error puede aparecer en un flujo distinto al modulo que introdujo la politica.
+
 ## 195. Un header de seguridad debe validar los APIs del navegador que el ERP usa
 
 - **`Permissions-Policy` puede romper funcionalidad aunque parezca un hardening conservador.** Si un widget usa `navigator.geolocation`, `geolocation=()` deshabilita la API a nivel navegador y fuerza fallback aunque el usuario tenga permisos.
