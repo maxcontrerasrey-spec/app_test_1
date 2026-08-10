@@ -17,6 +17,7 @@ import {
   useBiHeadcountByJobTitle,
   useBiRecruitmentDashboard
 } from "../hooks/useBiQueries";
+import { useProgressiveBiStage } from "../hooks/useProgressiveBiStage";
 import { formatBiContractLabel } from "../lib/presentation";
 import type { BiFilters } from "../types";
 import "../styles/bi.css";
@@ -85,7 +86,6 @@ export function BiDashboardPage() {
   const [jobTitleFilter, setJobTitleFilter] = useState<string[]>([]);
   const [managementFilter, setManagementFilter] = useState<string[]>([]);
   const [shiftNameFilter, setShiftNameFilter] = useState<string[]>([]);
-  const [deferDotacionCharts, setDeferDotacionCharts] = useState(false);
   const dotacionFilters = useMemo<BiFilters>(
     () => ({
       periodCode: debouncedPeriodCode || undefined,
@@ -111,6 +111,7 @@ export function BiDashboardPage() {
     recruitmentFilters,
     activeView === "reclutamiento"
   );
+  const dotacionChartStage = useProgressiveBiStage(activeView === "dotacion", 4);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(
@@ -119,16 +120,6 @@ export function BiDashboardPage() {
     );
     return () => window.clearTimeout(timeoutId);
   }, [periodCodeFilter]);
-
-  useEffect(() => {
-    if (activeView !== "dotacion") {
-      setDeferDotacionCharts(false);
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => setDeferDotacionCharts(true), 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [activeView]);
 
   const jobTitlesByContractCode = useMemo(() => {
     const lookup = new Map<string, Set<string>>();
@@ -470,17 +461,15 @@ export function BiDashboardPage() {
       {activeView === "dotacion" && (
         <div className="bi-dashboard-grid">
           <BiOverviewCards filters={dotacionFilters} />
-          {deferDotacionCharts ? (
-            <>
-              <BiHeadcountCharts filters={dotacionFilters} />
-              <BiPresenceAndExceptions filters={dotacionFilters} />
-              <div className="bi-chart-row">
-                <BiDemographicsChart filters={dotacionFilters} />
-                <BiRecruitmentFunnel filters={dotacionFilters} />
-              </div>
-              <BiTrendingExceptionsChart filters={dotacionFilters} />
-            </>
+          {dotacionChartStage >= 1 ? <BiHeadcountCharts filters={dotacionFilters} /> : null}
+          {dotacionChartStage >= 2 ? <BiPresenceAndExceptions filters={dotacionFilters} /> : null}
+          {dotacionChartStage >= 3 ? (
+            <div className="bi-chart-row">
+              <BiDemographicsChart filters={dotacionFilters} />
+              <BiRecruitmentFunnel filters={dotacionFilters} />
+            </div>
           ) : null}
+          {dotacionChartStage >= 4 ? <BiTrendingExceptionsChart filters={dotacionFilters} /> : null}
         </div>
       )}
 

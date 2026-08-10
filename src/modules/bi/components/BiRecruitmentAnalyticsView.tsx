@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiRecruitmentDashboard } from "../types";
+import { useProgressiveBiStage } from "../hooks/useProgressiveBiStage";
 import {
   aggregatePulseData,
   BI_CHART_PALETTES,
@@ -68,6 +69,7 @@ export function BiRecruitmentAnalyticsView({
     useState<RequestedVacancyView>("pending");
   const [operationalPulseView, setOperationalPulseView] =
     useState<OperationalPulseView>("weekly");
+  const chartStage = useProgressiveBiStage(!isLoading && !isError && Boolean(dashboard), 3);
 
   const textColor = chartTheme.text;
   const axisColor = chartTheme.border;
@@ -548,73 +550,79 @@ export function BiRecruitmentAnalyticsView({
         ))}
       </div>
 
-      <div className="bi-chart-row">
-        <div className="info-card">
-          <h3 className="bi-chart-title">Cobertura de Cupos</h3>
-          <EChartSurface
-            height={320}
-            option={vacancyCoverageOption ?? {}}
-            empty={!vacancyCoverageOption}
-            emptyMessage="Sin cupos solicitados para el filtro."
-          />
-        </div>
-        <div className="info-card">
-          <h3 className="bi-chart-title">Etapas de Candidatos</h3>
-          <EChartSurface
-            height={320}
-            option={candidatesByStageOption ?? {}}
-            empty={!candidatesByStageOption}
-            emptyMessage="Sin candidatos visibles para el filtro."
-          />
-        </div>
-      </div>
-
-      <div className="bi-chart-row">
-        <div className="info-card">
-          <h3 className="bi-chart-title">Cupos por Contrato</h3>
-          <EChartSurface
-            height={340}
-            option={vacanciesByContractOption ?? {}}
-            empty={!vacanciesByContractOption}
-            emptyMessage="Sin folios visibles para el filtro."
-          />
-        </div>
-        <div className="info-card">
-          <h3 className="bi-chart-title">Estado de Movilidad Interna</h3>
-          <EChartSurface
-            height={340}
-            option={mobilityStatusOption ?? {}}
-            empty={!mobilityStatusOption}
-            emptyMessage="Sin movilidades visibles para el filtro."
-          />
-        </div>
-      </div>
-
-      <div className="info-card">
-        <div className="bi-chart-header">
-          <h3 className="bi-chart-title">Pulso Operativo</h3>
-          <div className="bi-pulse-view-tabs" aria-label="Vista temporal del pulso operativo">
-            {OPERATIONAL_PULSE_VIEW_OPTIONS.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                className={option.key === operationalPulseView ? "is-active" : ""}
-                aria-pressed={option.key === operationalPulseView}
-                title={option.label}
-                onClick={() => setOperationalPulseView(option.key)}
-              >
-                {option.shortLabel}
-              </button>
-            ))}
+      {chartStage >= 1 ? (
+        <div className="bi-chart-row">
+          <div className="info-card">
+            <h3 className="bi-chart-title">Cobertura de Cupos</h3>
+            <EChartSurface
+              height={320}
+              option={vacancyCoverageOption ?? {}}
+              empty={!vacancyCoverageOption}
+              emptyMessage="Sin cupos solicitados para el filtro."
+            />
+          </div>
+          <div className="info-card">
+            <h3 className="bi-chart-title">Etapas de Candidatos</h3>
+            <EChartSurface
+              height={320}
+              option={candidatesByStageOption ?? {}}
+              empty={!candidatesByStageOption}
+              emptyMessage="Sin candidatos visibles para el filtro."
+            />
           </div>
         </div>
-        <EChartSurface
-          height={340}
-          option={timelineOption ?? {}}
-          empty={!timelineOption}
-          emptyMessage="Sin movimiento visible para el filtro."
-        />
-      </div>
+      ) : null}
+
+      {chartStage >= 2 ? (
+        <div className="bi-chart-row">
+          <div className="info-card">
+            <h3 className="bi-chart-title">Cupos por Contrato</h3>
+            <EChartSurface
+              height={340}
+              option={vacanciesByContractOption ?? {}}
+              empty={!vacanciesByContractOption}
+              emptyMessage="Sin folios visibles para el filtro."
+            />
+          </div>
+          <div className="info-card">
+            <h3 className="bi-chart-title">Estado de Movilidad Interna</h3>
+            <EChartSurface
+              height={340}
+              option={mobilityStatusOption ?? {}}
+              empty={!mobilityStatusOption}
+              emptyMessage="Sin movilidades visibles para el filtro."
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {chartStage >= 3 ? (
+        <div className="info-card">
+          <div className="bi-chart-header">
+            <h3 className="bi-chart-title">Pulso Operativo</h3>
+            <div className="bi-pulse-view-tabs" aria-label="Vista temporal del pulso operativo">
+              {OPERATIONAL_PULSE_VIEW_OPTIONS.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  className={option.key === operationalPulseView ? "is-active" : ""}
+                  aria-pressed={option.key === operationalPulseView}
+                  title={option.label}
+                  onClick={() => setOperationalPulseView(option.key)}
+                >
+                  {option.shortLabel}
+                </button>
+              ))}
+            </div>
+          </div>
+          <EChartSurface
+            height={340}
+            option={timelineOption ?? {}}
+            empty={!timelineOption}
+            emptyMessage="Sin movimiento visible para el filtro."
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

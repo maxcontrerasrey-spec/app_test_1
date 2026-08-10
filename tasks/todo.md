@@ -1484,6 +1484,21 @@ Resultado:
 
 ## Proximos objetivos vivos
 
+## Auditoria y correccion de bloqueo en Business Intelligence - 2026-08-10
+
+- [x] Auditar el montaje de BI, consultas, importaciones pesadas y navegacion entre modulos.
+- [x] Reemplazar el diferimiento de una sola tarea por montaje progresivo y cancelable de visualizaciones.
+- [x] Diferir la importacion de ECharts del mapa y abortar la descarga al salir de BI.
+- [x] Mantener cache operativa del dashboard de Reclutamiento y consultas independientes en paralelo.
+- [x] Ejecutar TypeScript, build frontend, 98 tests unitarios/integridad, baseline de performance y Guardian.
+
+### Resultado aplicado
+
+- La causa principal era que `setTimeout(0)` solo postergaba un tick y luego montaba todos los graficos secundarios juntos, bloqueando el hilo principal con RPCs, ECharts y el mapa.
+- Dotacion ahora monta sus bloques en cuatro etapas con `requestIdleCallback`/fallback temporizado y limpieza al cambiar de vista.
+- Reclutamiento monta sus tres grupos de graficos por etapas; el mapa de Chile carga ECharts de forma diferida y cancela el fetch al desmontarse.
+- Validacion final: `npm run build:frontend-check`, `npm run test:unit`, `npm run test:integrity`, `npm run audit:performance-baseline` y `npm run guardian` pasaron con 0 errores y 0 warnings.
+
 ## Revision de errores GitHub Actions - 2026-07-22
 
 - [x] Inventariar ejecuciones fallidas recientes de `Audit Enterprise Guardrails` y revisar sus logs completos.

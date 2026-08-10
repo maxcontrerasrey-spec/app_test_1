@@ -4,7 +4,6 @@ import { useBiHeadcountByContract, useBiHeadcountByCity } from "../hooks/useBiQu
 import { formatBiContractLabel } from "../lib/presentation";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
-import { echarts } from "../../../shared/ui/charts/echartsRuntime";
 
 type BiHeadcountChartsProps = {
   filters?: BiFilters;
@@ -13,44 +12,45 @@ type BiHeadcountChartsProps = {
 export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   const { data: contractData, isLoading: isLoadingContract } = useBiHeadcountByContract(filters);
   const { data: cityData, isLoading: isLoadingCity } = useBiHeadcountByCity(filters);
-  const [isChileMapReady, setIsChileMapReady] = useState(() => Boolean(echarts.getMap("chile")));
+  const [isChileMapReady, setIsChileMapReady] = useState(false);
   const chartTheme = useChartTheme();
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
-    if (echarts.getMap("chile")) {
-      setIsChileMapReady(true);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    void fetch("/maps/chile.json", { cache: "force-cache" })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`No fue posible cargar mapa de Chile (${response.status})`);
+    void import("../../../shared/ui/charts/echartsRuntime")
+      .then(({ echarts }) => {
+        if (echarts.getMap("chile")) {
+          if (isMounted) setIsChileMapReady(true);
+          return null;
         }
 
-        return response.json();
+        return fetch("/maps/chile.json", { cache: "force-cache", signal: controller.signal })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`No fue posible cargar mapa de Chile (${response.status})`);
+            }
+
+            return response.json();
+          })
+          .then((geoJson) => {
+            if (!echarts.getMap("chile")) {
+              echarts.registerMap("chile", geoJson as never);
+            }
+
+            if (isMounted) setIsChileMapReady(true);
+          });
       })
-      .then((geoJson) => {
-        if (!echarts.getMap("chile")) {
-          echarts.registerMap("chile", geoJson as never);
-        }
-
-        if (isMounted) {
-          setIsChileMapReady(true);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
+      .catch((error: unknown) => {
+        if (isMounted && !(error instanceof DOMException && error.name === "AbortError")) {
           setIsChileMapReady(false);
         }
       });
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, []);
 

@@ -111,9 +111,9 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10188955,
+  "distTotalBytes": 10189453,
   "jsFileCount": 54,
-  "jsTotalBytes": 2687404,
+  "jsTotalBytes": 2687902,
   "cssFileCount": 10,
   "cssTotalBytes": 226778,
   "trackedAssets": [
@@ -140,6 +140,8 @@ Revision 2026-08-10 catalogos BUK ficha publica: el total global y JS suben 118 
 Revision 2026-08-10 optimizacion BI: el total global y JS suben 215 bytes por diferir el montaje de graficos secundarios hasta despues del primer render, mantener cache del dashboard de Reclutamiento y paralelizar su timeline. Reduce trabajo inicial y no agrega vendors ni assets trackeados.
 
 Revision 2026-08-10 expansion DSAL ECO04: el total global y JS suben 859 bytes por agregar 13 roles homologados al selector publico. No agrega vendors ni assets trackeados; la validacion equivalente permanece en la RPC y constraint backend.
+
+Revision 2026-08-10 auditoria BI: el total global y JS suben 498 bytes por reemplazar el diferimiento de una sola tarea por etapas progresivas cancelables, diferir la importacion de ECharts del mapa y abortar su descarga al salir del modulo. No agrega vendors ni assets trackeados; reduce el trabajo concurrente del hilo principal al navegar.
 
 ## Politica de actualizacion
 

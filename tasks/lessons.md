@@ -2958,3 +2958,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El autocompletado no es la autoridad final.** La RPC publica debe resolver nuevamente el RUT contra la nomina y validar el rol contra el catalogo permitido antes de insertar.
 - **Las fuentes pueden omitir un apellido.** No bloquees una postulación valida por un campo que la nomina fuente entrega vacío; conserva el dato vacío y mantén nombres y apellido paterno autoritativos.
 - **El barrido judicial debe ser independiente del cargo.** La revisión autenticada debe unir por RUT y exponer conteos y detalles de ambas categorías para cualquier rol, sin convertir ausencia de fuente en un resultado judicial inventado.
+
+## 202. Diferir BI requiere etapas cancelables, no solo un `setTimeout(0)`
+
+- **Un tick no es carga progresiva.** Si todos los graficos se montan en el callback inmediato, las RPCs, ECharts y mapas siguen compitiendo por el hilo principal y la navegación puede quedar bloqueada.
+- **La salida de la ruta debe cancelar trabajo pendiente.** Los temporizadores, `requestIdleCallback` y fetches de mapas deben limpiarse o abortarse al cambiar de modulo para no seguir consumiendo recursos de una vista abandonada.
+- **Los runtimes pesados deben importarse donde se usan.** El mapa no debe importar ECharts al montar la pagina; debe cargarlo solo cuando su bloque progresivo llegue a esa etapa.
