@@ -2969,3 +2969,4 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Un RPC puede tener `EXECUTE` correcto y aun fallar antes de su logica de negocio.** Con `set search_path = public`, funciones como `digest` instaladas en `extensions` no se resuelven si se invocan sin esquema.
 - **El smoke debe distinguir permisos de errores internos.** Un `42501` visible en la interfaz puede ocultar un fallo de resolucion o runtime; hay que invocar el RPC y conservar el codigo/mensaje original antes de cambiar grants.
+- **Los nombres de variables no deben colisionar con columnas usadas en SQL dinamico o PL/pgSQL.** Una RPC puede superar autenticacion y hash, pero fallar al consultar la sesion con `column reference ... is ambiguous`; los parametros y variables deben usar nombres distintivos como `session_token_hash`.

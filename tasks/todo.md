@@ -1484,6 +1484,21 @@ Resultado:
 
 ## Proximos objetivos vivos
 
+## Auditoria y despliegue integral backend/frontend - 2026-08-10
+
+- [x] Revisar todos los worktrees, ramas, commits y estado de `origin/main`.
+- [x] Inventariar las migraciones versionadas pendientes y validar su nomenclatura/baseline.
+- [x] Obtener sesión de despliegue Supabase, consultar migraciones remotas y aplicar solo las pendientes en orden.
+- [x] Ejecutar smoke remoto de las RPC de ficha BUK, incluyendo inicio y guardado transaccional.
+- [x] Ejecutar Guardian y gates finales, confirmar árboles limpios y publicar commit/push en `main`.
+
+### Resultado aplicado
+
+- El historial remoto tenía 17 versiones legacy sin archivo local, pero todas las migraciones locales previas estaban aplicadas; no se repararon ni alteraron esas versiones históricas.
+- Se aplicaron y registraron en `supabase_migrations.schema_migrations` las migraciones `20260810134000`, `20260810172000`, `20260810173000`, `20260810174000`, `20260810175000` y `20260810180000`.
+- Smoke remoto anonimo: inicio de ficha exitoso para el candidato reportado, hash y sesion temporal correctos, envio con `submitted: true` dentro de `BEGIN/ROLLBACK`, y limpieza de la sesion de prueba.
+- Auditoria final: `audit:migrations`, `audit:supabase-security` y `guardian` pasan con 0 errores y 0 warnings; el build frontend y los tests incluidos en Guardian tambien pasan.
+
 ## Correccion acceso ficha BUK publica DSAL - 2026-08-10
 
 - [x] Reproducir el error de acceso mediante el RPC publico con el RUT y correo reportados.
