@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Desglose de precandidatos por rol en tarjetas - 2026-08-10
+
+- [x] Extender el resumen autenticado de precandidatos con conteos por rol para cada estado.
+- [x] Mostrar el desglose en tooltip al pasar el mouse o enfocar las tarjetas de Pendientes, Aprobados y Rechazados.
+- [x] Validar responsive, tipos, build, migración aplicada y consulta productiva.
+- [x] Ejecutar Guardian, registrar resultado y publicar en `main`.
+
+Resultado: la migración `20260810231504_add_dsal_precandidate_role_summary` está aplicada y registrada en Supabase. Producción devuelve `by_role` para Pendientes, Aprobados y Rechazados; build, unitarias, integridad, seguridad, migraciones y Guardian pasan sin errores ni advertencias después de actualizar el baseline medido.
+
 ## Expansion de precandidatos DSAL a nomina ECO04 - 2026-08-10
 
 - [x] Validar los 43 RUT de la nómina entregada contra el verificador del ERP.

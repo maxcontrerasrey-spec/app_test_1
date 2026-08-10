@@ -111,11 +111,11 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10189453,
+  "distTotalBytes": 10191436,
   "jsFileCount": 54,
-  "jsTotalBytes": 2687902,
+  "jsTotalBytes": 2688672,
   "cssFileCount": 10,
-  "cssTotalBytes": 226778,
+  "cssTotalBytes": 227991,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -142,6 +142,8 @@ Revision 2026-08-10 optimizacion BI: el total global y JS suben 215 bytes por di
 Revision 2026-08-10 expansion DSAL ECO04: el total global y JS suben 859 bytes por agregar 13 roles homologados al selector publico. No agrega vendors ni assets trackeados; la validacion equivalente permanece en la RPC y constraint backend.
 
 Revision 2026-08-10 auditoria BI: el total global y JS suben 498 bytes por reemplazar el diferimiento de una sola tarea por etapas progresivas cancelables, diferir la importacion de ECharts del mapa y abortar su descarga al salir del modulo. No agrega vendors ni assets trackeados; reduce el trabajo concurrente del hilo principal al navegar.
+
+Revision 2026-08-10 precandidatos por rol: el total sube 1,983 bytes, JS sube 770 bytes y CSS sube 1,213 bytes por agregar al resumen autenticado el desglose por rol y mostrarlo en tooltips accesibles de las tarjetas de estado. No agrega vendors ni assets trackeados.
 
 ## Politica de actualizacion
 

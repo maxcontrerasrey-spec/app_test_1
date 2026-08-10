@@ -46,6 +46,44 @@ function buildCaseOptionLabel(
   return `Folio ${folio} · ${caseCode} · ${contractName} · ${jobPositionName}`;
 }
 
+function PrecandidateSummaryCard({
+  label,
+  value,
+  status,
+  roles,
+  tone
+}: {
+  label: string;
+  value: number;
+  status: DsalPrecandidateStatus;
+  roles: Array<{ role: string; count: number }>;
+  tone: string;
+}) {
+  return (
+    <article
+      className={`tracking-kpi-card tracking-kpi-card-${tone} precandidate-summary-card`}
+      tabIndex={0}
+      aria-label={`${label}: ${value}. Ver desglose por rol.`}
+    >
+      <span className="micro-label">{label}</span>
+      <strong>{value}</strong>
+      <span className="precandidate-summary-tooltip" role="tooltip">
+        <span className="precandidate-summary-tooltip-title">{label} por rol</span>
+        {roles.length > 0 ? (
+          roles.map((item) => (
+            <span className="precandidate-summary-role" key={`${status}-${item.role}`}>
+              <span>{item.role}</span>
+              <strong>{item.count}</strong>
+            </span>
+          ))
+        ) : (
+          <span className="precandidate-summary-empty">Sin postulaciones registradas</span>
+        )}
+      </span>
+    </article>
+  );
+}
+
 function JudicialBubble({
   label,
   count,
@@ -98,7 +136,12 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
 
   const precandidates = precandidatesQuery.data?.items ?? [];
   const totalCount = precandidatesQuery.data?.totalCount ?? 0;
-  const summary = precandidatesQuery.data?.summary ?? { pending: 0, approved: 0, rejected: 0 };
+  const summary = precandidatesQuery.data?.summary ?? {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    by_role: { pending: [], approved: [], rejected: [], archived: [] }
+  };
   const activeCases = useMemo(
     () =>
       (activeCaseOptionsQuery.data ?? []).filter(
@@ -220,18 +263,27 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
       </div>
 
       <div className="tracking-kpi-row tracking-kpi-row-compact">
-        <article className="tracking-kpi-card tracking-kpi-card-pendiente">
-          <span className="micro-label">Pendientes</span>
-          <strong>{summary.pending}</strong>
-        </article>
-        <article className="tracking-kpi-card tracking-kpi-card-generado">
-          <span className="micro-label">Aprobados</span>
-          <strong>{summary.approved}</strong>
-        </article>
-        <article className="tracking-kpi-card tracking-kpi-card-rechazado">
-          <span className="micro-label">Rechazados</span>
-          <strong>{summary.rejected}</strong>
-        </article>
+        <PrecandidateSummaryCard
+          label="Pendientes"
+          value={summary.pending}
+          status="pending"
+          roles={summary.by_role.pending}
+          tone="pendiente"
+        />
+        <PrecandidateSummaryCard
+          label="Aprobados"
+          value={summary.approved}
+          status="approved"
+          roles={summary.by_role.approved}
+          tone="generado"
+        />
+        <PrecandidateSummaryCard
+          label="Rechazados"
+          value={summary.rejected}
+          status="rejected"
+          roles={summary.by_role.rejected}
+          tone="rechazado"
+        />
       </div>
 
       <div className="approval-chip-row">

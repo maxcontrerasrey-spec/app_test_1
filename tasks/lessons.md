@@ -2981,3 +2981,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **El solicitante del folio no necesariamente es el supervisor operativo.** Para contratos con mapping vigente, `contract_admin_name` es la fuente de supervisor y debe tener prioridad sobre `requester_email`.
 - **Una correccion manual en BUK debe reflejarse en el ERP.** Actualiza la fecha critica en la ficha contractual y conserva la evidencia del antes/despues para que el siguiente reproceso no revierta el cambio.
+
+## 206. Los KPI de precandidatos deben conservar su desglose en el backend
+
+- **No derives un tooltip de los registros de la página actual.** La paginación y los filtros pueden ocultar roles; el resumen debe calcularse en el RPC con el alcance completo del estado.
+- **Los KPI deben seguir siendo accesibles sin mouse.** La tarjeta debe poder enfocarse y mostrar el mismo detalle por teclado, manteniendo el patrón visual existente.

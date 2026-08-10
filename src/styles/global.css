@@ -4106,6 +4106,69 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   color: var(--title);
 }
 
+.precandidate-summary-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.precandidate-summary-card:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 3px;
+}
+
+.precandidate-summary-tooltip {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.6rem);
+  left: 0;
+  width: min(19rem, calc(100vw - 2rem));
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--soft-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--title);
+  box-shadow: 0 16px 30px -18px var(--soft-shadow-dark);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.25rem);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.precandidate-summary-card:hover .precandidate-summary-tooltip,
+.precandidate-summary-card:focus-visible .precandidate-summary-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.precandidate-summary-tooltip-title {
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--soft-border);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.precandidate-summary-role {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.82rem;
+}
+
+.precandidate-summary-role strong {
+  font-size: 0.86rem;
+}
+
+.precandidate-summary-empty {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .tracking-toolbar {
   display: flex;
   align-items: end;

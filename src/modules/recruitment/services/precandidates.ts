@@ -80,17 +80,23 @@ export type DsalPrecandidatesSummary = {
   pending: number;
   approved: number;
   rejected: number;
+  by_role: Record<DsalPrecandidateStatus, Array<{ role: string; count: number }>>;
+};
+
+type DsalPrecandidatesSummaryPayload = Partial<Omit<DsalPrecandidatesSummary, "by_role">> & {
+  by_role?: Partial<DsalPrecandidatesSummary["by_role"]> | null;
 };
 
 type PagedPrecandidatesPayload = {
   items?: DsalPrecandidate[] | null;
   total_count?: number | null;
-  summary?: Partial<DsalPrecandidatesSummary> | null;
+  summary?: DsalPrecandidatesSummaryPayload | null;
 };
 
 function parsePrecandidatesPage(payload: unknown) {
   const parsed = (payload ?? {}) as PagedPrecandidatesPayload;
   const summary = parsed.summary ?? {};
+  const byRole = summary.by_role ?? {};
 
   return {
     items: Array.isArray(parsed.items) ? parsed.items : [],
@@ -98,7 +104,13 @@ function parsePrecandidatesPage(payload: unknown) {
     summary: {
       pending: Number(summary.pending ?? 0),
       approved: Number(summary.approved ?? 0),
-      rejected: Number(summary.rejected ?? 0)
+      rejected: Number(summary.rejected ?? 0),
+      by_role: {
+        pending: Array.isArray(byRole.pending) ? byRole.pending : [],
+        approved: Array.isArray(byRole.approved) ? byRole.approved : [],
+        rejected: Array.isArray(byRole.rejected) ? byRole.rejected : [],
+        archived: Array.isArray(byRole.archived) ? byRole.archived : []
+      }
     }
   };
 }
