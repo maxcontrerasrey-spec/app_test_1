@@ -70,7 +70,6 @@ export function DsalPublicApplicationPage() {
       (rosterLookupStatus === "found" || rosterLookupStatus === "not_found") &&
       draft.firstName.trim() &&
       draft.lastName.trim() &&
-      draft.secondLastName.trim() &&
       draft.addressLine.trim() &&
       draft.region.trim() &&
       draft.currentCity.trim() &&
@@ -282,7 +281,7 @@ export function DsalPublicApplicationPage() {
               />
               <TextField
                 id="dsal-public-second-last-name"
-                label="Apellido materno"
+                label="Apellido materno (opcional)"
                 value={draft.secondLastName}
                 disabled={rosterLookupStatus === "found" || rosterLookupStatus === "loading"}
                 onChange={(event) => updateDraft({ secondLastName: event.target.value })}

@@ -18,7 +18,23 @@ export const dsalRoleOptions = [
   { value: "Interno Mina", label: "Interno Mina" },
   { value: "Furgón Eléctrico", label: "Furgón Eléctrico" },
   { value: "Bus Eléctrico", label: "Bus Eléctrico" },
-  { value: "Ciudades Base", label: "Ciudades Base" }
+  { value: "Ciudades Base", label: "Ciudades Base" },
+  { value: "Administrador de Contrato", label: "Administrador de Contrato" },
+  { value: "Aseadores", label: "Aseadores" },
+  { value: "Bodeguero", label: "Bodeguero" },
+  { value: "Electricista Especialista", label: "Electricista Especialista" },
+  { value: "Expeditora - Acreditación", label: "Expeditora - Acreditación" },
+  { value: "Experto Prevención de riesgos", label: "Experto Prevención de riesgos" },
+  {
+    value: "Ingeniero especialista Planificación y control",
+    label: "Ingeniero especialista Planificación y control"
+  },
+  { value: "Jefe de Operaciones", label: "Jefe de Operaciones" },
+  { value: "Jefe de taller", label: "Jefe de taller" },
+  { value: "Mecánico Especialista", label: "Mecánico Especialista" },
+  { value: "Mecánico especialista carrocería", label: "Mecánico especialista carrocería" },
+  { value: "Personal Administrativo", label: "Personal Administrativo" },
+  { value: "Supervisor de Terreno", label: "Supervisor de Terreno" }
 ] as const;
 
 export type DsalPrecandidateStatus = "pending" | "approved" | "rejected" | "archived";

@@ -1,5 +1,17 @@
 # Tareas y Roadmap de Desarrollo
 
+## Expansion de precandidatos DSAL a nomina ECO04 - 2026-08-10
+
+- [x] Validar los 43 RUT de la nómina entregada contra el verificador del ERP.
+- [x] Incorporar nombres y apellidos para autocompletado, permitiendo apellido materno vacío cuando la fuente no lo informa.
+- [x] Ampliar el catálogo de roles en frontend, constraint y RPC pública de postulación.
+- [x] Mantener el enriquecimiento judicial por RUT para criminales, laborales y detalle de causas.
+- [x] Ejecutar auditorías, pruebas, commit y push a `main`.
+
+Resultado parcial: la migración `20260810170000_expand_dsal_roster_roles` fue aplicada en Supabase remoto y registra 43 personas nuevas de la nómina ECO04. La información judicial existente se resuelve por RUT en la vista autenticada de Precandidatos; no se inventan resultados cuando un RUT no existe en la fuente judicial importada.
+
+Resultado final: 79 pruebas unitarias, 19 pruebas de integridad, build frontend, auditorias de migraciones/seguridad y Guardian completo pasan sin errores.
+
 ## Optimizacion fuerte Business Intelligence - 2026-08-10
 
 - [x] Medir el contrato actual de queries, renderizado y cambio de vistas del modulo BI.

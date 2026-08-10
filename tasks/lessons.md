@@ -2952,3 +2952,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Una pestaña ejecutiva no debe perder su cache al navegar.** Usa `staleTime` y `gcTime` explicitos, y evita `refetchOnMount: "always"` cuando el dato puede reutilizarse durante una ventana operativa corta.
 - **Consultas independientes deben ejecutarse en paralelo cuando el contrato lo permite.** En dashboards, cargar el resumen y el timeline con `Promise.all` reduce la latencia percibida sin cambiar permisos ni forma de respuesta.
 - **Los indices se agregan con evidencia.** Primero mide filas y revisa los planes/catalogo; para una carga pequeña con indices existentes, reducir el trabajo inicial del frontend tiene menor riesgo que sumar indices especulativos.
+
+## 201. Una nomina de postulacion debe validar identidad y catalogo en el mismo backend
+
+- **El autocompletado no es la autoridad final.** La RPC publica debe resolver nuevamente el RUT contra la nomina y validar el rol contra el catalogo permitido antes de insertar.
+- **Las fuentes pueden omitir un apellido.** No bloquees una postulación valida por un campo que la nomina fuente entrega vacío; conserva el dato vacío y mantén nombres y apellido paterno autoritativos.
+- **El barrido judicial debe ser independiente del cargo.** La revisión autenticada debe unir por RUT y exponer conteos y detalles de ambas categorías para cualquier rol, sin convertir ausencia de fuente en un resultado judicial inventado.

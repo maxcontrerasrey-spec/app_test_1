@@ -31,6 +31,10 @@ const nonRosterMigration = fs.readFileSync(
   path.join(root, "supabase/migrations/20260809161820_allow_non_roster_dsal_precandidate_submissions.sql"),
   "utf8"
 );
+const expandedRosterMigration = fs.readFileSync(
+  path.join(root, "supabase/migrations/20260810170000_expand_dsal_roster_roles.sql"),
+  "utf8"
+);
 
 describe("DSAL precandidate approval contract", () => {
   it("enforces folio ownership, effective capacity and transactional approval", () => {
@@ -101,5 +105,18 @@ describe("DSAL precandidate approval contract", () => {
     expect(nonRosterMigration).not.toContain("raise exception 'El RUT no se encuentra en la nómina vigente del contrato DSAL'");
     expect(publicApplication).toContain('(rosterLookupStatus === "found" || rosterLookupStatus === "not_found")');
     expect(publicApplication).toContain("Puedes continuar: completa tus nombres y apellidos");
+  });
+
+  it("amplia la nómina ECO04 y mantiene roles/judicial por RUT", () => {
+    expect(expandedRosterMigration).toContain("184036991");
+    expect(expandedRosterMigration).toContain("Camilo Nicolas");
+    expect(expandedRosterMigration).toContain("Administrador de Contrato");
+    expect(expandedRosterMigration).toContain("Mecánico especialista carrocería");
+    expect(expandedRosterMigration).toContain("is_valid_dsal_precandidate_role");
+    expect(expandedRosterMigration).toContain(
+      "coalesce(public.normalize_dsal_precandidate_name(p_second_last_name), '')"
+    );
+    expect(approvalView).toContain("criminal_cause_count");
+    expect(approvalView).toContain("labor_cause_count");
   });
 });
