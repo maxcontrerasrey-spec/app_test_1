@@ -1613,3 +1613,10 @@ Resultado:
 - La Solicitud de Contratación quedó explícitamente omitida para regularización posterior; el job contingente conserva motivo, usuario, fecha y respuestas del proveedor.
 - La reconciliación automática fue ajustada para no transformar una carga contingente en contratación ERP; Ricardo permanece en etapa `lead`.
 - Guardian final: PASS, 0 errores y 0 warnings; migraciones, seguridad, integridad, concurrencia, idempotencia, build y diff check aprobados.
+
+## Correccion supervisor y fecha Ricardo Cortez - 2026-08-10
+- [x] Confirmar supervisor contractual DSAL en `buk_contract_mappings` y ficha BUK.
+- [x] Actualizar BUK: supervisor Marcelo Villarroel (`35304`) y fecha de ingreso `2026-08-10`.
+- [x] Actualizar la ficha contractual ERP con fecha `2026-08-10`, conservando auditoria del cambio `2026-08-09 -> 2026-08-10`.
+- [x] Ajustar el worker para priorizar el administrador del contrato como supervisor BUK y evitar que futuros reprocesos usen al solicitante del folio.
+- [x] Verificar BUK, desplegar Edge Function y ejecutar Guardian.

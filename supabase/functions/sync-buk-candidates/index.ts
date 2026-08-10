@@ -1897,7 +1897,7 @@ function isRequesterNameMatch(
   return requesterTokens.every((token) => employeeTokens.has(token));
 }
 
-async function fetchLocalBukEmployeeByRequesterIdentity(
+async function fetchLocalBukEmployeeByIdentity(
   supabase: SupabaseAdminClient,
   requesterEmail: string | null | undefined,
   requesterName: string | null | undefined
@@ -1915,7 +1915,7 @@ async function fetchLocalBukEmployeeByRequesterIdentity(
       .limit(5);
 
     if (error) {
-      throw new Error(`No fue posible leer el cache local BUK del solicitante ${normalizedEmail}: ${error.message}`);
+      throw new Error(`No fue posible leer el cache local BUK por correo ${normalizedEmail}: ${error.message}`);
     }
 
     const exactEmailMatch = ((data ?? []) as LocalBukEmployeeRow[]).find(
@@ -1942,7 +1942,7 @@ async function fetchLocalBukEmployeeByRequesterIdentity(
     .limit(50);
 
   if (error) {
-    throw new Error(`No fue posible leer el cache local BUK por nombre de solicitante ${requesterName ?? ""}: ${error.message}`);
+    throw new Error(`No fue posible leer el cache local BUK por nombre ${requesterName ?? ""}: ${error.message}`);
   }
 
   const matchedRequester = ((data ?? []) as LocalBukEmployeeRow[]).find((row) => {
@@ -2283,12 +2283,13 @@ async function resolveCandidateSyncContext(
     id?: number | null;
     buk_area_name: string | null;
     buk_area_code: string | null;
+    contract_admin_name: string | null;
   } | null = null;
 
   if (caseRecord.contract_id != null) {
     const { data } = await supabase
       .from("buk_contract_mappings")
-      .select("id, buk_area_name, buk_area_code")
+      .select("id, buk_area_name, buk_area_code, contract_admin_name")
       .eq("contract_id", caseRecord.contract_id)
       .limit(1)
       .maybeSingle();
@@ -2298,7 +2299,7 @@ async function resolveCandidateSyncContext(
   if (!contractMapping && typeof hiringRequest.contract_number === "string" && hiringRequest.contract_number.trim()) {
     const { data } = await supabase
       .from("buk_contract_mappings")
-      .select("id, buk_area_name, buk_area_code")
+      .select("id, buk_area_name, buk_area_code, contract_admin_name")
       .eq("contract_number", hiringRequest.contract_number.trim())
       .limit(1)
       .maybeSingle();
@@ -2348,26 +2349,30 @@ async function resolveCandidateSyncContext(
   const areaEmployees = sortLocalBukEmployees(await loadLocalBukAreaEmployees(supabase, areaCode));
   const localAreaSnapshots = areaEmployees.map((row) => extractCurrentJobSnapshot(row.raw_payload));
 
+  const contractAdminBukEmployee = contractMapping?.contract_admin_name
+    ? await fetchLocalBukEmployeeByIdentity(supabase, null, contractMapping.contract_admin_name)
+    : null;
   const requesterBukEmployee =
     (await fetchBukEmployeeByEmail(hiringRequest.requester_email)) ??
-    (await fetchLocalBukEmployeeByRequesterIdentity(
+    (await fetchLocalBukEmployeeByIdentity(
       supabase,
       hiringRequest.requester_email,
       hiringRequest.requester_name
     ));
+  const supervisorBukEmployee = contractAdminBukEmployee ?? requesterBukEmployee;
   const requesterCompanyId =
-    requesterBukEmployee && typeof requesterBukEmployee === "object"
+    supervisorBukEmployee && typeof supervisorBukEmployee === "object"
       ? parseIntegerLike(
-          requesterBukEmployee.current_job &&
-            typeof requesterBukEmployee.current_job === "object" &&
-            !Array.isArray(requesterBukEmployee.current_job)
-            ? (requesterBukEmployee.current_job as Record<string, unknown>).company_id
+          supervisorBukEmployee.current_job &&
+            typeof supervisorBukEmployee.current_job === "object" &&
+            !Array.isArray(supervisorBukEmployee.current_job)
+            ? (supervisorBukEmployee.current_job as Record<string, unknown>).company_id
             : null
         )
       : null;
-  const requesterLeaderId =
-    requesterBukEmployee && typeof requesterBukEmployee === "object"
-      ? parseIntegerLike(requesterBukEmployee.id)
+  const supervisorLeaderId =
+    supervisorBukEmployee && typeof supervisorBukEmployee === "object"
+      ? parseIntegerLike(supervisorBukEmployee.id)
       : null;
 
   const resolvedBukArea = await resolveBukAreaFromRoleAreas(
@@ -2385,14 +2390,14 @@ async function resolveCandidateSyncContext(
   if (resolvedBukArea) {
     fallbackAreaSnapshot = {
       areaId: resolvedBukArea.id,
-      companyId: resolvedAreaSnapshot?.companyId ?? requesterCompanyId ?? fallbackAreaSnapshot?.companyId ?? 1,
+      companyId: resolvedAreaSnapshot?.companyId ?? fallbackAreaSnapshot?.companyId ?? requesterCompanyId ?? 1,
       costCenter: resolvedBukArea.costCenter ?? resolvedAreaSnapshot?.costCenter ?? areaCode,
       roleId: resolvedAreaSnapshot?.roleId ?? null,
       roleName: resolvedAreaSnapshot?.roleName ?? null,
       weeklyHours: resolvedAreaSnapshot?.weeklyHours ?? null,
       workingScheduleType: resolvedAreaSnapshot?.workingScheduleType ?? null,
       otherTypeOfWorkingDay: resolvedAreaSnapshot?.otherTypeOfWorkingDay ?? null,
-      leaderId: requesterLeaderId ?? resolvedAreaSnapshot?.leaderId ?? null
+      leaderId: supervisorLeaderId ?? resolvedAreaSnapshot?.leaderId ?? null
     };
   }
 
@@ -2424,7 +2429,7 @@ async function resolveCandidateSyncContext(
     companyId: matchingRoleSample?.companyId ?? fallbackAreaSnapshot.companyId ?? requesterCompanyId ?? 0,
     areaId: matchingRoleSample?.areaId ?? fallbackAreaSnapshot.areaId,
     costCenter: matchingRoleSample?.costCenter ?? fallbackAreaSnapshot.costCenter,
-    leaderId: requesterLeaderId ?? matchingRoleSample?.leaderId ?? fallbackAreaSnapshot.leaderId ?? 0,
+    leaderId: supervisorLeaderId ?? matchingRoleSample?.leaderId ?? fallbackAreaSnapshot.leaderId ?? 0,
     roleId: roleResolution.roleId,
     roleName: roleResolution.roleName,
     wage: 0,

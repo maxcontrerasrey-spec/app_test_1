@@ -2976,3 +2976,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La contingencia debe ser una autorización separada.** Exige permisos RRHH, motivo, cupo y mapping operativo; no debe relajar la ficha contractual crítica ni los estados terminales.
 - **El worker debe tolerar la etapa previa sin saltarse auditoría.** Una carga contingente puede crear ficha, plan, cargo y documentos BUK, pero la Solicitud de Contratación y la aprobación documental quedan para regularización.
 - **Los triggers de éxito también son parte del contrato.** Si un job contingente queda en `success`, la reconciliación automática no puede promover al candidato a `hired`; debe conservar la etapa ERP y registrar el motivo.
+
+## 205. El supervisor BUK debe salir del administrador del contrato
+
+- **El solicitante del folio no necesariamente es el supervisor operativo.** Para contratos con mapping vigente, `contract_admin_name` es la fuente de supervisor y debe tener prioridad sobre `requester_email`.
+- **Una correccion manual en BUK debe reflejarse en el ERP.** Actualiza la fecha critica en la ficha contractual y conserva la evidencia del antes/despues para que el siguiente reproceso no revierta el cambio.
