@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Mapping BUK Acciona Tranque Talabre - 2026-08-10
+
+- [x] Confirmar el contrato y el codigo de subarea BUK informado por el correo.
+- [x] Completar el codigo operativo del mapping BUK sin reutilizar el area del contrato anterior.
+- [x] Verificar en produccion la asociacion, flags operativos y ausencia de duplicados.
+- [x] Ejecutar auditorias, pruebas, commit y push a `main`.
+
+Resultado: el mapping `ACCIONA - TRANQUE TALABRE` / contrato `5906986003:0001` quedo asociado a `buk_area_code = 5906986003:0001`, operativo, uno-a-uno y enlazado al contrato ERP 194. La validacion de creacion de una persona en BUK debe ejecutarse con un candidato real desde el flujo operativo para no generar datos de prueba.
+
 ## Normalizacion de cargo Conductor de Bus - 2026-08-10
 
 - [x] Confirmar el catalogo canonico y medir todos los registros productivos que usan `CONDUCTOR BUS`.

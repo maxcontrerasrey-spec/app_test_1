@@ -2926,6 +2926,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **La opcion legacy debe dejar de estar disponible.** Conserva el codigo anterior para trazabilidad, pero marca el registro inactivo y agrega restricciones backend que impidan volver a guardar la variante incorrecta.
 - **La validacion de cierre debe buscar el valor en todas las superficies relevantes.** Confirma cero valores y referencias legacy, un unico registro canonico activo y que las vistas derivadas reflejen el cambio.
 
+## 198. Un mapping BUK creado en la plataforma debe quedar enlazado por codigo operativo
+
+- **Que el contrato exista en el ERP no basta.** El proceso BUK necesita tambien el codigo operativo del area/subarea BUK; sin ese valor, la resolucion falla antes de procesar al candidato.
+- **No se debe reutilizar el area de otro contrato parecido.** El mapping debe usar el codigo entregado para el contrato exacto, mantener `is_operational` e `is_one_to_one`, y conservar una sola fila activa.
+- **La configuracion y la creacion de la persona son validaciones distintas.** El mapping puede verificarse sin mutar personas, pero la prueba final de sincronizacion debe ejecutarse con un candidato autorizado y auditar el resultado real en BUK.
+
 ## 194. Los enlaces Auth de un solo uso deben sobrevivir a scanners corporativos
 
 - **Un correo aceptado no demuestra que el usuario pueda usar el enlace.** Correlaciona `/recover`, `/verify`, IP, agente y clic humano; Microsoft Safe Links puede consumir el token antes de que la persona abra el mensaje.
