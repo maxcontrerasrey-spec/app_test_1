@@ -63,6 +63,18 @@ const ALLOWED_ANON_EXECUTE_GRANTS = new Map([
     "supabase/migrations/20260809161820_allow_non_roster_dsal_precandidate_submissions.sql",
     ["submit_dsal_precandidate_application"],
   ],
+  [
+    "supabase/migrations/20260810150000_add_public_dsal_buk_worker_file_form.sql",
+    ["start_public_dsal_buk_worker_file", "submit_public_dsal_buk_worker_file"],
+  ],
+  [
+    "supabase/migrations/20260810153000_fix_public_dsal_buk_session_token.sql",
+    ["start_public_dsal_buk_worker_file"],
+  ],
+  [
+    "supabase/migrations/20260810154500_fix_public_dsal_buk_session_token_runtime.sql",
+    [],
+  ],
 ]);
 
 function addFinding(severity, filePath, message, detail = "") {

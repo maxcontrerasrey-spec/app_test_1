@@ -4909,6 +4909,33 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   min-width: min(100%, 190px);
 }
 
+.public-buk-worker-file-page .public-application-shell {
+  width: min(1180px, 100%);
+}
+
+.public-buk-access-form {
+  max-width: 860px;
+}
+
+.public-buk-identity {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.public-buk-identity strong {
+  color: var(--title);
+  font-size: 0.92rem;
+}
+
+.public-buk-identity span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
 .precandidate-review-cell {
   min-width: 340px;
 }

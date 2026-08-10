@@ -19,6 +19,10 @@ const DsalPublicApplicationPage = lazyWithRetry(
   "dsal-public-application-page",
   routeModuleImporters.dsalPublicApplicationPage
 );
+const PublicBukWorkerFilePage = lazyWithRetry(
+  "public-buk-worker-file-page",
+  routeModuleImporters.publicBukWorkerFilePage
+);
 const LoginPage = lazyWithRetry("login-page", routeModuleImporters.loginPage);
 const ResetPasswordPage = lazyWithRetry("reset-password-page", routeModuleImporters.resetPasswordPage);
 const AccessDeniedPage = lazyWithRetry("access-denied-page", routeModuleImporters.accessDeniedPage);
@@ -85,6 +89,7 @@ export function AppRouter() {
         <Route path="/verificar/documento" element={<HiringDocumentVerificationPage />} />
         <Route path="/verificar/documento/:lookup" element={<HiringDocumentVerificationPage />} />
         <Route path="/postulacion-dsal" element={<DsalPublicApplicationPage />} />
+        <Route path="/ficha-buk-dsal" element={<PublicBukWorkerFilePage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />

@@ -1,5 +1,22 @@
 # Tareas y Roadmap de Desarrollo
 
+## Formulario publico de ficha BUK para candidatos DSAL - 2026-08-10
+
+- [x] Confirmar campos personales y previsionales que puede completar el candidato y estados validos de elegibilidad.
+- [x] Crear sesion publica temporal vinculada a candidato aprobado, con verificacion de RUT y correo personal, expiracion y uso controlado.
+- [x] Implementar RPC anonima de carga/guardado que valide elegibilidad, normalice datos, preserve campos internos y registre auditoria.
+- [x] Crear formulario responsivo fuera de login y conectarlo con la ficha BUK canonica, reutilizando catalogos y reglas del ERP.
+- [x] Validar rechazo para RUT no aprobado, rechazo de sesiones invalidas, persistencia, completitud BUK y ausencia de acceso anonimo directo.
+- [x] Ejecutar build, Guardian, auditorias, smoke remoto, commit y push a main.
+
+Resultado:
+- Ruta publica `/ficha-buk-dsal` disponible sin login; valida RUT aprobado y correo personal registrado antes de revelar la ficha.
+- RPCs anonimas acotadas, tabla de sesiones sin acceso directo, token temporal de 30 minutos, uso unico y auditoria `candidate_public_buk_worker_file_updated`.
+- El formulario reutiliza catalogos BUK y completa datos personales, domicilio, contacto, tallas, pagos, banco, prevision y salud; mantiene los campos internos de RRHH.
+- Migraciones `20260810150000`, `20260810153000` y `20260810154500` aplicadas y reparadas en Supabase remoto; la ultima corrige el token compatible con la instalacion remota.
+- Validacion: build frontend, `test:integrity` (18), `audit:migrations`, `audit:supabase-security`, Guardian completo y baseline de performance pasan. El smoke remoto de RUT/email invalido quedo limitado por timeout de la API de consulta, y se verifico la definicion publicada y los privilegios de RPC.
+
+
 > **REGLA FUNDACIONAL (Leccion 56):** Antes de proponer, planificar o ejecutar cualquier cambio sobre este repositorio, se debe leer `tasks/todo.md` y `tasks/lessons.md` completos. Esta es la primera accion obligatoria de cada sesion de trabajo, sin excepcion.
 
 Este archivo mantiene solo el estado vivo y los cierres recientes con relevancia operacional para el ERP. El historial cerrado sin enlace productivo fue purgado para reducir peso del repositorio; las reglas reutilizables permanecen en `tasks/lessons.md` y la documentacion vigente en `docs/`.

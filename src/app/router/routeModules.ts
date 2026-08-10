@@ -14,6 +14,9 @@ export const routeModuleImporters = {
   dsalPublicApplicationPage: async () => ({
     default: (await import("../../modules/recruitment/pages/DsalPublicApplicationPage")).DsalPublicApplicationPage
   }),
+  publicBukWorkerFilePage: async () => ({
+    default: (await import("../../modules/recruitment/pages/PublicBukWorkerFilePage")).PublicBukWorkerFilePage
+  }),
   loginPage: async () => ({
     default: (await import("../../modules/auth/pages/LoginPage")).LoginPage
   }),
@@ -97,6 +100,10 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/postulacion-dsal")) {
     return ["dsalPublicApplicationPage"];
+  }
+
+  if (normalizedPath.startsWith("/ficha-buk-dsal")) {
+    return ["publicBukWorkerFilePage"];
   }
 
   if (normalizedPath.startsWith("/alta-operacional")) {
