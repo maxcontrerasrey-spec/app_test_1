@@ -2990,3 +2990,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ## 207. Un tooltip de KPI que tapa la tabla debe expandir el layout
 
 - **No uses posicionamiento absoluto para contenido variable sobre una tabla.** Si el texto puede envolver o crecer por rol, el popup debe reservar altura en el flujo para que se vea completo y no oculte filas.
+
+## 208. Una migración posterior debe preservar todas las columnas calculadas del RPC
+
+- **Antes de reemplazar una función, compara la versión productiva más reciente, no solo la migración inmediata anterior.** Un `create or replace function` que omite campos enriquecidos puede pasar el build y romper la expansión de UI con datos reales.
+- **Los parsers frontend deben normalizar arreglos opcionales.** El backend sigue siendo la fuente correcta, pero un payload histórico o parcial no debe tumbar el módulo al renderizar `.length` o `.join`.

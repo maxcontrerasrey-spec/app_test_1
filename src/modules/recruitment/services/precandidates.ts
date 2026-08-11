@@ -97,9 +97,17 @@ function parsePrecandidatesPage(payload: unknown) {
   const parsed = (payload ?? {}) as PagedPrecandidatesPayload;
   const summary = parsed.summary ?? {};
   const byRole = summary.by_role ?? {};
+  const items = Array.isArray(parsed.items)
+    ? parsed.items.map((item) => ({
+        ...item,
+        driver_license_classes: Array.isArray(item.driver_license_classes) ? item.driver_license_classes : [],
+        criminal_cause_details: Array.isArray(item.criminal_cause_details) ? item.criminal_cause_details : [],
+        labor_cause_details: Array.isArray(item.labor_cause_details) ? item.labor_cause_details : []
+      }))
+    : [];
 
   return {
-    items: Array.isArray(parsed.items) ? parsed.items : [],
+    items,
     totalCount: Number(parsed.total_count ?? 0),
     summary: {
       pending: Number(summary.pending ?? 0),

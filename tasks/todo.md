@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección expandir precandidato filtrado - 2026-08-10
+
+- [x] Reproducir y localizar el `undefined.length` al expandir resultados filtrados.
+- [x] Restaurar en el RPC los detalles judiciales omitidos al agregar el resumen por rol.
+- [x] Agregar normalización defensiva de arreglos en el parser frontend.
+- [x] Validar RPC filtrado, build, Guardian, commit y push a `main`.
+
+Resultado: el RPC filtrado conserva los detalles judiciales y el parser tolera payloads históricos sin provocar `undefined.length`; build y Guardian pasan sin errores ni advertencias.
+
 ## Corrección tooltip de roles en Precandidatos - 2026-08-10
 
 - [x] Identificar que el popup absoluto se superponía a la tabla y podía quedar cortado.

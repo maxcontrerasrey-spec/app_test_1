@@ -111,9 +111,9 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10191522,
+  "distTotalBytes": 10191798,
   "jsFileCount": 54,
-  "jsTotalBytes": 2688672,
+  "jsTotalBytes": 2688948,
   "cssFileCount": 10,
   "cssTotalBytes": 228077,
   "trackedAssets": [
@@ -146,6 +146,8 @@ Revision 2026-08-10 auditoria BI: el total global y JS suben 498 bytes por reemp
 Revision 2026-08-10 precandidatos por rol: el total sube 1,983 bytes, JS sube 770 bytes y CSS sube 1,213 bytes por agregar al resumen autenticado el desglose por rol y mostrarlo en tooltips accesibles de las tarjetas de estado. No agrega vendors ni assets trackeados.
 
 Revision 2026-08-10 correccion tooltip por rol: el total y CSS suben 86 bytes por cambiar el popup a expansion en flujo, reservando espacio para evitar que tape o corte la tabla. No agrega vendors ni assets trackeados.
+
+Revision 2026-08-11 reparacion payload judicial DSAL: el total y JS suben 276 bytes por normalizar arreglos opcionales del RPC antes de renderizar detalles judiciales y licencias. No agrega vendors ni assets trackeados.
 
 ## Politica de actualizacion
 
