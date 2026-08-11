@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Creación proyecto cambio de turno Zona 3 Norte Costa - 2026-08-11
+
+- [x] Identificar tablas/RPC reales para proyectos, contratos, mappings BUK, cargos y aprobadores.
+- [x] Verificar en producción si `9462300005:0001`, centro `726` o proyecto `10116` ya existen para evitar duplicados.
+- [x] Insertar o actualizar solo los registros necesarios para el proyecto `SODEXO - ALTONORTE` de cambios de turno Zona 3 Norte Costa.
+- [x] Validar producción con consulta read-only, registrar migración/resultado, ejecutar auditorías proporcionales, commit y push a `main`.
+
+Resultado: migración `20260811203239_add_sodexo_altonorte_contract` aplicada y registrada en Supabase. Se creó `contracts.id = 203`, `code = CONT-111`, `contract_number = 9462300005:0001`, `contract_name = SODEXO - ALTONORTE`, unidad `115 / SERV CAMBIO DE TURNO`, centro `10116 / GERENCIA OPERACIONES ZONA III (NORTE COSTA)`. Mapping BUK `id = 119`, `buk_area_code = 726`, gerente `Luciano Fischer Ballerini`, administrador `Javier Plaza Cerda`, activo y one-to-one. Validación productiva confirmó 1 contrato, 1 mapping, gerente zona 3 activo y los cargos `CONDUCTOR DE BUS`, `AUXILIAR DE BUS`, `CONDUCTOR DE MINI BUS` activos.
+
 ## Rediseño visual Solicitud de Sanciones - 2026-08-11
 
 - [x] Auditar el módulo actual contra los patrones visuales ERP de RRHH, Reclutamiento e Incentivos.
