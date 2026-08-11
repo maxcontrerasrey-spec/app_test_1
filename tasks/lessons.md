@@ -3018,3 +3018,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Una burbuja de revisión no debe depender de una lista frontend.** La pertenencia a una nómina sindical debe vivir en la fuente protegida y exponerse como un dato calculado por el RPC autenticado.
 - **La ausencia de coincidencia debe ser explícita.** El parser debe convertir payloads históricos o incompletos a `false`, para que solo aparezca `Representante sindical` cuando el RUT coincida con una fila activa marcada.
 - **No dupliques fuentes ya existentes.** Si la nómina base ya contiene el RUT, agrega una marca auditable a esa misma fuente y conserva el enriquecimiento dentro del flujo de revisión DSAL.
+## 291. La recuperación de contraseña no puede depender del límite global del correo Auth
+
+- **Un cooldown de UI no controla el rate-limit del proveedor.** Aunque el usuario pulse una sola vez, el endpoint compartido de Supabase Auth puede devolver 429 por IP, proyecto o volumen histórico.
+- **Generar el enlace y enviarlo son operaciones distintas.** `auth.admin.generateLink` permite conservar el token y la sesión de recuperación sin consumir el endpoint de envío de Auth; el correo debe salir por el proveedor transaccional corporativo.
+- **El broker público debe responder de forma anti-enumeración.** Direcciones inexistentes, bloqueadas por límite y válidas reciben la misma aceptación; los límites durables viven en una tabla privada con RLS y RPC ejecutable solo por `service_role`.
+- **Los guardas de rol no deben usar `current_user` dentro de `SECURITY DEFINER`.** Dentro de la función el usuario efectivo cambia al dueño; la ACL explícita del wrapper/RPC debe ser la frontera de autorización y el esquema privado debe negar acceso a anon/authenticated.

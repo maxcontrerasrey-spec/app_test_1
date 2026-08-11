@@ -64,8 +64,11 @@ export async function sendPasswordResetEmail(email: string) {
     };
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: buildResetPasswordRedirectUrl()
+  const { error } = await supabase.functions.invoke("request-password-reset", {
+    body: {
+      email,
+      redirectTo: buildResetPasswordRedirectUrl()
+    }
   });
 
   return { error: normalizeAuthOperationError(error) };

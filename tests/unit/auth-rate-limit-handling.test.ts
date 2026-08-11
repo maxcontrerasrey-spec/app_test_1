@@ -48,4 +48,14 @@ describe("auth rate limit handling", () => {
     expect(source).toContain("resetCooldownSeconds > 0");
     expect(source).not.toMatch(/^\s*setErrorMessage\(\s*error\s*\);/m);
   });
+
+  it("usa el broker transaccional y no el limite global de correos Auth", () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), "src/modules/auth/services/authApi.ts"),
+      "utf8"
+    );
+
+    expect(source).toContain('supabase.functions.invoke("request-password-reset"');
+    expect(source).not.toContain("resetPasswordForEmail");
+  });
 });

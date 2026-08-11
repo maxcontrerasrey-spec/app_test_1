@@ -41,3 +41,6 @@ entrypoint = "./functions/generate-competency-certificate/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/generate-competency-certificate/*.html" ]
+
+[functions.request-password-reset]
+verify_jwt = false

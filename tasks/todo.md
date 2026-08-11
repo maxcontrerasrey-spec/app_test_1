@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Recuperación de cuentas sin bloqueo por rate-limit - 2026-08-11
+
+- [x] Confirmar el contrato vigente de recuperación, configuración de redirect y proveedor transaccional.
+- [x] Implementar broker seguro de recuperación con generación de enlace Auth, límite durable por usuario/IP y respuesta anti-enumeración.
+- [x] Conectar el frontend al broker sin fallback al endpoint Auth que está provocando 429 y preservar el cambio de contraseña backend-authoritative.
+- [x] Validar producción con smoke no destructivo, auditorías Supabase, build, Guardian y revisar que Javier quede elegible para recuperar sin modificar su contraseña manualmente.
+- [x] Commit y push a `main`, verificando hash remoto y CI.
+
+Resultado: el broker `request-password-reset` está desplegado y probado en producción. Las migraciones `20260811210607`, `20260811210845` y `20260811211006` están aplicadas y registradas; la ruta responde de forma genérica, limita por correo/IP y envió un enlace real a `javier.plaza@busesjm.com`. Build, Guardian, auditorías y smoke de permisos pasan antes de publicar.
+
 ## Creación proyecto cambio de turno Zona 3 Norte Costa - 2026-08-11
 
 - [x] Identificar tablas/RPC reales para proyectos, contratos, mappings BUK, cargos y aprobadores.
