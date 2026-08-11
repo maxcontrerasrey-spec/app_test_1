@@ -3000,3 +3000,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Actualizar solo `recruitment_cases` deja la solicitud de contratación desalineada.** Cuando cambia el cargo de un folio, `hiring_requests.job_position_id/name` y `recruitment_cases.job_position_id/name` deben actualizarse juntos bajo precondiciones del folio y contrato.
 - **El cargo BUK debe validarse por rol y area antes de crear la ficha.** No se debe sustituir un cargo no habilitado por otro parecido; primero se confirma el rol exacto y su asociacion con el area operativa DSAL.
+
+## 210. Los datos bancarios incompletos deben detener la carga contingente
+
+- **Un valor descriptivo no es un numero de cuenta.** Textos como `CTA RUT` no deben enviarse como numero bancario para superar una validacion de BUK.
+- **La carga debe detenerse si falta tipo o numero de cuenta.** Regularizar primero ambos campos en ERP y reintentar el mismo job; no crear una ficha parcial ni inventar datos.

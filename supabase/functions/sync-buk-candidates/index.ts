@@ -2585,7 +2585,7 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
     bank: worker.bank_name || undefined,
     payment_currency: worker.currency || "CLP",
     payment_method: worker.payment_method,
-    payment_period: worker.payment_period,
+    payment_period: mapBukPeriodicity(worker.payment_period),
     account_type: worker.bank_account_type || undefined,
     account_number: worker.bank_account_number || undefined,
     active_since: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined,
