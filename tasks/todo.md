@@ -1646,3 +1646,10 @@ Resultado:
 - [x] Actualizar la ficha contractual ERP con fecha `2026-08-10`, conservando auditoria del cambio `2026-08-09 -> 2026-08-10`.
 - [x] Ajustar el worker para priorizar el administrador del contrato como supervisor BUK y evitar que futuros reprocesos usen al solicitante del folio.
 - [x] Verificar BUK, desplegar Edge Function y ejecutar Guardian.
+
+## Correccion folio y carga BUK - Jorge Andres Godoy Martinez - 2026-08-11
+- [x] Confirmar que RC-0132 correspondia al contrato CODELCO - DSAL y revisar la ficha ERP con codigo F1.
+- [x] Corregir `hiring_requests` y `recruitment_cases` al cargo canonico `CONDUCTOR DE MINIBUS 4X4` (`job_position_id 271`).
+- [x] Ejecutar la carga contingente BUK y verificar ficha, plan, job, area, cargo, supervisor y fecha directamente en BUK.
+
+Resultado: Jorge Andres Godoy Martinez quedo en BUK como empleado `42663`, ficha `F1`, cargo `CONDUCTOR DE MINIBUS 4X4` (rol `157`), area DSAL `2911`, centro `718`, supervisor Marcelo Villarroel (`35304`) y fecha de ingreso `2026-08-11`. El job ERP quedo en `success`; no se transfirieron documentos porque no habia documentos cargados y el candidato permanece en `lead` por tratarse de una carga contingente.

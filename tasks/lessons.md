@@ -2995,3 +2995,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Antes de reemplazar una función, compara la versión productiva más reciente, no solo la migración inmediata anterior.** Un `create or replace function` que omite campos enriquecidos puede pasar el build y romper la expansión de UI con datos reales.
 - **Los parsers frontend deben normalizar arreglos opcionales.** El backend sigue siendo la fuente correcta, pero un payload histórico o parcial no debe tumbar el módulo al renderizar `.length` o `.join`.
+
+## 209. Corregir un cargo de folio exige alinear solicitud y proceso antes de sincronizar BUK
+
+- **Actualizar solo `recruitment_cases` deja la solicitud de contratación desalineada.** Cuando cambia el cargo de un folio, `hiring_requests.job_position_id/name` y `recruitment_cases.job_position_id/name` deben actualizarse juntos bajo precondiciones del folio y contrato.
+- **El cargo BUK debe validarse por rol y area antes de crear la ficha.** No se debe sustituir un cargo no habilitado por otro parecido; primero se confirma el rol exacto y su asociacion con el area operativa DSAL.
