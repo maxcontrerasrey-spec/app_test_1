@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Rediseño visual Solicitud de Sanciones - 2026-08-11
+
+- [x] Auditar el módulo actual contra los patrones visuales ERP de RRHH, Reclutamiento e Incentivos.
+- [x] Reemplazar CSS local genérico por componentes/clases existentes de formularios, filtros, KPIs, tablas y acciones.
+- [x] Mejorar estados de carga, vacío, error y feedback sin modificar permisos ni backend Supabase.
+- [x] Validar build, Guardian, render responsive, commit y push a `main`.
+
+Resultado: Solicitud de Sanciones queda alineado al lenguaje ERP usando `TextField`, `SelectField`, `approval-chip`, `tracking-kpi-card`, `tracking-filters`, `tracking-table` y filas expandibles de seguimiento. Se redujo la hoja local a ajustes específicos, se corrigió overflow móvil de la tabla y no se modificó Supabase ni permisos; el módulo sigue visible solo para admin mientras se desarrolla.
+
 ## Representantes sindicales en precandidatos DSAL - 2026-08-11
 
 - [x] Marcar en backend los RUT de la nómina sindical entregada y exponer la condición desde el RPC autenticado.

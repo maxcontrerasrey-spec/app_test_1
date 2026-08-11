@@ -1,5 +1,6 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { SelectField, TextField } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   createHrSanctionRequest,
@@ -71,6 +72,18 @@ export function SanctionRequestForm({
     () => measures.find((measure) => measure.id === measureId),
     [measureId, measures]
   );
+  const causeOptions = useMemo(
+    () => causes.map((cause) => ({ value: cause.id, label: cause.name })),
+    [causes]
+  );
+  const measureOptions = useMemo(
+    () => measures.map((measure) => ({ value: measure.id, label: measure.name })),
+    [measures]
+  );
+  const documentTypeOptions = useMemo(
+    () => DOCUMENT_TYPE_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+    []
+  );
 
   function handleCauseChange(nextCauseId: string) {
     const nextCause = causes.find((cause) => cause.id === nextCauseId);
@@ -99,6 +112,16 @@ export function SanctionRequestForm({
 
     if (!causeId || !measureId) {
       setErrorMessage("Selecciona causal y medida solicitada.");
+      return;
+    }
+
+    if (!incidentAt || !incidentPlace.trim()) {
+      setErrorMessage("Indica fecha, hora y lugar de ocurrencia.");
+      return;
+    }
+
+    if (!regulatoryBasis.trim()) {
+      setErrorMessage("Indica el fundamento normativo aplicable.");
       return;
     }
 
@@ -174,96 +197,74 @@ export function SanctionRequestForm({
       />
 
       {selectedWorker ? (
-        <div className="sanctions-worker-card">
+        <div className="sanctions-worker-card" aria-live="polite">
+          <span className="micro-label">Trabajador seleccionado</span>
           <strong>{selectedWorker.fullName}</strong>
-          <span>
-            {selectedWorker.documentNumber} · {selectedWorker.jobTitle || "Sin cargo"} ·{" "}
-            {selectedWorker.areaName || selectedWorker.contractCode || "Sin contrato"}
-          </span>
+          <div className="sanctions-worker-meta">
+            <span className="tracking-status-pill">{selectedWorker.documentNumber}</span>
+            <span>{selectedWorker.jobTitle || "Sin cargo"}</span>
+            <span>{selectedWorker.areaName || selectedWorker.contractCode || "Sin contrato"}</span>
+          </div>
         </div>
       ) : null}
 
       <div className="sanctions-form-grid">
-        <label>
-          <span>Causal</span>
-          <select
-            value={causeId}
-            onChange={(event) => handleCauseChange(event.target.value)}
-            disabled={isLoadingCatalogs || isSubmitting}
-            required
-          >
-            <option value="">Seleccionar causal</option>
-            {causes.map((cause) => (
-              <option key={cause.id} value={cause.id}>
-                {cause.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          id="sanction-cause"
+          label="Causal"
+          value={causeId}
+          onChange={(event) => handleCauseChange(event.target.value)}
+          options={causeOptions}
+          placeholder={isLoadingCatalogs ? "Cargando causales" : "Seleccionar causal"}
+          disabled={isLoadingCatalogs || isSubmitting}
+        />
 
-        <label>
-          <span>Medida solicitada</span>
-          <select
-            value={measureId}
-            onChange={(event) => setMeasureId(event.target.value)}
-            disabled={isLoadingCatalogs || isSubmitting}
-            required
-          >
-            <option value="">Seleccionar medida</option>
-            {measures.map((measure) => (
-              <option key={measure.id} value={measure.id}>
-                {measure.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          id="sanction-measure"
+          label="Medida solicitada"
+          value={measureId}
+          onChange={(event) => setMeasureId(event.target.value)}
+          options={measureOptions}
+          placeholder={isLoadingCatalogs ? "Cargando medidas" : "Seleccionar medida"}
+          disabled={isLoadingCatalogs || isSubmitting}
+        />
 
-        <label>
-          <span>Fecha y hora de ocurrencia</span>
-          <input
-            type="datetime-local"
-            value={incidentAt}
-            onChange={(event) => setIncidentAt(event.target.value)}
-            disabled={isSubmitting}
-            required
-          />
-        </label>
+        <TextField
+          id="sanction-incident-at"
+          label="Fecha y hora de ocurrencia"
+          type="datetime-local"
+          value={incidentAt}
+          onChange={(event) => setIncidentAt(event.target.value)}
+          disabled={isSubmitting}
+        />
 
-        <label>
-          <span>Lugar de la infracción</span>
-          <input
-            value={incidentPlace}
-            onChange={(event) => setIncidentPlace(event.target.value)}
-            placeholder="Ej: Ruta, faena, terminal o sector"
-            disabled={isSubmitting}
-            required
-          />
-        </label>
+        <TextField
+          id="sanction-incident-place"
+          label="Lugar de la infracción"
+          value={incidentPlace}
+          onChange={(event) => setIncidentPlace(event.target.value)}
+          placeholder="Ej: Ruta, faena, terminal o sector"
+          disabled={isSubmitting}
+        />
 
-        <label>
-          <span>N° de equipo</span>
-          <input
-            value={equipmentNumber}
-            onChange={(event) => setEquipmentNumber(event.target.value)}
-            placeholder="Ej: 1198"
-            disabled={isSubmitting}
-          />
-        </label>
+        <TextField
+          id="sanction-equipment-number"
+          label="N° de equipo"
+          value={equipmentNumber}
+          onChange={(event) => setEquipmentNumber(event.target.value)}
+          placeholder="Ej: 1198"
+          disabled={isSubmitting}
+        />
 
-        <label>
-          <span>Tipo de respaldo</span>
-          <select
-            value={documentType}
-            onChange={(event) => setDocumentType(event.target.value as HrSanctionDocumentType)}
-            disabled={isSubmitting}
-          >
-            {DOCUMENT_TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          id="sanction-document-type"
+          label="Tipo de respaldo"
+          value={documentType}
+          onChange={(event) => setDocumentType(event.target.value as HrSanctionDocumentType)}
+          options={documentTypeOptions}
+          disabled={isSubmitting}
+          includePlaceholder={false}
+        />
       </div>
 
       {selectedCause ? (
@@ -273,9 +274,11 @@ export function SanctionRequestForm({
         </div>
       ) : null}
 
-      <label className="sanctions-full-field">
-        <span>Fundamento normativo</span>
+      <label className="field-group sanctions-full-field" htmlFor="sanction-regulatory-basis">
+        <span className="field-label">Fundamento normativo</span>
         <textarea
+          id="sanction-regulatory-basis"
+          className="text-field sanctions-textarea"
           value={regulatoryBasis}
           onChange={(event) => setRegulatoryBasis(event.target.value)}
           rows={3}
@@ -284,9 +287,11 @@ export function SanctionRequestForm({
         />
       </label>
 
-      <label className="sanctions-full-field">
-        <span>Descripción detallada de la infracción</span>
+      <label className="field-group sanctions-full-field" htmlFor="sanction-description">
+        <span className="field-label">Descripción detallada de la infracción</span>
         <textarea
+          id="sanction-description"
+          className="text-field sanctions-textarea"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           rows={5}
@@ -296,9 +301,11 @@ export function SanctionRequestForm({
         />
       </label>
 
-      <label className="sanctions-full-field">
-        <span>Respaldos</span>
+      <label className="field-group sanctions-full-field" htmlFor="sanction-documents">
+        <span className="field-label">Respaldos</span>
         <input
+          id="sanction-documents"
+          className="text-field sanctions-file-input"
           type="file"
           multiple
           accept="application/pdf,image/jpeg,image/png,video/mp4,video/quicktime"
@@ -316,7 +323,10 @@ export function SanctionRequestForm({
       ) : null}
 
       <div className="sanctions-actions">
-        <button type="submit" className="primary-action-button" disabled={isSubmitting}>
+        <p className="form-status">
+          La solicitud queda trazada con folio interno y revisión posterior de RRLL.
+        </p>
+        <button type="submit" className="soft-primary-button approval-button-approve" disabled={isSubmitting}>
           {isSubmitting ? "Creando..." : "Crear solicitud"}
         </button>
       </div>

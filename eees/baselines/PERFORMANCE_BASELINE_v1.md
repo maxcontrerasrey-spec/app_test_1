@@ -113,11 +113,11 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10192432,
+  "distTotalBytes": 10195802,
   "jsFileCount": 59,
-  "jsTotalBytes": 2689236,
+  "jsTotalBytes": 2692353,
   "cssFileCount": 11,
-  "cssTotalBytes": 228423,
+  "cssTotalBytes": 228676,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -150,6 +150,8 @@ Revision 2026-08-10 precandidatos por rol: el total sube 1,983 bytes, JS sube 77
 Revision 2026-08-10 correccion tooltip por rol: el total y CSS suben 86 bytes por cambiar el popup a expansion en flujo, reservando espacio para evitar que tape o corte la tabla. No agrega vendors ni assets trackeados.
 
 Revision 2026-08-11 reparacion payload judicial DSAL: el total y JS suben 276 bytes por normalizar arreglos opcionales del RPC antes de renderizar detalles judiciales y licencias. No agrega vendors ni assets trackeados.
+
+Revision 2026-08-11 rediseño visual sanciones: el total sube 3,370 bytes, JS sube 3,117 bytes y CSS sube 253 bytes por migrar Solicitud de Sanciones a controles ERP compartidos, filtros globales, tabla expandible de seguimiento y overflow móvil encapsulado. No agrega vendors, rutas ni assets trackeados; mantiene el módulo admin-only y no modifica Supabase.
 
 ## Politica de actualizacion
 

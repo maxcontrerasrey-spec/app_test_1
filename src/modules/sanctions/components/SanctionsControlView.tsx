@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { SelectField, TextField } from "../../../shared/ui";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useHrSanctionRequestsPage, invalidateHrSanctionQueries } from "../hooks/useSanctionsQueries";
 import { transitionHrSanctionRequest } from "../services/sanctionsApi";
-import type { HrSanctionStatus } from "../types";
+import type { HrSanctionRequestRow, HrSanctionStatus } from "../types";
 
 const STATUS_LABELS: Record<HrSanctionStatus, string> = {
   submitted: "Ingresada",
@@ -50,11 +51,126 @@ function canManageSanctions(appRoles: string[], isSuperAdmin: boolean) {
   );
 }
 
+function getStatusTone(status: HrSanctionStatus) {
+  if (status === "closed") return "mobility-status-pill-success";
+  if (["rejected", "expired", "cancelled"].includes(status)) {
+    return "mobility-status-pill-danger";
+  }
+  if (
+    [
+      "under_review",
+      "issued",
+      "pending_signature",
+      "pending_certified_mail",
+      "pending_dt_filing"
+    ].includes(status)
+  ) {
+    return "mobility-status-pill-warning";
+  }
+  return "";
+}
+
+function SanctionRequestExpandedDetail({
+  row,
+  canManage,
+  busyRequestId,
+  onTransition
+}: {
+  row: HrSanctionRequestRow;
+  canManage: boolean;
+  busyRequestId: string | null;
+  onTransition: (requestId: string, nextStatus: HrSanctionStatus) => void;
+}) {
+  return (
+    <tr className="tracking-table-expanded-row">
+      <td colSpan={6}>
+        <div className="expanded-case-detail-grid sanctions-expanded-detail">
+          <div className="expanded-detail-section">
+            <h4>Trabajador</h4>
+            <div className="expanded-detail-fields">
+              <div>
+                <strong>{row.employeeFullName}</strong>
+                <span>{row.employeeDocumentNumber}</span>
+              </div>
+              <div>
+                <strong>{row.employeeJobTitle || "Sin cargo"}</strong>
+                <span>{row.employeeAreaName || row.employeeContractCode || "Sin contrato"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="expanded-detail-section">
+            <h4>Infracción</h4>
+            <div className="expanded-detail-fields">
+              <div>
+                <strong>{row.causeName}</strong>
+                <span>{row.measureName}</span>
+              </div>
+              <div>
+                <strong>{formatDateTime(row.incidentAt)}</strong>
+                <span>{row.incidentPlace}</span>
+              </div>
+              {row.equipmentNumber ? (
+                <div>
+                  <strong>Equipo</strong>
+                  <span>{row.equipmentNumber}</span>
+                </div>
+              ) : null}
+              <div>
+                <strong>Solicitante</strong>
+                <span>{row.requesterName || "Sin solicitante informado"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="expanded-detail-section">
+            <h4>Gestión RRLL</h4>
+            <div className="expanded-detail-fields">
+              <div>
+                <strong>Vencimiento</strong>
+                <span>{formatDateTime(row.dueAt)}</span>
+              </div>
+              <div>
+                <strong>Respaldos</strong>
+                <span>{row.documentsCount}</span>
+              </div>
+              <div>
+                <strong>BUK</strong>
+                <span>{row.bukUploadStatus.replace(/_/g, " ")}</span>
+              </div>
+              {canManage ? (
+                <label className="sanctions-inline-action">
+                  <span>Cambiar estado</span>
+                  <select
+                    value=""
+                    onChange={(event) =>
+                      onTransition(row.id, event.target.value as HrSanctionStatus)
+                    }
+                    disabled={busyRequestId === row.id}
+                  >
+                    <option value="">Seleccionar acción</option>
+                    {MANAGER_STATUSES.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export function SanctionsControlView() {
   const queryClient = useQueryClient();
   const { appRoles, isSuperAdmin } = useAuth();
   const [status, setStatus] = useState<HrSanctionStatus | "all">("all");
   const [search, setSearch] = useState("");
+  const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null);
   const [busyRequestId, setBusyRequestId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const canManage = useMemo(
@@ -68,6 +184,13 @@ export function SanctionsControlView() {
     offset: 0
   });
   const page = requestsQuery.data;
+  const statusOptions = useMemo(
+    () => [
+      { value: "all", label: "Todos" },
+      ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))
+    ],
+    []
+  );
 
   async function handleTransition(requestId: string, nextStatus: HrSanctionStatus) {
     const comment =
@@ -131,98 +254,106 @@ export function SanctionsControlView() {
         </article>
       </div>
 
-      <div className="sanctions-toolbar">
-        <label>
-          <span>Estado</span>
-          <select value={status} onChange={(event) => setStatus(event.target.value as HrSanctionStatus | "all")}>
-            <option value="all">Todos</option>
-            {Object.entries(STATUS_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Buscar</span>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Folio, trabajador, RUT, causal o equipo"
-          />
-        </label>
+      <div className="tracking-filters tracking-filters-inline sanctions-toolbar">
+        <SelectField
+          id="sanction-status-filter"
+          label="Estado"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as HrSanctionStatus | "all")}
+          options={statusOptions}
+          includePlaceholder={false}
+          className="tracking-filter-select"
+        />
+        <TextField
+          id="sanction-search"
+          label="Buscar"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Folio, trabajador, RUT, causal o equipo"
+          className="tracking-search-field"
+        />
       </div>
 
-      <div className="sanctions-table-wrap">
-        <table className="sanctions-table">
-          <thead>
-            <tr>
-              <th>Folio</th>
-              <th>Trabajador</th>
-              <th>Causal</th>
-              <th>Ocurrencia</th>
-              <th>Estado</th>
-              <th>Respaldos</th>
-              {canManage ? <th>Acción RRLL</th> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {requestsQuery.isLoading ? (
+      <div className="tracking-table-wrap tracking-table-wrap-full">
+        <div className="tracking-table-scroll tracking-table-scroll-wide">
+          <table className="tracking-table sanctions-tracking-table">
+            <thead>
               <tr>
-                <td colSpan={canManage ? 7 : 6}>Cargando solicitudes...</td>
+                <th>Folio</th>
+                <th>Trabajador</th>
+                <th>Causal</th>
+                <th>Ocurrencia</th>
+                <th>Estado</th>
+                <th>Respaldos</th>
               </tr>
-            ) : null}
-            {!requestsQuery.isLoading && !page?.rows.length ? (
-              <tr>
-                <td colSpan={canManage ? 7 : 6}>No hay solicitudes para los filtros actuales.</td>
-              </tr>
-            ) : null}
-            {page?.rows.map((row) => (
-              <tr key={row.id}>
-                <td>#{row.folio}</td>
-                <td>
-                  <strong>{row.employeeFullName}</strong>
-                  <span>{row.employeeDocumentNumber}</span>
-                  <small>{row.employeeAreaName || row.employeeContractCode || "Sin contrato"}</small>
-                </td>
-                <td>
-                  <strong>{row.causeName}</strong>
-                  <span>{row.measureName}</span>
-                  {row.equipmentNumber ? <small>Equipo {row.equipmentNumber}</small> : null}
-                </td>
-                <td>
-                  <span>{formatDateTime(row.incidentAt)}</span>
-                  <small>{row.incidentPlace}</small>
-                </td>
-                <td>
-                  <span className={`sanctions-status-pill sanctions-status-${row.status}`}>
-                    {STATUS_LABELS[row.status]}
-                  </span>
-                  <small>Vence {formatDateTime(row.dueAt)}</small>
-                </td>
-                <td>{row.documentsCount}</td>
-                {canManage ? (
-                  <td>
-                    <select
-                      value=""
-                      onChange={(event) =>
-                        handleTransition(row.id, event.target.value as HrSanctionStatus)
-                      }
-                      disabled={busyRequestId === row.id}
-                    >
-                      <option value="">Cambiar estado</option>
-                      {MANAGER_STATUSES.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
+            </thead>
+            <tbody>
+              {requestsQuery.isLoading ? (
+                <tr>
+                  <td colSpan={6} className="tracking-empty-state">
+                    Cargando solicitudes de sanción...
                   </td>
-                ) : null}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </tr>
+              ) : null}
+              {!requestsQuery.isLoading && !page?.rows.length ? (
+                <tr>
+                  <td colSpan={6} className="tracking-empty-state">
+                    No hay solicitudes para los filtros actuales.
+                  </td>
+                </tr>
+              ) : null}
+              {page?.rows.map((row) => {
+                const isExpanded = expandedRequestId === row.id;
+
+                return (
+                  <Fragment key={row.id}>
+                    <tr
+                      className={`tracking-table-row-clickable ${isExpanded ? "tracking-table-row-expanded" : ""}`}
+                      onClick={() => setExpandedRequestId(isExpanded ? null : row.id)}
+                      aria-expanded={isExpanded}
+                    >
+                      <td>
+                        <span className="case-code-toggle tracking-case-code-toggle">
+                          <span className={`expand-chevron tracking-expand-chevron ${isExpanded ? "expand-chevron-open" : ""}`}>
+                            ›
+                          </span>
+                          #{row.folio}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{row.employeeFullName}</strong>
+                        <span className="sanctions-table-subtext">{row.employeeDocumentNumber}</span>
+                      </td>
+                      <td>
+                        <strong>{row.causeName}</strong>
+                        <span className="sanctions-table-subtext">{row.measureName}</span>
+                      </td>
+                      <td>
+                        <strong>{formatDateTime(row.incidentAt)}</strong>
+                        <span className="sanctions-table-subtext">{row.incidentPlace}</span>
+                      </td>
+                      <td>
+                        <span className={`tracking-status-pill mobility-status-pill ${getStatusTone(row.status)}`}>
+                          {STATUS_LABELS[row.status]}
+                        </span>
+                        <span className="sanctions-table-subtext">Vence {formatDateTime(row.dueAt)}</span>
+                      </td>
+                      <td>{row.documentsCount}</td>
+                    </tr>
+                    {isExpanded ? (
+                      <SanctionRequestExpandedDetail
+                        row={row}
+                        canManage={canManage}
+                        busyRequestId={busyRequestId}
+                        onTransition={handleTransition}
+                      />
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

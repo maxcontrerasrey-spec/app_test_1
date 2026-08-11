@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 304. Un módulo nuevo del ERP debe nacer con el sistema visual existente
+
+- Que un módulo compile y tenga permisos correctos no basta si su interfaz queda con CSS local genérico, tablas propias y formularios crudos.
+- Antes de cerrar un módulo nuevo, comparar contra pantallas vecinas y reutilizar `TextField`, `SelectField`, `approval-chip`, `tracking-kpi-card`, `tracking-filters`, `tracking-table` y filas expandibles cuando correspondan.
+- La validación responsive debe medir overflow real; una tabla puede verse aceptable en desktop y aun así ensanchar todo el documento en mobile si el scroll no queda encapsulado.
+- Las hojas locales deben complementar el sistema visual, no redefinir inputs, selects, tablas, badges y botones que ya existen globalmente.
+
 ## 303. Los formularios publicos BUK deben heredar catalogos y defaults del template ERP
 
 - Los campos con catalogo vigente, como comuna, banco, forma de pago, regimen previsional, salud y tallas, deben usar las mismas opciones del template BUK en vez de listas locales.
