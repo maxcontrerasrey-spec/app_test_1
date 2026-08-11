@@ -1658,6 +1658,6 @@ Resultado: Jorge Andres Godoy Martinez quedo en BUK como empleado `42663`, ficha
 - [x] Validar candidato DSAL, folio RC-0132, cargo `CONDUCTOR DE MINIBUS 4X4` y ficha reservada `F1`.
 - [x] Confirmar en BUK que el rol `157` esta habilitado para el area DSAL `2911` y que no existe ficha previa por RUT.
 - [x] Normalizar en el worker el periodo de pago antes de enviarlo a BUK y desplegar la Edge Function.
-- [ ] Completar la carga BUK despues de regularizar tipo y numero de cuenta bancaria.
+- [x] Completar la carga BUK despues de regularizar tipo y numero de cuenta bancaria.
 
-Resultado parcial: BUK rechazo la carga sin crear ficha porque el ERP entrega `bank_account_type` vacio y `bank_account_number = CTA RUT`; ambos datos requieren correccion antes de enviarlos al sistema destino. El job `aad59a20-5714-45d2-a49d-4f2baa080cf2` conserva el error y no hay empleado BUK creado.
+Resultado final: el primer job `aad59a20-5714-45d2-a49d-4f2baa080cf2` conserva el error historico del snapshot antiguo. El nuevo job `c66f1900-f71e-4714-a36c-b001c680bdb6` quedo en `success`; Yerko Alfonso Corrotea Rojas quedo en BUK como empleado `42664`, ficha `F1`, cargo `CONDUCTOR DE MINIBUS 4X4` (rol `157`), area DSAL `2911`, centro `718`, supervisor Marcelo Villarroel (`35304`) y fecha de ingreso `2026-08-11`.
