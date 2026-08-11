@@ -115,6 +115,19 @@ function JudicialBubble({
   );
 }
 
+function UnionRepresentativeBubble() {
+  return (
+    <span
+      className="precandidate-union-bubble"
+      tabIndex={0}
+      aria-label="Representante sindical"
+      title="Representante sindical"
+    >
+      Representante sindical
+    </span>
+  );
+}
+
 export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandidatesViewProps) {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -367,6 +380,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                                   <div>
                                     <small>Información judicial</small>
                                     <div className="precandidate-judicial-bubbles" aria-label="Información judicial del precandidato">
+                                      {precandidate.is_union_representative ? <UnionRepresentativeBubble /> : null}
                                       <JudicialBubble
                                         label="Causas criminales"
                                         count={precandidate.criminal_cause_count}

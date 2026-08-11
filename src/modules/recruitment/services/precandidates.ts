@@ -63,6 +63,7 @@ export type DsalPrecandidate = {
   approved_recruitment_case_id: string | null;
   approved_case_candidate_id: string | null;
   approved_folio: string | null;
+  is_union_representative: boolean;
   criminal_cause_count: number;
   labor_cause_count: number;
   criminal_cause_details: Array<{ description: string; date: string | null }>;
@@ -100,6 +101,7 @@ function parsePrecandidatesPage(payload: unknown) {
   const items = Array.isArray(parsed.items)
     ? parsed.items.map((item) => ({
         ...item,
+        is_union_representative: item.is_union_representative === true,
         driver_license_classes: Array.isArray(item.driver_license_classes) ? item.driver_license_classes : [],
         criminal_cause_details: Array.isArray(item.criminal_cause_details) ? item.criminal_cause_details : [],
         labor_cause_details: Array.isArray(item.labor_cause_details) ? item.labor_cause_details : []

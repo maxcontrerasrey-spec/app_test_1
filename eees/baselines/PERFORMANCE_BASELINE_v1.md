@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.22
+version: 1.0.23
 status: Activo
 language: es-CL
 owner: Quality
@@ -88,6 +88,8 @@ Revision 2026-08-08 copy postulacion DSAL: JS sube 5 bytes por reemplazar el blo
 
 Revision 2026-08-08 validacion DSAL: el total sube 1,117 bytes y JS sube 1,226 bytes por agregar normalizacion visible de texto, formato de telefono y validacion de correo en la pagina publica. No agrega vendors ni assets.
 
+Revision 2026-08-11 representantes sindicales DSAL: el total sube 634 bytes, JS sube 288 bytes y CSS sube 346 bytes por exponer desde el RPC la marca de nómina sindical y mostrar la burbuja `Representante sindical` solo para los RUT coincidentes. No agrega vendors, rutas ni assets pesados.
+
 Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes por exigir folio con cupo en la aprobacion de precandidatos y mostrar la instruccion operativa cuando no hay destino habilitado. No agrega vendors, CSS ni assets.
 
 Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sube 1,866 bytes por ampliar la autoridad del flujo a gerente de área DSAL, Director de Operaciones y Reclutamiento, además de incorporar el detalle expandible de cada precandidato. No agrega vendors, CSS ni assets.
@@ -111,11 +113,11 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10191798,
-  "jsFileCount": 54,
-  "jsTotalBytes": 2688948,
-  "cssFileCount": 10,
-  "cssTotalBytes": 228077,
+  "distTotalBytes": 10192432,
+  "jsFileCount": 59,
+  "jsTotalBytes": 2689236,
+  "cssFileCount": 11,
+  "cssTotalBytes": 228423,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

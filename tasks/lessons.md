@@ -3005,3 +3005,9 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Un valor descriptivo no es un numero de cuenta.** Textos como `CTA RUT` no deben enviarse como numero bancario para superar una validacion de BUK.
 - **La carga debe detenerse si falta tipo o numero de cuenta.** Regularizar primero ambos campos en ERP y reintentar el mismo job; no crear una ficha parcial ni inventar datos.
+
+## 211. Las marcas especiales de precandidatos deben resolverse por RUT en backend
+
+- **Una burbuja de revisión no debe depender de una lista frontend.** La pertenencia a una nómina sindical debe vivir en la fuente protegida y exponerse como un dato calculado por el RPC autenticado.
+- **La ausencia de coincidencia debe ser explícita.** El parser debe convertir payloads históricos o incompletos a `false`, para que solo aparezca `Representante sindical` cuando el RUT coincida con una fila activa marcada.
+- **No dupliques fuentes ya existentes.** Si la nómina base ya contiene el RUT, agrega una marca auditable a esa misma fuente y conserva el enriquecimiento dentro del flujo de revisión DSAL.

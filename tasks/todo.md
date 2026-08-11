@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Representantes sindicales en precandidatos DSAL - 2026-08-11
+
+- [x] Marcar en backend los RUT de la nómina sindical entregada y exponer la condición desde el RPC autenticado.
+- [x] Mostrar la burbuja `Representante sindical` solo cuando el RUT esté marcado en la nómina.
+- [x] Validar coincidencias positivas y negativas, build, Guardian, migración remota y responsive.
+- [x] Registrar resultado, commit y push a `main`.
+
+Resultado: la migración `20260811110000_add_dsal_union_representative_flag` marca por RUT a Fernando Enrique Carvajal Salinas (`12.349.082-7`), Wilton De Los Santos Ramirez Leon (`10.389.868-4`) y Joaquin Felipe Riquelme Manriquez (`12.237.981-7`). El RPC autenticado devuelve la marca y la vista muestra `Representante sindical` solo para esos RUT; un RUT de control devuelve `false`. Build, integridad, auditorias y Guardian pasan sin errores ni advertencias.
+
 ## Corrección expandir precandidato filtrado - 2026-08-10
 
 - [x] Reproducir y localizar el `undefined.length` al expandir resultados filtrados.
