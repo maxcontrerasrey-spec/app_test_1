@@ -113,9 +113,9 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10195802,
+  "distTotalBytes": 10204472,
   "jsFileCount": 59,
-  "jsTotalBytes": 2692353,
+  "jsTotalBytes": 2701023,
   "cssFileCount": 11,
   "cssTotalBytes": 228676,
   "trackedAssets": [
@@ -152,6 +152,8 @@ Revision 2026-08-10 correccion tooltip por rol: el total y CSS suben 86 bytes po
 Revision 2026-08-11 reparacion payload judicial DSAL: el total y JS suben 276 bytes por normalizar arreglos opcionales del RPC antes de renderizar detalles judiciales y licencias. No agrega vendors ni assets trackeados.
 
 Revision 2026-08-11 rediseño visual sanciones: el total sube 3,370 bytes, JS sube 3,117 bytes y CSS sube 253 bytes por migrar Solicitud de Sanciones a controles ERP compartidos, filtros globales, tabla expandible de seguimiento y overflow móvil encapsulado. No agrega vendors, rutas ni assets trackeados; mantiene el módulo admin-only y no modifica Supabase.
+
+Revision 2026-08-11 rediseño visual sanciones CI: GitHub Actions `Audit Enterprise Guardrails` run `31523440150`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,204,472 bytes totales y 2,701,023 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo los limites del cambio visual.
 
 ## Politica de actualizacion
 
