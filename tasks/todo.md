@@ -6,7 +6,9 @@
 - [x] Revisar límites, broker, proveedor de correo y validaciones para todos los usuarios.
 - [x] Reproducir de forma no destructiva y confirmar que el enlace permite cambiar la contraseña.
 - [x] Aplicar una corrección backend-authoritative sin desactivar rate limits ni enumeración.
-- [ ] Ejecutar pruebas, auditorías Supabase/Guardian, desplegar, verificar producción y publicar.
+- [x] Ejecutar pruebas, auditorías Supabase/Guardian, desplegar, verificar producción y publicar.
+
+Resultado: Jorge Parra (`jorge.parra@busesjm.com`) tiene la cuenta activa y recibió un enlace fresco mediante `request-password-reset`; el broker registró 2 solicitudes dentro del límite durable. El cliente ahora completa explícitamente enlaces Auth con `code` o `token_hash` antes de mostrar el formulario. Build frontend y 80 unitarias pasan; commit `3633da8` publicado en `main`. Guardian pasa todos los gates funcionales y deja únicamente el bloqueo ambiental preexistente de `audit:repository-cleanup` por la copia conflictiva local de `@supabase/supabase-js`.
 
 ## Diagnóstico de error Sync BUK - 2026-08-12
 
