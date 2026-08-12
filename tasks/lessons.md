@@ -3029,3 +3029,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Un codigo con formato `####:####` identifica la subarea visible del contrato y no debe usarse como `cost_center`.** El worker debe resolver la subarea en el catalogo BUK y tomar el centro de costo operativo devuelto (`724` en ACCIONA - TRANQUE TALABRE).
 - **Un fallo posterior a la creacion externa puede dejar el checkpoint local vacio.** Los reintentos deben reconciliar primero por RUT/documento y reutilizar la ficha existente antes de intentar crear otra.
+
+## 293. La recuperacion debe completar cualquier variante de enlace Auth
+
+- **No basta con detectar `PASSWORD_RECOVERY`.** Enlaces con `code` o `token_hash` pueden llegar antes de que el cliente emita el evento de recuperación; el arranque debe intercambiar/verificar el token antes de mostrar el formulario.

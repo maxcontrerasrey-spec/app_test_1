@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Incidencia recuperación de cuenta - Jorge Parra - 2026-08-12
+
+- [x] Identificar el flujo común de recuperación y el error real de Jorge en producción.
+- [x] Revisar límites, broker, proveedor de correo y validaciones para todos los usuarios.
+- [x] Reproducir de forma no destructiva y confirmar que el enlace permite cambiar la contraseña.
+- [x] Aplicar una corrección backend-authoritative sin desactivar rate limits ni enumeración.
+- [ ] Ejecutar pruebas, auditorías Supabase/Guardian, desplegar, verificar producción y publicar.
+
 ## Diagnóstico de error Sync BUK - 2026-08-12
 
 - [x] Identificar el job fallido, candidato/folio, código de error y etapa exacta en producción.

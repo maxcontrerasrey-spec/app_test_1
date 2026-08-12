@@ -141,6 +141,7 @@ function detectRecoveryMode() {
     queryParams.get("type") === "recovery" ||
     queryParams.get("recovery") === "1" ||
     queryParams.has("code") ||
+    queryParams.has("token_hash") ||
     queryParams.has("access_token") ||
     queryParams.has("refresh_token") ||
     hashParams.get("type") === "recovery" ||
@@ -448,10 +449,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let initialLoadDone = false;
 
-    supabase.auth.getSession().then(({ data }) => {
+    const loadInitialSession = async () => {
+      const initialResult = await supabaseClient.auth.getSession();
+      let nextSession = initialResult.data.session;
+
+      // Supabase normally consumes recovery URLs automatically.  Custom mail
+      // templates and older recovery links can expose token_hash/code without
+      // completing that exchange, so recover once before rendering the form.
+      if (!nextSession) {
+        const queryParams = new URLSearchParams(window.location.search);
+        const tokenHash = queryParams.get("token_hash")?.trim();
+        const code = queryParams.get("code")?.trim();
+
+        if (tokenHash) {
+          const { data } = await supabaseClient.auth.verifyOtp({
+            type: "recovery",
+            token_hash: tokenHash
+          });
+          nextSession = data.session;
+        } else if (code) {
+          const { data } = await supabaseClient.auth.exchangeCodeForSession(code);
+          nextSession = data.session;
+        }
+      }
+
+      return nextSession;
+    };
+
+    loadInitialSession().then((nextSession) => {
       if (!isMounted) return;
       initialLoadDone = true;
-      void loadAuthorization(data.session);
+      void loadAuthorization(nextSession);
     }).catch((err) => {
       logger.error("AuthContext getSession", err);
       if (isMounted) {
