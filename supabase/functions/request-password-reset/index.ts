@@ -72,11 +72,18 @@ Deno.serve(async (req) => {
     });
     const actionLink = (data as { properties?: { action_link?: string }; action_link?: string } | null)
       ?.properties?.action_link ?? (data as { action_link?: string } | null)?.action_link;
+    const hashedToken = (data as { properties?: { hashed_token?: string } } | null)
+      ?.properties?.hashed_token?.trim();
 
     // Unknown addresses intentionally produce the same response as accepted requests.
-    if (error || !actionLink) return jsonResponse({ accepted: true });
+    if (error || (!actionLink && !hashedToken)) return jsonResponse({ accepted: true });
 
-    const safeLink = escapeHtml(actionLink);
+    // Prefer a direct token-hash callback. It avoids a second Auth redirect hop
+    // and lets the ERP verify the one-time recovery token with verifyOtp.
+    const recoveryLink = hashedToken
+      ? `${redirectTo}?token_hash=${encodeURIComponent(hashedToken)}&type=recovery`
+      : actionLink ?? "";
+    const safeLink = escapeHtml(recoveryLink);
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -87,7 +94,7 @@ Deno.serve(async (req) => {
         from: fromEmail,
         to: [email],
         subject: "Recupera tu acceso a la Plataforma de Control",
-        text: `Solicitaste recuperar tu acceso. Abre este enlace para definir una nueva contraseña: ${actionLink}\n\nSi no realizaste esta solicitud, ignora este correo.`,
+        text: `Solicitaste recuperar tu acceso. Abre este enlace para definir una nueva contraseña: ${recoveryLink}\n\nSi no realizaste esta solicitud, ignora este correo.`,
         html: `<p>Solicitaste recuperar tu acceso a la Plataforma de Control.</p><p><a href="${safeLink}">Definir nueva contraseña</a></p><p>Si no realizaste esta solicitud, ignora este correo.</p>`,
       }),
     });

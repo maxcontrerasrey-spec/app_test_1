@@ -58,4 +58,15 @@ describe("auth rate limit handling", () => {
     expect(source).toContain('supabase.functions.invoke("request-password-reset"');
     expect(source).not.toContain("resetPasswordForEmail");
   });
+
+  it("envia un callback directo de token hash para evitar el salto Auth intermedio", () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), "supabase/functions/request-password-reset/index.ts"),
+      "utf8"
+    );
+
+    expect(source).toContain("hashed_token");
+    expect(source).toContain("token_hash=");
+    expect(source).toContain("type=recovery");
+  });
 });

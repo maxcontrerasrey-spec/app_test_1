@@ -8,7 +8,7 @@
 - [x] Aplicar una corrección backend-authoritative sin desactivar rate limits ni enumeración.
 - [x] Ejecutar pruebas, auditorías Supabase/Guardian, desplegar, verificar producción y publicar.
 
-Resultado: Jorge Parra (`jorge.parra@busesjm.com`) tiene la cuenta activa y recibió un enlace fresco mediante `request-password-reset`; el broker registró 2 solicitudes dentro del límite durable. El cliente ahora completa explícitamente enlaces Auth con `code` o `token_hash` antes de mostrar el formulario. Build frontend y 80 unitarias pasan; commit `3633da8` publicado en `main`. Guardian pasa todos los gates funcionales y deja únicamente el bloqueo ambiental preexistente de `audit:repository-cleanup` por la copia conflictiva local de `@supabase/supabase-js`.
+Resultado: Jorge Parra (`jorge.parra@busesjm.com`) y Victor Guerrero (`victor.guerrero@busesjm.com`) recibieron enlaces frescos. El broker ahora prioriza un callback directo de un solo uso con `token_hash`; el cliente verifica ese token antes de mostrar el formulario. Build frontend y 81 unitarias pasan. La Edge Function quedó desplegada en Supabase; el frontend está publicado en `main` y Cloudflare ya refleja el bundle con el fallback `verifyOtp`.
 
 ## Diagnóstico de error Sync BUK - 2026-08-12
 
