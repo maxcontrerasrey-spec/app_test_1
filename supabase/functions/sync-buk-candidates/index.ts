@@ -2307,6 +2307,12 @@ async function resolveCandidateSyncContext(
   }
 
   let areaCode = contractMapping?.buk_area_code?.trim() ?? null;
+  // A BUK contract number (for example 5906986003:0001) is a visible
+  // subarea identifier, not the operational cost center used by the jobs API.
+  // Force live catalog resolution so a stale mapping cannot block a hire.
+  if (areaCode && /^\d+:\d+$/.test(areaCode)) {
+    areaCode = null;
+  }
   if (!areaCode) {
     const areaName =
       contractMapping?.buk_area_name?.trim() ??

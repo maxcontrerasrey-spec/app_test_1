@@ -121,6 +121,11 @@ addCheck(
     /language\s+sql\s+stable/.test(migrationSources),
   "resolve_known_company_name prioriza el mapping BUK exacto antes del fallback por sufijo"
 );
+addCheck(
+  /A BUK contract number[\s\S]*Force live catalog resolution/.test(source) &&
+    /areaCode && \/\^\\d\+:\\d\+\$\/\.test\(areaCode\)/.test(source),
+  "los códigos visibles de contrato se resuelven contra el cost center operativo BUK"
+);
 
 const failedChecks = checks.filter((check) => !check.ok);
 

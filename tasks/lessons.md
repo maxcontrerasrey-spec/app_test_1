@@ -3024,3 +3024,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Generar el enlace y enviarlo son operaciones distintas.** `auth.admin.generateLink` permite conservar el token y la sesión de recuperación sin consumir el endpoint de envío de Auth; el correo debe salir por el proveedor transaccional corporativo.
 - **El broker público debe responder de forma anti-enumeración.** Direcciones inexistentes, bloqueadas por límite y válidas reciben la misma aceptación; los límites durables viven en una tabla privada con RLS y RPC ejecutable solo por `service_role`.
 - **Los guardas de rol no deben usar `current_user` dentro de `SECURITY DEFINER`.** Dentro de la función el usuario efectivo cambia al dueño; la ACL explícita del wrapper/RPC debe ser la frontera de autorización y el esquema privado debe negar acceso a anon/authenticated.
+
+## 292. Los codigos visibles de contrato BUK no son centros de costo operativos
+
+- **Un codigo con formato `####:####` identifica la subarea visible del contrato y no debe usarse como `cost_center`.** El worker debe resolver la subarea en el catalogo BUK y tomar el centro de costo operativo devuelto (`724` en ACCIONA - TRANQUE TALABRE).
+- **Un fallo posterior a la creacion externa puede dejar el checkpoint local vacio.** Los reintentos deben reconciliar primero por RUT/documento y reutilizar la ficha existente antes de intentar crear otra.

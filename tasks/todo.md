@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Diagnóstico de error Sync BUK - 2026-08-12
+
+- [x] Identificar el job fallido, candidato/folio, código de error y etapa exacta en producción.
+- [x] Comparar el error con el contrato vigente de `sync-buk-candidates`, mappings BUK y estado remoto del trabajador.
+- [x] Reproducir la rama afectada de forma no destructiva y determinar si requiere corrección de datos, código o reintento controlado.
+- [x] Aplicar y desplegar la corrección mínima si corresponde, validar idempotencia y confirmar el estado productivo.
+- [ ] Ejecutar auditorías/Guardian, registrar resultado, commit, push y CI.
+
 ## Recuperación de cuentas sin bloqueo por rate-limit - 2026-08-11
 
 - [x] Confirmar el contrato vigente de recuperación, configuración de redirect y proveedor transaccional.
