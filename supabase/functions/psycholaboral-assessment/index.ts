@@ -309,15 +309,29 @@ Deno.serve(async (request) => {
 
     if (action === "redeem") {
       const sessionToken = randomToken();
-      const { data, error } = await admin.rpc("redeem_psycholaboral_invite", {
-        p_public_id: cleanText(payload.public_id, 50),
-        p_rut: cleanText(payload.rut, 20),
-        p_invite_hash: await sha256(
-          cleanText(payload.access_code, 50).toUpperCase(),
-        ),
-        p_session_hash: await sha256(sessionToken),
-        p_ip_hash: await hmacSha256(secretKey, getIp(request)),
-      });
+      const rut = cleanText(payload.rut, 20);
+      const temporaryRut = Deno.env.get("PSYCHO_TEMP_TEST_RUT")?.trim();
+      const temporaryAccess = temporaryRut &&
+        rut.replace(/[^0-9kK]/g, "").toUpperCase() ===
+          temporaryRut.replace(/[^0-9kK]/g, "").toUpperCase();
+      const rpc = temporaryAccess
+        ? "redeem_psycholaboral_temporary_test_access"
+        : "redeem_psycholaboral_invite";
+      const params = temporaryAccess
+        ? {
+          p_public_id: cleanText(payload.public_id, 50),
+          p_rut: rut,
+          p_session_hash: await sha256(sessionToken),
+          p_ip_hash: await hmacSha256(secretKey, getIp(request)),
+        }
+        : {
+          p_public_id: cleanText(payload.public_id, 50),
+          p_rut: rut,
+          p_invite_hash: await sha256(cleanText(payload.access_code, 50).toUpperCase()),
+          p_session_hash: await sha256(sessionToken),
+          p_ip_hash: await hmacSha256(secretKey, getIp(request)),
+        };
+      const { data, error } = await admin.rpc(rpc, params);
       if (error) {
         return response({ error: "No fue posible validar los datos." }, 400);
       }
