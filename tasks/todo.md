@@ -20,6 +20,8 @@ Resultado: William Eric Araya Toro quedó con RUT `15573108` (presentación `15.
 
 Resultado: el centro de mando dejó el encabezado tipo hero y ahora usa `minimal-page-header`, `tracking-panel`, KPIs, chips de estado, barra de filtros y tabla con scroll como Reclutamiento. La columna Actualización muestra una acción compacta `PDF` para descargar certificados generados. En `/evaluacionpsico`, el número de pregunta y el enunciado quedaron separados en nodos distintos para evitar choque visual. Build frontend, baseline de performance, Guardian y `git diff --check` pasan sin errores.
 
+Corrección visual posterior: los chips de batería separan nombre del instrumento y cantidad de preguntas; las acciones del detalle expandido quedan dentro del cuadro en una franja propia, con botones más pequeños para Enviar, Ver resultados, Generar/Descargar certificado, Aprobar y Rechazar.
+
 ## Implementación módulo Gestión Psicolaboral - 2026-08-13
 
 - [x] Inspeccionar rutas, autorización, candidatos activos, descarte oficial, correo, tokens públicos, Storage y generadores PDF vigentes.

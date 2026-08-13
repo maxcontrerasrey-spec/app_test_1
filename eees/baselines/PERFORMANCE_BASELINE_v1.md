@@ -113,11 +113,11 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10241763,
+  "distTotalBytes": 10242249,
   "jsFileCount": 62,
-  "jsTotalBytes": 2729365,
+  "jsTotalBytes": 2729522,
   "cssFileCount": 12,
-  "cssTotalBytes": 237647,
+  "cssTotalBytes": 237954,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -150,6 +150,10 @@ Revision 2026-08-13 cierre Gestión Psicolaboral: el total global sube 8,634 byt
 Revision 2026-08-13 Gestión Psicolaboral CI: GitHub Actions con Node 24 midió 10,240,522 bytes totales y 2,728,102 bytes JS. Se ajustan únicamente los límites globales al artefacto canónico remoto; CSS, vendors y assets trackeados conservan sus límites auditados.
 
 Revision 2026-08-13 Gestión Psicolaboral estética ERP CI: GitHub Actions midió 10,241,763 bytes totales y 2,729,365 bytes JS para la reestructuración visual del centro de mando y la separación explícita de preguntas. Se ajustan solo los límites globales y JS al artefacto remoto; CSS permanece en 237,647 bytes, vendors y assets trackeados no cambian.
+
+Revision 2026-08-13 Gestión Psicolaboral detalle expandido: CSS sube a 237,954 bytes por separar nombre/cantidad de preguntas en chips de batería y encerrar las acciones dentro del detalle expandido con botones compactos. No cambia JS, vendors ni assets trackeados.
+
+Revision 2026-08-13 Gestión Psicolaboral detalle expandido CI: GitHub Actions midió 10,242,249 bytes totales y 2,729,522 bytes JS para el mismo ajuste visual del detalle expandido. Se ajustan solo los límites globales y JS al artefacto remoto; CSS queda en el límite local ya documentado y no cambian vendors ni assets trackeados.
 
 Revision 2026-08-10 optimizacion BI: el total global y JS suben 215 bytes por diferir el montaje de graficos secundarios hasta despues del primer render, mantener cache del dashboard de Reclutamiento y paralelizar su timeline. Reduce trabajo inicial y no agrega vendors ni assets trackeados.
 

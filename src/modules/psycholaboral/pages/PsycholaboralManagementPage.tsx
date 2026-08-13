@@ -370,7 +370,7 @@ export function PsycholaboralManagementPage() {
                                 ))}
                               </div>
                             ) : (
-                              <div className="approval-chip-row">
+                              <div className="approval-chip-row psych-test-chip-row">
                                 {catalog.data?.map((instrument) => (
                                   <button
                                     type="button"
@@ -384,7 +384,7 @@ export function PsycholaboralManagementPage() {
                                     }}
                                     key={instrument.code}
                                   >
-                                    {instrument.short_name}
+                                    <span>{instrument.short_name}</span>
                                     <small>
                                       {instrument.question_count} preguntas
                                     </small>
@@ -416,73 +416,81 @@ export function PsycholaboralManagementPage() {
                               </div>
                             </dl>
                           </section>
-                        </div>
-                        <div className="psych-actions">
-                          {!row.assessment_id ? (
-                            <button
-                              className="psych-primary-action"
-                              type="button"
-                              disabled={busy === row.id || !row.email}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void send(row);
-                              }}
-                            >
-                              Enviar test
-                            </button>
-                          ) : null}
-                          {row.display_status === "completed" ? (
-                            <>
-                              <button
-                                className="psych-secondary-action"
-                                type="button"
-                                disabled={busy === row.id}
-                                onClick={() => void inspect(row)}
-                              >
-                                Ver resultados
-                              </button>
-                              {row.certificate_status === "generated" ? (
+                          <section className="expanded-detail-section expanded-detail-section-full psych-actions-section">
+                            <div className="psych-actions">
+                              {!row.assessment_id ? (
                                 <button
-                                  className="psych-secondary-action"
+                                  className="psych-primary-action"
                                   type="button"
-                                  disabled={busy === row.id}
-                                  onClick={() => void download(row)}
+                                  disabled={busy === row.id || !row.email}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    void send(row);
+                                  }}
                                 >
-                                  Descargar certificado
-                                </button>
-                              ) : row.certificate_status === "queued" ||
-                                row.certificate_status === "failed" ? (
-                                <button
-                                  className="psych-secondary-action"
-                                  type="button"
-                                  disabled={busy === row.id}
-                                  onClick={() => void generateCertificate(row)}
-                                >
-                                  Generar certificado
+                                  Enviar test
                                 </button>
                               ) : null}
-                              {row.decision === "pending" ? (
+                              {row.display_status === "completed" ? (
                                 <>
                                   <button
-                                    className="psych-primary-action"
+                                    className="psych-secondary-action"
                                     type="button"
                                     disabled={busy === row.id}
-                                    onClick={() => void decide(row, "approved")}
+                                    onClick={() => void inspect(row)}
                                   >
-                                    Aprobar
+                                    Ver resultados
                                   </button>
-                                  <button
-                                    className="psych-danger-action"
-                                    type="button"
-                                    disabled={busy === row.id}
-                                    onClick={() => void decide(row, "rejected")}
-                                  >
-                                    Rechazar
-                                  </button>
+                                  {row.certificate_status === "generated" ? (
+                                    <button
+                                      className="psych-secondary-action"
+                                      type="button"
+                                      disabled={busy === row.id}
+                                      onClick={() => void download(row)}
+                                    >
+                                      Descargar certificado
+                                    </button>
+                                  ) : row.certificate_status === "queued" ||
+                                    row.certificate_status === "failed" ? (
+                                    <button
+                                      className="psych-secondary-action"
+                                      type="button"
+                                      disabled={busy === row.id}
+                                      onClick={() =>
+                                        void generateCertificate(row)
+                                      }
+                                    >
+                                      Generar certificado
+                                    </button>
+                                  ) : null}
+                                  {row.decision === "pending" ? (
+                                    <>
+                                      <button
+                                        className="psych-primary-action"
+                                        type="button"
+                                        disabled={busy === row.id}
+                                        onClick={() =>
+                                          void decide(row, "approved")
+                                        }
+                                      >
+                                        Aprobar
+                                      </button>
+                                      <button
+                                        className="psych-danger-action"
+                                        type="button"
+                                        disabled={busy === row.id}
+                                        onClick={() =>
+                                          void decide(row, "rejected")
+                                        }
+                                      >
+                                        Rechazar
+                                      </button>
+                                    </>
+                                  ) : null}
                                 </>
                               ) : null}
-                            </>
-                          ) : null}
+                            </div>
+                          </section>
                         </div>
                       </td>
                     </tr>

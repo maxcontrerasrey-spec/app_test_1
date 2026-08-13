@@ -100,13 +100,7 @@
   margin: 0.2rem 0 0;
   font-weight: 650;
 }
-.psych-actions {
-  display: flex;
-  gap: 0.6rem;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-}
+.psych-actions{display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap}.psych-actions-section{padding-block:.85rem;background:#f8fafcb8}.psych-actions-section button{min-height:2.25rem;padding:.46rem .75rem;border-radius:7px;font-size:.78rem;line-height:1}
 .psych-danger-action {
   border: 0;
   border-radius: 8px;
@@ -121,11 +115,7 @@
   color: #fff;
   border-color: #182230;
 }
-.psych-command .approval-chip small {
-  display: block;
-  font-size: 0.68rem;
-  opacity: 0.72;
-}
+.psych-test-chip-row{gap:.45rem}.psych-test-chip-row .approval-chip{display:grid;grid-template-columns:auto auto;gap:.28rem;min-width:7.9rem}.psych-command .approval-chip small{display:block;font-size:.68rem;opacity:.72;white-space:nowrap}
 .psych-feedback {
   padding: 0.8rem 1rem;
   border-radius: 8px;

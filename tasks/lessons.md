@@ -9,6 +9,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Si el usuario reporta que producción "sigue igual" aunque el deploy esté verde, revisar si el cambio alteró la estructura visual real y no solo estilos locales.
 - Para módulos de Reclutamiento, usar `minimal-page-header`, `tracking-panel`, KPIs, chips, toolbar y tabla scroll como composición base; un header tipo hero mantiene la pantalla fuera del lenguaje ERP aunque compile.
 - Cuando un bug es de choque de texto, separar el contenido en nodos semánticos y CSS de bloque; depender de saltos o del comportamiento especial de `legend` puede verse distinto entre navegadores.
+- En filas expandibles, las acciones deben vivir dentro del grid del detalle, no como bloque suelto bajo la tabla; si quedan fuera del borde visual, el usuario las percibe descentradas aunque el DOM sea correcto.
 
 ## 310. Digitalizar literalmente no significa ocultar contradicciones de la fuente
 
