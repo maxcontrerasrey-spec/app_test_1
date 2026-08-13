@@ -1837,3 +1837,12 @@ Resultado final: el primer job `aad59a20-5714-45d2-a49d-4f2baa080cf2` conserva e
 - [x] Verificar build frontend, Guardian y diff check; revisar la version publicada.
 
 Resultado: las tarjetas usan el ancho disponible con wrapping defensivo y el siguiente bloque se enfoca automáticamente después de guardar.
+
+## Correccion finalizacion IPIP psicolaboral - 2026-08-13
+- [x] Reproducir el error con las respuestas persistidas del candidato canario.
+- [x] Corregir el conflicto de nombres del RPC de finalización sin perder respuestas.
+- [x] Reprocesar el IPIP-16 y confirmar estado completado en Supabase.
+- [x] Mejorar el mensaje de errores controlados de la Edge Function en el portal.
+- [ ] Verificar cierre de la batería completa y generación del certificado con todos los instrumentos.
+
+Resultado: el RPC fallaba en `result=result` por ambigüedad PL/pgSQL; ahora usa una variable y columna calificadas explícitamente. El IPIP-16 de Maximiliano quedó completado con 105 respuestas conservadas.

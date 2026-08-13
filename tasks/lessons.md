@@ -3102,6 +3102,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **Los `fieldset` pueden conservar un ancho mínimo implícito en pantallas pequeñas.** Fuerza `min-width: 0`, `box-sizing: border-box` y wrapping del texto para que ninguna pregunta escape de su tarjeta.
 - **El scroll debe ejecutarse después de pintar el bloque nuevo.** Un `scrollTo` dentro del handler puede correr antes del layout actualizado; usa un ref al contenedor y `requestAnimationFrame` con `scrollIntoView` para llevar al candidato al inicio del siguiente bloque.
 
+## 301. Un RPC de scoring no debe reutilizar el mismo identificador para variable y columna
+
+- **En PL/pgSQL, `result=result` puede ser ambiguo dentro de un `UPDATE`.** Usa nombres de variables específicos (`scored_result`) y alias de tabla (`ai.result`) para que la finalización no falle después de guardar todas las respuestas.
+- **Las respuestas persistidas deben poder reprocesarse idempotentemente.** Si falla el sellado posterior al guardado, el reintento debe calcular el resultado desde la copia almacenada sin pedir al candidato repetir el test.
+
 ## 299. Los módulos nuevos deben reutilizar la retícula de su sección
 
 - **Una tabla funcional no basta si rompe la gramática visual del ERP.** Compara KPIs, filtros, densidad, expansión y acciones con una pantalla viva del mismo dominio antes de cerrar el módulo.

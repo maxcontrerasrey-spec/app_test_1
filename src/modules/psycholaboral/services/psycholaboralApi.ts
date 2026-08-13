@@ -10,13 +10,27 @@ import type {
 } from "../types";
 
 const FUNCTION = "psycholaboral-assessment";
+async function readFunctionError(error: unknown) {
+  if (!error || typeof error !== "object") return "";
+  const context = (error as { context?: unknown }).context;
+  if (!(context instanceof Response)) return "";
+  try {
+    const payload = (await context.clone().json()) as { error?: unknown };
+    return typeof payload.error === "string" ? payload.error : "";
+  } catch {
+    return "";
+  }
+}
 async function invoke(body: Record<string, unknown>) {
   const client = getSupabaseClientOrThrow();
   const { data, error } = await client.functions.invoke(FUNCTION, { body });
-  if (error)
+  if (error) {
+    const functionMessage = await readFunctionError(error);
     throw new Error(
-      getSupabaseErrorMessage(error, "No fue posible procesar la solicitud."),
+      functionMessage ||
+        getSupabaseErrorMessage(error, "No fue posible procesar la solicitud."),
     );
+  }
   if (data?.error) throw new Error(String(data.error));
   return data as Record<string, unknown>;
 }
