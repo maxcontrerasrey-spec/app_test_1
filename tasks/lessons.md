@@ -3084,3 +3084,8 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ## 295. Un submódulo nuevo debe tener identidad visual propia
 
 - **No reutilices el ícono del módulo vecino por conveniencia.** Antes de publicar navegación nueva, compara los íconos dentro del mismo grupo y asigna uno semánticamente reconocible para evitar confusión visual.
+
+## 299. Los módulos nuevos deben reutilizar la retícula de su sección
+
+- **Una tabla funcional no basta si rompe la gramática visual del ERP.** Compara KPIs, filtros, densidad, expansión y acciones con una pantalla viva del mismo dominio antes de cerrar el módulo.
+- **Las acciones de documento deben vivir en la fila principal.** Cuando el usuario solicita descarga junto a actualización, usa un ícono accesible en esa columna y conserva la acción de generación dentro del detalle.

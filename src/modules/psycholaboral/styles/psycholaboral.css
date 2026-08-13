@@ -439,8 +439,7 @@
 .psych-questions legend {
   font-weight: 750;
   padding: 0 0.35rem;
-  display: flex;
-  gap: 0.55rem;
+  display:block;
 }
 .psych-questions legend span {
   color: #a51218;

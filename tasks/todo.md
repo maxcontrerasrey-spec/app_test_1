@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Ajuste visual y prueba controlada de Gestión Psicolaboral - 2026-08-13
+
+- [ ] Comparar el centro de mando con la composición visual de Reclutamiento y ajustar KPIs, filtros, tabla expandible y acciones.
+- [ ] Separar visualmente nombre de instrumento y texto de preguntas en `/evaluacionpsico`, verificando desktop y móvil.
+- [ ] Mostrar descarga del certificado como acción icónica junto a la columna Actualización, conservando acción de generación/reintento.
+- [ ] Confirmar y documentar el envío de invitaciones mediante Resend con idempotencia.
+- [ ] Diseñar un bypass temporal de hash exclusivamente para un RUT explícito, con fecha de caducidad y sin relajar el acceso general.
+- [ ] Ejecutar build, Guardian, diff y QA visual antes de publicar.
+
 ## Implementación módulo Gestión Psicolaboral - 2026-08-13
 
 - [x] Inspeccionar rutas, autorización, candidatos activos, descarte oficial, correo, tokens públicos, Storage y generadores PDF vigentes.

@@ -24,6 +24,13 @@ const statusLabels = {
   completed: "Terminado",
 } as const;
 const PAGE_SIZE = 50;
+function DownloadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" aria-hidden="true" focusable="false">
+      <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+    </svg>
+  );
+}
 function dateTime(value: string | null) {
   return value ? new Date(value).toLocaleString("es-CL") : "Sin registro";
 }
@@ -306,6 +313,21 @@ export function PsycholaboralManagementPage() {
                       {dateTime(
                         row.completed_at ?? row.started_at ?? row.issued_at,
                       )}
+                      {row.certificate_status === "generated" ? (
+                        <button
+                          type="button"
+                          className="psych-secondary-action"
+                          title="Descargar certificado"
+                          aria-label={`Descargar certificado de ${row.full_name}`}
+                          disabled={busy === row.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void download(row);
+                          }}
+                        >
+                          <DownloadIcon />
+                        </button>
+                      ) : null}
                     </td>
                   </tr>
                   {expanded === row.id ? (
