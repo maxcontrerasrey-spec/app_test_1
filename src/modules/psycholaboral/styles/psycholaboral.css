@@ -436,14 +436,8 @@
   background: #fff;
   padding: 1rem;
 }
-.psych-questions legend {
-  font-weight: 750;
-  padding: 0 0.35rem;
-  display:block;
-}
-.psych-questions legend span {
-  color: #a51218;
-}
+.psych-questions legend {font-weight:750;padding:0 .35rem;display:block}
+.psych-questions legend span {color:#a51218}
 .psych-questions fieldset > div {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

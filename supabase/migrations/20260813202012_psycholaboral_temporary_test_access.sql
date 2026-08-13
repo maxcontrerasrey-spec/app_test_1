@@ -48,3 +48,4 @@ end
 $$;
 revoke all on function public.redeem_psycholaboral_temporary_test_access(uuid,text,text,text) from public,anon,authenticated;
 grant execute on function public.redeem_psycholaboral_temporary_test_access(uuid,text,text,text) to service_role;
+notify pgrst, 'reload schema';

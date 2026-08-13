@@ -482,6 +482,7 @@ export function PsychometricAssessmentPage() {
               <fieldset key={question.order}>
                 <legend>
                   <span>{question.order}</span>
+                  <br />
                   {question.text}
                 </legend>
                 <div>
