@@ -113,9 +113,9 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10242249,
+  "distTotalBytes": 10242721,
   "jsFileCount": 62,
-  "jsTotalBytes": 2729522,
+  "jsTotalBytes": 2729776,
   "cssFileCount": 12,
   "cssTotalBytes": 238172,
   "trackedAssets": [
