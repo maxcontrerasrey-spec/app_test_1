@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
-import { PageShell, SelectField, TextField } from "../../../shared/ui";
+import { PageShell, TextField } from "../../../shared/ui";
 import { TrackingPagination } from "../../recruitment/components/TrackingPagination";
 import { PsychResultDialog } from "../components/PsychResultDialog";
 import {
@@ -52,6 +52,12 @@ export function PsycholaboralManagementPage() {
     }),
     {} as Record<string, number>,
   );
+  const tabs = [
+    { key: "", label: "Todos" },
+    { key: "not_sent", label: "No realizado" },
+    { key: "sent", label: "Enviado" },
+    { key: "completed", label: "Terminado" },
+  ] as const;
   const refresh = async () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.psycholaboral.all() });
   const toggleTest = (id: string, code: string) =>
@@ -162,88 +168,105 @@ export function PsycholaboralManagementPage() {
 
   return (
     <PageShell className="psych-command">
-      <header className="psych-command__header">
-        <div>
-          <span className="psych-eyebrow">Reclutamiento</span>
-          <h1>Gestión Psicolaboral</h1>
-          <p>
-            Envío, seguimiento y decisión humana sobre evaluaciones de
-            candidatos con procesos activos.
-          </p>
-        </div>
-        <button
-          className="psych-secondary-action"
-          type="button"
-          onClick={() => void refresh()}
-        >
-          Actualizar
-        </button>
-      </header>
-      <section className="tracking-kpi-row" aria-label="Resumen psicolaboral">
-        {(["not_sent", "sent", "completed"] as const).map((item) => (
+      <div className="minimal-page-header psych-minimal-header">
+        <h1>Gestión Psicolaboral</h1>
+      </div>
+      <section className="tracking-panel psych-tracking-panel">
+        <div className="tracking-kpi-row" aria-label="Resumen psicolaboral">
           <button
             type="button"
-            className={`tracking-kpi-card ${status === item ? "tracking-kpi-card-active" : ""}`}
-            key={item}
+            className={`tracking-kpi-card tracking-kpi-card-folio-search ${status === "" ? "tracking-kpi-card-active" : ""}`}
             onClick={() => {
-              setStatus(status === item ? "" : item);
+              setStatus("");
               setPage(0);
             }}
           >
-            <span>{statusLabels[item]}</span>
-            <strong>{counts[item] ?? 0}</strong>
-            <small>Candidatos en la página actual</small>
+            <span className="micro-label">Candidatos visibles</span>
+            <strong>{rows.length}</strong>
+            <small>Página actual</small>
           </button>
-        ))}
-      </section>
-      <section className="tracking-filters psych-filters">
-        <TextField
-          id="psych-search"
-          label="Buscar"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(0);
-          }}
-          placeholder="Nombre, RUT, folio, cargo o contrato"
-        />
-        <SelectField
-          id="psych-status"
-          label="Estado"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value);
-            setPage(0);
-          }}
-          options={[
-            { value: "not_sent", label: "No realizado" },
-            { value: "sent", label: "Enviado" },
-            { value: "completed", label: "Terminado" },
-          ]}
-          placeholder="Todos los estados"
-        />
-      </section>
-      {feedback ? (
-        <div className="psych-feedback" role="status">
-          {feedback}
+          {(["not_sent", "sent", "completed"] as const).map((item) => (
+            <button
+              type="button"
+              className={`tracking-kpi-card ${item === "completed" ? "tracking-kpi-card-generado" : "tracking-kpi-card-en-proceso"} ${status === item ? "tracking-kpi-card-active" : ""}`}
+              key={item}
+              onClick={() => {
+                setStatus(status === item ? "" : item);
+                setPage(0);
+              }}
+            >
+              <span className="micro-label">{statusLabels[item]}</span>
+              <strong>{counts[item] ?? 0}</strong>
+              <small>Página actual</small>
+            </button>
+          ))}
         </div>
-      ) : null}
-      {candidates.isLoading || catalog.isLoading ? (
-        <div className="psych-skeleton">
-          Cargando candidatos y batería disponible...
+        <div className="approval-chip-row psych-status-tabs">
+          {tabs.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`approval-chip ${status === item.key ? "tracking-kpi-card-active" : ""}`}
+              onClick={() => {
+                setStatus(item.key);
+                setPage(0);
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-      ) : candidates.error || catalog.error ? (
-        <div className="psych-feedback psych-feedback--error">
-          No fue posible cargar Gestión Psicolaboral.
+        <div className="tracking-toolbar psych-toolbar">
+          <div className="tracking-toolbar-copy">
+            <h3>Seguimiento de evaluaciones</h3>
+            <span className="tracking-filter-caption">
+              Candidatos activos con batería psicolaboral pendiente, enviada o
+              terminada.
+            </span>
+          </div>
+          <div className="tracking-filters tracking-filters-inline psych-filters">
+            <TextField
+              id="psych-search"
+              label="Buscar candidatos"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(0);
+              }}
+              className="tracking-search-field"
+              placeholder="Nombre, RUT, folio, cargo o contrato"
+            />
+            <button
+              className="psych-secondary-action"
+              type="button"
+              onClick={() => void refresh()}
+            >
+              Actualizar
+            </button>
+          </div>
         </div>
-      ) : rows.length === 0 ? (
-        <div className="psych-empty">
-          <strong>No hay candidatos para mostrar</strong>
-          <span>Ajusta la búsqueda o el estado seleccionado.</span>
-        </div>
-      ) : (
-        <div className="tracking-table-wrap">
-          <table className="tracking-table psych-table">
+        {feedback ? (
+          <div className="psych-feedback" role="status">
+            {feedback}
+          </div>
+        ) : null}
+        {candidates.isLoading || catalog.isLoading ? (
+          <div className="psych-skeleton">
+            Cargando candidatos y batería disponible...
+          </div>
+        ) : candidates.error || catalog.error ? (
+          <div className="psych-feedback psych-feedback--error">
+            No fue posible cargar Gestión Psicolaboral.
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="psych-empty">
+            <strong>No hay candidatos para mostrar</strong>
+            <span>Ajusta la búsqueda o el estado seleccionado.</span>
+          </div>
+        ) : (
+          <div className="tracking-table-wrap tracking-table-wrap-full">
+            <div className="tracking-table-scroll tracking-table-scroll-wide">
+              <table className="tracking-table psych-table">
             <thead>
               <tr>
                 <th></th>
@@ -302,14 +325,16 @@ export function PsycholaboralManagementPage() {
                         </small>
                       ) : null}
                     </td>
-                    <td>
-                      {dateTime(
-                        row.completed_at ?? row.started_at ?? row.issued_at,
-                      )}
+                    <td className="psych-update-cell">
+                      <span>
+                        {dateTime(
+                          row.completed_at ?? row.started_at ?? row.issued_at,
+                        )}
+                      </span>
                       {row.certificate_status === "generated" ? (
                         <button
                           type="button"
-                          className="psych-secondary-action"
+                          className="psych-icon-action"
                           title="Descargar certificado"
                           aria-label={`Descargar certificado de ${row.full_name}`}
                           disabled={busy === row.id}
@@ -318,7 +343,7 @@ export function PsycholaboralManagementPage() {
                             void download(row);
                           }}
                         >
-                          <span aria-hidden="true" className="psych-download-glyph">↓</span>
+                          PDF
                         </button>
                       ) : null}
                     </td>
@@ -465,16 +490,18 @@ export function PsycholaboralManagementPage() {
                 </Fragment>
               ))}
             </tbody>
-          </table>
-        </div>
-      )}
-      <TrackingPagination
-        page={page}
-        pageSize={PAGE_SIZE}
-        totalCount={candidates.data?.total_count ?? 0}
-        label="Candidatos"
-        onPageChange={setPage}
-      />
+              </table>
+            </div>
+          </div>
+        )}
+        <TrackingPagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          totalCount={candidates.data?.total_count ?? 0}
+          label="Candidatos"
+          onPageChange={setPage}
+        />
+      </section>
       {result ? (
         <PsychResultDialog detail={result} onClose={() => setResult(null)} />
       ) : null}

@@ -4,6 +4,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 311. Un cambio visual publicado debe dejar evidencia perceptible, no solo clases distintas
+
+- Si el usuario reporta que producción "sigue igual" aunque el deploy esté verde, revisar si el cambio alteró la estructura visual real y no solo estilos locales.
+- Para módulos de Reclutamiento, usar `minimal-page-header`, `tracking-panel`, KPIs, chips, toolbar y tabla scroll como composición base; un header tipo hero mantiene la pantalla fuera del lenguaje ERP aunque compile.
+- Cuando un bug es de choque de texto, separar el contenido en nodos semánticos y CSS de bloque; depender de saltos o del comportamiento especial de `legend` puede verse distinto entre navegadores.
+
 ## 310. Digitalizar literalmente no significa ocultar contradicciones de la fuente
 
 - Cuando el usuario pide conservar un instrumento, el cuestionario y corrector adjuntos son la autoridad; no se deben reemplazar silenciosamente por una versión encontrada en internet.

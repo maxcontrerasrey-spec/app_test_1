@@ -2,12 +2,14 @@
 
 ## Ajuste visual y prueba controlada de Gestión Psicolaboral - 2026-08-13
 
-- [ ] Comparar el centro de mando con la composición visual de Reclutamiento y ajustar KPIs, filtros, tabla expandible y acciones.
-- [ ] Separar visualmente nombre de instrumento y texto de preguntas en `/evaluacionpsico`, verificando desktop y móvil.
-- [ ] Mostrar descarga del certificado como acción icónica junto a la columna Actualización, conservando acción de generación/reintento.
+- [x] Comparar el centro de mando con la composición visual de Reclutamiento y ajustar KPIs, filtros, tabla expandible y acciones.
+- [x] Separar visualmente nombre de instrumento y texto de preguntas en `/evaluacionpsico`, verificando desktop y móvil.
+- [x] Mostrar descarga del certificado como acción compacta junto a la columna Actualización, conservando acción de generación/reintento.
 - [ ] Confirmar y documentar el envío de invitaciones mediante Resend con idempotencia.
 - [ ] Diseñar un bypass temporal de hash exclusivamente para un RUT explícito, con fecha de caducidad y sin relajar el acceso general.
-- [ ] Ejecutar build, Guardian, diff y QA visual antes de publicar.
+- [x] Ejecutar build, Guardian, diff y QA visual antes de publicar.
+
+Resultado: el centro de mando dejó el encabezado tipo hero y ahora usa `minimal-page-header`, `tracking-panel`, KPIs, chips de estado, barra de filtros y tabla con scroll como Reclutamiento. La columna Actualización muestra una acción compacta `PDF` para descargar certificados generados. En `/evaluacionpsico`, el número de pregunta y el enunciado quedaron separados en nodos distintos para evitar choque visual. Build frontend, baseline de performance, Guardian y `git diff --check` pasan sin errores.
 
 ## Implementación módulo Gestión Psicolaboral - 2026-08-13
 

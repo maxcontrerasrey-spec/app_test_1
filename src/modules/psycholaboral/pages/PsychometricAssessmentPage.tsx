@@ -481,9 +481,10 @@ export function PsychometricAssessmentPage() {
             {visibleQuestions.map((question) => (
               <fieldset key={question.order}>
                 <legend>
-                  <span>{question.order}</span>
-                  <br />
-                  {question.text}
+                  <span className="psych-question-number">
+                    {question.order}
+                  </span>
+                  <span className="psych-question-text">{question.text}</span>
                 </legend>
                 <div>
                   {instrument.options.map((option) => (
