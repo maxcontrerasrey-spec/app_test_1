@@ -153,6 +153,8 @@ function drawHeader(
   bold: PDFFont,
   logo: PDFImage,
   folio: string,
+  pageNumber = 1,
+  totalPages = 1,
 ) {
   const { width, height } = page.getSize();
   page.drawImage(logo, { x: 45, y: height - 105, width: 92, height: 50 });
@@ -177,7 +179,7 @@ function drawHeader(
     font,
     color: rgb(0.4, 0.44, 0.5),
   });
-  page.drawText("Página: 1 de 1", {
+  page.drawText(`Página: ${pageNumber} de ${totalPages}`, {
     x: width - 170,
     y: height - 82,
     size: 8,
@@ -336,7 +338,7 @@ Deno.serve(async (request) => {
       target.drawText("Documento confidencial · Antecedente complementario · No decisión automática", { x: 50, y: 28, size: 7, font, color: rgb(0.35, 0.38, 0.42) });
       target.drawText(`PS-${payload.public_id.slice(0, 8).toUpperCase()} · Informe v1 · Página ${pageNumber} de 3`, { x: 390, y: 28, size: 7, font, color: rgb(0.35, 0.38, 0.42) });
     };
-    drawHeader(reportPage, font, bold, logo, payload.public_id);
+    drawHeader(reportPage, font, bold, logo, payload.public_id, 1, 3);
     reportPage.drawText("Informe Psicolaboral Integrado", { x: 50, y: 635, size: 18, font: bold });
     reportPage.drawText("Resumen ejecutivo y calidad de respuestas", { x: 50, y: 612, size: 11, font });
     let reportY = 580;
@@ -356,7 +358,7 @@ Deno.serve(async (request) => {
     for (const line of wrap("No se emite una conclusión automática de aptitud, contratación o rechazo. La interpretación requiere revisión profesional y evidencia complementaria del proceso.", font, 9, 500)) { reportPage.drawText(line, { x: 60, y: reportY, size: 9, font }); reportY -= 13; }
     drawReportFooter(reportPage, 1);
     const ipipPage = report.addPage([612, 792]);
-    drawHeader(ipipPage, font, bold, logo, payload.public_id);
+    drawHeader(ipipPage, font, bold, logo, payload.public_id, 2, 3);
     ipipPage.drawText("IPIP-16 · 16 dimensiones", { x: 50, y: 635, size: 16, font: bold });
     let ipipY = 605;
     const ipip = payload.instruments.find((item) => item.code === "IPIP16_105");
@@ -364,7 +366,7 @@ Deno.serve(async (request) => {
     ipipPage.drawText("Adaptación lingüística interna; sin baremo chileno validado. Las medias 1–5 no son percentiles.", { x: 55, y: ipipY - 10, size: 8, font, color: rgb(0.45, 0.28, 0.12) });
     drawReportFooter(ipipPage, 2);
     const ipcPage = report.addPage([612, 792]);
-    drawHeader(ipcPage, font, bold, logo, payload.public_id);
+    drawHeader(ipcPage, font, bold, logo, payload.public_id, 3, 3);
     ipcPage.drawText("IPIP-IPC · 8 octantes y perfil conductual", { x: 50, y: 635, size: 16, font: bold });
     let ipcY = 605;
     const ipc = payload.instruments.find((item) => item.code === "IPIP_IPC_32");

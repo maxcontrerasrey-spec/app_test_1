@@ -9,6 +9,7 @@ import {
   generatePsychCertificate,
   getPsychCertificateUrl,
   getPsychReportUrl,
+  resetPsychCertificate,
   getPsychResult,
   sendPsychBattery,
 } from "../services/psycholaboralApi";
@@ -161,6 +162,9 @@ export function PsycholaboralManagementPage() {
     setBusy(row.id);
     setFeedback("");
     try {
+      if (row.certificate_status === "generated") {
+        await resetPsychCertificate(row.assessment_id);
+      }
       await generatePsychCertificate(row.assessment_id);
       setFeedback("Certificado generado correctamente.");
       await refresh();
@@ -460,6 +464,9 @@ export function PsycholaboralManagementPage() {
                                       </button>
                                       <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void downloadReport(row)}>
                                         Descargar informe
+                                      </button>
+                                      <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void generateCertificate(row)}>
+                                        Actualizar informe
                                       </button>
                                     </>
                                   ) : row.certificate_status === "queued" ||

@@ -3112,6 +3112,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **En una batería enviada, cada test puede estar en una etapa distinta.** El estado textual debe acompañarse de un relleno suave y semántico: verde completado, amarillo en progreso y gris no iniciado.
 - **Los encabezados del detalle necesitan separación propia.** Ajusta margen y espacio inferior del título sin alterar la retícula compartida del ERP.
 
+## 303. Regenerar un documento debe conservar la evidencia psicométrica
+
+- **Una corrección de formato no debe recalcular ni modificar respuestas.** Reprocesa solo el artefacto, conserva los hashes de resultados y verifica la nueva ruta privada antes de reemplazar el estado visible.
+
 ## 299. Los módulos nuevos deben reutilizar la retícula de su sección
 
 - **Una tabla funcional no basta si rompe la gramática visual del ERP.** Compara KPIs, filtros, densidad, expansión y acciones con una pantalla viva del mismo dominio antes de cerrar el módulo.

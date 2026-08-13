@@ -9,6 +9,13 @@
 
 Alcance de esta entrega: certificado de 1 página + informe interno multipágina, calidad determinística de respuesta, perfil interpersonal propio IPIP-IPC y salida PRP sin factores genéricos. La compatibilidad por cargo queda pendiente de habilitar perfiles versionados administrables; mientras tanto el informe no emite índice ni conclusión automática.
 
+## Regeneración certificado psicolaboral canario - 2026-08-13
+- [x] Marcar el certificado anterior para reproceso sin tocar respuestas ni scoring (RPC autorizado disponible desde el ERP).
+- [x] Ejecutar el generador con el formato certificado + informe integrado (acción `Actualizar informe` desplegada en Gestión Psicolaboral).
+- [ ] Confirmar hashes, rutas privadas y estado generado en el canario; requiere ejecutar la acción desde una sesión autenticada de Reclutamiento.
+
+Nota operativa: el certificado histórico permanece intacto (`generated`) hasta que un usuario autorizado pulse `Actualizar informe`; así no se deja una descarga rota si el generador o el Storage fallan.
+
 ## Correccion RUT William Eric Araya Toro - 2026-08-13
 
 - [x] Localizar el RUT ingresado y todas las fuentes vinculadas al candidato.

@@ -72,6 +72,18 @@ begin
  return payload;
 end $$;
 
+create or replace function public.reset_psycholaboral_certificate(p_assessment_id uuid) returns void language plpgsql security definer set search_path='' as $$
+begin
+ if auth.uid() is null or not public.user_can_access_psycholaboral(auth.uid()) then raise exception 'Sin permisos para Gestión Psicolaboral'; end if;
+ update private.psychometric_assessments
+ set certificate_status='queued', report_status='queued', certificate_claim_token=null,
+     certificate_claimed_at=null, updated_at=timezone('utc',now())
+ where id=p_assessment_id and execution_status='completed';
+ if not found then raise exception 'La evaluación no está disponible para regenerar'; end if;
+ insert into private.psychometric_audit_log(assessment_id,event_type,actor_user_id,metadata)
+ values(p_assessment_id,'certificate_regeneration_requested',auth.uid(),'{}');
+end $$;
+
 revoke all on function private.psychometric_response_quality(jsonb,jsonb) from public,anon,authenticated;
 grant execute on function private.psychometric_response_quality(jsonb,jsonb) to service_role;
 revoke all on function private.psycholaboral_ipc_profile(jsonb) from public,anon,authenticated;
@@ -80,4 +92,6 @@ revoke all on function public.complete_psycholaboral_certificate(uuid,uuid,boole
 grant execute on function public.complete_psycholaboral_certificate(uuid,uuid,boolean,text,text,text,text,text,text,text) to service_role;
 revoke all on function public.get_psycholaboral_report_artifact(uuid) from public,anon;
 grant execute on function public.get_psycholaboral_report_artifact(uuid) to authenticated;
+revoke all on function public.reset_psycholaboral_certificate(uuid) from public,anon;
+grant execute on function public.reset_psycholaboral_certificate(uuid) to authenticated;
 notify pgrst, 'reload schema';
