@@ -3120,3 +3120,6 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **Una tabla funcional no basta si rompe la gramática visual del ERP.** Compara KPIs, filtros, densidad, expansión y acciones con una pantalla viva del mismo dominio antes de cerrar el módulo.
 - **Las acciones de documento deben vivir en la fila principal.** Cuando el usuario solicita descarga junto a actualización, usa un ícono accesible en esa columna y conserva la acción de generación dentro del detalle.
+### 304. Los PDFs separados deben embebir sus propios recursos
+
+Al generar un certificado y un informe con `pdf-lib`, cada `PDFDocument` mantiene su propio contexto de fuentes e imágenes. Reutilizar recursos embebidos del primer documento puede producir un informe aparentemente vacío o inválido aunque el Storage y el estado de generación indiquen éxito. Cada documento debe embebir de forma independiente sus fuentes, logo y demás recursos antes de publicarse.
