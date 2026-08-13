@@ -113,9 +113,9 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10232571,
+  "distTotalBytes": 10240522,
   "jsFileCount": 62,
-  "jsTotalBytes": 2720151,
+  "jsTotalBytes": 2728102,
   "cssFileCount": 12,
   "cssTotalBytes": 237647,
   "trackedAssets": [
@@ -146,6 +146,8 @@ Revision 2026-08-10 catalogos BUK ficha publica: el total global y JS suben 118 
 Revision 2026-08-13 Gestión Psicolaboral: el total global sube 18,722 bytes, JS sube 12,800 bytes y CSS sube 5,922 bytes por incorporar dos rutas lazy independientes: centro de mando autenticado y portal público de evaluación. No aumenta los límites de ECharts, XLSX, Supabase, framework ni assets pesados; los bancos de ítems y scoring permanecen fuera del bundle en Supabase privado/Edge Functions.
 
 Revision 2026-08-13 cierre Gestión Psicolaboral: el total global sube 8,634 bytes, JS sube 6,239 bytes y CSS sube 2,395 bytes por paginación y autosave del candidato, modal profesional de resultados, recuperación manual de certificados y estados accesibles del centro de mando. Las dos rutas permanecen lazy, el PDF sigue en Edge y no cambian vendors ni assets trackeados.
+
+Revision 2026-08-13 Gestión Psicolaboral CI: GitHub Actions con Node 24 midió 10,240,522 bytes totales y 2,728,102 bytes JS. Se ajustan únicamente los límites globales al artefacto canónico remoto; CSS, vendors y assets trackeados conservan sus límites auditados.
 
 Revision 2026-08-10 optimizacion BI: el total global y JS suben 215 bytes por diferir el montaje de graficos secundarios hasta despues del primer render, mantener cache del dashboard de Reclutamiento y paralelizar su timeline. Reduce trabajo inicial y no agrega vendors ni assets trackeados.
 
