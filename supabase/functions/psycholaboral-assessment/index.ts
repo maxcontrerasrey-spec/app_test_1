@@ -253,7 +253,7 @@ Deno.serve(async (request) => {
       }
     }
 
-    if (action === "generate_certificate" || action === "certificate_url") {
+    if (action === "generate_certificate" || action === "certificate_url" || action === "report_url") {
       const authorization = request.headers.get("authorization") ?? "";
       if (!authorization.startsWith("Bearer ")) {
         return response({ error: "No autorizado" }, 401);
@@ -291,7 +291,9 @@ Deno.serve(async (request) => {
       }
 
       const { data: artifact, error: artifactError } = await actor.rpc(
-        "get_psycholaboral_certificate_artifact",
+        action === "report_url"
+          ? "get_psycholaboral_report_artifact"
+          : "get_psycholaboral_certificate_artifact",
         { p_assessment_id: assessmentId },
       );
       if (artifactError || !artifact) {

@@ -76,6 +76,7 @@ export type PsychResultInstrument = {
   result: Record<string, unknown>;
   response_count: number;
   response_distribution: Record<string, number>;
+  quality?: Record<string, unknown>;
 };
 export type PsychResultDetail = {
   assessment_id: string;

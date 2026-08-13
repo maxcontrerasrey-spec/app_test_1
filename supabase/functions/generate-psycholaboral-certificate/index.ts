@@ -39,6 +39,16 @@ type Payload = {
     result: Record<string, unknown>;
     response_count: number;
     response_summary: Array<{ label: string; count: number }>;
+    quality?: {
+      status?: string;
+      completitud?: number;
+      items_respondidos?: number;
+      valores_distintos?: number;
+      neutros_indecisos?: number;
+      extremos?: number;
+      straight_lining?: boolean;
+      motivos?: string[];
+    };
     result_sha256: string;
   }>;
   consents: Array<
@@ -99,18 +109,13 @@ function formatResult(result: Record<string, unknown>) {
     return `Puntaje total: ${result.total}. Clasificación: ${result.classification}.`;
   }
   if (result.kind === "ipc32") {
-    return `Ejes continuos - Calidez: ${result.warmth}; Dominancia: ${result.dominance}. Octantes: ${namedScores(result.octants)}`;
+    return `Ejes continuos - Calidez: ${result.warmth}; Dominancia: ${result.dominance}. Octantes IPIP-IPC: ${namedScores(result.octants)}`;
   }
   if (result.kind === "ipip16") {
     return `Dimensiones (media 1-5): ${namedScores(result.dimensions)}. Sin baremo chileno; requiere revisión profesional.`;
   }
   if (result.kind === "prp") {
-    const factors = result.factors && typeof result.factors === "object"
-      ? Object.entries(result.factors as Record<string, unknown>)
-        .map(([name, score]) => `${name}: ${String(score)}`)
-        .join(" · ")
-      : "";
-    return `Puntaje directo: ${result.raw_total}. Factores: ${factors || "sin factores calculables"}. Baremos: revisión profesional pendiente.`;
+    return `Puntaje directo: ${result.raw_total}. La interpretación de dimensiones y baremos queda pendiente de revisión profesional; no se muestran factores sin definición documentada.`;
   }
   return "Resultados disponibles para revisión profesional en el ERP.";
 }
@@ -245,7 +250,7 @@ Deno.serve(async (request) => {
       y -= 19;
     }
     y -= 12;
-    page.drawText("Resumen de instrumentos", {
+    page.drawText("Certificado de Evaluación", {
       x: 50,
       y,
       size: 13,
@@ -321,19 +326,65 @@ Deno.serve(async (request) => {
       color: rgb(0.3, 0.33, 0.37),
     });
     page.drawText(
-      "Documento confidencial. El resultado es un antecedente para revisión profesional y no constituye una decisión automática de contratación.",
+      "Certificado de 1 página. Informe Psicolaboral Integrado: documento interno separado para revisión profesional.",
       { x: 50, y: 55, size: 7.5, font, color: rgb(0.35, 0.38, 0.42) },
     );
-    const bytes = await pdf.save();
-    const hash = await sha256(bytes);
+    const certificateBytes = await pdf.save();
+    const report = await PDFDocument.create();
+    const reportPage = report.addPage([612, 792]);
+    const drawReportFooter = (target: PDFPage, pageNumber: number) => {
+      target.drawText("Documento confidencial · Antecedente complementario · No decisión automática", { x: 50, y: 28, size: 7, font, color: rgb(0.35, 0.38, 0.42) });
+      target.drawText(`PS-${payload.public_id.slice(0, 8).toUpperCase()} · Informe v1 · Página ${pageNumber} de 3`, { x: 390, y: 28, size: 7, font, color: rgb(0.35, 0.38, 0.42) });
+    };
+    drawHeader(reportPage, font, bold, logo, payload.public_id);
+    reportPage.drawText("Informe Psicolaboral Integrado", { x: 50, y: 635, size: 18, font: bold });
+    reportPage.drawText("Resumen ejecutivo y calidad de respuestas", { x: 50, y: 612, size: 11, font });
+    let reportY = 580;
+    reportPage.drawText("Calidad y consistencia", { x: 50, y: reportY, size: 12, font: bold });
+    reportY -= 22;
+    for (const instrument of payload.instruments) {
+      const quality = instrument.quality ?? {};
+      reportPage.drawText(`${instrument.name}: ${quality.status ?? "REVISAR"}`, { x: 60, y: reportY, size: 9, font: bold });
+      reportY -= 14;
+      reportPage.drawText(`Completitud ${quality.completitud ?? 0}% · ${quality.items_respondidos ?? instrument.response_count} respuestas · valores distintos ${quality.valores_distintos ?? "—"}`, { x: 70, y: reportY, size: 8, font });
+      reportY -= 13;
+      if (quality.motivos?.length) { reportPage.drawText(`A profundizar: ${quality.motivos.join("; ")}`, { x: 70, y: reportY, size: 8, font, color: rgb(0.45, 0.28, 0.12) }); reportY -= 13; }
+    }
+    reportY -= 12;
+    reportPage.drawText("Conclusión", { x: 50, y: reportY, size: 12, font: bold });
+    reportY -= 18;
+    for (const line of wrap("No se emite una conclusión automática de aptitud, contratación o rechazo. La interpretación requiere revisión profesional y evidencia complementaria del proceso.", font, 9, 500)) { reportPage.drawText(line, { x: 60, y: reportY, size: 9, font }); reportY -= 13; }
+    drawReportFooter(reportPage, 1);
+    const ipipPage = report.addPage([612, 792]);
+    drawHeader(ipipPage, font, bold, logo, payload.public_id);
+    ipipPage.drawText("IPIP-16 · 16 dimensiones", { x: 50, y: 635, size: 16, font: bold });
+    let ipipY = 605;
+    const ipip = payload.instruments.find((item) => item.code === "IPIP16_105");
+    if (ipip) for (const line of wrap(formatResult(ipip.result), font, 9, 500)) { ipipPage.drawText(line, { x: 55, y: ipipY, size: 9, font }); ipipY -= 14; }
+    ipipPage.drawText("Adaptación lingüística interna; sin baremo chileno validado. Las medias 1–5 no son percentiles.", { x: 55, y: ipipY - 10, size: 8, font, color: rgb(0.45, 0.28, 0.12) });
+    drawReportFooter(ipipPage, 2);
+    const ipcPage = report.addPage([612, 792]);
+    drawHeader(ipcPage, font, bold, logo, payload.public_id);
+    ipcPage.drawText("IPIP-IPC · 8 octantes y perfil conductual", { x: 50, y: 635, size: 16, font: bold });
+    let ipcY = 605;
+    const ipc = payload.instruments.find((item) => item.code === "IPIP_IPC_32");
+    if (ipc) for (const line of wrap(formatResult(ipc.result), font, 9, 500)) { ipcPage.drawText(line, { x: 55, y: ipcY, size: 9, font }); ipcY -= 14; }
+    for (const line of wrap("Perfil Conductual Laboral: interpretación interna del ERP en cuatro macroestilos (Directivo, Influyente, Estable y Analítico). No es DISC, no utiliza contenido de Everything DiSC y no constituye una equivalencia psicométrica validada.", font, 9, 500)) { ipcPage.drawText(line, { x: 55, y: ipcY - 15, size: 9, font }); ipcY -= 13; }
+    drawReportFooter(ipcPage, 3);
+    const reportBytes = await report.save();
+    const hash = await sha256(certificateBytes);
+    const reportHash = await sha256(reportBytes);
     const path =
       `${payload.assessment_id}/certificado-psicolaboral-${payload.public_id}.pdf`;
+    const reportPath = `${payload.assessment_id}/informe-psicolaboral-integrado-${payload.public_id}.pdf`;
     const { error: uploadError } = await client.storage.from(BUCKET).upload(
       path,
-      bytes,
+      certificateBytes,
       { contentType: "application/pdf", upsert: true },
     );
     if (uploadError) throw new Error(uploadError.message);
+    const { error: reportUploadError } = await client.storage.from(BUCKET).upload(reportPath, reportBytes, { contentType: "application/pdf", upsert: true });
+    if (reportUploadError) throw new Error(reportUploadError.message);
     const { error: completeError } = await client.rpc(
       "complete_psycholaboral_certificate",
       {
@@ -344,6 +395,9 @@ Deno.serve(async (request) => {
         p_path: path,
         p_sha256: hash,
         p_error: null,
+        p_report_bucket: BUCKET,
+        p_report_path: reportPath,
+        p_report_sha256: reportHash,
       },
     );
     if (completeError) throw new Error(completeError.message);
@@ -360,6 +414,9 @@ Deno.serve(async (request) => {
         p_path: null,
         p_sha256: null,
         p_error: error instanceof Error ? error.message : "Error",
+        p_report_bucket: null,
+        p_report_path: null,
+        p_report_sha256: null,
       });
     }
     return new Response(

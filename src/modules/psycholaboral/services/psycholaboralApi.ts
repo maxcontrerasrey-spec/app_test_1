@@ -113,6 +113,13 @@ export async function getPsychCertificateUrl(assessmentId: string) {
   });
   return String(data.signed_url);
 }
+export async function getPsychReportUrl(assessmentId: string) {
+  const data = await invoke({
+    action: "report_url",
+    assessment_id: assessmentId,
+  });
+  return String(data.signed_url);
+}
 export async function generatePsychCertificate(assessmentId: string) {
   return invoke({
     action: "generate_certificate",

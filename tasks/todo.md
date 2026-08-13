@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Rediseño informe psicolaboral integrado - 2026-08-13
+- [x] Auditar generador PDF, scoring, datos históricos, permisos y contratos actuales.
+- [x] Implementar calidad de respuesta y capa interpretativa trazable sin alterar scoring original.
+- [x] Separar certificado de evaluación e informe integrado con metadatos versionados y disclaimer.
+- [ ] Añadir perfiles de cargo configurables/versionados y compatibilidad no decisoria.
+- [ ] Incorporar pruebas, migración reversible, build, seguridad, Guardian y despliegue.
+
+Alcance de esta entrega: certificado de 1 página + informe interno multipágina, calidad determinística de respuesta, perfil interpersonal propio IPIP-IPC y salida PRP sin factores genéricos. La compatibilidad por cargo queda pendiente de habilitar perfiles versionados administrables; mientras tanto el informe no emite índice ni conclusión automática.
+
 ## Correccion RUT William Eric Araya Toro - 2026-08-13
 
 - [x] Localizar el RUT ingresado y todas las fuentes vinculadas al candidato.

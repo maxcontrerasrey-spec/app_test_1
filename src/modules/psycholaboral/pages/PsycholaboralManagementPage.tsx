@@ -8,6 +8,7 @@ import {
   decidePsychAssessment,
   generatePsychCertificate,
   getPsychCertificateUrl,
+  getPsychReportUrl,
   getPsychResult,
   sendPsychBattery,
 } from "../services/psycholaboralApi";
@@ -145,6 +146,14 @@ export function PsycholaboralManagementPage() {
       setFeedback(
         error instanceof Error ? error.message : "Certificado no disponible.",
       );
+    }
+  };
+  const downloadReport = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    try {
+      window.open(await getPsychReportUrl(row.assessment_id), "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Informe no disponible.");
     }
   };
   const generateCertificate = async (row: PsychCandidate) => {
@@ -445,14 +454,14 @@ export function PsycholaboralManagementPage() {
                                     Ver resultados
                                   </button>
                                   {row.certificate_status === "generated" ? (
-                                    <button
-                                      className="psych-secondary-action"
-                                      type="button"
-                                      disabled={busy === row.id}
-                                      onClick={() => void download(row)}
-                                    >
-                                      Descargar certificado
-                                    </button>
+                                    <>
+                                      <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void download(row)}>
+                                        Descargar certificado
+                                      </button>
+                                      <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void downloadReport(row)}>
+                                        Descargar informe
+                                      </button>
+                                    </>
                                   ) : row.certificate_status === "queued" ||
                                     row.certificate_status === "failed" ? (
                                     <button

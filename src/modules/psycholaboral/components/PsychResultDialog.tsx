@@ -44,6 +44,10 @@ function metricEntries(instrument: PsychResultInstrument) {
           ([label, value]) => ({ label, value: Number(value).toFixed(2) }),
         )
       : [];
+  if (result.kind === "prp") return [
+    { label: "Puntaje directo", value: String(result.raw_total ?? "—") },
+    { label: "Interpretación", value: "Revisión profesional pendiente" },
+  ];
   return [
     { label: "Puntaje directo", value: String(result.raw_total ?? "—") },
     ...factors,
@@ -122,6 +126,11 @@ export function PsychResultDialog({ detail, onClose }: Props) {
                 Resultado descriptivo para revisión profesional. No constituye
                 una decisión automática.
               </p>
+              {instrument.quality ? (
+                <p className="psych-result-note">
+                  Calidad de respuestas: {String(instrument.quality.status ?? "REVISAR")} · completitud {String(instrument.quality.completitud ?? 0)}%.
+                </p>
+              ) : null}
             </article>
           ))}
         </div>
