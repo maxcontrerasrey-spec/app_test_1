@@ -3080,3 +3080,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **El consentimiento debe fijar la evidencia exacta mostrada.** El cliente envía código, versión, hash documental y aceptación; el backend compara el conjunto único asignado y bloquea guardar o enviar respuestas hasta completar todos.
 - **Storage privado también requiere alcance por objeto.** Evita una policy que permita explorar todo un bucket sensible; autoriza la evaluación exacta en backend y genera una URL firmada breve con service-role.
 - **La verificación visual debe incluir estado real y tamaño móvil.** Build y tests no detectan desbordes, pérdida de autosave ni sesiones cruzadas en navegadores compartidos; usa una clave por invitación, QA desktop/móvil y mide `scrollWidth` contra `clientWidth`.
+
+## 295. Un submódulo nuevo debe tener identidad visual propia
+
+- **No reutilices el ícono del módulo vecino por conveniencia.** Antes de publicar navegación nueva, compara los íconos dentro del mismo grupo y asigna uno semánticamente reconocible para evitar confusión visual.
