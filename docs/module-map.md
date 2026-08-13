@@ -26,6 +26,15 @@
 - Servicios: `src/modules/recruitment/services/hiringRequests.ts`, `src/modules/recruitment/services/hiringWorkflow.ts`, `src/modules/recruitment/services/hiringControl.ts`, `src/modules/recruitment/services/documentChecklistApi.ts`, `src/modules/recruitment/services/hiringCatalogs.ts`
 - Riesgo: `hiringControl.ts` y varios componentes exceden tamano comodo de auditoria
 
+### Gestión Psicolaboral
+
+- Rutas: `/gestion-psicolaboral` (ERP autenticado) y `/evaluacionpsico` (candidato con invitación).
+- Páginas: `src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx`, `src/modules/psycholaboral/pages/PsychometricAssessmentPage.tsx`.
+- Hooks: `src/modules/psycholaboral/hooks/usePsycholaboralQueries.ts`.
+- Servicio: `src/modules/psycholaboral/services/psycholaboralApi.ts`.
+- Backend: tablas sensibles en esquema `private`, RPCs exclusivas y Edge Functions `psycholaboral-assessment`/`generate-psycholaboral-certificate`.
+- Frontera: no importa servicios internos de Reclutamiento; usa un view-model y una autorización propios.
+
 ### Movilidad interna
 
 - Ruta: `/movilidad-interna`

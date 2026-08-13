@@ -75,6 +75,11 @@ export const queryKeys = {
     caseDetail: (caseId: string) => ["recruitment", "case-detail", caseId] as const,
     hiringCatalogs: () => ["recruitment", "hiring-catalogs"] as const
   },
+  psycholaboral: {
+    all: () => ["psycholaboral"] as const,
+    catalog: () => ["psycholaboral", "catalog"] as const,
+    candidates: (filters: Record<string, unknown>) => ["psycholaboral", "candidates", filters] as const
+  },
   internalMobility: {
     setupCatalogs: () => ["internal-mobility", "setup-catalogs"] as const,
     workerSearch: (search: string) => ["internal-mobility", "worker-search", search] as const,

@@ -44,3 +44,9 @@ entrypoint = "./functions/generate-competency-certificate/index.ts"
 
 [functions.request-password-reset]
 verify_jwt = false
+
+[functions.psycholaboral-assessment]
+verify_jwt = false
+
+[functions.generate-psycholaboral-certificate]
+verify_jwt = false

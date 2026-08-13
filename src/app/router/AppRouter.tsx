@@ -15,6 +15,8 @@ const HomePage = lazyWithRetry("home-page", routeModuleImporters.homePage);
 const HiringRequestPage = lazyWithRetry("hiring-request-page", routeModuleImporters.hiringRequestPage);
 const InternalMobilityPage = lazyWithRetry("internal-mobility-page", routeModuleImporters.internalMobilityPage);
 const HiringStatusPage = lazyWithRetry("hiring-status-page", routeModuleImporters.hiringStatusPage);
+const PsycholaboralManagementPage = lazyWithRetry("psycholaboral-management-page", routeModuleImporters.psycholaboralManagementPage);
+const PsychometricAssessmentPage = lazyWithRetry("psychometric-assessment-page", routeModuleImporters.psychometricAssessmentPage);
 const DsalPublicApplicationPage = lazyWithRetry(
   "dsal-public-application-page",
   routeModuleImporters.dsalPublicApplicationPage
@@ -90,6 +92,7 @@ export function AppRouter() {
         <Route path="/verificar/documento/:lookup" element={<HiringDocumentVerificationPage />} />
         <Route path="/postulacion-dsal" element={<DsalPublicApplicationPage />} />
         <Route path="/ficha-buk-dsal" element={<PublicBukWorkerFilePage />} />
+        <Route path="/evaluacionpsico" element={<PsychometricAssessmentPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />
@@ -126,6 +129,14 @@ export function AppRouter() {
               element={
                 <RoleProtectedRoute moduleCode="control_contrataciones">
                   <HiringStatusPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/gestion-psicolaboral"
+              element={
+                <RoleProtectedRoute moduleCode="gestion_psicolaboral">
+                  <PsycholaboralManagementPage />
                 </RoleProtectedRoute>
               }
             />

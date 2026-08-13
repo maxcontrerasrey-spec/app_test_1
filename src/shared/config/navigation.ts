@@ -50,6 +50,13 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "clipboard-list"
       },
       {
+        moduleCode: "gestion_psicolaboral",
+        to: "/gestion-psicolaboral",
+        label: "Gestión Psicolaboral",
+        description: "Envía baterías, supervisa ejecución y registra la decisión psicolaboral.",
+        iconKey: "clipboard-list"
+      },
+      {
         moduleCode: "alta_operacional_personal",
         to: "/alta-operacional",
         label: "Onboarding",

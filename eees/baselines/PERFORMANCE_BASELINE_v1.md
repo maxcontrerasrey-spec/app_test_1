@@ -113,11 +113,11 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10204500,
-  "jsFileCount": 59,
-  "jsTotalBytes": 2701051,
-  "cssFileCount": 11,
-  "cssTotalBytes": 228676,
+  "distTotalBytes": 10232571,
+  "jsFileCount": 62,
+  "jsTotalBytes": 2720151,
+  "cssFileCount": 12,
+  "cssTotalBytes": 237647,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -133,6 +133,8 @@ Revision 2026-08-08 DSAL nómina y antecedentes: el total global sube 3,345 byte
 
 Revision 2026-08-10 sanciones como módulo propio: el total global sube 1,451 bytes, JS sube 1,450 bytes y CSS sube 1 byte por separar Sanciones en una ruta lazy y un contenedor propio fuera de Incentivos. No agrega vendors ni assets trackeados; la nueva ruta usa el módulo y guard `solicitud_sanciones`.
 
+Revision 2026-08-13 Gestión Psicolaboral: el ajuste final del temporizador público agrega 61 bytes al chunk lazy de la evaluación y los estados visuales explícitos de sus botones agregan 654 bytes al CSS. No cambia vendors, assets pesados ni el entry inicial; las páginas de gestión y candidato continúan cargándose por ruta.
+
 Revision 2026-08-10 recuperación de contraseña: el total global y JS suben 134 bytes por reconocer los formatos `code` y tokens hash de recuperación de Supabase y conservar el modo de recuperación durante `SIGNED_IN`. No agrega vendors, CSS ni assets trackeados.
 
 Revision 2026-08-11 broker de recuperación: el baseline global se ajusta al artefacto medido por CI (28 bytes) y conserva los límites estrictos de CSS, vendors y assets trackeados.
@@ -140,6 +142,10 @@ Revision 2026-08-11 broker de recuperación: el baseline global se ajusta al art
 Revision 2026-08-10 ficha BUK publica DSAL: el total global sube 16,224 bytes, JS sube 15,809 bytes y CSS sube 415 bytes por agregar la ruta lazy `/ficha-buk-dsal`, el formulario de sesión temporal y la captura publica de datos personales/previsionales. No agrega vendors ni assets trackeados; el acceso se limita a candidatos DSAL aprobados mediante RPC anonima acotada.
 
 Revision 2026-08-10 catalogos BUK ficha publica: el total global y JS suben 118 bytes por usar el selector ERP de comunas y fijar valores iniciales de transferencia bancaria y periodo mensual. No agrega vendors, CSS ni assets.
+
+Revision 2026-08-13 Gestión Psicolaboral: el total global sube 18,722 bytes, JS sube 12,800 bytes y CSS sube 5,922 bytes por incorporar dos rutas lazy independientes: centro de mando autenticado y portal público de evaluación. No aumenta los límites de ECharts, XLSX, Supabase, framework ni assets pesados; los bancos de ítems y scoring permanecen fuera del bundle en Supabase privado/Edge Functions.
+
+Revision 2026-08-13 cierre Gestión Psicolaboral: el total global sube 8,634 bytes, JS sube 6,239 bytes y CSS sube 2,395 bytes por paginación y autosave del candidato, modal profesional de resultados, recuperación manual de certificados y estados accesibles del centro de mando. Las dos rutas permanecen lazy, el PDF sigue en Edge y no cambian vendors ni assets trackeados.
 
 Revision 2026-08-10 optimizacion BI: el total global y JS suben 215 bytes por diferir el montaje de graficos secundarios hasta despues del primer render, mantener cache del dashboard de Reclutamiento y paralelizar su timeline. Reduce trabajo inicial y no agrega vendors ni assets trackeados.
 

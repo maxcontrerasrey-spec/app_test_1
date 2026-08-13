@@ -16,6 +16,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `solicitud_contrataciones` | `/solicitud-contrataciones` | `RoleProtectedRoute` |
 | `movilidad_interna` | `/movilidad-interna` | `RoleProtectedRoute` |
 | `control_contrataciones` | `/control-contrataciones` | `RoleProtectedRoute` |
+| `gestion_psicolaboral` | `/gestion-psicolaboral` | `RoleProtectedRoute` |
 | `alta_operacional_personal` | `/alta-operacional` | `RoleProtectedRoute` |
 | `operaciones` | `/operaciones/*` | `RoleProtectedRoute` |
 | `recursos_humanos` | `/recursos-humanos/*` | `RoleProtectedRoute` + roles para analytics |
@@ -39,7 +40,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | Rol | Modulos/responsabilidades actuales |
 | --- | --- |
 | `admin` | todos los modulos activos y todas las capabilities activas |
-| `reclutamiento` | solicitud, control, movilidad; capability `candidate_control_access` |
+| `reclutamiento` | solicitud, control, movilidad y Gestión Psicolaboral; capability `candidate_control_access` |
 | `control_contratos` | control, solicitud, movilidad, RRHH, roster, acreditacion, BI |
 | `operaciones` | operaciones, roster, acreditacion |
 | `gerencia` | solicitud, movilidad, roster, acreditacion, BI |
@@ -49,7 +50,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `operaciones_l_1` | solicitud, movilidad, roster, acreditacion, BI |
 | `operaciones_l_2` | solicitud, movilidad, roster, acreditacion |
 | `administrativo` | solicitud, movilidad, roster, acreditacion |
-| `jefe_administrativo` | union efectiva de `administrativo` + `reclutamiento` |
+| `jefe_administrativo` | unión efectiva de `administrativo` + `reclutamiento`; Gestión Psicolaboral se excluye por contener datos sensibles y requiere asignación explícita futura |
 | `certificaciones` | certificados y seguimiento de certificados; puede operar seleccion editable de instructor |
 | `instructor` | certificados y seguimiento de certificados; instructor autoseleccionado/no editable cuando la cuenta esta vinculada |
 

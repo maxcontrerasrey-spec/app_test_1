@@ -39,6 +39,7 @@ export type AppModuleCode =
   | "solicitud_sanciones"
   | "movilidad_interna"
   | "control_contrataciones"
+  | "gestion_psicolaboral"
 
   | "operaciones"
   | "recursos_humanos"
@@ -96,6 +97,7 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "solicitud_sanciones",
   "movilidad_interna",
   "control_contrataciones",
+  "gestion_psicolaboral",
 
   "operaciones",
   "recursos_humanos",

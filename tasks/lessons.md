@@ -4,6 +4,46 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 310. Digitalizar literalmente no significa ocultar contradicciones de la fuente
+
+- Cuando el usuario pide conservar un instrumento, el cuestionario y corrector adjuntos son la autoridad; no se deben reemplazar silenciosamente por una versión encontrada en internet.
+- Si el corrector contiene rangos solapados, celdas vacías, intervalos sospechosos o dos clasificaciones para el mismo tramo, hay que preservar la evidencia y bloquear solo esa derivación hasta confirmación profesional.
+- El sistema puede conservar respuestas y puntaje directo de forma determinista aunque un baremo esté pendiente, pero nunca debe inventar percentiles, eneatipos o una conclusión laboral.
+
+## 309. La planificación del módulo psicométrico debe converger en el producto digital
+
+- Los tres instrumentos son componentes de un único proceso digital del ERP, no entregables documentales separados.
+- Las planillas pueden servir como apoyo temporal de análisis, pero no deben generarse ni presentarse como producto si el objetivo es implementar la experiencia web, la persistencia, el scoring backend y los reportes digitales.
+- La especificación viva debe residir en contratos de código, migraciones, pruebas y documentación técnica del repositorio; una sola arquitectura debe compartir acceso, sesiones, auditoría, privacidad y operación para los tres tests.
+
+## 308. Cada instrumento psicométrico debe conservar su propio contrato de origen
+
+- Una sustitución acordada para un test no se extiende automáticamente a los demás: IPIP puede reemplazar 16PF o DISC por decisión explícita, mientras Barratt debe conservarse literalmente si el usuario así lo define.
+- La escala visible forma parte del instrumento. Si la hoja fuente usa `0-1-3-4`, no debe normalizarse silenciosamente a `1-2-3-4`; la clave, los rangos y la versión deben quedar trazables.
+- Un calculador externo no es una dependencia operativa aceptable. Hay que recuperar y versionar la regla determinística, comprobarla contra la fuente indicada y mantener la clave fuera de la interfaz del candidato.
+
+## 307. La especificación psicométrica debe separar instrumento, interpretación y ajuste al cargo
+
+- La respuesta original, el score psicométrico y la interpretación laboral son capas diferentes, con autoridades y versiones propias; una nunca debe sobrescribir a otra.
+- Una selección interna de ítems públicos no se convierte en una forma oficial por conservar dimensiones o un número deseado de preguntas: debe identificarse como adaptación interna y bloquearse para uso decisional hasta validación local.
+- Los macroestilos laborales derivados de un instrumento abierto son modelos internos configurables, no equivalencias con marcas comerciales; el reporte debe conservar siempre visibles los resultados originales.
+- No completar vacíos metodológicos con percentiles, ponderaciones o rangos inventados. Es preferible dejarlos explícitamente pendientes de aprobación y validación.
+- Desde el diseño, respuestas y resultados deben tratarse como datos de alta sensibilidad: scoring server-side, RLS negativa, historial inmutable, signed URLs, retención y logs sin respuestas completas.
+
+## 306. Un reemplazo funcional de DISC debe conservar su propia identidad psicométrica
+
+- Adoptar IPIP-IPC permite implementar legalmente un perfil interpersonal comercializable, pero no transforma sus ocho octantes en dimensiones D/I/S/C.
+- Los resultados históricos deben conservar instrumento y versión; no se deben convertir ni comparar como si ambos cuestionarios midieran lo mismo.
+- La interfaz puede reemplazar el flujo operativo de DISC, pero el informe debe mostrar octantes y ejes continuos de Calidez/Dominancia, con revisión profesional y sin etiquetas rígidas o rechazo automático.
+- Antes de uso laboral, la adaptación lingüística necesita entrevistas cognitivas, piloto sin consecuencias y validación local; los parámetros publicados no son baremos chilenos.
+
+## 305. Un instrumento IPIP abreviado es una adaptación nueva, no una réplica comercial
+
+- Sustituir una prueba propietaria por IPIP permite reutilizar ítems de dominio público, pero no autoriza a presentarla como equivalente, diagnóstico ni versión oficial de la marca comercial.
+- Si se reduce el conjunto original, conservar todas las dimensiones, balancear claves directas/invertidas y priorizar cobertura en las escalas de menor consistencia; el número coincidente de preguntas no demuestra equivalencia.
+- Toda traducción o abreviación debe quedar versionada y pasar revisión lingüística, entrevistas cognitivas, piloto sin consecuencias y análisis psicométrico local antes de influir en contratación.
+- La clave y las reglas de puntuación son backend/private; los resultados deben permanecer continuos y sujetos a revisión profesional, sin rechazo automático.
+
 ## 304. Un módulo nuevo del ERP debe nacer con el sistema visual existente
 
 - Que un módulo compile y tenga permisos correctos no basta si su interfaz queda con CSS local genérico, tablas propias y formularios crudos.
@@ -3033,3 +3073,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ## 293. La recuperacion debe completar cualquier variante de enlace Auth
 
 - **No basta con detectar `PASSWORD_RECOVERY`.** Enlaces con `code` o `token_hash` pueden llegar antes de que el cliente emita el evento de recuperación; el arranque debe intercambiar/verificar el token antes de mostrar el formulario.
+
+## 294. Un módulo sensible no está listo solo porque compile
+
+- **Los RPC `SECURITY DEFINER` deben probarse según su identidad efectiva.** `current_user` representa al propietario dentro de la función; la frontera service-role debe vivir en ACL/GRANT y no en una comparación interna que vuelve el RPC inutilizable.
+- **El consentimiento debe fijar la evidencia exacta mostrada.** El cliente envía código, versión, hash documental y aceptación; el backend compara el conjunto único asignado y bloquea guardar o enviar respuestas hasta completar todos.
+- **Storage privado también requiere alcance por objeto.** Evita una policy que permita explorar todo un bucket sensible; autoriza la evaluación exacta en backend y genera una URL firmada breve con service-role.
+- **La verificación visual debe incluir estado real y tamaño móvil.** Build y tests no detectan desbordes, pérdida de autosave ni sesiones cruzadas en navegadores compartidos; usa una clave por invitación, QA desktop/móvil y mide `scrollWidth` contra `clientWidth`.

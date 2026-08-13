@@ -1,0 +1,468 @@
+import { Fragment, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
+import { PageShell, SelectField, TextField } from "../../../shared/ui";
+import { TrackingPagination } from "../../recruitment/components/TrackingPagination";
+import { PsychResultDialog } from "../components/PsychResultDialog";
+import {
+  decidePsychAssessment,
+  generatePsychCertificate,
+  getPsychCertificateUrl,
+  getPsychResult,
+  sendPsychBattery,
+} from "../services/psycholaboralApi";
+import {
+  usePsychCandidates,
+  usePsychCatalog,
+} from "../hooks/usePsycholaboralQueries";
+import type { PsychCandidate, PsychResultDetail } from "../types";
+import "../styles/psycholaboral.css";
+
+const statusLabels = {
+  not_sent: "No realizado",
+  sent: "Enviado",
+  completed: "Terminado",
+} as const;
+const PAGE_SIZE = 50;
+function dateTime(value: string | null) {
+  return value ? new Date(value).toLocaleString("es-CL") : "Sin registro";
+}
+
+export function PsycholaboralManagementPage() {
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(0);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Record<string, string[]>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState("");
+  const [result, setResult] = useState<PsychResultDetail | null>(null);
+  const filters = useMemo(
+    () => ({ search, status, limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+    [page, search, status],
+  );
+  const candidates = usePsychCandidates(filters);
+  const catalog = usePsychCatalog();
+  const rows = candidates.data?.items ?? [];
+  const counts = rows.reduce(
+    (acc, row) => ({
+      ...acc,
+      [row.display_status]: (acc[row.display_status] ?? 0) + 1,
+    }),
+    {} as Record<string, number>,
+  );
+  const refresh = async () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.psycholaboral.all() });
+  const toggleTest = (id: string, code: string) =>
+    setSelected((current) => ({
+      ...current,
+      [id]: current[id]?.includes(code)
+        ? current[id].filter((item) => item !== code)
+        : [...(current[id] ?? []), code],
+    }));
+  const send = async (row: PsychCandidate) => {
+    const codes = selected[row.id] ?? [];
+    if (!codes.length) return setFeedback("Selecciona al menos un test.");
+    setBusy(row.id);
+    setFeedback("");
+    try {
+      await sendPsychBattery(row.id, codes);
+      setFeedback(`Batería enviada a ${row.email}.`);
+      await refresh();
+    } catch (error) {
+      setFeedback(
+        error instanceof Error ? error.message : "No fue posible enviar.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+  const decide = async (
+    row: PsychCandidate,
+    decision: "approved" | "rejected",
+  ) => {
+    if (!row.assessment_id) return;
+    const comment =
+      decision === "rejected"
+        ? window
+            .prompt(
+              "Indica el motivo del rechazo. El candidato será descartado del proceso:",
+            )
+            ?.trim()
+        : undefined;
+    if (decision === "rejected" && !comment) return;
+    if (
+      !window.confirm(
+        decision === "rejected"
+          ? "¿Rechazar y descartar al candidato del proceso activo?"
+          : "¿Aprobar la evaluación psicolaboral?",
+      )
+    )
+      return;
+    setBusy(row.id);
+    try {
+      await decidePsychAssessment(row.assessment_id, decision, comment);
+      await refresh();
+    } catch (error) {
+      setFeedback(
+        error instanceof Error ? error.message : "No fue posible decidir.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+  const inspect = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    setBusy(row.id);
+    try {
+      setResult(await getPsychResult(row.assessment_id));
+    } catch (error) {
+      setFeedback(
+        error instanceof Error
+          ? error.message
+          : "No fue posible cargar el resultado.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+  const download = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    try {
+      window.open(
+        await getPsychCertificateUrl(row.assessment_id),
+        "_blank",
+        "noopener,noreferrer",
+      );
+    } catch (error) {
+      setFeedback(
+        error instanceof Error ? error.message : "Certificado no disponible.",
+      );
+    }
+  };
+  const generateCertificate = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    setBusy(row.id);
+    setFeedback("");
+    try {
+      await generatePsychCertificate(row.assessment_id);
+      setFeedback("Certificado generado correctamente.");
+      await refresh();
+    } catch (error) {
+      setFeedback(
+        error instanceof Error
+          ? error.message
+          : "No fue posible generar el certificado.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <PageShell className="psych-command">
+      <header className="psych-command__header">
+        <div>
+          <span className="psych-eyebrow">Reclutamiento</span>
+          <h1>Gestión Psicolaboral</h1>
+          <p>
+            Envío, seguimiento y decisión humana sobre evaluaciones de
+            candidatos con procesos activos.
+          </p>
+        </div>
+        <button
+          className="psych-secondary-action"
+          type="button"
+          onClick={() => void refresh()}
+        >
+          Actualizar
+        </button>
+      </header>
+      <section className="tracking-kpi-row" aria-label="Resumen psicolaboral">
+        {(["not_sent", "sent", "completed"] as const).map((item) => (
+          <button
+            type="button"
+            className={`tracking-kpi-card ${status === item ? "tracking-kpi-card-active" : ""}`}
+            key={item}
+            onClick={() => {
+              setStatus(status === item ? "" : item);
+              setPage(0);
+            }}
+          >
+            <span>{statusLabels[item]}</span>
+            <strong>{counts[item] ?? 0}</strong>
+            <small>Candidatos en la página actual</small>
+          </button>
+        ))}
+      </section>
+      <section className="tracking-filters psych-filters">
+        <TextField
+          id="psych-search"
+          label="Buscar"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(0);
+          }}
+          placeholder="Nombre, RUT, folio, cargo o contrato"
+        />
+        <SelectField
+          id="psych-status"
+          label="Estado"
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value);
+            setPage(0);
+          }}
+          options={[
+            { value: "not_sent", label: "No realizado" },
+            { value: "sent", label: "Enviado" },
+            { value: "completed", label: "Terminado" },
+          ]}
+          placeholder="Todos los estados"
+        />
+      </section>
+      {feedback ? (
+        <div className="psych-feedback" role="status">
+          {feedback}
+        </div>
+      ) : null}
+      {candidates.isLoading || catalog.isLoading ? (
+        <div className="psych-skeleton">
+          Cargando candidatos y batería disponible...
+        </div>
+      ) : candidates.error || catalog.error ? (
+        <div className="psych-feedback psych-feedback--error">
+          No fue posible cargar Gestión Psicolaboral.
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="psych-empty">
+          <strong>No hay candidatos para mostrar</strong>
+          <span>Ajusta la búsqueda o el estado seleccionado.</span>
+        </div>
+      ) : (
+        <div className="tracking-table-wrap">
+          <table className="tracking-table psych-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Candidato</th>
+                <th>Proceso</th>
+                <th>Cargo / contrato</th>
+                <th>Correo</th>
+                <th>Estado</th>
+                <th>Actualización</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <Fragment key={row.id}>
+                  <tr
+                    key={row.id}
+                    className={`tracking-table-row-clickable ${expanded === row.id ? "tracking-table-row-expanded" : ""}`}
+                    onClick={() =>
+                      setExpanded(expanded === row.id ? null : row.id)
+                    }
+                    tabIndex={0}
+                    aria-expanded={expanded === row.id}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setExpanded(expanded === row.id ? null : row.id);
+                      }
+                    }}
+                  >
+                    <td>{expanded === row.id ? "−" : "+"}</td>
+                    <td>
+                      <strong>{row.full_name}</strong>
+                      <small>{row.national_id}</small>
+                    </td>
+                    <td>
+                      <strong>{row.case_code}</strong>
+                      <small>Folio {row.folio}</small>
+                    </td>
+                    <td>
+                      {row.job_position_name}
+                      <small>{row.contract_name}</small>
+                    </td>
+                    <td>{row.email ?? "Sin correo"}</td>
+                    <td>
+                      <span
+                        className={`psych-status psych-status--${row.display_status}`}
+                      >
+                        {statusLabels[row.display_status]}
+                      </span>
+                      {row.decision && row.decision !== "pending" ? (
+                        <small>
+                          Decisión:{" "}
+                          {row.decision === "approved"
+                            ? "Aprobado"
+                            : "Rechazado"}
+                        </small>
+                      ) : null}
+                    </td>
+                    <td>
+                      {dateTime(
+                        row.completed_at ?? row.started_at ?? row.issued_at,
+                      )}
+                    </td>
+                  </tr>
+                  {expanded === row.id ? (
+                    <tr
+                      className="tracking-table-expanded-row"
+                      key={`${row.id}-detail`}
+                    >
+                      <td colSpan={7}>
+                        <div className="expanded-case-detail-grid">
+                          <section className="expanded-detail-section">
+                            <h3>Batería psicolaboral</h3>
+                            {row.assessment_id ? (
+                              <div className="psych-instrument-list">
+                                {row.instruments.map((instrument) => (
+                                  <span key={instrument.code}>
+                                    {instrument.name}
+                                    <small>
+                                      {instrument.answered}/{instrument.total} ·{" "}
+                                      {instrument.status}
+                                    </small>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="approval-chip-row">
+                                {catalog.data?.map((instrument) => (
+                                  <button
+                                    type="button"
+                                    className="approval-chip"
+                                    aria-pressed={(
+                                      selected[row.id] ?? []
+                                    ).includes(instrument.code)}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleTest(row.id, instrument.code);
+                                    }}
+                                    key={instrument.code}
+                                  >
+                                    {instrument.short_name}
+                                    <small>
+                                      {instrument.question_count} preguntas
+                                    </small>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </section>
+                          <section className="expanded-detail-section">
+                            <h3>Hitos</h3>
+                            <dl className="psych-timeline">
+                              <div>
+                                <dt>Enviado</dt>
+                                <dd>{dateTime(row.issued_at)}</dd>
+                              </div>
+                              <div>
+                                <dt>Inicio</dt>
+                                <dd>{dateTime(row.started_at)}</dd>
+                              </div>
+                              <div>
+                                <dt>Término</dt>
+                                <dd>{dateTime(row.completed_at)}</dd>
+                              </div>
+                              <div>
+                                <dt>Certificado</dt>
+                                <dd>
+                                  {row.certificate_status ?? "No preparado"}
+                                </dd>
+                              </div>
+                            </dl>
+                          </section>
+                        </div>
+                        <div className="psych-actions">
+                          {!row.assessment_id ? (
+                            <button
+                              className="psych-primary-action"
+                              type="button"
+                              disabled={busy === row.id || !row.email}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void send(row);
+                              }}
+                            >
+                              Enviar test
+                            </button>
+                          ) : null}
+                          {row.display_status === "completed" ? (
+                            <>
+                              <button
+                                className="psych-secondary-action"
+                                type="button"
+                                disabled={busy === row.id}
+                                onClick={() => void inspect(row)}
+                              >
+                                Ver resultados
+                              </button>
+                              {row.certificate_status === "generated" ? (
+                                <button
+                                  className="psych-secondary-action"
+                                  type="button"
+                                  disabled={busy === row.id}
+                                  onClick={() => void download(row)}
+                                >
+                                  Descargar certificado
+                                </button>
+                              ) : row.certificate_status === "queued" ||
+                                row.certificate_status === "failed" ? (
+                                <button
+                                  className="psych-secondary-action"
+                                  type="button"
+                                  disabled={busy === row.id}
+                                  onClick={() => void generateCertificate(row)}
+                                >
+                                  Generar certificado
+                                </button>
+                              ) : null}
+                              {row.decision === "pending" ? (
+                                <>
+                                  <button
+                                    className="psych-primary-action"
+                                    type="button"
+                                    disabled={busy === row.id}
+                                    onClick={() => void decide(row, "approved")}
+                                  >
+                                    Aprobar
+                                  </button>
+                                  <button
+                                    className="psych-danger-action"
+                                    type="button"
+                                    disabled={busy === row.id}
+                                    onClick={() => void decide(row, "rejected")}
+                                  >
+                                    Rechazar
+                                  </button>
+                                </>
+                              ) : null}
+                            </>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <TrackingPagination
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalCount={candidates.data?.total_count ?? 0}
+        label="Candidatos"
+        onPageChange={setPage}
+      />
+      {result ? (
+        <PsychResultDialog detail={result} onClose={() => setResult(null)} />
+      ) : null}
+    </PageShell>
+  );
+}

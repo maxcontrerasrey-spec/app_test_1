@@ -11,6 +11,12 @@ export const routeModuleImporters = {
   hiringStatusPage: async () => ({
     default: (await import("../../modules/recruitment/pages/HiringStatusPage")).HiringStatusPage
   }),
+  psycholaboralManagementPage: async () => ({
+    default: (await import("../../modules/psycholaboral/pages/PsycholaboralManagementPage")).PsycholaboralManagementPage
+  }),
+  psychometricAssessmentPage: async () => ({
+    default: (await import("../../modules/psycholaboral/pages/PsychometricAssessmentPage")).PsychometricAssessmentPage
+  }),
   dsalPublicApplicationPage: async () => ({
     default: (await import("../../modules/recruitment/pages/DsalPublicApplicationPage")).DsalPublicApplicationPage
   }),
@@ -97,6 +103,8 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
   if (normalizedPath.startsWith("/control-contrataciones")) {
     return ["hiringStatusPage"];
   }
+  if (normalizedPath.startsWith("/gestion-psicolaboral")) return ["psycholaboralManagementPage"];
+  if (normalizedPath.startsWith("/evaluacionpsico")) return ["psychometricAssessmentPage"];
 
   if (normalizedPath.startsWith("/postulacion-dsal")) {
     return ["dsalPublicApplicationPage"];

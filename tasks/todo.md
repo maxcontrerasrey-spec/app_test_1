@@ -1,5 +1,98 @@
 # Tareas y Roadmap de Desarrollo
 
+## Implementación módulo Gestión Psicolaboral - 2026-08-13
+
+- [x] Inspeccionar rutas, autorización, candidatos activos, descarte oficial, correo, tokens públicos, Storage y generadores PDF vigentes.
+- [x] Recuperar y verificar los consentimientos F-RH-061 y F-RH-062 y los contratos digitales de los cuatro instrumentos.
+- [x] Crear el módulo independiente `gestion_psicolaboral`, su esquema privado, RLS/grants, auditoría y RPCs backend-authoritative.
+- [x] Implementar invitación de un solo uso, rate limiting, sesión opaca de 90 minutos, consentimientos versionados, guardado de avance y entrega idempotente.
+- [x] Implementar scoring privado para IPIP-16/105, IPIP-IPC/32, Barratt y PRP sin decisión automática ni exposición de claves.
+- [x] Implementar centro de mando expandible, selección múltiple de test, estados No realizado/Enviado/Terminado y decisión Aprobar/Rechazar.
+- [x] Implementar `/evaluacionpsico` con RUT + código, bloqueo por consentimientos, progreso, tiempo restante y recuperación de la única sesión vigente.
+- [x] Generar certificado psicométrico privado con resumen de respuestas y resultados por instrumento, hash, folio y descarga autorizada.
+- [x] Validar localmente tipos, Edge Functions, integridad, concurrencia, idempotencia, build, migraciones, seguridad y Guardian.
+- [ ] Ejecutar smoke funcional con candidato canario autorizado: envío, sesión, consentimientos, scoring, PDF y descarte transaccional antes de uso masivo.
+
+Decisiones cerradas: el módulo no reutiliza autorización de `control_contrataciones`; las tablas sensibles viven en `private` sin acceso directo; el código temporal se guarda únicamente como hash y se canjea una vez por una sesión backend de 90 minutos; `Terminado` no depende de que el PDF termine de generarse; Aprobar no mueve la etapa; Rechazar exige motivo y usa `advance_recruitment_candidate_stage`; PRP conserva su salida normativa como `pending_professional_review` mientras sus baremos sigan ambiguos.
+
+Resultado local: quedaron implementadas las rutas lazy `/gestion-psicolaboral` y `/evaluacionpsico`, cuatro contratos de instrumento versionados, consentimientos F-RH-061/F-RH-062 versionados, almacenamiento privado, scoring backend, auditoría, correo Resend, sesión opaca, certificado y decisiones humanas. `tsc`, los dos `deno check`, 25 pruebas de integridad, build frontend, auditorías de migraciones/seguridad/rendimiento y Guardian pasan; Guardian finaliza con 0 errores y 0 advertencias. El dry-run remoto de Supabase no modifica datos, pero no pudo ordenar la migración nueva porque el historial remoto conserva 17 versiones legacy ausentes localmente; no se reparó historial ni se aplicó nada en producción durante esta fase.
+
+### Cierre integral backend/frontend y QA estética ERP
+
+- [x] Reabrir la revisión del contrato completo y comparar la UI con patrones vivos del ERP.
+- [x] Endurecer la aceptación backend de consentimientos para exigir exactamente código, versión y hash mostrados.
+- [x] Completar guardado automático, paginación interna de preguntas y recuperación segura del test pendiente.
+- [x] Reemplazar resultados JSON por una presentación profesional y agregar paginación real de candidatos.
+- [x] Revisar generación/reintento del certificado privado y estados de integración.
+- [x] Ejecutar pruebas de contrato, seguridad, build, Guardian y QA visual desktop/móvil con evidencia.
+
+Revisión final: se corrigieron bloqueos runtime de los RPC service-role (`current_user`, `jsonb_object_length` y `extensions.digest`), se hizo la aceptación de consentimientos exacta y no duplicable, y se cerró el acceso directo al bucket. El candidato conserva una sesión por invitación, autosave con revisión optimista y bloques de 10 preguntas. El centro de mando pagina candidatos, actualiza estados cada 30 segundos, muestra resultados interpretables y permite recuperar certificados en cola/fallidos. El correo usa código determinístico por idempotency key e `Idempotency-Key` del proveedor. El PDF usa logo contractual variable, resultados por dimensión y sello ERP sin publicar datos psicológicos.
+
+Evidencia: TypeScript, dos `deno check`, 28 pruebas de integridad, auditoría de migraciones, auditoría Supabase, build productivo y baseline de rendimiento pasan. Guardian finaliza con 0 errores y 0 advertencias. Playwright Firefox verificó `/evaluacionpsico` en 1440x1000 y 390x844; en móvil `scrollWidth=clientWidth=390`, sin desborde. `supabase migration list --linked` confirma que `20260813180211` sigue únicamente local; no se modificó producción ni el historial remoto en este cierre.
+
+Aplicación productiva de migración: `20260813180211` fue ejecutada directamente con `supabase db query --linked --file` (SHA-256 `6cce4253e2ac933e5b60f0ddf97bd50fa8337587c70eba3c498e68b3e43b941c`) y registrada como `applied` mediante `migration repair`, sin reparar ni alterar otras versiones legacy. El smoke remoto confirmó módulo activo, roles exclusivos `admin`/`reclutamiento`, 8 tablas privadas con RLS, cero acceso directo de `anon`/`authenticated`, cuatro instrumentos activos con 105/32/30/30 ítems, consentimientos F-RH-061/F-RH-062, bucket privado sin policy directa, RPC internos exclusivos de `service_role` y cero evaluaciones creadas por la aplicación. Las Edge Functions y el frontend no fueron desplegados en esta acción.
+
+Despliegue productivo: las Edge Functions `psycholaboral-assessment` y `generate-psycholaboral-certificate` quedaron `ACTIVE` en Supabase, ambas con `verify_jwt=false` porque aplican sus propias fronteras de autorización/sesión. Se fijó `PUBLIC_APP_URL=https://gestion.busesjm.cl` y se confirmó la presencia de Resend, remitente transaccional y secretos Supabase sin exponer valores. Los smokes HTTP negativos devolvieron 401 para sesión inexistente y generador sin secreto. Guardian previo a publicación mantiene 0 errores y 0 advertencias. Pendiente al cierre técnico: envío canario real, que requiere escoger deliberadamente un candidato/correo para no contactar personas durante un smoke de infraestructura.
+
+## Planificación PRP literal dentro del módulo psicométrico - 2026-08-13
+
+- [x] Inspeccionar `5.- Escala PRP JM.docx` y `2. Corrector PRP (1).xls` adjuntos al correo.
+- [x] Reconstruir el contrato digital exacto: instrucciones, ítems, alternativas, orden, escalas y tabulación.
+- [x] Integrar PRP como cuarto instrumento del flujo web compartido, sin generar entregables Excel ni implementar código productivo.
+- [x] Validar correspondencia cuestionario-corrector, casos de borde y gates profesionales/legales reales.
+
+Alcance: análisis y especificación funcional para digitalización. No incluye todavía migraciones, UI, RLS, RPC/Edge Functions, reportes ni despliegue.
+
+Resultado: se documentó `docs/psychometric-module/prp-email-contract.md` como contrato digital vivo. PRP conserva 30 ítems literales, cinco alternativas, 14 claves directas, 16 inversas, puntaje directo `30–150`, seis factores y baremos por cinco grupos ocupacionales. Se identificaron sin corregir siete ambigüedades reales del material fuente que requieren confirmación profesional o legal antes de codificar: interpolación/celdas vacías del baremo, rótulos simultáneos `RIESGOSOS`/`NEUTRO`, mapeo de cargos, fórmula especial del Factor 5, doble uso del ítem 24, rangos demográficos solapados/incompletos e intervalo `110-101` potencialmente erróneo. No se generó ningún Excel de salida ni se modificó producción.
+
+## Planificación instrumento Barratt recibido por correo - 2026-08-13
+
+- [x] Recuperar del correo la hoja Barratt original y transcribir literalmente sus 30 ítems, orden e instrucciones.
+- [x] Confirmar la escala especial `0-1-3-4`, las inversiones y la tabulación usada por la página CETEP indicada en el correo.
+- [x] Construir el cuestionario, clave privada, resultados QA, contrato técnico y arquitectura ERP sin implementar código productivo.
+- [x] Verificar fórmulas, escenarios límite, trazabilidad, seguridad y presentación visual del entregable.
+- [x] Documentar los límites interpretativos y las validaciones profesionales previas al uso laboral.
+
+Alcance corregido: Barratt forma parte del único módulo psicométrico digital junto con IPIP-16/105 e IPIP-IPC/32. La planilla creada fue solo apoyo transitorio de análisis y no es un entregable ni parte del producto. La siguiente fase debe especificar e implementar directamente migraciones, UI, RLS, RPC/Edge Functions, scoring, reportes y despliegue del flujo web compartido.
+
+Resultado: se creó `outputs/019fc7c7-dfcf-7011-883f-b80565eef186/Planificacion_Barratt_BIS11_30.xlsx` con la transcripción literal de los 30 ítems, escala `0-1-3-4`, clave privada CETEP recuperada, 18 ítems directos y 12 invertidos, clasificación total en tres bandas, contrato técnico, arquitectura y controles de seguridad. Los escenarios 0, 120, 33, 34, 64, 65 e incompleto quedaron `OK`; no hubo errores de fórmula, el XLSX pasó integridad ZIP y las nueve hojas pasaron revisión visual. Quedan como gates productivos la aprobación psicológica de la clave/rangos, el derecho de reproducción digital de la adaptación y la política de privacidad/retención.
+
+## Ajuste de ambos instrumentos al prompt maestro psicométrico - 2026-08-13
+
+- [x] Comparar el prompt maestro con los libros IPIP-16/105 e IPIP-IPC/32 y documentar brechas.
+- [x] Ajustar identidad, fuentes, traducción, versionado, capas de datos, scoring y privacidad del IPIP-16/105.
+- [x] Mantener el núcleo oficial IPIP-IPC/32 y agregar un Perfil Conductual Laboral propio, versionado y auditable.
+- [x] Incorporar arquitectura compartida, perfiles objetivo por cargo, seguridad, reportes y criterios de aceptación.
+- [x] Verificar fórmulas, trazabilidad, controles automáticos y presentación visual de ambos libros.
+
+Alcance: actualización de la especificación funcional y psicométrica. No incluye todavía migraciones, UI, RLS, Edge Functions, PDF ni despliegue en producción.
+
+Resultado: los dos libros fueron actualizados a versión de especificación `v0.2-draft`. IPIP-16/105 queda identificado explícitamente como selección interna de ítems IPIP, con scoring determinístico, metadatos por ítem, resultados QA sin percentiles y bloqueo de uso laboral hasta validación. IPIP-IPC/32 conserva sus ocho octantes y agrega `Perfil Conductual Laboral v0.1-draft`, una hipótesis interna de cuatro macroestilos con fórmula visible y versionada. Ambos libros incorporan contrato técnico, arquitectura ERP, siete familias de cargo sin pesos inventados, seguridad, privacidad y matriz de QA. Todos los controles existentes quedaron `OK`, no se detectaron errores de fórmula, los dos archivos XLSX pasan integridad ZIP y las 22 hojas pasaron revisión visual.
+
+## Planificación instrumento IPIP-IPC/32 - 2026-08-13
+
+- [x] Confirmar contrato oficial, licencia, ocho octantes y scoring publicado del IPIP-IPC/32.
+- [x] Adaptar los 32 ítems al español chileno preservando su sentido y asignación original.
+- [x] Crear cuestionario, clave privada, parámetros y perfil circunflejo auditable, sin implementar código ERP.
+- [x] Verificar fórmulas, octantes, ejes de calidez/dominancia, controles y presentación visual.
+- [x] Documentar límites del reemplazo funcional de DISC y validaciones previas al uso laboral.
+
+Alcance: especificación funcional y psicométrica preliminar. No incluye ruta pública, persistencia, permisos, despliegue ni conversión de perfiles DISC históricos.
+
+Resultado: se creó `outputs/019fc7c7-dfcf-7011-883f-b80565eef186/Planificacion_IPIP_IPC_32.xlsx` con los 32 ítems oficiales, ocho octantes de cuatro ítems, clave directa 1-5, parámetros publicados, perfil circunflejo de prueba y controles automáticos. Las asignaciones oficiales, fórmulas, ejes Calidez/Dominancia y siete hojas pasaron validación lógica y visual. Es un reemplazo funcional del flujo DISC, no una equivalencia ni conversión de perfiles D/I/S/C.
+
+## Planificación instrumento IPIP-16/105 - 2026-08-13
+
+- [x] Definir criterios y distribución exacta de 105 ítems entre las 16 escalas IPIP.
+- [x] Seleccionar y adaptar al español chileno los ítems, preservando claves directas/inversas.
+- [x] Crear cuestionario revisable y matriz privada/auditable de puntuación, sin implementar código ERP.
+- [x] Verificar conteos, balance, fórmulas y presentación visual de los entregables.
+- [x] Documentar límites psicométricos y validaciones profesionales mínimas antes de uso laboral.
+
+Alcance: especificación funcional y psicométrica preliminar. No incluye ruta pública, base de datos, permisos, despliegue ni decisiones automáticas sobre candidatos.
+
+Resultado: se creó `outputs/019fc7c7-dfcf-7011-883f-b80565eef186/Planificacion_IPIP_16_105.xlsx` con 105 ítems únicos verificados contra la fuente oficial IPIP, 16 escalas, 53 claves directas y 52 invertidas. El libro incluye cuestionario visible, clave privada con puntuación 1-5, diccionario de escalas, fuentes y controles automáticos; todas las comprobaciones quedaron `OK` y las cinco hojas pasaron revisión visual. Es un borrador para piloto local, no una equivalencia del 16PF comercial.
+
 ## Incidencia recuperación de cuenta - Jorge Parra - 2026-08-12
 
 - [x] Identificar el flujo común de recuperación y el error real de Jorge en producción.
