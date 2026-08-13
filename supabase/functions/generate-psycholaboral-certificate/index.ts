@@ -333,45 +333,52 @@ Deno.serve(async (request) => {
     );
     const certificateBytes = await pdf.save();
     const report = await PDFDocument.create();
+    // Cada PDFDocument mantiene su propio contexto de recursos. No se pueden
+    // reutilizar las fuentes/imágenes embebidas en el certificado anterior.
+    const reportFont = await report.embedFont(StandardFonts.Helvetica);
+    const reportBold = await report.embedFont(StandardFonts.HelveticaBold);
+    const reportLogo = await report.embedPng(
+      bytesFromBase64(resolveLogo(payload.candidate.company_name)),
+    );
     const reportPage = report.addPage([612, 792]);
     const drawReportFooter = (target: PDFPage, pageNumber: number) => {
-      target.drawText("Documento confidencial · Antecedente complementario · No decisión automática", { x: 50, y: 28, size: 7, font, color: rgb(0.35, 0.38, 0.42) });
-      target.drawText(`PS-${payload.public_id.slice(0, 8).toUpperCase()} · Informe v1 · Página ${pageNumber} de 3`, { x: 390, y: 28, size: 7, font, color: rgb(0.35, 0.38, 0.42) });
+      target.drawText("Documento confidencial · Antecedente complementario · No decisión automática", { x: 50, y: 28, size: 7, font: reportFont, color: rgb(0.35, 0.38, 0.42) });
+      target.drawText(`PS-${payload.public_id.slice(0, 8).toUpperCase()} · Informe v1 · Página ${pageNumber} de 3`, { x: 390, y: 28, size: 7, font: reportFont, color: rgb(0.35, 0.38, 0.42) });
     };
-    drawHeader(reportPage, font, bold, logo, payload.public_id, 1, 3);
-    reportPage.drawText("Informe Psicolaboral Integrado", { x: 50, y: 635, size: 18, font: bold });
-    reportPage.drawText("Resumen ejecutivo y calidad de respuestas", { x: 50, y: 612, size: 11, font });
+    drawHeader(reportPage, reportFont, reportBold, reportLogo, payload.public_id, 1, 3);
+    reportPage.drawText("Informe Psicolaboral Integrado", { x: 50, y: 635, size: 18, font: reportBold });
+    reportPage.drawText("Resumen ejecutivo y calidad de respuestas", { x: 50, y: 612, size: 11, font: reportFont });
     let reportY = 580;
-    reportPage.drawText("Calidad y consistencia", { x: 50, y: reportY, size: 12, font: bold });
+    reportPage.drawText("Calidad y consistencia", { x: 50, y: reportY, size: 12, font: reportBold });
     reportY -= 22;
     for (const instrument of payload.instruments) {
       const quality = instrument.quality ?? {};
-      reportPage.drawText(`${instrument.name}: ${quality.status ?? "REVISAR"}`, { x: 60, y: reportY, size: 9, font: bold });
+      reportPage.drawText(`${instrument.name}: ${quality.status ?? "REVISAR"}`, { x: 60, y: reportY, size: 9, font: reportBold });
       reportY -= 14;
-      reportPage.drawText(`Completitud ${quality.completitud ?? 0}% · ${quality.items_respondidos ?? instrument.response_count} respuestas · valores distintos ${quality.valores_distintos ?? "—"}`, { x: 70, y: reportY, size: 8, font });
+      reportPage.drawText(`Completitud ${quality.completitud ?? 0}% · ${quality.items_respondidos ?? instrument.response_count} respuestas · valores distintos ${quality.valores_distintos ?? "—"}`, { x: 70, y: reportY, size: 8, font: reportFont });
       reportY -= 13;
-      if (quality.motivos?.length) { reportPage.drawText(`A profundizar: ${quality.motivos.join("; ")}`, { x: 70, y: reportY, size: 8, font, color: rgb(0.45, 0.28, 0.12) }); reportY -= 13; }
+      if (quality.motivos?.length) { reportPage.drawText(`A profundizar: ${quality.motivos.join("; ")}`, { x: 70, y: reportY, size: 8, font: reportFont, color: rgb(0.45, 0.28, 0.12) }); reportY -= 13; }
     }
     reportY -= 12;
-    reportPage.drawText("Conclusión", { x: 50, y: reportY, size: 12, font: bold });
+    reportPage.drawText("Conclusión", { x: 50, y: reportY, size: 12, font: reportBold });
     reportY -= 18;
-    for (const line of wrap("No se emite una conclusión automática de aptitud, contratación o rechazo. La interpretación requiere revisión profesional y evidencia complementaria del proceso.", font, 9, 500)) { reportPage.drawText(line, { x: 60, y: reportY, size: 9, font }); reportY -= 13; }
+    for (const line of wrap("No se emite una conclusión automática de aptitud, contratación o rechazo. La interpretación requiere revisión profesional y evidencia complementaria del proceso.", reportFont, 9, 500)) { reportPage.drawText(line, { x: 60, y: reportY, size: 9, font: reportFont }); reportY -= 13; }
     drawReportFooter(reportPage, 1);
     const ipipPage = report.addPage([612, 792]);
-    drawHeader(ipipPage, font, bold, logo, payload.public_id, 2, 3);
-    ipipPage.drawText("IPIP-16 · 16 dimensiones", { x: 50, y: 635, size: 16, font: bold });
+    drawHeader(ipipPage, reportFont, reportBold, reportLogo, payload.public_id, 2, 3);
+    ipipPage.drawText("IPIP-16 · 16 dimensiones", { x: 50, y: 635, size: 16, font: reportBold });
     let ipipY = 605;
     const ipip = payload.instruments.find((item) => item.code === "IPIP16_105");
-    if (ipip) for (const line of wrap(formatResult(ipip.result), font, 9, 500)) { ipipPage.drawText(line, { x: 55, y: ipipY, size: 9, font }); ipipY -= 14; }
-    ipipPage.drawText("Adaptación lingüística interna; sin baremo chileno validado. Las medias 1–5 no son percentiles.", { x: 55, y: ipipY - 10, size: 8, font, color: rgb(0.45, 0.28, 0.12) });
+    if (ipip) for (const line of wrap(formatResult(ipip.result), reportFont, 9, 500)) { ipipPage.drawText(line, { x: 55, y: ipipY, size: 9, font: reportFont }); ipipY -= 14; }
+    ipipPage.drawText("Adaptación lingüística interna; sin baremo chileno validado. Las medias 1–5 no son percentiles.", { x: 55, y: ipipY - 10, size: 8, font: reportFont, color: rgb(0.45, 0.28, 0.12) });
     drawReportFooter(ipipPage, 2);
     const ipcPage = report.addPage([612, 792]);
-    drawHeader(ipcPage, font, bold, logo, payload.public_id, 3, 3);
-    ipcPage.drawText("IPIP-IPC · 8 octantes y perfil conductual", { x: 50, y: 635, size: 16, font: bold });
+    drawHeader(ipcPage, reportFont, reportBold, reportLogo, payload.public_id, 3, 3);
+    ipcPage.drawText("IPIP-IPC · 8 octantes y perfil conductual", { x: 50, y: 635, size: 16, font: reportBold });
     let ipcY = 605;
     const ipc = payload.instruments.find((item) => item.code === "IPIP_IPC_32");
-    if (ipc) for (const line of wrap(formatResult(ipc.result), font, 9, 500)) { ipcPage.drawText(line, { x: 55, y: ipcY, size: 9, font }); ipcY -= 14; }
-    for (const line of wrap("Perfil Conductual Laboral: interpretación interna del ERP en cuatro macroestilos (Directivo, Influyente, Estable y Analítico). No es DISC, no utiliza contenido de Everything DiSC y no constituye una equivalencia psicométrica validada.", font, 9, 500)) { ipcPage.drawText(line, { x: 55, y: ipcY - 15, size: 9, font }); ipcY -= 13; }
+    if (ipc) for (const line of wrap(formatResult(ipc.result), reportFont, 9, 500)) { ipcPage.drawText(line, { x: 55, y: ipcY, size: 9, font: reportFont }); ipcY -= 14; }
+    for (const line of wrap("Perfil Conductual Laboral: interpretación interna del ERP en cuatro macroestilos (Directivo, Influyente, Estable y Analítico). No es DISC, no utiliza contenido de Everything DiSC y no constituye una equivalencia psicométrica validada.", reportFont, 9, 500)) { ipcPage.drawText(line, { x: 55, y: ipcY - 15, size: 9, font: reportFont }); ipcY -= 13; }
     drawReportFooter(ipcPage, 3);
     const reportBytes = await report.save();
     const hash = await sha256(certificateBytes);
