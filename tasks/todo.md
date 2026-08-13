@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Correccion RUT William Eric Araya Toro - 2026-08-13
+
+- [x] Localizar el RUT ingresado y todas las fuentes vinculadas al candidato.
+- [x] Confirmar el RUT correcto contra fuentes independientes y descartar colision.
+- [x] Corregir atomicamente perfil y precandidatura, preservando historial y documentos.
+- [x] Validar producción, auditorías, commit, push y CI.
+
+Resultado: William Eric Araya Toro quedó con RUT `15573108` (presentación `15.573.108-7`) en `candidate_profiles` y `recruitment_precandidates`. La corrección `20260813204703` fue aplicada y registrada en Supabase. No existía ficha BUK ni job de sincronización asociado; la nómina y el resumen judicial ya contenían el RUT correcto. Se conservaron nombres, estado, postulación y documentos.
+
 ## Ajuste visual y prueba controlada de Gestión Psicolaboral - 2026-08-13
 
 - [x] Comparar el centro de mando con la composición visual de Reclutamiento y ajustar KPIs, filtros, tabla expandible y acciones.

@@ -3080,6 +3080,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **No basta con detectar `PASSWORD_RECOVERY`.** Enlaces con `code` o `token_hash` pueden llegar antes de que el cliente emita el evento de recuperación; el arranque debe intercambiar/verificar el token antes de mostrar el formulario.
 
+## 294. Una correccion de RUT debe alinear perfil y precandidatura
+
+- **No basta con cambiar la tabla visible.** Cuando la persona tiene `candidate_profiles` y `recruitment_precandidates`, ambas fuentes deben actualizarse en una sola transaccion y conservar el mismo identificador de caso.
+- **El RUT correcto debe validarse fuera del candidato.** Confirmar digito verificador, ausencia de colision y coincidencia en fuentes independientes antes de escribir; si ya existe ficha BUK, detenerse y reconciliar por documento.
+
 ## 294. Un módulo sensible no está listo solo porque compile
 
 - **Los RPC `SECURITY DEFINER` deben probarse según su identidad efectiva.** `current_user` representa al propietario dentro de la función; la frontera service-role debe vivir en ACL/GRANT y no en una comparación interna que vuelve el RPC inutilizable.
