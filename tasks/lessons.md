@@ -3097,6 +3097,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - **No reutilices el ícono del módulo vecino por conveniencia.** Antes de publicar navegación nueva, compara los íconos dentro del mismo grupo y asigna uno semánticamente reconocible para evitar confusión visual.
 
+## 300. La evaluación psicolaboral debe reservar el viewport para cada bloque móvil
+
+- **Los `fieldset` pueden conservar un ancho mínimo implícito en pantallas pequeñas.** Fuerza `min-width: 0`, `box-sizing: border-box` y wrapping del texto para que ninguna pregunta escape de su tarjeta.
+- **El scroll debe ejecutarse después de pintar el bloque nuevo.** Un `scrollTo` dentro del handler puede correr antes del layout actualizado; usa un ref al contenedor y `requestAnimationFrame` con `scrollIntoView` para llevar al candidato al inicio del siguiente bloque.
+
 ## 299. Los módulos nuevos deben reutilizar la retícula de su sección
 
 - **Una tabla funcional no basta si rompe la gramática visual del ERP.** Compara KPIs, filtros, densidad, expansión y acciones con una pantalla viva del mismo dominio antes de cerrar el módulo.

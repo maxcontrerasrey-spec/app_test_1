@@ -117,7 +117,7 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
   "jsFileCount": 62,
   "jsTotalBytes": 2729522,
   "cssFileCount": 12,
-  "cssTotalBytes": 237954,
+  "cssTotalBytes": 238172,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -154,6 +154,8 @@ Revision 2026-08-13 Gestión Psicolaboral estética ERP CI: GitHub Actions midi�
 Revision 2026-08-13 Gestión Psicolaboral detalle expandido: CSS sube a 237,954 bytes por separar nombre/cantidad de preguntas en chips de batería y encerrar las acciones dentro del detalle expandido con botones compactos. No cambia JS, vendors ni assets trackeados.
 
 Revision 2026-08-13 Gestión Psicolaboral detalle expandido CI: GitHub Actions midió 10,242,249 bytes totales y 2,729,522 bytes JS para el mismo ajuste visual del detalle expandido. Se ajustan solo los límites globales y JS al artefacto remoto; CSS queda en el límite local ya documentado y no cambian vendors ni assets trackeados.
+
+Revision 2026-08-13 evaluación psicolaboral móvil: CSS sube a 238,172 bytes por encapsular las tarjetas de preguntas, permitir wrapping seguro y reservar el viewport al cambiar de bloque. No cambia vendors, assets ni la carga inicial.
 
 Revision 2026-08-10 optimizacion BI: el total global y JS suben 215 bytes por diferir el montaje de graficos secundarios hasta despues del primer render, mantener cache del dashboard de Reclutamiento y paralelizar su timeline. Reduce trabajo inicial y no agrega vendors ni assets trackeados.
 

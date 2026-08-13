@@ -316,6 +316,7 @@
 .psych-runner {
   min-height: 100dvh;
   background: #f4f6f8;
+  overflow-x: hidden;
 }
 .psych-runner__header {
   position: sticky;
@@ -374,8 +375,11 @@
 }
 .psych-instrument {
   max-width: 980px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
+  scroll-margin-top: 7.5rem;
 }
 .psych-instrument__heading {
   display: flex;
@@ -398,19 +402,24 @@
   margin: 1.5rem 0;
 }
 .psych-questions fieldset {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid #dfe3e8;
   border-radius: 12px;
   background: #fff;
   padding: 1rem;
 }
-.psych-questions legend{padding:0 .35rem;white-space:normal}.psych-question-number{display:block;margin-bottom:.18rem;color:#a51218;font-size:.76rem;font-weight:850}.psych-question-text{display:block;color:#182230;font-weight:750;line-height:1.42}
+.psych-questions legend{max-width:100%;padding:0 .35rem;white-space:normal}.psych-question-number{display:block;margin-bottom:.18rem;color:#a51218;font-size:.76rem;font-weight:850}.psych-question-text{display:block;max-width:100%;color:#182230;font-weight:750;line-height:1.42;overflow-wrap:anywhere}
 .psych-questions fieldset > div {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 0.5rem;
   margin-top: 0.7rem;
 }
 .psych-questions label {
+  min-width: 0;
+  box-sizing: border-box;
   border: 1px solid #d9dee5;
   border-radius: 8px;
   padding: 0.65rem;

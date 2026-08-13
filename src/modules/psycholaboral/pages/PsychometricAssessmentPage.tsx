@@ -38,6 +38,7 @@ export function PsychometricAssessmentPage() {
   const revisionRef = useRef(0);
   const answersRef = useRef<Record<string, number>>({});
   const saveInFlight = useRef(false);
+  const instrumentSectionRef = useRef<HTMLElement | null>(null);
   const [saved, setSaved] = useState("Sin cambios pendientes");
   const instrument: CandidateInstrument | null =
     session?.instruments[instrumentIndex] ?? null;
@@ -129,6 +130,17 @@ export function PsychometricAssessmentPage() {
     setSaved("Avance recuperado");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [instrument?.code]);
+
+  useEffect(() => {
+    if (!instrument || blockIndex === 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      instrumentSectionRef.current?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [blockIndex, instrument?.code]);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -449,7 +461,7 @@ export function PsychometricAssessmentPage() {
         <strong className="psych-clock">{clock(visibleSeconds)}</strong>
       </header>
       {instrument ? (
-        <section className="psych-instrument">
+        <section ref={instrumentSectionRef} className="psych-instrument">
           <div className="psych-instrument__heading">
             <div>
               <span className="psych-eyebrow">

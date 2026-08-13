@@ -1831,3 +1831,9 @@ Resultado: Jorge Andres Godoy Martinez quedo en BUK como empleado `42663`, ficha
 - [x] Completar la carga BUK despues de regularizar tipo y numero de cuenta bancaria.
 
 Resultado final: el primer job `aad59a20-5714-45d2-a49d-4f2baa080cf2` conserva el error historico del snapshot antiguo. El nuevo job `c66f1900-f71e-4714-a36c-b001c680bdb6` quedo en `success`; Yerko Alfonso Corrotea Rojas quedo en BUK como empleado `42664`, ficha `F1`, cargo `CONDUCTOR DE MINIBUS 4X4` (rol `157`), area DSAL `2911`, centro `718`, supervisor Marcelo Villarroel (`35304`) y fecha de ingreso `2026-08-11`.
+## Correccion movil evaluacion psicolaboral - 2026-08-13
+- [x] Ajustar el contenedor de preguntas para evitar desborde horizontal en pantallas pequeñas.
+- [x] Llevar el viewport al inicio del bloque siguiente despues de guardar y avanzar.
+- [x] Verificar build frontend, Guardian y diff check; revisar la version publicada.
+
+Resultado: las tarjetas usan el ancho disponible con wrapping defensivo y el siguiente bloque se enfoca automáticamente después de guardar.
