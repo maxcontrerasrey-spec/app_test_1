@@ -1846,3 +1846,10 @@ Resultado: las tarjetas usan el ancho disponible con wrapping defensivo y el sig
 - [ ] Verificar cierre de la batería completa y generación del certificado con todos los instrumentos.
 
 Resultado: el RPC fallaba en `result=result` por ambigüedad PL/pgSQL; ahora usa una variable y columna calificadas explícitamente. El IPIP-16 de Maximiliano quedó completado con 105 respuestas conservadas.
+
+## Ajuste visual de estados de batería psicolaboral - 2026-08-13
+- [x] Separar visualmente los títulos de Batería psicolaboral e Hitos de las tarjetas.
+- [x] Aplicar relleno tipo marca de agua a cada instrumento según estado.
+- [x] Verificar build, Guardian y publicación productiva.
+
+Resultado: los instrumentos completados se muestran en verde suave, los que están en progreso en amarillo y los no iniciados en gris; los títulos tienen mayor separación superior e inferior.

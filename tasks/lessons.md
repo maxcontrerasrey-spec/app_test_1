@@ -3107,6 +3107,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **En PL/pgSQL, `result=result` puede ser ambiguo dentro de un `UPDATE`.** Usa nombres de variables específicos (`scored_result`) y alias de tabla (`ai.result`) para que la finalización no falle después de guardar todas las respuestas.
 - **Las respuestas persistidas deben poder reprocesarse idempotentemente.** Si falla el sellado posterior al guardado, el reintento debe calcular el resultado desde la copia almacenada sin pedir al candidato repetir el test.
 
+## 302. El estado de cada instrumento debe leerse también visualmente
+
+- **En una batería enviada, cada test puede estar en una etapa distinta.** El estado textual debe acompañarse de un relleno suave y semántico: verde completado, amarillo en progreso y gris no iniciado.
+- **Los encabezados del detalle necesitan separación propia.** Ajusta margen y espacio inferior del título sin alterar la retícula compartida del ERP.
+
 ## 299. Los módulos nuevos deben reutilizar la retícula de su sección
 
 - **Una tabla funcional no basta si rompe la gramática visual del ERP.** Compara KPIs, filtros, densidad, expansión y acciones con una pantalla viva del mismo dominio antes de cerrar el módulo.

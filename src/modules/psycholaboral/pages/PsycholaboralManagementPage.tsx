@@ -360,7 +360,10 @@ export function PsycholaboralManagementPage() {
                             {row.assessment_id ? (
                               <div className="psych-instrument-list">
                                 {row.instruments.map((instrument) => (
-                                  <span key={instrument.code}>
+                                  <span
+                                    key={instrument.code}
+                                    className={`psych-instrument-card psych-instrument-card--${instrument.status}`}
+                                  >
                                     {instrument.name}
                                     <small>
                                       {instrument.answered}/{instrument.total} ·{" "}
