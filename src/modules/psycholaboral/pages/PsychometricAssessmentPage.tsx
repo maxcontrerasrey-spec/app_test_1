@@ -54,6 +54,19 @@ export function PsychometricAssessmentPage() {
     blockIndex * QUESTIONS_PER_BLOCK,
     (blockIndex + 1) * QUESTIONS_PER_BLOCK,
   );
+  const blockCompletion = useMemo(
+    () =>
+      Array.from({ length: blockCount }, (_, index) => {
+        const blockQuestions = questions.slice(
+          index * QUESTIONS_PER_BLOCK,
+          (index + 1) * QUESTIONS_PER_BLOCK,
+        );
+        return blockQuestions.length > 0 && blockQuestions.every((question) =>
+          Object.prototype.hasOwnProperty.call(answers, String(question.order)),
+        );
+      }),
+    [answers, blockCount, questions],
+  );
   const complete = instrument
     ? Object.keys(answers).length === questions.length
     : false;
@@ -477,12 +490,23 @@ export function PsychometricAssessmentPage() {
               {saved}
             </span>
           </div>
-          <nav className="psych-block-nav" aria-label="Bloques del test">
+          <nav className="psych-block-nav" aria-label="Páginas del test">
             {Array.from({ length: blockCount }, (_, index) => (
               <button
                 type="button"
                 key={index}
+                className={`psych-block-nav__button ${
+                  blockCompletion[index]
+                    ? "psych-block-nav__button--complete"
+                    : "psych-block-nav__button--incomplete"
+                }`}
                 aria-current={index === blockIndex ? "step" : undefined}
+                aria-label={`Página ${index + 1}: ${
+                  blockCompletion[index] ? "completa" : "falta responder"
+                }`}
+                title={`Página ${index + 1}: ${
+                  blockCompletion[index] ? "completa" : "falta responder"
+                }`}
                 onClick={() => void changeBlock(index)}
               >
                 {index + 1}

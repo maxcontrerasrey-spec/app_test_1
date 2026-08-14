@@ -1,6 +1,6 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 
-export const PSYCH_SEMANTIC_VERSION = "psych-semantic-guardrails-v3";
+export const PSYCH_SEMANTIC_VERSION = "psych-semantic-guardrails-v6.1";
 
 type Direction = "HIGHER_MORE" | "HIGHER_LESS" | "BIPOLAR" | "UNKNOWN";
 type InterpretationMode = "THEORETICAL_RANGE" | "DOCUMENTED_CLASSIFICATION" | "PROFESSIONAL_ONLY";
@@ -60,9 +60,11 @@ export type PsychSemanticContext = {
     };
     prp?: {
       score: number;
-      interpretation_status: "DESCRIPTIVE_INTERPRETATION" | "PROFESSIONAL_ONLY";
+      classification: "NO_ADECUADO" | "NEUTRO" | "ADECUADO" | "OUT_OF_DOCUMENTED_RANGE";
+      interpretation_status: "DESCRIPTIVE_INTERPRETATION" | "OUT_OF_DOCUMENTED_RANGE" | "PROFESSIONAL_ONLY";
       automatic_interpretation_allowed: boolean;
       allowed_statement: string;
+      documented_meaning: string;
     };
     ipc?: {
       macrostyles: Array<{ label: string; score: number; rank: number }>;
@@ -72,6 +74,40 @@ export type PsychSemanticContext = {
   prohibited_terms: string[];
   neutral_interview_examples: string[];
 };
+
+export type PrpClassification = "NO_ADECUADO" | "NEUTRO" | "ADECUADO" | "OUT_OF_DOCUMENTED_RANGE";
+
+export function classifyPrpScore(score: number | null | undefined): {
+  classification: PrpClassification;
+  status: "DOCUMENTED" | "OUT_OF_DOCUMENTED_RANGE" | "NOT_AVAILABLE";
+  meaning: string;
+} {
+  if (score === null || score === undefined || !Number.isFinite(score)) {
+    return { classification: "OUT_OF_DOCUMENTED_RANGE", status: "NOT_AVAILABLE", meaning: "" };
+  }
+  if (score < 81 || score > 150) {
+    return { classification: "OUT_OF_DOCUMENTED_RANGE", status: "OUT_OF_DOCUMENTED_RANGE", meaning: "" };
+  }
+  if (score <= 117) {
+    return {
+      classification: "NO_ADECUADO",
+      status: "DOCUMENTED",
+      meaning: "Manejo no adecuado en aspectos referentes a seguridad ocupacional",
+    };
+  }
+  if (score <= 136) {
+    return {
+      classification: "NEUTRO",
+      status: "DOCUMENTED",
+      meaning: "Manejo neutro en aspectos referentes a seguridad ocupacional",
+    };
+  }
+  return {
+    classification: "ADECUADO",
+    status: "DOCUMENTED",
+    meaning: "Manejo adecuado en aspectos referentes a seguridad ocupacional",
+  };
+}
 
 export type PsychSemanticValidation = {
   ok: boolean;
@@ -191,10 +227,10 @@ function normalizeText(value: string) {
 }
 
 const RECOMMENDATIONS = new Set([
-  "RECOMENDADO",
-  "RECOMENDADO_CON_OBSERVACIONES",
+  "ADECUADO",
+  "ADECUADO_CON_OBSERVACIONES",
   "REQUIERE_PROFUNDIZACION",
-  "NO_RECOMENDADO",
+  "NO_ADECUADO",
 ]);
 
 const CONFIDENCES = new Set(["BAJA", "MEDIA", "ALTA"]);
@@ -202,7 +238,9 @@ const CONFIDENCES = new Set(["BAJA", "MEDIA", "ALTA"]);
 function normalizeRecommendation(value: unknown) {
   const raw = readText(value, "REQUIERE_PROFUNDIZACION").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-  if (raw === "RECOMENDADO_CON_OBSERVACION") return "RECOMENDADO_CON_OBSERVACIONES";
+  if (raw === "RECOMENDADO") return "ADECUADO";
+  if (raw === "RECOMENDADO_CON_OBSERVACIONES" || raw === "RECOMENDADO_CON_OBSERVACION") return "ADECUADO_CON_OBSERVACIONES";
+  if (raw === "NO_RECOMENDADO") return "NO_ADECUADO";
   return RECOMMENDATIONS.has(raw) ? raw as PsychAIOutput["recommendation"] : "REQUIERE_PROFUNDIZACION";
 }
 
@@ -343,15 +381,19 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
   const prpResult = asRecord(prp?.result);
   const prpScore = readNumber(prpResult.raw_total);
   if (prp && prpScore !== null) {
+    const prpInterpretation = classifyPrpScore(prpScore);
     evidence.push({
       id: "ev_prp_total",
       instrument: "PRP_EMAIL_FORM_A_30",
       score: prpScore,
+      classification: prpInterpretation.classification,
       semanticLevel: "DOCUMENTED_CLASSIFICATION",
       direction: "UNKNOWN",
-      sourceVersion: "prp-descriptive-method-v5",
-      maxAllowedIntensity: "DESCRIPTIVE_PREVENTIVE_PATTERN",
-      interpretationStatus: "DOCUMENTED_CLASSIFICATION",
+      sourceVersion: "prp-documentary-ranges-v6.1",
+      maxAllowedIntensity: prpInterpretation.classification,
+      interpretationStatus: prpInterpretation.status === "DOCUMENTED"
+        ? "DOCUMENTED_CLASSIFICATION"
+        : "PROFESSIONAL_ONLY",
     });
   }
 
@@ -368,10 +410,15 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
       },
       prp: prpScore === null ? undefined : {
         score: prpScore,
-        interpretation_status: "PROFESSIONAL_ONLY",
-        automatic_interpretation_allowed: false,
-        allowed_statement:
-          "PRP se conserva como antecedente descriptivo calculado por el ERP. Sin semántica/baremos documentados suficientes, su peso decisional es 0 y no debe modificar la recomendación.",
+        classification: classifyPrpScore(prpScore).classification,
+        interpretation_status: classifyPrpScore(prpScore).status === "DOCUMENTED"
+          ? "DESCRIPTIVE_INTERPRETATION"
+          : "OUT_OF_DOCUMENTED_RANGE",
+        automatic_interpretation_allowed: classifyPrpScore(prpScore).status === "DOCUMENTED",
+        allowed_statement: classifyPrpScore(prpScore).status === "DOCUMENTED"
+          ? `En PRP obtiene ${prpScore} puntos, ubicándose en el rango de ${classifyPrpScore(prpScore).meaning.toLowerCase()}.`
+          : "El puntaje PRP se encuentra fuera del rango documentado y no se interpreta.",
+        documented_meaning: classifyPrpScore(prpScore).meaning,
       },
       ipc: ipcStyles.length ? {
         macrostyles: ipcStyles,
@@ -399,7 +446,7 @@ export function attachPsychSemanticContext(input: JsonRecord) {
   return {
     ...input,
     methodology: {
-      version: "psych-methodology-v5",
+      version: "psych-methodology-v6.1",
       instruments: {
         IPIP16_105: {
           professional_name: "Evaluación de Personalidad IPIP-16",
@@ -440,13 +487,13 @@ export function attachPsychSemanticContext(input: JsonRecord) {
           professional_name: "Escala P.R.P",
           source_type: "documento y corrector recibidos por correo",
           scoring: "30 ítems, dirección positiva/negativa, score total y factores técnicos F1-F6 calculados por ERP",
-          automatic_interpretation_allowed: false,
-          decision_weight: 0,
-          interpretation: "antecedente descriptivo sin peso decisional mientras no exista semántica/baremos suficientemente documentados",
+          automatic_interpretation_allowed: true,
+          decision_weight: "CONTEXTUAL_NOT_DECISIVE",
+          interpretation: "clasificación documental por rangos inclusivos 81-117, 118-136 y 137-150; participa en la integración sin determinar por sí sola el resultado final",
           restrictions: [
             "no inventar nombres de factores F1-F6",
             "no usar percentiles, eneatipos ni grupos normativos si no vienen documentados en el payload",
-            "no emitir clasificación de riesgo no documentada",
+            "fuera de 81-150: no extrapolar ni interpretar",
           ],
         },
       },
@@ -462,8 +509,8 @@ export function attachPsychSemanticContext(input: JsonRecord) {
       semantic_guardrails_version: PSYCH_SEMANTIC_VERSION,
       llm_must_use_evidence_ids: false,
       llm_must_not_infer_intensity: true,
-      prp_descriptive_interpretation_allowed: false,
-      prp_decision_weight: 0,
+      prp_descriptive_interpretation_allowed: true,
+      prp_decision_weight: "CONTEXTUAL_NOT_DECISIVE",
     },
   };
 }
@@ -565,8 +612,8 @@ export function buildDeterministicPsychSemanticOutput(
         `BIS-11 obtiene ${bis.score}, con clasificacion deterministica ${bis.classification}. Se conserva esa intensidad y se sugiere profundizarla por el contexto del cargo.`,
       evidence_ids: ["ev_bis11_total"],
     } : null,
-    prp ? {
-      title: "PRP sin interpretación adicional sustentable",
+    prp && prp.interpretation_status === "DESCRIPTIVE_INTERPRETATION" ? {
+      title: "PRP y seguridad ocupacional",
       text: prp.allowed_statement,
       evidence_ids: ["ev_prp_total"],
     } : null,
@@ -574,7 +621,7 @@ export function buildDeterministicPsychSemanticOutput(
 
   const v5 = {
     version: PSYCH_SEMANTIC_VERSION,
-    recommendation: bis ? "REQUIERE_PROFUNDIZACION" : "RECOMENDADO_CON_OBSERVACIONES",
+    recommendation: bis ? "REQUIERE_PROFUNDIZACION" : "ADECUADO_CON_OBSERVACIONES",
     recommendation_confidence: "MEDIA",
     critical_strengths: [],
     critical_gaps: [],
@@ -583,7 +630,7 @@ export function buildDeterministicPsychSemanticOutput(
       ...(nor ? ["Cumplimiento de normas en rango descriptivo intermedio no constituye fortaleza; requiere corroboración conductual por criticidad del cargo."] : []),
     ],
     decision_rationale:
-      "La recomendación se basa en compatibilidad entre resultados psicométricos y criticidades del cargo. PRP se conserva como antecedente descriptivo sin peso decisional.",
+      "La recomendación integra la relevancia del cargo, la consistencia de los antecedentes y la convergencia o divergencia entre instrumentos. Ningún instrumento aislado determina por sí solo el resultado final.",
     executive_profile:
       `Informe de contingencia generado porque el ${displayFallbackReason(reason)}. La lectura integra resultados descriptivos disponibles sin atribuir conducta observada no documentada.`,
     personality_profile: {
@@ -609,12 +656,29 @@ export function buildDeterministicPsychSemanticOutput(
         ? `El resultado BIS-11 obtiene ${bis.score} y se encuentra clasificado como ${bis.classification.toLowerCase().replaceAll("_", " ")} segun el criterio documentado.`
         : "BIS-11 disponible para revision profesional.",
       prp: prp?.allowed_statement ??
-        "PRP disponible solo como antecedente descriptivo si el puntaje esta calculado por el ERP.",
+        "El puntaje PRP se encuentra fuera del rango documentado o no está disponible; no se extrapola su significado.",
       combined_interpretation:
-        "La lectura integrada separa criticidad del cargo de severidad del resultado; los hallazgos deben contrastarse con entrevista, antecedentes laborales y criterio profesional.",
+        prp?.classification === "NO_ADECUADO" && bis?.classification === "SOBRE_EL_PROMEDIO"
+          ? "BIS-11 y PRP convergen en un ámbito relevante para seguridad ocupacional. Esta convergencia eleva la prioridad de profundizar autocontrol y respuesta bajo presión, sin convertirla por sí sola en una decisión final."
+          : "Los instrumentos muestran señales que deben leerse por separado y luego integrarse según la criticidad del cargo; una fortaleza en un ámbito no compensa automáticamente una brecha en otro.",
     },
     job_fit_analysis:
       "El ajuste al cargo se analiza desde el patrón conjunto de autorregulación, normas, trato laboral, impulsividad y orientación preventiva.",
+    adjustment_to_role:
+      "El ajuste al cargo se analiza desde el patrón conjunto de autorregulación, normas, trato laboral, impulsividad y orientación preventiva.",
+    competency_matrix: [],
+    evidence_integration: {
+      summary: "La integración considera la relevancia del cargo y la consistencia entre instrumentos.",
+      convergences: prp?.classification === "NO_ADECUADO" && bis?.classification === "SOBRE_EL_PROMEDIO"
+        ? ["BIS-11 y PRP señalan un mismo ámbito de seguridad ocupacional."]
+        : [],
+      divergences: [],
+    },
+    prp_assessment: prp ? {
+      classification: prp.classification,
+      meaning: prp.documented_meaning,
+      status: prp.interpretation_status === "OUT_OF_DOCUMENTED_RANGE" ? "OUT_OF_DOCUMENTED_RANGE" : "DOCUMENTED",
+    } : { classification: "OUT_OF_DOCUMENTED_RANGE", meaning: "", status: "NOT_AVAILABLE" },
     strengths,
     points_to_explore: points,
     interview_questions: [
@@ -741,6 +805,23 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
         combined_interpretation: readText(safety.combined_interpretation),
       },
       job_fit_analysis: jobFit,
+      adjustment_to_role: jobFit,
+      competency_matrix: asArray(source.competency_matrix).map(asRecord).map((item) => ({
+        competency: readText(item.competency),
+        evidence_level: readText(item.evidence_level, "INSUFFICIENT_EVIDENCE"),
+        level: readText(item.level, "S/E"),
+        interpretation: readText(item.interpretation),
+      })).filter((item) => item.competency && item.interpretation).slice(0, 10) as PsychAIOutput["competency_matrix"],
+      evidence_integration: {
+        summary: readText(asRecord(source.evidence_integration).summary),
+        convergences: textList(asRecord(source.evidence_integration).convergences, 4),
+        divergences: textList(asRecord(source.evidence_integration).divergences, 4),
+      },
+      prp_assessment: {
+        classification: readText(asRecord(source.prp_assessment).classification, "OUT_OF_DOCUMENTED_RANGE") as NonNullable<PsychAIOutput["prp_assessment"]>["classification"],
+        meaning: readText(asRecord(source.prp_assessment).meaning),
+        status: readText(asRecord(source.prp_assessment).status, "NOT_AVAILABLE") as NonNullable<PsychAIOutput["prp_assessment"]>["status"],
+      },
       integrated_analysis: [jobFit, readText(safety.combined_interpretation)].filter(Boolean).join("\n\n"),
       preliminary_conclusion: conclusion,
       integrated_conclusion: conclusion,
@@ -899,4 +980,31 @@ export function validatePsychSemanticOutput(value: unknown, context: PsychSemant
   }
 
   return { ok: flags.length === 0, flags: unique(flags) };
+}
+
+export function validatePsychometricConsistency(value: unknown, context: PsychSemanticContext): string[] {
+  const output = asRecord(value);
+  const flags: string[] = [];
+  const expected = context.locks.prp;
+  const reported = asRecord(output.prp_assessment);
+  if (expected && Object.keys(reported).length) {
+    const reportedClassification = normalizeText(readText(reported.classification)).replace(/[^a-z0-9]+/g, "_").toUpperCase();
+    if (reportedClassification && reportedClassification !== expected.classification) flags.push("prp_classification_inconsistent");
+    const status = normalizeText(readText(reported.status)).replace(/[^a-z0-9]+/g, "_").toUpperCase();
+    if (expected.interpretation_status === "OUT_OF_DOCUMENTED_RANGE" && status !== "OUT_OF_DOCUMENTED_RANGE") {
+      flags.push("prp_out_of_range_status_inconsistent");
+    }
+  }
+  const finalClass = normalizeText(readText(output.recommendation)).replace(/[^a-z0-9]+/g, "_").toUpperCase();
+  const conclusion = normalizeText([
+    readText(output.integrated_conclusion),
+    readText(output.decision_rationale),
+  ].join(" "));
+  if (finalClass === "ADECUADO" && /(incompatib|desfavorable para el cargo|brecha critica)/.test(conclusion)) {
+    flags.push("recommendation_conclusion_inconsistent");
+  }
+  if (finalClass === "NO_ADECUADO" && /(compatibilidad suficiente|ajuste favorable|adecuado para el cargo)/.test(conclusion)) {
+    flags.push("recommendation_conclusion_inconsistent");
+  }
+  return flags;
 }

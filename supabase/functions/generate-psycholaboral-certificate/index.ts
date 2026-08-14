@@ -111,6 +111,23 @@ type PsychAIOutput = {
     combined_interpretation?: string;
   };
   job_fit_analysis?: string;
+  adjustment_to_role?: string;
+  competency_matrix?: Array<{
+    competency?: string;
+    evidence_level?: string;
+    level?: string;
+    interpretation?: string;
+  }>;
+  evidence_integration?: {
+    summary?: string;
+    convergences?: string[];
+    divergences?: string[];
+  };
+  prp_assessment?: {
+    classification?: string;
+    meaning?: string;
+    status?: string;
+  };
   integrated_conclusion?: string;
   material_limitations?: string[];
   integrated_analysis?: string;
@@ -277,6 +294,14 @@ function clusterLabel(value: string) {
     adaptability_thinking: "Adaptabilidad y pensamiento",
   };
   return labels[value] ?? value;
+}
+
+function evidenceLevelLabel(value: string) {
+  const normalized = value.toUpperCase();
+  if (normalized === "DIRECT_EVIDENCE") return "Evidencia directa";
+  if (normalized === "INTEGRATED_EVIDENCE") return "Evidencia integrada";
+  if (normalized === "INSUFFICIENT_EVIDENCE") return "Sin evidencia suficiente";
+  return value;
 }
 
 function defaultAIOutput(payload: Payload): PsychAIOutput {
@@ -652,7 +677,7 @@ function bulletHeight(items: string[], font: PDFFont, size: number, width: numbe
 
 function startReportPage(ctx: ReportContext, pageNumber: number) {
   ctx.page = ctx.doc.addPage([612, 792]);
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, pageNumber, ["Informe Psicolaboral Integrado"]);
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, 1, ["Informe Psicolaboral Integrado"]);
   ctx.y = REPORT.topY;
 }
 
@@ -832,8 +857,24 @@ function drawReportPdf(
   );
   drawCard(ctx, "Perfil ejecutivo", [text(ai.executive_profile ?? ai.executive_summary)]);
   drawCard(ctx, "Ajuste al cargo", [
-    text(ai.job_fit_analysis, `Cargo evaluado: ${payload.candidate.job_position_name}. La compatibilidad debe revisarse contra entrevista, evidencia documental y criterio profesional.`),
+    text(ai.adjustment_to_role ?? ai.job_fit_analysis, `Cargo evaluado: ${payload.candidate.job_position_name}. La compatibilidad se interpreta según las exigencias del puesto y los antecedentes disponibles.`),
   ]);
+  const matrix = (ai.competency_matrix ?? []).map((item) => {
+    const level = text(item.level, "S/E");
+    const evidence = evidenceLevelLabel(text(item.evidence_level, "INSUFFICIENT_EVIDENCE"));
+    return `${text(item.competency)} — Nivel ${level} (${evidence}). ${text(item.interpretation)}`;
+  }).filter(Boolean);
+  if (matrix.length) drawBulletSection(ctx, "Síntesis de competencias laborales", matrix, { tone: "default" });
+  const integration = ai.evidence_integration;
+  if (integration?.summary || integration?.convergences?.length || integration?.divergences?.length) {
+    drawTwoColumnBulletCards(
+      ctx,
+      "Convergencias",
+      [text(integration.summary), ...(integration.convergences ?? []).map((item) => text(item))].filter(Boolean),
+      "Divergencias",
+      (integration.divergences ?? []).map((item) => text(item)).filter(Boolean),
+    );
+  }
   drawTwoColumnBulletCards(
     ctx,
     "Fortalezas críticas",
@@ -887,6 +928,7 @@ function drawReportPdf(
     "PRP",
     [
       prp ? formatResult(prp.result) : "Resultado PRP no disponible.",
+      text(ai.prp_assessment?.meaning),
       text(ai.safety_and_impulse_profile?.prp ?? ai.prp?.documentation_status),
     ],
   );

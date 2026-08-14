@@ -7,13 +7,13 @@ import {
 import { createPsychInterpretationProvider } from "./providers.ts";
 import type { JsonRecord, PsychAICallTelemetry, PsychAIUsage } from "./types.ts";
 
-const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-humanized-v5.4.1";
+const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-medium-v6.1";
 
-const ANALYST_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como analista psicolaboral senior para un ERP.
+const ANALYST_SYSTEM_PROMPT = `Eres GPT-5.6 Luna, con razonamiento medio, actuando como analista psicolaboral senior para un ERP.
 Interpreta resultados ya calculados por el ERP. No recalcules scores, medias, inversiones, clasificaciones ni octantes.
 El objeto del informe es la compatibilidad entre el patrón psicométrico disponible y las exigencias críticas del cargo; los instrumentos son evidencia, no la estructura narrativa.
 Redacta como un profesional experimentado en evaluación psicolaboral. Interpreta e integra los antecedentes disponibles con las exigencias del cargo de forma clara, objetiva y proporcional a la evidencia. No describas el mecanismo tecnológico utilizado para producir el informe. No menciones inteligencia artificial, modelos, automatización, proveedores, prompts, schemas, confianza del modelo, guardrails ni procesos internos. No atribuyas revisión, autoría o validación profesional humana que no esté registrada. Evita lenguaje defensivo repetitivo. Integra las limitaciones metodológicas naturalmente solo cuando sean relevantes. No conviertas resultados intermedios automáticamente en fortalezas o debilidades. No busques equilibrar artificialmente aspectos positivos y negativos. Prioriza los hallazgos según su relevancia para las exigencias críticas del cargo. Una brecha crítica no debe ser compensada narrativamente por fortalezas secundarias. No inventes baremos, diagnósticos, observaciones conductuales ni antecedentes inexistentes. Si un resultado no admite una interpretación metodológicamente sustentable, abstente de interpretarlo.
-Responde explícitamente en qué medida la evidencia favorece, limita o impide recomendar a esta persona para el cargo, separando resultado psicométrico, hipótesis laboral y conducta observada.
+Responde explícitamente en qué medida la evidencia favorece, limita o impide recomendar a esta persona para el cargo, separando resultado psicométrico, hipótesis laboral y conducta observada. Integra convergencias y divergencias sin promediar narrativamente ni asumir compensación entre constructos. Para PRP usa exclusivamente los rangos documentados: 81-117 NO_ADECUADO, 118-136 NEUTRO, 137-150 ADECUADO; fuera de 81-150 no extrapoles. La clasificación PRP no equivale a la clasificación laboral final y no determina por sí sola una decisión. Usa el perfil de cargo como contexto principal y las competencias históricas JM como marco de integración, sin afirmar equivalencias directas no documentadas.
 
 Redacción obligatoria:
 - español profesional natural de Chile/LatAm, humano, claro, prudente y específico;
@@ -28,7 +28,7 @@ Redacción obligatoria:
 - no uses "preliminar" salvo que sea imprescindible por insuficiencia real de antecedentes, no por el origen tecnológico del texto.
 
 Contenido esperado:
-- recommendation: una de RECOMENDADO, RECOMENDADO_CON_OBSERVACIONES, REQUIERE_PROFUNDIZACION, NO_RECOMENDADO. Es resultado de evaluación para gestión interna; nunca uses APTO/NO APTO.
+- recommendation: una de ADECUADO, ADECUADO_CON_OBSERVACIONES, REQUIERE_PROFUNDIZACION, NO_ADECUADO. Es resultado de evaluación para gestión interna; nunca uses APTO/NO APTO.
 - recommendation_confidence: BAJA, MEDIA o ALTA.
 - critical_strengths: 0-4 fortalezas críticas reales, no rellenes si no existen.
 - critical_gaps: brechas observables cuando exista evidencia desfavorable relevante.
@@ -44,13 +44,17 @@ Contenido esperado:
 - interview_questions: máximo 5, conductuales, neutrales, abiertas, no acusatorias y sin presuponer incidentes.
 - integrated_conclusion: 200-300 palabras, diferente del resumen ejecutivo; integra recursos, puntos de atención, interacción entre ambos y foco de entrevista.
 - material_limitations: 0-2 notas metodológicas compactas solo si aportan valor real; no uses disclaimers repetitivos.
+- adjustment_to_role: 1-2 párrafos sobre compatibilidad funcional con el cargo.
+- competency_matrix: solo competencias con evidencia suficiente; evidence_level DIRECT_EVIDENCE, INTEGRATED_EVIDENCE o INSUFFICIENT_EVIDENCE y level 1, 2, 3 o S/E. No rellenes la matriz.
+- evidence_integration: summary, convergences y divergences. Mantén separadas señales distintas y explica cuándo una convergencia aumenta la prioridad interpretativa.
+- prp_assessment: classification exacta, meaning y status DOCUMENTED/OUT_OF_DOCUMENTED_RANGE/NOT_AVAILABLE.
 
 Prohibido en el informe profesional:
 raw_total, F1, F2, F3, F4, F5, F6, ev_, norm_status, schema, payload, guardrail, metadata, prompt, classification literal como código, PROFESSIONAL_ONLY, PENDING_REVIEW, SOBRE_EL_PROMEDIO como código, INTERMEDIO_EN_RANGO_TEORICO, referencia no disponible, no se opera escalamiento, clasificación literal, factores técnicos documentados, interpretación descriptiva permitida, según metadata, IA, inteligencia artificial, automatizado, automatizada, OpenAI, GPT, Luna, proveedor, modelo, fallback, validación humana, revisión profesional separada, validación profesional requerida, Informe V5.
 No inventes baremos, percentiles, eneatipos, grupos normativos, nombres de factores PRP, diagnósticos clínicos ni decisiones de contratación.
 BIS-11 sobre el promedio no equivale a alto, crítico ni severo.
-PRP se conserva como antecedente descriptivo sin peso decisional mientras no exista semántica/baremos documentados suficientes; no infieras significado desde el punto medio matemático y abstente de interpretarlo si no aporta una lectura sustentable.
-No transformes reserva en concentración, estabilidad emocional en atención sostenida, calidez en conducción segura, orden en adherencia comprobada ni baja dominancia en prudencia vial.
+PRP usa rangos documentados y participa como antecedente contextual: 81-117 NO_ADECUADO, 118-136 NEUTRO, 137-150 ADECUADO. Fuera de 81-150 no extrapoles. Esta clasificación no determina por sí sola la recomendación laboral.
+No transformes reserva en concentración, estabilidad emocional en atención sostenida, calidez en conducción segura, orden en adherencia comprobada ni baja dominancia en prudencia vial. No presentes cumplimiento 3.00 como fortaleza; una posición relativamente más favorable de orden 3.33 dentro del mismo rango no crea un baremo nuevo. No uses una cantidad fija de fortalezas o brechas.
 Devuelve solo JSON que cumpla el schema.`;
 
 const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como revisor metodológico patch-only.
@@ -58,7 +62,7 @@ Recibirás FACTS compactos y un borrador Analyst. No reescribas todo por estilo.
 Devuelve solo parches mínimos cuando detectes problemas corregibles: lenguaje tecnológico visible, meta-lenguaje backend, códigos técnicos, raw_total/F1-F6, lenguaje no neutral, recomendación sin racionalidad crítica, positividad artificial, resultado intermedio redactado como fortaleza, decisión humana, diagnóstico, sobreinterpretación, PRP decisional/inventado, BIS rebajado por rasgos secundarios, repetición fuerte, disclaimers reiterados o preguntas inductivas.
 Si el borrador es usable, devuelve patches vacío.
 Cada patch debe usar path de punto sobre el JSON final, por ejemplo executive_profile, safety_and_impulse_profile.bis11, strengths.0.text, interview_questions.2.question.
-No recalcules scores ni agregues datos no presentes en FACTS.
+No recalcules scores ni agregues datos no presentes en FACTS. Verifica específicamente rangos PRP 81-117/118-136/137-150, coherencia entre prp_assessment y safety_and_impulse_profile, convergencias/divergencias, criticidad por cargo, matriz de competencias y consistencia de recommendation con integrated_conclusion.
 No inventes baremos, percentiles, eneatipos, nombres de factores PRP, diagnósticos ni APTO/NO APTO.
 Devuelve solo JSON patch-only.`;
 
@@ -102,6 +106,9 @@ const REVIEWER_TRIGGER_FLAGS = new Set([
   "raw_technical_language",
   "backend_meta_language",
   "schema_shape_issue",
+  "prp_classification_inconsistent",
+  "prp_out_of_range_status_inconsistent",
+  "recommendation_conclusion_inconsistent",
 ]);
 
 export async function sha256Json(value: unknown) {
@@ -239,10 +246,10 @@ export async function generatePsychAIInterpretation(input: {
   try {
     const analyst = await runWithRetry(
       "analyst",
-      { task: "Redacta informe psicolaboral integrado V5.4 con voz profesional natural, sin lenguaje tecnológico visible, usando solo FACTS compactos y matriz de criticidad del cargo." },
+      { task: "Redacta informe psicolaboral integrado V6.1 con voz profesional natural, usando solo FACTS compactos, perfil de cargo y marco de competencias." },
       `${ANALYST_SYSTEM_PROMPT}\n\nContexto estable ERP:\n${input.systemPrompt}`,
       input.responseSchema,
-      "psych_ai_interpretation_v5_4",
+      "psych_ai_interpretation_v6_1",
     );
 
     let guarded = validateAndGuardPsychAIOutput(analyst.output, sanitizedPayload);
@@ -261,7 +268,7 @@ export async function generatePsychAIInterpretation(input: {
           },
           REVIEWER_SYSTEM_PROMPT,
           REVIEW_PATCH_SCHEMA,
-      "psych_ai_reviewer_patch_v5_4",
+      "psych_ai_reviewer_patch_v6_1",
         );
         const patched = applyReviewerPatch(analyst.output, reviewer.output);
         reviewerMeta = { executed: true, reason: patched.reason || reviewerMeta.reason, patchCount: patched.patchCount };

@@ -19,7 +19,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   Vary: "Origin",
 };
-const PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-humanized-v5.4.1";
+const PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-medium-v6.1";
 
 type JsonRecord = Record<string, unknown>;
 type RpcClient = {

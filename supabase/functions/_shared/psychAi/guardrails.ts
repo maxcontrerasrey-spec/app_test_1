@@ -3,9 +3,11 @@ import {
   attachPsychSemanticContext,
   buildDeterministicPsychSemanticOutput,
   buildPsychSemanticContext,
+  classifyPrpScore,
   normalizeSemanticOutputForErp,
   PSYCH_SEMANTIC_VERSION,
   validatePsychSemanticOutput,
+  validatePsychometricConsistency,
 } from "./semantic.ts";
 import type { GuardrailResult, JsonRecord, PsychAIOutput } from "./types.ts";
 
@@ -91,6 +93,8 @@ function replaceProhibited(text: string) {
   cleaned = cleaned.replace(/\bPROFESSIONAL_ONLY\b/g, "sin interpretación adicional sustentable");
   cleaned = cleaned.replace(/\bPENDING_REVIEW\b/g, "en evaluación");
   cleaned = cleaned.replace(/\bREQUIERE_PROFUNDIZACION\b/g, "requiere profundización");
+  cleaned = cleaned.replace(/\bADECUADO_CON_OBSERVACIONES\b/g, "adecuado con observaciones");
+  cleaned = cleaned.replace(/\bNO_ADECUADO\b/g, "no adecuado");
   cleaned = cleaned.replace(/\bRECOMENDADO_CON_OBSERVACIONES\b/g, "recomendado con observaciones");
   cleaned = cleaned.replace(/\bNO_RECOMENDADO\b/g, "no recomendado");
   cleaned = cleaned.replace(/\bno\s+apto\b/gi, "desfavorable para el cargo");
@@ -211,13 +215,27 @@ function buildCompatibilityFrame(input: JsonRecord, semanticContext = buildPsych
     criticalStrengths.push("BIS-11 no muestra una señal elevada de impulsividad según la clasificación disponible.");
   }
 
+  const prpClassification = prp?.classification ?? "OUT_OF_DOCUMENTED_RANGE";
+  const convergences: string[] = [];
+  const divergences: string[] = [];
+  if (isSafetyCritical && bis?.classification === "SOBRE_EL_PROMEDIO" && prpClassification === "NO_ADECUADO") {
+    convergences.push("BIS-11 y PRP aportan señales compatibles en seguridad ocupacional y autocontrol.");
+    criticalUncertainties.push("La convergencia entre BIS-11 y PRP aumenta la prioridad de profundizar autocontrol y respuesta bajo presión.");
+  } else if (isSafetyCritical && bis?.classification === "SOBRE_EL_PROMEDIO" && prpClassification === "ADECUADO") {
+    divergences.push("BIS-11 y PRP muestran señales distintas en el ámbito de seguridad ocupacional; no deben promediarse narrativamente.");
+    criticalUncertainties.push("La divergencia entre BIS-11 y PRP requiere explorar qué situaciones explican la diferencia entre ambos antecedentes.");
+  }
+  if (prpClassification === "OUT_OF_DOCUMENTED_RANGE") {
+    criticalUncertainties.push("El puntaje PRP está fuera del rango documentado y no se extrapola su significado.");
+  }
+
   const recommendation = criticalGaps.length >= 2
-    ? "NO_RECOMENDADO"
+    ? "NO_ADECUADO"
     : criticalGaps.length || criticalUncertainties.length
     ? "REQUIERE_PROFUNDIZACION"
     : criticalStrengths.length
-    ? "RECOMENDADO_CON_OBSERVACIONES"
-    : "RECOMENDADO_CON_OBSERVACIONES";
+    ? "ADECUADO_CON_OBSERVACIONES"
+    : "ADECUADO_CON_OBSERVACIONES";
 
   return {
     job_family: jobFamily,
@@ -232,7 +250,7 @@ function buildCompatibilityFrame(input: JsonRecord, semanticContext = buildPsych
     objective_rules: [
       "Resultados intermedios son neutros por defecto; no deben redactarse como fortalezas.",
       "Fortalezas interpersonales de relevancia media no compensan alertas en competencias críticas.",
-      "PRP tiene peso decisional 0 mientras no exista semántica/baremos documentados suficientes.",
+      "PRP aporta una clasificación documental contextual; no determina por sí solo la recomendación laboral.",
       "Separar resultado psicométrico, hipótesis laboral y conducta observada.",
     ],
     preliminary_recommendation_frame: {
@@ -242,13 +260,22 @@ function buildCompatibilityFrame(input: JsonRecord, semanticContext = buildPsych
       critical_gaps: criticalGaps.slice(0, 4),
       critical_uncertainties: criticalUncertainties.slice(0, 5),
       rationale:
-        "Marco ERP basado en criticidad del cargo y señales psicométricas disponibles. La redacción no debe rebajar brechas o incertidumbres críticas ni usar PRP para modificar la recomendación.",
+        "Marco ERP basado en criticidad del cargo, magnitud documentada y convergencia o divergencia entre señales. Ningún instrumento aislado determina el resultado final.",
     },
     evidence_weighting: {
       critical_over_secondary: true,
-      prp_decision_weight: prp?.automatic_interpretation_allowed ? 1 : 0,
+      prp_decision_weight: "CONTEXTUAL_NOT_DECISIVE",
       bis11_weight: bis && isSafetyCritical ? "HIGH_CONTEXTUAL_WEIGHT_WITHOUT_BEHAVIORAL_CONCLUSION" : "DOCUMENTED_CLASSIFICATION_ONLY",
       middle_results_default: "NEUTRAL",
+    },
+    evidence_integration: {
+      convergences,
+      divergences,
+      summary: convergences.length
+        ? "Se detectan señales compatibles en una dimensión relevante para el cargo."
+        : divergences.length
+        ? "Se detectan señales divergentes que deben mantenerse diferenciadas."
+        : "No se detecta convergencia o divergencia crítica suficiente para una lectura conjunta.",
     },
   };
 }
@@ -283,13 +310,13 @@ function enforceObjectiveFrame(output: PsychAIOutput, input?: JsonRecord) {
   next.critical_uncertainties = mergeUniqueText(next.critical_uncertainties, frame.critical_uncertainties).slice(0, 5);
   if (
     frame.recommendation === "REQUIERE_PROFUNDIZACION" &&
-    (next.recommendation === "RECOMENDADO" || next.recommendation === "RECOMENDADO_CON_OBSERVACIONES")
+    (next.recommendation === "ADECUADO" || next.recommendation === "ADECUADO_CON_OBSERVACIONES")
   ) {
     next.recommendation = "REQUIERE_PROFUNDIZACION";
     flags.push("critical_uncertainty_recommendation_enforced");
   }
-  if (frame.recommendation === "NO_RECOMENDADO" && next.recommendation !== "NO_RECOMENDADO") {
-    next.recommendation = "NO_RECOMENDADO";
+  if (frame.recommendation === "NO_ADECUADO" && next.recommendation !== "NO_ADECUADO") {
+    next.recommendation = "NO_ADECUADO";
     flags.push("critical_gap_recommendation_enforced");
   }
   next.recommendation ??= frame.recommendation as PsychAIOutput["recommendation"];
@@ -360,6 +387,8 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
   const ipcResult = asRecord(ipc.result);
   const prp = byCode("PRP_EMAIL_FORM_A_30");
   const prpResult = asRecord(prp.result);
+  const prpScore = readNumber(prpResult.raw_total);
+  const prpInterpretation = classifyPrpScore(prpScore);
   const prpFactors = Object.entries(asRecord(prpResult.factors)).map(([code, value]) => ({
     code,
     score: roundNumber(value),
@@ -382,6 +411,7 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
       competency_matrix: compatibilityFrame.competencies,
       objective_rules: compatibilityFrame.objective_rules,
       preliminary_recommendation_frame: compatibilityFrame.preliminary_recommendation_frame,
+      evidence_integration: compatibilityFrame.evidence_integration,
       evidence_weighting: compatibilityFrame.evidence_weighting,
       critical_context: asArray(asRecord(profile.payload).critical_context).map((item) => readText(item)).filter(Boolean),
       interview_focus: asArray(asRecord(profile.payload).interview_focus).map((item) => readText(item)).filter(Boolean),
@@ -404,18 +434,20 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         classification: readText(barrattResult.classification),
       },
       PRP_EMAIL_FORM_A_30: {
-        interpretation_mode: "antecedente descriptivo sin peso decisional; sin baremo poblacional activo ni semántica suficiente para modificar recomendación",
-        direct_score: readNumber(prpResult.raw_total),
+        interpretation_mode: "clasificación documental por rangos inclusivos; participa en integración sin determinar por sí sola el resultado final",
+        direct_score: prpScore,
         scale_min: 30,
         scale_midpoint: 90,
         scale_max: 150,
-        documented_meaning: "El puntaje directo se conserva como antecedente. No autoriza inferir significado del punto medio matemático ni modificar recomendación.",
-        decision_weight: 0,
+        classification: prpInterpretation.classification,
+        classification_status: prpInterpretation.status,
+        documented_meaning: prpInterpretation.meaning,
+        decision_weight: "CONTEXTUAL_NOT_DECISIVE",
         factors: prpFactors,
       },
     },
     methodology: {
-      version: "psych-methodology-v5.2-compact",
+      version: "psych-methodology-v6.1-compact",
       professional_report_rules: {
         object_of_report: "persona y funcionamiento laboral aplicado al cargo",
         instruments_are_evidence: true,
@@ -424,7 +456,7 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         max_strengths: 4,
         max_points_to_explore: 4,
         max_interview_questions: 5,
-        recommendation_labels: ["RECOMENDADO", "RECOMENDADO_CON_OBSERVACIONES", "REQUIERE_PROFUNDIZACION", "NO_RECOMENDADO"],
+        recommendation_labels: ["ADECUADO", "ADECUADO_CON_OBSERVACIONES", "REQUIERE_PROFUNDIZACION", "NO_ADECUADO"],
       },
       methodological_notes: [
         "Los resultados psicométricos se integran con entrevista y antecedentes laborales.",
@@ -473,12 +505,15 @@ export function validateAndGuardPsychAIOutput(value: unknown, input?: JsonRecord
   const finalSemanticValidation = semanticContext
     ? validatePsychSemanticOutput(normalized, semanticContext)
     : { ok: true, flags: [] };
+  const consistencyFlags = semanticContext
+    ? validatePsychometricConsistency(normalized, semanticContext)
+    : [];
   const guardrailFlags = collectStrings(normalized).flatMap((text) => detectProhibitedFlags(text));
 
   return {
     output: normalized,
     validationFlags: Array.from(new Set([...shape.flags, ...preSanitizeFlags, ...rawSemanticValidation.flags, ...objective.flags])),
-    guardrailFlags: Array.from(new Set([...guardrailFlags, ...finalSemanticValidation.flags])),
+    guardrailFlags: Array.from(new Set([...guardrailFlags, ...finalSemanticValidation.flags, ...consistencyFlags])),
   };
 }
 

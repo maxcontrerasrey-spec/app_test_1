@@ -114,7 +114,7 @@ export type PsychAIStatus =
 
 export type PsychAIOutput = {
   version: string;
-  recommendation?: "RECOMENDADO" | "RECOMENDADO_CON_OBSERVACIONES" | "REQUIERE_PROFUNDIZACION" | "NO_RECOMENDADO";
+  recommendation?: "ADECUADO" | "ADECUADO_CON_OBSERVACIONES" | "REQUIERE_PROFUNDIZACION" | "NO_ADECUADO";
   recommendation_confidence?: "BAJA" | "MEDIA" | "ALTA";
   critical_strengths?: string[];
   critical_gaps?: string[];

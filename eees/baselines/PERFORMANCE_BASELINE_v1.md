@@ -127,7 +127,7 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
   "jsFileCount": 62,
   "jsTotalBytes": 2740587,
   "cssFileCount": 12,
-  "cssTotalBytes": 240482,
+  "cssTotalBytes": 240891,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -138,6 +138,8 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
   ]
 }
 ```
+
+Revision 2026-08-14 navegación de páginas psicométricas: el CSS sube 409 bytes para mostrar en rojo las páginas con respuestas faltantes y en verde las páginas completas, manteniendo estado activo, foco accesible y navegación responsive. No agrega vendors, assets trackeados ni modifica el entry inicial.
 
 Revision 2026-08-08 DSAL nómina y antecedentes: el total global sube 3,345 bytes, JS sube 1,951 bytes y CSS sube 1,280 bytes por integrar el autocompletado autoritativo de nómina, las burbujas judiciales y tooltips de causas en Precandidatos. No agrega vendors, rutas lazy ni assets trackeados; las tablas judiciales permanecen protegidas y el enriquecimiento ocurre solo en la RPC autenticada de revisión.
 

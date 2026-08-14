@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDeterministicPsychSemanticOutput,
   buildPsychSemanticContext,
+  classifyPrpScore,
   classifyIpipTheoreticalLevel,
   deduplicateLimitations,
   validatePsychSemanticOutput,
@@ -164,13 +165,25 @@ describe("bis11-classification-lock.test", () => {
   });
 });
 
-describe("prp-descriptive-methodology.test", () => {
-  it("mantiene PRP como antecedente profesional y bloquea sobrealcances metodológicos", () => {
+describe("prp-v6.1-ranges.test", () => {
+  it("aplica rangos inclusivos documentados y marca fuera de rango", () => {
+    expect(classifyPrpScore(80).classification).toBe("OUT_OF_DOCUMENTED_RANGE");
+    expect(classifyPrpScore(81).classification).toBe("NO_ADECUADO");
+    expect(classifyPrpScore(117).classification).toBe("NO_ADECUADO");
+    expect(classifyPrpScore(118).classification).toBe("NEUTRO");
+    expect(classifyPrpScore(136).classification).toBe("NEUTRO");
+    expect(classifyPrpScore(137).classification).toBe("ADECUADO");
+    expect(classifyPrpScore(150).classification).toBe("ADECUADO");
+    expect(classifyPrpScore(151).classification).toBe("OUT_OF_DOCUMENTED_RANGE");
+  });
+
+  it("mantiene PRP documentado y bloquea sobrealcances metodológicos", () => {
     const context = buildPsychSemanticContext(fixturePayload);
     expect(context.locks.prp).toMatchObject({
       score: 90,
-      interpretation_status: "PROFESSIONAL_ONLY",
-      automatic_interpretation_allowed: false,
+      classification: "NO_ADECUADO",
+      interpretation_status: "DESCRIPTIVE_INTERPRETATION",
+      automatic_interpretation_allowed: true,
     });
     const output = validOutput();
     output.points_to_explore[2].text = "PRP se revisa como patrón preventivo descriptivo desde el puntaje total.";
@@ -250,15 +263,15 @@ describe("v5-4-objectivity.test", () => {
     payload.instruments[0].result.dimensions.TEN.mean = 2.1;
     payload.instruments[2].result.classification = "Bajo el promedio";
     const output = validOutput();
-    output.recommendation = "RECOMENDADO";
+    output.recommendation = "ADECUADO";
     output.recommendation_confidence = "MEDIA";
     const guarded = validateAndGuardPsychAIOutput(output, payload);
-    expect(guarded.output.recommendation).toBe("RECOMENDADO");
+    expect(guarded.output.recommendation).toBe("ADECUADO");
   });
 
   it("no deja que fortalezas secundarias compensen incertidumbre crítica de seguridad", () => {
     const output = validOutput();
-    output.recommendation = "RECOMENDADO";
+    output.recommendation = "ADECUADO";
     output.recommendation_confidence = "ALTA";
     output.strengths.push({
       title: "Relación interpersonal",
@@ -276,9 +289,9 @@ describe("v5-4-objectivity.test", () => {
     payload.instruments[0].result.dimensions.ORD.mean = 2.1;
     payload.instruments[0].result.dimensions.TEN.mean = 4.35;
     const output = validOutput();
-    output.recommendation = "RECOMENDADO_CON_OBSERVACIONES";
+    output.recommendation = "ADECUADO_CON_OBSERVACIONES";
     const guarded = validateAndGuardPsychAIOutput(output, payload);
-    expect(guarded.output.recommendation).toBe("NO_RECOMENDADO");
+    expect(guarded.output.recommendation).toBe("NO_ADECUADO");
     expect(guarded.validationFlags).toContain("critical_gap_recommendation_enforced");
   });
 });

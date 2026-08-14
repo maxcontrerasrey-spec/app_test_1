@@ -1,7 +1,7 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 import { normalizeSemanticOutputForErp, PSYCH_SEMANTIC_VERSION } from "./semantic.ts";
 
-export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v5.4";
+export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v6.1";
 
 const REQUIRED_TOP_LEVEL = [
   "recommendation",
@@ -15,6 +15,10 @@ const REQUIRED_TOP_LEVEL = [
   "interpersonal_profile",
   "safety_and_impulse_profile",
   "job_fit_analysis",
+  "adjustment_to_role",
+  "competency_matrix",
+  "evidence_integration",
+  "prp_assessment",
   "strengths",
   "points_to_explore",
   "interview_questions",
@@ -71,11 +75,51 @@ function optionalStatementArray(value: unknown, max: number) {
     : [];
 }
 
+function competencyMatrix(value: unknown) {
+  const allowedEvidence = new Set(["DIRECT_EVIDENCE", "INTEGRATED_EVIDENCE", "INSUFFICIENT_EVIDENCE"]);
+  const allowedLevels = new Set(["1", "2", "3", "S/E"]);
+  return Array.isArray(value)
+    ? value.map((item) => {
+      const record = item && typeof item === "object" && !Array.isArray(item) ? item as Record<string, unknown> : {};
+      const competency = text(record.competency, 180);
+      const evidenceLevel = text(record.evidence_level, 40).toUpperCase();
+      const level = text(record.level, 10).toUpperCase();
+      const interpretation = text(record.interpretation, 600);
+      if (!competency || !allowedEvidence.has(evidenceLevel) || !allowedLevels.has(level) || !interpretation) return null;
+      return { competency, evidence_level: evidenceLevel as "DIRECT_EVIDENCE" | "INTEGRATED_EVIDENCE" | "INSUFFICIENT_EVIDENCE", level: level as "1" | "2" | "3" | "S/E", interpretation };
+    }).filter(Boolean).slice(0, 10) as Array<{ competency: string; evidence_level: "DIRECT_EVIDENCE" | "INTEGRATED_EVIDENCE" | "INSUFFICIENT_EVIDENCE"; level: "1" | "2" | "3" | "S/E"; interpretation: string }>
+    : [];
+}
+
+function evidenceIntegration(value: unknown) {
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  return {
+    summary: text(record.summary, 800),
+    convergences: textArray(record.convergences, 4, 4, []),
+    divergences: textArray(record.divergences, 4, 4, []),
+  };
+}
+
+function prpAssessment(value: unknown) {
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const classification = text(record.classification, 50).toUpperCase();
+  const status = text(record.status, 50).toUpperCase();
+  const allowedClassification = new Set(["NO_ADECUADO", "NEUTRO", "ADECUADO", "OUT_OF_DOCUMENTED_RANGE"]);
+  const allowedStatus = new Set(["DOCUMENTED", "OUT_OF_DOCUMENTED_RANGE", "NOT_AVAILABLE"]);
+  const safeClassification = (allowedClassification.has(classification) ? classification : "OUT_OF_DOCUMENTED_RANGE") as NonNullable<PsychAIOutput["prp_assessment"]>["classification"];
+  const safeStatus = (allowedStatus.has(status) ? status : "NOT_AVAILABLE") as NonNullable<PsychAIOutput["prp_assessment"]>["status"];
+  return {
+    classification: safeClassification,
+    meaning: text(record.meaning, 500),
+    status: safeStatus,
+  } satisfies NonNullable<PsychAIOutput["prp_assessment"]>;
+}
+
 const RECOMMENDATIONS = new Set([
-  "RECOMENDADO",
-  "RECOMENDADO_CON_OBSERVACIONES",
+  "ADECUADO",
+  "ADECUADO_CON_OBSERVACIONES",
   "REQUIERE_PROFUNDIZACION",
-  "NO_RECOMENDADO",
+  "NO_ADECUADO",
 ]);
 
 const CONFIDENCES = new Set(["BAJA", "MEDIA", "ALTA"]);
@@ -83,7 +127,9 @@ const CONFIDENCES = new Set(["BAJA", "MEDIA", "ALTA"]);
 function recommendation(value: unknown) {
   const cleaned = text(value, 80).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
     .replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-  if (cleaned === "RECOMENDADO_CON_OBSERVACION") return "RECOMENDADO_CON_OBSERVACIONES";
+  if (cleaned === "RECOMENDADO") return "ADECUADO";
+  if (cleaned === "RECOMENDADO_CON_OBSERVACIONES" || cleaned === "RECOMENDADO_CON_OBSERVACION") return "ADECUADO_CON_OBSERVACIONES";
+  if (cleaned === "NO_RECOMENDADO") return "NO_ADECUADO";
   return RECOMMENDATIONS.has(cleaned) ? cleaned as PsychAIOutput["recommendation"] : "REQUIERE_PROFUNDIZACION";
 }
 
@@ -219,6 +265,10 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
         combined_interpretation: text(safety.combined_interpretation),
       },
       job_fit_analysis: jobFit,
+      adjustment_to_role: jobFit,
+      competency_matrix: competencyMatrix(source.competency_matrix),
+      evidence_integration: evidenceIntegration(source.evidence_integration),
+      prp_assessment: prpAssessment(source.prp_assessment),
       integrated_analysis: [jobFit, text(safety.combined_interpretation)].filter(Boolean).join("\n\n"),
       preliminary_conclusion: conclusion,
       integrated_conclusion: conclusion,

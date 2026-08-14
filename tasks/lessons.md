@@ -3202,3 +3202,7 @@ Cuando el proveedor sí devuelve contenido pero incumple locks semánticos, la s
 ### 312. En IA psicolaboral, el Reviewer debe cargar el peso semántico
 
 El ERP no debe escribir el informe con decenas de reglas, pero tampoco debe confiar en el primer borrador del modelo. La arquitectura estable es Analyst para redactar, Reviewer para corregir contra facts y hard checks mínimos para bloquear solo decisiones, diagnóstico o violaciones no recuperables.
+
+### 313. Una versión metodológica debe viajar completa hasta el informe
+
+Cuando cambian rangos, categorías o el marco de competencias, no basta con modificar el prompt: la clasificación debe existir en el contexto backend, el schema, los guardrails, el fallback y las etiquetas visibles del PDF. La prueba de producción debe comprobar la versión activa, el resultado determinístico y el artefacto generado para el mismo canario.

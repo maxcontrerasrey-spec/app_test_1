@@ -1,5 +1,25 @@
 # Tareas y Roadmap de Desarrollo
 
+## Psych AI V6.1 Luna medio robusto - 2026-08-14
+
+- [ ] Auditar V5.4 vigente, scoring PRP, perfiles de cargo, contrato de salida, guardrails y renderer PDF.
+- [ ] Implementar PRP V6.1 con rangos inclusivos 81-117/118-136/137-150, fuera de rango observable y sin rechazo automático.
+- [ ] Incorporar convergencia/divergencia, criticidad por perfil, marco de competencias y clasificación laboral objetiva en el contexto determinístico entregado a Luna.
+- [ ] Versionar prompt/schema V6.1, compactar facts para Luna medio y reforzar consistencia post-salida/reintento único.
+- [ ] Ajustar PDF integrado a 5-6 páginas aproximadas, matriz de competencias con S/E y paginación final correcta.
+- [ ] Agregar tests PRP, convergencia, criticidad, cuatro clasificaciones, anti-alucinación y regresión de contenido.
+- [ ] Aplicar migración y desplegar funciones en producción; regenerar canario de forma explícita, comparar V5.4/V6.1 y verificar PDF/hash.
+- [ ] Ejecutar gates, documentar riesgos metodológicos pendientes, commit/push a main y verificar CI.
+
+## Estado visual de páginas en respuesta psicométrica - 2026-08-14
+
+- [x] Calcular completitud por página usando las respuestas actuales del candidato.
+- [x] Mostrar páginas incompletas en rojo y completas en verde, manteniendo foco/selección.
+- [x] Agregar regresión y validar build, responsive y Guardian.
+- [x] Documentar resultado.
+
+Resultado: en `/evaluacionpsico`, los botones de página/bloque ahora usan las respuestas actuales para mostrar fondo rojo cuando falta una respuesta y verde cuando la página está completa. El estado activo conserva un anillo visual, y cada botón expone su estado mediante `aria-label` y `title`. Se validó con 40 pruebas de integridad, build frontend, baseline de performance y Guardian con 0 errores y 0 advertencias.
+
 ## Psych AI V5.4 humanizacion integral - 2026-08-14
 
 - [x] Auditar origen real de textos técnicos visibles en prompt, schema, guardrails, PDF y UI.
@@ -2019,3 +2039,15 @@ Resultado: el candidato termina la batería, el ERP dispara IA y certificado en 
 - [x] Aplicar migración, desplegar Edge/frontend, reintentar evaluación afectada y validar.
 
 Resultado: una IA fallida se ve como estado técnico, no como informe; el caso histórico RC-1807 fue regenerado y quedó `PENDING_REVIEW`.
+
+## Psych AI V6.1 Luna medio robusto - 2026-08-14
+- [x] Auditar contrato V5.4, scoring PRP, perfiles de cargo, guardrails, schema y renderer PDF.
+- [x] Implementar semántica V6.1: rangos PRP documentados, convergencias/divergencias, criticidad y matriz de competencias.
+- [x] Versionar prompt, schema, perfiles y runtime `gpt56-luna-medium-v6.1`.
+- [x] Ajustar salida determinística, normalización, consistencia y etiquetas visibles del PDF.
+- [x] Agregar/actualizar pruebas unitarias e integridad; ejecutar Deno checks, build, Guardian y auditorías.
+- [x] Aplicar migración en Supabase producción y desplegar las Edge Functions involucradas.
+- [x] Regenerar canario RC-1807 y confirmar interpretación V6.1 y certificado generado.
+- [x] Comparar estado/artefactos, documentar límites metodológicos y preparar publicación en `main`.
+
+Resultado: producción quedó con `psych-ai-prompt-v6.1`, `psych-ai-schema-v6.1`, siete perfiles `profile-v6.1` activos y OpenAI `gpt-5.6-luna`. El canario `a48773d1-b296-4b9a-9524-84aa400ffdca` generó interpretación nueva (`2c77b1a3-e2f9-4148-83d0-c9151429e168`) con PRP 90 clasificado `NO_ADECUADO`, convergencia con BIS-11 sobre el promedio y recomendación `REQUIERE_PROFUNDIZACION`; `guardrail_flags` quedó vacío. El informe/certificado quedó generado. No se inventaron baremos, conducta observada ni equivalencias; eneatipos y otros instrumentos no documentados siguen fuera de alcance.

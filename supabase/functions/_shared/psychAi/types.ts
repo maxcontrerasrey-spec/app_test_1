@@ -55,7 +55,7 @@ export type EvidenceBackedAIStatement = {
 
 export type PsychAIOutput = {
   version: string;
-  recommendation?: "RECOMENDADO" | "RECOMENDADO_CON_OBSERVACIONES" | "REQUIERE_PROFUNDIZACION" | "NO_RECOMENDADO";
+  recommendation?: "ADECUADO" | "ADECUADO_CON_OBSERVACIONES" | "REQUIERE_PROFUNDIZACION" | "NO_ADECUADO";
   recommendation_confidence?: "BAJA" | "MEDIA" | "ALTA";
   critical_strengths?: string[];
   critical_gaps?: string[];
@@ -113,6 +113,23 @@ export type PsychAIOutput = {
     combined_interpretation: string;
   };
   job_fit_analysis?: string;
+  adjustment_to_role?: string;
+  competency_matrix?: Array<{
+    competency: string;
+    evidence_level: "DIRECT_EVIDENCE" | "INTEGRATED_EVIDENCE" | "INSUFFICIENT_EVIDENCE";
+    level: "1" | "2" | "3" | "S/E";
+    interpretation: string;
+  }>;
+  evidence_integration?: {
+    summary: string;
+    convergences: string[];
+    divergences: string[];
+  };
+  prp_assessment?: {
+    classification: "NO_ADECUADO" | "NEUTRO" | "ADECUADO" | "OUT_OF_DOCUMENTED_RANGE";
+    meaning: string;
+    status: "DOCUMENTED" | "OUT_OF_DOCUMENTED_RANGE" | "NOT_AVAILABLE";
+  };
   integrated_conclusion?: string;
   material_limitations?: string[];
   integrated_analysis: string;
