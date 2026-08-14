@@ -45,4 +45,3 @@ Reemplazar el runtime psicolaboral desde `gpt-5-mini` hacia `gpt-5.6-luna` como 
 - No se cambió el flujo de revisión profesional.
 - No se agregó A/B permanente.
 - No se agregó fallback multi-modelo.
-

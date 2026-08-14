@@ -35,4 +35,3 @@ según el conjunto completo, pero con racionalidad explícita y sin compensació
 ## Estado de ejecución
 
 Pendiente de regeneración productiva después de aplicar migración y desplegar funciones.
-

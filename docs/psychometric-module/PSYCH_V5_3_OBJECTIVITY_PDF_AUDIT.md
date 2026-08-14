@@ -39,4 +39,3 @@ Fecha: 2026-08-14
 - La recomendación es preliminar y requiere validación humana.
 - No se cambian scores ni respuestas existentes.
 - El certificado e informe siguen en Storage privado.
-

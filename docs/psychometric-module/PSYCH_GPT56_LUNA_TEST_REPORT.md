@@ -28,4 +28,3 @@ Permitido encontrar `gpt-5-mini` solo en:
 - pruebas que validan migraciones históricas.
 
 No debe aparecer como default, fallback ni modelo activo del runtime psicolaboral.
-
