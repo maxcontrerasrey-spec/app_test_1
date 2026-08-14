@@ -1,5 +1,27 @@
 # Tareas y Roadmap de Desarrollo
 
+## Psych AI V5.3 objetividad discriminativa y rediseño PDF - 2026-08-14
+
+- [x] Auditar V5.2 real en producción: prompt/schema activo, perfil de cargo, último canary RC-1807 y PDF vigente.
+- [x] Versionar perfiles de cargo V5.3 con criticidad explícita por competencia, sin alterar scoring ni respuestas históricas.
+- [x] Implementar output V5.3 con recomendación preliminar automatizada, confianza, fortalezas críticas, brechas e incertidumbres, manteniendo revisión humana separada.
+- [x] Endurecer prompt, schema y guardrails para evitar positividad artificial, inferencias no medidas, fortalezas de resultados medios y PRP decisional.
+- [x] Migrar el proveedor activo de Gestión Psicolaboral a OpenAI `gpt-5.6-luna`, sin fallback a `gpt-5-mini` ni dependencias ORION.
+- [x] Rediseñar el informe PDF con tokens editoriales, paginación semántica, bloques respirables, texto narrativo justificado y resultado preliminar visible.
+- [x] Validar Deno, unit/integrity tests, migraciones, seguridad, build, Guardian, canary productivo, render visual y CI.
+
+Resultado: V5.3 quedó aplicado en producción con prompt `psych-ai-prompt-v5.3`, schema `psych-ai-schema-v5.3`, provider `openai`, modelo único `gpt-5.6-luna` y pipeline `gpt56-luna-objective-v5.3`. El canario RC-1807 generó IA real `PENDING_REVIEW`, recomendación `REQUIERE_PROFUNDIZACION`, confianza `MEDIA`, 0 guardrail flags, 1 llamada OpenAI, 5.998 tokens totales y costo estimado USD 0,003039. Certificado e informe quedaron regenerados; el informe final renderizado tiene 7 páginas, encabezado `Página: 1 de 7` a `Página: 7 de 7`, logo ajustado y sin secciones vacías.
+
+## Corrección sync BUK con error - 2026-08-14
+
+- [x] Localizar el job BUK fallido y conservar evidencia de su error/snapshot.
+- [x] Auditar el contrato del worker contra el estado real ERP y BUK.
+- [x] Corregir la causa raíz y aplicar/desplegar la corrección si corresponde.
+- [x] Reprocesar o reconciliar el job, verificando resultado en ERP y BUK.
+- [x] Ejecutar Guardian/gates aplicables y documentar resultado final.
+
+Resultado: los errores de Stephanye Troncoso (`celular` con espacios) quedaron reconciliados por el job exitoso `c6d67c33-1363-4c5c-8f26-ec73c010eaef`, empleado BUK `42828`. El worker ahora normaliza teléfonos antes del POST, la Edge Function quedó desplegada en `pzblmbahnoyntrhistea`, y la verificación viva confirmó ficha `F1`, estado activo, job BUK `145561`, renta `0` y tallas verificadas. No hay jobs `processing`; permanece un `pending` histórico excluido por claim porque el candidato ya tiene éxito efectivo.
+
 ## Psych AI V5.2 humanización y auditoría de tokens - 2026-08-14
 
 - [x] Auditar V5 real en código y producción: prompts, schema, telemetry, doble ejecución, reuse del output IA en PDF y canary RC-1807.

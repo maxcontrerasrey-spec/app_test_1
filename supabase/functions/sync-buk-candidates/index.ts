@@ -456,6 +456,19 @@ function normalizeEmail(value: string | null | undefined) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalized) ? normalized : "";
 }
 
+function normalizeBukPhone(value: string | null | undefined) {
+  const digits = (value ?? "").replace(/[^0-9]/g, "");
+  if (!digits) {
+    return "";
+  }
+
+  if (digits.startsWith("56") && digits.length === 11) {
+    return digits.slice(2);
+  }
+
+  return digits;
+}
+
 function extractDatePortion(value: string | null | undefined) {
   const normalized = (value ?? "").trim();
   if (!normalized) {
@@ -2574,8 +2587,8 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
     district: profile.district_or_commune,
     location_id: locationId,
     region: profile.region,
-    office_phone: profile.office_phone || undefined,
-    phone: profile.phone || undefined,
+    office_phone: normalizeBukPhone(profile.office_phone) || undefined,
+    phone: normalizeBukPhone(profile.phone) || undefined,
     gender: resolveGender(profile.gender),
     birthday: profile.birth_date,
     university: profile.education_institution || undefined,

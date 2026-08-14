@@ -73,6 +73,14 @@ describe("CORE data integrity", () => {
     expect(sync).toContain("const employee = await fetchBukEmployeeById(employeeId)");
   });
 
+  it("normalizes formatted phone numbers before sending employees to BUK", () => {
+    const sync = read("supabase/functions/sync-buk-candidates/index.ts");
+    expect(sync).toContain("function normalizeBukPhone(value: string | null | undefined)");
+    expect(sync).toContain("const digits = (value ?? \"\").replace(/[^0-9]/g, \"\")");
+    expect(sync).toContain("office_phone: normalizeBukPhone(profile.office_phone) || undefined");
+    expect(sync).toContain("phone: normalizeBukPhone(profile.phone) || undefined");
+  });
+
   it("persists accreditation upload operations behind RLS", () => {
     const uploadMigration = read(
       "supabase/migrations/20260722184849_add_accreditation_document_upload_jobs.sql"

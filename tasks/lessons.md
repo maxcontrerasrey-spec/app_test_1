@@ -4,6 +4,17 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 317. Las reglas metodológicas sobreviven al cambio de estado interpretativo
+
+- Cuando un instrumento pasa de “descriptivo permitido” a “solo revisión profesional”, sus prohibiciones no deben apagarse.
+- PRP sigue bloqueando percentiles, eneatipos, baremos inventados y nombres de factores no documentados aunque no tenga peso decisional automático.
+
+## 316. Los teléfonos formateados deben normalizarse en el borde de la integración BUK
+
+- Los formularios pueden conservar un teléfono legible como `9 3236 7172`, pero BUK rechaza los separadores en el campo numérico `celular`.
+- El payload ERP autorizado no basta como contrato externo: el worker debe eliminar separadores y convertir `+56 9...` al formato nacional de nueve dígitos antes del POST.
+- Un error histórico puede quedar acompañado de un éxito posterior; se conserva para auditoría y la resolución operativa se confirma con el job efectivo y el estado vivo del empleado BUK.
+
 ## 315. Los guardrails IA deben separar trigger de revisión y bloqueo final
 
 - Un término problemático detectado antes de sanitizar sirve para activar Reviewer o registrar trazabilidad, pero no debe bloquear si el ERP ya normalizó la salida profesional antes de persistir.
