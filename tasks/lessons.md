@@ -3173,3 +3173,7 @@ Si OpenAI u otro proveedor real agota tiempo, el ERP puede construir un resumen 
 ### 311. Una respuesta IA insegura debe sanearse, no vaciar el informe
 
 Cuando el proveedor sí devuelve contenido pero incumple locks semánticos, la salida no debe descartarse completa si el normalizador determinístico puede corregirla. El ERP debe conservar la interpretación saneada, registrar los flags aplicados y reservar `FAILED` para ausencia real de respuesta, rechazo del proveedor, timeout o errores de API.
+
+### 312. En IA psicolaboral, el Reviewer debe cargar el peso semántico
+
+El ERP no debe escribir el informe con decenas de reglas, pero tampoco debe confiar en el primer borrador del modelo. La arquitectura estable es Analyst para redactar, Reviewer para corregir contra facts y hard checks mínimos para bloquear solo decisiones, diagnóstico o violaciones no recuperables.

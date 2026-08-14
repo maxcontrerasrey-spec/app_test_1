@@ -134,6 +134,8 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAi).toContain('fetch(`${this.baseUrl}/responses`');
     expect(psychAi).toContain("text: {");
     expect(psychAi).toContain("max_output_tokens");
+    expect(psychAi).toContain("reasoning");
+    expect(psychAi).toContain("low");
     expect(psychAi).toContain("json_schema");
     expect(psychAi).toContain("openai_incomplete_");
     expect(psychAi).toContain("openai_refusal_");
@@ -156,7 +158,10 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
     expect(psychAiIndex).toContain("provider_failed_fallback_used");
     expect(psychAiIndex).toContain("success: !liveConfigured");
-    expect(psychAiIndex).toContain("semantic_guardrail_normalized_after_retry");
+    expect(psychAiIndex).toContain("gpt5-mini-analyst-reviewer-v1");
+    expect(psychAiIndex).toContain("ANALYST_SYSTEM_PROMPT");
+    expect(psychAiIndex).toContain("REVIEWER_SYSTEM_PROMPT");
+    expect(psychAiIndex).toContain("REVIEWER_BYPASSED_DUE_TO_FAILURE");
     expect(edge).toContain("p_output: generated.success ? generated.output : null");
   });
 

@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Psych AI GPT-5 mini dual-pass Analyst/Reviewer V4 - 2026-08-14
+
+- [x] Aterrizar el prompt V4 contra el pipeline actual sin tocar scoring, respuestas, RLS ni revisión profesional.
+- [x] Implementar Analyst → Reviewer con OpenAI Responses API, schemas estrictos, retries acotados y fallback no vacío solo cuando sea seguro.
+- [x] Reducir la dependencia de reglas semánticas extensas a hard checks mínimos, conservando bloqueos críticos de PRP, BIS, decisiones, diagnóstico y PII.
+- [x] Registrar metadata de pipeline, correcciones, tokens y latencia, manteniendo compatibilidad con UI/PDF actuales.
+- [x] Agregar pruebas de regresión para BIS, PRP, estilos IPC, preguntas neutrales, hard guardrails, fallback y PDF final.
+- [x] Desplegar producción, regenerar RC-1807 y verificar que el informe use Reviewer/final output con hash.
+
+Resultado: se implementó `gpt5-mini-analyst-reviewer-v1` en backend. GPT-5 mini genera Analyst y luego Reviewer con Responses API, schema estricto, reasoning low, sin tools ni browsing. El ERP mantiene scoring/facts como fuente de verdad, sanea PII, conserva locks PRP/BIS/decisiones/diagnóstico y usa hard checks mínimos sobre la salida final. RC-1807 quedó con run `SUCCESS`, `analyst_attempt:1`, `reviewer_attempt:1`, estado `PENDING_REVIEW`, certificado e informe `generated`.
+
 ## Migración Psych AI a OpenAI GPT-5 mini - 2026-08-13
 
 - [x] Reemplazar el proveedor anterior por OpenAI en la Edge Function psicolaboral, manteniendo Mock/fallback y guardrails V3.

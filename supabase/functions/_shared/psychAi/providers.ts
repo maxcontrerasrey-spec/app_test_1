@@ -86,6 +86,9 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
               strict: true,
             },
           },
+          reasoning: {
+            effort: Deno.env.get("PSYCH_AI_REASONING_EFFORT")?.trim() || "low",
+          },
           max_output_tokens: Number(Deno.env.get("PSYCH_AI_MAX_OUTPUT_TOKENS")?.trim()) || 8000,
           store: false,
         }),
