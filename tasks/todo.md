@@ -5,12 +5,12 @@
 - [x] Reemplazar el proveedor anterior por OpenAI en la Edge Function psicolaboral, manteniendo Mock/fallback y guardrails V3.
 - [x] Versionar prompt activo para `provider='openai'` y `model='gpt-5-mini'` sin tocar scoring ni respuestas históricas.
 - [x] Actualizar tests, documentación operativa y reportes para eliminar dependencia del proveedor anterior en el flujo psicolaboral.
-- [ ] Configurar secreto productivo `OPENAI_API_KEY`; `PSYCH_AI_PROVIDER=openai`, `PSYCH_AI_MODEL=gpt-5-mini`, despliegue y regeneración RC-1807 ya quedaron aplicados.
+- [x] Configurar secreto productivo `OPENAI_API_KEY`; `PSYCH_AI_PROVIDER=openai`, `PSYCH_AI_MODEL=gpt-5-mini`, despliegue y regeneración RC-1807 quedaron aplicados.
 - [x] Ejecutar Deno, unit/integrity, auditorías Supabase, build, Guardian, verificación PDF y commit/push.
 - [x] Limpiar referencias del proveedor anterior en el flujo Psych AI activo y retirar secreto productivo obsoleto de Supabase.
 - [x] Separar ORION de la migración: no lee `OPENAI_API_KEY`, no usa defaults OpenAI/GPT y sus secrets `ORION_LLM_*` fueron retirados de producción.
 
-Resultado parcial: producción quedó con prompt activo `psych-ai-prompt-v4`, schema `psych-ai-schema-v3`, provider `openai` y modelo `gpt-5-mini`. RC-1807 fue regenerado sin el proveedor anterior y sin flags semánticos; al no existir `OPENAI_API_KEY` en Supabase, el ERP dejó fallback determinístico revisable con texto limpio “proveedor IA no habilitado”. El live test real con GPT-5 mini queda pendiente exclusivamente de cargar ese secreto.
+Resultado: producción quedó con prompt activo `psych-ai-prompt-v4`, schema `psych-ai-schema-v3`, provider `openai` y modelo `gpt-5-mini`. `OPENAI_API_KEY` quedó configurado solo para Psych AI; `GROQ_API_KEY` y `ORION_LLM_*` quedaron retirados. RC-1807 fue regenerado con OpenAI real, run `SUCCESS`, estado `PENDING_REVIEW`, certificado e informe `generated` con hashes.
 
 ## Guardrails semánticos IA psicolaboral V3 - 2026-08-13
 
