@@ -24,14 +24,14 @@ Fecha: 2026-08-13
 - Edge Function `generate-psycholaboral-certificate` desplegada con informe interno de 4 paginas.
 - Smoke SQL reducido: 4 tablas IA, 5 RPC IA, 1 prompt activo, 7 perfiles activos, 0 grants directos a `anon/authenticated`, perfil conductor resuelto.
 - Smoke HTTP negativo: endpoint IA rechaza acceso sin JWT con `401` y CORS restringido al dominio ERP.
-- Corrección Groq schema v2: `ipip16.clusters` usa propiedades fijas para evitar rechazo `groq_400_invalid JSON schema`.
+- Corrección schema v2: `ipip16.clusters` usa propiedades fijas para evitar rechazo de JSON Schema dinámico.
 
 ## Cobertura agregada
 
 - Tablas IA privadas y sin grants directos.
 - Payload IA service-role only.
 - Sanitización de PII y respuestas crudas.
-- Mock y Groq providers.
+- Mock y OpenAI providers.
 - Feature flag `PSYCH_AI_ENABLED`.
 - JSON Schema estricto.
 - Guardrails contra decisión, diagnóstico y baremos inventados.
@@ -39,6 +39,6 @@ Fecha: 2026-08-13
 
 ## Pendiente por credencial
 
-`LIVE_GROQ_INTEGRATION_TEST`: ejecutar desde una evaluación terminada después de publicar `psych-ai-schema-v2`.
+`LIVE_OPENAI_INTEGRATION_TEST`: ejecutar desde una evaluación terminada con `PSYCH_AI_PROVIDER=openai`, `PSYCH_AI_MODEL=gpt-5-mini` y `OPENAI_API_KEY`.
 
-Estado final: `IMPLEMENTATION COMPLETE — LIVE GROQ VALIDATION PENDING API KEY`.
+Estado final: `IMPLEMENTATION COMPLETE — LIVE OPENAI VALIDATION PENDING API KEY`.

@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 314. El proveedor IA debe ser reemplazable sin reabrir scoring ni reportes
+
+- En módulos sensibles, el proveedor externo es un adaptador, no parte del motor psicométrico: cambiar Groq por OpenAI no debe tocar respuestas, scoring, locks semánticos, revisión profesional ni PDF salvo configuración y trazabilidad.
+- La tabla de prompts debe versionar `provider` y `model`; cambiar modelo debe producir nuevo `input_hash` y nuevo intento, sin sobrescribir salidas históricas.
+- Los errores técnicos del proveedor nunca deben llegar al informe visible; el fallback debe expresar una causa operacional saneada y conservar el detalle solo en runs/logs internos.
+- Los tests de integridad deben bloquear dependencias accidentales al proveedor retirado dentro del flujo activo, manteniendo migraciones antiguas solo como historia.
+
 ## 313. Un informe generado por IA debe esperar la interpretación antes de sellar el PDF
 
 - Si IA y PDF se disparan en paralelo, el informe puede quedar correctamente generado pero con fallback antiguo; el estado del candidato no basta para demostrar que el binario contiene la interpretación vigente.
@@ -23,7 +30,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - En psicometría, la IA debe recibir solo resultados calculados y saneados; nunca respuestas crudas, RUN, correo ni identidad directa.
 - La salida original del proveedor es evidencia y no se sobrescribe: la revisión profesional vive en un campo separado con estado, actor, fecha y comentario.
-- Un proveedor faltante o fallido no debe bloquear el proceso ni inventar scoring; debe producir fallback determinístico trazable y dejar `LIVE_GROQ_INTEGRATION_TEST` como único pendiente de credencial.
+- Un proveedor faltante o fallido no debe bloquear el proceso ni inventar scoring; debe producir fallback determinístico trazable y dejar `LIVE_OPENAI_INTEGRATION_TEST` como único pendiente de credencial.
 - Todo texto automático necesita guardrails posteriores contra diagnóstico, aptitud, rechazo, contratación, percentiles o baremos no entregados.
 
 ## 310. Digitalizar literalmente no significa ocultar contradicciones de la fuente

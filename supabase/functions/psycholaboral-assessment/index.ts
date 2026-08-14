@@ -139,12 +139,12 @@ async function runPsychAIInterpretation(
   const inputHash = await sha256Json(inputPayload);
   const claimToken = crypto.randomUUID();
   const providerName = Deno.env.get("PSYCH_AI_ENABLED")?.trim().toLowerCase() === "true" &&
-      Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() === "groq" &&
-      Deno.env.get("GROQ_API_KEY")?.trim()
-    ? "groq"
+      Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() === "openai" &&
+      Deno.env.get("OPENAI_API_KEY")?.trim()
+    ? "openai"
     : "mock";
-  const modelName = providerName === "groq"
-    ? Deno.env.get("PSYCH_AI_MODEL")?.trim() || "openai/gpt-oss-120b"
+  const modelName = providerName === "openai"
+    ? Deno.env.get("PSYCH_AI_MODEL")?.trim() || "gpt-5-mini"
     : "mock-psych-ai-v1";
   const { data: claim, error: claimError } = await admin.rpc(
     "claim_psych_ai_interpretation",
@@ -230,7 +230,7 @@ async function runPsychAIInterpretation(
   }
   if (!generated.success) {
     throw new Error(
-      `Groq no pudo generar la interpretación: ${generated.fallback_reason || generated.error_message || "provider_failed"}`,
+      `OpenAI no pudo generar la interpretación: ${generated.fallback_reason || generated.error_message || "provider_failed"}`,
     );
   }
   return {

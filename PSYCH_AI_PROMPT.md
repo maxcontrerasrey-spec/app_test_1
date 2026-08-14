@@ -2,11 +2,11 @@
 
 Código: `psych-ai-interpretation`
 
-Versión: `psych-ai-prompt-v1`
+Versión activa: `psych-ai-prompt-v4`
 
-Modelo objetivo: `openai/gpt-oss-120b`
+Modelo objetivo: `gpt-5-mini`
 
-Proveedor objetivo: `groq`
+Proveedor objetivo: `openai`
 
 System prompt activo:
 
@@ -19,6 +19,4 @@ Restricciones operativas:
 - Sin herramientas.
 - Sin streaming.
 - JSON Schema estricto.
-- `reasoning_effort=low`.
-- Temperatura baja.
 - Maximo un intento real; fallback determinístico si falla.

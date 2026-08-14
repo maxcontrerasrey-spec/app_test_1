@@ -1,4 +1,12 @@
 import { normalizePsychAIOutput, validateStrictShape } from "./schema.ts";
+import {
+  attachPsychSemanticContext,
+  buildDeterministicPsychSemanticOutput,
+  buildPsychSemanticContext,
+  normalizeSemanticOutputForErp,
+  PSYCH_SEMANTIC_VERSION,
+  validatePsychSemanticOutput,
+} from "./semantic.ts";
 import type { GuardrailResult, JsonRecord, PsychAIOutput } from "./types.ts";
 
 const PROHIBITED_PATTERNS: Array<[RegExp, string]> = [
@@ -6,6 +14,7 @@ const PROHIBITED_PATTERNS: Array<[RegExp, string]> = [
   [/\bdiagn[oó]stic[oa]|trastorno|patolog[ií]a|enfermedad mental\b/i, "clinical_word"],
   [/\bpercentil|baremo chileno|eneatipo\s+[0-9]\b/i, "invented_norm_word"],
   [/\bcalcul[eé]|recalcul[eé]|modifiqu[eé]\s+score\b/i, "score_modification_word"],
+  [/\b(riesgo cr[ií]tico|alto riesgo|riesgo severo|peligroso|inseguro|no recomendable|incompatible|requiere intervenci[oó]n)\b/i, "risk_language_word"],
 ];
 
 function collectStrings(value: unknown, out: string[] = []) {
@@ -70,12 +79,18 @@ export function sanitizePsychAIInput(input: JsonRecord) {
     return value;
   };
 
-  return scrub(cloned) as JsonRecord;
+  return attachPsychSemanticContext(scrub(cloned) as JsonRecord);
 }
 
-export function validateAndGuardPsychAIOutput(value: unknown): GuardrailResult {
+export function validateAndGuardPsychAIOutput(value: unknown, input?: JsonRecord): GuardrailResult {
   const shape = validateStrictShape(value);
-  const normalized = normalizePsychAIOutput(sanitizeStrings(value));
+  const semanticContext = input ? buildPsychSemanticContext(input) : null;
+  const semanticValidation = semanticContext
+    ? validatePsychSemanticOutput(value, semanticContext)
+    : { ok: true, flags: [] };
+  const normalized = semanticContext
+    ? normalizeSemanticOutputForErp(sanitizeStrings(value), semanticContext)
+    : normalizePsychAIOutput(sanitizeStrings(value));
   const guardrailFlags = collectStrings(normalized).flatMap((text) =>
     PROHIBITED_PATTERNS
       .filter(([pattern]) => pattern.test(text))
@@ -88,18 +103,23 @@ export function validateAndGuardPsychAIOutput(value: unknown): GuardrailResult {
     "No constituye decision automatica de contratacion o rechazo.",
     "La revision profesional es obligatoria antes de usar este antecedente.",
   ])).slice(0, 8);
+  normalized.version = normalized.version || PSYCH_SEMANTIC_VERSION;
 
   normalized.ipc.disc_disclaimer =
     "Este modelo interno no corresponde a DISC ni a Everything DiSC; usa octantes IPIP-IPC y macroestilos laborales propios.";
 
   return {
     output: normalized,
-    validationFlags: shape.flags,
-    guardrailFlags: Array.from(new Set(guardrailFlags)),
+    validationFlags: [...shape.flags, ...semanticValidation.flags],
+    guardrailFlags: Array.from(new Set([...guardrailFlags, ...semanticValidation.flags])),
   };
 }
 
 export function buildDeterministicPsychOutput(input: JsonRecord, reason: string): PsychAIOutput {
+  return buildDeterministicPsychSemanticOutput(input, reason);
+}
+
+export function buildLegacyDeterministicPsychOutput(input: JsonRecord, reason: string): PsychAIOutput {
   const instruments = Array.isArray(input.instruments) ? input.instruments as JsonRecord[] : [];
   const quality = instruments
     .map((item) => `${String(item.code ?? "TEST")}: ${String((item.quality as JsonRecord | undefined)?.status ?? "REVISAR")}`)

@@ -28,13 +28,29 @@ export type PsychAIPromptInput = {
   responseSchema: JsonRecord;
 };
 
+export type EvidenceBackedAIStatement = {
+  title?: string;
+  text?: string;
+  question?: string;
+  target?: string;
+  evidence_ids: string[];
+};
+
 export type PsychAIOutput = {
   version: string;
+  profile_summary?: string;
   executive_summary: string;
   response_quality: string;
   strengths: string[];
+  points_to_explore?: EvidenceBackedAIStatement[];
   development_areas: string[];
   interview_questions: string[];
+  instrument_analysis?: {
+    ipip16: string;
+    ipip_ipc: string;
+    bis11: string;
+    prp: string;
+  };
   ipip16: {
     summary: string;
     clusters: Record<string, string>;
@@ -54,6 +70,7 @@ export type PsychAIOutput = {
   };
   integrated_analysis: string;
   preliminary_conclusion: string;
+  recommendations?: string[];
   limitations: string[];
   evidence: string[];
 };

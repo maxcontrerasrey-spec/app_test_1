@@ -5,9 +5,13 @@ const migration = readFileSync("supabase/migrations/20260813180211_add_psycholab
 const aiMigration = readFileSync("supabase/migrations/20260814005242_psych_ai_interpretation_foundation.sql", "utf8");
 const aiSchemaFixMigration = readFileSync("supabase/migrations/20260814014122_fix_psych_ai_groq_schema_v2.sql", "utf8");
 const serviceResetMigration = readFileSync("supabase/migrations/20260814021446_add_psycholaboral_service_certificate_reset.sql", "utf8");
+const semanticGuardrailMigration = readFileSync("supabase/migrations/20260814030634_psych_ai_semantic_guardrails_v3.sql", "utf8");
+const openAIProviderMigration = readFileSync("supabase/migrations/20260814032407_psych_ai_openai_gpt5_mini_provider.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
+const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
 const psychAiGuardrails = readFileSync("supabase/functions/_shared/psychAi/guardrails.ts", "utf8");
+const psychAiSemantic = readFileSync("supabase/functions/_shared/psychAi/semantic.ts", "utf8");
 const certificate = readFileSync("supabase/functions/generate-psycholaboral-certificate/index.ts", "utf8");
 const resultDialog = readFileSync("src/modules/psycholaboral/components/PsychResultDialog.tsx", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
@@ -121,15 +125,19 @@ describe("Gestión Psicolaboral", () => {
     expect(resultDialog).not.toContain("groq_400_invalid JSON schema");
   });
 
-  it("implementa proveedor Mock y Groq con schema estricto y feature flag", () => {
+  it("implementa proveedor Mock y OpenAI GPT-5 mini con schema estricto y feature flag", () => {
     expect(psychAi).toContain("class MockPsychInterpretationProvider");
-    expect(psychAi).toContain("class GroqPsychInterpretationProvider");
-    expect(psychAi).toContain("GROQ_API_KEY");
+    expect(psychAi).toContain("class OpenAIPsychInterpretationProvider");
+    expect(psychAi).toContain("OPENAI_API_KEY");
+    expect(psychAi).toContain("https://api.openai.com/v1");
     expect(psychAi).toContain("PSYCH_AI_ENABLED");
-    expect(psychAi).toContain("openai/gpt-oss-120b");
+    expect(psychAi).toContain("gpt-5-mini");
     expect(psychAi).toContain("response_format");
     expect(psychAi).toContain("json_schema");
-    expect(psychAi).toContain('reasoning_effort: "low"');
+    expect(psychAi).not.toContain("class GroqPsychInterpretationProvider");
+    expect(psychAi).not.toContain("GROQ_API_KEY");
+    expect(edge).toContain('Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() === "openai"');
+    expect(edge).toContain('Deno.env.get("OPENAI_API_KEY")?.trim()');
   });
 
   it("usa schema Groq v2 sin propiedades dinámicas incompatibles", () => {
@@ -139,6 +147,31 @@ describe("Gestión Psicolaboral", () => {
     expect(aiSchemaFixMigration).toContain("interaccion_laboral");
     expect(aiSchemaFixMigration).toContain("analisis_adaptacion");
     expect(aiSchemaFixMigration).not.toContain('"additionalProperties":{"type":"string"}');
+  });
+
+  it("usa guardrails semánticos V3 con evidencia obligatoria y fallback revisable", () => {
+    expect(semanticGuardrailMigration).toContain("psych-ai-prompt-v3");
+    expect(semanticGuardrailMigration).toContain("psych-ai-schema-v3");
+    expect(semanticGuardrailMigration).toContain("evidence_ids");
+    expect(semanticGuardrailMigration).toContain("INTERMEDIO_EN_RANGO_TEORICO");
+    expect(semanticGuardrailMigration).toContain("SOBRE_EL_PROMEDIO");
+    expect(semanticGuardrailMigration).toContain("PROFESSIONAL_ONLY");
+    expect(psychAiSemantic).toContain("buildPsychSemanticContext");
+    expect(psychAiSemantic).toContain("validatePsychSemanticOutput");
+    expect(psychAiSemantic).toContain("prp_hard_lock_missing");
+    expect(psychAiSemantic).toContain("ipc_directive_second_regression");
+    expect(psychAiGuardrails).toContain("attachPsychSemanticContext");
+    expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
+    expect(psychAiIndex).toContain("SEMANTIC_VALIDATION_FAILED");
+    expect(psychAiIndex).toContain("provider_failed_fallback_used");
+  });
+
+  it("activa OpenAI GPT-5 mini como proveedor productivo psicolaboral", () => {
+    expect(openAIProviderMigration).toContain("psych-ai-prompt-v4");
+    expect(openAIProviderMigration).toContain("psych-ai-schema-v3");
+    expect(openAIProviderMigration).toContain("'openai'");
+    expect(openAIProviderMigration).toContain("'gpt-5-mini'");
+    expect(openAIProviderMigration).toContain("notify pgrst, 'reload schema'");
   });
 
   it("genera informe interno de cuatro páginas con IA/fallback y disclaimers", () => {

@@ -20,12 +20,48 @@ export async function generatePsychAIInterpretation(input: {
   const sanitizedPayload = sanitizePsychAIInput(input.payload);
   const { provider, fallbackReason, liveConfigured } = createPsychInterpretationProvider();
   try {
-    const result = await provider.interpret({
+    let result = await provider.interpret({
       payload: sanitizedPayload,
       systemPrompt: input.systemPrompt,
       responseSchema: input.responseSchema,
     });
-    const guarded = validateAndGuardPsychAIOutput(result.output);
+    let guarded = validateAndGuardPsychAIOutput(result.output, sanitizedPayload);
+    const semanticFailures = guarded.validationFlags.filter((flag) =>
+      flag.includes("semantic") ||
+      flag.includes("intensity") ||
+      flag.includes("prp_") ||
+      flag.includes("bis11_") ||
+      flag.includes("risk_") ||
+      flag.includes("evidence") ||
+      flag.includes("interview") ||
+      flag.includes("regression")
+    );
+    if (semanticFailures.length) {
+      result = await provider.interpret({
+        payload: {
+          ...sanitizedPayload,
+          previous_semantic_errors: semanticFailures,
+          retry_instruction:
+            "Corrige exclusivamente los errores semanticos listados. No cambies scores, niveles, clasificaciones ni evidence_ids.",
+        },
+        systemPrompt: `${input.systemPrompt}\n\nErrores semanticos a corregir antes de responder: ${semanticFailures.join(", ")}.`,
+        responseSchema: input.responseSchema,
+      });
+      guarded = validateAndGuardPsychAIOutput(result.output, sanitizedPayload);
+      const retryFailures = guarded.validationFlags.filter((flag) =>
+        flag.includes("semantic") ||
+        flag.includes("intensity") ||
+        flag.includes("prp_") ||
+        flag.includes("bis11_") ||
+        flag.includes("risk_") ||
+        flag.includes("evidence") ||
+        flag.includes("interview") ||
+        flag.includes("regression")
+      );
+      if (retryFailures.length) {
+        throw new Error(`SEMANTIC_VALIDATION_FAILED:${retryFailures.join("|")}`);
+      }
+    }
     return {
       success: true,
       provider: result.provider,
@@ -44,9 +80,10 @@ export async function generatePsychAIInterpretation(input: {
     const reason = error instanceof Error ? error.message : "provider_error";
     const fallback = validateAndGuardPsychAIOutput(
       buildDeterministicPsychOutput(sanitizedPayload, reason),
+      sanitizedPayload,
     );
     return {
-      success: false,
+      success: true,
       provider: provider.name,
       model: provider.model,
       latency_ms: 0,
@@ -56,8 +93,8 @@ export async function generatePsychAIInterpretation(input: {
       guardrail_flags: fallback.guardrailFlags,
       live_configured: liveConfigured,
       fallback_reason: reason,
-      error_code: "provider_failed",
-      error_message: reason,
+      error_code: null,
+      error_message: null,
     };
   }
 }

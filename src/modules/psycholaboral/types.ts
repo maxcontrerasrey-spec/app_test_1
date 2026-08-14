@@ -114,17 +114,30 @@ export type PsychAIStatus =
 
 export type PsychAIOutput = {
   version: string;
+  profile_summary?: string;
   executive_summary: string;
   response_quality: string;
   strengths: string[];
+  points_to_explore?: Array<{
+    title?: string;
+    text?: string;
+    evidence_ids: string[];
+  }>;
   development_areas: string[];
   interview_questions: string[];
+  instrument_analysis?: {
+    ipip16: string;
+    ipip_ipc: string;
+    bis11: string;
+    prp: string;
+  };
   ipip16: { summary: string; clusters: Record<string, string> };
   ipc: { summary: string; predominant_profile: string; disc_disclaimer: string };
   bis11: { summary: string; impulsivity_interpretation: string };
   prp: { summary: string; documentation_status: string };
   integrated_analysis: string;
   preliminary_conclusion: string;
+  recommendations?: string[];
   limitations: string[];
   evidence: string[];
 };

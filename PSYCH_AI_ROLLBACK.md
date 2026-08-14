@@ -8,7 +8,7 @@ Configurar:
 PSYCH_AI_ENABLED=false
 ```
 
-Con esto no se invoca Groq; el flujo queda en Mock/fallback.
+Con esto no se invoca OpenAI; el flujo queda en Mock/fallback.
 
 ## Rollback frontend
 

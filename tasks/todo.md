@@ -1,10 +1,29 @@
 # Tareas y Roadmap de Desarrollo
 
+## Migración Psych AI a OpenAI GPT-5 mini - 2026-08-13
+
+- [x] Reemplazar proveedor Groq por OpenAI en la Edge Function psicolaboral, manteniendo Mock/fallback y guardrails V3.
+- [x] Versionar prompt activo para `provider='openai'` y `model='gpt-5-mini'` sin tocar scoring ni respuestas históricas.
+- [x] Actualizar tests, documentación operativa y reportes para eliminar dependencia Groq del flujo psicolaboral.
+- [ ] Configurar secreto productivo `OPENAI_API_KEY`; `PSYCH_AI_PROVIDER=openai`, `PSYCH_AI_MODEL=gpt-5-mini`, despliegue y regeneración RC-1807 ya quedaron aplicados.
+- [x] Ejecutar Deno, unit/integrity, auditorías Supabase, build, Guardian, verificación PDF y commit/push.
+
+Resultado parcial: producción quedó con prompt activo `psych-ai-prompt-v4`, schema `psych-ai-schema-v3`, provider `openai` y modelo `gpt-5-mini`. RC-1807 fue regenerado sin Groq y sin flags semánticos; al no existir `OPENAI_API_KEY` en Supabase, el ERP dejó fallback determinístico revisable con texto limpio “proveedor IA no habilitado”. El live test real con GPT-5 mini queda pendiente exclusivamente de cargar ese secreto.
+
+## Guardrails semánticos IA psicolaboral V3 - 2026-08-13
+
+- [ ] Implementar `PsychSemanticGuardrailEngine` determinístico entre scoring e IA, con niveles teóricos IPIP, lock BIS-11, lock PRP y evidencia versionada.
+- [ ] Migrar schema de salida IA a V3 estructurado sin que el LLM decida intensidad, significado ni clasificación.
+- [ ] Validar post-LLM evidencia, intensidad, riesgo, PRP, fortalezas, preguntas neutrales y limitaciones deduplicadas.
+- [ ] Mantener compatibilidad con UI/PDF actuales sin rediseño estructural y sin tocar scoring ni respuestas históricas.
+- [ ] Crear tests de regresión semántica obligatorios y reporte `PSYCH_AI_SEMANTIC_GUARDRAIL_REPORT.md`.
+- [ ] Desplegar Edge Functions, regenerar el canario RC-1807 y verificar producción antes de cerrar.
+
 ## Capa IA interpretativa psicolaboral - 2026-08-13
 - [x] Auditar el prompt maestro contra scoring, calidad, perfiles, PDF, Storage, RLS y frontend existentes.
 - [x] Documentar arquitectura, brechas, riesgos, rollback y gates en `PSYCH_AI_IMPLEMENTATION_AUDIT.md`.
 - [x] Crear migración privada de perfiles de cargo, interpretaciones, ejecuciones y versiones de prompt.
-- [x] Implementar proveedor abstracto, Mock, Groq, sanitización, schema estricto, guardrails, cache e idempotencia.
+- [x] Implementar proveedor abstracto, Mock, OpenAI, sanitización, schema estricto, guardrails, cache e idempotencia.
 - [x] Integrar generación piloto manual y revisión profesional sin decisión automática.
 - [x] Rediseñar PDF de cuatro páginas con evidencia, interpretación separada y fallback determinístico.
 - [x] Crear documentación operacional: arquitectura, privacidad, prompt, schema, tests, piloto y rollback.
@@ -12,9 +31,9 @@
 
 Decisión: `PSYCH_AI_ENABLED=false` durante el desarrollo. El scoring existente, los resultados históricos, el certificado actual y el flujo de candidatos no se modifican hasta que la capa auditable esté validada.
 
-Continuación solicitada: ejecutar Fase 2 a Fase 16 sin repetir auditoría. La ausencia de `GROQ_API_KEY` no bloquea el desarrollo: el proveedor real queda implementado, pero el entorno usa Mock/fallback hasta configurar secreto y activar feature flag.
+Continuación solicitada: ejecutar Fase 2 a Fase 16 sin repetir auditoría. La ausencia de `OPENAI_API_KEY` no bloquea el desarrollo: el proveedor real queda implementado, pero el entorno usa Mock/fallback hasta configurar secreto y activar feature flag.
 
-Resultado actualizado: la capa IA queda aislada en tablas privadas, con generación automática post-respuesta, revisión profesional editable y PDF interno de 4 páginas. Groq quedó operativo para el canario RC-1807 y el informe fue regenerado con estado IA `PENDING_REVIEW`; queda pendiente ampliar perfiles configurables antes de uso masivo.
+Resultado actualizado: la capa IA queda aislada en tablas privadas, con generación automática post-respuesta, revisión profesional editable y PDF interno de 4 páginas. El proveedor productivo fue migrado a OpenAI `gpt-5-mini`; queda pendiente ampliar perfiles configurables antes de uso masivo.
 
 ## Rediseño informe psicolaboral integrado - 2026-08-13
 - [x] Auditar generador PDF, scoring, datos históricos, permisos y contratos actuales.

@@ -1,7 +1,7 @@
 # Auditoría de implementación IA psicolaboral
 
 Fecha: 2026-08-13  
-Alcance: integración incremental Groq + `openai/gpt-oss-120b` para interpretación descriptiva.
+Alcance: integración incremental OpenAI `gpt-5-mini` para interpretación descriptiva.
 
 ## Resumen ejecutivo
 
@@ -27,10 +27,10 @@ La brecha está en una capa interpretativa separada: no existe proveedor abstrac
 ## Riesgos que deben permanecer bloqueados
 
 1. La IA no puede recalcular scores, crear percentiles, inventar baremos ni modificar respuestas.
-2. No se enviará nombre, RUN, email, teléfono, dirección ni respuestas crudas a Groq.
+2. No se enviará nombre, RUN, email, teléfono, dirección ni respuestas crudas a OpenAI.
 3. PRP no expondrá factores sin significado documentado.
 4. La IA no podrá emitir `APTO`, `NO APTO`, `CONTRATAR`, `NO CONTRATAR`, diagnóstico ni rechazo.
-5. Un fallo, timeout, rate limit o ausencia de `GROQ_API_KEY` debe producir informe determinístico, no bloquear el proceso.
+5. Un fallo, timeout, rate limit o ausencia de `OPENAI_API_KEY` debe producir informe determinístico, no bloquear el proceso.
 6. La salida IA será un borrador `AI_DRAFT`, nunca un informe profesional validado.
 7. El informe completo seguirá restringido a los roles autorizados y no será accesible al candidato.
 
@@ -42,12 +42,12 @@ La brecha está en una capa interpretativa separada: no existe proveedor abstrac
 - Añadir tablas privadas `psych_ai_interpretations`, `psych_ai_runs` y `psych_prompt_versions` con RLS, sin grants directos a `anon`/`authenticated`.
 - Añadir estado IA al assessment y RPCs de lectura, generación piloto, revisión, observación y validación.
 - Persistir `input_hash`, payload saneado, salida original, salida validada, proveedor, modelo, prompt/schema/profile versions y métricas de ejecución.
-- Mantener idempotencia por assessment + hash de entrada; no llamar nuevamente a Groq si existe una interpretación válida.
+- Mantener idempotencia por assessment + hash de entrada; no llamar nuevamente a OpenAI si existe una interpretación válida.
 
 ### Edge Functions
 
 - Crear proveedor abstracto `PsychInterpretationProvider`.
-- Implementar `GroqPsychInterpretationProvider` contra `https://api.groq.com/openai/v1/chat/completions`, con `openai/gpt-oss-120b`, `reasoning_effort=low`, sin streaming ni tools y JSON Schema estricto.
+- Implementar `OpenAIPsychInterpretationProvider` contra `https://api.openai.com/v1/chat/completions`, con `gpt-5-mini`, sin streaming ni tools y JSON Schema estricto.
 - Implementar `MockPsychInterpretationProvider` para CI.
 - Aplicar sanitización, validación de schema, límites de longitud y guardrails de contenido.
 - Dejar fallback determinístico cuando la IA no esté disponible.
@@ -62,7 +62,7 @@ La brecha está en una capa interpretativa separada: no existe proveedor abstrac
 ## Orden incremental y rollback
 
 1. Migración de tablas, perfiles y RPCs: rollback eliminando solo tablas/funciones nuevas; no toca scoring.
-2. Prompt versionado, schema y proveedores Mock/Groq: rollback desactivando `PSYCH_AI_ENABLED`.
+2. Prompt versionado, schema y proveedores Mock/OpenAI: rollback desactivando `PSYCH_AI_ENABLED`.
 3. Edge Function de interpretación: rollback retirando la función; el generador usa fallback determinístico.
 4. Integración PDF/frontend: rollback ocultando las acciones IA y conservando el informe numérico actual.
 5. Piloto manual con evaluaciones ya completadas, sin generación automática masiva.
@@ -70,9 +70,9 @@ La brecha está en una capa interpretativa separada: no existe proveedor abstrac
 ## Configuración requerida
 
 ```text
-GROQ_API_KEY                 # secreto únicamente en Supabase Edge
-PSYCH_AI_PROVIDER=groq
-PSYCH_AI_MODEL=openai/gpt-oss-120b
+OPENAI_API_KEY               # secreto únicamente en Supabase Edge
+PSYCH_AI_PROVIDER=openai
+PSYCH_AI_MODEL=gpt-5-mini
 PSYCH_AI_ENABLED=false       # se activa después del piloto controlado
 PSYCH_AI_PROMPT_VERSION=psych-v1
 PSYCH_AI_SCHEMA_VERSION=1
@@ -84,8 +84,8 @@ La implementación puede desplegarse con la IA apagada. No se debe activar produ
 
 - Scoring y hashes antes/después son idénticos.
 - Payload saliente no contiene PII ni respuestas crudas.
-- Groq no se invoca cuando no hay API key, feature flag apagado o cache válido.
-- Falla de Groq deja `AI_STATUS=FAILED` y genera fallback determinístico.
+- OpenAI no se invoca cuando no hay API key, feature flag apagado o cache válido.
+- Falla de OpenAI deja fallback determinístico revisable y no bloquea el proceso.
 - Salida inválida o prohibida nunca llega al PDF como interpretación validada.
 - Ningún texto automático contiene diagnóstico, percentil inventado o decisión de contratación.
 - El profesional puede observar/editar/validar sin perder la salida original.
@@ -100,9 +100,9 @@ Se implementará primero la base auditable y el piloto manual. La generación au
 Implementación iniciada en Fase 2 el 2026-08-13:
 
 - Migración `20260814005242_psych_ai_interpretation_foundation.sql`.
-- Proveedores `MockPsychInterpretationProvider` y `GroqPsychInterpretationProvider`.
+- Proveedores `MockPsychInterpretationProvider` y `OpenAIPsychInterpretationProvider`.
 - Sanitización de payload, schema estricto, guardrails y fallback determinístico.
 - UI de generación y revisión profesional.
 - Informe interno PDF de 4 páginas con IA/fallback.
 
-La activación real de Groq queda pendiente de configurar `GROQ_API_KEY` y cambiar `PSYCH_AI_ENABLED=true`.
+La activación real de OpenAI queda pendiente de configurar `OPENAI_API_KEY` y cambiar `PSYCH_AI_ENABLED=true`.

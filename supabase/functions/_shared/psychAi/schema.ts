@@ -1,22 +1,18 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
+import { normalizeSemanticOutputForErp, PSYCH_SEMANTIC_VERSION } from "./semantic.ts";
 
-export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v2";
+export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v3";
 
 const REQUIRED_TOP_LEVEL = [
-  "version",
-  "executive_summary",
-  "response_quality",
+  "profile_summary",
   "strengths",
-  "development_areas",
-  "interview_questions",
-  "ipip16",
-  "ipc",
-  "bis11",
-  "prp",
+  "points_to_explore",
+  "instrument_analysis",
   "integrated_analysis",
+  "interview_questions",
   "preliminary_conclusion",
+  "recommendations",
   "limitations",
-  "evidence",
 ] as const;
 
 function text(value: unknown, max = 1400) {
@@ -45,6 +41,9 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
   const source = value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+  if ("profile_summary" in source || "points_to_explore" in source || "instrument_analysis" in source) {
+    return normalizeSemanticOutputForErp(source);
+  }
   const ipip16 = source.ipip16 && typeof source.ipip16 === "object" && !Array.isArray(source.ipip16)
     ? source.ipip16 as Record<string, unknown>
     : {};
@@ -59,7 +58,7 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
     : {};
 
   return {
-    version: text(source.version, 80) || RESPONSE_SCHEMA_VERSION,
+    version: text(source.version, 80) || PSYCH_SEMANTIC_VERSION,
     executive_summary: text(source.executive_summary) || "Interpretación preliminar no disponible.",
     response_quality: text(source.response_quality) || "La calidad debe revisarse junto con los indicadores calculados por el ERP.",
     strengths: textArray(source.strengths, 3, 6, [
