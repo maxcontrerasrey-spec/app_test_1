@@ -96,6 +96,17 @@ describe("Gestión Psicolaboral", () => {
     expect(edge).toContain("complete_psych_ai_interpretation");
   });
 
+  it("genera IA automaticamente al completar la bateria y no expone boton manual", () => {
+    const managementPage = readFileSync(
+      "src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx",
+      "utf8",
+    );
+    expect(edge).toContain("runPsychAIInterpretation(admin, session.assessment_id, null)");
+    expect(edge).toContain("EdgeRuntime.waitUntil(aiJob)");
+    expect(managementPage).not.toContain("Generar IA");
+    expect(managementPage).toContain("IA automática:");
+  });
+
   it("implementa proveedor Mock y Groq con schema estricto y feature flag", () => {
     expect(psychAi).toContain("class MockPsychInterpretationProvider");
     expect(psychAi).toContain("class GroqPsychInterpretationProvider");

@@ -1907,3 +1907,13 @@ Resultado: Psych AI queda implementado y activo funcionalmente con proveedor moc
 - [x] Verificar prompt activo `schema-v2`, schema dinámico eliminado e interpretaciones viejas inválidas en 0 pendientes.
 
 Resultado: Gestión Psicolaboral puede regenerar IA real con Groq usando el nuevo schema compatible.
+
+## Automatizacion IA psicolaboral al recibir respuestas - 2026-08-13
+- [x] Revisar el cierre real de batería en `submit_psycholaboral_instrument` y la Edge Function pública de candidatos.
+- [x] Extraer la generación IA a una función backend reutilizable.
+- [x] Ejecutar la generación IA automáticamente con `waitUntil` cuando el último instrumento completa la batería.
+- [x] Quitar el botón manual `Generar IA` de Gestión Psicolaboral.
+- [x] Mantener solo revisión profesional clickeable cuando exista interpretación IA revisable.
+- [x] Validar build, Guardian, deploy Supabase/frontend, smoke y publicar.
+
+Resultado: el candidato termina la batería, el ERP dispara IA y certificado en backend; Reclutamiento solo revisa el resultado cuando esté disponible.

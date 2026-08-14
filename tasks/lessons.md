@@ -3138,3 +3138,7 @@ El scoring, la calidad, los hashes y las decisiones de reclutamiento son contrat
 ### 306. Structured Outputs no debe usar mapas dinámicos en proveedores externos
 
 Un schema que pasa validación local puede ser rechazado por Groq/OpenAI-compatible si usa `additionalProperties` como schema dinámico dentro de objetos. Para salidas críticas, declara propiedades fijas, versiona el prompt/schema y deja una prueba de integridad que bloquee volver a publicar un schema incompatible.
+
+### 307. Los procesos automáticos no deben quedar como botones operativos
+
+Si una regla de negocio indica que el ERP debe actuar cuando llega un evento, la acción debe vivir en backend en el punto transaccional que confirma el evento. En Gestión Psicolaboral, la IA se dispara al completar la batería; la UI solo muestra estado y revisión profesional, no un botón manual de generación.

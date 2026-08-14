@@ -7,7 +7,6 @@ import { PsychAIReviewDialog } from "../components/PsychAIReviewDialog";
 import { PsychResultDialog } from "../components/PsychResultDialog";
 import {
   decidePsychAssessment,
-  generatePsychAIInterpretation,
   generatePsychCertificate,
   getPsychAIReviewDetail,
   getPsychCertificateUrl,
@@ -190,24 +189,6 @@ export function PsycholaboralManagementPage() {
           ? error.message
           : "No fue posible generar el certificado.",
       );
-    } finally {
-      setBusy(null);
-    }
-  };
-  const generateAI = async (row: PsychCandidate) => {
-    if (!row.assessment_id) return;
-    setBusy(row.id);
-    setFeedback("");
-    try {
-      const response = await generatePsychAIInterpretation(row.assessment_id);
-      setFeedback(
-        response.live_configured
-          ? "Interpretación IA generada y pendiente de revisión."
-          : "Interpretación Mock/fallback generada y pendiente de revisión.",
-      );
-      await refresh();
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "No fue posible generar la interpretación.");
     } finally {
       setBusy(null);
     }
@@ -524,18 +505,10 @@ export function PsycholaboralManagementPage() {
                                   >
                                     Ver resultados
                                   </button>
-                                  {row.ai_status === "NOT_REQUESTED" ||
-                                  row.ai_status === "FAILED" ||
-                                  !row.ai_status ? (
-                                    <button
-                                      className="psych-secondary-action"
-                                      type="button"
-                                      disabled={busy === row.id}
-                                      onClick={() => void generateAI(row)}
-                                    >
-                                      Generar IA
-                                    </button>
-                                  ) : (
+                                  {row.ai_status === "PENDING_REVIEW" ||
+                                  row.ai_status === "REVIEWED" ||
+                                  row.ai_status === "VALIDATED" ||
+                                  row.ai_status === "OBSERVED" ? (
                                     <button
                                       className="psych-secondary-action"
                                       type="button"
@@ -544,6 +517,10 @@ export function PsycholaboralManagementPage() {
                                     >
                                       Revisar IA
                                     </button>
+                                  ) : (
+                                    <span className="approval-chip">
+                                      IA automática: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
+                                    </span>
                                   )}
                                   {row.certificate_status === "generated" ? (
                                     <>
