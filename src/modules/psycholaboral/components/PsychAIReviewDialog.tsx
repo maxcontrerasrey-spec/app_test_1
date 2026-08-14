@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PsychAIOutput, PsychAIReviewDetail } from "../types";
 
 type Props = {
@@ -67,19 +67,11 @@ export function PsychAIReviewDialog({
   const closeRef = useRef<HTMLButtonElement>(null);
   const interpretation = detail.interpretation;
   const baseOutput = interpretation?.reviewed_output ??
-    interpretation?.original_output ??
     interpretation?.display_output ??
+    interpretation?.original_output ??
     null;
-  const [jsonText, setJsonText] = useState(() => JSON.stringify(baseOutput, null, 2));
   const [comment, setComment] = useState(interpretation?.reviewer_comment ?? "");
   const [error, setError] = useState("");
-  const parsed = useMemo(() => {
-    try {
-      return JSON.parse(jsonText) as PsychAIOutput;
-    } catch {
-      return null;
-    }
-  }, [jsonText]);
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -93,14 +85,14 @@ export function PsychAIReviewDialog({
   }, [onClose]);
 
   const submit = async (action: "save" | "validate" | "observe") => {
-    if (!parsed) {
-      setError("La revisión debe conservar JSON válido.");
+    if (!baseOutput) {
+      setError("No existe interpretación IA disponible para revisar.");
       return;
     }
     setError("");
-    if (action === "save") await onSave(parsed, comment);
-    else if (action === "validate") await onValidate(parsed, comment);
-    else await onObserve(parsed, comment);
+    if (action === "save") await onSave(baseOutput, comment);
+    else if (action === "validate") await onValidate(baseOutput, comment);
+    else await onObserve(baseOutput, comment);
   };
 
   return (
@@ -119,29 +111,17 @@ export function PsychAIReviewDialog({
           <span>Proveedor: {interpretation?.provider ?? "Sin registro"}</span>
           <span>Perfil: {interpretation?.profile?.label ?? "No resuelto"}</span>
         </div>
-        <div className="psych-ai-review-grid">
-          <div>
-            <h3>Original IA</h3>
-            {renderOutput(interpretation?.original_output ?? null)}
-          </div>
-          <div>
-            <h3>Revisión editable</h3>
-            <textarea
-              className="psych-ai-editor"
-              value={jsonText}
-              onChange={(event) => setJsonText(event.target.value)}
-              spellCheck={false}
-            />
-            <label className="psych-ai-comment">
-              Comentario profesional
-              <textarea value={comment} onChange={(event) => setComment(event.target.value)} />
-            </label>
-            {error ? <p className="psych-feedback psych-feedback--error">{error}</p> : null}
-            <div className="psych-actions">
-              <button className="psych-secondary-action" type="button" disabled={busy || !parsed} onClick={() => void submit("save")}>Guardar revisión</button>
-              <button className="psych-secondary-action" type="button" disabled={busy || !parsed} onClick={() => void submit("observe")}>Observar</button>
-              <button className="psych-primary-action" type="button" disabled={busy || !parsed} onClick={() => void submit("validate")}>Validar</button>
-            </div>
+        <div className="psych-ai-review-stack">
+          {renderOutput(baseOutput)}
+          <label className="psych-ai-comment">
+            Comentario profesional
+            <textarea value={comment} onChange={(event) => setComment(event.target.value)} />
+          </label>
+          {error ? <p className="psych-feedback psych-feedback--error">{error}</p> : null}
+          <div className="psych-actions psych-ai-review-actions">
+            <button className="psych-secondary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("save")}>Guardar comentario</button>
+            <button className="psych-secondary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("observe")}>Observar</button>
+            <button className="psych-primary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("validate")}>Validar</button>
           </div>
         </div>
         <div className="psych-ai-runs">

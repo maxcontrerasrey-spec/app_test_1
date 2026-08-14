@@ -10,6 +10,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - La regeneración de documentos sensibles necesita un camino service-only, idempotente y auditable que reprograme certificado e informe sin tocar respuestas ni scoring.
 - Los textos de proveedores IA deben normalizarse a caracteres compatibles con `pdf-lib`/WinAnsi antes de dibujar; un guion Unicode puede romper la generación o dejar un informe obsoleto.
 - La revisión de un PDF productivo debe incluir descarga privada, comparación de hash con Supabase y render visual; validar solo `generated` no detecta solapes, logos deformados ni etiquetas truncadas.
+- En revisión profesional no se debe mostrar JSON técnico si el usuario espera un informe operacional; conservar la acción auditada, pero presentar la salida IA como secciones legibles y dejar comentarios humanos al final.
 
 ## 311. Un cambio visual publicado debe dejar evidencia perceptible, no solo clases distintas
 

@@ -55,6 +55,8 @@ Resultado: el centro de mando dejó el encabezado tipo hero y ahora usa `minimal
 
 Corrección visual posterior: los chips de batería separan nombre del instrumento y cantidad de preguntas; las acciones del detalle expandido quedan dentro del cuadro en una franja propia, con botones más pequeños para Enviar, Ver resultados, Generar/Descargar certificado, Aprobar y Rechazar.
 
+Corrección revisión IA: el modal dejó de mostrar el JSON editable y los encabezados técnicos `Original IA`/`Revisión editable`. El resumen ejecutivo usa el ancho completo, las secciones IA quedan en una grilla ordenada y el comentario profesional se mueve al final como cierre de revisión.
+
 ## Implementación módulo Gestión Psicolaboral - 2026-08-13
 
 - [x] Inspeccionar rutas, autorización, candidatos activos, descarte oficial, correo, tokens públicos, Storage y generadores PDF vigentes.
