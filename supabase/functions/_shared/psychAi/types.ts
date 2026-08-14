@@ -2,13 +2,15 @@ export type JsonRecord = Record<string, unknown>;
 
 export type PsychAIUsage = {
   prompt_tokens?: number;
+  cached_prompt_tokens?: number;
   completion_tokens?: number;
+  reasoning_tokens?: number;
   total_tokens?: number;
   estimated_cost_usd?: number;
 };
 
 export type PsychAIResult = {
-  output: PsychAIOutput;
+  output: unknown;
   provider: string;
   model: string;
   latency_ms: number;
@@ -26,6 +28,21 @@ export type PsychAIPromptInput = {
   payload: JsonRecord;
   systemPrompt: string;
   responseSchema: JsonRecord;
+  responseSchemaName?: string;
+};
+
+export type PsychAICallTelemetry = {
+  executed: boolean;
+  reason?: string;
+  attempt?: number;
+  latency_ms?: number;
+  input_tokens?: number;
+  cached_input_tokens?: number;
+  output_tokens?: number;
+  reasoning_tokens?: number;
+  total_tokens?: number;
+  estimated_cost_usd?: number;
+  status?: string;
 };
 
 export type EvidenceBackedAIStatement = {

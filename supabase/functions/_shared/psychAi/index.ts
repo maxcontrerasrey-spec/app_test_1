@@ -1,50 +1,185 @@
 import {
+  buildCompactPsychAIFacts,
   buildDeterministicPsychOutput,
   sanitizePsychAIInput,
   validateAndGuardPsychAIOutput,
 } from "./guardrails.ts";
 import { createPsychInterpretationProvider } from "./providers.ts";
-import type { JsonRecord } from "./types.ts";
+import type { JsonRecord, PsychAICallTelemetry, PsychAIUsage } from "./types.ts";
 
-const PSYCH_AI_PIPELINE_VERSION = "gpt5-mini-methodological-v5";
+const PSYCH_AI_PIPELINE_VERSION = "gpt5-mini-humanized-v5.2";
 
-const ANALYST_SYSTEM_PROMPT = `Eres GPT-5 mini actuando como ANALYST psicolaboral para un ERP.
-Tu tarea es interpretar de forma integrada resultados psicolaborales ya calculados por el ERP.
-Usa exclusivamente FACTS pseudonimizados, metodología versionada, perfil de cargo, calidad y contexto normativo entregados.
-No recalcules scores, medias, inversiones, octantes ni clasificaciones.
-No inventes baremos, percentiles, eneatipos, grupos normativos, factores PRP, diagnósticos clínicos, APTO/NO APTO, contratar, rechazar ni descartar.
-No presentes IPIP-16 como 16PF propietario ni IPIP-IPC como DISC/Everything DiSC.
-Interpreta activamente toda información metodológicamente disponible.
-No respondas "requiere interpretación profesional" cuando el payload permite interpretación descriptiva.
-Si un instrumento tiene automatic_interpretation_allowed=true, intégralo activamente.
-Si una dimensión o factor carece de significado documentado, omite solo esa parte específica; no bloquees todo el instrumento.
-La ausencia de baremo local no impide interpretación descriptiva.
-Distingue medición directa, inferencia laboral y relevancia para el cargo.
-No conviertas criticidad del cargo en severidad del resultado del candidato.
-Conserva clasificaciones documentadas: BIS-11 SOBRE_EL_PROMEDIO no es alto, crítico ni severo.
-PRP puede interpretarse como patrón preventivo descriptivo solo desde score total, dirección de ítems y factores técnicos F1-F6, sin nombrar constructos no documentados.
-Redacta para RR.HH. o profesional laboral, en español de Chile, tono claro, ejecutivo, útil y no clínico.
-Prioriza síntesis integrada sobre enumeración de scores.
-Las preguntas de entrevista deben ser neutrales, conductuales y no inductivas.
+const ANALYST_SYSTEM_PROMPT = `Eres GPT-5 mini actuando como analista psicolaboral senior para un ERP.
+Interpreta resultados ya calculados por el ERP. No recalcules scores, medias, inversiones, clasificaciones ni octantes.
+El objeto del informe es la persona en contexto laboral; los instrumentos son evidencia, no la estructura narrativa.
+Responde implícitamente: qué tipo de trabajador parece ser, cómo probablemente se desenvuelve en el contexto evaluado, cuáles son sus recursos relevantes y qué conviene corroborar para el cargo.
+
+Redacción obligatoria:
+- español profesional natural de Chile/LatAm, humano, claro, prudente y específico;
+- integra resultados transversalmente antes de enumerar instrumentos;
+- prioriza variables relevantes al cargo por sobre comentar todo;
+- no conviertas resultados intermedios en fortalezas;
+- distingue hallazgo psicométrico de conducta demostrada;
+- no uses tono legalista, defensivo, académico innecesario ni de backend.
+
+Contenido esperado:
+- executive_profile: 200-300 palabras, estilo laboral predominante, funcionamiento interpersonal, autorregulación, relación con estructura/rutina, principal fortaleza, principal punto de atención y lectura aplicada al cargo.
+- personality_profile: 250-400 palabras totales distribuidas en patrones funcionales, no lista de 16 dimensiones.
+- interpersonal_profile: 150-250 palabras, traduciendo IPIP-IPC a conducta laboral comprensible. La nota no-DISC va solo si aporta trazabilidad y como nota secundaria.
+- safety_and_impulse_profile: integrar BIS-11 + PRP + rasgos vinculados a autocontrol, procedimientos y seguridad. Explica qué aparece, qué podría significar, qué NO concluye y qué corroborar.
+- job_fit_analysis: lectura funcional aplicada al cargo, sin APTO/NO APTO ni recomendación automática.
+- strengths: máximo 4, conductuales, relevantes al cargo y con lenguaje calibrado.
+- points_to_explore: máximo 4, hipótesis concretas de entrevista/verificación; no disclaimers.
+- interview_questions: máximo 5, conductuales, neutrales, abiertas, no acusatorias y sin presuponer incidentes.
+- integrated_conclusion: 200-300 palabras, diferente del resumen ejecutivo; integra recursos, punto de atención, interacción entre ambos y corroboración.
+- material_limitations: 1-2 notas metodológicas compactas.
+
+Prohibido en el informe profesional:
+raw_total, F1, F2, F3, F4, F5, F6, ev_, norm_status, schema, payload, guardrail, metadata, prompt, classification literal como código, PROFESSIONAL_ONLY, PENDING_REVIEW, SOBRE_EL_PROMEDIO como código, INTERMEDIO_EN_RANGO_TEORICO, referencia no disponible, no se opera escalamiento, clasificación literal, factores técnicos documentados, interpretación descriptiva permitida, según metadata.
+No inventes baremos, percentiles, eneatipos, grupos normativos, nombres de factores PRP, diagnósticos clínicos ni decisiones de contratación.
+BIS-11 sobre el promedio no equivale a alto, crítico ni severo.
+PRP puede aportar lectura descriptiva preventiva desde score directo, punto medio de escala, dirección de ítems y factores anónimos; si la semántica documentada no permite más, dilo de forma breve en notas, no como centro de la narrativa.
 Devuelve solo JSON que cumpla el schema.`;
 
-const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5 mini actuando como REVIEWER metodológico de un análisis psicolaboral.
-Tu función es mejorar y corregir el análisis, no volverlo conservador por defecto.
-FACTS tienen prioridad absoluta sobre el borrador Analyst.
-Corrige o elimina afirmaciones no respaldadas: intensidad, alucinaciones, PRP, BIS-11, riesgo, contradicciones, preguntas inductivas, duplicados, códigos internos o lenguaje propietario.
-No recalcules scores ni inventes baremos, percentiles, eneatipos, factores PRP, diagnósticos o decisiones.
-No uses comparación poblacional sin benchmark documentado.
-Si BIS-11 es SOBRE_EL_PROMEDIO, elimina ALTO, MUY ALTO, CRÍTICO, SEVERO o intervención referidos a BIS.
-PRP debe interpretarse si automatic_interpretation_allowed=true; si un factor PRP carece de nombre documentado, omite solo ese factor.
-No sustituyas análisis válido por disclaimers ni por "requiere revisión profesional".
-El resultado final debe ser más claro, coherente, integrado y útil que el borrador.
-No APTO/NO APTO, no diagnóstico clínico, no decisión automática.
-Devuelve el JSON final corregido, listo para revisión profesional humana, sin review_meta.`;
+const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5 mini actuando como revisor metodológico patch-only.
+Recibirás FACTS compactos y un borrador Analyst. No reescribas todo por estilo.
+Devuelve solo parches mínimos cuando detectes problemas corregibles: meta-lenguaje backend, códigos técnicos, raw_total/F1-F6, lenguaje no neutral, decisión automática, diagnóstico, sobreinterpretación, PRP inventado, BIS escalado, repetición fuerte o preguntas inductivas.
+Si el borrador es usable, devuelve patches vacío.
+Cada patch debe usar path de punto sobre el JSON final, por ejemplo executive_profile, safety_and_impulse_profile.bis11, strengths.0.text, interview_questions.2.question.
+No recalcules scores ni agregues datos no presentes en FACTS.
+No inventes baremos, percentiles, eneatipos, nombres de factores PRP, diagnósticos ni APTO/NO APTO.
+Devuelve solo JSON patch-only.`;
+
+const REVIEW_PATCH_SCHEMA: JsonRecord = {
+  type: "object",
+  additionalProperties: false,
+  required: ["patches", "reviewer_reason"],
+  properties: {
+    reviewer_reason: { type: "string" },
+    patches: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["path", "value"],
+        properties: {
+          path: { type: "string" },
+          value: { type: ["string", "array"] },
+        },
+      },
+    },
+  },
+};
+
+const REVIEWER_TRIGGER_FLAGS = new Set([
+  "decision_word",
+  "clinical_word",
+  "invented_norm_word",
+  "risk_language_word",
+  "score_modification_word",
+  "prp_methodology_overreach",
+  "prp_construct_invention",
+  "bis11_classification_escalation",
+  "non_neutral_interview_question",
+  "methodological_strength",
+  "missing_profile_summary",
+  "missing_instrument_analysis",
+  "invalid_evidence_ids",
+  "prohibited_semantic_term",
+  "undocumented_average_language",
+  "raw_technical_language",
+  "backend_meta_language",
+  "schema_shape_issue",
+]);
 
 export async function sha256Json(value: unknown) {
   const body = JSON.stringify(value);
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function usageTelemetry(result: { usage: PsychAIUsage; latency_ms?: number; attempt?: number; raw_finish_reason?: string } | null | undefined, executed: boolean, reason: string): PsychAICallTelemetry {
+  return {
+    executed,
+    reason,
+    attempt: result?.attempt,
+    latency_ms: result?.latency_ms ?? 0,
+    input_tokens: result?.usage.prompt_tokens ?? 0,
+    cached_input_tokens: result?.usage.cached_prompt_tokens ?? 0,
+    output_tokens: result?.usage.completion_tokens ?? 0,
+    reasoning_tokens: result?.usage.reasoning_tokens ?? 0,
+    total_tokens: result?.usage.total_tokens ?? 0,
+    estimated_cost_usd: result?.usage.estimated_cost_usd ?? 0,
+    status: result?.raw_finish_reason,
+  };
+}
+
+function mergeUsage(...items: Array<PsychAIUsage | undefined>) {
+  return {
+    prompt_tokens: items.reduce((sum, item) => sum + Number(item?.prompt_tokens ?? 0), 0),
+    cached_prompt_tokens: items.reduce((sum, item) => sum + Number(item?.cached_prompt_tokens ?? 0), 0),
+    completion_tokens: items.reduce((sum, item) => sum + Number(item?.completion_tokens ?? 0), 0),
+    reasoning_tokens: items.reduce((sum, item) => sum + Number(item?.reasoning_tokens ?? 0), 0),
+    total_tokens: items.reduce((sum, item) => sum + Number(item?.total_tokens ?? 0), 0),
+    estimated_cost_usd: items.reduce((sum, item) => sum + Number(item?.estimated_cost_usd ?? 0), 0),
+  };
+}
+
+function isHardFailure(flags: string[]) {
+  return flags.some((flag) => flag === "decision_word" || flag === "clinical_word");
+}
+
+function needsReviewer(flags: string[]) {
+  return flags.some((flag) => REVIEWER_TRIGGER_FLAGS.has(flag) || flag.startsWith("missing_") || flag.startsWith("unexpected_"));
+}
+
+function reviewerReason(flags: string[]) {
+  const relevant = flags.filter((flag) => flag !== "pipeline:gpt5-mini-humanized-v5.2");
+  return relevant.length ? relevant.slice(0, 8).join("|") : "analyst_passed";
+}
+
+function applyPatchValue(target: JsonRecord, path: string, value: unknown) {
+  const parts = path.split(".").map((item) => item.trim()).filter(Boolean);
+  if (!parts.length || parts.length > 4) return;
+  let cursor: unknown = target;
+  for (let index = 0; index < parts.length - 1; index += 1) {
+    const key = parts[index];
+    const nextKey = parts[index + 1];
+    if (Array.isArray(cursor)) {
+      const numeric = Number(key);
+      if (!Number.isInteger(numeric) || numeric < 0 || numeric >= cursor.length) return;
+      cursor = cursor[numeric];
+    } else if (cursor && typeof cursor === "object") {
+      const record = cursor as JsonRecord;
+      if (!(key in record)) return;
+      cursor = record[key];
+    } else {
+      return;
+    }
+    if (Array.isArray(cursor) && index === parts.length - 2 && /^\d+$/.test(nextKey)) continue;
+    if (!Array.isArray(cursor) && (!cursor || typeof cursor !== "object")) return;
+  }
+  const last = parts[parts.length - 1];
+  if (Array.isArray(cursor)) {
+    const numeric = Number(last);
+    if (!Number.isInteger(numeric) || numeric < 0 || numeric >= cursor.length) return;
+    cursor[numeric] = value;
+  } else if (cursor && typeof cursor === "object") {
+    (cursor as JsonRecord)[last] = value;
+  }
+}
+
+function applyReviewerPatch(baseOutput: unknown, patchOutput: unknown) {
+  const merged = structuredClone(baseOutput) as JsonRecord;
+  const patch = patchOutput && typeof patchOutput === "object" && !Array.isArray(patchOutput) ? patchOutput as JsonRecord : {};
+  const patches = Array.isArray(patch.patches) ? patch.patches : [];
+  for (const item of patches) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const record = item as JsonRecord;
+    if (typeof record.path !== "string") continue;
+    applyPatchValue(merged, record.path, record.value);
+  }
+  return { output: merged, patchCount: patches.length, reason: typeof patch.reviewer_reason === "string" ? patch.reviewer_reason : "reviewer_patch" };
 }
 
 export async function generatePsychAIInterpretation(input: {
@@ -53,32 +188,33 @@ export async function generatePsychAIInterpretation(input: {
   responseSchema: JsonRecord;
 }) {
   const sanitizedPayload = sanitizePsychAIInput(input.payload);
+  const compactFacts = buildCompactPsychAIFacts(sanitizedPayload);
   const { provider, fallbackReason, liveConfigured } = createPsychInterpretationProvider();
-  const isHardFailure = (flags: string[]) =>
-    flags.some((flag) =>
-      flag === "decision_word" ||
-      flag === "clinical_word"
-    );
-  const mergeUsage = (...items: Array<{ prompt_tokens?: number; completion_tokens?: number; total_tokens?: number; estimated_cost_usd?: number }>) => ({
-    prompt_tokens: items.reduce((sum, item) => sum + Number(item.prompt_tokens ?? 0), 0),
-    completion_tokens: items.reduce((sum, item) => sum + Number(item.completion_tokens ?? 0), 0),
-    total_tokens: items.reduce((sum, item) => sum + Number(item.total_tokens ?? 0), 0),
-    estimated_cost_usd: items.reduce((sum, item) => sum + Number(item.estimated_cost_usd ?? 0), 0),
-  });
-  const runWithRetry = async (phase: "analyst" | "reviewer", payload: JsonRecord, systemPrompt: string) => {
+  let apiCallCount = 0;
+  let retryCount = 0;
+  const runWithRetry = async (
+    phase: "analyst" | "reviewer",
+    payload: JsonRecord,
+    systemPrompt: string,
+    responseSchema: JsonRecord,
+    responseSchemaName: string,
+  ) => {
     let lastError: unknown = null;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
+      apiCallCount += 1;
+      if (attempt > 1) retryCount += 1;
       try {
         return {
           ...(await provider.interpret({
             payload: {
               pipeline_version: PSYCH_AI_PIPELINE_VERSION,
               phase,
-              facts: sanitizedPayload,
+              facts: compactFacts,
               ...payload,
             },
             systemPrompt,
-            responseSchema: input.responseSchema,
+            responseSchema,
+            responseSchemaName,
           })),
           attempt,
         };
@@ -91,56 +227,75 @@ export async function generatePsychAIInterpretation(input: {
   try {
     const analyst = await runWithRetry(
       "analyst",
-      { task: "Genera el borrador Analyst usando solo facts." },
-      `${ANALYST_SYSTEM_PROMPT}\n\nContexto de versionado ERP:\n${input.systemPrompt}`,
+      { task: "Redacta informe V5.2 humanizado usando solo FACTS compactos." },
+      `${ANALYST_SYSTEM_PROMPT}\n\nContexto estable ERP:\n${input.systemPrompt}`,
+      input.responseSchema,
+      "psych_ai_interpretation_v5_2",
     );
+
+    let guarded = validateAndGuardPsychAIOutput(analyst.output, sanitizedPayload);
     let reviewer = null as Awaited<ReturnType<typeof runWithRetry>> | null;
-    let reviewerBypassed = false;
-    try {
-      reviewer = await runWithRetry(
-        "reviewer",
-        {
-          task: "Revisa y corrige el borrador Analyst contra facts. Devuelve solo la salida final corregida.",
-          analyst_output: analyst.output as unknown as JsonRecord,
-        },
-        `${REVIEWER_SYSTEM_PROMPT}\n\nContexto de versionado ERP:\n${input.systemPrompt}`,
-      );
-    } catch {
-      reviewerBypassed = true;
+    let reviewerMeta = { executed: false, reason: "analyst_passed", patchCount: 0 };
+    const analystFlags = [...guarded.validationFlags, ...guarded.guardrailFlags];
+    if (needsReviewer(analystFlags)) {
+      reviewerMeta = { executed: true, reason: reviewerReason(analystFlags), patchCount: 0 };
+      try {
+        reviewer = await runWithRetry(
+          "reviewer",
+          {
+            task: "Devuelve solo parches mínimos para corregir el borrador Analyst. Si no hay problemas, patches vacío.",
+            analyst_output: analyst.output as JsonRecord,
+            reviewer_triggers: analystFlags.slice(0, 12),
+          },
+          REVIEWER_SYSTEM_PROMPT,
+          REVIEW_PATCH_SCHEMA,
+          "psych_ai_reviewer_patch_v5_2",
+        );
+        const patched = applyReviewerPatch(analyst.output, reviewer.output);
+        reviewerMeta = { executed: true, reason: patched.reason || reviewerMeta.reason, patchCount: patched.patchCount };
+        guarded = validateAndGuardPsychAIOutput(patched.output, sanitizedPayload);
+      } catch {
+        reviewerMeta = { executed: true, reason: `${reviewerMeta.reason}|reviewer_failed_bypassed`, patchCount: 0 };
+      }
     }
 
-    const selected = reviewer ?? analyst;
-    let guarded = validateAndGuardPsychAIOutput(selected.output, sanitizedPayload);
     guarded = {
       output: guarded.output,
       validationFlags: Array.from(new Set([
         ...guarded.validationFlags,
         `pipeline:${PSYCH_AI_PIPELINE_VERSION}`,
         `analyst_attempt:${analyst.attempt}`,
+        `reviewer_executed:${reviewerMeta.executed ? "yes" : "no"}`,
         `reviewer_attempt:${reviewer?.attempt ?? 0}`,
-        ...(reviewerBypassed ? ["REVIEWER_BYPASSED_DUE_TO_FAILURE"] : []),
+        `reviewer_reason:${reviewerMeta.reason}`,
+        `api_call_count:${apiCallCount}`,
       ])),
-      guardrailFlags: Array.from(new Set([
-        ...guarded.guardrailFlags,
-        ...(reviewerBypassed ? ["REVIEWER_BYPASSED_DUE_TO_FAILURE"] : []),
-      ])),
+      guardrailFlags: Array.from(new Set(guarded.guardrailFlags)),
     };
     if (isHardFailure(guarded.guardrailFlags)) {
-      if (!reviewer && !reviewerBypassed) {
-        throw new Error("HARD_GUARDRAIL_FAILED");
-      }
       throw new Error(`HARD_GUARDRAIL_FAILED:${[...guarded.validationFlags, ...guarded.guardrailFlags].join("|")}`);
     }
-    const usage = mergeUsage(analyst.usage, reviewer?.usage ?? {});
+    const usage = mergeUsage(analyst.usage, reviewer?.usage);
+    const telemetry = {
+      pipeline_version: PSYCH_AI_PIPELINE_VERSION,
+      api_call_count: apiCallCount,
+      retry_count: retryCount,
+      analyst: usageTelemetry(analyst, true, "default"),
+      reviewer: usageTelemetry(reviewer, reviewerMeta.executed, reviewerMeta.reason),
+      reviewer_patch_count: reviewerMeta.patchCount,
+      assessment_total_tokens: usage.total_tokens,
+      estimated_cost_usd: usage.estimated_cost_usd,
+    };
     return {
       success: true,
-      provider: selected.provider,
-      model: selected.model,
-      latency_ms: analyst.latency_ms + (reviewer?.latency_ms ?? 0),
+      provider: analyst.provider,
+      model: analyst.model,
+      latency_ms: (analyst.latency_ms ?? 0) + (reviewer?.latency_ms ?? 0),
       usage,
       output: guarded.output,
       validation_flags: guarded.validationFlags,
       guardrail_flags: guarded.guardrailFlags,
+      telemetry,
       live_configured: liveConfigured,
       fallback_reason: fallbackReason,
       error_code: null,
@@ -157,10 +312,19 @@ export async function generatePsychAIInterpretation(input: {
       provider: provider.name,
       model: provider.model,
       latency_ms: 0,
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, estimated_cost_usd: 0 },
+      usage: { prompt_tokens: 0, cached_prompt_tokens: 0, completion_tokens: 0, reasoning_tokens: 0, total_tokens: 0, estimated_cost_usd: 0 },
       output: fallback.output,
       validation_flags: [...fallback.validationFlags, "provider_failed_fallback_used"],
       guardrail_flags: fallback.guardrailFlags,
+      telemetry: {
+        pipeline_version: PSYCH_AI_PIPELINE_VERSION,
+        api_call_count: apiCallCount,
+        retry_count: retryCount,
+        analyst: usageTelemetry(null, false, reason),
+        reviewer: usageTelemetry(null, false, "not_executed"),
+        assessment_total_tokens: 0,
+        estimated_cost_usd: 0,
+      },
       live_configured: liveConfigured,
       fallback_reason: reason,
       error_code: liveConfigured ? "provider_failed" : null,

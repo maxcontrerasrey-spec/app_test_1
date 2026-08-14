@@ -85,7 +85,9 @@ const IPIP_DIMENSION_LABELS: Record<string, string> = {
   AUT: "Autosuficiencia",
   CAL: "Calidez interpersonal",
   NOR: "Cumplimiento de normas",
+  CUM: "Cumplimiento de normas",
   CAU: "Cautela interpersonal",
+  DES: "Cautela interpersonal",
   EST: "Estabilidad emocional",
   GRE: "Sociabilidad grupal",
   IMA: "Imaginación",
@@ -496,7 +498,8 @@ export function buildDeterministicPsychSemanticOutput(
   );
   const cal = context.evidence_catalog.find((item) => item.id === "ev_ipip16_CAL");
   const ord = context.evidence_catalog.find((item) => item.id === "ev_ipip16_ORD");
-  const nor = context.evidence_catalog.find((item) => item.id === "ev_ipip16_NOR");
+  const nor = context.evidence_catalog.find((item) => item.id === "ev_ipip16_CUM") ??
+    context.evidence_catalog.find((item) => item.id === "ev_ipip16_NOR");
   const bis = context.locks.bis11;
   const prp = context.locks.prp;
   const ipc = context.locks.ipc?.macrostyles ?? [];

@@ -234,6 +234,28 @@ describe("professional-report-language.test", () => {
     expect(JSON.stringify(guarded.output)).not.toContain("INTERMEDIO_EN_RANGO_TEORICO");
     expect(guarded.output.executive_summary).toContain("sobre el promedio");
   });
+
+  it("permite nota metodológica de no diagnóstico sin convertirla en hard failure", () => {
+    const output = validOutput();
+    output.limitations = [
+      "Los resultados son antecedentes complementarios y no constituyen un diagnóstico clínico ni decisión automática.",
+    ];
+    const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
+    expect(guarded.guardrailFlags).not.toContain("clinical_word");
+    expect(guarded.guardrailFlags).not.toContain("decision_word");
+  });
+
+  it("usa flags crudos para revisión sin bloquear si la salida final queda saneada", () => {
+    const output = validOutput();
+    output.profile_summary = "Diagnóstico preliminar con raw_total y F1 visibles.";
+    const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
+    expect(guarded.validationFlags).toContain("clinical_word");
+    expect(guarded.validationFlags).toContain("backend_meta_language");
+    expect(guarded.validationFlags).toContain("raw_technical_language");
+    expect(guarded.guardrailFlags).not.toContain("clinical_word");
+    expect(JSON.stringify(guarded.output)).not.toContain("raw_total");
+    expect(JSON.stringify(guarded.output)).not.toContain("F1");
+  });
 });
 
 describe("limitations-dedup.test", () => {

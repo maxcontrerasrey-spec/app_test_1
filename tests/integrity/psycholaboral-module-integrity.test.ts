@@ -7,6 +7,7 @@ const serviceResetMigration = readFileSync("supabase/migrations/20260814021446_a
 const semanticGuardrailMigration = readFileSync("supabase/migrations/20260814030634_psych_ai_semantic_guardrails_v3.sql", "utf8");
 const openAIProviderMigration = readFileSync("supabase/migrations/20260814032407_psych_ai_openai_gpt5_mini_provider.sql", "utf8");
 const v5Migration = readFileSync("supabase/migrations/20260814041907_psych_ai_v5_methodological_reconstruction.sql", "utf8");
+const v52Migration = readFileSync("supabase/migrations/20260814045629_psych_ai_v5_2_humanization_token_audit.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -159,10 +160,12 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
     expect(psychAiIndex).toContain("provider_failed_fallback_used");
     expect(psychAiIndex).toContain("success: !liveConfigured");
-    expect(psychAiIndex).toContain("gpt5-mini-methodological-v5");
+    expect(psychAiIndex).toContain("gpt5-mini-humanized-v5.2");
     expect(psychAiIndex).toContain("ANALYST_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("REVIEWER_SYSTEM_PROMPT");
-    expect(psychAiIndex).toContain("REVIEWER_BYPASSED_DUE_TO_FAILURE");
+    expect(psychAiIndex).toContain("reviewer_failed_bypassed");
+    expect(psychAiIndex).toContain("REVIEW_PATCH_SCHEMA");
+    expect(psychAiIndex).toContain("buildCompactPsychAIFacts");
     expect(edge).toContain("p_output: generated.success ? generated.output : null");
   });
 
@@ -188,8 +191,19 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiSemantic).toContain("psych-methodology-v5");
     expect(psychAiSemantic).toContain("PRP puede interpretarse descriptivamente");
     expect(psychAiSemantic).not.toContain("prp_hard_lock_missing");
-    expect(psychAiIndex).toContain("No respondas \"requiere interpretación profesional\"");
-    expect(psychAiIndex).toContain("PRP puede interpretarse como patrón preventivo descriptivo");
+    expect(v52Migration).toContain("psych-ai-prompt-v5.2");
+    expect(v52Migration).toContain("psych-ai-schema-v5.2");
+    expect(v52Migration).toContain("analyst_input_tokens");
+    expect(v52Migration).toContain("reviewer_executed");
+    expect(v52Migration).toContain("p_metadata jsonb default '{}'::jsonb");
+    expect(psychAiIndex).toContain("El objeto del informe es la persona en contexto laboral");
+    expect(psychAiIndex).toContain("reviewer_executed:");
+    expect(psychAiIndex).toContain("needsReviewer(analystFlags)");
+    expect(psychAiIndex).toContain("PRP puede aportar lectura descriptiva preventiva");
+    expect(psychAiGuardrails).toContain("delete cloned.prompt");
+    expect(psychAiGuardrails).toContain("buildCompactPsychAIFacts");
+    expect(psychAiGuardrails).toContain("backend_meta_language");
+    expect(psychAiGuardrails).toContain("raw_technical_language");
     expect(audit).toContain("Evaluación de Personalidad IPIP-16");
     expect(audit).toContain("No es DISC ni Everything DiSC");
     expect(audit).toContain("Interpretación descriptiva habilitada");

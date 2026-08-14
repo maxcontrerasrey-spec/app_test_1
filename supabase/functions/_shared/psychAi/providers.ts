@@ -19,6 +19,18 @@ function resolveProviderFailureReason(error: unknown) {
   return error instanceof Error ? error.message.slice(0, 120) : "provider_error";
 }
 
+function readNumber(value: unknown) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function estimateGpt5MiniCostUsd(inputTokens: number, cachedInputTokens: number, outputTokens: number) {
+  const billableInput = Math.max(0, inputTokens - cachedInputTokens);
+  // Official OpenAI docs list GPT-5 mini text pricing at $0.25/M input,
+  // $0.025/M cached input, and $2.00/M output at implementation time.
+  return ((billableInput * 0.25) + (cachedInputTokens * 0.025) + (outputTokens * 2.0)) / 1_000_000;
+}
+
 export class MockPsychInterpretationProvider implements PsychInterpretationProvider {
   name = "mock";
   model = "mock-psych-ai-v1";
@@ -81,7 +93,7 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
           text: {
             format: {
               type: "json_schema",
-              name: "psych_ai_interpretation",
+              name: input.responseSchemaName ?? "psych_ai_interpretation",
               schema: input.responseSchema,
               strict: true,
             },
@@ -117,16 +129,24 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
       }
       const parsed = JSON.parse(content);
       const usage = (raw.usage ?? {}) as JsonRecord;
+      const inputDetails = (usage.input_tokens_details ?? usage.prompt_tokens_details ?? {}) as JsonRecord;
+      const outputDetails = (usage.output_tokens_details ?? usage.completion_tokens_details ?? {}) as JsonRecord;
+      const promptTokens = readNumber(usage.input_tokens ?? usage.prompt_tokens);
+      const completionTokens = readNumber(usage.output_tokens ?? usage.completion_tokens);
+      const cachedPromptTokens = readNumber(inputDetails.cached_tokens ?? inputDetails.cached_input_tokens);
+      const reasoningTokens = readNumber(outputDetails.reasoning_tokens);
       return {
         output: parsed,
         provider: this.name,
         model: this.model,
         latency_ms: Math.round(now() - started),
         usage: {
-          prompt_tokens: Number(usage.input_tokens ?? usage.prompt_tokens ?? 0),
-          completion_tokens: Number(usage.output_tokens ?? usage.completion_tokens ?? 0),
-          total_tokens: Number(usage.total_tokens ?? 0),
-          estimated_cost_usd: 0,
+          prompt_tokens: promptTokens,
+          cached_prompt_tokens: cachedPromptTokens,
+          completion_tokens: completionTokens,
+          reasoning_tokens: reasoningTokens,
+          total_tokens: readNumber(usage.total_tokens),
+          estimated_cost_usd: estimateGpt5MiniCostUsd(promptTokens, cachedPromptTokens, completionTokens),
         },
         raw_finish_reason: readText(raw.status),
       };

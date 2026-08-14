@@ -18,6 +18,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   Vary: "Origin",
 };
+const PSYCH_AI_RUNTIME_VERSION = "gpt5-mini-humanized-v5.2.3";
 
 type JsonRecord = Record<string, unknown>;
 type RpcClient = {
@@ -136,7 +137,10 @@ async function runPsychAIInterpretation(
     throw new Error(payloadError?.message ?? "No fue posible preparar la interpretación.");
   }
 
-  const inputHash = await sha256Json(inputPayload);
+  const inputHashPayload = inputPayload && typeof inputPayload === "object" && !Array.isArray(inputPayload)
+    ? { ...(inputPayload as JsonRecord), runtime_pipeline_version: PSYCH_AI_RUNTIME_VERSION }
+    : { payload: inputPayload, runtime_pipeline_version: PSYCH_AI_RUNTIME_VERSION };
+  const inputHash = await sha256Json(inputHashPayload);
   const claimToken = crypto.randomUUID();
   const providerName = Deno.env.get("PSYCH_AI_ENABLED")?.trim().toLowerCase() === "true" &&
       Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() === "openai" &&
@@ -179,7 +183,7 @@ async function runPsychAIInterpretation(
   }
 
   const generated = await generatePsychAIInterpretation({
-    payload: (claimed.payload ?? inputPayload) as JsonRecord,
+    payload: (claimed.payload ?? inputHashPayload) as JsonRecord,
     systemPrompt: cleanText(claimed.system_prompt, 4000),
     responseSchema: (claimed.response_schema ?? {}) as JsonRecord,
   });
@@ -200,6 +204,7 @@ async function runPsychAIInterpretation(
       p_completion_tokens: generated.usage.completion_tokens ?? 0,
       p_total_tokens: generated.usage.total_tokens ?? 0,
       p_estimated_cost_usd: generated.usage.estimated_cost_usd ?? 0,
+      p_metadata: generated.telemetry ?? {},
       p_error_code: generated.error_code,
       p_error_message: generated.error_message,
     },
@@ -220,6 +225,7 @@ async function runPsychAIInterpretation(
         p_completion_tokens: generated.usage.completion_tokens ?? 0,
         p_total_tokens: generated.usage.total_tokens ?? 0,
         p_estimated_cost_usd: generated.usage.estimated_cost_usd ?? 0,
+        p_metadata: generated.telemetry ?? {},
         p_error_code: "persist_failed",
         p_error_message: completeError.message,
       });

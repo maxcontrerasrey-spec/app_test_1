@@ -186,9 +186,31 @@ export type PsychAIRun = {
   attempt: number;
   latency_ms: number | null;
   prompt_tokens: number | null;
+  cached_prompt_tokens?: number | null;
   completion_tokens: number | null;
+  reasoning_tokens?: number | null;
   total_tokens: number | null;
   estimated_cost_usd: number | null;
+  api_call_count?: number | null;
+  retry_count?: number | null;
+  reviewer_executed?: boolean | null;
+  reviewer_reason?: string | null;
+  analyst?: {
+    input_tokens: number | null;
+    cached_input_tokens: number | null;
+    output_tokens: number | null;
+    reasoning_tokens: number | null;
+    total_tokens: number | null;
+  } | null;
+  reviewer?: {
+    executed: boolean | null;
+    reason: string | null;
+    input_tokens: number | null;
+    cached_input_tokens: number | null;
+    output_tokens: number | null;
+    reasoning_tokens: number | null;
+    total_tokens: number | null;
+  } | null;
   error_code: string | null;
   created_at: string | null;
 };

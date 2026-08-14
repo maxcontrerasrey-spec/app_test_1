@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 315. Los guardrails IA deben separar trigger de revisión y bloqueo final
+
+- Un término problemático detectado antes de sanitizar sirve para activar Reviewer o registrar trazabilidad, pero no debe bloquear si el ERP ya normalizó la salida profesional antes de persistir.
+- Las notas metodológicas negadas, como “no constituye diagnóstico clínico”, deben permitirse explícitamente; de lo contrario el propio disclaimer genera falsos hard-fails.
+- El cache de interpretaciones debe incluir una versión runtime del pipeline, no solo facts y prompt DB, porque cambios de guardrails/código pueden requerir regenerar salida aunque el caso no haya cambiado.
+- La validación productiva debe buscar términos visibles en la salida profesional y separar metadata/versionado interno de narrativa mostrada al usuario.
+
 ## 314. El proveedor IA debe ser reemplazable sin reabrir scoring ni reportes
 
 - En módulos sensibles, el proveedor externo es un adaptador, no parte del motor psicométrico: cambiar de proveedor a OpenAI no debe tocar respuestas, scoring, locks semánticos, revisión profesional ni PDF salvo configuración y trazabilidad.

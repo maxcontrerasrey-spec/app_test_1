@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Psych AI V5.2 humanización y auditoría de tokens - 2026-08-14
+
+- [x] Auditar V5 real en código y producción: prompts, schema, telemetry, doble ejecución, reuse del output IA en PDF y canary RC-1807.
+- [x] Implementar narrativa V5.2 más humana y aplicada al cargo, sin meta-lenguaje backend, sin códigos técnicos, sin `raw_total`, sin `F1-F6` y sin evidence IDs visibles.
+- [x] Compactar facts y cambiar el flujo a Analyst por defecto + Reviewer condicional patch-only, persistiendo desglose de tokens/calls/costo por ejecución.
+- [x] Ajustar PRP para usar solo semántica metodológica válida, evitando baremos inventados y frases circulares.
+- [x] Actualizar UI/PDF y generar `PSYCH_V5_2_AUDIT.md`, `PSYCH_V5_2_TOKEN_ANALYSIS.md`, `PSYCH_V5_2_HUMANIZATION_REPORT.md` y `PSYCH_V5_2_CANARY_COMPARISON.md`.
+- [x] Validar Deno, unit/integrity tests, auditorías, build, Guardian, despliegue, canary productivo y CI.
+
+Resultado: V5.2 quedó aplicado en producción con prompt activo `psych-ai-prompt-v5.2`, schema `psych-ai-schema-v5.2`, provider `openai`, modelo `gpt-5-mini` y pipeline runtime `gpt5-mini-humanized-v5.2.3`. El canario RC-1807 generó interpretación `ff42459d-aba8-4188-9ec9-33cdfb8d1e9b` con `SUCCESS`, `PENDING_REVIEW`, 1 llamada IA, Reviewer no ejecutado, 2.574 input tokens, 2.432 cached input tokens, 2.263 output tokens, 4.837 total tokens, costo estimado USD 0,004622, 0 guardrail flags y 0 términos técnicos bloqueados. Certificado e informe quedaron `generated`.
+
 ## Psych AI V5 reconstrucción metodológica GPT-5 mini - 2026-08-14
 
 - [x] Auditar implementación V4 contra el prompt V5, scoring, payload, prompt/schema activo, UI de revisión, PDF y límites metodológicos.

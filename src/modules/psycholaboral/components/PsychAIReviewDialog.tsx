@@ -136,7 +136,9 @@ export function PsychAIReviewDialog({
         <div className="psych-ai-runs">
           <h3>Ejecuciones</h3>
           {(interpretation?.runs ?? []).map((run) => (
-            <span key={run.id}>{run.status} · intento {run.attempt} · {run.total_tokens ?? 0} tokens · {run.latency_ms ?? 0} ms</span>
+            <span key={run.id}>
+              {run.status} · intento {run.attempt} · AI calls {run.api_call_count ?? (run.reviewer_executed ? 2 : 1)} · input {run.prompt_tokens ?? 0} · cache {run.cached_prompt_tokens ?? 0} · output {run.completion_tokens ?? 0} · total {run.total_tokens ?? 0} · reviewer {run.reviewer_executed ? "sí" : "no"} · costo USD {(Number(run.estimated_cost_usd ?? 0)).toFixed(6)} · {run.latency_ms ?? 0} ms
+            </span>
           ))}
         </div>
       </section>
