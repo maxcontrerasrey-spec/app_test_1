@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.24
+version: 1.0.25
 status: Activo
 language: es-CL
 owner: Quality
@@ -96,6 +96,8 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 
 Revision 2026-08-14 Psych AI V5: el total global sube 1,780 bytes, JS sube 1,521 bytes y CSS sube 259 bytes por reconstruir la salida metodologica del informe psicolaboral integrado, schema V5 y secciones de revisión profesional. No agrega vendors ni assets trackeados; el cambio permanece en el módulo lazy Gestión Psicolaboral y Edge Functions.
 
+Revision 2026-08-14 Psych AI V5 CI: GitHub Actions `Audit Enterprise Guardrails` run `31770394443`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,254,698 bytes totales y 2,739,884 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo los limites medidos.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -115,9 +117,9 @@ Revision 2026-08-14 Psych AI V5: el total global sube 1,780 bytes, JS sube 1,521
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10246747,
+  "distTotalBytes": 10254698,
   "jsFileCount": 62,
-  "jsTotalBytes": 2731933,
+  "jsTotalBytes": 2739884,
   "cssFileCount": 12,
   "cssTotalBytes": 240041,
   "trackedAssets": [
