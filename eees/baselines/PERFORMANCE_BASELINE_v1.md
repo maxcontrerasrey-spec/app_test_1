@@ -98,6 +98,8 @@ Revision 2026-08-14 Psych AI V5: el total global sube 1,780 bytes, JS sube 1,521
 
 Revision 2026-08-14 Psych AI V5 CI: GitHub Actions `Audit Enterprise Guardrails` run `31770394443`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,254,698 bytes totales y 2,739,884 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo los limites medidos.
 
+Revision 2026-08-14 Psych AI V5.2 CI: GitHub Actions `Audit Enterprise Guardrails` run `31774292713`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,254,972 bytes totales y 2,740,158 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto por telemetria V5.2 y UI de revision; CSS, vendors y assets trackeados permanecen bajo los limites medidos.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -117,9 +119,9 @@ Revision 2026-08-14 Psych AI V5 CI: GitHub Actions `Audit Enterprise Guardrails`
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10254698,
+  "distTotalBytes": 10254972,
   "jsFileCount": 62,
-  "jsTotalBytes": 2739884,
+  "jsTotalBytes": 2740158,
   "cssFileCount": 12,
   "cssTotalBytes": 240041,
   "trackedAssets": [
