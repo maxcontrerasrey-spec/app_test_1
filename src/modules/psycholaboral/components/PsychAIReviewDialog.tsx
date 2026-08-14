@@ -27,9 +27,26 @@ function renderOutput(output: PsychAIOutput | null) {
   if (!output) return <p className="psych-result-note">Sin interpretación disponible.</p>;
   return (
     <div className="psych-ai-output">
-      <Section title="Resumen ejecutivo">
-        <p>{output.executive_summary}</p>
-        <p className="psych-result-note">{output.response_quality}</p>
+      <Section title="Perfil ejecutivo">
+        <p>{output.executive_profile ?? output.executive_summary}</p>
+      </Section>
+      <Section title="Personalidad laboral">
+        <p>{output.personality_profile?.summary ?? output.ipip16.summary}</p>
+        <p><strong>Autorregulación:</strong> {output.personality_profile?.self_regulation ?? output.ipip16.clusters.self_regulation ?? output.ipip16.clusters.autocontrol_estabilidad}</p>
+        <p><strong>Disciplina y estructura:</strong> {output.personality_profile?.discipline_structure ?? output.ipip16.clusters.discipline_structure ?? output.ipip16.clusters.disciplina_estructura}</p>
+      </Section>
+      <Section title="Estilo interpersonal">
+        <p>{output.interpersonal_profile?.summary ?? output.ipc.summary}</p>
+        <p>{output.interpersonal_profile?.communication}</p>
+        <p className="psych-result-note">{output.ipc.disc_disclaimer}</p>
+      </Section>
+      <Section title="Seguridad e impulsividad">
+        <p>{output.safety_and_impulse_profile?.summary ?? output.bis11.summary}</p>
+        <p><strong>BIS-11:</strong> {output.safety_and_impulse_profile?.bis11 ?? output.bis11.impulsivity_interpretation}</p>
+        <p><strong>PRP:</strong> {output.safety_and_impulse_profile?.prp ?? output.prp.documentation_status}</p>
+      </Section>
+      <Section title="Ajuste al cargo">
+        <p>{output.job_fit_analysis ?? output.integrated_analysis}</p>
       </Section>
       <Section title="Fortalezas">
         <ul>{list(output.strengths).map((item) => <li key={item}>{item}</li>)}</ul>
@@ -40,17 +57,9 @@ function renderOutput(output: PsychAIOutput | null) {
       <Section title="Preguntas sugeridas">
         <ul>{list(output.interview_questions).map((item) => <li key={item}>{item}</li>)}</ul>
       </Section>
-      <Section title="Instrumentos">
-        <p><strong>IPIP-16:</strong> {output.ipip16.summary}</p>
-        <p><strong>IPIP-IPC:</strong> {output.ipc.summary}</p>
-        <p className="psych-result-note">{output.ipc.disc_disclaimer}</p>
-        <p><strong>BIS-11:</strong> {output.bis11.impulsivity_interpretation}</p>
-        <p><strong>PRP:</strong> {output.prp.documentation_status}</p>
-      </Section>
-      <Section title="Integración y límites">
-        <p>{output.integrated_analysis}</p>
-        <p>{output.preliminary_conclusion}</p>
-        <ul>{list(output.limitations).map((item) => <li key={item}>{item}</li>)}</ul>
+      <Section title="Conclusión integrada">
+        <p>{output.integrated_conclusion ?? output.preliminary_conclusion}</p>
+        <ul>{list(output.material_limitations ?? output.limitations).slice(0, 1).map((item) => <li key={item}>{item}</li>)}</ul>
       </Section>
     </div>
   );
@@ -107,7 +116,7 @@ export function PsychAIReviewDialog({
           <button ref={closeRef} className="psych-secondary-action" type="button" onClick={onClose}>Cerrar</button>
         </header>
         <div className="psych-result-meta">
-          <span>Estado IA: {detail.ai_status}</span>
+          <span>Interpretación automatizada basada en instrumentos aplicados</span>
           <span>Proveedor: {interpretation?.provider ?? "Sin registro"}</span>
           <span>Perfil: {interpretation?.profile?.label ?? "No resuelto"}</span>
         </div>

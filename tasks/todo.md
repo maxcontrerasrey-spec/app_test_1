@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Psych AI V5 reconstrucción metodológica GPT-5 mini - 2026-08-14
+
+- [x] Auditar implementación V4 contra el prompt V5, scoring, payload, prompt/schema activo, UI de revisión, PDF y límites metodológicos.
+- [x] Documentar matriz fuente → instrumento ERP → licencia/scoring/interpretación/baremos/uso IA en `PSYCH_V5_SOURCE_AND_IMPLEMENTATION_AUDIT.md`.
+- [x] Activar schema/prompt V5 con Analyst/Reviewer V2, lenguaje integrado, PRP descriptivo cuando esté permitido y sin códigos técnicos en informe profesional.
+- [x] Enriquecer facts pseudonimizados con metodología versionada sin exponer respuestas crudas, PII ni consentimientos completos al proveedor.
+- [x] Ajustar normalización, guardrails mínimos, UI y PDF para el Informe Psicolaboral Integrado V5.
+- [x] Validar Deno, pruebas de integridad, auditorías, build/Guardian, desplegar producción, regenerar canario y publicar commit/push.
+
+Resultado: producción quedó con prompt activo `psych-ai-prompt-v5`, schema `psych-ai-schema-v5`, provider `openai`, modelo `gpt-5-mini` y pipeline `gpt5-mini-methodological-v5`. El canario RC-1807 fue reprocesado con run `SUCCESS`, estado `PENDING_REVIEW`, guardrail flags vacíos, sin `PROFESSIONAL_ONLY`, sin `PENDING_REVIEW` textual, sin `ev_` visible y sin código crudo `SOBRE_EL_PROMEDIO` en `display_output`. Certificado e informe privado quedaron `generated` con hashes presentes. Guardian final pasó con 0 errores y 0 warnings; el baseline performance sube solo por el módulo lazy psicolaboral V5 (+1.780 bytes total, +1.521 JS, +259 CSS), sin vendors ni assets nuevos.
+
 ## Psych AI GPT-5 mini dual-pass Analyst/Reviewer V4 - 2026-08-14
 
 - [x] Aterrizar el prompt V4 contra el pipeline actual sin tocar scoring, respuestas, RLS ni revisión profesional.

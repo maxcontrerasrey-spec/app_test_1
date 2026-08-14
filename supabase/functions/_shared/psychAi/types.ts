@@ -39,6 +39,7 @@ export type EvidenceBackedAIStatement = {
 export type PsychAIOutput = {
   version: string;
   profile_summary?: string;
+  executive_profile?: string;
   executive_summary: string;
   response_quality: string;
   strengths: string[];
@@ -68,6 +69,29 @@ export type PsychAIOutput = {
     summary: string;
     documentation_status: string;
   };
+  personality_profile?: {
+    summary: string;
+    self_regulation: string;
+    discipline_structure: string;
+    interpersonal_style: string;
+    adaptability_thinking: string;
+  };
+  interpersonal_profile?: {
+    summary: string;
+    communication: string;
+    cooperation: string;
+    initiative: string;
+    response_under_pressure: string;
+  };
+  safety_and_impulse_profile?: {
+    summary: string;
+    bis11: string;
+    prp: string;
+    combined_interpretation: string;
+  };
+  job_fit_analysis?: string;
+  integrated_conclusion?: string;
+  material_limitations?: string[];
   integrated_analysis: string;
   preliminary_conclusion: string;
   recommendations?: string[];

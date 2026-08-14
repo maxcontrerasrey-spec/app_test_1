@@ -6,6 +6,7 @@ import {
   deduplicateLimitations,
   validatePsychSemanticOutput,
 } from "../../supabase/functions/_shared/psychAi/semantic.ts";
+import { validateAndGuardPsychAIOutput } from "../../supabase/functions/_shared/psychAi/guardrails.ts";
 
 const fixturePayload = {
   instruments: [
@@ -146,16 +147,20 @@ describe("bis11-classification-lock.test", () => {
   });
 });
 
-describe("prp-hard-lock.test", () => {
-  it("mantiene PRP como PROFESSIONAL_ONLY y bloquea constructos inventados", () => {
+describe("prp-descriptive-methodology.test", () => {
+  it("permite PRP descriptivo y bloquea sobrealcances metodológicos", () => {
     const context = buildPsychSemanticContext(fixturePayload);
-    expect(context.locks.prp).toMatchObject({ score: 90, interpretation_status: "PROFESSIONAL_ONLY" });
+    expect(context.locks.prp).toMatchObject({
+      score: 90,
+      interpretation_status: "DESCRIPTIVE_INTERPRETATION",
+      automatic_interpretation_allowed: true,
+    });
     const output = validOutput();
-    output.points_to_explore[2].text = "PRP muestra documentación y organización moderada.";
-    output.instrument_analysis.prp = "PRP muestra factores de responsabilidad y control.";
-    expect(validatePsychSemanticOutput(output, context).flags).toEqual(
-      expect.arrayContaining(["prp_construct_invention", "prp_hard_lock_missing"]),
-    );
+    output.points_to_explore[2].text = "PRP se revisa como patrón preventivo descriptivo desde el puntaje total.";
+    output.instrument_analysis.prp = "PRP interpreta score total y factores F1-F6 sin nombres de constructos no documentados.";
+    expect(validatePsychSemanticOutput(output, context).flags).not.toContain("prp_methodology_overreach");
+    output.instrument_analysis.prp = "PRP usa percentil y factor 1 es responsabilidad.";
+    expect(validatePsychSemanticOutput(output, context).flags).toContain("prp_methodology_overreach");
   });
 });
 
@@ -216,6 +221,18 @@ describe("risk-language.test", () => {
     const output = validOutput();
     output.preliminary_conclusion = "Presenta alto riesgo e incompatibilidad con el cargo.";
     expect(validatePsychSemanticOutput(output, context).flags).toContain("prohibited_semantic_term");
+  });
+});
+
+describe("professional-report-language.test", () => {
+  it("traduce códigos técnicos antes de persistir informe profesional", () => {
+    const output = validOutput();
+    output.profile_summary = "BIS-11 SOBRE_EL_PROMEDIO y dimensión INTERMEDIO_EN_RANGO_TEORICO.";
+    output.instrument_analysis.bis11 = "Clasificación SOBRE_EL_PROMEDIO.";
+    const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
+    expect(JSON.stringify(guarded.output)).not.toContain("SOBRE_EL_PROMEDIO");
+    expect(JSON.stringify(guarded.output)).not.toContain("INTERMEDIO_EN_RANGO_TEORICO");
+    expect(guarded.output.executive_summary).toContain("sobre el promedio");
   });
 });
 

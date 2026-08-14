@@ -66,6 +66,7 @@ export function PsychResultDialog({ detail, onClose }: Props) {
       previous?.focus();
     };
   }, [onClose]);
+  const ai = detail.ai_interpretation?.display_output;
   return (
     <div
       className="psych-result-modal"
@@ -108,13 +109,47 @@ export function PsychResultDialog({ detail, onClose }: Props) {
           </span>
           <span>IA: {detail.ai_status ?? "NOT_REQUESTED"}</span>
         </div>
-        {detail.ai_interpretation?.display_output ? (
+        {ai ? (
           <div className="psych-ai-section">
-            <h3>Interpretación IA / revisión profesional</h3>
-            <p>{detail.ai_interpretation.display_output.executive_summary}</p>
+            <span className="psych-eyebrow">Análisis psicolaboral integrado por IA</span>
+            <h3>Perfil ejecutivo</h3>
+            <p>{ai.executive_profile ?? ai.executive_summary}</p>
+            <div className="psych-ai-grid">
+              <article>
+                <h4>Personalidad laboral</h4>
+                <p>{ai.personality_profile?.summary ?? ai.ipip16.summary}</p>
+              </article>
+              <article>
+                <h4>Estilo interpersonal</h4>
+                <p>{ai.interpersonal_profile?.summary ?? ai.ipc.summary}</p>
+              </article>
+              <article>
+                <h4>Seguridad e impulsividad</h4>
+                <p>{ai.safety_and_impulse_profile?.summary ?? ai.bis11.summary}</p>
+              </article>
+              <article>
+                <h4>Ajuste al cargo</h4>
+                <p>{ai.job_fit_analysis ?? ai.integrated_analysis}</p>
+              </article>
+            </div>
+            <div className="psych-ai-grid">
+              <article>
+                <h4>Fortalezas</h4>
+                <ul>
+                  {ai.strengths.slice(0, 5).map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </article>
+              <article>
+                <h4>Aspectos a profundizar</h4>
+                <ul>
+                  {ai.development_areas.slice(0, 4).map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </article>
+            </div>
+            <h4>Conclusión integrada</h4>
+            <p>{ai.integrated_conclusion ?? ai.preliminary_conclusion}</p>
             <p className="psych-result-note">
-              Estado {detail.ai_interpretation.status} · proveedor{" "}
-              {detail.ai_interpretation.provider}
+              Interpretación automatizada basada en los instrumentos aplicados y antecedentes disponibles.
             </p>
           </div>
         ) : null}

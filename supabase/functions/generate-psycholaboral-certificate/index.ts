@@ -74,6 +74,7 @@ type Payload = {
 };
 
 type PsychAIOutput = {
+  executive_profile?: string;
   executive_summary?: string;
   response_quality?: string;
   strengths?: string[];
@@ -83,6 +84,29 @@ type PsychAIOutput = {
   ipc?: { summary?: string; predominant_profile?: string; disc_disclaimer?: string };
   bis11?: { summary?: string; impulsivity_interpretation?: string };
   prp?: { summary?: string; documentation_status?: string };
+  personality_profile?: {
+    summary?: string;
+    self_regulation?: string;
+    discipline_structure?: string;
+    interpersonal_style?: string;
+    adaptability_thinking?: string;
+  };
+  interpersonal_profile?: {
+    summary?: string;
+    communication?: string;
+    cooperation?: string;
+    initiative?: string;
+    response_under_pressure?: string;
+  };
+  safety_and_impulse_profile?: {
+    summary?: string;
+    bis11?: string;
+    prp?: string;
+    combined_interpretation?: string;
+  };
+  job_fit_analysis?: string;
+  integrated_conclusion?: string;
+  material_limitations?: string[];
   integrated_analysis?: string;
   preliminary_conclusion?: string;
   limitations?: string[];
@@ -208,6 +232,10 @@ function clusterLabel(value: string) {
     disciplina_estructura: "Disciplina y Estructura",
     interaccion_laboral: "Interacción Laboral",
     analisis_adaptacion: "Análisis y Adaptación",
+    self_regulation: "Autorregulación y estabilidad",
+    discipline_structure: "Disciplina y estructura",
+    interpersonal_style: "Interacción laboral",
+    adaptability_thinking: "Adaptabilidad y pensamiento",
   };
   return labels[value] ?? value;
 }
@@ -653,48 +681,33 @@ Deno.serve(async (request) => {
     const reportPage = report.addPage([612, 792]);
     const drawReportFooter = (target: PDFPage, pageNumber: number) => {
       target.drawText("Documento confidencial - Antecedente complementario - No decision automatica", { x: 50, y: 28, size: 7, font: reportFont, color: rgb(0.35, 0.38, 0.42) });
-      target.drawText(`PS-${payload.public_id.slice(0, 8).toUpperCase()} - Informe IA v1 - Pagina ${pageNumber} de 4`, { x: 382, y: 28, size: 7, font: reportFont, color: rgb(0.35, 0.38, 0.42) });
+      target.drawText(`PS-${payload.public_id.slice(0, 8).toUpperCase()} - Informe integrado V5 - Pagina ${pageNumber} de 4`, { x: 360, y: 28, size: 7, font: reportFont, color: rgb(0.35, 0.38, 0.42) });
     };
     drawHeader(reportPage, reportFont, reportBold, reportLogo, payload.public_id, 1, 4);
     reportPage.drawText("Informe Psicolaboral Integrado", { x: 50, y: 635, size: 18, font: reportBold });
-    reportPage.drawText("Resumen ejecutivo, calidad y revisión", { x: 50, y: 612, size: 11, font: reportFont });
+    reportPage.drawText("Perfil ejecutivo y ajuste laboral", { x: 50, y: 612, size: 11, font: reportFont });
     let reportY = 582;
-    drawPanel(reportPage, "Perfil general preliminar", reportFont, reportBold, 45, 438, 522, 144);
+    drawPanel(reportPage, "Perfil general", reportFont, reportBold, 45, 400, 522, 182);
     const summaryEndY = drawWrappedLines(
       reportPage,
-      [text(ai.executive_summary)],
+      [text(ai.executive_profile ?? ai.executive_summary)],
       reportFont,
       8.6,
       58,
       548,
       496,
-      7,
+      10,
     );
-    reportPage.drawText(`Estado de revision: ${payload.ai_interpretation?.status ?? "FALLBACK_DETERMINISTICO"}`, {
-      x: 58,
-      y: Math.max(452, summaryEndY - 4),
-      size: 8,
-      font: reportBold,
-      color: rgb(0.42, 0.12, 0.14),
-    });
-    reportY = 412;
-    reportPage.drawText("Calidad de respuesta", { x: 50, y: reportY, size: 12, font: reportBold });
-    reportY -= 18;
-    reportY = drawWrappedLines(reportPage, [text(ai.response_quality)], reportFont, 8.5, 58, reportY, 496, 4);
-    reportY -= 12;
-    for (const instrument of payload.instruments) {
-      const quality = instrument.quality ?? {};
-      reportPage.drawText(text(`${instrument.name}: ${quality.status ?? "REVISAR"} - completitud ${quality.completitud ?? 0}% - valores ${quality.valores_distintos ?? "-"}`), { x: 58, y: reportY, size: 7.8, font: reportFont });
-      reportY -= 12;
-    }
+    reportY = Math.min(382, summaryEndY - 16);
+    reportPage.drawText("Ajuste al cargo", { x: 50, y: reportY, size: 12, font: reportBold });
+    reportY -= 17;
+    reportY = drawWrappedLines(reportPage, [
+      text(ai.job_fit_analysis, `Cargo evaluado: ${payload.candidate.job_position_name}. La compatibilidad debe revisarse contra entrevista, evidencia documental y criterio profesional; el ERP no emite decision automatica.`),
+    ], reportFont, 8.5, 58, reportY, 496, 6);
     drawPanel(reportPage, "Fortalezas", reportFont, reportBold, 45, 165, 250, 150);
     drawBulletList(reportPage, list(ai.strengths), reportFont, 8, 58, 278, 220, 5);
     drawPanel(reportPage, "Aspectos a profundizar", reportFont, reportBold, 317, 165, 250, 150);
     drawBulletList(reportPage, list(ai.development_areas), reportFont, 8, 330, 278, 220, 5);
-    reportPage.drawText("Ajuste al cargo", { x: 50, y: 132, size: 12, font: reportBold });
-    drawWrappedLines(reportPage, [
-      `Cargo evaluado: ${payload.candidate.job_position_name}. La compatibilidad debe revisarse contra entrevista, evidencia documental y criterio profesional; el ERP no emite decision automatica.`,
-    ], reportFont, 8.5, 58, 114, 496, 4);
     drawReportFooter(reportPage, 1);
 
     const ipipPage = report.addPage([612, 792]);
@@ -706,7 +719,7 @@ Deno.serve(async (request) => {
       ipipY = drawBarChart(ipipPage, dimensionEntries(ipip.result), reportFont, reportBold, 52, ipipY, 500);
     }
     ipipY -= 18;
-    ipipPage.drawText("Clusters laborales", { x: 50, y: ipipY, size: 12, font: reportBold });
+    ipipPage.drawText("Lectura laboral integrada", { x: 50, y: ipipY, size: 12, font: reportBold });
     ipipY -= 16;
     for (const [cluster, detail] of Object.entries(ai.ipip16?.clusters ?? {})) {
       ipipPage.drawText(text(clusterLabel(cluster)), { x: 58, y: ipipY, size: 8.5, font: reportBold });
@@ -715,7 +728,7 @@ Deno.serve(async (request) => {
       ipipY -= 4;
     }
     ipipPage.drawText("Interpretacion IPIP-16", { x: 50, y: 112, size: 12, font: reportBold });
-    drawWrappedLines(ipipPage, [text(ai.ipip16?.summary), "Adaptacion interna; medias 1-5 no son percentiles ni baremo chileno."], reportFont, 8, 58, 94, 496, 5, rgb(0.22, 0.24, 0.29));
+    drawWrappedLines(ipipPage, [text(ai.personality_profile?.summary ?? ai.ipip16?.summary)], reportFont, 8, 58, 94, 496, 5, rgb(0.22, 0.24, 0.29));
     drawReportFooter(ipipPage, 2);
 
     const ipcPage = report.addPage([612, 792]);
@@ -742,8 +755,10 @@ Deno.serve(async (request) => {
     }
     drawPanel(ipcPage, "Interpretacion laboral", reportFont, reportBold, 45, 122, 522, 142);
     drawWrappedLines(ipcPage, [
-      text(ai.ipc?.summary),
-      `Perfil predominante: ${text(ai.ipc?.predominant_profile, "Pendiente de revision profesional.")}`,
+      text(ai.interpersonal_profile?.summary ?? ai.ipc?.summary),
+      text(ai.interpersonal_profile?.communication),
+      text(ai.interpersonal_profile?.cooperation),
+      text(ai.interpersonal_profile?.response_under_pressure),
       text(ai.ipc?.disc_disclaimer, "Este modelo interno no corresponde a DISC ni a Everything DiSC."),
     ], reportFont, 8.5, 58, 225, 496, 9);
     drawReportFooter(ipcPage, 3);
@@ -757,26 +772,35 @@ Deno.serve(async (request) => {
     drawPanel(integrationPage, "BIS-11", reportFont, reportBold, 45, 490, 250, 120);
     drawWrappedLines(integrationPage, [
       barratt ? formatResult(barratt.result) : "Resultado BIS-11 no disponible.",
-      text(ai.bis11?.impulsivity_interpretation),
+      text(ai.safety_and_impulse_profile?.bis11 ?? ai.bis11?.impulsivity_interpretation),
     ], reportFont, 8.2, 58, 572, 220, 6);
     drawPanel(integrationPage, "PRP", reportFont, reportBold, 317, 490, 250, 120);
     drawWrappedLines(integrationPage, [
       prp ? formatResult(prp.result) : "Resultado PRP no disponible.",
-      text(ai.prp?.documentation_status),
+      text(ai.safety_and_impulse_profile?.prp ?? ai.prp?.documentation_status),
     ], reportFont, 8.2, 330, 572, 220, 6);
     integrationY = 455;
     integrationPage.drawText("Analisis integrado", { x: 50, y: integrationY, size: 12, font: reportBold });
     integrationY -= 17;
-    integrationY = drawWrappedLines(integrationPage, [text(ai.integrated_analysis)], reportFont, 8.5, 58, integrationY, 496, 7);
+    integrationY = drawWrappedLines(integrationPage, [text(ai.safety_and_impulse_profile?.combined_interpretation ?? ai.integrated_analysis)], reportFont, 8.5, 58, integrationY, 496, 7);
     integrationY -= 10;
     integrationPage.drawText("Preguntas sugeridas de entrevista", { x: 50, y: integrationY, size: 12, font: reportBold });
     integrationY -= 16;
     integrationY = drawBulletList(integrationPage, list(ai.interview_questions), reportFont, 8, 58, integrationY, 496, 6);
     integrationY -= 8;
-    integrationPage.drawText("Conclusion preliminar y limitaciones", { x: 50, y: integrationY, size: 12, font: reportBold });
+    integrationPage.drawText("Conclusion integrada y advertencia metodologica", { x: 50, y: integrationY, size: 12, font: reportBold });
     integrationY -= 16;
-    integrationY = drawWrappedLines(integrationPage, [text(ai.preliminary_conclusion)], reportFont, 8.5, 58, integrationY, 496, 4);
-    drawBulletList(integrationPage, list(ai.limitations), reportFont, 7.8, 58, Math.min(integrationY - 6, 158), 496, 4);
+    integrationY = drawWrappedLines(integrationPage, [text(ai.integrated_conclusion ?? ai.preliminary_conclusion)], reportFont, 8.5, 58, integrationY, 496, 4);
+    drawWrappedLines(
+      integrationPage,
+      [text(list(ai.material_limitations).at(0) ?? list(ai.limitations).at(0), "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.")],
+      reportFont,
+      7.8,
+      58,
+      Math.min(integrationY - 6, 158),
+      496,
+      4,
+    );
     drawReportFooter(integrationPage, 4);
 
     const reportBytes = await report.save();

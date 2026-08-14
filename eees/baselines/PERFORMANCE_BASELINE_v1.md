@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.23
+version: 1.0.24
 status: Activo
 language: es-CL
 owner: Quality
@@ -94,6 +94,8 @@ Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes 
 
 Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sube 1,866 bytes por ampliar la autoridad del flujo a gerente de área DSAL, Director de Operaciones y Reclutamiento, además de incorporar el detalle expandible de cada precandidato. No agrega vendors, CSS ni assets.
 
+Revision 2026-08-14 Psych AI V5: el total global sube 1,780 bytes, JS sube 1,521 bytes y CSS sube 259 bytes por reconstruir la salida metodologica del informe psicolaboral integrado, schema V5 y secciones de revisión profesional. No agrega vendors ni assets trackeados; el cambio permanece en el módulo lazy Gestión Psicolaboral y Edge Functions.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -113,11 +115,11 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10244967,
+  "distTotalBytes": 10246747,
   "jsFileCount": 62,
-  "jsTotalBytes": 2730412,
+  "jsTotalBytes": 2731933,
   "cssFileCount": 12,
-  "cssTotalBytes": 239782,
+  "cssTotalBytes": 240041,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

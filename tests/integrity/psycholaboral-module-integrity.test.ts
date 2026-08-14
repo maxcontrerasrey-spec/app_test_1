@@ -6,6 +6,7 @@ const aiMigration = readFileSync("supabase/migrations/20260814005242_psych_ai_in
 const serviceResetMigration = readFileSync("supabase/migrations/20260814021446_add_psycholaboral_service_certificate_reset.sql", "utf8");
 const semanticGuardrailMigration = readFileSync("supabase/migrations/20260814030634_psych_ai_semantic_guardrails_v3.sql", "utf8");
 const openAIProviderMigration = readFileSync("supabase/migrations/20260814032407_psych_ai_openai_gpt5_mini_provider.sql", "utf8");
+const v5Migration = readFileSync("supabase/migrations/20260814041907_psych_ai_v5_methodological_reconstruction.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -93,7 +94,7 @@ describe("Gestión Psicolaboral", () => {
     expect(aiMigration).toContain("PENDING_REVIEW");
     expect(aiMigration).toContain("VALIDATED");
     expect(aiMigration).toContain("reviewed_output");
-    expect(psychAiGuardrails).toContain("No constituye decision automatica");
+    expect(psychAiGuardrails).toContain("decisión automática");
     expect(psychAiGuardrails).toContain("decision_word");
     expect(psychAiGuardrails).toContain("clinical_word");
     expect(edge).toContain('action === "generate_ai_interpretation"');
@@ -152,13 +153,13 @@ describe("Gestión Psicolaboral", () => {
     expect(semanticGuardrailMigration).toContain("PROFESSIONAL_ONLY");
     expect(psychAiSemantic).toContain("buildPsychSemanticContext");
     expect(psychAiSemantic).toContain("validatePsychSemanticOutput");
-    expect(psychAiSemantic).toContain("prp_hard_lock_missing");
+    expect(psychAiSemantic).toContain("prp_descriptive_interpretation_allowed");
     expect(psychAiSemantic).toContain("ipc_directive_second_regression");
     expect(psychAiGuardrails).toContain("attachPsychSemanticContext");
     expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
     expect(psychAiIndex).toContain("provider_failed_fallback_used");
     expect(psychAiIndex).toContain("success: !liveConfigured");
-    expect(psychAiIndex).toContain("gpt5-mini-analyst-reviewer-v1");
+    expect(psychAiIndex).toContain("gpt5-mini-methodological-v5");
     expect(psychAiIndex).toContain("ANALYST_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("REVIEWER_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("REVIEWER_BYPASSED_DUE_TO_FAILURE");
@@ -171,6 +172,27 @@ describe("Gestión Psicolaboral", () => {
     expect(openAIProviderMigration).toContain("'openai'");
     expect(openAIProviderMigration).toContain("'gpt-5-mini'");
     expect(openAIProviderMigration).toContain("notify pgrst, 'reload schema'");
+  });
+
+  it("reconstruye metodología V5 con informe integrado y PRP descriptivo", () => {
+    const audit = readFileSync(
+      "docs/psychometric-module/PSYCH_V5_SOURCE_AND_IMPLEMENTATION_AUDIT.md",
+      "utf8",
+    );
+    expect(v5Migration).toContain("psych-ai-prompt-v5");
+    expect(v5Migration).toContain("psych-ai-schema-v5");
+    expect(v5Migration).toContain("executive_profile");
+    expect(v5Migration).toContain("safety_and_impulse_profile");
+    expect(v5Migration).toContain("integrated_conclusion");
+    expect(v5Migration).toContain("automatic_interpretation_allowed=true");
+    expect(psychAiSemantic).toContain("psych-methodology-v5");
+    expect(psychAiSemantic).toContain("PRP puede interpretarse descriptivamente");
+    expect(psychAiSemantic).not.toContain("prp_hard_lock_missing");
+    expect(psychAiIndex).toContain("No respondas \"requiere interpretación profesional\"");
+    expect(psychAiIndex).toContain("PRP puede interpretarse como patrón preventivo descriptivo");
+    expect(audit).toContain("Evaluación de Personalidad IPIP-16");
+    expect(audit).toContain("No es DISC ni Everything DiSC");
+    expect(audit).toContain("Interpretación descriptiva habilitada");
   });
 
   it("genera informe interno de cuatro páginas con IA/fallback y disclaimers", () => {

@@ -28,6 +28,14 @@ function collectStrings(value: unknown, out: string[] = []) {
 
 function replaceProhibited(text: string) {
   let cleaned = text;
+  cleaned = cleaned.replace(/\bSOBRE_EL_PROMEDIO\b/g, "sobre el promedio");
+  cleaned = cleaned.replace(/\bINTERMEDIO_EN_RANGO_TEORICO\b/g, "intermedio dentro del rango teórico");
+  cleaned = cleaned.replace(/\bALTO_EN_RANGO_TEORICO\b/g, "alto dentro del rango teórico");
+  cleaned = cleaned.replace(/\bBAJO_EN_RANGO_TEORICO\b/g, "bajo dentro del rango teórico");
+  cleaned = cleaned.replace(/\bMUY_ALTO_EN_RANGO_TEORICO\b/g, "muy alto dentro del rango teórico");
+  cleaned = cleaned.replace(/\bMUY_BAJO_EN_RANGO_TEORICO\b/g, "muy bajo dentro del rango teórico");
+  cleaned = cleaned.replace(/\bPROFESSIONAL_ONLY\b/g, "revisión profesional específica");
+  cleaned = cleaned.replace(/\bPENDING_REVIEW\b/g, "pendiente de revisión");
   cleaned = cleaned.replace(/\bno\s+apto\b/gi, "requiere revisión profesional");
   cleaned = cleaned.replace(/\bapto\b/gi, "sin decisión automática");
   cleaned = cleaned.replace(/\bno\s+contratar\b/gi, "profundizar antes de decidir");
@@ -97,12 +105,15 @@ export function validateAndGuardPsychAIOutput(value: unknown, input?: JsonRecord
       .map(([, flag]) => flag)
   );
 
+  const methodologicalNotice =
+    "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.";
   normalized.limitations = Array.from(new Set([
-    ...normalized.limitations,
-    "No constituye diagnostico clinico.",
-    "No constituye decision automatica de contratacion o rechazo.",
-    "La revision profesional es obligatoria antes de usar este antecedente.",
-  ])).slice(0, 8);
+    ...normalized.limitations.filter((item) =>
+      !/diagn[oó]stic|descripci[oó]n cl[ií]nic|decisi[oó]n autom[aá]tica|revisi[oó]n profesional/i.test(item)
+    ),
+    methodologicalNotice,
+  ])).slice(0, 4);
+  normalized.material_limitations = normalized.limitations;
   normalized.version = normalized.version || PSYCH_SEMANTIC_VERSION;
 
   normalized.ipc.disc_disclaimer =

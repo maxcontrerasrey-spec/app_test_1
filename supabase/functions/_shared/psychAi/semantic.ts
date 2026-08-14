@@ -60,7 +60,8 @@ export type PsychSemanticContext = {
     };
     prp?: {
       score: number;
-      interpretation_status: "PROFESSIONAL_ONLY";
+      interpretation_status: "DESCRIPTIVE_INTERPRETATION" | "PROFESSIONAL_ONLY";
+      automatic_interpretation_allowed: boolean;
       allowed_statement: string;
     };
     ipc?: {
@@ -318,11 +319,11 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
       id: "ev_prp_total",
       instrument: "PRP_EMAIL_FORM_A_30",
       score: prpScore,
-      semanticLevel: "PROFESSIONAL_ONLY",
+      semanticLevel: "DOCUMENTED_CLASSIFICATION",
       direction: "UNKNOWN",
-      sourceVersion: "prp-professional-only-v1",
-      maxAllowedIntensity: "PROFESSIONAL_ONLY",
-      interpretationStatus: "PROFESSIONAL_ONLY",
+      sourceVersion: "prp-descriptive-method-v5",
+      maxAllowedIntensity: "DESCRIPTIVE_PREVENTIVE_PATTERN",
+      interpretationStatus: "DOCUMENTED_CLASSIFICATION",
     });
   }
 
@@ -339,9 +340,10 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
       },
       prp: prpScore === null ? undefined : {
         score: prpScore,
-        interpretation_status: "PROFESSIONAL_ONLY",
+        interpretation_status: "DESCRIPTIVE_INTERPRETATION",
+        automatic_interpretation_allowed: true,
         allowed_statement:
-          "Resultado pendiente de interpretacion profesional debido a que no existe definicion/baremo documentado suficiente para interpretacion automatica.",
+          "PRP puede interpretarse descriptivamente desde score total, direccion de items preventivos y factores tecnicos F1-F6. No inventar nombres de factores, percentiles, eneatipos ni grupos normativos no documentados.",
       },
       ipc: ipcStyles.length ? {
         macrostyles: ipcStyles,
@@ -368,13 +370,70 @@ export function attachPsychSemanticContext(input: JsonRecord) {
   const semantic_context = buildPsychSemanticContext(input);
   return {
     ...input,
+    methodology: {
+      version: "psych-methodology-v5",
+      instruments: {
+        IPIP16_105: {
+          professional_name: "Evaluación de Personalidad IPIP-16",
+          source_type: "selección/adaptación interna basada en ítems IPIP de uso libre",
+          implementation_type: "reemplazo funcional no propietario del 16PF",
+          scoring: "media 1-5 por dimensión calculada por ERP",
+          interpretation: "descriptiva por dimensiones y clusters laborales internos",
+          normative_benchmark: null,
+          restrictions: [
+            "no atribuir a 16PF propietario",
+            "no usar baremos 16PF",
+            "no presentar percentiles poblacionales",
+          ],
+          clusters: {
+            self_regulation: ["Estabilidad emocional", "Aprensión", "Tensión e irritabilidad", "Cautela interpersonal", "Cumplimiento de normas"],
+            discipline_structure: ["Orden y perfeccionismo", "Cumplimiento de normas", "Análisis y aprendizaje", "Cautela interpersonal"],
+            interpersonal_style: ["Calidez interpersonal", "Sociabilidad grupal", "Asertividad", "Reserva personal", "Seguridad social"],
+            adaptability_thinking: ["Apertura a ideas y cambio", "Imaginación", "Análisis y aprendizaje", "Autosuficiencia"],
+          },
+        },
+        IPIP_IPC_32: {
+          professional_name: "Evaluación Interpersonal IPIP-IPC",
+          source_type: "IPIP-IPC de uso libre",
+          implementation_type: "reemplazo funcional laboral interno del flujo DISC",
+          scoring: "octantes, ejes continuos de calidez/dominancia y macroestilos internos",
+          interpretation: "estilo relacional, influencia, cooperación, iniciativa y respuesta bajo presión",
+          normative_benchmark: null,
+          disclaimer: "Modelo interpretativo laboral interno derivado de IPIP-IPC. No corresponde a Everything DiSC ni constituye equivalencia psicométrica validada.",
+        },
+        BARRATT_BIS11_30: {
+          professional_name: "Barratt BIS-11",
+          source_type: "instrumento recibido y digitalizado desde correo fuente",
+          scoring: "puntaje total y clasificación documentada calculada por ERP",
+          interpretation: "contextual, conservando literalmente la clasificación documentada",
+          restrictions: ["no escalar SOBRE_EL_PROMEDIO a alto, crítico ni severo"],
+        },
+        PRP_EMAIL_FORM_A_30: {
+          professional_name: "Escala P.R.P",
+          source_type: "documento y corrector recibidos por correo",
+          scoring: "30 ítems, dirección positiva/negativa, score total y factores técnicos F1-F6 calculados por ERP",
+          automatic_interpretation_allowed: true,
+          interpretation: "descriptiva del patrón preventivo y relación con seguridad laboral, sin baremos poblacionales activos",
+          restrictions: [
+            "no inventar nombres de factores F1-F6",
+            "no usar percentiles, eneatipos ni grupos normativos si no vienen documentados en el payload",
+            "no emitir clasificación de riesgo no documentada",
+          ],
+        },
+      },
+      professional_report_rules: {
+        avoid_internal_codes: true,
+        single_methodological_notice:
+          "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.",
+      },
+    },
     semantic_context,
     constraints: {
       ...asRecord(input.constraints),
       semantic_guardrails_version: PSYCH_SEMANTIC_VERSION,
-      llm_must_use_evidence_ids: true,
+      llm_must_use_evidence_ids: false,
       llm_must_not_infer_intensity: true,
-      prp_professional_only: true,
+      prp_descriptive_interpretation_allowed: true,
     },
   };
 }
@@ -389,11 +448,14 @@ function readEvidenceIds(statement: unknown) {
 }
 
 function statementsFromOutput(output: JsonRecord): EvidenceBackedStatement[] {
+  const v5Strengths = asArray(output.strengths).map(asRecord);
+  const v5Points = asArray(output.points_to_explore).map(asRecord);
+  const v5Questions = asArray(output.interview_questions).map(asRecord);
   return [
-    ...asArray(output.strengths),
-    ...asArray(output.points_to_explore),
-    ...asArray(output.interview_questions),
-  ].map(asRecord) as EvidenceBackedStatement[];
+    ...v5Strengths,
+    ...v5Points,
+    ...v5Questions,
+  ] as EvidenceBackedStatement[];
 }
 
 export function deduplicateLimitations(limitations: unknown): string[] {
@@ -479,25 +541,41 @@ export function buildDeterministicPsychSemanticOutput(
     } : null,
   ].filter(Boolean) as EvidenceBackedStatement[];
 
-  const v3 = {
-    profile_summary:
-      `Informe generado con guardrails semanticos determinísticos porque el ${displayFallbackReason(reason)}. Los resultados se presentan como antecedentes descriptivos y requieren revision profesional.`,
-    strengths,
-    points_to_explore: points,
-    instrument_analysis: {
-      ipip16:
+  const v5 = {
+    version: PSYCH_SEMANTIC_VERSION,
+    executive_profile:
+      `Informe generado con guardrails semanticos determinísticos porque el ${displayFallbackReason(reason)}. La lectura integra resultados descriptivos disponibles y debe validarse profesionalmente.`,
+    personality_profile: {
+      summary:
         `IPIP-16 se informa con niveles descriptivos relativos al rango teorico 1-5. ${ipipIntermediate.length} dimensiones se ubican en nivel intermedio; no corresponde hablar de promedio poblacional sin baremo documentado.`,
-      ipip_ipc: predominant
-        ? `IPIP-IPC muestra predominancia ${predominant.label}${second ? ` y segundo macroestilo ${second.label}` : ""}. No corresponde describir Directivo como tendencia secundaria si no ocupa el segundo lugar.`
-        : "IPIP-IPC disponible para revision profesional.",
+      self_regulation: "Revisar estabilidad emocional, tension, aprension, cautela y cumplimiento como patron conjunto de autorregulacion laboral.",
+      discipline_structure: "Revisar orden, cumplimiento de normas, analisis y cautela como soporte de estructura operacional.",
+      interpersonal_style: "Revisar calidez, sociabilidad, reserva y asertividad en contexto de trato laboral y coordinacion.",
+      adaptability_thinking: "Revisar apertura, imaginacion, aprendizaje y autosuficiencia como antecedentes de adaptacion y criterio.",
+    },
+    interpersonal_profile: {
+      summary: predominant
+        ? `IPIP-IPC muestra predominancia ${predominant.label}${second ? ` y segundo macroestilo ${second.label}` : ""}, dentro de un modelo laboral interno no equivalente a DISC.`
+        : "IPIP-IPC disponible para interpretar octantes y macroestilos laborales internos.",
+      communication: "Contrastar el estilo comunicacional con ejemplos de coordinacion, pasajeros, supervision y equipo.",
+      cooperation: "Analizar cooperacion y orientacion interpersonal desde el patron IPIP-IPC observado.",
+      initiative: predominant ? `El macroestilo principal observado es ${predominant.label}.` : "Iniciativa a revisar en entrevista.",
+      response_under_pressure: "Explorar respuesta bajo presion sin convertir la criticidad del cargo en severidad del resultado.",
+    },
+    safety_and_impulse_profile: {
+      summary: "La integracion de seguridad conductual cruza BIS-11, PRP y dimensiones IPIP vinculadas a normas, cautela y estabilidad.",
       bis11: bis
-        ? `BIS-11: puntaje ${bis.score}, clasificacion ${bis.classification}. No se escala a alto, critico ni severo.`
+        ? `El resultado BIS-11 obtiene ${bis.score} y se encuentra clasificado como ${bis.classification.toLowerCase().replaceAll("_", " ")} segun el criterio documentado.`
         : "BIS-11 disponible para revision profesional.",
       prp: prp?.allowed_statement ??
-        "PRP pendiente de interpretacion profesional debido a documentacion insuficiente para interpretacion automatica.",
+        "PRP disponible solo como antecedente descriptivo si el puntaje esta calculado por el ERP.",
+      combined_interpretation:
+        "La lectura integrada separa criticidad del cargo de severidad del resultado; los hallazgos deben contrastarse con entrevista, antecedentes laborales y criterio profesional.",
     },
-    integrated_analysis:
-      "La lectura integrada separa criticidad del cargo de severidad del resultado. Los hallazgos deben contrastarse con entrevista, antecedentes laborales y criterio profesional.",
+    job_fit_analysis:
+      "El ajuste al cargo debe revisarse desde el patron conjunto de autorregulacion, normas, trato laboral, impulsividad y orientacion preventiva, sin emitir decision automatica.",
+    strengths,
+    points_to_explore: points,
     interview_questions: [
       {
         question:
@@ -524,18 +602,14 @@ export function buildDeterministicPsychSemanticOutput(
         evidence_ids: [fallbackEvidence(context, "IPIP_IPC_32")],
       },
     ],
-    preliminary_conclusion:
-      "Conclusión preliminar no decisoria. Los tests no determinan aptitud por si solos; el resultado debe ser revisado profesionalmente junto con entrevista y antecedentes del proceso.",
-    recommendations: [],
-    limitations: deduplicateLimitations([
-      "No constituye diagnostico clinico.",
-      "No constituye decision automatica de contratacion o rechazo.",
-      "Los niveles IPIP son descriptivos del rango teorico y no percentiles poblacionales.",
-      "PRP permanece pendiente de interpretacion profesional por falta de definicion/baremo suficiente.",
+    integrated_conclusion:
+      "Conclusión preliminar no decisoria. Los tests no determinan aptitud por si solos; el resultado debe revisarse profesionalmente junto con entrevista y antecedentes del proceso.",
+    material_limitations: deduplicateLimitations([
+      "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben considerarse junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.",
     ]),
   };
 
-  return v3 as unknown as PsychAIOutput;
+  return v5 as unknown as PsychAIOutput;
 }
 
 function arrayText(items: EvidenceBackedStatement[]) {
@@ -544,6 +618,90 @@ function arrayText(items: EvidenceBackedStatement[]) {
 
 export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSemanticContext): PsychAIOutput {
   const source = asRecord(value);
+  if ("executive_profile" in source || "personality_profile" in source || "safety_and_impulse_profile" in source) {
+    const personality = asRecord(source.personality_profile);
+    const interpersonal = asRecord(source.interpersonal_profile);
+    const safety = asRecord(source.safety_and_impulse_profile);
+    const strengths = asArray(source.strengths).map(asRecord);
+    const points = asArray(source.points_to_explore).map(asRecord);
+    const questions = asArray(source.interview_questions).map(asRecord);
+    const executive = readText(source.executive_profile, "Interpretacion integrada no disponible.");
+    const jobFit = readText(source.job_fit_analysis, "Ajuste al cargo pendiente de revision profesional.");
+    const conclusion = readText(source.integrated_conclusion, "Conclusion preliminar no decisoria.");
+    const limitations = deduplicateLimitations(source.material_limitations);
+    const prpText = readText(safety.prp, "PRP se interpreta descriptivamente solo desde propiedades documentadas.");
+    const bisText = readText(safety.bis11, "BIS-11 se informa segun clasificacion documentada.");
+    const ipcText = readText(interpersonal.summary, "IPIP-IPC describe octantes y macroestilos propios; no corresponde a DISC.");
+    const ipipText = readText(personality.summary, "IPIP-16 usa niveles descriptivos relativos al rango teorico.");
+    return {
+      version: readText(source.version, PSYCH_SEMANTIC_VERSION),
+      executive_profile: executive,
+      profile_summary: executive,
+      executive_summary: executive,
+      response_quality:
+        "Adecuada. La calidad se basa en completitud y consistencia calculadas por el ERP; debe revisarse junto con los resultados.",
+      strengths: arrayText(strengths as EvidenceBackedStatement[]),
+      points_to_explore: points as EvidenceBackedStatement[],
+      development_areas: arrayText(points as EvidenceBackedStatement[]),
+      interview_questions: questions.map((item) => readText(item.question, readText(item.text))).filter(Boolean),
+      instrument_analysis: {
+        ipip16: ipipText,
+        ipip_ipc: ipcText,
+        bis11: bisText,
+        prp: prpText,
+      },
+      ipip16: {
+        summary: ipipText,
+        clusters: {
+          self_regulation: readText(personality.self_regulation),
+          discipline_structure: readText(personality.discipline_structure),
+          interpersonal_style: readText(personality.interpersonal_style),
+          adaptability_thinking: readText(personality.adaptability_thinking),
+        },
+      },
+      ipc: {
+        summary: ipcText,
+        predominant_profile: readText(interpersonal.initiative, "Perfil interpersonal integrado en el analisis."),
+        disc_disclaimer:
+          "Modelo interpretativo laboral interno derivado de IPIP-IPC. No corresponde a Everything DiSC ni constituye equivalencia psicométrica validada.",
+      },
+      bis11: {
+        summary: readText(safety.summary, bisText),
+        impulsivity_interpretation: bisText,
+      },
+      prp: {
+        summary: prpText,
+        documentation_status: prpText,
+      },
+      personality_profile: {
+        summary: ipipText,
+        self_regulation: readText(personality.self_regulation),
+        discipline_structure: readText(personality.discipline_structure),
+        interpersonal_style: readText(personality.interpersonal_style),
+        adaptability_thinking: readText(personality.adaptability_thinking),
+      },
+      interpersonal_profile: {
+        summary: ipcText,
+        communication: readText(interpersonal.communication),
+        cooperation: readText(interpersonal.cooperation),
+        initiative: readText(interpersonal.initiative),
+        response_under_pressure: readText(interpersonal.response_under_pressure),
+      },
+      safety_and_impulse_profile: {
+        summary: readText(safety.summary),
+        bis11: bisText,
+        prp: prpText,
+        combined_interpretation: readText(safety.combined_interpretation),
+      },
+      job_fit_analysis: jobFit,
+      integrated_analysis: [jobFit, readText(safety.combined_interpretation)].filter(Boolean).join("\n\n"),
+      preliminary_conclusion: conclusion,
+      integrated_conclusion: conclusion,
+      limitations,
+      material_limitations: limitations,
+      evidence: [],
+    } satisfies PsychAIOutput;
+  }
   const instrumentAnalysis = asRecord(source.instrument_analysis);
   const strengths = asArray(source.strengths).map(asRecord);
   const points = asArray(source.points_to_explore).map(asRecord);
@@ -613,9 +771,7 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
       "Conclusion preliminar no decisoria; requiere revision profesional.",
     ),
     limitations,
-    evidence: fallbackContext.evidence_catalog.map((item) =>
-      `${item.id}: ${item.instrument}${item.dimension ? `/${item.dimension}` : ""} ${item.score ?? item.classification ?? ""} ${item.semanticLevel ?? ""}`.trim()
-    ).slice(0, 10),
+    evidence: [],
   } satisfies PsychAIOutput;
 }
 
@@ -623,10 +779,11 @@ export function validatePsychSemanticOutput(value: unknown, context: PsychSemant
   const output = asRecord(value);
   const flags: string[] = [];
   const knownEvidenceIds = new Set(context.evidence_catalog.map((item) => item.id));
-  const validOrEmpty = (ids: string[]) => ids.length > 0 && ids.every((id) => knownEvidenceIds.has(id));
+  const isV5 = "executive_profile" in output || "personality_profile" in output || "safety_and_impulse_profile" in output;
+  const validOrEmpty = (ids: string[]) => isV5 ? ids.every((id) => knownEvidenceIds.has(id)) : ids.length > 0 && ids.every((id) => knownEvidenceIds.has(id));
 
-  if (!readText(output.profile_summary)) flags.push("missing_profile_summary");
-  if (!output.instrument_analysis || typeof output.instrument_analysis !== "object") {
+  if (!readText(output.profile_summary) && !readText(output.executive_profile)) flags.push("missing_profile_summary");
+  if (!isV5 && (!output.instrument_analysis || typeof output.instrument_analysis !== "object")) {
     flags.push("missing_instrument_analysis");
   }
 
@@ -651,12 +808,7 @@ export function validatePsychSemanticOutput(value: unknown, context: PsychSemant
       ) {
         flags.push("bis11_classification_escalation");
       }
-      if (
-        evidence.instrument === "PRP_EMAIL_FORM_A_30" &&
-        containsAny(currentText, ["organizacion", "organización", "responsabilidad", "control", "documentacion y organizacion", "documentación y organización"])
-      ) {
-        flags.push("prp_construct_invention");
-      }
+      if (evidence.instrument === "PRP_EMAIL_FORM_A_30" && containsAny(currentText, ["factor 1 es", "factor 2 es", "factor 3 es", "factor 4 es", "factor 5 es", "factor 6 es"])) flags.push("prp_construct_invention");
     }
   }
 
@@ -681,9 +833,11 @@ export function validatePsychSemanticOutput(value: unknown, context: PsychSemant
   if (containsAny(allText, ["baja adherencia"])) flags.push("norm_low_regression");
   if (containsAny(allText, ["irritabilidad sostenida"])) flags.push("tension_direction_regression");
 
-  const prpText = readText(asRecord(output.instrument_analysis).prp);
-  if (context.locks.prp && !containsAny(prpText, ["pendiente de interpretacion profesional", "pendiente de interpretación profesional"])) {
-    flags.push("prp_hard_lock_missing");
+  const prpText = isV5
+    ? readText(asRecord(output.safety_and_impulse_profile).prp)
+    : readText(asRecord(output.instrument_analysis).prp);
+  if (context.locks.prp?.automatic_interpretation_allowed && containsAny(prpText, ["percentil", "eneatipo", "baremo chileno", "factor 1 es", "factor 2 es", "factor 3 es", "factor 4 es", "factor 5 es", "factor 6 es"])) {
+    flags.push("prp_methodology_overreach");
   }
   const ipcText = `${readText(asRecord(output.instrument_analysis).ipip_ipc)} ${JSON.stringify(output)}`;
   const directivo = context.locks.ipc?.macrostyles.find((item) => normalizeText(item.label) === "directivo");
