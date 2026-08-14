@@ -3165,3 +3165,11 @@ Cuando un proveedor externo falla, el resultado visible debe quedar como estado 
 ### 309. Las credenciales IA deben quedar aisladas por dominio funcional
 
 Una migración de proveedor para Gestión Psicolaboral no debe crear defaults, modelos ni lecturas de secrets en ORION u otro asistente. Cada dominio debe tener sus propias variables, su propio fallback y una verificación explícita de que el secreto nuevo no es consumido por componentes fuera de alcance.
+
+### 310. Un timeout del proveedor real debe cerrar como fallo técnico
+
+Si OpenAI u otro proveedor real agota tiempo, el ERP puede construir un resumen determinístico para logs internos, pero no debe persistirlo como `PENDING_REVIEW` ni mostrarlo como interpretación del proveedor. La fila debe quedar `FAILED`, sin `output` revisable, para permitir reintento limpio y evitar mezclar evidencia calculada con contenido IA inexistente.
+
+### 311. Una respuesta IA insegura debe sanearse, no vaciar el informe
+
+Cuando el proveedor sí devuelve contenido pero incumple locks semánticos, la salida no debe descartarse completa si el normalizador determinístico puede corregirla. El ERP debe conservar la interpretación saneada, registrar los flags aplicados y reservar `FAILED` para ausencia real de respuesta, rechazo del proveedor, timeout o errores de API.

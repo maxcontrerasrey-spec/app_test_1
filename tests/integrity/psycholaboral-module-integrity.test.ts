@@ -131,8 +131,12 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAi).toContain("https://api.openai.com/v1");
     expect(psychAi).toContain("PSYCH_AI_ENABLED");
     expect(psychAi).toContain("gpt-5-mini");
-    expect(psychAi).toContain("response_format");
+    expect(psychAi).toContain('fetch(`${this.baseUrl}/responses`');
+    expect(psychAi).toContain("text: {");
+    expect(psychAi).toContain("max_output_tokens");
     expect(psychAi).toContain("json_schema");
+    expect(psychAi).toContain("openai_incomplete_");
+    expect(psychAi).toContain("openai_refusal_");
     expect(edge).toContain('Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() === "openai"');
     expect(edge).toContain('Deno.env.get("OPENAI_API_KEY")?.trim()');
   });
@@ -150,8 +154,10 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiSemantic).toContain("ipc_directive_second_regression");
     expect(psychAiGuardrails).toContain("attachPsychSemanticContext");
     expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
-    expect(psychAiIndex).toContain("SEMANTIC_VALIDATION_FAILED");
     expect(psychAiIndex).toContain("provider_failed_fallback_used");
+    expect(psychAiIndex).toContain("success: !liveConfigured");
+    expect(psychAiIndex).toContain("semantic_guardrail_normalized_after_retry");
+    expect(edge).toContain("p_output: generated.success ? generated.output : null");
   });
 
   it("activa OpenAI GPT-5 mini como proveedor productivo psicolaboral", () => {

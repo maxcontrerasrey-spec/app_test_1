@@ -52,7 +52,7 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
     this.apiKey = params.apiKey;
     this.model = params.model;
     this.baseUrl = (params.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "");
-    this.timeoutMs = params.timeoutMs ?? 24000;
+    this.timeoutMs = params.timeoutMs ?? 90000;
   }
 
   async interpret(input: PsychAIPromptInput): Promise<PsychAIResult> {
@@ -60,15 +60,16 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
     const started = now();
     try {
-      const result = await fetch(`${this.baseUrl}/chat/completions`, {
+      const result = await fetch(`${this.baseUrl}/responses`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
+          "X-Client-Request-Id": crypto.randomUUID(),
         },
         body: JSON.stringify({
           model: this.model,
-          messages: [
+          input: [
             { role: "system", content: input.systemPrompt },
             {
               role: "user",
@@ -77,16 +78,16 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
                 JSON.stringify(input.payload),
             },
           ],
-          response_format: {
-            type: "json_schema",
-            json_schema: {
+          text: {
+            format: {
+              type: "json_schema",
               name: "psych_ai_interpretation",
               schema: input.responseSchema,
               strict: true,
             },
           },
-          max_completion_tokens: 2400,
-          stream: false,
+          max_output_tokens: Number(Deno.env.get("PSYCH_AI_MAX_OUTPUT_TOKENS")?.trim()) || 8000,
+          store: false,
         }),
         signal: controller.signal,
       });
@@ -94,10 +95,23 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
       if (!result.ok) {
         throw new Error(`openai_${result.status}_${readText((raw.error as JsonRecord | undefined)?.message, "request_failed")}`);
       }
-      const content = readText(
-        ((raw.choices as Array<JsonRecord> | undefined)?.[0]?.message as JsonRecord | undefined)?.content,
-      );
-      if (!content) throw new Error("openai_empty_content");
+      const incomplete = raw.incomplete_details as JsonRecord | undefined;
+      if (raw.status === "incomplete") {
+        throw new Error(`openai_incomplete_${readText(incomplete?.reason, "unknown")}`);
+      }
+      if (raw.error) {
+        throw new Error(`openai_response_error_${readText((raw.error as JsonRecord).message, "unknown")}`);
+      }
+      const message = (raw.output as Array<JsonRecord> | undefined)?.find((item) => item.type === "message");
+      const messageContent = (message?.content as Array<JsonRecord> | undefined)?.[0];
+      if (messageContent?.type === "refusal") {
+        throw new Error(`openai_refusal_${readText(messageContent.refusal, "refused").slice(0, 80)}`);
+      }
+      const content = readText(raw.output_text) ||
+        (messageContent?.type === "output_text" ? readText(messageContent.text) : "");
+      if (!content) {
+        throw new Error(`openai_empty_content_${readText(raw.status, "unknown_status")}`);
+      }
       const parsed = JSON.parse(content);
       const usage = (raw.usage ?? {}) as JsonRecord;
       return {
@@ -106,12 +120,12 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
         model: this.model,
         latency_ms: Math.round(now() - started),
         usage: {
-          prompt_tokens: Number(usage.prompt_tokens ?? 0),
-          completion_tokens: Number(usage.completion_tokens ?? 0),
+          prompt_tokens: Number(usage.input_tokens ?? usage.prompt_tokens ?? 0),
+          completion_tokens: Number(usage.output_tokens ?? usage.completion_tokens ?? 0),
           total_tokens: Number(usage.total_tokens ?? 0),
           estimated_cost_usd: 0,
         },
-        raw_finish_reason: readText((raw.choices as Array<JsonRecord> | undefined)?.[0]?.finish_reason),
+        raw_finish_reason: readText(raw.status),
       };
     } catch (error) {
       throw new Error(resolveProviderFailureReason(error));
@@ -134,6 +148,7 @@ export function createPsychInterpretationProvider() {
         apiKey,
         model,
         baseUrl: Deno.env.get("OPENAI_BASE_URL")?.trim() || undefined,
+        timeoutMs: Number(Deno.env.get("PSYCH_AI_TIMEOUT_MS")?.trim()) || undefined,
       }),
       fallbackReason: "",
       liveConfigured: true,

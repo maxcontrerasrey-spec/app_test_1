@@ -12,6 +12,8 @@
 
 Resultado: producción quedó con prompt activo `psych-ai-prompt-v4`, schema `psych-ai-schema-v3`, provider `openai` y modelo `gpt-5-mini`. `OPENAI_API_KEY` quedó configurado solo para Psych AI; `GROQ_API_KEY` y `ORION_LLM_*` quedaron retirados. RC-1807 fue regenerado con OpenAI real, run `SUCCESS`, estado `PENDING_REVIEW`, certificado e informe `generated` con hashes.
 
+Corrección posterior: el fallback por timeout no vuelve a persistirse como revisión IA. El provider psicolaboral usa OpenAI Responses API con Structured Outputs, timeout ampliado y diagnóstico de `incomplete/refusal/empty_content`. Las respuestas IA que incumplen locks semánticos se normalizan con guardrails ERP y se guardan con flags; solo ausencia real de proveedor queda `FAILED`. RC-1807 fue regenerado nuevamente con OpenAI real, latencia 25.5s, run `SUCCESS`, estado `PENDING_REVIEW`, certificado e informe `generated`.
+
 ## Guardrails semánticos IA psicolaboral V3 - 2026-08-13
 
 - [ ] Implementar `PsychSemanticGuardrailEngine` determinístico entre scoring e IA, con niveles teóricos IPIP, lock BIS-11, lock PRP y evidencia versionada.

@@ -59,7 +59,17 @@ export async function generatePsychAIInterpretation(input: {
         flag.includes("regression")
       );
       if (retryFailures.length) {
-        throw new Error(`SEMANTIC_VALIDATION_FAILED:${retryFailures.join("|")}`);
+        guarded = {
+          ...guarded,
+          validationFlags: [
+            ...guarded.validationFlags,
+            `semantic_guardrail_normalized_after_retry:${retryFailures.join("|")}`,
+          ],
+          guardrailFlags: [
+            ...guarded.guardrailFlags,
+            "semantic_guardrail_normalized_after_retry",
+          ],
+        };
       }
     }
     return {
@@ -83,7 +93,7 @@ export async function generatePsychAIInterpretation(input: {
       sanitizedPayload,
     );
     return {
-      success: true,
+      success: !liveConfigured,
       provider: provider.name,
       model: provider.model,
       latency_ms: 0,
@@ -93,8 +103,8 @@ export async function generatePsychAIInterpretation(input: {
       guardrail_flags: fallback.guardrailFlags,
       live_configured: liveConfigured,
       fallback_reason: reason,
-      error_code: null,
-      error_message: null,
+      error_code: liveConfigured ? "provider_failed" : null,
+      error_message: liveConfigured ? reason : null,
     };
   }
 }
