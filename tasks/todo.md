@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Capa IA interpretativa psicolaboral - 2026-08-13
+- [x] Auditar el prompt maestro contra scoring, calidad, perfiles, PDF, Storage, RLS y frontend existentes.
+- [x] Documentar arquitectura, brechas, riesgos, rollback y gates en `PSYCH_AI_IMPLEMENTATION_AUDIT.md`.
+- [ ] Crear migración privada de perfiles de cargo, interpretaciones, ejecuciones y versiones de prompt.
+- [ ] Implementar proveedor abstracto, Mock, Groq, sanitización, schema estricto, guardrails, cache e idempotencia.
+- [ ] Integrar generación piloto manual y revisión profesional sin decisión automática.
+- [ ] Rediseñar PDF de cuatro páginas con evidencia, interpretación separada y fallback determinístico.
+- [ ] Ejecutar tests, auditorías Supabase, build, Guardian y piloto controlado antes de activar IA.
+
+Decisión: `PSYCH_AI_ENABLED=false` durante el desarrollo. El scoring existente, los resultados históricos, el certificado actual y el flujo de candidatos no se modifican hasta que la capa auditable esté validada.
+
 ## Rediseño informe psicolaboral integrado - 2026-08-13
 - [x] Auditar generador PDF, scoring, datos históricos, permisos y contratos actuales.
 - [x] Implementar calidad de respuesta y capa interpretativa trazable sin alterar scoring original.

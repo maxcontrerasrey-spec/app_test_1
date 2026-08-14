@@ -3123,3 +3123,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 ### 304. Los PDFs separados deben embebir sus propios recursos
 
 Al generar un certificado y un informe con `pdf-lib`, cada `PDFDocument` mantiene su propio contexto de fuentes e imágenes. Reutilizar recursos embebidos del primer documento puede producir un informe aparentemente vacío o inválido aunque el Storage y el estado de generación indiquen éxito. Cada documento debe embebir de forma independiente sus fuentes, logo y demás recursos antes de publicarse.
+
+### 305. La IA psicolaboral debe ser una capa interpretativa aislada
+
+El scoring, la calidad, los hashes y las decisiones de reclutamiento son contratos determinísticos del ERP. Una integración con Groq solo puede recibir un payload pseudonimizado ya calculado, devolver un borrador estructurado y quedar separada de la revisión profesional. El fallback determinístico y el apagado por feature flag deben existir antes de activar cualquier proveedor externo.
