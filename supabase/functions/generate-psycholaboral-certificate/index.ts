@@ -173,6 +173,16 @@ function list(value: unknown) {
     : [];
 }
 
+function clusterLabel(value: string) {
+  const labels: Record<string, string> = {
+    autocontrol_estabilidad: "Autocontrol y Estabilidad",
+    disciplina_estructura: "Disciplina y Estructura",
+    interaccion_laboral: "Interacción Laboral",
+    analisis_adaptacion: "Análisis y Adaptación",
+  };
+  return labels[value] ?? value;
+}
+
 function defaultAIOutput(payload: Payload): PsychAIOutput {
   const evidence = payload.instruments.map((instrument) =>
     `${instrument.code}: ${instrument.response_count} respuestas, hash ${instrument.result_sha256.slice(0, 12)}`,
@@ -202,10 +212,10 @@ function defaultAIOutput(payload: Payload): PsychAIOutput {
     ipip16: {
       summary: "Perfil IPIP-16 calculado por el ERP en 16 dimensiones continuas.",
       clusters: {
-        "Autocontrol y Estabilidad": "Revisar estabilidad, tensión, aprensión y cumplimiento como patrón conjunto.",
-        "Disciplina y Estructura": "Revisar orden, normas y cautela frente a exigencias operativas.",
-        "Interacción Laboral": "Revisar calidez, sociabilidad, reserva y asertividad en contexto de equipo.",
-        "Análisis y Adaptación": "Revisar apertura, imaginación, aprendizaje y autosuficiencia.",
+        autocontrol_estabilidad: "Revisar estabilidad, tensión, aprensión y cumplimiento como patrón conjunto.",
+        disciplina_estructura: "Revisar orden, normas y cautela frente a exigencias operativas.",
+        interaccion_laboral: "Revisar calidez, sociabilidad, reserva y asertividad en contexto de equipo.",
+        analisis_adaptacion: "Revisar apertura, imaginación, aprendizaje y autosuficiencia.",
       },
     },
     ipc: {
@@ -643,7 +653,7 @@ Deno.serve(async (request) => {
     ipipPage.drawText("Clusters laborales", { x: 50, y: ipipY, size: 12, font: reportBold });
     ipipY -= 16;
     for (const [cluster, detail] of Object.entries(ai.ipip16?.clusters ?? {})) {
-      ipipPage.drawText(cluster, { x: 58, y: ipipY, size: 8.5, font: reportBold });
+      ipipPage.drawText(clusterLabel(cluster), { x: 58, y: ipipY, size: 8.5, font: reportBold });
       ipipY -= 11;
       ipipY = drawWrappedLines(ipipPage, [detail], reportFont, 7.8, 68, ipipY, 475, 2);
       ipipY -= 4;

@@ -1,6 +1,6 @@
 # Schema Psych AI
 
-Versión: `psych-ai-schema-v1`
+Versión activa: `psych-ai-schema-v2`
 
 La salida debe ser un objeto JSON con `additionalProperties=false`.
 
@@ -29,6 +29,11 @@ Reglas:
 - `limitations`: 3 a 8 textos.
 - `evidence`: 4 a 10 textos.
 - `ipc.disc_disclaimer` debe declarar que no corresponde a DISC ni Everything DiSC.
+- `ipip16.clusters` usa claves fijas compatibles con Groq Structured Outputs:
+  - `autocontrol_estabilidad`
+  - `disciplina_estructura`
+  - `interaccion_laboral`
+  - `analisis_adaptacion`
 
 Postvalidación:
 

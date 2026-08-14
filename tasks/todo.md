@@ -1897,3 +1897,13 @@ Resultado: los instrumentos completados se muestran en verde suave, los que est�
 - [x] Ejecutar Deno checks, TypeScript, integridad, migraciones, seguridad, build frontend, performance baseline, Guardian y smoke productivo reducido.
 
 Resultado: Psych AI queda implementado y activo funcionalmente con proveedor mock mientras falte `GROQ_API_KEY`. La validacion real con Groq queda pendiente solo de configurar el secreto y activar `PSYCH_AI_ENABLED=true`.
+
+## Correccion Groq schema Psych AI - 2026-08-13
+- [x] Identificar causa del fallback: Groq rechazaba `psych-ai-schema-v1` por `additionalProperties` dinámico en `ipip16.clusters`.
+- [x] Versionar `psych-ai-schema-v2` con campos fijos compatibles.
+- [x] Ajustar Edge para dejar los fallos reales de proveedor en `FAILED`, no como revisión pendiente con fallback.
+- [x] Invalidar las revisiones pendientes generadas por el error anterior para permitir regeneración.
+- [x] Desplegar migración y Edge Functions en Supabase producción.
+- [x] Verificar prompt activo `schema-v2`, schema dinámico eliminado e interpretaciones viejas inválidas en 0 pendientes.
+
+Resultado: Gestión Psicolaboral puede regenerar IA real con Groq usando el nuevo schema compatible.

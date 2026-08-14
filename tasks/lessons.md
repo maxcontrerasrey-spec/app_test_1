@@ -3134,3 +3134,7 @@ Al generar un certificado y un informe con `pdf-lib`, cada `PDFDocument` mantien
 ### 305. La IA psicolaboral debe ser una capa interpretativa aislada
 
 El scoring, la calidad, los hashes y las decisiones de reclutamiento son contratos determinísticos del ERP. Una integración con Groq solo puede recibir un payload pseudonimizado ya calculado, devolver un borrador estructurado y quedar separada de la revisión profesional. El fallback determinístico y el apagado por feature flag deben existir antes de activar cualquier proveedor externo.
+
+### 306. Structured Outputs no debe usar mapas dinámicos en proveedores externos
+
+Un schema que pasa validación local puede ser rechazado por Groq/OpenAI-compatible si usa `additionalProperties` como schema dinámico dentro de objetos. Para salidas críticas, declara propiedades fijas, versiona el prompt/schema y deja una prueba de integridad que bloquee volver a publicar un schema incompatible.

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const migration = readFileSync("supabase/migrations/20260813180211_add_psycholaboral_module.sql", "utf8");
 const aiMigration = readFileSync("supabase/migrations/20260814005242_psych_ai_interpretation_foundation.sql", "utf8");
+const aiSchemaFixMigration = readFileSync("supabase/migrations/20260814014122_fix_psych_ai_groq_schema_v2.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
 const psychAiGuardrails = readFileSync("supabase/functions/_shared/psychAi/guardrails.ts", "utf8");
@@ -104,6 +105,15 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAi).toContain("response_format");
     expect(psychAi).toContain("json_schema");
     expect(psychAi).toContain('reasoning_effort: "low"');
+  });
+
+  it("usa schema Groq v2 sin propiedades dinámicas incompatibles", () => {
+    expect(aiSchemaFixMigration).toContain("psych-ai-schema-v2");
+    expect(aiSchemaFixMigration).toContain("autocontrol_estabilidad");
+    expect(aiSchemaFixMigration).toContain("disciplina_estructura");
+    expect(aiSchemaFixMigration).toContain("interaccion_laboral");
+    expect(aiSchemaFixMigration).toContain("analisis_adaptacion");
+    expect(aiSchemaFixMigration).not.toContain('"additionalProperties":{"type":"string"}');
   });
 
   it("genera informe interno de cuatro páginas con IA/fallback y disclaimers", () => {

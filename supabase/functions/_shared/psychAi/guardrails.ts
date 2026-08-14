@@ -131,10 +131,10 @@ export function buildDeterministicPsychOutput(input: JsonRecord, reason: string)
     ipip16: {
       summary: "IPIP-16 queda disponible como perfil de 16 dimensiones calculadas por el ERP.",
       clusters: {
-        "Autocontrol y Estabilidad": "Revisar estabilidad, tension, aprehension y cumplimiento como patrones conjuntos.",
-        "Disciplina y Estructura": "Revisar orden, normas y cautela frente a exigencias operativas.",
-        "Interaccion Laboral": "Revisar calidez, sociabilidad, reserva y asertividad en contexto de equipo.",
-        "Analisis y Adaptacion": "Revisar apertura, imaginacion, aprendizaje y autosuficiencia.",
+        autocontrol_estabilidad: "Revisar estabilidad, tension, aprehension y cumplimiento como patrones conjuntos.",
+        disciplina_estructura: "Revisar orden, normas y cautela frente a exigencias operativas.",
+        interaccion_laboral: "Revisar calidez, sociabilidad, reserva y asertividad en contexto de equipo.",
+        analisis_adaptacion: "Revisar apertura, imaginacion, aprendizaje y autosuficiencia.",
       },
     },
     ipc: {

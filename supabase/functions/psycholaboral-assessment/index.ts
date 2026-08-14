@@ -344,9 +344,9 @@ Deno.serve(async (request) => {
             p_interpretation_id: claimed.interpretation_id,
             p_run_id: claimed.run_id,
             p_claim_token: claimToken,
-            p_success: true,
-            p_output: generated.output,
-            p_output_hash: outputHash,
+            p_success: generated.success,
+            p_output: generated.success ? generated.output : null,
+            p_output_hash: generated.success ? outputHash : null,
             p_validation_flags: generated.validation_flags,
             p_guardrail_flags: generated.guardrail_flags,
             p_latency_ms: generated.latency_ms,
@@ -381,6 +381,12 @@ Deno.serve(async (request) => {
             // The caller still receives the persistence failure; this only clears the claim when possible.
           }
           return response({ error: "La interpretación se generó, pero no pudo persistirse." }, 500);
+        }
+        if (!generated.success) {
+          return response({
+            error: `Groq no pudo generar la interpretación: ${generated.fallback_reason || generated.error_message || "provider_failed"}`,
+            result: completed,
+          }, 502);
         }
         return response({
           generated: true,

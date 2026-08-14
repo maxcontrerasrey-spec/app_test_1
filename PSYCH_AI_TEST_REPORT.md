@@ -24,6 +24,7 @@ Fecha: 2026-08-13
 - Edge Function `generate-psycholaboral-certificate` desplegada con informe interno de 4 paginas.
 - Smoke SQL reducido: 4 tablas IA, 5 RPC IA, 1 prompt activo, 7 perfiles activos, 0 grants directos a `anon/authenticated`, perfil conductor resuelto.
 - Smoke HTTP negativo: endpoint IA rechaza acceso sin JWT con `401` y CORS restringido al dominio ERP.
+- Corrección Groq schema v2: `ipip16.clusters` usa propiedades fijas para evitar rechazo `groq_400_invalid JSON schema`.
 
 ## Cobertura agregada
 
@@ -38,6 +39,6 @@ Fecha: 2026-08-13
 
 ## Pendiente por credencial
 
-`LIVE_GROQ_INTEGRATION_TEST`: requiere `GROQ_API_KEY` configurado en Supabase.
+`LIVE_GROQ_INTEGRATION_TEST`: ejecutar desde una evaluación terminada después de publicar `psych-ai-schema-v2`.
 
 Estado final: `IMPLEMENTATION COMPLETE — LIVE GROQ VALIDATION PENDING API KEY`.

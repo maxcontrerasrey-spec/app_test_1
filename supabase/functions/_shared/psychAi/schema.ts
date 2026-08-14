@@ -1,6 +1,6 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 
-export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v1";
+export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v2";
 
 const REQUIRED_TOP_LEVEL = [
   "version",
