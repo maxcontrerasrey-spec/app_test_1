@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.25
+version: 1.0.26
 status: Activo
 language: es-CL
 owner: Quality
@@ -102,6 +102,8 @@ Revision 2026-08-14 Psych AI V5.2 CI: GitHub Actions `Audit Enterprise Guardrail
 
 Revision 2026-08-14 Psych AI V5.3 Luna: CSS sube a 240,482 bytes por mostrar la recomendacion preliminar, brechas, fortalezas y dudas criticas en tarjetas editables del modal de revision. No agrega vendors, assets pesados ni rutas eager; el procesamiento IA queda en Edge Functions con GPT-5.6 Luna.
 
+Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrails` run `31806636760`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,255,842 bytes totales y 2,740,587 bytes JS. Se ajustan solo los limites globales por la humanizacion V5.4, textos de revision y QA de objetividad; CSS, vendors y assets trackeados permanecen bajo sus limites.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -121,9 +123,9 @@ Revision 2026-08-14 Psych AI V5.3 Luna: CSS sube a 240,482 bytes por mostrar la 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10254972,
+  "distTotalBytes": 10255842,
   "jsFileCount": 62,
-  "jsTotalBytes": 2740158,
+  "jsTotalBytes": 2740587,
   "cssFileCount": 12,
   "cssTotalBytes": 240482,
   "trackedAssets": [
