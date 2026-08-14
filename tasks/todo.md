@@ -1917,3 +1917,12 @@ Resultado: Gestión Psicolaboral puede regenerar IA real con Groq usando el nuev
 - [x] Validar build, Guardian, deploy Supabase/frontend, smoke y publicar.
 
 Resultado: el candidato termina la batería, el ERP dispara IA y certificado en backend; Reclutamiento solo revisa el resultado cuando esté disponible.
+
+## Correccion visual y reintento IA fallida - 2026-08-13
+- [x] Confirmar que la pantalla seguía mostrando un fallo histórico de `psych-ai-schema-v1`.
+- [x] Evitar que el modal de resultados muestre fallback técnico fallido como interpretación profesional.
+- [x] Exponer `display_output` solo para estados revisables/validados.
+- [x] Agregar reintento interno protegido por service-role para evaluaciones ya completadas antes de la automatización.
+- [x] Aplicar migración, desplegar Edge/frontend, reintentar evaluación afectada y validar.
+
+Resultado: una IA fallida se ve como estado técnico, no como informe; el caso histórico RC-1807 fue regenerado con Groq v2 y quedó `PENDING_REVIEW`.

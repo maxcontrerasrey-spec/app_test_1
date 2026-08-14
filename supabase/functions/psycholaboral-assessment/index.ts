@@ -386,10 +386,28 @@ Deno.serve(async (request) => {
       action === "generate_certificate" ||
       action === "certificate_url" ||
       action === "report_url" ||
+      action === "internal_generate_ai_interpretation" ||
       action === "generate_ai_interpretation" ||
       action === "get_ai_interpretation" ||
       action === "review_ai_interpretation"
     ) {
+      if (action === "internal_generate_ai_interpretation") {
+        const internalSecret = Deno.env.get("PSYCH_AI_INTERNAL_WEBHOOK_SECRET")?.trim();
+        if (!internalSecret || internalSecret.length < 32) {
+          return response({ error: "Canal interno IA no configurado" }, 503);
+        }
+        if (request.headers.get("x-internal-secret") !== internalSecret) {
+          return response({ error: "No autorizado" }, 401);
+        }
+        const assessmentId = cleanText(payload.assessment_id, 50);
+        try {
+          return response(await runPsychAIInterpretation(admin, assessmentId, null));
+        } catch (error) {
+          return response({
+            error: error instanceof Error ? error.message : "No fue posible generar la interpretación IA.",
+          }, 409);
+        }
+      }
       const authorization = request.headers.get("authorization") ?? "";
       if (!authorization.startsWith("Bearer ")) {
         return response({ error: "No autorizado" }, 401);

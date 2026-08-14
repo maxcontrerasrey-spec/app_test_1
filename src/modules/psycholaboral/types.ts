@@ -135,6 +135,7 @@ export type PsychAIInterpretationSummary = {
   provider: string;
   model: string;
   display_output: PsychAIOutput | null;
+  error_message?: string | null;
   validation_flags: string[];
   guardrail_flags: string[];
   reviewer_comment: string | null;

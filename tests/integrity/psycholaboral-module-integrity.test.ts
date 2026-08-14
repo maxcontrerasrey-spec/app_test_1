@@ -8,6 +8,7 @@ const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts"
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
 const psychAiGuardrails = readFileSync("supabase/functions/_shared/psychAi/guardrails.ts", "utf8");
 const certificate = readFileSync("supabase/functions/generate-psycholaboral-certificate/index.ts", "utf8");
+const resultDialog = readFileSync("src/modules/psycholaboral/components/PsychResultDialog.tsx", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
 const access = readFileSync("src/modules/auth/config/access.ts", "utf8");
 
@@ -103,8 +104,16 @@ describe("Gestión Psicolaboral", () => {
     );
     expect(edge).toContain("runPsychAIInterpretation(admin, session.assessment_id, null)");
     expect(edge).toContain("EdgeRuntime.waitUntil(aiJob)");
+    expect(edge).toContain('action === "internal_generate_ai_interpretation"');
+    expect(edge).toContain("PSYCH_AI_INTERNAL_WEBHOOK_SECRET");
+    expect(edge).toContain('request.headers.get("x-internal-secret")');
     expect(managementPage).not.toContain("Generar IA");
     expect(managementPage).toContain("IA automática:");
+  });
+
+  it("no muestra fallback tecnico fallido como interpretación profesional", () => {
+    expect(resultDialog).toContain("detail.ai_interpretation?.display_output");
+    expect(resultDialog).not.toContain("groq_400_invalid JSON schema");
   });
 
   it("implementa proveedor Mock y Groq con schema estricto y feature flag", () => {

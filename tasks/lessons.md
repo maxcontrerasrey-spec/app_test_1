@@ -3142,3 +3142,7 @@ Un schema que pasa validación local puede ser rechazado por Groq/OpenAI-compati
 ### 307. Los procesos automáticos no deben quedar como botones operativos
 
 Si una regla de negocio indica que el ERP debe actuar cuando llega un evento, la acción debe vivir en backend en el punto transaccional que confirma el evento. En Gestión Psicolaboral, la IA se dispara al completar la batería; la UI solo muestra estado y revisión profesional, no un botón manual de generación.
+
+### 308. Un fallback técnico fallido no es una interpretación
+
+Cuando un proveedor externo falla, el resultado visible debe quedar como estado técnico reintentable. No guardes ni muestres el fallback determinístico como si fuera contenido profesional revisable; eso confunde causa técnica con evaluación psicolaboral.
