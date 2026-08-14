@@ -3206,3 +3206,7 @@ El ERP no debe escribir el informe con decenas de reglas, pero tampoco debe conf
 ### 313. Una versión metodológica debe viajar completa hasta el informe
 
 Cuando cambian rangos, categorías o el marco de competencias, no basta con modificar el prompt: la clasificación debe existir en el contexto backend, el schema, los guardrails, el fallback y las etiquetas visibles del PDF. La prueba de producción debe comprobar la versión activa, el resultado determinístico y el artefacto generado para el mismo canario.
+
+### 314. La capacidad de un lote no debe descontarse dos veces
+
+Cuando un RPC valida cupos leyendo trabajos `pending` dentro de la misma transacción, esos trabajos ya forman parte del snapshot de capacidad. Mantener además un contador de reservas en memoria reduce artificialmente los cupos y rompe lotes válidos; la prueba debe cargar varios candidatos del mismo folio y verificar que el límite se aplica una sola vez.

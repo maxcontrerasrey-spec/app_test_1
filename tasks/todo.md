@@ -2051,3 +2051,11 @@ Resultado: una IA fallida se ve como estado técnico, no como informe; el caso h
 - [x] Comparar estado/artefactos, documentar límites metodológicos y preparar publicación en `main`.
 
 Resultado: producción quedó con `psych-ai-prompt-v6.1`, `psych-ai-schema-v6.1`, siete perfiles `profile-v6.1` activos y OpenAI `gpt-5.6-luna`. El canario `a48773d1-b296-4b9a-9524-84aa400ffdca` generó interpretación nueva (`2c77b1a3-e2f9-4148-83d0-c9151429e168`) con PRP 90 clasificado `NO_ADECUADO`, convergencia con BIS-11 sobre el promedio y recomendación `REQUIERE_PROFUNDIZACION`; `guardrail_flags` quedó vacío. El informe/certificado quedó generado. No se inventaron baremos, conducta observada ni equivalencias; eneatipos y otros instrumentos no documentados siguen fuera de alcance.
+
+## Carga contingente BUK RC-0142 - 2026-08-14
+- [x] Corregir y auditar las fechas ERP de los 16 candidatos al `15/08/2026`; ajustar Ramiro y Christian con trazabilidad.
+- [x] Detectar y corregir el doble descuento de cupos en el RPC de carga contingente cuando un lote comparte folio.
+- [x] Encolar y procesar los 16 candidatos de RC-0142 en BUK con ruta operativa `718`.
+- [x] Verificar en ERP que los 16 jobs quedaron `success` y en BUK que cada ficha está activa con cargo, plan, área, centro y supervisor correctos.
+
+Resultado: 16/16 fichas creadas en BUK. Fichas BUK `42867` a `42882` (sin asumir orden correlativo por persona), cargo `CONDUCTOR DE BUS`, área DSAL `2911`, centro `718`, supervisor Marcelo Villarroel y fecha de ingreso `15/08/2026`. William fue cargado con el RUT ERP corregido `15.573.108-7`.
