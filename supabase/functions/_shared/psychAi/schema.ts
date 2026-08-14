@@ -1,7 +1,7 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 import { normalizeSemanticOutputForErp, PSYCH_SEMANTIC_VERSION } from "./semantic.ts";
 
-export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v5.3";
+export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v5.4";
 
 const REQUIRED_TOP_LEVEL = [
   "recommendation",
@@ -150,9 +150,9 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
     const strengths = optionalStatementArray(source.strengths, 4);
     const points = optionalStatementArray(source.points_to_explore, 5);
     const questions = questionArray(source.interview_questions, 3, 5);
-    const executiveProfile = text(source.executive_profile) || "Interpretación integrada no disponible.";
-    const jobFit = text(source.job_fit_analysis) || "El ajuste al cargo debe revisarse con entrevista y antecedentes del proceso.";
-    const conclusion = text(source.integrated_conclusion) || "Conclusión preliminar no decisoria; requiere validación profesional.";
+    const executiveProfile = text(source.executive_profile) || "Síntesis integrada no disponible.";
+    const jobFit = text(source.job_fit_analysis) || "El ajuste al cargo se analiza con los resultados disponibles, antecedentes del proceso y exigencias críticas del puesto.";
+    const conclusion = text(source.integrated_conclusion) || "Conclusión no emitida por falta de antecedentes interpretativos suficientes.";
     const limitations = textArray(source.material_limitations, 0, 4, []);
     return {
       version: text(source.version, 80) || PSYCH_SEMANTIC_VERSION,
@@ -165,19 +165,19 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
       executive_profile: executiveProfile,
       profile_summary: executiveProfile,
       executive_summary: executiveProfile,
-      response_quality: "Adecuada. La calidad se basa en completitud y consistencia calculadas por el ERP; debe revisarse junto con los resultados.",
+      response_quality: "Adecuada. La calidad se basa en completitud y consistencia de respuestas calculadas por el ERP.",
       strengths: strengths.map((item) => item.text || item.title).filter(Boolean),
       points_to_explore: evidenceStatements(points),
       development_areas: points.map((item) => item.text || item.title).filter(Boolean),
       interview_questions: questions.map((item) => item.question),
       instrument_analysis: {
-        ipip16: text(personality.summary) || "Evaluación de Personalidad IPIP-16 interpretada descriptivamente.",
-        ipip_ipc: text(interpersonal.summary) || "Evaluación Interpersonal IPIP-IPC interpretada como modelo laboral interno.",
+        ipip16: text(personality.summary) || "Evaluación de Personalidad IPIP-16 integrada según patrones funcionales disponibles.",
+        ipip_ipc: text(interpersonal.summary) || "Evaluación Interpersonal IPIP-IPC interpretada como lectura laboral de octantes y macroestilos.",
         bis11: text(safety.bis11) || "BIS-11 interpretado según clasificación documentada.",
         prp: text(safety.prp) || "PRP interpretado descriptivamente desde puntaje directo y elementos documentados.",
       },
       ipip16: {
-        summary: text(personality.summary) || "Perfil IPIP-16 disponible para revisión profesional.",
+        summary: text(personality.summary) || "Perfil IPIP-16 disponible como antecedente de personalidad laboral.",
         clusters: {
           self_regulation: text(personality.self_regulation),
           discipline_structure: text(personality.discipline_structure),
@@ -188,7 +188,7 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
       ipc: {
         summary: text(interpersonal.summary) || "IPIP-IPC describe patrones interpersonales laborales.",
         predominant_profile: text(interpersonal.initiative, 300) || "Perfil predominante integrado en el análisis interpersonal.",
-        disc_disclaimer: "Modelo interpretativo laboral interno derivado de IPIP-IPC. No corresponde a Everything DiSC ni constituye equivalencia psicométrica validada.",
+        disc_disclaimer: "IPIP-IPC usa octantes y macroestilos laborales propios; no corresponde a Everything DiSC ni constituye equivalencia psicométrica validada.",
       },
       bis11: {
         summary: text(safety.summary) || "Perfil de seguridad e impulsividad disponible.",
@@ -254,14 +254,13 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
     executive_summary: text(source.executive_summary) || "Interpretación preliminar no disponible.",
     response_quality: text(source.response_quality) || "La calidad debe revisarse junto con los indicadores calculados por el ERP.",
     strengths: textArray(source.strengths, 3, 6, [
-      "Mantener revisión profesional de resultados.",
       "Cruzar resultados con entrevista y antecedentes del proceso.",
       "Considerar el contexto del cargo antes de cualquier decisión.",
     ]),
     development_areas: textArray(source.development_areas, 3, 6, [
       "Profundizar patrones relevantes en entrevista.",
       "Revisar consistencia entre instrumentos.",
-      "Evitar conclusiones automáticas basadas solo en test.",
+      "Contrastar hipótesis relevantes con ejemplos conductuales específicos.",
     ]),
     interview_questions: textArray(source.interview_questions, 4, 8, [
       "Describa una situación reciente de presión laboral y cómo la resolvió.",
@@ -270,14 +269,14 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
       "Cuéntenos de una ocasión en que recibió retroalimentación difícil.",
     ]),
     ipip16: {
-      summary: text(ipip16.summary) || "IPIP-16 requiere interpretación profesional complementaria.",
+      summary: text(ipip16.summary) || "IPIP-16 describe dimensiones de personalidad laboral.",
       clusters: textRecord(ipip16.clusters),
     },
     ipc: {
       summary: text(ipc.summary) || "IPIP-IPC describe patrones interpersonales, no equivalentes a DISC.",
-      predominant_profile: text(ipc.predominant_profile, 300) || "Perfil predominante pendiente de revisión.",
+      predominant_profile: text(ipc.predominant_profile, 300) || "Perfil predominante integrado en el análisis interpersonal.",
       disc_disclaimer: text(ipc.disc_disclaimer, 400) ||
-        "Este modelo interno no corresponde a DISC ni a Everything DiSC.",
+        "IPIP-IPC usa octantes y macroestilos laborales propios; no corresponde a DISC ni a Everything DiSC.",
     },
     bis11: {
       summary: text(bis11.summary) || "BIS-11 se informa como antecedente de impulsividad.",
@@ -285,18 +284,17 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
         "La impulsividad debe revisarse junto con entrevista y antecedentes.",
     },
     prp: {
-      summary: text(prp.summary) || "PRP conserva salida documentada y revisión profesional.",
+      summary: text(prp.summary) || "PRP conserva la salida documentada del instrumento.",
       documentation_status: text(prp.documentation_status, 500) ||
         "Baremos y factores sujetos a documentación disponible.",
     },
     integrated_analysis: text(source.integrated_analysis) ||
-      "Análisis integrado pendiente de revisión profesional.",
+      "Análisis integrado no emitido por falta de antecedentes interpretativos suficientes.",
     preliminary_conclusion: text(source.preliminary_conclusion) ||
-      "Conclusión preliminar no decisoria; requiere validación profesional.",
+      "Conclusión no emitida por falta de antecedentes interpretativos suficientes.",
     limitations: textArray(source.limitations, 3, 8, [
       "No constituye diagnóstico clínico.",
-      "No constituye decisión automática de contratación o rechazo.",
-      "No reemplaza entrevista psicolaboral ni revisión profesional.",
+      "No constituye diagnóstico clínico.",
     ]),
     evidence: textArray(source.evidence, 4, 10, [
       "Scores calculados por el ERP.",

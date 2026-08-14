@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 318. El contenido entregable no debe compartir lenguaje con la trazabilidad interna
+
+- En informes sensibles, provider, modelo, prompt, schema, guardrails, fallback, tokens y confianza pertenecen a metadata interna; si aparecen en PDF o modales de resultado, contaminan el documento profesional.
+- Los sanitizadores deben cubrir tanto la salida del proveedor como fallbacks, defaults de schema y renderer PDF; un único texto estático viejo puede reaparecer aunque el prompt nuevo sea correcto.
+- Las pruebas deben separar falsos positivos internos de contenido visible: es válido que el prompt prohíba “IA” u “OpenAI”, pero el informe persistido/renderizado no debe imprimirlos.
+- La objetividad se prueba con casos favorables, mixtos y desfavorables; humanizar el texto no puede convertir brechas críticas en narrativas complacientes.
+
 ## 317. Las reglas metodológicas sobreviven al cambio de estado interpretativo
 
 - Cuando un instrumento pasa de “descriptivo permitido” a “solo revisión profesional”, sus prohibiciones no deben apagarse.

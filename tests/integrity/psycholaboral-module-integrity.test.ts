@@ -9,6 +9,7 @@ const openAIProviderMigration = readFileSync("supabase/migrations/20260814032407
 const v5Migration = readFileSync("supabase/migrations/20260814041907_psych_ai_v5_methodological_reconstruction.sql", "utf8");
 const v52Migration = readFileSync("supabase/migrations/20260814045629_psych_ai_v5_2_humanization_token_audit.sql", "utf8");
 const v53Migration = readFileSync("supabase/migrations/20260814111606_psych_ai_v5_3_objectivity_pdf_redesign.sql", "utf8");
+const v54Migration = readFileSync("supabase/migrations/20260814132317_psych_ai_v5_4_humanized_report.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -96,7 +97,7 @@ describe("Gestión Psicolaboral", () => {
     expect(aiMigration).toContain("PENDING_REVIEW");
     expect(aiMigration).toContain("VALIDATED");
     expect(aiMigration).toContain("reviewed_output");
-    expect(psychAiGuardrails).toContain("decisión automática");
+    expect(psychAiGuardrails).toContain("decision_word");
     expect(psychAiGuardrails).toContain("decision_word");
     expect(psychAiGuardrails).toContain("clinical_word");
     expect(edge).toContain('action === "generate_ai_interpretation"');
@@ -119,7 +120,7 @@ describe("Gestión Psicolaboral", () => {
     expect(edge).toContain("PSYCH_AI_INTERNAL_WEBHOOK_SECRET");
     expect(edge).toContain('request.headers.get("x-internal-secret")');
     expect(managementPage).not.toContain("Generar IA");
-    expect(managementPage).toContain("IA automática:");
+    expect(managementPage).toContain("Informe:");
   });
 
   it("no muestra fallback tecnico fallido como interpretación profesional", () => {
@@ -161,7 +162,7 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
     expect(psychAiIndex).toContain("provider_failed_fallback_used");
     expect(psychAiIndex).toContain("success: !liveConfigured");
-    expect(psychAiIndex).toContain("gpt56-luna-objective-v5.3");
+    expect(psychAiIndex).toContain("gpt56-luna-humanized-v5.4.1");
     expect(psychAiIndex).toContain("ANALYST_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("REVIEWER_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("reviewer_failed_bypassed");
@@ -178,7 +179,7 @@ describe("Gestión Psicolaboral", () => {
     expect(openAIProviderMigration).toContain("notify pgrst, 'reload schema'");
   });
 
-  it("reconstruye metodología V5 con informe integrado y PRP descriptivo", () => {
+  it("reconstruye metodología V5 con informe integrado y PRP sin lenguaje automatizado", () => {
     const audit = readFileSync(
       "docs/psychometric-module/PSYCH_V5_SOURCE_AND_IMPLEMENTATION_AUDIT.md",
       "utf8",
@@ -190,7 +191,7 @@ describe("Gestión Psicolaboral", () => {
     expect(v5Migration).toContain("integrated_conclusion");
     expect(v5Migration).toContain("automatic_interpretation_allowed=true");
     expect(psychAiSemantic).toContain("psych-methodology-v5");
-    expect(psychAiSemantic).toContain("antecedente descriptivo sin peso decisional automático");
+    expect(psychAiSemantic).toContain("antecedente descriptivo sin peso decisional mientras no exista semántica/baremos suficientemente documentados");
     expect(psychAiSemantic).not.toContain("prp_hard_lock_missing");
     expect(v52Migration).toContain("psych-ai-prompt-v5.2");
     expect(v52Migration).toContain("psych-ai-schema-v5.2");
@@ -200,7 +201,7 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiIndex).toContain("El objeto del informe es la compatibilidad");
     expect(psychAiIndex).toContain("reviewer_executed:");
     expect(psychAiIndex).toContain("needsReviewer(analystFlags)");
-    expect(psychAiIndex).toContain("PRP se conserva como antecedente descriptivo sin peso decisional automático");
+    expect(psychAiIndex).toContain("PRP se conserva como antecedente descriptivo sin peso decisional");
     expect(psychAiGuardrails).toContain("delete cloned.prompt");
     expect(psychAiGuardrails).toContain("buildCompactPsychAIFacts");
     expect(psychAiGuardrails).toContain("backend_meta_language");
@@ -222,18 +223,25 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiGuardrails).toContain("artificial_strength_removed");
     expect(psychAiIndex).toContain("Eres GPT-5.6 Luna");
     expect(psychAiIndex).not.toContain("Eres GPT-5 mini");
-    expect(edge).toContain('PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-objective-v5.3.0"');
+    expect(edge).toContain('PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-humanized-v5.4.1"');
   });
 
-  it("genera informe interno V5.3 con IA/fallback, paginación dinámica y disclaimers", () => {
-    expect(certificate).toContain("Informe V5.3 - Pagina");
+  it("genera informe interno V5.4 humanizado sin lenguaje tecnico en el PDF", () => {
+    expect(v54Migration).toContain("psych-ai-prompt-v5.4");
+    expect(v54Migration).toContain("psych-ai-schema-v5.4");
+    expect(v54Migration).toContain("'gpt-5.6-luna'");
+    expect(certificate).toContain("sanitizeReportText");
     expect(certificate).toContain("defaultAIOutput");
     expect(certificate).toContain("drawBarChart");
     expect(certificate).toContain("drawRadar");
     expect(certificate).toContain("Seguridad, impulsividad y conclusión");
-    expect(certificate).toContain("Recomendación preliminar automatizada");
     expect(certificate).toContain("drawJustifiedParagraph");
-    expect(certificate).toContain("Este modelo interno no corresponde a DISC");
     expect(certificate).toContain("payload.ai_interpretation?.display_output");
+    expect(certificate).not.toContain("Informe V5.3 - Pagina");
+    expect(certificate).not.toContain("Validacion profesional requerida");
+    expect(certificate).not.toContain("Recomendación preliminar automatizada");
+    expect(certificate).not.toContain("Confianza automatizada");
+    expect(certificate).not.toContain("Este modelo interno no corresponde a DISC");
+    expect(certificate).not.toContain("La interpretación es descriptiva y no incorpora baremos poblacionales locales ni evidencia de conducta observada");
   });
 });

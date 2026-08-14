@@ -371,7 +371,7 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
         interpretation_status: "PROFESSIONAL_ONLY",
         automatic_interpretation_allowed: false,
         allowed_statement:
-          "PRP se conserva como antecedente descriptivo calculado por el ERP. Sin semántica/baremos documentados suficientes, su peso decisional automático es 0 y no debe modificar la recomendación preliminar.",
+          "PRP se conserva como antecedente descriptivo calculado por el ERP. Sin semántica/baremos documentados suficientes, su peso decisional es 0 y no debe modificar la recomendación.",
       },
       ipc: ipcStyles.length ? {
         macrostyles: ipcStyles,
@@ -442,7 +442,7 @@ export function attachPsychSemanticContext(input: JsonRecord) {
           scoring: "30 ítems, dirección positiva/negativa, score total y factores técnicos F1-F6 calculados por ERP",
           automatic_interpretation_allowed: false,
           decision_weight: 0,
-          interpretation: "antecedente descriptivo sin peso decisional automático mientras no exista semántica/baremos suficientemente documentados",
+          interpretation: "antecedente descriptivo sin peso decisional mientras no exista semántica/baremos suficientemente documentados",
           restrictions: [
             "no inventar nombres de factores F1-F6",
             "no usar percentiles, eneatipos ni grupos normativos si no vienen documentados en el payload",
@@ -453,7 +453,7 @@ export function attachPsychSemanticContext(input: JsonRecord) {
       professional_report_rules: {
         avoid_internal_codes: true,
         single_methodological_notice:
-          "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.",
+          "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico.",
       },
     },
     semantic_context,
@@ -502,18 +502,18 @@ function fallbackEvidence(context: PsychSemanticContext, instrument: string) {
 function displayFallbackReason(reason: string) {
   const normalized = normalizeText(reason);
   if (normalized.includes("429") || normalized.includes("rate limit")) {
-    return "proveedor IA temporalmente limitado";
+    return "servicio interpretativo temporalmente limitado";
   }
   if (normalized.includes("timeout")) {
     return "tiempo de respuesta agotado";
   }
   if (normalized.includes("missing_openai_api_key") || normalized.includes("feature_flag_disabled")) {
-    return "proveedor IA no habilitado";
+    return "servicio interpretativo no habilitado";
   }
   if (normalized.includes("semantic_validation_failed")) {
     return "salida IA no aprobo validacion semantica";
   }
-  return "proveedor IA no disponible temporalmente";
+  return "servicio interpretativo no disponible temporalmente";
 }
 
 export function buildDeterministicPsychSemanticOutput(
@@ -566,7 +566,7 @@ export function buildDeterministicPsychSemanticOutput(
       evidence_ids: ["ev_bis11_total"],
     } : null,
     prp ? {
-      title: "PRP pendiente de interpretacion profesional",
+      title: "PRP sin interpretación adicional sustentable",
       text: prp.allowed_statement,
       evidence_ids: ["ev_prp_total"],
     } : null,
@@ -583,9 +583,9 @@ export function buildDeterministicPsychSemanticOutput(
       ...(nor ? ["Cumplimiento de normas en rango descriptivo intermedio no constituye fortaleza; requiere corroboración conductual por criticidad del cargo."] : []),
     ],
     decision_rationale:
-      "La recomendación preliminar automatizada se basa en compatibilidad entre resultados psicométricos y criticidades del cargo. PRP se conserva como antecedente descriptivo sin peso decisional automático.",
+      "La recomendación se basa en compatibilidad entre resultados psicométricos y criticidades del cargo. PRP se conserva como antecedente descriptivo sin peso decisional.",
     executive_profile:
-      `Informe generado con guardrails semanticos determinísticos porque el ${displayFallbackReason(reason)}. La lectura integra resultados descriptivos disponibles y debe validarse profesionalmente.`,
+      `Informe de contingencia generado porque el ${displayFallbackReason(reason)}. La lectura integra resultados descriptivos disponibles sin atribuir conducta observada no documentada.`,
     personality_profile: {
       summary:
         `IPIP-16 se informa con niveles descriptivos relativos al rango teorico 1-5. ${ipipIntermediate.length} dimensiones se ubican en nivel intermedio; no corresponde hablar de promedio poblacional sin baremo documentado.`,
@@ -596,7 +596,7 @@ export function buildDeterministicPsychSemanticOutput(
     },
     interpersonal_profile: {
       summary: predominant
-        ? `IPIP-IPC muestra predominancia ${predominant.label}${second ? ` y segundo macroestilo ${second.label}` : ""}, dentro de un modelo laboral interno no equivalente a DISC.`
+        ? `IPIP-IPC muestra predominancia ${predominant.label}${second ? ` y segundo macroestilo ${second.label}` : ""}; no corresponde a DISC.`
         : "IPIP-IPC disponible para interpretar octantes y macroestilos laborales internos.",
       communication: "Contrastar el estilo comunicacional con ejemplos de coordinacion, pasajeros, supervision y equipo.",
       cooperation: "Analizar cooperacion y orientacion interpersonal desde el patron IPIP-IPC observado.",
@@ -614,7 +614,7 @@ export function buildDeterministicPsychSemanticOutput(
         "La lectura integrada separa criticidad del cargo de severidad del resultado; los hallazgos deben contrastarse con entrevista, antecedentes laborales y criterio profesional.",
     },
     job_fit_analysis:
-      "El ajuste al cargo debe revisarse desde el patron conjunto de autorregulacion, normas, trato laboral, impulsividad y orientacion preventiva, sin emitir decision automatica.",
+      "El ajuste al cargo se analiza desde el patrón conjunto de autorregulación, normas, trato laboral, impulsividad y orientación preventiva.",
     strengths,
     points_to_explore: points,
     interview_questions: [
@@ -644,9 +644,9 @@ export function buildDeterministicPsychSemanticOutput(
       },
     ],
     integrated_conclusion:
-      "Conclusión preliminar no decisoria. Los tests no determinan aptitud por si solos; el resultado debe revisarse profesionalmente junto con entrevista y antecedentes del proceso.",
+      "Conclusión sujeta a contraste con entrevista y antecedentes del proceso; los tests por sí solos no establecen desempeño laboral observado.",
     material_limitations: deduplicateLimitations([
-      "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben considerarse junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.",
+      "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico.",
     ]),
   };
 
@@ -668,7 +668,7 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
     const questions = asArray(source.interview_questions).map(asRecord);
     const executive = readText(source.executive_profile, "Interpretacion integrada no disponible.");
     const jobFit = readText(source.job_fit_analysis, "Ajuste al cargo pendiente de revision profesional.");
-    const conclusion = readText(source.integrated_conclusion, "Conclusion preliminar no decisoria.");
+    const conclusion = readText(source.integrated_conclusion, "Conclusión sujeta a contraste con antecedentes del proceso.");
     const limitations = deduplicateLimitations(source.material_limitations);
     const prpText = readText(safety.prp, "PRP se interpreta descriptivamente solo desde propiedades documentadas.");
     const bisText = readText(safety.bis11, "BIS-11 se informa segun clasificacion documentada.");
@@ -758,7 +758,7 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
   const bisText = readText(instrumentAnalysis.bis11, "BIS-11 requiere revision profesional.");
   const prpText = readText(
     instrumentAnalysis.prp,
-    "Resultado pendiente de interpretacion profesional debido a que no existe definicion/baremo documentado suficiente para interpretacion automatica.",
+    "Resultado sin interpretación adicional sustentable por falta de definición o baremo documentado suficiente.",
   );
   const ipcText = readText(instrumentAnalysis.ipip_ipc, "IPIP-IPC describe octantes y macroestilos propios; no corresponde a DISC.");
   const ipipText = readText(instrumentAnalysis.ipip16, "IPIP-16 usa niveles descriptivos relativos al rango teorico.");
@@ -780,7 +780,7 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
       prp: prpText,
     },
     recommendations: asArray(source.recommendations).map((item) => readText(item)).filter(Boolean),
-    executive_summary: readText(source.profile_summary, "Interpretacion preliminar no disponible."),
+    executive_summary: readText(source.profile_summary, "Síntesis integrada no disponible."),
     response_quality:
       "Adecuada. La calidad se basa en completitud y consistencia calculadas por el ERP; debe revisarse junto con los resultados.",
     strengths: arrayText(strengths as EvidenceBackedStatement[]),
@@ -803,9 +803,9 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
       summary: ipcText,
       predominant_profile: fallbackContext.locks?.ipc?.macrostyles?.[0]?.label
         ? `Predominante: ${fallbackContext.locks.ipc.macrostyles[0].label}`
-        : "Perfil predominante pendiente de revision profesional.",
+        : "Perfil predominante sin lectura adicional sustentable.",
       disc_disclaimer:
-        "Este modelo interno no corresponde a DISC ni a Everything DiSC; usa octantes IPIP-IPC y macroestilos laborales propios.",
+        "IPIP-IPC usa octantes y macroestilos laborales propios; no corresponde a DISC ni a Everything DiSC.",
     },
     bis11: {
       summary: bisText,
@@ -821,7 +821,7 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
     ),
     preliminary_conclusion: readText(
       source.preliminary_conclusion,
-      "Conclusion preliminar no decisoria; requiere revision profesional.",
+      "Conclusión sujeta a contraste con antecedentes del proceso.",
     ),
     limitations,
     evidence: [],

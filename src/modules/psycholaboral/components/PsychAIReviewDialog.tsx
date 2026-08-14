@@ -27,10 +27,10 @@ function renderOutput(output: PsychAIOutput | null) {
   if (!output) return <p className="psych-result-note">Sin interpretación disponible.</p>;
   return (
     <div className="psych-ai-output">
-      <Section title="Recomendación preliminar automatizada">
+      <Section title="Resultado de evaluación">
         <div className="psych-ai-recommendation-card">
           <span>{(output.recommendation ?? "REQUIERE_PROFUNDIZACION").replace(/_/g, " ")}</span>
-          <small>Confianza: {output.recommendation_confidence ?? "MEDIA"} · Requiere validación profesional</small>
+          <small>Integración psicolaboral</small>
         </div>
         <p>{output.decision_rationale}</p>
       </Section>
@@ -48,7 +48,7 @@ function renderOutput(output: PsychAIOutput | null) {
         </Section>
       ) : null}
       {list(output.critical_uncertainties).length ? (
-        <Section title="Incertidumbres críticas">
+        <Section title="Aspectos críticos a profundizar">
           <ul>{list(output.critical_uncertainties).map((item) => <li key={item}>{item}</li>)}</ul>
         </Section>
       ) : null}
@@ -117,7 +117,7 @@ export function PsychAIReviewDialog({
 
   const submit = async (action: "save" | "validate" | "observe") => {
     if (!baseOutput) {
-      setError("No existe interpretación IA disponible para revisar.");
+      setError("No existe informe integrado disponible para revisar.");
       return;
     }
     setError("");
@@ -131,15 +131,14 @@ export function PsychAIReviewDialog({
       <section className="psych-ai-dialog">
         <header>
           <div>
-            <span className="psych-eyebrow">Revisión profesional IA</span>
+            <span className="psych-eyebrow">Revisión de informe integrado</span>
             <h2 id="psych-ai-title">{detail.candidate.full_name}</h2>
             <p>{detail.candidate.job_position_name} · {detail.candidate.contract_name}</p>
           </div>
           <button ref={closeRef} className="psych-secondary-action" type="button" onClick={onClose}>Cerrar</button>
         </header>
         <div className="psych-result-meta">
-          <span>Interpretación automatizada basada en instrumentos aplicados</span>
-          <span>Proveedor: {interpretation?.provider ?? "Sin registro"}</span>
+          <span>Integración basada en instrumentos aplicados</span>
           <span>Perfil: {interpretation?.profile?.label ?? "No resuelto"}</span>
         </div>
         <div className="psych-ai-review-stack">
@@ -159,7 +158,7 @@ export function PsychAIReviewDialog({
           <h3>Ejecuciones</h3>
           {(interpretation?.runs ?? []).map((run) => (
             <span key={run.id}>
-              {run.status} · intento {run.attempt} · AI calls {run.api_call_count ?? (run.reviewer_executed ? 2 : 1)} · input {run.prompt_tokens ?? 0} · cache {run.cached_prompt_tokens ?? 0} · output {run.completion_tokens ?? 0} · total {run.total_tokens ?? 0} · reviewer {run.reviewer_executed ? "sí" : "no"} · costo USD {(Number(run.estimated_cost_usd ?? 0)).toFixed(6)} · {run.latency_ms ?? 0} ms
+              {run.status} · intento {run.attempt} · llamadas {run.api_call_count ?? (run.reviewer_executed ? 2 : 1)} · input {run.prompt_tokens ?? 0} · cache {run.cached_prompt_tokens ?? 0} · output {run.completion_tokens ?? 0} · total {run.total_tokens ?? 0} · revisor {run.reviewer_executed ? "sí" : "no"} · costo USD {(Number(run.estimated_cost_usd ?? 0)).toFixed(6)} · {run.latency_ms ?? 0} ms
             </span>
           ))}
         </div>

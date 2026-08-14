@@ -1,5 +1,17 @@
 # Tareas y Roadmap de Desarrollo
 
+## Psych AI V5.4 humanizacion integral - 2026-08-14
+
+- [x] Auditar origen real de textos técnicos visibles en prompt, schema, guardrails, PDF y UI.
+- [x] Versionar V5.4 para Luna con voz profesional natural, sin lenguaje de automatización en contenido entregable.
+- [x] Separar contenido de reporte y metadata interna, conservando trazabilidad sin imprimirla en PDF.
+- [x] Eliminar del PDF frases de revisión/validación profesional requerida, automatización, IA, V5.3 y disclaimers repetitivos.
+- [x] Ajustar UI de revisión/resultados para usar lenguaje operativo sobrio sin exponer mecanismo IA en la narrativa.
+- [x] Agregar tests semánticos contra términos prohibidos en contenido de reporte/PDF y objetividad.
+- [x] Aplicar migración, desplegar funciones, regenerar canario productivo, validar render y ejecutar Guardian.
+
+Resultado: V5.4 quedó implementado y desplegado en producción con prompt activo `psych-ai-prompt-v5.4`, schema `psych-ai-schema-v5.4`, modelo `gpt-5.6-luna` y runtime `gpt56-luna-humanized-v5.4.1`. El canario RC-1807 fue regenerado sin cache, quedó `PENDING_REVIEW`, `guardrail_flags=[]`, `has_forbidden=false`, certificado e informe `generated`, y el PDF privado renderizado tiene 8 páginas, header `Informe Psicolaboral Integrado`, pie documental y hash `0f0744788a7634edf37719ef0116d35c8b451ed4fb026d33aa9617eb4b2aa1b5`. Guardian final pasó con 0 errores y 0 warnings.
+
 ## Psych AI V5.3 objetividad discriminativa y rediseño PDF - 2026-08-14
 
 - [x] Auditar V5.2 real en producción: prompt/schema activo, perfil de cargo, último canary RC-1807 y PDF vigente.

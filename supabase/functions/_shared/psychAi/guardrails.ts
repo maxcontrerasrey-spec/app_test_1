@@ -17,6 +17,7 @@ const PROHIBITED_PATTERNS: Array<[RegExp, string]> = [
   [/\b(riesgo cr[ií]tico|alto riesgo|riesgo severo|peligroso|inseguro|no recomendable|incompatible|requiere intervenci[oó]n)\b/i, "risk_language_word"],
   [/\b(raw_total|norm_status|schema|payload|metadata|guardrail|PROFESSIONAL_ONLY|PENDING_REVIEW|INTERMEDIO_EN_RANGO_TEORICO|SOBRE_EL_PROMEDIO|ev_[a-z0-9_]+)\b/i, "backend_meta_language"],
   [/\bF[1-6]\b|\bfactor(?:es)?\s+t[eé]cnic[oa]s?\b|\bclasificaci[oó]n literal\b|\bseg[uú]n metadata\b|\bno se opera escalamiento\b/i, "raw_technical_language"],
+  [/\b(IA|inteligencia artificial|automatizad[oa]|OpenAI|GPT|Luna|proveedor|modelo|fallback|structured output|validaci[oó]n humana|revisi[oó]n profesional separada|validaci[oó]n profesional requerida|Informe V5(?:\.[0-9])?)\b/i, "report_technology_language"],
 ];
 
 function collectStrings(value: unknown, out: string[] = []) {
@@ -54,6 +55,26 @@ function replaceProhibited(text: string) {
   cleaned = cleaned.replace(/\bpayload\b/gi, "antecedentes disponibles");
   cleaned = cleaned.replace(/\bmetadata\b/gi, "antecedentes disponibles");
   cleaned = cleaned.replace(/\bguardrail(?:s)?\b/gi, "criterios metodológicos");
+  cleaned = cleaned.replace(/\binteligencia artificial\b/gi, "integración de resultados");
+  cleaned = cleaned.replace(/\bIA\b/g, "informe");
+  cleaned = cleaned.replace(/\bautomatizad[oa]\b/gi, "estructurado");
+  cleaned = cleaned.replace(/\bOpenAI\b/g, "sistema");
+  cleaned = cleaned.replace(/\bGPT\b/g, "sistema");
+  cleaned = cleaned.replace(/\bLuna\b/g, "sistema");
+  cleaned = cleaned.replace(/\bproveedor\b/gi, "servicio");
+  cleaned = cleaned.replace(/\bmodelo\b/gi, "criterio");
+  cleaned = cleaned.replace(/\bfallback\b/gi, "salida de contingencia");
+  cleaned = cleaned.replace(/\bstructured output\b/gi, "estructura de salida");
+  cleaned = cleaned.replace(/\bvalidaci[oó]n humana\b/gi, "evaluación del proceso");
+  cleaned = cleaned.replace(/\brevisi[oó]n profesional separada\b/gi, "revisión del proceso");
+  cleaned = cleaned.replace(/\bvalidaci[oó]n profesional requerida\b/gi, "evaluación del proceso");
+  cleaned = cleaned.replace(/\bInforme V5(?:\.[0-9])?\b/gi, "Informe");
+  cleaned = cleaned.replace(/\bLa interpretaci[oó]n es descriptiva[^.]*baremos[^.]*conducta observada\.?/gi, "");
+  cleaned = cleaned.replace(/\bLa interpretaci[oó]n queda pendiente de revisi[oó]n profesional\.?/gi, "");
+  cleaned = cleaned.replace(/\bEl resultado no puede interpretarse autom[aá]ticamente\.?/gi, "");
+  cleaned = cleaned.replace(/\binterpretaci[oó]n autom[aá]tica\b/gi, "lectura estructurada");
+  cleaned = cleaned.replace(/\bpendiente de interpretaci[oó]n profesional\b/gi, "sin interpretación adicional sustentable");
+  cleaned = cleaned.replace(/\bConclusi[oó]n preliminar no decisoria;?\s*requiere (?:contraste|revision|revisi[oó]n|validaci[oó]n) profesional\.?/gi, "Conclusión sujeta a contraste con antecedentes del proceso.");
   cleaned = cleaned.replace(/\bev_[a-z0-9_]+\b/gi, "");
   cleaned = cleaned.replace(/\bF([1-6])\b/g, "factor $1");
   cleaned = cleaned.replace(/\bfactor(?:es)?\s+t[eé]cnic[oa]s?\b/gi, "aspectos preventivos medidos");
@@ -67,13 +88,13 @@ function replaceProhibited(text: string) {
   cleaned = cleaned.replace(/\bBAJO_EN_RANGO_TEORICO\b/g, "bajo dentro del rango teórico");
   cleaned = cleaned.replace(/\bMUY_ALTO_EN_RANGO_TEORICO\b/g, "muy alto dentro del rango teórico");
   cleaned = cleaned.replace(/\bMUY_BAJO_EN_RANGO_TEORICO\b/g, "muy bajo dentro del rango teórico");
-  cleaned = cleaned.replace(/\bPROFESSIONAL_ONLY\b/g, "revisión profesional específica");
-  cleaned = cleaned.replace(/\bPENDING_REVIEW\b/g, "pendiente de revisión");
+  cleaned = cleaned.replace(/\bPROFESSIONAL_ONLY\b/g, "sin interpretación adicional sustentable");
+  cleaned = cleaned.replace(/\bPENDING_REVIEW\b/g, "en evaluación");
   cleaned = cleaned.replace(/\bREQUIERE_PROFUNDIZACION\b/g, "requiere profundización");
   cleaned = cleaned.replace(/\bRECOMENDADO_CON_OBSERVACIONES\b/g, "recomendado con observaciones");
   cleaned = cleaned.replace(/\bNO_RECOMENDADO\b/g, "no recomendado");
-  cleaned = cleaned.replace(/\bno\s+apto\b/gi, "requiere revisión profesional");
-  cleaned = cleaned.replace(/\bapto\b/gi, "sin decisión automática");
+  cleaned = cleaned.replace(/\bno\s+apto\b/gi, "desfavorable para el cargo");
+  cleaned = cleaned.replace(/\bapto\b/gi, "compatible con el cargo");
   cleaned = cleaned.replace(/\bno\s+contratar\b/gi, "profundizar antes de decidir");
   cleaned = cleaned.replace(/\bcontratar\b/gi, "evaluar en comité");
   cleaned = cleaned.replace(/\brechazar\b/gi, "emitir una decisión desfavorable");
@@ -85,7 +106,7 @@ function replaceProhibited(text: string) {
   cleaned = cleaned.replace(/\binsegur[oa]\b/gi, "desfavorable");
   cleaned = cleaned.replace(/\bno recomendable\b/gi, "requiere corroboración");
   cleaned = cleaned.replace(/\bincompatible\b/gi, "requiere corroboración");
-  cleaned = cleaned.replace(/\brequiere intervenci[oó]n\b/gi, "requiere revisión profesional");
+  cleaned = cleaned.replace(/\brequiere intervenci[oó]n\b/gi, "requiere profundización");
   cleaned = cleaned.replace(/\bdiagn[oó]stic[oa]\b/gi, "descripción");
   cleaned = cleaned.replace(/\btrastorno\b/gi, "patrón observado");
   cleaned = cleaned.replace(/\bpercentil(?:es)?\b/gi, "referencia no disponible");
@@ -211,7 +232,7 @@ function buildCompatibilityFrame(input: JsonRecord, semanticContext = buildPsych
     objective_rules: [
       "Resultados intermedios son neutros por defecto; no deben redactarse como fortalezas.",
       "Fortalezas interpersonales de relevancia media no compensan alertas en competencias críticas.",
-      "PRP tiene peso decisional automático 0 mientras no exista semántica/baremos documentados suficientes.",
+      "PRP tiene peso decisional 0 mientras no exista semántica/baremos documentados suficientes.",
       "Separar resultado psicométrico, hipótesis laboral y conducta observada.",
     ],
     preliminary_recommendation_frame: {
@@ -221,7 +242,7 @@ function buildCompatibilityFrame(input: JsonRecord, semanticContext = buildPsych
       critical_gaps: criticalGaps.slice(0, 4),
       critical_uncertainties: criticalUncertainties.slice(0, 5),
       rationale:
-        "Marco determinístico ERP basado en criticidad del cargo y señales psicométricas disponibles. La IA puede redactar mejor, pero no debe rebajar brechas/incertidumbres críticas ni usar PRP para modificar recomendación.",
+        "Marco ERP basado en criticidad del cargo y señales psicométricas disponibles. La redacción no debe rebajar brechas o incertidumbres críticas ni usar PRP para modificar la recomendación.",
     },
     evidence_weighting: {
       critical_over_secondary: true,
@@ -368,11 +389,11 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
     quality: Object.fromEntries(instruments.map((item) => [readText(item.code), compactQuality(item)])),
     instruments: {
       IPIP16_105: {
-        interpretation_mode: "descriptiva por patrones laborales; no percentiles ni baremos 16PF",
+        interpretation_mode: "patrones laborales; no percentiles ni baremos 16PF",
         dimensions: ipipDimensions,
       },
       IPIP_IPC_32: {
-        interpretation_mode: "modelo laboral interno IPIP-IPC; no DISC ni Everything DiSC",
+        interpretation_mode: "lectura laboral IPIP-IPC; no DISC ni Everything DiSC",
         warmth: roundNumber(ipcResult.warmth),
         dominance: roundNumber(ipcResult.dominance),
         macrostyles: asRecord(asRecord(ipcResult.labor_profile).styles),
@@ -383,7 +404,7 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         classification: readText(barrattResult.classification),
       },
       PRP_EMAIL_FORM_A_30: {
-        interpretation_mode: "antecedente descriptivo sin peso decisional automático; sin baremo poblacional activo ni semántica suficiente para modificar recomendación",
+        interpretation_mode: "antecedente descriptivo sin peso decisional; sin baremo poblacional activo ni semántica suficiente para modificar recomendación",
         direct_score: readNumber(prpResult.raw_total),
         scale_min: 30,
         scale_midpoint: 90,
@@ -406,8 +427,8 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         recommendation_labels: ["RECOMENDADO", "RECOMENDADO_CON_OBSERVACIONES", "REQUIERE_PROFUNDIZACION", "NO_RECOMENDADO"],
       },
       methodological_notes: [
-        "Los resultados psicométricos son antecedentes complementarios y deben integrarse con entrevista y antecedentes laborales.",
-        "Las interpretaciones sin baremos locales se expresan en términos descriptivos.",
+        "Los resultados psicométricos se integran con entrevista y antecedentes laborales.",
+        "Los resultados sin sustento interpretativo suficiente se omiten de la recomendación.",
       ],
     },
     constraints: {
@@ -435,13 +456,8 @@ export function validateAndGuardPsychAIOutput(value: unknown, input?: JsonRecord
     : normalizePsychAIOutput(sanitizeStrings(value));
   const objective = enforceObjectiveFrame(initialNormalized, input);
   const normalized = objective.output;
-  const finalSemanticValidation = semanticContext
-    ? validatePsychSemanticOutput(normalized, semanticContext)
-    : { ok: true, flags: [] };
-  const guardrailFlags = collectStrings(normalized).flatMap((text) => detectProhibitedFlags(text));
-
   const methodologicalNotice =
-    "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.";
+    "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico.";
   normalized.limitations = Array.from(new Set([
     ...normalized.limitations.filter((item) =>
       !/diagn[oó]stic|descripci[oó]n cl[ií]nic|decisi[oó]n autom[aá]tica|revisi[oó]n profesional/i.test(item)
@@ -449,10 +465,15 @@ export function validateAndGuardPsychAIOutput(value: unknown, input?: JsonRecord
     methodologicalNotice,
   ])).slice(0, 4);
   normalized.material_limitations = normalized.limitations;
-  normalized.version = "psych-ai-v5.3";
+  normalized.version = "report-content";
 
   normalized.ipc.disc_disclaimer =
-    "Este modelo interno no corresponde a DISC ni a Everything DiSC; usa octantes IPIP-IPC y macroestilos laborales propios.";
+    "IPIP-IPC usa octantes y macroestilos laborales propios; no corresponde a DISC ni a Everything DiSC.";
+
+  const finalSemanticValidation = semanticContext
+    ? validatePsychSemanticOutput(normalized, semanticContext)
+    : { ok: true, flags: [] };
+  const guardrailFlags = collectStrings(normalized).flatMap((text) => detectProhibitedFlags(text));
 
   return {
     output: normalized,
@@ -474,19 +495,19 @@ export function buildLegacyDeterministicPsychOutput(input: JsonRecord, reason: s
     `${String(item.code ?? "TEST")} con ${String(item.response_count ?? "-")} respuestas y hash ${String(item.result_sha256 ?? "no disponible").slice(0, 12)}`
   );
   return {
-    version: "psych-ai-fallback-v1",
+    version: "report-content",
     executive_summary:
-      `Interpretacion deterministica generada por el ERP porque el proveedor IA no quedo disponible (${reason}). Los resultados quedan como antecedente descriptivo para revision profesional.`,
+      "Informe de contingencia generado con resultados calculados por el ERP. No se emite una integración interpretativa completa para esta evaluación.",
     response_quality: quality || "Indicadores de calidad disponibles en el ERP.",
     strengths: [
-      "Bateria completada y puntuada por reglas backend versionadas.",
+      "Batería completada y puntuada con reglas versionadas.",
       "Resultados disponibles para contrastar con entrevista.",
       "Trazabilidad de instrumentos, scoring y calidad preservada.",
     ],
     development_areas: [
       "Profundizar resultados extremos o de baja variabilidad.",
       "Cruzar patrones interpersonales con ejemplos laborales concretos.",
-      "Revisar PRP junto con documentacion profesional disponible.",
+      "Profundizar PRP solo si existen antecedentes documentales suficientes.",
     ],
     interview_questions: [
       "Describa una situacion reciente de presion laboral y como la resolvio.",
@@ -505,9 +526,9 @@ export function buildLegacyDeterministicPsychOutput(input: JsonRecord, reason: s
     },
     ipc: {
       summary: "IPIP-IPC queda disponible como octantes y ejes continuos de calidez y dominancia.",
-      predominant_profile: "Perfil predominante pendiente de revision profesional.",
+      predominant_profile: "Perfil predominante integrado en el análisis interpersonal.",
       disc_disclaimer:
-        "Este modelo interno no corresponde a DISC ni a Everything DiSC; usa octantes IPIP-IPC y macroestilos laborales propios.",
+        "IPIP-IPC usa octantes y macroestilos laborales propios; no corresponde a DISC ni a Everything DiSC.",
     },
     bis11: {
       summary: "BIS-11 informa un puntaje de impulsividad calculado por el ERP.",
@@ -516,16 +537,14 @@ export function buildLegacyDeterministicPsychOutput(input: JsonRecord, reason: s
     },
     prp: {
       summary: "PRP conserva puntaje directo y factores documentados, sin inventar baremos no resueltos.",
-      documentation_status: "Normas PRP permanecen sujetas a revision profesional cuando el material fuente sea ambiguo.",
+      documentation_status: "Se informa solo la salida documentada disponible.",
     },
     integrated_analysis:
-      "El analisis integrado debe combinar scores calculados, calidad de respuesta, perfil de cargo y entrevista. No se emite decision automatica.",
+      "El análisis integrado debe combinar puntajes calculados, calidad de respuesta, perfil de cargo y entrevista.",
     preliminary_conclusion:
-      "Conclusion preliminar no decisoria. Requiere revision profesional antes de utilizarse en el proceso.",
+      "Conclusión no emitida por falta de antecedentes interpretativos suficientes.",
     limitations: [
       "No constituye diagnostico clinico.",
-      "No constituye decision automatica de contratacion o rechazo.",
-      "No reemplaza entrevista psicologica ni revision profesional.",
     ],
     evidence: evidence.length ? evidence.slice(0, 10) : [
       "Scores calculados por el ERP.",

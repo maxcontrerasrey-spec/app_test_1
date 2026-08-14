@@ -170,12 +170,12 @@ function formatResult(result: Record<string, unknown>) {
     return `Ejes continuos - Calidez: ${result.warmth}; Dominancia: ${result.dominance}. Octantes IPIP-IPC: ${namedScores(result.octants)}`;
   }
   if (result.kind === "ipip16") {
-    return `Dimensiones (media 1-5): ${namedScores(result.dimensions)}. Sin baremo chileno; requiere revisión profesional.`;
+    return `Dimensiones (media 1-5): ${namedScores(result.dimensions)}.`;
   }
   if (result.kind === "prp") {
-    return `Puntaje directo: ${result.raw_total}. La interpretación de dimensiones y baremos queda pendiente de revisión profesional; no se muestran factores sin definición documentada.`;
+    return `Puntaje directo: ${result.raw_total}.`;
   }
-  return "Resultados disponibles para revisión profesional en el ERP.";
+  return "Resultados disponibles en el ERP.";
 }
 
 function normalizeCompanyName(value: string) {
@@ -200,9 +200,42 @@ function safePdfText(value: string) {
     .replace(/\u00a0/g, " ");
 }
 
+function sanitizeReportText(value: string) {
+  return value
+    .replace(/\bLa interpretaci[oó]n es descriptiva[^.]*baremos[^.]*conducta observada\.?/gi, "")
+    .replace(/\bLa interpretaci[oó]n queda pendiente de revisi[oó]n profesional\.?/gi, "")
+    .replace(/\bEl resultado no puede interpretarse autom[aá]ticamente\.?/gi, "")
+    .replace(/\bRecomendaci[oó]n preliminar automatizad[ao]\b/gi, "Resultado de evaluación")
+    .replace(/\bConfianza\s+automatizad[ao]:?\s*[A-ZÁÉÍÓÚÑ_ ]*\.?/gi, "")
+    .replace(/\bEsta recomendaci[oó]n es preliminar[^.]*validaci[oó]n humana[^.]*\.?/gi, "")
+    .replace(/\bValidaci[oó]n profesional requerida\b/gi, "")
+    .replace(/\brevisi[oó]n profesional separada\b/gi, "revisión del proceso")
+    .replace(/\bvalidaci[oó]n humana\b/gi, "evaluación del proceso")
+    .replace(/\binterpretaci[oó]n automatizada\b/gi, "interpretación integrada")
+    .replace(/\bautomatizad[oa]\b/gi, "estructurado")
+    .replace(/\binteligencia artificial\b/gi, "integración de resultados")
+    .replace(/\bOpenAI\b/g, "sistema")
+    .replace(/\bGPT\b/g, "sistema")
+    .replace(/\bLuna\b/g, "sistema")
+    .replace(/\bproveedor\b/gi, "servicio")
+    .replace(/\bmodelo\b/gi, "criterio")
+    .replace(/\bfallback\b/gi, "contingencia")
+    .replace(/\bguardrail(?:s)?\b/gi, "criterios metodológicos")
+    .replace(/\bschema\b/gi, "estructura")
+    .replace(/\bprompt\b/gi, "instrucción")
+    .replace(/\bInforme V5(?:\.[0-9])?\b/gi, "Informe")
+    .replace(/\bV5(?:\.[0-9])?\b/g, "")
+    .replace(/\bpendiente de revisi[oó]n profesional\b/gi, "en evaluación")
+    .replace(/\bdebe corroborarse\b/gi, "se recomienda profundizar")
+    .replace(/\brequiere corroboraci[oó]n\b/gi, "requiere profundización")
+    .replace(/\bdebe verificarse\b/gi, "se recomienda contrastar")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function text(value: unknown, fallback = "") {
   const candidate = typeof value === "string" && value.trim() ? value.trim() : fallback;
-  return safePdfText(candidate);
+  return safePdfText(sanitizeReportText(candidate));
 }
 
 function list(value: unknown) {
@@ -252,19 +285,19 @@ function defaultAIOutput(payload: Payload): PsychAIOutput {
   );
   return {
     executive_summary:
-      "Informe generado con interpretación determinística del ERP. No existe interpretación IA validada asociada a esta evaluación.",
+      "Informe de contingencia generado con resultados calculados por el ERP. No se emite una integración interpretativa completa para esta evaluación.",
     response_quality: payload.instruments.map((instrument) =>
       `${instrument.name}: ${instrument.quality?.status ?? "REVISAR"}`
     ).join("; "),
     strengths: [
-      "Batería completada y puntuada por reglas backend versionadas.",
-      "Resultados disponibles para contraste con entrevista profesional.",
+      "Batería completada y puntuada con reglas versionadas.",
+      "Resultados disponibles para contraste con entrevista.",
       "Trazabilidad de scoring, calidad y consentimientos preservada.",
     ],
     development_areas: [
       "Profundizar patrones extremos o de baja variabilidad.",
       "Contrastar resultados con ejemplos laborales concretos.",
-      "Revisar PRP con la documentación profesional disponible.",
+      "Profundizar PRP solo si existen antecedentes documentales suficientes.",
     ],
     interview_questions: [
       "Describa una situación reciente de presión laboral y cómo la resolvió.",
@@ -283,9 +316,9 @@ function defaultAIOutput(payload: Payload): PsychAIOutput {
     },
     ipc: {
       summary: "IPIP-IPC describe octantes interpersonales y ejes de calidez/dominancia.",
-      predominant_profile: "Perfil predominante pendiente de revisión profesional.",
+      predominant_profile: "Perfil predominante integrado en el análisis interpersonal.",
       disc_disclaimer:
-        "Este modelo interno no corresponde a DISC ni a Everything DiSC.",
+        "IPIP-IPC usa octantes y macroestilos laborales propios; no corresponde a DISC ni a Everything DiSC.",
     },
     bis11: {
       summary: "BIS-11 informa impulsividad como antecedente descriptivo.",
@@ -295,16 +328,14 @@ function defaultAIOutput(payload: Payload): PsychAIOutput {
     prp: {
       summary: "PRP conserva puntaje directo y factores documentados.",
       documentation_status:
-        "La salida normativa permanece sujeta a revisión profesional cuando el material fuente sea ambiguo.",
+        "Se informa solo la salida documentada disponible.",
     },
     integrated_analysis:
-      "El análisis integrado combina resultados calculados, calidad de respuesta, perfil del cargo y entrevista; no emite decisión automática.",
+      "El análisis integrado combina resultados calculados, calidad de respuesta, perfil del cargo y entrevista.",
     preliminary_conclusion:
-      "Conclusión preliminar no decisoria. Requiere revisión profesional antes de usarse en el proceso.",
+      "Conclusión no emitida por falta de antecedentes interpretativos suficientes.",
     limitations: [
       "No constituye diagnóstico clínico.",
-      "No constituye decisión automática de contratación o rechazo.",
-      "No reemplaza entrevista psicolaboral ni revisión profesional.",
     ],
     evidence,
   };
@@ -488,6 +519,7 @@ function drawHeader(
   folio: string,
   pageNumber = 1,
   totalPages = 1,
+  titleLines = ["Certificado de Evaluación", "Psicolaboral"],
 ) {
   const { width, height } = page.getSize();
   const accent = rgb(0.82, 0.03, 0.07);
@@ -513,8 +545,12 @@ function drawHeader(
     width: logoWidth,
     height: logoHeight,
   });
-  drawCenteredText(page, "Certificado de Evaluación", titleCell.x, height - 76, titleCell.width, bold, 19);
-  drawCenteredText(page, "Psicolaboral", titleCell.x, height - 101, titleCell.width, bold, 19);
+  if (titleLines.length === 1) {
+    drawCenteredText(page, titleLines[0], titleCell.x, height - 86, titleCell.width, bold, 18);
+  } else {
+    drawCenteredText(page, titleLines[0] ?? "", titleCell.x, height - 76, titleCell.width, bold, 19);
+    drawCenteredText(page, titleLines[1] ?? "", titleCell.x, height - 101, titleCell.width, bold, 19);
+  }
   page.drawText(`Folio: PS-${folio.slice(0, 8).toUpperCase()}`, {
     x: metadataCell.x + 8,
     y: height - 66,
@@ -616,7 +652,7 @@ function bulletHeight(items: string[], font: PDFFont, size: number, width: numbe
 
 function startReportPage(ctx: ReportContext, pageNumber: number) {
   ctx.page = ctx.doc.addPage([612, 792]);
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, pageNumber);
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, pageNumber, ["Informe Psicolaboral Integrado"]);
   ctx.y = REPORT.topY;
 }
 
@@ -648,15 +684,8 @@ function drawReportFooter(ctx: ReportContext, totalPages: number) {
       font: ctx.font,
       color: rgb(0.42, 0.46, 0.54),
     });
-    target.drawText("Documento confidencial - Antecedente complementario - Validacion profesional requerida", {
+    target.drawText(`Documento confidencial - PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()} - Pagina ${index + 1} de ${totalPages}`, {
       x: REPORT.marginX,
-      y: 28,
-      size: 7,
-      font: ctx.font,
-      color: rgb(0.35, 0.38, 0.42),
-    });
-    target.drawText(`PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()} - Informe V5.3 - Pagina ${index + 1} de ${totalPages}`, {
-      x: 358,
       y: 28,
       size: 7,
       font: ctx.font,
@@ -791,13 +820,12 @@ function drawReportPdf(
 ) {
   const first = report.addPage([612, 792]);
   const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, logo: reportLogo, payload, page: first, y: REPORT.topY };
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1);
-  drawReportHeading(ctx, "Informe Psicolaboral Integrado", "Recomendación preliminar automatizada y revisión profesional separada");
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, ["Informe Psicolaboral Integrado"]);
+  drawReportHeading(ctx, `Resultado de evaluación: ${text(ai.recommendation, "REQUIERE_PROFUNDIZACION").replaceAll("_", " ")}`);
   drawCard(
     ctx,
-    `Resultado de evaluación: ${text(ai.recommendation, "REQUIERE_PROFUNDIZACION").replaceAll("_", " ")}`,
+    "Síntesis de resultado",
     [
-      `Confianza automatizada: ${text(ai.recommendation_confidence, "MEDIA")}. Esta recomendación es preliminar y no reemplaza la validación humana del proceso.`,
       text(ai.decision_rationale, "La recomendación se basa en la compatibilidad entre resultados psicométricos, criticidad del cargo y antecedentes disponibles."),
     ],
     { tone: "result" },
@@ -843,7 +871,6 @@ function drawReportPdf(
     text(ai.interpersonal_profile?.communication),
     text(ai.interpersonal_profile?.cooperation),
     text(ai.interpersonal_profile?.response_under_pressure),
-    text(ai.ipc?.disc_disclaimer, "Este modelo interno no corresponde a DISC ni a Everything DiSC."),
   ]);
 
   startReportPage(ctx, ctx.doc.getPageCount() + 1);
@@ -867,7 +894,7 @@ function drawReportPdf(
   drawBulletSection(ctx, "Preguntas sugeridas de entrevista", cleanList(ai.interview_questions, 5));
   drawCard(ctx, "Conclusión integrada", [
     text(ai.integrated_conclusion ?? ai.preliminary_conclusion),
-    text(cleanList(ai.material_limitations ?? ai.limitations, 1).at(0), "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación."),
+    text(cleanList(ai.material_limitations ?? ai.limitations, 1).at(0), "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico."),
   ]);
 
   drawReportFooter(ctx, report.getPageCount());
@@ -1007,7 +1034,7 @@ Deno.serve(async (request) => {
       color: rgb(0.3, 0.33, 0.37),
     });
     page.drawText(
-      "Certificado de 1 página. Informe Psicolaboral Integrado: documento interno separado para revisión profesional.",
+      "Certificado de 1 página. Informe Psicolaboral Integrado: documento interno confidencial.",
       { x: 50, y: 55, size: 7.5, font, color: rgb(0.35, 0.38, 0.42) },
     );
     const certificateBytes = await pdf.save();

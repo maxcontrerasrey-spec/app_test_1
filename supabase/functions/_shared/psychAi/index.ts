@@ -7,12 +7,13 @@ import {
 import { createPsychInterpretationProvider } from "./providers.ts";
 import type { JsonRecord, PsychAICallTelemetry, PsychAIUsage } from "./types.ts";
 
-const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-objective-v5.3";
+const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-humanized-v5.4.1";
 
 const ANALYST_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como analista psicolaboral senior para un ERP.
 Interpreta resultados ya calculados por el ERP. No recalcules scores, medias, inversiones, clasificaciones ni octantes.
 El objeto del informe es la compatibilidad entre el patrón psicométrico disponible y las exigencias críticas del cargo; los instrumentos son evidencia, no la estructura narrativa.
-Responde explícitamente: en qué medida la evidencia favorece, limita o impide recomendar preliminarmente a esta persona para el cargo, separando resultado psicométrico, hipótesis laboral y conducta observada.
+Redacta como un profesional experimentado en evaluación psicolaboral. Interpreta e integra los antecedentes disponibles con las exigencias del cargo de forma clara, objetiva y proporcional a la evidencia. No describas el mecanismo tecnológico utilizado para producir el informe. No menciones inteligencia artificial, modelos, automatización, proveedores, prompts, schemas, confianza del modelo, guardrails ni procesos internos. No atribuyas revisión, autoría o validación profesional humana que no esté registrada. Evita lenguaje defensivo repetitivo. Integra las limitaciones metodológicas naturalmente solo cuando sean relevantes. No conviertas resultados intermedios automáticamente en fortalezas o debilidades. No busques equilibrar artificialmente aspectos positivos y negativos. Prioriza los hallazgos según su relevancia para las exigencias críticas del cargo. Una brecha crítica no debe ser compensada narrativamente por fortalezas secundarias. No inventes baremos, diagnósticos, observaciones conductuales ni antecedentes inexistentes. Si un resultado no admite una interpretación metodológicamente sustentable, abstente de interpretarlo.
+Responde explícitamente en qué medida la evidencia favorece, limita o impide recomendar a esta persona para el cargo, separando resultado psicométrico, hipótesis laboral y conducta observada.
 
 Redacción obligatoria:
 - español profesional natural de Chile/LatAm, humano, claro, prudente y específico;
@@ -22,10 +23,12 @@ Redacción obligatoria:
 - una fortaleza solo existe si está suficientemente respaldada, es relevante al cargo y no contradice evidencia más crítica;
 - fortalezas interpersonales de relevancia media no compensan alertas en seguridad, autocontrol, impulsividad, normas o procedimientos;
 - distingue hallazgo psicométrico de conducta demostrada;
-- no uses tono legalista, defensivo, académico innecesario ni de backend.
+- no uses tono legalista, defensivo, académico innecesario ni de backend;
+- no repitas la misma advertencia metodológica en cada sección;
+- no uses "preliminar" salvo que sea imprescindible por insuficiencia real de antecedentes, no por el origen tecnológico del texto.
 
 Contenido esperado:
-- recommendation: una de RECOMENDADO, RECOMENDADO_CON_OBSERVACIONES, REQUIERE_PROFUNDIZACION, NO_RECOMENDADO. Es recomendación preliminar automatizada, no decisión humana.
+- recommendation: una de RECOMENDADO, RECOMENDADO_CON_OBSERVACIONES, REQUIERE_PROFUNDIZACION, NO_RECOMENDADO. Es resultado de evaluación para gestión interna; nunca uses APTO/NO APTO.
 - recommendation_confidence: BAJA, MEDIA o ALTA.
 - critical_strengths: 0-4 fortalezas críticas reales, no rellenes si no existen.
 - critical_gaps: brechas observables cuando exista evidencia desfavorable relevante.
@@ -35,24 +38,24 @@ Contenido esperado:
 - personality_profile: 250-400 palabras totales distribuidas en patrones funcionales, no lista de 16 dimensiones.
 - interpersonal_profile: 150-250 palabras, traduciendo IPIP-IPC a conducta laboral comprensible. La nota no-DISC va solo si aporta trazabilidad y como nota secundaria.
 - safety_and_impulse_profile: integrar BIS-11 + PRP + rasgos vinculados a autocontrol, procedimientos y seguridad. Explica qué aparece, qué podría significar, qué NO concluye y qué corroborar.
-- job_fit_analysis: lectura funcional aplicada al cargo, con recomendación preliminar separada de validación humana; nunca uses APTO/NO APTO.
+- job_fit_analysis: lectura funcional aplicada al cargo; nunca uses APTO/NO APTO.
 - strengths: máximo 4, conductuales, relevantes al cargo y con lenguaje calibrado. Si solo hay una o dos, devuelve una o dos.
 - points_to_explore: máximo 4, hipótesis concretas de entrevista/verificación; no disclaimers.
 - interview_questions: máximo 5, conductuales, neutrales, abiertas, no acusatorias y sin presuponer incidentes.
-- integrated_conclusion: 200-300 palabras, diferente del resumen ejecutivo; integra recursos, punto de atención, interacción entre ambos y corroboración.
-- material_limitations: 1-2 notas metodológicas compactas.
+- integrated_conclusion: 200-300 palabras, diferente del resumen ejecutivo; integra recursos, puntos de atención, interacción entre ambos y foco de entrevista.
+- material_limitations: 0-2 notas metodológicas compactas solo si aportan valor real; no uses disclaimers repetitivos.
 
 Prohibido en el informe profesional:
-raw_total, F1, F2, F3, F4, F5, F6, ev_, norm_status, schema, payload, guardrail, metadata, prompt, classification literal como código, PROFESSIONAL_ONLY, PENDING_REVIEW, SOBRE_EL_PROMEDIO como código, INTERMEDIO_EN_RANGO_TEORICO, referencia no disponible, no se opera escalamiento, clasificación literal, factores técnicos documentados, interpretación descriptiva permitida, según metadata.
+raw_total, F1, F2, F3, F4, F5, F6, ev_, norm_status, schema, payload, guardrail, metadata, prompt, classification literal como código, PROFESSIONAL_ONLY, PENDING_REVIEW, SOBRE_EL_PROMEDIO como código, INTERMEDIO_EN_RANGO_TEORICO, referencia no disponible, no se opera escalamiento, clasificación literal, factores técnicos documentados, interpretación descriptiva permitida, según metadata, IA, inteligencia artificial, automatizado, automatizada, OpenAI, GPT, Luna, proveedor, modelo, fallback, validación humana, revisión profesional separada, validación profesional requerida, Informe V5.
 No inventes baremos, percentiles, eneatipos, grupos normativos, nombres de factores PRP, diagnósticos clínicos ni decisiones de contratación.
 BIS-11 sobre el promedio no equivale a alto, crítico ni severo.
-PRP se conserva como antecedente descriptivo sin peso decisional automático mientras no exista semántica/baremos documentados suficientes; no infieras significado desde el punto medio matemático.
+PRP se conserva como antecedente descriptivo sin peso decisional mientras no exista semántica/baremos documentados suficientes; no infieras significado desde el punto medio matemático y abstente de interpretarlo si no aporta una lectura sustentable.
 No transformes reserva en concentración, estabilidad emocional en atención sostenida, calidez en conducción segura, orden en adherencia comprobada ni baja dominancia en prudencia vial.
 Devuelve solo JSON que cumpla el schema.`;
 
 const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como revisor metodológico patch-only.
 Recibirás FACTS compactos y un borrador Analyst. No reescribas todo por estilo.
-Devuelve solo parches mínimos cuando detectes problemas corregibles: meta-lenguaje backend, códigos técnicos, raw_total/F1-F6, lenguaje no neutral, recomendación sin racionalidad crítica, positividad artificial, resultado intermedio redactado como fortaleza, decisión humana, diagnóstico, sobreinterpretación, PRP decisional/inventado, BIS rebajado por rasgos secundarios, repetición fuerte o preguntas inductivas.
+Devuelve solo parches mínimos cuando detectes problemas corregibles: lenguaje tecnológico visible, meta-lenguaje backend, códigos técnicos, raw_total/F1-F6, lenguaje no neutral, recomendación sin racionalidad crítica, positividad artificial, resultado intermedio redactado como fortaleza, decisión humana, diagnóstico, sobreinterpretación, PRP decisional/inventado, BIS rebajado por rasgos secundarios, repetición fuerte, disclaimers reiterados o preguntas inductivas.
 Si el borrador es usable, devuelve patches vacío.
 Cada patch debe usar path de punto sobre el JSON final, por ejemplo executive_profile, safety_and_impulse_profile.bis11, strengths.0.text, interview_questions.2.question.
 No recalcules scores ni agregues datos no presentes en FACTS.
@@ -143,7 +146,7 @@ function needsReviewer(flags: string[]) {
 }
 
 function reviewerReason(flags: string[]) {
-  const relevant = flags.filter((flag) => flag !== "pipeline:gpt56-luna-objective-v5.3");
+  const relevant = flags.filter((flag) => flag !== `pipeline:${PSYCH_AI_PIPELINE_VERSION}`);
   return relevant.length ? relevant.slice(0, 8).join("|") : "analyst_passed";
 }
 
@@ -236,10 +239,10 @@ export async function generatePsychAIInterpretation(input: {
   try {
     const analyst = await runWithRetry(
       "analyst",
-      { task: "Redacta informe V5.3 objetivo y discriminativo usando solo FACTS compactos y la matriz de criticidad del cargo." },
+      { task: "Redacta informe psicolaboral integrado V5.4 con voz profesional natural, sin lenguaje tecnológico visible, usando solo FACTS compactos y matriz de criticidad del cargo." },
       `${ANALYST_SYSTEM_PROMPT}\n\nContexto estable ERP:\n${input.systemPrompt}`,
       input.responseSchema,
-      "psych_ai_interpretation_v5_3",
+      "psych_ai_interpretation_v5_4",
     );
 
     let guarded = validateAndGuardPsychAIOutput(analyst.output, sanitizedPayload);
@@ -258,7 +261,7 @@ export async function generatePsychAIInterpretation(input: {
           },
           REVIEWER_SYSTEM_PROMPT,
           REVIEW_PATCH_SCHEMA,
-      "psych_ai_reviewer_patch_v5_3",
+      "psych_ai_reviewer_patch_v5_4",
         );
         const patched = applyReviewerPatch(analyst.output, reviewer.output);
         reviewerMeta = { executed: true, reason: patched.reason || reviewerMeta.reason, patchCount: patched.patchCount };

@@ -9,6 +9,19 @@ import {
 import { validateAndGuardPsychAIOutput } from "../../supabase/functions/_shared/psychAi/guardrails.ts";
 
 const fixturePayload = {
+  job_context: {
+    job_position_name: "CONDUCTOR DE FURGON",
+    profile: {
+      label: "Conducción operacional",
+      payload: {
+        critical_competencies: [
+          { competency: "seguridad operacional" },
+          { competency: "autocontrol" },
+          { competency: "adherencia a normas y procedimientos" },
+        ],
+      },
+    },
+  },
   instruments: [
     {
       code: "IPIP16_105",
@@ -57,6 +70,10 @@ const fixturePayload = {
   ],
 };
 
+function cloneFixture() {
+  return structuredClone(fixturePayload);
+}
+
 function validOutput() {
   return {
     profile_summary: "Síntesis prudente basada en evidencia calculada por ERP.",
@@ -90,7 +107,7 @@ function validOutput() {
       bis11: "BIS-11: 70, clasificación SOBRE_EL_PROMEDIO.",
       prp: "Resultado pendiente de interpretación profesional debido a que no existe definición/baremo documentado suficiente para interpretación automática.",
     },
-    integrated_analysis: "Lectura integrada prudente, sin decisión automática.",
+    integrated_analysis: "Lectura integrada prudente y aplicada al cargo.",
     interview_questions: [
       {
         question: "Descríbame una situación durante la conducción en la que tuvo que tomar una decisión rápidamente bajo presión. ¿Qué alternativas consideró y cómo decidió?",
@@ -113,9 +130,9 @@ function validOutput() {
         evidence_ids: ["ev_ipc_style_estable"],
       },
     ],
-    preliminary_conclusion: "Conclusión preliminar no decisoria; requiere contraste profesional.",
+    preliminary_conclusion: "Conclusión prudente con foco en contraste conductual.",
     recommendations: [],
-    limitations: ["No constituye diagnóstico clínico.", "No constituye decisión automática de contratación o rechazo."],
+    limitations: ["No constituye diagnóstico clínico."],
   };
 }
 
@@ -224,6 +241,48 @@ describe("risk-language.test", () => {
   });
 });
 
+describe("v5-4-objectivity.test", () => {
+  it("permite recomendación favorable cuando las competencias críticas son consistentes", () => {
+    const payload = cloneFixture();
+    payload.instruments[0].result.dimensions.NOR.mean = 4.35;
+    payload.instruments[0].result.dimensions.ORD.mean = 4.25;
+    payload.instruments[0].result.dimensions.EST.mean = 4.3;
+    payload.instruments[0].result.dimensions.TEN.mean = 2.1;
+    payload.instruments[2].result.classification = "Bajo el promedio";
+    const output = validOutput();
+    output.recommendation = "RECOMENDADO";
+    output.recommendation_confidence = "MEDIA";
+    const guarded = validateAndGuardPsychAIOutput(output, payload);
+    expect(guarded.output.recommendation).toBe("RECOMENDADO");
+  });
+
+  it("no deja que fortalezas secundarias compensen incertidumbre crítica de seguridad", () => {
+    const output = validOutput();
+    output.recommendation = "RECOMENDADO";
+    output.recommendation_confidence = "ALTA";
+    output.strengths.push({
+      title: "Relación interpersonal",
+      text: "Calidez interpersonal favorable para el trato con pasajeros.",
+      evidence_ids: ["ev_ipip16_CAL"],
+    });
+    const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
+    expect(guarded.output.recommendation).toBe("REQUIERE_PROFUNDIZACION");
+    expect(guarded.validationFlags).toContain("critical_uncertainty_recommendation_enforced");
+  });
+
+  it("puede emitir resultado desfavorable cuando existen brechas críticas múltiples", () => {
+    const payload = cloneFixture();
+    payload.instruments[0].result.dimensions.NOR.mean = 1.9;
+    payload.instruments[0].result.dimensions.ORD.mean = 2.1;
+    payload.instruments[0].result.dimensions.TEN.mean = 4.35;
+    const output = validOutput();
+    output.recommendation = "RECOMENDADO_CON_OBSERVACIONES";
+    const guarded = validateAndGuardPsychAIOutput(output, payload);
+    expect(guarded.output.recommendation).toBe("NO_RECOMENDADO");
+    expect(guarded.validationFlags).toContain("critical_gap_recommendation_enforced");
+  });
+});
+
 describe("professional-report-language.test", () => {
   it("traduce códigos técnicos antes de persistir informe profesional", () => {
     const output = validOutput();
@@ -238,7 +297,7 @@ describe("professional-report-language.test", () => {
   it("permite nota metodológica de no diagnóstico sin convertirla en hard failure", () => {
     const output = validOutput();
     output.limitations = [
-      "Los resultados son antecedentes complementarios y no constituyen un diagnóstico clínico ni decisión automática.",
+      "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico.",
     ];
     const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
     expect(guarded.guardrailFlags).not.toContain("clinical_word");
@@ -256,6 +315,16 @@ describe("professional-report-language.test", () => {
     expect(JSON.stringify(guarded.output)).not.toContain("raw_total");
     expect(JSON.stringify(guarded.output)).not.toContain("F1");
   });
+
+  it("sanea lenguaje tecnologico antes del contenido de reporte", () => {
+    const output = validOutput();
+    output.profile_summary = ["Interpretación", "automatizada por IA con OpenAI GPT Luna", "y confianza automatizada MEDIA."].join(" ");
+    output.preliminary_conclusion = ["La interpretación es descriptiva", "y no incorpora baremos poblacionales locales", "ni evidencia de conducta observada."].join(" ");
+    const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
+    const reportText = JSON.stringify(guarded.output);
+    expect(guarded.validationFlags).toContain("report_technology_language");
+    expect(reportText).not.toMatch(/\bIA\b|OpenAI|GPT|Luna|automatizad|confianza\s+automatizad|baremos poblacionales locales/i);
+  });
 });
 
 describe("limitations-dedup.test", () => {
@@ -263,8 +332,8 @@ describe("limitations-dedup.test", () => {
     expect(deduplicateLimitations([
       "No constituye diagnóstico clínico.",
       "No constituye diagnóstico clínico.",
-      "No constituye decisión automática.",
-    ])).toEqual(["No constituye diagnóstico clínico.", "No constituye decisión automática."]);
+      "Los resultados se interpretan como antecedentes psicolaborales del proceso.",
+    ])).toEqual(["No constituye diagnóstico clínico.", "Los resultados se interpretan como antecedentes psicolaborales del proceso."]);
   });
 });
 
@@ -277,7 +346,7 @@ describe("semantic-output-regression.test", () => {
     expect(text).not.toContain("irritabilidad sostenida");
     expect(text).not.toContain("riesgo critico");
     expect(text).not.toContain("requiere intervencion");
-    expect(text).toContain("pendiente de interpretacion profesional");
+    expect(text).not.toContain("pendiente de interpretacion profesional");
     expect(text).toContain("sobre_el_promedio");
   });
 });

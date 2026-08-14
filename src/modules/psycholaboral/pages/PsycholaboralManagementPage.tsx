@@ -33,7 +33,7 @@ const aiStatusLabels: Record<string, string> = {
   NOT_REQUESTED: "No solicitado",
   QUEUED: "En cola",
   PROCESSING: "Procesando",
-  AI_DRAFT: "Borrador IA",
+  AI_DRAFT: "Borrador",
   FAILED: "Fallida",
   PENDING_REVIEW: "Pendiente revisión",
   REVIEWED: "Revisada",
@@ -473,7 +473,7 @@ export function PsycholaboralManagementPage() {
                                 </dd>
                               </div>
                               <div>
-                                <dt>Interpretación IA</dt>
+                                <dt>Informe integrado</dt>
                                 <dd>
                                   {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
                                 </dd>
@@ -515,11 +515,11 @@ export function PsycholaboralManagementPage() {
                                       disabled={busy === row.id}
                                       onClick={() => void openAIReview(row)}
                                     >
-                                      Revisar IA
+                                      Revisar informe
                                     </button>
                                   ) : (
                                     <span className="approval-chip">
-                                      IA automática: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
+                                      Informe: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
                                     </span>
                                   )}
                                   {row.certificate_status === "generated" ? (

@@ -107,11 +107,11 @@ export function PsychResultDialog({ detail, onClose }: Props) {
                 ? "Aprobado"
               : "Rechazado"}
           </span>
-          <span>IA: {detail.ai_status ?? "NOT_REQUESTED"}</span>
+          <span>Informe integrado: {detail.ai_status ?? "NOT_REQUESTED"}</span>
         </div>
         {ai ? (
           <div className="psych-ai-section">
-            <span className="psych-eyebrow">Análisis psicolaboral integrado por IA</span>
+            <span className="psych-eyebrow">Análisis psicolaboral integrado</span>
             <h3>Perfil ejecutivo</h3>
             <p>{ai.executive_profile ?? ai.executive_summary}</p>
             <div className="psych-ai-grid">
@@ -148,9 +148,6 @@ export function PsychResultDialog({ detail, onClose }: Props) {
             </div>
             <h4>Conclusión integrada</h4>
             <p>{ai.integrated_conclusion ?? ai.preliminary_conclusion}</p>
-            <p className="psych-result-note">
-              Interpretación automatizada basada en los instrumentos aplicados y antecedentes disponibles.
-            </p>
           </div>
         ) : null}
         <div className="psych-result-instruments">
@@ -168,10 +165,6 @@ export function PsychResultDialog({ detail, onClose }: Props) {
                   </div>
                 ))}
               </dl>
-              <p className="psych-result-note">
-                Resultado descriptivo para revisión profesional. No constituye
-                una decisión automática.
-              </p>
               {instrument.quality ? (
                 <p className="psych-result-note">
                   Calidad de respuestas: {String(instrument.quality.status ?? "REVISAR")} · completitud {String(instrument.quality.completitud ?? 0)}%.
