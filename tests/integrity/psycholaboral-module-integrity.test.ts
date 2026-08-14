@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync("supabase/migrations/20260813180211_add_psycholaboral_module.sql", "utf8");
+const aiMigration = readFileSync("supabase/migrations/20260814005242_psych_ai_interpretation_foundation.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
+const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
+const psychAiGuardrails = readFileSync("supabase/functions/_shared/psychAi/guardrails.ts", "utf8");
+const certificate = readFileSync("supabase/functions/generate-psycholaboral-certificate/index.ts", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
 const access = readFileSync("src/modules/auth/config/access.ts", "utf8");
 
@@ -64,5 +68,51 @@ describe("Gestión Psicolaboral", () => {
     expect(edge).toContain("deterministicAccessCode");
     expect(edge).toContain('`psycholaboral/${prepared.assessment_id}`');
     expect(edge).toContain('"Idempotency-Key": input.idempotencyKey');
+  });
+
+  it("agrega IA psicolaboral en tablas privadas sin exponer payload sensible", () => {
+    expect(aiMigration).toContain("create table if not exists private.psych_ai_interpretations");
+    expect(aiMigration).toContain("create table if not exists private.psych_ai_runs");
+    expect(aiMigration).toContain("create table if not exists private.psych_prompt_versions");
+    expect(aiMigration).toContain("create table if not exists private.psych_job_profile_versions");
+    expect(aiMigration).toContain("revoke all on private.psych_ai_interpretations from public, anon, authenticated");
+    expect(aiMigration).toContain("grant execute on function public.get_psych_ai_input_payload(uuid) to service_role");
+    expect(psychAiGuardrails).toContain("delete cloned.national_id");
+    expect(psychAiGuardrails).toContain("delete cloned.raw_answers");
+    expect(psychAiGuardrails).toContain("delete cloned.responses");
+  });
+
+  it("mantiene la IA como interpretación revisable, no como scoring ni decisión", () => {
+    expect(aiMigration).toContain("NOT_REQUESTED");
+    expect(aiMigration).toContain("PENDING_REVIEW");
+    expect(aiMigration).toContain("VALIDATED");
+    expect(aiMigration).toContain("reviewed_output");
+    expect(psychAiGuardrails).toContain("No constituye decision automatica");
+    expect(psychAiGuardrails).toContain("decision_word");
+    expect(psychAiGuardrails).toContain("clinical_word");
+    expect(edge).toContain('action === "generate_ai_interpretation"');
+    expect(edge).toContain("claim_psych_ai_interpretation");
+    expect(edge).toContain("complete_psych_ai_interpretation");
+  });
+
+  it("implementa proveedor Mock y Groq con schema estricto y feature flag", () => {
+    expect(psychAi).toContain("class MockPsychInterpretationProvider");
+    expect(psychAi).toContain("class GroqPsychInterpretationProvider");
+    expect(psychAi).toContain("GROQ_API_KEY");
+    expect(psychAi).toContain("PSYCH_AI_ENABLED");
+    expect(psychAi).toContain("openai/gpt-oss-120b");
+    expect(psychAi).toContain("response_format");
+    expect(psychAi).toContain("json_schema");
+    expect(psychAi).toContain('reasoning_effort: "low"');
+  });
+
+  it("genera informe interno de cuatro páginas con IA/fallback y disclaimers", () => {
+    expect(certificate).toContain("Pagina ${pageNumber} de 4");
+    expect(certificate).toContain("defaultAIOutput");
+    expect(certificate).toContain("drawBarChart");
+    expect(certificate).toContain("drawRadar");
+    expect(certificate).toContain("BIS-11, PRP e integracion");
+    expect(certificate).toContain("Este modelo interno no corresponde a DISC");
+    expect(certificate).toContain("payload.ai_interpretation?.display_output");
   });
 });

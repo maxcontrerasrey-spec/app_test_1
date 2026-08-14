@@ -113,11 +113,11 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10242721,
+  "distTotalBytes": 10244967,
   "jsFileCount": 62,
-  "jsTotalBytes": 2729776,
+  "jsTotalBytes": 2730412,
   "cssFileCount": 12,
-  "cssTotalBytes": 238466,
+  "cssTotalBytes": 239782,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -130,6 +130,8 @@ Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sub
 ```
 
 Revision 2026-08-08 DSAL nómina y antecedentes: el total global sube 3,345 bytes, JS sube 1,951 bytes y CSS sube 1,280 bytes por integrar el autocompletado autoritativo de nómina, las burbujas judiciales y tooltips de causas en Precandidatos. No agrega vendors, rutas lazy ni assets trackeados; las tablas judiciales permanecen protegidas y el enriquecimiento ocurre solo en la RPC autenticada de revisión.
+
+Revision 2026-08-13 Psych AI: el total global sube 2,246 bytes, JS sube 636 bytes y CSS sube 1,316 bytes por agregar revisión profesional de interpretación IA en el módulo lazy Gestión Psicolaboral. No agrega vendors ni assets trackeados; Groq vive exclusivamente en Edge Functions.
 
 Revision 2026-08-10 sanciones como módulo propio: el total global sube 1,451 bytes, JS sube 1,450 bytes y CSS sube 1 byte por separar Sanciones en una ruta lazy y un contenedor propio fuera de Incentivos. No agrega vendors ni assets trackeados; la nueva ruta usa el módulo y guard `solicitud_sanciones`.
 

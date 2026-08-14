@@ -1,6 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
 import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
+import {
+  generatePsychAIInterpretation,
+  sha256Json,
+} from "../_shared/psychAi/index.ts";
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
@@ -253,7 +257,14 @@ Deno.serve(async (request) => {
       }
     }
 
-    if (action === "generate_certificate" || action === "certificate_url" || action === "report_url") {
+    if (
+      action === "generate_certificate" ||
+      action === "certificate_url" ||
+      action === "report_url" ||
+      action === "generate_ai_interpretation" ||
+      action === "get_ai_interpretation" ||
+      action === "review_ai_interpretation"
+    ) {
       const authorization = request.headers.get("authorization") ?? "";
       if (!authorization.startsWith("Bearer ")) {
         return response({ error: "No autorizado" }, 401);
@@ -268,6 +279,138 @@ Deno.serve(async (request) => {
         { p_assessment_id: assessmentId },
       );
       if (accessError) return response({ error: "No autorizado" }, 403);
+
+      if (action === "generate_ai_interpretation") {
+        const { data: inputPayload, error: payloadError } = await admin.rpc(
+          "get_psych_ai_input_payload",
+          { p_assessment_id: assessmentId },
+        );
+        if (payloadError || !inputPayload) {
+          return response({ error: "No fue posible preparar la interpretación." }, 409);
+        }
+
+        const inputHash = await sha256Json(inputPayload);
+        const claimToken = crypto.randomUUID();
+        const { data: userData } = await actor.auth.getUser();
+        const providerName = Deno.env.get("PSYCH_AI_ENABLED")?.trim().toLowerCase() === "true" &&
+            Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() === "groq" &&
+            Deno.env.get("GROQ_API_KEY")?.trim()
+          ? "groq"
+          : "mock";
+        const modelName = providerName === "groq"
+          ? Deno.env.get("PSYCH_AI_MODEL")?.trim() || "openai/gpt-oss-120b"
+          : "mock-psych-ai-v1";
+        const { data: claim, error: claimError } = await admin.rpc(
+          "claim_psych_ai_interpretation",
+          {
+            p_assessment_id: assessmentId,
+            p_input_hash: inputHash,
+            p_provider: providerName,
+            p_model: modelName,
+            p_claim_token: claimToken,
+            p_actor_user_id: userData.user?.id ?? null,
+          },
+        );
+        if (claimError || !claim) {
+          return response({ error: claimError?.message ?? "Interpretación en ejecución." }, 409);
+        }
+        const claimed = claim as {
+          cached?: boolean;
+          interpretation_id?: string;
+          run_id?: string;
+          payload?: JsonRecord | null;
+          system_prompt?: string;
+          response_schema?: JsonRecord;
+          interpretation?: JsonRecord;
+          status?: string;
+        };
+        if (claimed.cached) {
+          return response({
+            cached: true,
+            status: claimed.status,
+            interpretation: claimed.interpretation ?? null,
+          });
+        }
+
+        const generated = await generatePsychAIInterpretation({
+          payload: (claimed.payload ?? inputPayload) as JsonRecord,
+          systemPrompt: cleanText(claimed.system_prompt, 4000),
+          responseSchema: (claimed.response_schema ?? {}) as JsonRecord,
+        });
+        const outputHash = await sha256Json(generated.output);
+        const { data: completed, error: completeError } = await admin.rpc(
+          "complete_psych_ai_interpretation",
+          {
+            p_interpretation_id: claimed.interpretation_id,
+            p_run_id: claimed.run_id,
+            p_claim_token: claimToken,
+            p_success: true,
+            p_output: generated.output,
+            p_output_hash: outputHash,
+            p_validation_flags: generated.validation_flags,
+            p_guardrail_flags: generated.guardrail_flags,
+            p_latency_ms: generated.latency_ms,
+            p_prompt_tokens: generated.usage.prompt_tokens ?? 0,
+            p_completion_tokens: generated.usage.completion_tokens ?? 0,
+            p_total_tokens: generated.usage.total_tokens ?? 0,
+            p_estimated_cost_usd: generated.usage.estimated_cost_usd ?? 0,
+            p_error_code: generated.error_code,
+            p_error_message: generated.error_message,
+          },
+        );
+        if (completeError) {
+          try {
+            await admin.rpc("complete_psych_ai_interpretation", {
+              p_interpretation_id: claimed.interpretation_id,
+              p_run_id: claimed.run_id,
+              p_claim_token: claimToken,
+              p_success: false,
+              p_output: null,
+              p_output_hash: null,
+              p_validation_flags: generated.validation_flags,
+              p_guardrail_flags: generated.guardrail_flags,
+              p_latency_ms: generated.latency_ms,
+              p_prompt_tokens: generated.usage.prompt_tokens ?? 0,
+              p_completion_tokens: generated.usage.completion_tokens ?? 0,
+              p_total_tokens: generated.usage.total_tokens ?? 0,
+              p_estimated_cost_usd: generated.usage.estimated_cost_usd ?? 0,
+              p_error_code: "persist_failed",
+              p_error_message: completeError.message,
+            });
+          } catch {
+            // The caller still receives the persistence failure; this only clears the claim when possible.
+          }
+          return response({ error: "La interpretación se generó, pero no pudo persistirse." }, 500);
+        }
+        return response({
+          generated: true,
+          live_configured: generated.live_configured,
+          fallback_reason: generated.fallback_reason,
+          result: completed,
+        });
+      }
+
+      if (action === "get_ai_interpretation") {
+        const { data, error } = await actor.rpc("get_psych_ai_review_detail", {
+          p_assessment_id: assessmentId,
+        });
+        if (error) return response({ error: error.message }, 400);
+        return response({ detail: data as JsonRecord });
+      }
+
+      if (action === "review_ai_interpretation") {
+        const { data, error } = await actor.rpc(
+          "review_psych_ai_interpretation",
+          {
+            p_interpretation_id: cleanText(payload.interpretation_id, 50),
+            p_action: cleanText(payload.review_action, 40),
+            p_reviewed_output: payload.reviewed_output ?? null,
+            p_comment: cleanText(payload.comment, 1000) || null,
+          },
+        );
+        if (error) return response({ error: error.message }, 400);
+        return response({ detail: data as JsonRecord });
+      }
 
       if (action === "generate_certificate") {
         const certificateResponse = await fetch(

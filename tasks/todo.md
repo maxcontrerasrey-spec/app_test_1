@@ -3,13 +3,18 @@
 ## Capa IA interpretativa psicolaboral - 2026-08-13
 - [x] Auditar el prompt maestro contra scoring, calidad, perfiles, PDF, Storage, RLS y frontend existentes.
 - [x] Documentar arquitectura, brechas, riesgos, rollback y gates en `PSYCH_AI_IMPLEMENTATION_AUDIT.md`.
-- [ ] Crear migración privada de perfiles de cargo, interpretaciones, ejecuciones y versiones de prompt.
-- [ ] Implementar proveedor abstracto, Mock, Groq, sanitización, schema estricto, guardrails, cache e idempotencia.
-- [ ] Integrar generación piloto manual y revisión profesional sin decisión automática.
-- [ ] Rediseñar PDF de cuatro páginas con evidencia, interpretación separada y fallback determinístico.
+- [x] Crear migración privada de perfiles de cargo, interpretaciones, ejecuciones y versiones de prompt.
+- [x] Implementar proveedor abstracto, Mock, Groq, sanitización, schema estricto, guardrails, cache e idempotencia.
+- [x] Integrar generación piloto manual y revisión profesional sin decisión automática.
+- [x] Rediseñar PDF de cuatro páginas con evidencia, interpretación separada y fallback determinístico.
+- [x] Crear documentación operacional: arquitectura, privacidad, prompt, schema, tests, piloto y rollback.
 - [ ] Ejecutar tests, auditorías Supabase, build, Guardian y piloto controlado antes de activar IA.
 
 Decisión: `PSYCH_AI_ENABLED=false` durante el desarrollo. El scoring existente, los resultados históricos, el certificado actual y el flujo de candidatos no se modifican hasta que la capa auditable esté validada.
+
+Continuación solicitada: ejecutar Fase 2 a Fase 16 sin repetir auditoría. La ausencia de `GROQ_API_KEY` no bloquea el desarrollo: el proveedor real queda implementado, pero el entorno usa Mock/fallback hasta configurar secreto y activar feature flag.
+
+Resultado parcial: la capa IA queda aislada en tablas privadas, con generación manual desde Gestión Psicolaboral, revisión profesional editable y PDF interno de 4 páginas. La activación real de Groq sigue bloqueada deliberadamente por `PSYCH_AI_ENABLED=false` y falta de `GROQ_API_KEY`.
 
 ## Rediseño informe psicolaboral integrado - 2026-08-13
 - [x] Auditar generador PDF, scoring, datos históricos, permisos y contratos actuales.
@@ -1880,3 +1885,15 @@ Resultado: el RPC fallaba en `result=result` por ambigüedad PL/pgSQL; ahora usa
 - [x] Verificar build, Guardian y publicación productiva.
 
 Resultado: los instrumentos completados se muestran en verde suave, los que están en progreso en amarillo y los no iniciados en gris; los títulos tienen mayor separación superior e inferior.
+
+## Implementacion Psych AI Groq - 2026-08-13
+- [x] Leer prompt de continuidad y contratos vivos del modulo psicolaboral antes de editar.
+- [x] Crear capa backend privada para perfiles de cargo, prompts versionados, interpretaciones IA y ejecuciones auditables.
+- [x] Implementar proveedor Groq con JSON Schema estricto y fallback mock bajo `PSYCH_AI_ENABLED=false`.
+- [x] Blindar privacidad: payload sin RUT, correo, nombre candidato ni respuestas crudas hacia proveedor externo.
+- [x] Agregar flujo frontend para generar, revisar, observar y validar interpretaciones IA desde Gestion Psicolaboral.
+- [x] Incorporar la interpretacion IA al informe psicolaboral interno de 4 paginas.
+- [x] Aplicar migraciones y desplegar Edge Functions en Supabase produccion.
+- [x] Ejecutar Deno checks, TypeScript, integridad, migraciones, seguridad, build frontend, performance baseline, Guardian y smoke productivo reducido.
+
+Resultado: Psych AI queda implementado y activo funcionalmente con proveedor mock mientras falte `GROQ_API_KEY`. La validacion real con Groq queda pendiente solo de configurar el secreto y activar `PSYCH_AI_ENABLED=true`.

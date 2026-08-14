@@ -4,6 +4,8 @@ import {
 } from "../../../shared/lib/supabaseRpc";
 import type {
   CandidateSession,
+  PsychAIOutput,
+  PsychAIReviewDetail,
   PsychCandidate,
   PsychInstrumentCatalog,
   PsychResultDetail,
@@ -125,6 +127,41 @@ export async function generatePsychCertificate(assessmentId: string) {
     action: "generate_certificate",
     assessment_id: assessmentId,
   });
+}
+export async function generatePsychAIInterpretation(assessmentId: string) {
+  return invoke({
+    action: "generate_ai_interpretation",
+    assessment_id: assessmentId,
+  }) as Promise<{
+    generated?: boolean;
+    cached?: boolean;
+    live_configured?: boolean;
+    fallback_reason?: string;
+  }>;
+}
+export async function getPsychAIReviewDetail(assessmentId: string) {
+  const data = await invoke({
+    action: "get_ai_interpretation",
+    assessment_id: assessmentId,
+  });
+  return data.detail as PsychAIReviewDetail;
+}
+export async function reviewPsychAIInterpretation(input: {
+  assessmentId: string;
+  interpretationId: string;
+  action: "save_review" | "validate" | "observe";
+  reviewedOutput?: PsychAIOutput | null;
+  comment?: string;
+}) {
+  const data = await invoke({
+    action: "review_ai_interpretation",
+    assessment_id: input.assessmentId,
+    interpretation_id: input.interpretationId,
+    review_action: input.action,
+    reviewed_output: input.reviewedOutput ?? null,
+    comment: input.comment ?? null,
+  });
+  return data.detail as PsychAIReviewDetail;
 }
 export async function resetPsychCertificate(assessmentId: string) {
   const { error } = await getSupabaseClientOrThrow().rpc(

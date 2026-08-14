@@ -32,6 +32,11 @@ export type PsychCandidate = {
   deadline_at: string | null;
   completed_at: string | null;
   certificate_status: string | null;
+  report_status?: string | null;
+  ai_status?: PsychAIStatus | null;
+  ai_updated_at?: string | null;
+  ai_interpretation_id?: string | null;
+  ai_interpretation_status?: PsychAIStatus | null;
   instruments: PsychInstrumentProgress[];
 };
 export type PsychQuestion = { order: number; text: string };
@@ -91,5 +96,80 @@ export type PsychResultDetail = {
   completed_at: string;
   certificate_status: string;
   certificate_available: boolean;
+  ai_status?: PsychAIStatus;
+  ai_interpretation?: PsychAIInterpretationSummary | null;
   instruments: PsychResultInstrument[];
+};
+
+export type PsychAIStatus =
+  | "NOT_REQUESTED"
+  | "QUEUED"
+  | "PROCESSING"
+  | "AI_DRAFT"
+  | "FAILED"
+  | "PENDING_REVIEW"
+  | "REVIEWED"
+  | "VALIDATED"
+  | "OBSERVED";
+
+export type PsychAIOutput = {
+  version: string;
+  executive_summary: string;
+  response_quality: string;
+  strengths: string[];
+  development_areas: string[];
+  interview_questions: string[];
+  ipip16: { summary: string; clusters: Record<string, string> };
+  ipc: { summary: string; predominant_profile: string; disc_disclaimer: string };
+  bis11: { summary: string; impulsivity_interpretation: string };
+  prp: { summary: string; documentation_status: string };
+  integrated_analysis: string;
+  preliminary_conclusion: string;
+  limitations: string[];
+  evidence: string[];
+};
+
+export type PsychAIInterpretationSummary = {
+  id: string;
+  status: PsychAIStatus;
+  provider: string;
+  model: string;
+  display_output: PsychAIOutput | null;
+  validation_flags: string[];
+  guardrail_flags: string[];
+  reviewer_comment: string | null;
+  reviewed_at: string | null;
+  generated_at: string | null;
+};
+
+export type PsychAIRun = {
+  id: string;
+  status: string;
+  attempt: number;
+  latency_ms: number | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  total_tokens: number | null;
+  estimated_cost_usd: number | null;
+  error_code: string | null;
+  created_at: string | null;
+};
+
+export type PsychAIReviewDetail = {
+  assessment_id: string;
+  ai_status: PsychAIStatus;
+  candidate: {
+    full_name: string;
+    national_id: string;
+    job_position_name: string;
+    contract_name: string;
+  };
+  interpretation: (PsychAIInterpretationSummary & {
+    input_hash: string;
+    original_output: PsychAIOutput | null;
+    reviewed_output: PsychAIOutput | null;
+    profile: { code: string; label: string; version: string } | null;
+    prompt: { version: string; schema_version: string; content_sha256: string } | null;
+    runs: PsychAIRun[];
+  }) | null;
 };

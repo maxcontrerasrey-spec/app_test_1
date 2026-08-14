@@ -104,9 +104,20 @@ export function PsychResultDialog({ detail, onClose }: Props) {
               ? "Pendiente"
               : detail.decision === "approved"
                 ? "Aprobado"
-                : "Rechazado"}
+              : "Rechazado"}
           </span>
+          <span>IA: {detail.ai_status ?? "NOT_REQUESTED"}</span>
         </div>
+        {detail.ai_interpretation?.display_output ? (
+          <div className="psych-ai-section">
+            <h3>Interpretación IA / revisión profesional</h3>
+            <p>{detail.ai_interpretation.display_output.executive_summary}</p>
+            <p className="psych-result-note">
+              Estado {detail.ai_interpretation.status} · proveedor{" "}
+              {detail.ai_interpretation.provider}
+            </p>
+          </div>
+        ) : null}
         <div className="psych-result-instruments">
           {detail.instruments.map((instrument) => (
             <article key={instrument.code}>

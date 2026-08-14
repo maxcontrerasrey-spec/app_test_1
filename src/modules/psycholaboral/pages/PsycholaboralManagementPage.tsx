@@ -3,21 +3,25 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { PageShell, TextField } from "../../../shared/ui";
 import { TrackingPagination } from "../../recruitment/components/TrackingPagination";
+import { PsychAIReviewDialog } from "../components/PsychAIReviewDialog";
 import { PsychResultDialog } from "../components/PsychResultDialog";
 import {
   decidePsychAssessment,
+  generatePsychAIInterpretation,
   generatePsychCertificate,
+  getPsychAIReviewDetail,
   getPsychCertificateUrl,
   getPsychReportUrl,
   resetPsychCertificate,
   getPsychResult,
+  reviewPsychAIInterpretation,
   sendPsychBattery,
 } from "../services/psycholaboralApi";
 import {
   usePsychCandidates,
   usePsychCatalog,
 } from "../hooks/usePsycholaboralQueries";
-import type { PsychCandidate, PsychResultDetail } from "../types";
+import type { PsychAIOutput, PsychAIReviewDetail, PsychCandidate, PsychResultDetail } from "../types";
 import "../styles/psycholaboral.css";
 
 const statusLabels = {
@@ -26,6 +30,17 @@ const statusLabels = {
   completed: "Terminado",
 } as const;
 const PAGE_SIZE = 50;
+const aiStatusLabels: Record<string, string> = {
+  NOT_REQUESTED: "No solicitado",
+  QUEUED: "En cola",
+  PROCESSING: "Procesando",
+  AI_DRAFT: "Borrador IA",
+  FAILED: "Fallida",
+  PENDING_REVIEW: "Pendiente revisión",
+  REVIEWED: "Revisada",
+  VALIDATED: "Validada",
+  OBSERVED: "Observada",
+};
 function dateTime(value: string | null) {
   return value ? new Date(value).toLocaleString("es-CL") : "Sin registro";
 }
@@ -40,6 +55,7 @@ export function PsycholaboralManagementPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [result, setResult] = useState<PsychResultDetail | null>(null);
+  const [aiReview, setAiReview] = useState<PsychAIReviewDetail | null>(null);
   const filters = useMemo(
     () => ({ search, status, limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
     [page, search, status],
@@ -177,6 +193,51 @@ export function PsycholaboralManagementPage() {
     } finally {
       setBusy(null);
     }
+  };
+  const generateAI = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    setBusy(row.id);
+    setFeedback("");
+    try {
+      const response = await generatePsychAIInterpretation(row.assessment_id);
+      setFeedback(
+        response.live_configured
+          ? "Interpretación IA generada y pendiente de revisión."
+          : "Interpretación Mock/fallback generada y pendiente de revisión.",
+      );
+      await refresh();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "No fue posible generar la interpretación.");
+    } finally {
+      setBusy(null);
+    }
+  };
+  const openAIReview = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    setBusy(row.id);
+    try {
+      setAiReview(await getPsychAIReviewDetail(row.assessment_id));
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "No fue posible abrir la revisión IA.");
+    } finally {
+      setBusy(null);
+    }
+  };
+  const reviewAI = async (
+    action: "save_review" | "validate" | "observe",
+    output: PsychAIOutput,
+    comment: string,
+  ) => {
+    if (!aiReview?.interpretation) return;
+    const next = await reviewPsychAIInterpretation({
+      assessmentId: aiReview.assessment_id,
+      interpretationId: aiReview.interpretation.id,
+      action,
+      reviewedOutput: output,
+      comment,
+    });
+    setAiReview(next);
+    await refresh();
   };
 
   return (
@@ -430,6 +491,12 @@ export function PsycholaboralManagementPage() {
                                   {row.certificate_status ?? "No preparado"}
                                 </dd>
                               </div>
+                              <div>
+                                <dt>Interpretación IA</dt>
+                                <dd>
+                                  {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
+                                </dd>
+                              </div>
                             </dl>
                           </section>
                           <section className="expanded-detail-section expanded-detail-section-full psych-actions-section">
@@ -457,6 +524,27 @@ export function PsycholaboralManagementPage() {
                                   >
                                     Ver resultados
                                   </button>
+                                  {row.ai_status === "NOT_REQUESTED" ||
+                                  row.ai_status === "FAILED" ||
+                                  !row.ai_status ? (
+                                    <button
+                                      className="psych-secondary-action"
+                                      type="button"
+                                      disabled={busy === row.id}
+                                      onClick={() => void generateAI(row)}
+                                    >
+                                      Generar IA
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="psych-secondary-action"
+                                      type="button"
+                                      disabled={busy === row.id}
+                                      onClick={() => void openAIReview(row)}
+                                    >
+                                      Revisar IA
+                                    </button>
+                                  )}
                                   {row.certificate_status === "generated" ? (
                                     <>
                                       <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void download(row)}>
@@ -531,6 +619,16 @@ export function PsycholaboralManagementPage() {
       </section>
       {result ? (
         <PsychResultDialog detail={result} onClose={() => setResult(null)} />
+      ) : null}
+      {aiReview ? (
+        <PsychAIReviewDialog
+          detail={aiReview}
+          busy={Boolean(busy)}
+          onClose={() => setAiReview(null)}
+          onSave={(output, comment) => reviewAI("save_review", output, comment)}
+          onValidate={(output, comment) => reviewAI("validate", output, comment)}
+          onObserve={(output, comment) => reviewAI("observe", output, comment)}
+        />
       ) : null}
     </PageShell>
   );

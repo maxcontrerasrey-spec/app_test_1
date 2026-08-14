@@ -11,6 +11,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Cuando un bug es de choque de texto, separar el contenido en nodos semánticos y CSS de bloque; depender de saltos o del comportamiento especial de `legend` puede verse distinto entre navegadores.
 - En filas expandibles, las acciones deben vivir dentro del grid del detalle, no como bloque suelto bajo la tabla; si quedan fuera del borde visual, el usuario las percibe descentradas aunque el DOM sea correcto.
 
+## 312. Una capa IA sensible debe ser una interpretación auditable, no un nuevo motor de decisión
+
+- En psicometría, la IA debe recibir solo resultados calculados y saneados; nunca respuestas crudas, RUN, correo ni identidad directa.
+- La salida original del proveedor es evidencia y no se sobrescribe: la revisión profesional vive en un campo separado con estado, actor, fecha y comentario.
+- Un proveedor faltante o fallido no debe bloquear el proceso ni inventar scoring; debe producir fallback determinístico trazable y dejar `LIVE_GROQ_INTEGRATION_TEST` como único pendiente de credencial.
+- Todo texto automático necesita guardrails posteriores contra diagnóstico, aptitud, rechazo, contratación, percentiles o baremos no entregados.
+
 ## 310. Digitalizar literalmente no significa ocultar contradicciones de la fuente
 
 - Cuando el usuario pide conservar un instrumento, el cuestionario y corrector adjuntos son la autoridad; no se deben reemplazar silenciosamente por una versión encontrada en internet.

@@ -94,3 +94,15 @@ La implementación puede desplegarse con la IA apagada. No se debe activar produ
 ## Decisión de implementación
 
 Se implementará primero la base auditable y el piloto manual. La generación automática para todos los candidatos queda explícitamente fuera hasta cumplir el criterio Go/No-Go del prompt maestro.
+
+## Estado de implementación
+
+Implementación iniciada en Fase 2 el 2026-08-13:
+
+- Migración `20260814005242_psych_ai_interpretation_foundation.sql`.
+- Proveedores `MockPsychInterpretationProvider` y `GroqPsychInterpretationProvider`.
+- Sanitización de payload, schema estricto, guardrails y fallback determinístico.
+- UI de generación y revisión profesional.
+- Informe interno PDF de 4 páginas con IA/fallback.
+
+La activación real de Groq queda pendiente de configurar `GROQ_API_KEY` y cambiar `PSYCH_AI_ENABLED=true`.
