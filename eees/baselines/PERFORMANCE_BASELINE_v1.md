@@ -123,9 +123,9 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10255842,
+  "distTotalBytes": 10256676,
   "jsFileCount": 62,
-  "jsTotalBytes": 2740587,
+  "jsTotalBytes": 2741012,
   "cssFileCount": 12,
   "cssTotalBytes": 240891,
   "trackedAssets": [
@@ -188,6 +188,8 @@ Revision 2026-08-11 reparacion payload judicial DSAL: el total y JS suben 276 by
 Revision 2026-08-11 rediseño visual sanciones: el total sube 3,370 bytes, JS sube 3,117 bytes y CSS sube 253 bytes por migrar Solicitud de Sanciones a controles ERP compartidos, filtros globales, tabla expandible de seguimiento y overflow móvil encapsulado. No agrega vendors, rutas ni assets trackeados; mantiene el módulo admin-only y no modifica Supabase.
 
 Revision 2026-08-11 rediseño visual sanciones CI: GitHub Actions `Audit Enterprise Guardrails` run `31523440150`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,204,472 bytes totales y 2,701,023 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo los limites del cambio visual.
+
+Revision 2026-08-14 Psych AI V6.1 CI: GitHub Actions `Audit Enterprise Guardrails` run `31821179255`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,256,676 bytes totales y 2,741,012 bytes JS. El incremento corresponde al artefacto canonico de la rama publicada; no cambia vendors ni assets trackeados.
 
 ## Politica de actualizacion
 
