@@ -274,6 +274,28 @@
 .psych-ai-section li {
   margin: 0.25rem 0;
 }
+.psych-ai-recommendation-card {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid rgba(190, 18, 32, 0.18);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  background: linear-gradient(135deg, rgba(190, 18, 32, 0.06), rgba(255, 255, 255, 0.92));
+}
+.psych-ai-recommendation-card span {
+  color: #9f1239;
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.psych-ai-recommendation-card small {
+  color: #667085;
+  font-size: 0.76rem;
+  font-weight: 650;
+  text-align: right;
+}
 .psych-ai-grid {
   display: grid;
   gap: 0.75rem;

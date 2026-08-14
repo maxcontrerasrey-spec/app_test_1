@@ -5,6 +5,7 @@ import {
   generatePsychAIInterpretation,
   sha256Json,
 } from "../_shared/psychAi/index.ts";
+import { DEFAULT_PSYCH_AI_MODEL } from "../_shared/psychAi/providers.ts";
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
@@ -18,7 +19,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   Vary: "Origin",
 };
-const PSYCH_AI_RUNTIME_VERSION = "gpt5-mini-humanized-v5.2.3";
+const PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-objective-v5.3.0";
 
 type JsonRecord = Record<string, unknown>;
 type RpcClient = {
@@ -148,7 +149,7 @@ async function runPsychAIInterpretation(
     ? "openai"
     : "mock";
   const modelName = providerName === "openai"
-    ? Deno.env.get("PSYCH_AI_MODEL")?.trim() || "gpt-5-mini"
+    ? Deno.env.get("PSYCH_AI_MODEL")?.trim() || DEFAULT_PSYCH_AI_MODEL
     : "mock-psych-ai-v1";
   const { data: claim, error: claimError } = await admin.rpc(
     "claim_psych_ai_interpretation",

@@ -69,12 +69,15 @@ function replaceProhibited(text: string) {
   cleaned = cleaned.replace(/\bMUY_BAJO_EN_RANGO_TEORICO\b/g, "muy bajo dentro del rango teórico");
   cleaned = cleaned.replace(/\bPROFESSIONAL_ONLY\b/g, "revisión profesional específica");
   cleaned = cleaned.replace(/\bPENDING_REVIEW\b/g, "pendiente de revisión");
+  cleaned = cleaned.replace(/\bREQUIERE_PROFUNDIZACION\b/g, "requiere profundización");
+  cleaned = cleaned.replace(/\bRECOMENDADO_CON_OBSERVACIONES\b/g, "recomendado con observaciones");
+  cleaned = cleaned.replace(/\bNO_RECOMENDADO\b/g, "no recomendado");
   cleaned = cleaned.replace(/\bno\s+apto\b/gi, "requiere revisión profesional");
   cleaned = cleaned.replace(/\bapto\b/gi, "sin decisión automática");
   cleaned = cleaned.replace(/\bno\s+contratar\b/gi, "profundizar antes de decidir");
   cleaned = cleaned.replace(/\bcontratar\b/gi, "evaluar en comité");
-  cleaned = cleaned.replace(/\brechazar\b/gi, "observar profesionalmente");
-  cleaned = cleaned.replace(/\bdescartar\b/gi, "observar profesionalmente");
+  cleaned = cleaned.replace(/\brechazar\b/gi, "emitir una decisión desfavorable");
+  cleaned = cleaned.replace(/\bdescartar\b/gi, "emitir una decisión desfavorable");
   cleaned = cleaned.replace(/\briesgo cr[ií]tico\b/gi, "punto de atención relevante");
   cleaned = cleaned.replace(/\balto riesgo\b/gi, "punto de atención relevante");
   cleaned = cleaned.replace(/\briesgo severo\b/gi, "punto de atención relevante");
@@ -128,6 +131,152 @@ function roundNumber(value: unknown, decimals = 2) {
   return Number(numeric.toFixed(decimals));
 }
 
+function buildCompatibilityFrame(input: JsonRecord, semanticContext = buildPsychSemanticContext(input)) {
+  const jobContext = asRecord(input.job_context);
+  const profile = asRecord(jobContext.profile);
+  const payload = asRecord(profile.payload);
+  const jobFamily = readText(profile.label, "Perfil general");
+  const criticalCompetencies = asArray(payload.critical_competencies).map(asRecord);
+  const highCompetencies = asArray(payload.high_competencies).map(asRecord);
+  const mediumCompetencies = asArray(payload.medium_competencies).map(asRecord);
+  const lowRelevanceCompetencies = asArray(payload.low_relevance_competencies).map(asRecord);
+  const competencyText = (item: JsonRecord) => readText(item.competency ?? item.name ?? item.label);
+  const bis = semanticContext.locks.bis11;
+  const prp = semanticContext.locks.prp;
+  const normEvidence = semanticContext.evidence_catalog.find((item) => item.id === "ev_ipip16_CUM") ??
+    semanticContext.evidence_catalog.find((item) => item.id === "ev_ipip16_NOR");
+  const orderEvidence = semanticContext.evidence_catalog.find((item) => item.id === "ev_ipip16_ORD");
+  const stabilityEvidence = semanticContext.evidence_catalog.find((item) => item.id === "ev_ipip16_EST");
+  const tensionEvidence = semanticContext.evidence_catalog.find((item) => item.id === "ev_ipip16_TEN");
+  const criticalLabels = criticalCompetencies.map(competencyText).join(" | ");
+  const isSafetyCritical = /seguridad|autocontrol|impulsividad|norma|procedimiento|conducci[oó]n/i.test(
+    `${criticalLabels} ${readText(jobContext.job_position_name)}`,
+  );
+  const criticalStrengths: string[] = [];
+  const criticalGaps: string[] = [];
+  const criticalUncertainties: string[] = [];
+
+  if (
+    normEvidence &&
+    (normEvidence.semanticLevel === "BAJO_EN_RANGO_TEORICO" || normEvidence.semanticLevel === "MUY_BAJO_EN_RANGO_TEORICO")
+  ) {
+    criticalGaps.push("Cumplimiento de normas aparece bajo dentro del rango teórico en una competencia crítica del cargo.");
+  } else if (normEvidence?.semanticLevel === "INTERMEDIO_EN_RANGO_TEORICO" && isSafetyCritical) {
+    criticalUncertainties.push("Cumplimiento de normas se ubica en rango descriptivo intermedio; no constituye fortaleza y requiere contraste conductual por criticidad operacional.");
+  }
+  if (
+    orderEvidence &&
+    (orderEvidence.semanticLevel === "BAJO_EN_RANGO_TEORICO" || orderEvidence.semanticLevel === "MUY_BAJO_EN_RANGO_TEORICO")
+  ) {
+    criticalGaps.push("Orden y estructura aparecen bajos dentro del rango teórico para una exigencia operacional alta.");
+  } else if (orderEvidence?.semanticLevel === "INTERMEDIO_EN_RANGO_TEORICO" && isSafetyCritical) {
+    criticalUncertainties.push("Orden y estructura aparecen en rango descriptivo intermedio; deben verificarse con ejemplos de adherencia a procedimientos.");
+  }
+  if (
+    stabilityEvidence &&
+    (stabilityEvidence.semanticLevel === "ALTO_EN_RANGO_TEORICO" || stabilityEvidence.semanticLevel === "MUY_ALTO_EN_RANGO_TEORICO")
+  ) {
+    criticalStrengths.push("Estabilidad emocional se ubica en rango teórico favorable para demandas de presión habitual.");
+  }
+  if (
+    tensionEvidence &&
+    (tensionEvidence.semanticLevel === "ALTO_EN_RANGO_TEORICO" || tensionEvidence.semanticLevel === "MUY_ALTO_EN_RANGO_TEORICO")
+  ) {
+    criticalGaps.push("Tensión e irritabilidad aparecen altas dentro del rango teórico y deben ponderarse por autocontrol operacional.");
+  }
+  if (bis?.classification === "SOBRE_EL_PROMEDIO" && isSafetyCritical) {
+    criticalUncertainties.push("BIS-11 se clasifica sobre el promedio; por criticidad de autocontrol/seguridad requiere profundización antes de recomendar sin observaciones.");
+  } else if (bis?.classification === "BAJO_EL_PROMEDIO" && isSafetyCritical) {
+    criticalStrengths.push("BIS-11 no muestra una señal elevada de impulsividad según la clasificación disponible.");
+  }
+
+  const recommendation = criticalGaps.length >= 2
+    ? "NO_RECOMENDADO"
+    : criticalGaps.length || criticalUncertainties.length
+    ? "REQUIERE_PROFUNDIZACION"
+    : criticalStrengths.length
+    ? "RECOMENDADO_CON_OBSERVACIONES"
+    : "RECOMENDADO_CON_OBSERVACIONES";
+
+  return {
+    job_family: jobFamily,
+    profile_code: readText(profile.code),
+    profile_version: readText(profile.version),
+    competencies: {
+      critical: criticalCompetencies.map((item) => ({ competency: competencyText(item), evidence_focus: asArray(item.evidence_focus).map((entry) => readText(entry)).filter(Boolean) })),
+      high: highCompetencies.map((item) => ({ competency: competencyText(item), evidence_focus: asArray(item.evidence_focus).map((entry) => readText(entry)).filter(Boolean) })),
+      medium: mediumCompetencies.map((item) => ({ competency: competencyText(item), evidence_focus: asArray(item.evidence_focus).map((entry) => readText(entry)).filter(Boolean) })),
+      low_relevance: lowRelevanceCompetencies.map((item) => ({ competency: competencyText(item) })),
+    },
+    objective_rules: [
+      "Resultados intermedios son neutros por defecto; no deben redactarse como fortalezas.",
+      "Fortalezas interpersonales de relevancia media no compensan alertas en competencias críticas.",
+      "PRP tiene peso decisional automático 0 mientras no exista semántica/baremos documentados suficientes.",
+      "Separar resultado psicométrico, hipótesis laboral y conducta observada.",
+    ],
+    preliminary_recommendation_frame: {
+      recommendation,
+      confidence: "MEDIA",
+      critical_strengths: criticalStrengths.slice(0, 4),
+      critical_gaps: criticalGaps.slice(0, 4),
+      critical_uncertainties: criticalUncertainties.slice(0, 5),
+      rationale:
+        "Marco determinístico ERP basado en criticidad del cargo y señales psicométricas disponibles. La IA puede redactar mejor, pero no debe rebajar brechas/incertidumbres críticas ni usar PRP para modificar recomendación.",
+    },
+    evidence_weighting: {
+      critical_over_secondary: true,
+      prp_decision_weight: prp?.automatic_interpretation_allowed ? 1 : 0,
+      bis11_weight: bis && isSafetyCritical ? "HIGH_CONTEXTUAL_WEIGHT_WITHOUT_BEHAVIORAL_CONCLUSION" : "DOCUMENTED_CLASSIFICATION_ONLY",
+      middle_results_default: "NEUTRAL",
+    },
+  };
+}
+
+function removeArtificialStrengths(items: string[]) {
+  return items.filter((item) => {
+    const normalized = item.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (/\b(intermedio|promedio|moderad[oa]s?|sin tendencias extremas|no aparecen tendencias|cumplimiento de rutinas|conducta de cumplimiento|reserva.*concentracion|prudencia vial)\b/.test(normalized)) {
+      return false;
+    }
+    if (/\b(capacidad|competencia|aptitud|buen desempeno|desempeno adecuado)\b/.test(normalized)) {
+      return false;
+    }
+    return true;
+  }).slice(0, 4);
+}
+
+function mergeUniqueText(...groups: Array<string[] | undefined>) {
+  return Array.from(new Set(groups.flatMap((items) => items ?? []).map((item) => readText(item)).filter(Boolean)));
+}
+
+function enforceObjectiveFrame(output: PsychAIOutput, input?: JsonRecord) {
+  if (!input) return { output, flags: [] as string[] };
+  const frame = buildCompatibilityFrame(input).preliminary_recommendation_frame;
+  const flags: string[] = [];
+  const next = structuredClone(output) as PsychAIOutput;
+  const originalStrengthCount = next.strengths.length;
+  next.strengths = removeArtificialStrengths(next.strengths);
+  if (next.strengths.length < originalStrengthCount) flags.push("artificial_strength_removed");
+  next.critical_strengths = mergeUniqueText(next.critical_strengths, frame.critical_strengths).slice(0, 4);
+  next.critical_gaps = mergeUniqueText(next.critical_gaps, frame.critical_gaps).slice(0, 4);
+  next.critical_uncertainties = mergeUniqueText(next.critical_uncertainties, frame.critical_uncertainties).slice(0, 5);
+  if (
+    frame.recommendation === "REQUIERE_PROFUNDIZACION" &&
+    (next.recommendation === "RECOMENDADO" || next.recommendation === "RECOMENDADO_CON_OBSERVACIONES")
+  ) {
+    next.recommendation = "REQUIERE_PROFUNDIZACION";
+    flags.push("critical_uncertainty_recommendation_enforced");
+  }
+  if (frame.recommendation === "NO_RECOMENDADO" && next.recommendation !== "NO_RECOMENDADO") {
+    next.recommendation = "NO_RECOMENDADO";
+    flags.push("critical_gap_recommendation_enforced");
+  }
+  next.recommendation ??= frame.recommendation as PsychAIOutput["recommendation"];
+  next.recommendation_confidence ??= frame.confidence as PsychAIOutput["recommendation_confidence"];
+  if (!next.decision_rationale) next.decision_rationale = frame.rationale;
+  return { output: next, flags };
+}
+
 export function sanitizePsychAIInput(input: JsonRecord) {
   const cloned = structuredClone(input) as JsonRecord;
   delete cloned.prompt;
@@ -160,6 +309,7 @@ export function sanitizePsychAIInput(input: JsonRecord) {
 
 export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
   const semanticContext = buildPsychSemanticContext(input);
+  const compatibilityFrame = buildCompatibilityFrame(input, semanticContext);
   const jobContext = asRecord(input.job_context);
   const profile = asRecord(jobContext.profile);
   const instruments = asArray(input.instruments).map(asRecord);
@@ -206,6 +356,12 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
       job_position_name: readText(jobContext.job_position_name),
       contract_name: readText(jobContext.contract_name),
       profile_label: readText(profile.label),
+      job_profile_version: compatibilityFrame.profile_version,
+      job_family: compatibilityFrame.job_family,
+      competency_matrix: compatibilityFrame.competencies,
+      objective_rules: compatibilityFrame.objective_rules,
+      preliminary_recommendation_frame: compatibilityFrame.preliminary_recommendation_frame,
+      evidence_weighting: compatibilityFrame.evidence_weighting,
       critical_context: asArray(asRecord(profile.payload).critical_context).map((item) => readText(item)).filter(Boolean),
       interview_focus: asArray(asRecord(profile.payload).interview_focus).map((item) => readText(item)).filter(Boolean),
     },
@@ -227,12 +383,13 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         classification: readText(barrattResult.classification),
       },
       PRP_EMAIL_FORM_A_30: {
-        interpretation_mode: "lectura descriptiva preventiva; sin baremo poblacional activo",
+        interpretation_mode: "antecedente descriptivo sin peso decisional automático; sin baremo poblacional activo ni semántica suficiente para modificar recomendación",
         direct_score: readNumber(prpResult.raw_total),
         scale_min: 30,
         scale_midpoint: 90,
         scale_max: 150,
-        documented_meaning: "El puntaje directo ubica el patrón general dentro de la escala matemática; no autoriza clasificación poblacional alto/medio/bajo.",
+        documented_meaning: "El puntaje directo se conserva como antecedente. No autoriza inferir significado del punto medio matemático ni modificar recomendación.",
+        decision_weight: 0,
         factors: prpFactors,
       },
     },
@@ -246,6 +403,7 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         max_strengths: 4,
         max_points_to_explore: 4,
         max_interview_questions: 5,
+        recommendation_labels: ["RECOMENDADO", "RECOMENDADO_CON_OBSERVACIONES", "REQUIERE_PROFUNDIZACION", "NO_RECOMENDADO"],
       },
       methodological_notes: [
         "Los resultados psicométricos son antecedentes complementarios y deben integrarse con entrevista y antecedentes laborales.",
@@ -272,9 +430,11 @@ export function validateAndGuardPsychAIOutput(value: unknown, input?: JsonRecord
   const rawSemanticValidation = semanticContext
     ? validatePsychSemanticOutput(value, semanticContext)
     : { ok: true, flags: [] };
-  const normalized = semanticContext
+  const initialNormalized = semanticContext
     ? normalizeSemanticOutputForErp(sanitizeStrings(value), semanticContext)
     : normalizePsychAIOutput(sanitizeStrings(value));
+  const objective = enforceObjectiveFrame(initialNormalized, input);
+  const normalized = objective.output;
   const finalSemanticValidation = semanticContext
     ? validatePsychSemanticOutput(normalized, semanticContext)
     : { ok: true, flags: [] };
@@ -289,14 +449,14 @@ export function validateAndGuardPsychAIOutput(value: unknown, input?: JsonRecord
     methodologicalNotice,
   ])).slice(0, 4);
   normalized.material_limitations = normalized.limitations;
-  normalized.version = "psych-ai-v5.2";
+  normalized.version = "psych-ai-v5.3";
 
   normalized.ipc.disc_disclaimer =
     "Este modelo interno no corresponde a DISC ni a Everything DiSC; usa octantes IPIP-IPC y macroestilos laborales propios.";
 
   return {
     output: normalized,
-    validationFlags: Array.from(new Set([...shape.flags, ...preSanitizeFlags, ...rawSemanticValidation.flags])),
+    validationFlags: Array.from(new Set([...shape.flags, ...preSanitizeFlags, ...rawSemanticValidation.flags, ...objective.flags])),
     guardrailFlags: Array.from(new Set([...guardrailFlags, ...finalSemanticValidation.flags])),
   };
 }

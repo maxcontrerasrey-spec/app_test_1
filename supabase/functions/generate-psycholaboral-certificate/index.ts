@@ -74,6 +74,12 @@ type Payload = {
 };
 
 type PsychAIOutput = {
+  recommendation?: string;
+  recommendation_confidence?: string;
+  critical_strengths?: string[];
+  critical_gaps?: string[];
+  critical_uncertainties?: string[];
+  decision_rationale?: string;
   executive_profile?: string;
   executive_summary?: string;
   response_quality?: string;
@@ -531,6 +537,342 @@ function drawHeader(
   });
 }
 
+const REPORT = {
+  marginX: 45,
+  topY: 635,
+  bottomY: 58,
+  width: 522,
+  sectionGap: 17,
+  titleGap: 10,
+  paragraphGap: 7,
+  cardPaddingX: 14,
+  cardPaddingY: 13,
+  bodySize: 8.7,
+  bodyLineHeight: 13.2,
+  smallSize: 7.7,
+  smallLineHeight: 11.4,
+  h1: 18,
+  h2: 13,
+  h3: 10,
+};
+
+type ReportContext = {
+  doc: PDFDocument;
+  font: PDFFont;
+  bold: PDFFont;
+  logo: PDFImage;
+  payload: Payload;
+  page: PDFPage;
+  y: number;
+};
+
+function cleanList(items: unknown, max = 8) {
+  return list(items).slice(0, max);
+}
+
+function linesForParagraph(value: string, font: PDFFont, size: number, width: number) {
+  return wrap(text(value), font, size, width);
+}
+
+function drawJustifiedParagraph(
+  page: PDFPage,
+  value: string,
+  font: PDFFont,
+  size: number,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  color = rgb(0.16, 0.18, 0.22),
+) {
+  const lines = linesForParagraph(value, font, size, maxWidth);
+  let cursor = y;
+  lines.forEach((line, index) => {
+    const words = line.split(/\s+/).filter(Boolean);
+    const isLast = index === lines.length - 1 || words.length < 3;
+    if (isLast) {
+      page.drawText(line, { x, y: cursor, size, font, color });
+    } else {
+      const wordsWidth = words.reduce((sum, word) => sum + font.widthOfTextAtSize(word, size), 0);
+      const gap = Math.max(2.2, (maxWidth - wordsWidth) / (words.length - 1));
+      let wordX = x;
+      for (const word of words) {
+        page.drawText(word, { x: wordX, y: cursor, size, font, color });
+        wordX += font.widthOfTextAtSize(word, size) + gap;
+      }
+    }
+    cursor -= lineHeight;
+  });
+  return { y: cursor, lines: lines.length };
+}
+
+function paragraphHeight(value: string, font: PDFFont, size: number, width: number, lineHeight: number) {
+  return Math.max(1, linesForParagraph(value, font, size, width).length) * lineHeight;
+}
+
+function bulletHeight(items: string[], font: PDFFont, size: number, width: number, lineHeight: number) {
+  return items.reduce((sum, item) => sum + paragraphHeight(item, font, size, width - 16, lineHeight) + 4, 0);
+}
+
+function startReportPage(ctx: ReportContext, pageNumber: number) {
+  ctx.page = ctx.doc.addPage([612, 792]);
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, pageNumber);
+  ctx.y = REPORT.topY;
+}
+
+function ensureSpace(ctx: ReportContext, height: number, minCarry = 36) {
+  if (ctx.y - height >= REPORT.bottomY + minCarry) return;
+  startReportPage(ctx, ctx.doc.getPageCount() + 1);
+}
+
+function drawReportFooter(ctx: ReportContext, totalPages: number) {
+  ctx.doc.getPages().forEach((target, index) => {
+    target.drawRectangle({
+      x: 448,
+      y: 702,
+      width: 130,
+      height: 46,
+      color: rgb(1, 1, 1),
+    });
+    target.drawText(`Folio: PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()}`, {
+      x: 455,
+      y: 726,
+      size: 8,
+      font: ctx.font,
+      color: rgb(0.42, 0.46, 0.54),
+    });
+    target.drawText(`Página: ${index + 1} de ${totalPages}`, {
+      x: 455,
+      y: 710,
+      size: 8,
+      font: ctx.font,
+      color: rgb(0.42, 0.46, 0.54),
+    });
+    target.drawText("Documento confidencial - Antecedente complementario - Validacion profesional requerida", {
+      x: REPORT.marginX,
+      y: 28,
+      size: 7,
+      font: ctx.font,
+      color: rgb(0.35, 0.38, 0.42),
+    });
+    target.drawText(`PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()} - Informe V5.3 - Pagina ${index + 1} de ${totalPages}`, {
+      x: 358,
+      y: 28,
+      size: 7,
+      font: ctx.font,
+      color: rgb(0.35, 0.38, 0.42),
+    });
+  });
+}
+
+function drawReportHeading(ctx: ReportContext, title: string, subtitle?: string) {
+  ensureSpace(ctx, subtitle ? 54 : 36);
+  ctx.page.drawText(text(title), { x: REPORT.marginX, y: ctx.y, size: REPORT.h1, font: ctx.bold, color: rgb(0.07, 0.08, 0.1) });
+  ctx.y -= 23;
+  if (subtitle) {
+    ctx.page.drawText(text(subtitle), { x: REPORT.marginX, y: ctx.y, size: 10.5, font: ctx.font, color: rgb(0.38, 0.42, 0.5) });
+    ctx.y -= 24;
+  } else {
+    ctx.y -= 14;
+  }
+}
+
+function drawCard(ctx: ReportContext, title: string, paragraphs: string[], options: { tone?: "default" | "result"; minHeight?: number } = {}) {
+  const bodyWidth = REPORT.width - REPORT.cardPaddingX * 2;
+  const cleanParagraphs = paragraphs.map((item) => text(item)).filter(Boolean);
+  const contentHeight = cleanParagraphs.reduce(
+    (sum, item) => sum + paragraphHeight(item, ctx.font, REPORT.bodySize, bodyWidth, REPORT.bodyLineHeight) + REPORT.paragraphGap,
+    0,
+  );
+  const height = Math.max(
+    options.minHeight ?? 0,
+    REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(0, contentHeight - REPORT.paragraphGap),
+  );
+  ensureSpace(ctx, height + REPORT.sectionGap);
+  const yBottom = ctx.y - height;
+  ctx.page.drawRectangle({
+    x: REPORT.marginX,
+    y: yBottom,
+    width: REPORT.width,
+    height,
+    borderWidth: 0.7,
+    borderColor: options.tone === "result" ? rgb(0.78, 0.14, 0.18) : rgb(0.86, 0.88, 0.91),
+    color: options.tone === "result" ? rgb(0.995, 0.968, 0.97) : rgb(0.992, 0.994, 0.997),
+  });
+  ctx.page.drawText(text(title), {
+    x: REPORT.marginX + REPORT.cardPaddingX,
+    y: ctx.y - REPORT.cardPaddingY - 6,
+    size: REPORT.h3,
+    font: ctx.bold,
+    color: options.tone === "result" ? rgb(0.55, 0.04, 0.07) : rgb(0.08, 0.1, 0.14),
+  });
+  let cursor = ctx.y - REPORT.cardPaddingY - 6 - 18;
+  for (const paragraph of cleanParagraphs) {
+    const drawn = drawJustifiedParagraph(ctx.page, paragraph, ctx.font, REPORT.bodySize, REPORT.marginX + REPORT.cardPaddingX, cursor, bodyWidth, REPORT.bodyLineHeight);
+    cursor = drawn.y - REPORT.paragraphGap;
+  }
+  ctx.y = yBottom - REPORT.sectionGap;
+}
+
+function drawBulletCard(ctx: ReportContext, title: string, items: string[], options: { width?: number; x?: number; tone?: "default" | "result" } = {}) {
+  const x = options.x ?? REPORT.marginX;
+  const width = options.width ?? REPORT.width;
+  const cleanItems = items.map((item) => text(item)).filter(Boolean);
+  const bodyWidth = width - REPORT.cardPaddingX * 2;
+  const height = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(18, bulletHeight(cleanItems, ctx.font, REPORT.bodySize, bodyWidth, REPORT.bodyLineHeight));
+  ctx.page.drawRectangle({
+    x,
+    y: ctx.y - height,
+    width,
+    height,
+    borderWidth: 0.7,
+    borderColor: rgb(0.86, 0.88, 0.91),
+    color: options.tone === "result" ? rgb(0.995, 0.968, 0.97) : rgb(0.992, 0.994, 0.997),
+  });
+  ctx.page.drawText(text(title), { x: x + REPORT.cardPaddingX, y: ctx.y - REPORT.cardPaddingY - 6, size: REPORT.h3, font: ctx.bold, color: rgb(0.08, 0.1, 0.14) });
+  let cursor = ctx.y - REPORT.cardPaddingY - 25;
+  for (const item of cleanItems) {
+    ctx.page.drawText("•", { x: x + REPORT.cardPaddingX, y: cursor, size: REPORT.bodySize, font: ctx.bold, color: rgb(0.72, 0.06, 0.08) });
+    const drawn = drawJustifiedParagraph(ctx.page, item, ctx.font, REPORT.bodySize, x + REPORT.cardPaddingX + 14, cursor, bodyWidth - 14, REPORT.bodyLineHeight);
+    cursor = drawn.y - 4;
+  }
+  return height;
+}
+
+function drawBulletSection(ctx: ReportContext, title: string, items: string[], options: { tone?: "default" | "result" } = {}) {
+  const cleanItems = cleanList(items, 8);
+  const bodyWidth = REPORT.width - REPORT.cardPaddingX * 2;
+  const height = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap +
+    Math.max(18, bulletHeight(cleanItems, ctx.font, REPORT.bodySize, bodyWidth, REPORT.bodyLineHeight));
+  ensureSpace(ctx, height + REPORT.sectionGap);
+  drawBulletCard(ctx, title, cleanItems, options);
+  ctx.y -= height + REPORT.sectionGap;
+}
+
+function drawSectionTitle(ctx: ReportContext, title: string) {
+  ensureSpace(ctx, 28);
+  ctx.page.drawText(text(title), { x: REPORT.marginX, y: ctx.y, size: REPORT.h2, font: ctx.bold, color: rgb(0.07, 0.08, 0.1) });
+  ctx.y -= 22;
+}
+
+function drawTwoColumnBulletCards(ctx: ReportContext, leftTitle: string, left: string[], rightTitle: string, right: string[]) {
+  const gap = 16;
+  const width = (REPORT.width - gap) / 2;
+  const leftHeight = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(22, bulletHeight(left, ctx.font, REPORT.bodySize, width - REPORT.cardPaddingX * 2, REPORT.bodyLineHeight));
+  const rightHeight = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(22, bulletHeight(right, ctx.font, REPORT.bodySize, width - REPORT.cardPaddingX * 2, REPORT.bodyLineHeight));
+  const required = Math.max(leftHeight, rightHeight) + REPORT.sectionGap;
+  if (required > 245 || left.length > 4 || right.length > 4) {
+    drawBulletSection(ctx, leftTitle, left);
+    drawBulletSection(ctx, rightTitle, right);
+    return;
+  }
+  ensureSpace(ctx, required);
+  const top = ctx.y;
+  drawBulletCard(ctx, leftTitle, left, { width, x: REPORT.marginX });
+  ctx.y = top;
+  drawBulletCard(ctx, rightTitle, right, { width, x: REPORT.marginX + width + gap });
+  ctx.y = top - Math.max(leftHeight, rightHeight) - REPORT.sectionGap;
+}
+
+function drawInstrumentBars(ctx: ReportContext, title: string, entries: Array<{ name: string; mean: number }>) {
+  drawSectionTitle(ctx, title);
+  const height = Math.min(entries.length, 16) * 13.5 + 22;
+  ensureSpace(ctx, height + REPORT.sectionGap);
+  ctx.y = drawBarChart(ctx.page, entries, ctx.font, ctx.bold, REPORT.marginX + 6, ctx.y, REPORT.width - 12) - 10;
+}
+
+function drawReportPdf(
+  report: PDFDocument,
+  reportFont: PDFFont,
+  reportBold: PDFFont,
+  reportLogo: PDFImage,
+  payload: Payload,
+  ai: PsychAIOutput,
+) {
+  const first = report.addPage([612, 792]);
+  const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, logo: reportLogo, payload, page: first, y: REPORT.topY };
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1);
+  drawReportHeading(ctx, "Informe Psicolaboral Integrado", "Recomendación preliminar automatizada y revisión profesional separada");
+  drawCard(
+    ctx,
+    `Resultado de evaluación: ${text(ai.recommendation, "REQUIERE_PROFUNDIZACION").replaceAll("_", " ")}`,
+    [
+      `Confianza automatizada: ${text(ai.recommendation_confidence, "MEDIA")}. Esta recomendación es preliminar y no reemplaza la validación humana del proceso.`,
+      text(ai.decision_rationale, "La recomendación se basa en la compatibilidad entre resultados psicométricos, criticidad del cargo y antecedentes disponibles."),
+    ],
+    { tone: "result" },
+  );
+  drawCard(ctx, "Perfil ejecutivo", [text(ai.executive_profile ?? ai.executive_summary)]);
+  drawCard(ctx, "Ajuste al cargo", [
+    text(ai.job_fit_analysis, `Cargo evaluado: ${payload.candidate.job_position_name}. La compatibilidad debe revisarse contra entrevista, evidencia documental y criterio profesional.`),
+  ]);
+  drawTwoColumnBulletCards(
+    ctx,
+    "Fortalezas críticas",
+    cleanList(ai.critical_strengths?.length ? ai.critical_strengths : ai.strengths, 4),
+    "Brechas e incertidumbres",
+    cleanList([...(ai.critical_gaps ?? []), ...(ai.critical_uncertainties ?? []), ...cleanList(ai.development_areas, 3)], 6),
+  );
+
+  startReportPage(ctx, ctx.doc.getPageCount() + 1);
+  drawInstrumentBars(ctx, "Personalidad laboral IPIP-16", dimensionEntries(payload.instruments.find((item) => item.code === "IPIP16_105")?.result ?? {}));
+  drawCard(ctx, "Lectura laboral integrada", [
+    text(ai.personality_profile?.summary ?? ai.ipip16?.summary),
+    text(ai.personality_profile?.self_regulation),
+    text(ai.personality_profile?.discipline_structure),
+  ]);
+  drawCard(ctx, "Dimensiones relevantes", Object.entries(ai.ipip16?.clusters ?? {}).map(([cluster, detail]) => `${clusterLabel(cluster)}: ${detail}`));
+
+  startReportPage(ctx, ctx.doc.getPageCount() + 1);
+  drawSectionTitle(ctx, "Estilo interpersonal IPIP-IPC");
+  const ipc = payload.instruments.find((item) => item.code === "IPIP_IPC_32");
+  if (ipc) {
+    ensureSpace(ctx, 230);
+    drawRadar(ctx.page, octantEntries(ipc.result), ctx.font, 175, ctx.y - 105, 88);
+    let listY = ctx.y - 18;
+    ctx.page.drawText("Octantes y macroestilos", { x: 330, y: listY, size: REPORT.h3, font: ctx.bold });
+    listY -= 15;
+    for (const entry of octantEntries(ipc.result).slice(0, 8)) {
+      ctx.page.drawText(text(`${entry.code} - ${entry.name}: ${entry.mean.toFixed(2)}`), { x: 330, y: listY, size: REPORT.smallSize, font: ctx.font });
+      listY -= REPORT.smallLineHeight;
+    }
+    ctx.y -= 230;
+  }
+  drawCard(ctx, "Interpretación laboral", [
+    text(ai.interpersonal_profile?.summary ?? ai.ipc?.summary),
+    text(ai.interpersonal_profile?.communication),
+    text(ai.interpersonal_profile?.cooperation),
+    text(ai.interpersonal_profile?.response_under_pressure),
+    text(ai.ipc?.disc_disclaimer, "Este modelo interno no corresponde a DISC ni a Everything DiSC."),
+  ]);
+
+  startReportPage(ctx, ctx.doc.getPageCount() + 1);
+  drawSectionTitle(ctx, "Seguridad, impulsividad y conclusión");
+  const barratt = payload.instruments.find((item) => item.code === "BARRATT_BIS11_30");
+  const prp = payload.instruments.find((item) => item.code === "PRP_EMAIL_FORM_A_30");
+  drawTwoColumnBulletCards(
+    ctx,
+    "BIS-11",
+    [
+      barratt ? formatResult(barratt.result) : "Resultado BIS-11 no disponible.",
+      text(ai.safety_and_impulse_profile?.bis11 ?? ai.bis11?.impulsivity_interpretation),
+    ],
+    "PRP",
+    [
+      prp ? formatResult(prp.result) : "Resultado PRP no disponible.",
+      text(ai.safety_and_impulse_profile?.prp ?? ai.prp?.documentation_status),
+    ],
+  );
+  drawCard(ctx, "Integración de seguridad", [text(ai.safety_and_impulse_profile?.combined_interpretation ?? ai.integrated_analysis)]);
+  drawBulletSection(ctx, "Preguntas sugeridas de entrevista", cleanList(ai.interview_questions, 5));
+  drawCard(ctx, "Conclusión integrada", [
+    text(ai.integrated_conclusion ?? ai.preliminary_conclusion),
+    text(cleanList(ai.material_limitations ?? ai.limitations, 1).at(0), "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación."),
+  ]);
+
+  drawReportFooter(ctx, report.getPageCount());
+}
+
 Deno.serve(async (request) => {
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Método no permitido" }), {
@@ -678,130 +1020,7 @@ Deno.serve(async (request) => {
       bytesFromBase64(resolveLogo(payload.candidate.company_name)),
     );
     const ai = payload.ai_interpretation?.display_output ?? defaultAIOutput(payload);
-    const reportPage = report.addPage([612, 792]);
-    const drawReportFooter = (target: PDFPage, pageNumber: number) => {
-      target.drawText("Documento confidencial - Antecedente complementario - No decision automatica", { x: 50, y: 28, size: 7, font: reportFont, color: rgb(0.35, 0.38, 0.42) });
-      target.drawText(`PS-${payload.public_id.slice(0, 8).toUpperCase()} - Informe integrado V5 - Pagina ${pageNumber} de 4`, { x: 360, y: 28, size: 7, font: reportFont, color: rgb(0.35, 0.38, 0.42) });
-    };
-    drawHeader(reportPage, reportFont, reportBold, reportLogo, payload.public_id, 1, 4);
-    reportPage.drawText("Informe Psicolaboral Integrado", { x: 50, y: 635, size: 18, font: reportBold });
-    reportPage.drawText("Perfil ejecutivo y ajuste laboral", { x: 50, y: 612, size: 11, font: reportFont });
-    let reportY = 582;
-    drawPanel(reportPage, "Perfil general", reportFont, reportBold, 45, 400, 522, 182);
-    const summaryEndY = drawWrappedLines(
-      reportPage,
-      [text(ai.executive_profile ?? ai.executive_summary)],
-      reportFont,
-      8.6,
-      58,
-      548,
-      496,
-      10,
-    );
-    reportY = Math.min(382, summaryEndY - 16);
-    reportPage.drawText("Ajuste al cargo", { x: 50, y: reportY, size: 12, font: reportBold });
-    reportY -= 17;
-    reportY = drawWrappedLines(reportPage, [
-      text(ai.job_fit_analysis, `Cargo evaluado: ${payload.candidate.job_position_name}. La compatibilidad debe revisarse contra entrevista, evidencia documental y criterio profesional; el ERP no emite decision automatica.`),
-    ], reportFont, 8.5, 58, reportY, 496, 6);
-    drawPanel(reportPage, "Fortalezas", reportFont, reportBold, 45, 165, 250, 150);
-    drawBulletList(reportPage, list(ai.strengths), reportFont, 8, 58, 278, 220, 5);
-    drawPanel(reportPage, "Aspectos a profundizar", reportFont, reportBold, 317, 165, 250, 150);
-    drawBulletList(reportPage, list(ai.development_areas), reportFont, 8, 330, 278, 220, 5);
-    drawReportFooter(reportPage, 1);
-
-    const ipipPage = report.addPage([612, 792]);
-    drawHeader(ipipPage, reportFont, reportBold, reportLogo, payload.public_id, 2, 4);
-    ipipPage.drawText("IPIP-16 - 16 dimensiones", { x: 50, y: 635, size: 16, font: reportBold });
-    let ipipY = 606;
-    const ipip = payload.instruments.find((item) => item.code === "IPIP16_105");
-    if (ipip) {
-      ipipY = drawBarChart(ipipPage, dimensionEntries(ipip.result), reportFont, reportBold, 52, ipipY, 500);
-    }
-    ipipY -= 18;
-    ipipPage.drawText("Lectura laboral integrada", { x: 50, y: ipipY, size: 12, font: reportBold });
-    ipipY -= 16;
-    for (const [cluster, detail] of Object.entries(ai.ipip16?.clusters ?? {})) {
-      ipipPage.drawText(text(clusterLabel(cluster)), { x: 58, y: ipipY, size: 8.5, font: reportBold });
-      ipipY -= 11;
-      ipipY = drawWrappedLines(ipipPage, [detail], reportFont, 7.8, 68, ipipY, 475, 2);
-      ipipY -= 4;
-    }
-    ipipPage.drawText("Interpretacion IPIP-16", { x: 50, y: 112, size: 12, font: reportBold });
-    drawWrappedLines(ipipPage, [text(ai.personality_profile?.summary ?? ai.ipip16?.summary)], reportFont, 8, 58, 94, 496, 5, rgb(0.22, 0.24, 0.29));
-    drawReportFooter(ipipPage, 2);
-
-    const ipcPage = report.addPage([612, 792]);
-    drawHeader(ipcPage, reportFont, reportBold, reportLogo, payload.public_id, 3, 4);
-    ipcPage.drawText("IPIP-IPC - 8 octantes y perfil conductual", { x: 50, y: 635, size: 16, font: reportBold });
-    const ipc = payload.instruments.find((item) => item.code === "IPIP_IPC_32");
-    if (ipc) drawRadar(ipcPage, octantEntries(ipc.result), reportFont, 175, 485, 92);
-    let ipcY = 585;
-    ipcPage.drawText("Octantes", { x: 330, y: ipcY, size: 12, font: reportBold });
-    ipcY -= 17;
-    if (ipc) {
-      for (const entry of octantEntries(ipc.result)) {
-        ipcPage.drawText(text(`${entry.code} - ${entry.name}: ${entry.mean.toFixed(2)}`), { x: 330, y: ipcY, size: 8, font: reportFont });
-        ipcY -= 13;
-      }
-      const profile = ipc.result.labor_profile as { styles?: Record<string, number> } | undefined;
-      ipcY -= 10;
-      ipcPage.drawText("Macroestilos internos", { x: 330, y: ipcY, size: 11, font: reportBold });
-      ipcY -= 15;
-      for (const [label, value] of Object.entries(profile?.styles ?? {})) {
-        ipcPage.drawText(text(`${label}: ${Number(value).toFixed(2)}`), { x: 330, y: ipcY, size: 8, font: reportFont });
-        ipcY -= 13;
-      }
-    }
-    drawPanel(ipcPage, "Interpretacion laboral", reportFont, reportBold, 45, 122, 522, 142);
-    drawWrappedLines(ipcPage, [
-      text(ai.interpersonal_profile?.summary ?? ai.ipc?.summary),
-      text(ai.interpersonal_profile?.communication),
-      text(ai.interpersonal_profile?.cooperation),
-      text(ai.interpersonal_profile?.response_under_pressure),
-      text(ai.ipc?.disc_disclaimer, "Este modelo interno no corresponde a DISC ni a Everything DiSC."),
-    ], reportFont, 8.5, 58, 225, 496, 9);
-    drawReportFooter(ipcPage, 3);
-
-    const integrationPage = report.addPage([612, 792]);
-    drawHeader(integrationPage, reportFont, reportBold, reportLogo, payload.public_id, 4, 4);
-    integrationPage.drawText("BIS-11, PRP e integracion", { x: 50, y: 635, size: 16, font: reportBold });
-    const barratt = payload.instruments.find((item) => item.code === "BARRATT_BIS11_30");
-    const prp = payload.instruments.find((item) => item.code === "PRP_EMAIL_FORM_A_30");
-    let integrationY = 606;
-    drawPanel(integrationPage, "BIS-11", reportFont, reportBold, 45, 490, 250, 120);
-    drawWrappedLines(integrationPage, [
-      barratt ? formatResult(barratt.result) : "Resultado BIS-11 no disponible.",
-      text(ai.safety_and_impulse_profile?.bis11 ?? ai.bis11?.impulsivity_interpretation),
-    ], reportFont, 8.2, 58, 572, 220, 6);
-    drawPanel(integrationPage, "PRP", reportFont, reportBold, 317, 490, 250, 120);
-    drawWrappedLines(integrationPage, [
-      prp ? formatResult(prp.result) : "Resultado PRP no disponible.",
-      text(ai.safety_and_impulse_profile?.prp ?? ai.prp?.documentation_status),
-    ], reportFont, 8.2, 330, 572, 220, 6);
-    integrationY = 455;
-    integrationPage.drawText("Analisis integrado", { x: 50, y: integrationY, size: 12, font: reportBold });
-    integrationY -= 17;
-    integrationY = drawWrappedLines(integrationPage, [text(ai.safety_and_impulse_profile?.combined_interpretation ?? ai.integrated_analysis)], reportFont, 8.5, 58, integrationY, 496, 7);
-    integrationY -= 10;
-    integrationPage.drawText("Preguntas sugeridas de entrevista", { x: 50, y: integrationY, size: 12, font: reportBold });
-    integrationY -= 16;
-    integrationY = drawBulletList(integrationPage, list(ai.interview_questions), reportFont, 8, 58, integrationY, 496, 6);
-    integrationY -= 8;
-    integrationPage.drawText("Conclusion integrada y advertencia metodologica", { x: 50, y: integrationY, size: 12, font: reportBold });
-    integrationY -= 16;
-    integrationY = drawWrappedLines(integrationPage, [text(ai.integrated_conclusion ?? ai.preliminary_conclusion)], reportFont, 8.5, 58, integrationY, 496, 4);
-    drawWrappedLines(
-      integrationPage,
-      [text(list(ai.material_limitations).at(0) ?? list(ai.limitations).at(0), "Los resultados representan antecedentes complementarios de evaluación psicolaboral y deben ser considerados junto con entrevista, antecedentes laborales y demás información del proceso. No constituyen diagnóstico clínico ni una decisión automática de contratación.")],
-      reportFont,
-      7.8,
-      58,
-      Math.min(integrationY - 6, 158),
-      496,
-      4,
-    );
-    drawReportFooter(integrationPage, 4);
+    drawReportPdf(report, reportFont, reportBold, reportLogo, payload, ai);
 
     const reportBytes = await report.save();
     const hash = await sha256(certificateBytes);

@@ -27,9 +27,31 @@ function renderOutput(output: PsychAIOutput | null) {
   if (!output) return <p className="psych-result-note">Sin interpretación disponible.</p>;
   return (
     <div className="psych-ai-output">
+      <Section title="Recomendación preliminar automatizada">
+        <div className="psych-ai-recommendation-card">
+          <span>{(output.recommendation ?? "REQUIERE_PROFUNDIZACION").replace(/_/g, " ")}</span>
+          <small>Confianza: {output.recommendation_confidence ?? "MEDIA"} · Requiere validación profesional</small>
+        </div>
+        <p>{output.decision_rationale}</p>
+      </Section>
       <Section title="Perfil ejecutivo">
         <p>{output.executive_profile ?? output.executive_summary}</p>
       </Section>
+      {list(output.critical_strengths).length ? (
+        <Section title="Fortalezas críticas">
+          <ul>{list(output.critical_strengths).map((item) => <li key={item}>{item}</li>)}</ul>
+        </Section>
+      ) : null}
+      {list(output.critical_gaps).length ? (
+        <Section title="Brechas críticas">
+          <ul>{list(output.critical_gaps).map((item) => <li key={item}>{item}</li>)}</ul>
+        </Section>
+      ) : null}
+      {list(output.critical_uncertainties).length ? (
+        <Section title="Incertidumbres críticas">
+          <ul>{list(output.critical_uncertainties).map((item) => <li key={item}>{item}</li>)}</ul>
+        </Section>
+      ) : null}
       <Section title="Personalidad laboral">
         <p>{output.personality_profile?.summary ?? output.ipip16.summary}</p>
         <p><strong>Autorregulación:</strong> {output.personality_profile?.self_regulation ?? output.ipip16.clusters.self_regulation ?? output.ipip16.clusters.autocontrol_estabilidad}</p>

@@ -190,6 +190,32 @@ function normalizeText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
+const RECOMMENDATIONS = new Set([
+  "RECOMENDADO",
+  "RECOMENDADO_CON_OBSERVACIONES",
+  "REQUIERE_PROFUNDIZACION",
+  "NO_RECOMENDADO",
+]);
+
+const CONFIDENCES = new Set(["BAJA", "MEDIA", "ALTA"]);
+
+function normalizeRecommendation(value: unknown) {
+  const raw = readText(value, "REQUIERE_PROFUNDIZACION").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (raw === "RECOMENDADO_CON_OBSERVACION") return "RECOMENDADO_CON_OBSERVACIONES";
+  return RECOMMENDATIONS.has(raw) ? raw as PsychAIOutput["recommendation"] : "REQUIERE_PROFUNDIZACION";
+}
+
+function normalizeConfidence(value: unknown) {
+  const raw = readText(value, "MEDIA").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return CONFIDENCES.has(raw) ? raw as PsychAIOutput["recommendation_confidence"] : "MEDIA";
+}
+
+function textList(value: unknown, max: number) {
+  return asArray(value).map((item) => readText(item)).filter(Boolean).slice(0, max);
+}
+
 function containsAny(text: string, terms: string[]) {
   const normalized = normalizeText(text);
   return terms.some((term) => {
@@ -342,10 +368,10 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
       },
       prp: prpScore === null ? undefined : {
         score: prpScore,
-        interpretation_status: "DESCRIPTIVE_INTERPRETATION",
-        automatic_interpretation_allowed: true,
+        interpretation_status: "PROFESSIONAL_ONLY",
+        automatic_interpretation_allowed: false,
         allowed_statement:
-          "PRP puede interpretarse descriptivamente desde score total, direccion de items preventivos y factores tecnicos F1-F6. No inventar nombres de factores, percentiles, eneatipos ni grupos normativos no documentados.",
+          "PRP se conserva como antecedente descriptivo calculado por el ERP. Sin semántica/baremos documentados suficientes, su peso decisional automático es 0 y no debe modificar la recomendación preliminar.",
       },
       ipc: ipcStyles.length ? {
         macrostyles: ipcStyles,
@@ -414,8 +440,9 @@ export function attachPsychSemanticContext(input: JsonRecord) {
           professional_name: "Escala P.R.P",
           source_type: "documento y corrector recibidos por correo",
           scoring: "30 ítems, dirección positiva/negativa, score total y factores técnicos F1-F6 calculados por ERP",
-          automatic_interpretation_allowed: true,
-          interpretation: "descriptiva del patrón preventivo y relación con seguridad laboral, sin baremos poblacionales activos",
+          automatic_interpretation_allowed: false,
+          decision_weight: 0,
+          interpretation: "antecedente descriptivo sin peso decisional automático mientras no exista semántica/baremos suficientemente documentados",
           restrictions: [
             "no inventar nombres de factores F1-F6",
             "no usar percentiles, eneatipos ni grupos normativos si no vienen documentados en el payload",
@@ -435,7 +462,8 @@ export function attachPsychSemanticContext(input: JsonRecord) {
       semantic_guardrails_version: PSYCH_SEMANTIC_VERSION,
       llm_must_use_evidence_ids: false,
       llm_must_not_infer_intensity: true,
-      prp_descriptive_interpretation_allowed: true,
+      prp_descriptive_interpretation_allowed: false,
+      prp_decision_weight: 0,
     },
   };
 }
@@ -546,6 +574,16 @@ export function buildDeterministicPsychSemanticOutput(
 
   const v5 = {
     version: PSYCH_SEMANTIC_VERSION,
+    recommendation: bis ? "REQUIERE_PROFUNDIZACION" : "RECOMENDADO_CON_OBSERVACIONES",
+    recommendation_confidence: "MEDIA",
+    critical_strengths: [],
+    critical_gaps: [],
+    critical_uncertainties: [
+      ...(bis ? ["Impulsividad medida por BIS-11 debe contrastarse por su criticidad para conducción operacional."] : []),
+      ...(nor ? ["Cumplimiento de normas en rango descriptivo intermedio no constituye fortaleza; requiere corroboración conductual por criticidad del cargo."] : []),
+    ],
+    decision_rationale:
+      "La recomendación preliminar automatizada se basa en compatibilidad entre resultados psicométricos y criticidades del cargo. PRP se conserva como antecedente descriptivo sin peso decisional automático.",
     executive_profile:
       `Informe generado con guardrails semanticos determinísticos porque el ${displayFallbackReason(reason)}. La lectura integra resultados descriptivos disponibles y debe validarse profesionalmente.`,
     personality_profile: {
@@ -638,6 +676,12 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
     const ipipText = readText(personality.summary, "IPIP-16 usa niveles descriptivos relativos al rango teorico.");
     return {
       version: readText(source.version, PSYCH_SEMANTIC_VERSION),
+      recommendation: normalizeRecommendation(source.recommendation),
+      recommendation_confidence: normalizeConfidence(source.recommendation_confidence),
+      critical_strengths: textList(source.critical_strengths, 4),
+      critical_gaps: textList(source.critical_gaps, 4),
+      critical_uncertainties: textList(source.critical_uncertainties, 5),
+      decision_rationale: readText(source.decision_rationale, conclusion),
       executive_profile: executive,
       profile_summary: executive,
       executive_summary: executive,
@@ -721,6 +765,12 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
 
   return {
     version: readText(source.version, PSYCH_SEMANTIC_VERSION),
+    recommendation: normalizeRecommendation(source.recommendation),
+    recommendation_confidence: normalizeConfidence(source.recommendation_confidence),
+    critical_strengths: textList(source.critical_strengths, 4),
+    critical_gaps: textList(source.critical_gaps, 4),
+    critical_uncertainties: textList(source.critical_uncertainties, 5),
+    decision_rationale: readText(source.decision_rationale, readText(source.preliminary_conclusion)),
     profile_summary: readText(source.profile_summary),
     points_to_explore: points as EvidenceBackedStatement[],
     instrument_analysis: {
@@ -839,7 +889,7 @@ export function validatePsychSemanticOutput(value: unknown, context: PsychSemant
   const prpText = isV5
     ? readText(asRecord(output.safety_and_impulse_profile).prp)
     : readText(asRecord(output.instrument_analysis).prp);
-  if (context.locks.prp?.automatic_interpretation_allowed && containsAny(prpText, ["percentil", "eneatipo", "baremo chileno", "factor 1 es", "factor 2 es", "factor 3 es", "factor 4 es", "factor 5 es", "factor 6 es"])) {
+  if (context.locks.prp && containsAny(prpText, ["percentil", "eneatipo", "baremo chileno", "factor 1 es", "factor 2 es", "factor 3 es", "factor 4 es", "factor 5 es", "factor 6 es"])) {
     flags.push("prp_methodology_overreach");
   }
   const ipcText = `${readText(asRecord(output.instrument_analysis).ipip_ipc)} ${JSON.stringify(output)}`;

@@ -23,7 +23,7 @@ La suite bloquea:
 RC-1807 se usa como canario productivo. Debe quedar con:
 
 - provider `openai`;
-- model `gpt-5-mini`;
+- model `gpt-5.6-luna`;
 - run `SUCCESS`;
 - estado `PENDING_REVIEW`;
 - certificado e informe `generated`.
@@ -33,8 +33,8 @@ RC-1807 se usa como canario productivo. Debe quedar con:
 Resultado productivo V4:
 
 - provider `openai`;
-- model `gpt-5-mini`;
-- pipeline `gpt5-mini-analyst-reviewer-v1`;
+- model `gpt-5.6-luna`;
+- pipeline `gpt56-luna-objective-v5.3`;
 - Analyst attempt `1`;
 - Reviewer attempt `1`;
 - run `SUCCESS`;

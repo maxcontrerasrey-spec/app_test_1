@@ -24,11 +24,16 @@ function readNumber(value: unknown) {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
-function estimateGpt5MiniCostUsd(inputTokens: number, cachedInputTokens: number, outputTokens: number) {
+export const DEFAULT_PSYCH_AI_MODEL = "gpt-5.6-luna";
+
+const MODEL_PRICING_USD_PER_MILLION: Record<string, { input: number; cachedInput: number; output: number }> = {
+  "gpt-5.6-luna": { input: 0.2, cachedInput: 0.02, output: 1.2 },
+};
+
+function estimatePsychAICostUsd(model: string, inputTokens: number, cachedInputTokens: number, outputTokens: number) {
+  const pricing = MODEL_PRICING_USD_PER_MILLION[model] ?? MODEL_PRICING_USD_PER_MILLION[DEFAULT_PSYCH_AI_MODEL];
   const billableInput = Math.max(0, inputTokens - cachedInputTokens);
-  // Official OpenAI docs list GPT-5 mini text pricing at $0.25/M input,
-  // $0.025/M cached input, and $2.00/M output at implementation time.
-  return ((billableInput * 0.25) + (cachedInputTokens * 0.025) + (outputTokens * 2.0)) / 1_000_000;
+  return ((billableInput * pricing.input) + (cachedInputTokens * pricing.cachedInput) + (outputTokens * pricing.output)) / 1_000_000;
 }
 
 export class MockPsychInterpretationProvider implements PsychInterpretationProvider {
@@ -146,7 +151,7 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
           completion_tokens: completionTokens,
           reasoning_tokens: reasoningTokens,
           total_tokens: readNumber(usage.total_tokens),
-          estimated_cost_usd: estimateGpt5MiniCostUsd(promptTokens, cachedPromptTokens, completionTokens),
+          estimated_cost_usd: estimatePsychAICostUsd(this.model, promptTokens, cachedPromptTokens, completionTokens),
         },
         raw_finish_reason: readText(raw.status),
       };
@@ -161,7 +166,7 @@ export class OpenAIPsychInterpretationProvider implements PsychInterpretationPro
 export function createPsychInterpretationProvider() {
   const enabled = Deno.env.get("PSYCH_AI_ENABLED")?.trim().toLowerCase() === "true";
   const provider = Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() || "mock";
-  const model = Deno.env.get("PSYCH_AI_MODEL")?.trim() || "gpt-5-mini";
+  const model = DEFAULT_PSYCH_AI_MODEL;
   const apiKey = Deno.env.get("OPENAI_API_KEY")?.trim();
   const fallbackReason = enabled && provider === "openai" && !apiKey ? "missing_openai_api_key" : "feature_flag_disabled";
 

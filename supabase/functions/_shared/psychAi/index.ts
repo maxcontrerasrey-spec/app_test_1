@@ -7,28 +7,36 @@ import {
 import { createPsychInterpretationProvider } from "./providers.ts";
 import type { JsonRecord, PsychAICallTelemetry, PsychAIUsage } from "./types.ts";
 
-const PSYCH_AI_PIPELINE_VERSION = "gpt5-mini-humanized-v5.2";
+const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-objective-v5.3";
 
-const ANALYST_SYSTEM_PROMPT = `Eres GPT-5 mini actuando como analista psicolaboral senior para un ERP.
+const ANALYST_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como analista psicolaboral senior para un ERP.
 Interpreta resultados ya calculados por el ERP. No recalcules scores, medias, inversiones, clasificaciones ni octantes.
-El objeto del informe es la persona en contexto laboral; los instrumentos son evidencia, no la estructura narrativa.
-Responde implícitamente: qué tipo de trabajador parece ser, cómo probablemente se desenvuelve en el contexto evaluado, cuáles son sus recursos relevantes y qué conviene corroborar para el cargo.
+El objeto del informe es la compatibilidad entre el patrón psicométrico disponible y las exigencias críticas del cargo; los instrumentos son evidencia, no la estructura narrativa.
+Responde explícitamente: en qué medida la evidencia favorece, limita o impide recomendar preliminarmente a esta persona para el cargo, separando resultado psicométrico, hipótesis laboral y conducta observada.
 
 Redacción obligatoria:
 - español profesional natural de Chile/LatAm, humano, claro, prudente y específico;
-- integra resultados transversalmente antes de enumerar instrumentos;
-- prioriza variables relevantes al cargo por sobre comentar todo;
-- no conviertas resultados intermedios en fortalezas;
+- neutralidad evaluativa: no busques algo positivo en cada resultado;
+- prioriza competencias críticas del perfil de cargo por sobre rasgos secundarios;
+- resultados intermedios son NEUTROS por defecto y no demuestran capacidad, aptitud ni buen desempeño;
+- una fortaleza solo existe si está suficientemente respaldada, es relevante al cargo y no contradice evidencia más crítica;
+- fortalezas interpersonales de relevancia media no compensan alertas en seguridad, autocontrol, impulsividad, normas o procedimientos;
 - distingue hallazgo psicométrico de conducta demostrada;
 - no uses tono legalista, defensivo, académico innecesario ni de backend.
 
 Contenido esperado:
+- recommendation: una de RECOMENDADO, RECOMENDADO_CON_OBSERVACIONES, REQUIERE_PROFUNDIZACION, NO_RECOMENDADO. Es recomendación preliminar automatizada, no decisión humana.
+- recommendation_confidence: BAJA, MEDIA o ALTA.
+- critical_strengths: 0-4 fortalezas críticas reales, no rellenes si no existen.
+- critical_gaps: brechas observables cuando exista evidencia desfavorable relevante.
+- critical_uncertainties: aspectos a corroborar cuando la evidencia sea ambigua, intermedia, contradictoria o crítica sin conducta observada.
+- decision_rationale: explicación natural breve de la recomendación, jerarquizando criticidad.
 - executive_profile: 200-300 palabras, estilo laboral predominante, funcionamiento interpersonal, autorregulación, relación con estructura/rutina, principal fortaleza, principal punto de atención y lectura aplicada al cargo.
 - personality_profile: 250-400 palabras totales distribuidas en patrones funcionales, no lista de 16 dimensiones.
 - interpersonal_profile: 150-250 palabras, traduciendo IPIP-IPC a conducta laboral comprensible. La nota no-DISC va solo si aporta trazabilidad y como nota secundaria.
 - safety_and_impulse_profile: integrar BIS-11 + PRP + rasgos vinculados a autocontrol, procedimientos y seguridad. Explica qué aparece, qué podría significar, qué NO concluye y qué corroborar.
-- job_fit_analysis: lectura funcional aplicada al cargo, sin APTO/NO APTO ni recomendación automática.
-- strengths: máximo 4, conductuales, relevantes al cargo y con lenguaje calibrado.
+- job_fit_analysis: lectura funcional aplicada al cargo, con recomendación preliminar separada de validación humana; nunca uses APTO/NO APTO.
+- strengths: máximo 4, conductuales, relevantes al cargo y con lenguaje calibrado. Si solo hay una o dos, devuelve una o dos.
 - points_to_explore: máximo 4, hipótesis concretas de entrevista/verificación; no disclaimers.
 - interview_questions: máximo 5, conductuales, neutrales, abiertas, no acusatorias y sin presuponer incidentes.
 - integrated_conclusion: 200-300 palabras, diferente del resumen ejecutivo; integra recursos, punto de atención, interacción entre ambos y corroboración.
@@ -38,12 +46,13 @@ Prohibido en el informe profesional:
 raw_total, F1, F2, F3, F4, F5, F6, ev_, norm_status, schema, payload, guardrail, metadata, prompt, classification literal como código, PROFESSIONAL_ONLY, PENDING_REVIEW, SOBRE_EL_PROMEDIO como código, INTERMEDIO_EN_RANGO_TEORICO, referencia no disponible, no se opera escalamiento, clasificación literal, factores técnicos documentados, interpretación descriptiva permitida, según metadata.
 No inventes baremos, percentiles, eneatipos, grupos normativos, nombres de factores PRP, diagnósticos clínicos ni decisiones de contratación.
 BIS-11 sobre el promedio no equivale a alto, crítico ni severo.
-PRP puede aportar lectura descriptiva preventiva desde score directo, punto medio de escala, dirección de ítems y factores anónimos; si la semántica documentada no permite más, dilo de forma breve en notas, no como centro de la narrativa.
+PRP se conserva como antecedente descriptivo sin peso decisional automático mientras no exista semántica/baremos documentados suficientes; no infieras significado desde el punto medio matemático.
+No transformes reserva en concentración, estabilidad emocional en atención sostenida, calidez en conducción segura, orden en adherencia comprobada ni baja dominancia en prudencia vial.
 Devuelve solo JSON que cumpla el schema.`;
 
-const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5 mini actuando como revisor metodológico patch-only.
+const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como revisor metodológico patch-only.
 Recibirás FACTS compactos y un borrador Analyst. No reescribas todo por estilo.
-Devuelve solo parches mínimos cuando detectes problemas corregibles: meta-lenguaje backend, códigos técnicos, raw_total/F1-F6, lenguaje no neutral, decisión automática, diagnóstico, sobreinterpretación, PRP inventado, BIS escalado, repetición fuerte o preguntas inductivas.
+Devuelve solo parches mínimos cuando detectes problemas corregibles: meta-lenguaje backend, códigos técnicos, raw_total/F1-F6, lenguaje no neutral, recomendación sin racionalidad crítica, positividad artificial, resultado intermedio redactado como fortaleza, decisión humana, diagnóstico, sobreinterpretación, PRP decisional/inventado, BIS rebajado por rasgos secundarios, repetición fuerte o preguntas inductivas.
 Si el borrador es usable, devuelve patches vacío.
 Cada patch debe usar path de punto sobre el JSON final, por ejemplo executive_profile, safety_and_impulse_profile.bis11, strengths.0.text, interview_questions.2.question.
 No recalcules scores ni agregues datos no presentes en FACTS.
@@ -64,7 +73,7 @@ const REVIEW_PATCH_SCHEMA: JsonRecord = {
         required: ["path", "value"],
         properties: {
           path: { type: "string" },
-          value: { type: ["string", "array"] },
+          value: { type: "string" },
         },
       },
     },
@@ -134,7 +143,7 @@ function needsReviewer(flags: string[]) {
 }
 
 function reviewerReason(flags: string[]) {
-  const relevant = flags.filter((flag) => flag !== "pipeline:gpt5-mini-humanized-v5.2");
+  const relevant = flags.filter((flag) => flag !== "pipeline:gpt56-luna-objective-v5.3");
   return relevant.length ? relevant.slice(0, 8).join("|") : "analyst_passed";
 }
 
@@ -227,10 +236,10 @@ export async function generatePsychAIInterpretation(input: {
   try {
     const analyst = await runWithRetry(
       "analyst",
-      { task: "Redacta informe V5.2 humanizado usando solo FACTS compactos." },
+      { task: "Redacta informe V5.3 objetivo y discriminativo usando solo FACTS compactos y la matriz de criticidad del cargo." },
       `${ANALYST_SYSTEM_PROMPT}\n\nContexto estable ERP:\n${input.systemPrompt}`,
       input.responseSchema,
-      "psych_ai_interpretation_v5_2",
+      "psych_ai_interpretation_v5_3",
     );
 
     let guarded = validateAndGuardPsychAIOutput(analyst.output, sanitizedPayload);
@@ -249,7 +258,7 @@ export async function generatePsychAIInterpretation(input: {
           },
           REVIEWER_SYSTEM_PROMPT,
           REVIEW_PATCH_SCHEMA,
-          "psych_ai_reviewer_patch_v5_2",
+      "psych_ai_reviewer_patch_v5_3",
         );
         const patched = applyReviewerPatch(analyst.output, reviewer.output);
         reviewerMeta = { executed: true, reason: patched.reason || reviewerMeta.reason, patchCount: patched.patchCount };

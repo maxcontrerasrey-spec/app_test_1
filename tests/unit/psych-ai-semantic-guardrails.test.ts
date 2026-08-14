@@ -148,12 +148,12 @@ describe("bis11-classification-lock.test", () => {
 });
 
 describe("prp-descriptive-methodology.test", () => {
-  it("permite PRP descriptivo y bloquea sobrealcances metodológicos", () => {
+  it("mantiene PRP como antecedente profesional y bloquea sobrealcances metodológicos", () => {
     const context = buildPsychSemanticContext(fixturePayload);
     expect(context.locks.prp).toMatchObject({
       score: 90,
-      interpretation_status: "DESCRIPTIVE_INTERPRETATION",
-      automatic_interpretation_allowed: true,
+      interpretation_status: "PROFESSIONAL_ONLY",
+      automatic_interpretation_allowed: false,
     });
     const output = validOutput();
     output.points_to_explore[2].text = "PRP se revisa como patrón preventivo descriptivo desde el puntaje total.";

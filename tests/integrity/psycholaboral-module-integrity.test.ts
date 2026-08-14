@@ -8,6 +8,7 @@ const semanticGuardrailMigration = readFileSync("supabase/migrations/20260814030
 const openAIProviderMigration = readFileSync("supabase/migrations/20260814032407_psych_ai_openai_gpt5_mini_provider.sql", "utf8");
 const v5Migration = readFileSync("supabase/migrations/20260814041907_psych_ai_v5_methodological_reconstruction.sql", "utf8");
 const v52Migration = readFileSync("supabase/migrations/20260814045629_psych_ai_v5_2_humanization_token_audit.sql", "utf8");
+const v53Migration = readFileSync("supabase/migrations/20260814111606_psych_ai_v5_3_objectivity_pdf_redesign.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -126,13 +127,13 @@ describe("Gestión Psicolaboral", () => {
     expect(resultDialog).not.toContain("invalid JSON schema");
   });
 
-  it("implementa proveedor Mock y OpenAI GPT-5 mini con schema estricto y feature flag", () => {
+  it("implementa proveedor Mock y OpenAI GPT-5.6 Luna con schema estricto y feature flag", () => {
     expect(psychAi).toContain("class MockPsychInterpretationProvider");
     expect(psychAi).toContain("class OpenAIPsychInterpretationProvider");
     expect(psychAi).toContain("OPENAI_API_KEY");
     expect(psychAi).toContain("https://api.openai.com/v1");
     expect(psychAi).toContain("PSYCH_AI_ENABLED");
-    expect(psychAi).toContain("gpt-5-mini");
+    expect(psychAi).toContain('DEFAULT_PSYCH_AI_MODEL = "gpt-5.6-luna"');
     expect(psychAi).toContain('fetch(`${this.baseUrl}/responses`');
     expect(psychAi).toContain("text: {");
     expect(psychAi).toContain("max_output_tokens");
@@ -160,7 +161,7 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
     expect(psychAiIndex).toContain("provider_failed_fallback_used");
     expect(psychAiIndex).toContain("success: !liveConfigured");
-    expect(psychAiIndex).toContain("gpt5-mini-humanized-v5.2");
+    expect(psychAiIndex).toContain("gpt56-luna-objective-v5.3");
     expect(psychAiIndex).toContain("ANALYST_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("REVIEWER_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("reviewer_failed_bypassed");
@@ -189,17 +190,17 @@ describe("Gestión Psicolaboral", () => {
     expect(v5Migration).toContain("integrated_conclusion");
     expect(v5Migration).toContain("automatic_interpretation_allowed=true");
     expect(psychAiSemantic).toContain("psych-methodology-v5");
-    expect(psychAiSemantic).toContain("PRP puede interpretarse descriptivamente");
+    expect(psychAiSemantic).toContain("antecedente descriptivo sin peso decisional automático");
     expect(psychAiSemantic).not.toContain("prp_hard_lock_missing");
     expect(v52Migration).toContain("psych-ai-prompt-v5.2");
     expect(v52Migration).toContain("psych-ai-schema-v5.2");
     expect(v52Migration).toContain("analyst_input_tokens");
     expect(v52Migration).toContain("reviewer_executed");
     expect(v52Migration).toContain("p_metadata jsonb default '{}'::jsonb");
-    expect(psychAiIndex).toContain("El objeto del informe es la persona en contexto laboral");
+    expect(psychAiIndex).toContain("El objeto del informe es la compatibilidad");
     expect(psychAiIndex).toContain("reviewer_executed:");
     expect(psychAiIndex).toContain("needsReviewer(analystFlags)");
-    expect(psychAiIndex).toContain("PRP puede aportar lectura descriptiva preventiva");
+    expect(psychAiIndex).toContain("PRP se conserva como antecedente descriptivo sin peso decisional automático");
     expect(psychAiGuardrails).toContain("delete cloned.prompt");
     expect(psychAiGuardrails).toContain("buildCompactPsychAIFacts");
     expect(psychAiGuardrails).toContain("backend_meta_language");
@@ -209,12 +210,29 @@ describe("Gestión Psicolaboral", () => {
     expect(audit).toContain("Interpretación descriptiva habilitada");
   });
 
-  it("genera informe interno de cuatro páginas con IA/fallback y disclaimers", () => {
-    expect(certificate).toContain("Pagina ${pageNumber} de 4");
+  it("versiona V5.3 con objetividad discriminativa, criticidad de cargo y GPT-5.6 Luna", () => {
+    expect(v53Migration).toContain("psych-ai-prompt-v5.3");
+    expect(v53Migration).toContain("psych-ai-schema-v5.3");
+    expect(v53Migration).toContain("'gpt-5.6-luna'");
+    expect(v53Migration).toContain("critical_competencies");
+    expect(v53Migration).toContain("REQUIERE_PROFUNDIZACION");
+    expect(v53Migration).toContain("prp_decision_weight");
+    expect(psychAiGuardrails).toContain("buildCompatibilityFrame");
+    expect(psychAiGuardrails).toContain("middle_results_default: \"NEUTRAL\"");
+    expect(psychAiGuardrails).toContain("artificial_strength_removed");
+    expect(psychAiIndex).toContain("Eres GPT-5.6 Luna");
+    expect(psychAiIndex).not.toContain("Eres GPT-5 mini");
+    expect(edge).toContain('PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-objective-v5.3.0"');
+  });
+
+  it("genera informe interno V5.3 con IA/fallback, paginación dinámica y disclaimers", () => {
+    expect(certificate).toContain("Informe V5.3 - Pagina");
     expect(certificate).toContain("defaultAIOutput");
     expect(certificate).toContain("drawBarChart");
     expect(certificate).toContain("drawRadar");
-    expect(certificate).toContain("BIS-11, PRP e integracion");
+    expect(certificate).toContain("Seguridad, impulsividad y conclusión");
+    expect(certificate).toContain("Recomendación preliminar automatizada");
+    expect(certificate).toContain("drawJustifiedParagraph");
     expect(certificate).toContain("Este modelo interno no corresponde a DISC");
     expect(certificate).toContain("payload.ai_interpretation?.display_output");
   });

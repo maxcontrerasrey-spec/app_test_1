@@ -1,9 +1,15 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 import { normalizeSemanticOutputForErp, PSYCH_SEMANTIC_VERSION } from "./semantic.ts";
 
-export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v5";
+export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v5.3";
 
 const REQUIRED_TOP_LEVEL = [
+  "recommendation",
+  "recommendation_confidence",
+  "critical_strengths",
+  "critical_gaps",
+  "critical_uncertainties",
+  "decision_rationale",
   "executive_profile",
   "personality_profile",
   "interpersonal_profile",
@@ -50,6 +56,41 @@ function statementArray(value: unknown, min: number, max: number, fallback: Arra
     }).filter(Boolean) as Array<{ title: string; text: string }>
     : [];
   return [...items, ...fallback].slice(0, Math.max(min, Math.min(max, items.length || fallback.length)));
+}
+
+function optionalStatementArray(value: unknown, max: number) {
+  return Array.isArray(value)
+    ? value.map((item) => {
+      const record = item && typeof item === "object" && !Array.isArray(item)
+        ? item as Record<string, unknown>
+        : {};
+      const title = text(record.title, 160);
+      const body = text(record.text, 700);
+      return title || body ? { title, text: body } : null;
+    }).filter(Boolean).slice(0, max) as Array<{ title: string; text: string }>
+    : [];
+}
+
+const RECOMMENDATIONS = new Set([
+  "RECOMENDADO",
+  "RECOMENDADO_CON_OBSERVACIONES",
+  "REQUIERE_PROFUNDIZACION",
+  "NO_RECOMENDADO",
+]);
+
+const CONFIDENCES = new Set(["BAJA", "MEDIA", "ALTA"]);
+
+function recommendation(value: unknown) {
+  const cleaned = text(value, 80).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (cleaned === "RECOMENDADO_CON_OBSERVACION") return "RECOMENDADO_CON_OBSERVACIONES";
+  return RECOMMENDATIONS.has(cleaned) ? cleaned as PsychAIOutput["recommendation"] : "REQUIERE_PROFUNDIZACION";
+}
+
+function confidence(value: unknown) {
+  const cleaned = text(value, 40).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return CONFIDENCES.has(cleaned) ? cleaned as PsychAIOutput["recommendation_confidence"] : "MEDIA";
 }
 
 function questionArray(value: unknown, min: number, max: number) {
@@ -106,15 +147,8 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
     const safety = source.safety_and_impulse_profile && typeof source.safety_and_impulse_profile === "object" && !Array.isArray(source.safety_and_impulse_profile)
       ? source.safety_and_impulse_profile as Record<string, unknown>
       : {};
-    const strengths = statementArray(source.strengths, 3, 5, [
-      { title: "Trazabilidad preservada", text: "Batería completada y puntuada por reglas backend versionadas." },
-      { title: "Base para entrevista", text: "Resultados disponibles para contrastar con entrevista y antecedentes laborales." },
-      { title: "Lectura integrada", text: "El perfil debe analizarse junto con el contexto del cargo." },
-    ]);
-    const points = statementArray(source.points_to_explore, 2, 4, [
-      { title: "Contraste conductual", text: "Profundizar los patrones relevantes mediante ejemplos laborales concretos." },
-      { title: "Criterio profesional", text: "Revisar el resultado junto con antecedentes del proceso." },
-    ]);
+    const strengths = optionalStatementArray(source.strengths, 4);
+    const points = optionalStatementArray(source.points_to_explore, 5);
     const questions = questionArray(source.interview_questions, 3, 5);
     const executiveProfile = text(source.executive_profile) || "Interpretación integrada no disponible.";
     const jobFit = text(source.job_fit_analysis) || "El ajuste al cargo debe revisarse con entrevista y antecedentes del proceso.";
@@ -122,6 +156,12 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
     const limitations = textArray(source.material_limitations, 0, 4, []);
     return {
       version: text(source.version, 80) || PSYCH_SEMANTIC_VERSION,
+      recommendation: recommendation(source.recommendation),
+      recommendation_confidence: confidence(source.recommendation_confidence),
+      critical_strengths: textArray(source.critical_strengths, 0, 4, []),
+      critical_gaps: textArray(source.critical_gaps, 0, 4, []),
+      critical_uncertainties: textArray(source.critical_uncertainties, 0, 5, []),
+      decision_rationale: text(source.decision_rationale, 1100) || conclusion,
       executive_profile: executiveProfile,
       profile_summary: executiveProfile,
       executive_summary: executiveProfile,
@@ -205,6 +245,12 @@ export function normalizePsychAIOutput(value: unknown): PsychAIOutput {
 
   return {
     version: text(source.version, 80) || PSYCH_SEMANTIC_VERSION,
+    recommendation: recommendation(source.recommendation),
+    recommendation_confidence: confidence(source.recommendation_confidence),
+    critical_strengths: textArray(source.critical_strengths, 0, 4, []),
+    critical_gaps: textArray(source.critical_gaps, 0, 4, []),
+    critical_uncertainties: textArray(source.critical_uncertainties, 0, 5, []),
+    decision_rationale: text(source.decision_rationale, 1100) || text(source.preliminary_conclusion),
     executive_summary: text(source.executive_summary) || "Interpretación preliminar no disponible.",
     response_quality: text(source.response_quality) || "La calidad debe revisarse junto con los indicadores calculados por el ERP.",
     strengths: textArray(source.strengths, 3, 6, [
