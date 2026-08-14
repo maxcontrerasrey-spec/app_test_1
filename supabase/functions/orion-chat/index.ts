@@ -62,7 +62,7 @@ type SupabaseAiRuntime = {
   };
 };
 
-type GroqToolCall = {
+type ChatToolCall = {
   id: string;
   function: {
     name: string;
@@ -70,10 +70,10 @@ type GroqToolCall = {
   };
 };
 
-type GroqChatMessage = {
+type ChatCompletionMessage = {
   role: "system" | "user" | "assistant" | "tool";
   content?: string;
-  tool_calls?: GroqToolCall[];
+  tool_calls?: ChatToolCall[];
   tool_call_id?: string;
   name?: string;
 };
@@ -155,11 +155,11 @@ function resolveSelectedColumns(
   return validColumns.length > 0 ? validColumns : [...config.defaultColumns];
 }
 
-async function requestGroqChatCompletion(params: {
+async function requestLlmChatCompletion(params: {
   apiKey: string;
   baseUrl: string;
   model: string;
-  messages: GroqChatMessage[];
+  messages: ChatCompletionMessage[];
   tools?: Array<Record<string, unknown>>;
   toolChoice?: "auto" | "none";
   timeoutMs?: number;
@@ -168,7 +168,7 @@ async function requestGroqChatCompletion(params: {
   const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs ?? 20000);
 
   try {
-    const groqResponse = await fetch(`${params.baseUrl}/chat/completions`, {
+    const llmResponse = await fetch(`${params.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${params.apiKey}`,
@@ -185,11 +185,11 @@ async function requestGroqChatCompletion(params: {
       signal: controller.signal
     });
 
-    if (!groqResponse.ok) {
-      throw new Error(`Groq API returned status ${groqResponse.status}`);
+    if (!llmResponse.ok) {
+      throw new Error(`LLM API returned status ${llmResponse.status}`);
     }
 
-    return await groqResponse.json();
+    return await llmResponse.json();
   } finally {
     clearTimeout(timeoutId);
   }
@@ -305,9 +305,9 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   const accessToken = getAccessTokenFromAuthHeader(authHeader);
 
-  const orionLlmApiKey = Deno.env.get("ORION_LLM_API_KEY");
-  const orionLlmBaseUrl = Deno.env.get("ORION_LLM_BASE_URL") || "https://api.groq.com/openai/v1";
-  const orionLlmModel = Deno.env.get("ORION_LLM_MODEL") || "llama-3.1-8b-instant";
+  const orionLlmApiKey = Deno.env.get("ORION_LLM_API_KEY")?.trim();
+  const orionLlmBaseUrl = Deno.env.get("ORION_LLM_BASE_URL")?.trim();
+  const orionLlmModel = Deno.env.get("ORION_LLM_MODEL")?.trim();
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     return new Response(JSON.stringify({ error: "Supabase runtime no configurado." }), {
@@ -425,7 +425,7 @@ Deno.serve(async (req) => {
       .filter(Boolean);
 
     // Prepare message history for LLM (oldest to newest)
-    const llmMessages: GroqChatMessage[] = [...(contextRows ?? [])].reverse().map((row) => ({
+    const llmMessages: ChatCompletionMessage[] = [...(contextRows ?? [])].reverse().map((row) => ({
       role: row.sender === "user" ? "user" : "assistant",
       content: sanitizeOutboundText(row.content)
     }));
@@ -458,7 +458,7 @@ IMPORTANTE:
 MAPA DE TABLAS PERMITIDAS:
 ${buildOrionSchemaPrompt()}`;
     
-    const messagesToSend: GroqChatMessage[] = [
+    const messagesToSend: ChatCompletionMessage[] = [
       { role: "system", content: systemPrompt },
       ...llmMessages,
       { role: "user", content: sanitizedUserMessage }
@@ -478,7 +478,7 @@ ${buildOrionSchemaPrompt()}`;
     };
 
     let fallbackReason = "unknown";
-    if (orionLlmApiKey) {
+    if (orionLlmApiKey && orionLlmBaseUrl && orionLlmModel) {
       try {
         const tools = [
           {
@@ -560,13 +560,13 @@ ${buildOrionSchemaPrompt()}`;
           }
         ];
 
-        let currentMessages: GroqChatMessage[] = [...messagesToSend];
+        let currentMessages: ChatCompletionMessage[] = [...messagesToSend];
         let iterations = 0;
         const MAX_ITERATIONS = 4;
 
         while (iterations < MAX_ITERATIONS) {
           iterations++;
-          const responseData = await requestGroqChatCompletion({
+          const responseData = await requestLlmChatCompletion({
             apiKey: orionLlmApiKey,
             baseUrl: orionLlmBaseUrl,
             model: orionLlmModel,
@@ -575,10 +575,10 @@ ${buildOrionSchemaPrompt()}`;
             toolChoice: "auto",
             timeoutMs: 20000
           });
-          const responseMessage = responseData.choices?.[0]?.message as GroqChatMessage | undefined;
+          const responseMessage = responseData.choices?.[0]?.message as ChatCompletionMessage | undefined;
 
           if (!responseMessage) {
-            throw new Error("Groq API returned empty choice content.");
+            throw new Error("LLM API returned empty choice content.");
           }
 
           if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
@@ -631,14 +631,14 @@ ${buildOrionSchemaPrompt()}`;
             }
           } else {
             normalizedAssistantText = responseMessage.content?.trim() || "Análisis completado sin contenido adicional.";
-            vendor = "groq";
+            vendor = "openai-compatible";
             modelUsed = orionLlmModel;
             break;
           }
         }
 
         if (!normalizedAssistantText.trim()) {
-          const finalResponseData = await requestGroqChatCompletion({
+          const finalResponseData = await requestLlmChatCompletion({
             apiKey: orionLlmApiKey,
             baseUrl: orionLlmBaseUrl,
             model: orionLlmModel,
@@ -660,17 +660,17 @@ ${buildOrionSchemaPrompt()}`;
               ? finalMessage
               : "No fue posible cerrar el análisis con una respuesta final."
           );
-          vendor = "groq";
+          vendor = "openai-compatible";
           modelUsed = orionLlmModel;
         }
       } catch (e: unknown) {
         fallbackReason = resolveProviderFailureReason(e);
-        console.error(`Groq request failed: ${fallbackReason}`);
+        console.error(`LLM request failed: ${fallbackReason}`);
         normalizedAssistantText = `[MODO SEGURO] Proveedor no disponible (${fallbackReason}). ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
       }
     } else {
-      fallbackReason = "no_api_key";
-      normalizedAssistantText = `[MODO SEGURO] Error: Falta ORION_LLM_API_KEY. ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
+      fallbackReason = orionLlmApiKey ? "missing_llm_configuration" : "no_api_key";
+      normalizedAssistantText = `[MODO SEGURO] Proveedor ORION no configurado (${fallbackReason}). ` + normalizeAssistantText(buildLocalSafeAssistantText(message));
     }
 
     if (vendor === "local-safe") {

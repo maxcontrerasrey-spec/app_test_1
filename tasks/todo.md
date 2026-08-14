@@ -2,13 +2,15 @@
 
 ## Migración Psych AI a OpenAI GPT-5 mini - 2026-08-13
 
-- [x] Reemplazar proveedor Groq por OpenAI en la Edge Function psicolaboral, manteniendo Mock/fallback y guardrails V3.
+- [x] Reemplazar el proveedor anterior por OpenAI en la Edge Function psicolaboral, manteniendo Mock/fallback y guardrails V3.
 - [x] Versionar prompt activo para `provider='openai'` y `model='gpt-5-mini'` sin tocar scoring ni respuestas históricas.
-- [x] Actualizar tests, documentación operativa y reportes para eliminar dependencia Groq del flujo psicolaboral.
+- [x] Actualizar tests, documentación operativa y reportes para eliminar dependencia del proveedor anterior en el flujo psicolaboral.
 - [ ] Configurar secreto productivo `OPENAI_API_KEY`; `PSYCH_AI_PROVIDER=openai`, `PSYCH_AI_MODEL=gpt-5-mini`, despliegue y regeneración RC-1807 ya quedaron aplicados.
 - [x] Ejecutar Deno, unit/integrity, auditorías Supabase, build, Guardian, verificación PDF y commit/push.
+- [x] Limpiar referencias del proveedor anterior en el flujo Psych AI activo y retirar secreto productivo obsoleto de Supabase.
+- [x] Separar ORION de la migración: no lee `OPENAI_API_KEY`, no usa defaults OpenAI/GPT y sus secrets `ORION_LLM_*` fueron retirados de producción.
 
-Resultado parcial: producción quedó con prompt activo `psych-ai-prompt-v4`, schema `psych-ai-schema-v3`, provider `openai` y modelo `gpt-5-mini`. RC-1807 fue regenerado sin Groq y sin flags semánticos; al no existir `OPENAI_API_KEY` en Supabase, el ERP dejó fallback determinístico revisable con texto limpio “proveedor IA no habilitado”. El live test real con GPT-5 mini queda pendiente exclusivamente de cargar ese secreto.
+Resultado parcial: producción quedó con prompt activo `psych-ai-prompt-v4`, schema `psych-ai-schema-v3`, provider `openai` y modelo `gpt-5-mini`. RC-1807 fue regenerado sin el proveedor anterior y sin flags semánticos; al no existir `OPENAI_API_KEY` en Supabase, el ERP dejó fallback determinístico revisable con texto limpio “proveedor IA no habilitado”. El live test real con GPT-5 mini queda pendiente exclusivamente de cargar ese secreto.
 
 ## Guardrails semánticos IA psicolaboral V3 - 2026-08-13
 
@@ -717,7 +719,7 @@ Resultado:
 - Se eliminaron ocho APIs frontend sin referencias y sus cadenas privadas; dos bloques identicos de normalizacion de candidato se consolidaron. Reduccion neta en `src`: 242 lineas.
 - El unico duplicado binario tracked es `app-logo.png` en `public` y `src/assets`; se conserva porque sostiene favicon publico e import Vite. No hay documentos Markdown identicos, Office, PDF, ZIP, dumps ni logs tracked.
 - PostCSS se actualizo de 8.5.18 a 8.5.25 y `npm audit` bajo de 3 a 2 moderadas. Las restantes son React Router y solo se corrigen con el salto mayor a v7.
-- Seguridad local: `.env.local` quedo en modo `0600` y se retiro `VITE_GROQ_API_KEY` sin consumidor. Los seeds SharePoint con PII quedan bajo revision de gobierno porque borrarlos sin purgar historial Git no elimina la exposicion historica.
+- Seguridad local: `.env.local` quedo en modo `0600` y se retiro una clave IA frontend sin consumidor. Los seeds SharePoint con PII quedan bajo revision de gobierno porque borrarlos sin purgar historial Git no elimina la exposicion historica.
 - Validacion: 64 unitarias, 6 contratos, TypeScript/build, auditoria de limpieza y Guardian full con 27 gates pasan; 0 errores y 0 warnings.
 
 ## Backfill Solicitud de Contratacion para trabajadores ya creados en BUK - 2026-08-04
@@ -1908,27 +1910,27 @@ Resultado: el RPC fallaba en `result=result` por ambigüedad PL/pgSQL; ahora usa
 
 Resultado: los instrumentos completados se muestran en verde suave, los que están en progreso en amarillo y los no iniciados en gris; los títulos tienen mayor separación superior e inferior.
 
-## Implementacion Psych AI Groq - 2026-08-13
+## Implementacion Psych AI proveedor externo - 2026-08-13
 - [x] Leer prompt de continuidad y contratos vivos del modulo psicolaboral antes de editar.
 - [x] Crear capa backend privada para perfiles de cargo, prompts versionados, interpretaciones IA y ejecuciones auditables.
-- [x] Implementar proveedor Groq con JSON Schema estricto y fallback mock bajo `PSYCH_AI_ENABLED=false`.
+- [x] Implementar proveedor externo con JSON Schema estricto y fallback mock bajo `PSYCH_AI_ENABLED=false`.
 - [x] Blindar privacidad: payload sin RUT, correo, nombre candidato ni respuestas crudas hacia proveedor externo.
 - [x] Agregar flujo frontend para generar, revisar, observar y validar interpretaciones IA desde Gestion Psicolaboral.
 - [x] Incorporar la interpretacion IA al informe psicolaboral interno de 4 paginas.
 - [x] Aplicar migraciones y desplegar Edge Functions en Supabase produccion.
 - [x] Ejecutar Deno checks, TypeScript, integridad, migraciones, seguridad, build frontend, performance baseline, Guardian y smoke productivo reducido.
 
-Resultado: Psych AI queda implementado y activo funcionalmente con proveedor mock mientras falte `GROQ_API_KEY`. La validacion real con Groq queda pendiente solo de configurar el secreto y activar `PSYCH_AI_ENABLED=true`.
+Resultado histórico: Psych AI quedó implementado con proveedor mock mientras faltaba la credencial del proveedor externo. La validación real pasó luego a OpenAI `gpt-5-mini`.
 
-## Correccion Groq schema Psych AI - 2026-08-13
-- [x] Identificar causa del fallback: Groq rechazaba `psych-ai-schema-v1` por `additionalProperties` dinámico en `ipip16.clusters`.
+## Correccion schema Psych AI - 2026-08-13
+- [x] Identificar causa del fallback: el proveedor rechazaba `psych-ai-schema-v1` por `additionalProperties` dinámico en `ipip16.clusters`.
 - [x] Versionar `psych-ai-schema-v2` con campos fijos compatibles.
 - [x] Ajustar Edge para dejar los fallos reales de proveedor en `FAILED`, no como revisión pendiente con fallback.
 - [x] Invalidar las revisiones pendientes generadas por el error anterior para permitir regeneración.
 - [x] Desplegar migración y Edge Functions en Supabase producción.
 - [x] Verificar prompt activo `schema-v2`, schema dinámico eliminado e interpretaciones viejas inválidas en 0 pendientes.
 
-Resultado: Gestión Psicolaboral puede regenerar IA real con Groq usando el nuevo schema compatible.
+Resultado histórico: Gestión Psicolaboral puede regenerar IA real usando schema compatible.
 
 ## Automatizacion IA psicolaboral al recibir respuestas - 2026-08-13
 - [x] Revisar el cierre real de batería en `submit_psycholaboral_instrument` y la Edge Function pública de candidatos.
@@ -1947,4 +1949,4 @@ Resultado: el candidato termina la batería, el ERP dispara IA y certificado en 
 - [x] Agregar reintento interno protegido por service-role para evaluaciones ya completadas antes de la automatización.
 - [x] Aplicar migración, desplegar Edge/frontend, reintentar evaluación afectada y validar.
 
-Resultado: una IA fallida se ve como estado técnico, no como informe; el caso histórico RC-1807 fue regenerado con Groq v2 y quedó `PENDING_REVIEW`.
+Resultado: una IA fallida se ve como estado técnico, no como informe; el caso histórico RC-1807 fue regenerado y quedó `PENDING_REVIEW`.

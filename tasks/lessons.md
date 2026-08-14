@@ -6,7 +6,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 314. El proveedor IA debe ser reemplazable sin reabrir scoring ni reportes
 
-- En módulos sensibles, el proveedor externo es un adaptador, no parte del motor psicométrico: cambiar Groq por OpenAI no debe tocar respuestas, scoring, locks semánticos, revisión profesional ni PDF salvo configuración y trazabilidad.
+- En módulos sensibles, el proveedor externo es un adaptador, no parte del motor psicométrico: cambiar de proveedor a OpenAI no debe tocar respuestas, scoring, locks semánticos, revisión profesional ni PDF salvo configuración y trazabilidad.
 - La tabla de prompts debe versionar `provider` y `model`; cambiar modelo debe producir nuevo `input_hash` y nuevo intento, sin sobrescribir salidas históricas.
 - Los errores técnicos del proveedor nunca deben llegar al informe visible; el fallback debe expresar una causa operacional saneada y conservar el detalle solo en runs/logs internos.
 - Los tests de integridad deben bloquear dependencias accidentales al proveedor retirado dentro del flujo activo, manteniendo migraciones antiguas solo como historia.
@@ -1898,7 +1898,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ## 57. Si una política bloquea el proveedor externo, la salida correcta es degradar ORION a modo seguro local
 
-- **La autorización del usuario no invalida una política de exportación del entorno**. Si el deploy a un tercero como Groq sigue rechazado por compliance, no se insiste con workarounds; se cambia el contrato técnico.
+- **La autorización del usuario no invalida una política de exportación del entorno**. Si el deploy a un tercero sigue rechazado por compliance, no se insiste con workarounds; se cambia el contrato técnico.
 - **El fallback correcto no es dejar ORION roto**. Se preserva persistencia, autenticación y contexto local en Supabase, pero la respuesta pasa a un modo determinístico seguro sin salir del perímetro.
 - **El cliente ORION debe tolerar ambos contratos**. Si hoy responde JSON local y mañana vuelve un proveedor aprobado por SSE, `orionChat.ts` debe aceptar ambos sin romper el módulo.
 
@@ -3148,11 +3148,11 @@ Al generar un certificado y un informe con `pdf-lib`, cada `PDFDocument` mantien
 
 ### 305. La IA psicolaboral debe ser una capa interpretativa aislada
 
-El scoring, la calidad, los hashes y las decisiones de reclutamiento son contratos determinísticos del ERP. Una integración con Groq solo puede recibir un payload pseudonimizado ya calculado, devolver un borrador estructurado y quedar separada de la revisión profesional. El fallback determinístico y el apagado por feature flag deben existir antes de activar cualquier proveedor externo.
+El scoring, la calidad, los hashes y las decisiones de reclutamiento son contratos determinísticos del ERP. Una integración con un proveedor externo solo puede recibir un payload pseudonimizado ya calculado, devolver un borrador estructurado y quedar separada de la revisión profesional. El fallback determinístico y el apagado por feature flag deben existir antes de activar cualquier proveedor externo.
 
 ### 306. Structured Outputs no debe usar mapas dinámicos en proveedores externos
 
-Un schema que pasa validación local puede ser rechazado por Groq/OpenAI-compatible si usa `additionalProperties` como schema dinámico dentro de objetos. Para salidas críticas, declara propiedades fijas, versiona el prompt/schema y deja una prueba de integridad que bloquee volver a publicar un schema incompatible.
+Un schema que pasa validación local puede ser rechazado por proveedores de Structured Outputs si usa `additionalProperties` como schema dinámico dentro de objetos. Para salidas críticas, declara propiedades fijas, versiona el prompt/schema y deja una prueba de integridad que bloquee volver a publicar un schema incompatible.
 
 ### 307. Los procesos automáticos no deben quedar como botones operativos
 
@@ -3161,3 +3161,7 @@ Si una regla de negocio indica que el ERP debe actuar cuando llega un evento, la
 ### 308. Un fallback técnico fallido no es una interpretación
 
 Cuando un proveedor externo falla, el resultado visible debe quedar como estado técnico reintentable. No guardes ni muestres el fallback determinístico como si fuera contenido profesional revisable; eso confunde causa técnica con evaluación psicolaboral.
+
+### 309. Las credenciales IA deben quedar aisladas por dominio funcional
+
+Una migración de proveedor para Gestión Psicolaboral no debe crear defaults, modelos ni lecturas de secrets en ORION u otro asistente. Cada dominio debe tener sus propias variables, su propio fallback y una verificación explícita de que el secreto nuevo no es consumido por componentes fuera de alcance.

@@ -7,6 +7,7 @@ vite.config.d.ts
 .netlify/
 .env.local
 .env
+.local-secrets/
 supabase/.temp/
 app_mobile/node_modules/
 app_mobile/.expo/

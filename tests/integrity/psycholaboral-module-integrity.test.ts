@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 const migration = readFileSync("supabase/migrations/20260813180211_add_psycholaboral_module.sql", "utf8");
 const aiMigration = readFileSync("supabase/migrations/20260814005242_psych_ai_interpretation_foundation.sql", "utf8");
-const aiSchemaFixMigration = readFileSync("supabase/migrations/20260814014122_fix_psych_ai_groq_schema_v2.sql", "utf8");
 const serviceResetMigration = readFileSync("supabase/migrations/20260814021446_add_psycholaboral_service_certificate_reset.sql", "utf8");
 const semanticGuardrailMigration = readFileSync("supabase/migrations/20260814030634_psych_ai_semantic_guardrails_v3.sql", "utf8");
 const openAIProviderMigration = readFileSync("supabase/migrations/20260814032407_psych_ai_openai_gpt5_mini_provider.sql", "utf8");
@@ -122,7 +121,7 @@ describe("Gestión Psicolaboral", () => {
 
   it("no muestra fallback tecnico fallido como interpretación profesional", () => {
     expect(resultDialog).toContain("detail.ai_interpretation?.display_output");
-    expect(resultDialog).not.toContain("groq_400_invalid JSON schema");
+    expect(resultDialog).not.toContain("invalid JSON schema");
   });
 
   it("implementa proveedor Mock y OpenAI GPT-5 mini con schema estricto y feature flag", () => {
@@ -134,19 +133,8 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAi).toContain("gpt-5-mini");
     expect(psychAi).toContain("response_format");
     expect(psychAi).toContain("json_schema");
-    expect(psychAi).not.toContain("class GroqPsychInterpretationProvider");
-    expect(psychAi).not.toContain("GROQ_API_KEY");
     expect(edge).toContain('Deno.env.get("PSYCH_AI_PROVIDER")?.trim().toLowerCase() === "openai"');
     expect(edge).toContain('Deno.env.get("OPENAI_API_KEY")?.trim()');
-  });
-
-  it("usa schema Groq v2 sin propiedades dinámicas incompatibles", () => {
-    expect(aiSchemaFixMigration).toContain("psych-ai-schema-v2");
-    expect(aiSchemaFixMigration).toContain("autocontrol_estabilidad");
-    expect(aiSchemaFixMigration).toContain("disciplina_estructura");
-    expect(aiSchemaFixMigration).toContain("interaccion_laboral");
-    expect(aiSchemaFixMigration).toContain("analisis_adaptacion");
-    expect(aiSchemaFixMigration).not.toContain('"additionalProperties":{"type":"string"}');
   });
 
   it("usa guardrails semánticos V3 con evidencia obligatoria y fallback revisable", () => {
