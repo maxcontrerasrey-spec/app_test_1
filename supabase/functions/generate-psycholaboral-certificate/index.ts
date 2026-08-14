@@ -105,7 +105,7 @@ async function sha256(bytes: Uint8Array) {
 }
 
 function wrap(text: string, font: PDFFont, size: number, maxWidth: number) {
-  const words = text.split(/\s+/);
+  const words = safePdfText(text).split(/\s+/);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -163,14 +163,43 @@ function responseSummary(items: Array<{ label: string; count: number }>) {
   return items.map((item) => `${item.label}: ${item.count}`).join(" · ");
 }
 
+function safePdfText(value: string) {
+  return value
+    .normalize("NFC")
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-")
+    .replace(/\u00a0/g, " ");
+}
+
 function text(value: unknown, fallback = "") {
-  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+  const candidate = typeof value === "string" && value.trim() ? value.trim() : fallback;
+  return safePdfText(candidate);
 }
 
 function list(value: unknown) {
   return Array.isArray(value)
     ? value.map((item) => text(item)).filter(Boolean)
     : [];
+}
+
+function drawCenteredText(
+  page: PDFPage,
+  value: string,
+  x: number,
+  y: number,
+  width: number,
+  font: PDFFont,
+  size: number,
+  color = rgb(0.07, 0.08, 0.1),
+) {
+  const safeValue = safePdfText(value);
+  const textWidth = font.widthOfTextAtSize(safeValue, size);
+  page.drawText(safeValue, {
+    x: x + Math.max(0, (width - textWidth) / 2),
+    y,
+    size,
+    font,
+    color,
+  });
 }
 
 function clusterLabel(value: string) {
@@ -307,7 +336,7 @@ function drawPanel(
     borderColor: rgb(0.86, 0.88, 0.91),
     color: rgb(0.985, 0.988, 0.992),
   });
-  page.drawText(title, { x: x + 12, y: y + height - 20, size: 10, font: bold, color: rgb(0.08, 0.1, 0.14) });
+  page.drawText(safePdfText(title), { x: x + 12, y: y + height - 20, size: 10, font: bold, color: rgb(0.08, 0.1, 0.14) });
 }
 
 function dimensionEntries(result: Record<string, unknown>) {
@@ -341,7 +370,9 @@ function drawBarChart(
 ) {
   let cursor = y;
   for (const entry of entries.slice(0, 16)) {
-    page.drawText(entry.name.slice(0, 32), { x, y: cursor, size: 7, font });
+    const label = text(entry.name);
+    const labelSize = font.widthOfTextAtSize(label, 7) > 145 ? 6.2 : 7;
+    page.drawText(label, { x, y: cursor, size: labelSize, font });
     const barX = x + 155;
     page.drawRectangle({ x: barX, y: cursor - 1, width: width - 195, height: 7, color: rgb(0.9, 0.92, 0.95) });
     page.drawRectangle({
@@ -384,7 +415,7 @@ function drawRadar(
     const angle = -Math.PI / 2 + (index * 2 * Math.PI) / count;
     const valueRadius = radius * Math.max(0, Math.min(1, entry.mean / 5));
     const labelRadius = radius + 18;
-    page.drawText(entry.code, {
+    page.drawText(text(entry.code), {
       x: centerX + Math.cos(angle) * labelRadius - 8,
       y: centerY + Math.sin(angle) * labelRadius - 3,
       size: 7,
@@ -425,40 +456,50 @@ function drawHeader(
   totalPages = 1,
 ) {
   const { width, height } = page.getSize();
-  page.drawImage(logo, { x: 45, y: height - 105, width: 92, height: 50 });
-  page.drawText("Certificado de Evaluación", {
-    x: 175,
-    y: height - 76,
-    size: 20,
-    font: bold,
-    color: rgb(0.07, 0.08, 0.1),
+  const accent = rgb(0.82, 0.03, 0.07);
+  const muted = rgb(0.48, 0.52, 0.58);
+  const header = { x: 32, y: height - 121, width: width - 64, height: 101 };
+  const logoCell = { x: header.x, y: header.y, width: 121, height: header.height };
+  const metadataCell = { x: width - 158, y: header.y, width: 126, height: header.height };
+  const titleCell = {
+    x: logoCell.x + logoCell.width,
+    y: header.y,
+    width: metadataCell.x - (logoCell.x + logoCell.width),
+    height: header.height,
+  };
+  const logoMaxWidth = 68;
+  const logoMaxHeight = 68;
+  const logoScale = Math.min(logoMaxWidth / logo.width, logoMaxHeight / logo.height);
+  const logoWidth = logo.width * logoScale;
+  const logoHeight = logo.height * logoScale;
+
+  page.drawImage(logo, {
+    x: logoCell.x + (logoCell.width - logoWidth) / 2,
+    y: logoCell.y + (logoCell.height - logoHeight) / 2,
+    width: logoWidth,
+    height: logoHeight,
   });
-  page.drawText("Psicolaboral", {
-    x: 230,
-    y: height - 101,
-    size: 20,
-    font: bold,
-    color: rgb(0.07, 0.08, 0.1),
-  });
+  drawCenteredText(page, "Certificado de Evaluación", titleCell.x, height - 76, titleCell.width, bold, 19);
+  drawCenteredText(page, "Psicolaboral", titleCell.x, height - 101, titleCell.width, bold, 19);
   page.drawText(`Folio: PS-${folio.slice(0, 8).toUpperCase()}`, {
-    x: width - 170,
+    x: metadataCell.x + 8,
     y: height - 66,
     size: 8,
     font,
-    color: rgb(0.4, 0.44, 0.5),
+    color: muted,
   });
   page.drawText(`Página: ${pageNumber} de ${totalPages}`, {
-    x: width - 170,
+    x: metadataCell.x + 8,
     y: height - 82,
     size: 8,
     font,
-    color: rgb(0.4, 0.44, 0.5),
+    color: muted,
   });
   page.drawLine({
-    start: { x: 45, y: height - 122 },
-    end: { x: width - 45, y: height - 122 },
+    start: { x: header.x, y: header.y },
+    end: { x: header.x + header.width, y: header.y },
     thickness: 2,
-    color: rgb(0.75, 0.07, 0.09),
+    color: accent,
   });
 }
 
@@ -515,8 +556,8 @@ Deno.serve(async (request) => {
       ["Término", formatDateTime(payload.completed_at)],
     ];
     for (const [label, value] of fields) {
-      page.drawText(label, { x: 50, y, size: 9, font: bold });
-      page.drawText(String(value ?? ""), { x: 132, y, size: 9, font });
+      page.drawText(text(label), { x: 50, y, size: 9, font: bold });
+      page.drawText(text(value), { x: 132, y, size: 9, font });
       y -= 19;
     }
     y -= 12;
@@ -528,7 +569,7 @@ Deno.serve(async (request) => {
     });
     y -= 24;
     for (const instrument of payload.instruments) {
-      page.drawText(instrument.name, { x: 50, y, size: 10, font: bold });
+      page.drawText(text(instrument.name), { x: 50, y, size: 10, font: bold });
       y -= 15;
       for (
         const line of wrap(
@@ -618,17 +659,32 @@ Deno.serve(async (request) => {
     reportPage.drawText("Informe Psicolaboral Integrado", { x: 50, y: 635, size: 18, font: reportBold });
     reportPage.drawText("Resumen ejecutivo, calidad y revisión", { x: 50, y: 612, size: 11, font: reportFont });
     let reportY = 582;
-    drawPanel(reportPage, "Perfil general preliminar", reportFont, reportBold, 45, 472, 522, 118);
-    drawWrappedLines(reportPage, [text(ai.executive_summary)], reportFont, 9, 58, 548, 496, 6);
-    reportPage.drawText(`Estado de revision: ${payload.ai_interpretation?.status ?? "FALLBACK_DETERMINISTICO"}`, { x: 58, y: 488, size: 8, font: reportBold, color: rgb(0.42, 0.12, 0.14) });
-    reportY = 445;
+    drawPanel(reportPage, "Perfil general preliminar", reportFont, reportBold, 45, 438, 522, 144);
+    const summaryEndY = drawWrappedLines(
+      reportPage,
+      [text(ai.executive_summary)],
+      reportFont,
+      8.6,
+      58,
+      548,
+      496,
+      7,
+    );
+    reportPage.drawText(`Estado de revision: ${payload.ai_interpretation?.status ?? "FALLBACK_DETERMINISTICO"}`, {
+      x: 58,
+      y: Math.max(452, summaryEndY - 4),
+      size: 8,
+      font: reportBold,
+      color: rgb(0.42, 0.12, 0.14),
+    });
+    reportY = 412;
     reportPage.drawText("Calidad de respuesta", { x: 50, y: reportY, size: 12, font: reportBold });
     reportY -= 18;
     reportY = drawWrappedLines(reportPage, [text(ai.response_quality)], reportFont, 8.5, 58, reportY, 496, 4);
     reportY -= 12;
     for (const instrument of payload.instruments) {
       const quality = instrument.quality ?? {};
-      reportPage.drawText(`${instrument.name}: ${quality.status ?? "REVISAR"} - completitud ${quality.completitud ?? 0}% - valores ${quality.valores_distintos ?? "-"}`, { x: 58, y: reportY, size: 7.8, font: reportFont });
+      reportPage.drawText(text(`${instrument.name}: ${quality.status ?? "REVISAR"} - completitud ${quality.completitud ?? 0}% - valores ${quality.valores_distintos ?? "-"}`), { x: 58, y: reportY, size: 7.8, font: reportFont });
       reportY -= 12;
     }
     drawPanel(reportPage, "Fortalezas", reportFont, reportBold, 45, 165, 250, 150);
@@ -653,7 +709,7 @@ Deno.serve(async (request) => {
     ipipPage.drawText("Clusters laborales", { x: 50, y: ipipY, size: 12, font: reportBold });
     ipipY -= 16;
     for (const [cluster, detail] of Object.entries(ai.ipip16?.clusters ?? {})) {
-      ipipPage.drawText(clusterLabel(cluster), { x: 58, y: ipipY, size: 8.5, font: reportBold });
+      ipipPage.drawText(text(clusterLabel(cluster)), { x: 58, y: ipipY, size: 8.5, font: reportBold });
       ipipY -= 11;
       ipipY = drawWrappedLines(ipipPage, [detail], reportFont, 7.8, 68, ipipY, 475, 2);
       ipipY -= 4;
@@ -672,7 +728,7 @@ Deno.serve(async (request) => {
     ipcY -= 17;
     if (ipc) {
       for (const entry of octantEntries(ipc.result)) {
-        ipcPage.drawText(`${entry.code} - ${entry.name}: ${entry.mean.toFixed(2)}`, { x: 330, y: ipcY, size: 8, font: reportFont });
+        ipcPage.drawText(text(`${entry.code} - ${entry.name}: ${entry.mean.toFixed(2)}`), { x: 330, y: ipcY, size: 8, font: reportFont });
         ipcY -= 13;
       }
       const profile = ipc.result.labor_profile as { styles?: Record<string, number> } | undefined;
@@ -680,7 +736,7 @@ Deno.serve(async (request) => {
       ipcPage.drawText("Macroestilos internos", { x: 330, y: ipcY, size: 11, font: reportBold });
       ipcY -= 15;
       for (const [label, value] of Object.entries(profile?.styles ?? {})) {
-        ipcPage.drawText(`${label}: ${Number(value).toFixed(2)}`, { x: 330, y: ipcY, size: 8, font: reportFont });
+        ipcPage.drawText(text(`${label}: ${Number(value).toFixed(2)}`), { x: 330, y: ipcY, size: 8, font: reportFont });
         ipcY -= 13;
       }
     }

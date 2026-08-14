@@ -14,7 +14,7 @@ Decisión: `PSYCH_AI_ENABLED=false` durante el desarrollo. El scoring existente,
 
 Continuación solicitada: ejecutar Fase 2 a Fase 16 sin repetir auditoría. La ausencia de `GROQ_API_KEY` no bloquea el desarrollo: el proveedor real queda implementado, pero el entorno usa Mock/fallback hasta configurar secreto y activar feature flag.
 
-Resultado parcial: la capa IA queda aislada en tablas privadas, con generación manual desde Gestión Psicolaboral, revisión profesional editable y PDF interno de 4 páginas. La activación real de Groq sigue bloqueada deliberadamente por `PSYCH_AI_ENABLED=false` y falta de `GROQ_API_KEY`.
+Resultado actualizado: la capa IA queda aislada en tablas privadas, con generación automática post-respuesta, revisión profesional editable y PDF interno de 4 páginas. Groq quedó operativo para el canario RC-1807 y el informe fue regenerado con estado IA `PENDING_REVIEW`; queda pendiente ampliar perfiles configurables antes de uso masivo.
 
 ## Rediseño informe psicolaboral integrado - 2026-08-13
 - [x] Auditar generador PDF, scoring, datos históricos, permisos y contratos actuales.
@@ -28,9 +28,10 @@ Alcance de esta entrega: certificado de 1 página + informe interno multipágina
 ## Regeneración certificado psicolaboral canario - 2026-08-13
 - [x] Marcar el certificado anterior para reproceso sin tocar respuestas ni scoring (RPC autorizado disponible desde el ERP).
 - [x] Ejecutar el generador con el formato certificado + informe integrado (acción `Actualizar informe` desplegada en Gestión Psicolaboral).
-- [ ] Confirmar hashes, rutas privadas y estado generado en el canario; requiere ejecutar la acción desde una sesión autenticada de Reclutamiento.
+- [x] Confirmar hashes, rutas privadas y estado generado en el canario.
+- [x] Corregir carrera IA/PDF, regeneración service-only, caracteres WinAnsi y layout visual del header/panel IA.
 
-Nota operativa: el certificado histórico permanece intacto (`generated`) hasta que un usuario autorizado pulse `Actualizar informe`; así no se deja una descarga rota si el generador o el Storage fallan.
+Resultado: RC-1807 quedó con `ai_status=PENDING_REVIEW`, certificado e informe `generated`, `last_error=null`, hashes productivos verificados contra descarga privada y render visual sin fallback ni solapes. El logo conserva proporción y el header usa la retícula del certificado estándar.
 
 ## Correccion RUT William Eric Araya Toro - 2026-08-13
 

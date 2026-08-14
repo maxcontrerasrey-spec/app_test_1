@@ -387,11 +387,15 @@ Deno.serve(async (request) => {
       action === "certificate_url" ||
       action === "report_url" ||
       action === "internal_generate_ai_interpretation" ||
+      action === "internal_regenerate_certificate" ||
       action === "generate_ai_interpretation" ||
       action === "get_ai_interpretation" ||
       action === "review_ai_interpretation"
     ) {
-      if (action === "internal_generate_ai_interpretation") {
+      if (
+        action === "internal_generate_ai_interpretation" ||
+        action === "internal_regenerate_certificate"
+      ) {
         const internalSecret = Deno.env.get("PSYCH_AI_INTERNAL_WEBHOOK_SECRET")?.trim();
         if (!internalSecret || internalSecret.length < 32) {
           return response({ error: "Canal interno IA no configurado" }, 503);
@@ -400,6 +404,28 @@ Deno.serve(async (request) => {
           return response({ error: "No autorizado" }, 401);
         }
         const assessmentId = cleanText(payload.assessment_id, 50);
+        if (action === "internal_regenerate_certificate") {
+          const { error: resetError } = await admin.rpc(
+            "reset_psycholaboral_certificate_service",
+            { p_assessment_id: assessmentId },
+          );
+          if (resetError) return response({ error: "No fue posible preparar la regeneración." }, 409);
+          const certificateResponse = await fetch(
+            `${url}/functions/v1/generate-psycholaboral-certificate`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${secretKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ assessmentId }),
+            },
+          );
+          if (!certificateResponse.ok) {
+            return response({ error: "No fue posible regenerar el certificado." }, 409);
+          }
+          return response({ generated: true });
+        }
         try {
           return response(await runPsychAIInterpretation(admin, assessmentId, null));
         } catch (error) {
@@ -593,26 +619,28 @@ Deno.serve(async (request) => {
         assessment_id?: string;
       };
       if (session.execution_status === "completed" && session.assessment_id) {
-        const aiJob = runPsychAIInterpretation(admin, session.assessment_id, null)
-          .catch((error) => {
+        const postCompletionJob = (async () => {
+          try {
+            await runPsychAIInterpretation(admin, session.assessment_id!, null);
+          } catch (error) {
             console.error(
               "psycholaboral automatic AI failed",
               error instanceof Error ? error.message : "unknown",
             );
-          });
-        const certificateUrl =
-          `${url}/functions/v1/generate-psycholaboral-certificate`;
-        const certificateJob = fetch(certificateUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${secretKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ assessmentId: session.assessment_id }),
-        }).catch(() => undefined);
-        // Supabase Edge keeps the automatic IA and certificate jobs alive after returning the candidate response.
-        EdgeRuntime.waitUntil(aiJob);
-        EdgeRuntime.waitUntil(certificateJob);
+          }
+          const certificateUrl =
+            `${url}/functions/v1/generate-psycholaboral-certificate`;
+          await fetch(certificateUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${secretKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ assessmentId: session.assessment_id }),
+          }).catch(() => undefined);
+        })();
+        // Supabase Edge keeps the automatic IA and certificate chain alive after returning the candidate response.
+        EdgeRuntime.waitUntil(postCompletionJob);
       }
       return response({ session });
     }

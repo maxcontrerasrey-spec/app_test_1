@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync("supabase/migrations/20260813180211_add_psycholaboral_module.sql", "utf8");
 const aiMigration = readFileSync("supabase/migrations/20260814005242_psych_ai_interpretation_foundation.sql", "utf8");
 const aiSchemaFixMigration = readFileSync("supabase/migrations/20260814014122_fix_psych_ai_groq_schema_v2.sql", "utf8");
+const serviceResetMigration = readFileSync("supabase/migrations/20260814021446_add_psycholaboral_service_certificate_reset.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
 const psychAiGuardrails = readFileSync("supabase/functions/_shared/psychAi/guardrails.ts", "utf8");
@@ -102,9 +103,13 @@ describe("Gestión Psicolaboral", () => {
       "src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx",
       "utf8",
     );
-    expect(edge).toContain("runPsychAIInterpretation(admin, session.assessment_id, null)");
-    expect(edge).toContain("EdgeRuntime.waitUntil(aiJob)");
+    expect(edge).toContain("await runPsychAIInterpretation(admin, session.assessment_id!, null)");
+    expect(edge).toContain("EdgeRuntime.waitUntil(postCompletionJob)");
     expect(edge).toContain('action === "internal_generate_ai_interpretation"');
+    expect(edge).toContain('action === "internal_regenerate_certificate"');
+    expect(edge).toContain("reset_psycholaboral_certificate_service");
+    expect(serviceResetMigration).toContain("grant execute on function public.reset_psycholaboral_certificate_service(uuid) to service_role");
+    expect(serviceResetMigration).toContain("revoke all on function public.reset_psycholaboral_certificate_service(uuid) from public, anon, authenticated");
     expect(edge).toContain("PSYCH_AI_INTERNAL_WEBHOOK_SECRET");
     expect(edge).toContain('request.headers.get("x-internal-secret")');
     expect(managementPage).not.toContain("Generar IA");

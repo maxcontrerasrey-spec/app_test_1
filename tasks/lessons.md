@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 313. Un informe generado por IA debe esperar la interpretación antes de sellar el PDF
+
+- Si IA y PDF se disparan en paralelo, el informe puede quedar correctamente generado pero con fallback antiguo; el estado del candidato no basta para demostrar que el binario contiene la interpretación vigente.
+- La regeneración de documentos sensibles necesita un camino service-only, idempotente y auditable que reprograme certificado e informe sin tocar respuestas ni scoring.
+- Los textos de proveedores IA deben normalizarse a caracteres compatibles con `pdf-lib`/WinAnsi antes de dibujar; un guion Unicode puede romper la generación o dejar un informe obsoleto.
+- La revisión de un PDF productivo debe incluir descarga privada, comparación de hash con Supabase y render visual; validar solo `generated` no detecta solapes, logos deformados ni etiquetas truncadas.
+
 ## 311. Un cambio visual publicado debe dejar evidencia perceptible, no solo clases distintas
 
 - Si el usuario reporta que producción "sigue igual" aunque el deploy esté verde, revisar si el cambio alteró la estructura visual real y no solo estilos locales.
