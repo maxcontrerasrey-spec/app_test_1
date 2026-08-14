@@ -217,6 +217,14 @@ function safePdfText(value: string) {
     .replace(/\u00a0/g, " ");
 }
 
+function humanizeCode(value: unknown, fallback = "") {
+  const source = typeof value === "string" && value.trim() ? value.trim() : fallback;
+  return source
+    .replace(/_/g, " ")
+    .toLocaleLowerCase("es-CL")
+    .replace(/(^|\s)\S/g, (match) => match.toLocaleUpperCase("es-CL"));
+}
+
 function sanitizeReportText(value: string) {
   return value
     .replace(/\bLa interpretaci[oó]n es descriptiva[^.]*baremos[^.]*conducta observada\.?/gi, "")
@@ -243,6 +251,12 @@ function sanitizeReportText(value: string) {
     .replace(/\bInforme V5(?:\.[0-9])?\b/gi, "Informe")
     .replace(/\bV5(?:\.[0-9])?\b/g, "")
     .replace(/\bpendiente de revisi[oó]n profesional\b/gi, "en evaluación")
+    .replace(/\bREQUIERE_PROFUNDIZACION\b/g, "profundización sugerida")
+    .replace(/\bADECUADO_CON_OBSERVACIONES\b/g, "adecuado con observaciones")
+    .replace(/\bNO_ADECUADO\b/g, "no adecuado")
+    .replace(/\bOUT_OF_DOCUMENTED_RANGE\b/g, "fuera de rango documentado")
+    .replace(/\bSOBRE_EL_PROMEDIO\b/g, "sobre el promedio")
+    .replace(/\bINTERMEDIO_EN_RANGO_TEORICO\b/g, "intermedio dentro del rango teórico")
     .replace(/\bdebe corroborarse\b/gi, "se recomienda profundizar")
     .replace(/\brequiere corroboraci[oó]n\b/gi, "requiere profundización")
     .replace(/\bdebe verificarse\b/gi, "se recomienda contrastar")
@@ -846,7 +860,7 @@ function drawReportPdf(
   const first = report.addPage([612, 792]);
   const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, logo: reportLogo, payload, page: first, y: REPORT.topY };
   drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, ["Informe Psicolaboral Integrado"]);
-  drawReportHeading(ctx, `Resultado de evaluación: ${text(ai.recommendation, "REQUIERE_PROFUNDIZACION").replaceAll("_", " ")}`);
+  drawReportHeading(ctx, `Resultado de evaluación: ${humanizeCode(ai.recommendation, "ADECUADO_CON_OBSERVACIONES")}`);
   drawCard(
     ctx,
     "Síntesis de resultado",

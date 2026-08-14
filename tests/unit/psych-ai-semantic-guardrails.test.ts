@@ -269,7 +269,15 @@ describe("v5-4-objectivity.test", () => {
     expect(guarded.output.recommendation).toBe("ADECUADO");
   });
 
-  it("no deja que fortalezas secundarias compensen incertidumbre crítica de seguridad", () => {
+  it("normaliza categorías finales fuera de la taxonomía vigente", () => {
+    const output = validOutput();
+    output.recommendation = "REQUIERE_PROFUNDIZACION";
+    const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
+    expect(["ADECUADO", "ADECUADO_CON_OBSERVACIONES", "NO_ADECUADO"]).toContain(guarded.output.recommendation);
+    expect(guarded.output.recommendation).not.toBe("REQUIERE_PROFUNDIZACION");
+  });
+
+  it("mantiene observaciones cuando hay señales críticas sin crear una cuarta categoría", () => {
     const output = validOutput();
     output.recommendation = "ADECUADO";
     output.recommendation_confidence = "ALTA";
@@ -279,8 +287,9 @@ describe("v5-4-objectivity.test", () => {
       evidence_ids: ["ev_ipip16_CAL"],
     });
     const guarded = validateAndGuardPsychAIOutput(output, fixturePayload);
-    expect(guarded.output.recommendation).toBe("REQUIERE_PROFUNDIZACION");
-    expect(guarded.validationFlags).toContain("critical_uncertainty_recommendation_enforced");
+    expect(guarded.output.recommendation).toBe("ADECUADO_CON_OBSERVACIONES");
+    expect(guarded.validationFlags).toContain("critical_observation_recommendation_enforced");
+    expect(guarded.output.recommendation).not.toBe("REQUIERE_PROFUNDIZACION");
   });
 
   it("puede emitir resultado desfavorable cuando existen brechas críticas múltiples", () => {

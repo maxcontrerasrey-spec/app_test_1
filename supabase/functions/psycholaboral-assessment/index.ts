@@ -19,7 +19,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   Vary: "Origin",
 };
-const PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-medium-v6.1";
+const PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-medium-v6.2";
 
 type JsonRecord = Record<string, unknown>;
 type RpcClient = {
@@ -404,10 +404,11 @@ Deno.serve(async (request) => {
         action === "internal_regenerate_certificate"
       ) {
         const internalSecret = Deno.env.get("PSYCH_AI_INTERNAL_WEBHOOK_SECRET")?.trim();
-        if (!internalSecret || internalSecret.length < 32) {
+        const serviceAuthorization = request.headers.get("authorization") === `Bearer ${secretKey}`;
+        if ((!internalSecret || internalSecret.length < 32) && !serviceAuthorization) {
           return response({ error: "Canal interno IA no configurado" }, 503);
         }
-        if (request.headers.get("x-internal-secret") !== internalSecret) {
+        if (!serviceAuthorization && request.headers.get("x-internal-secret") !== internalSecret) {
           return response({ error: "No autorizado" }, 401);
         }
         const assessmentId = cleanText(payload.assessment_id, 50);

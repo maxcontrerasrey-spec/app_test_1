@@ -29,7 +29,7 @@ function renderOutput(output: PsychAIOutput | null) {
     <div className="psych-ai-output">
       <Section title="Resultado de evaluación">
         <div className="psych-ai-recommendation-card">
-          <span>{(output.recommendation ?? "REQUIERE_PROFUNDIZACION").replace(/_/g, " ")}</span>
+          <span>{output.recommendation?.replace(/_/g, " ")}</span>
           <small>Integración psicolaboral</small>
         </div>
         <p>{output.decision_rationale}</p>

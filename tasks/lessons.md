@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 319. Los codigos internos pueden persistir estructurados, pero nunca imprimirse como texto profesional
+
+- La salida estructurada debe conservar codigos estables como `ADECUADO_CON_OBSERVACIONES` o `NO_ADECUADO` para reglas, auditoria y compatibilidad, pero el PDF y la UI deben humanizarlos antes de renderizar.
+- Un sanitizador de contenido no reemplaza una frontera de presentacion: campos JSON como PRP pueden necesitar codigos exactos, mientras que parrafos, titulos y badges requieren texto natural sin guiones bajos.
+- Si se elimina una categoria final, hay que cerrarla en schema, tipos, prompt, guardrails, migracion activa, UI, PDF y tests; dejarla en un default viejo reintroduce el problema por cache o fallback.
+- La validacion productiva de informes debe incluir extraccion textual del PDF y render visual; revisar solo el JSON no detecta codigos visibles ni problemas editoriales.
+
 ## 318. El contenido entregable no debe compartir lenguaje con la trazabilidad interna
 
 - En informes sensibles, provider, modelo, prompt, schema, guardrails, fallback, tokens y confianza pertenecen a metadata interna; si aparecen en PDF o modales de resultado, contaminan el documento profesional.

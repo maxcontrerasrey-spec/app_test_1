@@ -1,5 +1,17 @@
 # Tareas y Roadmap de Desarrollo
 
+## Psych AI V6.2 cierre taxonomico y editorial - 2026-08-14
+
+- [x] Completar descubrimiento: flujo respuestas->scoring->payload->OpenAI->validacion->persistencia->UI->PDF, taxonomia historica y origen de `REQUIERE_PROFUNDIZACION`.
+- [x] Eliminar `REQUIERE_PROFUNDIZACION` como categoria final en schema, tipos, prompt, guardrails, frontend, PDF, tests y migracion activa, preservando narrativa natural de profundizacion cuando corresponda.
+- [x] Preservar scoring PRP/BIS/IPIP y ajustar normalizacion de codigos estructurados PRP sin cambiar el scoring.
+- [x] Endurecer validaciones contra categoria invalida, metalinguaje tecnico visible, redundancia excesiva y fortalezas artificiales.
+- [x] Ajustar PDF para V6.2: etiquetas humanas sin `_`, paginacion consistente y layout editorial validado por render.
+- [x] Aplicar migracion/desplegar funciones en produccion, regenerar canary sin conclusion hardcodeada, verificar tokens, categoria e informe/PDF.
+- [x] Ejecutar gates locales, QA visual de todas las paginas y documentar resultado final.
+
+Resultado: produccion queda en `psych-ai-prompt-v6.2`, `psych-ai-schema-v6.2`, runtime `gpt56-luna-medium-v6.2` y OpenAI `gpt-5.6-luna`. La categoria final se cerro a `ADECUADO`, `ADECUADO_CON_OBSERVACIONES` y `NO_ADECUADO`; `REQUIERE_PROFUNDIZACION` deja de ser estado final visible. El canario `a48773d1-b296-4b9a-9524-84aa400ffdca` fue regenerado en vivo con 14.120 tokens, PRP estructurado `NO_ADECUADO`, recomendacion `ADECUADO_CON_OBSERVACIONES`, PDF privado de 9 paginas generado y extraccion textual `underscore_lines=0`.
+
 ## Psych AI V6.1 Luna medio robusto - 2026-08-14
 
 - [ ] Auditar V5.4 vigente, scoring PRP, perfiles de cargo, contrato de salida, guardrails y renderer PDF.

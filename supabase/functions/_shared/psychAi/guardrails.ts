@@ -92,7 +92,7 @@ function replaceProhibited(text: string) {
   cleaned = cleaned.replace(/\bMUY_BAJO_EN_RANGO_TEORICO\b/g, "muy bajo dentro del rango teórico");
   cleaned = cleaned.replace(/\bPROFESSIONAL_ONLY\b/g, "sin interpretación adicional sustentable");
   cleaned = cleaned.replace(/\bPENDING_REVIEW\b/g, "en evaluación");
-  cleaned = cleaned.replace(/\bREQUIERE_PROFUNDIZACION\b/g, "requiere profundización");
+  cleaned = cleaned.replace(/\bREQUIERE_PROFUNDIZACION\b/g, "profundización sugerida");
   cleaned = cleaned.replace(/\bADECUADO_CON_OBSERVACIONES\b/g, "adecuado con observaciones");
   cleaned = cleaned.replace(/\bNO_ADECUADO\b/g, "no adecuado");
   cleaned = cleaned.replace(/\bRECOMENDADO_CON_OBSERVACIONES\b/g, "recomendado con observaciones");
@@ -232,9 +232,9 @@ function buildCompatibilityFrame(input: JsonRecord, semanticContext = buildPsych
   const recommendation = criticalGaps.length >= 2
     ? "NO_ADECUADO"
     : criticalGaps.length || criticalUncertainties.length
-    ? "REQUIERE_PROFUNDIZACION"
-    : criticalStrengths.length
     ? "ADECUADO_CON_OBSERVACIONES"
+    : criticalStrengths.length
+    ? "ADECUADO"
     : "ADECUADO_CON_OBSERVACIONES";
 
   return {
@@ -308,12 +308,9 @@ function enforceObjectiveFrame(output: PsychAIOutput, input?: JsonRecord) {
   next.critical_strengths = mergeUniqueText(next.critical_strengths, frame.critical_strengths).slice(0, 4);
   next.critical_gaps = mergeUniqueText(next.critical_gaps, frame.critical_gaps).slice(0, 4);
   next.critical_uncertainties = mergeUniqueText(next.critical_uncertainties, frame.critical_uncertainties).slice(0, 5);
-  if (
-    frame.recommendation === "REQUIERE_PROFUNDIZACION" &&
-    (next.recommendation === "ADECUADO" || next.recommendation === "ADECUADO_CON_OBSERVACIONES")
-  ) {
-    next.recommendation = "REQUIERE_PROFUNDIZACION";
-    flags.push("critical_uncertainty_recommendation_enforced");
+  if (frame.recommendation === "ADECUADO_CON_OBSERVACIONES" && next.recommendation === "ADECUADO") {
+    next.recommendation = "ADECUADO_CON_OBSERVACIONES";
+    flags.push("critical_observation_recommendation_enforced");
   }
   if (frame.recommendation === "NO_ADECUADO" && next.recommendation !== "NO_ADECUADO") {
     next.recommendation = "NO_ADECUADO";
@@ -447,7 +444,7 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
       },
     },
     methodology: {
-      version: "psych-methodology-v6.1-compact",
+      version: "psych-methodology-v6.2-compact",
       professional_report_rules: {
         object_of_report: "persona y funcionamiento laboral aplicado al cargo",
         instruments_are_evidence: true,
@@ -456,7 +453,7 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         max_strengths: 4,
         max_points_to_explore: 4,
         max_interview_questions: 5,
-        recommendation_labels: ["ADECUADO", "ADECUADO_CON_OBSERVACIONES", "REQUIERE_PROFUNDIZACION", "NO_ADECUADO"],
+        recommendation_labels: ["ADECUADO", "ADECUADO_CON_OBSERVACIONES", "NO_ADECUADO"],
       },
       methodological_notes: [
         "Los resultados psicométricos se integran con entrevista y antecedentes laborales.",

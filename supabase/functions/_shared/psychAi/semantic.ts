@@ -1,6 +1,6 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 
-export const PSYCH_SEMANTIC_VERSION = "psych-semantic-guardrails-v6.1";
+export const PSYCH_SEMANTIC_VERSION = "psych-semantic-guardrails-v6.2";
 
 type Direction = "HIGHER_MORE" | "HIGHER_LESS" | "BIPOLAR" | "UNKNOWN";
 type InterpretationMode = "THEORETICAL_RANGE" | "DOCUMENTED_CLASSIFICATION" | "PROFESSIONAL_ONLY";
@@ -229,25 +229,42 @@ function normalizeText(value: string) {
 const RECOMMENDATIONS = new Set([
   "ADECUADO",
   "ADECUADO_CON_OBSERVACIONES",
-  "REQUIERE_PROFUNDIZACION",
   "NO_ADECUADO",
 ]);
 
 const CONFIDENCES = new Set(["BAJA", "MEDIA", "ALTA"]);
 
 function normalizeRecommendation(value: unknown) {
-  const raw = readText(value, "REQUIERE_PROFUNDIZACION").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  const raw = readText(value, "ADECUADO_CON_OBSERVACIONES").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   if (raw === "RECOMENDADO") return "ADECUADO";
   if (raw === "RECOMENDADO_CON_OBSERVACIONES" || raw === "RECOMENDADO_CON_OBSERVACION") return "ADECUADO_CON_OBSERVACIONES";
   if (raw === "NO_RECOMENDADO") return "NO_ADECUADO";
-  return RECOMMENDATIONS.has(raw) ? raw as PsychAIOutput["recommendation"] : "REQUIERE_PROFUNDIZACION";
+  return RECOMMENDATIONS.has(raw) ? raw as PsychAIOutput["recommendation"] : "ADECUADO_CON_OBSERVACIONES";
 }
 
 function normalizeConfidence(value: unknown) {
   const raw = readText(value, "MEDIA").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   return CONFIDENCES.has(raw) ? raw as PsychAIOutput["recommendation_confidence"] : "MEDIA";
+}
+
+function normalizePrpClassification(value: unknown) {
+  const raw = readText(value, "OUT_OF_DOCUMENTED_RANGE").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (raw === "NO_ADECUADO" || raw === "NEUTRO" || raw === "ADECUADO" || raw === "OUT_OF_DOCUMENTED_RANGE") {
+    return raw as NonNullable<PsychAIOutput["prp_assessment"]>["classification"];
+  }
+  return "OUT_OF_DOCUMENTED_RANGE";
+}
+
+function normalizePrpStatus(value: unknown) {
+  const raw = readText(value, "NOT_AVAILABLE").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (raw === "DOCUMENTED" || raw === "OUT_OF_DOCUMENTED_RANGE" || raw === "NOT_AVAILABLE") {
+    return raw as NonNullable<PsychAIOutput["prp_assessment"]>["status"];
+  }
+  return "NOT_AVAILABLE";
 }
 
 function textList(value: unknown, max: number) {
@@ -446,7 +463,7 @@ export function attachPsychSemanticContext(input: JsonRecord) {
   return {
     ...input,
     methodology: {
-      version: "psych-methodology-v6.1",
+      version: "psych-methodology-v6.2",
       instruments: {
         IPIP16_105: {
           professional_name: "Evaluación de Personalidad IPIP-16",
@@ -621,7 +638,7 @@ export function buildDeterministicPsychSemanticOutput(
 
   const v5 = {
     version: PSYCH_SEMANTIC_VERSION,
-    recommendation: bis ? "REQUIERE_PROFUNDIZACION" : "ADECUADO_CON_OBSERVACIONES",
+    recommendation: "ADECUADO_CON_OBSERVACIONES",
     recommendation_confidence: "MEDIA",
     critical_strengths: [],
     critical_gaps: [],
@@ -818,9 +835,9 @@ export function normalizeSemanticOutputForErp(value: unknown, context?: PsychSem
         divergences: textList(asRecord(source.evidence_integration).divergences, 4),
       },
       prp_assessment: {
-        classification: readText(asRecord(source.prp_assessment).classification, "OUT_OF_DOCUMENTED_RANGE") as NonNullable<PsychAIOutput["prp_assessment"]>["classification"],
+        classification: normalizePrpClassification(asRecord(source.prp_assessment).classification),
         meaning: readText(asRecord(source.prp_assessment).meaning),
-        status: readText(asRecord(source.prp_assessment).status, "NOT_AVAILABLE") as NonNullable<PsychAIOutput["prp_assessment"]>["status"],
+        status: normalizePrpStatus(asRecord(source.prp_assessment).status),
       },
       integrated_analysis: [jobFit, readText(safety.combined_interpretation)].filter(Boolean).join("\n\n"),
       preliminary_conclusion: conclusion,

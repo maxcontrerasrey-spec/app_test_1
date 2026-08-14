@@ -7,7 +7,7 @@ import {
 import { createPsychInterpretationProvider } from "./providers.ts";
 import type { JsonRecord, PsychAICallTelemetry, PsychAIUsage } from "./types.ts";
 
-const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-medium-v6.1";
+const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-medium-v6.2";
 
 const ANALYST_SYSTEM_PROMPT = `Eres GPT-5.6 Luna, con razonamiento medio, actuando como analista psicolaboral senior para un ERP.
 Interpreta resultados ya calculados por el ERP. No recalcules scores, medias, inversiones, clasificaciones ni octantes.
@@ -28,7 +28,7 @@ Redacción obligatoria:
 - no uses "preliminar" salvo que sea imprescindible por insuficiencia real de antecedentes, no por el origen tecnológico del texto.
 
 Contenido esperado:
-- recommendation: una de ADECUADO, ADECUADO_CON_OBSERVACIONES, REQUIERE_PROFUNDIZACION, NO_ADECUADO. Es resultado de evaluación para gestión interna; nunca uses APTO/NO APTO.
+- recommendation: una de ADECUADO, ADECUADO_CON_OBSERVACIONES o NO_ADECUADO. Es resultado de evaluación para gestión interna; nunca uses APTO/NO APTO. No crees una categoría final de profundización; si hay antecedentes que profundizar pero no una conclusión desfavorable, usa ADECUADO_CON_OBSERVACIONES y explica la profundización en brechas, incertidumbres o preguntas.
 - recommendation_confidence: BAJA, MEDIA o ALTA.
 - critical_strengths: 0-4 fortalezas críticas reales, no rellenes si no existen.
 - critical_gaps: brechas observables cuando exista evidencia desfavorable relevante.
@@ -246,10 +246,10 @@ export async function generatePsychAIInterpretation(input: {
   try {
     const analyst = await runWithRetry(
       "analyst",
-      { task: "Redacta informe psicolaboral integrado V6.1 con voz profesional natural, usando solo FACTS compactos, perfil de cargo y marco de competencias." },
+      { task: "Redacta informe psicolaboral integrado V6.2 con voz profesional natural, usando solo FACTS compactos, perfil de cargo y marco de competencias." },
       `${ANALYST_SYSTEM_PROMPT}\n\nContexto estable ERP:\n${input.systemPrompt}`,
       input.responseSchema,
-      "psych_ai_interpretation_v6_1",
+      "psych_ai_interpretation_v6_2",
     );
 
     let guarded = validateAndGuardPsychAIOutput(analyst.output, sanitizedPayload);
@@ -268,7 +268,7 @@ export async function generatePsychAIInterpretation(input: {
           },
           REVIEWER_SYSTEM_PROMPT,
           REVIEW_PATCH_SCHEMA,
-      "psych_ai_reviewer_patch_v6_1",
+      "psych_ai_reviewer_patch_v6_2",
         );
         const patched = applyReviewerPatch(analyst.output, reviewer.output);
         reviewerMeta = { executed: true, reason: patched.reason || reviewerMeta.reason, patchCount: patched.patchCount };

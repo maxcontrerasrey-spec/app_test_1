@@ -1,7 +1,7 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 import { normalizeSemanticOutputForErp, PSYCH_SEMANTIC_VERSION } from "./semantic.ts";
 
-export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v6.1";
+export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v6.2";
 
 const REQUIRED_TOP_LEVEL = [
   "recommendation",
@@ -102,8 +102,10 @@ function evidenceIntegration(value: unknown) {
 
 function prpAssessment(value: unknown) {
   const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
-  const classification = text(record.classification, 50).toUpperCase();
-  const status = text(record.status, 50).toUpperCase();
+  const classification = text(record.classification, 50).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const status = text(record.status, 50).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   const allowedClassification = new Set(["NO_ADECUADO", "NEUTRO", "ADECUADO", "OUT_OF_DOCUMENTED_RANGE"]);
   const allowedStatus = new Set(["DOCUMENTED", "OUT_OF_DOCUMENTED_RANGE", "NOT_AVAILABLE"]);
   const safeClassification = (allowedClassification.has(classification) ? classification : "OUT_OF_DOCUMENTED_RANGE") as NonNullable<PsychAIOutput["prp_assessment"]>["classification"];
@@ -118,7 +120,6 @@ function prpAssessment(value: unknown) {
 const RECOMMENDATIONS = new Set([
   "ADECUADO",
   "ADECUADO_CON_OBSERVACIONES",
-  "REQUIERE_PROFUNDIZACION",
   "NO_ADECUADO",
 ]);
 
@@ -130,7 +131,7 @@ function recommendation(value: unknown) {
   if (cleaned === "RECOMENDADO") return "ADECUADO";
   if (cleaned === "RECOMENDADO_CON_OBSERVACIONES" || cleaned === "RECOMENDADO_CON_OBSERVACION") return "ADECUADO_CON_OBSERVACIONES";
   if (cleaned === "NO_RECOMENDADO") return "NO_ADECUADO";
-  return RECOMMENDATIONS.has(cleaned) ? cleaned as PsychAIOutput["recommendation"] : "REQUIERE_PROFUNDIZACION";
+  return RECOMMENDATIONS.has(cleaned) ? cleaned as PsychAIOutput["recommendation"] : "ADECUADO_CON_OBSERVACIONES";
 }
 
 function confidence(value: unknown) {
