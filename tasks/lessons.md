@@ -4,6 +4,13 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 ---
 
+## 320. La limpieza de ausencias BUK no debe depender de dotación activa
+
+- Una excepción BUK histórica puede seguir activa en `hr_roster_exceptions` aunque el trabajador ya no aparezca en `employees_active_current`.
+- Para limpiar una excepción ya existente (`p_exception_type` vacío/null), la RPC debe resolver primero la fila por `employee_buk_employee_id` y fecha; no necesita rehidratar metadata desde dotación activa.
+- La exigencia de `employees_active_current` sigue siendo correcta para crear o actualizar vacaciones/licencias vigentes, porque ahí sí se necesitan nombre/documento actuales y se evita insertar ausencias de trabajadores fuera del espejo operativo.
+- Ante un workflow fallido llamado “Sync BUK Roster Absences”, no diagnosticar con `buk_sync_jobs`: ese nombre corresponde a contratación BUK, no al sync de ausencias de pauta.
+
 ## 319. Los codigos internos pueden persistir estructurados, pero nunca imprimirse como texto profesional
 
 - La salida estructurada debe conservar codigos estables como `ADECUADO_CON_OBSERVACIONES` o `NO_ADECUADO` para reglas, auditoria y compatibilidad, pero el PDF y la UI deben humanizarlos antes de renderizar.

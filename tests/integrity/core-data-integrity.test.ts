@@ -81,6 +81,23 @@ describe("CORE data integrity", () => {
     expect(sync).toContain("phone: normalizeBukPhone(profile.phone) || undefined");
   });
 
+  it("clears stale BUK roster exceptions without requiring an active employee snapshot", () => {
+    const sql = read(
+      "supabase/migrations/20260817100000_allow_buk_roster_exception_clear_for_inactive_workers.sql"
+    );
+    const lookupExisting = sql.indexOf("into existing_row");
+    const clearBranch = sql.indexOf("if normalized_exception_type = '' then");
+    const activeEmployeeLookup = sql.indexOf("from public.employees_active_current e");
+
+    expect(sql).toContain("normalized_buk_employee_id text := trim(coalesce(p_buk_employee_id, ''))");
+    expect(lookupExisting).toBeGreaterThan(0);
+    expect(clearBranch).toBeGreaterThan(lookupExisting);
+    expect(activeEmployeeLookup).toBeGreaterThan(clearBranch);
+    expect(sql).toContain("return null;");
+    expect(sql).toContain("is_active = false");
+    expect(sql).toContain("Trabajador BUK no encontrado para sincronizar excepción");
+  });
+
   it("persists accreditation upload operations behind RLS", () => {
     const uploadMigration = read(
       "supabase/migrations/20260722184849_add_accreditation_document_upload_jobs.sql"

@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección Sync BUK Roster Absences - 2026-08-17
+
+- [x] Identificar workflow/script `Sync BUK Roster Absences` y obtener el log exacto del run fallido `31986491575`.
+- [x] Confirmar causa raíz: limpieza de excepciones BUK obsoletas falla para trabajadores fuera de `employees_active_current`.
+- [x] Corregir la RPC `sync_hr_roster_exception_from_buk` para permitir limpiar excepciones BUK existentes sin exigir trabajador activo.
+- [x] Agregar regresión para impedir que la limpieza vuelva a depender de `employees_active_current`.
+- [x] Aplicar migración en producción, re-ejecutar workflow y verificar resultado.
+- [x] Documentar resultado final y lección nueva si aplica.
+
+Resultado: el run fallido `31986491575` no correspondía a `buk_sync_jobs` de contratación, sino al workflow `Sync BUK Roster Absences`. El error ocurrió al limpiar 9 vacaciones BUK obsoletas de los trabajadores `27977` y `22898`, que existen en `employees` pero no en `employees_active_current`. La RPC ahora limpia/restaura excepciones BUK existentes antes de exigir trabajador activo; crear o actualizar ausencias vigentes sigue requiriendo `employees_active_current`. Se aplicó la migración `20260817100000` en producción, se registró como aplicada y el workflow manual `32035804183` terminó `success` con `ok=true`, `synced=2190`, `cleared=9`, `failed=[]`.
+
 ## Psych AI V6.2 cierre taxonomico y editorial - 2026-08-14
 
 - [x] Completar descubrimiento: flujo respuestas->scoring->payload->OpenAI->validacion->persistencia->UI->PDF, taxonomia historica y origen de `REQUIERE_PROFUNDIZACION`.
