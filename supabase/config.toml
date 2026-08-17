@@ -35,6 +35,7 @@ verify_jwt = true
 enabled = true
 verify_jwt = false
 import_map = "./functions/generate-competency-certificate/deno.json"
+static_files = ["./functions/generate-competency-certificate/assets/guillermo-zanartu-apara.png"]
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
 entrypoint = "./functions/generate-competency-certificate/index.ts"

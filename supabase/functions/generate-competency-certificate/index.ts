@@ -79,6 +79,20 @@ type CertificateRow = {
   buk_folder_id?: string | null;
   buk_uploaded_at?: string | null;
   storage_purge_status?: string | null;
+  legal_signature_required?: boolean;
+  legal_approval_status?: string;
+  legal_signer_id?: string | null;
+  legal_approved_at?: string | null;
+  legal_rejection_reason?: string | null;
+};
+
+type LegalSignerRow = {
+  id: string;
+  full_name: string;
+  role_label: string;
+  document_number: string | null;
+  signature_asset_key: string;
+  signature_sha256: string | null;
 };
 
 type AuthorizedModelRow = {
@@ -219,6 +233,11 @@ function bytesToArrayBuffer(bytes: Uint8Array) {
 function dataUrlToBytes(dataUrl: string) {
   const base64 = dataUrl.includes(",") ? dataUrl.split(",").at(-1) ?? "" : dataUrl;
   return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+}
+
+async function readLegalSignatureBytes() {
+  const assetUrl = new URL("./assets/guillermo-zanartu-apara.png", import.meta.url);
+  return await Deno.readFile(assetUrl);
 }
 
 function formatDate(value: string | null | undefined) {
@@ -668,6 +687,9 @@ function drawValidationPanel(page: PDFPage, input: {
   instructorName: string;
   instructorDocumentNumber: string;
   instructorProfileCode: string;
+  legalSigner: LegalSignerRow | null;
+  legalSignaturePng: Awaited<ReturnType<PDFDocument["embedPng"]>> | null;
+  legalSignatureHash: string | null;
   folio: string;
   issuedDate: string;
   validUntil: string;
@@ -688,10 +710,41 @@ function drawValidationPanel(page: PDFPage, input: {
   page.drawText("VALIDACIÓN DEL CERTIFICADO", { x: x + 42, y: y + height - 28, size: 9.7, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
   drawCenteredText(page, "Verificación digital", x + 300, y + height - 27, 160, fonts.bold, 9.2);
   page.drawText(`Firmado electrónicamente el ${formatLongDate(input.issuedDate)}, por:`, { x: x + 14, y: y + 94, size: 8.2, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  drawScaledText(page, input.instructorName, { x: x + 14, y: y + 59, width: 245, size: 23, minSize: 14, font: fonts.signature });
-  page.drawLine({ start: { x: x + 14, y: y + 53 }, end: { x: x + 238, y: y + 53 }, thickness: 0.6, color: rgb(0.78, 0.81, 0.86) });
-  page.drawText("Instructor de Conductores", { x: x + 14, y: y + 39, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
-  page.drawText(`RUT N. ${input.instructorDocumentNumber}`, { x: x + 14, y: y + 23, size: 8.6, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+  const signerColumns = [
+    {
+      columnX: x + 14,
+      title: "Instructor de Conductores",
+      name: input.instructorName,
+      role: "Instructor de Conductores",
+      document: `RUT N. ${input.instructorDocumentNumber}`,
+      signatureFont: fonts.signature,
+      signatureImage: null
+    },
+    {
+      columnX: x + 142,
+      title: input.legalSigner?.role_label || "Representante Legal",
+      name: input.legalSigner?.full_name || "",
+      role: input.legalSigner?.role_label || "",
+      document: input.legalSigner?.document_number ? `RUN N. ${input.legalSigner.document_number}` : "RUN pendiente de configuracion",
+      signatureFont: fonts.signature,
+      signatureImage: input.legalSignaturePng
+    }
+  ];
+  signerColumns.forEach((signer) => {
+    page.drawText(signer.title, { x: signer.columnX, y: y + 78, size: 7.2, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });
+    if (signer.signatureImage) {
+      page.drawImage(signer.signatureImage, { x: signer.columnX, y: y + 48, width: 94, height: 24 });
+    } else {
+      drawScaledText(page, signer.name, { x: signer.columnX, y: y + 51, width: 106, size: 16, minSize: 10, font: signer.signatureFont });
+    }
+    page.drawLine({ start: { x: signer.columnX, y: y + 43 }, end: { x: signer.columnX + 106, y: y + 43 }, thickness: 0.6, color: rgb(0.78, 0.81, 0.86) });
+    page.drawText(signer.name, { x: signer.columnX, y: y + 30, size: 6.5, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+    page.drawText(signer.role, { x: signer.columnX, y: y + 18, size: 6.4, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+    page.drawText(signer.document, { x: signer.columnX, y: y + 6, size: 6.4, font: fonts.regular, color: rgb(0.07, 0.09, 0.16) });
+  });
+  if (input.legalSigner && input.legalSignatureHash) {
+    page.drawText(`Firmado digitalmente con hash: ${input.legalSignatureHash.slice(0, 16)}...`, { x: x + 142, y: y - 5, size: 5.4, font: fonts.regular, color: rgb(0.35, 0.39, 0.46) });
+  }
   page.drawImage(qrPng, { x: qrX, y: qrY, width: qrSize, height: qrSize });
   drawCenteredText(page, "Escanee el codigo QR para verificar", x + 295, y + 36, 170, fonts.regular, 8);
   drawCenteredText(page, "la autenticidad, estado y vigencia", x + 295, y + 23, 170, fonts.regular, 8);
@@ -742,8 +795,11 @@ async function buildCertificatePdf(input: {
   validUntil: string;
   authorizedModels: AuthorizedModelRow[];
   workerCompanyName: string | null;
+  legalSigner: LegalSignerRow | null;
+  legalSignatureBytes: Uint8Array | null;
+  legalSignatureHash: string | null;
 }) {
-  const { request, instructor, certificate, issuedDate, validUntil, authorizedModels, workerCompanyName } = input;
+  const { request, instructor, certificate, issuedDate, validUntil, authorizedModels, workerCompanyName, legalSigner, legalSignatureBytes, legalSignatureHash } = input;
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const modelRows = authorizedModels.length > 0 ? authorizedModels : buildModelRowsFromSummary(request.model_summary);
@@ -756,6 +812,7 @@ async function buildCertificatePdf(input: {
   const logo = await pdfDoc.embedPng(await readLogoBytes(workerCompanyName));
   const busIcon = await pdfDoc.embedPng(dataUrlToBytes(CERTIFICATE_BUS_ICON_BASE64));
   const validationBadge = await pdfDoc.embedPng(dataUrlToBytes(CERTIFICATE_VALIDATION_BADGE_BASE64));
+  const legalSignaturePng = legalSignatureBytes ? await pdfDoc.embedPng(legalSignatureBytes) : null;
   drawCertificateHeader(page, logo, { regular, bold }, pageNumber, pageTotal);
 
   const bodyX = 64;
@@ -817,6 +874,9 @@ async function buildCertificatePdf(input: {
       instructorName: instructor.signature_label || instructor.full_name,
       instructorDocumentNumber: instructor.document_number,
       instructorProfileCode: instructor.profile_code,
+      legalSigner,
+      legalSignaturePng,
+      legalSignatureHash,
       folio: certificate.folio,
       issuedDate,
       validUntil,
@@ -970,6 +1030,13 @@ Deno.serve(async (req) => {
       throw new Error(certificateError?.message || "Certificado no inicializado.");
     }
 
+    if (certificateRow.legal_signature_required && certificateRow.legal_approval_status !== "approved") {
+      const approvalMessage = certificateRow.legal_approval_status === "rejected"
+        ? `La firma del Representante Legal fue rechazada: ${certificateRow.legal_rejection_reason || "sin motivo informado"}.`
+        : "El certificado de Codelco El Salvador debe ser aprobado por el Representante Legal antes de generar y cargar el PDF en BUK.";
+      throw new Error(approvalMessage);
+    }
+
     if (certificateRow.certificate_status === "uploaded_to_buk" && certificateRow.pdf_path) {
       if (
         certificateRow.storage_purge_status !== "success" ||
@@ -1035,6 +1102,47 @@ Deno.serve(async (req) => {
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    let legalSigner: LegalSignerRow | null = null;
+    let legalSignatureBytes: Uint8Array | null = null;
+    let legalSignatureHash: string | null = null;
+    if (certificateRow.legal_signature_required) {
+      const { data: legalSignerRow, error: legalSignerError } = await supabase
+        .from("competency_legal_signers")
+        .select("id, full_name, role_label, document_number, signature_asset_key, signature_sha256")
+        .eq("id", certificateRow.legal_signer_id)
+        .eq("status", "active")
+        .maybeSingle<LegalSignerRow>();
+
+      if (legalSignerError || !legalSignerRow) {
+        throw new Error(legalSignerError?.message || "Firmante legal de Codelco El Salvador no configurado.");
+      }
+
+      legalSigner = legalSignerRow;
+      if (!legalSigner.document_number) {
+        const { data: bukSigner } = await supabase
+          .from("employees_active_current")
+          .select("document_number, raw_payload")
+          .ilike("full_name", legalSigner.full_name)
+          .limit(1)
+          .maybeSingle<{ document_number?: string | null; raw_payload?: Record<string, unknown> | null }>();
+        const payload = bukSigner?.raw_payload ?? {};
+        const payloadDocument = ["document_number", "national_id", "rut", "run"]
+          .map((key) => payload[key])
+          .find((value): value is string => typeof value === "string" && value.trim().length > 0);
+        legalSigner = {
+          ...legalSigner,
+          document_number: bukSigner?.document_number?.trim() || payloadDocument?.trim() || null
+        };
+      }
+
+      if (!legalSigner.document_number) {
+        throw new Error("No fue posible resolver el RUN de Guillermo Zañartu Apara desde BUK. Completa su ficha BUK antes de emitir el certificado.");
+      }
+
+      legalSignatureBytes = await readLegalSignatureBytes();
+      legalSignatureHash = await sha256Hex(legalSignatureBytes);
     }
 
     const { data: generationClaimed, error: claimError } = await supabase.rpc(
@@ -1116,7 +1224,10 @@ Deno.serve(async (req) => {
       issuedDate,
       validUntil,
       authorizedModels,
-      workerCompanyName
+      workerCompanyName,
+      legalSigner,
+      legalSignatureBytes,
+      legalSignatureHash
     });
     const pdfHash = await sha256Hex(pdfBytes);
     const pdfPath = `certificates/${certificateRow.id}/${certificateRow.folio}.pdf`;
@@ -1239,6 +1350,9 @@ Deno.serve(async (req) => {
         buk_document_name: certificateBukFileName,
         buk_uploaded_at: certificateUploadedAt,
         buk_last_error: bukError,
+        legal_signature_sha256: legalSignatureHash,
+        legal_signature_signed_at: certificateRow.legal_signature_required ? new Date().toISOString() : null,
+        legal_signer_document_number: legalSigner?.document_number ?? null,
         storage_purge_status: storagePurgeStatus,
         storage_purged_at: storagePurgedAt,
         storage_purge_error: storagePurgeError,
@@ -1304,6 +1418,10 @@ Deno.serve(async (req) => {
         evaluation_buk_document_id: evaluationBukDocumentId,
         evaluation_buk_document_name: evaluationBukFileName,
         buk_folder_name: BUK_FOLDER,
+        legal_signature_required: Boolean(certificateRow.legal_signature_required),
+        legal_signer_name: legalSigner?.full_name ?? null,
+        legal_signer_document_number: legalSigner?.document_number ?? null,
+        legal_signature_sha256: legalSignatureHash,
         storage_purge_status: storagePurgeStatus,
         buk_error: bukError
       },

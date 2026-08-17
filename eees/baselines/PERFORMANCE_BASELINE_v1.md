@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.26
+version: 1.0.27
 status: Activo
 language: es-CL
 owner: Quality
@@ -123,11 +123,11 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10256676,
+  "distTotalBytes": 10259646,
   "jsFileCount": 62,
-  "jsTotalBytes": 2741012,
+  "jsTotalBytes": 2742929,
   "cssFileCount": 12,
-  "cssTotalBytes": 240891,
+  "cssTotalBytes": 241944,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -190,6 +190,10 @@ Revision 2026-08-11 rediseño visual sanciones: el total sube 3,370 bytes, JS su
 Revision 2026-08-11 rediseño visual sanciones CI: GitHub Actions `Audit Enterprise Guardrails` run `31523440150`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,204,472 bytes totales y 2,701,023 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo los limites del cambio visual.
 
 Revision 2026-08-14 Psych AI V6.1 CI: GitHub Actions `Audit Enterprise Guardrails` run `31821179255`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,256,676 bytes totales y 2,741,012 bytes JS. El incremento corresponde al artefacto canonico de la rama publicada; no cambia vendors ni assets trackeados.
+
+Revision 2026-08-17 firma legal en Certificacion de Competencias: el total sube 2,852 bytes, JS sube 1,854 bytes y CSS sube 998 bytes por incorporar la cola de aprobacion del Representante Legal de Codelco El Salvador, manteniendo el servicio de aprobacion separado del flujo lazy de emision. No agrega vendors ni assets pesados; la firma legal vive en el Edge Function y se carga solo durante la generacion aprobada.
+
+Revision 2026-08-17 Gestión Psicolaboral alineación de tabla: el total sube 118 bytes, JS sube 63 bytes y CSS sube 55 bytes por conservar la columna `Actualización` como celda de tabla y mover el layout flexible a un contenedor interno. No agrega vendors, rutas, assets ni cambia la carga inicial.
 
 ## Politica de actualizacion
 

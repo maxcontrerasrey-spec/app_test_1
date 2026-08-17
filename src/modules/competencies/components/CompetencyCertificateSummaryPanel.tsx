@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { formatDateForDisplay } from "../../../shared/lib/date";
-import type { CompetencyDashboardPayload, CompetencyDashboardRow } from "../types";
+import { decideCompetencyLegalApproval, fetchCompetencyLegalApprovalQueue } from "../services/competencyLegalApprovalApi";
+import type { CompetencyDashboardPayload, CompetencyDashboardRow, CompetencyLegalApproval } from "../types";
 
 function statusLabel(value: string) {
   const labels: Record<string, string> = {
@@ -69,6 +71,41 @@ export function CompetencyCertificateSummaryPanel({
 }: CompetencyCertificateSummaryPanelProps) {
   const summary = dashboard?.summary;
   const recent = dashboard?.recent ?? [];
+  const [legalApprovals, setLegalApprovals] = useState<CompetencyLegalApproval[]>([]);
+  const [legalApprovalError, setLegalApprovalError] = useState<string | null>(null);
+  const [legalApprovalBusy, setLegalApprovalBusy] = useState<string | null>(null);
+
+  async function loadLegalApprovals() {
+    try {
+      setLegalApprovalError(null);
+      setLegalApprovals(await fetchCompetencyLegalApprovalQueue());
+    } catch {
+      setLegalApprovals([]);
+      setLegalApprovalError(null);
+    }
+  }
+
+  useEffect(() => {
+    void loadLegalApprovals();
+  }, []);
+
+  async function resolveLegalApproval(item: CompetencyLegalApproval, decision: "approved" | "rejected") {
+    const rejectionReason = decision === "rejected"
+      ? window.prompt("Indica el motivo del rechazo legal:")?.trim() ?? ""
+      : undefined;
+    if (decision === "rejected" && !rejectionReason) return;
+
+    setLegalApprovalBusy(item.certificateId);
+    try {
+      await decideCompetencyLegalApproval(item.certificateId, decision, rejectionReason);
+      await loadLegalApprovals();
+      onRetry();
+    } catch (error) {
+      setLegalApprovalError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLegalApprovalBusy(null);
+    }
+  }
 
   return (
     <section className="competency-summary-panel" aria-label="Resumen de certificados generados">
@@ -113,6 +150,45 @@ export function CompetencyCertificateSummaryPanel({
           <small>Carga documental</small>
         </article>
       </div>
+
+      {legalApprovalError ? <div className="competency-alert">{legalApprovalError}</div> : null}
+      {legalApprovals.length > 0 ? (
+        <section className="competency-legal-approval-panel" aria-label="Aprobaciones legales pendientes">
+          <div className="competency-validity-card__header">
+            <div>
+              <h3>Aprobaciones Representante Legal</h3>
+              <p>Certificados Codelco El Salvador bloqueados hasta la resolución de Guillermo Zañartu Apara.</p>
+            </div>
+            <button type="button" className="competency-inline-action" onClick={() => void loadLegalApprovals()}>
+              Actualizar
+            </button>
+          </div>
+          <div className="competency-legal-approval-list">
+            {legalApprovals.map((item) => (
+              <article className="competency-legal-approval-card" key={item.certificateId}>
+                <div>
+                  <strong>{item.workerFullName}</strong>
+                  <small>{item.workerDocumentNumber} · {item.folio}</small>
+                  <small>{item.workerJobTitle || "Cargo no informado"} · {item.workerAreaName || "Faena no informada"}</small>
+                </div>
+                <div className="competency-legal-approval-card__meta">
+                  <span>{item.legalSignerName}</span>
+                  <small>{item.legalSignerRole} · {item.legalSignerDocumentNumber || "RUN pendiente de BUK"}</small>
+                  <small>Capacitación: {formatDateLabel(item.trainingDate)}</small>
+                </div>
+                <div className="competency-legal-approval-card__actions">
+                  <button type="button" className="competency-inline-action competency-inline-action--success" disabled={legalApprovalBusy === item.certificateId} onClick={() => void resolveLegalApproval(item, "approved")}>
+                    Aprobar firma
+                  </button>
+                  <button type="button" className="competency-inline-action competency-inline-action--danger" disabled={legalApprovalBusy === item.certificateId} onClick={() => void resolveLegalApproval(item, "rejected")}>
+                    Rechazar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="competency-validity-card">
         <div className="competency-validity-card__header">

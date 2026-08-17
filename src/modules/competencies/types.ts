@@ -153,6 +153,24 @@ export type CompetencyDashboardPayload = {
   recent: CompetencyDashboardRow[];
 };
 
+export type CompetencyLegalApproval = {
+  certificateId: string;
+  requestId: string;
+  folio: string;
+  workerFullName: string;
+  workerDocumentNumber: string;
+  workerJobTitle: string | null;
+  workerAreaName: string | null;
+  workerContractCode: string | null;
+  instructorFullName: string;
+  trainingDate: string;
+  legalApprovalStatus: string;
+  legalSignerName: string;
+  legalSignerRole: string;
+  legalSignerDocumentNumber: string | null;
+  createdAt: string;
+};
+
 export type CompetencyEvaluationUpload = {
   path: string;
   name: string;

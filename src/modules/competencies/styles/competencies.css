@@ -252,6 +252,60 @@
   line-height: 1;
 }
 
+.competency-legal-approval-panel {
+  display: grid;
+  gap: 0;
+  margin-bottom: 18px;
+  border: 1px solid rgba(14, 116, 144, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.competency-legal-approval-list {
+  display: grid;
+}
+
+.competency-legal-approval-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(200px, 0.9fr) auto;
+  gap: 16px;
+  align-items: center;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 14px 16px;
+}
+
+.competency-legal-approval-card > div,
+.competency-legal-approval-card__meta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.competency-legal-approval-card strong {
+  color: var(--text-primary, #0f172a);
+}
+
+.competency-legal-approval-card small {
+  color: var(--text-muted, #64748b);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.competency-legal-approval-card__actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.competency-inline-action--success {
+  color: #166534;
+}
+
+.competency-inline-action--danger {
+  color: #991b1b;
+}
+
 .competency-validity-card {
   border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
   border-radius: 8px;
@@ -382,6 +436,14 @@
 
   .competency-validity-card__header {
     display: grid;
+  }
+
+  .competency-legal-approval-card {
+    grid-template-columns: 1fr;
+  }
+
+  .competency-legal-approval-card__actions {
+    justify-content: flex-start;
   }
 
   .competency-summary-table__head {
