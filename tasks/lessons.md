@@ -3147,6 +3147,10 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - **No basta con cambiar la tabla visible.** Cuando la persona tiene `candidate_profiles` y `recruitment_precandidates`, ambas fuentes deben actualizarse en una sola transaccion y conservar el mismo identificador de caso.
 - **El RUT correcto debe validarse fuera del candidato.** Confirmar digito verificador, ausencia de colision y coincidencia en fuentes independientes antes de escribir; si ya existe ficha BUK, detenerse y reconciliar por documento.
 
+## 295. La sincronizacion de cargos BUK debe reconciliar por codigo estable
+
+- **Un cambio de nombre no debe crear otro cargo.** Si BUK conserva el mismo `role_id`, el ERP debe actualizar el registro `BUK-ROLE-*` existente y mantener su identificador para no romper solicitudes históricas.
+
 ## 294. Un módulo sensible no está listo solo porque compile
 
 - **Los RPC `SECURITY DEFINER` deben probarse según su identidad efectiva.** `current_user` representa al propietario dentro de la función; la frontera service-role debe vivir en ACL/GRANT y no en una comparación interna que vuelve el RPC inutilizable.

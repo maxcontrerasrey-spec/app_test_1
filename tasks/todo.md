@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Sincronización cargo BUK Encargado de RRLL - 2026-08-17
+
+- [x] Confirmar el rol exacto en BUK y su código estable.
+- [x] Comparar el registro local y evitar duplicar el cargo.
+- [x] Sincronizar el nombre/estado del cargo en ERP y verificar el catálogo productivo.
+- [ ] Ejecutar auditorías, commit, push y CI.
+
+Resultado parcial: BUK rol `67` (`BUK-ROLE-67`) ya existe como `ENCARGADO DE RRLL`; ERP fue actualizado desde `ENCARGADA DE RRLL` al mismo código, activo y disponible para contratación. Migración aplicada: `20260817141459`.
+
 ## Corrección Sync BUK Roster Absences - 2026-08-17
 
 - [x] Identificar workflow/script `Sync BUK Roster Absences` y obtener el log exacto del run fallido `31986491575`.
