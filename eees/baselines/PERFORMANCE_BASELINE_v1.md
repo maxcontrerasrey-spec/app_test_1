@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.28
+version: 1.0.29
 status: Activo
 language: es-CL
 owner: Quality
@@ -88,6 +88,8 @@ Revision 2026-08-08 copy postulacion DSAL: JS sube 5 bytes por reemplazar el blo
 
 Revision 2026-08-08 validacion DSAL: el total sube 1,117 bytes y JS sube 1,226 bytes por agregar normalizacion visible de texto, formato de telefono y validacion de correo en la pagina publica. No agrega vendors ni assets.
 
+Revision 2026-08-17 Psych AI V6.3: el artefacto canonico de GitHub Actions sube 281 bytes totales y 281 bytes JS por el contrato de homologaciones funcionales y guardrails metodologicos. No agrega vendors, CSS ni assets trackeados.
+
 Revision 2026-08-11 representantes sindicales DSAL: el total sube 634 bytes, JS sube 288 bytes y CSS sube 346 bytes por exponer desde el RPC la marca de nómina sindical y mostrar la burbuja `Representante sindical` solo para los RUT coincidentes. No agrega vendors, rutas ni assets pesados.
 
 Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes por exigir folio con cupo en la aprobacion de precandidatos y mostrar la instruccion operativa cuando no hay destino habilitado. No agrega vendors, CSS ni assets.
@@ -123,9 +125,9 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10261135,
+  "distTotalBytes": 10261416,
   "jsFileCount": 62,
-  "jsTotalBytes": 2744418,
+  "jsTotalBytes": 2744699,
   "cssFileCount": 12,
   "cssTotalBytes": 241944,
   "trackedAssets": [

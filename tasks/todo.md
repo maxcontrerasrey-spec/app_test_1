@@ -18,6 +18,8 @@
 
 Resultado: V6.3 quedó activa en producción con canary real de 8.377 tokens y sin flags. El informe regenerado conserva 7 páginas legibles; se dejó documentado que el objetivo editorial de 5-6 páginas no se fuerza porque implicaría perder contenido requerido.
 
+Corrección CI: el primer workflow de este SHA detectó un aumento medido de 281 bytes en el bundle; se actualizó el baseline canónico a la medición de GitHub sin modificar límites de vendors, CSS ni assets trackeados. Guardian local vuelve a pasar con 0 errores y 0 advertencias.
+
 ## Auditoría integral y cierre de repositorio - 2026-08-17
 
 - [x] Revisar estado Git, commits recientes, archivos pendientes y artefactos locales.
