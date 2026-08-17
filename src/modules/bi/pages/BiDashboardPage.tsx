@@ -265,9 +265,10 @@ export function BiDashboardPage() {
     }
 
     const allowedContractCodes = new Set(contractOptions.map((item) => item.value));
-    setContractCodeFilter((current) =>
-      current.filter((contractCode) => allowedContractCodes.has(contractCode))
-    );
+    setContractCodeFilter((current) => {
+      const next = current.filter((contractCode) => allowedContractCodes.has(contractCode));
+      return next.length === current.length ? current : next;
+    });
   }, [activeView, contractOptions, recruitmentAnalytics.isLoading]);
 
   useEffect(() => {
@@ -280,7 +281,10 @@ export function BiDashboardPage() {
     }
 
     const allowedJobs = new Set(recruitmentJobOptions.map((item) => item.value));
-    setJobTitleFilter((current) => current.filter((jobTitle) => allowedJobs.has(jobTitle)));
+    setJobTitleFilter((current) => {
+      const next = current.filter((jobTitle) => allowedJobs.has(jobTitle));
+      return next.length === current.length ? current : next;
+    });
   }, [activeView, recruitmentAnalytics.isLoading, recruitmentJobOptions]);
 
   useEffect(() => {
@@ -293,7 +297,10 @@ export function BiDashboardPage() {
     }
 
     const allowedShifts = new Set(recruitmentShiftOptions.map((item) => item.value));
-    setShiftNameFilter((current) => current.filter((shiftName) => allowedShifts.has(shiftName)));
+    setShiftNameFilter((current) => {
+      const next = current.filter((shiftName) => allowedShifts.has(shiftName));
+      return next.length === current.length ? current : next;
+    });
   }, [activeView, recruitmentAnalytics.isLoading, recruitmentShiftOptions]);
 
   useEffect(() => {
@@ -303,10 +310,16 @@ export function BiDashboardPage() {
 
     const allowedValues = new Set(secondaryOptions.map((item) => item.value));
     if (activeView === "reclutamiento") {
-      setManagementFilter((current) => current.filter((value) => allowedValues.has(value)));
+      setManagementFilter((current) => {
+        const next = current.filter((value) => allowedValues.has(value));
+        return next.length === current.length ? current : next;
+      });
       return;
     }
-    setJobTitleFilter((current) => current.filter((value) => allowedValues.has(value)));
+    setJobTitleFilter((current) => {
+      const next = current.filter((value) => allowedValues.has(value));
+      return next.length === current.length ? current : next;
+    });
   }, [activeView, recruitmentAnalytics.isLoading, secondaryOptions]);
 
   const activeViewMeta = useMemo(
