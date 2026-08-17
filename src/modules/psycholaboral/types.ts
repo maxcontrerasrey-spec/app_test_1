@@ -23,7 +23,7 @@ export type PsychCandidate = {
   job_position_name: string;
   stage_code: string;
   assessment_id: string | null;
-  display_status: "not_sent" | "sent" | "completed";
+  display_status: "not_sent" | "sent" | "expired" | "completed";
   delivery_status: string | null;
   execution_status: string | null;
   decision: "pending" | "approved" | "rejected" | null;

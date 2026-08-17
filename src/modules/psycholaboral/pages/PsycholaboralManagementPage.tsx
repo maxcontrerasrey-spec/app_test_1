@@ -26,6 +26,7 @@ import "../styles/psycholaboral.css";
 const statusLabels = {
   not_sent: "No realizado",
   sent: "Enviado",
+  expired: "Desierto",
   completed: "Terminado",
 } as const;
 const PAGE_SIZE = 50;
@@ -73,6 +74,7 @@ export function PsycholaboralManagementPage() {
     { key: "", label: "Todos" },
     { key: "not_sent", label: "No realizado" },
     { key: "sent", label: "Enviado" },
+    { key: "expired", label: "Desierto" },
     { key: "completed", label: "Terminado" },
   ] as const;
   const refresh = async () =>
@@ -240,7 +242,7 @@ export function PsycholaboralManagementPage() {
             <strong>{rows.length}</strong>
             <small>Página actual</small>
           </button>
-          {(["not_sent", "sent", "completed"] as const).map((item) => (
+          {(["not_sent", "sent", "expired", "completed"] as const).map((item) => (
             <button
               type="button"
               className={`tracking-kpi-card ${item === "completed" ? "tracking-kpi-card-generado" : "tracking-kpi-card-en-proceso"} ${status === item ? "tracking-kpi-card-active" : ""}`}
@@ -484,7 +486,7 @@ export function PsycholaboralManagementPage() {
                           </section>
                           <section className="expanded-detail-section expanded-detail-section-full psych-actions-section">
                             <div className="psych-actions">
-                              {!row.assessment_id ? (
+                              {!row.assessment_id || row.display_status === "expired" ? (
                                 <button
                                   className="psych-primary-action"
                                   type="button"
@@ -494,7 +496,7 @@ export function PsycholaboralManagementPage() {
                                     void send(row);
                                   }}
                                 >
-                                  Enviar test
+                                  {row.display_status === "expired" ? "Reenviar test" : "Enviar test"}
                                 </button>
                               ) : null}
                               {row.display_status === "completed" ? (

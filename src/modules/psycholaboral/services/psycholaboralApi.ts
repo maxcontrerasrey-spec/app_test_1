@@ -52,6 +52,13 @@ export async function fetchPsychCandidates(filters: {
   limit: number;
   offset: number;
 }) {
+  const { error: expirationError } = await getSupabaseClientOrThrow().rpc(
+    "expire_abandoned_psycholaboral_assessments",
+  );
+  if (expirationError)
+    throw new Error(
+      getSupabaseErrorMessage(expirationError, "No fue posible actualizar los vencimientos."),
+    );
   const { data, error } = await getSupabaseClientOrThrow().rpc(
     "get_psycholaboral_candidates_page",
     {
