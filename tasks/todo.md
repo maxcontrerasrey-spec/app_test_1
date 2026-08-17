@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Auditoría integral y cierre de repositorio - 2026-08-17
+
+- [x] Revisar estado Git, commits recientes, archivos pendientes y artefactos locales.
+- [x] Ejecutar Guardian, auditorías de migraciones/seguridad/limpieza, tests y build frontend.
+- [x] Corregir la vulnerabilidad transitoria de `nanoid` actualizando PostCSS a `8.5.26`.
+- [x] Retirar artefactos no versionados de `output/` y `tmp/` a una ubicación recuperable fuera del repositorio.
+- [x] Confirmar diff limpio, commit y publicación en `main`.
+
+Resultado: todos los gates del repositorio pasan; `npm audit` queda sin vulnerabilidades; el código y las migraciones ya estaban alineados con `origin/main`. Los artefactos locales de maquetas se conservaron fuera del repositorio en `/tmp` para recuperación.
+
 ## Alineación separadores Gestión Psicolaboral - 2026-08-17
 
 - [x] Confirmar la causa visual en la tabla de `/gestion-psicolaboral`.
@@ -20,7 +30,7 @@ Resultado: la columna `Actualización` ya no usa `display:flex` directamente sob
 - [x] Agregar regresiones de integridad, permisos e idempotencia de decision, con prueba de no impacto para otras faenas.
 - [x] Ejecutar `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run guardian`, `npm run build:frontend-check`, `git diff --check` y smoke controlado antes de decidir despliegue.
 
-Resultado: implementacion local validada. El RUN se resuelve exclusivamente desde el snapshot BUK (`employees_active_current`) y la emision se bloquea si no existe; no se invento ni se fijo un RUN desde la maqueta. La migracion aun no se aplico porque este entorno no tiene Supabase CLI ni se solicito despliegue productivo en este turno.
+Resultado productivo: migracion `20260817180000` aplicada y registrada en Supabase; Edge Function `generate-competency-certificate` desplegada con la firma como asset versionado; commit `061a20e` publicado en `main`; Cloudflare Pages expone el bundle de Competencias con la cola de aprobacion legal. El RUN se resuelve exclusivamente desde `employees_active_current`: actualmente BUK no tiene una fila coincidente para Guillermo Zañartu Apara, por lo que la emision permanece correctamente bloqueada hasta sincronizar su ficha BUK.
 
 
 ## Administrador ERP para Renato Martinez - 2026-08-17
