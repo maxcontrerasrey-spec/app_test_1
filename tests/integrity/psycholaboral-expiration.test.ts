@@ -10,6 +10,9 @@ const migration = read(
 const page = read("src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx");
 const service = read("src/modules/psycholaboral/services/psycholaboralApi.ts");
 const types = read("src/modules/psycholaboral/types.ts");
+const statusMigration = read(
+  "supabase/migrations/20260817201000_show_expired_psycholaboral_status.sql",
+);
 
 describe("Psycholaboral expiration contract", () => {
   it("expires abandoned 90-minute sessions only at the backend boundary", () => {
@@ -28,5 +31,7 @@ describe("Psycholaboral expiration contract", () => {
     expect(page).toContain('{ key: "expired", label: "Desierto" }');
     expect(page).toContain('row.display_status === "expired"');
     expect(page).toContain('"Reenviar test"');
+    expect(statusMigration).toContain("when execution_status = 'expired' then 'expired'");
+    expect(statusMigration).toContain("display_status = p_status");
   });
 });
