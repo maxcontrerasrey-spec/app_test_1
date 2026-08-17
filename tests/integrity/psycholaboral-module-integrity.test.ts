@@ -277,6 +277,7 @@ describe("Gestión Psicolaboral", () => {
     expect(certificate).toContain("function humanizeCode");
     expect(certificate).toContain('replace(/_/g, " ")');
     expect(certificate).toContain('humanizeCode(ai.recommendation, "ADECUADO_CON_OBSERVACIONES")');
+    expect(certificate).not.toContain("Síntesis de resultado");
     expect(aiReviewDialog).not.toContain("REQUIERE_PROFUNDIZACION");
   });
 

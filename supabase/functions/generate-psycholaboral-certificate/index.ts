@@ -861,14 +861,6 @@ function drawReportPdf(
   const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, logo: reportLogo, payload, page: first, y: REPORT.topY };
   drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, ["Informe Psicolaboral Integrado"]);
   drawReportHeading(ctx, `Resultado de evaluación: ${humanizeCode(ai.recommendation, "ADECUADO_CON_OBSERVACIONES")}`);
-  drawCard(
-    ctx,
-    "Síntesis de resultado",
-    [
-      text(ai.decision_rationale, "La recomendación se basa en la compatibilidad entre resultados psicométricos, criticidad del cargo y antecedentes disponibles."),
-    ],
-    { tone: "result" },
-  );
   drawCard(ctx, "Perfil ejecutivo", [text(ai.executive_profile ?? ai.executive_summary)]);
   drawCard(ctx, "Ajuste al cargo", [
     text(ai.adjustment_to_role ?? ai.job_fit_analysis, `Cargo evaluado: ${payload.candidate.job_position_name}. La compatibilidad se interpreta según las exigencias del puesto y los antecedentes disponibles.`),
