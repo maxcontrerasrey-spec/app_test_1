@@ -386,11 +386,6 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
   const prpResult = asRecord(prp.result);
   const prpScore = readNumber(prpResult.raw_total);
   const prpInterpretation = classifyPrpScore(prpScore);
-  const prpFactors = Object.entries(asRecord(prpResult.factors)).map(([code, value]) => ({
-    code,
-    score: roundNumber(value),
-    documented_meaning: null,
-  }));
   const barratt = byCode("BARRATT_BIS11_30");
   const barrattResult = asRecord(barratt.result);
 
@@ -410,6 +405,11 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
       preliminary_recommendation_frame: compatibilityFrame.preliminary_recommendation_frame,
       evidence_integration: compatibilityFrame.evidence_integration,
       evidence_weighting: compatibilityFrame.evidence_weighting,
+      decision_constraints: {
+        final_recommendations: ["ADECUADO", "ADECUADO_CON_OBSERVACIONES", "NO_ADECUADO"],
+        prp: "81-117 NO_ADECUADO; 118-136 NEUTRO; 137-150 ADECUADO; fuera de rango no extrapolar",
+        barratt_risk_high: "BLOCKED_NOT_VALIDATED: el ERP solo dispone de Bajo el promedio, Promedio y Sobre el promedio",
+      },
       critical_context: asArray(asRecord(profile.payload).critical_context).map((item) => readText(item)).filter(Boolean),
       interview_focus: asArray(asRecord(profile.payload).interview_focus).map((item) => readText(item)).filter(Boolean),
     },
@@ -440,11 +440,11 @@ export function buildCompactPsychAIFacts(input: JsonRecord): JsonRecord {
         classification_status: prpInterpretation.status,
         documented_meaning: prpInterpretation.meaning,
         decision_weight: "CONTEXTUAL_NOT_DECISIVE",
-        factors: prpFactors,
       },
     },
+    functional_mappings: semanticContext.functional_mappings,
     methodology: {
-      version: "psych-methodology-v6.2-compact",
+      version: "psych-methodology-v6.3-compact",
       professional_report_rules: {
         object_of_report: "persona y funcionamiento laboral aplicado al cargo",
         instruments_are_evidence: true,

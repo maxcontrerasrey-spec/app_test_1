@@ -1,5 +1,23 @@
 # Tareas y Roadmap de Desarrollo
 
+## Expiracion de evaluaciones psicolaborales abandonadas - 2026-08-17
+
+- [ ] Auditar el vencimiento de 90 minutos, el estado de la evaluación y la regla de reenvío.
+- [ ] Crear RPC backend para marcar como `expired` las sesiones `in_progress` cuyo plazo venció, con auditoría.
+- [ ] Mostrar `Desierto` en Gestión Psicolaboral y habilitar reenvío únicamente para expirados.
+- [ ] Agregar regresiones de integridad y ejecutar gates completos.
+
+## Psych AI V6.3 consolidada - 2026-08-17
+
+- [x] Auditar V6.2 vigente, scoring PRP/Barratt, homologaciones IPIP, schema, renderer y flujo de canary.
+- [x] Versionar prompt/schema/metodología V6.3 sin alterar scoring ni históricos; compactar facts y fijar las tres categorías finales.
+- [x] Incorporar matriz funcional IPIP-16/IPIP-IPC con niveles de evidencia y límites; bloquear cualquier supuesto Barratt alto no validado.
+- [x] Actualizar runtime, guardrails y tests de regresión; conservar Structured Output, seguridad y decisión humana.
+- [x] Aplicar migración y desplegar Edge Functions; regenerar un canary sin modificar históricos y medir tokens V6.2/V6.3.
+- [x] Validar PDF, QA semántico/visual, auditorías, Guardian, commit, push y CI.
+
+Resultado: V6.3 quedó activa en producción con canary real de 8.377 tokens y sin flags. El informe regenerado conserva 7 páginas legibles; se dejó documentado que el objetivo editorial de 5-6 páginas no se fuerza porque implicaría perder contenido requerido.
+
 ## Auditoría integral y cierre de repositorio - 2026-08-17
 
 - [x] Revisar estado Git, commits recientes, archivos pendientes y artefactos locales.

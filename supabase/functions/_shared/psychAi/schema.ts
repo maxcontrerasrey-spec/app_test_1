@@ -1,7 +1,7 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 import { normalizeSemanticOutputForErp, PSYCH_SEMANTIC_VERSION } from "./semantic.ts";
 
-export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v6.2";
+export const RESPONSE_SCHEMA_VERSION = "psych-ai-schema-v6.3";
 
 const REQUIRED_TOP_LEVEL = [
   "recommendation",

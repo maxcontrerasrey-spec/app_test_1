@@ -876,9 +876,9 @@ function drawReportPdf(
     drawTwoColumnBulletCards(
       ctx,
       "Convergencias",
-      [text(integration.summary), ...(integration.convergences ?? []).map((item) => text(item))].filter(Boolean),
+      [text(integration.summary), ...(integration.convergences ?? []).slice(0, 3).map((item) => text(item))].filter(Boolean),
       "Divergencias",
-      (integration.divergences ?? []).map((item) => text(item)).filter(Boolean),
+      (integration.divergences ?? []).slice(0, 3).map((item) => text(item)).filter(Boolean),
     );
   }
   drawTwoColumnBulletCards(
@@ -886,19 +886,17 @@ function drawReportPdf(
     "Fortalezas críticas",
     cleanList(ai.critical_strengths?.length ? ai.critical_strengths : ai.strengths, 4),
     "Brechas e incertidumbres",
-    cleanList([...(ai.critical_gaps ?? []), ...(ai.critical_uncertainties ?? []), ...cleanList(ai.development_areas, 3)], 6),
+    cleanList([...(ai.critical_gaps ?? []), ...(ai.critical_uncertainties ?? []), ...cleanList(ai.development_areas, 3)], 4),
   );
 
-  startReportPage(ctx, ctx.doc.getPageCount() + 1);
   drawInstrumentBars(ctx, "Personalidad laboral IPIP-16", dimensionEntries(payload.instruments.find((item) => item.code === "IPIP16_105")?.result ?? {}));
   drawCard(ctx, "Lectura laboral integrada", [
     text(ai.personality_profile?.summary ?? ai.ipip16?.summary),
     text(ai.personality_profile?.self_regulation),
     text(ai.personality_profile?.discipline_structure),
   ]);
-  drawCard(ctx, "Dimensiones relevantes", Object.entries(ai.ipip16?.clusters ?? {}).map(([cluster, detail]) => `${clusterLabel(cluster)}: ${detail}`));
 
-  startReportPage(ctx, ctx.doc.getPageCount() + 1);
+  ensureSpace(ctx, 260);
   drawSectionTitle(ctx, "Estilo interpersonal IPIP-IPC");
   const ipc = payload.instruments.find((item) => item.code === "IPIP_IPC_32");
   if (ipc) {
@@ -920,7 +918,7 @@ function drawReportPdf(
     text(ai.interpersonal_profile?.response_under_pressure),
   ]);
 
-  startReportPage(ctx, ctx.doc.getPageCount() + 1);
+  ensureSpace(ctx, 260);
   drawSectionTitle(ctx, "Seguridad, impulsividad y conclusión");
   const barratt = payload.instruments.find((item) => item.code === "BARRATT_BIS11_30");
   const prp = payload.instruments.find((item) => item.code === "PRP_EMAIL_FORM_A_30");
@@ -939,7 +937,7 @@ function drawReportPdf(
     ],
   );
   drawCard(ctx, "Integración de seguridad", [text(ai.safety_and_impulse_profile?.combined_interpretation ?? ai.integrated_analysis)]);
-  drawBulletSection(ctx, "Preguntas sugeridas de entrevista", cleanList(ai.interview_questions, 5));
+  drawBulletSection(ctx, "Preguntas sugeridas de entrevista", cleanList(ai.interview_questions, 4));
   drawCard(ctx, "Conclusión integrada", [
     text(ai.integrated_conclusion ?? ai.preliminary_conclusion),
     text(cleanList(ai.material_limitations ?? ai.limitations, 1).at(0), "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico."),

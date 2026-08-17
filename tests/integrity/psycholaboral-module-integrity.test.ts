@@ -12,6 +12,7 @@ const v53Migration = readFileSync("supabase/migrations/20260814111606_psych_ai_v
 const v54Migration = readFileSync("supabase/migrations/20260814132317_psych_ai_v5_4_humanized_report.sql", "utf8");
 const v61Migration = readFileSync("supabase/migrations/20260814163136_psych_ai_v6_1_luna_medium_robusto.sql", "utf8");
 const v62Migration = readFileSync("supabase/migrations/20260814191200_psych_ai_v6_2_taxonomy_pdf_close.sql", "utf8");
+const v63Migration = readFileSync("supabase/migrations/20260817200000_psych_ai_v6_3_consolidated.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -183,7 +184,7 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiGuardrails).toContain("buildDeterministicPsychSemanticOutput");
     expect(psychAiIndex).toContain("provider_failed_fallback_used");
     expect(psychAiIndex).toContain("success: !liveConfigured");
-    expect(psychAiIndex).toContain("gpt56-luna-medium-v6.2");
+    expect(psychAiIndex).toContain("gpt56-luna-medium-v6.3");
     expect(psychAiIndex).toContain("ANALYST_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("REVIEWER_SYSTEM_PROMPT");
     expect(psychAiIndex).toContain("reviewer_failed_bypassed");
@@ -203,8 +204,8 @@ describe("Gestión Psicolaboral", () => {
     expect(v61Migration).toContain("150");
     expect(v61Migration).toContain("competency_framework");
     expect(v61Migration).toContain("criticality_order");
-    expect(psychAiIndex).toContain("gpt56-luna-medium-v6.2");
-    expect(edge).toContain("gpt56-luna-medium-v6.2");
+    expect(psychAiIndex).toContain("gpt56-luna-medium-v6.3");
+    expect(edge).toContain("gpt56-luna-medium-v6.3");
     expect(psychAiSemantic).toContain("classifyPrpScore");
     expect(psychAiGuardrails).toContain("evidence_integration");
     expect(certificate).toContain("Síntesis de competencias laborales");
@@ -230,7 +231,7 @@ describe("Gestión Psicolaboral", () => {
     expect(v5Migration).toContain("safety_and_impulse_profile");
     expect(v5Migration).toContain("integrated_conclusion");
     expect(v5Migration).toContain("automatic_interpretation_allowed=true");
-    expect(psychAiSemantic).toContain("psych-methodology-v6.2");
+    expect(psychAiSemantic).toContain("psych-methodology-v6.3");
     expect(psychAiSemantic).toContain("prp-documentary-ranges-v6.1");
     expect(psychAiSemantic).not.toContain("prp_hard_lock_missing");
     expect(v52Migration).toContain("psych-ai-prompt-v5.2");
@@ -263,7 +264,7 @@ describe("Gestión Psicolaboral", () => {
     expect(psychAiGuardrails).toContain("artificial_strength_removed");
     expect(psychAiIndex).toContain("Eres GPT-5.6 Luna");
     expect(psychAiIndex).not.toContain("Eres GPT-5 mini");
-    expect(edge).toContain('PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-medium-v6.2"');
+    expect(edge).toContain('PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-medium-v6.3"');
   });
 
   it("cierra V6.2 sin cuarta categoria final y sin guiones bajos visibles en PDF", () => {
@@ -298,5 +299,20 @@ describe("Gestión Psicolaboral", () => {
     expect(certificate).not.toContain("Confianza automatizada");
     expect(certificate).not.toContain("Este modelo interno no corresponde a DISC");
     expect(certificate).not.toContain("La interpretación es descriptiva y no incorpora baremos poblacionales locales ni evidencia de conducta observada");
+  });
+
+  it("activa V6.3 con homologaciones funcionales y bloquea cortes Barratt no validados", () => {
+    expect(v63Migration).toContain("psych-ai-prompt-v6.3");
+    expect(v63Migration).toContain("psych-ai-schema-v6.3");
+    expect(v63Migration).toContain("psych-methodology-v6.3");
+    expect(v63Migration).toContain("BLOCKED_NOT_VALIDATED");
+    expect(v63Migration).toContain("functional_mappings");
+    expect(psychAiSemantic).toContain("PSYCH_FUNCTIONAL_MAPPINGS");
+    expect(psychAiSemantic).toContain("risk_high_mapping: \"BLOCKED_NOT_VALIDATED\"");
+    expect(psychAiGuardrails).toContain("barratt_risk_high: \"BLOCKED_NOT_VALIDATED");
+    expect(psychAiGuardrails).toContain("functional_mappings: semanticContext.functional_mappings");
+    expect(psychAiIndex).toContain("psych_ai_interpretation_v6_3");
+    expect(psychAiIndex).toContain("no inventes cortes");
+    expect(edge).toContain('PSYCH_AI_RUNTIME_VERSION = "gpt56-luna-medium-v6.3"');
   });
 });
