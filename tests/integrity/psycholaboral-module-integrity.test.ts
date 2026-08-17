@@ -20,6 +20,7 @@ const psychAiSemantic = readFileSync("supabase/functions/_shared/psychAi/semanti
 const certificate = readFileSync("supabase/functions/generate-psycholaboral-certificate/index.ts", "utf8");
 const resultDialog = readFileSync("src/modules/psycholaboral/components/PsychResultDialog.tsx", "utf8");
 const aiReviewDialog = readFileSync("src/modules/psycholaboral/components/PsychAIReviewDialog.tsx", "utf8");
+const managementPage = readFileSync("src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx", "utf8");
 const assessmentPage = readFileSync("src/modules/psycholaboral/pages/PsychometricAssessmentPage.tsx", "utf8");
 const assessmentStyles = readFileSync("src/modules/psycholaboral/styles/psycholaboral.css", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
@@ -35,6 +36,14 @@ describe("Gestión Psicolaboral", () => {
     expect(assessmentStyles).toContain(".psych-block-nav__button--complete");
     expect(assessmentStyles).toContain(".psych-block-nav__button--incomplete");
     expect(assessmentStyles).toContain("button[aria-current=\"step\"]");
+  });
+
+  it("mantiene la columna de actualización como celda de tabla para no desalinear separadores", () => {
+    expect(managementPage).toContain('td className="psych-update-cell"');
+    expect(managementPage).toContain('className="psych-update-cell__content"');
+    expect(assessmentStyles).toContain(".psych-update-cell{min-width:");
+    expect(assessmentStyles).toContain(".psych-update-cell__content{display:flex;");
+    expect(assessmentStyles).not.toContain(".psych-update-cell{display:flex");
   });
 
   it("registra un módulo independiente y protege su ruta", () => {
@@ -122,10 +131,6 @@ describe("Gestión Psicolaboral", () => {
   });
 
   it("genera IA automaticamente al completar la bateria y no expone boton manual", () => {
-    const managementPage = readFileSync(
-      "src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx",
-      "utf8",
-    );
     expect(edge).toContain("await runPsychAIInterpretation(admin, session.assessment_id!, null)");
     expect(edge).toContain("EdgeRuntime.waitUntil(postCompletionJob)");
     expect(edge).toContain('action === "internal_generate_ai_interpretation"');

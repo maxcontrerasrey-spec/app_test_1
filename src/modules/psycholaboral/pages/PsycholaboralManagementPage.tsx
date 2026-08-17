@@ -381,26 +381,28 @@ export function PsycholaboralManagementPage() {
                       ) : null}
                     </td>
                     <td className="psych-update-cell">
-                      <span>
-                        {dateTime(
-                          row.completed_at ?? row.started_at ?? row.issued_at,
-                        )}
-                      </span>
-                      {row.certificate_status === "generated" ? (
-                        <button
-                          type="button"
-                          className="psych-icon-action"
-                          title="Descargar certificado"
-                          aria-label={`Descargar certificado de ${row.full_name}`}
-                          disabled={busy === row.id}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void download(row);
-                          }}
-                        >
-                          PDF
-                        </button>
-                      ) : null}
+                      <div className="psych-update-cell__content">
+                        <span>
+                          {dateTime(
+                            row.completed_at ?? row.started_at ?? row.issued_at,
+                          )}
+                        </span>
+                        {row.certificate_status === "generated" ? (
+                          <button
+                            type="button"
+                            className="psych-icon-action"
+                            title="Descargar certificado"
+                            aria-label={`Descargar certificado de ${row.full_name}`}
+                            disabled={busy === row.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void download(row);
+                            }}
+                          >
+                            PDF
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                   {expanded === row.id ? (

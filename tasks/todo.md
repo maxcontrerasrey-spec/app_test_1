@@ -1,5 +1,46 @@
 # Tareas y Roadmap de Desarrollo
 
+## Alineación separadores Gestión Psicolaboral - 2026-08-17
+
+- [x] Confirmar la causa visual en la tabla de `/gestion-psicolaboral`.
+- [x] Corregir la celda `Actualización` para que conserve semántica de tabla y alinee su borde con el resto de columnas.
+- [x] Agregar regresión de integridad contra el patrón que rompe el layout.
+- [x] Validar pruebas, build frontend y diff.
+
+Resultado: la columna `Actualización` ya no usa `display:flex` directamente sobre el `<td>`; el layout flexible vive en `.psych-update-cell__content`, por lo que el borde inferior vuelve a ser el mismo separador nativo de la fila. Validado con integridad, build frontend y Guardian.
+
+## Firma Representante Legal en certificados Codelco El Salvador - 2026-08-17
+
+- [x] Auditar el contrato vigente de certificacion, el origen BUK de la faena y el RUN verificable de Guillermo Zanartu Apara; no asumir datos desde la maqueta.
+- [x] Implementar configuracion versionada y privada del firmante legal, con firma versionada en el Edge Function, hash y vigencia.
+- [x] Implementar aprobacion backend-authoritative solo para certificados de Codelco El Salvador, con Guillermo como aprobador y trazabilidad de solicitud, decision, actor y hash.
+- [x] Bloquear la generacion/carga BUK de esa faena hasta aprobacion valida y datos completos del firmante; mantener sin cambio el flujo de otras faenas.
+- [x] Incorporar firma legal al PDF original sin perder contenido, usando el mismo bloque visual del instructor y el hash de la firma.
+- [x] Actualizar frontend para visualizar la cola de aprobacion y permitir aprobar/rechazar solo con permisos autorizados, sin mover autorizacion al cliente.
+- [x] Agregar regresiones de integridad, permisos e idempotencia de decision, con prueba de no impacto para otras faenas.
+- [x] Ejecutar `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run guardian`, `npm run build:frontend-check`, `git diff --check` y smoke controlado antes de decidir despliegue.
+
+Resultado: implementacion local validada. El RUN se resuelve exclusivamente desde el snapshot BUK (`employees_active_current`) y la emision se bloquea si no existe; no se invento ni se fijo un RUN desde la maqueta. La migracion aun no se aplico porque este entorno no tiene Supabase CLI ni se solicito despliegue productivo en este turno.
+
+
+## Administrador ERP para Renato Martinez - 2026-08-17
+
+- [x] Crear migracion para reemplazar `desarrollador` por `admin` en Renato.
+- [x] Aplicar la migracion individualmente en produccion y registrar su version.
+- [x] Verificar rol efectivo, acceso global y que `is_super_admin` permanezca en `false`.
+
+Resultado: `20260817171000_promote_renato_to_admin.sql` fue ejecutada individualmente en produccion y registrada como aplicada. Renato tiene unicamente el rol `admin`, `effective_admin=true`, acceso a los 14 modulos activos e `is_super_admin=false`.
+
+## Rol desarrollador para Renato Martinez - 2026-08-17
+
+- [x] Auditar contratos vigentes de roles, modulos, features y guardas backend de RRHH.
+- [x] Crear rol `desarrollador` y asignarlo a `renato.martinez@busesjm.com`.
+- [x] Otorgar acceso a RRHH, Jornadas y Turnos, Acreditacion, Sanciones y analitica HR sin acceso admin global.
+- [x] Validar helpers/RPCs de backend, auditorias SQL, Guardian y diff.
+- [x] Aplicar la migracion en el entorno autorizado y verificar la matriz efectiva de Renato.
+
+Resultado: la migracion `20260817170000_add_developer_hr_access.sql` se ejecuto individualmente en produccion y se registro como aplicada, sin ejecutar las otras migraciones locales pendientes. Renato quedo con rol `desarrollador`, `is_super_admin=false`, y acceso a `recursos_humanos`, `jornadas_turnos`, `acreditacion_personas`, `solicitud_sanciones` y `bi_analytics`, junto con features de roster, incentivos y analitica HR.
+
 ## Sincronización cargo BUK Encargado de RRLL - 2026-08-17
 
 - [x] Confirmar el rol exacto en BUK y su código estable.

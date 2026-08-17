@@ -3228,3 +3228,7 @@ Cuando cambian rangos, categorías o el marco de competencias, no basta con modi
 ### 314. La capacidad de un lote no debe descontarse dos veces
 
 Cuando un RPC valida cupos leyendo trabajos `pending` dentro de la misma transacción, esos trabajos ya forman parte del snapshot de capacidad. Mantener además un contador de reservas en memoria reduce artificialmente los cupos y rompe lotes válidos; la prueba debe cargar varios candidatos del mismo folio y verificar que el límite se aplica una sola vez.
+
+### 315. Una celda de tabla no debe transformarse en flex container
+
+En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` rompe la semántica de celda y puede desalinear los separadores horizontales entre columnas. Mantén el `<td>` como celda de tabla y usa un wrapper interno para alinear contenido, iconos o acciones.

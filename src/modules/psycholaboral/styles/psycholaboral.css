@@ -51,7 +51,7 @@
   color: #667085;
   margin-top: 0.18rem;
 }
-.psych-update-cell{display:flex;align-items:center;justify-content:space-between;gap:.55rem}.psych-icon-action{width:2.2rem;height:2.05rem;border:1px solid #cfd5dd;border-radius:8px;background:#fff;color:#263142;font-size:.64rem;font-weight:850}.psych-icon-action:hover:not(:disabled){background:#f5f7f9}.psych-icon-action:disabled{opacity:.55}
+.psych-update-cell{min-width:15rem}.psych-update-cell__content{display:flex;align-items:center;justify-content:space-between;gap:.55rem;width:100%}.psych-icon-action{width:2.2rem;height:2.05rem;border:1px solid #cfd5dd;border-radius:8px;background:#fff;color:#263142;font-size:.64rem;font-weight:850}.psych-icon-action:hover:not(:disabled){background:#f5f7f9}.psych-icon-action:disabled{opacity:.55}
 .psych-status {
   display: inline-flex;
   padding: 0.28rem 0.65rem;
