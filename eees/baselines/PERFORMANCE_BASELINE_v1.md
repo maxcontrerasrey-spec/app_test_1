@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.27
+version: 1.0.28
 status: Activo
 language: es-CL
 owner: Quality
@@ -123,9 +123,9 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10259646,
+  "distTotalBytes": 10261135,
   "jsFileCount": 62,
-  "jsTotalBytes": 2742929,
+  "jsTotalBytes": 2744418,
   "cssFileCount": 12,
   "cssTotalBytes": 241944,
   "trackedAssets": [
@@ -194,6 +194,8 @@ Revision 2026-08-14 Psych AI V6.1 CI: GitHub Actions `Audit Enterprise Guardrail
 Revision 2026-08-17 firma legal en Certificacion de Competencias: el total sube 2,852 bytes, JS sube 1,854 bytes y CSS sube 998 bytes por incorporar la cola de aprobacion del Representante Legal de Codelco El Salvador, manteniendo el servicio de aprobacion separado del flujo lazy de emision. No agrega vendors ni assets pesados; la firma legal vive en el Edge Function y se carga solo durante la generacion aprobada.
 
 Revision 2026-08-17 Gestión Psicolaboral alineación de tabla: el total sube 118 bytes, JS sube 63 bytes y CSS sube 55 bytes por conservar la columna `Actualización` como celda de tabla y mover el layout flexible a un contenedor interno. No agrega vendors, rutas, assets ni cambia la carga inicial.
+
+Revision 2026-08-17 firma legal RUN CI: GitHub Actions `Audit Enterprise Guardrails` run `32044206847`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,261,135 bytes totales y 2,744,418 bytes JS tras incorporar la migracion de RUN verificable del firmante legal. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
 
 ## Politica de actualizacion
 
