@@ -143,6 +143,9 @@ export const navigationModules: NavigationModule[] = [
   {
     label: "Business Intelligence",
     moduleCode: "bi_analytics",
-    to: "/bi/dotacion"
+    // "/bi" redirige a "/bi/resumen" (ver AppRouter.tsx). No apuntar aquí
+    // directamente a una subvista (ej. "/bi/dotacion"): eso saltaba el
+    // redirect y abría Dotación BUK como entrada general del módulo.
+    to: "/bi"
   }
 ];

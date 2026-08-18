@@ -10,6 +10,7 @@ import {
   fetchBiExceptionsToday,
   fetchBiPresenceSummaryToday,
   fetchBiExceptionsMonthly,
+  fetchBiAbsenteeismTrend,
   fetchBiRecruitmentPipeline,
   fetchBiRecruitmentDashboard
 } from "../services/biApi";
@@ -18,11 +19,12 @@ const BI_STALE_TIME = 1000 * 60 * 5; // 5 minutos, según lección 48 no ahogar 
 export const BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS = 1000 * 60 * 2;
 export const BI_RECRUITMENT_DASHBOARD_GC_TIME_MS = 1000 * 60 * 15;
 
-export function useBiWorkforceOverview(filters?: BiFilters) {
+export function useBiWorkforceOverview(filters?: BiFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.bi.workforceOverview(filters),
     queryFn: () => fetchBiWorkforceOverview(filters),
-    staleTime: BI_STALE_TIME
+    staleTime: BI_STALE_TIME,
+    enabled
   });
 }
 
@@ -68,11 +70,12 @@ export function useBiExceptionsToday(filters?: BiFilters) {
   });
 }
 
-export function useBiPresenceSummaryToday(filters?: BiFilters) {
+export function useBiPresenceSummaryToday(filters?: BiFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.bi.presenceSummaryToday(filters),
     queryFn: () => fetchBiPresenceSummaryToday(filters),
-    staleTime: BI_STALE_TIME
+    staleTime: BI_STALE_TIME,
+    enabled
   });
 }
 
@@ -84,11 +87,21 @@ export function useBiExceptionsMonthly(filters?: BiFilters) {
   });
 }
 
-export function useBiRecruitmentPipeline(filters?: BiFilters) {
+export function useBiRecruitmentPipeline(filters?: BiFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.bi.recruitmentPipeline(filters),
     queryFn: () => fetchBiRecruitmentPipeline(filters),
-    staleTime: BI_STALE_TIME
+    staleTime: BI_STALE_TIME,
+    enabled
+  });
+}
+
+export function useBiAbsenteeismTrend(filters: BiFilters | undefined, periodCodes: string[], enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.bi.absenteeismTrend(filters, periodCodes),
+    queryFn: () => fetchBiAbsenteeismTrend(filters, periodCodes),
+    staleTime: BI_STALE_TIME,
+    enabled: enabled && periodCodes.length > 0
   });
 }
 

@@ -48,7 +48,9 @@ export const queryKeys = {
     recruitmentPipeline: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "recruitmentPipeline", normalizeBiFilters(filters)] as const,
     recruitmentDashboard: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "recruitmentDashboard", normalizeBiFilters(filters)] as const
+      [...queryKeys.bi.all(), "recruitmentDashboard", normalizeBiFilters(filters)] as const,
+    absenteeismTrend: (filters: BiQueryFilters | null | undefined, periodCodes: string[]) =>
+      [...queryKeys.bi.all(), "absenteeismTrend", normalizeBiFilters(filters), periodCodes] as const
   },
   recruitment: {
     controlSummary: () => ["recruitment", "control-summary"] as const,

@@ -18,6 +18,7 @@ import type {
   BiRecruitmentTimelineDatum,
   BiRecruitmentVacancyByContractDatum
 } from "../types";
+import { mergeAbsenteeismTrend, type AbsenteeismTrendPoint } from "../lib/workforceChartConfig";
 
 function normalizeBiFilters(filters?: BiFilters) {
   const periodCode = filters?.periodCode?.trim() || undefined;
@@ -324,6 +325,29 @@ export async function fetchBiExceptionsMonthly(filters?: BiFilters): Promise<Buk
   const { data, error } = await client.rpc("get_bi_exceptions_monthly", buildBiRpcParams(filters));
   if (error) throw error;
   return asArray<Record<string, unknown>>(data).map((row) => mapExceptionsMonthly(row));
+}
+
+/**
+ * `get_bi_exceptions_monthly` solo acepta un `p_period_code` a la vez (el
+ * backend resuelve un único month_start/month_end por llamada). Para una
+ * tendencia real de varios meses se dispara una llamada por período en
+ * paralelo -- mismo patrón ya usado por `fetchBiRecruitmentDashboard` y por
+ * la evolución de Incentivos -- y se combinan con `mergeAbsenteeismTrend`.
+ */
+export async function fetchBiAbsenteeismTrend(
+  filters: BiFilters | undefined,
+  periodCodes: string[]
+): Promise<AbsenteeismTrendPoint[]> {
+  const responses = await Promise.all(
+    periodCodes.map((periodCode) => fetchBiExceptionsMonthly({ ...filters, periodCode }))
+  );
+
+  const rowsByPeriod = new Map<string, BukBiExceptionsMonthly[]>();
+  periodCodes.forEach((periodCode, index) => {
+    rowsByPeriod.set(periodCode, responses[index]);
+  });
+
+  return mergeAbsenteeismTrend(periodCodes, rowsByPeriod);
 }
 
 export async function fetchBiRecruitmentPipeline(filters?: BiFilters): Promise<BukBiRecruitmentPipeline[]> {

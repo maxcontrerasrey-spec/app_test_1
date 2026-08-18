@@ -16,6 +16,12 @@ import {
 } from "../../../shared/lib/format";
 import { formatDateForDisplay } from "../../../shared/lib/date";
 import { useHrIncentivesAnalytics, useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
+import {
+  computeAmountVariance,
+  computeIncentivesAmountBreakdown,
+  computeSharePct
+} from "../lib/incentivesAnalyticsHelpers";
+import { SegmentedStatusBar, type SegmentedStatusSegment } from "../../bi/components/SegmentedStatusBar";
 
 type ChartClickParams = {
   data?: unknown;
@@ -28,11 +34,16 @@ type TooltipParam = {
   value?: unknown;
   data?: unknown;
   percent?: number;
+  dataIndex?: number;
 };
 
 type ChartDataRecord = Record<string, unknown>;
 
+// Azul = volumen/neutral, verde = cubierto/aprobado, naranjo = pendiente,
+// rojo = rechazo, gris = referencia. Reservado para series categoricas
+// (tipo de incentivo, contratos) donde no aplica un color de estado unico.
 const CHART_PALETTE = ["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#65a30d", "#b45309"];
+const COLOR_NEUTRAL_VOLUME = "#2563eb";
 
 function formatPercent(value: number) {
   return formatPercentValue(value, 1, "0.0%");
@@ -102,33 +113,24 @@ function getChartDataRecord(value: unknown): ChartDataRecord {
   return {};
 }
 
-function toNumber(value: unknown) {
-  if (typeof value === "number") return value;
-  if (Array.isArray(value)) return Number(value[1] ?? value[0] ?? 0);
-  return Number(value ?? 0);
-}
-
 function toggleFilterValue(values: string[], nextValue: string) {
   return values.includes(nextValue)
     ? values.filter((value) => value !== nextValue)
     : [...values.filter((value) => value !== "A"), nextValue];
 }
 
-function buildAxisTooltip(params: unknown, title: string) {
-  const rows = asTooltipParams(params);
-  const body = rows
-    .filter((item) => item.seriesName)
-    .map((item) => {
-      const amount = formatCurrencyValue(toNumber(item.value));
-      return `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">${item.marker ?? ""}${item.seriesName}</span><strong>${amount}</strong></div>`;
-    })
-    .join("");
-
-  return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list">${body}</div></div>`;
+function buildItemTooltip(title: string, amount: number, suffix = "", valueLabel = "Monto") {
+  return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list"><div class="chart-tooltip-item"><span class="chart-tooltip-item-label">${valueLabel}</span><strong>${formatCurrencyValue(amount)}${suffix}</strong></div></div></div>`;
 }
 
-function buildItemTooltip(title: string, amount: number, suffix = "") {
-  return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list"><div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Monto</span><strong>${formatCurrencyValue(amount)}${suffix}</strong></div></div></div>`;
+function buildCountTooltip(title: string, count: number, suffix = "") {
+  return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list"><div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Solicitudes</span><strong>${count.toLocaleString("es-CL")}${suffix}</strong></div></div></div>`;
+}
+
+function formatVarianceLabel(deltaPct: number | null) {
+  if (deltaPct === null || !Number.isFinite(deltaPct)) return null;
+  const sign = deltaPct > 0 ? "+" : "";
+  return `${sign}${deltaPct.toLocaleString("es-CL", { maximumFractionDigits: 1 })}%`;
 }
 
 function ChartToggle({
@@ -242,6 +244,15 @@ export function IncentiveAnalyticsView() {
 
   const evolutionChartData = timeView === "period" ? periodTrendData : dateTrendData;
 
+  const evolutionVariance = useMemo(() => {
+    if (evolutionChartData.length < 2) return null;
+    const current = evolutionChartData[evolutionChartData.length - 1];
+    const previous = evolutionChartData[evolutionChartData.length - 2];
+    return computeAmountVariance(current.totalAmount, previous.totalAmount);
+  }, [evolutionChartData]);
+
+  const evolutionVarianceLabel = formatVarianceLabel(evolutionVariance?.deltaPct ?? null);
+
   const amountByTypeData = useMemo(() => {
     const sourceData = typeTimeView === "period" ? allPeriodsAnalyticsQuery.data?.countByIncentiveType : analyticsQuery.data?.countByIncentiveType;
 
@@ -253,12 +264,21 @@ export function IncentiveAnalyticsView() {
     }));
   }, [analyticsQuery.data?.countByIncentiveType, allPeriodsAnalyticsQuery.data?.countByIncentiveType, typeTimeView]);
 
+  const amountByTypeTotal = useMemo(
+    () => amountByTypeData.reduce((sum, item) => sum + item.value, 0),
+    [amountByTypeData]
+  );
+
   const amountByContractData = useMemo(() => {
     const sourceData = contractTimeView === "period" ? allPeriodsAnalyticsQuery.data?.amountByContract : analyticsQuery.data?.amountByContract;
-    return (sourceData?.slice(0, 8) ?? []).map((item) => ({
+    const rows = sourceData?.slice(0, 8) ?? [];
+    const total = rows.reduce((sum, item) => sum + Number(item.totalAmount || 0), 0);
+
+    return rows.map((item) => ({
       contractCode: item.contractCode,
       contractLabel: item.areaName || item.contractCode,
-      totalAmount: Number(item.totalAmount || 0)
+      totalAmount: Number(item.totalAmount || 0),
+      sharePct: computeSharePct(Number(item.totalAmount || 0), total)
     }));
   }, [analyticsQuery.data?.amountByContract, allPeriodsAnalyticsQuery.data?.amountByContract, contractTimeView]);
 
@@ -267,28 +287,20 @@ export function IncentiveAnalyticsView() {
     return sourceData?.slice(0, 8) ?? [];
   }, [analyticsQuery.data?.amountByWorker, allPeriodsAnalyticsQuery.data?.amountByWorker, workerTimeView]);
 
-  const amountByWorkerData = useMemo(() => {
-    return rawWorkerData.map((item) => {
-      const flatItem: Record<string, string | number> = {
-        workerName: item.workerName || "Desconocido",
-        totalAmount: item.totalAmount
-      };
-      item.contracts.forEach((contract) => {
-        flatItem[contract.contractLabel] = contract.amount;
-      });
-      return flatItem;
-    });
-  }, [rawWorkerData]);
+  const workerRankingTotalBase = timeView === "period"
+    ? allPeriodsAnalyticsQuery.data?.summaryCards.totalAmount ?? 0
+    : analyticsQuery.data?.summaryCards.totalAmount ?? 0;
 
-  const uniqueWorkerContracts = useMemo(() => {
-    const contractsSet = new Set<string>();
-    rawWorkerData.forEach((item) => {
-      item.contracts.forEach((contract) => {
-        contractsSet.add(contract.contractLabel);
-      });
-    });
-    return Array.from(contractsSet);
-  }, [rawWorkerData]);
+  const amountByWorkerData = useMemo(() => {
+    return rawWorkerData
+      .map((item) => ({
+        workerName: item.workerName || "Desconocido",
+        totalAmount: item.totalAmount,
+        sharePct: computeSharePct(item.totalAmount, workerRankingTotalBase),
+        contracts: item.contracts
+      }))
+      .sort((a, b) => b.totalAmount - a.totalAmount);
+  }, [rawWorkerData, workerRankingTotalBase]);
 
   const evolutionOption = useMemo<EChartsOption>(() => {
     const categories = evolutionChartData.map((item) => {
@@ -307,7 +319,7 @@ export function IncentiveAnalyticsView() {
     });
 
     return {
-      grid: { top: 36, right: 20, bottom: 42, left: 56 },
+      grid: { top: 20, right: 20, bottom: 42, left: 56 },
       tooltip: {
         trigger: "axis",
         formatter: (params: unknown) => {
@@ -316,10 +328,9 @@ export function IncentiveAnalyticsView() {
           const title = timeView === "period"
             ? `Período ${data.displayLabel ?? ""}`
             : `Fecha: ${data.displayLabel ?? ""}`;
-          return buildAxisTooltip(params, title);
+          return buildItemTooltip(title, Number(data.totalAmount ?? 0));
         }
       },
-      legend: { bottom: 0, icon: "circle" },
       xAxis: {
         type: "category",
         data: categories,
@@ -337,42 +348,10 @@ export function IncentiveAnalyticsView() {
       series: [
         {
           type: "bar",
-          name: "Gasto total",
+          name: "Monto registrado",
           data: seriesData,
-          itemStyle: {
-            color: {
-              type: "linear",
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: "rgba(59, 130, 246, 0.8)" },
-                { offset: 1, color: "rgba(59, 130, 246, 0.1)" }
-              ]
-            },
-            borderRadius: [6, 6, 0, 0]
-          }
-        },
-        {
-          type: "line",
-          name: "Tendencia",
-          data: seriesData,
-          smooth: true,
-          symbolSize: 8,
-          symbol: "circle",
-          lineStyle: {
-            color: "#38bdf8",
-            width: 3,
-            shadowColor: "rgba(56, 189, 248, 0.5)",
-            shadowBlur: 12,
-            shadowOffsetY: 4
-          },
-          itemStyle: {
-            color: "#38bdf8",
-            borderWidth: 2,
-            borderColor: "#ffffff"
-          }
+          barMaxWidth: 42,
+          itemStyle: { color: COLOR_NEUTRAL_VOLUME, borderRadius: [6, 6, 0, 0] }
         }
       ]
     };
@@ -418,7 +397,8 @@ export function IncentiveAnalyticsView() {
       formatter: (params: unknown) => {
         const item = asTooltipParams(params)[0];
         const data = getChartDataRecord(item?.data);
-        return buildItemTooltip(String(data.contractLabel ?? "Contrato"), Number(data.value ?? 0));
+        const sharePct = typeof data.sharePct === "number" ? ` · ${formatPercent(data.sharePct)}` : "";
+        return buildItemTooltip(String(data.contractLabel ?? "Contrato"), Number(data.value ?? 0), sharePct);
       }
     },
     xAxis: {
@@ -440,30 +420,22 @@ export function IncentiveAnalyticsView() {
       {
         type: "bar",
         name: "Monto total",
+        barMaxWidth: 26,
         data: amountByContractData.map((item) => ({
           value: item.totalAmount,
           contractCode: item.contractCode,
-          contractLabel: item.contractLabel
+          contractLabel: item.contractLabel,
+          sharePct: item.sharePct
         })),
         itemStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 1,
-            y2: 0,
-            colorStops: [
-              { offset: 0, color: "rgba(16, 185, 129, 0.2)" },
-              { offset: 1, color: "rgba(16, 185, 129, 0.8)" }
-            ]
-          },
+          color: COLOR_NEUTRAL_VOLUME,
           borderRadius: [0, 8, 8, 0]
         },
         label: {
           show: true,
           position: "insideLeft",
           distance: 8,
-          color: "rgba(15, 23, 42, 0.88)",
+          color: "#ffffff",
           fontSize: 12,
           fontWeight: 700,
           lineHeight: 16,
@@ -472,7 +444,8 @@ export function IncentiveAnalyticsView() {
           ellipsis: "…",
           formatter: (params: { data?: unknown }) => {
             const data = getChartDataRecord(params.data);
-            return String(data.contractLabel ?? "");
+            const sharePct = typeof data.sharePct === "number" ? ` · ${formatPercent(data.sharePct)}` : "";
+            return `${String(data.contractLabel ?? "")}${sharePct}`;
           }
         }
       }
@@ -480,23 +453,28 @@ export function IncentiveAnalyticsView() {
   }), [amountByContractData]);
 
   const amountByWorkerOption = useMemo<EChartsOption>(() => {
-    const workerNames = amountByWorkerData.map((item) => String(item.workerName));
+    const workerNames = amountByWorkerData.map((item) => item.workerName);
 
     return {
-      grid: { top: 18, right: 28, bottom: 54, left: 132 },
+      grid: { top: 18, right: 28, bottom: 8, left: 132 },
       tooltip: {
-        trigger: "axis",
-        axisPointer: { type: "shadow" },
+        trigger: "item",
         formatter: (params: unknown) => {
-          const rows = asTooltipParams(params).filter((item) => toNumber(item.value) > 0);
-          const title = rows[0]?.name ?? "Trabajador";
-          const body = rows
-            .map((item) => `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">${item.marker ?? ""}${item.seriesName}</span><strong>${formatCurrencyValue(toNumber(item.value))}</strong></div>`)
+          const item = asTooltipParams(params)[0];
+          const dataIndex = item?.dataIndex ?? 0;
+          const worker = amountByWorkerData[dataIndex];
+          if (!worker) return "";
+
+          const contractRows = worker.contracts
+            .map(
+              (contract) =>
+                `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">${contract.contractLabel}</span><strong>${formatCurrencyValue(contract.amount)}</strong></div>`
+            )
             .join("");
-          return `<div class="chart-tooltip"><div class="chart-tooltip-title">${title}</div><div class="chart-tooltip-list">${body}</div></div>`;
+
+          return `<div class="chart-tooltip"><div class="chart-tooltip-title">${worker.workerName}</div><div class="chart-tooltip-list"><div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Monto total</span><strong>${formatCurrencyValue(worker.totalAmount)} · ${formatPercent(worker.sharePct)}</strong></div>${contractRows}</div></div>`;
         }
       },
-      legend: { bottom: 0, icon: "circle", type: "scroll" },
       xAxis: {
         type: "value",
         axisTick: { show: false },
@@ -516,22 +494,54 @@ export function IncentiveAnalyticsView() {
           formatter: (value: string) => truncateLabel(value, 18)
         }
       },
-      series: uniqueWorkerContracts.map((contractLabel, index) => ({
-        type: "bar",
-        name: contractLabel,
-        stack: "workerAmount",
-        data: amountByWorkerData.map((item) => Number(item[contractLabel] ?? 0)),
-        itemStyle: { 
-          color: CHART_PALETTE[index % CHART_PALETTE.length], 
-          borderRadius: 4,
-          borderWidth: 1,
-          borderColor: "rgba(255, 255, 255, 0.5)"
+      series: [
+        {
+          type: "bar",
+          name: "Monto total",
+          barMaxWidth: 22,
+          data: amountByWorkerData.map((item) => item.totalAmount),
+          itemStyle: {
+            color: COLOR_NEUTRAL_VOLUME,
+            borderRadius: [0, 6, 6, 0]
+          },
+          label: {
+            show: true,
+            position: "right",
+            distance: 6,
+            color: "var(--text-muted)",
+            fontSize: 11,
+            fontWeight: 700,
+            formatter: (params: { dataIndex?: number }) => {
+              const worker = amountByWorkerData[params.dataIndex ?? 0];
+              return worker ? formatPercent(worker.sharePct) : "";
+            }
+          }
         }
-      }))
+      ]
     };
-  }, [amountByWorkerData, uniqueWorkerContracts]);
+  }, [amountByWorkerData]);
 
   const cards = analyticsQuery.data?.summaryCards;
+  const amountBreakdown = useMemo(() => {
+    if (!analyticsQuery.data) return null;
+    return computeIncentivesAmountBreakdown(
+      analyticsQuery.data.summaryCards,
+      analyticsQuery.data.totalAmountByPeriod
+    );
+  }, [analyticsQuery.data]);
+
+  const statusSegments = useMemo<SegmentedStatusSegment[] | null>(() => {
+    if (!cards || cards.requestCount === 0) return null;
+
+    const pendingCount = Math.max(cards.requestCount - cards.approvedCount - cards.rejectedCount, 0);
+
+    return [
+      { key: "approved", label: "Aprobadas", value: cards.approvedCount, tone: "approved" },
+      { key: "pending", label: "Pendientes", value: pendingCount, tone: "pending" },
+      { key: "rejected", label: "Rechazadas", value: cards.rejectedCount, tone: "rejected" }
+    ];
+  }, [cards]);
+
   const contractOptions = analyticsQuery.data?.filterOptions.contracts ?? [];
   const incentiveTypeOptions = analyticsQuery.data?.filterOptions.incentiveTypes ?? [];
   const statusOptions =
@@ -605,31 +615,58 @@ export function IncentiveAnalyticsView() {
       ) : null}
 
       <div className="tracking-kpi-row hr-incentives-analytics-kpis">
-        <article className="tracking-kpi-card tracking-kpi-card-generado">
-          <span>Gasto total</span>
+        <article className="tracking-kpi-card tracking-kpi-card-bi-gray">
+          <span>Monto Registrado</span>
           <strong>{cards ? formatCurrencyValue(cards.totalAmount) : "—"}</strong>
+          <small className="bi-kpi-caption">Todas las solicitudes ingresadas, sin importar estado</small>
         </article>
-        <article className="tracking-kpi-card tracking-kpi-card-pendiente">
-          <span>Descansos trabajados</span>
-          <strong>{cards ? cards.declaredRestDayCount.toLocaleString("es-CL") : "—"}</strong>
+        <article className="tracking-kpi-card tracking-kpi-card-bi-green">
+          <span>Monto Aprobado</span>
+          <strong>{amountBreakdown ? formatCurrencyValue(amountBreakdown.approvedAmount) : "—"}</strong>
+          {amountBreakdown ? (
+            <small className="bi-kpi-caption">{formatPercent(amountBreakdown.approvedPct)} del registrado</small>
+          ) : null}
         </article>
-        <article className="tracking-kpi-card tracking-kpi-card-en-proceso">
-          <span>Tasa de aprobación</span>
+        <article className="tracking-kpi-card tracking-kpi-card-bi-yellow">
+          <span>Monto Pendiente</span>
+          <strong>{amountBreakdown ? formatCurrencyValue(amountBreakdown.pendingAmount) : "—"}</strong>
+          {amountBreakdown ? (
+            <small className="bi-kpi-caption">{formatPercent(amountBreakdown.pendingPct)} del registrado</small>
+          ) : null}
+        </article>
+        <article className="tracking-kpi-card tracking-kpi-card-bi-blue">
+          <span>Solicitudes</span>
+          <strong>{cards ? cards.requestCount.toLocaleString("es-CL") : "—"}</strong>
+        </article>
+        <article className="tracking-kpi-card tracking-kpi-card-bi-green">
+          <span>Tasa de Aprobación</span>
           <strong>{cards ? formatPercent(cards.approvalRate) : "—"}</strong>
-        </article>
-        <article className="tracking-kpi-card tracking-kpi-card-error">
-          <span>Tasa de rechazo</span>
-          <strong>{cards ? formatPercent(cards.rejectionRate) : "—"}</strong>
+          {amountBreakdown ? (
+            <small className="bi-kpi-caption">
+              Rechazo {formatPercent(cards?.rejectionRate ?? 0)} · Pendiente {formatPercent(amountBreakdown.pendingPct)}
+            </small>
+          ) : null}
         </article>
       </div>
+
+      {statusSegments ? (
+        <div className="info-card bi-status-stack-card">
+          <div className="bi-status-stack-header">
+            <h4>Estado de Solicitudes</h4>
+            <span className="tracking-filter-caption">Aprobadas / Pendientes / Rechazadas</span>
+          </div>
+          <SegmentedStatusBar segments={statusSegments} totalLabel="Estado de solicitudes de incentivos" />
+        </div>
+      ) : null}
 
       <div className="hr-incentives-analytics-grid">
         <article className="hr-incentives-analytics-card">
           <div className="hr-incentives-analytics-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
             <div>
-              <h4>Evolución del gasto</h4>
+              <h4>Evolución del monto</h4>
               <span className="tracking-filter-caption">
                 {timeView === "period" ? "Monto agregado por período" : "Monto agregado por fecha"}
+                {evolutionVarianceLabel ? ` · ${evolutionVarianceLabel} vs anterior` : ""}
               </span>
             </div>
             <ChartToggle value={timeView} onChange={setTimeView} />
@@ -659,21 +696,29 @@ export function IncentiveAnalyticsView() {
             </div>
             <ChartToggle value={typeTimeView} onChange={setTypeTimeView} />
           </div>
-          <EChartSurface
-            height={280}
-            option={amountByTypeOption}
-            loading={analyticsQuery.isLoading}
-            empty={amountByTypeData.length === 0}
-            emptyMessage="No hay tipos de incentivo para el filtro actual."
-            onEvents={{
-              click: (params: ChartClickParams) => {
-                const data = getChartDataRecord(params.data);
-                const typeId = typeof data.typeId === "string" ? data.typeId : "";
-                if (!typeId) return;
-                setTypeIdFilter((previous) => toggleFilterValue(previous, typeId));
-              }
-            }}
-          />
+          <div className="bi-donut-center-wrap">
+            <EChartSurface
+              height={280}
+              option={amountByTypeOption}
+              loading={analyticsQuery.isLoading}
+              empty={amountByTypeData.length === 0}
+              emptyMessage="No hay tipos de incentivo para el filtro actual."
+              onEvents={{
+                click: (params: ChartClickParams) => {
+                  const data = getChartDataRecord(params.data);
+                  const typeId = typeof data.typeId === "string" ? data.typeId : "";
+                  if (!typeId) return;
+                  setTypeIdFilter((previous) => toggleFilterValue(previous, typeId));
+                }
+              }}
+            />
+            {amountByTypeData.length > 0 ? (
+              <div className="bi-donut-center-label">
+                <span>Total</span>
+                <strong>{formatCompactCurrency(amountByTypeTotal)}</strong>
+              </div>
+            ) : null}
+          </div>
         </article>
 
         <article className="hr-incentives-analytics-card">
@@ -708,7 +753,7 @@ export function IncentiveAnalyticsView() {
             <div>
               <h4>Ranking de trabajadores</h4>
               <span className="tracking-filter-caption">
-                Trabajadores con mayor monto ingresado, diferenciado por contrato
+                Monto total por trabajador · detalle de contratos en tooltip
               </span>
             </div>
             <ChartToggle value={workerTimeView} onChange={setWorkerTimeView} />

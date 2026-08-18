@@ -5,11 +5,12 @@ import { hasFeatureAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
 import { BiOverviewCards } from "../components/BiOverviewCards";
 import { BiHeadcountCharts } from "../components/BiHeadcountCharts";
-import { BiDemographicsChart } from "../components/BiDemographicsChart";
+import { BiAbsenteeismByContractChart } from "../components/BiAbsenteeismByContractChart";
 import { BiPresenceAndExceptions } from "../components/BiPresenceAndExceptions";
-import { BiTrendingExceptionsChart } from "../components/BiTrendingExceptionsChart";
-import { BiRecruitmentFunnel } from "../components/BiRecruitmentFunnel";
+import { BiAbsenteeismTrendChart } from "../components/BiAbsenteeismTrendChart";
+import { BiCandidatesByStageChart } from "../components/BiCandidatesByStageChart";
 import { BiRecruitmentAnalyticsView } from "../components/BiRecruitmentAnalyticsView";
+import { BiExecutiveSummary } from "../components/BiExecutiveSummary";
 import { IncentiveAnalyticsView } from "../../incentives/components/IncentiveAnalyticsView";
 import { TextField, MultiSelectField } from "../../../shared/ui";
 import {
@@ -31,6 +32,11 @@ const EraserIcon = () => (
 );
 
 const BI_VIEWS = [
+  {
+    key: "resumen",
+    label: "Resumen Ejecutivo",
+    description: "Vista transversal para entender en segundos el estado de dotación, reclutamiento e incentivos."
+  },
   {
     key: "dotacion",
     label: "Analítica de Dotación (BUK)",
@@ -58,10 +64,18 @@ export function BiDashboardPage() {
   const { accessibleFeatures, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { view } = useParams();
-  const activeView = isBiView(view) ? view : "dotacion";
+  const activeView = isBiView(view) ? view : "resumen";
   const visibleViews = useMemo(
     () =>
       BI_VIEWS.filter((item) => {
+        // El Resumen Ejecutivo no tiene feature backend propia: se gatilla
+        // por el mismo módulo `bi_analytics` que ya protege toda la ruta
+        // /bi/:view (ver sección 5.8 de la especificación). Cada bloque
+        // interno igual respeta bi_dotacion/bi_incentivos/bi_reclutamiento.
+        if (item.key === "resumen") {
+          return true;
+        }
+
         if (isSuperAdmin) {
           return true;
         }
@@ -471,6 +485,8 @@ export function BiDashboardPage() {
         </>
       )}
 
+      {activeView === "resumen" && <BiExecutiveSummary />}
+
       {activeView === "dotacion" && (
         <div className="bi-dashboard-grid">
           <BiOverviewCards filters={dotacionFilters} />
@@ -478,11 +494,11 @@ export function BiDashboardPage() {
           {dotacionChartStage >= 2 ? <BiPresenceAndExceptions filters={dotacionFilters} /> : null}
           {dotacionChartStage >= 3 ? (
             <div className="bi-chart-row">
-              <BiDemographicsChart filters={dotacionFilters} />
-              <BiRecruitmentFunnel filters={dotacionFilters} />
+              <BiAbsenteeismByContractChart filters={dotacionFilters} />
+              <BiCandidatesByStageChart filters={dotacionFilters} />
             </div>
           ) : null}
-          {dotacionChartStage >= 4 ? <BiTrendingExceptionsChart filters={dotacionFilters} /> : null}
+          {dotacionChartStage >= 4 ? <BiAbsenteeismTrendChart filters={dotacionFilters} /> : null}
         </div>
       )}
 

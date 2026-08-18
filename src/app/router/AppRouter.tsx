@@ -212,7 +212,7 @@ export function AppRouter() {
               path="/bi"
               element={
                 <RoleProtectedRoute moduleCode="bi_analytics">
-                  <Navigate to="/bi/dotacion" replace />
+                  <Navigate to="/bi/resumen" replace />
                 </RoleProtectedRoute>
               }
             />
