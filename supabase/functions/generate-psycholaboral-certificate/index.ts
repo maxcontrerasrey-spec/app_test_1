@@ -18,6 +18,7 @@ import {
 } from "../generate-competency-certificate/logos.ts";
 
 const BUCKET = "psychometric_documents";
+const CANDIDATE_DOCUMENTS_BUCKET = "candidate-docs";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://gestion.busesjm.cl",
   "Content-Type": "application/json",
@@ -1168,6 +1169,22 @@ Deno.serve(async (request) => {
     if (uploadError) throw new Error(uploadError.message);
     const { error: reportUploadError } = await client.storage.from(BUCKET).upload(reportPath, reportBytes, { contentType: "application/pdf", upsert: true });
     if (reportUploadError) throw new Error(reportUploadError.message);
+    const candidateDocumentPath = `psycholaboral-auto/${assessmentId}/informe-psicolaboral-integrado-${payload.public_id}.pdf`;
+    const { error: candidateDocumentUploadError } = await client.storage
+      .from(CANDIDATE_DOCUMENTS_BUCKET)
+      .upload(candidateDocumentPath, reportBytes, { contentType: "application/pdf", upsert: true });
+    if (candidateDocumentUploadError) throw new Error(`No fue posible cargar el informe en la ficha del candidato: ${candidateDocumentUploadError.message}`);
+    const { data: candidateDocumentRegistration, error: candidateDocumentRegistrationError } = await client.rpc(
+      "register_psycholaboral_report_document",
+      { p_assessment_id: assessmentId, p_file_path: candidateDocumentPath, p_sha256: reportHash },
+    );
+    if (candidateDocumentRegistrationError) throw new Error(candidateDocumentRegistrationError.message);
+    if (!(candidateDocumentRegistration as { stored?: boolean } | null)?.stored) {
+      const { error: preservedFileCleanupError } = await client.storage
+        .from(CANDIDATE_DOCUMENTS_BUCKET)
+        .remove([candidateDocumentPath]);
+      if (preservedFileCleanupError) throw new Error(`El informe quedó generado, pero no se pudo limpiar la copia automática preservando el documento manual: ${preservedFileCleanupError.message}`);
+    }
     const { error: completeError } = await client.rpc(
       "complete_psycholaboral_certificate",
       {

@@ -14,6 +14,7 @@ const v61Migration = readFileSync("supabase/migrations/20260814163136_psych_ai_v
 const v62Migration = readFileSync("supabase/migrations/20260814191200_psych_ai_v6_2_taxonomy_pdf_close.sql", "utf8");
 const v63Migration = readFileSync("supabase/migrations/20260817200000_psych_ai_v6_3_consolidated.sql", "utf8");
 const psychologistValidationMigration = readFileSync("supabase/migrations/20260817210000_psychologist_report_validation.sql", "utf8");
+const psychologistDocumentMigration = readFileSync("supabase/migrations/20260817220000_auto_upload_psycholaboral_report.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -145,6 +146,17 @@ describe("Gestión Psicolaboral", () => {
     expect(certificate).toContain("Firmado digitalmente con hash:");
     expect(aiReviewDialog).toContain("Validar y generar informe");
     expect(managementPage).toContain('if (action === "validate")');
+  });
+
+  it("carga automáticamente el informe validado sin eliminar la carga manual", () => {
+    expect(psychologistDocumentMigration).toContain("register_psycholaboral_report_document(uuid,text,text)");
+    expect(psychologistDocumentMigration).toContain("Informe Evaluación Psicolaboral");
+    expect(psychologistDocumentMigration).toContain("existing_rec.file_path like 'psycholaboral-auto/%'");
+    expect(psychologistDocumentMigration).toContain("psycholaboral_report_document_preserved");
+    expect(certificate).toContain('CANDIDATE_DOCUMENTS_BUCKET = "candidate-docs"');
+    expect(certificate).toContain("register_psycholaboral_report_document");
+    expect(certificate).toContain("candidateDocumentPath");
+    expect(certificate).toContain("preservedFileCleanupError");
   });
 
   it("genera IA automaticamente al completar la bateria y no expone boton manual", () => {
