@@ -179,6 +179,9 @@ describe("Gestión Psicolaboral", () => {
     expect(edge).toContain('request.headers.get("x-internal-secret")');
     expect(managementPage).not.toContain("Generar IA");
     expect(managementPage).toContain("Informe:");
+    expect(managementPage).toContain('row.ai_status === "FAILED"');
+    expect(managementPage).toContain("Reintentar informe IA");
+    expect(managementPage).toContain("generatePsychAIInterpretation(row.assessment_id)");
   });
 
   it("no muestra fallback tecnico fallido como interpretación profesional", () => {

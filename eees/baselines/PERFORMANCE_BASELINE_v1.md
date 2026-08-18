@@ -125,9 +125,9 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10262216,
+  "distTotalBytes": 10263133,
   "jsFileCount": 62,
-  "jsTotalBytes": 2745499,
+  "jsTotalBytes": 2746416,
   "cssFileCount": 12,
   "cssTotalBytes": 241944,
   "trackedAssets": [
@@ -140,6 +140,8 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
   ]
 }
 ```
+
+Revision 2026-08-18 reintento de interpretación IA fallida: el baseline global y JS se alinean con la medición local reproducible del build, sin aumentar CSS, vendors ni assets trackeados. Se agrega recuperación explícita para estados `FAILED` sin relajar los guardrails metodológicos.
 
 Revision 2026-08-14 navegación de páginas psicométricas: el CSS sube 409 bytes para mostrar en rojo las páginas con respuestas faltantes y en verde las páginas completas, manteniendo estado activo, foco accesible y navegación responsive. No agrega vendors, assets trackeados ni modifica el entry inicial.
 

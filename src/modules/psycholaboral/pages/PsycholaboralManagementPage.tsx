@@ -7,6 +7,7 @@ import { PsychAIReviewDialog } from "../components/PsychAIReviewDialog";
 import { PsychResultDialog } from "../components/PsychResultDialog";
 import {
   decidePsychAssessment,
+  generatePsychAIInterpretation,
   generatePsychCertificate,
   getPsychAIReviewDetail,
   getPsychCertificateUrl,
@@ -202,6 +203,24 @@ export function PsycholaboralManagementPage() {
       setAiReview(await getPsychAIReviewDetail(row.assessment_id));
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "No fue posible abrir la revisión IA.");
+    } finally {
+      setBusy(null);
+    }
+  };
+  const retryAI = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    setBusy(row.id);
+    setFeedback("");
+    try {
+      await generatePsychAIInterpretation(row.assessment_id);
+      setFeedback("Interpretación IA reenviada para generación.");
+      await refresh();
+    } catch (error) {
+      setFeedback(
+        error instanceof Error
+          ? error.message
+          : "No fue posible reintentar la interpretación IA.",
+      );
     } finally {
       setBusy(null);
     }
@@ -526,9 +545,21 @@ export function PsycholaboralManagementPage() {
                                       Revisar informe
                                     </button>
                                   ) : (
-                                    <span className="approval-chip">
-                                      Informe: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
-                                    </span>
+                                    <>
+                                      <span className="approval-chip">
+                                        Informe: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
+                                      </span>
+                                      {row.ai_status === "FAILED" ? (
+                                        <button
+                                          className="psych-secondary-action"
+                                          type="button"
+                                          disabled={busy === row.id}
+                                          onClick={() => void retryAI(row)}
+                                        >
+                                          Reintentar informe IA
+                                        </button>
+                                      ) : null}
+                                    </>
                                   )}
                                   {row.certificate_status === "generated" ? (
                                     <>
