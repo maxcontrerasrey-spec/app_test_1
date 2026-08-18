@@ -144,14 +144,14 @@ export function PsychAIReviewDialog({
         <div className="psych-ai-review-stack">
           {renderOutput(baseOutput)}
           <label className="psych-ai-comment">
-            Comentario profesional
+            Comentarios y validación de Psicólogo
             <textarea value={comment} onChange={(event) => setComment(event.target.value)} />
           </label>
           {error ? <p className="psych-feedback psych-feedback--error">{error}</p> : null}
           <div className="psych-actions psych-ai-review-actions">
             <button className="psych-secondary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("save")}>Guardar comentario</button>
             <button className="psych-secondary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("observe")}>Observar</button>
-            <button className="psych-primary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("validate")}>Validar</button>
+            <button className="psych-primary-action" type="button" disabled={busy || !baseOutput || !comment.trim()} onClick={() => void submit("validate")}>Validar y generar informe</button>
           </div>
         </div>
         <div className="psych-ai-runs">

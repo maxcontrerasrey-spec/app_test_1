@@ -13,6 +13,7 @@ const v54Migration = readFileSync("supabase/migrations/20260814132317_psych_ai_v
 const v61Migration = readFileSync("supabase/migrations/20260814163136_psych_ai_v6_1_luna_medium_robusto.sql", "utf8");
 const v62Migration = readFileSync("supabase/migrations/20260814191200_psych_ai_v6_2_taxonomy_pdf_close.sql", "utf8");
 const v63Migration = readFileSync("supabase/migrations/20260817200000_psych_ai_v6_3_consolidated.sql", "utf8");
+const psychologistValidationMigration = readFileSync("supabase/migrations/20260817210000_psychologist_report_validation.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -129,6 +130,21 @@ describe("Gestión Psicolaboral", () => {
     expect(edge).toContain('action === "generate_ai_interpretation"');
     expect(edge).toContain("claim_psych_ai_interpretation");
     expect(edge).toContain("complete_psych_ai_interpretation");
+  });
+
+  it("exige validación profesional antes de emitir el informe firmado", () => {
+    expect(psychologistValidationMigration).toContain("p_action in ('validate', 'observe') and comment_value is null");
+    expect(psychologistValidationMigration).toContain("create or replace function public.assert_psychologist_report_approved(p_assessment_id uuid)");
+    expect(psychologistValidationMigration).toContain("i.status = 'VALIDATED'");
+    expect(psychologistValidationMigration).toContain("employees_active_current");
+    expect(psychologistValidationMigration).toContain("grant execute on function public.assert_psychologist_report_approved(uuid) to service_role");
+    expect(certificate).toContain('"assert_psychologist_report_approved"');
+    expect(certificate).toContain("psychologist_review: psychologistReview");
+    expect(certificate).toContain("Comentarios y validación de Psicólogo");
+    expect(certificate).toContain("F-RH-009");
+    expect(certificate).toContain("Firmado digitalmente con hash:");
+    expect(aiReviewDialog).toContain("Validar y generar informe");
+    expect(managementPage).toContain('if (action === "validate")');
   });
 
   it("genera IA automaticamente al completar la bateria y no expone boton manual", () => {

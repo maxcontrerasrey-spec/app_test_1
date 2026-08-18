@@ -220,6 +220,10 @@ export function PsycholaboralManagementPage() {
       comment,
     });
     setAiReview(next);
+    if (action === "validate") {
+      setFeedback("Validación registrada. Generando informe firmado...");
+      await generatePsychCertificate(aiReview.assessment_id);
+    }
     await refresh();
   };
 
@@ -538,8 +542,8 @@ export function PsycholaboralManagementPage() {
                                         Actualizar informe
                                       </button>
                                     </>
-                                  ) : row.certificate_status === "queued" ||
-                                    row.certificate_status === "failed" ? (
+                                  ) : (row.certificate_status === "queued" ||
+                                    row.certificate_status === "failed") && row.ai_status === "VALIDATED" ? (
                                     <button
                                       className="psych-secondary-action"
                                       type="button"
@@ -548,7 +552,7 @@ export function PsycholaboralManagementPage() {
                                         void generateCertificate(row)
                                       }
                                     >
-                                      Generar certificado
+                                      Generar informe y PDF
                                     </button>
                                   ) : null}
                                   {row.decision === "pending" ? (

@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import fontkit from "npm:@pdf-lib/fontkit@1.1.1";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
 import {
   PDFDocument,
@@ -12,6 +13,7 @@ import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 import {
   CONSORCIO_ANDINO_LOGO_BASE64,
   CONSORCIO_NUEVO_NORTE_LOGO_BASE64,
+  CERTIFICATE_SIGNATURE_FONT_BASE64,
   JM_LOGO_BASE64,
 } from "../generate-competency-certificate/logos.ts";
 
@@ -45,6 +47,14 @@ type Payload = {
     reviewed_at?: string | null;
     generated_at?: string | null;
   } | null;
+  psychologist_review: {
+    reviewer_name: string;
+    reviewer_document_number: string;
+    reviewer_role: string;
+    reviewer_comment: string;
+    reviewed_at: string;
+    signature_hash: string;
+  };
   instruments: Array<{
     code: string;
     name: string;
@@ -550,6 +560,18 @@ function formatDateTime(value: string) {
   }).format(new Date(value)).replace(",", "");
 }
 
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago", day: "2-digit", month: "2-digit", year: "2-digit",
+  }).format(new Date(value)).replace(/\//g, "-");
+}
+
+function formatLongDate(value: string) {
+  return new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago", day: "2-digit", month: "long", year: "numeric",
+  }).format(new Date(value));
+}
+
 function drawHeader(
   page: PDFPage,
   font: PDFFont,
@@ -559,6 +581,7 @@ function drawHeader(
   pageNumber = 1,
   totalPages = 1,
   titleLines = ["Certificado de Evaluación", "Psicolaboral"],
+  metadata?: { code: string; date: string; version: string },
 ) {
   const { width, height } = page.getSize();
   const accent = rgb(0.82, 0.03, 0.07);
@@ -590,20 +613,16 @@ function drawHeader(
     drawCenteredText(page, titleLines[0] ?? "", titleCell.x, height - 76, titleCell.width, bold, 19);
     drawCenteredText(page, titleLines[1] ?? "", titleCell.x, height - 101, titleCell.width, bold, 19);
   }
-  page.drawText(`Folio: PS-${folio.slice(0, 8).toUpperCase()}`, {
+  const metadataLines = metadata
+    ? [`Código: ${metadata.code}`, `Fecha: ${metadata.date}`, `Versión: ${metadata.version}`, `Página: ${pageNumber} de ${totalPages}`]
+    : [`Folio: PS-${folio.slice(0, 8).toUpperCase()}`, `Página: ${pageNumber} de ${totalPages}`];
+  metadataLines.forEach((line, index) => page.drawText(line, {
     x: metadataCell.x + 8,
-    y: height - 66,
+    y: height - 55 - index * 14,
     size: 8,
     font,
     color: muted,
-  });
-  page.drawText(`Página: ${pageNumber} de ${totalPages}`, {
-    x: metadataCell.x + 8,
-    y: height - 82,
-    size: 8,
-    font,
-    color: muted,
-  });
+  }));
   page.drawLine({
     start: { x: header.x, y: header.y },
     end: { x: header.x + header.width, y: header.y },
@@ -635,6 +654,7 @@ type ReportContext = {
   doc: PDFDocument;
   font: PDFFont;
   bold: PDFFont;
+  signature: PDFFont;
   logo: PDFImage;
   payload: Payload;
   page: PDFPage;
@@ -691,7 +711,7 @@ function bulletHeight(items: string[], font: PDFFont, size: number, width: numbe
 
 function startReportPage(ctx: ReportContext, pageNumber: number) {
   ctx.page = ctx.doc.addPage([612, 792]);
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, 1, ["Informe Psicolaboral Integrado"]);
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, 1, ["Informe Psicolaboral Integrado"], { code: "F-RH-009", date: formatShortDate(ctx.payload.psychologist_review.reviewed_at), version: "1" });
   ctx.y = REPORT.topY;
 }
 
@@ -823,6 +843,34 @@ function drawSectionTitle(ctx: ReportContext, title: string) {
   ctx.y -= 22;
 }
 
+function drawPsychologistValidation(ctx: ReportContext) {
+  const review = ctx.payload.psychologist_review;
+  const commentLines = wrap(review.reviewer_comment, ctx.font, REPORT.bodySize, REPORT.width - 28);
+  const height = 150 + commentLines.length * REPORT.bodyLineHeight;
+  ensureSpace(ctx, height + REPORT.sectionGap, 18);
+  const bottom = ctx.y - height;
+  ctx.page.drawRectangle({
+    x: REPORT.marginX, y: bottom, width: REPORT.width, height,
+    borderWidth: 0.8, borderColor: rgb(0.82, 0.08, 0.12), color: rgb(0.998, 0.985, 0.985),
+  });
+  ctx.page.drawText("Comentarios y validación de Psicólogo", { x: REPORT.marginX + 14, y: ctx.y - 20, size: REPORT.h2, font: ctx.bold, color: rgb(0.42, 0.03, 0.06) });
+  let cursor = ctx.y - 42;
+  for (const line of commentLines) {
+    ctx.page.drawText(line, { x: REPORT.marginX + 14, y: cursor, size: REPORT.bodySize, font: ctx.font, color: rgb(0.16, 0.18, 0.22) });
+    cursor -= REPORT.bodyLineHeight;
+  }
+  cursor -= 8;
+  ctx.page.drawLine({ start: { x: REPORT.marginX + 14, y: cursor }, end: { x: REPORT.marginX + 240, y: cursor }, thickness: 0.7, color: rgb(0.73, 0.76, 0.81) });
+  ctx.page.drawText("VALIDACIÓN DEL INFORME", { x: REPORT.marginX + 14, y: cursor - 18, size: 10, font: ctx.bold, color: rgb(0.08, 0.1, 0.18) });
+  ctx.page.drawText(`Firmado electrónicamente el ${formatLongDate(review.reviewed_at)}, por:`, { x: REPORT.marginX + 14, y: cursor - 36, size: 8.5, font: ctx.font, color: rgb(0.12, 0.14, 0.2) });
+  ctx.page.drawText(text(review.reviewer_name), { x: REPORT.marginX + 14, y: cursor - 64, size: 17, font: ctx.signature, color: rgb(0.06, 0.07, 0.1) });
+  ctx.page.drawLine({ start: { x: REPORT.marginX + 14, y: cursor - 70 }, end: { x: REPORT.marginX + 240, y: cursor - 70 }, thickness: 0.7, color: rgb(0.73, 0.76, 0.81) });
+  ctx.page.drawText(text(review.reviewer_role, "Psicólogo/a responsable"), { x: REPORT.marginX + 14, y: cursor - 87, size: 8.5, font: ctx.font, color: rgb(0.08, 0.1, 0.18) });
+  ctx.page.drawText(`RUN N. ${text(review.reviewer_document_number)}`, { x: REPORT.marginX + 14, y: cursor - 103, size: 8.5, font: ctx.font, color: rgb(0.08, 0.1, 0.18) });
+  ctx.page.drawText(`Firmado digitalmente con hash: ${review.signature_hash.slice(0, 24)}...`, { x: REPORT.marginX + 14, y: cursor - 119, size: 7.2, font: ctx.font, color: rgb(0.35, 0.38, 0.45) });
+  ctx.y = bottom - REPORT.sectionGap;
+}
+
 function drawTwoColumnBulletCards(ctx: ReportContext, leftTitle: string, left: string[], rightTitle: string, right: string[]) {
   const gap = 16;
   const width = (REPORT.width - gap) / 2;
@@ -854,12 +902,13 @@ function drawReportPdf(
   reportFont: PDFFont,
   reportBold: PDFFont,
   reportLogo: PDFImage,
+  signature: PDFFont,
   payload: Payload,
   ai: PsychAIOutput,
 ) {
   const first = report.addPage([612, 792]);
-  const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, logo: reportLogo, payload, page: first, y: REPORT.topY };
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, ["Informe Psicolaboral Integrado"]);
+  const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, signature, logo: reportLogo, payload, page: first, y: REPORT.topY };
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, ["Informe Psicolaboral Integrado"], { code: "F-RH-009", date: formatShortDate(payload.psychologist_review.reviewed_at), version: "1" });
   drawReportHeading(ctx, `Resultado de evaluación: ${humanizeCode(ai.recommendation, "ADECUADO_CON_OBSERVACIONES")}`);
   drawCard(ctx, "Perfil ejecutivo", [text(ai.executive_profile ?? ai.executive_summary)]);
   drawCard(ctx, "Ajuste al cargo", [
@@ -942,6 +991,7 @@ function drawReportPdf(
     text(ai.integrated_conclusion ?? ai.preliminary_conclusion),
     text(cleanList(ai.material_limitations ?? ai.limitations, 1).at(0), "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico."),
   ]);
+  drawPsychologistValidation(ctx);
 
   drawReportFooter(ctx, report.getPageCount());
 }
@@ -972,6 +1022,13 @@ Deno.serve(async (request) => {
     assessmentId = String(
       (await request.json() as { assessmentId?: unknown }).assessmentId ?? "",
     );
+    const { data: psychologistReview, error: reviewError } = await client.rpc(
+      "assert_psychologist_report_approved",
+      { p_assessment_id: assessmentId },
+    );
+    if (reviewError || !psychologistReview) {
+      throw new Error(reviewError?.message ?? "El informe requiere validación profesional");
+    }
     const { data, error } = await client.rpc(
       "get_psycholaboral_certificate_payload",
       { p_assessment_id: assessmentId, p_claim_token: claimToken },
@@ -980,7 +1037,7 @@ Deno.serve(async (request) => {
       throw new Error(error?.message ?? "Evaluación no disponible");
     }
     claimed = true;
-    const payload = data as Payload;
+    const payload = { ...(data as Payload), psychologist_review: psychologistReview } as Payload;
     const pdf = await PDFDocument.create();
     const page = pdf.addPage([612, 792]);
     const font = await pdf.embedFont(StandardFonts.Helvetica);
@@ -1089,11 +1146,13 @@ Deno.serve(async (request) => {
     // reutilizar las fuentes/imágenes embebidas en el certificado anterior.
     const reportFont = await report.embedFont(StandardFonts.Helvetica);
     const reportBold = await report.embedFont(StandardFonts.HelveticaBold);
+    report.registerFontkit(fontkit);
+    const signature = await report.embedFont(bytesFromBase64(CERTIFICATE_SIGNATURE_FONT_BASE64), { subset: true });
     const reportLogo = await report.embedPng(
       bytesFromBase64(resolveLogo(payload.candidate.company_name)),
     );
     const ai = payload.ai_interpretation?.display_output ?? defaultAIOutput(payload);
-    drawReportPdf(report, reportFont, reportBold, reportLogo, payload, ai);
+    drawReportPdf(report, reportFont, reportBold, reportLogo, signature, payload, ai);
 
     const reportBytes = await report.save();
     const hash = await sha256(certificateBytes);
