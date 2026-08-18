@@ -103,6 +103,7 @@ export function PsychAIReviewDialog({
     null;
   const [comment, setComment] = useState(interpretation?.reviewer_comment ?? "");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -121,9 +122,20 @@ export function PsychAIReviewDialog({
       return;
     }
     setError("");
-    if (action === "save") await onSave(baseOutput, comment);
-    else if (action === "validate") await onValidate(baseOutput, comment);
-    else await onObserve(baseOutput, comment);
+    setSubmitting(true);
+    try {
+      if (action === "save") await onSave(baseOutput, comment);
+      else if (action === "validate") await onValidate(baseOutput, comment);
+      else await onObserve(baseOutput, comment);
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "No fue posible guardar la revisión profesional.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -149,9 +161,9 @@ export function PsychAIReviewDialog({
           </label>
           {error ? <p className="psych-feedback psych-feedback--error">{error}</p> : null}
           <div className="psych-actions psych-ai-review-actions">
-            <button className="psych-secondary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("save")}>Guardar comentario</button>
-            <button className="psych-secondary-action" type="button" disabled={busy || !baseOutput} onClick={() => void submit("observe")}>Observar</button>
-            <button className="psych-primary-action" type="button" disabled={busy || !baseOutput || !comment.trim()} onClick={() => void submit("validate")}>Validar y generar informe</button>
+            <button className="psych-secondary-action" type="button" disabled={busy || submitting || !baseOutput} onClick={() => void submit("save")}>Guardar comentario</button>
+            <button className="psych-secondary-action" type="button" disabled={busy || submitting || !baseOutput} onClick={() => void submit("observe")}>Observar</button>
+            <button className="psych-primary-action" type="button" disabled={busy || submitting || !baseOutput || !comment.trim()} onClick={() => void submit("validate")}>{submitting ? "Guardando..." : "Validar y generar informe"}</button>
           </div>
         </div>
         <div className="psych-ai-runs">

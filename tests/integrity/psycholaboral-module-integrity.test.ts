@@ -182,6 +182,9 @@ describe("Gestión Psicolaboral", () => {
     expect(managementPage).toContain('row.ai_status === "FAILED"');
     expect(managementPage).toContain("Reintentar informe IA");
     expect(managementPage).toContain("generatePsychAIInterpretation(row.assessment_id)");
+    expect(aiReviewDialog).toContain("const [submitting, setSubmitting] = useState(false)");
+    expect(aiReviewDialog).toContain("catch (submitError)");
+    expect(aiReviewDialog).toContain("No fue posible guardar la revisión profesional.");
   });
 
   it("no muestra fallback tecnico fallido como interpretación profesional", () => {
