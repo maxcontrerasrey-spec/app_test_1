@@ -2,6 +2,14 @@
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
+## 322. Las variables PL/pgSQL no deben repetir nombres de columnas de la tabla objetivo
+
+- En funciones `security definer`, un nombre local como `output_hash` puede volverse ambiguo al coincidir con una columna usada en un `UPDATE`.
+- Las variables calculadas deben usar prefijo inequívoco (`v_...`) y las columnas de la tabla objetivo deben calificarse con alias en el `SET`.
+- Las regresiones de integridad deben bloquear el patrón cuando la RPC participa en flujos productivos sensibles como validaciones firmadas o generación documental.
+
+---
+
 ## 321. El autoguardado psicometrico debe serializarse antes de finalizar
 
 - Un bloqueo booleano que descarta una escritura en vuelo permite que la revision local quede atrasada respecto del snapshot visible.

@@ -15,6 +15,7 @@ const v62Migration = readFileSync("supabase/migrations/20260814191200_psych_ai_v
 const v63Migration = readFileSync("supabase/migrations/20260817200000_psych_ai_v6_3_consolidated.sql", "utf8");
 const psychologistValidationMigration = readFileSync("supabase/migrations/20260817210000_psychologist_report_validation.sql", "utf8");
 const psychologistDocumentMigration = readFileSync("supabase/migrations/20260817220000_auto_upload_psycholaboral_report.sql", "utf8");
+const psychologistReviewHashFixMigration = readFileSync("supabase/migrations/20260818233000_fix_psych_review_output_hash_ambiguity.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -154,6 +155,14 @@ describe("Gestión Psicolaboral", () => {
     expect(certificate).toContain("Firmado digitalmente con hash:");
     expect(aiReviewDialog).toContain("Validar y generar informe");
     expect(managementPage).toContain('if (action === "validate")');
+  });
+
+  it("evita ambiguedad SQL al guardar el hash de revision profesional", () => {
+    expect(psychologistReviewHashFixMigration).toContain("v_reviewed_output_hash text");
+    expect(psychologistReviewHashFixMigration).toContain("reviewed_output_hash = coalesce(v_reviewed_output_hash, i.reviewed_output_hash)");
+    expect(psychologistReviewHashFixMigration).toContain("update private.psych_ai_interpretations i");
+    expect(psychologistReviewHashFixMigration).not.toContain("\n  output_hash text;");
+    expect(psychologistReviewHashFixMigration).not.toContain("coalesce(output_hash, reviewed_output_hash)");
   });
 
   it("carga automáticamente el informe validado sin eliminar la carga manual", () => {
