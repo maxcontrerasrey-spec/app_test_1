@@ -41,6 +41,14 @@ describe("Gestión Psicolaboral", () => {
     expect(assessmentStyles).toContain("button[aria-current=\"step\"]");
   });
 
+  it("serializa los autoguardados y espera el último avance antes de finalizar", () => {
+    expect(assessmentPage).toContain("const saveQueueRef = useRef<Promise<void> | null>(null)");
+    expect(assessmentPage).toContain("pendingSaveRef.current = { code: instrument.code, snapshot }");
+    expect(assessmentPage).toContain("while (pendingSaveRef.current)");
+    expect(assessmentPage).toContain("await persist(answers);");
+    expect(assessmentPage).not.toContain("saveInFlight.current");
+  });
+
   it("mantiene la columna de actualización como celda de tabla para no desalinear separadores", () => {
     expect(managementPage).toContain('td className="psych-update-cell"');
     expect(managementPage).toContain('className="psych-update-cell__content"');

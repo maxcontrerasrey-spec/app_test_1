@@ -2,6 +2,12 @@
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
+## 321. El autoguardado psicometrico debe serializarse antes de finalizar
+
+- Un bloqueo booleano que descarta una escritura en vuelo permite que la revision local quede atrasada respecto del snapshot visible.
+- Los guardados deben conservar el ultimo snapshot y procesarse en cola; el cierre del instrumento debe esperar esa cola antes de enviar.
+- El control de revision del backend se mantiene como proteccion contra sesiones concurrentes y no debe relajarse para ocultar una carrera del cliente.
+
 ---
 
 ## 320. La limpieza de ausencias BUK no debe depender de dotación activa
