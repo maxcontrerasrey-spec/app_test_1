@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiPresenceSummaryToday, useBiExceptionsToday } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
-import { formatMetricValue, formatPercentValue, WORKFORCE_PALETTE } from "../lib/workforceChartConfig";
+import { computePresenceSummary, formatMetricValue, formatPercentValue, WORKFORCE_PALETTE } from "../lib/workforceChartConfig";
 import type { BiFilters } from "../types";
 
 type BiPresenceAndExceptionsProps = {
@@ -27,14 +27,10 @@ export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProp
   const chartTheme = useChartTheme();
   const palette = WORKFORCE_PALETTE[chartTheme.mode];
 
-  const presenceSummary = useMemo(() => {
-    if (!presenceData || presenceData.length === 0) return null;
-    const totalHeadcount = presenceData.reduce((sum, row) => sum + row.headcount, 0);
-    const totalPresent = presenceData.reduce((sum, row) => sum + row.presentToday, 0);
-    const totalAbsent = totalHeadcount - totalPresent;
-    const presencePct = totalHeadcount > 0 ? (totalPresent / totalHeadcount) * 100 : 0;
-    return { totalHeadcount, totalPresent, totalAbsent, presencePct };
-  }, [presenceData]);
+  // Mismo helper que alimenta las tarjetas KPI superiores: el anillo y el
+  // KPI de Presencia no pueden divergir porque comparten la única
+  // implementación del cálculo.
+  const presenceSummary = useMemo(() => computePresenceSummary(presenceData ?? []), [presenceData]);
 
   const presenceRingOption = useMemo<EChartsOption | null>(() => {
     if (!presenceSummary || presenceSummary.totalHeadcount === 0) return null;

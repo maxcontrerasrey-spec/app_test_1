@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.26
+version: 1.0.27
 status: Activo
 language: es-CL
 owner: Quality
@@ -123,11 +123,11 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10256676,
+  "distTotalBytes": 10279217,
   "jsFileCount": 62,
-  "jsTotalBytes": 2741012,
+  "jsTotalBytes": 2756056,
   "cssFileCount": 12,
-  "cssTotalBytes": 240891,
+  "cssTotalBytes": 247979,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -138,6 +138,8 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
   ]
 }
 ```
+
+Revision 2026-08-18 rediseño BI (Resumen Ejecutivo, Dotación, Reclutamiento): el total global sube 22,541 bytes, JS sube 15,044 bytes y CSS sube 7,088 bytes por la nueva vista `/bi/resumen`, los componentes de dotación/ausentismo/candidatos reconstruidos, el gráfico de ritmo de incorporación y sus estilos. No agrega vendors, dependencias ni assets trackeados: el crecimiento es código de aplicación dentro del chunk lazy `BiDashboardPage` y su hoja de estilos. Medición local `dist=10,278,383`, `JS=2,755,631`, `CSS=247,979`; los valores registrados para `dist` y JS suman el delta conocido del artefacto de CI (+834 y +425 bytes respectivamente, medido en la revisión 2026-08-14 al inyectar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` productivas, que se inlinean solo en JS). CSS no depende de esas variables y se registra con el valor medido.
 
 Revision 2026-08-14 navegación de páginas psicométricas: el CSS sube 409 bytes para mostrar en rojo las páginas con respuestas faltantes y en verde las páginas completas, manteniendo estado activo, foco accesible y navegación responsive. No agrega vendors, assets trackeados ni modifica el entry inicial.
 

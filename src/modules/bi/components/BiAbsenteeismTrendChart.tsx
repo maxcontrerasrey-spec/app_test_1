@@ -2,7 +2,13 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { useBiAbsenteeismTrend } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
-import { buildRecentPeriodCodes, formatMetricValue, formatPercentValue, WORKFORCE_PALETTE } from "../lib/workforceChartConfig";
+import {
+  buildRecentPeriodCodes,
+  computeAbsenteeismTrendDelta,
+  formatMetricValue,
+  formatPercentValue,
+  WORKFORCE_PALETTE
+} from "../lib/workforceChartConfig";
 import type { BiFilters } from "../types";
 
 type BiAbsenteeismTrendChartProps = {
@@ -42,7 +48,7 @@ export function BiAbsenteeismTrendChart({ filters }: BiAbsenteeismTrendChartProp
   const chartOption = useMemo<EChartsOption | null>(() => {
     if (!data || data.length === 0) return null;
 
-    const hasAnyDays = data.some((point) => point.totalDays > 0);
+    const hasAnyDays = data.some((point) => point.hasData && point.totalDays > 0);
     if (!hasAnyDays) return null;
 
     return {
@@ -57,15 +63,19 @@ export function BiAbsenteeismTrendChart({ filters }: BiAbsenteeismTrendChartProp
           const point = data[dataIndex];
           if (!point) return "";
 
+          if (!point.hasData) {
+            return `<div class="chart-tooltip"><div class="chart-tooltip-title">${point.monthLabel}</div><div class="chart-tooltip-list"><div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Sin datos disponibles para este mes</span></div></div></div>`;
+          }
+
           const pctRow =
             point.absenteeismPct !== null
               ? `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Ausentismo</span><strong>${formatPercentValue(point.absenteeismPct)}</strong></div>`
               : "";
 
           return `<div class="chart-tooltip"><div class="chart-tooltip-title">${point.monthLabel}</div><div class="chart-tooltip-list">` +
-            `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Vacaciones</span><strong>${formatMetricValue(point.vacationDays)} días</strong></div>` +
-            `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Licencias médicas</span><strong>${formatMetricValue(point.medicalLeaveDays)} días</strong></div>` +
-            `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Otras ausencias</span><strong>${formatMetricValue(point.otherAbsenceDays)} días</strong></div>` +
+            `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Vacaciones</span><strong>${formatMetricValue(point.vacationDays ?? 0)} días</strong></div>` +
+            `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Licencias médicas</span><strong>${formatMetricValue(point.medicalLeaveDays ?? 0)} días</strong></div>` +
+            `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Otras ausencias</span><strong>${formatMetricValue(point.otherAbsenceDays ?? 0)} días</strong></div>` +
             `<div class="chart-tooltip-item"><span class="chart-tooltip-item-label">Total</span><strong>${formatMetricValue(point.totalDays)} días</strong></div>` +
             `${pctRow}</div></div>`;
         }
@@ -130,8 +140,8 @@ export function BiAbsenteeismTrendChart({ filters }: BiAbsenteeismTrendChartProp
           yAxisIndex: 1,
           smooth: true,
           symbolSize: 7,
-          lineStyle: { color: chartTheme.text, width: 2.4 },
-          itemStyle: { color: chartTheme.text },
+          lineStyle: { color: palette.absenteeismRate, width: 2.4 },
+          itemStyle: { color: palette.absenteeismRate },
           connectNulls: false,
           data: data.map((point) => point.absenteeismPct)
         }
@@ -139,9 +149,31 @@ export function BiAbsenteeismTrendChart({ filters }: BiAbsenteeismTrendChartProp
     };
   }, [chartTheme, data, palette]);
 
+  const delta = useMemo(() => (data ? computeAbsenteeismTrendDelta(data) : null), [data]);
+
   return (
     <div className="info-card">
-      <h3 className="bi-chart-title">Evolución Mensual del Ausentismo</h3>
+      <div className="bi-chart-header">
+        <h3 className="bi-chart-title">Evolución Mensual del Ausentismo</h3>
+        {delta ? (
+          <p className="bi-trend-delta">
+            <strong>{formatPercentValue(delta.currentPct)}</strong>
+            <span className="bi-trend-delta-label">en {delta.currentLabel}</span>
+            <span
+              className={
+                delta.deltaPp > 0
+                  ? "bi-trend-delta-chip bi-trend-delta-chip-up"
+                  : delta.deltaPp < 0
+                    ? "bi-trend-delta-chip bi-trend-delta-chip-down"
+                    : "bi-trend-delta-chip"
+              }
+            >
+              {delta.deltaPp > 0 ? "▲" : delta.deltaPp < 0 ? "▼" : "="}{" "}
+              {formatPercentValue(Math.abs(delta.deltaPp)).replace("%", " pp")} vs {delta.previousLabel}
+            </span>
+          </p>
+        ) : null}
+      </div>
       <EChartSurface
         height={340}
         option={chartOption ?? {}}

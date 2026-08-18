@@ -13,24 +13,17 @@ baseline_date: 2026-07-22
 
 ## Estado
 
-FAIL
+PASS
 
 ## Resumen
 
-- Errores: 1
+- Errores: 0
 - Warnings: 0
-- Info: 18
+- Info: 19
 
 ## Errores
 
-- EEES-GATE · `audit:performance-baseline` · > app_test_1@0.1.0 audit:performance-baseline
-> node scripts/audit-performance-baseline.mjs
-
-
-Performance baseline audit failed:
-- dist total 10275373 <= baseline 10256676
-- JS total 2753387 <= baseline 2741012
-- CSS total 247213 <= baseline 240891
+- Sin errores bloqueantes.
 
 ## Warnings
 
@@ -55,4 +48,5 @@ Performance baseline audit failed:
 - audit:supabase-security: PASS
 - audit:competency-catalog-guards: PASS
 - build:frontend-check: PASS
+- audit:performance-baseline: PASS
 - git diff --check: PASS

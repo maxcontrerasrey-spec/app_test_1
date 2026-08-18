@@ -391,6 +391,58 @@
   gap: 1rem;
 }
 
+/* Delta mes contra mes en la cabecera de la tendencia. El color indica
+   dirección del movimiento (sube/baja), no juicio de valor: no existe una
+   meta oficial de ausentismo con la cual calificar el nivel. */
+.bi-trend-delta {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.bi-trend-delta strong {
+  font-size: 1rem;
+  color: var(--title);
+}
+
+.bi-trend-delta-label {
+  font-weight: 550;
+}
+
+.bi-trend-delta-chip {
+  padding: 0.14rem 0.44rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  white-space: nowrap;
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--text-muted);
+}
+
+.bi-trend-delta-chip-up {
+  background: rgba(179, 66, 58, 0.14);
+  color: #b3423a;
+}
+
+.bi-trend-delta-chip-down {
+  background: rgba(23, 132, 99, 0.14);
+  color: #178463;
+}
+
+[data-theme="dark"] .bi-trend-delta-chip-up {
+  background: rgba(252, 165, 165, 0.16);
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .bi-trend-delta-chip-down {
+  background: rgba(52, 211, 153, 0.16);
+  color: #34d399;
+}
+
 @media (max-width: 1280px) {
   .bi-recruitment-kpi-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -462,6 +514,16 @@
   font-weight: 500;
   color: var(--text-muted);
   line-height: 1.25;
+}
+
+/* Declaración de alcance de filtros: evita que un KPI acumulado se lea
+   como dato del período seleccionado. */
+.bi-kpi-scope-note {
+  margin: -0.35rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  max-width: 78ch;
 }
 
 /* Cobertura de vacantes: bullet / progress bar */

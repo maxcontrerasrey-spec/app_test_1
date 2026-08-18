@@ -10,7 +10,7 @@ import {
   useBiWorkforceOverview
 } from "../hooks/useBiQueries";
 import { buildVacancyGapRows, computeVacancyCoverage, formatMetricValue } from "../lib/recruitmentAnalyticsChartConfig";
-import { buildAbsenteeismByContractRows } from "../lib/workforceChartConfig";
+import { buildAbsenteeismByContractRows, computePresenceSummary } from "../lib/workforceChartConfig";
 import { formatBiContractLabel } from "../lib/presentation";
 import { ExecutiveWorkforceSummary } from "./ExecutiveWorkforceSummary";
 import { ExecutiveRecruitmentSummary } from "./ExecutiveRecruitmentSummary";
@@ -37,18 +37,25 @@ export function BiExecutiveSummary() {
   const recruitmentQuery = useBiRecruitmentDashboard(undefined, canSeeReclutamiento);
   const incentivesQuery = useHrIncentivesAnalytics(INCENTIVES_DEFAULT_FILTERS, canSeeIncentivos);
 
+  // La presencia se toma del helper compartido sobre
+  // get_bi_presence_summary_today, no de restar los tres conteos por tipo
+  // del overview: esos se solapan si un empleado tiene dos excepciones el
+  // mismo día. Ver computePresenceSummary.
+  const presenceSummary = useMemo(
+    () => computePresenceSummary(presenceQuery.data ?? []),
+    [presenceQuery.data]
+  );
+
   const workforceKpis = useMemo(() => {
     if (!canSeeDotacion || !overviewQuery.data) return null;
     const overview = overviewQuery.data;
-    const presentToday =
-      overview.totalActiveEmployees - overview.onVacationToday - overview.onMedicalLeaveToday - overview.otherAbsencesToday;
-    const presencePct = overview.totalActiveEmployees > 0 ? (presentToday / overview.totalActiveEmployees) * 100 : null;
 
     return {
       activeEmployees: overview.totalActiveEmployees,
-      presencePct
+      presencePct: presenceSummary?.presencePct ?? null,
+      hiredThisMonth: overview.hiredThisMonth
     };
-  }, [canSeeDotacion, overviewQuery.data]);
+  }, [canSeeDotacion, overviewQuery.data, presenceSummary]);
 
   const recruitmentKpis = useMemo(() => {
     if (!canSeeReclutamiento || !recruitmentQuery.data) return null;
@@ -170,6 +177,14 @@ export function BiExecutiveSummary() {
             <article className="tracking-kpi-card tracking-kpi-card-bi-yellow bi-overview-kpi-card">
               <span>Vacantes Pendientes</span>
               <strong>{recruitmentKpis ? formatMetricValue(recruitmentKpis.pendingVacancies) : "—"}</strong>
+              {/* Oferta contra demanda: solo si el usuario ve ambas
+                  secciones, porque contratados viene de bi_dotacion y las
+                  vacantes de bi_reclutamiento. */}
+              {workforceKpis ? (
+                <small className="bi-kpi-caption">
+                  {formatMetricValue(workforceKpis.hiredThisMonth)} contratados este mes
+                </small>
+              ) : null}
             </article>
             <article className="tracking-kpi-card tracking-kpi-card-bi-green bi-overview-kpi-card">
               <span>Cobertura</span>

@@ -18,6 +18,7 @@ import type {
   BiRecruitmentTimelineDatum,
   BiRecruitmentVacancyByContractDatum
 } from "../types";
+import { logger } from "../../../shared/lib/logger";
 import { mergeAbsenteeismTrend, type AbsenteeismTrendPoint } from "../lib/workforceChartConfig";
 
 function normalizeBiFilters(filters?: BiFilters) {
@@ -338,14 +339,36 @@ export async function fetchBiAbsenteeismTrend(
   filters: BiFilters | undefined,
   periodCodes: string[]
 ): Promise<AbsenteeismTrendPoint[]> {
-  const responses = await Promise.all(
+  const responses = await Promise.allSettled(
     periodCodes.map((periodCode) => fetchBiExceptionsMonthly({ ...filters, periodCode }))
   );
 
+  // Degradación parcial deliberada: un mes que falle no debe vaciar la
+  // tendencia completa. El mes sin datos queda con días 0 y porcentaje
+  // null (hueco real en la línea, no un cero inventado). Solo se propaga
+  // el error si NINGÚN mes pudo resolverse.
   const rowsByPeriod = new Map<string, BukBiExceptionsMonthly[]>();
+  const failures: unknown[] = [];
+
   periodCodes.forEach((periodCode, index) => {
-    rowsByPeriod.set(periodCode, responses[index]);
+    const response = responses[index];
+    if (response.status === "fulfilled") {
+      rowsByPeriod.set(periodCode, response.value);
+      return;
+    }
+    failures.push(response.reason);
   });
+
+  if (rowsByPeriod.size === 0) {
+    throw failures[0] ?? new Error("No se pudo resolver la tendencia de ausentismo.");
+  }
+
+  if (failures.length > 0) {
+    logger.warn("bi.absenteeismTrend.partial", {
+      requestedMonths: periodCodes.length,
+      resolvedMonths: rowsByPeriod.size
+    });
+  }
 
   return mergeAbsenteeismTrend(periodCodes, rowsByPeriod);
 }

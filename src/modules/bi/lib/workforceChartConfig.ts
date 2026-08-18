@@ -11,6 +11,10 @@ export type WorkforcePalette = {
   volume: string;
   neutral: string;
   track: string;
+  /** Series de tasa (no categoría): debe distinguirse de los 3 tipos de
+   * ausencia y del color de texto/eje, para leerse como dato y no como
+   * chrome de la interfaz. */
+  absenteeismRate: string;
 };
 
 // Semántica compartida en toda la vista de Dotación (sección 12 del brief):
@@ -24,7 +28,8 @@ export const WORKFORCE_PALETTE: Record<"light" | "dark" | "e-ink", WorkforcePale
     otherAbsence: "#d97706",
     volume: "#2563eb",
     neutral: "#64748b",
-    track: "rgba(148, 163, 184, 0.22)"
+    track: "rgba(148, 163, 184, 0.22)",
+    absenteeismRate: "#7c3aed"
   },
   dark: {
     presence: "#34d399",
@@ -33,7 +38,8 @@ export const WORKFORCE_PALETTE: Record<"light" | "dark" | "e-ink", WorkforcePale
     otherAbsence: "#fbbf24",
     volume: "#60a5fa",
     neutral: "#94a3b8",
-    track: "rgba(148, 163, 184, 0.16)"
+    track: "rgba(148, 163, 184, 0.16)",
+    absenteeismRate: "#c4b5fd"
   },
   "e-ink": {
     presence: "#4a6b52",
@@ -42,7 +48,8 @@ export const WORKFORCE_PALETTE: Record<"light" | "dark" | "e-ink", WorkforcePale
     otherAbsence: "#8a6a2a",
     volume: "#355f75",
     neutral: "#6b665d",
-    track: "rgba(107, 102, 93, 0.2)"
+    track: "rgba(107, 102, 93, 0.2)",
+    absenteeismRate: "#6a5a78"
   }
 };
 
@@ -83,6 +90,54 @@ export function mapPipelineStageLabel(stageCode: string): string {
   return PIPELINE_STAGE_LABELS[stageCode] ?? stageCode;
 }
 
+export type PresenceRow = {
+  contractCode: string;
+  headcount: number;
+  absentToday: number;
+  presentToday: number;
+  presencePct: number;
+};
+
+export type PresenceSummary = {
+  totalHeadcount: number;
+  totalPresent: number;
+  totalAbsent: number;
+  presencePct: number;
+  absenteeismPct: number;
+};
+
+/**
+ * Única fuente de verdad para presencia/ausentismo agregado del día.
+ *
+ * Debe usarse en todo lugar que muestre estos números (tarjetas KPI y
+ * anillo de presencia): `get_bi_workforce_overview` entrega los ausentes
+ * como tres conteos independientes por tipo, y sumarlos cuenta dos veces a
+ * un empleado con excepciones simultáneas (p. ej. vacaciones y licencia
+ * médica el mismo día). `get_bi_presence_summary_today` ya resuelve eso
+ * con un `count(distinct empleado)` sobre todos los tipos, así que ese es
+ * el dato que debe mandar.
+ *
+ * Los ausentes se derivan como resto de dotación - presentes para que el
+ * porcentaje, el conteo y la geometría del anillo provengan siempre de los
+ * mismos dos números.
+ */
+export function computePresenceSummary(presenceRows: PresenceRow[]): PresenceSummary | null {
+  if (presenceRows.length === 0) return null;
+
+  const totalHeadcount = presenceRows.reduce((sum, row) => sum + row.headcount, 0);
+  const totalPresent = presenceRows.reduce((sum, row) => sum + row.presentToday, 0);
+  const totalAbsent = totalHeadcount - totalPresent;
+  const presencePct = totalHeadcount > 0 ? (totalPresent / totalHeadcount) * 100 : 0;
+
+  return {
+    totalHeadcount,
+    totalPresent,
+    totalAbsent,
+    presencePct,
+    absenteeismPct: totalHeadcount > 0 ? 100 - presencePct : 0
+  };
+}
+
 export type AbsenteeismByContractRow = {
   contractCode: string;
   label: string;
@@ -112,11 +167,13 @@ export function buildAbsenteeismByContractRows(
 export type AbsenteeismTrendPoint = {
   periodCode: string;
   monthLabel: string;
-  vacationDays: number;
-  medicalLeaveDays: number;
-  otherAbsenceDays: number;
+  /** null = mes sin datos resueltos (hueco real, no cero). */
+  vacationDays: number | null;
+  medicalLeaveDays: number | null;
+  otherAbsenceDays: number | null;
   totalDays: number;
   absenteeismPct: number | null;
+  hasData: boolean;
 };
 
 const OTHER_ABSENCE_TYPES = new Set(["absent", "administrative_leave", "union_leave"]);
@@ -147,7 +204,21 @@ export function mergeAbsenteeismTrend(
   rowsByPeriod: Map<string, BukBiExceptionsMonthly[]>
 ): AbsenteeismTrendPoint[] {
   return periodCodes.map((periodCode) => {
-    const rows = rowsByPeriod.get(periodCode) ?? [];
+    // Clave ausente = ese mes no se pudo resolver -> hueco (null).
+    // Clave presente con arreglo vacío = mes resuelto sin ausencias -> 0 real.
+    const rows = rowsByPeriod.get(periodCode);
+    if (!rows) {
+      return {
+        periodCode,
+        monthLabel: toMonthLabel(periodCode),
+        vacationDays: null,
+        medicalLeaveDays: null,
+        otherAbsenceDays: null,
+        totalDays: 0,
+        absenteeismPct: null,
+        hasData: false
+      };
+    }
 
     let vacationDays = 0;
     let medicalLeaveDays = 0;
@@ -177,9 +248,53 @@ export function mergeAbsenteeismTrend(
       medicalLeaveDays,
       otherAbsenceDays,
       totalDays: vacationDays + medicalLeaveDays + otherAbsenceDays,
-      absenteeismPct
+      absenteeismPct,
+      hasData: true
     };
   });
+}
+
+export type AbsenteeismTrendDelta = {
+  currentLabel: string;
+  currentPct: number;
+  previousLabel: string;
+  previousPct: number;
+  /** Diferencia en puntos porcentuales (no variación relativa). */
+  deltaPp: number;
+};
+
+/**
+ * Compara el ausentismo del último mes con datos contra el mes con datos
+ * inmediatamente anterior.
+ *
+ * Se compara solo dentro de esta misma serie (mismo RPC, misma fórmula y
+ * mismo denominador) porque es la única comparación temporal estrictamente
+ * válida disponible: el ausentismo "de hoy" viene de otro RPC con otra base
+ * de dotación, así que restarlos produciría una variación falsa.
+ *
+ * La diferencia se expresa en puntos porcentuales, no en variación relativa:
+ * pasar de 2% a 4% es "+2 pp", no "+100%".
+ */
+export function computeAbsenteeismTrendDelta(
+  points: AbsenteeismTrendPoint[]
+): AbsenteeismTrendDelta | null {
+  const withPct = points.filter(
+    (point): point is AbsenteeismTrendPoint & { absenteeismPct: number } =>
+      point.hasData && point.absenteeismPct !== null
+  );
+
+  if (withPct.length < 2) return null;
+
+  const current = withPct[withPct.length - 1];
+  const previous = withPct[withPct.length - 2];
+
+  return {
+    currentLabel: current.monthLabel,
+    currentPct: current.absenteeismPct,
+    previousLabel: previous.monthLabel,
+    previousPct: previous.absenteeismPct,
+    deltaPp: current.absenteeismPct - previous.absenteeismPct
+  };
 }
 
 /** Últimos `count` períodos YYYYMM terminando en el mes actual (cliente). */

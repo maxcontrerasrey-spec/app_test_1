@@ -107,13 +107,14 @@ export function BiRecruitmentAnalyticsView({
       {
         title: "Cobertura",
         value: formatPercentValue(coverage.coveragePct),
-        caption: `${formatMetricValue(coverage.filled)} / ${formatMetricValue(coverage.requested)}`,
+        caption: `${formatMetricValue(coverage.filled)} / ${formatMetricValue(coverage.requested)} cupos`,
         type: "bi-green"
       },
       { title: "Candidatos Activos", value: formatMetricValue(dashboard.summary.candidatesInProgress), type: "bi-blue" },
       {
         title: "Tiempo Medio de Contratación",
         value: formatAverageHiringDuration(dashboard.summary.averageHiringDays),
+        caption: "Solo período filtrado",
         type: "bi-blue"
       }
     ];
@@ -429,6 +430,17 @@ export function BiRecruitmentAnalyticsView({
           </article>
         ))}
       </div>
+
+      {/* El RPC calcula folios/vacantes/cobertura/candidatos sobre todos los
+          casos activos (filtered_cases no aplica el período; solo el promedio
+          de contratación lo filtra vía HAVING). Se declara explícitamente
+          para que nadie lea la cobertura como un dato del mes seleccionado
+          ni asuma que el filtro está fallando cuando el número no se mueve. */}
+      <p className="bi-kpi-scope-note">
+        Folios, vacantes, cobertura y candidatos reflejan el estado actual de todos los folios
+        abiertos: no varían con el filtro de Periodo. Solo Tiempo Medio de Contratación responde
+        al período seleccionado.
+      </p>
 
       {chartStage >= 1 ? (
         <div className="info-card">

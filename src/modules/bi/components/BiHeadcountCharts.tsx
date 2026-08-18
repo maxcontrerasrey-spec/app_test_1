@@ -91,11 +91,18 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   const chartTheme = useChartTheme();
   const palette = WORKFORCE_PALETTE[chartTheme.mode];
 
-  const themeParams = {
-    textColor: chartTheme.text,
-    borderColor: chartTheme.border,
-    surfaceColor: chartTheme.tooltipSurface
-  };
+  // Memoizado a propósito: si este objeto se recrea en cada render, los
+  // useMemo de las opciones que lo tienen como dependencia se invalidan
+  // siempre y ECharts recibe una option nueva en cada render del padre
+  // (mismo patrón de referencia inestable que causó el loop de filtros).
+  const themeParams = useMemo(
+    () => ({
+      textColor: chartTheme.text,
+      borderColor: chartTheme.border,
+      surfaceColor: chartTheme.tooltipSurface
+    }),
+    [chartTheme.border, chartTheme.text, chartTheme.tooltipSurface]
+  );
 
   const contractRows = useMemo(() => {
     if (!contractData || contractData.length === 0) return [];

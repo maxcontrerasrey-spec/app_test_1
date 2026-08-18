@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { useBiHeadcountByContract, useBiPresenceSummaryToday, useBiWorkforceOverview } from "../hooks/useBiQueries";
 import { formatBiContractLabel } from "../lib/presentation";
 import { formatMetricValue, formatPercentValue } from "../lib/recruitmentAnalyticsChartConfig";
-import { buildAbsenteeismByContractRows } from "../lib/workforceChartConfig";
+import { buildAbsenteeismByContractRows, computePresenceSummary } from "../lib/workforceChartConfig";
 
 export function ExecutiveWorkforceSummary() {
   const overviewQuery = useBiWorkforceOverview();
@@ -11,15 +11,15 @@ export function ExecutiveWorkforceSummary() {
   const contractQuery = useBiHeadcountByContract();
 
   const overview = overviewQuery.data;
-  const presentToday =
-    overview !== undefined
-      ? overview.totalActiveEmployees - overview.onVacationToday - overview.onMedicalLeaveToday - overview.otherAbsencesToday
-      : null;
-  const presencePct =
-    overview && overview.totalActiveEmployees > 0 && presentToday !== null
-      ? (presentToday / overview.totalActiveEmployees) * 100
-      : null;
-  const absenteeismPct = presencePct !== null ? 100 - presencePct : null;
+  // Presencia/ausentismo desde el helper compartido: restar los tres
+  // conteos por tipo del overview cuenta dos veces a quien tenga dos
+  // excepciones activas el mismo día. Ver computePresenceSummary.
+  const presenceSummary = useMemo(
+    () => computePresenceSummary(presenceQuery.data ?? []),
+    [presenceQuery.data]
+  );
+  const presencePct = presenceSummary?.presencePct ?? null;
+  const absenteeismPct = presenceSummary?.absenteeismPct ?? null;
 
   // Mismo mapping contractCode -> nombre real usado por
   // BiAbsenteeismByContractChart (vista Dotación) para no mostrar códigos

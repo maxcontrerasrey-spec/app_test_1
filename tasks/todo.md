@@ -1,5 +1,29 @@
 # Tareas y Roadmap de Desarrollo
 
+## Revisión técnica BI y KPIs accionables - 2026-08-18
+
+Pasada de revisión sobre lo entregado en las dos iteraciones anteriores de BI, antes de subir a producción.
+
+- [x] Corregir memoización rota en `BiHeadcountCharts`: el objeto `themeParams` se recreaba en cada render y estaba en las dependencias de dos `useMemo`, invalidándolos siempre y entregando una `option` nueva a ECharts en cada render del padre. Es el mismo patrón de referencia inestable que causó el loop infinito de filtros (commit `f045607`).
+- [x] `fetchBiAbsenteeismTrend`: `Promise.all` → `Promise.allSettled`. Antes, si fallaba 1 de las 6 llamadas mensuales se caía el gráfico completo; ahora hay degradación parcial y solo se propaga el error si no se resuelve ningún mes.
+- [x] Distinguir "mes resuelto sin ausencias" (0 real) de "mes sin datos" (`null`, hueco). Un mes fallido dibujado como 0 días era la misma distorsión que los ceros de fechas futuras ya eliminados.
+- [x] La serie "Ausentismo %" usaba `chartTheme.text`, el mismo color que las etiquetas de eje, leyéndose como chrome y rompiendo la semántica de color. Se agregó el token `absenteeismRate` a los 3 temas.
+- [x] KPIs de Dotación (`BiOverviewCards`): unidades homogéneas (presencia y ausentismo ambos en %, con el conteo como caption), clases de color del sistema BI en vez de las de estado de otro módulo, helper `formatPercentValue` compartido en vez de `toLocaleString` propio, y `key` por título en vez de índice.
+- [x] KPI C (comparación temporal): delta mes contra mes en la cabecera de Evolución Mensual, en **puntos porcentuales**. Se compara solo dentro de la misma serie (mismo RPC, misma fórmula, mismo denominador); el ausentismo "de hoy" viene de otro RPC con otra base de dotación, así que restarlos habría producido una variación falsa. Un delta sobre los KPIs de "hoy" requiere historial de snapshots en backend: queda documentado, no simulado.
+- [x] KPI D (oferta vs demanda): "Contratados del Mes" con contexto de `openRecruitmentCases` (mismo RPC, sin llamada extra); en Resumen Ejecutivo, "Vacantes Pendientes" muestra los contratados del mes solo cuando el usuario tiene ambos permisos (`bi_dotacion` + `bi_reclutamiento`).
+- [x] KPI E: se auditó el SQL de `get_bi_recruitment_dashboard`. La hipótesis de cobertura subestimada era **incorrecta**: `requested_vacancies` y `filled_vacancies` salen ambos de `filtered_cases`, sin filtro de período, así que la cobertura es internamente consistente. Pero eso reveló un problema real: el filtro de **Periodo no afecta** a Folios, Vacantes, Cobertura ni Candidatos (solo a Tiempo Medio de Contratación, vía `HAVING`, y a los gráficos de movilidad/timeline). Se declara explícitamente en la vista para que nadie lea la cobertura como dato del mes ni crea que el filtro está roto.
+- [x] Tests de regresión para la matemática crítica (`tests/unit/bi-workforce-chart-config.test.ts`, 11 casos): porcentaje combinado entre contratos, hueco vs cero, delta en pp ignorando meses sin datos, exclusión de contratos sin dotación, exclusión de buckets futuros y suma de incorporaciones.
+- [x] Unificar la fuente de verdad de presencia/ausentismo: `get_bi_workforce_overview` entrega los ausentes como tres conteos independientes por tipo, y sumarlos cuenta dos veces a un empleado con excepciones simultáneas (vacaciones + licencia médica el mismo día). El SQL no impide excepciones concurrentes, así que el riesgo es estructural. Se creó `computePresenceSummary` como única implementación sobre `get_bi_presence_summary_today` (que ya deduplica con `count(distinct)`) y se aplicó a los 3 lugares que replicaban el cálculo: `BiOverviewCards`, `BiPresenceAndExceptions` y `ExecutiveWorkforceSummary`/`BiExecutiveSummary`. Los KPIs de un solo tipo (Vacaciones, Licencias Médicas) siguen viniendo del overview porque no participan de la suma. Sin llamadas extra: es la misma query que ya alimenta el anillo.
+- [x] Baseline de performance actualizado (`PERFORMANCE_BASELINE_v1.md` v1.0.27): dist 10,279,217 / JS 2,756,056 / CSS 247,979. Los valores de dist y JS incluyen el delta conocido del artefacto de CI (+834 / +425 bytes por las variables públicas inyectadas, medido en la revisión 2026-08-14); CSS no depende de esas variables.
+- [x] `tsc -b`, `vite build`, `git diff --check`, `test:unit` (115 casos) y Guardian completo en verde.
+
+Convención de baseline: cuando el crecimiento de bundle es legítimo y está justificado, `PERFORMANCE_BASELINE_v1.md` se actualiza en el mismo commit documentando la causa y el delta, en vez de dejar el gate en rojo.
+
+Pendientes de negocio detectados (no implementados, requieren definición o backend):
+- Sin metas oficiales (ausentismo, cobertura, tiempo de contratación) el tablero informa pero no califica. Cuando existan, deben vivir en configuración, no hardcodeadas.
+- Distribución de tiempo de contratación (p90 / procesos sobre N días) requiere backend; el promedio actual esconde la cola.
+- Antigüedad de vacantes sigue requiriendo fecha de apertura por vacante en el RPC.
+
 ## Rediseño BI - Resumen Ejecutivo, Reclutamiento y navegación - 2026-08-17
 
 - [x] Corregir el entry point general de Business Intelligence: `src/shared/config/navigation.ts` apuntaba directo a `/bi/dotacion`, saltándose el redirect `/bi` → `/bi/resumen` ya existente en `AppRouter.tsx`. Causa raíz confirmada (no era el router ni `BiDashboardPage`, que ya defaultea correctamente a "resumen"): un único link de sidebar. Corregido a `/bi`; el resaltado activo del módulo en `AppShell.tsx` sigue funcionando en las 4 subvistas porque usa `location.pathname.startsWith(module.to)`.
