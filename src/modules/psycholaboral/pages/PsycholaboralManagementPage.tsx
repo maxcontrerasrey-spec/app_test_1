@@ -416,7 +416,7 @@ export function PsycholaboralManagementPage() {
                         <div className="expanded-case-detail-grid">
                           <section className="expanded-detail-section">
                             <h3>Batería psicolaboral</h3>
-                            {row.assessment_id ? (
+                            {row.assessment_id && row.display_status !== "expired" ? (
                               <div className="psych-instrument-list">
                                 {row.instruments.map((instrument) => (
                                   <span

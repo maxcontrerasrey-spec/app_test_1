@@ -31,6 +31,7 @@ describe("Psycholaboral expiration contract", () => {
     expect(page).toContain('{ key: "expired", label: "Desierto" }');
     expect(page).toContain('row.display_status === "expired"');
     expect(page).toContain('"Reenviar test"');
+    expect(page).toContain('row.assessment_id && row.display_status !== "expired"');
     expect(statusMigration).toContain("when execution_status = 'expired' then 'expired'");
     expect(statusMigration).toContain("display_status = p_status");
   });
