@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Firma legal solo en certificados Salvador - 2026-08-17
+
+- [x] Auditar el renderer y confirmar que el bloque vacío se originaba en un fallback visual del firmante legal.
+- [x] Renderizar Representante Legal únicamente cuando `legal_signature_required` lo exige; conservar solo la firma del instructor en los demás contratos.
+- [x] Agregar regresión de integridad y validar Edge Function, PDF, Guardian y publicación.
+
+Resultado: el certificado fuera de Codelco El Salvador ya no muestra rótulo, espacio ni RUN pendiente de Representante Legal. El flujo Salvador conserva aprobación, firma y trazabilidad legal.
+
 ## Expiracion de evaluaciones psicolaborales abandonadas - 2026-08-17
 
 - [ ] Auditar el vencimiento de 90 minutos, el estado de la evaluación y la regla de reenvío.

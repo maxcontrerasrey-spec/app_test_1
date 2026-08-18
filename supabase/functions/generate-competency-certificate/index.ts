@@ -720,15 +720,15 @@ function drawValidationPanel(page: PDFPage, input: {
       signatureFont: fonts.signature,
       signatureImage: null
     },
-    {
+    ...(input.legalSigner ? [{
       columnX: x + 142,
-      title: input.legalSigner?.role_label || "Representante Legal",
-      name: input.legalSigner?.full_name || "",
-      role: input.legalSigner?.role_label || "",
-      document: input.legalSigner?.document_number ? `RUN N. ${input.legalSigner.document_number}` : "RUN pendiente de configuracion",
+      title: input.legalSigner.role_label,
+      name: input.legalSigner.full_name,
+      role: input.legalSigner.role_label,
+      document: input.legalSigner.document_number ? `RUN N. ${input.legalSigner.document_number}` : "RUN pendiente de configuracion",
       signatureFont: fonts.signature,
       signatureImage: input.legalSignaturePng
-    }
+    }] : [])
   ];
   signerColumns.forEach((signer) => {
     page.drawText(signer.title, { x: signer.columnX, y: y + 78, size: 7.2, font: fonts.bold, color: rgb(0.07, 0.09, 0.16) });

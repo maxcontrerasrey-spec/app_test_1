@@ -44,6 +44,11 @@ describe("Competency legal signature contract", () => {
     expect(generator).toContain("legal_signature_signed_at");
   });
 
+  it("omits the legal signer block for certificates outside the Salvador scope", () => {
+    expect(generator).toContain("...(input.legalSigner ? [{");
+    expect(generator).not.toContain('title: input.legalSigner?.role_label || "Representante Legal"');
+  });
+
   it("connects the restricted approval RPCs to the compact ERP review panel", () => {
     expect(approvalApi).toContain("fetchCompetencyLegalApprovalQueue");
     expect(approvalApi).toContain("decide_competency_legal_approval");
