@@ -48,6 +48,7 @@ const emptySummary: RecruitmentDashboardSummary = {
 export function HiringStatusPage() {
   const { accessibleFeatures, accessibleModules, appRoles, isSuperAdmin, user } = useAuth();
   const isAdmin = isSuperAdmin || appRoles.includes("admin");
+  const isReadOnlyRecruitment = appRoles.includes("control_contratos") && !isAdmin;
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [selectedCaseId, setSelectedCaseId] = useState("");
@@ -395,6 +396,7 @@ export function HiringStatusPage() {
       pendingApprovalCount={summary.pending_approval_count ?? summary.pending_contracts_control}
       currentUserId={user?.id}
       isAdmin={isAdmin}
+      readOnly={isReadOnlyRecruitment}
       decisionMessage={decisionMessage}
       errorMessage={errorMessage}
       onApprovalSuccess={() => void invalidateRecruitmentCache()}
@@ -489,6 +491,7 @@ export function HiringStatusPage() {
           processesView
         ) : activeView === "precandidates" && canAccessPrecandidates ? (
           <HiringPrecandidatesView
+            readOnly={isReadOnlyRecruitment}
             onCandidateApproved={async (caseId, candidateId) => {
               setSelectedCaseId(caseId);
               setSelectedCandidateId(candidateId);
@@ -498,6 +501,7 @@ export function HiringStatusPage() {
           />
         ) : activeView === "candidates" && canAccessCandidateControl ? (
           <HiringCandidatesView
+            readOnly={isReadOnlyRecruitment}
             isParentLoading={isLoading}
             errorMessage={errorMessage}
             selectedCandidateId={selectedCandidateId}
@@ -522,6 +526,7 @@ export function HiringStatusPage() {
           />
         ) : activeView === "personnel_to_hire" && canAccessPersonnelToHire ? (
           <HiringPersonnelToHireView
+            readOnly={isReadOnlyRecruitment}
             key="personnel-to-hire"
             isParentLoading={isLoading}
             errorMessage={errorMessage}
@@ -537,6 +542,7 @@ export function HiringStatusPage() {
           />
         ) : activeView === "personnel_contracted" && canAccessContractedPersonnel ? (
           <HiringPersonnelToHireView
+            readOnly={isReadOnlyRecruitment}
             key="personnel-contracted"
             bucket="contracted"
             isParentLoading={isLoading}
@@ -553,6 +559,7 @@ export function HiringStatusPage() {
           />
         ) : activeView === "internal_mobility" && canAccessInternalMobility ? (
           <HiringInternalMobilityView
+            readOnly={isReadOnlyRecruitment}
             isParentLoading={summaryQuery.isLoading}
             externalErrorMessage={summaryError}
           />

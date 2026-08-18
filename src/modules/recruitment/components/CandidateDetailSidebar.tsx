@@ -34,6 +34,7 @@ import { BukContingencyAction } from "./BukContingencyAction";
 
 type CandidateDetailSidebarProps = {
   mode?: "candidate_control" | "personnel_to_hire" | "personnel_contracted";
+  readOnly?: boolean;
   isLoading: boolean;
   selectedCaseDetail: RecruitmentCaseDetail | null;
   selectedCandidate: RecruitmentCaseCandidateRow | null;
@@ -55,6 +56,7 @@ type CandidateDetailSidebarProps = {
 
 export function CandidateDetailSidebar({
   mode = "candidate_control",
+  readOnly = false,
   isLoading,
   selectedCaseDetail,
   selectedCandidate,
@@ -160,7 +162,7 @@ export function CandidateDetailSidebar({
     value: stage,
     label: toRecruitmentCandidateStageLabel(stage)
   }));
-  const showStageControls = mode === "candidate_control";
+  const showStageControls = mode === "candidate_control" && !readOnly;
   const isWhoPending = selectedCandidate.stage_code === "who_pending";
   const canApproveWho = hasCapability("can_approve_who_stage");
   const canManageBukActions =
@@ -221,7 +223,7 @@ export function CandidateDetailSidebar({
             {toRecruitmentCandidateStageLabel(selectedCandidate.stage_code)}
           </span>
         </div>
-        {onTransferCandidateRequested && selectedCandidate.stage_code !== "hired" && selectedCandidate.stage_code !== "rejected" && selectedCandidate.stage_code !== "withdrawn" && (
+        {!readOnly && onTransferCandidateRequested && selectedCandidate.stage_code !== "hired" && selectedCandidate.stage_code !== "rejected" && selectedCandidate.stage_code !== "withdrawn" && (
           <button
             type="button"
             className="soft-primary-button control-compact-button"
@@ -340,7 +342,7 @@ export function CandidateDetailSidebar({
           <div className="approval-detail-note control-block-top">
             <div className="control-inline-header">
               <small>Licencia de Conducir</small>
-              {!isEditingLicense ? (
+              {!readOnly && !isEditingLicense ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -683,7 +685,7 @@ export function CandidateDetailSidebar({
           <div className="approval-detail-note control-block-top">
             <div className="control-inline-header">
               <small>Puntos Clave de la Entrevista</small>
-              {!isEditingInterview ? (
+              {!readOnly && !isEditingInterview ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -782,6 +784,7 @@ export function CandidateDetailSidebar({
         <CandidateDocumentChecklist
           caseCandidateId={selectedCandidate.id}
           candidateStageCode={selectedCandidate.stage_code}
+          readOnly={readOnly}
           onChecklistUpdated={onCandidateFileUpdated}
         />
       )}
@@ -790,7 +793,7 @@ export function CandidateDetailSidebar({
         <CandidateWorkerFileForm
           candidate={selectedCandidate}
           caseDetail={selectedCaseDetail}
-          readOnly={isWorkerFileReadOnly}
+          readOnly={isWorkerFileReadOnly || readOnly}
           onSaved={onCandidateFileUpdated}
         />
       )}

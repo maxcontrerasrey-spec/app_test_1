@@ -31,6 +31,7 @@ type HiringPersonnelToHireViewProps = {
   onLicenseUpdated: () => Promise<void>;
   onInterviewNotesUpdated: () => Promise<void>;
   onCandidateFileUpdated: () => Promise<void>;
+  readOnly?: boolean;
 };
 
 async function mapWithConcurrency<TInput, TOutput>(
@@ -115,7 +116,8 @@ export function HiringPersonnelToHireView({
   onSelectCandidate,
   onLicenseUpdated,
   onInterviewNotesUpdated,
-  onCandidateFileUpdated
+  onCandidateFileUpdated,
+  readOnly = false
 }: HiringPersonnelToHireViewProps) {
   const { appRoles, isSuperAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -143,7 +145,7 @@ export function HiringPersonnelToHireView({
     isSuperAdmin ||
     appRoles.includes("administrativo") ||
     appRoles.includes("jefe_administrativo");
-  const showBukActions = bucket === "to_hire" && canManageBukActions;
+  const showBukActions = bucket === "to_hire" && canManageBukActions && !readOnly;
   const title = bucket === "to_hire" ? "Personal a Contratar" : "Personal contratado";
   const description =
     bucket === "to_hire"
@@ -528,6 +530,7 @@ export function HiringPersonnelToHireView({
 
         <CandidateDetailSidebar
           mode={bucket === "contracted" ? "personnel_contracted" : "personnel_to_hire"}
+          readOnly={readOnly}
           isLoading={isLoading}
           selectedCaseDetail={selectedCaseDetail}
           selectedCandidate={selectedCandidate}

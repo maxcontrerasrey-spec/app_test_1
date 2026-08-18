@@ -22,12 +22,14 @@ type ChecklistModalState =
 type CandidateDocumentChecklistProps = {
   caseCandidateId: string;
   candidateStageCode?: string | null;
+  readOnly?: boolean;
   onChecklistUpdated?: () => Promise<void>;
 };
 
 export function CandidateDocumentChecklist({
   caseCandidateId,
   candidateStageCode,
+  readOnly = false,
   onChecklistUpdated
 }: CandidateDocumentChecklistProps) {
   const [checklist, setChecklist] = useState<CandidateChecklistResult | null>(null);
@@ -365,7 +367,7 @@ export function CandidateDocumentChecklist({
               </p>
             ) : null}
 
-            <div className="document-validation-actions">
+            {!readOnly ? <div className="document-validation-actions">
               <button
                 type="button"
                 className="soft-primary-button approval-button-approve"
@@ -381,7 +383,7 @@ export function CandidateDocumentChecklist({
                   ? "Aprobando revisión..."
                   : "Aprobar revisión documental"}
               </button>
-            </div>
+            </div> : null}
           </>
         )}
       </div>
@@ -424,7 +426,7 @@ export function CandidateDocumentChecklist({
                 </button>
               ) : null}
 
-              {doc.status === "pending" || doc.status === "rejected" || doc.status === "expired" ? (
+              {!readOnly && (doc.status === "pending" || doc.status === "rejected" || doc.status === "expired") ? (
                 <button 
                   type="button" 
                   className="soft-primary-button soft-primary-button-sm soft-primary-button-neutral"
@@ -435,7 +437,7 @@ export function CandidateDocumentChecklist({
                 </button>
               ) : null}
 
-              {doc.file_path && doc.status !== "pending" ? (
+              {!readOnly && doc.file_path && doc.status !== "pending" ? (
                 <button
                   type="button"
                   className="soft-primary-button soft-primary-button-sm soft-primary-button-neutral"
@@ -448,7 +450,7 @@ export function CandidateDocumentChecklist({
                 </button>
               ) : null}
 
-              {doc.file_path ? (
+              {!readOnly && doc.file_path ? (
                 <button
                   type="button"
                   className="soft-primary-button soft-primary-button-sm document-danger-button"
@@ -459,7 +461,7 @@ export function CandidateDocumentChecklist({
                 </button>
               ) : null}
 
-              {doc.status === "uploaded" ? (
+              {!readOnly && doc.status === "uploaded" ? (
                 <>
                   <button 
                     type="button" 

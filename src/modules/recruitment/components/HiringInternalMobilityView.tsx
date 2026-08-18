@@ -20,11 +20,13 @@ import { setInternalMobilityHrExecutionStatus } from "../../internal_mobility/se
 type HiringInternalMobilityViewProps = {
   isParentLoading: boolean;
   externalErrorMessage: string;
+  readOnly?: boolean;
 };
 
 export function HiringInternalMobilityView({
   isParentLoading,
-  externalErrorMessage
+  externalErrorMessage,
+  readOnly = false
 }: HiringInternalMobilityViewProps) {
   const queryClient = useQueryClient();
   const { appRoles, isSuperAdmin, user } = useAuth();
@@ -33,7 +35,7 @@ export function HiringInternalMobilityView({
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [isHrExecutionSaving, setIsHrExecutionSaving] = useState(false);
   const [hrExecutionError, setHrExecutionError] = useState<string | null>(null);
-  const canManageHrExecution = canManageInternalMobilityHrExecution(appRoles, isSuperAdmin);
+  const canManageHrExecution = !readOnly && canManageInternalMobilityHrExecution(appRoles, isSuperAdmin);
 
   const approvedRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
