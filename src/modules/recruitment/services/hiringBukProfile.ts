@@ -304,6 +304,57 @@ export async function enqueueCandidatesToBuk(candidateIds: string[]) {
   };
 }
 
+export async function enqueueCandidatesToBukContingency(
+  candidateIds: string[],
+  reason: string
+) {
+  if (!supabase) {
+    return {
+      data: [] as Array<{
+        job_id: string;
+        recruitment_case_candidate_id: string;
+        status: string;
+      }>,
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const normalizedIds = Array.from(
+    new Set(candidateIds.map((candidateId) => candidateId.trim()).filter(Boolean))
+  );
+  const normalizedReason = reason.trim();
+
+  if (normalizedIds.length === 0) {
+    return { data: [], error: "Selecciona al menos un candidato." };
+  }
+  if (normalizedReason.length < 10) {
+    return { data: [], error: "Ingresa un motivo de contingencia de al menos 10 caracteres." };
+  }
+
+  const { data, error } = await supabase.rpc("enqueue_buk_generation_contingency", {
+    p_candidate_ids: normalizedIds,
+    p_reason: normalizedReason
+  });
+
+  if (error) {
+    return {
+      data: [],
+      error: getSupabaseErrorMessage(error, "No fue posible encolar la carga BUK en contingencia.")
+    };
+  }
+
+  return {
+    data: Array.isArray(data)
+      ? (data as Array<{
+          job_id: string;
+          recruitment_case_candidate_id: string;
+          status: string;
+        }>)
+      : [],
+    error: null
+  };
+}
+
 type BukSyncQueueRow = {
   job_id: string;
   recruitment_case_candidate_id: string;

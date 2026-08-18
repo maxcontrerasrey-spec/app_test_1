@@ -125,9 +125,9 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10261416,
+  "distTotalBytes": 10262216,
   "jsFileCount": 62,
-  "jsTotalBytes": 2744699,
+  "jsTotalBytes": 2745499,
   "cssFileCount": 12,
   "cssTotalBytes": 241944,
   "trackedAssets": [
@@ -198,6 +198,8 @@ Revision 2026-08-17 firma legal en Certificacion de Competencias: el total sube 
 Revision 2026-08-17 Gestión Psicolaboral alineación de tabla: el total sube 118 bytes, JS sube 63 bytes y CSS sube 55 bytes por conservar la columna `Actualización` como celda de tabla y mover el layout flexible a un contenedor interno. No agrega vendors, rutas, assets ni cambia la carga inicial.
 
 Revision 2026-08-17 firma legal RUN CI: GitHub Actions `Audit Enterprise Guardrails` run `32044206847`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,261,135 bytes totales y 2,744,418 bytes JS tras incorporar la migracion de RUN verificable del firmante legal. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
+
+Revision 2026-08-18 carga BUK DSAL en contingencia: el total sube 776 bytes y JS sube 776 bytes por exponer en el detalle de Control de candidatos el flujo auditado de `enqueue_buk_generation_contingency`, con motivo obligatorio y sin mover la etapa ERP. No agrega vendors, CSS, rutas ni assets trackeados.
 
 ## Politica de actualizacion
 

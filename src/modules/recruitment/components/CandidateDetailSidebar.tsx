@@ -30,6 +30,7 @@ import {
 } from "./hiringControlViewUtils";
 import { CandidateDocumentChecklist } from "./CandidateDocumentChecklist";
 import { CandidateWorkerFileForm } from "./CandidateWorkerFileForm";
+import { BukContingencyAction } from "./BukContingencyAction";
 
 type CandidateDetailSidebarProps = {
   mode?: "candidate_control" | "personnel_to_hire" | "personnel_contracted";
@@ -73,9 +74,9 @@ export function CandidateDetailSidebar({
   onTransferCandidateRequested
 }: CandidateDetailSidebarProps) {
   const { hasCapability } = useAuth();
+  const { appRoles, isSuperAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<"pipeline" | "documents" | "worker">("pipeline");
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
-
   const [isEditingLicense, setIsEditingLicense] = useState(false);
   const [licenseClass, setLicenseClass] = useState("");
   const [licenseExpiry, setLicenseExpiry] = useState("");
@@ -88,7 +89,6 @@ export function CandidateDetailSidebar({
   const [interviewError, setInterviewError] = useState("");
   const [isWhoCausesExpanded, setIsWhoCausesExpanded] = useState(false);
   const [whoCauseDrafts, setWhoCauseDrafts] = useState<WhoCauseDraft[]>(buildEmptyWhoCauseDrafts);
-
   useEffect(() => {
     setIsHistoryExpanded(false);
     setIsEditingLicense(false);
@@ -100,13 +100,11 @@ export function CandidateDetailSidebar({
     setIsWhoCausesExpanded(false);
     setWhoCauseDrafts(buildEmptyWhoCauseDrafts());
   }, [selectedCandidate?.id]);
-
   useEffect(() => {
     if (stageDraft === "who_pending") {
       setIsWhoCausesExpanded(true);
     }
   }, [stageDraft]);
-
   const handleSaveLicense = async () => {
     if (!selectedCandidate) return;
     setIsLicenseSaving(true);
@@ -165,6 +163,14 @@ export function CandidateDetailSidebar({
   const showStageControls = mode === "candidate_control";
   const isWhoPending = selectedCandidate.stage_code === "who_pending";
   const canApproveWho = hasCapability("can_approve_who_stage");
+  const canManageBukActions =
+    isSuperAdmin || appRoles.includes("administrativo") || appRoles.includes("jefe_administrativo");
+  const isDsalCandidate = /CODELCO\s*-\s*DSAL/i.test(selectedCaseDetail.case.contract_name ?? "");
+  const canLoadDsalContingency =
+    mode === "candidate_control" &&
+    canManageBukActions &&
+    isDsalCandidate &&
+    !["hired", "rejected", "withdrawn"].includes(selectedCandidate.stage_code);
   const latestWhoApproval = selectedCandidate.who_approval ?? null;
   const completedWhoCauseCount = whoCauseDrafts.filter(isWhoCauseDraftComplete).length;
   const hasStartedWhoCauseDrafts = whoCauseDrafts.some(isWhoCauseDraftStarted);
@@ -198,7 +204,6 @@ export function CandidateDetailSidebar({
       )
     );
   };
-
   const normalizedWhoCauses: WhoApprovalCause[] = whoCauseDrafts
     .filter(isWhoCauseDraftComplete)
     .map((cause) => ({
@@ -227,6 +232,10 @@ export function CandidateDetailSidebar({
           </button>
         )}
       </div>
+
+      {canLoadDsalContingency ? (
+        <BukContingencyAction candidateId={selectedCandidate.id} />
+      ) : null}
 
       <div className="control-tabs-row">
         <button 
