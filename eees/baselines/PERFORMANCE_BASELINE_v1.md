@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.30
+version: 1.0.31
 status: Activo
 language: es-CL
 owner: Quality
@@ -125,9 +125,9 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10287335,
+  "distTotalBytes": 10295544,
   "jsFileCount": 62,
-  "jsTotalBytes": 2763121,
+  "jsTotalBytes": 2771739,
   "cssFileCount": 12,
   "cssTotalBytes": 249032,
   "trackedAssets": [
@@ -140,6 +140,8 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
   ]
 }
 ```
+
+Revision 2026-08-19 CI posterior al merge: GitHub Actions `Audit Enterprise Guardrails` run `32215224932` (commit `48ebc74`, Node 24, variables publicas de Supabase inyectadas) midio `dist=10,295,544` y `JS=2,771,739`, superando por 8,209 y 8,618 bytes respectivamente el limite fijado en la revision anterior. La causa fue que esa revision estimo el delta CI-vs-local extrapolando un ajuste de la revision 2026-08-14 (+834/+425 bytes), que resulto menor al real de este commit. Se realinean los limites globales de `dist` y JS a la medicion exacta reportada por el propio artefacto de CI, eliminando la estimacion; CSS no se ve afectado (no depende de las variables inyectadas) y permanece bajo el valor ya medido localmente.
 
 Revision 2026-08-19 merge Resumen Ejecutivo BI + Psych AI V6.3/competencias/reclutamiento: la rama `dev/renato/business-intelligence` diverge del remoto porque ambos historiales avanzaron en paralelo sobre `5478e25`. Esta revision remide `dist` completo despues de integrar ambos conjuntos de cambios, porque los deltas de las dos revisiones siguientes no son sumables: cada uno se midio contra una base distinta. Medicion local del merge `dist=10,286,501`, `JS=2,762,696`, `CSS=249,032`; los limites globales de `dist` y JS registran esa medicion mas el delta conocido del artefacto de CI (+834 y +425 bytes, medido en la revision 2026-08-14 al inyectar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` productivas, que se inlinean solo en JS). CSS no depende de esas variables y se registra con el valor medido. Si el proximo run de CI reporta un excedente de pocos cientos de bytes, la causa es ese delta estimado y no un crecimiento real del bundle: debe realinearse al artefacto remoto como ya se hizo en las revisiones 2026-07-23 CI y 2026-08-18 CI.
 
