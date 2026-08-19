@@ -8,6 +8,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - El siguiente título debe posicionarse usando una separación explícita desde el borde inferior de la tarjeta, no confiar solo en el interlineado del texto.
 - Un footer heredado no debe pintar encima de un encabezado documental nuevo; cada zona del PDF debe tener una única autoridad visual.
 
+## 325. El total de páginas debe resolverse en una segunda pasada del renderer
+
+- Un PDF paginado incrementalmente no conoce el denominador final al crear la primera página; no se debe dejar `1` como total permanente.
+- La metadata de cada encabezado debe repintarse después de completar el layout, usando el total real y conservando la numeración individual.
+- La prueba debe verificar tanto la numeración del footer como la segunda pasada del encabezado, porque revisar solo el texto inferior puede ocultar el error visible al usuario.
+
 ## 322. Las variables PL/pgSQL no deben repetir nombres de columnas de la tabla objetivo
 
 - En funciones `security definer`, un nombre local como `output_hash` puede volverse ambiguo al coincidir con una columna usada en un `UPDATE`.

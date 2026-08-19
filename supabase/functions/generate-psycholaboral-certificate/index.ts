@@ -631,22 +631,46 @@ function drawHeader(
     drawCenteredText(page, titleLines[0] ?? "", titleCell.x, height - 76, titleCell.width, bold, 19);
     drawCenteredText(page, titleLines[1] ?? "", titleCell.x, height - 101, titleCell.width, bold, 19);
   }
-  const metadataLines = metadata
-    ? [`Código: ${metadata.code}`, `Fecha: ${metadata.date}`, `Versión: ${metadata.version}`, `Página: ${pageNumber} de ${totalPages}`]
-    : [`Folio: PS-${folio.slice(0, 8).toUpperCase()}`, `Página: ${pageNumber} de ${totalPages}`];
-  metadataLines.forEach((line, index) => page.drawText(line, {
-    x: metadataCell.x + 8,
-    y: height - 55 - index * 14,
-    size: 8,
-    font,
-    color: muted,
-  }));
+  drawPageMetadata(page, font, pageNumber, totalPages, metadata, folio, metadataCell.x, height, muted);
   page.drawLine({
     start: { x: header.x, y: header.y },
     end: { x: header.x + header.width, y: header.y },
     thickness: 2,
     color: accent,
   });
+}
+
+function drawPageMetadata(
+  page: PDFPage,
+  font: PDFFont,
+  pageNumber: number,
+  totalPages: number,
+  metadata: { code: string; date: string; version: string } | undefined,
+  folio: string,
+  metadataX: number,
+  pageHeight: number,
+  muted = rgb(0.48, 0.52, 0.58),
+) {
+  // Headers are created incrementally, but the final page count is known only
+  // after all content has been laid out. Replace this small metadata cell in a
+  // second pass so every page displays the same final denominator.
+  page.drawRectangle({
+    x: metadataX,
+    y: pageHeight - 120,
+    width: 150,
+    height: 82,
+    color: rgb(1, 1, 1),
+  });
+  const metadataLines = metadata
+    ? [`Código: ${metadata.code}`, `Fecha: ${metadata.date}`, `Versión: ${metadata.version}`, `Página: ${pageNumber} de ${totalPages}`]
+    : [`Folio: PS-${folio.slice(0, 8).toUpperCase()}`, `Página: ${pageNumber} de ${totalPages}`];
+  metadataLines.forEach((line, index) => page.drawText(line, {
+    x: metadataX + 8,
+    y: pageHeight - 55 - index * 14,
+    size: 8,
+    font,
+    color: muted,
+  }));
 }
 
 const REPORT = {
@@ -743,6 +767,16 @@ function ensureSpace(ctx: ReportContext, height: number, minCarry = 36) {
 
 function drawReportFooter(ctx: ReportContext, totalPages: number) {
   ctx.doc.getPages().forEach((target, index) => {
+    drawPageMetadata(
+      target,
+      ctx.font,
+      index + 1,
+      totalPages,
+      REPORT_METADATA,
+      ctx.payload.public_id,
+      target.getWidth() - 158,
+      target.getHeight(),
+    );
     target.drawText(`Documento confidencial - PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()} - Página ${index + 1} de ${totalPages}`, {
       x: REPORT.marginX,
       y: 28,

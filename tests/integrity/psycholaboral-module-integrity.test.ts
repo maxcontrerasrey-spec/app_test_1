@@ -201,6 +201,13 @@ describe("Gestión Psicolaboral", () => {
     expect(certificate).not.toContain("Informe Psicolaboral Integrado\"], { code:");
   });
 
+  it("corrige el denominador de páginas después de completar el layout", () => {
+    expect(certificate).toContain("function drawPageMetadata(");
+    expect(certificate).toContain("second pass so every page displays the same final denominator");
+    expect(certificate).toContain("drawPageMetadata(\n      target,");
+    expect(certificate).toContain("index + 1,\n      totalPages,");
+  });
+
   it("evita ambiguedad SQL al registrar el tipo documental del informe", () => {
     expect(psychologistDocumentTypeFixMigration).toContain("v_document_type_id uuid");
     expect(psychologistDocumentTypeFixMigration).toContain("select dt.id into v_document_type_id");

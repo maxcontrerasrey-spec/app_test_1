@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Correccion total de paginas en informe psicolaboral - 2026-08-19
+
+- [x] Confirmar por que el encabezado persiste con denominador `1`.
+- [x] Reescribir la metadata del encabezado después de conocer el total real.
+- [x] Validar extracción/maqueta, gates, despliegue y publicación en `main`.
+
+Resultado: el encabezado se repinta en una segunda pasada al terminar el layout, usando el total real de páginas. El footer ya usaba ese total; ahora encabezado y footer quedan consistentes. Integridad 60/60, Deno check y diff limpios.
+
 ## Retiro de certificado sin firma Salvador - 2026-08-19
 
 - [x] Verificar folio, identidad, estado BUK y ausencia de ambigüedad.
