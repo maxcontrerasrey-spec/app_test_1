@@ -1,13 +1,23 @@
 # Tareas y Roadmap de Desarrollo
 
+## Correccion periodo 202607 en BI de dotacion - 2026-08-19
+
+- [ ] Auditar el contrato frontend/RPC y reproducir el vacio de `202607` frente a `202606` y `202608`.
+- [ ] Corregir la causa raiz con una migracion o ajuste frontend acotado, sin alterar permisos ni filtros validos.
+- [ ] Agregar regresion para asegurar que un periodo intermedio valido no quede vacio por el calculo de fechas.
+- [ ] Ejecutar integridad, build frontend, auditorias SQL/seguridad, Guardian y `git diff --check`.
+- [ ] Documentar el resultado y cualquier dependencia de datos vivos.
+
 ## Reproducción real del bloqueo de navegación BI - 2026-08-19
 
 - [x] Reproducir el bloqueo desde el navegador integrado con clics físicos en Dotación y barra superior.
 - [x] Identificar que la ruta cambiaba sin repintar la vista y que el menú móvil se desbordaba horizontalmente.
 - [x] Corregir la causa raíz con navegación documental BI y menú móvil en columna, agregando regresión.
-- [ ] Ejecutar gates frontend/Guardian y verificar nuevamente el flujo en producción.
+- [x] Ejecutar gates frontend/Guardian y verificar nuevamente el flujo en producción.
 
 Hallazgo en vivo: el clic físico sobre `Análisis de Incentivos` dejó `/bi/incentivos` en la barra de dirección, pero conservó el DOM de Dotación; además `.top-nav-mobile-panel` tenía `display:flex` sin dirección de columna y sus enlaces quedaban fuera del viewport. La corrección fuerza recarga documental en las tres pestañas BI y ordena el menú móvil verticalmente.
+
+Validación final: `npm run test:integrity` (66/66), `npm run build:frontend-check` y `git diff --check` pasan. Guardian ejecutó todos los gates funcionales y solo permanece bloqueado por copias locales preexistentes `node_modules/* 2` y `.git/index 2`. Producción sirve el bundle `index-DwoTBmgS.js`; con clic físico se verificó Dotación → Reclutamiento, Dotación → Incentivos y menú superior → Gestión Psicolaboral sin recarga manual adicional.
 
 ## Separación de informes psicolaborales aprobados - 2026-08-19
 
