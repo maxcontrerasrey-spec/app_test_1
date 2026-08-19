@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Gráfico BI de dotación por región - 2026-08-19
+
+- [x] Auditar la extracción y escritura de región BUK/ERP frente a los nombres del mapa de Chile.
+- [x] Crear una consulta protegida que agrupe exclusivamente por región y no use ciudad como sustituto.
+- [x] Cambiar el gráfico, agregar regresión y validar estados vacíos.
+- [x] Publicar y verificar el mapa regional en producción.
+
+Resultado: `get_bi_headcount_by_region` usa la región extraída desde BUK/ERP, la canoniza a los nombres exactos de `public/maps/chile.json` y agrupa la dotación una sola vez por región. La UI eliminó el fallback ciudad→región y ahora muestra `Dotación por Región`.
+
+Validación: migración `20260820000000` aplicada y registrada en Supabase remoto; integridad 70/70, TypeScript/build frontend, auditorías de migraciones/seguridad y `git diff --check` pasan.
+
 ## Corrección de deriva del historial Supabase - 2026-08-19
 
 - [x] Comparar historial local y remoto e identificar versiones huérfanas.

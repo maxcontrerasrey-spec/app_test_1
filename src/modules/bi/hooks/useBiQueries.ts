@@ -7,6 +7,7 @@ import {
   fetchBiHeadcountByManagement,
   fetchBiHeadcountByJobTitle,
   fetchBiHeadcountByCity,
+  fetchBiHeadcountByRegion,
   fetchBiAgeDistribution,
   fetchBiExceptionsToday,
   fetchBiPresenceSummaryToday,
@@ -58,6 +59,14 @@ export function useBiHeadcountByCity(filters?: BiFilters) {
   return useQuery({
     queryKey: queryKeys.bi.headcountByCity(filters),
     queryFn: () => fetchBiHeadcountByCity(filters),
+    staleTime: BI_STALE_TIME
+  });
+}
+
+export function useBiHeadcountByRegion(filters?: BiFilters) {
+  return useQuery({
+    queryKey: queryKeys.bi.headcountByRegion(filters),
+    queryFn: () => fetchBiHeadcountByRegion(filters),
     staleTime: BI_STALE_TIME
   });
 }

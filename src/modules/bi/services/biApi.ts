@@ -9,6 +9,7 @@ import type {
   BukBiHeadcountByManagement,
   BukBiHeadcountByJobTitle,
   BukBiHeadcountByCity,
+  BukBiHeadcountByRegion,
   BukBiAgeDistribution,
   BukBiExceptionsToday,
   BukBiPresenceSummaryToday,
@@ -197,6 +198,13 @@ export function mapHeadcountByCity(row: Record<string, unknown>): BukBiHeadcount
   };
 }
 
+export function mapHeadcountByRegion(row: Record<string, unknown>): BukBiHeadcountByRegion {
+  return {
+    regionName: String(row.region_name ?? "SIN REGION"),
+    headcount: Number(row.headcount ?? 0)
+  };
+}
+
 export function mapAgeDistribution(row: Record<string, unknown>): BukBiAgeDistribution {
   return {
     contractCode: String(row.contract_code ?? ""),
@@ -311,6 +319,13 @@ export async function fetchBiHeadcountByCity(filters?: BiFilters): Promise<BukBi
   const { data, error } = await client.rpc("get_bi_headcount_by_city", buildBiRpcParams(filters));
   if (error) throw error;
   return asArray<Record<string, unknown>>(data).map((row) => mapHeadcountByCity(row));
+}
+
+export async function fetchBiHeadcountByRegion(filters?: BiFilters): Promise<BukBiHeadcountByRegion[]> {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("get_bi_headcount_by_region", buildBiRpcParams(filters));
+  if (error) throw error;
+  return asArray<Record<string, unknown>>(data).map((row) => mapHeadcountByRegion(row));
 }
 
 export async function fetchBiAgeDistribution(filters?: BiFilters): Promise<BukBiAgeDistribution[]> {

@@ -42,6 +42,11 @@ export interface BukBiHeadcountByCity {
   headcount: number;
 }
 
+export interface BukBiHeadcountByRegion {
+  regionName: string;
+  headcount: number;
+}
+
 export interface BukBiAgeDistribution {
   contractCode: string;
   areaName: string;

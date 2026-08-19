@@ -39,6 +39,8 @@ export const queryKeys = {
       [...queryKeys.bi.all(), "headcountByJobTitle", normalizeBiFilters(filters)] as const,
     headcountByCity: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "headcountByCity", normalizeBiFilters(filters)] as const,
+    headcountByRegion: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "headcountByRegion", normalizeBiFilters(filters)] as const,
     ageDistribution: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "ageDistribution", normalizeBiFilters(filters)] as const,
     exceptionsToday: (filters?: BiQueryFilters | null) =>

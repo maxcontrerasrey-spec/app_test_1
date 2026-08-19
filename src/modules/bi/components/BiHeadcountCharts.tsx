@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiHeadcountByManagement, useBiHeadcountByCity } from "../hooks/useBiQueries";
+import { useBiHeadcountByManagement, useBiHeadcountByRegion } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
@@ -10,7 +10,7 @@ type BiHeadcountChartsProps = {
 
 export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   const { data: managementData, isLoading: isLoadingManagement } = useBiHeadcountByManagement(filters);
-  const { data: cityData, isLoading: isLoadingCity } = useBiHeadcountByCity(filters);
+  const { data: regionData, isLoading: isLoadingRegion } = useBiHeadcountByRegion(filters);
   const [isChileMapReady, setIsChileMapReady] = useState(false);
   const chartTheme = useChartTheme();
 
@@ -104,27 +104,16 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   }, [chartTheme, managementData]);
 
   const mapChartOption = useMemo<EChartsOption | null>(() => {
-    if (!isChileMapReady || !cityData || cityData.length === 0) {
+    if (!isChileMapReady || !regionData || regionData.length === 0) {
       return null;
     }
 
-    // Agrupar por regionName en un intento de match con el GeoJSON
-    const totalsByRegion = new Map<string, number>();
-    cityData.forEach((item) => {
-      const region = item.regionName || item.cityName;
-      let normalizedRegion = region;
-      // Normalización simple para que haga match con el mapa de 'fcortes/Chile-GeoJSON'
-      if (!region.startsWith("Región")) {
-        if (region.includes("Metropolitana")) normalizedRegion = "Región Metropolitana de Santiago";
-        else if (region.includes("O'Higgins")) normalizedRegion = "Región del Libertador General Bernardo O'Higgins";
-        else if (region.includes("Aysén")) normalizedRegion = "Región de Aysén del General Carlos Ibáñez del Campo";
-        else if (region.includes("Magallanes")) normalizedRegion = "Región de Magallanes y de la Antártica Chilena";
-        else normalizedRegion = `Región de ${region}`;
-      }
-      totalsByRegion.set(normalizedRegion, (totalsByRegion.get(normalizedRegion) ?? 0) + item.headcount);
-    });
+    // La RPC ya agrupa y canoniza la región según los nombres del GeoJSON.
+    // Nunca usamos la ciudad como sustituto: eso produciría una región falsa.
+    const rows = regionData.filter((item) => item.regionName !== "SIN REGION");
+    if (rows.length === 0) return null;
 
-    const maxHeadcount = Math.max(...totalsByRegion.values(), 10);
+    const maxHeadcount = Math.max(...rows.map((item) => item.headcount), 10);
 
     return {
       tooltip: {
@@ -156,11 +145,11 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
           emphasis: {
             label: { show: true, color: chartTheme.text }
           },
-          data: [...totalsByRegion.entries()].map(([name, value]) => ({ name, value }))
+          data: rows.map((item) => ({ name: item.regionName, value: item.headcount }))
         }
       ]
     };
-  }, [chartTheme, cityData, isChileMapReady]);
+  }, [chartTheme, isChileMapReady, regionData]);
 
   return (
     <div className="bi-chart-row">
@@ -176,13 +165,13 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         />
       </div>
       <div className="info-card">
-        <h3 className="bi-chart-title">Dotación por Ciudad</h3>
+        <h3 className="bi-chart-title">Dotación por Región</h3>
         <EChartSurface
           height={300}
           option={mapChartOption ?? {}}
-          loading={isLoadingCity || !isChileMapReady}
+          loading={isLoadingRegion || !isChileMapReady}
           empty={!mapChartOption}
-          emptyMessage="Sin datos de ciudad"
+          emptyMessage="Sin datos de región"
           loadingMessage="Cargando mapa..."
         />
       </div>
