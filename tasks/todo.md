@@ -2,9 +2,11 @@
 
 ## Corrección interacción y escala mapa regional BI - 2026-08-19
 
-- [ ] Corregir tooltip `NaN` y validar el valor de la región bajo el cursor.
-- [ ] Reforzar la escala de colores y el estado hover sin alterar el cálculo de dotación.
-- [ ] Ejecutar regresión, publicar y comprobar el mapa en producción.
+- [x] Corregir tooltip `NaN` y validar el valor de la región bajo el cursor.
+- [x] Reforzar la escala de colores y el estado hover sin alterar el cálculo de dotación.
+- [x] Ejecutar regresión, publicar y comprobar el mapa en producción.
+
+Resultado: el tooltip convierte de forma segura el valor numérico de la región y muestra `Sin dato` solo cuando no existe valor; se eliminó el `NaN`. La escala pasó a cinco niveles contrastados y el hover resalta el contorno regional. Producción sirve el bundle `index-rK5PFMkU.js`; integridad 70/70, build y consola del navegador sin errores.
 
 ## Gráfico BI de dotación por región - 2026-08-19
 
