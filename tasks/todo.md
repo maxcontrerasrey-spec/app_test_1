@@ -5,11 +5,11 @@
 - [x] Auditar las variantes actuales y detectar estados con colores repetidos.
 - [x] Asignar una variante semántica única para cada tarjeta en modo claro y oscuro.
 - [x] Agregar regresión de integridad para impedir reutilización accidental de variantes.
-- [ ] Publicar y verificar los assets servidos en producción.
+- [x] Publicar y verificar los assets servidos en producción.
 
 Resultado parcial: `Candidatos visibles` conserva dorado; `No realizado` usa gris neutro; `Enviado`, azul; `Desierto`, rojo; `Terminado`, ámbar; y `Aprobados`, verde.
 
-Validación focalizada: integridad Psicolaboral 35/35. El TypeScript/build global queda bloqueado por un cambio concurrente ajeno en BI: falta `src/modules/bi/components/BiHeadcountCharts.tsx` durante la compilación.
+Validación: integridad Psicolaboral 35/35. Producción sirve el bundle `PsycholaboralManagementPage-B14MHQiL.js` con las variantes únicas; el TypeScript/build global queda bloqueado por un cambio concurrente ajeno en BI: falta `src/modules/bi/components/BiHeadcountCharts.tsx` durante la compilación.
 
 ## Gráfico BI de dotación regional en barras - 2026-08-19
 
