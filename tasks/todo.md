@@ -1,5 +1,11 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección interacción y escala mapa regional BI - 2026-08-19
+
+- [ ] Corregir tooltip `NaN` y validar el valor de la región bajo el cursor.
+- [ ] Reforzar la escala de colores y el estado hover sin alterar el cálculo de dotación.
+- [ ] Ejecutar regresión, publicar y comprobar el mapa en producción.
+
 ## Gráfico BI de dotación por región - 2026-08-19
 
 - [x] Auditar la extracción y escritura de región BUK/ERP frente a los nombres del mapa de Chile.

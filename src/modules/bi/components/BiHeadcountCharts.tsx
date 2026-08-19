@@ -128,16 +128,29 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         trigger: "item",
         backgroundColor: chartTheme.tooltipSurface,
         textStyle: { color: chartTheme.tooltipText },
-        formatter: "{b}<br/>Dotación: {c}"
+        formatter: (params) => {
+          const item = Array.isArray(params) ? params[0] : params;
+          const name = typeof item === "object" && item && "name" in item
+            ? String(item.name)
+            : "Región";
+          const rawValue = typeof item === "object" && item && "value" in item
+            ? item.value
+            : null;
+          const numericValue = Number(rawValue);
+          const value = Number.isFinite(numericValue)
+            ? numericValue.toLocaleString("es-CL")
+            : "Sin dato";
+          return `${name}<br/>Dotación: ${value}`;
+        }
       },
       visualMap: {
         min: 0,
         max: maxHeadcount,
-        text: ["High", "Low"],
+        text: ["Alta", "Baja"],
         realtime: false,
-        calculable: true,
+        calculable: false,
         inRange: {
-          color: [chartTheme.info, chartTheme.primary, chartTheme.text]
+          color: ["#eff6ff", "#93c5fd", "#2563eb", "#1e3a8a", "#0f172a"]
         },
         textStyle: { color: chartTheme.text }
       },
@@ -151,7 +164,13 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
             show: false
           },
           emphasis: {
-            label: { show: true, color: chartTheme.text }
+            label: { show: true, color: chartTheme.text },
+            itemStyle: {
+              borderColor: chartTheme.text,
+              borderWidth: 1.5,
+              shadowBlur: 8,
+              shadowColor: "rgba(15, 23, 42, 0.3)"
+            }
           },
           data: rows.map((item) => ({ name: item.regionName, value: item.headcount }))
         }

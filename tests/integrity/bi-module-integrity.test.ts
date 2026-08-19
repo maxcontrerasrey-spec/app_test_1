@@ -71,6 +71,9 @@ describe("BI module navigation integrity", () => {
     expect(chart).toContain("Dotación por Región");
     expect(chart).toContain('item.regionName !== "SIN REGION"');
     expect(chart).not.toContain("item.regionName || item.cityName");
+    expect(chart).toContain('toLocaleString("es-CL")');
+    expect(chart).toContain('"#eff6ff"');
+    expect(chart).toContain('text: ["Alta", "Baja"]');
     expect(api).toContain('get_bi_headcount_by_region');
     expect(migration).toContain("normalize_bi_region_name");
     expect(migration).toContain("user_can_access_bi_analytics");
