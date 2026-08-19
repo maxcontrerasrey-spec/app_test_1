@@ -14,6 +14,33 @@ function list(items?: string[]) {
   return Array.isArray(items) ? items.filter(Boolean) : [];
 }
 
+const FINAL_RECOMMENDATIONS: Array<{
+  value: NonNullable<PsychAIOutput["recommendation"]>;
+  label: string;
+}> = [
+  { value: "ADECUADO", label: "Adecuado" },
+  { value: "ADECUADO_CON_OBSERVACIONES", label: "Adecuado con Observaciones" },
+  { value: "NO_ADECUADO", label: "No Adecuado" },
+];
+
+function recommendationLabel(value?: string) {
+  return FINAL_RECOMMENDATIONS.find((item) => item.value === value)?.label ?? "Sin selección";
+}
+
+function normalizeRecommendation(value?: string): NonNullable<PsychAIOutput["recommendation"]> {
+  return FINAL_RECOMMENDATIONS.some((item) => item.value === value)
+    ? value as NonNullable<PsychAIOutput["recommendation"]>
+    : "ADECUADO_CON_OBSERVACIONES";
+}
+
+function isConductorPosition(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-CL")
+    .includes("conductor");
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="psych-ai-section">
@@ -23,14 +50,32 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function renderOutput(output: PsychAIOutput | null) {
+function renderOutput(
+  output: PsychAIOutput | null,
+  selectedRecommendation: NonNullable<PsychAIOutput["recommendation"]> | undefined,
+  onRecommendationChange: (value: NonNullable<PsychAIOutput["recommendation"]>) => void,
+) {
   if (!output) return <p className="psych-result-note">Sin interpretación disponible.</p>;
   return (
     <div className="psych-ai-output">
       <Section title="Resultado de evaluación">
-        <div className="psych-ai-recommendation-card">
-          <span>{output.recommendation?.replace(/_/g, " ")}</span>
-          <small>Integración psicolaboral</small>
+        <div className="psych-ai-recommendation-card" role="radiogroup" aria-label="Categoría final del informe">
+          <div className="psych-ai-recommendation-options">
+            {FINAL_RECOMMENDATIONS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                role="radio"
+                aria-checked={selectedRecommendation === item.value}
+                className={`psych-ai-recommendation-option ${selectedRecommendation === item.value ? "is-selected" : ""}`}
+                onClick={() => onRecommendationChange(item.value)}
+              >
+                <span className="psych-ai-recommendation-dot" aria-hidden="true" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <small>Selección final de la psicóloga · actual: {recommendationLabel(selectedRecommendation)}</small>
         </div>
         <p>{output.decision_rationale}</p>
       </Section>
@@ -102,6 +147,9 @@ export function PsychAIReviewDialog({
     interpretation?.original_output ??
     null;
   const [comment, setComment] = useState(interpretation?.reviewer_comment ?? "");
+  const [selectedRecommendation, setSelectedRecommendation] = useState<NonNullable<PsychAIOutput["recommendation"]>>(
+    normalizeRecommendation(baseOutput?.recommendation),
+  );
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -116,6 +164,10 @@ export function PsychAIReviewDialog({
     };
   }, [onClose]);
 
+  useEffect(() => {
+    setSelectedRecommendation(normalizeRecommendation(baseOutput?.recommendation));
+  }, [baseOutput?.recommendation]);
+
   const submit = async (action: "save" | "validate" | "observe") => {
     if (!baseOutput) {
       setError("No existe informe integrado disponible para revisar.");
@@ -124,9 +176,13 @@ export function PsychAIReviewDialog({
     setError("");
     setSubmitting(true);
     try {
-      if (action === "save") await onSave(baseOutput, comment);
-      else if (action === "validate") await onValidate(baseOutput, comment);
-      else await onObserve(baseOutput, comment);
+      const reviewedOutput: PsychAIOutput = {
+        ...baseOutput,
+        recommendation: selectedRecommendation,
+      };
+      if (action === "save") await onSave(reviewedOutput, comment);
+      else if (action === "validate") await onValidate(reviewedOutput, comment);
+      else await onObserve(reviewedOutput, comment);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -146,6 +202,7 @@ export function PsychAIReviewDialog({
             <span className="psych-eyebrow">Revisión de informe integrado</span>
             <h2 id="psych-ai-title">{detail.candidate.full_name}</h2>
             <p>{detail.candidate.job_position_name} · {detail.candidate.contract_name}</p>
+            <span className="psych-report-type">{isConductorPosition(detail.candidate.job_position_name) ? "Informe de Aversión al Riesgo · F-RH-071" : "Informe de Evaluación Psicolaboral · F-RH-009"}</span>
           </div>
           <button ref={closeRef} className="psych-secondary-action" type="button" onClick={onClose}>Cerrar</button>
         </header>
@@ -154,7 +211,7 @@ export function PsychAIReviewDialog({
           <span>Perfil: {interpretation?.profile?.label ?? "No resuelto"}</span>
         </div>
         <div className="psych-ai-review-stack">
-          {renderOutput(baseOutput)}
+          {renderOutput(baseOutput, selectedRecommendation, setSelectedRecommendation)}
           <label className="psych-ai-comment">
             Comentarios y validación de Psicólogo
             <textarea value={comment} onChange={(event) => setComment(event.target.value)} />

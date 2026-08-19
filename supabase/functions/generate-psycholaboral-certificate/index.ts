@@ -694,6 +694,22 @@ const REPORT = {
 
 const REPORT_TITLE_LINES = ["Informe de Evaluación", "Psicolaboral"];
 const REPORT_METADATA = { code: "F-RH-009", date: "17-08-26", version: "1" };
+const DRIVER_REPORT_TITLE_LINES = ["Informe de Aversión al Riesgo"];
+const DRIVER_REPORT_METADATA = { code: "F-RH-071", date: "01-08-2026", version: "1" };
+
+function isConductorPosition(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-CL")
+    .includes("conductor");
+}
+
+function getReportBranding(jobPositionName: string) {
+  return isConductorPosition(jobPositionName)
+    ? { titleLines: DRIVER_REPORT_TITLE_LINES, metadata: DRIVER_REPORT_METADATA }
+    : { titleLines: REPORT_TITLE_LINES, metadata: REPORT_METADATA };
+}
 
 type ReportContext = {
   doc: PDFDocument;
@@ -756,7 +772,8 @@ function bulletHeight(items: string[], font: PDFFont, size: number, width: numbe
 
 function startReportPage(ctx: ReportContext, pageNumber: number) {
   ctx.page = ctx.doc.addPage([612, 792]);
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, 1, REPORT_TITLE_LINES, REPORT_METADATA);
+  const branding = getReportBranding(ctx.payload.candidate.job_position_name);
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, 1, branding.titleLines, branding.metadata);
   ctx.y = REPORT.topY;
 }
 
@@ -766,13 +783,14 @@ function ensureSpace(ctx: ReportContext, height: number, minCarry = 36) {
 }
 
 function drawReportFooter(ctx: ReportContext, totalPages: number) {
+  const branding = getReportBranding(ctx.payload.candidate.job_position_name);
   ctx.doc.getPages().forEach((target, index) => {
     drawPageMetadata(
       target,
       ctx.font,
       index + 1,
       totalPages,
-      REPORT_METADATA,
+      branding.metadata,
       ctx.payload.public_id,
       target.getWidth() - 158,
       target.getHeight(),
@@ -952,7 +970,8 @@ function drawReportPdf(
 ) {
   const first = report.addPage([612, 792]);
   const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, signature, logo: reportLogo, payload, page: first, y: REPORT.topY };
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, REPORT_TITLE_LINES, REPORT_METADATA);
+  const branding = getReportBranding(payload.candidate.job_position_name);
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, branding.titleLines, branding.metadata);
   drawReportHeading(ctx, `Resultado de evaluación: ${humanizeCode(ai.recommendation, "ADECUADO_CON_OBSERVACIONES")}`);
   drawCard(ctx, "Perfil ejecutivo", [text(ai.executive_profile ?? ai.executive_summary)]);
   drawCard(ctx, "Ajuste al cargo", [
