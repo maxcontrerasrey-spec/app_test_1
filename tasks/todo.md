@@ -2352,3 +2352,11 @@ Resultado final del análisis: se levantaron las fases de agosto para 54 RUT con
 - [x] Ejecutar pruebas, build frontend, Guardian, revisión de diff y documentar resultado.
 
 Resultado: la revisión IA mantiene el contenido original y permite que la psicóloga seleccione `Adecuado`, `Adecuado con Observaciones` o `No Adecuado`; la selección se guarda en `reviewed_output.recommendation` y el renderer PDF la utiliza como resultado final. Perfil ejecutivo y Fortalezas críticas ocupan el ancho completo del diálogo. Para cargos cuyo nombre contiene `conductor`, el informe usa `Informe de Aversión al Riesgo`, código `F-RH-071`, fecha `01-08-2026` y versión `1`; el resto conserva `Informe de Evaluación Psicolaboral` y `F-RH-009`. Vite build, Deno check del renderer, integridad 62/62, auditoría BUK y `git diff --check` pasaron. `build:frontend-check` y Guardian quedaron bloqueados localmente por copias conflictivas preexistentes en `node_modules/* 2`; Guardian además reportó el baseline histórico de tamaño de `dist`. Publicación completada: commit `9a2109d` en `main`, bundle nuevo confirmado en `https://gestion.busesjm.cl` y Edge Function `generate-psycholaboral-certificate` desplegada en Supabase versión `109`.
+# Bloqueo de informes psicolaborales aprobados - 2026-08-19
+
+- [x] Auditar acciones de revisión, regeneración y estados `VALIDATED/generated`.
+- [x] Ocultar edición/revisión y actualización en la interfaz para informes aprobados.
+- [x] Bloquear revisión y reset de certificado aprobado en RPCs backend.
+- [x] Ejecutar gates, aplicar migración, desplegar frontend/Edge Functions y verificar producción.
+
+Resultado: cuando el informe está `VALIDATED` y el documento generado, la interfaz muestra `Aprobado · bloqueado`, oculta `Revisar informe` y `Actualizar informe`, y conserva solo las descargas. La RPC de revisión rechaza cualquier modificación de una interpretación `VALIDATED`; las RPCs de reset manual y de servicio también rechazan regenerar informes aprobados/generados. La migración `20260819212000_lock_approved_psychological_report.sql` se aplicó y registró en producción. Vite build, integridad 62/62, auditoría de migraciones, auditoría de seguridad y `git diff --check` pasaron; la auditoría de seguridad mantiene únicamente warnings históricos del repositorio.

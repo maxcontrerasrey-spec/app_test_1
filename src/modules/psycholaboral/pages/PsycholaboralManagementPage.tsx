@@ -12,7 +12,6 @@ import {
   getPsychAIReviewDetail,
   getPsychCertificateUrl,
   getPsychReportUrl,
-  resetPsychCertificate,
   getPsychResult,
   reviewPsychAIInterpretation,
   sendPsychBattery,
@@ -177,12 +176,13 @@ export function PsycholaboralManagementPage() {
   };
   const generateCertificate = async (row: PsychCandidate) => {
     if (!row.assessment_id) return;
+    if (row.ai_status === "VALIDATED" && row.certificate_status === "generated") {
+      setFeedback("El informe aprobado está bloqueado y no puede actualizarse.");
+      return;
+    }
     setBusy(row.id);
     setFeedback("");
     try {
-      if (row.certificate_status === "generated") {
-        await resetPsychCertificate(row.assessment_id);
-      }
       await generatePsychCertificate(row.assessment_id);
       setFeedback("Certificado generado correctamente.");
       await refresh();
@@ -532,10 +532,10 @@ export function PsycholaboralManagementPage() {
                                   >
                                     Ver resultados
                                   </button>
-                                  {row.ai_status === "PENDING_REVIEW" ||
-                                  row.ai_status === "REVIEWED" ||
-                                  row.ai_status === "VALIDATED" ||
-                                  row.ai_status === "OBSERVED" ? (
+                                  {(row.ai_status === "PENDING_REVIEW" ||
+                                    row.ai_status === "REVIEWED" ||
+                                    row.ai_status === "OBSERVED") &&
+                                  row.certificate_status !== "generated" ? (
                                     <button
                                       className="psych-secondary-action"
                                       type="button"
@@ -547,7 +547,9 @@ export function PsycholaboralManagementPage() {
                                   ) : (
                                     <>
                                       <span className="approval-chip">
-                                        Informe: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
+                                        Informe: {row.ai_status === "VALIDATED" && row.certificate_status === "generated"
+                                          ? "Aprobado · bloqueado"
+                                          : aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
                                       </span>
                                       {row.ai_status === "FAILED" ? (
                                         <button
@@ -568,9 +570,6 @@ export function PsycholaboralManagementPage() {
                                       </button>
                                       <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void downloadReport(row)}>
                                         Descargar informe
-                                      </button>
-                                      <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void generateCertificate(row)}>
-                                        Actualizar informe
                                       </button>
                                     </>
                                   ) : (row.certificate_status === "queued" ||
