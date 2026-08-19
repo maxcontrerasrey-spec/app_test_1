@@ -30,7 +30,7 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
       // La columna de etiquetas no debe comerse el ancho del gráfico:
       // reservamos solo lo necesario para nombres completos y dejamos que las
       // barras ocupen el resto del panel.
-      grid: { left: 4, right: 18, top: 14, bottom: 20, containLabel: true },
+      grid: { left: 0, right: 10, top: 14, bottom: 20, containLabel: true },
       tooltip: {
         trigger: "axis", axisPointer: { type: "shadow" },
         backgroundColor: chartTheme.tooltipSurface, textStyle: { color: chartTheme.tooltipText },
@@ -44,7 +44,7 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
       xAxis: { type: "value", minInterval: 1, axisLabel: { color: chartTheme.textMuted }, splitLine: { lineStyle: { color: chartTheme.border } } },
       yAxis: {
         type: "category", inverse: true, data: rows.map((item) => item.managementName),
-        axisLabel: { color: chartTheme.text, width: 350, overflow: "break", align: "right", lineHeight: 17 },
+        axisLabel: { color: chartTheme.text, width: 300, overflow: "break", align: "right", lineHeight: 17 },
         axisLine: { lineStyle: { color: chartTheme.border } }, axisTick: { show: false }
       },
       series: [{

@@ -70,8 +70,8 @@ describe("BI module navigation integrity", () => {
     expect(chart).toContain("useBiHeadcountByManagement");
     expect(chart).toContain("Dotación por Gerencia");
     expect(chart).toContain('type: "bar"');
-    expect(chart).toContain("width: 350");
-    expect(chart).toContain("grid: { left: 4");
+    expect(chart).toContain("width: 300");
+    expect(chart).toContain("grid: { left: 0");
     expect(chart).toContain('overflow: "break"');
     expect(chart).not.toContain('overflow: "truncate"');
     expect(api).toContain('get_bi_headcount_by_management');
@@ -110,6 +110,20 @@ describe("BI module navigation integrity", () => {
       "grant execute on function public.capture_buk_employee_monthly_snapshot(date) to authenticated, service_role"
     );
     expect(migration).not.toContain("capture_buk_employee_daily_snapshot");
+  });
+
+  it("keeps contingency snapshot imports idempotent and auditable", () => {
+    const migration = read(
+      "supabase/migrations/20260820010000_add_audited_contingency_buk_snapshot_import.sql"
+    );
+
+    expect(migration).toContain("buk_employee_snapshot_contingency_audits");
+    expect(migration).toContain("source_sha256 text not null");
+    expect(migration).toContain("capture_mode in ('scheduled', 'contingency')");
+    expect(migration).toContain("where audit.source_sha256 = normalized_sha256");
+    expect(migration).toContain("no se sobrescribe historia");
+    expect(migration).toContain("grant execute on function public.import_buk_employee_contingency_snapshot");
+    expect(migration).toContain("to service_role");
   });
 
 });
