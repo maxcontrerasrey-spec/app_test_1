@@ -336,6 +336,7 @@ export function BiDashboardPage() {
             <NavLink
               to={`/bi/${item.key}`}
               key={item.key}
+              reloadDocument
               className={`approval-chip ${activeView === item.key ? "tracking-kpi-card-active" : ""}`}
               aria-current={activeView === item.key ? "page" : undefined}
             >

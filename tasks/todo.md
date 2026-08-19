@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Reproducción real del bloqueo de navegación BI - 2026-08-19
+
+- [x] Reproducir el bloqueo desde el navegador integrado con clics físicos en Dotación y barra superior.
+- [x] Identificar que la ruta cambiaba sin repintar la vista y que el menú móvil se desbordaba horizontalmente.
+- [x] Corregir la causa raíz con navegación documental BI y menú móvil en columna, agregando regresión.
+- [ ] Ejecutar gates frontend/Guardian y verificar nuevamente el flujo en producción.
+
+Hallazgo en vivo: el clic físico sobre `Análisis de Incentivos` dejó `/bi/incentivos` en la barra de dirección, pero conservó el DOM de Dotación; además `.top-nav-mobile-panel` tenía `display:flex` sin dirección de columna y sus enlaces quedaban fuera del viewport. La corrección fuerza recarga documental en las tres pestañas BI y ordena el menú móvil verticalmente.
+
 ## Separación de informes psicolaborales aprobados - 2026-08-19
 
 - [x] Auditar el contrato actual de estados, filtros y decisión psicolaboral.

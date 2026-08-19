@@ -14,14 +14,18 @@ describe("BI module navigation integrity", () => {
     expect(page).not.toContain("onClick={() => navigate(`/bi/${item.key}`)}");
   });
 
-  it("uses document navigation for top-level module switches", () => {
+  it("uses document navigation for BI and top-level module switches", () => {
     const shell = read("src/app/layout/AppShell.tsx");
     const biPage = read("src/modules/bi/pages/BiDashboardPage.tsx");
+    const styles = read("src/styles/global.css");
 
     expect(shell.match(/reloadDocument/g)?.length ?? 0).toBeGreaterThanOrEqual(6);
     expect(shell).toContain("top-nav-dropdown-link");
     expect(shell).toContain("top-nav-link top-nav-link-active");
-    expect(biPage).not.toContain("reloadDocument");
+    expect(biPage).toContain("reloadDocument");
+    expect(styles).toContain(".top-nav-mobile-panel {");
+    expect(styles).toContain("flex-direction: column;");
+    expect(styles).toContain("align-items: stretch;");
   });
 
   it("does not fetch the incentive request list until a concrete period exists", () => {

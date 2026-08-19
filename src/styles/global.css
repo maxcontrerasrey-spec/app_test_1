@@ -6471,6 +6471,8 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
   .top-nav-mobile-panel {
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
     position: fixed;
     top: calc(4.35rem + env(safe-area-inset-top));
     left: 0.7rem;

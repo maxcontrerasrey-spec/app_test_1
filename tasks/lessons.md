@@ -9,6 +9,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Las regresiones deben validar tanto el contrato de navegación como el `enabled` de queries derivadas para impedir que una pestaña vuelva a congelarse al cambiar desde Dotación a Incentivos o Reclutamiento.
 - Si la URL cambia pero el contenido visible queda pegado al módulo anterior, tratarlo como navegación SPA inconsistente: para cambios de módulo desde la barra superior usar navegación documental real y reservar la navegación interna sin recarga solo para pestañas livianas del mismo módulo.
 
+## 329. La navegación BI debe verificarse con clic físico y viewport estrecho
+
+- Una URL actualizada no demuestra que React haya repintado la vista; la prueba debe comparar URL, pestaña activa y contenido visible después del clic.
+- En el menú móvil, `display: flex` sin `flex-direction: column` puede dejar los módulos fuera del viewport y hacer que la navegación parezca bloqueada.
+- La revisión en navegador integrado debe incluir al menos un clic físico en una pestaña BI y otro en un módulo del menú superior, no solo `navigate()` o aserciones de ruta.
+
 ## 327. Una ficha BUK corregida manualmente no prueba un default de alta
 
 - Si una ficha creada por el ERP aparece luego con `current_job.union = "No Sindicalizados"`, no asumir que BUK aplico un default automatico; RRHH puede haber completado el campo manualmente.

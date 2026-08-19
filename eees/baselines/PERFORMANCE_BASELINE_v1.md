@@ -108,6 +108,8 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 
 Revision 2026-08-19 BI navegación resiliente: Guardian local midio CSS total de 243,125 bytes en el artefacto productivo actual despues de reconstruir dependencias limpias. Se normaliza el limite CSS al build vigente para mantener el gate ejecutable; el cambio BI no agrega vendors, assets pesados ni rutas eager.
 
+Revision 2026-08-19 BI navegación física: CSS sube 42 bytes por ordenar verticalmente el panel móvil del menú superior (`flex-direction: column` y `align-items: stretch`) para mantener todos los módulos dentro del viewport. No agrega vendors, rutas eager ni assets trackeados.
+
 Revision 2026-08-19 BI navegación resiliente CI: GitHub Actions `Audit Enterprise Guardrails` run `32280159297`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,268,214 bytes totales y 2,750,316 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
 
 ## Rutas criticas smoke
@@ -133,7 +135,7 @@ Revision 2026-08-19 BI navegación resiliente CI: GitHub Actions `Audit Enterpri
   "jsFileCount": 62,
   "jsTotalBytes": 2750455,
   "cssFileCount": 12,
-  "cssTotalBytes": 243125,
+  "cssTotalBytes": 243167,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
