@@ -111,6 +111,7 @@ function mapDashboardRow(item: Record<string, unknown>): CompetencyDashboardRow 
     requestStatus: readText(item.request_status),
     certificateStatus: readText(item.certificate_status),
     competencyStatus: readText(item.competency_status),
+    legalApprovalStatus: readText(item.legal_approval_status),
     bukUploadStatus: readText(item.buk_upload_status),
     validUntil: readNullableText(item.valid_until),
     pdfPath: readNullableText(item.pdf_path),

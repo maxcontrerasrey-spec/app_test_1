@@ -3264,3 +3264,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - En paneles de firma y validación, la altura debe incluir comentario, nombre, cargo, RUN, hash y márgenes; calcularla solo con el texto principal deja elementos críticos fuera del borde.
 - El informe final y la revisión preliminar tienen superficies distintas: preguntas de entrevista pueden apoyar la revisión profesional, pero no deben aparecer en el PDF final firmado si el usuario las define como material preliminar.
 - Las etiquetas provenientes de perfiles no deben asumirse correctamente acentuadas; normalizar términos profesionales al renderizar evita que `Psicologa` llegue al documento final.
+## 2026-08-19 - Una decisión legal debe cerrar el estado documental y activar su efecto operativo
+
+- La RPC de aprobación no puede quedarse en un booleano de firma: rechazo debe persistir un estado visible (`rejected`) y aprobación debe dejar el certificado en cola para generación.
+- Todo flujo que pueda haber quedado aprobado antes del despliegue necesita una reconciliación idempotente al leer el dashboard; así no se exige repetir una decisión legal ya válida.

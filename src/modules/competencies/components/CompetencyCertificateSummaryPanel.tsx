@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateForDisplay } from "../../../shared/lib/date";
 import { decideCompetencyLegalApproval, fetchCompetencyLegalApprovalQueue } from "../services/competencyLegalApprovalApi";
 import type { CompetencyDashboardPayload, CompetencyDashboardRow, CompetencyLegalApproval } from "../types";
@@ -11,6 +11,7 @@ function statusLabel(value: string) {
     completed: "Completada",
     generated: "Generado",
     uploaded_to_buk: "Cargado BUK",
+    rejected: "Rechazado",
     buk_upload_failed: "BUK pendiente",
     enabled: "Habilitado",
     expired: "Vencido",
@@ -29,6 +30,10 @@ function formatDateLabel(value: string | null | undefined) {
 function getCertificateValidity(row: CompetencyDashboardRow) {
   if (row.certificateStatus === "revoked" || row.certificateStatus === "annulled") {
     return { label: "Revocado", tone: "danger" };
+  }
+
+  if (row.certificateStatus === "rejected") {
+    return { label: "Rechazado", tone: "danger" };
   }
 
   if (row.certificateStatus === "replaced") {
@@ -74,6 +79,7 @@ export function CompetencyCertificateSummaryPanel({
   const [legalApprovals, setLegalApprovals] = useState<CompetencyLegalApproval[]>([]);
   const [legalApprovalError, setLegalApprovalError] = useState<string | null>(null);
   const [legalApprovalBusy, setLegalApprovalBusy] = useState<string | null>(null);
+  const reconciliationInFlight = useRef(false);
 
   async function loadLegalApprovals() {
     try {
@@ -89,6 +95,24 @@ export function CompetencyCertificateSummaryPanel({
     void loadLegalApprovals();
   }, []);
 
+  useEffect(() => {
+    if (reconciliationInFlight.current || !dashboard?.recent.length) return;
+    const pendingApproved = dashboard.recent.filter(
+      (row) => row.legalApprovalStatus === "approved" && ["not_generated", "queued"].includes(row.certificateStatus)
+    );
+    if (pendingApproved.length === 0) return;
+    reconciliationInFlight.current = true;
+    void (async () => {
+      try {
+        const { generateCompetencyCertificate } = await import("../services/competencyApi");
+        await Promise.allSettled(pendingApproved.map((row) => generateCompetencyCertificate(row.requestId)));
+        onRetry();
+      } finally {
+        reconciliationInFlight.current = false;
+      }
+    })();
+  }, [dashboard, onRetry]);
+
   async function resolveLegalApproval(item: CompetencyLegalApproval, decision: "approved" | "rejected") {
     const rejectionReason = decision === "rejected"
       ? window.prompt("Indica el motivo del rechazo legal:")?.trim() ?? ""
@@ -98,6 +122,10 @@ export function CompetencyCertificateSummaryPanel({
     setLegalApprovalBusy(item.certificateId);
     try {
       await decideCompetencyLegalApproval(item.certificateId, decision, rejectionReason);
+      if (decision === "approved") {
+        const { generateCompetencyCertificate } = await import("../services/competencyApi");
+        await generateCompetencyCertificate(item.requestId);
+      }
       await loadLegalApprovals();
       onRetry();
     } catch (error) {

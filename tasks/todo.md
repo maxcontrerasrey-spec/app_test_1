@@ -1,5 +1,21 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección de decisión legal y generación de certificados - 2026-08-19
+
+- [x] Confirmar en producción por qué el folio 47 quedaba como `Sin vigencia` y el 48 como `Pendiente` pese a la decisión legal.
+- [x] Persistir `Rechazado` como estado documental y registrar la revocación del folio rechazado.
+- [x] Hacer que una aprobación legal encole la generación y que el dashboard reconcilie certificados aprobados que quedaron pendientes.
+- [x] Reparar en producción los folios `1908202610031247` (rechazado) y `1908202610071248` (aprobado/encolado).
+- [x] Ejecutar integridad, TypeScript, build frontend, diff y Guardian; publicar en `main`.
+
+Resultado: el folio 47 quedó `certificate_status = rejected` y `legal_approval_status = rejected`, por lo que la interfaz mostrará `Rechazado`. El folio 48 quedó aprobado y encolado; al cargar Competencias, el dashboard dispara una generación autenticada e idempotente y actualiza la fila cuando el PDF queda disponible. El Guardian local conserva únicamente los artefactos duplicados de `node_modules` generados por la instalación y el baseline de bundle fue actualizado por el cambio frontend.
+
+## Auditoria completa de choques entre cajas y titulos - 2026-08-19
+
+- [ ] Revisar primitivas de tarjetas, títulos, gráficos y paginación.
+- [ ] Corregir el margen tipográfico común entre cajas y títulos.
+- [ ] Ejecutar revisión visual/gates, desplegar y publicar `main`.
+
 ## Correccion total de paginas en informe psicolaboral - 2026-08-19
 
 - [x] Confirmar por que el encabezado persiste con denominador `1`.

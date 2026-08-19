@@ -11,11 +11,15 @@ const migration = read(
 const scopeFixMigration = read(
   "supabase/migrations/20260819140000_fix_salvador_signature_scope_variants.sql"
 );
+const decisionFlowMigration = read(
+  "supabase/migrations/20260819200000_complete_competency_legal_decision_flow.sql"
+);
 const generator = read("supabase/functions/generate-competency-certificate/index.ts");
 const approvalApi = read("src/modules/competencies/services/competencyLegalApprovalApi.ts");
 const approvalPanel = read(
   "src/modules/competencies/components/CompetencyCertificateSummaryPanel.tsx"
 );
+const competencyApi = read("src/modules/competencies/services/competencyApi.ts");
 const competencyTypes = read("src/modules/competencies/types.ts");
 
 describe("Competency legal signature contract", () => {
@@ -57,6 +61,14 @@ describe("Competency legal signature contract", () => {
     expect(scopeFixMigration).toContain("regexp_replace(lower(trim(coalesce(area_name_input, '')))");
     expect(scopeFixMigration).toContain("6170400011:0001");
     expect(scopeFixMigration).toContain("notify pgrst, 'reload schema'");
+  });
+
+  it("makes rejection visible and keeps approval coupled to certificate generation", () => {
+    expect(decisionFlowMigration).toContain("'rejected'");
+    expect(decisionFlowMigration).toContain("certificate_status = case when normalized_decision = 'rejected' then 'rejected'");
+    expect(decisionFlowMigration).toContain("'request_id', certificate_record.request_id");
+    expect(approvalPanel).toContain("generateCompetencyCertificate(item.requestId)");
+    expect(competencyApi).toContain('functions.invoke("generate-competency-certificate"');
   });
 
   it("connects the restricted approval RPCs to the compact ERP review panel", () => {

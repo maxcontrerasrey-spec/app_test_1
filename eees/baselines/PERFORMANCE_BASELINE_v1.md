@@ -125,9 +125,9 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10264786,
+  "distTotalBytes": 10265732,
   "jsFileCount": 62,
-  "jsTotalBytes": 2748069,
+  "jsTotalBytes": 2749015,
   "cssFileCount": 12,
   "cssTotalBytes": 241944,
   "trackedAssets": [
@@ -141,7 +141,7 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 }
 ```
 
-Revision 2026-08-18 reintento de interpretación IA fallida: el baseline global y JS se alinean con la medición local reproducible del build, sin aumentar CSS, vendors ni assets trackeados. Se agrega recuperación explícita para estados `FAILED` sin relajar los guardrails metodológicos y se muestran errores de guardado dentro del modal de revisión.
+Revision 2026-08-19 reconciliación de certificados de competencia aprobados legalmente: el dashboard y el flujo de generación incorporan la recuperación automática de certificados aprobados que aún estaban en cola.
 
 Revision 2026-08-18 CI posterior a validación psicolaboral: GitHub Actions `Audit Enterprise Guardrails` run `32187383760`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,264,786 bytes totales y 2,748,069 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
 

@@ -135,6 +135,7 @@ export type CompetencyDashboardRow = {
   requestStatus: string;
   certificateStatus: string;
   competencyStatus: string;
+  legalApprovalStatus: string;
   bukUploadStatus: string;
   validUntil: string | null;
   pdfPath: string | null;
