@@ -3307,3 +3307,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 ## 2026-08-19 - Los estados finales deben conservar las acciones operativas
 
 - Si un registro cambia de bucket visual, las acciones inferiores no deben seguir dependiendo solo del estado anterior. Cuando `approved` reemplaza a `completed` para filtrar, debe compartir el bloque de resultados, informe y certificado, manteniendo bloqueada únicamente la edición que corresponda.
+
+## 2026-08-19 - Las tarjetas de reportabilidad deben usar colores semánticos únicos
+
+- Cada estado visible debe tener una variante cromática propia y estable; reutilizar el mismo azul o verde para estados distintos elimina la lectura rápida del tablero. La variante activa debe conservar la identidad del estado seleccionado.

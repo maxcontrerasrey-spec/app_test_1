@@ -113,6 +113,15 @@ describe("Gestión Psicolaboral", () => {
     expect(managementPage).toContain('row.display_status === "approved"');
   });
 
+  it("mantiene una variante cromática única para cada tarjeta de estado", () => {
+    expect(managementPage).toContain('not_sent: "tracking-kpi-card-no-realizado"');
+    expect(managementPage).toContain('sent: "tracking-kpi-card-enviado"');
+    expect(managementPage).toContain('expired: "tracking-kpi-card-desierto"');
+    expect(managementPage).toContain('completed: "tracking-kpi-card-terminado"');
+    expect(managementPage).toContain('approved: "tracking-kpi-card-aprobados"');
+    expect(assessmentStyles).toContain(".psych-actions-section");
+  });
+
   it("mantiene PRP en revisión profesional", () => {
     expect(migration).toContain("'pending_professional_review'");
   });

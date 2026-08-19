@@ -30,6 +30,13 @@ const statusLabels = {
   completed: "Terminado",
   approved: "Aprobados",
 } as const;
+const statusCardClasses = {
+  not_sent: "tracking-kpi-card-no-realizado",
+  sent: "tracking-kpi-card-enviado",
+  expired: "tracking-kpi-card-desierto",
+  completed: "tracking-kpi-card-terminado",
+  approved: "tracking-kpi-card-aprobados",
+} as const;
 const PAGE_SIZE = 50;
 const aiStatusLabels: Record<string, string> = {
   NOT_REQUESTED: "No solicitado",
@@ -270,7 +277,7 @@ export function PsycholaboralManagementPage() {
           {(["not_sent", "sent", "expired", "completed", "approved"] as const).map((item) => (
             <button
               type="button"
-              className={`tracking-kpi-card ${item === "approved" ? "tracking-kpi-card-generado" : item === "completed" ? "tracking-kpi-card-generado" : "tracking-kpi-card-en-proceso"} ${status === item ? "tracking-kpi-card-active" : ""}`}
+              className={`tracking-kpi-card ${statusCardClasses[item]} ${status === item ? "tracking-kpi-card-active" : ""}`}
               key={item}
               onClick={() => {
                 setStatus(status === item ? "" : item);
