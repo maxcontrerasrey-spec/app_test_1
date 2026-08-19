@@ -3286,3 +3286,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - La RPC de aprobación no puede quedarse en un booleano de firma: rechazo debe persistir un estado visible (`rejected`) y aprobación debe dejar el certificado en cola para generación.
 - Todo flujo que pueda haber quedado aprobado antes del despliegue necesita una reconciliación idempotente al leer el dashboard; así no se exige repetir una decisión legal ya válida.
+
+## 2026-08-19 - Los estados finales deben conservar las acciones operativas
+
+- Si un registro cambia de bucket visual, las acciones inferiores no deben seguir dependiendo solo del estado anterior. Cuando `approved` reemplaza a `completed` para filtrar, debe compartir el bloque de resultados, informe y certificado, manteniendo bloqueada únicamente la edición que corresponda.

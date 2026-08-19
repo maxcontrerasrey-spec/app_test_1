@@ -109,6 +109,8 @@ describe("Gestión Psicolaboral", () => {
     expect(decisionSeparationMigration).toContain("perform public.advance_recruitment_candidate_stage(");
     expect(managementPage).toContain('{ key: "approved", label: "Aprobados" }');
     expect(managementPage).toContain('"completed", "approved"] as const');
+    expect(managementPage).toContain('row.display_status === "completed" ||');
+    expect(managementPage).toContain('row.display_status === "approved"');
   });
 
   it("mantiene PRP en revisión profesional", () => {

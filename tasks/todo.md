@@ -10,6 +10,8 @@
 
 Resultado: la nueva migración `20260819230000_separate_psycholaboral_report_decisions.sql` clasifica como `completed` únicamente los informes con batería completada y decisión pendiente; las decisiones `approved` y `rejected` pasan al bucket `approved`, que la interfaz muestra como `Aprobados`. Los rechazados psicolaborales se incluyen solo si la decisión proviene de este módulo, se mueven mediante `advance_recruitment_candidate_stage` y guardan el comentario con prefijo `Rechazo de evaluación psicolaboral`. Validaciones: integridad psicolaboral 65/65, TypeScript, `build:frontend-check`, auditoría de migraciones y seguridad SQL completadas; `git diff --check` limpio. Guardian quedó bloqueado por copias conflictivas preexistentes en `node_modules` con sufijo `2`.
 
+Corrección posterior: `approved` comparte nuevamente las acciones inferiores de resultados, informe y certificado; el bloqueo del informe aprobado se mantiene.
+
 ## Auditoria bloqueo pestañas BI - 2026-08-19
 
 - [x] Inspeccionar contrato real de rutas, permisos, componentes y CSS de `/bi/:view`.

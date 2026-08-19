@@ -524,7 +524,8 @@ export function PsycholaboralManagementPage() {
                                   {row.display_status === "expired" ? "Reenviar test" : "Enviar test"}
                                 </button>
                               ) : null}
-                              {row.display_status === "completed" ? (
+                              {(row.display_status === "completed" ||
+                                row.display_status === "approved") ? (
                                 <>
                                   <button
                                     className="psych-secondary-action"
