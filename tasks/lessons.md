@@ -2,6 +2,12 @@
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
+## 324. Las columnas paralelas de un PDF deben compartir altura y dejar margen real al siguiente bloque
+
+- Calcular la altura de cada tarjeta por separado desalineará los bordes aunque el ancho sea correcto; las columnas paralelas deben recibir una altura común igual al máximo requerido.
+- El siguiente título debe posicionarse usando una separación explícita desde el borde inferior de la tarjeta, no confiar solo en el interlineado del texto.
+- Un footer heredado no debe pintar encima de un encabezado documental nuevo; cada zona del PDF debe tener una única autoridad visual.
+
 ## 322. Las variables PL/pgSQL no deben repetir nombres de columnas de la tabla objetivo
 
 - En funciones `security definer`, un nombre local como `output_hash` puede volverse ambiguo al coincidir con una columna usada en un `UPDATE`.

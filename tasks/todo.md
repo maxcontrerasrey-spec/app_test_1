@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Correccion de alineacion y encabezado del informe psicolaboral - 2026-08-19
+
+- [x] Auditar la evidencia visual contra el renderer vigente.
+- [x] Alinear tarjetas de Fortalezas/Brechas y separar el titulo siguiente.
+- [x] Corregir titulo, metadata documental y duplicacion del encabezado.
+- [x] Ejecutar QA visual/gates, desplegar la funcion y publicar `main`.
+
+Resultado: las tarjetas de dos columnas usan una altura compartida, el siguiente titulo conserva una separacion minima de 20 puntos, el encabezado queda como `Informe de Evaluación Psicolaboral` con Código `F-RH-009`, Fecha `17-08-26` y Versión `1`, y se retiro el overlay antiguo que duplicaba Folio/Página sobre el encabezado. Build, integridad, Deno check, auditorias y diff fueron ejecutados; los warnings de seguridad corresponden al baseline historico.
+
 ## Alcance Salvador con variantes BUK - 2026-08-19
 
 - [x] Auditar el certificado `1808202611101246` y confirmar el área/contrato almacenado en producción.

@@ -668,6 +668,9 @@ const REPORT = {
   h3: 10,
 };
 
+const REPORT_TITLE_LINES = ["Informe de Evaluación", "Psicolaboral"];
+const REPORT_METADATA = { code: "F-RH-009", date: "17-08-26", version: "1" };
+
 type ReportContext = {
   doc: PDFDocument;
   font: PDFFont;
@@ -729,7 +732,7 @@ function bulletHeight(items: string[], font: PDFFont, size: number, width: numbe
 
 function startReportPage(ctx: ReportContext, pageNumber: number) {
   ctx.page = ctx.doc.addPage([612, 792]);
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, 1, ["Informe Psicolaboral Integrado"], { code: "F-RH-009", date: formatShortDate(ctx.payload.psychologist_review.reviewed_at), version: "1" });
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, ctx.payload.public_id, pageNumber, 1, REPORT_TITLE_LINES, REPORT_METADATA);
   ctx.y = REPORT.topY;
 }
 
@@ -740,28 +743,7 @@ function ensureSpace(ctx: ReportContext, height: number, minCarry = 36) {
 
 function drawReportFooter(ctx: ReportContext, totalPages: number) {
   ctx.doc.getPages().forEach((target, index) => {
-    target.drawRectangle({
-      x: 448,
-      y: 702,
-      width: 130,
-      height: 46,
-      color: rgb(1, 1, 1),
-    });
-    target.drawText(`Folio: PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()}`, {
-      x: 455,
-      y: 726,
-      size: 8,
-      font: ctx.font,
-      color: rgb(0.42, 0.46, 0.54),
-    });
-    target.drawText(`Página: ${index + 1} de ${totalPages}`, {
-      x: 455,
-      y: 710,
-      size: 8,
-      font: ctx.font,
-      color: rgb(0.42, 0.46, 0.54),
-    });
-    target.drawText(`Documento confidencial - PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()} - Pagina ${index + 1} de ${totalPages}`, {
+    target.drawText(`Documento confidencial - PS-${ctx.payload.public_id.slice(0, 8).toUpperCase()} - Página ${index + 1} de ${totalPages}`, {
       x: REPORT.marginX,
       y: 28,
       size: 7,
@@ -820,12 +802,13 @@ function drawCard(ctx: ReportContext, title: string, paragraphs: string[], optio
   ctx.y = yBottom - REPORT.sectionGap;
 }
 
-function drawBulletCard(ctx: ReportContext, title: string, items: string[], options: { width?: number; x?: number; tone?: "default" | "result" } = {}) {
+function drawBulletCard(ctx: ReportContext, title: string, items: string[], options: { width?: number; x?: number; height?: number; tone?: "default" | "result" } = {}) {
   const x = options.x ?? REPORT.marginX;
   const width = options.width ?? REPORT.width;
   const cleanItems = items.map((item) => text(item)).filter(Boolean);
   const bodyWidth = width - REPORT.cardPaddingX * 2;
-  const height = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(18, bulletHeight(cleanItems, ctx.font, REPORT.bodySize, bodyWidth, REPORT.bodyLineHeight));
+  const naturalHeight = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(18, bulletHeight(cleanItems, ctx.font, REPORT.bodySize, bodyWidth, REPORT.bodyLineHeight));
+  const height = Math.max(naturalHeight, options.height ?? 0);
   ctx.page.drawRectangle({
     x,
     y: ctx.y - height,
@@ -898,7 +881,9 @@ function drawTwoColumnBulletCards(ctx: ReportContext, leftTitle: string, left: s
   const width = (REPORT.width - gap) / 2;
   const leftHeight = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(22, bulletHeight(left, ctx.font, REPORT.bodySize, width - REPORT.cardPaddingX * 2, REPORT.bodyLineHeight));
   const rightHeight = REPORT.cardPaddingY * 2 + 16 + REPORT.titleGap + Math.max(22, bulletHeight(right, ctx.font, REPORT.bodySize, width - REPORT.cardPaddingX * 2, REPORT.bodyLineHeight));
-  const required = Math.max(leftHeight, rightHeight) + REPORT.sectionGap;
+  const sharedHeight = Math.max(leftHeight, rightHeight);
+  const followingSectionGap = Math.max(REPORT.sectionGap, 20);
+  const required = sharedHeight + followingSectionGap;
   if (required > 245 || left.length > 4 || right.length > 4) {
     drawBulletSection(ctx, leftTitle, left);
     drawBulletSection(ctx, rightTitle, right);
@@ -906,10 +891,10 @@ function drawTwoColumnBulletCards(ctx: ReportContext, leftTitle: string, left: s
   }
   ensureSpace(ctx, required);
   const top = ctx.y;
-  drawBulletCard(ctx, leftTitle, left, { width, x: REPORT.marginX });
+  drawBulletCard(ctx, leftTitle, left, { width, height: sharedHeight, x: REPORT.marginX });
   ctx.y = top;
-  drawBulletCard(ctx, rightTitle, right, { width, x: REPORT.marginX + width + gap });
-  ctx.y = top - Math.max(leftHeight, rightHeight) - REPORT.sectionGap;
+  drawBulletCard(ctx, rightTitle, right, { width, height: sharedHeight, x: REPORT.marginX + width + gap });
+  ctx.y = top - sharedHeight - followingSectionGap;
 }
 
 function drawInstrumentBars(ctx: ReportContext, title: string, entries: Array<{ name: string; mean: number }>) {
@@ -930,7 +915,7 @@ function drawReportPdf(
 ) {
   const first = report.addPage([612, 792]);
   const ctx: ReportContext = { doc: report, font: reportFont, bold: reportBold, signature, logo: reportLogo, payload, page: first, y: REPORT.topY };
-  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, ["Informe Psicolaboral Integrado"], { code: "F-RH-009", date: formatShortDate(payload.psychologist_review.reviewed_at), version: "1" });
+  drawHeader(ctx.page, ctx.font, ctx.bold, ctx.logo, payload.public_id, 1, 1, REPORT_TITLE_LINES, REPORT_METADATA);
   drawReportHeading(ctx, `Resultado de evaluación: ${humanizeCode(ai.recommendation, "ADECUADO_CON_OBSERVACIONES")}`);
   drawCard(ctx, "Perfil ejecutivo", [text(ai.executive_profile ?? ai.executive_summary)]);
   drawCard(ctx, "Ajuste al cargo", [

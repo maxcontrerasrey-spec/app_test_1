@@ -192,6 +192,15 @@ describe("Gestión Psicolaboral", () => {
     expect(psychologistValidationMigration).not.toMatch(/left\s*\(\s*coalesce\(p_comment/i);
   });
 
+  it("mantiene el encabezado documental y las tarjetas de síntesis alineadas", () => {
+    expect(certificate).toContain('const REPORT_TITLE_LINES = ["Informe de Evaluación", "Psicolaboral"]');
+    expect(certificate).toContain('const REPORT_METADATA = { code: "F-RH-009", date: "17-08-26", version: "1" }');
+    expect(certificate).toContain("height: sharedHeight");
+    expect(certificate).toContain("followingSectionGap = Math.max(REPORT.sectionGap, 20)");
+    expect(certificate).not.toContain("x: 448,");
+    expect(certificate).not.toContain("Informe Psicolaboral Integrado\"], { code:");
+  });
+
   it("evita ambiguedad SQL al registrar el tipo documental del informe", () => {
     expect(psychologistDocumentTypeFixMigration).toContain("v_document_type_id uuid");
     expect(psychologistDocumentTypeFixMigration).toContain("select dt.id into v_document_type_id");
