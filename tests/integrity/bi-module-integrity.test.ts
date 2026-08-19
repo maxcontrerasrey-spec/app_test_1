@@ -46,6 +46,13 @@ describe("BI module navigation integrity", () => {
     expect(page).toContain("useBiHeadcountByJobTitle(\n    dotacionFilters,");
   });
 
+  it("keeps shared multi-select filters open while selecting options", () => {
+    const multiSelect = read("src/shared/ui/forms/MultiSelectField.tsx");
+
+    expect(multiSelect).toContain("event.stopPropagation();");
+    expect(multiSelect).toContain("toggleOption(opt.value);");
+  });
+
   it("renders dotacion by gerencia from the protected BI dimension", () => {
     const chart = read("src/modules/bi/components/BiHeadcountCharts.tsx");
     const api = read("src/modules/bi/services/biApi.ts");

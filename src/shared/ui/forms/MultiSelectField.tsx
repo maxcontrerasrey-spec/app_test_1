@@ -171,7 +171,12 @@ export function MultiSelectField({
                 return (
                   <div
                     key={opt.value}
-                    onClick={() => toggleOption(opt.value)}
+                    onClick={(event) => {
+                      // La opción vive dentro del trigger. Detener el bubbling
+                      // mantiene abierto el menú para seleccionar varios valores.
+                      event.stopPropagation();
+                      toggleOption(opt.value);
+                    }}
                     className={`multi-select-option ${isSelected ? "is-selected" : ""}`}
                     role="option"
                     aria-selected={isSelected}
