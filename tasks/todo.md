@@ -12,9 +12,11 @@ Resultado: el folio 47 quedó `certificate_status = rejected` y `legal_approval_
 
 ## Auditoria completa de choques entre cajas y titulos - 2026-08-19
 
-- [ ] Revisar primitivas de tarjetas, títulos, gráficos y paginación.
-- [ ] Corregir el margen tipográfico común entre cajas y títulos.
-- [ ] Ejecutar revisión visual/gates, desplegar y publicar `main`.
+- [x] Revisar primitivas de tarjetas, títulos, gráficos y paginación.
+- [x] Corregir el margen tipográfico común entre cajas y títulos.
+- [x] Ejecutar revisión visual/gates, desplegar y publicar `main`.
+
+Resultado: se corrigió el primitive común `drawSectionTitle`, que ahora reserva separación real para el ascender tipográfico antes de dibujar cada título. Esto cubre transiciones de tarjeta a título, título a gráfico y título a nuevas cajas en todo el informe. Integridad 62/62, build, Deno check, auditorías y Guardian aprobados; quedó solo el warning histórico de `CandidateDetailSidebar.tsx` sobre 800 líneas.
 
 ## Correccion total de paginas en informe psicolaboral - 2026-08-19
 

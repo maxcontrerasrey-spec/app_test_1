@@ -873,9 +873,12 @@ function drawBulletSection(ctx: ReportContext, title: string, items: string[], o
 }
 
 function drawSectionTitle(ctx: ReportContext, title: string) {
-  ensureSpace(ctx, 28);
-  ctx.page.drawText(text(title), { x: REPORT.marginX, y: ctx.y, size: REPORT.h2, font: ctx.bold, color: rgb(0.07, 0.08, 0.1) });
-  ctx.y -= 22;
+  // Keep the glyph box below the preceding card border. The baseline alone
+  // is not enough because the font ascender reaches above the draw position.
+  ensureSpace(ctx, 44);
+  const titleY = ctx.y - 12;
+  ctx.page.drawText(text(title), { x: REPORT.marginX, y: titleY, size: REPORT.h2, font: ctx.bold, color: rgb(0.07, 0.08, 0.1) });
+  ctx.y = titleY - 22;
 }
 
 function drawPsychologistValidation(ctx: ReportContext) {

@@ -208,6 +208,12 @@ describe("Gestión Psicolaboral", () => {
     expect(certificate).toContain("index + 1,\n      totalPages,");
   });
 
+  it("separa todos los títulos de las cajas anteriores", () => {
+    expect(certificate).toContain("const titleY = ctx.y - 12");
+    expect(certificate).toContain("ensureSpace(ctx, 44)");
+    expect(certificate).toContain("ctx.y = titleY - 22");
+  });
+
   it("evita ambiguedad SQL al registrar el tipo documental del informe", () => {
     expect(psychologistDocumentTypeFixMigration).toContain("v_document_type_id uuid");
     expect(psychologistDocumentTypeFixMigration).toContain("select dt.id into v_document_type_id");

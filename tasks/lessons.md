@@ -14,6 +14,12 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - La metadata de cada encabezado debe repintarse después de completar el layout, usando el total real y conservando la numeración individual.
 - La prueba debe verificar tanto la numeración del footer como la segunda pasada del encabezado, porque revisar solo el texto inferior puede ocultar el error visible al usuario.
 
+## 326. La línea base de un título PDF incluye el ascender de la fuente
+
+- Posicionar un título justo después del borde de una caja usando solo su línea base permite que el ascender de la fuente invada la caja anterior.
+- El primitive de títulos debe reservar un margen tipográfico explícito y reutilizable para todas las transiciones del documento.
+- La revisión visual debe recorrer cada cambio tarjeta/título/gráfico, no solo la sección reportada inicialmente.
+
 ## 322. Las variables PL/pgSQL no deben repetir nombres de columnas de la tabla objetivo
 
 - En funciones `security definer`, un nombre local como `output_hash` puede volverse ambiguo al coincidir con una columna usada en un `UPDATE`.
