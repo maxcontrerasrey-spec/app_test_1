@@ -62,7 +62,7 @@ describe("BI module navigation integrity", () => {
     expect(migration).toContain("user_can_access_bi_analytics");
   });
 
-  it("renders the map from canonical regional headcount, never city fallback", () => {
+  it("renders ordered regional bars from canonical headcount, never city fallback", () => {
     const chart = read("src/modules/bi/components/BiHeadcountCharts.tsx");
     const api = read("src/modules/bi/services/biApi.ts");
     const migration = read("supabase/migrations/20260820000000_add_bi_headcount_by_region.sql");
@@ -72,8 +72,10 @@ describe("BI module navigation integrity", () => {
     expect(chart).toContain('item.regionName !== "SIN REGION"');
     expect(chart).not.toContain("item.regionName || item.cityName");
     expect(chart).toContain('toLocaleString("es-CL")');
-    expect(chart).toContain('"#eff6ff"');
-    expect(chart).toContain('text: ["Alta", "Baja"]');
+    expect(chart).toContain("CHILE_REGION_ORDER");
+    expect(chart).toContain("formatPercentage");
+    expect(chart).toContain("REGION_BAR_COLORS");
+    expect(chart).toContain("position: \"top\"");
     expect(api).toContain('get_bi_headcount_by_region');
     expect(migration).toContain("normalize_bi_region_name");
     expect(migration).toContain("user_can_access_bi_analytics");

@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Gráfico BI de dotación regional en barras - 2026-08-19
+
+- [x] Reemplazar el mapa por barras verticales ordenadas geográficamente de norte a sur.
+- [x] Mostrar porcentaje fijo sobre cada barra y cantidad exacta únicamente en tooltip.
+- [x] Aplicar degradado proporcional a la dotación y conservar el estado sin datos.
+- [x] Ejecutar regresión, build, auditorías y publicar el cambio.
+
+Resultado: el mapa regional se reemplazó por barras verticales ordenadas de Arica a Magallanes. Cada barra muestra su porcentaje fijo; al pasar el cursor se muestra la cantidad exacta con formato chileno. El color escala desde azul claro hasta azul oscuro según la dotación y `SIN REGION` solo aparece si tiene personas.
+
+Validación: integridad 71/71, TypeScript/build frontend, auditoría de migraciones, auditoría de seguridad SQL y `git diff --check` pasan. La auditoría de limpieza mantiene únicamente el bloqueo histórico de copias locales `node_modules/* 2` y `.git/index 2`.
+
 ## Corrección interacción y escala mapa regional BI - 2026-08-19
 
 - [x] Corregir tooltip `NaN` y validar el valor de la región bajo el cursor.
