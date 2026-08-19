@@ -14,6 +14,16 @@ describe("BI module navigation integrity", () => {
     expect(page).not.toContain("onClick={() => navigate(`/bi/${item.key}`)}");
   });
 
+  it("uses document navigation for top-level module switches", () => {
+    const shell = read("src/app/layout/AppShell.tsx");
+    const biPage = read("src/modules/bi/pages/BiDashboardPage.tsx");
+
+    expect(shell.match(/reloadDocument/g)?.length ?? 0).toBeGreaterThanOrEqual(6);
+    expect(shell).toContain("top-nav-dropdown-link");
+    expect(shell).toContain("top-nav-link top-nav-link-active");
+    expect(biPage).not.toContain("reloadDocument");
+  });
+
   it("does not fetch the incentive request list until a concrete period exists", () => {
     const hook = read("src/modules/incentives/hooks/useIncentivesQueries.ts");
     const analytics = read("src/modules/incentives/components/IncentiveAnalyticsView.tsx");

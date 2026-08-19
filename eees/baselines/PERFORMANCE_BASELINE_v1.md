@@ -129,9 +129,9 @@ Revision 2026-08-19 BI navegación resiliente CI: GitHub Actions `Audit Enterpri
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10268214,
+  "distTotalBytes": 10268245,
   "jsFileCount": 62,
-  "jsTotalBytes": 2750316,
+  "jsTotalBytes": 2750347,
   "cssFileCount": 12,
   "cssTotalBytes": 243125,
   "trackedAssets": [

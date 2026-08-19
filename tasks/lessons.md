@@ -7,6 +7,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Un selector de vistas críticas no debe depender solo de `onClick` + `navigate()` si la vista activa puede saturar el hilo con queries/render pesado; usar links de ruta reales mantiene semántica de navegación y mejora resiliencia.
 - Las vistas analíticas no deben disparar RPCs de detalle con filtros incompletos mientras calculan el período base; una consulta con `periodCode = null` puede convertirse en carga amplia y bloquear la experiencia.
 - Las regresiones deben validar tanto el contrato de navegación como el `enabled` de queries derivadas para impedir que una pestaña vuelva a congelarse al cambiar desde Dotación a Incentivos o Reclutamiento.
+- Si la URL cambia pero el contenido visible queda pegado al módulo anterior, tratarlo como navegación SPA inconsistente: para cambios de módulo desde la barra superior usar navegación documental real y reservar la navegación interna sin recarga solo para pestañas livianas del mismo módulo.
 
 ## 327. Una ficha BUK corregida manualmente no prueba un default de alta
 

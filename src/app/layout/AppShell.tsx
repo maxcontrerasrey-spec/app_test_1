@@ -391,6 +391,7 @@ export function AppShell() {
       <div key={item.label} className="top-nav-dropdown-item-wrap">
         <NavLink
           to={item.to || "#"}
+          reloadDocument
           onMouseEnter={() => preloadNavigationPath(item.to)}
           onFocus={() => preloadNavigationPath(item.to)}
           onClick={() => {
@@ -420,6 +421,7 @@ export function AppShell() {
               <NavLink
                 key={subItem.label}
                 to={subItem.to}
+                reloadDocument
                 onMouseEnter={() => preloadNavigationPath(subItem.to)}
                 onFocus={() => preloadNavigationPath(subItem.to)}
                 onClick={() => clearPinnedNavigation()}
@@ -451,6 +453,7 @@ export function AppShell() {
             aria-label="Ir al inicio"
             className="top-brand-block"
             to="/"
+            reloadDocument
           >
             <img alt="Logo JM" className="app-logo app-logo-topbar" src={logo} />
           </NavLink>
@@ -461,6 +464,7 @@ export function AppShell() {
                 key={homeNavigationItem.to}
                 to={homeNavigationItem.to}
                 end
+                reloadDocument
                 onMouseEnter={() => preloadNavigationPath(homeNavigationItem.to)}
                 onFocus={() => preloadNavigationPath(homeNavigationItem.to)}
                 className={({ isActive }) =>
@@ -483,6 +487,7 @@ export function AppShell() {
                       key={module.label}
                       to={module.to ?? "/"}
                       end
+                      reloadDocument
                       onMouseEnter={() => preloadNavigationPath(module.to)}
                       onFocus={() => preloadNavigationPath(module.to)}
                       className={({ isActive }) =>
@@ -541,6 +546,7 @@ export function AppShell() {
               {isSuperAdmin ? (
                 <NavLink
                   to="/copiloto-ia"
+                  reloadDocument
                   onMouseEnter={() => preloadNavigationPath("/copiloto-ia")}
                   onFocus={() => preloadNavigationPath("/copiloto-ia")}
                   className={({ isActive }) =>

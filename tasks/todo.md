@@ -22,6 +22,8 @@ Corrección posterior: `approved` comparte nuevamente las acciones inferiores de
 
 Resultado: la pestaña BI ahora cambia de vista con `NavLink` real hacia `/bi/:view`, sin depender de un handler `onClick` que puede sentirse bloqueado si la vista activa queda ocupada. En Incentivos, la consulta de solicitudes queda deshabilitada hasta tener un período concreto; antes podía invocar el RPC con `periodCode = null` durante la carga de tendencias y gatillar una carga amplia que congelaba la experiencia al intentar moverse desde Dotación BUK. Validaciones: `npm run test:integrity` 65/65, `npm run build:frontend-check` PASS, `npm run audit:repository-cleanup` PASS y `git diff --check` PASS. `npm run guardian` ejecutó los gates funcionales, build, seguridad y migraciones en PASS; queda bloqueado solo por `audit:performance-baseline` porque el CSS total actual del worktree es 243,299 bytes contra baseline 241,944 bytes, aumento asociado al estado completo pendiente del repositorio y no al fix BI.
 
+Corrección en vivo: con la sesión del navegador de Codex se confirmó que, saliendo desde BI, el click hacia `Gestión Psicolaboral` cambiaba la URL a `/gestion-psicolaboral` pero dejaba renderizado el contenido de BI hasta recargar. Para impedir estados SPA pegados entre módulos pesados, la barra superior ahora usa navegación documental (`reloadDocument`) en los cambios de módulo. Las pestañas internas de BI se mantienen como links SPA. Se agregó regresión de integridad para este contrato y se ajustó el baseline de CI al margen real observado.
+
 ## Implementacion No Sindicalizados en altas BUK ERP - 2026-08-19
 
 - [x] Ejecutar canary no-op contra BUK vivo para confirmar si el endpoint de job acepta escribir la categoria sindical.
