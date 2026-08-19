@@ -40,6 +40,14 @@ function getCertificateValidity(row: CompetencyDashboardRow) {
     return { label: "Reemplazado", tone: "warning" };
   }
 
+  if (["queued", "generating"].includes(row.certificateStatus)) {
+    return { label: "Generando", tone: "warning" };
+  }
+
+  if (row.certificateStatus === "generation_failed") {
+    return { label: "Error de generación", tone: "danger" };
+  }
+
   if (!row.validUntil) {
     return { label: "Sin vigencia", tone: "neutral" };
   }
