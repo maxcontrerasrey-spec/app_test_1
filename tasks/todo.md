@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Retiro de certificado sin firma Salvador - 2026-08-19
+
+- [x] Verificar folio, identidad, estado BUK y ausencia de ambigüedad.
+- [x] Eliminar exclusivamente el certificado ERP `1808202611101246` (`bec5ba7c-0319-4454-a7c7-ed6acae6f842`).
+- [x] Confirmar que la solicitud y evaluación de origen permanecen para trazabilidad y nueva emisión.
+
+Resultado productivo: `certificates_remaining = 0`, `request_remaining = 1`, `evaluations_remaining = 1`. El folio queda libre para una nueva generación; BUK ya no contiene el documento según la confirmación operativa recibida.
+
 ## Correccion de alineacion y encabezado del informe psicolaboral - 2026-08-19
 
 - [x] Auditar la evidencia visual contra el renderer vigente.
