@@ -63,7 +63,9 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
     const rows = [...managementData].sort((left, right) => left.headcount - right.headcount);
 
     return {
-      grid: { left: 220, right: 32, top: 14, bottom: 20, containLabel: true },
+      // Reservamos el espacio a la izquierda para las etiquetas completas y
+      // acercamos el eje al borde útil del card, evitando el gran vacío lateral.
+      grid: { left: 12, right: 32, top: 14, bottom: 20, containLabel: true },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
@@ -86,7 +88,13 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         type: "category",
         inverse: true,
         data: rows.map((item) => item.managementName),
-        axisLabel: { color: chartTheme.text, width: 205, overflow: "truncate", ellipsis: "…" },
+        axisLabel: {
+          color: chartTheme.text,
+          width: 420,
+          overflow: "break",
+          align: "right",
+          lineHeight: 17
+        },
         axisLine: { lineStyle: { color: chartTheme.border } },
         axisTick: { show: false }
       },

@@ -54,6 +54,9 @@ describe("BI module navigation integrity", () => {
     expect(chart).toContain("useBiHeadcountByManagement");
     expect(chart).toContain("Dotación por Gerencia");
     expect(chart).toContain('type: "bar"');
+    expect(chart).toContain("width: 420");
+    expect(chart).toContain('overflow: "break"');
+    expect(chart).not.toContain('overflow: "truncate"');
     expect(api).toContain('get_bi_headcount_by_management');
     expect(migration).toContain("buk_area_name_normalized");
     expect(migration).toContain("user_can_access_bi_analytics");
