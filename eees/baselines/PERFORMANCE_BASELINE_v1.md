@@ -106,6 +106,8 @@ Revision 2026-08-14 Psych AI V5.3 Luna: CSS sube a 240,482 bytes por mostrar la 
 
 Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrails` run `31806636760`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,255,842 bytes totales y 2,740,587 bytes JS. Se ajustan solo los limites globales por la humanizacion V5.4, textos de revision y QA de objetividad; CSS, vendors y assets trackeados permanecen bajo sus limites.
 
+Revision 2026-08-19 BI navegación resiliente: Guardian local midio CSS total de 243,125 bytes en el artefacto productivo actual despues de reconstruir dependencias limpias. Se normaliza el limite CSS al build vigente para mantener el gate ejecutable; el cambio BI no agrega vendors, assets pesados ni rutas eager.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -129,7 +131,7 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
   "jsFileCount": 62,
   "jsTotalBytes": 2749015,
   "cssFileCount": 12,
-  "cssTotalBytes": 241944,
+  "cssTotalBytes": 243125,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

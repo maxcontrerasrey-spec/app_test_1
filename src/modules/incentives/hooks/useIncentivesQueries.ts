@@ -37,7 +37,7 @@ export function useHrIncentiveSetupCatalogs(enabled = true) {
   });
 }
 
-export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters) {
+export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.incentives.requestsList(filters),
     queryFn: () => fetchHrIncentiveRequests(filters),
@@ -45,7 +45,8 @@ export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters) {
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false
+    refetchOnReconnect: false,
+    enabled
   });
 }
 

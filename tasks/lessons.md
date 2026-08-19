@@ -2,6 +2,12 @@
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
+## 328. Las pestañas de BI deben navegar aunque una vista esté cargando datos pesados
+
+- Un selector de vistas críticas no debe depender solo de `onClick` + `navigate()` si la vista activa puede saturar el hilo con queries/render pesado; usar links de ruta reales mantiene semántica de navegación y mejora resiliencia.
+- Las vistas analíticas no deben disparar RPCs de detalle con filtros incompletos mientras calculan el período base; una consulta con `periodCode = null` puede convertirse en carga amplia y bloquear la experiencia.
+- Las regresiones deben validar tanto el contrato de navegación como el `enabled` de queries derivadas para impedir que una pestaña vuelva a congelarse al cambiar desde Dotación a Incentivos o Reclutamiento.
+
 ## 327. Una ficha BUK corregida manualmente no prueba un default de alta
 
 - Si una ficha creada por el ERP aparece luego con `current_job.union = "No Sindicalizados"`, no asumir que BUK aplico un default automatico; RRHH puede haber completado el campo manualmente.

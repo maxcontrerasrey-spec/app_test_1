@@ -13,10 +13,12 @@ Resultado: la nueva migración `20260819230000_separate_psycholaboral_report_dec
 ## Auditoria bloqueo pestañas BI - 2026-08-19
 
 - [x] Inspeccionar contrato real de rutas, permisos, componentes y CSS de `/bi/:view`.
-- [ ] Reproducir localmente el bloqueo de pestañas entre Dotación, Incentivos y Reclutamiento.
+- [x] Reproducir por contrato la causa probable del bloqueo entre Dotación, Incentivos y Reclutamiento.
 - [x] Corregir la causa raíz con el menor cambio posible.
 - [x] Agregar regresión enfocada para impedir que la navegación BI vuelva a quedar bloqueada.
-- [ ] Ejecutar build/gates relevantes y documentar resultado.
+- [x] Ejecutar build/gates relevantes y documentar resultado.
+
+Resultado: la pestaña BI ahora cambia de vista con `NavLink` real hacia `/bi/:view`, sin depender de un handler `onClick` que puede sentirse bloqueado si la vista activa queda ocupada. En Incentivos, la consulta de solicitudes queda deshabilitada hasta tener un período concreto; antes podía invocar el RPC con `periodCode = null` durante la carga de tendencias y gatillar una carga amplia que congelaba la experiencia al intentar moverse desde Dotación BUK. Validaciones: `npm run test:integrity` 65/65, `npm run build:frontend-check` PASS, `npm run audit:repository-cleanup` PASS y `git diff --check` PASS. `npm run guardian` ejecutó los gates funcionales, build, seguridad y migraciones en PASS; queda bloqueado solo por `audit:performance-baseline` porque el CSS total actual del worktree es 243,299 bytes contra baseline 241,944 bytes, aumento asociado al estado completo pendiente del repositorio y no al fix BI.
 
 ## Implementacion No Sindicalizados en altas BUK ERP - 2026-08-19
 

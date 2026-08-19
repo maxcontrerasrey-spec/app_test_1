@@ -221,7 +221,7 @@ export function IncentiveAnalyticsView() {
     contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
     typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
     statuses: statusFilter.length > 0 ? statusFilter : undefined
-  });
+  }, Boolean(actualPeriodCode));
 
   const dateTrendData = useMemo(() => {
     if (!requestsQuery.data) return [];

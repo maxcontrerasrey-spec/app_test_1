@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router";
+import { Navigate, NavLink, useParams } from "react-router";
 import { PageShell } from "../../../shared/ui";
 import { hasFeatureAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
@@ -56,7 +56,6 @@ function isBiView(value: string | undefined): value is BiViewKey {
 
 export function BiDashboardPage() {
   const { accessibleFeatures, isSuperAdmin } = useAuth();
-  const navigate = useNavigate();
   const { view } = useParams();
   const activeView = isBiView(view) ? view : "dotacion";
   const visibleViews = useMemo(
@@ -334,15 +333,14 @@ export function BiDashboardPage() {
       <section className="bi-view-switcher">
         <div className="approval-chip-row">
           {visibleViews.map((item) => (
-            <button
-              type="button"
+            <NavLink
+              to={`/bi/${item.key}`}
               key={item.key}
               className={`approval-chip ${activeView === item.key ? "tracking-kpi-card-active" : ""}`}
               aria-current={activeView === item.key ? "page" : undefined}
-              onClick={() => navigate(`/bi/${item.key}`)}
             >
               {item.label}
-            </button>
+            </NavLink>
           ))}
         </div>
       </section>
