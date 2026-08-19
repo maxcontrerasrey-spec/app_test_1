@@ -26,7 +26,7 @@ describe("Psycholaboral expiration contract", () => {
 
   it("refreshes expirations before listing and permits resend only for expired rows", () => {
     expect(service).toContain("expire_abandoned_psycholaboral_assessments");
-    expect(types).toContain('"not_sent" | "sent" | "expired" | "completed"');
+    expect(types).toContain('"not_sent" | "sent" | "expired" | "completed" | "approved"');
     expect(page).toContain('expired: "Desierto"');
     expect(page).toContain('{ key: "expired", label: "Desierto" }');
     expect(page).toContain('row.display_status === "expired"');

@@ -17,6 +17,7 @@ const psychologistValidationMigration = readFileSync("supabase/migrations/202608
 const psychologistDocumentMigration = readFileSync("supabase/migrations/20260817220000_auto_upload_psycholaboral_report.sql", "utf8");
 const psychologistReviewHashFixMigration = readFileSync("supabase/migrations/20260818233000_fix_psych_review_output_hash_ambiguity.sql", "utf8");
 const psychologistDocumentTypeFixMigration = readFileSync("supabase/migrations/20260819131500_fix_psych_report_document_type_ambiguity.sql", "utf8");
+const decisionSeparationMigration = readFileSync("supabase/migrations/20260819230000_separate_psycholaboral_report_decisions.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -98,6 +99,16 @@ describe("Gestión Psicolaboral", () => {
     expect(migration).toContain("perform public.advance_recruitment_candidate_stage(a.recruitment_case_candidate_id,'rejected',commentv)");
     expect(migration).toContain("p_decision not in ('approved','rejected')");
     expect(migration).not.toMatch(/score[^;]{0,180}advance_recruitment_candidate_stage/is);
+  });
+
+  it("separa informes pendientes de decisiones finales y deja trazabilidad del rechazo psicolaboral", () => {
+    expect(decisionSeparationMigration).toContain("when execution_status = 'completed' and decision in ('approved', 'rejected') then 'approved'");
+    expect(decisionSeparationMigration).toContain("or display_status = p_status");
+    expect(decisionSeparationMigration).toContain("rcc.stage_code <> 'rejected' or a.decision in ('approved', 'rejected')");
+    expect(decisionSeparationMigration).toContain("Rechazo de evaluación psicolaboral: ");
+    expect(decisionSeparationMigration).toContain("perform public.advance_recruitment_candidate_stage(");
+    expect(managementPage).toContain('{ key: "approved", label: "Aprobados" }');
+    expect(managementPage).toContain('"completed", "approved"] as const');
   });
 
   it("mantiene PRP en revisión profesional", () => {

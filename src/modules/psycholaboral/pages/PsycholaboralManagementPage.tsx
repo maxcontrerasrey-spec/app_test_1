@@ -28,6 +28,7 @@ const statusLabels = {
   sent: "Enviado",
   expired: "Desierto",
   completed: "Terminado",
+  approved: "Aprobados",
 } as const;
 const PAGE_SIZE = 50;
 const aiStatusLabels: Record<string, string> = {
@@ -76,6 +77,7 @@ export function PsycholaboralManagementPage() {
     { key: "sent", label: "Enviado" },
     { key: "expired", label: "Desierto" },
     { key: "completed", label: "Terminado" },
+    { key: "approved", label: "Aprobados" },
   ] as const;
   const refresh = async () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.psycholaboral.all() });
@@ -265,10 +267,10 @@ export function PsycholaboralManagementPage() {
             <strong>{rows.length}</strong>
             <small>Página actual</small>
           </button>
-          {(["not_sent", "sent", "expired", "completed"] as const).map((item) => (
+          {(["not_sent", "sent", "expired", "completed", "approved"] as const).map((item) => (
             <button
               type="button"
-              className={`tracking-kpi-card ${item === "completed" ? "tracking-kpi-card-generado" : "tracking-kpi-card-en-proceso"} ${status === item ? "tracking-kpi-card-active" : ""}`}
+              className={`tracking-kpi-card ${item === "approved" ? "tracking-kpi-card-generado" : item === "completed" ? "tracking-kpi-card-generado" : "tracking-kpi-card-en-proceso"} ${status === item ? "tracking-kpi-card-active" : ""}`}
               key={item}
               onClick={() => {
                 setStatus(status === item ? "" : item);
@@ -300,8 +302,8 @@ export function PsycholaboralManagementPage() {
           <div className="tracking-toolbar-copy">
             <h3>Seguimiento de evaluaciones</h3>
             <span className="tracking-filter-caption">
-              Candidatos activos con batería psicolaboral pendiente, enviada o
-              terminada.
+              Candidatos con batería psicolaboral pendiente, enviada o con
+              decisión final registrada.
             </span>
           </div>
           <div className="tracking-filters tracking-filters-inline psych-filters">

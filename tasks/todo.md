@@ -1,5 +1,23 @@
 # Tareas y Roadmap de Desarrollo
 
+## Separación de informes psicolaborales aprobados - 2026-08-19
+
+- [x] Auditar el contrato actual de estados, filtros y decisión psicolaboral.
+- [x] Ajustar la RPC para separar informes pendientes de aprobación de informes aprobados/rechazados y persistir el rechazo con comentario del test psicolaboral.
+- [x] Incorporar la tarjeta y pestaña `Aprobados`, manteniendo `Terminado` solo para informes pendientes.
+- [x] Agregar regresión de integridad para la clasificación y el rechazo automático.
+- [x] Ejecutar TypeScript, build frontend, integridad, auditorías SQL, Guardian y `git diff --check`.
+
+Resultado: la nueva migración `20260819230000_separate_psycholaboral_report_decisions.sql` clasifica como `completed` únicamente los informes con batería completada y decisión pendiente; las decisiones `approved` y `rejected` pasan al bucket `approved`, que la interfaz muestra como `Aprobados`. Los rechazados psicolaborales se incluyen solo si la decisión proviene de este módulo, se mueven mediante `advance_recruitment_candidate_stage` y guardan el comentario con prefijo `Rechazo de evaluación psicolaboral`. Validaciones: integridad psicolaboral 65/65, TypeScript, `build:frontend-check`, auditoría de migraciones y seguridad SQL completadas; `git diff --check` limpio. Guardian quedó bloqueado por copias conflictivas preexistentes en `node_modules` con sufijo `2`.
+
+## Auditoria bloqueo pestañas BI - 2026-08-19
+
+- [x] Inspeccionar contrato real de rutas, permisos, componentes y CSS de `/bi/:view`.
+- [ ] Reproducir localmente el bloqueo de pestañas entre Dotación, Incentivos y Reclutamiento.
+- [x] Corregir la causa raíz con el menor cambio posible.
+- [x] Agregar regresión enfocada para impedir que la navegación BI vuelva a quedar bloqueada.
+- [ ] Ejecutar build/gates relevantes y documentar resultado.
+
 ## Implementacion No Sindicalizados en altas BUK ERP - 2026-08-19
 
 - [x] Ejecutar canary no-op contra BUK vivo para confirmar si el endpoint de job acepta escribir la categoria sindical.
