@@ -64,6 +64,143 @@ Alcance explícito: no se modifica Supabase/migraciones/RLS/permisos en esta ent
 
 Resultado: las 4 vistas de BI (`resumen`, `dotacion`, `incentivos`, `reclutamiento`) están implementadas y verificadas visualmente con datos simulados (sin acceso a Supabase real en este entorno). `tsc -b`, `vite build` y `git diff --check` pasan limpios. `npm run guardian` da 1 error esperado: `audit:performance-baseline` (dist +8KB, JS +3KB, CSS +5KB por las vistas nuevas), pendiente de actualizar `eees/baselines/PERFORMANCE_BASELINE_v1.md` junto con el commit real. Durante la verificación se corrigió un bug real descubierto en pruebas: los 3 bloques del Resumen Ejecutivo mostraban "Cargando..." indefinidamente ante un error de query en vez de un estado de error distinto (ya corregido, sigue el patrón existente de `BiOverviewCards.tsx`). No se hizo commit ni push.
 
+## Auditoría integral de worktrees y publicación main - 2026-08-18
+
+- [x] Inventariar worktrees, ramas locales/remotas y diferencias contra `main`.
+- [x] Confirmar que las ramas de Jornadas y Turnos y Business Intelligence están limpias y basadas en `origin/main`.
+- [x] Confirmar que la corrección Auth ya está representada en `main` y no duplicar el hotfix de la rama histórica.
+- [x] Retirar artefactos locales no versionados de `outputs/` a `/tmp/app_test_1-outputs-20260818`.
+- [x] Ejecutar tests, build, auditorías de migraciones/seguridad/limpieza e integridad.
+- [x] Ejecutar `npm run guardian`: 0 errores; permanece warning PERF-001 documentado para `CandidateDetailSidebar.tsx` (803 líneas).
+- [ ] Diagnosticar el bloqueo ambiental de `guardian:full` en `smoke:frontend-routes` con Chromium.
+
+Resultado parcial: `main` queda con cambios intencionales de lockfile, auditoría EEES y trazabilidad en `tasks/todo.md`. No se integraron ramas sin cambios propios ni se aplicaron migraciones pendientes no relacionadas.
+
+## Correccion validacion informe psicologico - 2026-08-18
+
+- [x] Confirmar causa exacta del error `column reference "output_hash" is ambiguous`.
+- [x] Crear migracion versionada que corrija la RPC sin relajar permisos ni validaciones profesionales.
+- [x] Agregar regresion de integridad para bloquear variables PL/pgSQL con nombres de columnas sensibles.
+- [x] Aplicar la migracion en produccion, validar flujo y publicar commit en `main`.
+
+Resultado: la RPC `review_psych_ai_interpretation` usaba una variable local `output_hash` con el mismo nombre que la columna de `private.psych_ai_interpretations`, provocando ambiguedad al guardar la revision y validar/generar el informe. Se versiono `20260818233000_fix_psych_review_output_hash_ambiguity.sql`, se aplico en produccion y se registro como aplicada. La verificacion remota confirma la firma `review_psych_ai_interpretation(uuid,text,jsonb,text)`, la variable `v_reviewed_output_hash` y el `UPDATE` calificado. El smoke productivo con rollback sobre una interpretacion revisable real ejecuto la rama de hash (`p_reviewed_output` no nulo) y retorno correctamente, con 0 eventos persistidos por la prueba.
+
+## Carga BUK en contingencia desde Control de candidatos - 2026-08-18
+
+- [ ] Exponer en el detalle de candidato el flujo autorizado de contingencia, sin mover la etapa ERP.
+- [ ] Conectar el control a `enqueue_buk_generation_contingency` con motivo obligatorio y permisos backend.
+- [ ] Validar compilacion, integridad, Guardian y publicacion antes de ejecutar la carga productiva.
+- [x] Prevalidar en produccion a Millan Alberto Jimenez Plaza y Franco Rodrigo Trabucco Bonilla contra RUT, caso, etapa, cupos y payload BUK de contingencia.
+- [x] Encolar y procesar sus jobs BUK con `enqueue_buk_generation_contingency` y `sync-buk-candidates`.
+- [x] Verificar en ERP y BUK que las fichas creadas quedan activas con job/plan/cargo/area/centro/fechas correctas.
+- [x] Documentar el resumen de candidatos DSAL cargados por contingencia.
+
+Resultado operacional: se prevalidaron en produccion Millan Alberto Jimenez Plaza (`12.596.209-2`, RC-0142) y Franco Rodrigo Trabucco Bonilla (`18.509.108-2`, RC-0144), ambos en etapa `lead`, sin job BUK previo y con cupos disponibles para contingencia. Se encolaron los jobs `1952b484-299e-4074-b569-c23e3b0da1c6` y `96cccedc-bbf3-4a71-b151-c51d8415f59c`, se ejecuto `sync-buk-candidates` productivo y ambos terminaron `success`. BUK vivo confirma fichas activas `42896` y `42897`, codigo `F1`, un job y un plan por persona, area `2911`, centro `718`, jefe `42827`, sueldo base `0`; Millan quedo como `CONDUCTOR DE BUS` con inicio `2026-08-15`, Franco como `ENCARGADO DE RRLL` con inicio `2026-08-11`. La contingencia mantuvo la etapa ERP y dejo la Solicitud de Contratacion como regularizacion posterior.
+
+## Auditoría candidatos por RUT - 2026-08-18
+
+- [x] Buscar los RUT solicitados en perfiles de candidatos del ERP.
+- [x] Contrastar procesos, etapa actual, historial de etapas y ficha laboral BUK.
+- [x] Documentar coincidencias, ausencia de registros y discrepancias de identidad.
+
+Resultado: se verificaron directamente las tablas productivas de candidatos, procesos, historial de etapas, empleos y vista de empleados activos. Cinco RUT tienen historial; Brenda Karin Torres Moya no aparece por RUT ni nombre. El RUT 24.450.121-4 está asociado a Ronald González Carvallo en dos procesos y no tiene ficha laboral activa.
+
+## Correccion de carrera en autoguardado psicolaboral - 2026-08-18
+
+- [x] Auditar el rechazo de revision y contrastarlo con sesiones productivas recientes.
+- [x] Serializar autoguardados y conservar el snapshot mas reciente del candidato.
+- [x] Esperar el guardado final antes de enviar el instrumento.
+- [x] Ejecutar pruebas, Guardian y build; el commit fue publicado en `main`.
+- [ ] Verificar que Cloudflare Pages publique el bundle del commit; al cierre sigue sirviendo el bundle anterior.
+
+## Validación profesional de informe psicolaboral - 2026-08-17
+
+- [ ] Auditar el contrato vigente de revisión IA, perfiles psicológicos y generación del PDF.
+- [ ] Exigir comentario y aprobación profesional en backend antes de emitir el informe.
+- [ ] Incorporar identidad, RUN, hash y fecha del psicólogo aprobador al payload y al PDF.
+- [ ] Mantener íntegro el contenido IA y agregar el bloque visual de comentarios/firma solicitado.
+- [ ] Actualizar la revisión UI para generar el PDF solo después de validar.
+- [ ] Ejecutar pruebas, auditorías, despliegue y verificación productiva.
+
+## Firma legal solo en certificados Salvador - 2026-08-17
+
+- [x] Auditar el renderer y confirmar que el bloque vacío se originaba en un fallback visual del firmante legal.
+- [x] Renderizar Representante Legal únicamente cuando `legal_signature_required` lo exige; conservar solo la firma del instructor en los demás contratos.
+- [x] Agregar regresión de integridad y validar Edge Function, PDF, Guardian y publicación.
+
+Resultado: el certificado fuera de Codelco El Salvador ya no muestra rótulo, espacio ni RUN pendiente de Representante Legal. El flujo Salvador conserva aprobación, firma y trazabilidad legal.
+
+## Expiracion de evaluaciones psicolaborales abandonadas - 2026-08-17
+
+- [ ] Auditar el vencimiento de 90 minutos, el estado de la evaluación y la regla de reenvío.
+- [ ] Crear RPC backend para marcar como `expired` las sesiones `in_progress` cuyo plazo venció, con auditoría.
+- [ ] Mostrar `Desierto` en Gestión Psicolaboral y habilitar reenvío únicamente para expirados.
+- [ ] Agregar regresiones de integridad y ejecutar gates completos.
+
+## Psych AI V6.3 consolidada - 2026-08-17
+
+- [x] Auditar V6.2 vigente, scoring PRP/Barratt, homologaciones IPIP, schema, renderer y flujo de canary.
+- [x] Versionar prompt/schema/metodología V6.3 sin alterar scoring ni históricos; compactar facts y fijar las tres categorías finales.
+- [x] Incorporar matriz funcional IPIP-16/IPIP-IPC con niveles de evidencia y límites; bloquear cualquier supuesto Barratt alto no validado.
+- [x] Actualizar runtime, guardrails y tests de regresión; conservar Structured Output, seguridad y decisión humana.
+- [x] Aplicar migración y desplegar Edge Functions; regenerar un canary sin modificar históricos y medir tokens V6.2/V6.3.
+- [x] Validar PDF, QA semántico/visual, auditorías, Guardian, commit, push y CI.
+
+Resultado: V6.3 quedó activa en producción con canary real de 8.377 tokens y sin flags. El informe regenerado conserva 7 páginas legibles; se dejó documentado que el objetivo editorial de 5-6 páginas no se fuerza porque implicaría perder contenido requerido.
+
+Corrección CI: el primer workflow de este SHA detectó un aumento medido de 281 bytes en el bundle; se actualizó el baseline canónico a la medición de GitHub sin modificar límites de vendors, CSS ni assets trackeados. Guardian local vuelve a pasar con 0 errores y 0 advertencias.
+
+## Auditoría integral y cierre de repositorio - 2026-08-17
+
+- [x] Revisar estado Git, commits recientes, archivos pendientes y artefactos locales.
+- [x] Ejecutar Guardian, auditorías de migraciones/seguridad/limpieza, tests y build frontend.
+- [x] Corregir la vulnerabilidad transitoria de `nanoid` actualizando PostCSS a `8.5.26`.
+- [x] Retirar artefactos no versionados de `output/` y `tmp/` a una ubicación recuperable fuera del repositorio.
+- [x] Confirmar diff limpio, commit y publicación en `main`.
+
+Resultado: todos los gates del repositorio pasan; `npm audit` queda sin vulnerabilidades; el código y las migraciones ya estaban alineados con `origin/main`. Los artefactos locales de maquetas se conservaron fuera del repositorio en `/tmp` para recuperación.
+
+## Alineación separadores Gestión Psicolaboral - 2026-08-17
+
+- [x] Confirmar la causa visual en la tabla de `/gestion-psicolaboral`.
+- [x] Corregir la celda `Actualización` para que conserve semántica de tabla y alinee su borde con el resto de columnas.
+- [x] Agregar regresión de integridad contra el patrón que rompe el layout.
+- [x] Validar pruebas, build frontend y diff.
+
+Resultado: la columna `Actualización` ya no usa `display:flex` directamente sobre el `<td>`; el layout flexible vive en `.psych-update-cell__content`, por lo que el borde inferior vuelve a ser el mismo separador nativo de la fila. Validado con integridad, build frontend y Guardian.
+
+## Firma Representante Legal en certificados Codelco El Salvador - 2026-08-17
+
+- [x] Auditar el contrato vigente de certificacion, el origen BUK de la faena y el RUN verificable de Guillermo Zanartu Apara; no asumir datos desde la maqueta.
+- [x] Implementar configuracion versionada y privada del firmante legal, con firma versionada en el Edge Function, hash y vigencia.
+- [x] Implementar aprobacion backend-authoritative solo para certificados de Codelco El Salvador, con Guillermo como aprobador y trazabilidad de solicitud, decision, actor y hash.
+- [x] Bloquear la generacion/carga BUK de esa faena hasta aprobacion valida y datos completos del firmante; mantener sin cambio el flujo de otras faenas.
+- [x] Incorporar firma legal al PDF original sin perder contenido, usando el mismo bloque visual del instructor y el hash de la firma.
+- [x] Actualizar frontend para visualizar la cola de aprobacion y permitir aprobar/rechazar solo con permisos autorizados, sin mover autorizacion al cliente.
+- [x] Agregar regresiones de integridad, permisos e idempotencia de decision, con prueba de no impacto para otras faenas.
+- [x] Ejecutar `npm run audit:migrations`, `npm run audit:supabase-security`, `npm run guardian`, `npm run build:frontend-check`, `git diff --check` y smoke controlado antes de decidir despliegue.
+
+Resultado productivo: migracion `20260817180000` aplicada y registrada en Supabase; Edge Function `generate-competency-certificate` desplegada con la firma como asset versionado; commit `061a20e` publicado en `main`; Cloudflare Pages expone el bundle de Competencias con la cola de aprobacion legal. El RUN se resuelve exclusivamente desde `employees_active_current`: actualmente BUK no tiene una fila coincidente para Guillermo Zañartu Apara, por lo que la emision permanece correctamente bloqueada hasta sincronizar su ficha BUK.
+
+
+## Administrador ERP para Renato Martinez - 2026-08-17
+
+- [x] Crear migracion para reemplazar `desarrollador` por `admin` en Renato.
+- [x] Aplicar la migracion individualmente en produccion y registrar su version.
+- [x] Verificar rol efectivo, acceso global y que `is_super_admin` permanezca en `false`.
+
+Resultado: `20260817171000_promote_renato_to_admin.sql` fue ejecutada individualmente en produccion y registrada como aplicada. Renato tiene unicamente el rol `admin`, `effective_admin=true`, acceso a los 14 modulos activos e `is_super_admin=false`.
+
+## Rol desarrollador para Renato Martinez - 2026-08-17
+
+- [x] Auditar contratos vigentes de roles, modulos, features y guardas backend de RRHH.
+- [x] Crear rol `desarrollador` y asignarlo a `renato.martinez@busesjm.com`.
+- [x] Otorgar acceso a RRHH, Jornadas y Turnos, Acreditacion, Sanciones y analitica HR sin acceso admin global.
+- [x] Validar helpers/RPCs de backend, auditorias SQL, Guardian y diff.
+- [x] Aplicar la migracion en el entorno autorizado y verificar la matriz efectiva de Renato.
+
+Resultado: la migracion `20260817170000_add_developer_hr_access.sql` se ejecuto individualmente en produccion y se registro como aplicada, sin ejecutar las otras migraciones locales pendientes. Renato quedo con rol `desarrollador`, `is_super_admin=false`, y acceso a `recursos_humanos`, `jornadas_turnos`, `acreditacion_personas`, `solicitud_sanciones` y `bi_analytics`, junto con features de roster, incentivos y analitica HR.
+
 ## Sincronización cargo BUK Encargado de RRLL - 2026-08-17
 
 - [x] Confirmar el rol exacto en BUK y su código estable.
@@ -2155,3 +2292,13 @@ Resultado: producción quedó con `psych-ai-prompt-v6.1`, `psych-ai-schema-v6.1`
 - [x] Verificar en ERP que los 16 jobs quedaron `success` y en BUK que cada ficha está activa con cargo, plan, área, centro y supervisor correctos.
 
 Resultado: 16/16 fichas creadas en BUK. Fichas BUK `42867` a `42882` (sin asumir orden correlativo por persona), cargo `CONDUCTOR DE BUS`, área DSAL `2911`, centro `718`, supervisor Marcelo Villarroel y fecha de ingreso `15/08/2026`. William fue cargado con el RUT ERP corregido `15.573.108-7`.
+# Análisis Exd.xlsx contra Jornadas y Turnos - 2026-08-18
+
+- [x] Leer el contrato real del módulo y distinguir pauta, estado base y excepciones.
+- [x] Inspeccionar las hojas y normalizar la columna Fecha de servicio/RUT del archivo.
+- [x] Consultar el estado productivo por RUT-fecha mediante el RPC autorizado `get_worker_schedule`.
+- [x] Entregar el cruce analítico por trabajador y fecha usando la fase observada en agosto, con evidencia de identidad y pauta.
+
+Resultado parcial: `Resumen` contiene 214 filas, 58 RUT y 198 pares RUT-fecha distintos entre 2026-05-20 y 2026-07-23. El RUT `12.703.451-6` aparece con tres nombres distintos, por lo que no se debe resolver por nombre. La consulta productiva no pudo ejecutarse con las credenciales locales: la clave de servicio fue rechazada y el acceso anónimo no tiene permisos sobre trabajadores/RPCs de roster. Las hojas auxiliares comparan 1.411 pares contra 220 y solo 97 coinciden; esto no reemplaza el estado del módulo.
+
+Resultado final del análisis: se levantaron las fases de agosto para 54 RUT con coincidencia estable y se proyectaron hacia atrás según la periodicidad observada de cada pauta. De las 214 filas, 166 quedan probablemente en `Trabajo`, 44 en `Descanso` y 4 no son verificables porque los RUT `10.235.039-2`, `10.235.039-3`, `10.235.039-4` y `10.235.039-5` no cargaron como trabajadores del módulo. La inferencia no determina excepciones históricas ni prueba que el servicio efectivamente se haya realizado; solo clasifica la jornada base esperada. Se observaron 14 filas de `Por Vacante no llenada`, 12 de `Reemplazo por vacaciones y/o permisos` y 7 de sobretiempo que caen en descanso base, coherente con los conceptos declarados, sujeto a validación de excepciones históricas.

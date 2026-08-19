@@ -1,6 +1,43 @@
 import type { JsonRecord, PsychAIOutput } from "./types.ts";
 
-export const PSYCH_SEMANTIC_VERSION = "psych-semantic-guardrails-v6.2";
+export const PSYCH_SEMANTIC_VERSION = "psych-semantic-guardrails-v6.3";
+
+/**
+ * Functional mappings are deliberately narrower than the source instruments.
+ * They describe how a score may be discussed in this ERP, never an equivalence
+ * with 16PF/DISC or evidence of observed behaviour.
+ */
+export const PSYCH_FUNCTIONAL_MAPPINGS = {
+  ipip16: [
+    { dimension: "EST", labor_axis: "estabilidad/vulnerabilidad emocional", evidence_level: "INTEGRATED", limits: "Rango teórico 1-5; no diagnóstico ni conducta observada." },
+    { dimension: "APR", labor_axis: "tolerancia al estrés/presión", evidence_level: "INTEGRATED", limits: "Solo señal descriptiva; no infiere reacción bajo presión." },
+    { dimension: "TEN", labor_axis: "tensión/irritabilidad", evidence_level: "INTEGRATED", limits: "No equivale a desregulación ni riesgo clínico." },
+    { dimension: "CUM", labor_axis: "adherencia a normas/procedimientos", evidence_level: "INTEGRATED", limits: "No demuestra cumplimiento conductual." },
+    { dimension: "NOR", labor_axis: "adherencia a normas/procedimientos", evidence_level: "INTEGRATED", limits: "No demuestra cumplimiento conductual." },
+    { dimension: "ORD", labor_axis: "orden/consistencia", evidence_level: "INTEGRATED", limits: "No demuestra organización en terreno." },
+    { dimension: "APE", labor_axis: "adaptación", evidence_level: "INTEGRATED", limits: "No equivale a flexibilidad conductual observada." },
+    { dimension: "INT", labor_axis: "análisis/aprendizaje", evidence_level: "INTEGRATED", limits: "No equivale a desempeño ni capacidad validada." },
+    { dimension: "ASE", labor_axis: "asertividad/comunicación", evidence_level: "INTEGRATED", limits: "No equivale a liderazgo ni influencia efectiva." },
+    { dimension: "CAL", labor_axis: "interacción interpersonal", evidence_level: "INTEGRATED", limits: "No equivale a cooperación observada." },
+    { dimension: "GRE", labor_axis: "interacción interpersonal", evidence_level: "INTEGRATED", limits: "No equivale a desempeño grupal observado." },
+    { dimension: "SEN", labor_axis: null, evidence_level: "INSUFFICIENT", limits: "Sin eje laboral solicitado sustentado por este módulo." },
+    { dimension: "DES", labor_axis: null, evidence_level: "INSUFFICIENT", limits: "Sin eje laboral solicitado sustentado por este módulo." },
+    { dimension: "RES", labor_axis: null, evidence_level: "INSUFFICIENT", limits: "Sin eje laboral solicitado sustentado por este módulo." },
+    { dimension: "AUT", labor_axis: null, evidence_level: "INSUFFICIENT", limits: "Sin eje laboral solicitado sustentado por este módulo." },
+    { dimension: "SEG", labor_axis: null, evidence_level: "INSUFFICIENT", limits: "Sin eje laboral solicitado sustentado por este módulo." },
+  ],
+  ipc: [
+    { axis: "emociones", evidence_level: "INTEGRATED", limits: "Octantes y ejes IPIP-IPC; no conducta observada." },
+    { axis: "meta/motivadores", evidence_level: "INSUFFICIENT", limits: "No se deriva de forma válida con el payload actual." },
+    { axis: "criterio interpersonal", evidence_level: "INTEGRATED", limits: "Lectura relacional, no juicio clínico." },
+    { axis: "influencia", evidence_level: "INTEGRATED", limits: "No usar D/I/S/C ni perfiles propietarios." },
+    { axis: "valor para la organización", evidence_level: "INSUFFICIENT", limits: "No se deriva de forma válida con el payload actual." },
+    { axis: "sobreutilización del estilo", evidence_level: "INTEGRATED", limits: "Expresar como riesgo condicional, no defecto." },
+    { axis: "bajo presión", evidence_level: "INTEGRATED", limits: "Hipótesis laboral, no conducta observada." },
+    { axis: "factores de tensión", evidence_level: "INTEGRATED", limits: "No convertir en miedo psicológico absoluto." },
+    { axis: "eficacia", evidence_level: "INTEGRATED", limits: "Debe redactarse como sugerencia accionable." },
+  ],
+} as const;
 
 type Direction = "HIGHER_MORE" | "HIGHER_LESS" | "BIPOLAR" | "UNKNOWN";
 type InterpretationMode = "THEORETICAL_RANGE" | "DOCUMENTED_CLASSIFICATION" | "PROFESSIONAL_ONLY";
@@ -50,6 +87,7 @@ export type EvidenceBackedStatement = {
 
 export type PsychSemanticContext = {
   version: string;
+  functional_mappings: typeof PSYCH_FUNCTIONAL_MAPPINGS;
   evidence_catalog: PsychEvidence[];
   locks: {
     ipip_level_disclaimer: string;
@@ -57,6 +95,7 @@ export type PsychSemanticContext = {
       score: number;
       classification: string;
       max_allowed_classification: string;
+      risk_high_mapping: "BLOCKED_NOT_VALIDATED";
     };
     prp?: {
       score: number;
@@ -416,6 +455,7 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
 
   return {
     version: PSYCH_SEMANTIC_VERSION,
+    functional_mappings: PSYCH_FUNCTIONAL_MAPPINGS,
     evidence_catalog: evidence,
     locks: {
       ipip_level_disclaimer:
@@ -424,6 +464,7 @@ export function buildPsychSemanticContext(input: JsonRecord): PsychSemanticConte
         score: bisScore,
         classification: bisClassification,
         max_allowed_classification: bisClassification,
+        risk_high_mapping: "BLOCKED_NOT_VALIDATED",
       },
       prp: prpScore === null ? undefined : {
         score: prpScore,
@@ -463,7 +504,8 @@ export function attachPsychSemanticContext(input: JsonRecord) {
   return {
     ...input,
     methodology: {
-      version: "psych-methodology-v6.2",
+      version: "psych-methodology-v6.3",
+      functional_mappings: PSYCH_FUNCTIONAL_MAPPINGS,
       instruments: {
         IPIP16_105: {
           professional_name: "Evaluación de Personalidad IPIP-16",
@@ -498,7 +540,7 @@ export function attachPsychSemanticContext(input: JsonRecord) {
           source_type: "instrumento recibido y digitalizado desde correo fuente",
           scoring: "puntaje total y clasificación documentada calculada por ERP",
           interpretation: "contextual, conservando literalmente la clasificación documentada",
-          restrictions: ["no escalar SOBRE_EL_PROMEDIO a alto, crítico ni severo"],
+          restrictions: ["no escalar SOBRE_EL_PROMEDIO a alto, crítico ni severo", "riesgo alto no validado en el contrato actual"],
         },
         PRP_EMAIL_FORM_A_30: {
           professional_name: "Escala P.R.P",

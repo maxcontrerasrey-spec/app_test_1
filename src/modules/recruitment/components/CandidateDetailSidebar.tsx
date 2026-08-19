@@ -30,9 +30,11 @@ import {
 } from "./hiringControlViewUtils";
 import { CandidateDocumentChecklist } from "./CandidateDocumentChecklist";
 import { CandidateWorkerFileForm } from "./CandidateWorkerFileForm";
+import { BukContingencyAction } from "./BukContingencyAction";
 
 type CandidateDetailSidebarProps = {
   mode?: "candidate_control" | "personnel_to_hire" | "personnel_contracted";
+  readOnly?: boolean;
   isLoading: boolean;
   selectedCaseDetail: RecruitmentCaseDetail | null;
   selectedCandidate: RecruitmentCaseCandidateRow | null;
@@ -54,6 +56,7 @@ type CandidateDetailSidebarProps = {
 
 export function CandidateDetailSidebar({
   mode = "candidate_control",
+  readOnly = false,
   isLoading,
   selectedCaseDetail,
   selectedCandidate,
@@ -73,9 +76,9 @@ export function CandidateDetailSidebar({
   onTransferCandidateRequested
 }: CandidateDetailSidebarProps) {
   const { hasCapability } = useAuth();
+  const { appRoles, isSuperAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<"pipeline" | "documents" | "worker">("pipeline");
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
-
   const [isEditingLicense, setIsEditingLicense] = useState(false);
   const [licenseClass, setLicenseClass] = useState("");
   const [licenseExpiry, setLicenseExpiry] = useState("");
@@ -88,7 +91,6 @@ export function CandidateDetailSidebar({
   const [interviewError, setInterviewError] = useState("");
   const [isWhoCausesExpanded, setIsWhoCausesExpanded] = useState(false);
   const [whoCauseDrafts, setWhoCauseDrafts] = useState<WhoCauseDraft[]>(buildEmptyWhoCauseDrafts);
-
   useEffect(() => {
     setIsHistoryExpanded(false);
     setIsEditingLicense(false);
@@ -100,13 +102,11 @@ export function CandidateDetailSidebar({
     setIsWhoCausesExpanded(false);
     setWhoCauseDrafts(buildEmptyWhoCauseDrafts());
   }, [selectedCandidate?.id]);
-
   useEffect(() => {
     if (stageDraft === "who_pending") {
       setIsWhoCausesExpanded(true);
     }
   }, [stageDraft]);
-
   const handleSaveLicense = async () => {
     if (!selectedCandidate) return;
     setIsLicenseSaving(true);
@@ -162,9 +162,17 @@ export function CandidateDetailSidebar({
     value: stage,
     label: toRecruitmentCandidateStageLabel(stage)
   }));
-  const showStageControls = mode === "candidate_control";
+  const showStageControls = mode === "candidate_control" && !readOnly;
   const isWhoPending = selectedCandidate.stage_code === "who_pending";
   const canApproveWho = hasCapability("can_approve_who_stage");
+  const canManageBukActions =
+    isSuperAdmin || appRoles.includes("administrativo") || appRoles.includes("jefe_administrativo");
+  const isDsalCandidate = /CODELCO\s*-\s*DSAL/i.test(selectedCaseDetail.case.contract_name ?? "");
+  const canLoadDsalContingency =
+    mode === "candidate_control" &&
+    canManageBukActions &&
+    isDsalCandidate &&
+    !["hired", "rejected", "withdrawn"].includes(selectedCandidate.stage_code);
   const latestWhoApproval = selectedCandidate.who_approval ?? null;
   const completedWhoCauseCount = whoCauseDrafts.filter(isWhoCauseDraftComplete).length;
   const hasStartedWhoCauseDrafts = whoCauseDrafts.some(isWhoCauseDraftStarted);
@@ -198,7 +206,6 @@ export function CandidateDetailSidebar({
       )
     );
   };
-
   const normalizedWhoCauses: WhoApprovalCause[] = whoCauseDrafts
     .filter(isWhoCauseDraftComplete)
     .map((cause) => ({
@@ -216,7 +223,7 @@ export function CandidateDetailSidebar({
             {toRecruitmentCandidateStageLabel(selectedCandidate.stage_code)}
           </span>
         </div>
-        {onTransferCandidateRequested && selectedCandidate.stage_code !== "hired" && selectedCandidate.stage_code !== "rejected" && selectedCandidate.stage_code !== "withdrawn" && (
+        {!readOnly && onTransferCandidateRequested && selectedCandidate.stage_code !== "hired" && selectedCandidate.stage_code !== "rejected" && selectedCandidate.stage_code !== "withdrawn" && (
           <button
             type="button"
             className="soft-primary-button control-compact-button"
@@ -227,6 +234,10 @@ export function CandidateDetailSidebar({
           </button>
         )}
       </div>
+
+      {canLoadDsalContingency ? (
+        <BukContingencyAction candidateId={selectedCandidate.id} />
+      ) : null}
 
       <div className="control-tabs-row">
         <button 
@@ -331,7 +342,7 @@ export function CandidateDetailSidebar({
           <div className="approval-detail-note control-block-top">
             <div className="control-inline-header">
               <small>Licencia de Conducir</small>
-              {!isEditingLicense ? (
+              {!readOnly && !isEditingLicense ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -674,7 +685,7 @@ export function CandidateDetailSidebar({
           <div className="approval-detail-note control-block-top">
             <div className="control-inline-header">
               <small>Puntos Clave de la Entrevista</small>
-              {!isEditingInterview ? (
+              {!readOnly && !isEditingInterview ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -773,6 +784,7 @@ export function CandidateDetailSidebar({
         <CandidateDocumentChecklist
           caseCandidateId={selectedCandidate.id}
           candidateStageCode={selectedCandidate.stage_code}
+          readOnly={readOnly}
           onChecklistUpdated={onCandidateFileUpdated}
         />
       )}
@@ -781,7 +793,7 @@ export function CandidateDetailSidebar({
         <CandidateWorkerFileForm
           candidate={selectedCandidate}
           caseDetail={selectedCaseDetail}
-          readOnly={isWorkerFileReadOnly}
+          readOnly={isWorkerFileReadOnly || readOnly}
           onSaved={onCandidateFileUpdated}
         />
       )}

@@ -18,7 +18,7 @@ PASS
 ## Resumen
 
 - Errores: 0
-- Warnings: 0
+- Warnings: 1
 - Info: 19
 
 ## Errores
@@ -27,7 +27,7 @@ PASS
 
 ## Warnings
 
-- Sin warnings.
+- PERF-001 · `src/modules/recruitment/components/CandidateDetailSidebar.tsx` · Archivo sobre 800 lineas: 803.
 
 ## Gates informativos
 

@@ -37,7 +37,11 @@ export function PsychometricAssessmentPage() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const revisionRef = useRef(0);
   const answersRef = useRef<Record<string, number>>({});
-  const saveInFlight = useRef(false);
+  const saveQueueRef = useRef<Promise<void> | null>(null);
+  const pendingSaveRef = useRef<{
+    code: string;
+    snapshot: Record<string, number>;
+  } | null>(null);
   const instrumentSectionRef = useRef<HTMLElement | null>(null);
   const [saved, setSaved] = useState("Sin cambios pendientes");
   const instrument: CandidateInstrument | null =
@@ -174,40 +178,49 @@ export function PsychometricAssessmentPage() {
     return () => window.removeEventListener("beforeunload", before);
   }, [saved, session?.execution_status]);
 
-  const persist = async (snapshot = answers) => {
-    if (
-      !instrument ||
-      saveInFlight.current ||
-      instrument.status === "completed"
-    )
-      return;
-    saveInFlight.current = true;
-    setSaved("Guardando...");
-    const serialized = JSON.stringify(snapshot);
-    try {
-      const result = await savePsychResponses(
-        token,
-        instrument.code,
-        snapshot,
-        revisionRef.current,
-      );
-      revisionRef.current = result.revision;
-      setSaved(
-        JSON.stringify(answersRef.current) === serialized
-          ? "Guardado en ERP"
-          : "Cambios pendientes",
-      );
-      setError("");
-    } catch (cause) {
-      setSaved("No guardado");
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "No fue posible guardar el avance.",
-      );
-    } finally {
-      saveInFlight.current = false;
-    }
+  const persist = (snapshot = answers): Promise<void> => {
+    if (!instrument || instrument.status === "completed") return Promise.resolve();
+
+    pendingSaveRef.current = { code: instrument.code, snapshot };
+    if (saveQueueRef.current) return saveQueueRef.current;
+
+    const run = async () => {
+      while (pendingSaveRef.current) {
+        const request = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        setSaved("Guardando...");
+        const serialized = JSON.stringify(request.snapshot);
+        try {
+          const result = await savePsychResponses(
+            token,
+            request.code,
+            request.snapshot,
+            revisionRef.current,
+          );
+          revisionRef.current = result.revision;
+          setSaved(
+            JSON.stringify(answersRef.current) === serialized
+              ? "Guardado en ERP"
+              : "Cambios pendientes",
+          );
+          setError("");
+        } catch (cause) {
+          pendingSaveRef.current = request;
+          setSaved("No guardado");
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "No fue posible guardar el avance.",
+          );
+          break;
+        }
+      }
+    };
+
+    saveQueueRef.current = run().finally(() => {
+      saveQueueRef.current = null;
+    });
+    return saveQueueRef.current;
   };
 
   useEffect(() => {
@@ -258,8 +271,7 @@ export function PsychometricAssessmentPage() {
   };
 
   const changeBlock = async (next: number) => {
-    if (saved === "Cambios pendientes" || saved === "No guardado")
-      await persist();
+    if (saved === "Cambios pendientes" || saved === "No guardado") await persist();
     setBlockIndex(Math.min(Math.max(next, 0), blockCount - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -276,6 +288,7 @@ export function PsychometricAssessmentPage() {
     setBusy(true);
     setError("");
     try {
+      await persist(answers);
       const next = await submitPsychInstrument(token, instrument.code, answers);
       installSession(next);
       if (next.execution_status === "completed")

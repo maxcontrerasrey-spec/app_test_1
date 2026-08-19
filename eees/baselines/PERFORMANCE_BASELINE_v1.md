@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.27
+version: 1.0.30
 status: Activo
 language: es-CL
 owner: Quality
@@ -88,6 +88,8 @@ Revision 2026-08-08 copy postulacion DSAL: JS sube 5 bytes por reemplazar el blo
 
 Revision 2026-08-08 validacion DSAL: el total sube 1,117 bytes y JS sube 1,226 bytes por agregar normalizacion visible de texto, formato de telefono y validacion de correo en la pagina publica. No agrega vendors ni assets.
 
+Revision 2026-08-17 Psych AI V6.3: el artefacto canonico de GitHub Actions sube 281 bytes totales y 281 bytes JS por el contrato de homologaciones funcionales y guardrails metodologicos. No agrega vendors, CSS ni assets trackeados.
+
 Revision 2026-08-11 representantes sindicales DSAL: el total sube 634 bytes, JS sube 288 bytes y CSS sube 346 bytes por exponer desde el RPC la marca de nómina sindical y mostrar la burbuja `Representante sindical` solo para los RUT coincidentes. No agrega vendors, rutas ni assets pesados.
 
 Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes por exigir folio con cupo en la aprobacion de precandidatos y mostrar la instruccion operativa cuando no hay destino habilitado. No agrega vendors, CSS ni assets.
@@ -123,11 +125,11 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10279217,
+  "distTotalBytes": 10287335,
   "jsFileCount": 62,
-  "jsTotalBytes": 2756056,
+  "jsTotalBytes": 2763121,
   "cssFileCount": 12,
-  "cssTotalBytes": 247979,
+  "cssTotalBytes": 249032,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -139,7 +141,13 @@ Revision 2026-08-14 Psych AI V5.4 CI: GitHub Actions `Audit Enterprise Guardrail
 }
 ```
 
-Revision 2026-08-18 rediseño BI (Resumen Ejecutivo, Dotación, Reclutamiento): el total global sube 22,541 bytes, JS sube 15,044 bytes y CSS sube 7,088 bytes por la nueva vista `/bi/resumen`, los componentes de dotación/ausentismo/candidatos reconstruidos, el gráfico de ritmo de incorporación y sus estilos. No agrega vendors, dependencias ni assets trackeados: el crecimiento es código de aplicación dentro del chunk lazy `BiDashboardPage` y su hoja de estilos. Medición local `dist=10,278,383`, `JS=2,755,631`, `CSS=247,979`; los valores registrados para `dist` y JS suman el delta conocido del artefacto de CI (+834 y +425 bytes respectivamente, medido en la revisión 2026-08-14 al inyectar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` productivas, que se inlinean solo en JS). CSS no depende de esas variables y se registra con el valor medido.
+Revision 2026-08-19 merge Resumen Ejecutivo BI + Psych AI V6.3/competencias/reclutamiento: la rama `dev/renato/business-intelligence` diverge del remoto porque ambos historiales avanzaron en paralelo sobre `5478e25`. Esta revision remide `dist` completo despues de integrar ambos conjuntos de cambios, porque los deltas de las dos revisiones siguientes no son sumables: cada uno se midio contra una base distinta. Medicion local del merge `dist=10,286,501`, `JS=2,762,696`, `CSS=249,032`; los limites globales de `dist` y JS registran esa medicion mas el delta conocido del artefacto de CI (+834 y +425 bytes, medido en la revision 2026-08-14 al inyectar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` productivas, que se inlinean solo en JS). CSS no depende de esas variables y se registra con el valor medido. Si el proximo run de CI reporta un excedente de pocos cientos de bytes, la causa es ese delta estimado y no un crecimiento real del bundle: debe realinearse al artefacto remoto como ya se hizo en las revisiones 2026-07-23 CI y 2026-08-18 CI.
+
+Revision 2026-08-18 rediseño BI (Resumen Ejecutivo, Dotación, Reclutamiento): el total global sube 22,541 bytes, JS sube 15,044 bytes y CSS sube 7,088 bytes por la nueva vista `/bi/resumen`, los componentes de dotación/ausentismo/candidatos reconstruidos, el gráfico de ritmo de incorporación y sus estilos. No agrega vendors, dependencias ni assets trackeados: el crecimiento es código de aplicación dentro del chunk lazy `BiDashboardPage` y su hoja de estilos. Medición local `dist=10,278,383`, `JS=2,755,631`, `CSS=247,979` (base: `5478e25`, sin los cambios de Psych AI/competencias/reclutamiento de abajo).
+
+Revision 2026-08-18 reintento de interpretación IA fallida: el baseline global y JS se alinean con la medición local reproducible del build, sin aumentar CSS, vendors ni assets trackeados. Se agrega recuperación explícita para estados `FAILED` sin relajar los guardrails metodológicos y se muestran errores de guardado dentro del modal de revisión.
+
+Revision 2026-08-18 CI posterior a validación psicolaboral: GitHub Actions `Audit Enterprise Guardrails` run `32187383760`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,264,786 bytes totales y 2,748,069 bytes JS (base: `5478e25`, sin los cambios de BI de arriba). Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
 
 Revision 2026-08-14 navegación de páginas psicométricas: el CSS sube 409 bytes para mostrar en rojo las páginas con respuestas faltantes y en verde las páginas completas, manteniendo estado activo, foco accesible y navegación responsive. No agrega vendors, assets trackeados ni modifica el entry inicial.
 
@@ -192,6 +200,14 @@ Revision 2026-08-11 rediseño visual sanciones: el total sube 3,370 bytes, JS su
 Revision 2026-08-11 rediseño visual sanciones CI: GitHub Actions `Audit Enterprise Guardrails` run `31523440150`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,204,472 bytes totales y 2,701,023 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo los limites del cambio visual.
 
 Revision 2026-08-14 Psych AI V6.1 CI: GitHub Actions `Audit Enterprise Guardrails` run `31821179255`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,256,676 bytes totales y 2,741,012 bytes JS. El incremento corresponde al artefacto canonico de la rama publicada; no cambia vendors ni assets trackeados.
+
+Revision 2026-08-17 firma legal en Certificacion de Competencias: el total sube 2,852 bytes, JS sube 1,854 bytes y CSS sube 998 bytes por incorporar la cola de aprobacion del Representante Legal de Codelco El Salvador, manteniendo el servicio de aprobacion separado del flujo lazy de emision. No agrega vendors ni assets pesados; la firma legal vive en el Edge Function y se carga solo durante la generacion aprobada.
+
+Revision 2026-08-17 Gestión Psicolaboral alineación de tabla: el total sube 118 bytes, JS sube 63 bytes y CSS sube 55 bytes por conservar la columna `Actualización` como celda de tabla y mover el layout flexible a un contenedor interno. No agrega vendors, rutas, assets ni cambia la carga inicial.
+
+Revision 2026-08-17 firma legal RUN CI: GitHub Actions `Audit Enterprise Guardrails` run `32044206847`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,261,135 bytes totales y 2,744,418 bytes JS tras incorporar la migracion de RUN verificable del firmante legal. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
+
+Revision 2026-08-18 carga BUK DSAL en contingencia: el total sube 776 bytes y JS sube 776 bytes por exponer en el detalle de Control de candidatos el flujo auditado de `enqueue_buk_generation_contingency`, con motivo obligatorio y sin mover la etapa ERP. No agrega vendors, CSS, rutas ni assets trackeados.
 
 ## Politica de actualizacion
 

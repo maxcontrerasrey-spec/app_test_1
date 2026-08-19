@@ -7,6 +7,7 @@ import { PsychAIReviewDialog } from "../components/PsychAIReviewDialog";
 import { PsychResultDialog } from "../components/PsychResultDialog";
 import {
   decidePsychAssessment,
+  generatePsychAIInterpretation,
   generatePsychCertificate,
   getPsychAIReviewDetail,
   getPsychCertificateUrl,
@@ -26,6 +27,7 @@ import "../styles/psycholaboral.css";
 const statusLabels = {
   not_sent: "No realizado",
   sent: "Enviado",
+  expired: "Desierto",
   completed: "Terminado",
 } as const;
 const PAGE_SIZE = 50;
@@ -73,6 +75,7 @@ export function PsycholaboralManagementPage() {
     { key: "", label: "Todos" },
     { key: "not_sent", label: "No realizado" },
     { key: "sent", label: "Enviado" },
+    { key: "expired", label: "Desierto" },
     { key: "completed", label: "Terminado" },
   ] as const;
   const refresh = async () =>
@@ -204,6 +207,24 @@ export function PsycholaboralManagementPage() {
       setBusy(null);
     }
   };
+  const retryAI = async (row: PsychCandidate) => {
+    if (!row.assessment_id) return;
+    setBusy(row.id);
+    setFeedback("");
+    try {
+      await generatePsychAIInterpretation(row.assessment_id);
+      setFeedback("Interpretación IA reenviada para generación.");
+      await refresh();
+    } catch (error) {
+      setFeedback(
+        error instanceof Error
+          ? error.message
+          : "No fue posible reintentar la interpretación IA.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
   const reviewAI = async (
     action: "save_review" | "validate" | "observe",
     output: PsychAIOutput,
@@ -218,6 +239,10 @@ export function PsycholaboralManagementPage() {
       comment,
     });
     setAiReview(next);
+    if (action === "validate") {
+      setFeedback("Validación registrada. Generando informe firmado...");
+      await generatePsychCertificate(aiReview.assessment_id);
+    }
     await refresh();
   };
 
@@ -240,7 +265,7 @@ export function PsycholaboralManagementPage() {
             <strong>{rows.length}</strong>
             <small>Página actual</small>
           </button>
-          {(["not_sent", "sent", "completed"] as const).map((item) => (
+          {(["not_sent", "sent", "expired", "completed"] as const).map((item) => (
             <button
               type="button"
               className={`tracking-kpi-card ${item === "completed" ? "tracking-kpi-card-generado" : "tracking-kpi-card-en-proceso"} ${status === item ? "tracking-kpi-card-active" : ""}`}
@@ -381,26 +406,28 @@ export function PsycholaboralManagementPage() {
                       ) : null}
                     </td>
                     <td className="psych-update-cell">
-                      <span>
-                        {dateTime(
-                          row.completed_at ?? row.started_at ?? row.issued_at,
-                        )}
-                      </span>
-                      {row.certificate_status === "generated" ? (
-                        <button
-                          type="button"
-                          className="psych-icon-action"
-                          title="Descargar certificado"
-                          aria-label={`Descargar certificado de ${row.full_name}`}
-                          disabled={busy === row.id}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void download(row);
-                          }}
-                        >
-                          PDF
-                        </button>
-                      ) : null}
+                      <div className="psych-update-cell__content">
+                        <span>
+                          {dateTime(
+                            row.completed_at ?? row.started_at ?? row.issued_at,
+                          )}
+                        </span>
+                        {row.certificate_status === "generated" ? (
+                          <button
+                            type="button"
+                            className="psych-icon-action"
+                            title="Descargar certificado"
+                            aria-label={`Descargar certificado de ${row.full_name}`}
+                            disabled={busy === row.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void download(row);
+                            }}
+                          >
+                            PDF
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                   {expanded === row.id ? (
@@ -412,7 +439,7 @@ export function PsycholaboralManagementPage() {
                         <div className="expanded-case-detail-grid">
                           <section className="expanded-detail-section">
                             <h3>Batería psicolaboral</h3>
-                            {row.assessment_id ? (
+                            {row.assessment_id && row.display_status !== "expired" ? (
                               <div className="psych-instrument-list">
                                 {row.instruments.map((instrument) => (
                                   <span
@@ -482,7 +509,7 @@ export function PsycholaboralManagementPage() {
                           </section>
                           <section className="expanded-detail-section expanded-detail-section-full psych-actions-section">
                             <div className="psych-actions">
-                              {!row.assessment_id ? (
+                              {!row.assessment_id || row.display_status === "expired" ? (
                                 <button
                                   className="psych-primary-action"
                                   type="button"
@@ -492,7 +519,7 @@ export function PsycholaboralManagementPage() {
                                     void send(row);
                                   }}
                                 >
-                                  Enviar test
+                                  {row.display_status === "expired" ? "Reenviar test" : "Enviar test"}
                                 </button>
                               ) : null}
                               {row.display_status === "completed" ? (
@@ -518,9 +545,21 @@ export function PsycholaboralManagementPage() {
                                       Revisar informe
                                     </button>
                                   ) : (
-                                    <span className="approval-chip">
-                                      Informe: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
-                                    </span>
+                                    <>
+                                      <span className="approval-chip">
+                                        Informe: {aiStatusLabels[row.ai_status ?? "NOT_REQUESTED"] ?? row.ai_status ?? "No solicitado"}
+                                      </span>
+                                      {row.ai_status === "FAILED" ? (
+                                        <button
+                                          className="psych-secondary-action"
+                                          type="button"
+                                          disabled={busy === row.id}
+                                          onClick={() => void retryAI(row)}
+                                        >
+                                          Reintentar informe IA
+                                        </button>
+                                      ) : null}
+                                    </>
                                   )}
                                   {row.certificate_status === "generated" ? (
                                     <>
@@ -534,8 +573,8 @@ export function PsycholaboralManagementPage() {
                                         Actualizar informe
                                       </button>
                                     </>
-                                  ) : row.certificate_status === "queued" ||
-                                    row.certificate_status === "failed" ? (
+                                  ) : (row.certificate_status === "queued" ||
+                                    row.certificate_status === "failed") && row.ai_status === "VALIDATED" ? (
                                     <button
                                       className="psych-secondary-action"
                                       type="button"
@@ -544,7 +583,7 @@ export function PsycholaboralManagementPage() {
                                         void generateCertificate(row)
                                       }
                                     >
-                                      Generar certificado
+                                      Generar informe y PDF
                                     </button>
                                   ) : null}
                                   {row.decision === "pending" ? (

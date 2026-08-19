@@ -657,6 +657,7 @@ export async function updateCandidateInterviewNotes(input: {
 export {
   checkCandidateInBukLive,
   enqueueCandidatesToBuk,
+  enqueueCandidatesToBukContingency,
   fetchCandidateBukProfile,
   findCandidateProfileByRut,
   generateCandidatesInBuk,

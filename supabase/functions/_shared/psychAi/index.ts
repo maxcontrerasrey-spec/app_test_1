@@ -7,7 +7,7 @@ import {
 import { createPsychInterpretationProvider } from "./providers.ts";
 import type { JsonRecord, PsychAICallTelemetry, PsychAIUsage } from "./types.ts";
 
-const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-medium-v6.2";
+const PSYCH_AI_PIPELINE_VERSION = "gpt56-luna-medium-v6.3";
 
 const ANALYST_SYSTEM_PROMPT = `Eres GPT-5.6 Luna, con razonamiento medio, actuando como analista psicolaboral senior para un ERP.
 Interpreta resultados ya calculados por el ERP. No recalcules scores, medias, inversiones, clasificaciones ni octantes.
@@ -55,9 +55,9 @@ No inventes baremos, percentiles, eneatipos, grupos normativos, nombres de facto
 BIS-11 sobre el promedio no equivale a alto, crítico ni severo.
 PRP usa rangos documentados y participa como antecedente contextual: 81-117 NO_ADECUADO, 118-136 NEUTRO, 137-150 ADECUADO. Fuera de 81-150 no extrapoles. Esta clasificación no determina por sí sola la recomendación laboral.
 No transformes reserva en concentración, estabilidad emocional en atención sostenida, calidez en conducción segura, orden en adherencia comprobada ni baja dominancia en prudencia vial. No presentes cumplimiento 3.00 como fortaleza; una posición relativamente más favorable de orden 3.33 dentro del mismo rango no crea un baremo nuevo. No uses una cantidad fija de fortalezas o brechas.
-Devuelve solo JSON que cumpla el schema.`;
+Reglas V6.3 adicionales: usa functional_mappings como tabla de homologación funcional, respetando sus niveles DIRECT/INTEGRATED/INSUFFICIENT y límites. IPIP-16 no es 16PF e IPIP-IPC no es DISC; no uses D/I/S/C ni nombres propietarios. El ERP no dispone de un mapeo metodológicamente validado de Barratt a riesgo bajo/medio/alto: no inventes cortes y nunca conviertas SOBRE_EL_PROMEDIO en riesgo alto ni en un criterio excluyente. Conserva PRP exactamente en sus rangos documentados. El resultado final solo puede ser ADECUADO, ADECUADO_CON_OBSERVACIONES o NO_ADECUADO. Devuelve solo JSON que cumpla el schema.`;
 
-const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como revisor metodológico patch-only.
+const REVIEWER_SYSTEM_PROMPT = `Eres GPT-5.6 Luna actuando como revisor metodológico patch-only V6.3.
 Recibirás FACTS compactos y un borrador Analyst. No reescribas todo por estilo.
 Devuelve solo parches mínimos cuando detectes problemas corregibles: lenguaje tecnológico visible, meta-lenguaje backend, códigos técnicos, raw_total/F1-F6, lenguaje no neutral, recomendación sin racionalidad crítica, positividad artificial, resultado intermedio redactado como fortaleza, decisión humana, diagnóstico, sobreinterpretación, PRP decisional/inventado, BIS rebajado por rasgos secundarios, repetición fuerte, disclaimers reiterados o preguntas inductivas.
 Si el borrador es usable, devuelve patches vacío.
@@ -246,10 +246,10 @@ export async function generatePsychAIInterpretation(input: {
   try {
     const analyst = await runWithRetry(
       "analyst",
-      { task: "Redacta informe psicolaboral integrado V6.2 con voz profesional natural, usando solo FACTS compactos, perfil de cargo y marco de competencias." },
+      { task: "Redacta informe psicolaboral integrado V6.3 con voz profesional natural, usando solo FACTS compactos, homologaciones funcionales y perfil de cargo." },
       `${ANALYST_SYSTEM_PROMPT}\n\nContexto estable ERP:\n${input.systemPrompt}`,
       input.responseSchema,
-      "psych_ai_interpretation_v6_2",
+      "psych_ai_interpretation_v6_3",
     );
 
     let guarded = validateAndGuardPsychAIOutput(analyst.output, sanitizedPayload);
@@ -268,7 +268,7 @@ export async function generatePsychAIInterpretation(input: {
           },
           REVIEWER_SYSTEM_PROMPT,
           REVIEW_PATCH_SCHEMA,
-      "psych_ai_reviewer_patch_v6_2",
+      "psych_ai_reviewer_patch_v6_3",
         );
         const patched = applyReviewerPatch(analyst.output, reviewer.output);
         reviewerMeta = { executed: true, reason: patched.reason || reviewerMeta.reason, patchCount: patched.patchCount };

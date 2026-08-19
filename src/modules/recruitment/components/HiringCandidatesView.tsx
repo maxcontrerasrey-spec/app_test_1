@@ -45,6 +45,7 @@ type HiringCandidatesViewProps = {
   onLicenseUpdated: () => Promise<void>;
   onInterviewNotesUpdated: () => Promise<void>;
   onCandidateFileUpdated: () => Promise<void>;
+  readOnly?: boolean;
 };
 
 export function HiringCandidatesView({
@@ -65,7 +66,8 @@ export function HiringCandidatesView({
   onWhoApprovalRejected,
   onLicenseUpdated,
   onInterviewNotesUpdated,
-  onCandidateFileUpdated
+  onCandidateFileUpdated,
+  readOnly = false
 }: HiringCandidatesViewProps) {
   const queryClient = useQueryClient();
   const [showCandidateForm, setShowCandidateForm] = useState(false);
@@ -132,7 +134,7 @@ export function HiringCandidatesView({
           ) : null}
         </div>
         <div className="tracking-filters tracking-filters-inline">
-          <button
+          {!readOnly ? <button
             type="button"
             className="soft-primary-button"
             style={{ flexShrink: 0 }}
@@ -140,7 +142,7 @@ export function HiringCandidatesView({
             onClick={() => setShowCandidateForm((current) => !current)}
           >
             {showCandidateForm ? "Cerrar alta" : "Registrar candidato"}
-          </button>
+          </button> : null}
           <TextField
             id="hiring-candidates-search"
             label="Buscar candidatos"
@@ -170,7 +172,7 @@ export function HiringCandidatesView({
         style={!selectedCandidateBoardRow ? { gridTemplateColumns: "1fr" } : undefined}
       >
         <div className="tracking-table-wrap">
-          {showCandidateForm ? (
+          {!readOnly && showCandidateForm ? (
             <CandidateIntakeForm
               initialCaseId={selectedCaseDetail?.case.id ?? candidateIntakeCases[0]?.id ?? ""}
               candidateIntakeCases={candidateIntakeCases}
@@ -247,6 +249,7 @@ export function HiringCandidatesView({
         </div>
 
         <CandidateDetailSidebar
+          readOnly={readOnly}
           isLoading={isLoading}
           selectedCaseDetail={selectedCaseDetail}
           selectedCandidate={selectedCandidate}
@@ -263,12 +266,12 @@ export function HiringCandidatesView({
           onLicenseUpdated={onLicenseUpdated}
           onInterviewNotesUpdated={onInterviewNotesUpdated}
           onCandidateFileUpdated={onCandidateFileUpdated}
-          onTransferCandidateRequested={() => setIsTransferModalOpen(true)}
+          onTransferCandidateRequested={readOnly ? undefined : () => setIsTransferModalOpen(true)}
         />
       </div>
 
       <TransferCandidateModal
-        isOpen={isTransferModalOpen}
+        isOpen={!readOnly && isTransferModalOpen}
         candidate={selectedCandidateBoardRow}
         activeCases={activeCases}
         onClose={() => setIsTransferModalOpen(false)}

@@ -28,6 +28,7 @@ const statusOptions: Array<{ key: DsalPrecandidateStatus | "all"; label: string 
 
 type HiringPrecandidatesViewProps = {
   onCandidateApproved: (caseId: string, candidateId: string) => Promise<void>;
+  readOnly?: boolean;
 };
 
 function getPrecandidateStatusLabel(status: DsalPrecandidateStatus) {
@@ -128,7 +129,7 @@ function UnionRepresentativeBubble() {
   );
 }
 
-export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandidatesViewProps) {
+export function HiringPrecandidatesView({ onCandidateApproved, readOnly = false }: HiringPrecandidatesViewProps) {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -429,6 +430,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                                       value={caseSelection[precandidate.id] ?? ""}
                                       options={caseOptions}
                                       placeholder="Selecciona un folio con cupo"
+                                      disabled={readOnly}
                                       onChange={(event) =>
                                         setCaseSelection((current) => ({
                                           ...current,
@@ -443,7 +445,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                                         precandidato en candidato.
                                       </p>
                                     ) : null}
-                                    <div className="approval-action-row">
+                                    {!readOnly ? <div className="approval-action-row">
                                       <button
                                         type="button"
                                         className="soft-primary-button approval-button-approve"
@@ -460,7 +462,7 @@ export function HiringPrecandidatesView({ onCandidateApproved }: HiringPrecandid
                                       >
                                         Rechazar
                                       </button>
-                                    </div>
+                                    </div> : null}
                                     {rowMessage[precandidate.id] ? (
                                       <p className="form-status form-status-error">{rowMessage[precandidate.id]}</p>
                                     ) : null}

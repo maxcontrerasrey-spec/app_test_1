@@ -41,7 +41,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | --- | --- |
 | `admin` | todos los modulos activos y todas las capabilities activas |
 | `reclutamiento` | solicitud, control, movilidad y Gestión Psicolaboral; capability `candidate_control_access` |
-| `control_contratos` | control, solicitud, movilidad, RRHH, roster, acreditacion, BI |
+| `control_contratos` | control de contrataciones (solo lectura en resumen de procesos, precandidatos, control de candidatos, personal a contratar y movilidad interna), solicitud, movilidad, RRHH, roster, acreditacion, BI |
 | `operaciones` | operaciones, roster, acreditacion |
 | `gerencia` | solicitud, movilidad, roster, acreditacion, BI |
 | `director_eje` | solicitud, movilidad, roster, acreditacion, BI |

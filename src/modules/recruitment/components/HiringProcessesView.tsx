@@ -32,6 +32,7 @@ type HiringProcessesViewProps = {
   pendingApprovalCount: number;
   currentUserId?: string;
   isAdmin?: boolean;
+  readOnly?: boolean;
   decisionMessage: string;
   errorMessage: string;
   onApprovalSuccess: () => void;
@@ -43,6 +44,7 @@ export function HiringProcessesView({
   pendingApprovalCount,
   currentUserId,
   isAdmin = false,
+  readOnly = false,
   decisionMessage,
   errorMessage,
   onApprovalSuccess,
@@ -710,7 +712,7 @@ export function HiringProcessesView({
                                     </div>
                                   </div>
                                   {!["filled", "closed_unfilled", "cancelled"].includes(caseRow.status) &&
-                                  caseRow.can_close_request &&
+                                  !readOnly && caseRow.can_close_request &&
                                   onCloseRequest &&
                                   hr && (
                                     <div className="expanded-detail-actions tracking-expanded-actions-end">
@@ -760,7 +762,7 @@ export function HiringProcessesView({
       </div>
 
       <ApprovalModal
-        isOpen={!!selectedApproval}
+        isOpen={!readOnly && !!selectedApproval}
         approvalData={selectedApproval}
         currentUserId={currentUserId}
         isAdmin={isAdmin}

@@ -2,6 +2,20 @@
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
+## 322. Las variables PL/pgSQL no deben repetir nombres de columnas de la tabla objetivo
+
+- En funciones `security definer`, un nombre local como `output_hash` puede volverse ambiguo al coincidir con una columna usada en un `UPDATE`.
+- Las variables calculadas deben usar prefijo inequívoco (`v_...`) y las columnas de la tabla objetivo deben calificarse con alias en el `SET`.
+- Las regresiones de integridad deben bloquear el patrón cuando la RPC participa en flujos productivos sensibles como validaciones firmadas o generación documental.
+
+---
+
+## 321. El autoguardado psicometrico debe serializarse antes de finalizar
+
+- Un bloqueo booleano que descarta una escritura en vuelo permite que la revision local quede atrasada respecto del snapshot visible.
+- Los guardados deben conservar el ultimo snapshot y procesarse en cola; el cierre del instrumento debe esperar esa cola antes de enviar.
+- El control de revision del backend se mantiene como proteccion contra sesiones concurrentes y no debe relajarse para ocultar una carrera del cliente.
+
 ---
 
 ## 320. La limpieza de ausencias BUK no debe depender de dotación activa
@@ -3228,3 +3242,7 @@ Cuando cambian rangos, categorías o el marco de competencias, no basta con modi
 ### 314. La capacidad de un lote no debe descontarse dos veces
 
 Cuando un RPC valida cupos leyendo trabajos `pending` dentro de la misma transacción, esos trabajos ya forman parte del snapshot de capacidad. Mantener además un contador de reservas en memoria reduce artificialmente los cupos y rompe lotes válidos; la prueba debe cargar varios candidatos del mismo folio y verificar que el límite se aplica una sola vez.
+
+### 315. Una celda de tabla no debe transformarse en flex container
+
+En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` rompe la semántica de celda y puede desalinear los separadores horizontales entre columnas. Mantén el `<td>` como celda de tabla y usa un wrapper interno para alinear contenido, iconos o acciones.
