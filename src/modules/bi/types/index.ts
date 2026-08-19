@@ -24,6 +24,11 @@ export interface BukBiHeadcountByContract {
   avgAge: number | null;
 }
 
+export interface BukBiHeadcountByManagement {
+  managementName: string;
+  headcount: number;
+}
+
 export interface BukBiHeadcountByJobTitle {
   contractCode: string;
   areaName: string;

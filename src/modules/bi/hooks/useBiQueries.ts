@@ -4,6 +4,7 @@ import type { BiFilters } from "../types";
 import {
   fetchBiWorkforceOverview,
   fetchBiHeadcountByContract,
+  fetchBiHeadcountByManagement,
   fetchBiHeadcountByJobTitle,
   fetchBiHeadcountByCity,
   fetchBiAgeDistribution,
@@ -30,6 +31,15 @@ export function useBiHeadcountByContract(filters?: BiFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.bi.headcountByContract(filters),
     queryFn: () => fetchBiHeadcountByContract(filters),
+    staleTime: BI_STALE_TIME,
+    enabled
+  });
+}
+
+export function useBiHeadcountByManagement(filters?: BiFilters, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.bi.headcountByManagement(filters),
+    queryFn: () => fetchBiHeadcountByManagement(filters),
     staleTime: BI_STALE_TIME,
     enabled
   });

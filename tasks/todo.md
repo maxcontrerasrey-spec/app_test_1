@@ -1,12 +1,25 @@
 # Tareas y Roadmap de Desarrollo
 
+## Gráfico BI de dotación por gerencia - 2026-08-19
+
+- [x] Auditar el componente actual, su consulta y el contrato de datos disponible para gerencia.
+- [x] Cambiar el gráfico para agrupar dotación por gerencia sin romper filtros ni estados vacíos.
+- [x] Agregar regresión de integridad y validar la maqueta del gráfico.
+- [x] Ejecutar build/gates, publicar y verificar la vista BI en producción.
+
+Resultado: el gráfico usa la nueva RPC protegida `get_bi_headcount_by_management`, que enlaza el área BUK con `buk_contract_mappings.cost_center_name` y conserva los filtros de período, contrato y cargo. La visualización pasó de una rosa ilegible por contrato a barras horizontales por gerencia, con etiqueta, tooltip y estado vacío propios.
+
+Validación: migración `20260819233000` aplicada y registrada en Supabase remoto; la función existe con `EXECUTE` para `authenticated`. Integridad 68/68, TypeScript/build frontend, auditoría de migraciones, auditoría de seguridad SQL y `git diff --check` pasan. `supabase db push` quedó bloqueado únicamente por el historial legado conocido y se usó la ejecución SQL aislada autorizada.
+
 ## Correccion periodo 202607 en BI de dotacion - 2026-08-19
 
-- [ ] Auditar el contrato frontend/RPC y reproducir el vacio de `202607` frente a `202606` y `202608`.
-- [ ] Corregir la causa raiz con una migracion o ajuste frontend acotado, sin alterar permisos ni filtros validos.
-- [ ] Agregar regresion para asegurar que un periodo intermedio valido no quede vacio por el calculo de fechas.
+- [x] Auditar el contrato frontend/RPC y reproducir el vacio de `202607` frente a `202606` y `202608`.
+- [x] Corregir el contrato frontend para que los filtros de período lleguen a todas las consultas de dotación.
+- [ ] Ejecutar en producción el job mensual para generar el snapshot/cierre exacto de `202607`; no se permite usar `202606` como sustituto.
 - [ ] Ejecutar integridad, build frontend, auditorias SQL/seguridad, Guardian y `git diff --check`.
 - [ ] Documentar el resultado y cualquier dependencia de datos vivos.
+
+Estado: el diseño vigente es mensual y cerrado. La migración `20260819243000_fix_monthly_buk_snapshot_cron_context.sql` ya fue aplicada y registrada en remoto; aún falta ejecutar/verificar el cierre `202607` en producción antes de declararlo resuelto.
 
 ## Reproducción real del bloqueo de navegación BI - 2026-08-19
 

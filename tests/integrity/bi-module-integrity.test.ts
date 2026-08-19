@@ -38,4 +38,39 @@ describe("BI module navigation integrity", () => {
     expect(hook).toContain("enabled");
     expect(analytics).toContain("}, Boolean(actualPeriodCode));");
   });
+
+  it("passes the dotacion period to every headcount query", () => {
+    const page = read("src/modules/bi/pages/BiDashboardPage.tsx");
+
+    expect(page).toContain("useBiHeadcountByContract(\n    dotacionFilters,");
+    expect(page).toContain("useBiHeadcountByJobTitle(\n    dotacionFilters,");
+  });
+
+  it("renders dotacion by gerencia from the protected BI dimension", () => {
+    const chart = read("src/modules/bi/components/BiHeadcountCharts.tsx");
+    const api = read("src/modules/bi/services/biApi.ts");
+    const migration = read("supabase/migrations/20260819233000_add_bi_headcount_by_management.sql");
+
+    expect(chart).toContain("useBiHeadcountByManagement");
+    expect(chart).toContain("Dotación por Gerencia");
+    expect(chart).toContain('type: "bar"');
+    expect(api).toContain('get_bi_headcount_by_management');
+    expect(migration).toContain("buk_area_name_normalized");
+    expect(migration).toContain("user_can_access_bi_analytics");
+  });
+
+  it("allows the monthly snapshot scheduler without weakening API authorization", () => {
+    const migration = read(
+      "supabase/migrations/20260819243000_fix_monthly_buk_snapshot_cron_context.sql"
+    );
+
+    expect(migration).toContain("request_claims <> ''");
+    expect(migration).toContain("capture_buk_employee_monthly_snapshot");
+    expect(migration).toContain("Solo se pueden capturar periodos BUK cerrados");
+    expect(migration).toContain(
+      "grant execute on function public.capture_buk_employee_monthly_snapshot(date) to authenticated, service_role"
+    );
+    expect(migration).not.toContain("capture_buk_employee_daily_snapshot");
+  });
+
 });

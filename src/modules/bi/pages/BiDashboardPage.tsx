@@ -104,8 +104,14 @@ export function BiDashboardPage() {
     [contractCodeFilter, debouncedPeriodCode, jobTitleFilter, managementFilter, shiftNameFilter]
   );
 
-  const { data: contractsData } = useBiHeadcountByContract(undefined, activeView === "dotacion");
-  const { data: jobsData } = useBiHeadcountByJobTitle(undefined, activeView === "dotacion");
+  const { data: contractsData } = useBiHeadcountByContract(
+    dotacionFilters,
+    activeView === "dotacion"
+  );
+  const { data: jobsData } = useBiHeadcountByJobTitle(
+    dotacionFilters,
+    activeView === "dotacion"
+  );
   const recruitmentAnalytics = useBiRecruitmentDashboard(
     recruitmentFilters,
     activeView === "reclutamiento"

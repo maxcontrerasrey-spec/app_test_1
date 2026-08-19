@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiHeadcountByContract, useBiHeadcountByCity } from "../hooks/useBiQueries";
-import { formatBiContractLabel } from "../lib/presentation";
+import { useBiHeadcountByManagement, useBiHeadcountByCity } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
@@ -10,7 +9,7 @@ type BiHeadcountChartsProps = {
 };
 
 export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
-  const { data: contractData, isLoading: isLoadingContract } = useBiHeadcountByContract(filters);
+  const { data: managementData, isLoading: isLoadingManagement } = useBiHeadcountByManagement(filters);
   const { data: cityData, isLoading: isLoadingCity } = useBiHeadcountByCity(filters);
   const [isChileMapReady, setIsChileMapReady] = useState(false);
   const chartTheme = useChartTheme();
@@ -54,44 +53,55 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
     };
   }, []);
 
-  const contractChartOption = useMemo<EChartsOption | null>(() => {
-    if (!contractData || contractData.length === 0) {
+  const managementChartOption = useMemo<EChartsOption | null>(() => {
+    if (!managementData || managementData.length === 0) {
       return null;
     }
 
-    const totalsByContract = new Map<string, { label: string; headcount: number }>();
-
-    contractData.forEach((item) => {
-      const contractKey = item.areaName || item.contractCode;
-      const current = totalsByContract.get(contractKey);
-      totalsByContract.set(contractKey, {
-        label: formatBiContractLabel(item.areaName || item.contractCode),
-        headcount: (current?.headcount ?? 0) + item.headcount
-      });
-    });
+    // El backend ya entrega una fila por gerencia. Orden ascendente para que
+    // la mayor dotación quede arriba al usar un eje categórico invertido.
+    const rows = [...managementData].sort((left, right) => left.headcount - right.headcount);
 
     return {
-      tooltip: { trigger: "item", backgroundColor: chartTheme.tooltipSurface, textStyle: { color: chartTheme.tooltipText } },
+      grid: { left: 220, right: 32, top: 14, bottom: 20, containLabel: true },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        backgroundColor: chartTheme.tooltipSurface,
+        textStyle: { color: chartTheme.tooltipText },
+        formatter: (params) => {
+          const item = Array.isArray(params) ? params[0] : params;
+          const name = typeof item === "object" && item && "name" in item ? String(item.name) : "Gerencia";
+          const value = typeof item === "object" && item && "value" in item ? Number(item.value) : 0;
+          return `${name}<br/>Dotación: ${value}`;
+        }
+      },
+      xAxis: {
+        type: "value",
+        minInterval: 1,
+        axisLabel: { color: chartTheme.textMuted },
+        splitLine: { lineStyle: { color: chartTheme.border } }
+      },
+      yAxis: {
+        type: "category",
+        inverse: true,
+        data: rows.map((item) => item.managementName),
+        axisLabel: { color: chartTheme.text, width: 205, overflow: "truncate", ellipsis: "…" },
+        axisLine: { lineStyle: { color: chartTheme.border } },
+        axisTick: { show: false }
+      },
       series: [
         {
           name: "Dotación",
-          type: "pie",
-          radius: ["20%", "80%"],
-          center: ["50%", "50%"],
-          roseType: "area",
-          itemStyle: {
-            borderRadius: 8
-          },
-          label: { show: false },
-          labelLine: { show: false },
-          data: [...totalsByContract.values()].map((item) => ({
-            value: item.headcount,
-            name: item.label
-          }))
+          type: "bar",
+          barMaxWidth: 22,
+          itemStyle: { color: chartTheme.primary, borderRadius: [0, 6, 6, 0] },
+          label: { show: true, position: "right", color: chartTheme.text, fontWeight: 600 },
+          data: rows.map((item) => item.headcount)
         }
       ]
     };
-  }, [chartTheme, contractData]);
+  }, [chartTheme, managementData]);
 
   const mapChartOption = useMemo<EChartsOption | null>(() => {
     if (!isChileMapReady || !cityData || cityData.length === 0) {
@@ -155,13 +165,13 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   return (
     <div className="bi-chart-row">
       <div className="info-card">
-        <h3 className="bi-chart-title">Dotación por Contrato</h3>
+        <h3 className="bi-chart-title">Dotación por Gerencia</h3>
         <EChartSurface
           height={300}
-          option={contractChartOption ?? {}}
-          loading={isLoadingContract}
-          empty={!contractChartOption}
-          emptyMessage="Sin datos de contrato"
+          option={managementChartOption ?? {}}
+          loading={isLoadingManagement}
+          empty={!managementChartOption}
+          emptyMessage="Sin datos de gerencia"
           loadingMessage="Cargando datos..."
         />
       </div>

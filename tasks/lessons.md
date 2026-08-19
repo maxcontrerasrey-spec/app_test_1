@@ -1,5 +1,15 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 331. Las dimensiones BI deben resolverse con el catálogo corporativo
+
+- No se debe inferir una gerencia concatenando o renombrando contratos en el frontend: la dimensión operativa debe salir del mapeo BUK vigente.
+- Para categorías con nombres largos, una barra horizontal con etiquetas y tooltip es más legible y auditable que una rosa con segmentos sin texto.
+
+## 330. BI no debe sustituir un cierre histórico
+
+- Un período histórico sin snapshot propio no puede representarse usando el snapshot del mes anterior o posterior; eso cambia el significado del informe.
+- Antes de implementar fallbacks de datos, confirmar la semántica de cierre con negocio y distinguir ausencia de captura de ausencia de registros.
+
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
 ## 328. Las pestañas de BI deben navegar aunque una vista esté cargando datos pesados
