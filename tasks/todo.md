@@ -11,6 +11,8 @@ Resultado: `get_bi_headcount_by_region` usa la región extraída desde BUK/ERP, 
 
 Validación: migración `20260820000000` aplicada y registrada en Supabase remoto; integridad 70/70, TypeScript/build frontend, auditorías de migraciones/seguridad y `git diff --check` pasan.
 
+Ajuste visual posterior: el eje de gerencias ahora usa el espacio lateral disponible, permite quiebre de línea y evita truncar nombres largos; commit `ed1c567`.
+
 ## Corrección de deriva del historial Supabase - 2026-08-19
 
 - [x] Comparar historial local y remoto e identificar versiones huérfanas.
