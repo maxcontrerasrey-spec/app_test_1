@@ -8,6 +8,9 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), "utf8");
 const migration = read(
   "supabase/migrations/20260817180000_add_competency_legal_signature_workflow.sql"
 );
+const scopeFixMigration = read(
+  "supabase/migrations/20260819140000_fix_salvador_signature_scope_variants.sql"
+);
 const generator = read("supabase/functions/generate-competency-certificate/index.ts");
 const approvalApi = read("src/modules/competencies/services/competencyLegalApprovalApi.ts");
 const approvalPanel = read(
@@ -47,6 +50,13 @@ describe("Competency legal signature contract", () => {
   it("omits the legal signer block for certificates outside the Salvador scope", () => {
     expect(generator).toContain("...(input.legalSigner ? [{");
     expect(generator).not.toContain('title: input.legalSigner?.role_label || "Representante Legal"');
+  });
+
+  it("recognizes DSAL area variants that include the BUK center code", () => {
+    expect(scopeFixMigration).toContain("like 'codelco-dsal%'");
+    expect(scopeFixMigration).toContain("regexp_replace(lower(trim(coalesce(area_name_input, '')))");
+    expect(scopeFixMigration).toContain("6170400011:0001");
+    expect(scopeFixMigration).toContain("notify pgrst, 'reload schema'");
   });
 
   it("connects the restricted approval RPCs to the compact ERP review panel", () => {

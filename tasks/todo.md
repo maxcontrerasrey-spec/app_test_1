@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Alcance Salvador con variantes BUK - 2026-08-19
+
+- [x] Auditar el certificado `1808202611101246` y confirmar el área/contrato almacenado en producción.
+- [x] Corregir la detección para aceptar `CODELCO - DSAL` con sufijos de centro/código y normalizar mayúsculas correctamente.
+- [x] Aplicar y registrar la migración productiva; probar variante DSAL positiva y faena no Salvador negativa.
+
+Resultado: el certificado auditado fue creado antes de la corrección y conserva `legal_signature_required = false`; los nuevos certificados DSAL sí quedarán sujetos a firma legal. No se reescribió automáticamente el PDF ya cargado en BUK.
+
 ## Ajuste editorial informe psicolaboral final - 2026-08-19
 
 - [x] Auditar renderer PDF, modal preliminar y contrato de comentarios.
