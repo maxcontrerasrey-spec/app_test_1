@@ -238,6 +238,7 @@ const corsHeaders = {
 
 const DEFAULT_BUK_LOCATIONS_CACHE_TTL_HOURS = 12;
 const MAX_EXTERNAL_ERROR_TEXT_LENGTH = 240;
+const DEFAULT_BUK_JOB_UNION = "No Sindicalizados";
 
 class BukApiError extends Error {
   status: number;
@@ -2208,22 +2209,18 @@ function buildBukJobPayload(context: CandidateSyncContext) {
   return payload;
 }
 
-function isEquivalentBukPlan(
-  existingPlan: Record<string, unknown>,
-  desiredPlan: Record<string, unknown>,
-  targetStartDate: string
-) {
-  return (
-    extractDatePortion(existingPlan.start_date as string | null | undefined) === targetStartDate &&
-    normalizeText(existingPlan.pension_scheme as string | undefined) ===
-      normalizeText(desiredPlan.pension_scheme as string | undefined) &&
-    normalizeText(existingPlan.health_company as string | undefined) ===
-      normalizeText(desiredPlan.health_company as string | undefined) &&
-    normalizeText(existingPlan.afc as string | undefined) === normalizeText(desiredPlan.afc as string | undefined)
-  );
+function buildBukJobUnionPayload() {
+  return {
+    union: DEFAULT_BUK_JOB_UNION
+  };
 }
 
-function isEquivalentBukJob(
+function getBukJobId(job: Record<string, unknown> | null | undefined) {
+  const jobId = job?.id;
+  return typeof jobId === "string" || typeof jobId === "number" ? String(jobId) : null;
+}
+
+function hasEquivalentBukJobCore(
   existingJob: Record<string, unknown>,
   context: CandidateSyncContext
 ) {
@@ -2245,6 +2242,32 @@ function isEquivalentBukJob(
   );
 }
 
+function hasExpectedBukJobUnion(job: Record<string, unknown> | null | undefined) {
+  return normalizeText(job?.union as string | null | undefined) === normalizeText(DEFAULT_BUK_JOB_UNION);
+}
+
+function isEquivalentBukPlan(
+  existingPlan: Record<string, unknown>,
+  desiredPlan: Record<string, unknown>,
+  targetStartDate: string
+) {
+  return (
+    extractDatePortion(existingPlan.start_date as string | null | undefined) === targetStartDate &&
+    normalizeText(existingPlan.pension_scheme as string | undefined) ===
+      normalizeText(desiredPlan.pension_scheme as string | undefined) &&
+    normalizeText(existingPlan.health_company as string | undefined) ===
+      normalizeText(desiredPlan.health_company as string | undefined) &&
+    normalizeText(existingPlan.afc as string | undefined) === normalizeText(desiredPlan.afc as string | undefined)
+  );
+}
+
+function isEquivalentBukJob(
+  existingJob: Record<string, unknown>,
+  context: CandidateSyncContext
+) {
+  return hasEquivalentBukJobCore(existingJob, context) && hasExpectedBukJobUnion(existingJob);
+}
+
 function hasNonZeroBukJobWage(job: Record<string, unknown> | null) {
   if (!job) {
     return false;
@@ -2261,6 +2284,63 @@ function hasNonZeroBukJobWage(job: Record<string, unknown> | null) {
     parseFiniteNumber(compensation?.base_wage),
     parseFiniteNumber(compensation?.wage)
   ].some((value) => value != null && value !== 0);
+}
+
+async function ensureBukEmployeeJobUnion(
+  employeeId: string,
+  jobResponse: Record<string, unknown> | null,
+  context: CandidateSyncContext
+) {
+  const targetJobId = getBukJobId(jobResponse);
+  const currentJobs = await fetchBukEmployeeJobs(employeeId);
+  const targetJob =
+    (targetJobId
+      ? currentJobs.find((job) => getBukJobId(job) === targetJobId)
+      : null) ??
+    currentJobs.find((job) => hasEquivalentBukJobCore(job, context)) ??
+    currentJobs.find((job) => extractDatePortion(job.start_date as string | null | undefined) === context.startDate) ??
+    null;
+
+  if (!targetJob) {
+    throw new Error("No fue posible verificar en BUK el trabajo creado para asignar la categoria sindical.");
+  }
+
+  const resolvedJobId = getBukJobId(targetJob);
+  if (!resolvedJobId) {
+    throw new Error("BUK no retorno el identificador del trabajo para asignar la categoria sindical.");
+  }
+
+  let patched = false;
+  let patchResponse: Record<string, unknown> | null = null;
+
+  if (!hasExpectedBukJobUnion(targetJob)) {
+    const response = await patchBukEmployeeJob(employeeId, resolvedJobId, buildBukJobUnionPayload());
+    patched = true;
+    patchResponse =
+      response.data && typeof response.data === "object"
+        ? (response.data as Record<string, unknown>)
+        : response;
+  }
+
+  const verifiedJobs = await fetchBukEmployeeJobs(employeeId);
+  const verifiedJob =
+    verifiedJobs.find((job) => getBukJobId(job) === resolvedJobId) ??
+    verifiedJobs.find((job) => hasEquivalentBukJobCore(job, context)) ??
+    null;
+
+  if (!hasExpectedBukJobUnion(verifiedJob)) {
+    throw new Error(`BUK no confirmo la categoria sindical ${DEFAULT_BUK_JOB_UNION} para el trabajo ${resolvedJobId}.`);
+  }
+
+  return {
+    expectedUnion: DEFAULT_BUK_JOB_UNION,
+    jobId: resolvedJobId,
+    patched,
+    observedUnionBefore: targetJob.union ?? null,
+    observedUnionAfter: verifiedJob?.union ?? null,
+    patchResponse,
+    verifiedAt: new Date().toISOString()
+  };
 }
 
 async function resolveCandidateSyncContext(
@@ -2551,12 +2631,15 @@ async function ensureBukEmployeeSetup(
     jobResponse = matchingJob;
   }
 
+  const jobUnionVerification = await ensureBukEmployeeJobUnion(employeeId, jobResponse, context);
+
   return {
     context,
     planPayload: context.planPayload,
     planResponse,
     jobPayload,
-    jobResponse
+    jobResponse,
+    jobUnionVerification
   };
 }
 
@@ -3605,6 +3688,7 @@ Deno.serve(async (req) => {
           jobResultSnapshot.job = {
             request: setupResult.jobPayload,
             response: setupResult.jobResponse,
+            unionVerification: setupResult.jobUnionVerification,
             resolvedContext: {
               areaCode: setupResult.context.areaCode,
               areaName: setupResult.context.areaName,

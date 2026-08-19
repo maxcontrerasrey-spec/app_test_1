@@ -1,5 +1,41 @@
 # Tareas y Roadmap de Desarrollo
 
+## Implementacion No Sindicalizados en altas BUK ERP - 2026-08-19
+
+- [x] Ejecutar canary no-op contra BUK vivo para confirmar si el endpoint de job acepta escribir la categoria sindical.
+- [x] Incorporar `No Sindicalizados` en el payload de job de `sync-buk-candidates`.
+- [x] Verificar por lectura posterior que BUK deja `current_job.union = "No Sindicalizados"` antes de cerrar el job.
+- [x] Agregar guardrails/tests para evitar regresion del payload y la verificacion.
+- [x] Ejecutar gates locales, desplegar Edge Function y confirmar version remota.
+- [x] Documentar el cierre y dejar pendiente la confirmacion definitiva en la proxima alta ERP si no existe nuevo candidato autorizado durante esta tarea.
+
+Resultado: BUK vivo acepto un canary no-op `PATCH /employees/42896/jobs/147181` con `union = "No Sindicalizados"` y la lectura posterior confirmo el mismo valor. La Edge Function ahora mantiene el alta/parche principal del job sin agregar campos no documentados al `POST`, luego aplica un PATCH especifico de sindicato solo si falta o difiere, relee `/employees/{id}/jobs` y exige `No Sindicalizados` antes de cerrar el job como exitoso. El snapshot de `buk_sync_jobs.result_snapshot.job.unionVerification` guarda job, valor esperado, valor antes/despues, si parcho y fecha de verificacion. Validaciones: `npm run check:edge:sync-buk-candidates`, `npm run audit:buk-sync-guards`, `npm run test:integrity` y `git diff --check` pasaron; `npm run guardian` quedo bloqueado por copias conflictivas locales preexistentes en `node_modules/* 2`, no por el cambio. Produccion: `sync-buk-candidates` desplegada en Supabase version `137`; smoke sin autenticacion responde `Unauthorized`. No se proceso el job pendiente historico `RC-0075` de David Antonio Tapia Ovalle porque no pertenece a esta solicitud. Confirmacion operativa final queda para la proxima alta BUK desde ERP con candidato autorizado.
+
+## Factibilidad No Sindicalizados en altas BUK ERP - 2026-08-19
+
+- [x] Confirmar con evidencia viva si `union` existe en jobs BUK y no solo en `current_job`.
+- [x] Revisar si el worker puede crear y parchear el job con el mismo payload sin romper idempotencia.
+- [x] Evaluar si hay contrato documentado o solo contrato observado del tenant.
+- [x] Responder factibilidad en si/no y separar garantia tecnica de riesgo externo.
+
+Resultado de factibilidad corregido: si es factible implementar una integracion para que las nuevas fichas BUK salgan con categoria `No Sindicalizados`, pero no es factible afirmar 100% sin errores solo con evidencia de lectura. Evidencia: BUK vivo devuelve `union` en `current_job` y en `/employees/{id}/jobs`, y el catalogo `/unions/23` existe con nombre `No Sindicalizados`. Correccion recibida de negocio: las fichas `42896` y `42897` no prueban default automatico de BUK porque RRHH pudo haberlas ajustado manualmente despues del alta ERP. Riesgo: el Swagger oficial de escritura para `JobInputCountry` y `JobInputCountryPatch` no documenta `union` ni `union_id` como parametro de `POST/PATCH` de jobs; solo expone sindicatos como catalogo y la union aparece observada en lectura. Por eso la implementacion robusta debe validarse con canary autorizado o confirmacion formal BUK: intentar el campo documentado/observado en ambiente controlado, leer BUK directo despues y exigir `current_job.union = "No Sindicalizados"` antes de cerrar el job como exitoso.
+
+## Diseño implementacion No Sindicalizados en altas BUK ERP - 2026-08-19
+
+- [x] Confirmar el endpoint exacto donde debe enviarse la categoria sindical al crear nuevas fichas desde `sync-buk-candidates`.
+- [x] Revisar si debe aplicar solo a nuevas altas o tambien a reparaciones/reintentos de fichas incompletas.
+- [x] Definir el cambio minimo de codigo, pruebas y verificacion productiva sin implementar aun.
+
+Resultado de diseno: la categoria sindical visible en BUK vive en el job (`current_job.union` y `/employees/{id}/jobs[*].union`), no en `employee.custom_attributes` ni en el plan previsional. La implementacion correcta debe agregar una constante local `DEFAULT_BUK_JOB_UNION = "No Sindicalizados"` en `supabase/functions/sync-buk-candidates/index.ts`, incluir `union: DEFAULT_BUK_JOB_UNION` dentro de `buildBukJobPayload(...)` y ampliar `isEquivalentBukJob(...)` para exigir esa misma union. Asi aplica tanto a altas nuevas como a reintentos/reparaciones de fichas que ya tienen job creado sin union. No se deben setear automaticamente `current_job.custom_attributes["Afecto a convenio Colectivo"]` ni `["Fecha incorporación al sindicato"]`, porque son campos distintos y en BUK vivo existen combinaciones inconsistentes entre convenio y sindicato. Verificacion esperada si se implementa: `npm run check:edge:sync-buk-candidates`, `npm run audit:buk-sync-guards`, `npm run test:integrity`, `npm run guardian`, `git diff --check`, deploy de `sync-buk-candidates` y smoke con un job real o autorizado confirmando en BUK vivo `current_job.union = "No Sindicalizados"`.
+
+## Investigación categoría sindical en fichas BUK - 2026-08-19
+
+- [x] Ubicar en el flujo `sync-buk-candidates` dónde se representa la información sindical.
+- [x] Revisar fichas/empleados BUK y sus valores reales en la sección sindical.
+- [x] Comparar los valores encontrados con `No sindicalizado` y documentar la conclusión sin implementar cambios.
+
+Resultado: la sección sindical de la ficha BUK corresponde a `current_job.union`. En producción aparecen 1.482 fichas activas con ese campo, 208 con el valor `No Sindicalizados` y distintos nombres de sindicatos. La equivalencia operativa más directa para RRHH es `No Sindicalizados` (plural y con mayúscula inicial), no `No sindicalizado`. También existen los atributos `current_job.custom_attributes[\"Afecto a convenio Colectivo\"]` (`Si`, `No` o vacío) y `current_job.custom_attributes[\"Fecha incorporación al sindicato\"]`; no deben confundirse con la categoría visible de sindicato. No se implementó ningún cambio.
+
 ## Corrección de decisión legal y generación de certificados - 2026-08-19
 
 - [x] Confirmar en producción por qué el folio 47 quedaba como `Sin vigencia` y el 48 como `Pendiente` pese a la decisión legal.

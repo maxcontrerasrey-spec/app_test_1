@@ -126,6 +126,24 @@ addCheck(
     /areaCode && \/\^\\d\+:\\d\+\$\/\.test\(areaCode\)/.test(source),
   "los códigos visibles de contrato se resuelven contra el cost center operativo BUK"
 );
+addCheck(
+  /const\s+DEFAULT_BUK_JOB_UNION\s*=\s*"No Sindicalizados"/.test(source) &&
+    /function\s+buildBukJobUnionPayload\s*\([\s\S]*?union:\s*DEFAULT_BUK_JOB_UNION/.test(source),
+  "la categoria sindical BUK por defecto queda definida como payload de job controlado"
+);
+addCheck(
+  /function\s+isEquivalentBukJob\s*\([\s\S]*?hasEquivalentBukJobCore\(existingJob,\s*context\)\s*&&\s*hasExpectedBukJobUnion\(existingJob\)/.test(source),
+  "la equivalencia de trabajos BUK exige categoria sindical esperada"
+);
+addCheck(
+  /async\s+function\s+ensureBukEmployeeJobUnion\s*\([\s\S]*?fetchBukEmployeeJobs\(employeeId\)[\s\S]*?patchBukEmployeeJob\(employeeId,\s*resolvedJobId,\s*buildBukJobUnionPayload\(\)\)[\s\S]*?fetchBukEmployeeJobs\(employeeId\)[\s\S]*?hasExpectedBukJobUnion\(verifiedJob\)/.test(source),
+  "la categoria sindical se parcha y verifica por lectura viva antes del exito"
+);
+addCheck(
+  /const\s+jobUnionVerification\s*=\s*await\s+ensureBukEmployeeJobUnion\(employeeId,\s*jobResponse,\s*context\)/.test(source) &&
+    /unionVerification:\s*setupResult\.jobUnionVerification/.test(source),
+  "el resultado BUK registra la verificacion sindical en el snapshot del job"
+);
 
 const failedChecks = checks.filter((check) => !check.ok);
 

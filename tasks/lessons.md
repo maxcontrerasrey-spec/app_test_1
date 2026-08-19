@@ -2,6 +2,12 @@
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
+## 327. Una ficha BUK corregida manualmente no prueba un default de alta
+
+- Si una ficha creada por el ERP aparece luego con `current_job.union = "No Sindicalizados"`, no asumir que BUK aplico un default automatico; RRHH puede haber completado el campo manualmente.
+- Para campos BUK observables en lectura pero no documentados en escritura, separar tres evidencias: catalogo vivo, schema oficial de escritura y canary autorizado de POST/PATCH.
+- Una alta ERP no debe cerrarse como conforme por snapshot local; debe leer BUK vivo despues del write y exigir el valor operacional requerido antes de marcar exito.
+
 ## 324. Las columnas paralelas de un PDF deben compartir altura y dejar margen real al siguiente bloque
 
 - Calcular la altura de cada tarjeta por separado desalineará los bordes aunque el ancho sea correcto; las columnas paralelas deben recibir una altura común igual al máximo requerido.
