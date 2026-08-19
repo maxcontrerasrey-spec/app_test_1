@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección de deriva del historial Supabase - 2026-08-19
+
+- [x] Comparar historial local y remoto e identificar versiones huérfanas.
+- [x] Reparar únicamente el registro de historial de las 17 versiones remotas sin archivo local, marcándolas `reverted` sin revertir SQL ni datos.
+- [x] Aplicar las 5 migraciones locales que estaban pendientes detrás del historial remoto con `--include-all`.
+- [x] Confirmar con `db push --linked --dry-run` que la base quedó alineada.
+
+Resultado: Supabase quedó alineado con el repositorio. El dry-run final informa `Remote database is up to date`, sin versiones remotas ausentes localmente ni migraciones locales pendientes remotamente.
+
 ## Gráfico BI de dotación por gerencia - 2026-08-19
 
 - [x] Auditar el componente actual, su consulta y el contrato de datos disponible para gerencia.
