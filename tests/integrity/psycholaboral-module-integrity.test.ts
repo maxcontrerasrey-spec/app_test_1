@@ -16,6 +16,7 @@ const v63Migration = readFileSync("supabase/migrations/20260817200000_psych_ai_v
 const psychologistValidationMigration = readFileSync("supabase/migrations/20260817210000_psychologist_report_validation.sql", "utf8");
 const psychologistDocumentMigration = readFileSync("supabase/migrations/20260817220000_auto_upload_psycholaboral_report.sql", "utf8");
 const psychologistReviewHashFixMigration = readFileSync("supabase/migrations/20260818233000_fix_psych_review_output_hash_ambiguity.sql", "utf8");
+const psychologistDocumentTypeFixMigration = readFileSync("supabase/migrations/20260819131500_fix_psych_report_document_type_ambiguity.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -174,6 +175,18 @@ describe("Gestión Psicolaboral", () => {
     expect(certificate).toContain("register_psycholaboral_report_document");
     expect(certificate).toContain("candidateDocumentPath");
     expect(certificate).toContain("preservedFileCleanupError");
+    expect(certificate).toContain("function publicErrorMessage(error: unknown): string");
+    expect(edge).toContain("const certificatePayload = await certificateResponse.json().catch(() => ({}))");
+    expect(edge).toContain("certificatePayload.error");
+  });
+
+  it("evita ambiguedad SQL al registrar el tipo documental del informe", () => {
+    expect(psychologistDocumentTypeFixMigration).toContain("v_document_type_id uuid");
+    expect(psychologistDocumentTypeFixMigration).toContain("select dt.id into v_document_type_id");
+    expect(psychologistDocumentTypeFixMigration).toContain("cd.document_type_id = v_document_type_id");
+    expect(psychologistDocumentTypeFixMigration).toContain("'document_type_id', v_document_type_id");
+    expect(psychologistDocumentTypeFixMigration).not.toContain("\n  document_type_id uuid;");
+    expect(psychologistDocumentTypeFixMigration).not.toContain("cd.document_type_id = document_type_id");
   });
 
   it("genera IA automaticamente al completar la bateria y no expone boton manual", () => {

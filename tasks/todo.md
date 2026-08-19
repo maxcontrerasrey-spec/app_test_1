@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Correccion autocarga informe psicolaboral validado - 2026-08-19
+
+- [x] Confirmar causa real del mensaje generico `No fue posible generar el certificado. Reintenta.`
+- [x] Corregir la RPC de registro documental sin permitir sobreescritura de cargas manuales.
+- [x] Validar con smoke productivo y rollback que el PDF puede completar la autocarga.
+- [x] Ejecutar gates, aplicar produccion, commit y push `main`.
+
+Resultado: el caso productivo afectado fue Cindy Nicole Hidalgo Astorga (`RC-0138`), con informe IA `VALIDATED` y certificado/informe `failed`. El error real guardado era `column reference "document_type_id" is ambiguous` en `register_psycholaboral_report_document`. Se versiono y aplico `20260819131500_fix_psych_report_document_type_ambiguity.sql`; el smoke productivo con rollback ejecuto `register_psycholaboral_report_document` y la cadena SQL de claim/payload/registro/cierre sin error. Se desplegaron `generate-psycholaboral-certificate` y `psycholaboral-assessment` para propagar errores saneados si apareciera otra falla posterior. Validado con `deno check` de ambas Edge Functions, integridad, auditorias SQL, build frontend y Guardian.
+
 ## Auditoría integral de worktrees y publicación main - 2026-08-18
 
 - [x] Inventariar worktrees, ramas locales/remotas y diferencias contra `main`.

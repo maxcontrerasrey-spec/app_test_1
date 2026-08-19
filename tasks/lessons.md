@@ -7,6 +7,7 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - En funciones `security definer`, un nombre local como `output_hash` puede volverse ambiguo al coincidir con una columna usada en un `UPDATE`.
 - Las variables calculadas deben usar prefijo inequívoco (`v_...`) y las columnas de la tabla objetivo deben calificarse con alias en el `SET`.
 - Las regresiones de integridad deben bloquear el patrón cuando la RPC participa en flujos productivos sensibles como validaciones firmadas o generación documental.
+- Si un botón encadena varias RPCs, corregir la primera ambigüedad no cierra el incidente; hay que consultar `last_error`/logs de la segunda etapa y probar el flujo completo hasta el artefacto final.
 
 ---
 

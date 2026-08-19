@@ -24,6 +24,11 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
+function publicErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : "No fue posible generar el certificado";
+  return message.slice(0, 600);
+}
+
 type Payload = {
   assessment_id: string;
   public_id: string;
@@ -1220,7 +1225,7 @@ Deno.serve(async (request) => {
       });
     }
     return new Response(
-      JSON.stringify({ error: "No fue posible generar el certificado" }),
+      JSON.stringify({ error: publicErrorMessage(error) }),
       { status: 500, headers: corsHeaders },
     );
   }

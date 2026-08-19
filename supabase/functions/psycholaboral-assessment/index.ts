@@ -507,8 +507,12 @@ Deno.serve(async (request) => {
           },
         );
         if (!certificateResponse.ok) {
+          const certificatePayload = await certificateResponse.json().catch(() => ({})) as { error?: unknown };
+          const certificateError = typeof certificatePayload.error === "string" && certificatePayload.error.trim()
+            ? certificatePayload.error.trim()
+            : "No fue posible generar el certificado. Reintenta.";
           return response(
-            { error: "No fue posible generar el certificado. Reintenta." },
+            { error: certificateError },
             409,
           );
         }
