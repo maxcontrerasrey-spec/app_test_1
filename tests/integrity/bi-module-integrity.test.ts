@@ -42,8 +42,17 @@ describe("BI module navigation integrity", () => {
   it("passes the dotacion period to every headcount query", () => {
     const page = read("src/modules/bi/pages/BiDashboardPage.tsx");
 
-    expect(page).toContain("useBiHeadcountByContract(\n    dotacionFilters,");
-    expect(page).toContain("useBiHeadcountByJobTitle(\n    dotacionFilters,");
+    expect(page).toContain("useBiHeadcountByContract(\n    dotacionOptionFilters,");
+    expect(page).toContain("useBiHeadcountByJobTitle(\n    dotacionOptionFilters,");
+    expect(page).toContain("<BiHeadcountCharts filters={dotacionFilters} />");
+  });
+
+  it("keeps the dotacion filter catalog independent from selected dimensions", () => {
+    const page = read("src/modules/bi/pages/BiDashboardPage.tsx");
+
+    expect(page).toContain("const dotacionOptionFilters = useMemo<BiFilters>");
+    expect(page).toContain("useBiHeadcountByContract(\n    dotacionOptionFilters,");
+    expect(page).toContain("useBiHeadcountByJobTitle(\n    dotacionOptionFilters,");
   });
 
   it("keeps shared multi-select filters open while selecting options", () => {

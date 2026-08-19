@@ -104,12 +104,21 @@ export function BiDashboardPage() {
     [contractCodeFilter, debouncedPeriodCode, jobTitleFilter, managementFilter, shiftNameFilter]
   );
 
+  // El catálogo de contratos/cargos no puede depender de la selección actual:
+  // si se consulta con el filtro aplicado, la primera elección elimina las
+  // demás opciones y hace imposible una multiselección. El periodo sí acota
+  // correctamente el catálogo disponible.
+  const dotacionOptionFilters = useMemo<BiFilters>(
+    () => ({ periodCode: debouncedPeriodCode || undefined }),
+    [debouncedPeriodCode]
+  );
+
   const { data: contractsData } = useBiHeadcountByContract(
-    dotacionFilters,
+    dotacionOptionFilters,
     activeView === "dotacion"
   );
   const { data: jobsData } = useBiHeadcountByJobTitle(
-    dotacionFilters,
+    dotacionOptionFilters,
     activeView === "dotacion"
   );
   const recruitmentAnalytics = useBiRecruitmentDashboard(
