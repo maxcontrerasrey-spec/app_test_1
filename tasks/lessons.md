@@ -3247,3 +3247,8 @@ Cuando un RPC valida cupos leyendo trabajos `pending` dentro de la misma transac
 ### 315. Una celda de tabla no debe transformarse en flex container
 
 En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` rompe la semántica de celda y puede desalinear los separadores horizontales entre columnas. Mantén el `<td>` como celda de tabla y usa un wrapper interno para alinear contenido, iconos o acciones.
+# 323. La caja PDF debe dimensionarse por contenido completo, no solo por comentario
+
+- En paneles de firma y validación, la altura debe incluir comentario, nombre, cargo, RUN, hash y márgenes; calcularla solo con el texto principal deja elementos críticos fuera del borde.
+- El informe final y la revisión preliminar tienen superficies distintas: preguntas de entrevista pueden apoyar la revisión profesional, pero no deben aparecer en el PDF final firmado si el usuario las define como material preliminar.
+- Las etiquetas provenientes de perfiles no deben asumirse correctamente acentuadas; normalizar términos profesionales al renderizar evita que `Psicologa` llegue al documento final.

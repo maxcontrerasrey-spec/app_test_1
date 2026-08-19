@@ -243,6 +243,10 @@ function humanizeCode(value: unknown, fallback = "") {
 
 function sanitizeReportText(value: string) {
   return value
+    .replace(/\bPsicologa\b/g, "Psicóloga")
+    .replace(/\bpsicologa\b/g, "psicóloga")
+    .replace(/\bPsicologo\b/g, "Psicólogo")
+    .replace(/\bpsicologo\b/g, "psicólogo")
     .replace(/\bLa interpretaci[oó]n es descriptiva[^.]*baremos[^.]*conducta observada\.?/gi, "")
     .replace(/\bLa interpretaci[oó]n queda pendiente de revisi[oó]n profesional\.?/gi, "")
     .replace(/\bEl resultado no puede interpretarse autom[aá]ticamente\.?/gi, "")
@@ -283,6 +287,14 @@ function sanitizeReportText(value: string) {
 function text(value: unknown, fallback = "") {
   const candidate = typeof value === "string" && value.trim() ? value.trim() : fallback;
   return safePdfText(sanitizeReportText(candidate));
+}
+
+function professionalRole(value: unknown, fallback = "Psicólogo/a responsable") {
+  return text(value, fallback)
+    .replace(/\bPsicologa\b/g, "Psicóloga")
+    .replace(/\bpsicologa\b/g, "psicóloga")
+    .replace(/\bPsicologo\b/g, "Psicólogo")
+    .replace(/\bpsicologo\b/g, "psicólogo");
 }
 
 function list(value: unknown) {
@@ -642,11 +654,11 @@ const REPORT = {
   topY: 635,
   bottomY: 58,
   width: 522,
-  sectionGap: 17,
-  titleGap: 10,
-  paragraphGap: 7,
+  sectionGap: 11,
+  titleGap: 7,
+  paragraphGap: 4,
   cardPaddingX: 14,
-  cardPaddingY: 13,
+  cardPaddingY: 10,
   bodySize: 8.7,
   bodyLineHeight: 13.2,
   smallSize: 7.7,
@@ -852,7 +864,11 @@ function drawSectionTitle(ctx: ReportContext, title: string) {
 function drawPsychologistValidation(ctx: ReportContext) {
   const review = ctx.payload.psychologist_review;
   const commentLines = wrap(review.reviewer_comment, ctx.font, REPORT.bodySize, REPORT.width - 28);
-  const height = 150 + commentLines.length * REPORT.bodyLineHeight;
+  // The signature block is part of the panel height. Keeping it in the
+  // calculation prevents the hash and RUN from falling outside the border.
+  const signatureBlockHeight = 132;
+  const commentHeaderHeight = 50;
+  const height = commentHeaderHeight + commentLines.length * REPORT.bodyLineHeight + signatureBlockHeight;
   ensureSpace(ctx, height + REPORT.sectionGap, 18);
   const bottom = ctx.y - height;
   ctx.page.drawRectangle({
@@ -871,7 +887,7 @@ function drawPsychologistValidation(ctx: ReportContext) {
   ctx.page.drawText(`Firmado electrónicamente el ${formatLongDate(review.reviewed_at)}, por:`, { x: REPORT.marginX + 14, y: cursor - 36, size: 8.5, font: ctx.font, color: rgb(0.12, 0.14, 0.2) });
   ctx.page.drawText(text(review.reviewer_name), { x: REPORT.marginX + 14, y: cursor - 64, size: 17, font: ctx.signature, color: rgb(0.06, 0.07, 0.1) });
   ctx.page.drawLine({ start: { x: REPORT.marginX + 14, y: cursor - 70 }, end: { x: REPORT.marginX + 240, y: cursor - 70 }, thickness: 0.7, color: rgb(0.73, 0.76, 0.81) });
-  ctx.page.drawText(text(review.reviewer_role, "Psicólogo/a responsable"), { x: REPORT.marginX + 14, y: cursor - 87, size: 8.5, font: ctx.font, color: rgb(0.08, 0.1, 0.18) });
+  ctx.page.drawText(professionalRole(review.reviewer_role), { x: REPORT.marginX + 14, y: cursor - 87, size: 8.5, font: ctx.font, color: rgb(0.08, 0.1, 0.18) });
   ctx.page.drawText(`RUN N. ${text(review.reviewer_document_number)}`, { x: REPORT.marginX + 14, y: cursor - 103, size: 8.5, font: ctx.font, color: rgb(0.08, 0.1, 0.18) });
   ctx.page.drawText(`Firmado digitalmente con hash: ${review.signature_hash.slice(0, 24)}...`, { x: REPORT.marginX + 14, y: cursor - 119, size: 7.2, font: ctx.font, color: rgb(0.35, 0.38, 0.45) });
   ctx.y = bottom - REPORT.sectionGap;
@@ -992,7 +1008,8 @@ function drawReportPdf(
     ],
   );
   drawCard(ctx, "Integración de seguridad", [text(ai.safety_and_impulse_profile?.combined_interpretation ?? ai.integrated_analysis)]);
-  drawBulletSection(ctx, "Preguntas sugeridas de entrevista", cleanList(ai.interview_questions, 4));
+  // Interview questions are working material for the preliminary review and
+  // must not appear in the final signed report.
   drawCard(ctx, "Conclusión integrada", [
     text(ai.integrated_conclusion ?? ai.preliminary_conclusion),
     text(cleanList(ai.material_limitations ?? ai.limitations, 1).at(0), "Los resultados se interpretan como antecedentes psicolaborales del proceso y no constituyen diagnóstico clínico."),

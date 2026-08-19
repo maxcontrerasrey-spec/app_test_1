@@ -180,6 +180,18 @@ describe("Gestión Psicolaboral", () => {
     expect(edge).toContain("certificatePayload.error");
   });
 
+  it("mantiene el material preliminar fuera del PDF final y encuadra la validación profesional", () => {
+    expect(aiReviewDialog).toContain('title="Preguntas sugeridas"');
+    expect(certificate).toContain("Interview questions are working material for the preliminary review");
+    expect(certificate).not.toContain('drawBulletSection(ctx, "Preguntas sugeridas de entrevista"');
+    expect(certificate).toContain("signatureBlockHeight = 132");
+    expect(certificate).toContain("commentHeaderHeight = 50");
+    expect(certificate).toContain("Psicóloga");
+    expect(aiReviewDialog).not.toContain("maxLength");
+    expect(psychologistValidationMigration).toContain("comment_value text");
+    expect(psychologistValidationMigration).not.toMatch(/left\s*\(\s*coalesce\(p_comment/i);
+  });
+
   it("evita ambiguedad SQL al registrar el tipo documental del informe", () => {
     expect(psychologistDocumentTypeFixMigration).toContain("v_document_type_id uuid");
     expect(psychologistDocumentTypeFixMigration).toContain("select dt.id into v_document_type_id");

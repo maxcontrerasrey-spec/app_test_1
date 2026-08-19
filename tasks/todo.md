@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Ajuste editorial informe psicolaboral final - 2026-08-19
+
+- [x] Auditar renderer PDF, modal preliminar y contrato de comentarios.
+- [x] Compactar espaciado, encuadrar firma completa y normalizar etiquetas profesionales.
+- [x] Excluir preguntas sugeridas del PDF final manteniéndolas en la revisión preliminar.
+- [x] Confirmar comentarios sin límite artificial, ejecutar QA visual/gates y publicar si corresponde.
+
+Resultado: el renderer final ya no dibuja preguntas de entrevista; permanecen en la revisión preliminar. La caja de validación calcula explícitamente el bloque completo de firma, RUN y hash, los espacios entre tarjetas se compactaron y las etiquetas Psicóloga/Psicólogo se normalizan con tilde. El comentario profesional continúa siendo `text` sin `maxLength` ni truncamiento. Gates locales: integridad 57/57, build frontend, Deno check, Guardian 0 errores/1 warning histórico, auditorías SQL y diff limpios.
+
 ## Correccion autocarga informe psicolaboral validado - 2026-08-19
 
 - [x] Confirmar causa real del mensaje generico `No fue posible generar el certificado. Reintenta.`
