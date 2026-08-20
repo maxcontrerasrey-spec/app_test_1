@@ -31,7 +31,9 @@ Estado: resuelto en producción. La pestaña Sin Folio oculta el caso anterior, 
 - [x] Confirmar 13 candidatos activos y 5 contratados sin alterar los cupos ni los contratados.
 - [x] Marcar los 13 activos como liberados sin folio, preservando historial y auditoría.
 - [x] Permitir el cierre manual posterior del folio ignorando solo esas participaciones liberadas.
-- [ ] Publicar y verificar el frontend con la marca Sin Folio.
+- [x] Publicar y verificar el frontend con la marca Sin Folio.
+
+Resultado: 13 candidatos activos de `RC-0067` quedaron liberados en producción para `Sin Folio`, con 13 registros de auditoría. Los 5 contratados permanecen intactos, el folio sigue `partially_filled` y el usuario puede cerrarlo manualmente después.
 
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
