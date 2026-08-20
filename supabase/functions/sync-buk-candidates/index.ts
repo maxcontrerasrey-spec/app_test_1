@@ -2388,8 +2388,8 @@ async function ensureBukEmployeeJobUnion(
 
   const unionConfirmed = Boolean(matchingUnion);
   if (!unionConfirmed) {
-    console.warn(
-      `BUK no expone la categoria sindical ${DEFAULT_BUK_JOB_UNION} al verificar el trabajo ${resolvedJobId}; se conserva como advertencia de auditoria.`
+    throw new Error(
+      `BUK no expuso la categoria sindical ${DEFAULT_BUK_JOB_UNION} en las lecturas disponibles para el trabajo ${resolvedJobId}; el job queda reintentable sin crear otra ficha.`
     );
   }
 
