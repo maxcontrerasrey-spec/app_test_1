@@ -19,6 +19,7 @@ export const candidateStageFilterOptions = [
   { key: "medical_contraindication_resolution", label: "Levantamiento de Contraindicación" },
   { key: "document_review", label: "Revisión Documental" },
   { key: "ready_for_hire", label: "Listos para contratar" },
+  { key: "without_folio", label: "Sin Folio" },
   { key: "discarded", label: "Descartados" }
 ] as const;
 

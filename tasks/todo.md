@@ -9,6 +9,12 @@
 
 Estado: resuelto. La migración quedó aplicada en producción y el frontend sirve el bundle actualizado; la validación real confirmó la normalización del RUT formateado y el registro `RC-0115` en etapa `Who aprobado`.
 
+## Pestaña Sin Folio para reasignación - 2026-08-20
+
+- [ ] Incorporar el filtro backend para casos cubiertos o cerrados con candidatos no terminales.
+- [ ] Agregar la pestaña Sin Folio antes de Descartados.
+- [ ] Ejecutar pruebas, publicar y verificar que `RC-0115` aparezca para reasignación.
+
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
 - [x] Reducir el espacio lateral reservado a las etiquetas sin truncar nombres.

@@ -40,7 +40,7 @@ export type RecruitmentProcessesPageFilters = {
 
 export type RecruitmentCandidatesPageFilters = {
   search?: string;
-  stageFilter?: RecruitmentCandidateStage | "active" | "discarded";
+  stageFilter?: RecruitmentCandidateStage | "active" | "discarded" | "without_folio";
   limit: number;
   offset: number;
 };
