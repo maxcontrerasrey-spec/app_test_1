@@ -316,11 +316,11 @@ export function CandidateDetailSidebar({
             </div>
             <div>
               <small>Contrato</small>
-              <strong>{selectedCaseDetail.case.contract_name}</strong>
+              <strong>{isWithoutFolioCandidate ? "Sin folio asignado" : selectedCaseDetail.case.contract_name}</strong>
             </div>
             <div>
               <small>Cargo</small>
-              <strong>{selectedCaseDetail.case.job_position_name}</strong>
+              <strong>{isWithoutFolioCandidate ? "Sin folio asignado" : selectedCaseDetail.case.job_position_name}</strong>
             </div>
             <div>
               <small>Participaciones activas</small>
