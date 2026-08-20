@@ -136,8 +136,15 @@ addCheck(
   "la equivalencia de trabajos BUK exige categoria sindical esperada"
 );
 addCheck(
-  /async\s+function\s+ensureBukEmployeeJobUnion\s*\([\s\S]*?fetchBukEmployeeJobs\(employeeId\)[\s\S]*?patchBukEmployeeJob\(employeeId,\s*resolvedJobId,\s*buildBukJobUnionPayload\(\)\)[\s\S]*?fetchBukEmployeeJobs\(employeeId\)[\s\S]*?hasExpectedBukJobUnion\(verifiedJob\)/.test(source),
+  /async\s+function\s+ensureBukEmployeeJobUnion\s*\([\s\S]*?fetchBukEmployeeJobs\(employeeId\)[\s\S]*?patchBukEmployeeJob\(employeeId,\s*resolvedJobId,\s*buildBukJobUnionPayload\(\)\)[\s\S]*?fetchBukEmployeeJobs\(employeeId\)[\s\S]*?verificationCandidates/.test(source),
   "la categoria sindical se parcha y verifica por lectura viva antes del exito"
+);
+addCheck(
+  /fetchBukEmployeeJobById\(employeeId,\s*resolvedJobId\)/.test(source) &&
+    /employeeAfter\.current_job/.test(source) &&
+    /verificationState:\s*unionConfirmed\s*\?\s*"confirmed"\s*:\s*"not_exposed"/.test(source) &&
+    /categoria sindical distinta/.test(source),
+  "la verificacion sindical consulta trabajo directo y current_job, y distingue discrepancia de campo no expuesto"
 );
 addCheck(
   /const\s+jobUnionVerification\s*=\s*await\s+ensureBukEmployeeJobUnion\(employeeId,\s*jobResponse,\s*context\)/.test(source) &&

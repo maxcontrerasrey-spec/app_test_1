@@ -1279,6 +1279,21 @@ async function fetchBukEmployeeJobs(employeeId: string) {
   return extractBukObjectRows(response, ["data", "jobs", "items", "results"]);
 }
 
+async function fetchBukEmployeeJobById(employeeId: string, jobId: string) {
+  const response = await fetchBukJson(
+    `${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/jobs/${encodeURIComponent(jobId)}`
+  );
+  const candidate = response && typeof response === "object" && !Array.isArray(response)
+    ? (response as Record<string, unknown>).data
+    : null;
+  const job = candidate && typeof candidate === "object" && !Array.isArray(candidate)
+    ? candidate
+    : response;
+  return job && typeof job === "object" && !Array.isArray(job)
+    ? job as Record<string, unknown>
+    : null;
+}
+
 async function createBukEmployeePlan(employeeId: string, payload: Record<string, unknown>) {
   return fetchBukJson(`${buildBukBaseUrl().replace(/\/+$/, "")}/${encodeURIComponent(employeeId)}/plans`, {
     method: "POST",
@@ -2215,6 +2230,11 @@ function buildBukJobUnionPayload() {
   };
 }
 
+function readBukJobUnion(job: Record<string, unknown> | null | undefined) {
+  const candidates = [job?.union, job?.union_name, job?.union_category, job?.trade_union];
+  return candidates.find((value): value is string => typeof value === "string" && Boolean(value.trim())) ?? null;
+}
+
 function getBukJobId(job: Record<string, unknown> | null | undefined) {
   const jobId = job?.id;
   return typeof jobId === "string" || typeof jobId === "number" ? String(jobId) : null;
@@ -2243,7 +2263,7 @@ function hasEquivalentBukJobCore(
 }
 
 function hasExpectedBukJobUnion(job: Record<string, unknown> | null | undefined) {
-  return normalizeText(job?.union as string | null | undefined) === normalizeText(DEFAULT_BUK_JOB_UNION);
+  return normalizeText(readBukJobUnion(job)) === normalizeText(DEFAULT_BUK_JOB_UNION);
 }
 
 function isEquivalentBukPlan(
@@ -2322,22 +2342,70 @@ async function ensureBukEmployeeJobUnion(
         : response;
   }
 
-  const verifiedJobs = await fetchBukEmployeeJobs(employeeId);
+  const [verifiedJobs, employeeAfter] = await Promise.all([
+    fetchBukEmployeeJobs(employeeId),
+    fetchBukEmployeeById(employeeId)
+  ]);
   const verifiedJob =
     verifiedJobs.find((job) => getBukJobId(job) === resolvedJobId) ??
     verifiedJobs.find((job) => hasEquivalentBukJobCore(job, context)) ??
     null;
 
-  if (!hasExpectedBukJobUnion(verifiedJob)) {
-    throw new Error(`BUK no confirmo la categoria sindical ${DEFAULT_BUK_JOB_UNION} para el trabajo ${resolvedJobId}.`);
+  let directVerifiedJob: Record<string, unknown> | null = null;
+  try {
+    directVerifiedJob = await fetchBukEmployeeJobById(employeeId, resolvedJobId);
+  } catch (error) {
+    if (
+      !(error instanceof BukApiError) ||
+      ![400, 404, 405].includes(error.status)
+    ) {
+      throw error;
+    }
+  }
+
+  const currentJob =
+    employeeAfter.current_job && typeof employeeAfter.current_job === "object" && !Array.isArray(employeeAfter.current_job)
+      ? employeeAfter.current_job as Record<string, unknown>
+      : null;
+  const verificationCandidates = [directVerifiedJob, currentJob, verifiedJob].filter(
+    (job): job is Record<string, unknown> => Boolean(job)
+  );
+  const observedUnions = verificationCandidates
+    .map((job) => readBukJobUnion(job))
+    .filter((value): value is string => Boolean(value));
+  const matchingUnion = observedUnions.find(
+    (value) => normalizeText(value) === normalizeText(DEFAULT_BUK_JOB_UNION)
+  ) ?? null;
+  const mismatchingUnion = observedUnions.find(
+    (value) => normalizeText(value) !== normalizeText(DEFAULT_BUK_JOB_UNION)
+  ) ?? null;
+
+  if (mismatchingUnion) {
+    throw new Error(
+      `BUK confirmo una categoria sindical distinta (${mismatchingUnion}) para el trabajo ${resolvedJobId}; se esperaba ${DEFAULT_BUK_JOB_UNION}.`
+    );
+  }
+
+  const unionConfirmed = Boolean(matchingUnion);
+  if (!unionConfirmed) {
+    console.warn(
+      `BUK no expone la categoria sindical ${DEFAULT_BUK_JOB_UNION} al verificar el trabajo ${resolvedJobId}; se conserva como advertencia de auditoria.`
+    );
   }
 
   return {
     expectedUnion: DEFAULT_BUK_JOB_UNION,
+    confirmed: unionConfirmed,
     jobId: resolvedJobId,
     patched,
-    observedUnionBefore: targetJob.union ?? null,
-    observedUnionAfter: verifiedJob?.union ?? null,
+    observedUnionBefore: readBukJobUnion(targetJob),
+    observedUnionAfter: matchingUnion ?? readBukJobUnion(directVerifiedJob) ?? readBukJobUnion(currentJob) ?? readBukJobUnion(verifiedJob),
+    verificationSources: {
+      directJobEndpoint: Boolean(directVerifiedJob),
+      employeeCurrentJob: Boolean(currentJob),
+      jobsCollection: Boolean(verifiedJob)
+    },
+    verificationState: unionConfirmed ? "confirmed" : "not_exposed",
     patchResponse,
     verifiedAt: new Date().toISOString()
   };
@@ -2777,6 +2845,21 @@ async function resolveBukEmployeeForSync(
   payload: BukCandidateSyncPayload,
   locations: BukLocation[]
 ) {
+  const reservedEmployeeId = payload.employee_code_reservation?.buk_employee_id?.trim();
+  if (reservedEmployeeId) {
+    const reservedEmployee = await fetchBukEmployeeById(reservedEmployeeId);
+    // The reservation is issued for this candidate and remains authoritative
+    // when BUK formats the document number differently on a partial create.
+    if (matchesResolvedBukEmployeeCode(reservedEmployee, payload)) {
+      return {
+        employeeId: reservedEmployeeId,
+        employeePayload: null,
+        resolution: "reused_reserved_existing",
+        matchedEmployee: reservedEmployee
+      } as const;
+    }
+  }
+
   try {
     const created = await createBukEmployee(payload, locations);
     return {
