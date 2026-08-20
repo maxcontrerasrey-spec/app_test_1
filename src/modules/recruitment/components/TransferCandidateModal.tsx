@@ -91,7 +91,13 @@ export function TransferCandidateModal({
           <div>
             <h3 id="transfer-modal-title">Trasladar Candidato</h3>
             <p>
-              Trasladar a <strong>{candidate.full_name}</strong> de {candidate.case_code} a otro folio activo.
+              Trasladar a <strong>{candidate.full_name}</strong>{
+                candidate.case_status === "filled" || candidate.case_status === "closed_unfilled"
+                  ? ""
+                  : candidate.case_code
+                    ? ` desde ${candidate.case_code}`
+                    : ""
+              } a otro folio activo.
             </p>
           </div>
           <button

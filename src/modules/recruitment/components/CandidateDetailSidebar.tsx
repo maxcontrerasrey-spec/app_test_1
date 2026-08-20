@@ -163,6 +163,9 @@ export function CandidateDetailSidebar({
     label: toRecruitmentCandidateStageLabel(stage)
   }));
   const showStageControls = mode === "candidate_control" && !readOnly;
+  const isWithoutFolioCandidate = ["filled", "closed_unfilled"].includes(
+    selectedCandidateBoardRow.case_status
+  );
   const isWhoPending = selectedCandidate.stage_code === "who_pending";
   const canApproveWho = hasCapability("can_approve_who_stage");
   const canManageBukActions =
@@ -305,11 +308,11 @@ export function CandidateDetailSidebar({
             </div>
             <div>
               <small>Folio activo</small>
-              <strong>{selectedCaseDetail.case.hiring_request.folio ?? "Sin folio"}</strong>
+              <strong>{isWithoutFolioCandidate ? "Sin folio asignado" : selectedCaseDetail.case.hiring_request.folio ?? "Sin folio"}</strong>
             </div>
             <div>
               <small>Caso</small>
-              <strong>{selectedCaseDetail.case.case_code}</strong>
+              <strong>{isWithoutFolioCandidate ? "Sin folio asignado" : selectedCaseDetail.case.case_code}</strong>
             </div>
             <div>
               <small>Contrato</small>
@@ -503,12 +506,17 @@ export function CandidateDetailSidebar({
 
           {showStageControls ? (
             <>
+              {isWithoutFolioCandidate ? (
+                <div className="approval-detail-note control-block-top">
+                  <strong>Este candidato debe asignarse a un folio nuevo antes de moverlo de etapa.</strong>
+                </div>
+              ) : null}
               <div className="control-edit-grid control-edit-grid-spaced">
                 <SelectField
                   id="candidate-next-stage"
                   label="Siguiente etapa"
                   value={stageDraft}
-                  disabled={isWhoPending || isStageSaving}
+                  disabled={isWithoutFolioCandidate || isWhoPending || isStageSaving}
                   onChange={(event) =>
                     onStageDraftChange(event.target.value as RecruitmentCandidateStage | "")
                   }
@@ -520,7 +528,7 @@ export function CandidateDetailSidebar({
                   id="candidate-stage-comment"
                   label="Comentario"
                   value={stageComment}
-                  disabled={isStageSaving}
+                  disabled={isWithoutFolioCandidate || isStageSaving}
                   onChange={(event) => onStageCommentChange(event.target.value)}
                 />
 
@@ -606,6 +614,7 @@ export function CandidateDetailSidebar({
                     type="button"
                     className="soft-primary-button approval-button-approve"
                     disabled={
+                      isWithoutFolioCandidate ||
                       isStageSaving || 
                       isWhoPending || 
                       !stageDraft || 

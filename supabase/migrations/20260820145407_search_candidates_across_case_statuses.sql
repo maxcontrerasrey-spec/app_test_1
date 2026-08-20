@@ -70,7 +70,7 @@ begin
         'id', rcc.id,
         'candidate_profile_id', cp.id,
         'recruitment_case_id', rc.id,
-        'case_code', rc.case_code,
+        'case_code', case when normalized_stage_filter = 'without_folio' then null else rc.case_code end,
         'folio', hr.folio,
         'case_status', rc.status,
         'national_id', cp.national_id,

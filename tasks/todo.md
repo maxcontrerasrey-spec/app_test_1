@@ -17,6 +17,13 @@ Estado: resuelto. La migración quedó aplicada en producción y el frontend sir
 
 Estado: resuelto en producción. `RC-0115` aparece en Sin Folio porque está cubierto y su candidato sigue en etapa no terminal (`Who aprobado`), por lo que puede ser reasignado.
 
+## Ajuste de Sin Folio y bloqueo de cambio de etapa - 2026-08-20
+
+- [x] Dejar vacía la columna Caso cuando el candidato se muestra en Sin Folio.
+- [x] Ocultar el folio/caso anterior en el detalle y mostrar que requiere folio nuevo.
+- [x] Bloquear en backend cualquier cambio de etapa mientras permanezca sin folio nuevo.
+- [ ] Probar, publicar y verificar producción.
+
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
 - [x] Reducir el espacio lateral reservado a las etiquetas sin truncar nombres.
