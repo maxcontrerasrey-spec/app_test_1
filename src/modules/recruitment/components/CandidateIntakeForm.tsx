@@ -10,6 +10,7 @@ import {
   type RecruitmentCaseListRow,
   type RecruitmentCaseDetail,
   type BukCandidateStatus,
+  type CandidateCaseMembership,
   type CandidateHistoricalRejection
 } from "../services/hiringControl";
 import { validateRut } from "../../../shared/lib/rut";
@@ -35,6 +36,7 @@ type CandidateLookupProfile = {
   email: string | null;
   phone: string | null;
   historical_rejections?: CandidateHistoricalRejection[];
+  case_memberships?: CandidateCaseMembership[];
 };
 
 function formatBukExitDate(value?: string | null) {
@@ -203,14 +205,25 @@ export function CandidateIntakeForm({
 
     if (localResponse.data) {
       autofilledRutRef.current = normalizedRut;
-      setFoundCandidateProfile(localResponse.data as CandidateLookupProfile);
+      const profile = localResponse.data as CandidateLookupProfile;
+      setFoundCandidateProfile(profile);
       setCandidateForm((current) => ({
         ...current,
-        fullName: (localResponse.data as CandidateLookupProfile).full_name,
-        email: (localResponse.data as CandidateLookupProfile).email || "",
-        phone: (localResponse.data as CandidateLookupProfile).phone || ""
+        fullName: profile.full_name,
+        email: profile.email || "",
+        phone: profile.phone || ""
       }));
-      setCandidateFormStatus("✓ Candidato registrado en el sistema local. Datos autocompletados.");
+      const memberships = profile.case_memberships ?? [];
+      setCandidateFormStatus(
+        memberships.length > 0
+          ? `✓ Candidato registrado. Participa actualmente o participó en: ${memberships
+              .map(
+                (membership) =>
+                  `${membership.case_code} (${toRecruitmentCandidateStageLabel(membership.stage_code)})`
+              )
+              .join(", ")}.`
+          : "✓ Candidato registrado en el sistema local. Datos autocompletados."
+      );
     } else {
       autofilledRutRef.current = "";
       setFoundCandidateProfile(null);
@@ -520,6 +533,31 @@ export function CandidateIntakeForm({
         <p className="form-status form-status-error" style={{ marginTop: "0.5rem" }}>
           {candidateFormError}
         </p>
+      ) : null}
+
+      {foundCandidateProfile?.case_memberships && foundCandidateProfile.case_memberships.length > 0 ? (
+        <div
+          className="control-span-full"
+          style={{
+            marginTop: "0.5rem",
+            padding: "8px 12px",
+            borderRadius: "6px",
+            backgroundColor: "#eef4ff",
+            border: "1px solid #b8c9ee"
+          }}
+        >
+          <p style={{ fontSize: "0.88rem", fontWeight: 500, color: "#2457a6", margin: 0 }}>
+            🔎 Registro encontrado en el ERP. Ubicación del candidato:
+          </p>
+          <ul style={{ margin: "4px 0 0", paddingLeft: "20px", fontSize: "0.85rem", color: "#2457a6" }}>
+            {foundCandidateProfile.case_memberships.map((membership) => (
+              <li key={`${membership.case_code}-${membership.stage_code}-${membership.date}`}>
+                <strong>{membership.case_code}</strong> · {membership.job_position} · etapa{" "}
+                <strong>{toRecruitmentCandidateStageLabel(membership.stage_code)}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {foundBukStatus?.exists && !(candidateInSelectedCase && !candidateCanBeReactivated) ? (

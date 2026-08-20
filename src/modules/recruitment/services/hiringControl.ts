@@ -664,4 +664,9 @@ export {
   updateCandidatePersonProfile,
   updateCandidateWorkerFile
 } from "./hiringBukProfile";
-export type { BukCandidateStatus, CandidateHistoricalRejection, CandidateProfileSearchResult } from "./hiringBukProfile";
+export type {
+  BukCandidateStatus,
+  CandidateCaseMembership,
+  CandidateHistoricalRejection,
+  CandidateProfileSearchResult
+} from "./hiringBukProfile";

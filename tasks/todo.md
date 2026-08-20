@@ -1,5 +1,34 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección de búsqueda y visibilidad de candidatos por RUT - 2026-08-20
+
+- [x] Auditar el RUT reportado en producción contra perfil, participaciones y filtros de candidatos.
+- [x] Normalizar la búsqueda de RUT con formato y devolver las participaciones del candidato desde el RPC de alta.
+- [x] Mostrar en el alta dónde está registrado el candidato y evitar mensajes contradictorios.
+- [ ] Ejecutar integridad, build, Guardian y validaciones SQL; publicar y comprobar la búsqueda real en producción.
+
+Estado: migración aplicada en producción y validación SQL confirmada; falta publicar el frontend y verificar la interacción autenticada servida.
+
+## Ajuste de espacio en barras de gerencia BI - 2026-08-19
+
+- [x] Reducir el espacio lateral reservado a las etiquetas sin truncar nombres.
+- [x] Extender el área útil de las barras y conservar sus valores visibles.
+- [x] Ejecutar regresión, build y publicar.
+
+Resultado: las etiquetas de gerencia ahora usan una columna de 300 px con quiebre controlado, el inicio del gráfico queda pegado al borde útil y las barras ganan espacio adicional sin truncar nombres.
+
+Validación: integridad 74/74, TypeScript/build frontend y `git diff --check` pasan. Publicado en `main` como `7eb298d`.
+
+## Corrección selección múltiple en filtros BI - 2026-08-19
+
+- [x] Reproducir el cierre prematuro de los selectores múltiples.
+- [x] Corregir el bubbling del clic de opción sin alterar el componente compartido.
+- [x] Agregar regresión y ejecutar build/publicación.
+
+Resultado: el clic de cada opción ya detiene su propagación al disparador y el catálogo de contratos/cargos se carga sin aplicar la selección actual. El menú permanece abierto y conserva las demás opciones, permitiendo seleccionar múltiples valores válidos.
+
+Validación: integridad 73/73, TypeScript/build frontend y `git diff --check` pasan. En producción se seleccionaron dos contratos y dos cargos; ambas selecciones quedaron visibles y el catálogo mantuvo sus opciones.
+
 ## Código cromático único en tarjetas Psicolaboral - 2026-08-19
 
 - [x] Auditar las variantes actuales y detectar estados con colores repetidos.
@@ -67,11 +96,13 @@ Validación: migración `20260819233000` aplicada y registrada en Supabase remot
 
 - [x] Auditar el contrato frontend/RPC y reproducir el vacio de `202607` frente a `202606` y `202608`.
 - [x] Corregir el contrato frontend para que los filtros de período lleguen a todas las consultas de dotación.
-- [ ] Ejecutar en producción el job mensual para generar el snapshot/cierre exacto de `202607`; no se permite usar `202606` como sustituto.
-- [ ] Ejecutar integridad, build frontend, auditorias SQL/seguridad, Guardian y `git diff --check`.
-- [ ] Documentar el resultado y cualquier dependencia de datos vivos.
+- [x] Registrar una migración de importación contingente, idempotente y auditable, sin sobrescribir cierres existentes.
+- [x] Homologar `DOTACION.xlsx` por RUT contra `employees` y el snapshot vigente de `20260630`, conservando el archivo como autoridad histórica de julio.
+- [x] Importar en producción el cierre exacto `202607` como snapshot contingente del `20260731`.
+- [x] Ejecutar integridad, build frontend, auditorias SQL/seguridad y `git diff --check`.
+- [x] Documentar el resultado, el hash del archivo y la dependencia de datos vivos.
 
-Estado: el diseño vigente es mensual y cerrado. La migración `20260819243000_fix_monthly_buk_snapshot_cron_context.sql` ya fue aplicada y registrada en remoto; aún falta ejecutar/verificar el cierre `202607` en producción antes de declararlo resuelto.
+Estado: resuelto en producción. El cierre `20260731` quedó registrado como `contingency`, con audit ID `774a10f0-a969-47df-a6ef-650f529e4e92`, hash `2e06d0ac6c3968a56c7e8875c379374163c86336c26d649ac1adf200a6e0e7ea`, 1.616 filas homologadas y población BI de 1.574 activos. La captura mensual normal sigue siendo la autoridad para futuros cierres.
 
 ## Reproducción real del bloqueo de navegación BI - 2026-08-19
 

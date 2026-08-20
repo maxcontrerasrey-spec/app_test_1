@@ -568,6 +568,15 @@ export interface CandidateHistoricalRejection {
   date: string;
 }
 
+export interface CandidateCaseMembership {
+  case_code: string;
+  contract_name: string | null;
+  job_position: string;
+  stage_code: string;
+  case_status: string;
+  date: string;
+}
+
 export interface CandidateProfileSearchResult {
   id: string;
   national_id: string;
@@ -575,6 +584,7 @@ export interface CandidateProfileSearchResult {
   email: string | null;
   phone: string | null;
   historical_rejections?: CandidateHistoricalRejection[];
+  case_memberships?: CandidateCaseMembership[];
 }
 
 export async function findCandidateProfileByRut(rut: string): Promise<{

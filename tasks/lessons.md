@@ -10,6 +10,12 @@
 - Un período histórico sin snapshot propio no puede representarse usando el snapshot del mes anterior o posterior; eso cambia el significado del informe.
 - Antes de implementar fallbacks de datos, confirmar la semántica de cierre con negocio y distinguir ausencia de captura de ausencia de registros.
 
+## 332. Las reconstrucciones de snapshots deben ser contingentes e idempotentes
+
+- Cuando falta una captura mensual, reconstruir el cierre exacto del mes y marcarlo explícitamente como contingente; nunca presentarlo como captura programada.
+- La homologación puede usar el RUT contra datos vigentes solo para completar identificadores y campos faltantes; los valores históricos del archivo de cierre conservan la autoridad del período.
+- Registrar archivo, hash, motivo, reglas, decisiones de asociación y conteos en una auditoría persistente; el importador debe rechazar duplicados y no sobrescribir un cierre existente.
+
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
 ## 328. Las pestañas de BI deben navegar aunque una vista esté cargando datos pesados
@@ -3311,3 +3317,17 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 ## 2026-08-19 - Las tarjetas de reportabilidad deben usar colores semánticos únicos
 
 - Cada estado visible debe tener una variante cromática propia y estable; reutilizar el mismo azul o verde para estados distintos elimina la lectura rápida del tablero. La variante activa debe conservar la identidad del estado seleccionado.
+
+## 2026-08-19 - El catálogo de filtros no debe depender de su propia selección
+
+- Las opciones de un filtro múltiple deben consultar un catálogo base independiente de la dimensión seleccionada; si el catálogo se filtra con el primer valor elegido, las demás opciones desaparecen y se simula una selección única.
+- Los gráficos sí deben recibir los filtros activos; solo el catálogo de contratos y cargos se mantiene acotado por periodo para conservar opciones válidas.
+
+## 2026-08-20 - La búsqueda de candidatos debe normalizar el RUT en todos los puntos
+
+- El RUT formateado (`14.436.142-3`) y el RUT persistido (`144361423`) deben resolver al mismo candidato en el alta, el buscador general y los RPC; normalizar solo en el botón de registro deja una contradicción visible.
+- La consulta de alta debe devolver también las participaciones del perfil, incluyendo caso y etapa, para que RRHH pueda distinguir un candidato inexistente de uno registrado en otro proceso.
+## 316. Las opciones de un selector múltiple no deben burbujear al trigger
+
+- Cuando el menú desplegable está contenido dentro del mismo nodo clickeable que lo abre, el clic de una opción puede cerrar el menú inmediatamente y simular que solo permite una selección.
+- La solución mínima y reusable es detener la propagación en el handler de la opción, manteniendo el estado controlado y la semántica multiselección intacta.
