@@ -5,9 +5,9 @@
 - [x] Auditar el RUT reportado en producción contra perfil, participaciones y filtros de candidatos.
 - [x] Normalizar la búsqueda de RUT con formato y devolver las participaciones del candidato desde el RPC de alta.
 - [x] Mostrar en el alta dónde está registrado el candidato y evitar mensajes contradictorios.
-- [ ] Ejecutar integridad, build, Guardian y validaciones SQL; publicar y comprobar la búsqueda real en producción.
+- [x] Ejecutar integridad, build, Guardian y validaciones SQL; publicar y comprobar la búsqueda real en producción.
 
-Estado: migración aplicada en producción y validación SQL confirmada; falta publicar el frontend y verificar la interacción autenticada servida.
+Estado: resuelto. La migración quedó aplicada en producción y el frontend sirve el bundle actualizado; la validación real confirmó la normalización del RUT formateado y el registro `RC-0115` en etapa `Who aprobado`.
 
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
