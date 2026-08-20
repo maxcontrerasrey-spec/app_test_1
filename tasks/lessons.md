@@ -5,6 +5,11 @@
 - Cuando el usuario corrige un monto durante la preparación, no ejecutar la escritura con el valor anterior; volver a confirmar el estado productivo y aplicar solo el último valor solicitado.
 - Los ajustes puntuales de folios deben conservar el valor anterior, el nuevo valor, el folio y el motivo en una auditoría persistente.
 
+## 334. Liberar candidatos exige corregir métricas y detalle, no solo el filtro
+
+- Una marca persistente de Sin Folio no basta si los RPCs de resumen siguen contando la participación como activa.
+- La regla debe aplicarse tanto a `get_recruitment_case_effective_metrics` como a `get_recruitment_case_detail`; el candidato conserva historial y aparece en Sin Folio, pero no en el caso operativo original.
+
 ## 331. Las dimensiones BI deben resolverse con el catálogo corporativo
 
 - No se debe inferir una gerencia concatenando o renombrando contratos en el frontend: la dimensión operativa debe salir del mapeo BUK vigente.

@@ -44,6 +44,15 @@ Resultado: 13 candidatos activos de `RC-0067` quedaron liberados en producción 
 
 Resultado: `RC-0138` quedó con `salary_offer = 1.200.000`, estado `approved` y proceso `screening`. El cambio quedó registrado como `salary_offer_adjusted`.
 
+## Corrección de contadores para candidatos Sin Folio RC-0067 - 2026-08-20
+
+- [x] Verificar que los 13 candidatos estuvieran liberados y detectar por qué seguían contándose en el folio.
+- [x] Excluir candidatos liberados de las métricas operativas del caso.
+- [x] Excluirlos también del detalle de candidatos del caso, preservando su historial y su aparición en Sin Folio.
+- [x] Aplicar la corrección en producción y verificar `0` activos, `5` contratados y `1` movilidad interna.
+
+Resultado: `RC-0067` ya no debe mostrar los 13 liberados dentro del caso; permanecen disponibles exclusivamente en `Sin Folio`.
+
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
 - [x] Reducir el espacio lateral reservado a las etiquetas sin truncar nombres.
