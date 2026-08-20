@@ -11,9 +11,11 @@ Estado: resuelto. La migración quedó aplicada en producción y el frontend sir
 
 ## Pestaña Sin Folio para reasignación - 2026-08-20
 
-- [ ] Incorporar el filtro backend para casos cubiertos o cerrados con candidatos no terminales.
-- [ ] Agregar la pestaña Sin Folio antes de Descartados.
-- [ ] Ejecutar pruebas, publicar y verificar que `RC-0115` aparezca para reasignación.
+- [x] Incorporar el filtro backend para casos cubiertos o cerrados con candidatos no terminales.
+- [x] Agregar la pestaña Sin Folio antes de Descartados.
+- [x] Ejecutar pruebas, publicar y verificar que `RC-0115` aparezca para reasignación.
+
+Estado: resuelto en producción. `RC-0115` aparece en Sin Folio porque está cubierto y su candidato sigue en etapa no terminal (`Who aprobado`), por lo que puede ser reasignado.
 
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
