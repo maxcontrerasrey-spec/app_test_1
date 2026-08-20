@@ -92,7 +92,7 @@ export function TransferCandidateModal({
             <h3 id="transfer-modal-title">Trasladar Candidato</h3>
             <p>
               Trasladar a <strong>{candidate.full_name}</strong>{
-                candidate.case_status === "filled" || candidate.case_status === "closed_unfilled"
+                candidate.is_without_folio || candidate.case_status === "filled" || candidate.case_status === "closed_unfilled"
                   ? ""
                   : candidate.case_code
                     ? ` desde ${candidate.case_code}`

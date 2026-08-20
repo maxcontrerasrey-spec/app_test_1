@@ -26,6 +26,13 @@ Estado: resuelto en producción. `RC-0115` aparece en Sin Folio porque está cub
 
 Estado: resuelto en producción. La pestaña Sin Folio oculta el caso anterior, muestra la instrucción de asignar un folio nuevo y el backend impide cambios de etapa hasta que exista esa asignación.
 
+## Liberación de activos RC-0067 a Sin Folio - 2026-08-20
+
+- [x] Confirmar 13 candidatos activos y 5 contratados sin alterar los cupos ni los contratados.
+- [x] Marcar los 13 activos como liberados sin folio, preservando historial y auditoría.
+- [x] Permitir el cierre manual posterior del folio ignorando solo esas participaciones liberadas.
+- [ ] Publicar y verificar el frontend con la marca Sin Folio.
+
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
 - [x] Reducir el espacio lateral reservado a las etiquetas sin truncar nombres.

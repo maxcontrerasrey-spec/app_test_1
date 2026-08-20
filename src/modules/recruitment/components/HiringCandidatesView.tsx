@@ -218,7 +218,7 @@ export function HiringCandidatesView({
                         </div>
                       </td>
                        <td>
-                         {candidate.case_status === "filled" || candidate.case_status === "closed_unfilled"
+                         {candidate.is_without_folio || candidate.case_status === "filled" || candidate.case_status === "closed_unfilled"
                            ? ""
                            : candidate.case_code}
                        </td>

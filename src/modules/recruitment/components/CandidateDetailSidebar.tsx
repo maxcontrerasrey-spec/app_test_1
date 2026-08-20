@@ -163,8 +163,9 @@ export function CandidateDetailSidebar({
     label: toRecruitmentCandidateStageLabel(stage)
   }));
   const showStageControls = mode === "candidate_control" && !readOnly;
-  const isWithoutFolioCandidate = ["filled", "closed_unfilled"].includes(
-    selectedCandidateBoardRow.case_status
+  const isWithoutFolioCandidate = Boolean(
+    selectedCandidateBoardRow.is_without_folio ||
+      ["filled", "closed_unfilled"].includes(selectedCandidateBoardRow.case_status)
   );
   const isWhoPending = selectedCandidate.stage_code === "who_pending";
   const canApproveWho = hasCapability("can_approve_who_stage");

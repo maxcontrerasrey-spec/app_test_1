@@ -3328,6 +3328,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - El RUT formateado (`14.436.142-3`) y el RUT persistido (`144361423`) deben resolver al mismo candidato en el alta, el buscador general y los RPC; normalizar solo en el botón de registro deja una contradicción visible.
 - La consulta de alta debe devolver también las participaciones del perfil, incluyendo caso y etapa, para que RRHH pueda distinguir un candidato inexistente de uno registrado en otro proceso.
 - La búsqueda global no debe quedar limitada por el estado del folio: un caso cubierto puede ocultar al candidato del tablero activo aunque siga siendo necesario para reasignación.
+- Liberar candidatos antes del cierre requiere una marca persistente y auditable; cambiar solo el filtro visual no permite cerrar el folio ni distingue una liberación intencional de un caso aún activo.
 ## 316. Las opciones de un selector múltiple no deben burbujear al trigger
 
 - Cuando el menú desplegable está contenido dentro del mismo nodo clickeable que lo abre, el clic de una opción puede cerrar el menú inmediatamente y simular que solo permite una selección.

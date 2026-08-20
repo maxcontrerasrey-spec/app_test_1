@@ -164,6 +164,7 @@ export type RecruitmentCandidateControlRow = {
   case_code: string;
   folio: string | null;
   case_status: RecruitmentCaseStatus;
+  is_without_folio?: boolean;
   national_id: string;
   full_name: string;
   email: string | null;
