@@ -44,6 +44,15 @@ Resultado: 13 candidatos activos de `RC-0067` quedaron liberados en producción 
 
 Resultado: `RC-0138` quedó con `salary_offer = 1.200.000`, estado `approved` y proceso `screening`. El cambio quedó registrado como `salary_offer_adjusted`.
 
+## Ajuste de renta líquida RC-0132 - 2026-08-20
+
+- [x] Confirmar el folio y el valor vigente antes de modificarlo.
+- [x] Actualizar la renta líquida de `1.345.000` a `1.384.000` sin alterar el estado del folio.
+- [x] Registrar el valor anterior y nuevo en la auditoría productiva.
+- [x] Verificar producción y ejecutar auditorías de migraciones y diff.
+
+Resultado: `RC-0132` quedó con `salary_offer = 1.384.000`, estado `approved` y proceso `screening`. El cambio quedó registrado como `salary_offer_adjusted`.
+
 ## Corrección de contadores para candidatos Sin Folio RC-0067 - 2026-08-20
 
 - [x] Verificar que los 13 candidatos estuvieran liberados y detectar por qué seguían contándose en el folio.
