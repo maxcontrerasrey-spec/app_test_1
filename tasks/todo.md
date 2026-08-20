@@ -22,7 +22,9 @@ Estado: resuelto en producción. `RC-0115` aparece en Sin Folio porque está cub
 - [x] Dejar vacía la columna Caso cuando el candidato se muestra en Sin Folio.
 - [x] Ocultar el folio/caso anterior en el detalle y mostrar que requiere folio nuevo.
 - [x] Bloquear en backend cualquier cambio de etapa mientras permanezca sin folio nuevo.
-- [ ] Probar, publicar y verificar producción.
+- [x] Probar, publicar y verificar producción.
+
+Estado: resuelto en producción. La pestaña Sin Folio oculta el caso anterior, muestra la instrucción de asignar un folio nuevo y el backend impide cambios de etapa hasta que exista esa asignación.
 
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
