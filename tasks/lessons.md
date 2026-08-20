@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 333. Confirmar el monto final antes de una escritura productiva
+
+- Cuando el usuario corrige un monto durante la preparación, no ejecutar la escritura con el valor anterior; volver a confirmar el estado productivo y aplicar solo el último valor solicitado.
+- Los ajustes puntuales de folios deben conservar el valor anterior, el nuevo valor, el folio y el motivo en una auditoría persistente.
+
 ## 331. Las dimensiones BI deben resolverse con el catálogo corporativo
 
 - No se debe inferir una gerencia concatenando o renombrando contratos en el frontend: la dimensión operativa debe salir del mapeo BUK vigente.

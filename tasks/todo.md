@@ -35,6 +35,15 @@ Estado: resuelto en producción. La pestaña Sin Folio oculta el caso anterior, 
 
 Resultado: 13 candidatos activos de `RC-0067` quedaron liberados en producción para `Sin Folio`, con 13 registros de auditoría. Los 5 contratados permanecen intactos, el folio sigue `partially_filled` y el usuario puede cerrarlo manualmente después.
 
+## Ajuste de renta líquida RC-0138 - 2026-08-20
+
+- [x] Confirmar el folio y el valor vigente antes de modificarlo.
+- [x] Actualizar la renta líquida de `1.037.000` a `1.200.000` sin alterar el estado del folio.
+- [x] Registrar el valor anterior y nuevo en la auditoría productiva.
+- [x] Verificar producción y ejecutar auditorías de migraciones, seguridad SQL y diff.
+
+Resultado: `RC-0138` quedó con `salary_offer = 1.200.000`, estado `approved` y proceso `screening`. El cambio quedó registrado como `salary_offer_adjusted`.
+
 ## Ajuste de espacio en barras de gerencia BI - 2026-08-19
 
 - [x] Reducir el espacio lateral reservado a las etiquetas sin truncar nombres.
