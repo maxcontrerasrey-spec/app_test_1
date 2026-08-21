@@ -7,6 +7,10 @@ const migration = fs.readFileSync(
   path.join(root, "supabase/migrations/20260808032030_allow_dsal_precandidate_reviewers_and_expand_details.sql"),
   "utf8"
 );
+const recruitmentOnlyAccessMigration = fs.readFileSync(
+  path.join(root, "supabase/migrations/20260821145714_restrict_precandidate_access_to_recruitment.sql"),
+  "utf8"
+);
 const approvalView = fs.readFileSync(
   path.join(root, "src/modules/recruitment/components/HiringPrecandidatesView.tsx"),
   "utf8"
@@ -37,6 +41,12 @@ const expandedRosterMigration = fs.readFileSync(
 );
 
 describe("DSAL precandidate approval contract", () => {
+  it("limits management access to the recruitment role", () => {
+    expect(recruitmentOnlyAccessMigration).toContain("user_has_role(actor_id, 'reclutamiento')");
+    expect(recruitmentOnlyAccessMigration).toContain("current_user_id <> actor_id");
+    expect(recruitmentOnlyAccessMigration).toContain("solo están disponibles para Reclutamiento");
+  });
+
   it("enforces folio ownership, effective capacity and transactional approval", () => {
     expect(migration).toContain("assert_dsal_precandidate_case_capacity");
     expect(migration).toContain("upper(coalesce(case_record.contract_name, '')) not like '%DSAL%'");
@@ -47,9 +57,7 @@ describe("DSAL precandidate approval contract", () => {
     expect(migration).toContain("perform public.assert_dsal_precandidate_case_capacity(p_case_id);");
     expect(migration).toContain("grant execute on function public.approve_recruitment_precandidate(uuid, uuid, text) to authenticated");
     expect(migration).toContain("user_can_review_dsal_precandidates");
-    expect(migration).toContain("user_has_role(actor_id, 'director_op')");
     expect(migration).toContain("user_has_role(actor_id, 'reclutamiento')");
-    expect(migration).toContain("cost_center_approvers");
   });
 
   it("makes the no-folio operational path explicit in Control de Contrataciones", () => {
@@ -64,7 +72,7 @@ describe("DSAL precandidate approval contract", () => {
     expect(approvalView).not.toContain("reviewComment");
     expect(approvalView).not.toContain("id={`precandidate-comment-");
     expect(approvalView).toContain("precandidate-resolution-fields");
-    expect(statusPage).toContain('"gerencia", "director_op", "reclutamiento"');
+    expect(statusPage).toContain('appRoles.includes("reclutamiento")');
   });
 
   it("blocks a second submission by RUT at the database boundary", () => {

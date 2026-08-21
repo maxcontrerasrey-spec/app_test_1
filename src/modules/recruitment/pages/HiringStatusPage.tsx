@@ -63,10 +63,9 @@ export function HiringStatusPage() {
     hasModuleAccess(accessibleModules, "control_contrataciones");
   const canAccessCandidateControl =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_candidate_control");
-  const canAccessPrecandidates =
-    canAccessCandidateControl ||
-    hasModuleAccess(accessibleModules, "control_contrataciones") ||
-    appRoles.some((role) => ["gerencia", "director_op", "reclutamiento"].includes(role));
+  // Los precandidatos contienen antecedentes de postulación y revisión DSAL;
+  // su acceso operativo pertenece exclusivamente al rol Reclutamiento.
+  const canAccessPrecandidates = appRoles.includes("reclutamiento");
   const canAccessPersonnelToHire =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_personnel_to_hire");
   const canAccessContractedPersonnel = canAccessPersonnelToHire;
