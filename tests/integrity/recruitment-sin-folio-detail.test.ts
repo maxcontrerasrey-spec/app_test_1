@@ -25,7 +25,7 @@ describe("Sin Folio candidate detail contract", () => {
   it("passes the selected candidate through the detail query and cache key", () => {
     expect(service).toContain('supabase.rpc("get_recruitment_case_detail_for_candidate"');
     expect(queries).toContain("candidateId?: string");
-    expect(queries).toContain("candidateId ?? \"case\"");
+    expect(queries).toContain("queryKeys.recruitment.caseDetail(caseId, candidateId)");
     expect(page).toContain("selectedCandidateId || undefined");
   });
 });

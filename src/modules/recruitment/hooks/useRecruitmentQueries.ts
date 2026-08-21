@@ -85,7 +85,7 @@ export function getRecruitmentControlSummaryQueryOptions() {
 
 export function getRecruitmentCaseDetailQueryOptions(caseId: string, candidateId?: string) {
   return {
-    queryKey: [...queryKeys.recruitment.caseDetail(caseId), candidateId ?? "case"] as const,
+    queryKey: queryKeys.recruitment.caseDetail(caseId, candidateId),
     queryFn: async () => {
       const result = await fetchRecruitmentCaseDetail(caseId, candidateId);
 
