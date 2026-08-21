@@ -84,7 +84,11 @@ export function HiringStatusPage() {
       activeView === "personnel_contracted"
     ) &&
     Boolean(selectedCaseId);
-  const caseDetailQuery = useRecruitmentCaseDetail(selectedCaseId, shouldLoadCaseDetail);
+  const caseDetailQuery = useRecruitmentCaseDetail(
+    selectedCaseId,
+    shouldLoadCaseDetail,
+    selectedCandidateId || undefined
+  );
   const selectedCaseDetail = caseDetailQuery.data ?? null;
   const summaryError =
     summaryQuery.error instanceof Error ? summaryQuery.error.message : "";

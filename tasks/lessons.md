@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 336. Sin Folio debe conservar una ruta de detalle independiente
+
+- Excluir un candidato liberado de `get_recruitment_case_detail` evita inflar el caso operativo, pero también deja sin ficha a la persona seleccionada desde la pestaña Sin Folio.
+- La solución debe separar el detalle operativo del detalle del candidato seleccionado: incluir solo el `case_candidate_id` liberado solicitado y mantener el filtro para el resto del caso.
+- La caché frontend debe incorporar el identificador del candidato; reutilizar únicamente la clave del folio puede mostrar un detalle anterior o limpiar la selección.
+
 ## 333. Confirmar el monto final antes de una escritura productiva
 
 - Cuando el usuario corrige un monto durante la preparación, no ejecutar la escritura con el valor anterior; volver a confirmar el estado productivo y aplicar solo el último valor solicitado.
@@ -26,6 +32,12 @@
 - La homologación puede usar el RUT contra datos vigentes solo para completar identificadores y campos faltantes; los valores históricos del archivo de cierre conservan la autoridad del período.
 - Registrar archivo, hash, motivo, reglas, decisiones de asociación y conteos en una auditoría persistente; el importador debe rechazar duplicados y no sobrescribir un cierre existente.
 
+## 333. Las contingencias BUK deben reutilizar reservas de fichas parciales
+
+- Si BUK crea la persona antes de rechazar el plan, el reintento debe resolverla por la reserva ERP y el código reservado, aunque BUK devuelva el RUT con otro formato o deje la ficha inactiva.
+- Nunca reintentar creando otra persona o asignando F2: el job debe completar plan, jornada y documentos sobre el mismo `buk_employee_id`, dejando los errores previos como historial.
+- Cuando BUK acepta un PATCH pero su endpoint de lectura no expone la categoría sindical, registrarlo como advertencia auditable y no confundirlo con una duplicación o un fallo de identidad.
+
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
 ## 328. Las pestañas de BI deben navegar aunque una vista esté cargando datos pesados
@@ -46,6 +58,17 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Si una ficha creada por el ERP aparece luego con `current_job.union = "No Sindicalizados"`, no asumir que BUK aplico un default automatico; RRHH puede haber completado el campo manualmente.
 - Para campos BUK observables en lectura pero no documentados en escritura, separar tres evidencias: catalogo vivo, schema oficial de escritura y canary autorizado de POST/PATCH.
 - Una alta ERP no debe cerrarse como conforme por snapshot local; debe leer BUK vivo despues del write y exigir el valor operacional requerido antes de marcar exito.
+
+## 328. La categoría sindical BUK puede no venir en la lectura del job
+
+- El PATCH de `union` puede ser aceptado por BUK y devolver un job sin ese campo; eso no prueba por sí solo que la categoría se haya rechazado.
+- La verificación debe consultar el trabajo puntual y `current_job` además de la colección de jobs, y registrar qué fuentes expusieron el valor.
+- Si BUK devuelve explícitamente otra categoría, la alta debe detenerse; si no expone ninguna, conservar un estado `not_exposed` auditable y no reintentar la creación para evitar duplicados.
+
+## 335. Ocultar una pestaña no reemplaza la autorización de módulo
+
+- Un acceso de precandidatos no debe heredarse de `control_contratos`, gerencia, dirección ni capacidades generales de candidatos cuando el proceso pertenece exclusivamente a Reclutamiento.
+- La regla debe vivir en el frontend para la navegación y en el RPC backend para lectura, aprobación y rechazo; ambas capas deben usar el mismo rol explícito.
 
 ## 324. Las columnas paralelas de un PDF deben compartir altura y dejar margen real al siguiente bloque
 

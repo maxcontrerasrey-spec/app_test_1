@@ -83,11 +83,11 @@ export function getRecruitmentControlSummaryQueryOptions() {
   };
 }
 
-export function getRecruitmentCaseDetailQueryOptions(caseId: string) {
+export function getRecruitmentCaseDetailQueryOptions(caseId: string, candidateId?: string) {
   return {
-    queryKey: queryKeys.recruitment.caseDetail(caseId),
+    queryKey: [...queryKeys.recruitment.caseDetail(caseId), candidateId ?? "case"] as const,
     queryFn: async () => {
-      const result = await fetchRecruitmentCaseDetail(caseId);
+      const result = await fetchRecruitmentCaseDetail(caseId, candidateId);
 
       if (result.error || !result.data) {
         throw new Error(result.error ?? "No fue posible cargar el detalle del caso.");
@@ -282,9 +282,13 @@ export function useRecruitmentActiveCaseOptions(
   });
 }
 
-export function useRecruitmentCaseDetail(caseId: string, enabled = true) {
+export function useRecruitmentCaseDetail(
+  caseId: string,
+  enabled = true,
+  candidateId?: string
+) {
   return useQuery({
-    ...getRecruitmentCaseDetailQueryOptions(caseId),
+    ...getRecruitmentCaseDetailQueryOptions(caseId, candidateId),
     enabled: enabled && Boolean(caseId)
   });
 }

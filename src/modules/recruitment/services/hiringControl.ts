@@ -407,7 +407,7 @@ export async function fetchRecruitmentActiveCaseOptions(input: {
   };
 }
 
-export async function fetchRecruitmentCaseDetail(caseId: string) {
+export async function fetchRecruitmentCaseDetail(caseId: string, candidateId?: string) {
   if (!supabase) {
     return {
       data: null,
@@ -415,9 +415,14 @@ export async function fetchRecruitmentCaseDetail(caseId: string) {
     };
   }
 
-  const { data, error } = await supabase.rpc("get_recruitment_case_detail", {
-    p_case_id: caseId
-  });
+  const { data, error } = candidateId
+    ? await supabase.rpc("get_recruitment_case_detail_for_candidate", {
+        p_case_id: caseId,
+        p_case_candidate_id: candidateId
+      })
+    : await supabase.rpc("get_recruitment_case_detail", {
+        p_case_id: caseId
+      });
 
   if (error) {
     return {
