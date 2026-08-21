@@ -1,5 +1,40 @@
 # Tareas y Roadmap de Desarrollo
 
+## Liberar candidato individual a Sin Folio desde Traslado - 2026-08-21
+
+- [x] Agregar en el modal de traslado una acción explícita para dejar al candidato en Sin Folio, sin exigir un folio destino.
+- [x] Implementar una RPC transaccional y autorizada que marque la participación como liberada, conserve perfil, documentos e historial, audite actor/motivo y actualice las métricas del folio de origen.
+- [x] Mantener la reactivación futura mediante el flujo existente de asignación a un folio nuevo, limpiando la marca al reasignar.
+- [x] Cubrir estados terminales, permisos, doble ejecución y regresión de UI/RPC; validar que el candidato no aparezca activo en el folio original ni se descarte.
+- [x] Ejecutar gates, aplicar migración y verificar el flujo completo en producción antes de cerrar.
+
+Estado: publicado en producción en `11c35e5`. La RPC `release_candidate_without_folio` reutiliza `released_without_folio_at`, no pone `recruitment_case_id` en null ni elimina la nominación; el bundle productivo ya contiene la acción “Dejar en Sin Folio”.
+
+## Restringir acceso a Precandidatos exclusivamente a Reclutamiento - 2026-08-21
+
+- [x] Limitar la pestaña y la carga frontend a usuarios con rol `reclutamiento`.
+- [x] Reforzar el RPC de lectura y las acciones de aprobación/rechazo con la misma autorización backend.
+- [x] Ejecutar pruebas de integridad, migraciones, seguridad y build; aplicar la migración sin ampliar permisos.
+
+Estado: publicado en producción. La migración `20260821145714` quedó aplicada y registrada; el bundle frontend actualizado ya es servido por `gestion.busesjm.cl`.
+
+## Auditoría última alta BUK y categoría No Sindicalizados - 2026-08-20
+
+- [x] Confirmar en producción el job más reciente, el payload de sindicato, la respuesta del PATCH y la verificación posterior.
+- [x] Comparar el contrato observado de lectura/escritura BUK y determinar si la ausencia de `union` es fallo de aplicación o de exposición del endpoint.
+- [x] Corregir la verificación para no marcar una alta como conforme sin evidencia suficiente y conservar un diagnóstico accionable sin duplicar fichas.
+- [x] Ejecutar checks de Edge/guards y publicar únicamente si la corrección queda cubierta por pruebas; validar el job sin reprocesarlo a ciegas.
+
+Estado: corregido en código y publicado. El job `dd140b2f-1910-4122-90df-6999eb4e83f3` terminó `success`, pero el snapshot dejó `confirmed=false`, `patched=true` y `observedUnionAfter=null`: BUK aceptó el PATCH pero sus lecturas usadas por el worker no expusieron `union`. La verificación ahora consulta colección, trabajo puntual y `current_job`; un valor distinto o la ausencia total bloquean el cierre como éxito, dejando el job reintentable sin crear otra ficha.
+
+## Completar contingencia BUK Felipe Alexander Porta Veliz - 2026-08-20
+
+- [x] Corregir la resolución idempotente de una ficha BUK parcial creada por una contingencia fallida.
+- [x] Publicar el worker y reintentar la generación de Felipe sin duplicar el empleado `42926`.
+- [x] Verificar en BUK plan, jornada, documentos y en ERP el estado `lead` con auditoría contingente.
+
+Estado: resuelto en producción. BUK reutilizó `42926` con código `F1`; el job `dd140b2f-1910-4122-90df-6999eb4e83f3` terminó `success`. La categoría sindical se dejó como advertencia porque el endpoint de lectura no la expone después del PATCH.
+
 ## Corrección de búsqueda y visibilidad de candidatos por RUT - 2026-08-20
 
 - [x] Auditar el RUT reportado en producción contra perfil, participaciones y filtros de candidatos.
