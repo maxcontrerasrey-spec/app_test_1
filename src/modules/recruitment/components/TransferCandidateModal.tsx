@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import {
+  releaseCandidateWithoutFolio,
   transferCandidateToCase,
   type RecruitmentCandidateControlRow,
   type RecruitmentCaseListRow
@@ -72,6 +73,27 @@ export function TransferCandidateModal({
     }
   };
 
+  const handleReleaseWithoutFolio = async () => {
+    if (!candidate || candidate.is_without_folio) return;
+
+    setIsLoading(true);
+    setErrorMessage("");
+
+    const result = await releaseCandidateWithoutFolio({
+      caseCandidateId: candidate.id,
+      comment
+    });
+
+    if (result.error) {
+      setErrorMessage(result.error);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(false);
+    onSuccess();
+  };
+
   const caseOptions = availableCases.map((c) => ({
     value: c.id,
     label: `${c.case_code} - ${c.job_position_name} (${c.contract_name})`
@@ -98,6 +120,9 @@ export function TransferCandidateModal({
                     ? ` desde ${candidate.case_code}`
                     : ""
               } a otro folio activo.
+            </p>
+            <p className="tracking-filter-caption">
+              También puedes conservarlo en la nómina y dejarlo disponible en <strong>Sin Folio</strong>.
             </p>
           </div>
           <button
@@ -152,6 +177,15 @@ export function TransferCandidateModal({
               disabled={isLoading || !targetCaseId}
             >
               Confirmar Traslado
+            </button>
+            <button
+              type="button"
+              className="soft-primary-button"
+              onClick={() => void handleReleaseWithoutFolio()}
+              disabled={isLoading || Boolean(candidate.is_without_folio)}
+              title="Conservar al candidato y liberarlo del folio actual"
+            >
+              Dejar en Sin Folio
             </button>
           </div>
         </div>

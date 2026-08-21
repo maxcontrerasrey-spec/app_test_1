@@ -495,6 +495,30 @@ export async function transferCandidateToCase(input: {
   return { error: null };
 }
 
+export async function releaseCandidateWithoutFolio(input: {
+  caseCandidateId: string;
+  comment?: string;
+}) {
+  if (!supabase) {
+    return {
+      error: "Supabase no está configurado en este entorno."
+    };
+  }
+
+  const { error } = await supabase.rpc("release_candidate_without_folio", {
+    p_case_candidate_id: input.caseCandidateId,
+    p_comment: input.comment?.trim() ? input.comment.trim() : null
+  });
+
+  if (error) {
+    return {
+      error: getSupabaseErrorMessage(error, "No fue posible dejar al candidato sin folio.")
+    };
+  }
+
+  return { error: null };
+}
+
 
 export async function advanceRecruitmentCandidateStage(input: {
   caseCandidateId: string;
