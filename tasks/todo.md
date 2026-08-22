@@ -98,6 +98,14 @@ Resultado: `RC-0132` quedó con `salary_offer = 1.384.000`, estado `approved` y 
 
 Resultado: commit `256c4dd` publicado en `main`; producción sirve el bundle con `p_management_names` y la población productiva se recalcula de 1.627 a 601 para `GERENCIA OPERACIONES ZONA I (CENTRO)`. La misma barra alterna el filtro nuevamente.
 
+## Optimización extrema de carga BI y filtros cruzados - 2026-08-21
+
+- [x] Consolidar la actualización de tarjetas y gráficos de dotación en una sola RPC agregada.
+- [x] Mantener datos previos durante la actualización y reutilizar una query key compartida.
+- [x] Medir backend, ejecutar regresiones y publicar solo con evidencia productiva.
+
+Resultado: la vista de dotación usa una query key única y la RPC `get_bi_dotacion_dashboard`; la actualización por gerencia ya no dispara una solicitud por cada tarjeta/gráfico. Producción confirma la firma de cuatro parámetros y ejecución autorizada para `authenticated`.
+
 ## Corrección de contadores para candidatos Sin Folio RC-0067 - 2026-08-20
 
 - [x] Verificar que los 13 candidatos estuvieran liberados y detectar por qué seguían contándose en el folio.

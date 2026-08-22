@@ -92,6 +92,18 @@ export interface BukBiRecruitmentPipeline {
   selectedCount: number;
 }
 
+export interface BiDotacionDashboard {
+  overview: BukBiWorkforceOverview;
+  headcountByContract: BukBiHeadcountByContract[];
+  headcountByManagement: BukBiHeadcountByManagement[];
+  headcountByRegion: BukBiHeadcountByRegion[];
+  ageDistribution: BukBiAgeDistribution[];
+  exceptionsToday: BukBiExceptionsToday[];
+  presenceSummaryToday: BukBiPresenceSummaryToday[];
+  exceptionsMonthly: BukBiExceptionsMonthly[];
+  recruitmentPipeline: BukBiRecruitmentPipeline[];
+}
+
 export interface BiLabelValueDatum {
   label: string;
   value: number;

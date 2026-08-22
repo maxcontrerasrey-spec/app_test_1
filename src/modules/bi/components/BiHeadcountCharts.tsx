@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiHeadcountByManagement, useBiHeadcountByRegion } from "../hooks/useBiQueries";
+import { useBiDotacionDashboard } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
@@ -27,8 +27,11 @@ export function BiHeadcountCharts({
   selectedManagement = null,
   onManagementSelect
 }: BiHeadcountChartsProps) {
-  const { data: managementData, isLoading: isLoadingManagement } = useBiHeadcountByManagement(filters);
-  const { data: regionData, isLoading: isLoadingRegion } = useBiHeadcountByRegion(filters);
+  const { data: dashboard, isLoading } = useBiDotacionDashboard(filters);
+  const managementData = dashboard?.headcountByManagement;
+  const regionData = dashboard?.headcountByRegion;
+  const isLoadingManagement = isLoading;
+  const isLoadingRegion = isLoading;
   const chartTheme = useChartTheme();
 
   const managementChartOption = useMemo<EChartsOption | null>(() => {

@@ -68,7 +68,7 @@ describe("BI module navigation integrity", () => {
     const api = read("src/modules/bi/services/biApi.ts");
     const migration = read("supabase/migrations/20260819233000_add_bi_headcount_by_management.sql");
 
-    expect(chart).toContain("useBiHeadcountByManagement");
+    expect(chart).toContain("useBiDotacionDashboard");
     expect(chart).toContain("Dotación por Gerencia");
     expect(chart).toContain('type: "bar"');
     expect(chart).toContain("width: 300");
@@ -99,7 +99,7 @@ describe("BI module navigation integrity", () => {
     const api = read("src/modules/bi/services/biApi.ts");
     const migration = read("supabase/migrations/20260820000000_add_bi_headcount_by_region.sql");
 
-    expect(chart).toContain("useBiHeadcountByRegion");
+    expect(chart).toContain("headcountByRegion");
     expect(chart).toContain("Dotación por Región");
     expect(chart).toContain('item.regionName !== "SIN REGION"');
     expect(chart).not.toContain("item.regionName || item.cityName");
@@ -111,6 +111,19 @@ describe("BI module navigation integrity", () => {
     expect(api).toContain('get_bi_headcount_by_region');
     expect(migration).toContain("normalize_bi_region_name");
     expect(migration).toContain("user_can_access_bi_analytics");
+  });
+
+  it("consolidates dotacion filter changes into one cached dashboard request", () => {
+    const hook = read("src/modules/bi/hooks/useBiQueries.ts");
+    const api = read("src/modules/bi/services/biApi.ts");
+    const migration = read("supabase/migrations/20260822030431_optimize_bi_dotacion_dashboard_request.sql");
+
+    expect(hook).toContain("useBiDotacionDashboard");
+    expect(hook).toContain("placeholderData: (previous) => previous");
+    expect(api).toContain('get_bi_dotacion_dashboard');
+    expect(migration).toContain("get_bi_dotacion_dashboard");
+    expect(migration).toContain("headcountByManagement");
+    expect(migration).toContain("grant execute on function public.get_bi_dotacion_dashboard");
   });
 
   it("allows the monthly snapshot scheduler without weakening API authorization", () => {

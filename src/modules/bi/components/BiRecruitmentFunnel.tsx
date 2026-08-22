@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiRecruitmentPipeline } from "../hooks/useBiQueries";
+import { useBiDotacionDashboard } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
@@ -9,7 +9,8 @@ type BiRecruitmentFunnelProps = {
 };
 
 export function BiRecruitmentFunnel({ filters }: BiRecruitmentFunnelProps) {
-  const { data, isLoading } = useBiRecruitmentPipeline(filters);
+  const { data: dashboard, isLoading } = useBiDotacionDashboard(filters);
+  const data = dashboard?.recruitmentPipeline;
   const chartTheme = useChartTheme();
 
   const chartOption = useMemo<EChartsOption | null>(() => {

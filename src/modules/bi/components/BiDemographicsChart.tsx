@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiAgeDistribution, useBiHeadcountByContract } from "../hooks/useBiQueries";
+import { useBiDotacionDashboard } from "../hooks/useBiQueries";
 import { formatBiContractLabel } from "../lib/presentation";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
@@ -10,8 +10,9 @@ type BiDemographicsChartProps = {
 };
 
 export function BiDemographicsChart({ filters }: BiDemographicsChartProps) {
-  const { data, isLoading } = useBiAgeDistribution(filters);
-  const { data: contractsData } = useBiHeadcountByContract(filters);
+  const { data: dashboard, isLoading } = useBiDotacionDashboard(filters);
+  const data = dashboard?.ageDistribution;
+  const contractsData = dashboard?.headcountByContract;
   const chartTheme = useChartTheme();
 
   const chartOption = useMemo<EChartsOption | null>(() => {

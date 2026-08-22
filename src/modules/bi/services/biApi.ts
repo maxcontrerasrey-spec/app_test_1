@@ -18,7 +18,8 @@ import type {
   BiLabelValueDatum,
   BiRecruitmentDashboard,
   BiRecruitmentTimelineDatum,
-  BiRecruitmentVacancyByContractDatum
+  BiRecruitmentVacancyByContractDatum,
+  BiDotacionDashboard
 } from "../types";
 
 function normalizeBiFilters(filters?: BiFilters) {
@@ -149,6 +150,22 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
   };
 }
 
+export function mapBiDotacionDashboard(payload: unknown): BiDotacionDashboard {
+  const row = (payload ?? {}) as Record<string, unknown>;
+  const overviewRow = (row.overview ?? {}) as Record<string, unknown>;
+  return {
+    overview: mapWorkforceOverview(overviewRow),
+    headcountByContract: asArray<Record<string, unknown>>(row.headcountByContract).map(mapHeadcountByContract),
+    headcountByManagement: asArray<Record<string, unknown>>(row.headcountByManagement).map(mapHeadcountByManagement),
+    headcountByRegion: asArray<Record<string, unknown>>(row.headcountByRegion).map(mapHeadcountByRegion),
+    ageDistribution: asArray<Record<string, unknown>>(row.ageDistribution).map(mapAgeDistribution),
+    exceptionsToday: asArray<Record<string, unknown>>(row.exceptionsToday).map(mapExceptionsToday),
+    presenceSummaryToday: asArray<Record<string, unknown>>(row.presenceSummaryToday).map(mapPresenceSummaryToday),
+    exceptionsMonthly: asArray<Record<string, unknown>>(row.exceptionsMonthly).map(mapExceptionsMonthly),
+    recruitmentPipeline: asArray<Record<string, unknown>>(row.recruitmentPipeline).map(mapRecruitmentPipeline)
+  };
+}
+
 // ============================================================================
 // MAPPERS (Pure functions mapping Record<string, unknown> to Strict TS Interfaces)
 // ============================================================================
@@ -272,6 +289,13 @@ function mapLabelValueDatum(value: unknown): BiLabelValueDatum {
 // ============================================================================
 // FETCHERS (Supabase Data Access Layer)
 // ============================================================================
+
+export async function fetchBiDotacionDashboard(filters?: BiFilters): Promise<BiDotacionDashboard> {
+  const client = getSupabaseClient();
+  const { data, error } = await client.rpc("get_bi_dotacion_dashboard", buildBiRpcParams(filters));
+  if (error) throw error;
+  return mapBiDotacionDashboard(data);
+}
 
 export async function fetchBiWorkforceOverview(filters?: BiFilters): Promise<BukBiWorkforceOverview> {
   const client = getSupabaseClient();

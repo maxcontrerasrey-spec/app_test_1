@@ -3371,3 +3371,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Cuando el menú desplegable está contenido dentro del mismo nodo clickeable que lo abre, el clic de una opción puede cerrar el menú inmediatamente y simular que solo permite una selección.
 - La solución mínima y reusable es detener la propagación en el handler de la opción, manteniendo el estado controlado y la semántica multiselección intacta.
+
+## 317. Un filtro cruzado BI no debe disparar una RPC por gráfico
+
+- Si varias tarjetas y gráficos comparten los mismos filtros, cambiar una dimensión debe usar una consulta agregada y una query key común; repetir la población base por componente amplifica la latencia y la carga de Supabase.
+- `placeholderData` debe conservar el último resultado mientras llega el nuevo filtro para evitar una pantalla vacía; el indicador de carga puede acompañar la actualización sin degradar la percepción de respuesta.

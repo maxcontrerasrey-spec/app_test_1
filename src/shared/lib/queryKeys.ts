@@ -29,6 +29,8 @@ export const queryKeys = {
   },
   bi: {
     all: () => ["bi"] as const,
+    dotacionDashboard: (filters?: BiQueryFilters | null) =>
+      [...queryKeys.bi.all(), "dotacionDashboard", normalizeBiFilters(filters)] as const,
     workforceOverview: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "workforceOverview", normalizeBiFilters(filters)] as const,
     headcountByContract: (filters?: BiQueryFilters | null) =>

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiExceptionsMonthly } from "../hooks/useBiQueries";
+import { useBiDotacionDashboard } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
@@ -9,7 +9,8 @@ type BiTrendingExceptionsChartProps = {
 };
 
 export function BiTrendingExceptionsChart({ filters }: BiTrendingExceptionsChartProps) {
-  const { data, isLoading } = useBiExceptionsMonthly(filters);
+  const { data: dashboard, isLoading } = useBiDotacionDashboard(filters);
+  const data = dashboard?.exceptionsMonthly;
   const chartTheme = useChartTheme();
 
   const chartOption = useMemo<EChartsOption | null>(() => {

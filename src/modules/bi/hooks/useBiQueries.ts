@@ -13,12 +13,23 @@ import {
   fetchBiPresenceSummaryToday,
   fetchBiExceptionsMonthly,
   fetchBiRecruitmentPipeline,
-  fetchBiRecruitmentDashboard
+  fetchBiRecruitmentDashboard,
+  fetchBiDotacionDashboard
 } from "../services/biApi";
 
 const BI_STALE_TIME = 1000 * 60 * 5; // 5 minutos, según lección 48 no ahogar Supabase con polling
 export const BI_RECRUITMENT_DASHBOARD_STALE_TIME_MS = 1000 * 60 * 2;
 export const BI_RECRUITMENT_DASHBOARD_GC_TIME_MS = 1000 * 60 * 15;
+
+export function useBiDotacionDashboard(filters?: BiFilters) {
+  return useQuery({
+    queryKey: queryKeys.bi.dotacionDashboard(filters),
+    queryFn: () => fetchBiDotacionDashboard(filters),
+    staleTime: BI_STALE_TIME,
+    gcTime: BI_STALE_TIME * 3,
+    placeholderData: (previous) => previous
+  });
+}
 
 export function useBiWorkforceOverview(filters?: BiFilters) {
   return useQuery({

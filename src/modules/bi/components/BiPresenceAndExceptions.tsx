@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
-import { useBiPresenceSummaryToday, useBiExceptionsToday } from "../hooks/useBiQueries";
+import { useBiDotacionDashboard } from "../hooks/useBiQueries";
 import { EChartSurface, useChartTheme } from "../../../shared/ui";
 import type { BiFilters } from "../types";
 
@@ -9,8 +9,11 @@ type BiPresenceAndExceptionsProps = {
 };
 
 export function BiPresenceAndExceptions({ filters }: BiPresenceAndExceptionsProps) {
-  const { data: presenceData, isLoading: isLoadingPresence } = useBiPresenceSummaryToday(filters);
-  const { data: exceptionsData, isLoading: isLoadingExceptions } = useBiExceptionsToday(filters);
+  const { data: dashboard, isLoading } = useBiDotacionDashboard(filters);
+  const presenceData = dashboard?.presenceSummaryToday;
+  const exceptionsData = dashboard?.exceptionsToday;
+  const isLoadingPresence = isLoading;
+  const isLoadingExceptions = isLoading;
   const chartTheme = useChartTheme();
 
   const gaugeOption = useMemo<EChartsOption | null>(() => {

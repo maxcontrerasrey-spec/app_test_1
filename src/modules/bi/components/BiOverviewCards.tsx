@@ -1,4 +1,4 @@
-import { useBiWorkforceOverview } from "../hooks/useBiQueries";
+import { useBiDotacionDashboard } from "../hooks/useBiQueries";
 import type { BiFilters } from "../types";
 
 type BiOverviewCardsProps = {
@@ -6,7 +6,8 @@ type BiOverviewCardsProps = {
 };
 
 export function BiOverviewCards({ filters }: BiOverviewCardsProps) {
-  const { data, isLoading, isError } = useBiWorkforceOverview(filters);
+  const { data: dashboard, isLoading, isError } = useBiDotacionDashboard(filters);
+  const data = dashboard?.overview;
 
   if (isLoading) {
     return <div className="bi-overview-row">Cargando KPIs...</div>;
