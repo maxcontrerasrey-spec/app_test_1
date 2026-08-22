@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Ejecución contingencia BUK F1 - Francisco, Eneida y Carolaine - 2026-08-22
+
+- [x] Confirmar que los tres jobs ya existen en producción y siguen `pending`, `attempts=0`, sin `buk_employee_id`.
+- [ ] Ejecutar `sync-buk-candidates` en producción para esos tres `jobIds` usando secreto server-side, sin exponer credenciales ni crear duplicados manuales.
+- [ ] Verificar que cada job termine `success`, conserve código `F1` y tenga `buk_employee_id`.
+- [ ] Confirmar ausencia de duplicados por documento en ERP/BUK antes de cerrar.
+- [ ] Retirar el workflow operativo temporal usado para esta ejecución.
+
 ## Desbloqueo bundle productivo contingencia BUK - 2026-08-22
 
 - [x] Confirmar que `origin/main` apunta al fix `f04288c` y que produccion sigue sirviendo el bundle anterior `index-DzFAlzvG.js`.
