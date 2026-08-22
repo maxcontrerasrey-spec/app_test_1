@@ -3404,3 +3404,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - La etiqueta visible `jubilacion_afp: AFP` del formulario ERP no es el valor que acepta el endpoint de planes; BUK espera la clave `jubilacion_afp` (o `jubilacion_ips`) y un fondo AFP vacío cuando la persona no cotiza.
 - Una alta jubilada puede crear la ficha y fallar después al guardar el plan. El reintento debe reconciliar la ficha reservada existente y corregir solo el mapeo del régimen, nunca crear una segunda persona.
+
+## 2026-08-22 - Un catálogo externo recién creado requiere sincronización posterior a su alta
+
+- La sincronización de cargos debe conservar su lógica programada; si BUK crea un cargo después de la última ejecución, el diagnóstico correcto es una desactualización temporal del catálogo local, no un filtro defectuoso.
+- La corrección puntual debe usar el identificador y nombre devueltos por BUK, insertarse de forma idempotente y verificar que quede activo y único en `job_positions` antes de declarar disponible el cargo en el ERP.

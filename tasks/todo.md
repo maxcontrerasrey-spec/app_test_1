@@ -2642,3 +2642,11 @@ Resultado: la revisión IA mantiene el contenido original y permite que la psic�
 - [x] Ejecutar gates, aplicar migración, desplegar frontend/Edge Functions y verificar producción.
 
 Resultado: cuando el informe está `VALIDATED` y el documento generado, la interfaz muestra `Aprobado · bloqueado`, oculta `Revisar informe` y `Actualizar informe`, y conserva solo las descargas. La RPC de revisión rechaza cualquier modificación de una interpretación `VALIDATED`; las RPCs de reset manual y de servicio también rechazan regenerar informes aprobados/generados. La migración `20260819212000_lock_approved_psychological_report.sql` se aplicó y registró en producción. Vite build, integridad 62/62, auditoría de migraciones, auditoría de seguridad y `git diff --check` pasaron; la auditoría de seguridad mantiene únicamente warnings históricos del repositorio.
+
+## Sincronización puntual de cargo BUK - 2026-08-22
+- [x] Confirmar en BUK el cargo `Ingeniero especialista Planificación y control` y su identificador `1757`.
+- [x] Verificar que el cargo aún no existía en `public.job_positions` y que la sincronización automática había ocurrido antes de su creación.
+- [x] Aplicar en producción una sincronización puntual idempotente sin cambiar la lógica del sincronizador.
+- [x] Confirmar en producción una única fila activa, registrar la migración y publicar el commit en `main`.
+
+Resultado: el cargo quedó disponible en el catálogo productivo como `BUK-ROLE-1757`; la migración `20260822175710_sync_new_buk_job_position_ingeniero_planificacion_control` quedó aplicada y el commit `472870f` fue enviado a `main`.
