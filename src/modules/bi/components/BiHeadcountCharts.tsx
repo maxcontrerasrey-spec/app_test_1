@@ -16,9 +16,17 @@ const CHILE_REGION_ORDER = [
 
 const REGION_BAR_COLORS = ["#dbeafe", "#93c5fd", "#3b82f6", "#1d4ed8", "#172554"] as const;
 
-type BiHeadcountChartsProps = { filters?: BiFilters };
+type BiHeadcountChartsProps = {
+  filters?: BiFilters;
+  selectedManagement?: string | null;
+  onManagementSelect?: (managementName: string) => void;
+};
 
-export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
+export function BiHeadcountCharts({
+  filters,
+  selectedManagement = null,
+  onManagementSelect
+}: BiHeadcountChartsProps) {
   const { data: managementData, isLoading: isLoadingManagement } = useBiHeadcountByManagement(filters);
   const { data: regionData, isLoading: isLoadingRegion } = useBiHeadcountByRegion(filters);
   const chartTheme = useChartTheme();
@@ -51,10 +59,29 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
         name: "Dotación", type: "bar", barMaxWidth: 22,
         itemStyle: { color: chartTheme.primary, borderRadius: [0, 6, 6, 0] },
         label: { show: true, position: "right", color: chartTheme.text, fontWeight: 600 },
-        data: rows.map((item) => item.headcount)
+        data: rows.map((item) => ({
+          name: item.managementName,
+          value: item.headcount,
+          itemStyle: {
+            color: selectedManagement === null || selectedManagement === item.managementName
+              ? chartTheme.primary
+              : chartTheme.border,
+            opacity: selectedManagement === null || selectedManagement === item.managementName ? 1 : 0.45
+          }
+        }))
       }]
     };
-  }, [chartTheme, managementData]);
+  }, [chartTheme, managementData, selectedManagement]);
+
+  const managementChartEvents = useMemo(() => ({
+    click: (params: { seriesType?: string; name?: string }) => {
+      if (params.seriesType !== "bar" || !params.name || !onManagementSelect) {
+        return;
+      }
+
+      onManagementSelect(params.name);
+    }
+  }), [onManagementSelect]);
 
   const regionChartOption = useMemo<EChartsOption | null>(() => {
     if (!regionData || regionData.length === 0) return null;
@@ -113,8 +140,26 @@ export function BiHeadcountCharts({ filters }: BiHeadcountChartsProps) {
   return (
     <div className="bi-chart-row">
       <div className="info-card">
-        <h3 className="bi-chart-title">Dotación por Gerencia</h3>
-        <EChartSurface height={300} option={managementChartOption ?? {}} loading={isLoadingManagement} empty={!managementChartOption} emptyMessage="Sin datos de gerencia" loadingMessage="Cargando datos..." />
+        <div className="bi-chart-heading-row">
+          <div>
+            <h3 className="bi-chart-title">Dotación por Gerencia</h3>
+            <p className="bi-chart-hint">Haz clic en una barra para filtrar todo el tablero.</p>
+          </div>
+          {selectedManagement ? (
+            <span className="bi-chart-selection" role="status">
+              Filtro: {selectedManagement}
+            </span>
+          ) : null}
+        </div>
+        <EChartSurface
+          height={300}
+          option={managementChartOption ?? {}}
+          loading={isLoadingManagement}
+          empty={!managementChartOption}
+          emptyMessage="Sin datos de gerencia"
+          loadingMessage="Cargando datos..."
+          onEvents={managementChartEvents}
+        />
       </div>
       <div className="info-card">
         <h3 className="bi-chart-title">Dotación por Región</h3>

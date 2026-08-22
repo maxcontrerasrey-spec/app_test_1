@@ -88,6 +88,14 @@ Resultado: `RC-0138` quedó con `salary_offer = 1.200.000`, estado `approved` y 
 
 Resultado: `RC-0132` quedó con `salary_offer = 1.384.000`, estado `approved` y proceso `screening`. El cambio quedó registrado como `salary_offer_adjusted`.
 
+## Selección cruzada de gerencia en BI Dotación - 2026-08-21
+
+- [x] Auditar los contratos de filtros, consultas BI y eventos ECharts existentes.
+- [x] Agregar selección persistente de gerencia con alternancia al volver a pulsar la misma barra.
+- [x] Propagar la selección a tarjetas, gráficos de dotación, ausentismo, presencia, demografía y funnel.
+- [x] Mantener compatibilidad con las firmas BI existentes mediante sobrecargas explícitas de cuatro parámetros.
+- [ ] Ejecutar Guardian, publicar y comprobar la interacción real en producción.
+
 ## Corrección de contadores para candidatos Sin Folio RC-0067 - 2026-08-20
 
 - [x] Verificar que los 13 candidatos estuvieran liberados y detectar por qué seguían contándose en el folio.

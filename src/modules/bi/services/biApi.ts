@@ -42,7 +42,8 @@ function buildBiRpcParams(filters?: BiFilters) {
   return {
     p_period_code: normalized.periodCode ?? null,
     p_contract_codes: normalized.contractCodes.length > 0 ? normalized.contractCodes : null,
-    p_job_titles: normalized.jobTitles.length > 0 ? normalized.jobTitles : null
+    p_job_titles: normalized.jobTitles.length > 0 ? normalized.jobTitles : null,
+    p_management_names: normalized.managementNames.length > 0 ? normalized.managementNames : null
   };
 }
 

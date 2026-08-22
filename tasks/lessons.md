@@ -16,6 +16,11 @@
 - Una marca persistente de Sin Folio no basta si los RPCs de resumen siguen contando la participación como activa.
 - La regla debe aplicarse tanto a `get_recruitment_case_effective_metrics` como a `get_recruitment_case_detail`; el candidato conserva historial y aparece en Sin Folio, pero no en el caso operativo original.
 
+## 335. Un filtro cruzado BI debe viajar por el contrato de datos
+
+- Cambiar solo el estado visual de una barra no recalcula tarjetas ni gráficos; la selección debe entrar en las query keys, los parámetros RPC y la población base compartida.
+- Cuando se agregan dimensiones a Supabase, mantener la firma antigua y crear una sobrecarga explícita sin defaults ambiguos; así los consumidores legados siguen resolviendo su RPC y el cliente nuevo usa el contrato ampliado.
+
 ## 331. Las dimensiones BI deben resolverse con el catálogo corporativo
 
 - No se debe inferir una gerencia concatenando o renombrando contratos en el frontend: la dimensión operativa debe salir del mapeo BUK vigente.

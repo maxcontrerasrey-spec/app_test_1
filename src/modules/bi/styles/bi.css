@@ -77,6 +77,33 @@
   cursor: default;
 }
 
+.bi-chart-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bi-chart-hint {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.bi-chart-selection {
+  display: inline-flex;
+  align-items: center;
+  max-width: 48%;
+  padding: 0.34rem 0.58rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: right;
+}
+
 .bi-recruitment-kpi-row {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.7rem;

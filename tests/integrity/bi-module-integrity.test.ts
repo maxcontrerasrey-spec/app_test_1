@@ -44,7 +44,8 @@ describe("BI module navigation integrity", () => {
 
     expect(page).toContain("useBiHeadcountByContract(\n    dotacionOptionFilters,");
     expect(page).toContain("useBiHeadcountByJobTitle(\n    dotacionOptionFilters,");
-    expect(page).toContain("<BiHeadcountCharts filters={dotacionFilters} />");
+    expect(page).toContain("<BiHeadcountCharts");
+    expect(page).toContain("filters={dotacionFilters}");
   });
 
   it("keeps the dotacion filter catalog independent from selected dimensions", () => {
@@ -77,6 +78,20 @@ describe("BI module navigation integrity", () => {
     expect(api).toContain('get_bi_headcount_by_management');
     expect(migration).toContain("buk_area_name_normalized");
     expect(migration).toContain("user_can_access_bi_analytics");
+  });
+
+  it("propagates gerencia selection across dotacion queries and charts", () => {
+    const page = read("src/modules/bi/pages/BiDashboardPage.tsx");
+    const chart = read("src/modules/bi/components/BiHeadcountCharts.tsx");
+    const api = read("src/modules/bi/services/biApi.ts");
+
+    expect(page).toContain("dotacionManagementSelection");
+    expect(page).toContain("managementNames: dotacionManagementSelection ? [dotacionManagementSelection] : []");
+    expect(page).toContain("current === managementName ? null : managementName");
+    expect(chart).toContain("onManagementSelect");
+    expect(chart).toContain("managementChartEvents");
+    expect(chart).toContain("Haz clic en una barra para filtrar todo el tablero.");
+    expect(api).toContain("p_management_names");
   });
 
   it("renders ordered regional bars from canonical headcount, never city fallback", () => {

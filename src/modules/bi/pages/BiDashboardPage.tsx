@@ -84,14 +84,16 @@ export function BiDashboardPage() {
   const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
   const [jobTitleFilter, setJobTitleFilter] = useState<string[]>([]);
   const [managementFilter, setManagementFilter] = useState<string[]>([]);
+  const [dotacionManagementSelection, setDotacionManagementSelection] = useState<string | null>(null);
   const [shiftNameFilter, setShiftNameFilter] = useState<string[]>([]);
   const dotacionFilters = useMemo<BiFilters>(
     () => ({
       periodCode: debouncedPeriodCode || undefined,
       contractCodes: contractCodeFilter,
-      jobTitles: jobTitleFilter
+      jobTitles: jobTitleFilter,
+      managementNames: dotacionManagementSelection ? [dotacionManagementSelection] : []
     }),
-    [contractCodeFilter, debouncedPeriodCode, jobTitleFilter]
+    [contractCodeFilter, debouncedPeriodCode, dotacionManagementSelection, jobTitleFilter]
   );
   const recruitmentFilters = useMemo<BiFilters>(
     () => ({
@@ -460,6 +462,7 @@ export function BiDashboardPage() {
                     setContractCodeFilter([]);
                     setJobTitleFilter([]);
                     setManagementFilter([]);
+                    setDotacionManagementSelection(null);
                     setShiftNameFilter([]);
                   }}
                   className="bi-filter-reset-button"
@@ -475,7 +478,17 @@ export function BiDashboardPage() {
       {activeView === "dotacion" && (
         <div className="bi-dashboard-grid">
           <BiOverviewCards filters={dotacionFilters} />
-          {dotacionChartStage >= 1 ? <BiHeadcountCharts filters={dotacionFilters} /> : null}
+          {dotacionChartStage >= 1 ? (
+            <BiHeadcountCharts
+              filters={dotacionFilters}
+              selectedManagement={dotacionManagementSelection}
+              onManagementSelect={(managementName) => {
+                setDotacionManagementSelection((current) =>
+                  current === managementName ? null : managementName
+                );
+              }}
+            />
+          ) : null}
           {dotacionChartStage >= 2 ? <BiPresenceAndExceptions filters={dotacionFilters} /> : null}
           {dotacionChartStage >= 3 ? (
             <div className="bi-chart-row">
