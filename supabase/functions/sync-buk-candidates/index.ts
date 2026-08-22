@@ -2387,11 +2387,10 @@ async function ensureBukEmployeeJobUnion(
   }
 
   const unionConfirmed = Boolean(matchingUnion);
-  if (!unionConfirmed) {
-    throw new Error(
-      `BUK no expuso la categoria sindical ${DEFAULT_BUK_JOB_UNION} en las lecturas disponibles para el trabajo ${resolvedJobId}; el job queda reintentable sin crear otra ficha.`
-    );
-  }
+  const verificationState = unionConfirmed ? "confirmed" : "not_exposed";
+  const warning = unionConfirmed
+    ? null
+    : `BUK acepto el PATCH de categoria sindical ${DEFAULT_BUK_JOB_UNION}, pero no expuso el campo union en las lecturas disponibles para el trabajo ${resolvedJobId}.`;
 
   return {
     expectedUnion: DEFAULT_BUK_JOB_UNION,
@@ -2405,7 +2404,8 @@ async function ensureBukEmployeeJobUnion(
       employeeCurrentJob: Boolean(currentJob),
       jobsCollection: Boolean(verifiedJob)
     },
-    verificationState: unionConfirmed ? "confirmed" : "not_exposed",
+    verificationState,
+    warning,
     patchResponse,
     verifiedAt: new Date().toISOString()
   };

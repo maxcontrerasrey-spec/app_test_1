@@ -3,10 +3,14 @@
 ## Ejecución contingencia BUK F1 - Francisco, Eneida y Carolaine - 2026-08-22
 
 - [x] Confirmar que los tres jobs ya existen en producción y siguen `pending`, `attempts=0`, sin `buk_employee_id`.
-- [ ] Ejecutar `sync-buk-candidates` en producción para esos tres `jobIds` usando secreto server-side, sin exponer credenciales ni crear duplicados manuales.
-- [ ] Verificar que cada job termine `success`, conserve código `F1` y tenga `buk_employee_id`.
-- [ ] Confirmar ausencia de duplicados por documento en ERP/BUK antes de cerrar.
-- [ ] Retirar el workflow operativo temporal usado para esta ejecución.
+- [x] Ejecutar `sync-buk-candidates` en producción para esos tres `jobIds` usando secreto server-side, sin exponer credenciales ni crear duplicados manuales.
+- [x] Confirmar que el primer intento creó fichas parciales BUK F1 y dejó los jobs reintentables: Francisco `42992`, Carolaine `42993`, Eneida `42994`.
+- [x] Reintentar recuperación idempotente sobre esas mismas fichas después de habilitar el cargo `ASEADOR` en BUK.
+- [x] Verificar que cada job termine `success`, conserve código `F1` y tenga `buk_employee_id`.
+- [x] Confirmar ausencia de duplicados por documento en ERP/BUK antes de cerrar.
+- [x] Retirar el workflow operativo temporal usado para esta ejecución.
+
+Resultado: cerrado en producción sin duplicar. Francisco Javier Figueroa Rojas quedó en BUK `42992` F1, Carolaine Danitza Catalan Ruiz en BUK `42993` F1 y Eneida Rosales Vargas en BUK `42994` F1. Los tres jobs terminaron `success`; Eneida resolvió cargo `ASEADOR` en área `2911`. La verificación de sindicato queda auditada como `not_exposed`: BUK aceptó el PATCH de `No Sindicalizados`, pero sus lecturas de job no exponen el campo `union`; una categoría distinta sigue bloqueando el cierre.
 
 ## Desbloqueo bundle productivo contingencia BUK - 2026-08-22
 

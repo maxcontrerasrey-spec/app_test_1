@@ -142,9 +142,10 @@ addCheck(
 addCheck(
   /fetchBukEmployeeJobById\(employeeId,\s*resolvedJobId\)/.test(source) &&
     /employeeAfter\.current_job/.test(source) &&
-    /verificationState:\s*unionConfirmed\s*\?\s*"confirmed"\s*:\s*"not_exposed"/.test(source) &&
+    /const\s+verificationState\s*=\s*unionConfirmed\s*\?\s*"confirmed"\s*:\s*"not_exposed"/.test(source) &&
+    /warning/.test(source) &&
     /categoria sindical distinta/.test(source),
-  "la verificacion sindical consulta trabajo directo y current_job, y distingue discrepancia de campo no expuesto"
+  "la verificacion sindical consulta trabajo directo y current_job, bloquea discrepancias y audita campos no expuestos"
 );
 addCheck(
   /const\s+jobUnionVerification\s*=\s*await\s+ensureBukEmployeeJobUnion\(employeeId,\s*jobResponse,\s*context\)/.test(source) &&

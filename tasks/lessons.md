@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 339. Una categoría BUK no expuesta no debe duplicar fichas
+
+- En altas BUK, `No Sindicalizados` puede aceptar PATCH y no aparecer después en las lecturas `/jobs` ni `current_job`.
+- Si no hay una categoría distinta observada, el job debe cerrar con advertencia auditable `not_exposed`; si BUK devuelve una categoría distinta, debe bloquear.
+- No reintentar creando otra ficha: el empleado, la reserva F1 y el trabajo BUK pueden existir parcialmente aunque el job ERP haya quedado en error.
+
 ## 338. Un fix frontend en main puede quedar dormido si el baseline bloquea el deploy
 
 - Si produccion sigue sirviendo el bundle anterior despues de un push, contrastar `origin/main`, el HTML publico y el run de CI antes de reintentar acciones operativas.
