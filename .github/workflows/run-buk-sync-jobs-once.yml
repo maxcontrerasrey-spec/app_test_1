@@ -7,6 +7,10 @@ on:
         description: "JSON array of buk_sync_jobs UUIDs to process"
         required: true
         type: string
+      inspect_employee_id:
+        description: "Optional BUK employee id to inspect plans"
+        required: false
+        type: string
 
 jobs:
   run:
@@ -34,3 +38,15 @@ jobs:
             --header "Content-Type: application/json" \
             --header "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
             --data "$payload" "$SUPABASE_FUNCTION_URL"
+
+      - name: Inspect BUK plan catalog for a known employee
+        if: ${{ inputs.inspect_employee_id != '' }}
+        env:
+          INSPECT_EMPLOYEE_ID: ${{ inputs.inspect_employee_id }}
+          BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
+          BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
+        run: |
+          curl --fail-with-body --show-error --silent \
+            --header "Accept: application/json" \
+            --header "auth_token: ${BUK_AUTH_TOKEN}" \
+            "${BUK_EMPLOYEES_URL%/}/${INSPECT_EMPLOYEE_ID}/plans"
