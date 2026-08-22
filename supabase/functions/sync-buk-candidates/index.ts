@@ -621,6 +621,27 @@ function mapBukAfc(value: string | null | undefined) {
   }
 }
 
+function mapBukRetirementRegime(value: string | null | undefined) {
+  const normalized = normalizeText(value).replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const numeric = parseIntegerLike(value);
+  if (numeric != null) {
+    return numeric;
+  }
+
+  if (normalized.startsWith("jubilacion_afp") || normalized === "afp") {
+    return "jubilacion_afp";
+  }
+  if (normalized.startsWith("jubilacion_ips") || normalized === "ips") {
+    return "jubilacion_ips";
+  }
+
+  throw new Error(`Régimen de jubilación BUK no soportado: ${value}`);
+}
+
 function mapBukCurrency(value: string | null | undefined): "peso" | "uf" | "utm" {
   const normalized = normalizeText(value);
   switch (normalized) {
@@ -2171,7 +2192,7 @@ function buildBukPlanPayload(payload: BukCandidateSyncPayload) {
   }
 
   if (retired) {
-    const regime = parseIntegerLike(worker.retirement_regime);
+    const regime = mapBukRetirementRegime(worker.retirement_regime);
     if (regime != null) {
       planPayload.retirement_regime = regime;
     }

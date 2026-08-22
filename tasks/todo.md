@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Alta BUK Sylvia Myriam Carvajal Salinas - jubilada sin AFP - 2026-08-22
+
+- [x] Ubicar la ficha, participación, folio, cargo y RUT de Sylvia en el ERP y comprobar si ya existe una alta o job BUK.
+- [x] Auditar el contrato del worker para la excepción de jubilada sin AFP y confirmar los campos previsionales permitidos por BUK.
+- [x] Ejecutar la alta idempotente en producción solo si los datos obligatorios están completos, omitiendo AFP sin inventar valores.
+- [x] Verificar en ERP/BUK el job, ficha F1 y ausencia de duplicados; documentar cualquier advertencia de BUK.
+
+Resultado: Sylvia Myriam Carvajal Salinas quedó creada en BUK como `42995`, código F1, vinculada a RC-0134/Aseador. BUK confirmó plan `no_cotiza`, fondo AFP vacío, jubilada y régimen `jubilacion_afp`; el job ERP `669cb606-1388-4706-973b-0d3a8e60e67d` terminó `success` tras reutilizar la ficha parcial sin duplicar. Se corrigió el worker para traducir la etiqueta visual `jubilacion_afp: AFP` al valor API `jubilacion_afp`.
+
 ## Ejecución contingencia BUK F1 - Francisco, Eneida y Carolaine - 2026-08-22
 
 - [x] Confirmar que los tres jobs ya existen en producción y siguen `pending`, `attempts=0`, sin `buk_employee_id`.
