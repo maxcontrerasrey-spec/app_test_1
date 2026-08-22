@@ -3832,6 +3832,12 @@ Deno.serve(async (req) => {
           );
           jobResultSnapshot.documents = uploadedDocuments;
 
+          // A successful retry must not keep provider errors from a previous attempt
+          // visible in the ERP snapshot.
+          delete jobResultSnapshot.error;
+          delete jobResultSnapshot.errorAudit;
+          delete jobResultSnapshot.employeeResolutionAudit;
+
           await finalizeSuccessfulJob(supabase, job.id, employeeId, jobResultSnapshot);
         }
 

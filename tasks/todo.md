@@ -7,7 +7,7 @@
 - [x] Ejecutar la alta idempotente en producción solo si los datos obligatorios están completos, omitiendo AFP sin inventar valores.
 - [x] Verificar en ERP/BUK el job, ficha F1 y ausencia de duplicados; documentar cualquier advertencia de BUK.
 
-Resultado: Sylvia Myriam Carvajal Salinas quedó creada en BUK como `42995`, código F1, vinculada a RC-0134/Aseador. BUK confirmó plan `no_cotiza`, fondo AFP vacío, jubilada y régimen `jubilacion_afp`; el job ERP `669cb606-1388-4706-973b-0d3a8e60e67d` terminó `success` tras reutilizar la ficha parcial sin duplicar. Se corrigió el worker para traducir la etiqueta visual `jubilacion_afp: AFP` al valor API `jubilacion_afp`.
+Resultado: Sylvia Myriam Carvajal Salinas quedó creada en BUK como `42995`, código F1, vinculada a RC-0134/Aseador. BUK confirmó plan `no_cotiza`, fondo AFP vacío, jubilada y régimen `jubilacion_afp`; el job ERP `669cb606-1388-4706-973b-0d3a8e60e67d` terminó `success` tras reutilizar la ficha parcial sin duplicar. Se corrigió el worker para traducir la etiqueta visual `jubilacion_afp: AFP` al valor API `jubilacion_afp` y se limpiaron del snapshot los errores obsoletos del primer intento.
 
 ## Ejecución contingencia BUK F1 - Francisco, Eneida y Carolaine - 2026-08-22
 
