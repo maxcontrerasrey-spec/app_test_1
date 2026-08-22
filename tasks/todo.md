@@ -2650,3 +2650,13 @@ Resultado: cuando el informe está `VALIDATED` y el documento generado, la inter
 - [x] Confirmar en producción una única fila activa, registrar la migración y publicar el commit en `main`.
 
 Resultado: el cargo quedó disponible en el catálogo productivo como `BUK-ROLE-1757`; la migración `20260822175710_sync_new_buk_job_position_ingeniero_planificacion_control` quedó aplicada y el commit `472870f` fue enviado a `main`.
+## Alta BUK Jaime Andres Pasten Perez - 2026-08-22
+
+- [x] Confirmar ficha ERP, folio, cargo y datos laborales.
+- [x] Verificar que no exista job/empleado BUK previo.
+- [x] Validar payload mediante la ruta contingente autorizada.
+- [x] Encolar alta idempotente.
+- [x] Ejecutar job de sincronización BUK.
+- [x] Verificar empleado, F1 y ausencia de duplicados en producción.
+
+Resultado: job `474a8e42-62a3-4620-8de1-9f1a6ca9bda8` exitoso; BUK employee `42996`, código F1, una ficha ERP, un job exitoso y sin duplicados.
