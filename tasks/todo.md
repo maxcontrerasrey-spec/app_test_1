@@ -106,6 +106,14 @@ Resultado: commit `256c4dd` publicado en `main`; producción sirve el bundle con
 
 Resultado: la vista de dotación usa una query key única y la RPC `get_bi_dotacion_dashboard`; la actualización por gerencia ya no dispara una solicitud por cada tarjeta/gráfico. Producción confirma la firma de cuatro parámetros y ejecución autorizada para `authenticated`.
 
+## Restaurar acceso de superadministrador a Precandidatos - 2026-08-22
+
+- [x] Confirmar que la restricción afectaba frontend y RPC backend.
+- [x] Mantener Precandidatos visible para `is_super_admin` y restringido para el resto sin Reclutamiento.
+- [x] Ejecutar regresión, publicar y verificar producción.
+
+Resultado: `is_super_admin` conserva la vista y las acciones de Precandidatos en frontend y backend; la restricción continúa aplicando a usuarios sin Reclutamiento ni superadministración. La RPC productiva confirma ambos bypasses.
+
 ## Corrección de contadores para candidatos Sin Folio RC-0067 - 2026-08-20
 
 - [x] Verificar que los 13 candidatos estuvieran liberados y detectar por qué seguían contándose en el folio.

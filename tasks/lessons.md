@@ -3376,3 +3376,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Si varias tarjetas y gráficos comparten los mismos filtros, cambiar una dimensión debe usar una consulta agregada y una query key común; repetir la población base por componente amplifica la latencia y la carga de Supabase.
 - `placeholderData` debe conservar el último resultado mientras llega el nuevo filtro para evitar una pantalla vacía; el indicador de carga puede acompañar la actualización sin degradar la percepción de respuesta.
+
+## 318. Las restricciones por rol deben preservar siempre el bypass de superadministrador
+
+- Una regla de acceso que diga "solo Reclutamiento" no puede implementarse como `roles.includes(...)` sin evaluar primero `is_super_admin`.
+- El bypass debe existir tanto en la visibilidad frontend como en la autorización backend; corregir solo la pestaña deja al superadministrador viendo el botón, pero bloqueado por la RPC.

@@ -47,6 +47,17 @@ describe("DSAL precandidate approval contract", () => {
     expect(recruitmentOnlyAccessMigration).toContain("solo están disponibles para Reclutamiento");
   });
 
+  it("keeps precandidates visible and operable for super administrators", () => {
+    const superAdminMigration = fs.readFileSync(
+      path.join(root, "supabase/migrations/20260822160458_restore_precandidate_access_for_super_admin.sql"),
+      "utf8"
+    );
+
+    expect(statusPage).toContain("isSuperAdmin || appRoles.includes(\"reclutamiento\")");
+    expect(superAdminMigration).toContain("profile.is_super_admin = true");
+    expect(superAdminMigration).toContain("or public.user_has_role(actor_id, 'reclutamiento')");
+  });
+
   it("enforces folio ownership, effective capacity and transactional approval", () => {
     expect(migration).toContain("assert_dsal_precandidate_case_capacity");
     expect(migration).toContain("upper(coalesce(case_record.contract_name, '')) not like '%DSAL%'");
