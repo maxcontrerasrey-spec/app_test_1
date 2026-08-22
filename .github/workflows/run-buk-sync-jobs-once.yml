@@ -43,7 +43,7 @@ jobs:
         if: ${{ inputs.inspect_employee_id != '' }}
         env:
           INSPECT_EMPLOYEE_ID: ${{ inputs.inspect_employee_id }}
-          BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
+          BUK_EMPLOYEES_URL: https://busesjm.buk.cl/api/v1/chile/employees
           BUK_AUTH_TOKEN: ${{ secrets.BUK_AUTH_TOKEN }}
         run: |
           curl --fail-with-body --show-error --silent \
