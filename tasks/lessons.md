@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 338. Un fix frontend en main puede quedar dormido si el baseline bloquea el deploy
+
+- Si produccion sigue sirviendo el bundle anterior despues de un push, contrastar `origin/main`, el HTML publico y el run de CI antes de reintentar acciones operativas.
+- Cuando todos los gates funcionales pasan pero `audit:performance-baseline` falla por crecimiento medido y justificado, actualizar el baseline con la medicion exacta y su razon tecnica.
+- No declarar el flujo productivo corregido hasta que el HTML publico apunte a un bundle nuevo y el caso real ejecute la ruta actualizada.
+
 ## 337. La ficha pública BUK debe verificarse después de que el candidato la guarde
 
 - Una captura del formulario no prueba por sí sola que la ficha contractual se haya persistido; primero debe consultarse `candidate_worker_files` por el `recruitment_case_candidate_id` exacto.

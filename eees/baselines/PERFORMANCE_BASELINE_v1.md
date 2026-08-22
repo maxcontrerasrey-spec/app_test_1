@@ -112,6 +112,8 @@ Revision 2026-08-19 BI navegación física: CSS sube 42 bytes por ordenar vertic
 
 Revision 2026-08-19 BI navegación resiliente CI: GitHub Actions `Audit Enterprise Guardrails` run `32280159297`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,268,214 bytes totales y 2,750,316 bytes JS. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
 
+Revision 2026-08-22 contingencia BUK dispatch: GitHub Actions `Audit Enterprise Guardrails` run `32584899546`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,274,140 bytes totales, 2,754,770 bytes JS y 244,597 bytes CSS. El incremento corresponde al dispatch explicito del worker BUK desde la accion de contingencia y ajustes frontend acumulados ya validados; no agrega vendors ni assets trackeados.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -131,11 +133,11 @@ Revision 2026-08-19 BI navegación resiliente CI: GitHub Actions `Audit Enterpri
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10268353,
+  "distTotalBytes": 10274140,
   "jsFileCount": 62,
-  "jsTotalBytes": 2750455,
+  "jsTotalBytes": 2754770,
   "cssFileCount": 12,
-  "cssTotalBytes": 243167,
+  "cssTotalBytes": 244597,
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 5257091 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },

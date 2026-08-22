@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Desbloqueo bundle productivo contingencia BUK - 2026-08-22
+
+- [x] Confirmar que `origin/main` apunta al fix `f04288c` y que produccion sigue sirviendo el bundle anterior `index-DzFAlzvG.js`.
+- [x] Revisar el run fallido `32584899546` y aislar la causa en el baseline de performance, con tests funcionales y build pasando.
+- [x] Actualizar el baseline medido, ejecutar gates, commitear y pushear el redeploy a `main`.
+- [ ] Verificar que Cloudflare Pages sirva un bundle nuevo y que la accion de contingencia inicie `sync-buk-candidates`.
+- [ ] Confirmar estado final de los tres jobs BUK pendientes antes de declarar creacion exitosa.
+
 ## Liberar candidato individual a Sin Folio desde Traslado - 2026-08-21
 
 - [x] Agregar en el modal de traslado una acción explícita para dejar al candidato en Sin Folio, sin exigir un folio destino.
