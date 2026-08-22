@@ -94,7 +94,9 @@ Resultado: `RC-0132` quedó con `salary_offer = 1.384.000`, estado `approved` y 
 - [x] Agregar selección persistente de gerencia con alternancia al volver a pulsar la misma barra.
 - [x] Propagar la selección a tarjetas, gráficos de dotación, ausentismo, presencia, demografía y funnel.
 - [x] Mantener compatibilidad con las firmas BI existentes mediante sobrecargas explícitas de cuatro parámetros.
-- [ ] Ejecutar Guardian, publicar y comprobar la interacción real en producción.
+- [x] Ejecutar Guardian, publicar y comprobar la interacción real en producción.
+
+Resultado: commit `256c4dd` publicado en `main`; producción sirve el bundle con `p_management_names` y la población productiva se recalcula de 1.627 a 601 para `GERENCIA OPERACIONES ZONA I (CENTRO)`. La misma barra alterna el filtro nuevamente.
 
 ## Corrección de contadores para candidatos Sin Folio RC-0067 - 2026-08-20
 
