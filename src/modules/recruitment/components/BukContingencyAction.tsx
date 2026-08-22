@@ -20,7 +20,9 @@ export function BukContingencyAction({ candidateId }: BukContingencyActionProps)
     setMessage(
       result.error
         ? result.error
-        : `Carga BUK encolada. Job: ${result.data.map((job) => job.job_id).join(", ") || "pendiente"}.`
+        : result.dispatchError
+          ? `Job encolado, pero la sincronización no inició: ${result.dispatchError}`
+          : `Carga BUK iniciada. Job: ${result.data.map((job) => job.job_id).join(", ") || "pendiente"}.`
     );
     setIsLoading(false);
   };

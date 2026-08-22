@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 337. La ficha pública BUK debe verificarse después de que el candidato la guarde
+
+- Una captura del formulario no prueba por sí sola que la ficha contractual se haya persistido; primero debe consultarse `candidate_worker_files` por el `recruitment_case_candidate_id` exacto.
+- Si la fila ya existe y contiene código reservado, jornada, pagos, previsión y salud, no se debe volver a pedir la ficha ni inferir faltantes desde una lectura anterior.
+- La contingencia sigue requiriendo una sesión autenticada para encolar el job; no se debe insertar manualmente un `buk_sync_job` ni saltarse la autorización del actor.
+
 ## 336. Sin Folio debe conservar una ruta de detalle independiente
 
 - Excluir un candidato liberado de `get_recruitment_case_detail` evita inflar el caso operativo, pero también deja sin ficha a la persona seleccionada desde la pestaña Sin Folio.

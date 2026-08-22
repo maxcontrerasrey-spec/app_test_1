@@ -343,16 +343,41 @@ export async function enqueueCandidatesToBukContingency(
     };
   }
 
-  return {
-    data: Array.isArray(data)
-      ? (data as Array<{
-          job_id: string;
-          recruitment_case_candidate_id: string;
-          status: string;
-        }>)
-      : [],
-    error: null
-  };
+  const queuedJobs = Array.isArray(data)
+    ? (data as Array<{
+        job_id: string;
+        recruitment_case_candidate_id: string;
+        status: string;
+      }>)
+    : [];
+  const pendingJobIds = queuedJobs
+    .filter((job) =>
+      (job.status === "pending" || job.status === "processing") &&
+      typeof job.job_id === "string" &&
+      job.job_id.trim()
+    )
+    .map((job) => job.job_id);
+
+  if (pendingJobIds.length === 0) {
+    return { data: queuedJobs, error: null, dispatchError: null as string | null };
+  }
+
+  const dispatch = await supabase.functions.invoke("sync-buk-candidates", {
+    body: { jobIds: pendingJobIds }
+  });
+  if (dispatch.error) {
+    return {
+      data: queuedJobs,
+      error: null,
+      dispatchError: getSupabaseErrorMessage(
+        dispatch.error,
+        "La carga quedó encolada, pero no fue posible iniciar la sincronización con BUK.",
+        "message"
+      )
+    };
+  }
+
+  return { data: queuedJobs, error: null, dispatchError: null as string | null };
 }
 
 type BukSyncQueueRow = {
