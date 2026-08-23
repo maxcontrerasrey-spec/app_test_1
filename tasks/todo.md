@@ -2650,6 +2650,15 @@ Resultado: cuando el informe está `VALIDATED` y el documento generado, la inter
 - [x] Confirmar en producción una única fila activa, registrar la migración y publicar el commit en `main`.
 
 Resultado: el cargo quedó disponible en el catálogo productivo como `BUK-ROLE-1757`; la migración `20260822175710_sync_new_buk_job_position_ingeniero_planificacion_control` quedó aplicada y el commit `472870f` fue enviado a `main`.
+
+## Carga contingente BUK RC-0132 - 2026-08-23
+- [x] Verificar la identidad de los siete candidatos y su pertenencia al folio `RC-0132`.
+- [x] Validar que no tuvieran fichas BUK previas y que existieran cupos disponibles.
+- [x] Encolar la carga mediante la RPC oficial de contingencia.
+- [x] Procesar los siete jobs con el worker productivo y confirmar `success` e `buk_employee_id`.
+- [x] Deshabilitar el runner técnico temporal después de la ejecución.
+
+Resultado: 7/7 fichas creadas en BUK para `RC-0132`: IDs `42997` a `43003` (asignación por candidato verificada en `buk_sync_jobs`).
 ## Alta BUK Jaime Andres Pasten Perez - 2026-08-22
 
 - [x] Confirmar ficha ERP, folio, cargo y datos laborales.

@@ -3409,3 +3409,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - La sincronización de cargos debe conservar su lógica programada; si BUK crea un cargo después de la última ejecución, el diagnóstico correcto es una desactualización temporal del catálogo local, no un filtro defectuoso.
 - La corrección puntual debe usar el identificador y nombre devueltos por BUK, insertarse de forma idempotente y verificar que quede activo y único en `job_positions` antes de declarar disponible el cargo en el ERP.
+
+## 2026-08-23 - Encolar no equivale a crear la ficha BUK
+
+- Una carga contingente solo está terminada cuando el worker procesa los jobs y cada registro queda `success` con `buk_employee_id`; `pending` o `processing` debe comunicarse como trabajo incompleto.
+- Si la sesión local no tiene una credencial de worker válida, hay que resolver la ejecución productiva autenticada o detenerse con el bloqueo explícito; no entregar el encolamiento como resultado final.
