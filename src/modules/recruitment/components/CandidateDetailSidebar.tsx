@@ -31,6 +31,7 @@ import {
 import { CandidateDocumentChecklist } from "./CandidateDocumentChecklist";
 import { CandidateWorkerFileForm } from "./CandidateWorkerFileForm";
 import { BukContingencyAction } from "./BukContingencyAction";
+import { CandidateStageHistory } from "./CandidateStageHistory";
 
 type CandidateDetailSidebarProps = {
   mode?: "candidate_control" | "personnel_to_hire" | "personnel_contracted";
@@ -748,45 +749,11 @@ export function CandidateDetailSidebar({
             )}
           </div>
 
-          <div className="approval-detail-note control-block-top-lg">
-            <div className="control-inline-header">
-              <small>Historial de etapa</small>
-              <button
-                type="button"
-                onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-                className="control-inline-button"
-              >
-                {isHistoryExpanded ? "Contraer ▲" : `Ver historial (${selectedCandidate.stage_history.length}) ▼`}
-              </button>
-            </div>
-
-            {isHistoryExpanded ? (
-              <div className="control-history-scroll">
-                {selectedCandidate.stage_history.length > 0 ? (
-                  selectedCandidate.stage_history.map((entry, index) => (
-                    <div
-                      key={index}
-                      className={`control-history-entry${index < selectedCandidate.stage_history.length - 1 ? " has-divider" : ""}`}
-                    >
-                      <strong className="control-history-entry-title">
-                        {toRecruitmentCandidateStageLabel(entry.to_stage)}
-                      </strong>
-                      <span className="control-history-entry-meta">
-                        {formatDateTimeValue(entry.created_at)}
-                      </span>
-                      {entry.comment ? (
-                        <p className="control-history-entry-comment">
-                          "{entry.comment}"
-                        </p>
-                      ) : null}
-                    </div>
-                  ))
-                ) : (
-                  <span className="control-history-empty">Sin historial adicional</span>
-                )}
-              </div>
-            ) : null}
-          </div>
+          <CandidateStageHistory
+            entries={selectedCandidate.stage_history}
+            expanded={isHistoryExpanded}
+            onToggle={() => setIsHistoryExpanded((current) => !current)}
+          />
         </div>
       )}
 

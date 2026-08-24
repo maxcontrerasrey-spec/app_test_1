@@ -65,7 +65,6 @@ describe("BI module navigation integrity", () => {
 
   it("renders dotacion by gerencia from the protected BI dimension", () => {
     const chart = read("src/modules/bi/components/BiHeadcountCharts.tsx");
-    const api = read("src/modules/bi/services/biApi.ts");
     const migration = read("supabase/migrations/20260819233000_add_bi_headcount_by_management.sql");
 
     expect(chart).toContain("useBiDotacionDashboard");
@@ -75,7 +74,7 @@ describe("BI module navigation integrity", () => {
     expect(chart).toContain("grid: { left: 0");
     expect(chart).toContain('overflow: "break"');
     expect(chart).not.toContain('overflow: "truncate"');
-    expect(api).toContain('get_bi_headcount_by_management');
+    expect(migration).toContain("get_bi_headcount_by_management");
     expect(migration).toContain("buk_area_name_normalized");
     expect(migration).toContain("user_can_access_bi_analytics");
   });
@@ -96,7 +95,6 @@ describe("BI module navigation integrity", () => {
 
   it("renders ordered regional bars from canonical headcount, never city fallback", () => {
     const chart = read("src/modules/bi/components/BiHeadcountCharts.tsx");
-    const api = read("src/modules/bi/services/biApi.ts");
     const migration = read("supabase/migrations/20260820000000_add_bi_headcount_by_region.sql");
 
     expect(chart).toContain("headcountByRegion");
@@ -108,7 +106,7 @@ describe("BI module navigation integrity", () => {
     expect(chart).toContain("formatPercentage");
     expect(chart).toContain("REGION_BAR_COLORS");
     expect(chart).toContain("position: \"top\"");
-    expect(api).toContain('get_bi_headcount_by_region');
+    expect(migration).toContain("get_bi_headcount_by_region");
     expect(migration).toContain("normalize_bi_region_name");
     expect(migration).toContain("user_can_access_bi_analytics");
   });
@@ -121,6 +119,10 @@ describe("BI module navigation integrity", () => {
     expect(hook).toContain("useBiDotacionDashboard");
     expect(hook).toContain("placeholderData: (previous) => previous");
     expect(api).toContain('get_bi_dotacion_dashboard');
+    expect(hook).not.toContain("useBiWorkforceOverview");
+    expect(hook).not.toContain("useBiExceptionsMonthly");
+    expect(api).not.toContain("export async function fetchBiWorkforceOverview");
+    expect(api).not.toContain("export async function fetchBiExceptionsMonthly");
     expect(migration).toContain("get_bi_dotacion_dashboard");
     expect(migration).toContain("headcountByManagement");
     expect(migration).toContain("grant execute on function public.get_bi_dotacion_dashboard");

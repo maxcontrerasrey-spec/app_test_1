@@ -28,10 +28,15 @@ const warningLimit = Number.isFinite(configuredWarningLimit)
   : GLOBAL_WARNING_LIMIT;
 const FOLLOWUP_MIGRATION = "supabase/migrations/20260716025833_harden_operations_bi_orion_audit_followups.sql";
 const CORE_FOLLOWUP_MIGRATION = "supabase/migrations/20260722184219_reload_postgrest_after_core_integrity.sql";
+const BUK_PENSION_FOLLOWUP_MIGRATION =
+  "supabase/migrations/20260824170429_reload_postgrest_after_buk_pension_payload.sql";
 const CORE_RELOAD_WARNING_KEY =
   "supabase/migrations/20260722183930_core_data_integrity_hardening.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.";
+const BUK_PENSION_RELOAD_WARNING_KEY =
+  "supabase/migrations/20260824151707_block_invalid_buk_pension_payload.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.";
 const SUPERSEDED_WARNING_KEYS = new Set([
   CORE_RELOAD_WARNING_KEY,
+  BUK_PENSION_RELOAD_WARNING_KEY,
   "supabase/migrations/20260609130000_add_orion_session_persistence.sql::SQL grants broad table privileges to authenticated.",
   "supabase/migrations/20260609130000_add_orion_session_persistence.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
   "supabase/migrations/20260610000000_orion_knowledge_base_rag.sql::Migration changes RPC/policy/grants without notify pgrst reload schema.",
@@ -104,6 +109,16 @@ function isSupersededWarning(relativePath, message) {
     return (
       coreFollowup.includes("20260722183930_core_data_integrity_hardening") &&
       /notify\s+pgrst\s*,\s*'reload schema'/i.test(coreFollowup)
+    );
+  }
+
+  if (key === BUK_PENSION_RELOAD_WARNING_KEY) {
+    const followupPath = path.join(ROOT, BUK_PENSION_FOLLOWUP_MIGRATION);
+    if (!fs.existsSync(followupPath)) return false;
+    const followup = fs.readFileSync(followupPath, "utf8");
+    return (
+      followup.includes("20260824151707_block_invalid_buk_pension_payload") &&
+      /notify\s+pgrst\s*,\s*'reload schema'/i.test(followup)
     );
   }
 

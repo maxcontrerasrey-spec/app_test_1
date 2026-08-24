@@ -31,28 +31,10 @@ export const queryKeys = {
     all: () => ["bi"] as const,
     dotacionDashboard: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "dotacionDashboard", normalizeBiFilters(filters)] as const,
-    workforceOverview: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "workforceOverview", normalizeBiFilters(filters)] as const,
     headcountByContract: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "headcountByContract", normalizeBiFilters(filters)] as const,
-    headcountByManagement: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "headcountByManagement", normalizeBiFilters(filters)] as const,
     headcountByJobTitle: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "headcountByJobTitle", normalizeBiFilters(filters)] as const,
-    headcountByCity: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "headcountByCity", normalizeBiFilters(filters)] as const,
-    headcountByRegion: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "headcountByRegion", normalizeBiFilters(filters)] as const,
-    ageDistribution: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "ageDistribution", normalizeBiFilters(filters)] as const,
-    exceptionsToday: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "exceptionsToday", normalizeBiFilters(filters)] as const,
-    presenceSummaryToday: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "presenceSummaryToday", normalizeBiFilters(filters)] as const,
-    exceptionsMonthly: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "exceptionsMonthly", normalizeBiFilters(filters)] as const,
-    recruitmentPipeline: (filters?: BiQueryFilters | null) =>
-      [...queryKeys.bi.all(), "recruitmentPipeline", normalizeBiFilters(filters)] as const,
     recruitmentDashboard: (filters?: BiQueryFilters | null) =>
       [...queryKeys.bi.all(), "recruitmentDashboard", normalizeBiFilters(filters)] as const
   },

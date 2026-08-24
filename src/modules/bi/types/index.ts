@@ -36,12 +36,6 @@ export interface BukBiHeadcountByJobTitle {
   headcount: number;
 }
 
-export interface BukBiHeadcountByCity {
-  regionName: string;
-  cityName: string;
-  headcount: number;
-}
-
 export interface BukBiHeadcountByRegion {
   regionName: string;
   headcount: number;

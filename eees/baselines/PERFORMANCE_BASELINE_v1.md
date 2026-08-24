@@ -24,14 +24,14 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 
 ## Bundle medido
 
-- dist total medido: 10,113,208 bytes.
+- dist total medido: 5,080,867 bytes.
 - JS total medido: 2,632,397 bytes.
-- `dist` total: 10,113,208 bytes.
+- `dist` total: 5,080,867 bytes.
 - Archivos JS: 51.
 - JS total: 2,632,397 bytes.
 - Archivos CSS: 10.
 - CSS total: 216,605 bytes.
-- Mayor asset total: `dist/assets/fondo-D3Rn61W4.png`, 5,257,091 bytes.
+- Fondo de acceso: `dist/assets/fondo-BHbpeV8v.webp`, 65,132 bytes.
 - Mayor mapa: `dist/maps/chile.json`, 1,454,860 bytes.
 - Mayor vendor JS: `echarts-vendor`, 512,504 bytes.
 - Exportador XLSX lazy: `xlsx-vendor`, 500,059 bytes.
@@ -114,6 +114,8 @@ Revision 2026-08-19 BI navegación resiliente CI: GitHub Actions `Audit Enterpri
 
 Revision 2026-08-22 contingencia BUK dispatch: GitHub Actions `Audit Enterprise Guardrails` run `32584899546`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,274,140 bytes totales, 2,754,770 bytes JS y 244,597 bytes CSS. El incremento corresponde al dispatch explicito del worker BUK desde la accion de contingencia y ajustes frontend acumulados ya validados; no agrega vendors ni assets trackeados.
 
+Revision 2026-08-24 auditoria integral de performance: el fondo de acceso se redimensiona de 4.400x2.479 PNG a 2.200x1.240 WebP, preservando su uso a pantalla completa y reduciendo el recurso de 5,257,091 a 65,132 bytes. El artefacto total baja a 5,080,867 bytes; CSS aumenta 1 byte por la extensión del nombre. El límite machine-readable se reduce para bloquear la reintroducción del PNG pesado.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -133,13 +135,13 @@ Revision 2026-08-22 contingencia BUK dispatch: GitHub Actions `Audit Enterprise 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 10274140,
+  "distTotalBytes": 5080346,
   "jsFileCount": 62,
   "jsTotalBytes": 2754770,
   "cssFileCount": 12,
-  "cssTotalBytes": 244597,
+  "cssTotalBytes": 244598,
   "trackedAssets": [
-    { "match": "fondo-", "maxBytes": 5257091 },
+    { "match": "fondo-", "maxBytes": 65132 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
     { "match": "echarts-vendor", "maxBytes": 512504 },
     { "match": "xlsx-vendor", "maxBytes": 500059 },

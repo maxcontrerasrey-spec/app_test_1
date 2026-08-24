@@ -8,7 +8,6 @@ import type {
   BukBiHeadcountByContract,
   BukBiHeadcountByManagement,
   BukBiHeadcountByJobTitle,
-  BukBiHeadcountByCity,
   BukBiHeadcountByRegion,
   BukBiAgeDistribution,
   BukBiExceptionsToday,
@@ -150,7 +149,7 @@ export function mapRecruitmentDashboard(payload: unknown): BiRecruitmentDashboar
   };
 }
 
-export function mapBiDotacionDashboard(payload: unknown): BiDotacionDashboard {
+function mapBiDotacionDashboard(payload: unknown): BiDotacionDashboard {
   const row = (payload ?? {}) as Record<string, unknown>;
   const overviewRow = (row.overview ?? {}) as Record<string, unknown>;
   return {
@@ -170,7 +169,7 @@ export function mapBiDotacionDashboard(payload: unknown): BiDotacionDashboard {
 // MAPPERS (Pure functions mapping Record<string, unknown> to Strict TS Interfaces)
 // ============================================================================
 
-export function mapWorkforceOverview(row: Record<string, unknown>): BukBiWorkforceOverview {
+function mapWorkforceOverview(row: Record<string, unknown>): BukBiWorkforceOverview {
   return {
     totalActiveEmployees: Number(row.total_active_employees ?? 0),
     totalContracts: Number(row.total_contracts ?? 0),
@@ -182,7 +181,7 @@ export function mapWorkforceOverview(row: Record<string, unknown>): BukBiWorkfor
   };
 }
 
-export function mapHeadcountByContract(row: Record<string, unknown>): BukBiHeadcountByContract {
+function mapHeadcountByContract(row: Record<string, unknown>): BukBiHeadcountByContract {
   return {
     contractCode: String(row.contract_code ?? ""),
     areaName: String(row.area_name ?? ""),
@@ -192,14 +191,14 @@ export function mapHeadcountByContract(row: Record<string, unknown>): BukBiHeadc
   };
 }
 
-export function mapHeadcountByManagement(row: Record<string, unknown>): BukBiHeadcountByManagement {
+function mapHeadcountByManagement(row: Record<string, unknown>): BukBiHeadcountByManagement {
   return {
     managementName: String(row.management_name ?? "SIN GERENCIA"),
     headcount: Number(row.headcount ?? 0)
   };
 }
 
-export function mapHeadcountByJobTitle(row: Record<string, unknown>): BukBiHeadcountByJobTitle {
+function mapHeadcountByJobTitle(row: Record<string, unknown>): BukBiHeadcountByJobTitle {
   return {
     contractCode: String(row.contract_code ?? ""),
     areaName: String(row.area_name ?? ""),
@@ -208,22 +207,14 @@ export function mapHeadcountByJobTitle(row: Record<string, unknown>): BukBiHeadc
   };
 }
 
-export function mapHeadcountByCity(row: Record<string, unknown>): BukBiHeadcountByCity {
-  return {
-    regionName: String(row.region_name ?? ""),
-    cityName: String(row.city_name ?? ""),
-    headcount: Number(row.headcount ?? 0)
-  };
-}
-
-export function mapHeadcountByRegion(row: Record<string, unknown>): BukBiHeadcountByRegion {
+function mapHeadcountByRegion(row: Record<string, unknown>): BukBiHeadcountByRegion {
   return {
     regionName: String(row.region_name ?? "SIN REGION"),
     headcount: Number(row.headcount ?? 0)
   };
 }
 
-export function mapAgeDistribution(row: Record<string, unknown>): BukBiAgeDistribution {
+function mapAgeDistribution(row: Record<string, unknown>): BukBiAgeDistribution {
   return {
     contractCode: String(row.contract_code ?? ""),
     areaName: String(row.area_name ?? ""),
@@ -232,7 +223,7 @@ export function mapAgeDistribution(row: Record<string, unknown>): BukBiAgeDistri
   };
 }
 
-export function mapExceptionsToday(row: Record<string, unknown>): BukBiExceptionsToday {
+function mapExceptionsToday(row: Record<string, unknown>): BukBiExceptionsToday {
   return {
     contractCode: String(row.contract_code ?? ""),
     areaName: String(row.area_name ?? ""),
@@ -242,7 +233,7 @@ export function mapExceptionsToday(row: Record<string, unknown>): BukBiException
   };
 }
 
-export function mapPresenceSummaryToday(row: Record<string, unknown>): BukBiPresenceSummaryToday {
+function mapPresenceSummaryToday(row: Record<string, unknown>): BukBiPresenceSummaryToday {
   return {
     contractCode: String(row.contract_code ?? ""),
     headcount: Number(row.headcount ?? 0),
@@ -252,7 +243,7 @@ export function mapPresenceSummaryToday(row: Record<string, unknown>): BukBiPres
   };
 }
 
-export function mapExceptionsMonthly(row: Record<string, unknown>): BukBiExceptionsMonthly {
+function mapExceptionsMonthly(row: Record<string, unknown>): BukBiExceptionsMonthly {
   return {
     contractCode: String(row.contract_code ?? ""),
     monthStart: String(row.month_start ?? ""),
@@ -267,7 +258,7 @@ export function mapExceptionsMonthly(row: Record<string, unknown>): BukBiExcepti
   };
 }
 
-export function mapRecruitmentPipeline(row: Record<string, unknown>): BukBiRecruitmentPipeline {
+function mapRecruitmentPipeline(row: Record<string, unknown>): BukBiRecruitmentPipeline {
   return {
     caseStatus: String(row.case_status ?? ""),
     stageCode: String(row.stage_code ?? ""),
@@ -297,27 +288,6 @@ export async function fetchBiDotacionDashboard(filters?: BiFilters): Promise<BiD
   return mapBiDotacionDashboard(data);
 }
 
-export async function fetchBiWorkforceOverview(filters?: BiFilters): Promise<BukBiWorkforceOverview> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_workforce_overview", buildBiRpcParams(filters));
-
-  if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) {
-    return {
-      totalActiveEmployees: 0,
-      totalContracts: 0,
-      onVacationToday: 0,
-      onMedicalLeaveToday: 0,
-      otherAbsencesToday: 0,
-      hiredThisMonth: 0,
-      openRecruitmentCases: 0
-    };
-  }
-  
-  return mapWorkforceOverview(row as Record<string, unknown>);
-}
-
 export async function fetchBiHeadcountByContract(filters?: BiFilters): Promise<BukBiHeadcountByContract[]> {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("get_bi_headcount_by_contract", buildBiRpcParams(filters));
@@ -325,67 +295,11 @@ export async function fetchBiHeadcountByContract(filters?: BiFilters): Promise<B
   return asArray<Record<string, unknown>>(data).map((row) => mapHeadcountByContract(row));
 }
 
-export async function fetchBiHeadcountByManagement(filters?: BiFilters): Promise<BukBiHeadcountByManagement[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_headcount_by_management", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapHeadcountByManagement(row));
-}
-
 export async function fetchBiHeadcountByJobTitle(filters?: BiFilters): Promise<BukBiHeadcountByJobTitle[]> {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("get_bi_headcount_by_job_title", buildBiRpcParams(filters));
   if (error) throw error;
   return asArray<Record<string, unknown>>(data).map((row) => mapHeadcountByJobTitle(row));
-}
-
-export async function fetchBiHeadcountByCity(filters?: BiFilters): Promise<BukBiHeadcountByCity[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_headcount_by_city", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapHeadcountByCity(row));
-}
-
-export async function fetchBiHeadcountByRegion(filters?: BiFilters): Promise<BukBiHeadcountByRegion[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_headcount_by_region", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapHeadcountByRegion(row));
-}
-
-export async function fetchBiAgeDistribution(filters?: BiFilters): Promise<BukBiAgeDistribution[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_age_distribution", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapAgeDistribution(row));
-}
-
-export async function fetchBiExceptionsToday(filters?: BiFilters): Promise<BukBiExceptionsToday[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_exceptions_today", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapExceptionsToday(row));
-}
-
-export async function fetchBiPresenceSummaryToday(filters?: BiFilters): Promise<BukBiPresenceSummaryToday[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_presence_summary_today", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapPresenceSummaryToday(row));
-}
-
-export async function fetchBiExceptionsMonthly(filters?: BiFilters): Promise<BukBiExceptionsMonthly[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_exceptions_monthly", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapExceptionsMonthly(row));
-}
-
-export async function fetchBiRecruitmentPipeline(filters?: BiFilters): Promise<BukBiRecruitmentPipeline[]> {
-  const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_bi_recruitment_pipeline", buildBiRpcParams(filters));
-  if (error) throw error;
-  return asArray<Record<string, unknown>>(data).map((row) => mapRecruitmentPipeline(row));
 }
 
 export async function fetchBiRecruitmentDashboard(filters?: BiFilters): Promise<BiRecruitmentDashboard> {

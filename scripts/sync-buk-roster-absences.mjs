@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const DEFAULT_LOOKAHEAD_DAYS = 180;
 const PAGE_SIZE = 100;
 const CONCURRENCY = 6;
-const SUPABASE_RPC_CONCURRENCY = 12;
+const SUPABASE_RPC_BATCH_SIZE = 1000;
 const SUPABASE_PAGE_SIZE = 1000;
 const BUK_EXCEPTION_TYPES = new Set(["vacation", "medical_leave"]);
 
@@ -401,56 +401,40 @@ async function fetchActiveBukEmployeeIds(supabase) {
   return new Set(employees.map((employee) => String(employee.buk_employee_id)).filter(Boolean));
 }
 
-async function syncException(supabase, entry) {
-  const { error } = await supabase.rpc("sync_hr_roster_exception_from_buk", {
-    p_buk_employee_id: entry.bukEmployeeId,
-    p_exception_date: entry.exceptionDate,
-    p_exception_type: entry.exceptionType,
-    p_notes: `BUK ${entry.exceptionType}${entry.sourceRecordId ? ` #${entry.sourceRecordId}` : ""}${entry.status ? ` (${entry.status})` : ""}`,
-  });
-
-  if (error) {
-    throw error;
-  }
+function toBatchEntry(entry, clear = false) {
+  return {
+    buk_employee_id: entry.bukEmployeeId,
+    exception_date: entry.exceptionDate ?? entry.exception_date,
+    exception_type: clear ? null : entry.exceptionType,
+    notes: clear
+      ? "BUK ya no reporta vacaciones/licencia médica activa para esta fecha."
+      : `BUK ${entry.exceptionType}${entry.sourceRecordId ? ` #${entry.sourceRecordId}` : ""}${entry.status ? ` (${entry.status})` : ""}`,
+  };
 }
 
-async function clearException(supabase, entry) {
-  const { error } = await supabase.rpc("sync_hr_roster_exception_from_buk", {
-    p_buk_employee_id: entry.bukEmployeeId,
-    p_exception_date: entry.exception_date,
-    p_exception_type: null,
-    p_notes: "BUK ya no reporta vacaciones/licencia médica activa para esta fecha.",
-  });
-
-  if (error) {
-    throw error;
-  }
-}
-
-async function runLimited(entries, worker, summaryKey) {
+async function runBatches(supabase, entries, summaryKey, clear = false) {
   const summary = {
     [summaryKey]: 0,
     failed: [],
   };
 
-  for (let index = 0; index < entries.length; index += SUPABASE_RPC_CONCURRENCY) {
-    const batch = entries.slice(index, index + SUPABASE_RPC_CONCURRENCY);
-    const results = await Promise.allSettled(batch.map((entry) => worker(entry)));
-
-    results.forEach((result, resultIndex) => {
-      const entry = batch[resultIndex];
-      if (result.status === "fulfilled") {
-        summary[summaryKey] += 1;
-        return;
-      }
-
-      summary.failed.push({
-        bukEmployeeId: entry.bukEmployeeId,
-        exceptionDate: entry.exceptionDate ?? entry.exception_date,
-        exceptionType: entry.exceptionType ?? entry.exception_type,
-        message: formatErrorMessage(result.reason),
-      });
+  for (let index = 0; index < entries.length; index += SUPABASE_RPC_BATCH_SIZE) {
+    const batch = entries.slice(index, index + SUPABASE_RPC_BATCH_SIZE);
+    const { error } = await supabase.rpc("sync_hr_roster_exceptions_from_buk_batch", {
+      p_entries: batch.map((entry) => toBatchEntry(entry, clear)),
     });
+
+    if (!error) {
+      summary[summaryKey] += batch.length;
+      continue;
+    }
+
+    summary.failed.push(...batch.map((entry) => ({
+      bukEmployeeId: entry.bukEmployeeId,
+      exceptionDate: entry.exceptionDate ?? entry.exception_date,
+      exceptionType: entry.exceptionType ?? entry.exception_type,
+      message: formatErrorMessage(error),
+    })));
   }
 
   return summary;
@@ -508,8 +492,8 @@ async function main() {
     return;
   }
 
-  const applied = await runLimited(syncableDesired, (entry) => syncException(supabase, entry), "synced");
-  const cleared = await runLimited(exceptionsToClear, (entry) => clearException(supabase, entry), "cleared");
+  const applied = await runBatches(supabase, syncableDesired, "synced");
+  const cleared = await runBatches(supabase, exceptionsToClear, "cleared", true);
 
   console.log(JSON.stringify({
     ok: applied.failed.length === 0 && cleared.failed.length === 0,
