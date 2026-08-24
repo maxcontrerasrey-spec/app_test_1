@@ -11,6 +11,10 @@ baseline_date: 2026-07-22
 
 # Release and CI/CD Book
 
+## REL-003 - Release y rollback verificables
+
+Todo cambio productivo conserva checklist, estrategia de rollback y evidencia posterior al despliegue.
+
 ## Proposito
 
 Definir reglas normativas para release and ci/cd book del ERP, derivadas de evidencia real del repositorio.

@@ -11,6 +11,10 @@ baseline_date: 2026-07-22
 
 # Database Book
 
+## DB-005 - Migraciones destructivas
+
+`audit:destructive-migrations` revisa migraciones nuevas o modificadas. Una operacion destructiva requiere anotacion `EEES-DB-005: approved`, owner y rollback; se prefieren fases expand, backfill, switch y contract.
+
 ## Proposito
 
 Definir reglas normativas para database book del ERP, derivadas de evidencia real del repositorio.

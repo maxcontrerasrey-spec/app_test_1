@@ -1,5 +1,7 @@
 # CODEX OBJECTIVE LOOP --- ENTERPRISE REPOSITORY CLEANUP & CONSOLIDATION
 
+Regla EEES asociada: `REL-005`.
+
 ## OBJETIVO ÚNICO
 
 Ejecuta una limpieza final, segura y verificable del repositorio después

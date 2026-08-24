@@ -1,7 +1,7 @@
 ---
 document_id: EEES-CHANGELOG
 title: Changelog EEES
-version: 1.0.0
+version: 2.0.0
 status: Activo
 language: es-CL
 owner: Engineering Governance
@@ -10,6 +10,14 @@ baseline_date: 2026-07-22
 ---
 
 # Control de cambios
+
+## 2.0.0 - 2026-08-24
+
+- Se fortalece `rules.json` como registro canonico y se agrega validacion de gates, IDs, fuentes y excepciones.
+- La certificacion pasa a evidencia machine-readable ligada a commit con estados vigentes y SBOM.
+- Se agregan secret scanning, dependency audit, higiene CI y guard de migraciones destructivas.
+- Performance adopta tolerancias significativas y cleanup elimina falsos positivos internos de `node_modules`.
+- Se incorporan Governance y Supply Chain Books, guia de migracion e informe de implementacion.
 
 ## 1.5.0 - 2026-07-22
 

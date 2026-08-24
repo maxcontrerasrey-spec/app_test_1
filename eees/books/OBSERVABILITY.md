@@ -11,6 +11,18 @@ baseline_date: 2026-07-22
 
 # Observability and Operations Book
 
+## PERF-002 - Baseline de performance
+
+El build se compara contra el baseline machine-readable y conserva evidencia de sus artefactos principales.
+
+## OBS-008 - Telemetria de flujos criticos
+
+Sincronizacion BUK, contratacion, documentos y mutaciones criticas registran correlation ID, actor, operacion, resultado, duracion, dependencia y categoria de error. Tokens, passwords y datos personales completos quedan excluidos.
+
+## PERF-003 - Presupuestos significativos
+
+El gate usa tolerancia absoluta y porcentual. Variaciones pequenas pasan; crecimiento moderado advierte y una regresion material bloquea. El baseline solo se actualiza con causa y evidencia.
+
 ## Proposito
 
 Definir reglas normativas para observability and operations book del ERP, derivadas de evidencia real del repositorio.

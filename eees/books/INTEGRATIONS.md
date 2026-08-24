@@ -11,6 +11,10 @@ baseline_date: 2026-07-22
 
 # Integrations Book
 
+## API-002 - Validacion runtime
+
+Los payloads BUK, WebControl, Tracktec, Edge Functions y otras fronteras externas se validan antes de persistir o mutar. Se reutilizan validadores existentes; los errores se sanitizan y quedan observables sin payload sensible.
+
 ## Proposito
 
 Definir reglas normativas para integrations book del ERP, derivadas de evidencia real del repositorio.

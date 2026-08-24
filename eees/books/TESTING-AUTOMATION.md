@@ -11,6 +11,18 @@ baseline_date: 2026-07-22
 
 # Testing and Automation Book
 
+## TST-005 - Baseline medido de testing
+
+La suite conserva un baseline reproducible de unit, contracts y coverage.
+
+## TST-006 - Logica critica protegida
+
+Las funciones puras de negocio registradas por Guardian deben tener pruebas anti-regresion dirigidas.
+
+## TST-007 - Cobertura de codigo cambiado
+
+La cobertura global sigue siendo baseline, pero los cambios en logica critica deben incluir guardrail dirigido. La adopcion de diff coverage queda gradual hasta disponer de una comparacion estable contra la rama base en todos los entornos.
+
 ## Proposito
 
 Definir reglas normativas para testing and automation book del ERP, derivadas de evidencia real del repositorio.

@@ -1,5 +1,7 @@
 # CODEX OBJECTIVE LOOP --- CORE DATA INTEGRITY CERTIFICATION
 
+Reglas EEES asociadas: `DATA-002` y `CONC-003`.
+
 ## OBJETIVO ÚNICO
 
 Actúa como **Principal ERP Architect + PostgreSQL/Supabase Architect +

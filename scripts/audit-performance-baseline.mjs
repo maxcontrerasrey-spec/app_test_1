@@ -5,9 +5,38 @@ const repoRoot = process.cwd();
 const baselinePath = "eees/baselines/PERFORMANCE_BASELINE_v1.md";
 const marker = "<!-- EEES_PERFORMANCE_BASELINE_JSON -->";
 const checks = [];
+const warnings = [];
+
+const DEFAULT_WARNING_PERCENT = 1;
+const DEFAULT_ERROR_PERCENT = 3;
+const DEFAULT_ABSOLUTE_TOLERANCE_BYTES = 16 * 1024;
 
 function addCheck(ok, message) {
   checks.push({ ok, message });
+}
+
+function evaluateBudget(label, current, baselineValue, policy = {}) {
+  if (!Number.isFinite(baselineValue) || baselineValue < 0) {
+    addCheck(false, `${label} no tiene baseline numerico valido`);
+    return;
+  }
+
+  const absoluteTolerance = policy.absoluteToleranceBytes ?? DEFAULT_ABSOLUTE_TOLERANCE_BYTES;
+  const warningPercent = policy.warningPercent ?? DEFAULT_WARNING_PERCENT;
+  const errorPercent = policy.errorPercent ?? DEFAULT_ERROR_PERCENT;
+  const delta = current - baselineValue;
+  const percent = baselineValue === 0 ? (delta > 0 ? Infinity : 0) : (delta / baselineValue) * 100;
+  const errorLimit = Math.max(absoluteTolerance, baselineValue * (errorPercent / 100));
+  const warningLimit = Math.max(absoluteTolerance / 2, baselineValue * (warningPercent / 100));
+
+  if (delta > errorLimit) {
+    addCheck(false, `${label} aumento ${delta} bytes (${percent.toFixed(2)}%), sobre presupuesto ${errorPercent}%`);
+    return;
+  }
+  addCheck(true, `${label} ${current} bytes; baseline ${baselineValue}; delta ${delta}`);
+  if (delta > warningLimit) {
+    warnings.push(`${label} aumento ${delta} bytes (${percent.toFixed(2)}%); revisar antes de agotar el presupuesto`);
+  }
 }
 
 function listFiles(dir) {
@@ -86,27 +115,19 @@ const metrics = collectCurrentMetrics();
 addCheck(metrics.assets.length > 0, "dist contiene artefactos de build medibles");
 
 if (baseline) {
-  addCheck(
-    Number.isFinite(baseline.distTotalBytes) && metrics.totalBytes <= baseline.distTotalBytes,
-    `dist total ${metrics.totalBytes} <= baseline ${baseline.distTotalBytes}`
-  );
-  addCheck(
-    Number.isFinite(baseline.jsTotalBytes) && metrics.jsBytes <= baseline.jsTotalBytes,
-    `JS total ${metrics.jsBytes} <= baseline ${baseline.jsTotalBytes}`
-  );
-  addCheck(
-    Number.isFinite(baseline.cssTotalBytes) && metrics.cssBytes <= baseline.cssTotalBytes,
-    `CSS total ${metrics.cssBytes} <= baseline ${baseline.cssTotalBytes}`
-  );
+  const policy = baseline.budgetPolicy ?? {};
+  evaluateBudget("dist total", metrics.totalBytes, baseline.distTotalBytes, policy);
+  evaluateBudget("JS total", metrics.jsBytes, baseline.jsTotalBytes, policy);
+  evaluateBudget("CSS total", metrics.cssBytes, baseline.cssTotalBytes, policy);
 
   for (const asset of baseline.trackedAssets ?? []) {
     const current = findAsset(metrics, asset.match);
     addCheck(Boolean(current), `asset trackeado ${asset.match} existe en dist`);
     if (current) {
-      addCheck(
-        current.bytes <= asset.maxBytes,
-        `${asset.match} ${current.bytes} <= baseline ${asset.maxBytes}`
-      );
+      evaluateBudget(asset.match, current.bytes, asset.maxBytes, {
+        ...policy,
+        ...asset.budgetPolicy
+      });
     }
   }
 }
@@ -121,6 +142,9 @@ if (failedChecks.length > 0) {
 }
 
 console.log("Performance baseline audit passed:");
+for (const warning of warnings) {
+  console.warn(`Performance budget warning: ${warning}`);
+}
 console.log(
   JSON.stringify(
     {

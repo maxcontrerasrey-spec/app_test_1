@@ -23,7 +23,7 @@ function trackedFiles() {
     .filter(Boolean);
 }
 
-function findNumericConflictCopies(relativeRoot) {
+function findNumericConflictCopies(relativeRoot, { recursive = true } = {}) {
   const absoluteRoot = path.join(repoRoot, relativeRoot);
   if (!fs.existsSync(absoluteRoot)) {
     return [];
@@ -38,7 +38,7 @@ function findNumericConflictCopies(relativeRoot) {
       if (/ \d+(?:\.[^/]+)?$/.test(entry.name)) {
         matches.push(path.relative(repoRoot, absolutePath));
       }
-      if (entry.isDirectory()) {
+      if (recursive && entry.isDirectory()) {
         pending.push(absolutePath);
       }
     }
@@ -117,7 +117,8 @@ addCheck(trackedDsStoreCount === 0, "0 .DS_Store versionados activos");
 addCheck(trackedTsBuildInfoCount === 0, "0 tsbuildinfo versionados activos");
 
 const localConflictCopies = [
-  ...findNumericConflictCopies("node_modules"),
+  // node_modules is disposable dependency-manager output. Numeric paths under
+  // it are not repository debt and are intentionally outside this audit.
   ...findNumericConflictCopies(".git/info")
 ];
 for (const entry of fs.readdirSync(repoRoot)) {
@@ -135,7 +136,7 @@ for (const entry of fs.existsSync(path.join(repoRoot, ".git"))
     addCheck(false, `.git/${entry} parece una copia conflictiva local`);
   }
 }
-addCheck(localConflictCopies.length === 0, "0 copias numericas locales en node_modules/.git/info");
+addCheck(localConflictCopies.length === 0, "0 copias numericas locales en raices controladas");
 
 for (const required of [
   "eees/baselines/REPOSITORY-CLEANUP-BASELINE_v1.md",

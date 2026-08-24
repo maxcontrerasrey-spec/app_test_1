@@ -159,7 +159,7 @@ function validateRules() {
   }
 
   const ids = new Map();
-  const validPrefix = /^(ARCH|DB|SEC|FE|BE|MOD|QA|OBS|INT|DOC|TST|PERF|API|UX|DEP|CICD|DATA|REL|CONC|ERR|AI)-\d{3}$/;
+  const validPrefix = /^(AI|API|ARCH|BE|CICD|CONC|DATA|DB|DOC|ENG|ERR|FE|GOV|INT|MOD|OBS|PERF|QA|REL|RES|SEC|SUP|TST|UX)-\d{3}$/;
   const allowedSourceRoots = [
     "eees/",
     "docs/CODEX_OBJECTIVE_LOOP_EEES_100_PERCENT.md",
@@ -542,6 +542,11 @@ function runCommand(name, command, args = []) {
 }
 
 function runGates() {
+  runCommand("audit:eees-governance", "npm", ["run", "audit:eees-governance"]);
+  runCommand("audit:secrets", "npm", ["run", "audit:secrets"]);
+  runCommand("audit:destructive-migrations", "npm", ["run", "audit:destructive-migrations"]);
+  runCommand("audit:dependencies", "npm", ["run", "audit:dependencies"]);
+  runCommand("audit:ci-supply-chain", "npm", ["run", "audit:ci-supply-chain"]);
   runCommand("test:unit", "npm", ["run", "test:unit"]);
   runCommand("test:contracts", "npm", ["run", "test:contracts"]);
   runCommand("audit:enterprise-docs", "npm", ["run", "audit:enterprise-docs"]);

@@ -1,7 +1,7 @@
 ---
 document_id: EEES-CERT-ENTERPRISE-FINAL
 title: Enterprise Certification Final
-version: 1.0.0
+version: 2.0.0
 status: Activo
 language: es-CL
 owner: QA
@@ -10,6 +10,8 @@ baseline_date: 2026-07-22
 ---
 
 # Enterprise Certification Final
+
+> Registro historico del cierre 1.x. No representa automaticamente la salud de `HEAD`; consultar el artefacto `.eees/evidence/certification.json` de la ejecucion CI vigente.
 
 ## Resultado
 

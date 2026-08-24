@@ -1,7 +1,7 @@
 ---
 document_id: EEES-CERT-MODEL
 title: Certification Model
-version: 1.0.0
+version: 2.0.0
 status: Activo
 language: es-CL
 owner: QA
@@ -29,3 +29,14 @@ Una puntuacion alta no compensa:
 ## Evidencia aceptada
 
 Comandos ejecutados, logs de CI, auditorias SQL, smokes, tests, reportes EEES y lessons.
+
+## Vigencia
+
+El estado vigente se calcula con `npm run eees:certify` y queda asociado al SHA en `.eees/evidence/certification.json` dentro del artefacto de CI. Los estados son:
+
+- `CERTIFIED`: todos los gates pasan, sin riesgo aceptado vigente.
+- `CERTIFIED_WITH_ACCEPTED_RISK`: gates pasan y existen excepciones vigentes gobernadas.
+- `STALE`: la evidencia no representa `HEAD`, excede su ventana o cambio el estandar.
+- `NOT_CERTIFIED`: existe al menos un gate bloqueante fallido.
+
+Un documento historico nunca reemplaza esta evidencia.

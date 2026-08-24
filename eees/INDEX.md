@@ -1,7 +1,7 @@
 ---
 document_id: EEES-INDEX
 title: Indice maestro EEES
-version: 1.0.0
+version: 2.0.0
 status: Activo
 language: es-CL
 owner: Engineering Governance
@@ -47,6 +47,8 @@ baseline_date: 2026-07-22
 - [UX and Design System](books/UX-DESIGN-SYSTEM.md)
 - [Release and CI/CD](books/RELEASE-CICD.md)
 - [Data Governance and Documents](books/DATA-DOCUMENTS.md)
+- [Governance](books/GOVERNANCE.md)
+- [Supply Chain](books/SUPPLY-CHAIN.md)
 
 ## Guardian y certificacion
 
@@ -71,6 +73,8 @@ baseline_date: 2026-07-22
 - [Enterprise Certification Final](certification/ENTERPRISE-CERTIFICATION-FINAL.md)
 - [Release Checklist](certification/RELEASE-CHECKLIST.md)
 - [Module Checklist](certification/MODULE-CHECKLIST.md)
+- [EEES 2.0 Implementation Report](audits/EEES-2.0-IMPLEMENTATION-REPORT.md)
+- [Migration 1.x to 2.0](MIGRATION-1X-TO-2.0.md)
 
 ## Playbooks y Codex
 

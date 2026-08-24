@@ -11,6 +11,26 @@ baseline_date: 2026-07-22
 
 # Security Book
 
+## ERR-001 - Errores UI sanitizados
+
+La UI traduce fallos tecnicos mediante el helper canonico y no expone stack, SQL ni secretos.
+
+## AI-001 - IA administrada y gobernada
+
+Los flujos de IA respetan autorizacion backend, minimizacion de datos, trazabilidad y configuracion administrada.
+
+## SEC-005 - Secret scanning
+
+Todo archivo versionado se evalua con `audit:secrets`. Los hallazgos solo informan tipo y ruta; nunca imprimen el valor. Binarios, outputs y lockfile se excluyen para reducir falsos positivos.
+
+## SEC-006 - SECURITY DEFINER hardening
+
+Toda RPC `SECURITY DEFINER` debe justificar el privilegio, fijar `search_path`, validar identidad y autorizacion, y declarar grants minimos. La auditoria se aplica a migraciones forward-only y no reescribe historia aplicada.
+
+## SEC-007 - Pruebas negativas de autorizacion
+
+Las fronteras sensibles deben probar tanto el acceso permitido como el rechazo a roles no autorizados, lectura de terceros, suplantacion de IDs y mutaciones fuera de alcance.
+
 ## Proposito
 
 Definir reglas normativas para security book del ERP, derivadas de evidencia real del repositorio.

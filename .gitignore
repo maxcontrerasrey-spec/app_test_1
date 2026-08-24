@@ -1,6 +1,7 @@
 node_modules
 dist/
 coverage/
+.eees/evidence/
 .DS_Store
 *.tsbuildinfo
 vite.config.d.ts

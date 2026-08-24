@@ -1,5 +1,7 @@
 # CODEX OBJECTIVE LOOP --- EEES 100% ENTERPRISE CLOSURE
 
+Regla EEES asociada: `REL-004`.
+
 ## OBJETIVO ÚNICO
 
 Lleva este ERP desde su estado EEES actual hasta **EEES ENTERPRISE: 100%

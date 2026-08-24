@@ -385,5 +385,216 @@
     "source_document": "eees/books/SECURITY.md",
     "automatable": false,
     "blocking": false
+  },
+  {
+    "id": "GOV-001",
+    "title": "Registro canonico de reglas consistente",
+    "severity": "ERROR",
+    "scope": "eees/guardian eees/books scripts",
+    "source_document": "eees/books/GOVERNANCE.md",
+    "classification": "governance",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "GOV-002",
+    "title": "Certificacion representa HEAD y evidencia vigente",
+    "severity": "ERROR",
+    "scope": ".eees/evidence eees/certification scripts",
+    "source_document": "eees/books/GOVERNANCE.md",
+    "classification": "evidence",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "GOV-003",
+    "title": "Excepciones gobernadas y con expiracion",
+    "severity": "ERROR",
+    "scope": "eees/guardian/suppressions.json",
+    "source_document": "eees/books/GOVERNANCE.md",
+    "classification": "governance",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "GOV-004",
+    "title": "Baselines de deuda deben reducirse",
+    "severity": "WARNING",
+    "scope": "eees/baselines eees/guardian/suppressions.json",
+    "source_document": "eees/books/GOVERNANCE.md",
+    "classification": "governance",
+    "automatable": true,
+    "blocking": false
+  },
+  {
+    "id": "SEC-005",
+    "title": "Secretos no se versionan ni imprimen",
+    "severity": "ERROR",
+    "scope": "repositorio versionado",
+    "source_document": "eees/books/SECURITY.md",
+    "classification": "preventive",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "SEC-006",
+    "title": "SECURITY DEFINER con hardening verificable",
+    "severity": "ERROR",
+    "scope": "supabase/migrations",
+    "source_document": "eees/books/SECURITY.md",
+    "classification": "detective",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "SEC-007",
+    "title": "Autorizacion critica tiene pruebas negativas",
+    "severity": "ERROR",
+    "scope": "tests supabase src/app/router",
+    "source_document": "eees/books/SECURITY.md",
+    "classification": "detective",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "SUP-001",
+    "title": "Vulnerabilidades de produccion bloquean CI",
+    "severity": "ERROR",
+    "scope": "package.json package-lock.json",
+    "source_document": "eees/books/SUPPLY-CHAIN.md",
+    "classification": "detective",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "SUP-002",
+    "title": "Cambios de dependencias son revisables",
+    "severity": "WARNING",
+    "scope": "package.json package-lock.json",
+    "source_document": "eees/books/SUPPLY-CHAIN.md",
+    "classification": "governance",
+    "automatable": true,
+    "blocking": false
+  },
+  {
+    "id": "SUP-003",
+    "title": "Instalacion npm reproducible",
+    "severity": "ERROR",
+    "scope": "package-lock.json .github/workflows",
+    "source_document": "eees/books/SUPPLY-CHAIN.md",
+    "classification": "preventive",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "SUP-004",
+    "title": "Workflows con higiene de supply chain",
+    "severity": "ERROR",
+    "scope": ".github/workflows",
+    "source_document": "eees/books/SUPPLY-CHAIN.md",
+    "classification": "detective",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "SUP-005",
+    "title": "SBOM asociado a evidencia de build",
+    "severity": "WARNING",
+    "scope": ".eees/evidence .github/workflows",
+    "source_document": "eees/books/SUPPLY-CHAIN.md",
+    "classification": "evidence",
+    "automatable": true,
+    "blocking": false
+  },
+  {
+    "id": "SUP-006",
+    "title": "Provenance de artefacto evaluada",
+    "severity": "INFO",
+    "scope": ".github/workflows eees/certification",
+    "source_document": "eees/books/SUPPLY-CHAIN.md",
+    "classification": "evidence",
+    "status": "not_applicable",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "API-002",
+    "title": "Contratos externos se validan en runtime",
+    "severity": "ERROR",
+    "scope": "supabase/functions src/modules/*/services tests/contracts",
+    "source_document": "eees/books/INTEGRATIONS.md",
+    "classification": "preventive",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "RES-001",
+    "title": "Operaciones remotas criticas son resilientes",
+    "severity": "ERROR",
+    "scope": "supabase/functions scripts",
+    "source_document": "eees/books/BACKEND.md",
+    "classification": "preventive",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "OBS-008",
+    "title": "Flujos criticos emiten telemetria sanitizada",
+    "severity": "WARNING",
+    "scope": "supabase/functions scripts",
+    "source_document": "eees/books/OBSERVABILITY.md",
+    "classification": "detective",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "DB-005",
+    "title": "Migraciones destructivas requieren estrategia",
+    "severity": "ERROR",
+    "scope": "supabase/migrations",
+    "source_document": "eees/books/DATABASE.md",
+    "classification": "preventive",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "TST-007",
+    "title": "Cobertura protege codigo cambiado critico",
+    "severity": "WARNING",
+    "scope": "src tests vitest.config.ts",
+    "source_document": "eees/books/TESTING-AUTOMATION.md",
+    "classification": "detective",
+    "automatable": false,
+    "blocking": false
+  },
+  {
+    "id": "PERF-003",
+    "title": "Presupuestos de performance significativos",
+    "severity": "ERROR",
+    "scope": "dist eees/baselines scripts/audit-performance-baseline.mjs",
+    "source_document": "eees/books/OBSERVABILITY.md",
+    "classification": "detective",
+    "automatable": true,
+    "blocking": true
+  },
+  {
+    "id": "ENG-001",
+    "title": "Codigo generado no obtiene confianza privilegiada",
+    "severity": "ERROR",
+    "scope": "src supabase scripts",
+    "source_document": "eees/books/GOVERNANCE.md",
+    "classification": "governance",
+    "automatable": false,
+    "blocking": true
+  },
+  {
+    "id": "ENG-002",
+    "title": "Contratos vivos se inspeccionan antes de mutar",
+    "severity": "ERROR",
+    "scope": "tasks eees supabase scripts",
+    "source_document": "eees/books/GOVERNANCE.md",
+    "classification": "governance",
+    "automatable": false,
+    "blocking": true
   }
 ]

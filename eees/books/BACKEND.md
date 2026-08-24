@@ -11,6 +11,18 @@ baseline_date: 2026-07-22
 
 # Backend Book
 
+## CONC-001 - Jobs atomicos
+
+Los workers reclaman trabajo atomicamente y distinguen estados terminales de estados reintentables.
+
+## CONC-002 - Mutaciones idempotentes
+
+Las mutaciones criticas usan claves, locks o invariantes que evitan efectos duplicados y conservan auditoria.
+
+## RES-001 - Condiciones excepcionales
+
+Las llamadas remotas criticas declaran timeout, cancelacion y retry limitado. Una mutacion solo se reintenta cuando es idempotente o posee una proteccion equivalente; se evita todo retry infinito.
+
 ## Proposito
 
 Definir reglas normativas para backend book del ERP, derivadas de evidencia real del repositorio.

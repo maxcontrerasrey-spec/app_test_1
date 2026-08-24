@@ -12,6 +12,10 @@ on:
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
       - "scripts/audit-eees-guardian.mjs"
+      - "scripts/audit-eees-*.mjs"
+      - "scripts/eees-governance-lib.mjs"
+      - "scripts/run-eees-certification.mjs"
+      - "scripts/generate-eees-sbom.mjs"
       - "scripts/audit-enterprise-100-readiness.mjs"
       - "scripts/audit-repository-cleanup.mjs"
       - "scripts/audit-buk-sync-guards.mjs"
@@ -45,6 +49,10 @@ on:
       - "src/app/router/routeModules.ts"
       - "scripts/audit-enterprise-docs.mjs"
       - "scripts/audit-eees-guardian.mjs"
+      - "scripts/audit-eees-*.mjs"
+      - "scripts/eees-governance-lib.mjs"
+      - "scripts/run-eees-certification.mjs"
+      - "scripts/generate-eees-sbom.mjs"
       - "scripts/audit-enterprise-100-readiness.mjs"
       - "scripts/audit-repository-cleanup.mjs"
       - "scripts/audit-buk-sync-guards.mjs"
@@ -93,6 +101,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Audit dependency vulnerabilities
+        run: npm run audit:dependencies
+
+      - name: Audit CI and dependency state
+        run: npm run audit:ci-supply-chain
+
+      - name: Scan repository secrets
+        run: npm run audit:secrets
+
+      - name: Guard destructive migrations
+        run: npm run audit:destructive-migrations
 
       - name: Setup Deno
         uses: denoland/setup-deno@v2
@@ -146,6 +166,20 @@ jobs:
 
       - name: EEES Guardian
         run: npm run guardian:full
+
+      - name: Generate EEES certification evidence
+        run: npm run eees:certify
+
+      - name: Generate CycloneDX SBOM
+        run: npm run eees:sbom
+
+      - name: Preserve EEES evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: eees-evidence-${{ github.sha }}
+          path: .eees/evidence/
+          if-no-files-found: warn
 
       - name: EEES 100 readiness
         run: npm run audit:enterprise-100-readiness

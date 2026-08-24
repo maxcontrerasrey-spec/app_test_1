@@ -11,6 +11,8 @@ baseline_date: 2026-07-22
 
 # Auditoria de reutilizacion y complejidad
 
+Regla aplicable: `PERF-001` para archivos gigantes auditados.
+
 ## Baseline P2
 
 - Archivos criticos iniciales sobre 800 lineas: 13.
