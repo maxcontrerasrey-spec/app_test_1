@@ -1,5 +1,18 @@
 # Tareas y Roadmap de Desarrollo
 
+## Implementación EEES 2.0 - 2026-08-24
+
+- [x] Levantar el estado vivo de Books, registry, Guardian, gates, evidencia y certificación sin alterar cambios concurrentes.
+- [x] Diseñar e implementar la migración mínima de gobernanza, seguridad, supply chain, DB/API, resiliencia, calidad y performance.
+- [x] Reconciliar Books, reglas, Guardian, CI, excepciones y certificación con pruebas del propio estándar.
+- [x] Ejecutar los gates completos, corregir regresiones atribuibles y generar guía de migración e informe reproducible.
+
+Estado inicial: auditoría en curso sobre `main` con cambios concurrentes ajenos preservados. El prompt adjunto se usa como especificación de objetivos; el repositorio vivo conserva la autoridad técnica.
+
+Resultado: Guardian completo cerro con 0 errores/0 warnings propios; gobierno, secretos, dependencias, CI, migraciones, cleanup, tests, cobertura, smokes, Edge Functions y performance pasan. Las dos supresiones heredadas se retiraron porque sus hallazgos ya no existen. La certificacion cuenta por separado los warnings historicos informados por el audit Supabase.
+
+Revision final: commits `dc84694` y `071271c` enviados a `main`. GitHub Actions `32756756439` cerro exitosamente todos los gates, genero evidencia de certificacion y SBOM, y el upload de artefactos quedo fijado a `v6.0.0`/Node 24 sin la advertencia anterior.
+
 ## Alta BUK Sylvia Myriam Carvajal Salinas - jubilada sin AFP - 2026-08-22
 
 - [x] Ubicar la ficha, participación, folio, cargo y RUT de Sylvia en el ERP y comprobar si ya existe una alta o job BUK.
