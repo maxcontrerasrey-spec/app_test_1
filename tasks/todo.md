@@ -2678,3 +2678,12 @@ Resultado: job `474a8e42-62a3-4620-8de1-9f1a6ca9bda8` exitoso; BUK employee `429
 - [x] Validar en producción la búsqueda con tildes y sin tildes, además del RUT.
 
 Resultado: la migración `20260824135155_fix_dsal_precandidate_accent_search` permite encontrar el mismo precandidato aunque se busque `Pena` o `Peña`. El registro no fue modificado.
+## Carga contingente BUK - Marcelo Reyes, Eduard Leyton e Ignacio Pérez - 2026-08-24
+
+- [x] Identificar fichas ERP, folios, cargos y datos laborales de los tres candidatos.
+- [x] Confirmar que no existan jobs ni empleados BUK previos.
+- [x] Validar payloads por la ruta contingente autorizada.
+- [x] Encolar y procesar las tres altas idempotentes.
+- [x] Verificar empleados F1, estados `success` y ausencia de duplicados.
+
+Resultado: se confirmó que el trabajador rechazado de ERP (`42873`) ya no existe en BUK; se reconcilió su job histórico como no vigente, liberando un cupo real. Las tres altas quedaron `success`: Eduard `43058`, Marcelo `43059` (reutilización segura tras timeout) e Ignacio `43060`, todos F1 y sin duplicados.
