@@ -3414,3 +3414,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Una carga contingente solo está terminada cuando el worker procesa los jobs y cada registro queda `success` con `buk_employee_id`; `pending` o `processing` debe comunicarse como trabajo incompleto.
 - Si la sesión local no tiene una credencial de worker válida, hay que resolver la ejecución productiva autenticada o detenerse con el bloqueo explícito; no entregar el encolamiento como resultado final.
+
+## 2026-08-24 - Las búsquedas de precandidatos deben normalizar acentos simétricamente
+
+- Los nombres DSAL pueden persistirse sin tildes mientras el usuario busca con tildes; comparar solo con `lower()` produce falsos negativos aunque el registro exista.
+- Los RPC de búsqueda deben normalizar tanto el término ingresado como las columnas consultadas, incluyendo nombre, RUT, correo, teléfono y cargo.

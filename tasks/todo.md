@@ -2669,3 +2669,12 @@ Resultado: 7/7 fichas creadas en BUK para `RC-0132`: IDs `42997` a `43003` (asig
 - [x] Verificar empleado, F1 y ausencia de duplicados en producción.
 
 Resultado: job `474a8e42-62a3-4620-8de1-9f1a6ca9bda8` exitoso; BUK employee `42996`, código F1, una ficha ERP, un job exitoso y sin duplicados.
+
+## Corrección búsqueda precandidatos DSAL - 2026-08-24
+
+- [x] Reproducir la búsqueda de `Mario Antonio Peña Rivera` contra producción.
+- [x] Confirmar el registro real, su estado `pending` y la causa de la diferencia de tildes.
+- [x] Corregir el RPC productivo para normalizar consulta y columnas sin alterar datos ni estados.
+- [x] Validar en producción la búsqueda con tildes y sin tildes, además del RUT.
+
+Resultado: la migración `20260824135155_fix_dsal_precandidate_accent_search` permite encontrar el mismo precandidato aunque se busque `Pena` o `Peña`. El registro no fue modificado.
