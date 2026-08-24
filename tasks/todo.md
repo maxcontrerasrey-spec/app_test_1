@@ -5,11 +5,13 @@
 - [x] Reproducir y clasificar falsos positivos de certificación, migraciones, secretos, supply chain y performance.
 - [x] Corregir los controles críticos con contratos backend autoritativos y cobertura de regresión.
 - [x] Ejecutar pruebas focalizadas, Guardian completo, build y validación del workflow.
-- [ ] Publicar únicamente los cambios EEES en `main` y verificar CI/remoto antes de cerrar.
+- [x] Publicar únicamente los cambios EEES en `main` y verificar CI/remoto antes de cerrar.
 
 Alcance: se preservan sin mezclar los cambios locales concurrentes del flujo BUK y los artefactos no versionados.
 
 Revisión técnica: se cerraron falsos PASS en rango Git de migraciones, cobertura del workflow, certificación prematura/obsoleta, aceptación de riesgos, secretos, actions mutables, shell inputs, baseline Supabase y performance. Guardian completo cerró con 0 errores y 0 warnings; quedan como trabajo planificado la reducción forward-only de 82 fingerprints Supabase históricos y diff coverage general.
+
+Cierre productivo: commits `be438f6` y `6ea9067` publicados en `main`; GitHub Actions `32760062232` terminó `success` con build, smokes, Guardian, certificación y artefacto. La evidencia descargada declara `CERTIFIED`, commit `6ea9067`, 0 errores, 82 observaciones históricas y 0 riesgos aceptados.
 
 ## Implementación EEES 2.0 - 2026-08-24
 
