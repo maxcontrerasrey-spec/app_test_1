@@ -25,7 +25,7 @@ El package manager canonico es npm, el lockfile es `package-lock.json` y CI inst
 
 ## SUP-004 - Higiene de CI
 
-Los workflows usan permisos minimos, no usan `pull_request_target` y referencian actions con SHA o version estable explicita.
+Los workflows usan permisos minimos, no usan `pull_request_target`, no interpolan inputs directamente en shell y referencian actions externas por SHA inmutable con version legible en comentario.
 
 ## SUP-005 - SBOM
 

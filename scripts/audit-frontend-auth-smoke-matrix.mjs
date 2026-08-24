@@ -120,6 +120,7 @@ function parseManifest() {
 const scenarios = parseManifest();
 const coveredRoles = new Set(scenarios.map((scenario) => scenario.role));
 const workflow = readFile(workflowPath);
+const workflowRunsForAllChanges = !/^\s+paths:\s*$/m.test(workflow);
 const docs = readFile(docsPath);
 const packageJson = JSON.parse(readFile(packagePath));
 
@@ -155,7 +156,10 @@ for (const requiredPath of [
   "scripts/smoke-frontend-authenticated-matrix.mjs",
   "tests/smoke/**"
 ]) {
-  addCheck(workflow.includes(`- "${requiredPath}"`), `workflow observa cambios en ${requiredPath}`);
+  addCheck(
+    workflowRunsForAllChanges || workflow.includes(`- "${requiredPath}"`),
+    `workflow observa cambios en ${requiredPath}`,
+  );
 }
 
 addCheck(

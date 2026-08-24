@@ -57,11 +57,13 @@ jobs:
 
       - name: Checkout Repository
         if: steps.local_window.outputs.run_sync == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         if: steps.local_window.outputs.run_sync == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
@@ -93,9 +95,12 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          INPUT_FROM: ${{ inputs.from }}
+          INPUT_TO: ${{ inputs.to }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
         run: |
           ARGS=()
-          if [ -n "${{ inputs.from }}" ]; then ARGS+=(--from "${{ inputs.from }}"); fi
-          if [ -n "${{ inputs.to }}" ]; then ARGS+=(--to "${{ inputs.to }}"); fi
-          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          if [ -n "$INPUT_FROM" ]; then [[ "$INPUT_FROM" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "Invalid from date"; exit 1; }; ARGS+=(--from "$INPUT_FROM"); fi
+          if [ -n "$INPUT_TO" ]; then [[ "$INPUT_TO" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "Invalid to date"; exit 1; }; ARGS+=(--to "$INPUT_TO"); fi
+          if [ "$INPUT_DRY_RUN" = "true" ]; then ARGS+=(--dry-run); fi
           node scripts/sync-buk-roster-absences.mjs "${ARGS[@]}"

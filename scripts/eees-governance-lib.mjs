@@ -40,12 +40,26 @@ export function validateGates(document, rules) {
   const findings = [];
   const ruleIds = new Set(rules.map((rule) => rule.id));
   const gateIds = new Set();
+  const mappedRuleIds = new Set();
   for (const gate of document.gates ?? []) {
     if (!gate.id || gateIds.has(gate.id)) findings.push({ level: "ERROR", message: `Gate duplicado o sin ID: ${gate.id ?? "<vacio>"}` });
     gateIds.add(gate.id);
-    if (!gate.command?.startsWith("npm run ")) findings.push({ level: "ERROR", message: `Gate ${gate.id} sin comando npm auditable` });
+    if (gate.kind === "certifier") {
+      if (gate.executable || gate.args || gate.command) findings.push({ level: "ERROR", message: `Gate ${gate.id} certifier no debe ejecutar comandos` });
+    } else {
+      if (gate.executable !== "npm" || !Array.isArray(gate.args) || gate.args[0] !== "run") {
+        findings.push({ level: "ERROR", message: `Gate ${gate.id} sin executable/args npm auditables` });
+      }
+    }
     for (const ruleId of gate.rules ?? []) {
       if (!ruleIds.has(ruleId)) findings.push({ level: "ERROR", ruleId, message: `Gate ${gate.id} referencia regla inexistente` });
+      mappedRuleIds.add(ruleId);
+    }
+  }
+  for (const rule of rules) {
+    const active = (rule.status ?? "active") === "active";
+    if (rule.classification && active && rule.automatable && rule.blocking && !mappedRuleIds.has(rule.id)) {
+      findings.push({ level: "ERROR", ruleId: rule.id, message: "Regla automatizable y bloqueante sin gate" });
     }
   }
   return findings;
@@ -63,23 +77,39 @@ export function validateDocumentedRules(rules, booksRoot) {
   return findings;
 }
 
-export function validateSuppressions(document, now = new Date()) {
+export function validateSuppressions(document, now = new Date(), rules = []) {
   const findings = [];
   const required = ["id", "rule_id", "scope", "owner", "reason", "risk", "created_at", "expires_at", "exit_criteria"];
+  const ids = new Set();
+  const ruleById = new Map(rules.map((rule) => [rule.id, rule]));
   for (const suppression of document.suppressions ?? []) {
     for (const key of required) {
       if (!suppression[key]) findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: `Supresion sin ${key}` });
     }
+    if (ids.has(suppression.id)) findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: `Supresion duplicada ${suppression.id}` });
+    ids.add(suppression.id);
+    if (rules.length > 0 && !ruleById.has(suppression.rule_id)) {
+      findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: "Supresion referencia regla inexistente" });
+    } else if (ruleById.get(suppression.rule_id)?.status === "not_applicable") {
+      findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: "No se puede suprimir una regla no aplicable" });
+    }
+    const created = new Date(`${suppression.created_at}T00:00:00Z`);
     const expiry = new Date(`${suppression.expires_at}T23:59:59Z`);
+    if (Number.isNaN(created.valueOf())) findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: "created_at invalido" });
     if (Number.isNaN(expiry.valueOf())) findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: "expires_at invalido" });
     else if (expiry < now) findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: `Supresion expirada ${suppression.expires_at}` });
+    else if (!Number.isNaN(created.valueOf()) && created > expiry) findings.push({ level: "ERROR", ruleId: suppression.rule_id, message: "created_at posterior a expires_at" });
   }
   return findings;
 }
 
-export function certificationState({ errors, warnings, evidenceCommit, currentCommit, generatedAt, maxAgeHours = 24 }) {
-  if (errors > 0) return "NOT_CERTIFIED";
+export function certificationState({ errors, warnings = 0, unresolvedWarnings = warnings, acceptedRisks = 0, evidenceCommit, currentCommit, generatedAt, maxAgeHours = 24 }) {
+  if (errors > 0 || unresolvedWarnings > 0) return "NOT_CERTIFIED";
   const age = Date.now() - new Date(generatedAt).valueOf();
   if (!evidenceCommit || evidenceCommit !== currentCommit || !Number.isFinite(age) || age > maxAgeHours * 3_600_000) return "STALE";
-  return warnings > 0 ? "CERTIFIED_WITH_ACCEPTED_RISK" : "CERTIFIED";
+  return acceptedRisks > 0 ? "CERTIFIED_WITH_ACCEPTED_RISK" : "CERTIFIED";
+}
+
+export function isCertificationPassingState(state) {
+  return state === "CERTIFIED" || state === "CERTIFIED_WITH_ACCEPTED_RISK";
 }

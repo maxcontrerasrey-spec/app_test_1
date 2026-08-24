@@ -13,7 +13,7 @@ baseline_date: 2026-07-22
 
 ## DB-005 - Migraciones destructivas
 
-`audit:destructive-migrations` revisa migraciones nuevas o modificadas. Una operacion destructiva requiere anotacion `EEES-DB-005: approved`, owner y rollback; se prefieren fases expand, backfill, switch y contract.
+`audit:destructive-migrations` revisa el rango base/HEAD entregado por CI y los cambios locales fuera de CI. Una operacion destructiva requiere una cabecera consecutiva `EEES-DB-005: approved`, `owner:` y `rollback:`; si CI no puede resolver el SHA base, el control bloquea en vez de informar un PASS vacio. Se prefieren fases expand, backfill, switch y contract.
 
 ## Proposito
 

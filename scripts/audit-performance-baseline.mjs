@@ -7,10 +7,6 @@ const marker = "<!-- EEES_PERFORMANCE_BASELINE_JSON -->";
 const checks = [];
 const warnings = [];
 
-const DEFAULT_WARNING_PERCENT = 1;
-const DEFAULT_ERROR_PERCENT = 3;
-const DEFAULT_ABSOLUTE_TOLERANCE_BYTES = 16 * 1024;
-
 function addCheck(ok, message) {
   checks.push({ ok, message });
 }
@@ -21,9 +17,13 @@ function evaluateBudget(label, current, baselineValue, policy = {}) {
     return;
   }
 
-  const absoluteTolerance = policy.absoluteToleranceBytes ?? DEFAULT_ABSOLUTE_TOLERANCE_BYTES;
-  const warningPercent = policy.warningPercent ?? DEFAULT_WARNING_PERCENT;
-  const errorPercent = policy.errorPercent ?? DEFAULT_ERROR_PERCENT;
+  const absoluteTolerance = policy.absoluteToleranceBytes;
+  const warningPercent = policy.warningPercent;
+  const errorPercent = policy.errorPercent;
+  if (![absoluteTolerance, warningPercent, errorPercent].every((value) => Number.isFinite(value) && value >= 0)) {
+    addCheck(false, `${label} no tiene budgetPolicy explicita y valida`);
+    return;
+  }
   const delta = current - baselineValue;
   const percent = baselineValue === 0 ? (delta > 0 ? Infinity : 0) : (delta / baselineValue) * 100;
   const errorLimit = Math.max(absoluteTolerance, baselineValue * (errorPercent / 100));

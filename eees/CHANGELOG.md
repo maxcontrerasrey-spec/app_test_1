@@ -11,12 +11,20 @@ baseline_date: 2026-07-22
 
 # Control de cambios
 
+## 2.0.1 - 2026-08-24
+
+- El guard destructivo usa el rango Git real del push o PR y bloquea CI sin SHA base valido.
+- La certificacion se genera al final del pipeline, enlaza evidencia y SBOM por SHA-256 y rechaza estados `STALE`.
+- Los warnings quedan separados de riesgos aceptados; las excepciones validan identidad, regla y fechas.
+- CI se ejecuta para toda modificacion, fija actions por SHA e impide interpolar inputs directamente en shell.
+- Secret scanning, baseline Supabase, SBOM, performance y pruebas adversariales amplian su cobertura.
+
 ## 2.0.0 - 2026-08-24
 
 - Se fortalece `rules.json` como registro canonico y se agrega validacion de gates, IDs, fuentes y excepciones.
 - La certificacion pasa a evidencia machine-readable ligada a commit con estados vigentes y SBOM.
 - Se agregan secret scanning, dependency audit, higiene CI y guard de migraciones destructivas.
-- Performance adopta tolerancias significativas y cleanup elimina falsos positivos internos de `node_modules`.
+- Performance adopta un presupuesto exacto y cleanup elimina falsos positivos internos de `node_modules`.
 - Se incorporan Governance y Supply Chain Books, guia de migracion e informe de implementacion.
 
 ## 1.5.0 - 2026-07-22

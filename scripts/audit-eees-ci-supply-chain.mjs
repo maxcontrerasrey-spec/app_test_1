@@ -19,8 +19,21 @@ for (const entry of fs.readdirSync(workflowsRoot).filter((file) => /\.ya?ml$/.te
     const reference = match[1];
     if (/^\.\//.test(reference) || /docker:\/\//.test(reference)) continue;
     const ref = reference.split("@")[1] ?? "";
-    if (!/^[0-9a-f]{40}$/.test(ref) && !/^v?\d+(?:\.\d+){0,2}$/.test(ref)) {
-      findings.push(`${entry}: action no fijada a SHA o version estable (${reference})`);
+    if (!/^[0-9a-f]{40}$/.test(ref)) {
+      findings.push(`${entry}: action externa no fijada a SHA inmutable (${reference})`);
+    }
+  }
+  const lines = content.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(/^(\s*)run:\s*(\|\s*)?$/);
+    if (!match) continue;
+    const indent = match[1].length;
+    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+      const line = lines[cursor];
+      if (line.trim() && line.match(/^\s*/)[0].length <= indent) break;
+      if (/\$\{\{\s*inputs\./.test(line)) {
+        findings.push(`${entry}:${cursor + 1}: input interpolado directamente en shell; usar env y validar formato`);
+      }
     }
   }
 }

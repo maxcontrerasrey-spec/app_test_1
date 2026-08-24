@@ -42,7 +42,7 @@
     "audit:eees-governance": "node scripts/audit-eees-governance.mjs",
     "audit:secrets": "node scripts/audit-eees-secrets.mjs",
     "audit:destructive-migrations": "node scripts/audit-eees-migrations.mjs",
-    "audit:dependencies": "npm audit --omit=dev --audit-level=high",
+    "audit:dependencies": "npm audit --audit-level=high",
     "audit:ci-supply-chain": "node scripts/audit-eees-ci-supply-chain.mjs",
     "eees:sbom": "node scripts/generate-eees-sbom.mjs",
     "eees:certify": "node scripts/run-eees-certification.mjs",

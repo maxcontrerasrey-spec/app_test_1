@@ -140,6 +140,11 @@ Revision 2026-08-24 auditoria integral de performance: el fondo de acceso se red
   "jsTotalBytes": 2754770,
   "cssFileCount": 12,
   "cssTotalBytes": 244598,
+  "budgetPolicy": {
+    "absoluteToleranceBytes": 0,
+    "warningPercent": 0,
+    "errorPercent": 0
+  },
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 65132 },
     { "match": "maps/chile.json", "maxBytes": 1454860 },
@@ -217,6 +222,7 @@ Revision 2026-08-18 carga BUK DSAL en contingencia: el total sube 776 bytes y JS
 
 ## Politica de actualizacion
 
+- El presupuesto machine-readable es exacto: no admite tolerancias porcentuales o absolutas implicitas. Todo aumento requiere medicion reproducible, justificacion funcional y actualizacion versionada de este baseline.
 - Si un asset trackeado supera el baseline, se debe demostrar beneficio funcional o reduccion de riesgo y actualizar este archivo en el mismo cambio.
 - Si aparece un nuevo vendor pesado, debe quedar clasificado como lazy, accion especifica o deuda justificada.
 - Si una ruta critica nueva se agrega al ERP, debe sumarse a smokes o quedar clasificada con owner.

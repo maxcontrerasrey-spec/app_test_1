@@ -2,79 +2,9 @@ name: Audit Enterprise Guardrails
 
 on:
   push:
-    paths:
-      - "docs/**"
-      - "eees/**"
-      - "supabase/**"
-      - "tasks/todo.md"
-      - "tasks/lessons.md"
-      - "src/app/router/AppRouter.tsx"
-      - "src/app/router/routeModules.ts"
-      - "scripts/audit-enterprise-docs.mjs"
-      - "scripts/audit-eees-guardian.mjs"
-      - "scripts/audit-eees-*.mjs"
-      - "scripts/eees-governance-lib.mjs"
-      - "scripts/run-eees-certification.mjs"
-      - "scripts/generate-eees-sbom.mjs"
-      - "scripts/audit-enterprise-100-readiness.mjs"
-      - "scripts/audit-repository-cleanup.mjs"
-      - "scripts/audit-buk-sync-guards.mjs"
-      - "scripts/audit-performance-baseline.mjs"
-      - "scripts/audit-p4-operational-readiness.mjs"
-      - "scripts/audit-frontend-auth-smoke-matrix.mjs"
-      - "scripts/audit-frontend-auth-smoke-secrets.mjs"
-      - "scripts/audit-onboarding-legacy-guards.mjs"
-      - "scripts/audit-route-role-smoke.mjs"
-      - "scripts/audit-supabase-migrations.mjs"
-      - "scripts/audit-supabase-security.mjs"
-      - "scripts/smoke-frontend-auth-candidates.mjs"
-      - "scripts/smoke-frontend-authenticated.mjs"
-      - "scripts/smoke-frontend-authenticated-matrix.mjs"
-      - "scripts/smoke-frontend-routes.mjs"
-      - "tests/smoke/**"
-      - "tests/unit/**"
-      - "tests/contracts/**"
-      - "vitest.config.ts"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/audit-supabase-migrations.yml"
+    branches:
+      - main
   pull_request:
-    paths:
-      - "docs/**"
-      - "eees/**"
-      - "supabase/**"
-      - "tasks/todo.md"
-      - "tasks/lessons.md"
-      - "src/app/router/AppRouter.tsx"
-      - "src/app/router/routeModules.ts"
-      - "scripts/audit-enterprise-docs.mjs"
-      - "scripts/audit-eees-guardian.mjs"
-      - "scripts/audit-eees-*.mjs"
-      - "scripts/eees-governance-lib.mjs"
-      - "scripts/run-eees-certification.mjs"
-      - "scripts/generate-eees-sbom.mjs"
-      - "scripts/audit-enterprise-100-readiness.mjs"
-      - "scripts/audit-repository-cleanup.mjs"
-      - "scripts/audit-buk-sync-guards.mjs"
-      - "scripts/audit-performance-baseline.mjs"
-      - "scripts/audit-p4-operational-readiness.mjs"
-      - "scripts/audit-frontend-auth-smoke-matrix.mjs"
-      - "scripts/audit-frontend-auth-smoke-secrets.mjs"
-      - "scripts/audit-onboarding-legacy-guards.mjs"
-      - "scripts/audit-route-role-smoke.mjs"
-      - "scripts/audit-supabase-migrations.mjs"
-      - "scripts/audit-supabase-security.mjs"
-      - "scripts/smoke-frontend-auth-candidates.mjs"
-      - "scripts/smoke-frontend-authenticated.mjs"
-      - "scripts/smoke-frontend-authenticated-matrix.mjs"
-      - "scripts/smoke-frontend-routes.mjs"
-      - "tests/smoke/**"
-      - "tests/unit/**"
-      - "tests/contracts/**"
-      - "vitest.config.ts"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/audit-supabase-migrations.yml"
 
 jobs:
   audit-enterprise-guardrails:
@@ -89,13 +19,18 @@ jobs:
       FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED: ${{ vars.FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED }}
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      EEES_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      EEES_HEAD_SHA: ${{ github.sha }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
 
@@ -115,7 +50,7 @@ jobs:
         run: npm run audit:destructive-migrations
 
       - name: Setup Deno
-        uses: denoland/setup-deno@v2
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
         with:
           deno-version: v2.x
 
@@ -166,20 +101,6 @@ jobs:
 
       - name: EEES Guardian
         run: npm run guardian:full
-
-      - name: Generate EEES certification evidence
-        run: npm run eees:certify
-
-      - name: Generate CycloneDX SBOM
-        run: npm run eees:sbom
-
-      - name: Preserve EEES evidence
-        if: ${{ always() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0, Node 24
-        with:
-          name: eees-evidence-${{ github.sha }}
-          path: .eees/evidence/
-          if-no-files-found: warn
 
       - name: EEES 100 readiness
         run: npm run audit:enterprise-100-readiness
@@ -245,3 +166,17 @@ jobs:
 
       - name: Diff whitespace check
         run: git diff --check
+
+      - name: Generate final EEES certification evidence
+        run: npm run eees:certify
+
+      - name: Verify final EEES certification evidence
+        run: npm run eees:status
+
+      - name: Preserve EEES evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0, Node 24
+        with:
+          name: eees-evidence-${{ github.sha }}
+          path: .eees/evidence/
+          if-no-files-found: warn

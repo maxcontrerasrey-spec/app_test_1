@@ -74,6 +74,7 @@ baseline_date: 2026-07-22
 - [Release Checklist](certification/RELEASE-CHECKLIST.md)
 - [Module Checklist](certification/MODULE-CHECKLIST.md)
 - [EEES 2.0 Implementation Report](audits/EEES-2.0-IMPLEMENTATION-REPORT.md)
+- [EEES 2.0 Post Implementation Audit](audits/EEES-2.0-POST-IMPLEMENTATION-AUDIT.md)
 - [Migration 1.x to 2.0](MIGRATION-1X-TO-2.0.md)
 
 ## Playbooks y Codex

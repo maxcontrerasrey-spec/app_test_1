@@ -1,15 +1,17 @@
 {
   "version": "2.0.0",
   "gates": [
-    { "id": "governance", "command": "npm run audit:eees-governance", "rules": ["GOV-001", "GOV-003", "GOV-004"] },
-    { "id": "secret-scan", "command": "npm run audit:secrets", "rules": ["SEC-005"] },
-    { "id": "supabase-security", "command": "npm run audit:supabase-security", "rules": ["SEC-006", "SEC-007"] },
-    { "id": "dependency-audit", "command": "npm run audit:dependencies", "rules": ["SUP-001", "SUP-002", "SUP-003"] },
-    { "id": "ci-supply-chain", "command": "npm run audit:ci-supply-chain", "rules": ["SUP-004", "SUP-005", "SUP-006"] },
-    { "id": "destructive-migrations", "command": "npm run audit:destructive-migrations", "rules": ["DB-005"] },
-    { "id": "contracts", "command": "npm run test:contracts", "rules": ["API-002", "RES-001"] },
-    { "id": "coverage", "command": "npm run test:coverage", "rules": ["TST-007"] },
-    { "id": "performance", "command": "npm run audit:performance-baseline", "rules": ["PERF-002", "PERF-003"] },
-    { "id": "repository-cleanup", "command": "npm run audit:repository-cleanup", "rules": ["REL-005"] }
+    { "id": "governance", "executable": "npm", "args": ["run", "audit:eees-governance"], "rules": ["GOV-001", "GOV-003", "GOV-004"] },
+    { "id": "certification-integrity", "kind": "certifier", "rules": ["GOV-002"] },
+    { "id": "secret-scan", "executable": "npm", "args": ["run", "audit:secrets"], "rules": ["SEC-005"] },
+    { "id": "supabase-security", "executable": "npm", "args": ["run", "audit:supabase-security"], "rules": ["SEC-006", "SEC-007"] },
+    { "id": "dependency-audit", "executable": "npm", "args": ["run", "audit:dependencies"], "rules": ["SUP-001", "SUP-002", "SUP-003"] },
+    { "id": "ci-supply-chain", "executable": "npm", "args": ["run", "audit:ci-supply-chain"], "rules": ["SUP-004", "SUP-006"] },
+    { "id": "sbom", "executable": "npm", "args": ["run", "eees:sbom"], "rules": ["SUP-005"] },
+    { "id": "destructive-migrations", "executable": "npm", "args": ["run", "audit:destructive-migrations"], "rules": ["DB-005"] },
+    { "id": "contracts", "executable": "npm", "args": ["run", "test:contracts"], "rules": ["API-002", "RES-001"] },
+    { "id": "coverage", "executable": "npm", "args": ["run", "test:coverage"], "rules": ["TST-007"] },
+    { "id": "performance", "executable": "npm", "args": ["run", "audit:performance-baseline"], "rules": ["PERF-002", "PERF-003"] },
+    { "id": "repository-cleanup", "executable": "npm", "args": ["run", "audit:repository-cleanup"], "rules": ["REL-005"] }
   ]
 }

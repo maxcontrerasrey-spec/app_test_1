@@ -25,13 +25,13 @@ Antes de una mutacion productiva se inspeccionan schema, callers, permisos, payl
 
 ## GOV-002 - Vigencia de certificacion
 
-La certificacion vigente se materializa en `.eees/evidence/latest.json` y `.eees/evidence/certification.json`. Un reporte historico no certifica `HEAD`. Los estados son `CERTIFIED`, `CERTIFIED_WITH_ACCEPTED_RISK`, `STALE` y `NOT_CERTIFIED`.
+La certificacion vigente se materializa en `.eees/evidence/latest.json` y `.eees/evidence/certification.json`. Un reporte historico no certifica `HEAD`; ambos archivos se vinculan por SHA-256 y el SBOM queda asociado a la evidencia. Los estados son `CERTIFIED`, `CERTIFIED_WITH_ACCEPTED_RISK`, `STALE` y `NOT_CERTIFIED`. Solo una excepcion vigente y gobernada produce riesgo aceptado; una observacion de un gate no equivale por si sola a aceptacion.
 
 `npm run eees:status` compara automaticamente version, antiguedad y SHA de la evidencia con `HEAD`.
 
 ## GOV-003 - Excepciones con expiracion
 
-Cada excepcion declara regla, owner, motivo, riesgo, alcance, creacion, expiracion y criterio de salida. Una excepcion vencida bloquea el gate.
+Cada excepcion declara regla existente, owner, motivo, riesgo, alcance, creacion, expiracion y criterio de salida. IDs duplicados, fechas incoherentes y excepciones vencidas bloquean el gate.
 
 ## GOV-004 - Reduccion de deuda
 

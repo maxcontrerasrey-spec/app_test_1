@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import crypto from "node:crypto";
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ["src", "scripts", "supabase", ".github"];
@@ -21,11 +22,7 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 
 const findings = [];
-const GLOBAL_WARNING_LIMIT = 82;
-const configuredWarningLimit = Number.parseInt(process.env.SUPABASE_SECURITY_WARNING_LIMIT ?? "", 10);
-const warningLimit = Number.isFinite(configuredWarningLimit)
-  ? Math.min(configuredWarningLimit, GLOBAL_WARNING_LIMIT)
-  : GLOBAL_WARNING_LIMIT;
+const WARNING_BASELINE_PATH = path.join(ROOT, "eees/baselines/SUPABASE_SECURITY_FINDINGS_v1.json");
 const FOLLOWUP_MIGRATION = "supabase/migrations/20260716025833_harden_operations_bi_orion_audit_followups.sql";
 const CORE_FOLLOWUP_MIGRATION = "supabase/migrations/20260722184219_reload_postgrest_after_core_integrity.sql";
 const BUK_PENSION_FOLLOWUP_MIGRATION =
@@ -273,13 +270,23 @@ function main() {
     console.log(`[${finding.severity}] ${finding.filePath}: ${finding.message}${detail}`);
   }
 
-  const warningCount = grouped.warning ?? 0;
-  if (warningCount > warningLimit) {
-    console.error(
-      `Supabase security audit warning limit exceeded: ${warningCount}/${warningLimit}. ` +
-        "Corrige el warning nuevo antes de continuar.",
-    );
+  const warningFingerprints = findings
+    .filter((finding) => finding.severity === "warning")
+    .map((finding) => `${finding.filePath}::${finding.message}`)
+    .sort();
+  const fingerprintSha256 = crypto.createHash("sha256").update(warningFingerprints.join("\n")).digest("hex");
+  if (!fs.existsSync(WARNING_BASELINE_PATH)) {
+    console.error(`Falta baseline de warnings Supabase. count=${warningFingerprints.length} sha256=${fingerprintSha256}`);
     process.exitCode = 1;
+  } else {
+    const baseline = JSON.parse(fs.readFileSync(WARNING_BASELINE_PATH, "utf8"));
+    if (baseline.count !== warningFingerprints.length || baseline.fingerprintSha256 !== fingerprintSha256) {
+      console.error(
+        `Supabase security warning fingerprints changed: actual count=${warningFingerprints.length} sha256=${fingerprintSha256}. ` +
+          "Revisa el diff de hallazgos y actualiza el baseline solo con evidencia.",
+      );
+      process.exitCode = 1;
+    }
   }
 
   if (findings.some((finding) => finding.severity === "critical")) {

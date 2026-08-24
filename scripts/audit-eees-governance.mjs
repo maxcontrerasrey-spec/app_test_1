@@ -9,7 +9,7 @@ const findings = [
   ...validateRegistry(rules, root),
   ...validateDocumentedRules(rules, path.join(root, "eees/books")),
   ...validateGates(readJson(path.join(root, "eees/guardian/gates.json")), rules),
-  ...validateSuppressions(readJson(path.join(root, "eees/guardian/suppressions.json")))
+  ...validateSuppressions(readJson(path.join(root, "eees/guardian/suppressions.json")), new Date(), rules)
 ];
 
 if (findings.length) {

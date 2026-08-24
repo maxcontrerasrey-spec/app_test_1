@@ -21,7 +21,7 @@ Los flujos de IA respetan autorizacion backend, minimizacion de datos, trazabili
 
 ## SEC-005 - Secret scanning
 
-Todo archivo versionado se evalua con `audit:secrets`. Los hallazgos solo informan tipo y ruta; nunca imprimen el valor. Binarios, outputs y lockfile se excluyen para reducir falsos positivos.
+Todo archivo versionado y todo archivo local no ignorado se evalua con `audit:secrets`; asi el control local cubre secretos antes del primer commit. Los hallazgos solo informan tipo y ruta, nunca el valor. Binarios, outputs y lockfile se excluyen para reducir falsos positivos.
 
 ## SEC-006 - SECURITY DEFINER hardening
 
