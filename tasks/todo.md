@@ -6,11 +6,11 @@
 - [x] Eliminar esperas artificiales y solicitudes redundantes del primer render.
 - [x] Reutilizar una sola poblacion filtrada para todas las metricas de Dotacion sin alterar cifras ni permisos.
 - [x] Agregar presupuestos de regresion para consulta, payload y respuesta interactiva.
-- [ ] Ejecutar Guardian, build, auditorias SQL, publicar en `main` y verificar produccion/CI.
+- [x] Ejecutar Guardian, build, auditorias SQL, publicar en `main` y verificar produccion/CI.
 
 Objetivo operativo: carga de datos y actualizacion por filtro cruzado menor a 1 segundo con cache caliente; la seleccion visual debe responder inmediatamente y conservar los datos previos durante la revalidacion.
 
-Resultado medido en PostgreSQL productivo: la RPC sin filtros bajo de 8.959,53 ms a 753-776,78 ms en caliente; el filtro cruzado por gerencia quedo en 301,54-313,55 ms. La cache se refresca cada minuto, no es seleccionable por `authenticated`, el helper interno tampoco es ejecutable directamente y el filtro por area devuelve los mismos 353 registros que la fuente materializada.
+Resultado medido en PostgreSQL productivo: la RPC sin filtros bajo de 8.959,53 ms a 739,86-951,10 ms en la verificacion final con cache caliente; el filtro cruzado por gerencia quedo en 300,40-322,26 ms. La cache se refresca cada minuto, no es seleccionable por `authenticated`, el helper interno tampoco es ejecutable directamente y el filtro por area devuelve los mismos 353 registros que la fuente materializada. Guardian, build, integridad y auditorias aprobaron; CI `32770194364` termino `success`. Cloudflare Pages desplego el commit `466e7b3` y produccion sirve `BiDashboardPage-QjEUZmyw.js` junto con `EChartSurface-GEXqewbi.js`, confirmando animaciones de 140/90 ms y la eliminacion del montaje progresivo en Dotacion.
 
 ## Auditoría post-implementación EEES 2.0 - 2026-08-24
 
