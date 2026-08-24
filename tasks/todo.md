@@ -26,6 +26,18 @@ Resultado: Guardian completo cerro con 0 errores/0 warnings propios; gobierno, s
 
 Revision final: commits `dc84694` y `071271c` enviados a `main`. GitHub Actions `32756756439` cerro exitosamente todos los gates, genero evidencia de certificacion y SBOM, y el upload de artefactos quedo fijado a `v6.0.0`/Node 24 sin la advertencia anterior.
 
+## Auditoría integral ERP: funcionamiento, seguridad, versionado y performance - 2026-08-24
+
+- [x] Levantar línea base reproducible de Git, arquitectura, dependencias, tamaño, pruebas y build.
+- [x] Auditar Supabase: historial de migraciones, RLS, grants, RPC privilegiadas, Storage y Edge Functions.
+- [x] Perfilar frontend y producción: rutas, bundles, caché, consultas, render y tiempos de respuesta.
+- [x] Corregir hallazgos críticos/altos con cambios mínimos y eliminar únicamente código muerto demostrado.
+- [x] Ejecutar gates EEES completos, verificar producción y documentar riesgos residuales con evidencia.
+
+Alcance: se preservan los cambios locales existentes del flujo BUK; esta auditoría no los sobrescribirá ni mezclará sin verificar su autoría y estado.
+
+Revisión final: Guardian completo en 0 errores/0 warnings, 215 pruebas aprobadas, build y smoke aprobados, `npm audit` sin vulnerabilidades, migraciones productivas alineadas (`dry-run upToDate`), 22 políticas RLS optimizadas y fondo de login reducido en 98,8%. Informe: `eees/audits/ERP-CODE-PERFORMANCE-AUDIT-2026-08-24.md`.
+
 ## Alta BUK Sylvia Myriam Carvajal Salinas - jubilada sin AFP - 2026-08-22
 
 - [x] Ubicar la ficha, participación, folio, cargo y RUT de Sylvia en el ERP y comprobar si ya existe una alta o job BUK.
@@ -2713,3 +2725,29 @@ Resultado: la migración `20260824135155_fix_dsal_precandidate_accent_search` pe
 - [x] Verificar empleados F1, estados `success` y ausencia de duplicados.
 
 Resultado: se confirmó que el trabajador rechazado de ERP (`42873`) ya no existe en BUK; se reconcilió su job histórico como no vigente, liberando un cupo real. Las tres altas quedaron `success`: Eduard `43058`, Marcelo `43059` (reutilización segura tras timeout) e Ignacio `43060`, todos F1 y sin duplicados.
+
+## Corrección preventiva Sync BUK: fondo previsional AFP - 2026-08-24
+- [x] Reproducir la causa del error productivo `Buk API 400`: régimen que cotiza sin fondo de cotización.
+- [x] Alinear la validación del formulario, el límite de persistencia de jobs y el worker BUK.
+- [x] Aplicar migración `20260824151707_block_invalid_buk_pension_payload` y desplegar la función de sincronización.
+- [x] Ejecutar gates y verificar en producción que el rechazo sea previo a la llamada externa y auditable.
+
+Resultado: un payload AFP sin fondo ya no puede guardarse en `buk_sync_jobs`; el formulario muestra el campo faltante y la Edge Function mantiene una segunda validación. La función `sync-buk-candidates` fue desplegada en producción y el trigger productivo quedó habilitado. La prueba transaccional fue rechazada con el mensaje esperado, sin crear un job.
+
+## Carga contingente DSAL - María José Araya Herrera - 2026-08-24
+- [x] Confirmar identidad, RUT `19.271.418-4`, folio `RC-0163`, cargo y contrato DSAL.
+- [x] Confirmar que no existieran jobs ni ficha BUK previa y que hubiera un cupo disponible.
+- [x] Encolar mediante `enqueue_buk_generation_contingency` con motivo auditado.
+- [x] Procesar el job productivo y confirmar `success` con `buk_employee_id` real.
+- [x] Verificar F1, plan previsional, cargo, área, centro, tallas y ausencia de duplicados.
+- [x] Restaurar el runner técnico temporal a estado deshabilitado.
+
+Resultado: María José Araya Herrera quedó creada en BUK como ficha `43092`, código `F1`, con job `42a4b850-0f13-44da-827f-d846d3a9419a` en `success`. BUK confirmó cargo `1757`, área DSAL `2911`, centro `718`, AFP PlanVital, Fonasa y tallas `M/36/38`. La contingencia quedó auditada en el payload con motivo, usuario y fecha; no se generaron duplicados.
+
+## Auditoría y publicación de cambios pendientes - 2026-08-24
+- [x] Validar ramas, worktrees y divergencia con `origin`.
+- [x] Ejecutar pruebas y gates del cambio BUK pendiente.
+- [x] Committear únicamente cambios funcionales y documentación auditada.
+- [x] Publicar `main` y verificar alineación remota.
+
+Resultado parcial: integridad `84/84`, unitarias `115/115`, auditoría BUK, migraciones y `git diff --check` aprobados. Guardian quedó inicialmente bloqueado únicamente por un aumento medido de 126 bytes en `dist`, ya documentado en el baseline sin relajar sus presupuestos.

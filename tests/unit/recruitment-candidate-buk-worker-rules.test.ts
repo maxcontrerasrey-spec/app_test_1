@@ -60,4 +60,12 @@ describe("candidate BUK worker rules", () => {
     expect(missing).toContain("Plan Isapre UF");
     expect(missing).toContain("Régimen jubilación");
   });
+
+  it("exige fondo de cotización cuando el régimen es AFP", () => {
+    const missing = collectCandidateBukWorkerMissingFields(
+      buildDraft({ contributionFund: "", afpCollectionEntity: "" })
+    );
+
+    expect(missing).toContain("Fondo de cotización AFP");
+  });
 });

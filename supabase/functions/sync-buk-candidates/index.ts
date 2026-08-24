@@ -2168,6 +2168,17 @@ function buildBukPlanPayload(payload: BukCandidateSyncPayload) {
   const afc = mapBukAfc(worker.afc_regime);
   const quoteIncrease = parseBukBoolean(worker.increase_quote_one_percent);
   const retired = parseBukBoolean(worker.retired_status);
+
+  if (
+    pensionScheme === "afp" &&
+    !normalizeText(worker.contribution_fund) &&
+    !normalizeText(worker.afp_collection_entity)
+  ) {
+    throw new Error(
+      "La ficha BUK está incompleta: para el régimen AFP debes seleccionar un fondo de cotización antes de sincronizar."
+    );
+  }
+
   const planPayload: Record<string, unknown> = {
     pension_scheme: pensionScheme,
     health_company: healthCompany,

@@ -87,6 +87,7 @@ export function applyCandidateBukWorkerDefaults<T extends CandidateBukWorkerDraf
 
 export function collectCandidateBukWorkerMissingFields(draft: CandidateBukWorkerDraftLike) {
   const normalizedDraft = applyCandidateBukWorkerDefaults(draft);
+  const pensionRegime = normalizeBukText(normalizedDraft.pensionRegime);
   const missingFields: string[] = [];
 
   if (!normalizedDraft.employeeCode.trim()) missingFields.push("Código de ficha");
@@ -100,6 +101,14 @@ export function collectCandidateBukWorkerMissingFields(draft: CandidateBukWorker
   if (!normalizedDraft.healthProvider.trim()) missingFields.push("Fonasa / Isapre");
   if (!normalizedDraft.afcRegime.trim()) missingFields.push("AFC");
   if (!normalizedDraft.paymentPeriod.trim()) missingFields.push("Periodo de pago");
+
+  if (
+    pensionRegime === "afp" &&
+    !normalizedDraft.contributionFund.trim() &&
+    !normalizedDraft.afpCollectionEntity.trim()
+  ) {
+    missingFields.push("Fondo de cotización AFP");
+  }
 
   if (isAffirmativeBukValue(normalizedDraft.retiredStatus) && !normalizedDraft.retirementRegime.trim()) {
     missingFields.push("Régimen jubilación");

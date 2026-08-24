@@ -116,6 +116,8 @@ Revision 2026-08-22 contingencia BUK dispatch: GitHub Actions `Audit Enterprise 
 
 Revision 2026-08-24 auditoria integral de performance: el fondo de acceso se redimensiona de 4.400x2.479 PNG a 2.200x1.240 WebP, preservando su uso a pantalla completa y reduciendo el recurso de 5,257,091 a 65,132 bytes. El artefacto total baja a 5,080,867 bytes; CSS aumenta 1 byte por la extensión del nombre. El límite machine-readable se reduce para bloquear la reintroducción del PNG pesado.
 
+Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el mensaje de validacion que exige fondo de cotizacion cuando el regimen es AFP. JS y CSS, vendors y assets trackeados permanecen bajo sus limites; no se relaja el presupuesto porcentual.
+
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
@@ -135,7 +137,7 @@ Revision 2026-08-24 auditoria integral de performance: el fondo de acceso se red
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 5081661,
+  "distTotalBytes": 5081787,
   "jsFileCount": 62,
   "jsTotalBytes": 2754770,
   "cssFileCount": 12,
