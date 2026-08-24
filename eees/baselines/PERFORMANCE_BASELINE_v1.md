@@ -135,7 +135,7 @@ Revision 2026-08-24 auditoria integral de performance: el fondo de acceso se red
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 5080346,
+  "distTotalBytes": 5081661,
   "jsFileCount": 62,
   "jsTotalBytes": 2754770,
   "cssFileCount": 12,

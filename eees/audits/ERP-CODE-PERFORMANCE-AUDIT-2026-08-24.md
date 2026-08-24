@@ -47,7 +47,7 @@ Medición pública previa en producción, cinco muestras por ruta:
 | `/bi/dotacion` | 200 | 56–116 ms |
 | `/gestion-psicolaboral` | 200 | 56–116 ms |
 
-El build corregido pesa 5.080.346 bytes. Los paquetes pesados (`xlsx` y `echarts`) permanecen separados por lazy loading; no se mezclaron con el chunk inicial. El baseline se actualizó al resultado medido para impedir regresiones.
+El build corregido pesa hasta 5.081.661 bytes en CI (5.080.346 bytes en el entorno local). Los paquetes pesados (`xlsx` y `echarts`) permanecen separados por lazy loading; no se mezclaron con el chunk inicial. El baseline usa el resultado mayor medido para impedir regresiones sin depender de diferencias de entorno.
 
 ## Base de datos y Supabase
 
