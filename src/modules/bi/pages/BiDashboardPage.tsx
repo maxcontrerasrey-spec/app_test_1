@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, NavLink, useParams } from "react-router";
 import { PageShell } from "../../../shared/ui";
 import { hasFeatureAccess } from "../../auth/config/access";
@@ -17,7 +17,6 @@ import {
   useBiHeadcountByJobTitle,
   useBiRecruitmentDashboard
 } from "../hooks/useBiQueries";
-import { useProgressiveBiStage } from "../hooks/useProgressiveBiStage";
 import { formatBiContractLabel } from "../lib/presentation";
 import type { BiFilters } from "../types";
 import "../styles/bi.css";
@@ -127,7 +126,11 @@ export function BiDashboardPage() {
     recruitmentFilters,
     activeView === "reclutamiento"
   );
-  const dotacionChartStage = useProgressiveBiStage(activeView === "dotacion", 4);
+  const handleDotacionManagementSelect = useCallback((managementName: string) => {
+    setDotacionManagementSelection((current) =>
+      current === managementName ? null : managementName
+    );
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(
@@ -478,25 +481,17 @@ export function BiDashboardPage() {
       {activeView === "dotacion" && (
         <div className="bi-dashboard-grid">
           <BiOverviewCards filters={dotacionFilters} />
-          {dotacionChartStage >= 1 ? (
-            <BiHeadcountCharts
-              filters={dotacionFilters}
-              selectedManagement={dotacionManagementSelection}
-              onManagementSelect={(managementName) => {
-                setDotacionManagementSelection((current) =>
-                  current === managementName ? null : managementName
-                );
-              }}
-            />
-          ) : null}
-          {dotacionChartStage >= 2 ? <BiPresenceAndExceptions filters={dotacionFilters} /> : null}
-          {dotacionChartStage >= 3 ? (
-            <div className="bi-chart-row">
-              <BiDemographicsChart filters={dotacionFilters} />
-              <BiRecruitmentFunnel filters={dotacionFilters} />
-            </div>
-          ) : null}
-          {dotacionChartStage >= 4 ? <BiTrendingExceptionsChart filters={dotacionFilters} /> : null}
+          <BiHeadcountCharts
+            filters={dotacionFilters}
+            selectedManagement={dotacionManagementSelection}
+            onManagementSelect={handleDotacionManagementSelect}
+          />
+          <BiPresenceAndExceptions filters={dotacionFilters} />
+          <div className="bi-chart-row">
+            <BiDemographicsChart filters={dotacionFilters} />
+            <BiRecruitmentFunnel filters={dotacionFilters} />
+          </div>
+          <BiTrendingExceptionsChart filters={dotacionFilters} />
         </div>
       )}
 

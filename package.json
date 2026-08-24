@@ -34,6 +34,7 @@
     "audit:buk-sync-guards": "node scripts/audit-buk-sync-guards.mjs",
     "audit:competency-catalog-guards": "node scripts/audit-competency-catalog-guards.mjs",
     "audit:performance-baseline": "node scripts/audit-performance-baseline.mjs",
+    "audit:bi-dotacion-performance": "node scripts/audit-bi-dotacion-performance.mjs",
     "audit:p4-operational-readiness": "node scripts/audit-p4-operational-readiness.mjs",
     "audit:enterprise-100-readiness": "node scripts/audit-enterprise-100-readiness.mjs",
     "audit:repository-cleanup": "node scripts/audit-repository-cleanup.mjs",

@@ -3435,3 +3435,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Para una carga contingente DSAL se debe registrar el motivo en el payload, encolar por la RPC oficial y esperar `success` con `buk_employee_id`; `pending` no es una creación terminada.
 - La verificación final debe incluir código de ficha, cargo, área, centro, plan previsional y tallas, además de contar jobs exitosos para excluir duplicados.
 - Si se requiere un runner temporal para ejecutar el job, debe restaurarse inmediatamente a estado deshabilitado después de la ejecución autorizada.
+## 340. Una RPC consolidada no garantiza un BI rapido
+
+- Reducir varias solicitudes HTTP a una sola no sirve si la RPC agregadora vuelve a recorrer la misma poblacion para cada grafico; el presupuesto debe medirse dentro de PostgreSQL y en la interaccion real.
+- Para analitica sub-segundo sobre datos operativos derivados de JSON, materializar la dimension actual y refrescarla con una cadencia explicita evita recalcular identidad, domicilio y jerarquia en cada clic.
+- Separar siempre primera compilacion del plan y ejecuciones calientes; el gate debe bloquear si cualquiera de las muestras calientes alcanza un segundo.

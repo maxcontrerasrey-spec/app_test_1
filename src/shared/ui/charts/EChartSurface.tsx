@@ -69,7 +69,8 @@ export function EChartSurface({
         appendToBody: true,
         ...(typeof option.tooltip === "object" ? option.tooltip : {})
       },
-      animationDuration: 400,
+      animationDuration: 140,
+      animationDurationUpdate: 90,
       animationEasing: "cubicOut",
       ...option
     };

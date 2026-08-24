@@ -128,6 +128,38 @@ describe("BI module navigation integrity", () => {
     expect(migration).toContain("grant execute on function public.get_bi_dotacion_dashboard");
   });
 
+  it("keeps dotacion below the one-second rendering budget", () => {
+    const page = read("src/modules/bi/pages/BiDashboardPage.tsx");
+    const chartSurface = read("src/shared/ui/charts/EChartSurface.tsx");
+    const migration = read(
+      "supabase/migrations/20260824183000_optimize_bi_dotacion_single_scan.sql"
+    );
+    const cacheMigration = read(
+      "supabase/migrations/20260824193000_cache_bi_current_population.sql"
+    );
+    const hardeningMigration = read(
+      "supabase/migrations/20260824200000_harden_bi_population_cache_access.sql"
+    );
+
+    expect(page).not.toContain("useProgressiveBiStage");
+    expect(page).not.toContain("dotacionChartStage");
+    expect(page).toContain("handleDotacionManagementSelect");
+    expect(chartSurface).toContain("animationDuration: 140");
+    expect(chartSurface).toContain("animationDurationUpdate: 90");
+    expect(migration).toContain("population as materialized");
+    expect(migration.match(/get_bi_employee_population\(/g)?.length).toBe(1);
+    expect(migration).toContain("idx_hr_roster_exceptions_active_date_employee");
+    expect(cacheMigration).toContain("refresh materialized view concurrently");
+    expect(cacheMigration).toContain("'* * * * *'");
+    expect(hardeningMigration).toContain("cached.area_name = any(normalized_contracts)");
+    expect(hardeningMigration).toContain(
+      "revoke all on function public.get_bi_employee_population"
+    );
+    expect(hardeningMigration).not.toContain(
+      "grant execute on function public.get_bi_employee_population"
+    );
+  });
+
   it("allows the monthly snapshot scheduler without weakening API authorization", () => {
     const migration = read(
       "supabase/migrations/20260819243000_fix_monthly_buk_snapshot_cron_context.sql"
