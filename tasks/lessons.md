@@ -3419,3 +3419,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Los nombres DSAL pueden persistirse sin tildes mientras el usuario busca con tildes; comparar solo con `lower()` produce falsos negativos aunque el registro exista.
 - Los RPC de búsqueda deben normalizar tanto el término ingresado como las columnas consultadas, incluyendo nombre, RUT, correo, teléfono y cargo.
+
+## 2026-08-24 - Un éxito histórico BUK debe reconciliarse si la ficha fue eliminada
+
+- Un `buk_sync_jobs.status = success` no prueba que la persona siga existiendo en BUK; el roster actual (`employees`, `employees_active_current` y snapshots) debe confirmar la vigencia antes de usarlo para bloquear cupos.
+- Si BUK eliminó la ficha, se conserva el job como antecedente y se registra la reconciliación como no vigente; el reintento de otro candidato debe reutilizar una reserva/empleado ya creado tras timeout, nunca crear una segunda persona.
