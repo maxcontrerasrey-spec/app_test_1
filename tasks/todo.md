@@ -7,9 +7,11 @@
 - [x] Endurecer la clonacion de ficha inactiva y la recuperacion idempotente si BUK crea parcialmente el reingreso.
 - [x] Cubrir concurrencia, reintentos, identidad, ficha activa y ausencia de duplicados con pruebas de regresion.
 - [x] Aplicar migracion/worker, reparar el caso productivo y verificar nueva ficha, job, plan, cargo y documentos.
-- [ ] Ejecutar Guardian, CI, publicar en `main` y comprobar produccion.
+- [x] Ejecutar Guardian, CI, publicar en `main` y comprobar produccion.
 
 Regla operativa: una ficha historica inactiva nunca se reactiva ni se sobrescribe. El ERP debe reservar el siguiente `F` disponible de forma transaccional, crear una nueva ficha con los datos vigentes del proceso y reutilizar esa misma reserva en todo reintento.
+
+Resultado productivo: Jaime Harris Rojas Reyes (`11.692.837-K`, RC-0140) quedo creado en BUK como ID `43190`, ficha `F3`, mediante clonacion controlada desde la ultima ficha historica inactiva `F2`/ID `14748`. El job `afc09041-7b29-41bb-89d9-313036d4912b` termino `success`, la reserva quedo `confirmed`, el trabajo BUK se creo como `JEFE DE OPERACIONES` en `CODELCO DRT` (area `830`, centro `402`), el plan previsional fue conciliado y se cargaron 16 documentos. Guardian local cerro con 0 errores/0 warnings; los workflows `32853609053` y `32854082849` terminaron `success`.
 
 ## BI Dotacion interactivo bajo un segundo - 2026-08-24
 
