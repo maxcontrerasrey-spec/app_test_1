@@ -6,7 +6,7 @@
 - [x] Hacer autoritativa y atomica la resolucion del siguiente correlativo `F`, considerando todas las fichas historicas del RUT.
 - [x] Endurecer la clonacion de ficha inactiva y la recuperacion idempotente si BUK crea parcialmente el reingreso.
 - [x] Cubrir concurrencia, reintentos, identidad, ficha activa y ausencia de duplicados con pruebas de regresion.
-- [ ] Aplicar migracion/worker, reparar el caso productivo y verificar nueva ficha, job, plan, cargo y documentos.
+- [x] Aplicar migracion/worker, reparar el caso productivo y verificar nueva ficha, job, plan, cargo y documentos.
 - [ ] Ejecutar Guardian, CI, publicar en `main` y comprobar produccion.
 
 Regla operativa: una ficha historica inactiva nunca se reactiva ni se sobrescribe. El ERP debe reservar el siguiente `F` disponible de forma transaccional, crear una nueva ficha con los datos vigentes del proceso y reutilizar esa misma reserva en todo reintento.
