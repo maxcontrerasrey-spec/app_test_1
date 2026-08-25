@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 340. Los listados BUK filtrados por RUT pueden omitir el documento de cada fila
+
+- Una respuesta resumida obtenida con `document_number` puede devolver las fichas correctas y omitir `document_number`/`rut`; volver a exigir el campo sin hidratar el detalle produce falsos negativos.
+- Antes de resolver un reingreso, hidratar cada ficha por ID y conservar evidencia del RUT usado en la consulta. Si el detalle también omite el documento, exigir además coincidencia explícita de correo o nombre.
+- El código de la ficha clonada debe ser siempre la reserva atómica del ERP. Recalcularlo dentro del payload de clonación puede divergir bajo concurrencia y consumir un correlativo incorrecto.
+
 ## 339. Una categoría BUK no expuesta no debe duplicar fichas
 
 - En altas BUK, `No Sindicalizados` puede aceptar PATCH y no aparecer después en las lecturas `/jobs` ni `current_job`.

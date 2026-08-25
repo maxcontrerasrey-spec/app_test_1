@@ -11,6 +11,7 @@ import {
   type RecruitmentHiringDocumentRow
 } from "../_shared/recruitmentHiringDocument.ts";
 import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
+import { normalizeBukDocumentNumber as normalizeDocumentNumber } from "../_shared/bukIdentity.ts";
 
 type SyncRequest = {
   jobIds?: string[];
@@ -43,6 +44,8 @@ type BukCandidateSyncPayload = {
     employee_code?: string | null;
     status?: "reserved" | "confirmed" | "released" | null;
     buk_employee_id?: string | null;
+    predecessor_buk_employee_id?: string | null;
+    predecessor_employee_code?: string | null;
     created_at?: string | null;
   } | null;
   candidate: {
@@ -154,8 +157,14 @@ type BukEmployeeRecord = {
   is_active?: boolean | null;
   email?: string | null;
   personal_email?: string | null;
+  first_name?: string | null;
+  surname?: string | null;
+  second_surname?: string | null;
+  full_name?: string | null;
   document_number?: string | null;
   rut?: string | null;
+  document_query_identity?: string | null;
+  identity_hydrated?: boolean;
   active_since?: string | null;
   code_sheet?: string | null;
   created_at?: string | null;
@@ -429,19 +438,6 @@ function normalizeText(value: string | null | undefined) {
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase();
-}
-
-function normalizeDocumentNumber(documentType: string | null | undefined, documentNumber: string | null | undefined) {
-  const raw = (documentNumber ?? "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  if (normalizeText(documentType) === "rut") {
-    return raw.replace(/[.\-]/g, "");
-  }
-
-  return raw;
 }
 
 function normalizeEmail(value: string | null | undefined) {
@@ -778,7 +774,7 @@ function resolveBukEmployeeStatus(employee: BukEmployeeRecord) {
     employee.estado ??
     null;
   const normalized = normalizeBukEmployeeStatus(textualStatus);
-  if (normalized !== "unknown") {
+  if (normalized === "active" || normalized === "inactive") {
     return normalized;
   }
 
@@ -809,17 +805,68 @@ function matchesBukEmployeeIdentity(employee: BukEmployeeRecord, payload: BukCan
   );
 }
 
+function hasExplicitMatchingBukEmployeeContact(
+  employee: BukEmployeeRecord,
+  payload: BukCandidateSyncPayload
+) {
+  const targetEmails = [
+    normalizeEmail(payload.profile.email),
+    normalizeEmail(payload.profile.personal_email)
+  ].filter(Boolean);
+  const employeeEmails = [
+    normalizeEmail(employee.email),
+    normalizeEmail(employee.personal_email)
+  ].filter(Boolean);
+
+  return (
+    targetEmails.length > 0 &&
+    employeeEmails.length > 0 &&
+    targetEmails.some((targetEmail) => employeeEmails.includes(targetEmail))
+  );
+}
+
+function matchesBukEmployeeName(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
+  const targetName = normalizeText(
+    payload.profile.full_name ||
+      [payload.profile.first_name, payload.profile.last_name, payload.profile.second_last_name]
+        .filter(Boolean)
+        .join(" ")
+  );
+  const employeeName = normalizeText(
+    employee.full_name ||
+      [employee.first_name, employee.surname, employee.second_surname]
+        .filter(Boolean)
+        .join(" ")
+  );
+
+  return Boolean(targetName) && Boolean(employeeName) && targetName === employeeName;
+}
+
 function matchesBukEmployeeDocument(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
   const targetDocumentNumber = normalizeDocumentNumber(
     payload.profile.document_type,
     payload.profile.document_number
   );
+  const rawEmployeeDocumentNumber = employee.document_number ?? employee.rut ?? null;
   const employeeDocumentNumber = normalizeDocumentNumber(
     payload.profile.document_type,
-    employee.document_number ?? employee.rut ?? null
+    rawEmployeeDocumentNumber
   );
 
-  return Boolean(targetDocumentNumber) && employeeDocumentNumber === targetDocumentNumber;
+  if (!targetDocumentNumber) {
+    return false;
+  }
+  if (rawEmployeeDocumentNumber) {
+    return employeeDocumentNumber === targetDocumentNumber;
+  }
+
+  return (
+    employee.document_query_identity === targetDocumentNumber &&
+    (
+      hasExplicitMatchingBukEmployeeContact(employee, payload) ||
+      matchesBukEmployeeName(employee, payload)
+    )
+  );
 }
 
 function hasCompatibleBukEmployeeContact(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
@@ -878,17 +925,10 @@ function matchesResolvedBukEmployeeCode(employee: BukEmployeeRecord, payload: Bu
 }
 
 function isActiveBukEmployeeDuplicate(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
-  if (resolveBukEmployeeStatus(employee) !== "active") {
-    return false;
-  }
-
-  if (!matchesBukEmployeeIdentity(employee, payload)) {
-    return false;
-  }
-
-  const employeeStartDate = extractDatePortion(employee.active_since);
-  const targetStartDate = resolveTargetStartDate(payload);
-  return !targetStartDate || employeeStartDate === targetStartDate;
+  return (
+    resolveBukEmployeeStatus(employee) === "active" &&
+    matchesBukEmployeeDocument(employee, payload)
+  );
 }
 
 function isErpProvisionedActiveBukEmployee(employee: BukEmployeeRecord, payload: BukCandidateSyncPayload) {
@@ -948,8 +988,16 @@ function buildBukEmployeeResolutionAudit(
     rawStatus: employee.status ?? employee.employee_status ?? employee.estado ?? null,
     activeFlag: employee.active ?? employee.is_active ?? null,
     codeSheet: employee.code_sheet ?? null,
+    documentEvidence:
+      employee.document_number || employee.rut
+        ? "employee_record"
+        : employee.document_query_identity
+          ? "document_query"
+          : "missing",
+    identityHydrated: employee.identity_hydrated ?? false,
     hasCurrentJob: hasBukCurrentJob(employee),
     documentMatches: matchesBukEmployeeDocument(employee, payload),
+    nameMatches: matchesBukEmployeeName(employee, payload),
     identityMatches: matchesBukEmployeeIdentity(employee, payload),
     contact: getBukEmployeeContactAudit(employee, payload),
     matchesRequestedEmployeeCode: matchesResolvedBukEmployeeCode(employee, payload),
@@ -1363,17 +1411,44 @@ async function patchBukEmployeeJob(employeeId: string, jobId: string | number, p
 
 async function lookupBukEmployeesByDocumentNumber(payload: BukCandidateSyncPayload) {
   const url = new URL(buildBukBaseUrl());
-  url.searchParams.set(
-    "document_number",
-    normalizeDocumentNumber(payload.profile.document_type, payload.profile.document_number)
+  const queriedDocumentNumber = normalizeDocumentNumber(
+    payload.profile.document_type,
+    payload.profile.document_number
   );
+  url.searchParams.set("document_number", queriedDocumentNumber);
   url.searchParams.set("page_size", "100");
   url.searchParams.set("page", "1");
 
   const response = await fetchBukJson(url.toString());
-  return extractBukObjectRows(response)
+  const employees = extractBukObjectRows(response)
     .filter((entry): entry is BukEmployeeRecord => Boolean(entry) && typeof entry === "object")
-    .sort(compareBukEmployeePriority);
+    .map((employee) => ({
+      ...employee,
+      document_query_identity: queriedDocumentNumber,
+      identity_hydrated: Boolean(employee.document_number ?? employee.rut)
+    }));
+
+  const hydratedEmployees = await Promise.all(
+    employees.map(async (employee) => {
+      if (employee.document_number ?? employee.rut) {
+        return employee;
+      }
+
+      try {
+        const detail = await fetchBukEmployeeById(String(employee.id));
+        return {
+          ...employee,
+          ...detail,
+          document_query_identity: queriedDocumentNumber,
+          identity_hydrated: true
+        };
+      } catch {
+        return employee;
+      }
+    })
+  );
+
+  return hydratedEmployees.sort(compareBukEmployeePriority);
 }
 
 function applyReservedBukEmployeeCode(
@@ -1401,6 +1476,14 @@ function applyReservedBukEmployeeCode(
         : null,
     buk_employee_id:
       typeof reservation.buk_employee_id === "string" ? reservation.buk_employee_id : null,
+    predecessor_buk_employee_id:
+      typeof reservation.predecessor_buk_employee_id === "string"
+        ? reservation.predecessor_buk_employee_id
+        : null,
+    predecessor_employee_code:
+      typeof reservation.predecessor_employee_code === "string"
+        ? reservation.predecessor_employee_code
+        : null,
     created_at: typeof reservation.created_at === "string" ? reservation.created_at : null
   };
 
@@ -1434,7 +1517,6 @@ async function reconcileBukEmployeeCodeBeforeWrite(
       Number.isFinite(employeeCreatedAt) &&
       employeeCreatedAt >= reservationCreatedAt - 60_000;
     return (
-      job.attempts > 1 &&
       wasCreatedAfterReservation &&
       (
         isErpProvisionedActiveBukEmployee(employee, payload) ||
@@ -1451,7 +1533,6 @@ async function reconcileBukEmployeeCodeBeforeWrite(
   }
   if (
     !confirmedEmployeeId &&
-    job.attempts > 1 &&
     employeesUsingReservedCode.length > 0 &&
     !matchingReservedEmployee
   ) {
@@ -1476,11 +1557,69 @@ async function reconcileBukEmployeeCodeBeforeWrite(
     throw new Error("El backend no retornó la reserva de ficha BUK reconciliada.");
   }
 
+  const { data: reservationContext, error: reservationContextError } = await supabase.rpc(
+    "get_buk_employee_code_reservation_context",
+    { p_job_id: job.id }
+  );
+  if (reservationContextError) {
+    throw new Error(
+      `No fue posible leer el contexto de la reserva BUK: ${reservationContextError.message}`
+    );
+  }
+
   const employeeCode = applyReservedBukEmployeeCode(
     payload,
-    data as Record<string, unknown>
+    {
+      ...(data as Record<string, unknown>),
+      ...(reservationContext && typeof reservationContext === "object" && !Array.isArray(reservationContext)
+        ? reservationContext as Record<string, unknown>
+        : {})
+    }
   );
-  return { employeeCode, matchingEmployees, reservation: data as Record<string, unknown> };
+  return {
+    employeeCode,
+    matchingEmployees,
+    reservation: {
+      ...(data as Record<string, unknown>),
+      ...(reservationContext && typeof reservationContext === "object" && !Array.isArray(reservationContext)
+        ? reservationContext as Record<string, unknown>
+        : {})
+    }
+  };
+}
+
+async function checkpointBukEmployeeCode(
+  supabase: SupabaseAdminClient,
+  jobId: string,
+  payload: BukCandidateSyncPayload,
+  employeeId: string,
+  resolution: string,
+  predecessorBukEmployeeId: string | null
+) {
+  const expectedEmployeeCode = resolveBukEmployeeCode(payload);
+  if (!expectedEmployeeCode) {
+    throw new Error("El job no tiene un correlativo BUK reservado para registrar la nueva ficha.");
+  }
+
+  const { data, error } = await supabase.rpc(
+    "checkpoint_buk_employee_code_reservation",
+    {
+      p_job_id: jobId,
+      p_buk_employee_id: employeeId,
+      p_expected_employee_code: expectedEmployeeCode,
+      p_resolution: resolution,
+      p_predecessor_buk_employee_id: predecessorBukEmployeeId
+    }
+  );
+  if (error) {
+    throw new Error(`No fue posible registrar el checkpoint de la ficha BUK: ${error.message}`);
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("El backend no retornó el checkpoint de la ficha BUK.");
+  }
+
+  applyReservedBukEmployeeCode(payload, data as Record<string, unknown>);
+  return data as Record<string, unknown>;
 }
 
 async function verifyAndConfirmBukEmployeeCode(
@@ -2809,7 +2948,7 @@ function buildBukEmployeeClonePayload(
     bank: worker.bank_name ?? undefined,
     account_type: worker.bank_account_type ?? undefined,
     account_number: worker.bank_account_number ?? undefined,
-    code_sheet: resolveNextBukEmployeeCode(payload, employees) ?? resolveBukEmployeeCode(payload) ?? undefined,
+    code_sheet: resolveBukEmployeeCode(payload) ?? resolveNextBukEmployeeCode(payload, employees) ?? undefined,
     start_date: resolveTargetStartDate(payload) ?? undefined,
     private_role: resolvePrivateRole(worker.private_role),
     custom_attributes: buildBukUniformSizeAttributes(payload)
@@ -2945,9 +3084,17 @@ async function resolveBukEmployeeForSync(
       } as const;
     }
 
-    const inactiveEmployee = matchingEmployees.find((employee) =>
-      isInactiveBukEmployee(employee, payload)
-    );
+    const predecessorEmployeeId =
+      payload.employee_code_reservation?.predecessor_buk_employee_id?.trim() || null;
+    const inactiveEmployee =
+      matchingEmployees.find((employee) =>
+        predecessorEmployeeId &&
+        String(employee.id) === predecessorEmployeeId &&
+        resolveBukEmployeeStatus(employee) === "inactive"
+      ) ??
+      matchingEmployees.find((employee) =>
+        isInactiveBukEmployee(employee, payload)
+      );
     if (inactiveEmployee) {
       if (isReusableIncompleteBukEmployee(inactiveEmployee, payload)) {
         return {
@@ -3780,6 +3927,19 @@ Deno.serve(async (req) => {
           };
           await finalizeExistingActiveEmployeeJob(supabase, job.id, employeeId, jobResultSnapshot);
         } else {
+          const employeeCheckpoint = await checkpointBukEmployeeCode(
+            supabase,
+            job.id,
+            payload,
+            employeeId,
+            resolvedEmployee.resolution,
+            resolvedEmployee.clonedFromEmployeeId ?? null
+          );
+          jobResultSnapshot.employeeCheckpoint = {
+            ...employeeCheckpoint,
+            checkpointedAt: new Date().toISOString(),
+            resolution: resolvedEmployee.resolution
+          };
           const confirmedReservation = await verifyAndConfirmBukEmployeeCode(
             supabase,
             job.id,
