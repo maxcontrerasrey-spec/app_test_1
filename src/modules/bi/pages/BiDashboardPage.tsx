@@ -12,6 +12,7 @@ import { BiRecruitmentFunnel } from "../components/BiRecruitmentFunnel";
 import { BiRecruitmentAnalyticsView } from "../components/BiRecruitmentAnalyticsView";
 import { IncentiveAnalyticsView } from "../../incentives/components/IncentiveAnalyticsView";
 import { TextField, MultiSelectField } from "../../../shared/ui";
+import { buildBiPeriodCode, isBiPeriodRangeValid } from "../../../shared/lib/biPeriod";
 import {
   useBiHeadcountByContract,
   useBiHeadcountByJobTitle,
@@ -78,31 +79,36 @@ export function BiDashboardPage() {
   );
   const fallbackView = visibleViews[0]?.key ?? null;
 
-  const [periodCodeFilter, setPeriodCodeFilter] = useState("");
-  const [debouncedPeriodCode, setDebouncedPeriodCode] = useState("");
+  const [periodFromFilter, setPeriodFromFilter] = useState("");
+  const [periodToFilter, setPeriodToFilter] = useState("");
   const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
   const [jobTitleFilter, setJobTitleFilter] = useState<string[]>([]);
   const [managementFilter, setManagementFilter] = useState<string[]>([]);
   const [dotacionManagementSelection, setDotacionManagementSelection] = useState<string | null>(null);
   const [shiftNameFilter, setShiftNameFilter] = useState<string[]>([]);
+  const periodCodeFilter = useMemo(
+    () => buildBiPeriodCode(periodFromFilter, periodToFilter),
+    [periodFromFilter, periodToFilter]
+  );
+  const periodRangeIsValid = isBiPeriodRangeValid(periodFromFilter, periodToFilter);
   const dotacionFilters = useMemo<BiFilters>(
     () => ({
-      periodCode: debouncedPeriodCode || undefined,
+      periodCode: periodRangeIsValid ? periodCodeFilter : undefined,
       contractCodes: contractCodeFilter,
       jobTitles: jobTitleFilter,
       managementNames: dotacionManagementSelection ? [dotacionManagementSelection] : []
     }),
-    [contractCodeFilter, debouncedPeriodCode, dotacionManagementSelection, jobTitleFilter]
+    [contractCodeFilter, periodCodeFilter, periodRangeIsValid, dotacionManagementSelection, jobTitleFilter]
   );
   const recruitmentFilters = useMemo<BiFilters>(
     () => ({
-      periodCode: debouncedPeriodCode || undefined,
+      periodCode: periodRangeIsValid ? periodCodeFilter : undefined,
       managementNames: managementFilter,
       contractCodes: contractCodeFilter,
       jobTitles: jobTitleFilter,
       shiftNames: shiftNameFilter
     }),
-    [contractCodeFilter, debouncedPeriodCode, jobTitleFilter, managementFilter, shiftNameFilter]
+    [contractCodeFilter, periodCodeFilter, periodRangeIsValid, jobTitleFilter, managementFilter, shiftNameFilter]
   );
 
   // El catálogo de contratos/cargos no puede depender de la selección actual:
@@ -110,8 +116,8 @@ export function BiDashboardPage() {
   // demás opciones y hace imposible una multiselección. El periodo sí acota
   // correctamente el catálogo disponible.
   const dotacionOptionFilters = useMemo<BiFilters>(
-    () => ({ periodCode: debouncedPeriodCode || undefined }),
-    [debouncedPeriodCode]
+    () => ({ periodCode: periodRangeIsValid ? periodCodeFilter : undefined }),
+    [periodCodeFilter, periodRangeIsValid]
   );
 
   const { data: contractsData } = useBiHeadcountByContract(
@@ -131,14 +137,6 @@ export function BiDashboardPage() {
       current === managementName ? null : managementName
     );
   }, []);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(
-      () => setDebouncedPeriodCode(periodCodeFilter.trim()),
-      400
-    );
-    return () => window.clearTimeout(timeoutId);
-  }, [periodCodeFilter]);
 
   const jobTitlesByContractCode = useMemo(() => {
     const lookup = new Map<string, Set<string>>();
@@ -377,12 +375,21 @@ export function BiDashboardPage() {
               >
                 <TextField
                   id="hr-bi-analytics-period"
-                  label="Periodo"
-                  placeholder="Ej. 202606"
-                  value={periodCodeFilter}
-                  onChange={(e) => setPeriodCodeFilter(e.target.value)}
-                  inputMode="numeric"
+                  label="Desde"
+                  type="month"
+                  value={periodFromFilter}
+                  onChange={(e) => setPeriodFromFilter(e.target.value)}
                   className="bi-filter-period-field"
+                />
+                <TextField
+                  id="hr-bi-analytics-period-to"
+                  label="Hasta"
+                  type="month"
+                  value={periodToFilter}
+                  onChange={(e) => setPeriodToFilter(e.target.value)}
+                  hasError={!periodRangeIsValid}
+                  className="bi-filter-period-field"
+                  hint="Déjalo vacío para consultar solo el período indicado en Desde."
                 />
 
                 <MultiSelectField
@@ -461,7 +468,8 @@ export function BiDashboardPage() {
                   type="button"
                   title="Limpiar Filtros"
                   onClick={() => {
-                    setPeriodCodeFilter("");
+                    setPeriodFromFilter("");
+                    setPeriodToFilter("");
                     setContractCodeFilter([]);
                     setJobTitleFilter([]);
                     setManagementFilter([]);

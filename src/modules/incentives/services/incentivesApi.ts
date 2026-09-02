@@ -9,6 +9,7 @@ import type {
   CreateHrIncentiveRequestInput,
   CreateHrIncentiveRequestResult,
   HrIncentiveAnalyticsFilters,
+  HrIncentiveAnalyticsPayload,
   HrIncentiveApprovalQueuePageFilters,
   HrIncentiveEligibleWorker,
   HrIncentiveRequest,
@@ -334,13 +335,33 @@ export async function fetchAllHrIncentiveRequests(
   return items;
 }
 
-export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFilters) {
+export async function fetchHrIncentivesAnalytics(
+  filters: HrIncentiveAnalyticsFilters
+): Promise<HrIncentiveAnalyticsPayload> {
   const client = getSupabaseClient();
   const resolvedStatuses = normalizeFilterArray(filters.status, filters.statuses);
   const resolvedContractCodes = normalizeFilterArray(filters.contractCode, filters.contractCodes);
   const resolvedTypeIds = normalizeFilterArray(filters.typeId, filters.typeIds);
+  const periodCode = filters.periodCode?.trim() || "";
+  const rangeMatch = /^(\d{6})-(\d{6})$/.exec(periodCode);
+  if (rangeMatch) {
+    const periods: string[] = [];
+    let cursor = rangeMatch[1];
+    while (cursor <= rangeMatch[2]) {
+      periods.push(cursor);
+      const date = new Date(Date.UTC(Number(cursor.slice(0, 4)), Number(cursor.slice(4, 6)), 1));
+      date.setUTCMonth(date.getUTCMonth() + 1);
+      cursor = `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    }
+
+    const payloads: HrIncentiveAnalyticsPayload[] = await Promise.all(
+      periods.map((period) => fetchHrIncentivesAnalytics({ ...filters, periodCode: period }))
+    );
+    return mergeIncentiveAnalyticsPayloads(payloads);
+  }
+
   const { data, error } = await client.rpc("get_hr_incentives_analytics", {
-    p_period_code: filters.periodCode?.trim() || null,
+    p_period_code: periodCode || null,
     p_statuses: resolvedStatuses,
     p_contract_codes: resolvedContractCodes,
     p_type_ids: resolvedTypeIds
@@ -357,6 +378,67 @@ export async function fetchHrIncentivesAnalytics(filters: HrIncentiveAnalyticsFi
   }
 
   return mapAnalyticsPayload(data);
+}
+
+function mergeIncentiveAnalyticsPayloads(payloads: HrIncentiveAnalyticsPayload[]): HrIncentiveAnalyticsPayload {
+  const first = payloads[0];
+  if (!first) {
+    throw new Error("No fue posible construir el rango de períodos de incentivos.");
+  }
+
+  const summary = payloads.reduce((acc, payload) => ({
+    totalAmount: acc.totalAmount + payload.summaryCards.totalAmount,
+    requestCount: acc.requestCount + payload.summaryCards.requestCount,
+    approvedCount: acc.approvedCount + payload.summaryCards.approvedCount,
+    rejectedCount: acc.rejectedCount + payload.summaryCards.rejectedCount,
+    declaredRestDayCount: acc.declaredRestDayCount + payload.summaryCards.declaredRestDayCount,
+    approvalRate: 0,
+    rejectionRate: 0
+  }), { totalAmount: 0, requestCount: 0, approvedCount: 0, rejectedCount: 0, declaredRestDayCount: 0, approvalRate: 0, rejectionRate: 0 });
+
+  const byType = new Map<string, { incentiveTypeId: string; incentiveTypeName: string; requestCount: number; totalAmount: number }>();
+  const byContract = new Map<string, { contractCode: string; areaName: string | null; totalAmount: number }>();
+  const byWorker = new Map<string, { workerName: string; totalAmount: number; contracts: Map<string, { contractCode: string; contractLabel: string; amount: number }> }>();
+  const totalAmountByPeriod = payloads.flatMap((payload) => payload.totalAmountByPeriod).sort((a, b) => a.periodCode.localeCompare(b.periodCode));
+
+  for (const payload of payloads) {
+    for (const item of payload.countByIncentiveType) {
+      const current = byType.get(item.incentiveTypeId) ?? { ...item, requestCount: 0, totalAmount: 0 };
+      current.requestCount += item.requestCount;
+      current.totalAmount += item.totalAmount;
+      byType.set(item.incentiveTypeId, current);
+    }
+    for (const item of payload.amountByContract) {
+      const current = byContract.get(item.contractCode) ?? { ...item, totalAmount: 0 };
+      current.totalAmount += item.totalAmount;
+      byContract.set(item.contractCode, current);
+    }
+    for (const item of payload.amountByWorker) {
+      const current = byWorker.get(item.workerName) ?? { workerName: item.workerName, totalAmount: 0, contracts: new Map() };
+      current.totalAmount += item.totalAmount;
+      for (const contract of item.contracts) {
+        const currentContract = current.contracts.get(contract.contractCode) ?? { ...contract, amount: 0 };
+        currentContract.amount += contract.amount;
+        current.contracts.set(contract.contractCode, currentContract);
+      }
+      byWorker.set(item.workerName, current);
+    }
+  }
+
+  summary.approvalRate = summary.requestCount ? (summary.approvedCount / summary.requestCount) * 100 : 0;
+  summary.rejectionRate = summary.requestCount ? (summary.rejectedCount / summary.requestCount) * 100 : 0;
+  return {
+    summaryCards: summary,
+    totalAmountByPeriod,
+    countByIncentiveType: [...byType.values()],
+    amountByContract: [...byContract.values()],
+    amountByWorker: [...byWorker.values()].map((item) => ({ ...item, contracts: [...item.contracts.values()] })),
+    filterOptions: {
+      contracts: [...new Map(payloads.flatMap((payload) => payload.filterOptions.contracts).map((item) => [item.value, item])).values()],
+      incentiveTypes: [...new Map(payloads.flatMap((payload) => payload.filterOptions.incentiveTypes).map((item) => [item.value, item])).values()],
+      statuses: first.filterOptions.statuses
+    }
+  };
 }
 
 export async function fetchHrIncentiveApprovalQueuePage(

@@ -16,6 +16,7 @@ import {
 } from "../../../shared/lib/format";
 import { formatDateForDisplay } from "../../../shared/lib/date";
 import { useHrIncentivesAnalytics, useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
+import { buildBiPeriodCode, isBiPeriodRangeValid } from "../../../shared/lib/biPeriod";
 
 type ChartClickParams = {
   data?: unknown;
@@ -186,13 +187,16 @@ export function IncentiveAnalyticsView() {
   const [contractTimeView, setContractTimeView] = useState<"period" | "date">("date");
   const [workerTimeView, setWorkerTimeView] = useState<"period" | "date">("date");
 
-  const [periodCodeFilter, setPeriodCodeFilter] = useState("");
+  const [periodFromFilter, setPeriodFromFilter] = useState("");
+  const [periodToFilter, setPeriodToFilter] = useState("");
   const [contractCodeFilter, setContractCodeFilter] = useState<string[]>([]);
   const [typeIdFilter, setTypeIdFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>(["A"]);
+  const periodCodeFilter = buildBiPeriodCode(periodFromFilter, periodToFilter);
+  const periodRangeIsValid = isBiPeriodRangeValid(periodFromFilter, periodToFilter);
 
   const analyticsQuery = useHrIncentivesAnalytics({
-    periodCode: periodCodeFilter || undefined,
+    periodCode: periodRangeIsValid ? periodCodeFilter : undefined,
     contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
     typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
     statuses: statusFilter.length > 0 ? statusFilter : undefined
@@ -217,7 +221,7 @@ export function IncentiveAnalyticsView() {
   const actualPeriodCode = periodCodeFilter || (periodTrendData.length > 0 ? periodTrendData[periodTrendData.length - 1].periodCode : undefined);
 
   const requestsQuery = useHrIncentiveRequests({
-    periodCode: actualPeriodCode,
+    periodCode: periodCodeFilter?.includes("-") ? undefined : actualPeriodCode,
     contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
     typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
     statuses: statusFilter.length > 0 ? statusFilter : undefined
@@ -227,7 +231,11 @@ export function IncentiveAnalyticsView() {
     if (!requestsQuery.data) return [];
 
     const aggregated: Record<string, number> = {};
+    const [rangeFrom, rangeTo] = periodCodeFilter?.split("-") ?? [];
     for (const req of requestsQuery.data) {
+      if (rangeFrom && rangeTo && (req.periodCode < rangeFrom || req.periodCode > rangeTo)) {
+        continue;
+      }
       const datePart = req.serviceDate.split("T")[0];
       aggregated[datePart] = (aggregated[datePart] ?? 0) + req.calculatedAmount;
     }
@@ -238,7 +246,7 @@ export function IncentiveAnalyticsView() {
         totalAmount: amount
       }))
       .sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
-  }, [requestsQuery.data]);
+  }, [periodCodeFilter, requestsQuery.data]);
 
   const evolutionChartData = timeView === "period" ? periodTrendData : dateTrendData;
 
@@ -550,12 +558,20 @@ export function IncentiveAnalyticsView() {
 
         <div className="hr-incentives-analytics-filters">
           <TextField
-            id="hr-incentive-analytics-period"
-            label="Período"
-            value={periodCodeFilter}
-            onChange={(event) => setPeriodCodeFilter(event.target.value)}
-            placeholder="YYYYMM"
-            inputMode="numeric"
+            id="hr-incentive-analytics-period-from"
+            label="Desde"
+            type="month"
+            value={periodFromFilter}
+            onChange={(event) => setPeriodFromFilter(event.target.value)}
+          />
+          <TextField
+            id="hr-incentive-analytics-period-to"
+            label="Hasta"
+            type="month"
+            value={periodToFilter}
+            onChange={(event) => setPeriodToFilter(event.target.value)}
+            hasError={!periodRangeIsValid}
+            hint="Déjalo vacío para consultar solo el período indicado en Desde."
           />
           <MultiSelectField
             id="hr-incentive-analytics-contract"
@@ -587,7 +603,8 @@ export function IncentiveAnalyticsView() {
             title="Limpiar filtros"
             aria-label="Limpiar filtros"
             onClick={() => {
-              setPeriodCodeFilter("");
+              setPeriodFromFilter("");
+              setPeriodToFilter("");
               setContractCodeFilter([]);
               setTypeIdFilter([]);
               setStatusFilter(["A"]);
@@ -645,7 +662,9 @@ export function IncentiveAnalyticsView() {
                 const data = getChartDataRecord(params.data);
                 const periodCode = typeof data.periodCode === "string" ? data.periodCode : "";
                 if (!periodCode) return;
-                setPeriodCodeFilter((previous) => previous === periodCode ? "" : periodCode);
+                const monthValue = `${periodCode.slice(0, 4)}-${periodCode.slice(4, 6)}`;
+                setPeriodFromFilter((previous) => previous === monthValue ? "" : monthValue);
+                setPeriodToFilter((previous) => previous === monthValue ? "" : monthValue);
               }
             }}
           />
