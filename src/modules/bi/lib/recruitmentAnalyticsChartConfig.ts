@@ -125,19 +125,6 @@ export function truncateRecruitmentChartLabel(value: string, maxLength = RECRUIT
   return value.length > maxLength ? `${value.substring(0, maxLength)}…` : value;
 }
 
-export function getCaseStatusColor(label: string, palette: BiChartPalette) {
-  const normalized = label.toLowerCase();
-
-  if (normalized.includes("abierto")) return palette.open;
-  if (normalized.includes("screen")) return palette.screening;
-  if (normalized.includes("parcial")) return palette.partial;
-  if (normalized.includes("cerr") || normalized.includes("cancel") || normalized.includes("rech")) {
-    return palette.neutral;
-  }
-
-  return palette.mobility;
-}
-
 export function getMobilityStatusColor(label: string, palette: BiChartPalette) {
   const normalized = label.toLowerCase();
 

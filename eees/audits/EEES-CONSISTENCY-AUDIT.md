@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 0
-- Info: 32
+- Info: 30
 
 ## Errores
 
@@ -60,6 +60,4 @@ PASS
 - check:edge:sync-buk-candidates: PASS
 - check:edge:verify-competency-certificate: PASS
 - check:edge:verify-hiring-document: PASS
-- check:edge:orion-chat: PASS
-- check:edge:orion-document-processor: PASS
 - check:edge:sync-buk-job-positions: PASS

@@ -3441,8 +3441,49 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Para una carga contingente DSAL se debe registrar el motivo en el payload, encolar por la RPC oficial y esperar `success` con `buk_employee_id`; `pending` no es una creación terminada.
 - La verificación final debe incluir código de ficha, cargo, área, centro, plan previsional y tallas, además de contar jobs exitosos para excluir duplicados.
 - Si se requiere un runner temporal para ejecutar el job, debe restaurarse inmediatamente a estado deshabilitado después de la ejecución autorizada.
+
+## 2026-08-25 - Las correcciones de acentos DSAL deben usar identidad fuerte
+
+- Para corregir nombres de precandidatos, el RUT normalizado y un dato de contacto deben identificar exactamente un registro antes de actualizarlo.
+- La corrección debe cambiar solo los campos nominales necesarios y conservar estado, folio, aprobación, contacto e historial operativo.
+
+## 2026-08-26 - Un timeout de lote BUK requiere reconciliacion antes de reintentar
+
+- Un `504` o timeout de espera del runner no prueba que la sincronizacion haya fallado; primero se debe consultar el job autoritativo y reconciliar `status` con `buk_employee_id`.
+- Solo se pueden reintentar jobs `processing` obsoletos, respetando el claim atomico del worker y conservando fichas existentes mediante la resolucion segura de reutilizacion.
+- Al terminar una contingencia, se debe verificar `success` para cada candidato, contar exactamente un job por identidad y restaurar el runner temporal a estado deshabilitado con JWT habilitado.
+
+## 2026-08-27 - BUK separa fecha historica de ficha y fecha operativa del trabajo
+
+- Para corregir una fecha de ingreso, verificar por separado `active_since` de la ficha y `start_date`/`contract_subscription_date` del trabajo vigente; corregir el trabajo operativo cuando esa es la fecha contractual solicitada.
+- El PATCH de la ficha principal puede aceptar la solicitud sin cambiar `active_since` y exigir campos obligatorios adicionales; no debe declararse corregido hasta leer nuevamente el trabajo y la ficha en BUK.
+- Toda correccion puntual debe quedar anexada al `result_snapshot` del job original, sin crear un nuevo job de alta ni una segunda ficha.
 ## 340. Una RPC consolidada no garantiza un BI rapido
 
 - Reducir varias solicitudes HTTP a una sola no sirve si la RPC agregadora vuelve a recorrer la misma poblacion para cada grafico; el presupuesto debe medirse dentro de PostgreSQL y en la interaccion real.
 - Para analitica sub-segundo sobre datos operativos derivados de JSON, materializar la dimension actual y refrescarla con una cadencia explicita evita recalcular identidad, domicilio y jerarquia en cada clic.
 - Separar siempre primera compilacion del plan y ejecuciones calientes; el gate debe bloquear si cualquiera de las muestras calientes alcanza un segundo.
+## 2026-08-27 - Una auditoría nueva debe demostrar el estado actual desde cero
+
+- Si el usuario solicita rehacer una auditoría completa, los informes anteriores son contexto histórico, no baseline de conclusiones ni límite de alcance.
+- Solo se reutilizan mediciones reproducibles capturadas en el turno actual; cada eliminación o refactor debe probar uso, ausencia de consumidores y equivalencia funcional sobre el código vigente.
+
+## 2026-09-02 - La caducidad del envío debe distinguirse del vencimiento de la sesión
+
+- Una invitación puede estar `sent` y `not_started` aunque su código ya haya superado `invite_expires_at`; mostrarla como enviada oculta que el candidato necesita un nuevo código.
+- El estado visible debe derivarse del vencimiento de la invitación no consumida y el reenvío debe crear una nueva invitación mediante el flujo idempotente existente, sin borrar ni alterar la evaluación histórica.
+
+## 2026-09-02 - Las suscripciones Realtime no deben depender de referencias efímeras
+
+- Un hook que recibe arrays inline en sus dependencias puede desmontar y recrear canales en cada render, aunque la suscripción lógica no haya cambiado.
+- La suscripción debe depender de una firma estable y leer las opciones actuales desde refs; así se conserva la actualización de datos sin churn de canales.
+
+## 2026-09-02 - Los checks Deno no deben escribir sobre node_modules de npm
+
+- `--node-modules-dir=auto` mezcla el grafo de Deno con la instalación gobernada por `package-lock.json` y puede volver a crear carpetas duplicadas `* 2`.
+- Los checks del repositorio usan `--node-modules-dir=none`; una instalación limpia con `npm ci` y una comprobación de directorios vacíos deben preceder al build.
+
+## 2026-09-02 - Storage debe eliminarse solo por su API
+
+- Supabase bloquea también el `delete` directo sobre `storage.buckets`, aunque el bucket esté vacío.
+- El bucket ORION y sus objetos deben eliminarse íntegramente mediante Storage API; la migración de esquema solo debe retirar políticas y objetos propios de ORION.

@@ -21,31 +21,48 @@ type RealtimeInvalidationOptions = {
   debounceMs?: number;
 };
 
+const EMPTY_KEYS: QueryKey[] = [];
+
+function subscriptionSignature(subscriptions: RealtimeSubscription[]) {
+  return subscriptions
+    .map(({ table, schema = "public", event = "*", filter = "" }) =>
+      [schema, table, event, filter].join("\u001f")
+    )
+    .join("\u001e");
+}
+
 export function useRealtimeQueryInvalidation({
   channelName,
   subscriptions,
-  queryKeys = [],
+  queryKeys = EMPTY_KEYS,
   invalidate,
   enabled = true,
   debounceMs = 350
 }: RealtimeInvalidationOptions) {
   const queryClient = useQueryClient();
   const debounceRef = useRef<number | null>(null);
+  const subscriptionsRef = useRef(subscriptions);
+  const queryKeysRef = useRef(queryKeys);
+  const invalidateRef = useRef(invalidate);
+  subscriptionsRef.current = subscriptions;
+  queryKeysRef.current = queryKeys;
+  invalidateRef.current = invalidate;
+  const subscriptionsKey = subscriptionSignature(subscriptions);
 
   useEffect(() => {
-    if (!supabase || !enabled || subscriptions.length === 0) {
+    if (!supabase || !enabled || subscriptionsRef.current.length === 0) {
       return;
     }
 
     const supabaseClient = supabase;
 
     const runInvalidation = () => {
-      if (invalidate) {
-        void invalidate(queryClient);
+      if (invalidateRef.current) {
+        void invalidateRef.current(queryClient);
         return;
       }
 
-      queryKeys.forEach((queryKey) => {
+      queryKeysRef.current.forEach((queryKey) => {
         void queryClient.invalidateQueries({ queryKey });
       });
     };
@@ -63,7 +80,7 @@ export function useRealtimeQueryInvalidation({
 
     const channel = supabaseClient.channel(channelName);
 
-    subscriptions.forEach((subscription) => {
+    subscriptionsRef.current.forEach((subscription) => {
       channel.on(
         "postgres_changes",
         {
@@ -90,5 +107,5 @@ export function useRealtimeQueryInvalidation({
 
       void supabaseClient.removeChannel(channel);
     };
-  }, [channelName, debounceMs, enabled, invalidate, queryClient, queryKeys, subscriptions]);
+  }, [channelName, debounceMs, enabled, queryClient, subscriptionsKey]);
 }

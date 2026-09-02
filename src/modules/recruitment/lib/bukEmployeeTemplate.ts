@@ -52,5 +52,3 @@ export const bukEmployeeFieldOptions = {
   pantsSize: getOptions("Talla Pantalón"),
   shirtSize: getOptions("Talla Polera")
 } as const;
-
-export const bukEmployeeTemplateHeaders = templateData.headers as string[];

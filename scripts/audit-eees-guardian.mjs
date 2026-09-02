@@ -573,8 +573,6 @@ function runGates() {
     runCommand("check:edge:sync-buk-candidates", "npm", ["run", "check:edge:sync-buk-candidates"]);
     runCommand("check:edge:verify-competency-certificate", "npm", ["run", "check:edge:verify-competency-certificate"]);
     runCommand("check:edge:verify-hiring-document", "npm", ["run", "check:edge:verify-hiring-document"]);
-    runCommand("check:edge:orion-chat", "npm", ["run", "check:edge:orion-chat"]);
-    runCommand("check:edge:orion-document-processor", "npm", ["run", "check:edge:orion-document-processor"]);
     runCommand("check:edge:sync-buk-job-positions", "npm", ["run", "check:edge:sync-buk-job-positions"]);
   }
 }

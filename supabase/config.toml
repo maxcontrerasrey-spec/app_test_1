@@ -1,11 +1,5 @@
-[functions.orion-chat]
-verify_jwt = false
-
 [functions.check_buk_candidate]
 verify_jwt = false
-
-[functions.orion-document-processor]
-verify_jwt = true
 
 [functions.hiring-transactional-email]
 verify_jwt = false

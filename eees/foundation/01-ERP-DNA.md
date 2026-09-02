@@ -19,7 +19,7 @@ baseline_date: 2026-07-22
 - Supabase como gateway unico en `src/shared/lib/supabase.ts`.
 - Permisos efectivos desde `get_my_effective_permissions()`.
 - SQL versionado en `supabase/migrations`.
-- Edge Functions para BUK, documentos, certificados, ORION y correo.
+- Edge Functions para BUK, documentos, certificados y correo.
 
 ## Fronteras canonicas
 

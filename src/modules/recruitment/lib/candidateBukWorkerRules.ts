@@ -48,15 +48,6 @@ export function isFonasaBukHealthProvider(value: string | null | undefined) {
   return normalizeBukText(value) === "fonasa";
 }
 
-export function hasAnyHealthPlanValue(draft: Pick<
-  CandidateBukWorkerDraftLike,
-  "healthPlanUf" | "healthPlanPesos" | "healthPlanPercentage"
->) {
-  return [draft.healthPlanUf, draft.healthPlanPesos, draft.healthPlanPercentage].some((value) =>
-    Boolean(value.trim())
-  );
-}
-
 export function applyCandidateBukWorkerDefaults<T extends CandidateBukWorkerDraftLike>(draft: T): T {
   const requiresHealthPlan = healthProviderRequiresPlan(draft.healthProvider);
   const isFonasa = isFonasaBukHealthProvider(draft.healthProvider);

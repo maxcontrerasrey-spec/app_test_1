@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { preloadRouteModulesForPath } from "../router/routeModules";
 import {
@@ -13,14 +13,7 @@ import { AupPolicyModal } from "../../modules/auth/components/AupPolicyModal";
 import { useDashboard } from "../../modules/dashboard/hooks/useDashboard";
 import { canViewHrIncentiveAnalytics } from "../../modules/incentives/lib/analyticsAccess";
 import { useTheme } from "../../shared/context/ThemeContext";
-import orionLogo from "../../assets/orion-logo.png";
-import { lazyWithRetry } from "../../shared/lib/lazyWithRetry";
 import { TopNotificationsMenu } from "./TopNotificationsMenu";
-
-const ORIONWidget = lazyWithRetry("orion-widget", async () => {
-  const module = await import("../../modules/ai_assistant/components/ORIONWidget");
-  return { default: module.ORIONWidget };
-});
 
 function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
   const commonProps = {
@@ -543,21 +536,6 @@ export function AppShell() {
                 );
               })}
 
-              {isSuperAdmin ? (
-                <NavLink
-                  to="/copiloto-ia"
-                  reloadDocument
-                  onMouseEnter={() => preloadNavigationPath("/copiloto-ia")}
-                  onFocus={() => preloadNavigationPath("/copiloto-ia")}
-                  className={({ isActive }) =>
-                    isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
-                  }
-                  style={{ display: "flex", gap: "6px", alignItems: "center" }}
-                >
-                  <img src={orionLogo} alt="ORION" style={{ width: "24px", height: "24px", objectFit: "contain" }} className="orion-nav-icon" />
-                  <span>ORION</span>
-                </NavLink>
-              ) : null}
             </nav>
           </div>
 
@@ -664,11 +642,6 @@ export function AppShell() {
         <Outlet />
       </main>
 
-      {isSuperAdmin ? (
-        <Suspense fallback={null}>
-          <ORIONWidget />
-        </Suspense>
-      ) : null}
       {profile && !profile.aup_accepted_at ? <AupPolicyModal /> : null}
     </div>
   );

@@ -15,7 +15,7 @@ baseline_date: 2026-07-22
 
 - Archivos TypeScript/TSX en `src`: 200.
 - Lineas TS/TSX medidas: 44.250.
-- Dominios activos: recruitment, dashboard/home, internal_mobility, incentives, roster, accreditation, competencies, operaciones, bi, operational_onboarding, ai_assistant, auth.
+- Dominios activos: recruitment, dashboard/home, internal_mobility, incentives, roster, accreditation, competencies, operaciones, bi, operational_onboarding, auth.
 - Rutas protegidas: definidas en `src/app/router/AppRouter.tsx`.
 - Lazy imports: `src/app/router/routeModules.ts`.
 
@@ -35,3 +35,8 @@ baseline_date: 2026-07-22
 ## Score inicial
 
 72/100. Metodo: 30 arquitectura modular, 25 seguridad de fronteras, 20 mantenibilidad, 15 operabilidad, 10 CI. Penalizaciones por archivos gigantes y deuda legacy.
+
+## Actualización 2026-08-27
+
+- Se retiró el dominio `ai_assistant` y toda su superficie runtime de frontend y backend.
+- Las migraciones que crearon ORION se conservan únicamente como historia forward-only; la baja de sus objetos activos se ejecuta mediante una migración nueva y auditable.

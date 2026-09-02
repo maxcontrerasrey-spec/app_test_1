@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 
 const FRONTEND_BUILD_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -61,8 +63,34 @@ function runStep(label, command, args) {
   });
 }
 
+function removeEmptyDependencyConflictCopies() {
+  const root = path.join(process.cwd(), "node_modules");
+  if (!fs.existsSync(root)) return 0;
+
+  let removed = 0;
+  const stack = [root];
+  while (stack.length) {
+    const current = stack.pop();
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (!entry.isDirectory()) continue;
+      if (/ \d+$/.test(entry.name) && fs.readdirSync(full).length === 0) {
+        fs.rmdirSync(full);
+        removed += 1;
+        continue;
+      }
+      stack.push(full);
+    }
+  }
+  return removed;
+}
+
 async function main() {
   console.log(`[build-check] ${timestamp()} inicio de validacion frontend`);
+  const removed = removeEmptyDependencyConflictCopies();
+  if (removed > 0) {
+    console.log(`[build-check] ${timestamp()} se eliminaron ${removed} copias vacias de dependencias`);
+  }
 
   await runStep("TypeScript", "node", ["./node_modules/typescript/bin/tsc", "-b", "--pretty", "false"]);
   await runStep("Vite", "node", ["./node_modules/vite/bin/vite.js", "build", "--logLevel", "info"]);

@@ -170,13 +170,6 @@ export async function reviewPsychAIInterpretation(input: {
   });
   return data.detail as PsychAIReviewDetail;
 }
-export async function resetPsychCertificate(assessmentId: string) {
-  const { error } = await getSupabaseClientOrThrow().rpc(
-    "reset_psycholaboral_certificate",
-    { p_assessment_id: assessmentId },
-  );
-  if (error) throw new Error(getSupabaseErrorMessage(error, "No fue posible preparar la regeneración."));
-}
 export async function redeemPsychInvite(
   publicId: string,
   rut: string,

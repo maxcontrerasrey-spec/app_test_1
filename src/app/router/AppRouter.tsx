@@ -4,7 +4,6 @@ import { AppShell } from "../layout/AppShell";
 import { lazyWithRetry } from "../../shared/lib/lazyWithRetry";
 import { routeModuleImporters } from "./routeModules";
 import {
-  AdminProtectedRoute,
   ProtectedRoute,
   PublicOnlyRoute,
   RoleProtectedRoute
@@ -51,7 +50,6 @@ const HiringDocumentVerificationPage = lazyWithRetry(
   "hiring-document-verification-page",
   routeModuleImporters.hiringDocumentVerificationPage
 );
-const AIAssistantHome = lazyWithRetry("ai-assistant-page", routeModuleImporters.aiAssistantHome);
 const OnboardingModuleLayout = lazyWithRetry(
   "onboarding-module-layout",
   routeModuleImporters.onboardingModuleLayout
@@ -99,14 +97,6 @@ export function AppRouter() {
             <Route
               path="/sin-acceso"
               element={<AccessDeniedPage />}
-            />
-            <Route
-              path="/copiloto-ia"
-              element={
-                <AdminProtectedRoute>
-                  <AIAssistantHome />
-                </AdminProtectedRoute>
-              }
             />
             <Route
               path="/solicitud-contrataciones"

@@ -12,7 +12,7 @@ baseline_date: 2026-07-22
 # Module Checklist
 
 - [ ] Modulo registrado en `AppModuleCode`.
-- [ ] Ruta protegida por `RoleProtectedRoute` o `AdminProtectedRoute`.
+- [ ] Ruta protegida por `ProtectedRoute` y, cuando corresponda, por `RoleProtectedRoute`.
 - [ ] Navegacion alineada con permisos.
 - [ ] `app_modules` y `role_module_access` revisados.
 - [ ] Hooks y servicios de dominio separados.

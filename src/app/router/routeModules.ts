@@ -58,9 +58,6 @@ export const routeModuleImporters = {
   hiringDocumentVerificationPage: async () => ({
     default: (await import("../../modules/recruitment/pages/HiringDocumentVerificationPage")).HiringDocumentVerificationPage
   }),
-  aiAssistantHome: async () => ({
-    default: (await import("../../modules/ai_assistant/pages/AIAssistantHome")).AIAssistantHome
-  }),
   onboardingModuleLayout: async () => ({
     default: (await import("../../modules/operational_onboarding/pages/OnboardingModuleLayout"))
       .OnboardingModuleLayout
@@ -152,10 +149,6 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/verificar/documento")) {
     return ["hiringDocumentVerificationPage"];
-  }
-
-  if (normalizedPath.startsWith("/copiloto-ia")) {
-    return ["aiAssistantHome"];
   }
 
   if (normalizedPath.startsWith("/bi")) {

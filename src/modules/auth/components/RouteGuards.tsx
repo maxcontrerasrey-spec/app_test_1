@@ -100,17 +100,3 @@ export function RoleProtectedRoute({
 
   return <>{children}</>;
 }
-
-export function AdminProtectedRoute({ children }: { children: ReactNode }) {
-  const { isLoading, isSuperAdmin } = useAuth();
-
-  if (isLoading) {
-    return <AuthLoadingScreen />;
-  }
-
-  if (!isSuperAdmin) {
-    return <Navigate to="/sin-acceso" replace />;
-  }
-
-  return <>{children}</>;
-}

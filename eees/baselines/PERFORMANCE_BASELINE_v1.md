@@ -149,7 +149,6 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   },
   "trackedAssets": [
     { "match": "fondo-", "maxBytes": 65132 },
-    { "match": "maps/chile.json", "maxBytes": 1454860 },
     { "match": "echarts-vendor", "maxBytes": 512504 },
     { "match": "xlsx-vendor", "maxBytes": 500059 },
     { "match": "supabase-vendor", "maxBytes": 221867 },
@@ -225,6 +224,8 @@ Revision 2026-08-17 Gestión Psicolaboral alineación de tabla: el total sube 11
 Revision 2026-08-17 firma legal RUN CI: GitHub Actions `Audit Enterprise Guardrails` run `32044206847`, con Node 24 y variables publicas de Supabase inyectadas, midio 10,261,135 bytes totales y 2,744,418 bytes JS tras incorporar la migracion de RUN verificable del firmante legal. Se ajustan solo los limites globales al artefacto canonico remoto; CSS, vendors y assets trackeados permanecen bajo sus limites.
 
 Revision 2026-08-18 carga BUK DSAL en contingencia: el total sube 776 bytes y JS sube 776 bytes por exponer en el detalle de Control de candidatos el flujo auditado de `enqueue_buk_generation_contingency`, con motivo obligatorio y sin mover la etapa ERP. No agrega vendors, CSS, rutas ni assets trackeados.
+
+Revision 2026-08-27 retiro ORION y mapa legado: se elimina el asset sin consumidores `public/maps/chile.json` y deja de exigirse en `trackedAssets`. El BI de regiones usa barras y no realiza solicitudes al mapa; la reducción se mide nuevamente en la auditoría integral del árbol actual.
 
 ## Politica de actualizacion
 

@@ -379,9 +379,9 @@
   },
   {
     "id": "AI-001",
-    "title": "AI admin y conocimiento gobernado",
+    "title": "IA administrada y datos minimizados",
     "severity": "WARNING",
-    "scope": "src/modules/ai_assistant supabase/functions/orion-chat",
+    "scope": "supabase/functions/_shared/psychAi supabase/functions/psycholaboral-assessment",
     "source_document": "eees/books/SECURITY.md",
     "automatable": false,
     "blocking": false

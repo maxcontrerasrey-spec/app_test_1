@@ -29,6 +29,9 @@ baseline_date: 2026-07-22
 | `src/shared/ui/ModulePlaceholderPage.tsx` | 0 consumidores; no exportado por barrel vivo. | TypeScript, build, tests y Guardian PASS. |
 | PNGs legacy en `public/assets` | 0 referencias exactas a `login-*` y `nav-*`; no rutas publicas ni CSS los usan. | Build y smoke frontend PASS. |
 | PNGs legacy en `src/assets` | 0 referencias exactas a `certification-icon`, `recruiting-icon`, `status-*`, `operacion`, `recursos-humanos`. | Build y smoke frontend PASS. |
+| `public/maps/chile.json` | El BI vigente reemplazó el mapa por barras y no existe `fetch`, import ni ruta runtime al asset; Vite lo copiaba completo a cada deploy. | Build, tests y Guardian 2026-08-27. |
+| `public/app-logo.png` | Era idéntico byte a byte al asset importado `src/assets/app-logo.png`; el favicon ahora usa la fuente Vite y evita publicar dos copias. | HTML construido referencia el mismo asset hashado que la aplicación. |
+| Runtime ORION | El único consumidor de `react-markdown`/`remark-gfm` era ORION; su provider se montaba globalmente y las dos Edge Functions eran exclusivas del módulo. | Se retiran ruta, navegación, UI, contexto, estilos, assets, dependencias, pruebas, configuración y Edge sources; la baja de tablas, RPC y bucket queda forward-only y aborta si Storage aún contiene archivos. |
 
 ## CONSOLIDATE
 
@@ -86,7 +89,7 @@ baseline_date: 2026-07-22
 ### KEEP verificado
 
 - Los 94 documentos Markdown/EEES no tienen duplicados binarios y varios forman parte de contratos Guardian, seguridad, rollback o historia forward-only.
-- `public/app-logo.png` y `src/assets/app-logo.png` son el unico par versionado byte a byte identico, pero se conservan porque uno es favicon publico y el otro asset importado/hashado por Vite.
-- `src/assets/fondo.png` y `public/maps/chile.json` son grandes pero tienen consumidores runtime y baseline de performance.
+- La conservación duplicada previa de `public/app-logo.png` quedó superada el 2026-08-27: `index.html` procesa `src/assets/app-logo.png` mediante Vite y publica una sola copia hashada.
+- `src/assets/fondo.png` conserva consumidor runtime. La clasificación anterior de `public/maps/chile.json` quedó superada por la verificación completa del árbol del 2026-08-27 y el asset fue retirado.
 - `supabase/functions/check_buk_candidate` queda `KEEP_UNCERTAIN`: parece supersedida en el repositorio, pero no se retira sin confirmar consumidores y despliegue productivo.
 - `data/seed/sharepoint/*.csv` queda `KEEP_HISTORICAL_REVIEW`: no tiene consumidor runtime y contiene datos personales historicos; requiere una purga de gobierno e historial Git separada para que una eliminacion sea efectiva.

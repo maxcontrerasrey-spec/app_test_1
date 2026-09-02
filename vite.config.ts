@@ -47,13 +47,6 @@ export default defineConfig({
             return "supabase-vendor";
           }
 
-          if (
-            has("/node_modules/react-markdown/") ||
-            has("/node_modules/remark-gfm/")
-          ) {
-            return "markdown-vendor";
-          }
-
           return undefined;
         }
       }

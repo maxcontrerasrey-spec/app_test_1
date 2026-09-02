@@ -48,7 +48,6 @@ export type AppModuleCode =
   | "certificados"
   | "seguimiento_certificados"
   | "alta_operacional_personal"
-  | "ai_assistant"
   | "bi_analytics";
 
 const KNOWN_ROLE_CODES = new Set<AppRole>([
@@ -106,7 +105,6 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "certificados",
   "seguimiento_certificados",
   "alta_operacional_personal",
-  "ai_assistant",
   "bi_analytics"
 ]);
 

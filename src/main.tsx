@@ -7,7 +7,6 @@ import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "@fontsource/inter/latin-700.css";
 import { App } from "./app/App";
-import { ORIONProvider } from "./modules/ai_assistant/context/ORIONContext";
 import { AuthProvider } from "./modules/auth/context/AuthContext";
 import { ThemeProvider } from "./shared/context/ThemeContext";
 import { queryClient } from "./shared/lib/queryClient";
@@ -20,11 +19,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <AppErrorBoundary>
         <ThemeProvider>
           <AuthProvider>
-            <ORIONProvider>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
-            </ORIONProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
           </AuthProvider>
         </ThemeProvider>
       </AppErrorBoundary>

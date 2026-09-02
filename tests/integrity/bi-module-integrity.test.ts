@@ -19,7 +19,7 @@ describe("BI module navigation integrity", () => {
     const biPage = read("src/modules/bi/pages/BiDashboardPage.tsx");
     const styles = read("src/styles/global.css");
 
-    expect(shell.match(/reloadDocument/g)?.length ?? 0).toBeGreaterThanOrEqual(6);
+    expect(shell.match(/reloadDocument/g)?.length ?? 0).toBeGreaterThanOrEqual(5);
     expect(shell).toContain("top-nav-dropdown-link");
     expect(shell).toContain("top-nav-link top-nav-link-active");
     expect(biPage).toContain("reloadDocument");
@@ -61,6 +61,15 @@ describe("BI module navigation integrity", () => {
 
     expect(multiSelect).toContain("event.stopPropagation();");
     expect(multiSelect).toContain("toggleOption(opt.value);");
+  });
+
+  it("keeps realtime channels stable when callers pass inline options", () => {
+    const hook = read("src/shared/hooks/useRealtimeQueryInvalidation.ts");
+
+    expect(hook).toContain("const subscriptionsRef = useRef(subscriptions);");
+    expect(hook).toContain("const subscriptionsKey = subscriptionSignature(subscriptions);");
+    expect(hook).toContain("[channelName, debounceMs, enabled, queryClient, subscriptionsKey]");
+    expect(hook).not.toContain("queryKeys, subscriptions]);");
   });
 
   it("renders dotacion by gerencia from the protected BI dimension", () => {

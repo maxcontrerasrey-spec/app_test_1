@@ -26,7 +26,6 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `certificados` | `/certificados` | `RoleProtectedRoute` |
 | `seguimiento_certificados` | `/seguimiento-certificados` | `RoleProtectedRoute` + redirect a `/certificados` |
 | `bi_analytics` | `/bi/*` | `RoleProtectedRoute` |
-| `ai_assistant` | `/copiloto-ia` | `AdminProtectedRoute` |
 
 ## Capabilities finas vigentes
 
@@ -65,6 +64,5 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 
 - El frontend ya esta alineado con `accessible_modules`, no con allowlists por correo.
 - `jefe_administrativo` esta bien modelado como rol acumulativo en SQL.
-- El modulo AI sigue siendo admin-only en frontend; no existe una superficie productiva general para `ai_assistant`.
 - Certificacion de competencias usa modulos separados `certificados` y `seguimiento_certificados`; la pantalla viva redirige seguimiento al mismo modulo funcional mientras se consolida el flujo.
 - Sobrevive SQL legacy de onboarding con `user_can_access_module(..., 'reclutamiento')`; ese valor es un rol, no un modulo, y debe tratarse como deuda de seguridad/consistencia si ese bloque vuelve a usarse.

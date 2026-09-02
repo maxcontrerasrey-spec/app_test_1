@@ -403,64 +403,6 @@ function drawScaledText(page: PDFPage, text: string, options: {
   });
 }
 
-function drawJustifiedLine(page: PDFPage, line: string, options: {
-  x: number;
-  y: number;
-  width: number;
-  font: PDFFont;
-  size: number;
-}) {
-  const words = line.split(/\s+/).filter(Boolean);
-  if (words.length < 2) {
-    page.drawText(line, { x: options.x, y: options.y, size: options.size, font: options.font, color: rgb(0.12, 0.12, 0.14) });
-    return;
-  }
-
-  const wordsWidth = words.reduce((total, word) => total + options.font.widthOfTextAtSize(word, options.size), 0);
-  const gap = (options.width - wordsWidth) / (words.length - 1);
-
-  if (!Number.isFinite(gap) || gap < 2 || gap > 9) {
-    page.drawText(line, { x: options.x, y: options.y, size: options.size, font: options.font, color: rgb(0.12, 0.12, 0.14) });
-    return;
-  }
-
-  let cursorX = options.x;
-  for (const word of words) {
-    page.drawText(word, { x: cursorX, y: options.y, size: options.size, font: options.font, color: rgb(0.12, 0.12, 0.14) });
-    cursorX += options.font.widthOfTextAtSize(word, options.size) + gap;
-  }
-}
-
-function drawParagraph(page: PDFPage, text: string, options: {
-  x: number;
-  y: number;
-  width: number;
-  font: PDFFont;
-  size: number;
-  lineHeight: number;
-}) {
-  const lines = splitTextIntoLines(text, options.font, options.size, options.width);
-  let nextY = options.y;
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (index < lines.length - 1) {
-      drawJustifiedLine(page, line, { ...options, y: nextY });
-    } else {
-      page.drawText(line, {
-        x: options.x,
-        y: nextY,
-        size: options.size,
-        font: options.font,
-        color: rgb(0.12, 0.12, 0.14)
-      });
-    }
-    nextY -= options.lineHeight;
-  }
-
-  return nextY - 8;
-}
-
 function drawRichParagraph(page: PDFPage, segments: Array<{ text: string; font: PDFFont; color?: ReturnType<typeof rgb> }>, options: {
   x: number;
   y: number;

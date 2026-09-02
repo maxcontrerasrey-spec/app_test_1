@@ -1,5 +1,3 @@
-export const DSAL_PHONE_PREFIX = "+56 9";
-
 export function normalizeDsalDisplayText(value: string | null | undefined) {
   return (value ?? "")
     .replace(/\s+/g, " ")
@@ -29,11 +27,6 @@ export function normalizeDsalPhoneDigits(value: string | null | undefined) {
   const digits = (value ?? "").replace(/\D/g, "");
   const localDigits = digits.startsWith("569") ? digits.slice(3) : digits;
   return localDigits.slice(0, 8);
-}
-
-export function formatDsalPhone(value: string | null | undefined) {
-  const digits = normalizeDsalPhoneDigits(value);
-  return digits ? `${DSAL_PHONE_PREFIX} ${digits}` : "";
 }
 
 export function normalizeDsalPhone(value: string | null | undefined) {

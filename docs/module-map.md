@@ -109,13 +109,6 @@
 - Servicio: `src/modules/operational_onboarding/services/templateApi.ts`
 - Riesgo: coexistencia de SQL legacy de onboarding con backend nuevo
 
-### AI Assistant
-
-- Ruta: `/copiloto-ia`
-- Pagina: `src/modules/ai_assistant/pages/AIAssistantHome.tsx`
-- Servicios: `src/modules/ai_assistant/services/orion.ts`, `src/modules/ai_assistant/services/orionChat.ts`, `src/modules/ai_assistant/services/orionKnowledge.ts`
-- Guardia: admin-only
-
 ### Modulos sin ruta activa
 
 - `src/modules/labs`: existe en el arbol, pero no aparece en `routeModules.ts`, `AppRouter.tsx` ni en la navegacion actual; tratarlo como modulo no operativo hasta demostrar lo contrario.

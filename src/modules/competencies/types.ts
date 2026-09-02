@@ -97,29 +97,6 @@ export type CompetencyGenerationResult = {
   bukError?: string | null;
 };
 
-export type CompetencyPreviewPdfInput = {
-  instructorName: string;
-  instructorDocumentNumber: string;
-  instructorProfileCode: string;
-  workerName: string;
-  workerDocumentNumber: string;
-  workerJobTitle: string;
-  workerCompanyName: string | null;
-  authorizedModels: Array<{
-    brandName: string;
-    typeName: string;
-    modelName: string;
-  }>;
-  trainingDate: string;
-  trainingStartTime: string;
-  trainingEndTime: string;
-};
-
-export type CompetencyPreviewPdfResult = {
-  folio: string;
-  objectUrl: string;
-};
-
 export type CompetencyDashboardRow = {
   requestId: string;
   certificateId: string;

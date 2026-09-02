@@ -1,5 +1,29 @@
 # Tareas y Roadmap de Desarrollo
 
+## Vista calendario multi-trabajador en Jornadas - 2026-09-02
+
+- [x] Auditar la pantalla actual, contratos TypeScript/React Query y RPCs/migraciones de Jornadas.
+- [x] Diseñar la extensión mínima para seleccionar contrato y período y devolver todos los trabajadores autorizados con sus días.
+- [x] Implementar la grilla calendario con encabezado de días, primera ventana visual de aproximadamente 15 filas y scroll vertical/horizontal usable.
+- [x] Mantener la vista individual y la lógica vigente de pauta, excepciones, turnos e incentivos sin duplicar reglas.
+- [x] Agregar cobertura mediante los tests existentes y ejecutar tsc, build frontend, Guardian y diff check.
+- [x] Documentar resultado, evidencia y riesgos residuales.
+
+Resultado: Jornadas ahora carga `get_hr_roster_bulk_calendar` para mostrar todos los trabajadores activos autorizados del contrato/área y mes seleccionado, con días calculados por `resolve_hr_roster_day_status`. La vista individual sigue disponible para editar pautas y excepciones. La grilla tiene scroll vertical/horizontal, columna de trabajador y encabezado de fechas sticky.
+
+Validación: Vite build, auditoría de migraciones, Guardian (todas las auditorías/tests salvo `build:frontend-check`), tests unit/contract/integrity/concurrency/idempotency y `git diff --check` pasan. `tsc`/`build:frontend-check` quedan bloqueados por definiciones de tipos ambientales inválidas (`@types/* 2`); el dry-run Supabase queda bloqueado por la migración remota `20260902135250` ausente en este checkout.
+
+## Revisión integral de Incentivos Extraordinarios - 2026-09-02
+
+- [x] Mapear entrada, navegación, vistas y roles/capabilities del módulo.
+- [x] Reconstruir contratos frontend: hooks, servicios, mappers, validaciones y mutaciones.
+- [x] Reconstruir contratos backend: tablas, RPCs, triggers, RLS, grants y migración efectiva.
+- [x] Seguir los flujos de configuración, elegibilidad/cálculo, registro, doble aprobación, anulación, historial, exportación y analítica.
+- [x] Validar cobertura existente, coherencia entre capas y riesgos/residuos con evidencia reproducible.
+- [x] Documentar hallazgos y cierre de la revisión en este archivo.
+
+Resultado de revisión: el módulo opera mediante RPCs autoritativas y tablas protegidas por RLS. Se validaron registro idempotente, cálculo contextual por trabajador/contrato/fecha, pauta/ausencias/descanso, reemplazo, doble aprobación secuencial, anulación, historial, exportación XLSX y analítica BI. Tests focalizados: 113 unitarios, 6 contract y 86 integrity aprobados; auditorías de integridad y migraciones aprobadas. Riesgo pendiente: `user_can_manage_hr_incentives` autoriza por cualquiera de las cuatro features HR, por lo que la separación backend entre historial, registro y configuración no es estricta para llamadas RPC directas; requiere corrección futura con helpers por operación.
+
 ## Reingreso BUK con ficha historica inactiva y correlativo F - 2026-08-25
 
 - [x] Reproducir el fallo de Jaime Harris Rojas Reyes y verificar ficha BUK inactiva, job, reserva y ultimo codigo historico.
@@ -2776,3 +2800,67 @@ Resultado: María José Araya Herrera quedó creada en BUK como ficha `43092`, c
 - [x] Publicar `main` y verificar alineación remota.
 
 Resultado parcial: integridad `84/84`, unitarias `115/115`, auditoría BUK, migraciones y `git diff --check` aprobados. Guardian quedó inicialmente bloqueado únicamente por un aumento medido de 126 bytes en `dist`, ya documentado en el baseline sin relajar sus presupuestos.
+
+## Corrección de apellido DSAL: Mario Antonio Peña Rivera - 2026-08-25
+- [x] Confirmar el registro por RUT y contacto.
+- [x] Aplicar corrección acotada mediante migración con guardas `20260825134423_correct_mario_pena_accent`.
+- [x] Verificar apellido, nombre completo, estado y ausencia de cambios colaterales.
+
+Resultado: el registro `10.462.213-5` quedó como `Mario Antonio Peña Rivera`. Se conservaron teléfono, correo, estado `pending` y ausencia de folio/aprobación; no se creó ni modificó ningún candidato adicional.
+
+## Carga contingente DSAL - seis candidatos RC-0164 - 2026-08-26
+- [x] Confirmar identidad por RUT, pertenencia al folio `RC-0164`, cargo `CONDUCTOR DE BUS` y datos previsionales.
+- [x] Confirmar seis cupos disponibles y ausencia de jobs BUK previos para los seis candidatos.
+- [x] Encolar mediante `enqueue_buk_generation_contingency` con motivo auditado: `Contingencia de contratación DSAL; regularización documental posterior.`
+- [x] Procesar los seis jobs y verificar `success` con `buk_employee_id` real.
+- [x] Verificar que exista exactamente un job por candidato y ausencia de duplicación.
+- [x] Restaurar el runner técnico temporal a estado deshabilitado y JWT habilitado.
+
+Resultado: las seis altas quedaron exitosas en BUK: Mario Antonio Peña Rivera `43223`, Gonzalo Antonio Villalobos Albornoz `43224`, Marco Antonio Cobs Astudillo `43225`, Leopoldo Francisco Iriarte Iriarte `43226`, Germán Enrique Colicheo Cheuquepan `43227` (reutilización segura de ficha incompleta existente) y Jaime Andrés Ferrada Cisternas `43228`. La contingencia quedó registrada en cada payload; hubo un timeout de espera del lote, pero la recuperación se ejecutó solo sobre jobs obsoletos y no generó duplicados.
+
+## Reconciliación contingencia DSAL - Elías Osvaldo Zamorano Bugueno - 2026-08-27
+- [x] Confirmar identidad por RUT `13.977.561-9`, folio `RC-0139`, cargo `SUPERVISOR DE TERRENO` y contrato `CODELCO - DSAL`.
+- [x] Verificar que la ficha BUK ya existía antes de crear otra y que el folio tenía un cupo disponible.
+- [x] Confirmar que el job correspondía a la contingencia DSAL solicitada y que no había duplicación.
+- [x] Verificar `success`, ficha BUK, F1, AFP ProVida, Fonasa, fecha de ingreso y tallas en el resultado productivo.
+
+Resultado: la solicitud quedó atendida por el job `379ce952-3515-46bb-914c-ff4d9351f3fa`, creado el `2026-08-27`, con estado `success`, ficha BUK `43256` y resolución `created`. No se ejecutó un segundo alta ni F2; el motivo de contingencia quedó auditado en el payload.
+
+## Corrección fecha de ingreso BUK - Elías Osvaldo Zamorano Bugueno - 2026-08-27
+- [x] Confirmar la diferencia entre la fecha laboral ERP `2026-08-26` y la fecha inicialmente registrada en BUK.
+- [x] Corregir en BUK el `start_date` y `contract_subscription_date` del trabajo vigente `147541` a `2026-08-26`.
+- [x] Verificar en BUK la fecha operativa corregida y conservar intactos AFP, salud, contrato, cargo y ficha.
+- [x] Registrar la corrección en el `result_snapshot` del job y cerrar el endpoint técnico temporal con JWT habilitado.
+
+Resultado: el trabajo vigente de la ficha BUK `43256` quedó con inicio y suscripción contractual `2026-08-26`. BUK conserva `active_since = 2026-08-17` como fecha histórica de la ficha principal; esa diferencia quedó explícitamente auditada y no se alteraron otros datos.
+
+## Carga contingente DSAL - Luis Alberto Durán Rojas y Pedro Humberto Barraza Urqueta - 2026-08-27
+- [x] Confirmar identidad por RUT, folio `RC-0159`, cargo `CONDUCTOR DE MINIBUS 4X4` y datos previsionales.
+- [x] Confirmar siete cupos disponibles y ausencia de jobs/fichas BUK previos.
+- [x] Encolar mediante `enqueue_buk_generation_contingency` con motivo auditado.
+- [x] Procesar ambos jobs y verificar `success`, ficha BUK real, F1, AFP, salud y fecha de ingreso.
+- [x] Verificar exactamente un job por candidato, ausencia de duplicados y restaurar el runner temporal.
+
+Resultado: Luis Alberto Durán Rojas (`14.310.948-8`) quedó en BUK como ficha `43289`, AFP ProVida; Pedro Humberto Barraza Urqueta (`11.162.516-6`) quedó como ficha `43290`, AFP Cuprum. Ambos quedaron en `success`, con Fonasa y fecha de ingreso `2026-08-26`. La contingencia quedó registrada en cada payload.
+## Auditoría integral de rendimiento y reducción de código - 2026-08-27
+
+- [x] Capturar línea base: estructura, LOC, bundle, dependencias, build, tests y auditorías EEES.
+- [x] Auditar frontend por renders, consultas, duplicación, módulos huérfanos y utilidades repetidas.
+- [x] Auditar Edge Functions/Supabase por duplicación, hot paths y contratos sin uso, sin cambiar RLS ni permisos.
+- [x] Auditar scripts, configuración, assets y dependencias por código muerto o redundante.
+- [x] Inventariar y retirar ORION del frontend: rutas, navegación, UI, estilos, permisos funcionales y pruebas exclusivas.
+- [x] Inventariar y retirar ORION del backend: Edge Functions, configuración y objetos activos exclusivos mediante cambio forward-only.
+- [x] Implementar solo simplificaciones demostrables, con impacto mínimo y cobertura proporcional.
+- [x] Comparar métricas antes/después y ejecutar Guardian, integridad, build y auditorías de seguridad/migraciones.
+- [x] Documentar hallazgos corregidos, riesgos residuales y revisión final.
+
+Resultado final 2026-09-02: se retiró ORION del runtime y producción, se consolidó la lógica de reintento de chunks, se estabilizaron las suscripciones Realtime frente a arrays inline, se retiraron símbolos muertos confirmados, se eliminó el mapa sin consumidor y se consolidó el asset duplicado del logo. Se agregó una migración forward-only para retirar los objetos ORION y otra para bajar el refresco de la caché BI de cada minuto a cada 10 minutos. El bucket y las Edge Functions ORION fueron eliminados mediante APIs oficiales y la base quedó verificada sin tablas, RPC, módulo ni permisos ORION. Build, 235 pruebas, 4 checks Edge, auditorías de migraciones, seguridad, rendimiento y Guardian full pasan; la instalación limpia quedó sin carpetas duplicadas. La publicación frontend se realizará al pushear `main`.
+
+## Reenvío de invitaciones psicolaborales caducadas - 2026-09-02
+
+- [x] Auditar el estado derivado de caducidad y el contrato actual de despacho.
+- [x] Implementar estado visible `expired` y acción segura de reenvío.
+- [x] Validar que el reenvío invalide el código anterior y conserve los avances existentes.
+- [x] Ejecutar pruebas, migración, publicación y smoke productivo.
+
+Resultado: las invitaciones enviadas y no utilizadas pasan a `Envío caducado` al superar `invite_expires_at`; la fila habilita `Reenviar test`, que usa el flujo existente para emitir una nueva invitación y mantener la evaluación anterior sin respuestas. William fue validado en producción con estado `expired`. La migración quedó aplicada en Supabase y el frontend quedó publicado en Cloudflare Pages mediante el deployment exitoso `28864553` (commit `8b3d8de`); el build limpio terminó correctamente.

@@ -27,7 +27,7 @@ Definir reglas normativas para architecture book del ERP, derivadas de evidencia
 
 ## Reglas obligatorias
 
-- **ARCH-001. Router protegido canonico.** Toda ruta privada debe estar bajo `ProtectedRoute` y usar `RoleProtectedRoute` o `AdminProtectedRoute` segun corresponda.
+- **ARCH-001. Router protegido canonico.** Toda ruta privada debe estar bajo `ProtectedRoute` y usar `RoleProtectedRoute` cuando requiera autorización por módulo o rol.
 - **ARCH-002. Dominio antes que carpeta generica.** Las capacidades nuevas deben entrar en `src/modules/<dominio>` y compartir solo utilidades realmente transversales.
 - **ARCH-003. Lazy loading por frontera de modulo.** Las rutas productivas deben usar `routeModuleImporters` y `lazyWithRetry`.
 - **ARCH-004. Deuda legacy aislada.** Codigo sin ruta activa se clasifica LEGACY o UNKNOWN y no se reutiliza sin auditoria.

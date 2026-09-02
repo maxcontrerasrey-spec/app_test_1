@@ -23,8 +23,6 @@ export type HrIncentiveFilterOption = {
 
 export type IncentiveRequestStatus = "P" | "E" | "R" | "F" | "C";
 
-export type HrIncentiveApprovalDecision = "approved" | "rejected";
-
 export type HrIncentiveApprovalStatus = "pending" | "approved" | "rejected" | "cancelled";
 
 export type HrIncentiveAllowedJobTitle = {

@@ -48,20 +48,6 @@ function textRecord(value: unknown) {
   return result;
 }
 
-function statementArray(value: unknown, min: number, max: number, fallback: Array<{ title: string; text: string }>) {
-  const items = Array.isArray(value)
-    ? value.map((item) => {
-      const record = item && typeof item === "object" && !Array.isArray(item)
-        ? item as Record<string, unknown>
-        : {};
-      const title = text(record.title, 160);
-      const body = text(record.text, 700);
-      return title || body ? { title, text: body } : null;
-    }).filter(Boolean) as Array<{ title: string; text: string }>
-    : [];
-  return [...items, ...fallback].slice(0, Math.max(min, Math.min(max, items.length || fallback.length)));
-}
-
 function optionalStatementArray(value: unknown, max: number) {
   return Array.isArray(value)
     ? value.map((item) => {

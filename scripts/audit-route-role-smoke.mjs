@@ -121,8 +121,7 @@ const routeBasesToPreload = unique(
     ...roleProtectedRoutes.map((route) => route.basePath),
     "/login",
     "/reset-password",
-    "/sin-acceso",
-    "/copiloto-ia"
+    "/sin-acceso"
   ].filter((value) => value !== "/")
 ).filter((basePath, _index, values) => {
   return !values.some(
