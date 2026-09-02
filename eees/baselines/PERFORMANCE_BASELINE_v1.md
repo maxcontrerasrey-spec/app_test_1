@@ -137,11 +137,11 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 5082308,
+  "distTotalBytes": 5089778,
   "jsFileCount": 62,
-  "jsTotalBytes": 2754896,
+  "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 244598,
+  "cssTotalBytes": 247156,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -159,6 +159,8 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 ```
 
 Revision 2026-08-25 reingreso BUK: GitHub Actions `32853600278`, con Node 22 y las variables publicas productivas, midio 5,082,308 bytes totales y 2,754,896 bytes JS. El cambio funcional vive en Edge Functions, SQL y tooling operativo; se reconcilian solo los dos totales canonicos de CI (+521/+126 bytes), sin modificar CSS, vendors, assets trackeados ni los presupuestos de tolerancia cero.
+
+Revision 2026-09-02 calendario multi-trabajador Jornadas: GitHub Actions `33647704363` midio 5,089,778 bytes totales, 2,759,808 bytes JS y 247,156 bytes CSS. El incremento corresponde a la vista calendario mensual multi-trabajador, su consulta lazy y estilos; no agrega vendors ni assets trackeados.
 
 Revision 2026-08-19 reconciliación de certificados de competencia aprobados legalmente: el dashboard y el flujo de generación incorporan la recuperación automática de certificados aprobados que aún estaban en cola.
 
