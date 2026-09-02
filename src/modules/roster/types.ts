@@ -123,3 +123,13 @@ export type WorkerSchedulePayload = {
   exceptions: WorkerRosterException[];
   days: WorkerScheduleDay[];
 };
+
+export type RosterBulkWorker = WorkerSchedulePayload["worker"] & {
+  summary: WorkerSchedulePayload["summary"];
+  days: WorkerScheduleDay[];
+};
+
+export type RosterBulkCalendarPayload = {
+  range: WorkerSchedulePayload["range"];
+  workers: RosterBulkWorker[];
+};

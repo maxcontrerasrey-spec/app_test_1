@@ -14,6 +14,7 @@ import type {
   WorkerRosterException,
   WorkerScheduleDay,
   WorkerSchedulePayload
+  ,RosterBulkCalendarPayload
 } from "../types";
 
 function readRosterExceptionSource(value: unknown) {
@@ -142,6 +143,52 @@ function mapWorkerSchedule(payload: unknown): WorkerSchedulePayload {
   };
 }
 
+function mapBulkCalendar(payload: unknown): RosterBulkCalendarPayload {
+  const source = (payload ?? {}) as Record<string, unknown>;
+  const range = (source.range ?? {}) as Record<string, unknown>;
+  return {
+    range: {
+      startDate: String(range.start_date ?? ""),
+      endDate: String(range.end_date ?? "")
+    },
+    workers: asArray<Record<string, unknown>>(source.workers).map((item) => {
+      const summary = (item.summary ?? {}) as Record<string, unknown>;
+      return {
+        bukEmployeeId: String(item.buk_employee_id ?? ""),
+        fullName: String(item.full_name ?? ""),
+        documentNumber: String(item.document_number ?? ""),
+        documentType: String(item.document_type ?? "rut"),
+        jobTitle: String(item.job_title ?? ""),
+        contractCode: readNullableText(item.contract_code),
+        areaName: readNullableText(item.area_name),
+        summary: {
+          workingDays: Number(summary.working_days ?? 0),
+          restingDays: Number(summary.resting_days ?? 0),
+          exceptionDays: Number(summary.exception_days ?? 0),
+          unassignedDays: Number(summary.unassigned_days ?? 0)
+        },
+        days: asArray<Record<string, unknown>>(item.days).map(
+          (day): WorkerScheduleDay => ({
+            date: String(day.date ?? ""),
+            assignmentId: readNullableText(day.assignment_id),
+            patternId: readNullableText(day.pattern_id),
+            patternName: readNullableText(day.pattern_name),
+            cycleDay: day.cycle_day == null ? null : Number(day.cycle_day),
+            baseStatus: String(day.base_status ?? "unassigned") as WorkerScheduleDay["baseStatus"],
+            effectiveStatus: String(day.effective_status ?? "unassigned") as WorkerScheduleDay["effectiveStatus"],
+            exceptionType: readNullableText(day.exception_type) as RosterExceptionType | null,
+            exceptionLabel: readNullableText(day.exception_label),
+            exceptionSource: day.exception_source == null ? null : readRosterExceptionSource(day.exception_source),
+            exceptionNotes: readNullableText(day.exception_notes),
+            isWorkingDay: Boolean(day.is_working_day),
+            isRestDay: Boolean(day.is_rest_day)
+          })
+        )
+      };
+    })
+  };
+}
+
 export async function fetchRosterSetupCatalogs() {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("get_hr_roster_setup_catalogs");
@@ -183,6 +230,27 @@ export async function fetchRosterCalendarSummary(params: {
   }
 
   return mapRosterCalendarSummary(data);
+}
+
+export async function fetchRosterBulkCalendar(params: {
+  monthValue: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+}) {
+  const client = getSupabaseClient();
+  const [year, month] = params.monthValue.split("-");
+  const normalizedMonth = year && month ? `${year}-${month}-01` : `${new Date().toISOString().slice(0, 7)}-01`;
+  const { data, error } = await client.rpc("get_hr_roster_bulk_calendar", {
+    p_month: normalizedMonth,
+    p_search: params.search?.trim() || null,
+    p_contract_filter: params.contractFilter?.trim() || null,
+    p_area_filter: params.areaFilter?.trim() || null
+  });
+  if (error) {
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar el calendario de trabajadores.", "message"));
+  }
+  return mapBulkCalendar(data);
 }
 
 export async function searchRosterWorkers(search: string, limit = 12) {

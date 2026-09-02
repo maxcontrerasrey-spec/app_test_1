@@ -119,6 +119,8 @@ export const queryKeys = {
     setupCatalogs: () => ["roster", "setup-catalogs"] as const,
     calendarSummary: (params: Record<string, unknown>) =>
       ["roster", "calendar-summary", params] as const,
+    bulkCalendar: (params: Record<string, unknown>) =>
+      ["roster", "bulk-calendar", params] as const,
     workerSearch: (search: string) => ["roster", "worker-search", search] as const,
     workerSchedule: (params: Record<string, unknown>) => ["roster", "worker-schedule", params] as const,
     assignmentsRoot: () => ["roster", "assignments"] as const

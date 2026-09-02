@@ -10,6 +10,7 @@ import { hasFeatureAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   invalidateRosterQueries,
+  useRosterBulkCalendar,
   useRosterCalendarSummary,
   useRosterSetupCatalogs,
   useWorkerSchedule
@@ -28,6 +29,7 @@ import type {
 } from "../types";
 import { RosterAssignmentDialog } from "../components/RosterAssignmentDialog";
 import { RosterCalendar } from "../components/RosterCalendar";
+import { RosterBulkCalendar } from "../components/RosterBulkCalendar";
 import { RosterPatternManager } from "../components/RosterPatternManager";
 import { RosterWorkerLookup } from "../components/RosterWorkerLookup";
 import "../styles/roster.css";
@@ -173,6 +175,12 @@ export function RosterPage() {
 
   const setupCatalogsQuery = useRosterSetupCatalogs(canViewCalendar || canManagePatterns);
   const rosterCalendarSummaryQuery = useRosterCalendarSummary({
+    monthValue,
+    search: workerSearchTerm,
+    areaFilter: operationalAreaFilter,
+    enabled: !isPatternsView
+  });
+  const rosterBulkCalendarQuery = useRosterBulkCalendar({
     monthValue,
     search: workerSearchTerm,
     areaFilter: operationalAreaFilter,
@@ -402,6 +410,12 @@ export function RosterPage() {
               </section>
             ) : null}
 
+            <RosterBulkCalendar
+              monthValue={monthValue}
+              workers={rosterBulkCalendarQuery.data?.workers ?? []}
+              isLoading={rosterBulkCalendarQuery.isLoading}
+            />
+
             {selectedWorker && workerScheduleQuery.data ? (
               <div className="tracking-kpi-row roster-kpi-row">
                 <article className="tracking-kpi-card tracking-kpi-card-generado">
@@ -438,7 +452,7 @@ export function RosterPage() {
             {!selectedWorker ? (
               <section className="info-card">
                 <p className="tracking-filter-caption">
-                  Selecciona un trabajador para cargar su calendario de jornadas y excepciones.
+                  Usa la búsqueda para acotar la nómina o selecciona un trabajador si necesitas revisar y editar su detalle.
                 </p>
               </section>
             ) : null}

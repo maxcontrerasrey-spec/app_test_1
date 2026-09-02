@@ -2,6 +2,7 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchRosterCalendarSummary,
+  fetchRosterBulkCalendar,
   fetchRosterSetupCatalogs,
   fetchWorkerSchedule,
   searchRosterWorkers
@@ -50,6 +51,25 @@ export function useRosterCalendarSummary(params: {
         contractFilter,
         areaFilter
       }),
+    staleTime: ROSTER_STALE_TIME_MS,
+    gcTime: ROSTER_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: enabled && Boolean(monthValue)
+  });
+}
+
+export function useRosterBulkCalendar(params: {
+  monthValue: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+  enabled?: boolean;
+}) {
+  const { monthValue, search = "", contractFilter = "", areaFilter = "", enabled = true } = params;
+  return useQuery({
+    queryKey: queryKeys.roster.bulkCalendar({ monthValue, search, contractFilter, areaFilter }),
+    queryFn: () => fetchRosterBulkCalendar({ monthValue, search, contractFilter, areaFilter }),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
     refetchOnWindowFocus: false,
