@@ -72,8 +72,8 @@
   color: #a61b24;
 }
 .psych-status--completed {
-  background: #dcf7e8;
-  color: #17663d;
+  background: #e4f1ff;
+  color: #1d5f9f;
 }
 .psych-status--approved {
   background: #dcf7e8;
@@ -87,8 +87,14 @@
 }
 .psych-tracking-panel .tracking-kpi-card-terminado,
 .psych-tracking-panel .tracking-kpi-card-aprobados {
-  background: linear-gradient(180deg, rgba(220, 247, 232, 0.98), rgba(242, 252, 246, 0.94));
   border-color: rgba(183, 228, 200, 0.95);
+}
+.psych-tracking-panel .tracking-kpi-card-terminado {
+  background: linear-gradient(180deg, rgba(228, 241, 255, 0.98), rgba(243, 248, 255, 0.94));
+  border-color: rgba(164, 202, 239, 0.95);
+}
+.psych-tracking-panel .tracking-kpi-card-aprobados {
+  background: linear-gradient(180deg, rgba(220, 247, 232, 0.98), rgba(242, 252, 246, 0.94));
 }
 .psych-instrument-list {
   display: grid;
