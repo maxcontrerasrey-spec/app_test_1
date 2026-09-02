@@ -67,9 +67,28 @@
   background: #fff3d6;
   color: #8a5b00;
 }
+.psych-status--expired {
+  background: #ffe6e6;
+  color: #a61b24;
+}
 .psych-status--completed {
   background: #dcf7e8;
   color: #17663d;
+}
+.psych-status--approved {
+  background: #dcf7e8;
+  color: #17663d;
+}
+
+/* The summary uses the same semantic palette as the instrument cards below. */
+.psych-tracking-panel .tracking-kpi-card-enviado {
+  background: linear-gradient(180deg, rgba(255, 243, 214, 0.98), rgba(255, 252, 239, 0.94));
+  border-color: rgba(234, 211, 154, 0.9);
+}
+.psych-tracking-panel .tracking-kpi-card-terminado,
+.psych-tracking-panel .tracking-kpi-card-aprobados {
+  background: linear-gradient(180deg, rgba(220, 247, 232, 0.98), rgba(242, 252, 246, 0.94));
+  border-color: rgba(183, 228, 200, 0.95);
 }
 .psych-instrument-list {
   display: grid;
