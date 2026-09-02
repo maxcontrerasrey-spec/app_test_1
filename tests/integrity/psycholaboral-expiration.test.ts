@@ -13,6 +13,9 @@ const types = read("src/modules/psycholaboral/types.ts");
 const statusMigration = read(
   "supabase/migrations/20260817201000_show_expired_psycholaboral_status.sql",
 );
+const inviteStatusMigration = read(
+  "supabase/migrations/20260902135139_show_expired_psycholaboral_invites.sql",
+);
 
 describe("Psycholaboral expiration contract", () => {
   it("expires abandoned 90-minute sessions only at the backend boundary", () => {
@@ -27,12 +30,14 @@ describe("Psycholaboral expiration contract", () => {
   it("refreshes expirations before listing and permits resend only for expired rows", () => {
     expect(service).toContain("expire_abandoned_psycholaboral_assessments");
     expect(types).toContain('"not_sent" | "sent" | "expired" | "completed" | "approved"');
-    expect(page).toContain('expired: "Desierto"');
-    expect(page).toContain('{ key: "expired", label: "Desierto" }');
+    expect(page).toContain('expired: "Envío caducado"');
+    expect(page).toContain('{ key: "expired", label: "Envío caducado" }');
     expect(page).toContain('row.display_status === "expired"');
     expect(page).toContain('"Reenviar test"');
     expect(page).toContain('row.assessment_id && row.display_status !== "expired"');
     expect(statusMigration).toContain("when execution_status = 'expired' then 'expired'");
+    expect(inviteStatusMigration).toContain("invite_expires_at <= timezone('utc', now())");
+    expect(inviteStatusMigration).toContain("invite_consumed_at is null");
     expect(statusMigration).toContain("display_status = p_status");
   });
 });

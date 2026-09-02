@@ -26,7 +26,7 @@ import "../styles/psycholaboral.css";
 const statusLabels = {
   not_sent: "No realizado",
   sent: "Enviado",
-  expired: "Desierto",
+  expired: "Envío caducado",
   completed: "Terminado",
   approved: "Aprobados",
 } as const;
@@ -82,7 +82,7 @@ export function PsycholaboralManagementPage() {
     { key: "", label: "Todos" },
     { key: "not_sent", label: "No realizado" },
     { key: "sent", label: "Enviado" },
-    { key: "expired", label: "Desierto" },
+    { key: "expired", label: "Envío caducado" },
     { key: "completed", label: "Terminado" },
     { key: "approved", label: "Aprobados" },
   ] as const;
