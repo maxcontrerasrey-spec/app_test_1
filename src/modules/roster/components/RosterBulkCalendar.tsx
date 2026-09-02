@@ -44,7 +44,7 @@ export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: P
               const days = new Map(worker.days.map((day) => [day.date, day]));
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
                 <div className="roster-bulk-worker"><strong>{worker.fullName}</strong><span>{worker.documentNumber} · {worker.contractCode ?? worker.areaName ?? "Sin contrato"}</span></div>
-                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day)}</strong><span>{day?.patternCode ?? ""}</span></div>; })}
+                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day)}</strong><span>{day?.patternName ?? ""}</span></div>; })}
               </div>;
             })}
           </div>
