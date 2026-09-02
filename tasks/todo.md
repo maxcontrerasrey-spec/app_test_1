@@ -15,6 +15,16 @@ Validación: el build limpio, la auditoría de migraciones, los tests unit/contr
 
 Producción: Cloudflare sirve el commit `014dfe8` en `https://gestion.busesjm.cl`; el chunk de Jornadas publicado contiene `Calendario general` y `get_hr_roster_bulk_calendar`, y `/roster` responde HTTP 200.
 
+## Análisis histórico de montos de incentivos 2026+ - 2026-09-02
+
+- [x] Inspeccionar los cuatro archivos y filtrar por período `>= 202601`.
+- [x] Normalizar montos, contratos, tipos, estados, trabajadores y fechas.
+- [x] Auditar duplicados y registros Finalizado Aprobados sin monto.
+- [x] Calcular mínimo, máximo, media y mediana por contrato y tipo de incentivo.
+- [x] Crear y verificar Excel resumen con criterios y hojas de control.
+
+Resultado: 37.491 filas quedaron dentro del filtro temporal; se conservaron 37.487 tras excluir 4 IDs duplicados exactos. El universo Finalizado Aprobados quedó en 32.532 filas, de las cuales 30.803 tienen monto válido y 1.729 no tienen monto. El resumen contiene 280 combinaciones contrato-tipo, 69 contratos y 11 tipos. La fuente acredita estado Finalizado Aprobados, no liquidación bancaria independiente.
+
 ## Revisión integral de Incentivos Extraordinarios - 2026-09-02
 
 - [x] Mapear entrada, navegación, vistas y roles/capabilities del módulo.
