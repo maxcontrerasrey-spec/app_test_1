@@ -3,12 +3,21 @@ import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchPsychCandidates,
   fetchPsychCatalog,
+  fetchPsychStatusSummary,
 } from "../services/psycholaboralApi";
 export function usePsychCatalog() {
   return useQuery({
     queryKey: queryKeys.psycholaboral.catalog(),
     queryFn: fetchPsychCatalog,
     staleTime: 30 * 60_000,
+  });
+}
+export function usePsychStatusSummary(search: string) {
+  return useQuery({
+    queryKey: queryKeys.psycholaboral.summary(search),
+    queryFn: () => fetchPsychStatusSummary(search),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 }
 export function usePsychCandidates(filters: {

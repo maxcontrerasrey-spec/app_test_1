@@ -3473,6 +3473,11 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Una invitación puede estar `sent` y `not_started` aunque su código ya haya superado `invite_expires_at`; mostrarla como enviada oculta que el candidato necesita un nuevo código.
 - El estado visible debe derivarse del vencimiento de la invitación no consumida y el reenvío debe crear una nueva invitación mediante el flujo idempotente existente, sin borrar ni alterar la evaluación histórica.
 
+## 2026-09-02 - El reenvío debe liberar el índice parcial desde la RPC
+
+- Un estado `expired` calculado solo en la lectura no libera un índice único parcial que depende de `execution_status`; la RPC debe persistir la caducidad antes del nuevo insert, dentro de la misma transacción.
+- El reenvío solo debe cerrar invitaciones `sent`, no consumidas y vencidas; debe conservar la evaluación anterior y registrar el motivo en `psychometric_audit_log`.
+
 ## 2026-09-02 - Las suscripciones Realtime no deben depender de referencias efímeras
 
 - Un hook que recibe arrays inline en sus dependencias puede desmontar y recrear canales en cada render, aunque la suscripción lógica no haya cambiado.
@@ -3487,3 +3492,13 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Supabase bloquea también el `delete` directo sobre `storage.buckets`, aunque el bucket esté vacío.
 - El bucket ORION y sus objetos deben eliminarse íntegramente mediante Storage API; la migración de esquema solo debe retirar políticas y objetos propios de ORION.
+
+## 2026-09-02 - Las tarjetas paginadas no son métricas globales
+
+- Nunca derivar contadores de estado desde `rows` cuando la consulta usa `limit/offset`; eso muestra únicamente la página actual.
+- Las decisiones aprobadas deben formar parte explícita del estado derivado del backend para que sus filtros y archivos sean accesibles.
+
+## 2026-09-02 - Un rango BI debe conservar el contrato mensual existente
+
+- La interfaz puede representar un rango como `YYYYMM-YYYYMM`, pero cada backend debe resolver explícitamente sus límites inclusivos y rechazar rangos invertidos.
+- Para Incentivos, mantener las RPC mensuales existentes y consolidar sus resultados evita duplicar el contrato SQL; la selección de período sigue siendo auditable y no expone un filtro cliente como fuente de autorización.

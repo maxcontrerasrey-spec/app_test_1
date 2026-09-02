@@ -74,6 +74,15 @@ export async function fetchPsychCandidates(filters: {
     );
   return data as { items: PsychCandidate[]; total_count: number };
 }
+export async function fetchPsychStatusSummary(search: string) {
+  const { data, error } = await getSupabaseClientOrThrow().rpc(
+    "get_psycholaboral_status_summary",
+    { p_search: search || null },
+  );
+  if (error)
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar el resumen."));
+  return data as Record<"not_sent" | "sent" | "expired" | "completed" | "approved" | "total", number>;
+}
 export async function sendPsychBattery(
   caseCandidateId: string,
   codes: string[],

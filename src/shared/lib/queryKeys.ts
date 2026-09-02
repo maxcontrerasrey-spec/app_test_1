@@ -69,7 +69,8 @@ export const queryKeys = {
   psycholaboral: {
     all: () => ["psycholaboral"] as const,
     catalog: () => ["psycholaboral", "catalog"] as const,
-    candidates: (filters: Record<string, unknown>) => ["psycholaboral", "candidates", filters] as const
+    candidates: (filters: Record<string, unknown>) => ["psycholaboral", "candidates", filters] as const,
+    summary: (search: string) => ["psycholaboral", "summary", search] as const
   },
   internalMobility: {
     setupCatalogs: () => ["internal-mobility", "setup-catalogs"] as const,

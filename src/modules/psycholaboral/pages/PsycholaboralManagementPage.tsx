@@ -19,6 +19,7 @@ import {
 import {
   usePsychCandidates,
   usePsychCatalog,
+  usePsychStatusSummary,
 } from "../hooks/usePsycholaboralQueries";
 import type { PsychAIOutput, PsychAIReviewDetail, PsychCandidate, PsychResultDetail } from "../types";
 import "../styles/psycholaboral.css";
@@ -69,15 +70,10 @@ export function PsycholaboralManagementPage() {
     [page, search, status],
   );
   const candidates = usePsychCandidates(filters);
+  const statusSummary = usePsychStatusSummary(search);
   const catalog = usePsychCatalog();
   const rows = candidates.data?.items ?? [];
-  const counts = rows.reduce(
-    (acc, row) => ({
-      ...acc,
-      [row.display_status]: (acc[row.display_status] ?? 0) + 1,
-    }),
-    {} as Record<string, number>,
-  );
+  const counts: Record<string, number> = statusSummary.data ?? {};
   const tabs = [
     { key: "", label: "Todos" },
     { key: "not_sent", label: "No realizado" },
@@ -272,7 +268,7 @@ export function PsycholaboralManagementPage() {
           >
             <span className="micro-label">Candidatos visibles</span>
             <strong>{rows.length}</strong>
-            <small>Página actual</small>
+            <small>Total filtrado</small>
           </button>
           {(["not_sent", "sent", "expired", "completed", "approved"] as const).map((item) => (
             <button
@@ -286,7 +282,7 @@ export function PsycholaboralManagementPage() {
             >
               <span className="micro-label">{statusLabels[item]}</span>
               <strong>{counts[item] ?? 0}</strong>
-              <small>Página actual</small>
+              <small>Total filtrado</small>
             </button>
           ))}
         </div>

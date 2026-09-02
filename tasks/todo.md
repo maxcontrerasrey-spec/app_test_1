@@ -11,7 +11,9 @@
 
 Resultado: Jornadas ahora carga `get_hr_roster_bulk_calendar` para mostrar todos los trabajadores activos autorizados del contrato/área y mes seleccionado, con días calculados por `resolve_hr_roster_day_status`. La vista individual sigue disponible para editar pautas y excepciones. La grilla tiene scroll vertical/horizontal, columna de trabajador y encabezado de fechas sticky.
 
-Validación: Vite build, auditoría de migraciones, Guardian (todas las auditorías/tests salvo `build:frontend-check`), tests unit/contract/integrity/concurrency/idempotency y `git diff --check` pasan. `tsc`/`build:frontend-check` quedan bloqueados por definiciones de tipos ambientales inválidas (`@types/* 2`); el dry-run Supabase queda bloqueado por la migración remota `20260902135250` ausente en este checkout.
+Validación: el build limpio, la auditoría de migraciones, los tests unit/contract/integrity/concurrency/idempotency, `git diff --check` y el Guardian completo pasan en CI `33648178624` (incluye TypeScript, production build y smoke autenticado). La migración `20260902150000` está aplicada en Supabase; el listado remoto conserva además la migración histórica `20260902135250` que no existe en este checkout, por lo que no se ejecutó un `db push --include-all`.
+
+Producción: Cloudflare sirve el commit `014dfe8` en `https://gestion.busesjm.cl`; el chunk de Jornadas publicado contiene `Calendario general` y `get_hr_roster_bulk_calendar`, y `/roster` responde HTTP 200.
 
 ## Revisión integral de Incentivos Extraordinarios - 2026-09-02
 
@@ -2856,6 +2858,15 @@ Resultado: Luis Alberto Durán Rojas (`14.310.948-8`) quedó en BUK como ficha `
 
 Resultado final 2026-09-02: se retiró ORION del runtime y producción, se consolidó la lógica de reintento de chunks, se estabilizaron las suscripciones Realtime frente a arrays inline, se retiraron símbolos muertos confirmados, se eliminó el mapa sin consumidor y se consolidó el asset duplicado del logo. Se agregó una migración forward-only para retirar los objetos ORION y otra para bajar el refresco de la caché BI de cada minuto a cada 10 minutos. El bucket y las Edge Functions ORION fueron eliminados mediante APIs oficiales y la base quedó verificada sin tablas, RPC, módulo ni permisos ORION. Build, 235 pruebas, 4 checks Edge, auditorías de migraciones, seguridad, rendimiento y Guardian full pasan; la instalación limpia quedó sin carpetas duplicadas. La publicación frontend se realizará al pushear `main`.
 
+## Corrección de contadores Gestión Psicolaboral - 2026-09-02
+
+- [x] Confirmar causa en el cálculo actual y separar métricas globales de la página visible.
+- [x] Agregar resumen agregado autorizado en Supabase.
+- [x] Consumir el resumen en las tarjetas sin alterar la paginación ni permisos.
+- [x] Ejecutar pruebas, build, Guardian y verificación remota.
+
+Resultado: las tarjetas ya no cuentan solo los 50 registros de la página actual; usan el resumen global filtrado. Las decisiones aprobadas se clasifican como `approved`, por lo que el filtro muestra sus filas y permite abrir sus informes/archivos.
+
 ## Reenvío de invitaciones psicolaborales caducadas - 2026-09-02
 
 - [x] Auditar el estado derivado de caducidad y el contrato actual de despacho.
@@ -2864,3 +2875,19 @@ Resultado final 2026-09-02: se retiró ORION del runtime y producción, se conso
 - [x] Ejecutar pruebas, migración, publicación y smoke productivo.
 
 Resultado: las invitaciones enviadas y no utilizadas pasan a `Envío caducado` al superar `invite_expires_at`; la fila habilita `Reenviar test`, que usa el flujo existente para emitir una nueva invitación y mantener la evaluación anterior sin respuestas. William fue validado en producción con estado `expired`. La migración quedó aplicada en Supabase y el frontend quedó publicado en Cloudflare Pages mediante el deployment exitoso `28864553` (commit `8b3d8de`); el build limpio terminó correctamente.
+
+## Selector de período BI único o rango - 2026-09-02
+- [x] Revisar los filtros de período de Dotación, Reclutamiento e Incentivos.
+- [x] Incorporar calendario mensual Desde/Hasta, con validación de rango invertido y limpieza.
+- [x] Extender el contexto BI para aceptar `YYYYMM` y `YYYYMM-YYYYMM`; consolidar Incentivos por meses.
+- [x] Aplicar migración productiva y verificar el rango `202606-202608` como junio a agosto de 2026.
+- [x] Ejecutar build, pruebas unitarias, auditorías de migraciones, guardia destructiva y `git diff --check`.
+
+Resultado: todos los submódulos de BI permiten consultar un período único o un rango inclusivo mediante calendario. Dotación y Reclutamiento resuelven el rango en el contexto SQL; Incentivos conserva el contrato mensual existente y consolida los meses seleccionados sin cambiar la semántica de sus RPC operativas.
+
+## Corrección reenvío psicolaboral con índice de evaluación abierta - 2026-09-02
+- [x] Reproducir el conflicto `psychometric_one_open_assessment` con invitaciones `sent/not_started` vencidas detectadas en producción.
+- [x] Ajustar la RPC de preparación para cerrar transaccionalmente la evaluación caducada antes de crear el reenvío.
+- [x] Cubrir la regresión en la función desplegada: conserva el conflicto único para evaluaciones abiertas y permite el reemplazo solo después de marcar la anterior como `expired`.
+- [x] Aplicar migración, ejecutar gates y verificar la función desplegada en producción.
+- [x] Documentar causa raíz, resultado y riesgos residuales: no se envió correo de prueba ni se modificaron datos operativos; el siguiente reenvío real debe confirmarse con entrega `sent`.
