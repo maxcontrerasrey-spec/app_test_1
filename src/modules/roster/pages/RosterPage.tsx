@@ -413,6 +413,7 @@ export function RosterPage() {
 
             {hasRosterScopeFilter ? (
               <RosterBulkCalendar
+                key={operationalAreaFilter}
                 monthValue={monthValue}
                 workers={rosterBulkCalendarQuery.data?.workers ?? []}
                 isLoading={rosterBulkCalendarQuery.isLoading}

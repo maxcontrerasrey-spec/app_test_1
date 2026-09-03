@@ -1,4 +1,5 @@
 import { parseDateValue, formatDateValue } from "../../../shared/lib/date";
+import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { RosterBulkWorker, WorkerScheduleDay } from "../types";
 
@@ -25,6 +26,26 @@ function resolveWorkerPatternLabel(days: WorkerScheduleDay[]) {
 }
 
 export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: Props) {
+  const [selectedPattern, setSelectedPattern] = useState("");
+  const patternOptions = useMemo(() => {
+    const workerCounts = new Map<string, number>();
+    workers.forEach((worker) => {
+      const workerPatterns = new Set(
+        worker.days
+          .map((day) => day.patternName)
+          .filter((pattern): pattern is string => Boolean(pattern))
+      );
+      workerPatterns.forEach((pattern) => workerCounts.set(pattern, (workerCounts.get(pattern) ?? 0) + 1));
+    });
+    return [...workerCounts.entries()].sort(([left], [right]) => left.localeCompare(right, "es"));
+  }, [workers]);
+  const visibleWorkers = useMemo(
+    () =>
+      selectedPattern
+        ? workers.filter((worker) => worker.days.some((day) => day.patternName === selectedPattern))
+        : workers,
+    [selectedPattern, workers]
+  );
   const view = parseDateValue(`${monthValue}-01`);
   const totalDays = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
   const dates = Array.from({ length: totalDays }, (_, index) => {
@@ -34,18 +55,47 @@ export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: P
 
   return (
     <section className="info-card roster-bulk-card" aria-label="Calendario de trabajadores">
-      <div className="tracking-toolbar-copy">
-        <h3>Calendario general</h3>
-        <span className="tracking-filter-caption">{workers.length} trabajadores · desplázate para revisar la nómina completa</span>
+      <div className="roster-bulk-header">
+        <div className="tracking-toolbar-copy">
+          <h3>Calendario general</h3>
+          <span className="tracking-filter-caption">{visibleWorkers.length} trabajadores · desplázate para revisar la nómina completa</span>
+        </div>
+        {patternOptions.length > 0 ? (
+          <div className="roster-bulk-pattern-filters" aria-label="Filtrar por jornada">
+            <span className="roster-bulk-pattern-label">Jornadas</span>
+            <div className="roster-bulk-pattern-chips">
+              <button
+                type="button"
+                className={`approval-chip ${selectedPattern === "" ? "tracking-kpi-card-active" : ""}`}
+                onClick={() => setSelectedPattern("")}
+              >
+                Todas <span>{workers.length}</span>
+              </button>
+              {patternOptions.map(([pattern, workerCount]) => {
+                return (
+                  <button
+                    type="button"
+                    className={`approval-chip ${selectedPattern === pattern ? "tracking-kpi-card-active" : ""}`}
+                    key={pattern}
+                    onClick={() => setSelectedPattern(pattern)}
+                    title={`Mostrar trabajadores con jornada ${pattern}`}
+                  >
+                    {pattern} <span>{workerCount}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
       {isLoading ? <p className="tracking-filter-caption">Cargando calendario...</p> : null}
-      {!isLoading && workers.length === 0 ? <p className="tracking-filter-caption">No hay trabajadores para los filtros seleccionados.</p> : null}
-      {workers.length > 0 ? (
+      {!isLoading && visibleWorkers.length === 0 ? <p className="tracking-filter-caption">No hay trabajadores para los filtros seleccionados.</p> : null}
+      {visibleWorkers.length > 0 ? (
         <div className="roster-bulk-scroll">
           <div className="roster-bulk-grid" style={{ "--roster-day-count": totalDays } as CSSProperties}>
             <div className="roster-bulk-worker-header">Trabajador</div>
             {dates.map((date) => <div className="roster-bulk-date" key={date.value}><span>{date.weekday}</span><strong>{date.day}</strong></div>)}
-            {workers.map((worker) => {
+            {visibleWorkers.map((worker) => {
               const days = new Map(worker.days.map((day) => [day.date, day]));
               const jornadaLabel = resolveWorkerPatternLabel(worker.days);
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
