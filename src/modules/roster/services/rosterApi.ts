@@ -78,7 +78,8 @@ function mapWorkerSchedule(payload: unknown): WorkerSchedulePayload {
       documentType: String(worker.document_type ?? "rut"),
       jobTitle: String(worker.job_title ?? ""),
       contractCode: readNullableText(worker.contract_code),
-      areaName: readNullableText(worker.area_name)
+      areaName: readNullableText(worker.area_name),
+      exitDate: readNullableText(worker.exit_date)
     },
     range: {
       startDate: String(range.start_date ?? ""),
@@ -161,6 +162,7 @@ function mapBulkCalendar(payload: unknown): RosterBulkCalendarPayload {
         jobTitle: String(item.job_title ?? ""),
         contractCode: readNullableText(item.contract_code),
         areaName: readNullableText(item.area_name),
+        exitDate: readNullableText(item.exit_date),
         summary: {
           workingDays: Number(summary.working_days ?? 0),
           restingDays: Number(summary.resting_days ?? 0),

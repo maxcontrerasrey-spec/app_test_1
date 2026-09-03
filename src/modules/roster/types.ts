@@ -3,6 +3,7 @@ import type { BukEmployeeWithDocumentType } from "../../shared/types/buk";
 export type RosterExceptionType =
   | "vacation"
   | "medical_leave"
+  | "termination"
   | "absent"
   | "extra_shift"
   | "training"
@@ -108,6 +109,7 @@ export type WorkerSchedulePayload = {
     jobTitle: string;
     contractCode: string | null;
     areaName: string | null;
+    exitDate: string | null;
   };
   range: {
     startDate: string;

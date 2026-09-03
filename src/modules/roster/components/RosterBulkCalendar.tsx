@@ -7,7 +7,9 @@ type Props = { monthValue: string; workers: RosterBulkWorker[]; isLoading?: bool
 
 function tone(day: WorkerScheduleDay | undefined) {
   if (!day || day.baseStatus === "unassigned") return "roster-bulk-cell--unassigned";
-  if (day.exceptionType === "vacation" || day.exceptionType === "medical_leave") return "roster-bulk-cell--leave";
+  if (day.exceptionType === "vacation") return "roster-bulk-cell--vacation";
+  if (day.exceptionType === "medical_leave") return "roster-bulk-cell--medical-leave";
+  if (day.exceptionType === "termination") return "roster-bulk-cell--termination";
   if (day.exceptionType === "absent" || day.exceptionType === "administrative_leave") return "roster-bulk-cell--absent";
   if (day.exceptionType === "extra_shift") return "roster-bulk-cell--extra";
   if (day.exceptionType === "training" || day.exceptionType === "union_leave") return "roster-bulk-cell--training";

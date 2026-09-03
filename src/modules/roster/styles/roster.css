@@ -99,7 +99,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  min-height: 46px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,12 +137,12 @@
   position: sticky;
   left: 0;
   z-index: 1;
-  min-height: 54px;
+  min-height: 46px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 0.12rem;
-  padding: 0.38rem 0.75rem;
+  padding: 0.28rem 0.75rem;
   border-bottom: 1px solid var(--border-subtle);
   border-right: 1px solid var(--border);
   background: var(--surface);
@@ -167,7 +167,7 @@
 }
 
 .roster-bulk-cell {
-  min-height: 54px;
+  min-height: 46px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -190,7 +190,9 @@
 
 .roster-bulk-cell--working { background: rgba(37, 99, 235, 0.08); color: #075985; }
 .roster-bulk-cell--resting { background: rgba(148, 163, 184, 0.08); color: #475569; }
-.roster-bulk-cell--leave { background: rgba(249, 115, 22, 0.12); color: #9a3412; }
+.roster-bulk-cell--vacation { background: rgba(249, 115, 22, 0.12); color: #9a3412; }
+.roster-bulk-cell--medical-leave { background: rgba(220, 38, 38, 0.12); color: #b42318; }
+.roster-bulk-cell--termination { background: rgba(153, 27, 27, 0.16); color: #991b1b; }
 .roster-bulk-cell--absent { background: rgba(220, 38, 38, 0.1); color: #991b1b; }
 .roster-bulk-cell--extra { background: rgba(220, 38, 38, 0.17); color: #991b1b; }
 .roster-bulk-cell--training { background: rgba(124, 58, 237, 0.1); color: #6b21a8; }
@@ -227,6 +229,14 @@
 
 .roster-calendar-dot--vacation {
   background: #f97316;
+}
+
+.roster-calendar-dot--medical-leave {
+  background: #dc2626;
+}
+
+.roster-calendar-dot--termination {
+  background: #991b1b;
 }
 
 .roster-calendar-dot--extra {

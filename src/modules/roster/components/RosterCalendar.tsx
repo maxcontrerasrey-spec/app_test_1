@@ -14,8 +14,16 @@ function getDayTone(day: WorkerScheduleDay | null, inMonth: boolean) {
     return "roster-calendar-day--muted";
   }
 
-  if (day.exceptionType === "vacation" || day.exceptionType === "medical_leave") {
+  if (day.exceptionType === "vacation") {
     return "roster-calendar-day--vacation";
+  }
+
+  if (day.exceptionType === "medical_leave") {
+    return "roster-calendar-day--medical-leave";
+  }
+
+  if (day.exceptionType === "termination") {
+    return "roster-calendar-day--termination";
   }
 
   if (day.exceptionType === "absent" || day.exceptionType === "administrative_leave") {
@@ -80,7 +88,9 @@ export function RosterCalendar({
       <div className="roster-calendar-legend">
         <span><i className="roster-calendar-dot roster-calendar-dot--working" />Trabajo</span>
         <span><i className="roster-calendar-dot roster-calendar-dot--resting" />Descanso</span>
-        <span><i className="roster-calendar-dot roster-calendar-dot--vacation" />Vacación / licencia</span>
+        <span><i className="roster-calendar-dot roster-calendar-dot--vacation" />Vacación</span>
+        <span><i className="roster-calendar-dot roster-calendar-dot--medical-leave" />Licencia médica</span>
+        <span><i className="roster-calendar-dot roster-calendar-dot--termination" />Salida</span>
         <span><i className="roster-calendar-dot roster-calendar-dot--extra" />Turno extra</span>
       </div>
 
