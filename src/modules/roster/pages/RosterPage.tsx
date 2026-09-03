@@ -180,11 +180,12 @@ export function RosterPage() {
     areaFilter: operationalAreaFilter,
     enabled: !isPatternsView
   });
+  const hasRosterScopeFilter = Boolean(operationalAreaFilter.trim());
   const rosterBulkCalendarQuery = useRosterBulkCalendar({
     monthValue,
     search: workerSearchTerm,
     areaFilter: operationalAreaFilter,
-    enabled: !isPatternsView
+    enabled: !isPatternsView && hasRosterScopeFilter
   });
   const operationalAreaOptions = setupCatalogsQuery.data?.operationalAreas ?? [];
   const monthRange = useMemo(() => buildMonthRange(monthValue), [monthValue]);
@@ -410,11 +411,22 @@ export function RosterPage() {
               </section>
             ) : null}
 
-            <RosterBulkCalendar
-              monthValue={monthValue}
-              workers={rosterBulkCalendarQuery.data?.workers ?? []}
-              isLoading={rosterBulkCalendarQuery.isLoading}
-            />
+            {hasRosterScopeFilter ? (
+              <RosterBulkCalendar
+                monthValue={monthValue}
+                workers={rosterBulkCalendarQuery.data?.workers ?? []}
+                isLoading={rosterBulkCalendarQuery.isLoading}
+              />
+            ) : (
+              <section className="info-card roster-bulk-card" aria-label="Calendario de trabajadores">
+                <div className="tracking-toolbar-copy">
+                  <h3>Calendario general</h3>
+                  <span className="tracking-filter-caption">
+                    Selecciona un contrato o área para cargar la vista general.
+                  </span>
+                </div>
+              </section>
+            )}
 
             {selectedWorker && workerScheduleQuery.data ? (
               <div className="tracking-kpi-row roster-kpi-row">
