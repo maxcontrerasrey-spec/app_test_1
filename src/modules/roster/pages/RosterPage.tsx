@@ -42,6 +42,15 @@ function buildMonthRange(monthValue: string) {
   return { startDate, endDate };
 }
 
+function monthStartDate(monthValue: string) {
+  return `${monthValue}-01`;
+}
+
+function monthEndDate(monthValue: string) {
+  const [year, month] = monthValue.split("-").map(Number);
+  return `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
+}
+
 function todayMonthValue() {
   return toMonthInputValue(toTodayDateValue());
 }
@@ -162,7 +171,8 @@ export function RosterPage() {
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "roster_manage_patterns");
   const [selectedWorker, setSelectedWorker] = useState<RosterWorkerSearchItem | null>(null);
   const [workerSearchTerm, setWorkerSearchTerm] = useState("");
-  const [monthValue, setMonthValue] = useState(todayMonthValue());
+  const [periodStart, setPeriodStart] = useState(() => monthStartDate(todayMonthValue()));
+  const [periodEnd, setPeriodEnd] = useState(() => monthEndDate(todayMonthValue()));
   const [operationalAreaFilter, setOperationalAreaFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState(toTodayDateValue());
   const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
@@ -174,6 +184,7 @@ export function RosterPage() {
   const rosterProjectionMaxMonth = maxProjectionMonthValue();
 
   const setupCatalogsQuery = useRosterSetupCatalogs(canViewCalendar || canManagePatterns);
+  const monthValue = periodStart.slice(0, 7);
   const rosterCalendarSummaryQuery = useRosterCalendarSummary({
     monthValue,
     search: workerSearchTerm,
@@ -182,7 +193,8 @@ export function RosterPage() {
   });
   const hasRosterScopeFilter = Boolean(operationalAreaFilter.trim());
   const rosterBulkCalendarQuery = useRosterBulkCalendar({
-    monthValue,
+    startDate: periodStart,
+    endDate: periodEnd,
     search: workerSearchTerm,
     areaFilter: operationalAreaFilter,
     enabled: !isPatternsView && hasRosterScopeFilter
@@ -351,22 +363,37 @@ export function RosterPage() {
                   }}
                 />
 
-                <div className="field-group roster-filter-month">
-                  <label className="field-label" htmlFor="roster-month">
-                    Mes
-                  </label>
-                  <input
-                    id="roster-month"
-                    className="text-field"
-                    type="month"
-                    value={monthValue}
-                    max={rosterProjectionMaxMonth}
-                    onChange={(event) => {
-                      const nextMonth = event.target.value;
-                      setMonthValue(nextMonth);
-                      setSelectedDate(`${nextMonth}-01`);
-                    }}
-                  />
+                <div className="field-group roster-filter-period">
+                  <span className="field-label">Periodo</span>
+                  <div className="roster-period-fields">
+                    <label htmlFor="roster-period-start">Desde</label>
+                    <input
+                      id="roster-period-start"
+                      className="text-field"
+                      type="date"
+                      value={periodStart}
+                      max={periodEnd}
+                      onChange={(event) => {
+                        const nextDate = event.target.value;
+                        if (!nextDate) return;
+                        setPeriodStart(nextDate);
+                        setSelectedDate(nextDate);
+                      }}
+                    />
+                    <label htmlFor="roster-period-end">Hasta</label>
+                    <input
+                      id="roster-period-end"
+                      className="text-field"
+                      type="date"
+                      value={periodEnd}
+                      min={periodStart}
+                      max={monthEndDate(rosterProjectionMaxMonth)}
+                      onChange={(event) => {
+                        const nextDate = event.target.value;
+                        if (nextDate) setPeriodEnd(nextDate);
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <SelectField
@@ -414,7 +441,8 @@ export function RosterPage() {
             {hasRosterScopeFilter ? (
               <RosterBulkCalendar
                 key={operationalAreaFilter}
-                monthValue={monthValue}
+                startDate={periodStart}
+                endDate={periodEnd}
                 workers={rosterBulkCalendarQuery.data?.workers ?? []}
                 isLoading={rosterBulkCalendarQuery.isLoading}
               />

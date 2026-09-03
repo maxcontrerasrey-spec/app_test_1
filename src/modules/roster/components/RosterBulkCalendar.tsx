@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { RosterBulkWorker, WorkerScheduleDay } from "../types";
 
-type Props = { monthValue: string; workers: RosterBulkWorker[]; isLoading?: boolean };
+type Props = { startDate: string; endDate: string; workers: RosterBulkWorker[]; isLoading?: boolean };
 const NO_PATTERN_FILTER = "__no_pattern__";
 
 function tone(day: WorkerScheduleDay | undefined) {
@@ -28,7 +28,7 @@ function resolveWorkerPatternLabel(days: WorkerScheduleDay[]) {
   return patternNames.length > 0 ? patternNames.join(" / ") : "Sin jornada";
 }
 
-export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: Props) {
+export function RosterBulkCalendar({ startDate, endDate, workers, isLoading = false }: Props) {
   const [selectedPattern, setSelectedPattern] = useState("");
   const patternOptions = useMemo(() => {
     const workerCounts = new Map<string, number>();
@@ -61,11 +61,17 @@ export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: P
         : workers,
     [selectedPattern, workers]
   );
-  const view = parseDateValue(`${monthValue}-01`);
-  const totalDays = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+  const start = parseDateValue(startDate);
+  const end = parseDateValue(endDate);
+  const totalDays = Math.max(0, Math.floor((Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()) - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000) + 1);
   const dates = Array.from({ length: totalDays }, (_, index) => {
-    const date = new Date(view.getFullYear(), view.getMonth(), index + 1);
-    return { value: formatDateValue(date), day: date.getDate(), weekday: new Intl.DateTimeFormat("es-CL", { weekday: "short" }).format(date).replace(".", "") };
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
+    return {
+      value: formatDateValue(date),
+      day: date.getDate(),
+      month: new Intl.DateTimeFormat("es-CL", { month: "short" }).format(date).replace(".", ""),
+      weekday: new Intl.DateTimeFormat("es-CL", { weekday: "short" }).format(date).replace(".", "")
+    };
   });
 
   return (
@@ -110,7 +116,7 @@ export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: P
         <div className="roster-bulk-scroll">
           <div className="roster-bulk-grid" style={{ "--roster-day-count": totalDays } as CSSProperties}>
             <div className="roster-bulk-worker-header">Trabajador</div>
-            {dates.map((date) => <div className="roster-bulk-date" key={date.value}><span>{date.weekday}</span><strong>{date.day}</strong></div>)}
+            {dates.map((date) => <div className="roster-bulk-date" key={date.value}><small>{date.month}</small><span>{date.weekday}</span><strong>{date.day}</strong></div>)}
             {visibleWorkers.map((worker) => {
               const days = new Map(worker.days.map((day) => [day.date, day]));
               const jornadaLabel = resolveWorkerPatternLabel(worker.days);

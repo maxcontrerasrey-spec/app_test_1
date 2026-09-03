@@ -60,21 +60,22 @@ export function useRosterCalendarSummary(params: {
 }
 
 export function useRosterBulkCalendar(params: {
-  monthValue: string;
+  startDate: string;
+  endDate: string;
   search?: string;
   contractFilter?: string;
   areaFilter?: string;
   enabled?: boolean;
 }) {
-  const { monthValue, search = "", contractFilter = "", areaFilter = "", enabled = true } = params;
+  const { startDate, endDate, search = "", contractFilter = "", areaFilter = "", enabled = true } = params;
   return useQuery({
-    queryKey: queryKeys.roster.bulkCalendar({ monthValue, search, contractFilter, areaFilter }),
-    queryFn: () => fetchRosterBulkCalendar({ monthValue, search, contractFilter, areaFilter }),
+    queryKey: queryKeys.roster.bulkCalendar({ monthValue: `${startDate}:${endDate}`, search, contractFilter, areaFilter }),
+    queryFn: () => fetchRosterBulkCalendar({ startDate, endDate, search, contractFilter, areaFilter }),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    enabled: enabled && Boolean(monthValue)
+    enabled: enabled && Boolean(startDate) && Boolean(endDate)
   });
 }
 

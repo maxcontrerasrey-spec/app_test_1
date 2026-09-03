@@ -235,16 +235,16 @@ export async function fetchRosterCalendarSummary(params: {
 }
 
 export async function fetchRosterBulkCalendar(params: {
-  monthValue: string;
+  startDate: string;
+  endDate: string;
   search?: string;
   contractFilter?: string;
   areaFilter?: string;
 }) {
   const client = getSupabaseClient();
-  const [year, month] = params.monthValue.split("-");
-  const normalizedMonth = year && month ? `${year}-${month}-01` : `${new Date().toISOString().slice(0, 7)}-01`;
   const { data, error } = await client.rpc("get_hr_roster_bulk_calendar", {
-    p_month: normalizedMonth,
+    p_start_date: params.startDate,
+    p_end_date: params.endDate,
     p_search: params.search?.trim() || null,
     p_contract_filter: params.contractFilter?.trim() || null,
     p_area_filter: params.areaFilter?.trim() || null
