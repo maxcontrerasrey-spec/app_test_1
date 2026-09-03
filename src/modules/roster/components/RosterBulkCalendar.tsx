@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import type { RosterBulkWorker, WorkerScheduleDay } from "../types";
 
 type Props = { monthValue: string; workers: RosterBulkWorker[]; isLoading?: boolean };
+const NO_PATTERN_FILTER = "__no_pattern__";
 
 function tone(day: WorkerScheduleDay | undefined) {
   if (!day || day.baseStatus === "unassigned") return "roster-bulk-cell--unassigned";
@@ -37,14 +38,26 @@ export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: P
           .map((day) => day.patternName)
           .filter((pattern): pattern is string => Boolean(pattern))
       );
-      workerPatterns.forEach((pattern) => workerCounts.set(pattern, (workerCounts.get(pattern) ?? 0) + 1));
+      if (workerPatterns.size === 0) {
+        workerCounts.set(NO_PATTERN_FILTER, (workerCounts.get(NO_PATTERN_FILTER) ?? 0) + 1);
+      } else {
+        workerPatterns.forEach((pattern) => workerCounts.set(pattern, (workerCounts.get(pattern) ?? 0) + 1));
+      }
     });
-    return [...workerCounts.entries()].sort(([left], [right]) => left.localeCompare(right, "es"));
+    return [...workerCounts.entries()].sort(([left], [right]) => {
+      if (left === NO_PATTERN_FILTER) return 1;
+      if (right === NO_PATTERN_FILTER) return -1;
+      return left.localeCompare(right, "es");
+    });
   }, [workers]);
   const visibleWorkers = useMemo(
     () =>
       selectedPattern
-        ? workers.filter((worker) => worker.days.some((day) => day.patternName === selectedPattern))
+        ? workers.filter((worker) =>
+            selectedPattern === NO_PATTERN_FILTER
+              ? worker.days.every((day) => !day.patternName)
+              : worker.days.some((day) => day.patternName === selectedPattern)
+          )
         : workers,
     [selectedPattern, workers]
   );
@@ -74,15 +87,16 @@ export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: P
                 Todas <span>{workers.length}</span>
               </button>
               {patternOptions.map(([pattern, workerCount]) => {
+                const patternLabel = pattern === NO_PATTERN_FILTER ? "Sin Jornada" : pattern;
                 return (
                   <button
                     type="button"
                     className={`approval-chip ${selectedPattern === pattern ? "tracking-kpi-card-active" : ""}`}
                     key={pattern}
                     onClick={() => setSelectedPattern(pattern)}
-                    title={`Mostrar trabajadores con jornada ${pattern}`}
+                    title={`Mostrar trabajadores ${patternLabel.toLowerCase()}`}
                   >
-                    {pattern} <span>{workerCount}</span>
+                    {patternLabel} <span>{workerCount}</span>
                   </button>
                 );
               })}
