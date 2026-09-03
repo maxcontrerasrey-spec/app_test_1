@@ -19,6 +19,11 @@ function label(day: WorkerScheduleDay | undefined) {
   return day.baseStatus === "working" ? "T" : day.baseStatus === "resting" ? "D" : "—";
 }
 
+function resolveWorkerPatternLabel(days: WorkerScheduleDay[]) {
+  const patternNames = [...new Set(days.map((day) => day.patternName).filter(Boolean))];
+  return patternNames.length > 0 ? patternNames.join(" / ") : "Sin jornada";
+}
+
 export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: Props) {
   const view = parseDateValue(`${monthValue}-01`);
   const totalDays = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
@@ -42,9 +47,10 @@ export function RosterBulkCalendar({ monthValue, workers, isLoading = false }: P
             {dates.map((date) => <div className="roster-bulk-date" key={date.value}><span>{date.weekday}</span><strong>{date.day}</strong></div>)}
             {workers.map((worker) => {
               const days = new Map(worker.days.map((day) => [day.date, day]));
+              const jornadaLabel = resolveWorkerPatternLabel(worker.days);
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
-                <div className="roster-bulk-worker"><strong>{worker.fullName}</strong><span>{worker.documentNumber} · {worker.contractCode ?? worker.areaName ?? "Sin contrato"}</span></div>
-                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day)}</strong><span>{day?.patternName ?? ""}</span></div>; })}
+                <div className="roster-bulk-worker"><strong>{worker.fullName}</strong><span title={jornadaLabel}>{worker.documentNumber} · {jornadaLabel}</span></div>
+                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day)}</strong></div>; })}
               </div>;
             })}
           </div>
