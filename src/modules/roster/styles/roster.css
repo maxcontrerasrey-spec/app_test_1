@@ -44,6 +44,14 @@
   gap: var(--spacing-4);
 }
 
+.roster-bulk-header-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
 .roster-bulk-pattern-filters {
   display: grid;
   justify-items: end;
@@ -77,6 +85,13 @@
   margin-left: 0.3rem;
   color: var(--text-muted);
   font-size: 0.67rem;
+}
+
+.roster-bulk-export-button {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0.35rem 0.75rem;
+  white-space: nowrap;
 }
 
 .roster-bulk-scroll {
@@ -613,8 +628,18 @@
     flex-direction: column;
   }
 
+  .roster-bulk-header-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    width: 100%;
+  }
+
   .roster-bulk-pattern-filters {
     justify-items: start;
+    width: 100%;
+  }
+
+  .roster-bulk-export-button {
     width: 100%;
   }
 

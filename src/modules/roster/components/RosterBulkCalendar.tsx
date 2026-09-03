@@ -28,8 +28,70 @@ function resolveWorkerPatternLabel(days: WorkerScheduleDay[]) {
   return patternNames.length > 0 ? patternNames.join(" / ") : "Sin jornada";
 }
 
+function resolveDayStatus(day: WorkerScheduleDay) {
+  if (day.exceptionLabel) return day.exceptionLabel;
+  if (day.exceptionType === "medical_leave") return "Licencia médica";
+  if (day.exceptionType === "vacation") return "Vacaciones";
+  if (day.exceptionType === "termination") return "Salida";
+  if (day.exceptionType === "absent") return "Ausencia";
+  if (day.exceptionType === "administrative_leave") return "Permiso administrativo";
+  if (day.exceptionType === "extra_shift") return "Turno extra";
+  if (day.exceptionType === "training") return "Capacitación";
+  if (day.exceptionType === "union_leave") return "Permiso sindical";
+  if (day.baseStatus === "working") return "Trabajando";
+  if (day.baseStatus === "resting") return "Descanso";
+  return "Sin jornada";
+}
+
+function formatExportDate(dateValue: string) {
+  const [year, month, day] = dateValue.split("-");
+  return year && month && day ? `${day}-${month}-${year}` : dateValue;
+}
+
+async function exportRosterCalendar(
+  workers: RosterBulkWorker[],
+  dates: Array<{ value: string }>,
+  selectedPattern: string
+) {
+  const { utils, writeFile } = await import("@mylinkpi/xlsx");
+  const isNoPatternExport = selectedPattern === NO_PATTERN_FILTER;
+  const rows = isNoPatternExport
+    ? workers.map((worker) => ({
+        Nombre: worker.fullName,
+        RUT: worker.documentNumber,
+        Cargo: worker.jobTitle,
+        Contrato: worker.contractCode ?? "—"
+      }))
+    : workers.flatMap((worker) => {
+        const days = new Map(worker.days.map((day) => [day.date, day]));
+        return dates.map((date) => {
+          const day = days.get(date.value);
+          return {
+            Nombre: worker.fullName,
+            RUT: worker.documentNumber,
+            Cargo: worker.jobTitle,
+            Contrato: worker.contractCode ?? "—",
+            Jornada: day?.patternName ?? "Sin jornada",
+            Fecha: formatExportDate(date.value),
+            Estatus: day ? resolveDayStatus(day) : "Sin jornada"
+          };
+        });
+      });
+
+  if (rows.length === 0) return;
+  const worksheet = utils.json_to_sheet(rows);
+  worksheet["!cols"] = isNoPatternExport
+    ? [{ wch: 32 }, { wch: 16 }, { wch: 34 }, { wch: 28 }]
+    : [{ wch: 32 }, { wch: 16 }, { wch: 34 }, { wch: 28 }, { wch: 24 }, { wch: 14 }, { wch: 24 }];
+  const workbook = utils.book_new();
+  utils.book_append_sheet(workbook, worksheet, "Calendario");
+  const suffix = selectedPattern === NO_PATTERN_FILTER ? "sin-jornada" : "sabana-calendario";
+  writeFile(workbook, `${suffix}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
 export function RosterBulkCalendar({ startDate, endDate, workers, isLoading = false }: Props) {
   const [selectedPattern, setSelectedPattern] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
   const patternOptions = useMemo(() => {
     const workerCounts = new Map<string, number>();
     workers.forEach((worker) => {
@@ -74,6 +136,16 @@ export function RosterBulkCalendar({ startDate, endDate, workers, isLoading = fa
     };
   });
 
+  const handleExport = async () => {
+    if (visibleWorkers.length === 0 || isExporting) return;
+    setIsExporting(true);
+    try {
+      await exportRosterCalendar(visibleWorkers, dates, selectedPattern);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <section className="info-card roster-bulk-card" aria-label="Calendario de trabajadores">
       <div className="roster-bulk-header">
@@ -81,34 +153,45 @@ export function RosterBulkCalendar({ startDate, endDate, workers, isLoading = fa
           <h3>Calendario general</h3>
           <span className="tracking-filter-caption">{visibleWorkers.length} trabajadores · desplázate para revisar la nómina completa</span>
         </div>
-        {patternOptions.length > 0 ? (
-          <div className="roster-bulk-pattern-filters" aria-label="Filtrar por jornada">
-            <span className="roster-bulk-pattern-label">Jornadas</span>
-            <div className="roster-bulk-pattern-chips">
-              <button
-                type="button"
-                className={`approval-chip ${selectedPattern === "" ? "tracking-kpi-card-active" : ""}`}
-                onClick={() => setSelectedPattern("")}
-              >
-                Todas <span>{workers.length}</span>
-              </button>
-              {patternOptions.map(([pattern, workerCount]) => {
-                const patternLabel = pattern === NO_PATTERN_FILTER ? "Sin Jornada" : pattern;
-                return (
-                  <button
-                    type="button"
-                    className={`approval-chip ${selectedPattern === pattern ? "tracking-kpi-card-active" : ""}`}
-                    key={pattern}
-                    onClick={() => setSelectedPattern(pattern)}
-                    title={`Mostrar trabajadores ${patternLabel.toLowerCase()}`}
-                  >
-                    {patternLabel} <span>{workerCount}</span>
-                  </button>
-                );
-              })}
+        <div className="roster-bulk-header-actions">
+          {patternOptions.length > 0 ? (
+            <div className="roster-bulk-pattern-filters" aria-label="Filtrar por jornada">
+              <span className="roster-bulk-pattern-label">Jornadas</span>
+              <div className="roster-bulk-pattern-chips">
+                <button
+                  type="button"
+                  className={`approval-chip ${selectedPattern === "" ? "tracking-kpi-card-active" : ""}`}
+                  onClick={() => setSelectedPattern("")}
+                >
+                  Todas <span>{workers.length}</span>
+                </button>
+                {patternOptions.map(([pattern, workerCount]) => {
+                  const patternLabel = pattern === NO_PATTERN_FILTER ? "Sin Jornada" : pattern;
+                  return (
+                    <button
+                      type="button"
+                      className={`approval-chip ${selectedPattern === pattern ? "tracking-kpi-card-active" : ""}`}
+                      key={pattern}
+                      onClick={() => setSelectedPattern(pattern)}
+                      title={`Mostrar trabajadores ${patternLabel.toLowerCase()}`}
+                    >
+                      {patternLabel} <span>{workerCount}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+          <button
+            type="button"
+            className="soft-primary-button roster-bulk-export-button"
+            onClick={handleExport}
+            disabled={isLoading || isExporting || visibleWorkers.length === 0}
+            title="Exportar los trabajadores y fechas actualmente visibles"
+          >
+            {isExporting ? "Preparando..." : "Exportar Excel"}
+          </button>
+        </div>
       </div>
       {isLoading ? <p className="tracking-filter-caption">Cargando calendario...</p> : null}
       {!isLoading && visibleWorkers.length === 0 ? <p className="tracking-filter-caption">No hay trabajadores para los filtros seleccionados.</p> : null}
