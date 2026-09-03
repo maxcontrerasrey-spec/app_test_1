@@ -48,7 +48,9 @@ const emptySummary: RecruitmentDashboardSummary = {
 export function HiringStatusPage() {
   const { accessibleFeatures, accessibleModules, appRoles, isSuperAdmin, user } = useAuth();
   const isAdmin = isSuperAdmin || appRoles.includes("admin");
-  const isReadOnlyRecruitment = appRoles.includes("control_contratos") && !isAdmin;
+  const isReadOnlyRecruitment =
+    appRoles.includes("reclutamiento_consulta") ||
+    (appRoles.includes("control_contratos") && !isAdmin);
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<RecruitmentInternalView>("processes");
   const [selectedCaseId, setSelectedCaseId] = useState("");
@@ -63,9 +65,11 @@ export function HiringStatusPage() {
     hasModuleAccess(accessibleModules, "control_contrataciones");
   const canAccessCandidateControl =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_candidate_control");
-  // Los precandidatos contienen antecedentes de postulación y revisión DSAL;
-  // su acceso operativo pertenece exclusivamente al rol Reclutamiento.
-  const canAccessPrecandidates = isSuperAdmin || appRoles.includes("reclutamiento");
+  // Reclutamiento puede revisar; los roles de consulta solo pueden leer.
+  const canAccessPrecandidates =
+    isSuperAdmin || appRoles.includes("reclutamiento") ||
+    appRoles.includes("reclutamiento_consulta") ||
+    appRoles.includes("control_contratos");
   const canAccessPersonnelToHire =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_personnel_to_hire");
   const canAccessContractedPersonnel = canAccessPersonnelToHire;

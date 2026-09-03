@@ -2,6 +2,7 @@ export type AppRole =
   | "admin"
   | "aprobador_folios"
   | "reclutamiento"
+  | "reclutamiento_consulta"
   | "control_contratos"
   | "operaciones"
   | "gerencia"
@@ -54,6 +55,7 @@ const KNOWN_ROLE_CODES = new Set<AppRole>([
   "admin",
   "aprobador_folios",
   "reclutamiento",
+  "reclutamiento_consulta",
   "control_contratos",
   "operaciones",
   "gerencia",

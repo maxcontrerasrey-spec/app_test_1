@@ -1,5 +1,61 @@
 # Tareas y Roadmap de Desarrollo
 
+## Compactar jornada general con jornada junto al RUT - 2026-09-03
+
+- [ ] Mover la jornada desde cada celda T/D a la línea de identificación del trabajador.
+- [ ] Retirar el dato de ficha/contrato de esa línea y compactar filas y encabezados.
+- [ ] Mantener T/D, excepciones, tooltips y calendario individual sin cambios funcionales.
+- [ ] Ejecutar pruebas, build, Guardian, publicar en `main` y verificar el bundle productivo.
+
+
+## Auditoría de correos Gestión Psicolaboral - 2026-09-03
+
+- [x] Revisar el contrato vigente de despacho, Resend y manejo de errores en las Edge Functions.
+- [x] Consultar en producción invitaciones y trazas recientes sin enviar correos de prueba.
+- [x] Reconciliar estado ERP, identificador del proveedor y evidencia de entrega; separar aceptación de Resend de entrega en buzón.
+- [x] Corregir solo una causa raíz confirmada, preservando permisos, idempotencia y trazabilidad.
+- [x] Ejecutar validaciones focalizadas, Guardian/build si corresponde y documentar resultado o bloqueo.
+
+Resultado: el flujo vigente de Gestión Psicolaboral despacha directamente a Resend desde `psycholaboral-assessment`, con `RESEND_API_KEY` y `HIRING_NOTIFICATIONS_FROM_EMAIL` presentes en producción, idempotencia por evaluación y cierre transaccional mediante `finalize_psycholaboral_dispatch`. La reconciliación productiva encontró 95 invitaciones `sent`, todas con `provider_message_id`, 95 eventos `email_sent`, 0 `email_failed` y 0 destinatarios faltantes o inválidos; la función publicada está activa (v141) y la página `/evaluacionpsico` responde HTTP 200. No existe actualmente webhook/evento de entrega de Resend en el ERP, por lo que la evidencia confirma aceptación del proveedor, pero no permite afirmar entrega en el buzón ni descartar spam/rebote. No se modificó código ni se enviaron correos de prueba por falta de una causa raíz confirmada.
+
+## Carga condicional del calendario general de Jornadas - 2026-09-03
+
+- [x] Confirmar el disparo actual de la query y el estado “Todos” del filtro.
+- [x] Impedir la consulta y la renderización de la vista general cuando no exista contrato/área seleccionado.
+- [x] Mantener intactos el resumen, la búsqueda individual y el calendario por trabajador.
+- [x] Ejecutar TypeScript, build frontend, pruebas focalizadas y `git diff --check`.
+
+Resultado: `get_hr_roster_bulk_calendar` queda deshabilitado cuando el filtro está en “Todos” y la tabla general se reemplaza por una indicación para seleccionar contrato/área. Al seleccionar un alcance, la vista vuelve a cargar normalmente. Build frontend, 116 pruebas unitarias, Guardian y `git diff --check` pasan.
+
+
+## Permiso de lectura para Angel Reinoso en Reclutamiento - 2026-09-03
+
+- [x] Confirmar identidad, roles y asignaciones directas.
+- [x] Separar guards de vista de guards de mutación/revisión.
+- [x] Aplicar cambio de rol y guards backend/frontend.
+- [x] Verificar estado vivo y gates locales.
+
+Resultado: Angel Reinoso quedó con `administrativo` + `reclutamiento_consulta`, sin `reclutamiento` ni `control_contratos`; el guard vivo de gestión de casos devuelve `false`. `reclutamiento_consulta` permite consulta de candidatos/precandidatos, mientras aprobar, rechazar, agregar o trasladar sigue protegido por guards de gestión/revisión.
+
+## Rol de administrador de contratos para Jorge Parra - 2026-09-03
+
+- [x] Confirmar el patrón productivo de Angel Guerra e Isac Arratia y separar rol, módulo y alcance contractual.
+- [x] Asignar a Jorge Parra únicamente `operaciones_l_1`, sin `aprobador_folios`, y conservar sus asignaciones de contratos existentes.
+- [x] Ejecutar la migración con guardas de identidad, sin tocar otros roles ni reasignar contratos.
+- [x] Verificar en producción el rol, los 16 mapeos de contrato y el acceso autorizado posterior.
+
+Resultado: Jorge Parra Jimenez quedó con `operaciones_l_1`, igual que Isac Arratia. No se le asignó `control_contratos` ni `aprobador_folios`. Sus 16 mapeos existentes en `buk_contract_mappings` se conservaron sin modificaciones. La migración productiva `20260903134226` quedó aplicada.
+
+
+## Cuadro resumen candidatos folio 132 - 2026-09-02
+
+- [x] Confirmar en la fuente autoritativa los 19 candidatos del folio y 1 registro de movilidad interna.
+- [x] Extraer identidad, origen, estado y datos operativos disponibles.
+- [x] Reconciliar el total esperado de 20 registros.
+- [x] Entregar el cuadro de resumen con hechos y pendientes separados.
+
+Resultado: el folio RC-0132 muestra 19 candidatos originales activos (17 en Lead, 1 Who Aprobado y 2 En Proceso) y una movilidad interna aprobada MI-0073. El control también devuelve tres candidatos rechazados, que se excluyen del universo solicitado de 20.
+
 ## Vista calendario multi-trabajador en Jornadas - 2026-09-02
 
 - [x] Auditar la pantalla actual, contratos TypeScript/React Query y RPCs/migraciones de Jornadas.
