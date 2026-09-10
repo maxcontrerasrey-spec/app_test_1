@@ -29,6 +29,9 @@ export const routeModuleImporters = {
   resetPasswordPage: async () => ({
     default: (await import("../../modules/auth/pages/ResetPasswordPage")).ResetPasswordPage
   }),
+  recoveryLinkPage: async () => ({
+    default: (await import("../../modules/auth/pages/RecoveryLinkPage")).RecoveryLinkPage
+  }),
   accessDeniedPage: async () => ({
     default: (await import("../../modules/auth/pages/AccessDeniedPage")).AccessDeniedPage
   }),
@@ -161,6 +164,10 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/reset-password")) {
     return ["resetPasswordPage"];
+  }
+
+  if (normalizedPath.startsWith("/recover")) {
+    return ["recoveryLinkPage"];
   }
 
   if (normalizedPath.startsWith("/sin-acceso")) {

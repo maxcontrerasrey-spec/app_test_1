@@ -74,6 +74,22 @@ export async function sendPasswordResetEmail(email: string) {
   return { error: normalizeAuthOperationError(error) };
 }
 
+export async function verifyRecoveryToken(tokenHash: string) {
+  if (!supabase) {
+    return {
+      data: null,
+      error: normalizeAuthOperationError("Supabase no está configurado en este entorno.")
+    };
+  }
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    type: "recovery",
+    token_hash: tokenHash
+  });
+
+  return { data, error: normalizeAuthOperationError(error) };
+}
+
 export async function updateCurrentUserPassword(password: string) {
   if (!supabase) {
     return { error: "Supabase no está configurado en este entorno." };

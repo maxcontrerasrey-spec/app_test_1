@@ -26,6 +26,7 @@ const PublicBukWorkerFilePage = lazyWithRetry(
 );
 const LoginPage = lazyWithRetry("login-page", routeModuleImporters.loginPage);
 const ResetPasswordPage = lazyWithRetry("reset-password-page", routeModuleImporters.resetPasswordPage);
+const RecoveryLinkPage = lazyWithRetry("recovery-link-page", routeModuleImporters.recoveryLinkPage);
 const AccessDeniedPage = lazyWithRetry("access-denied-page", routeModuleImporters.accessDeniedPage);
 const OperacionesDashboard = lazyWithRetry("operaciones-dashboard", routeModuleImporters.operacionesDashboard);
 const HumanResourcesDashboard = lazyWithRetry(
@@ -84,6 +85,7 @@ export function AppRouter() {
           <Route path="/login" element={<LoginPage />} />
         </Route>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/recover" element={<RecoveryLinkPage />} />
         <Route path="/verificar/competencia" element={<CompetencyVerificationPage />} />
         <Route path="/verificar/competencia/:lookup" element={<CompetencyVerificationPage />} />
         <Route path="/verificar/documento" element={<HiringDocumentVerificationPage />} />

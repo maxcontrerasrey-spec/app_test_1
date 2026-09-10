@@ -8,7 +8,7 @@ const corsHeaders = {
   "Vary": "Origin",
 };
 
-const redirectTo = "https://gestion.busesjm.cl/reset-password";
+const redirectTo = "https://gestion.busesjm.cl/recover";
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {

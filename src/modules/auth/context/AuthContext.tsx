@@ -137,6 +137,10 @@ function detectRecoveryMode() {
   const queryParams = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 
+  if (window.location.pathname === "/recover") {
+    return false;
+  }
+
   return (
     queryParams.get("type") === "recovery" ||
     queryParams.get("recovery") === "1" ||
@@ -461,7 +465,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const tokenHash = queryParams.get("token_hash")?.trim();
         const code = queryParams.get("code")?.trim();
 
-        if (tokenHash) {
+        if (tokenHash && window.location.pathname !== "/recover") {
           const { data } = await supabaseClient.auth.verifyOtp({
             type: "recovery",
             token_hash: tokenHash
