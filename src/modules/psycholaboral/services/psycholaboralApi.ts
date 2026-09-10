@@ -81,7 +81,7 @@ export async function fetchPsychStatusSummary(search: string) {
   );
   if (error)
     throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar el resumen."));
-  return data as Record<"not_sent" | "sent" | "expired" | "completed" | "approved" | "total", number>;
+  return data as Record<"not_sent" | "sent" | "expired" | "completed" | "approved" | "hired" | "total", number>;
 }
 export async function sendPsychBattery(
   caseCandidateId: string,

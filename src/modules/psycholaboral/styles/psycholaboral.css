@@ -79,6 +79,10 @@
   background: #dcf7e8;
   color: #17663d;
 }
+.psych-status--hired {
+  background: #e8efff;
+  color: #315ca8;
+}
 
 /* The summary uses the same semantic palette as the instrument cards below. */
 .psych-tracking-panel .tracking-kpi-card-enviado {
@@ -95,6 +99,10 @@
 }
 .psych-tracking-panel .tracking-kpi-card-aprobados {
   background: linear-gradient(180deg, rgba(220, 247, 232, 0.98), rgba(242, 252, 246, 0.94));
+}
+.psych-tracking-panel .tracking-kpi-card-contratados {
+  background: linear-gradient(180deg, rgba(232, 239, 255, 0.98), rgba(246, 249, 255, 0.94));
+  border-color: rgba(183, 202, 241, 0.95);
 }
 .psych-instrument-list {
   display: grid;

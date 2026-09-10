@@ -30,6 +30,7 @@ const statusLabels = {
   expired: "Envío caducado",
   completed: "Terminado",
   approved: "Aprobados",
+  hired: "Contratados",
 } as const;
 const statusCardClasses = {
   not_sent: "tracking-kpi-card-no-realizado",
@@ -37,6 +38,7 @@ const statusCardClasses = {
   expired: "tracking-kpi-card-desierto",
   completed: "tracking-kpi-card-terminado",
   approved: "tracking-kpi-card-aprobados",
+  hired: "tracking-kpi-card-contratados",
 } as const;
 const PAGE_SIZE = 50;
 const aiStatusLabels: Record<string, string> = {
@@ -73,7 +75,9 @@ export function PsycholaboralManagementPage() {
   const statusSummary = usePsychStatusSummary(search);
   const catalog = usePsychCatalog();
   const rows = candidates.data?.items ?? [];
+  const totalVisible = candidates.data?.total_count ?? 0;
   const counts: Record<string, number> = statusSummary.data ?? {};
+  const statusItems = ["not_sent", "sent", "expired", "completed", "approved"] as const;
   const tabs = [
     { key: "", label: "Todos" },
     { key: "not_sent", label: "No realizado" },
@@ -81,6 +85,7 @@ export function PsycholaboralManagementPage() {
     { key: "expired", label: "Envío caducado" },
     { key: "completed", label: "Terminado" },
     { key: "approved", label: "Aprobados" },
+    { key: "hired", label: "Contratados" },
   ] as const;
   const refresh = async () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.psycholaboral.all() });
@@ -267,10 +272,10 @@ export function PsycholaboralManagementPage() {
             }}
           >
             <span className="micro-label">Candidatos visibles</span>
-            <strong>{rows.length}</strong>
+            <strong>{totalVisible}</strong>
             <small>Total filtrado</small>
           </button>
-          {(["not_sent", "sent", "expired", "completed", "approved"] as const).map((item) => (
+          {([...statusItems, "hired"] as const).map((item) => (
             <button
               type="button"
               className={`tracking-kpi-card ${statusCardClasses[item]} ${status === item ? "tracking-kpi-card-active" : ""}`}
