@@ -21,7 +21,14 @@ const sbomSha256 = fs.existsSync(sbomFile)
   ? crypto.createHash("sha256").update(fs.readFileSync(sbomFile)).digest("hex")
   : null;
 const currentCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-const workspaceDirty = execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim().length > 0;
+const generatedConsistencyAudit = "eees/audits/EEES-CONSISTENCY-AUDIT.md";
+const workspaceDirty = execFileSync(
+  "git",
+  ["status", "--porcelain", "--untracked-files=no"],
+  { encoding: "utf8" }
+)
+  .split("\n")
+  .some((line) => line.trim() && !line.endsWith(generatedConsistencyAudit));
 const evidenceConsistent = evidence.evidenceSha256 === evidenceSha256
   && gateEvidence.commit === evidence.commit
   && gateEvidence.generatedAt === evidence.generatedAt

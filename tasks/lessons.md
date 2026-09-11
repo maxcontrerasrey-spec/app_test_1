@@ -79,6 +79,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - La misma regla debe existir en formulario interno, formulario público, persistencia autoritativa de la ficha y del job, y Edge Function, para cubrir reintentos y bypasses.
 - Un job fallido por dato bancario no debe reenviarse hasta corregir la ficha; nunca completar números de cuenta por inferencia ni reutilizar datos de otra persona.
 
+## 343. La certificación de HEAD no debe quedar obsoleta por su propio reporte generado
+
+- El certifier debe bloquear cambios rastreados reales, pero no marcar `STALE` por archivos no versionados del runner ni por `EEES-CONSISTENCY-AUDIT.md`, que Guardian regenera dentro del mismo pipeline.
+- La exclusión debe ser explícita y mínima; ignorar todo el worktree ocultaría modificaciones de código o configuración que sí invalidan la evidencia.
+
 ## 328. Las pestañas de BI deben navegar aunque una vista esté cargando datos pesados
 
 - Un selector de vistas críticas no debe depender solo de `onClick` + `navigate()` si la vista activa puede saturar el hilo con queries/render pesado; usar links de ruta reales mantiene semántica de navegación y mejora resiliencia.

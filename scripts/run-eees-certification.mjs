@@ -11,7 +11,14 @@ const evidenceDir = path.join(root, ".eees/evidence");
 fs.mkdirSync(evidenceDir, { recursive: true });
 const currentCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 const branch = execFileSync("git", ["branch", "--show-current"], { encoding: "utf8" }).trim();
-const workspaceDirty = execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim().length > 0;
+const generatedConsistencyAudit = "eees/audits/EEES-CONSISTENCY-AUDIT.md";
+const workspaceDirty = execFileSync(
+  "git",
+  ["status", "--porcelain", "--untracked-files=no"],
+  { encoding: "utf8" }
+)
+  .split("\n")
+  .some((line) => line.trim() && !line.endsWith(generatedConsistencyAudit));
 const gates = readJson(path.join(root, "eees/guardian/gates.json")).gates;
 const rules = readJson(path.join(root, "eees/guardian/rules.json"));
 const results = [];
