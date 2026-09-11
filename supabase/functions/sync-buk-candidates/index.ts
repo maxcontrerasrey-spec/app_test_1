@@ -440,6 +440,31 @@ function normalizeText(value: string | null | undefined) {
     .toLowerCase();
 }
 
+function paymentMethodRequiresBankAccount(value: string | null | undefined) {
+  const normalized = normalizeText(value);
+  return normalized === "transferencia" || normalized === "transferencia bancaria";
+}
+
+function assertBukBankAccountIsComplete(worker: BukCandidateSyncPayload["profile"]["worker_file"]) {
+  if (!paymentMethodRequiresBankAccount(worker.payment_method)) {
+    return;
+  }
+
+  const missingFields = [
+    ["banco", worker.bank_name],
+    ["tipo de cuenta", worker.bank_account_type],
+    ["número de cuenta", worker.bank_account_number]
+  ]
+    .filter(([, value]) => !(value ?? "").trim())
+    .map(([label]) => label);
+
+  if (missingFields.length > 0) {
+    throw new Error(
+      `La ficha BUK está incompleta: para Transferencia Bancaria debes completar ${missingFields.join(", ")}.`
+    );
+  }
+}
+
 function normalizeEmail(value: string | null | undefined) {
   const normalized = (value ?? "")
     .trim()
@@ -2885,6 +2910,7 @@ async function ensureBukEmployeeSetup(
 function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: string | number) {
   const profile = payload.profile;
   const worker = payload.profile.worker_file;
+  assertBukBankAccountIsComplete(worker);
 
   const documentType = normalizeText(profile.document_type) === "rut" ? "rut" : "otro";
   const email = normalizeEmail(profile.email);
@@ -2923,12 +2949,12 @@ function buildBukEmployeePayload(payload: BukCandidateSyncPayload, locationId: s
     retired: normalizeText(worker.retired_status) === "si" || normalizeText(worker.retired_status) === "sí",
     retirement_regime: worker.retirement_regime,
     afc: worker.afc_regime,
-    bank: worker.bank_name || undefined,
+    bank: worker.bank_name?.trim() || undefined,
     payment_currency: worker.currency || "CLP",
     payment_method: worker.payment_method,
     payment_period: mapBukPeriodicity(worker.payment_period),
-    account_type: worker.bank_account_type || undefined,
-    account_number: worker.bank_account_number || undefined,
+    account_type: worker.bank_account_type?.trim() || undefined,
+    account_number: worker.bank_account_number?.trim() || undefined,
     active_since: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined,
     start_date: worker.company_entry_date || payload.case.requested_entry_date || payload.candidate.hired_at || undefined,
     custom_attributes: buildBukUniformSizeAttributes(payload),
@@ -2941,13 +2967,14 @@ function buildBukEmployeeClonePayload(
   employees: BukEmployeeRecord[]
 ) {
   const worker = payload.profile.worker_file;
+  assertBukBankAccountIsComplete(worker);
 
   return {
     payment_method: worker.payment_method ?? undefined,
     payment_period: worker.payment_period ?? undefined,
-    bank: worker.bank_name ?? undefined,
-    account_type: worker.bank_account_type ?? undefined,
-    account_number: worker.bank_account_number ?? undefined,
+    bank: worker.bank_name?.trim() || undefined,
+    account_type: worker.bank_account_type?.trim() || undefined,
+    account_number: worker.bank_account_number?.trim() || undefined,
     code_sheet: resolveBukEmployeeCode(payload) ?? resolveNextBukEmployeeCode(payload, employees) ?? undefined,
     start_date: resolveTargetStartDate(payload) ?? undefined,
     private_role: resolvePrivateRole(worker.private_role),

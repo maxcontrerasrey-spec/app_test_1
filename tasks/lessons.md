@@ -1,5 +1,9 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 341. El calendario general no debe resolver cada celda con una función PL/pgSQL
+
+Cuando el filtro de contrato devuelve muchos trabajadores, ejecutar una función que vuelve a consultar empleado, pauta y excepción por cada día produce latencia multiplicativa y puede terminar en timeout aunque el filtro sea correcto. La vista general debe resolver la población y sus estados en una sola consulta set-based, usando los índices por trabajador y fecha, sin cambiar el contrato ni los guards de acceso.
+
 ## 340. Los listados BUK filtrados por RUT pueden omitir el documento de cada fila
 
 - Una respuesta resumida obtenida con `document_number` puede devolver las fichas correctas y omitir `document_number`/`rut`; volver a exigir el campo sin hidratar el detalle produce falsos negativos.
@@ -68,6 +72,12 @@
 - Cuando BUK acepta un PATCH pero su endpoint de lectura no expone la categoría sindical, registrarlo como advertencia auditable y no confundirlo con una duplicación o un fallo de identidad.
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
+
+## 342. La forma de pago define campos bancarios obligatorios en toda la cadena BUK
+
+- `Transferencia Bancaria` requiere banco, tipo de cuenta y número de cuenta; validar solo forma y período permite que el error llegue tarde desde BUK.
+- La misma regla debe existir en formulario interno, formulario público, persistencia autoritativa de la ficha y del job, y Edge Function, para cubrir reintentos y bypasses.
+- Un job fallido por dato bancario no debe reenviarse hasta corregir la ficha; nunca completar números de cuenta por inferencia ni reutilizar datos de otra persona.
 
 ## 328. Las pestañas de BI deben navegar aunque una vista esté cargando datos pesados
 
@@ -3502,3 +3512,45 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - La interfaz puede representar un rango como `YYYYMM-YYYYMM`, pero cada backend debe resolver explícitamente sus límites inclusivos y rechazar rangos invertidos.
 - Para Incentivos, mantener las RPC mensuales existentes y consolidar sus resultados evita duplicar el contrato SQL; la selección de período sigue siendo auditable y no expone un filtro cliente como fuente de autorización.
+
+## 2026-09-03 - Los filtros de jornada deben vivir dentro del calendario general
+
+- La solicitud era una interacción local de la vista general, no un filtro global del módulo ni una modificación del calendario individual.
+- Las opciones deben derivarse del payload ya acotado al contrato seleccionado; no corresponde inventar jornadas ni ampliar la consulta a toda la empresa.
+
+## 2026-09-03 - La fecha de salida BUK debe resolver el estado operativo central
+
+- No basta con ocultar a una persona desde `employees_active_current`: si la salida ocurre dentro del mes, el calendario debe conservarla y marcar `Salida` desde la fecha efectiva.
+- El bloqueo de incentivos debe reutilizar el mismo resolvedor diario del backend; una regla solo visual permitiría registrar incentivos después de la salida.
+
+## 2026-09-03 - Las cantidades de los filtros deben tener separación visual y Sin Jornada debe ser explícito
+
+- En chips compactos, el texto y su contador necesitan separación propia; el espacio del JSX no es un contrato visual estable.
+- `Sin Jornada` debe aparecer como opción solo cuando el contrato seleccionado realmente contiene trabajadores sin pauta, y debe filtrar por ausencia de cualquier jornada.
+
+## 2026-09-03 - El periodo de calendario general debe separar rango y mes individual
+
+- El calendario general necesita un rango explícito desde/hasta y su consulta debe recibir ambas fechas; reutilizar solo el primer mes descarta silenciosamente el resto del periodo.
+- La vista individual conserva su lectura mensual mientras la vista general muestra el rango seleccionado, con el mes compacto sobre cada columna para evitar ambigüedad entre meses.
+
+## 2026-09-03 - Las asignaciones de reclutamiento no viven en recruitment_cases
+
+- No referenciar `owner_user_id` ni `recruiter_user_id` sobre `recruitment_cases`; el esquema real usa `recruitment_case_assignments`.
+- Antes de reemplazar una función de autorización, validar todas sus columnas contra `information_schema` y probar el RPC con una identidad real del rol afectado.
+## 2026-09-07 - Cerrar una contingencia BUK exige reconciliar la etapa ERP por ficha viva
+
+- Un job contingente `success` acredita la ejecución histórica, pero no basta para contratar: la ficha debe releerse en BUK y conservar al menos un trabajo del contrato esperado, aunque esté inactiva.
+- La identidad viva puede cambiar de ficha después de una eliminación y recreación; la auditoría de cierre debe registrar el `employee_id` actual sin sobrescribir el identificador histórico del job original.
+- Al regularizar en lote, proyecta cupos con contratados y movilidad efectiva, ejecuta `sync_recruitment_case_status` por folio y bloquea la transacción si aparece cualquier sobrellenado.
+
+## 2026-09-10 - Una ficha BUK manual debe absorber el retry ERP, no competir con la reserva
+
+- Si una ficha creada por el ERP fue eliminada y RRHH crea manualmente otra para el mismo RUT, la reserva confirmada debe reconciliarse explícitamente contra RUT, correo, correlativo y ficha viva antes de reintentar.
+- El retry debe reutilizar la ficha manual y completar sobre ella documentos, plan y trabajo faltantes; nunca liberar la reserva para crear una tercera ficha ni tratar el alta manual como duplicado ajeno.
+- La verificación final exige una sola ficha por identidad en BUK, todos los documentos del job, Solicitud de Contratación cargada y cierre transaccional de candidato y cupos en ERP.
+
+## 2026-09-10 - Una fila en auth.users no equivale a una cuenta email utilizable
+
+- Si un usuario fue creado directamente por SQL, verificar también `auth.identities`, `instance_id` y los campos internos esperados por GoTrue; correo confirmado y password hash válidos no bastan para autenticar.
+- Toda contingencia de contraseña debe cerrarse con un login real usando la clave generada, cierre global de la sesión técnica y reposición autoritativa de `must_reset_password = true`.
+- No interpretar una recuperación aceptada por el proveedor como evidencia de que la cuenta Auth está completa ni de que el mensaje llegó al buzón.

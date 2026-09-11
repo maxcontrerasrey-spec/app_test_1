@@ -415,6 +415,13 @@ function sanitizeBukSyncErrorMessage(message: string | null | undefined) {
 
   const lowerMessage = normalized.toLowerCase();
   if (
+    lowerMessage.includes("account_number") &&
+    (lowerMessage.includes("no puede estar en blanco") || lowerMessage.includes("can't be blank"))
+  ) {
+    return "La ficha BUK está incompleta: para Transferencia Bancaria debes completar banco, tipo de cuenta y número de cuenta antes de reintentar.";
+  }
+
+  if (
     lowerMessage.includes("<!doctype html") ||
     lowerMessage.includes("<html") ||
     lowerMessage.includes("</html>")

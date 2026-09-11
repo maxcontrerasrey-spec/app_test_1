@@ -7,6 +7,9 @@ type CandidateBukWorkerDraftLike = {
   progressiveVacationStartDate: string;
   paymentMethod: string;
   paymentPeriod: string;
+  bankName: string;
+  bankAccountType: string;
+  bankAccountNumber: string;
   valeVistaType: string;
   pensionRegime: string;
   contributionFund: string;
@@ -32,6 +35,11 @@ function normalizeBukText(value: string | null | undefined) {
 export function isAffirmativeBukValue(value: string | null | undefined) {
   const normalized = normalizeBukText(value);
   return normalized === "si" || normalized === "true" || normalized === "yes";
+}
+
+export function paymentMethodRequiresBankAccount(value: string | null | undefined) {
+  const normalized = normalizeBukText(value);
+  return normalized === "transferencia" || normalized === "transferencia bancaria";
 }
 
 export function healthProviderRequiresPlan(value: string | null | undefined) {
@@ -85,6 +93,11 @@ export function collectCandidateBukWorkerMissingFields(draft: CandidateBukWorker
   if (!normalizedDraft.companyEntryDate.trim()) missingFields.push("Ingreso compañía");
   if (!normalizedDraft.privateRole.trim()) missingFields.push("Rol privado");
   if (!normalizedDraft.paymentMethod.trim()) missingFields.push("Forma de pago");
+  if (paymentMethodRequiresBankAccount(normalizedDraft.paymentMethod)) {
+    if (!normalizedDraft.bankName.trim()) missingFields.push("Banco");
+    if (!normalizedDraft.bankAccountType.trim()) missingFields.push("Tipo de cuenta");
+    if (!normalizedDraft.bankAccountNumber.trim()) missingFields.push("Número de cuenta");
+  }
   if (!normalizedDraft.pensionRegime.trim()) missingFields.push("Régimen previsional");
   if (!normalizedDraft.increaseQuoteOnePercent.trim()) {
     missingFields.push("Aumentar cotización 1%");

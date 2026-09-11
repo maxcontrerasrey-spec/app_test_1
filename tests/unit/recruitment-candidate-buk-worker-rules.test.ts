@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   applyCandidateBukWorkerDefaults,
-  collectCandidateBukWorkerMissingFields
+  collectCandidateBukWorkerMissingFields,
+  paymentMethodRequiresBankAccount
 } from "../../src/modules/recruitment/lib/candidateBukWorkerRules";
 
 function buildDraft(overrides: Partial<Parameters<typeof applyCandidateBukWorkerDefaults>[0]> = {}) {
@@ -14,6 +15,9 @@ function buildDraft(overrides: Partial<Parameters<typeof applyCandidateBukWorker
     progressiveVacationStartDate: "",
     paymentMethod: "Transferencia",
     paymentPeriod: "Mensual",
+    bankName: "Banco Estado",
+    bankAccountType: "Cuenta RUT",
+    bankAccountNumber: "22553065",
     valeVistaType: "Retiro por caja",
     pensionRegime: "AFP",
     contributionFund: "Habitat",
@@ -67,5 +71,29 @@ describe("candidate BUK worker rules", () => {
     );
 
     expect(missing).toContain("Fondo de cotización AFP");
+  });
+
+  it("exige los tres datos bancarios para transferencias", () => {
+    const missing = collectCandidateBukWorkerMissingFields(
+      buildDraft({ bankName: "", bankAccountType: "", bankAccountNumber: "" })
+    );
+
+    expect(missing).toEqual(expect.arrayContaining(["Banco", "Tipo de cuenta", "Número de cuenta"]));
+    expect(paymentMethodRequiresBankAccount("Transferencia Bancaria")).toBe(true);
+  });
+
+  it("no exige datos bancarios para formas de pago no bancarias", () => {
+    const missing = collectCandidateBukWorkerMissingFields(
+      buildDraft({
+        paymentMethod: "Vale Vista",
+        bankName: "",
+        bankAccountType: "",
+        bankAccountNumber: ""
+      })
+    );
+
+    expect(missing).not.toContain("Banco");
+    expect(missing).not.toContain("Tipo de cuenta");
+    expect(missing).not.toContain("Número de cuenta");
   });
 });

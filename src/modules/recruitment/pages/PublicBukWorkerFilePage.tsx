@@ -5,6 +5,7 @@ import { SelectField, TextField } from "../../../shared/ui";
 import { formatRut, validateRut } from "../../../shared/lib/rut";
 import { bukEmployeeFieldOptions } from "../lib/bukEmployeeTemplate";
 import { bukPaymentPeriodOptions } from "../lib/candidateWorkerFileFormHelpers";
+import { paymentMethodRequiresBankAccount } from "../lib/candidateBukWorkerRules";
 import {
   startPublicBukWorkerFile,
   submitPublicBukWorkerFile,
@@ -87,11 +88,13 @@ export function PublicBukWorkerFilePage() {
     const normalized = draft.healthProvider.trim().toLowerCase();
     return normalized !== "" && !["fonasa", "mutual", "no cotiza salud", "no cotiza"].includes(normalized);
   }, [draft.healthProvider]);
+  const bankDetailsRequired = paymentMethodRequiresBankAccount(draft.paymentMethod);
   const formReady = Boolean(
     draft.gender && draft.birthDate && draft.nationality && draft.maritalStatus &&
     draft.personalEmail && draft.phone.length === 8 && draft.streetName &&
     draft.districtOrCommune && draft.currentCity && draft.region && draft.shirtSize &&
     draft.pantsSize && draft.shoeSize && draft.paymentMethod && draft.paymentPeriod &&
+    (!bankDetailsRequired || (draft.bankName && draft.bankAccountType && draft.bankAccountNumber.trim())) &&
     draft.pensionRegime && draft.healthProvider && (!healthPlanRequired || draft.healthPlanUf)
   );
 
@@ -213,9 +216,9 @@ export function PublicBukWorkerFilePage() {
               <div className="control-edit-grid public-application-grid">
                 <SelectField id="public-buk-payment-method" label="Forma de pago" value={draft.paymentMethod} options={bukEmployeeFieldOptions.paymentMethod} placeholder="Selecciona forma de pago" onChange={(event) => updateDraftValue(setDraft, "paymentMethod", event.target.value)} />
                 <SelectField id="public-buk-payment-period" label="Periodo de pago" value={draft.paymentPeriod} options={bukPaymentPeriodOptions} placeholder="Selecciona periodo" onChange={(event) => updateDraftValue(setDraft, "paymentPeriod", event.target.value)} />
-                <SelectField id="public-buk-bank" label="Banco" value={draft.bankName} options={bukEmployeeFieldOptions.bank} placeholder="Selecciona banco" onChange={(event) => updateDraftValue(setDraft, "bankName", event.target.value)} />
-                <SelectField id="public-buk-account-type" label="Tipo de cuenta" value={draft.bankAccountType} options={bukEmployeeFieldOptions.bankAccountType} placeholder="Selecciona tipo" onChange={(event) => updateDraftValue(setDraft, "bankAccountType", event.target.value)} />
-                <TextField id="public-buk-account-number" label="Número de cuenta" value={draft.bankAccountNumber} onChange={(event) => updateText("bankAccountNumber", event.target.value)} />
+                <SelectField id="public-buk-bank" label={`Banco${bankDetailsRequired ? " *" : ""}`} value={draft.bankName} options={bukEmployeeFieldOptions.bank} placeholder="Selecciona banco" onChange={(event) => updateDraftValue(setDraft, "bankName", event.target.value)} />
+                <SelectField id="public-buk-account-type" label={`Tipo de cuenta${bankDetailsRequired ? " *" : ""}`} value={draft.bankAccountType} options={bukEmployeeFieldOptions.bankAccountType} placeholder="Selecciona tipo" onChange={(event) => updateDraftValue(setDraft, "bankAccountType", event.target.value)} />
+                <TextField id="public-buk-account-number" label={`Número de cuenta${bankDetailsRequired ? " *" : ""}`} value={draft.bankAccountNumber} onChange={(event) => updateText("bankAccountNumber", event.target.value)} />
                 <SelectField id="public-buk-pension" label="Régimen previsional" value={draft.pensionRegime} options={bukEmployeeFieldOptions.pensionRegime} placeholder="Selecciona régimen" onChange={(event) => updateDraftValue(setDraft, "pensionRegime", event.target.value)} />
                 <SelectField id="public-buk-fund" label="Fondo de cotización" value={draft.contributionFund} options={bukEmployeeFieldOptions.contributionFund} placeholder="Selecciona fondo" onChange={(event) => updateDraftValue(setDraft, "contributionFund", event.target.value)} />
                 <SelectField id="public-buk-health" label="Fonasa / Isapre" value={draft.healthProvider} options={bukEmployeeFieldOptions.healthProvider} placeholder="Selecciona prestador" onChange={(event) => updateDraftValue(setDraft, "healthProvider", event.target.value)} />
@@ -223,6 +226,11 @@ export function PublicBukWorkerFilePage() {
                 <SelectField id="public-buk-retired" label="Jubilado" value={draft.retiredStatus} options={bukEmployeeFieldOptions.retiredStatus} placeholder="Selecciona opción" onChange={(event) => updateDraftValue(setDraft, "retiredStatus", event.target.value)} />
                 <SelectField id="public-buk-retirement" label="Régimen jubilación" value={draft.retirementRegime} options={bukEmployeeFieldOptions.retirementRegime} placeholder="Selecciona régimen" onChange={(event) => updateDraftValue(setDraft, "retirementRegime", event.target.value)} />
               </div>
+              {bankDetailsRequired && (!draft.bankName || !draft.bankAccountType || !draft.bankAccountNumber.trim()) ? (
+                <p className="form-status form-status-error public-application-alert" role="alert">
+                  Para transferencia bancaria debes completar banco, tipo de cuenta y número de cuenta.
+                </p>
+              ) : null}
             </section>
 
             {error ? <p className="form-status form-status-error public-application-submit-message" role="alert">{error}</p> : null}

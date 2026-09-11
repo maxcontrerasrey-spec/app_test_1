@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import { bukEmployeeFieldOptions } from "../lib/bukEmployeeTemplate";
+import { paymentMethodRequiresBankAccount } from "../lib/candidateBukWorkerRules";
 import { bukPaymentPeriodOptions, type WorkerDraft, yesNoBukOptions } from "../lib/candidateWorkerFileFormHelpers";
 
 type CandidateWorkerFileContractSectionProps = {
@@ -29,6 +30,8 @@ export function CandidateWorkerFileContractSection({
   usesAutomaticFonasaPlan,
   handleWorkerSave
 }: CandidateWorkerFileContractSectionProps) {
+  const bankDetailsRequired = paymentMethodRequiresBankAccount(workerDraft.paymentMethod);
+
   return (
       <section className="worker-file-section">
         <div className="worker-file-section-header">
@@ -116,7 +119,7 @@ export function CandidateWorkerFileContractSection({
           />
           <SelectField
             id="candidate-bank-name"
-            label="Banco"
+            label={`Banco${bankDetailsRequired ? " *" : ""}`}
             value={workerDraft.bankName}
             options={bukEmployeeFieldOptions.bank}
             placeholder="Selecciona banco"
@@ -126,7 +129,7 @@ export function CandidateWorkerFileContractSection({
           />
           <SelectField
             id="candidate-bank-account-type"
-            label="Tipo de cuenta"
+            label={`Tipo de cuenta${bankDetailsRequired ? " *" : ""}`}
             value={workerDraft.bankAccountType}
             options={bukEmployeeFieldOptions.bankAccountType}
             placeholder="Selecciona tipo"
@@ -139,7 +142,7 @@ export function CandidateWorkerFileContractSection({
           />
           <TextField
             id="candidate-bank-account-number"
-            label="Número de cuenta"
+            label={`Número de cuenta${bankDetailsRequired ? " *" : ""}`}
             value={workerDraft.bankAccountNumber}
             onChange={(event) =>
               setWorkerDraft((current) => ({

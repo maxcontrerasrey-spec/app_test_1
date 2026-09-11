@@ -1,11 +1,145 @@
 # Tareas y Roadmap de Desarrollo
 
+## Bloqueo de altas BUK con datos bancarios incompletos - 2026-09-11
+
+- [x] Confirmar la causa del error `account_number no puede estar en blanco` en RC-0183.
+- [x] Exigir banco, tipo y número de cuenta cuando la forma de pago sea transferencia, en formularios interno y público.
+- [x] Bloquear payloads y jobs BUK incompletos en backend y Edge Function, incluidos reintentos y bypasses.
+- [x] Agregar regresiones focalizadas y validar build, tests, migraciones, seguridad y Guardian.
+- [x] Revisar el job fallido de Consuelo Garrido y dejar una ruta de reintento segura sin inventar datos bancarios.
+
+Resultado: la causa fue una validación incompleta que permitía guardar y sincronizar `Transferencia Bancaria` sin número de cuenta. La ficha interna y pública ahora exigen banco, tipo y número; la base rechaza fichas/jobs incompletos y el worker vuelve a validar antes de llamar a BUK, incluido el reintento de jobs históricos. El error antiguo se traduce a una instrucción operativa. Para Consuelo corresponde completar sus datos bancarios reales en la ficha y reintentar el mismo flujo; no se inventó ni reutilizó información financiera. Pruebas focalizadas, Deno check, build, auditorías BUK/migraciones y Guardian aprobaron con 0 errores y 0 advertencias.
+
+## Corrección folio RC-0173 y movilidades internas - 2026-09-10
+
+- [x] Confirmar contrato del folio, cargo canónico y las tres movilidades vinculadas.
+- [x] Actualizar el cargo a `CONDUCTOR` en la solicitud, caso y destino de las movilidades, sin alterar el cargo actual de origen de los trabajadores.
+- [x] Verificar en producción títulos, identificadores de cargo, folio, cupos y trazabilidad de las tres movilidades.
+- [x] Ejecutar auditorías mínimas del repositorio y documentar el resultado.
+
+Resultado: RC-0173 / folio 0173 quedó con cargo canónico `CONDUCTOR` (job position ID 278) en la solicitud, el caso y las tres movilidades MI-0082, MI-0083 y MI-0084. Se conservaron los cargos actuales de origen de los trabajadores. Guardian, auditoría de migraciones, auditoría de seguridad y `git diff --check` pasaron sin errores.
+
+## Conciliación de cupos RC-0173 por contrataciones externas - 2026-09-10
+
+- [x] Confirmar que las 10 personas fueron contratadas externamente y ejecutadas manualmente en BUK.
+- [x] Registrar las 10 contrataciones externas vinculadas al folio sin convertirlas artificialmente en candidatos.
+- [x] Incorporar las contrataciones externas a los cálculos autoritativos de ocupación y disponibilidad.
+- [x] Verificar el resultado productivo: 13/15 ocupados y 2 disponibles.
+
+Resultado: RC-0173 quedó conciliado como 10 contrataciones externas manuales en BUK + 3 movilidades internas aprobadas = 13 cupos ocupados de 15. La corrección es idempotente y quedó en `20260910123000_register_rc_0173_external_buk_hires.sql`.
+
+## Acceso de contingencia para Katherine Castillo - 2026-09-10
+
+- [x] Revalidar identidad, estado de Auth, perfil y sesiones de Katherine en producción.
+- [x] Generar y asignar una contraseña temporal criptográficamente segura sin registrar secretos en el repositorio.
+- [x] Forzar cambio de contraseña, revocar sesiones y comprobar un login real con la credencial temporal.
+- [x] Verificar el estado final y entregar la credencial únicamente al solicitante autorizado.
+
+Resultado: se corrigió la cuenta Auth incompleta de Katherine agregando su identidad email y normalizando su instancia/tokens internos. La contraseña temporal fue validada con un inicio de sesión real, la sesión técnica quedó revocada y el perfil continúa activo con rol `administrativo` y cambio obligatorio de contraseña.
+
+## Alta de cuenta de Reclutamiento: Javiera Hermosilla - 2026-09-07
+
+- [x] Verificar que no exista una cuenta o perfil duplicado.
+- [x] Confirmar la matriz efectiva de Katherine como referencia.
+- [x] Crear Javiera con el mismo cargo, rol y reinicio obligatorio de contraseña.
+- [x] Validar producción, sesiones, permisos y correo de recuperación.
+
+Resultado: Javiera Hermosilla Badilla quedó activa con `javiera.hermosilla@busesjm.com`, cargo Asistente de RRHH, rol único `administrativo` y cambio obligatorio de contraseña. El broker de recuperación aceptó el envío del correo; no se creó ninguna asignación adicional.
+
+## Reemplazo de cuenta de Reclutamiento: Angélica Calderón → Katherine Castillo - 2026-09-07
+
+- [x] Identificar las cuentas, roles, permisos y asignaciones efectivas de ambas personas.
+- [x] Confirmar el procedimiento autorizado de alta, desactivación y trazabilidad en Supabase/Auth.
+- [x] Crear la cuenta de Katherine sin duplicar identidad ni ampliar permisos.
+- [x] Replicar únicamente las responsabilidades verificadas de Angélica.
+- [x] Desactivar la cuenta de Angélica sin eliminar historial.
+- [x] Validar producción, RLS, login y auditoría; documentar resultado.
+
+Resultado: Katherine Castillo Herrera quedó activa con `katherine.castillo@busesjm.com`, cargo Asistente de RRHH, rol único `administrativo` y cambio obligatorio de contraseña. Se envió el correo de recuperación de acceso. Angélica Calderón quedó `inactive`, bloqueada en Auth y con sesiones revocadas; no se eliminaron sus registros ni se reasignaron responsabilidades inexistentes.
+
+## Importación de ciclos DRT y Sierra Gorda en Jornadas - 2026-09-04
+
+- [x] Analizar la estructura del archivo y normalizar RUT, ciclos y fechas de inicio.
+- [x] Cruzar los registros contra trabajadores activos de BUK y pautas vigentes de Jornadas.
+- [x] Crear la pauta 14X14 y reutilizar las pautas existentes para 5X2, 10X5+5 y 7X7.
+- [x] Importar únicamente trabajadores activos sin asignación vigente, con carga idempotente.
+- [x] Verificar producción: cantidades por ciclo, duplicados y exclusiones.
+
+Resultado: se cargaron 111 pautas nuevas desde el archivo, sin duplicados. La distribución es 79 en 14X14, 26 en 5X2, 4 en 10X5+5 y 2 en 7X7. El registro de José Miguel Arias Ramos (15.023.550-2) quedó excluido porque BUK lo mantiene inactivo; no se alteró su estado ni se creó una jornada para él.
+
+## Bloqueo de incentivos extraordinarios sin jornada ERP - 2026-09-04
+
+- [x] Auditar guards de registro, aprobación, edición y consulta de incentivos extraordinarios contra la fuente autoritativa de jornadas.
+- [x] Confirmar con datos productivos un trabajador con jornada y otro sin jornada, sin modificar registros.
+- [x] Implementar el bloqueo backend en el punto transaccional de creación/actualización, manteniendo trazabilidad y permisos vigentes.
+- [x] Ajustar frontend, contratos y pruebas si corresponde.
+- [x] Ejecutar validaciones Supabase, Guardian, build y `git diff --check`; publicar solo con evidencia.
+
+Resultado: el ERP bloquea la creación de cualquier incentivo extraordinario cuando `resolve_hr_roster_day_status` no encuentra una asignación de jornada para la fecha del servicio. También revalida la jornada antes de pasar una solicitud a estado final `F`. La prueba productiva verificó bloqueo para un trabajador sin jornada y aprobación del guard para otro con jornada; no se modificaron registros de incentivos.
+
+## Modelo semántico del Analista de Control Operacional - 2026-09-04
+
+- [ ] Construir matriz de fuentes autoritativas para dotación, jornadas, ausentismo, descansos trabajados e incentivos.
+- [ ] Definir diccionario de métricas con estado de disponibilidad, fórmula conceptual, ventanas y riesgos.
+- [ ] Definir matriz de relaciones e identificadores entre dotación, disponibilidad, ausentismo, jornadas, descansos trabajados e incentivos.
+- [ ] Evaluar viabilidad semántica del indicador futuro de Presión Operacional de Dotación sin ponderaciones arbitrarias.
+- [ ] Documentar brechas de datos, definiciones de negocio y criterios necesarios antes de implementar.
+
+## Implementación Analista de Control Operacional V1 - 2026-09-04
+
+- [ ] Inspeccionar el flujo vivo de Gerencia, fuentes de RRHH, permisos y la integración OpenAI existente.
+- [ ] Formalizar los contratos internos de snapshot, métricas, señales, evidencia, entrada/salida Luna y manifest.
+- [ ] Implementar la extracción determinista y el Data Quality Gate sin abrir acceso SQL a Luna.
+- [ ] Implementar snapshots, pseudonimización, reidentificación autorizada y trazabilidad.
+- [ ] Implementar la ejecución GPT-5.6 Luna por Gerencia y la consolidación.
+- [ ] Implementar validación de salida e informe ejecutivo.
+- [ ] Ejecutar pruebas focalizadas, Guardian, build, auditorías Supabase y verificación de resultados.
+- [ ] Realizar piloto/backtest y documentar GO/NO-GO antes de activar distribución.
+
+## Optimización filtro de contrato en calendario general - 2026-09-03
+
+- [x] Medir la causa del retraso al seleccionar un contrato.
+- [x] Sustituir el cálculo celda por celda por joins set-based con índices existentes.
+- [x] Mantener permisos, estados, excepciones y fecha de salida BUK.
+- [x] Aplicar en producción y verificar la definición viva de la función.
+
+Resultado: el calendario general ya no invoca `resolve_hr_roster_day_status` por cada trabajador y fecha; la RPC productiva usa joins laterales indexados y conserva el mismo contrato de respuesta.
+
+## Periodo desde/hasta en calendario general - 2026-09-03
+
+- [x] Reemplazar el filtro único de mes por calendario Desde/Hasta en el mismo contenedor.
+- [x] Consultar la vista general con el rango seleccionado y limitarlo a seis meses.
+- [x] Mostrar el mes compacto encima de cada día y número.
+- [x] Mantener el calendario individual mensual sin mezclar su navegación con la vista general.
+- [x] Ejecutar build y aplicar la función de rango en Supabase.
+
+## Calendario: colores, mes formal, compactación y fecha de salida BUK - 2026-09-03
+
+- [x] Separar visualmente vacaciones, licencias médicas y salida.
+- [x] Mantener el calendario mensual con el número real de días del mes consultado.
+- [x] Compactar la altura de filas y encabezado de la vista general por contrato.
+- [x] Derivar la fecha de salida desde BUK y bloquear el estado operativo desde esa fecha en calendario e incentivos.
+- [x] Ejecutar build, pruebas y Guardian.
+
+Resultado: la fecha de salida BUK se resuelve en el backend, se muestra como `Salida` y bloquea la creación de incentivos desde esa fecha; los trabajadores con salida dentro del mes siguen visibles para conservar trazabilidad.
+
+## Filtros de jornada en calendario general - 2026-09-03
+
+- [x] Mostrar burbujas únicamente dentro de la vista Calendario general.
+- [x] Derivar las jornadas disponibles desde los trabajadores del contrato seleccionado.
+- [x] Filtrar la nómina visible por jornada y permitir volver a Todas.
+- [x] Reiniciar el filtro al cambiar de contrato y validar build/tests.
+
+Resultado: el calendario general muestra solo las jornadas presentes en el contrato seleccionado; el filtro no afecta el calendario individual ni otros filtros.
+
 ## Compactar jornada general con jornada junto al RUT - 2026-09-03
 
-- [ ] Mover la jornada desde cada celda T/D a la línea de identificación del trabajador.
-- [ ] Retirar el dato de ficha/contrato de esa línea y compactar filas y encabezados.
-- [ ] Mantener T/D, excepciones, tooltips y calendario individual sin cambios funcionales.
-- [ ] Ejecutar pruebas, build, Guardian, publicar en `main` y verificar el bundle productivo.
+- [x] Mover la jornada desde cada celda T/D a la línea de identificación del trabajador.
+- [x] Retirar el dato de ficha/contrato de esa línea y compactar filas y encabezados.
+- [x] Mantener T/D, excepciones, tooltips y calendario individual sin cambios funcionales.
+- [x] Ejecutar pruebas, build, Guardian, publicar en `main` y verificar el bundle productivo.
+
+Resultado: la vista general ahora muestra `RUT · jornada` en la columna del trabajador, elimina el dato de ficha/contrato y reduce las filas de 66 a 54 px y el encabezado de 52 a 46 px. Producción sirve el bundle `RosterPage-C2Z5sEIn.js` con el cambio. El gate funcional pasó; la ejecución posterior quedó fallida solo por evidencia EEES obsoleta heredada (`STALE`) en el commit concurrente de `main`.
 
 
 ## Auditoría de correos Gestión Psicolaboral - 2026-09-03
@@ -2910,6 +3044,16 @@ Resultado: el trabajo vigente de la ficha BUK `43256` quedó con inicio y suscri
 - [x] Verificar exactamente un job por candidato, ausencia de duplicados y restaurar el runner temporal.
 
 Resultado: Luis Alberto Durán Rojas (`14.310.948-8`) quedó en BUK como ficha `43289`, AFP ProVida; Pedro Humberto Barraza Urqueta (`11.162.516-6`) quedó como ficha `43290`, AFP Cuprum. Ambos quedaron en `success`, con Fonasa y fecha de ingreso `2026-08-26`. La contingencia quedó registrada en cada payload.
+## Corrección visibilidad Control de candidatos - Macarena Ruiz - 2026-09-03
+- [x] Auditar el error 42703 contra el esquema y las funciones productivas.
+- [x] Corregir forward-only la función de visibilidad usando `recruitment_case_assignments`.
+- [x] Restaurar el vínculo del helper con `auth.uid()` para impedir consultas por otra identidad.
+- [x] Aplicar la migración productiva sin relajar RLS ni permisos.
+- [x] Verificar la función y el dashboard con la identidad de Macarena.
+- [x] Ejecutar build y auditorías del repositorio; documentar causa raíz y lección.
+
+Resultado: el error `column rc.owner_user_id does not exist` provenía de la migración `20260903150000`, que reemplazó la visibilidad con columnas inexistentes en `recruitment_cases`. Se aplicaron las migraciones `20260903175657` y `20260903175840`; la función ahora usa `recruitment_case_assignments`, conserva el vínculo con `auth.uid()` y mantiene los permisos existentes. La prueba productiva con Macarena devolvió acceso `true` y 128 candidatos en `candidate_control`; no se modificó RLS.
+
 ## Auditoría integral de rendimiento y reducción de código - 2026-08-27
 
 - [x] Capturar línea base: estructura, LOC, bundle, dependencias, build, tests y auditorías EEES.
@@ -2957,3 +3101,44 @@ Resultado: todos los submódulos de BI permiten consultar un período único o u
 - [x] Cubrir la regresión en la función desplegada: conserva el conflicto único para evaluaciones abiertas y permite el reemplazo solo después de marcar la anterior como `expired`.
 - [x] Aplicar migración, ejecutar gates y verificar la función desplegada en producción.
 - [x] Documentar causa raíz, resultado y riesgos residuales: no se envió correo de prueba ni se modificaron datos operativos; el siguiente reenvío real debe confirmarse con entrega `sent`.
+## Cierre ERP de contingencia DSAL — 2026-09-07
+
+- [x] Identificar el universo exacto desde precandidatos, candidatos, casos, jobs BUK e historial de contingencia.
+- [x] Verificar en BUK vivo cada ficha, incluida la inactiva, y exigir evidencia de vínculo DSAL.
+- [x] Simular la clasificación y reconciliar cupos/folios antes de modificar producción.
+- [x] Pasar a contratados mediante la lógica transaccional vigente o descartar, solo si falta ficha DSAL y el folio sigue activo.
+- [x] Verificar cupos, cierres, historial, auditoría y ausencia de duplicados o sobrellenado.
+- [x] Ejecutar Guardian y auditorías aplicables, y documentar el resultado final.
+
+Resultado productivo: se auditaron 61 altas contingentes enlazadas a precandidatos DSAL. BUK vivo confirmó 60 fichas con trabajo DSAL (área `2911`, empresa `5`), incluida la ficha recreada `43653` de Ricardo Manuel Cortés Valdés. Esas 60 participaciones quedaron en `hired`, con 60 registros de historial y 60 eventos de auditoría. Simón Maximiliano Escobar Yáñez fue el único sin ficha BUK DSAL y ya se encontraba `rejected`, por lo que no se alteró. Doce folios quedaron `filled`; `RC-0159` quedó `partially_filled` con 4/10 cupos. La verificación posterior confirmó cero sobrellenados.
+
+Validación final: `audit:migrations`, `audit:supabase-security`, `git diff --check` y Guardian aprobaron; Guardian terminó con 0 errores y 0 advertencias. La migración `20260907130401_reconcile_dsal_contingency_candidates_as_hired` quedó aplicada y registrada en producción.
+## Corrección reserva BUK Eduardo Díaz Burgos — 2026-09-10
+
+- [x] Reconciliar candidato, job, reserva de código y ficha(s) BUK vivas por RUT.
+- [x] Determinar si el intento por TXT creó o modificó una ficha distinta.
+- [x] Corregir la causa raíz sin duplicar ni sobrescribir otra identidad.
+- [x] Reprocesar el flujo y verificar ficha, trabajo DRT, job ERP y contratación.
+- [x] Ejecutar pruebas, Guardian, desplegar y documentar evidencia productiva.
+
+Resultado productivo: la ficha ERP originalmente reservada como BUK `43751/F1` había sido eliminada y RRHH creó manualmente la ficha `44015/F1` para el mismo RUT. Se reconcilió la reserva con identidad fuerte, se reutilizó la ficha manual y el worker completó plan, trabajo DRT, tallas y 16 documentos del candidato, además de generar y cargar la Solicitud de Contratación. El job `47aef5c4-4fbe-492d-8493-db73ac6b4231` quedó `success`; Eduardo quedó `hired` y `RC-0035` quedó `partially_filled` con 1/3 cupos. BUK vivo devuelve una sola ficha para el RUT, activa y con 27 documentos totales.
+
+## Alta de proyecto CASINO ENJOY — 2026-09-10
+
+- [x] Auditar el catálogo productivo de contratos, mappings BUK y responsables del centro de costo.
+- [x] Confirmar ausencia de duplicados por número, nombre y código interno.
+- [x] Crear el proyecto en el catálogo ERP mediante migración idempotente y con guardas.
+- [x] Verificar en producción su vínculo con unidad `109`, CECO `10113`, empresa JM y responsables vigentes.
+- [x] Ejecutar auditorías, Guardian y documentar el resultado final.
+
+Resultado productivo: `CASINO ENJOY` quedó activo como contrato ERP `CONT-112` / `9959890001:0001`, enlazado de forma única al catálogo operativo con unidad `109` (`SERV ESPECIALES`), CECO `10113`, gerencia `GERENCIA OPERACIONES ZONA I (CENTRO)`, empresa `Buses JM Pullman S.A.`, gerente `Cristian Jimenez Jimenez` y administrador contractual `Jorge Parra Jimenez`. El código de área BUK se mantuvo nulo porque el área todavía no existe en la sincronización viva; no se inventó un identificador externo. La migración se reejecutó sin duplicar filas y Guardian finalizó con 0 errores y 0 advertencias.
+
+## Histórico Gestión Psicolaboral y pestaña Contratados — 2026-09-10
+
+- [x] Comparar conteo visible con candidatos, evaluaciones y folios históricos en producción.
+- [x] Incorporar evaluaciones históricas del ERP aunque el folio esté cerrado o la participación haya cambiado de etapa.
+- [x] Separar visualmente contratados con una pestaña y estado propio.
+- [x] Verificar filtros, tarjetas, paginación y ausencia de duplicados.
+- [x] Ejecutar Guardian, auditorías SQL/build y publicar.
+
+Resultado: la consulta autoritativa ahora conserva la vista operativa y agrega cualquier participación con evaluación psicolaboral válida, incluso en folios cerrados o etapas históricas. Producción quedó con 116 registros con antecedentes psicolaborales (43 operativos, 73 históricos; 63 clasificados como contratados). La UI incorpora tarjeta y pestaña `Contratados`, y la tarjeta de candidatos visibles usa `total_count` en vez de la longitud de la página. Guardian, build frontend, auditorías de migraciones/seguridad y la suite de integridad pasaron sin errores.
