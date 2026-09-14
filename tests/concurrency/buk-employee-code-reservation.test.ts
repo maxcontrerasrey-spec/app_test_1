@@ -71,7 +71,7 @@ describe("BUK employee code reservations", () => {
       "await verifyAndConfirmBukEmployeeCode("
     );
     const setup = edgeFunction.lastIndexOf(
-      "await ensureBukEmployeeSetup(supabase, payload, employeeId)"
+      "await ensureBukEmployeeSetup(supabase, payload, employeeId, syncContext)"
     );
 
     expect(preflightCall).toBeGreaterThan(-1);
@@ -129,7 +129,7 @@ describe("BUK employee code reservations", () => {
       "await verifyAndConfirmBukEmployeeCode("
     );
     const setup = edgeFunction.lastIndexOf(
-      "await ensureBukEmployeeSetup(supabase, payload, employeeId)"
+      "await ensureBukEmployeeSetup(supabase, payload, employeeId, syncContext)"
     );
 
     expect(checkpoint).toBeGreaterThan(-1);

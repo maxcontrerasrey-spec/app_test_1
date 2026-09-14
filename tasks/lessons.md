@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 344. Un cargo vivo BUK no debe volver a resolverse por similitud textual
+
+- El selector de solicitudes puede cargar cargos reales de BUK y aun así producir un cargo incorrecto si el worker descarta su identidad y vuelve a buscar por tokens compartidos.
+- Cargo y contrato forman una combinación: un cargo BUK existente puede no estar habilitado para el área del contrato seleccionado. Esa incompatibilidad debe detener el flujo antes de reservar ficha o escribir en BUK.
+- La sincronización debe priorizar el ID estable `BUK-ROLE-*`, exigir nombre exacto, resolver duplicados nominales solo por área y bloquear tanto la ausencia como la ambigüedad; nunca sustituir por el primer resultado parecido.
+
 ## 341. El calendario general no debe resolver cada celda con una función PL/pgSQL
 
 Cuando el filtro de contrato devuelve muchos trabajadores, ejecutar una función que vuelve a consultar empleado, pauta y excepción por cada día produce latencia multiplicativa y puede terminar en timeout aunque el filtro sea correcto. La vista general debe resolver la población y sus estados en una sola consulta set-based, usando los índices por trabajador y fecha, sin cambiar el contrato ni los guards de acceso.

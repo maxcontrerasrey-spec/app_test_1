@@ -12,6 +12,11 @@ import {
 } from "../_shared/recruitmentHiringDocument.ts";
 import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 import { normalizeBukDocumentNumber as normalizeDocumentNumber } from "../_shared/bukIdentity.ts";
+import {
+  filterExactBukRolesByName,
+  parseBukRoleIdFromJobPositionCode,
+  selectExactBukRoleForArea
+} from "../_shared/bukRoleResolution.ts";
 
 type SyncRequest = {
   jobIds?: string[];
@@ -218,6 +223,9 @@ type BukAreaRecord = {
 };
 
 type CandidateSyncContext = {
+  catalogJobPositionId: number;
+  catalogJobPositionCode: string;
+  preferredBukRoleId: number | null;
   areaCode: string;
   areaName: string | null;
   companyId: number;
@@ -2029,38 +2037,6 @@ function findCompleteBukJobSnapshot(
   );
 }
 
-function scoreBukRoleCandidate(targetRoleName: string, areaId: number, candidate: BukRoleRecord) {
-  const candidateAreaIds = Array.isArray(candidate.area_ids)
-    ? candidate.area_ids
-        .map((area) => parseIntegerLike(area))
-        .filter((value): value is number => value != null)
-    : [];
-  if (!candidateAreaIds.includes(areaId)) {
-    return Number.NEGATIVE_INFINITY;
-  }
-
-  const targetCompact = normalizeCompactText(targetRoleName);
-  const candidateLabel = candidate.name ?? candidate.code ?? "";
-  const candidateCompact = normalizeCompactText(candidateLabel);
-  const targetTokens = tokenizeBukLabel(targetRoleName);
-  const candidateTokens = new Set(tokenizeBukLabel(candidateLabel));
-
-  let score = 0;
-  if (candidateCompact === targetCompact) {
-    score += 1000;
-  } else if (candidateCompact.includes(targetCompact) || targetCompact.includes(candidateCompact)) {
-    score += 500;
-  }
-
-  for (const token of targetTokens) {
-    if (candidateTokens.has(token)) {
-      score += 25;
-    }
-  }
-
-  return score;
-}
-
 async function loadLocalBukAreaEmployees(
   supabase: SupabaseAdminClient,
   areaCode: string
@@ -2170,39 +2146,70 @@ async function fetchLocalBukEmployeeByIdentity(
   return buildLocalBukEmployeePayload(matchedRequester);
 }
 
-async function resolveBukRole(targetRoleName: string, areaId: number) {
-  const searchTerms = Array.from(
-    new Set([
-      targetRoleName.trim(),
-      ...tokenizeBukLabel(targetRoleName).slice(0, 1)
-    ].filter(Boolean))
-  );
+async function fetchBukRoleById(roleId: number) {
+  let response: Record<string, unknown>;
+  try {
+    response = await fetchBukJson(buildBukTenantApiUrl(`/api/v1/roles/${roleId}`));
+  } catch (error) {
+    if (error instanceof BukApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
 
-  const candidates = (
-    await Promise.all(searchTerms.map((term) => fetchBukRolesBySearch(term)))
-  ).flat();
+  const role =
+    response.data && typeof response.data === "object" && !Array.isArray(response.data)
+      ? response.data as BukRoleRecord
+      : response && typeof response === "object" && !Array.isArray(response)
+        ? response as BukRoleRecord
+        : null;
+
+  return role && parseIntegerLike(role.id) != null ? role : null;
+}
+
+async function loadExactBukRoles(targetRoleName: string, preferredRoleId: number | null) {
+  const searchedCandidates = await fetchBukRolesBySearch(targetRoleName);
+  const preferredRole = preferredRoleId == null ? null : await fetchBukRoleById(preferredRoleId);
+  const candidates = preferredRole ? [...searchedCandidates, preferredRole] : searchedCandidates;
 
   const deduped = Array.from(
     new Map(candidates.map((candidate) => [String(candidate.id), candidate])).values()
   );
 
-  const scoredCandidates = deduped
-    .map((candidate) => ({
-      candidate,
-      score: scoreBukRoleCandidate(targetRoleName, areaId, candidate)
-    }))
-    .filter((entry) => Number.isFinite(entry.score) && entry.score > 0)
-    .sort((left, right) => right.score - left.score);
+  return filterExactBukRolesByName(targetRoleName, deduped);
+}
 
-  const bestMatch = scoredCandidates[0]?.candidate;
-  const roleId = parseIntegerLike(bestMatch?.id);
-  if (!bestMatch || roleId == null || !bestMatch.name) {
-    throw new Error(`No fue posible resolver el cargo BUK para "${targetRoleName}" en el area ${areaId}.`);
+function resolveBukRole(
+  targetRoleName: string,
+  areaId: number,
+  preferredRoleId: number | null,
+  candidates: BukRoleRecord[]
+) {
+  const resolution = selectExactBukRoleForArea(
+    targetRoleName,
+    areaId,
+    preferredRoleId,
+    candidates
+  );
+  if (resolution.status === "not_found") {
+    throw new Error(
+      `El cargo BUK exacto "${targetRoleName}" no esta habilitado para el area ${areaId}; la sincronizacion se detuvo sin sustituirlo por un cargo parecido.`
+    );
+  }
+  if (resolution.status === "ambiguous") {
+    const roleIds = resolution.eligible.map((candidate) => String(candidate.id)).join(", ");
+    throw new Error(
+      `Existen varios cargos BUK exactos "${targetRoleName}" habilitados para el area ${areaId} (${roleIds}); la sincronizacion se detuvo por ambiguedad.`
+    );
   }
 
+  const roleId = parseIntegerLike(resolution.role.id);
+  if (roleId == null || !resolution.role.name) {
+    throw new Error(`El cargo BUK exacto "${targetRoleName}" no tiene un identificador valido.`);
+  }
   return {
     roleId,
-    roleName: bestMatch.name
+    roleName: resolution.role.name
   };
 }
 
@@ -2286,20 +2293,11 @@ function matchesBukAreaContext(
 }
 
 async function resolveBukAreaFromRoleAreas(
-  targetRoleName: string,
+  roles: BukRoleRecord[],
   areaCode: string,
   areaName: string | null,
   contractNumber: string | null
 ) {
-  const searchTerms = Array.from(
-    new Set([
-      targetRoleName.trim(),
-      ...tokenizeBukLabel(targetRoleName).slice(0, 1)
-    ].filter(Boolean))
-  );
-  const roles = (
-    await Promise.all(searchTerms.map((term) => fetchBukRolesBySearch(term)))
-  ).flat();
   const areaIds = Array.from(
     new Set(
       roles.flatMap((role) =>
@@ -2618,12 +2616,39 @@ async function resolveCandidateSyncContext(
 
   const { data: caseRecord, error: caseError } = await supabase
     .from("recruitment_cases")
-    .select("id, hiring_request_id, contract_id, contract_name, job_position_name")
+    .select("id, hiring_request_id, contract_id, contract_name, job_position_id, job_position_name")
     .eq("id", payload.case.id)
     .maybeSingle();
 
   if (caseError || !caseRecord) {
     throw new Error(`No fue posible cargar el caso de contratacion para sincronizar en BUK: ${caseError?.message ?? "sin caso"}`);
+  }
+
+  const { data: catalogJobPosition, error: catalogJobPositionError } = await supabase
+    .from("job_positions")
+    .select("id, code, name, is_active")
+    .eq("id", caseRecord.job_position_id)
+    .maybeSingle();
+
+  if (catalogJobPositionError || !catalogJobPosition || !catalogJobPosition.is_active) {
+    throw new Error(
+      `No fue posible cargar el cargo vivo del caso para sincronizar en BUK: ${catalogJobPositionError?.message ?? "cargo inexistente o inactivo"}`
+    );
+  }
+
+  if (normalizeCompactText(catalogJobPosition.name) !== normalizeCompactText(caseRecord.job_position_name)) {
+    throw new Error(
+      `El cargo del caso "${caseRecord.job_position_name ?? ""}" no coincide con su catalogo BUK vigente "${catalogJobPosition.name}".`
+    );
+  }
+
+  const targetRoleName = catalogJobPosition.name;
+  const preferredBukRoleId = parseBukRoleIdFromJobPositionCode(catalogJobPosition.code);
+  const exactBukRoles = await loadExactBukRoles(targetRoleName, preferredBukRoleId);
+  if (exactBukRoles.length === 0) {
+    throw new Error(
+      `BUK no devolvio ningun cargo exacto para "${targetRoleName}"; la sincronizacion se detuvo sin usar coincidencias parciales.`
+    );
   }
 
   const { data: hiringRequest, error: hiringRequestError } = await supabase
@@ -2739,11 +2764,16 @@ async function resolveCandidateSyncContext(
       : null;
 
   const resolvedBukArea = await resolveBukAreaFromRoleAreas(
-    caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
+    exactBukRoles,
     areaCode,
     contractMapping?.buk_area_name ?? caseRecord.contract_name ?? payload.case.contract_name,
     hiringRequest.contract_number
   );
+  if (!resolvedBukArea) {
+    throw new Error(
+      `El cargo BUK exacto "${targetRoleName}" no esta habilitado para el contrato ${caseRecord.contract_name ?? payload.case.contract_name ?? payload.case.case_code}; la sincronizacion se detuvo antes de crear o modificar la ficha BUK.`
+    );
+  }
   const resolvedAreaSnapshot = resolvedBukArea
     ? findCompleteBukJobSnapshot(localAreaSnapshots, resolvedBukArea.id)
     : null;
@@ -2772,9 +2802,11 @@ async function resolveCandidateSyncContext(
     throw new Error(`No fue posible resolver area_id/company_id BUK desde el cache local o catalogo BUK del area operativa ${areaCode}.`);
   }
 
-  const roleResolution = await resolveBukRole(
-    caseRecord.job_position_name ?? payload.case.job_position_name ?? "",
-    fallbackAreaSnapshot.areaId
+  const roleResolution = resolveBukRole(
+    targetRoleName,
+    fallbackAreaSnapshot.areaId,
+    preferredBukRoleId,
+    exactBukRoles
   );
 
   const matchingRoleSample = areaEmployees
@@ -2787,6 +2819,9 @@ async function resolveCandidateSyncContext(
 
   const worker = payload.profile.worker_file;
   return {
+    catalogJobPositionId: catalogJobPosition.id,
+    catalogJobPositionCode: catalogJobPosition.code,
+    preferredBukRoleId,
     areaCode,
     areaName: contractMapping?.buk_area_name ?? caseRecord.contract_name ?? payload.case.contract_name,
     companyId: matchingRoleSample?.companyId ?? fallbackAreaSnapshot.companyId ?? requesterCompanyId ?? 0,
@@ -2818,9 +2853,9 @@ async function resolveCandidateSyncContext(
 async function ensureBukEmployeeSetup(
   supabase: SupabaseAdminClient,
   payload: BukCandidateSyncPayload,
-  employeeId: string
+  employeeId: string,
+  context: CandidateSyncContext
 ) {
-  const context = await resolveCandidateSyncContext(supabase, payload);
   if (!context.companyId || !context.areaId || !context.leaderId) {
     throw new Error("No fue posible resolver company_id, area_id o leader_id para crear el trabajo en BUK.");
   }
@@ -3910,6 +3945,16 @@ Deno.serve(async (req) => {
       try {
         const payload = resolveAuthorizedPayload(job);
         await assertCandidateDocumentFilesExist(supabase, payload, alreadyUploadedDocumentIds);
+        const syncContext = await resolveCandidateSyncContext(supabase, payload);
+        jobResultSnapshot.jobPreflight = {
+          catalogJobPositionId: syncContext.catalogJobPositionId,
+          catalogJobPositionCode: syncContext.catalogJobPositionCode,
+          preferredBukRoleId: syncContext.preferredBukRoleId,
+          resolvedRoleId: syncContext.roleId,
+          resolvedRoleName: syncContext.roleName,
+          resolvedAreaId: syncContext.areaId,
+          checkedAt: new Date().toISOString()
+        };
         const employeeCodePreflight = await reconcileBukEmployeeCodeBeforeWrite(
           supabase,
           job,
@@ -3982,7 +4027,7 @@ Deno.serve(async (req) => {
             ...(jobResultSnapshot.employee as Record<string, unknown>),
             uniformSizes
           };
-          const setupResult = await ensureBukEmployeeSetup(supabase, payload, employeeId);
+          const setupResult = await ensureBukEmployeeSetup(supabase, payload, employeeId, syncContext);
           jobResultSnapshot.plan = {
             request: setupResult.planPayload,
             response: setupResult.planResponse
@@ -3992,6 +4037,9 @@ Deno.serve(async (req) => {
             response: setupResult.jobResponse,
             unionVerification: setupResult.jobUnionVerification,
             resolvedContext: {
+              catalogJobPositionId: setupResult.context.catalogJobPositionId,
+              catalogJobPositionCode: setupResult.context.catalogJobPositionCode,
+              preferredBukRoleId: setupResult.context.preferredBukRoleId,
               areaCode: setupResult.context.areaCode,
               areaName: setupResult.context.areaName,
               areaId: setupResult.context.areaId,

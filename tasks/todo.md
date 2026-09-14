@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Cargo BUK incorrecto en alta de Consuelo Garrido - 2026-09-14
+
+- [x] Reconstruir la trazabilidad autoritativa entre RC-0183, ficha contractual, job BUK y cargo vigente corregido manualmente.
+- [x] Confirmar la causa raíz en la resolución ERP → rol BUK y medir si existen otros cargos expuestos a la misma ambigüedad.
+- [x] Implementar una asociación estable por identificador de catálogo y bloquear resoluciones ambiguas o inconsistentes antes de escribir en BUK.
+- [x] Agregar regresiones focalizadas para nombres similares, catálogo desalineado y compatibilidad con registros históricos.
+- [x] Ejecutar pruebas, auditorías, Guardian y verificación productiva sin sobrescribir la corrección manual de Consuelo.
+
+Resultado: RC-0183 conservaba correctamente el cargo BUK 82 `ADM. VENTAS LOS ANDES`, pero ese rol no está habilitado para el área 408 de VALPARAISO. El worker descartaba esa identidad, puntuaba coincidencias parciales y envió el rol 81 `ADM. VENTAS VILLA ALEMANA`. La versión 151 del worker productivo exige nombre exacto, prioriza el ID `BUK-ROLE-*`, resuelve duplicados nominales solo por área y bloquea incompatibilidades antes de reservar ficha o escribir en BUK. La auditoría histórica encontró cinco altas con nombre enviado distinto al solicitado; no se modificaron sus correcciones actuales. Unit, integridad, concurrencia, Deno check y Guardian aprobaron.
+
 ## Bloqueo de altas BUK con datos bancarios incompletos - 2026-09-11
 
 - [x] Confirmar la causa del error `account_number no puede estar en blanco` en RC-0183.
