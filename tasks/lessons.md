@@ -1,5 +1,23 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 347. No encadenar migraciones compensatorias destructivas sin necesidad
+
+- Si un cambio de acceso es aditivo, la migración debe insertar o actualizar únicamente el alcance solicitado.
+- Una migración que elimina capacidades y otra que intenta restaurarlas después crea una ventana de fallo y puede perder datos de autorización que la compensatoria no conoce.
+- Antes de publicar, revisar el conjunto de migraciones pendientes como una unidad y conservar permisos existentes por diseño.
+
+## 346. Agregar acceso no autoriza a retirar permisos existentes
+
+- Cuando una solicitud pide sumar vista a un rol, el cambio debe ser aditivo y conservar todas sus facultades previas.
+- Antes de modificar una matriz de acceso hay que comparar el estado anterior con el estado objetivo y distinguir explícitamente entre agregar, reemplazar y retirar permisos.
+- Si se retira algo por error, se debe aplicar una migración compensatoria en producción y verificar la matriz efectiva completa.
+
+## 345. Una migración preparada no es una entrega terminada
+
+- Para este ERP, todo cambio autorizado debe llegar a producción en su totalidad.
+- La tarea solo puede cerrarse después de aplicar el cambio en el entorno productivo y verificar el resultado efectivo con evidencia viva.
+- Si el conector o la vía de despliegue no está disponible, el resultado debe quedar explícitamente abierto y no presentarse como completado.
+
 ## 344. Un cargo vivo BUK no debe volver a resolverse por similitud textual
 
 - El selector de solicitudes puede cargar cargos reales de BUK y aun así producir un cargo incorrecto si el worker descarta su identidad y vuelve a buscar por tokens compartidos.

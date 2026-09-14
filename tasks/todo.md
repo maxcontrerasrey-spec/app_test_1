@@ -1,5 +1,40 @@
 # Tareas y Roadmap de Desarrollo
 
+## Auditoría de cierre y publicación a main — 2026-09-14
+
+- [x] Revisar cambios locales, migraciones nuevas y su correspondencia con producción.
+- [x] Corregir inconsistencias de migraciones, documentación o código sin tocar cambios ajenos.
+- [x] Ejecutar Guardian, auditorías SQL/seguridad, pruebas contractuales y build.
+- [ ] Revisar diff final, crear commit limpio y publicar en `main`.
+- [ ] Verificar el commit remoto y dejar evidencia de cualquier bloqueo externo.
+
+## Aplicación de nueva distribución de contratos desde Libro3 - 2026-09-14
+
+- [ ] Validar el universo del Excel, responsables y cuentas activas contra producción.
+- [ ] Construir una migración forward-only usando el identificador autoritativo del área, preservando contratos no incluidos.
+- [ ] Aplicar la migración en producción sin modificar permisos ni otros datos contractuales.
+- [ ] Verificar en producción las 95 asignaciones, incluyendo `INDIRECTOS ZONA III` con Luciano Fischer.
+- [ ] Ejecutar auditorías de migraciones, seguridad, Guardian y `git diff --check`.
+
+## Agregar vista de Control de Contrataciones a control_contratos - 2026-09-14
+
+- [x] Auditar matriz actual de módulos/features y guards de lectura/escritura.
+- [x] Crear migración forward-only que agregue `control_contrataciones` sin retirar permisos existentes.
+- [x] Mantener las facultades operativas y de consulta previamente asignadas al rol.
+- [x] Aplicar en producción y verificar la definición efectiva.
+
+Resultado: se corrigió la interpretación inicial en producción. `control_contratos` conserva sus seis módulos y nueve features previas, incluyendo `control_contrataciones` y sus cuatro features de consulta. Se retiró la barrera read-only accidental y la verificación productiva confirmó cero triggers residuales.
+
+## Carga de turnos Codelco DRT desde nómina Excel - 2026-09-14
+
+- [x] Leer la estructura completa del archivo y validar nombres, RUT, cargos, ciclos y fechas.
+- [x] Cruzar los 16 registros contra trabajadores activos BUK de Codelco DRT y jornadas vigentes en producción.
+- [x] Clasificar incompatibilidades y preparar la nómina de trabajadores BUK sin jornada.
+- [x] Cargar únicamente filas validadas mediante el flujo autoritativo de jornadas, con excepciones separadas.
+- [x] Verificar producción: asignaciones, duplicados, fechas, contrato y exclusiones justificadas.
+
+Resultado: en producción se cargaron 12 jornadas para Codelco DRT usando la pauta y fecha Día 1 del archivo. Carlos Oyaneder ya estaba cargado previamente; Domingo Catalán, Juan Aguilera y Oriel Cruz ya tenían jornadas y no se duplicaron. Enrique Retamales quedó excluido porque el archivo no trae ciclo ni fecha (`Taller Calama`). La nómina final deja 1 trabajador BUK del contrato sin jornada: Eduardo Manuel Diaz Burgos, RUT 14.585.440-7, no incluido en el archivo fuente. Los contadores productivos quedaron en 177 con jornada y 1 pendiente; por pauta: 10X5+5 (87), 4X3 Ordinaria (12), 5X2 (3) y Excepcional 7X7 (75).
+
 ## Cargo BUK incorrecto en alta de Consuelo Garrido - 2026-09-14
 
 - [x] Reconstruir la trazabilidad autoritativa entre RC-0183, ficha contractual, job BUK y cargo vigente corregido manualmente.
@@ -3152,3 +3187,45 @@ Resultado productivo: `CASINO ENJOY` quedó activo como contrato ERP `CONT-112` 
 - [x] Ejecutar Guardian, auditorías SQL/build y publicar.
 
 Resultado: la consulta autoritativa ahora conserva la vista operativa y agrega cualquier participación con evaluación psicolaboral válida, incluso en folios cerrados o etapas históricas. Producción quedó con 116 registros con antecedentes psicolaborales (43 operativos, 73 históricos; 63 clasificados como contratados). La UI incorpora tarjeta y pestaña `Contratados`, y la tarjeta de candidatos visibles usa `total_count` en vez de la longitud de la página. Guardian, build frontend, auditorías de migraciones/seguridad y la suite de integridad pasaron sin errores.
+## Auditoría previa a puesta en marcha — Incentivos Extraordinarios — 2026-09-14
+
+- [x] Mapear flujo operativo completo: catálogo, preview, creación, aprobación/rechazo, cierre y consulta.
+- [x] Auditar contratos RPC/Edge, RLS, grants, roles y superficie de datos sensibles.
+- [x] Revisar validaciones de jornada/descanso, cupos, fechas, concurrencia e idempotencia.
+- [x] Revisar UI, estados de carga/error, exportaciones, observabilidad y recuperación ante fallos.
+- [x] Ejecutar pruebas focalizadas, auditorías de seguridad/migraciones y contrastar producción en solo lectura.
+- [x] Emitir informe priorizado con bloqueadores, riesgos aceptables y recomendaciones antes del uso operativo.
+
+Resultado de auditoría: el flujo funcional está cubierto por RPC transaccionales, RLS sin acceso directo a tablas, validación de roster, ventana de 7 días, bloqueo por descanso, locks e idempotencia. La suite focalizada pasó 19/19 pruebas; Guardian terminó con 0 errores y 0 advertencias; migraciones y diff pasaron.
+
+Bloqueadores antes de uso general: (P1) `user_can_manage_hr_incentives` agrupa registro, aprobaciones, historial y configuración. En producción, perfiles con solo historial/configuración/aprobaciones pueden invocar RPCs de registro, cálculo, catálogos y configuración, y la cola/detalle se amplían a todo el universo; la UI no es una barrera de seguridad. (P1/P2) `get_hr_incentive_worker_context` devuelve todos los contratos activos cuando no encuentra mapeo del trabajador y la creación conserva el desajuste como advertencia, lo que puede imputar un incentivo al contrato equivocado.
+
+Pendientes operativos: existe un incentivo pendiente desde el 25-06-2026 (folio 6) que debe conciliarse antes de abrir el módulo; hay dos finales históricos anteriores al trigger de roster sin coincidencia en la validación retrospectiva; y existen dos reglas activas de sobretiempo de alcance general con la misma prioridad. No se modificó producción ni se enviaron notificaciones durante esta auditoría.
+
+## Desfase KPI/calendario Jornadas — 2026-09-14
+
+- [x] Comparar las RPC y hooks que alimentan la tarjeta `Personas pendientes` y el calendario general.
+- [x] Revisar filtros de activo/inactivo, rango mensual, deduplicación e identidad del trabajador.
+- [x] Clasificar la causa raíz sin modificar datos ni desplegar cambios.
+
+Resultado: la tarjeta usa `get_hr_roster_calendar_summary`, que filtra únicamente `employees.is_active = true` y calcula pendientes contra la intersección de una jornada con todo el mes. El calendario usa `get_hr_roster_bulk_calendar`, que incluye además personas inactivas cuya fecha de salida es igual o posterior al inicio del rango (`is_active = true OR exit_date >= range_start`) y las deduplica por `buk_employee_id`. Por eso el calendario puede mostrar una persona adicional como `Sin jornada`: en la captura, 89 asignadas + 3 pendientes = 92 activas en la tarjeta, mientras `Todas 93` y `Sin Jornada 4` incluyen una persona de salida vigente dentro del rango. Existe además una diferencia secundaria de deduplicación en el resumen, que particiona por identidad lógica pero no hace `distinct on (buk_employee_id)` antes de contar.
+
+## Corrección de alcance compartido KPI/calendario Jornadas — 2026-09-14
+
+- [x] Definir el contrato común de trabajadores para resumen y calendario.
+- [x] Aplicar una migración forward-only al resumen sin relajar permisos ni RLS.
+- [x] Cubrir la regresión de inclusión de salidas, filtros y deduplicación.
+- [x] Ejecutar Guardian, auditorías SQL, pruebas focalizadas y diff check.
+- [x] Verificar el resultado desplegado y documentar la evidencia.
+
+Resultado de implementación: se creó `20260914160000_align_roster_summary_with_bulk_calendar_scope.sql` y la prueba contractual `tests/contracts/roster-summary-calendar-scope.test.ts`. Guardian terminó con 0 errores y 0 advertencias; la prueba contractual pasó 3/3; la auditoría de migraciones y `git diff --check` pasaron. La migración fue ejecutada directamente en el SQL Editor de Supabase el 2026-09-14 y devolvió `Success. No rows returned`. Verificación en ERP: sin filtro, 378 personas con jornada y 1305 pendientes; en CODELCO DSAL, la tarjeta mostró 0 asignadas y 109 pendientes, mientras el calendario mostró `Todas 109` y `Sin Jornada 109`; en CODELCO DRT, la tarjeta mostró 177 asignadas y 1 pendiente, mientras el calendario mostró `Todas 178` y `Sin Jornada 1`. El alcance quedó alineado. El commit local es `e92aa02`; el push a GitHub sigue pendiente por falta de credenciales del remoto.
+
+## Alta de jornadas 5x2 para nómina RRHH — 2026-09-14
+
+- [x] Extraer y normalizar nombres/RUT de la nómina adjunta.
+- [ ] Cruzar identidades y contratos contra ERP/BUK en producción.
+- [ ] Verificar jornadas existentes, solapamientos y patrón 5x2 vigente.
+- [ ] Generar únicamente asignaciones faltantes con inicio 2026-08-31.
+- [ ] Releer producción, confirmar fechas/patrón/duplicados y documentar excepciones.
+
+Verificación en vivo: la sesión quedó iniciada. Tras alinear el resumen con el calendario, sin filtro la tarjeta muestra 378 asignadas y 1.305 pendientes; en CODELCO DRT muestra 177 asignadas y 1 pendiente, coincidiendo con `Todas 178` y `Sin Jornada 1` del calendario. La carga de nuevas jornadas 5x2 sigue pendiente de cruce y autorización operativa; no se hicieron altas parciales ni se modificaron jornadas.
