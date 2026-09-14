@@ -5,7 +5,7 @@
 - [x] Revisar cambios locales, migraciones nuevas y su correspondencia con producción.
 - [x] Corregir inconsistencias de migraciones, documentación o código sin tocar cambios ajenos.
 - [x] Ejecutar Guardian, auditorías SQL/seguridad, pruebas contractuales y build.
-- [ ] Revisar diff final, crear commit limpio y publicar en `main`.
+- [x] Revisar diff final y crear commits limpios.
 - [ ] Verificar el commit remoto y dejar evidencia de cualquier bloqueo externo.
 
 ## Aplicación de nueva distribución de contratos desde Libro3 - 2026-09-14
@@ -3219,6 +3219,7 @@ Resultado: la tarjeta usa `get_hr_roster_calendar_summary`, que filtra únicamen
 - [x] Verificar el resultado desplegado y documentar la evidencia.
 
 Resultado de implementación: se creó `20260914160000_align_roster_summary_with_bulk_calendar_scope.sql` y la prueba contractual `tests/contracts/roster-summary-calendar-scope.test.ts`. Guardian terminó con 0 errores y 0 advertencias; la prueba contractual pasó 3/3; la auditoría de migraciones y `git diff --check` pasaron. La migración fue ejecutada directamente en el SQL Editor de Supabase el 2026-09-14 y devolvió `Success. No rows returned`. Verificación en ERP: sin filtro, 378 personas con jornada y 1305 pendientes; en CODELCO DSAL, la tarjeta mostró 0 asignadas y 109 pendientes, mientras el calendario mostró `Todas 109` y `Sin Jornada 109`; en CODELCO DRT, la tarjeta mostró 177 asignadas y 1 pendiente, mientras el calendario mostró `Todas 178` y `Sin Jornada 1`. El alcance quedó alineado. El commit local es `e92aa02`; el push a GitHub sigue pendiente por falta de credenciales del remoto.
+Resultado de implementación: se creó `20260914160000_align_roster_summary_with_bulk_calendar_scope.sql` y la prueba contractual `tests/contracts/roster-summary-calendar-scope.test.ts`. Guardian terminó con 0 errores y 0 advertencias; la prueba contractual pasó 3/3; la auditoría de migraciones y `git diff --check` pasaron. La migración fue ejecutada directamente en el SQL Editor de Supabase el 2026-09-14 y devolvió `Success. No rows returned`. Verificación en ERP: sin filtro, 378 personas con jornada y 1305 pendientes; en CODELCO DSAL, la tarjeta mostró 0 asignadas y 109 pendientes, mientras el calendario mostró `Todas 109` y `Sin Jornada 109`; en CODELCO DRT, la tarjeta mostró 177 asignadas y 1 pendiente, mientras el calendario mostró `Todas 178` y `Sin Jornada 1`. El alcance quedó alineado. Los commits locales son `e92aa02` y `80db5d7`; el push a GitHub devolvió `could not read Username` porque la credencial local de GitHub está ausente/inválida.
 
 ## Alta de jornadas 5x2 para nómina RRHH — 2026-09-14
 
