@@ -6,7 +6,9 @@
 - [x] Corregir inconsistencias de migraciones, documentación o código sin tocar cambios ajenos.
 - [x] Ejecutar Guardian, auditorías SQL/seguridad, pruebas contractuales y build.
 - [x] Revisar diff final y crear commits limpios.
-- [ ] Verificar el commit remoto y dejar evidencia de cualquier bloqueo externo.
+- [x] Verificar el commit remoto y dejar evidencia de cualquier bloqueo externo.
+
+Resultado de publicación: los cuatro commits pendientes quedaron publicados en `main`; el hash local y remoto coincidió en `19013dfebf74643b4517d6337d28e3b8fc9347e3`. El workflow `Audit Enterprise Guardrails` 34888128403 finalizó exitosamente con todos sus gates aprobados. Las migraciones de jornadas, permisos y distribución contractual ya estaban aplicadas y verificadas directamente en Supabase de producción antes del push.
 
 ## Aplicación de nueva distribución de contratos desde Libro3 - 2026-09-14
 

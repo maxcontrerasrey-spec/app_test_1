@@ -3589,3 +3589,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Antes de aplicar una distribución externa, contrastar todas las áreas objetivo con los mapeos productivos y detener la transacción si falta alguna; validar solo una muestra deja fallas tardías evitables.
 - Si BUK confirma un área vigente pero el catálogo ERP no contiene un contrato equivalente, crear únicamente el mapeo operativo con la metadata viva de BUK y `contract_id` nulo; no fabricar un contrato con fechas o condiciones desconocidas.
 - El cierre debe comparar de forma independiente el universo esperado con el estado productivo, incluyendo responsables: cantidad presente no equivale a asignación correcta.
+
+## 2026-09-14 - No declarar bloqueado un push mientras el login CLI sigue activo
+
+- Si `git push` detecta una credencial vencida, mantener y observar el proceso `gh auth login` hasta que termine; el navegador es parte del flujo oficial de la CLI, no un reemplazo del push por terminal.
+- Después de renovar la sesión, volver a comprobar `gh auth status` y ejecutar inmediatamente `git push`, `git ls-remote` y el seguimiento del workflow antes de informar un bloqueo.
