@@ -1,9 +1,10 @@
 -- Libro3.xlsx: distribución de responsables contractuales.
--- Actualiza las áreas existentes y crea únicamente las 3 áreas BUK faltantes.
+-- Actualiza las áreas existentes y crea las 4 áreas BUK faltantes.
 -- Metadatos copiados desde el área productiva más similar, según instrucción de negocio:
 -- NEWREST ANTUCOYA SIMSA <- NEWREST ANTUCOYA.
 -- SERVICIOS ESPECIALES INTERURBANO <- JM SERVICIOS ESPECIALES.
 -- SCHWAGER DCH <- ARAMARK - DCH.
+-- SK SALARES NORTE usa la metadata vigente del área BUK 539; no crea un contrato ERP.
 -- La distribución de responsables proviene del Excel; INDIRECTOS ZONA III queda en Luciano Fischer.
 begin;
 
@@ -164,6 +165,22 @@ where not exists (
   select 1 from public.buk_contract_mappings existing
   where existing.buk_area_name_normalized = public.normalize_buk_area_name(target.buk_area_name)
 );
+
+insert into public.buk_contract_mappings (
+  contract_number, contract_name, cost_unit, cost_unit_name, cost_center_code,
+  buk_area_name, cost_center_name, manager_name, contract_admin_name,
+  is_one_to_one, is_operational, contract_id
+)
+select
+  '9191500003:0001', 'SK SALARES NORTE', '189', 'SK SALARES NORTE', '189',
+  'SK SALARES NORTE', 'SK SALARES NORTE', target.manager_name, target.contract_admin_name,
+  true, true, null
+from tmp_contract_distribution target
+where target.buk_area_name = 'SK SALARES NORTE'
+  and not exists (
+    select 1 from public.buk_contract_mappings existing
+    where existing.buk_area_name_normalized = public.normalize_buk_area_name(target.buk_area_name)
+  );
 
 do $$
 declare

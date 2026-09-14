@@ -10,11 +10,15 @@
 
 ## Aplicación de nueva distribución de contratos desde Libro3 - 2026-09-14
 
-- [ ] Validar el universo del Excel, responsables y cuentas activas contra producción.
-- [ ] Construir una migración forward-only usando el identificador autoritativo del área, preservando contratos no incluidos.
-- [ ] Aplicar la migración en producción sin modificar permisos ni otros datos contractuales.
-- [ ] Verificar en producción las 95 asignaciones, incluyendo `INDIRECTOS ZONA III` con Luciano Fischer.
-- [ ] Ejecutar auditorías de migraciones, seguridad, Guardian y `git diff --check`.
+- [x] Validar el universo del Excel, responsables y cuentas activas contra producción.
+- [x] Construir una migración forward-only usando el identificador autoritativo del área, preservando contratos no incluidos.
+- [x] Aplicar la migración en producción sin modificar permisos ni otros datos contractuales.
+- [x] Verificar en producción las 95 asignaciones, incluyendo `INDIRECTOS ZONA III` con Luciano Fischer.
+- [x] Ejecutar auditorías de migraciones, seguridad, Guardian y `git diff --check`.
+
+Resultado productivo: la migración transaccional quedó aplicada sobre las 95 áreas del archivo. La comprobación independiente devolvió `expected_count = 95`, `matched_count = 95` y `mismatched_count = 0`. Las tres áreas derivadas reutilizan contratos ERP existentes; `SK SALARES NORTE` se resolvió con la metadata viva del área BUK 539 y quedó como mapeo operativo sin inventar un contrato ERP. No se modificaron permisos ni contratos fuera del universo solicitado.
+
+Validación final: Guardian terminó con 0 errores y 0 advertencias; las pruebas contractuales pasaron 9/9; las auditorías de migraciones y seguridad, el build frontend y `git diff --check` aprobaron.
 
 ## Agregar vista de Control de Contrataciones a control_contratos - 2026-09-14
 

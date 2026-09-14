@@ -3583,3 +3583,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Si un usuario fue creado directamente por SQL, verificar también `auth.identities`, `instance_id` y los campos internos esperados por GoTrue; correo confirmado y password hash válidos no bastan para autenticar.
 - Toda contingencia de contraseña debe cerrarse con un login real usando la clave generada, cierre global de la sesión técnica y reposición autoritativa de `must_reset_password = true`.
 - No interpretar una recuperación aceptada por el proveedor como evidencia de que la cuenta Auth está completa ni de que el mensaje llegó al buzón.
+
+## 2026-09-14 - Un área BUK sin contrato ERP no debe forzar un contrato inventado
+
+- Antes de aplicar una distribución externa, contrastar todas las áreas objetivo con los mapeos productivos y detener la transacción si falta alguna; validar solo una muestra deja fallas tardías evitables.
+- Si BUK confirma un área vigente pero el catálogo ERP no contiene un contrato equivalente, crear únicamente el mapeo operativo con la metadata viva de BUK y `contract_id` nulo; no fabricar un contrato con fechas o condiciones desconocidas.
+- El cierre debe comparar de forma independiente el universo esperado con el estado productivo, incluyendo responsables: cantidad presente no equivale a asignación correcta.
