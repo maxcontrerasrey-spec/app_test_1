@@ -16,6 +16,7 @@ import { canViewHrIncentiveAnalytics } from "../../modules/incentives/lib/analyt
 import { useTheme } from "../../shared/context/ThemeContext";
 import { TopNotificationsMenu } from "./TopNotificationsMenu";
 import { NavigationIcon } from "./NavigationIcon";
+import { CollapsedNavigationRail } from "./CollapsedNavigationRail";
 
 type WorkspaceSearchDestination = {
   id: string;
@@ -687,8 +688,13 @@ export function AppShell() {
               </div>
             ) : null}
           </div>
+          </div>
         </div>
-        </div>
+
+        <CollapsedNavigationRail
+          modules={visibleModules}
+          onExpand={() => setIsSidebarCollapsed(false)}
+        />
 
         {openModule?.items && openModule.items.length > 0 ? (
           <div className="top-nav-mobile-panel" aria-label={`Opciones de ${openModule.label}`}>

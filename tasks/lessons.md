@@ -3693,3 +3693,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Si Inicio y Control de Contrataciones representan los mismos folios, deben reutilizar clases, formateadores y reglas de tabla; duplicar CSS permite que códigos, estados e indicadores vuelvan a quebrarse de forma distinta.
 - Los códigos auxiliares no deben anexarse al nombre visible del contrato cuando ya existen como dato estructurado; el formateador debe retirar solo el sufijo numérico para no alterar nombres legítimos con paréntesis.
 - Cuando se elimina una tarjeta informativa, la grilla debe redistribuir explícitamente las restantes y retirar también componente y estilos huérfanos; ocultarla sin recomponer el eje conserva el problema espacial.
+
+## 2026-09-15 - Un rail plegado no equivale a una segunda sidebar permanente
+
+- La navegación compacta solicitada pertenece únicamente al estado plegado y debe ocupar el gutter que ya existe; no corresponde restaurar una columna adicional ni reducir nuevamente el workspace.
+- El rail debe derivarse de la misma navegación filtrada por permisos que la sidebar completa, incluyendo módulos y submódulos, para no revelar destinos ni mantener dos catálogos divergentes.
+- Los iconos sin texto visible necesitan nombre accesible, tooltip, foco y estado activo; el encabezado de módulo puede restaurar la sidebar mientras cada submódulo conserva navegación directa.

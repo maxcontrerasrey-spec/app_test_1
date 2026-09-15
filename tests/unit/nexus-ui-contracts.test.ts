@@ -73,4 +73,19 @@ describe("Nexus UI contracts", () => {
     expect(styles).toContain(".app-shell-topnav.app-shell-sidebar-collapsed .main-content");
     expect(styles).toContain("padding-inline: clamp(1.5rem, 2.2vw, 3.25rem);");
   });
+
+  it("renders an authorized icon-only navigation rail inside the existing collapsed gutter", () => {
+    const shell = readSource("src/app/layout/AppShell.tsx");
+    const rail = readSource("src/app/layout/CollapsedNavigationRail.tsx");
+    const styles = readSource("src/styles/global.css");
+
+    expect(shell).toContain("<CollapsedNavigationRail");
+    expect(shell).toContain("modules={visibleModules}");
+    expect(rail).toContain('className="sidebar-icon-rail"');
+    expect(rail).toContain('aria-label="Navegación compacta"');
+    expect(rail).toContain("<CollapsedNavigationItems items={module.items} />");
+    expect(styles).toContain("--collapsed-rail-width: clamp(1.5rem, 2.2vw, 3.25rem);");
+    expect(styles).toContain("width: var(--collapsed-rail-width);");
+    expect(styles).toContain(".sidebar-icon-rail-link-active");
+  });
 });

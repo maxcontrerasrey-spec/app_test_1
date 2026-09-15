@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Rail compacto de navegación al plegar la sidebar - 2026-09-15
+
+- [x] Renderizar en el gutter plegado los iconos autorizados de Inicio, módulos y submódulos.
+- [x] Conservar el ancho útil actual del workspace sin reservar una nueva columna.
+- [x] Mantener navegación, ruta activa, tooltips, foco de teclado y restauración de la sidebar.
+- [ ] Verificar geometría expandida/plegada y visibilidad del rail mediante smoke autenticado.
+- [ ] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
 ## Ajuste final de densidad en Inicio y Solicitud de Contrataciones - 2026-09-15
 
 - [x] Retirar Información financiera y redistribuir los tres widgets restantes en columnas amplias y simétricas.

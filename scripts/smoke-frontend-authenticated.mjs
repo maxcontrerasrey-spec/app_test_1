@@ -182,6 +182,34 @@ async function assertNexusHomeLayout(page) {
       collapsedGeometry.width > expandedGeometry.width + 100,
     "Collapsing the sidebar must materially increase the usable workspace width."
   );
+
+  const compactRail = page.getByRole("navigation", { name: "Navegación compacta" });
+  await compactRail.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  const compactRailGeometry = await compactRail.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const links = Array.from(element.querySelectorAll("a"));
+    const modules = Array.from(element.querySelectorAll("button"));
+    return {
+      width: rect.width,
+      height: rect.height,
+      linkCount: links.length,
+      moduleCount: modules.length,
+      allLinksNamed: links.every((link) => Boolean(link.getAttribute("aria-label"))),
+      allModulesNamed: modules.every((button) => Boolean(button.getAttribute("aria-label")))
+    };
+  });
+  assert(
+    compactRailGeometry.width <= 54 && compactRailGeometry.height > 0,
+    "Collapsed icon rail must stay inside the existing narrow gutter."
+  );
+  assert(
+    compactRailGeometry.linkCount >= 2 && compactRailGeometry.moduleCount >= 1,
+    "Collapsed icon rail must expose authorized module and submodule destinations."
+  );
+  assert(
+    compactRailGeometry.allLinksNamed && compactRailGeometry.allModulesNamed,
+    "Every compact navigation icon must keep an accessible name."
+  );
   await page.getByRole("button", { name: "Mostrar barra lateral" }).click();
 
   const foliosTable = page.locator(".dashboard-folios-table");
