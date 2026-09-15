@@ -8224,8 +8224,7 @@ textarea:focus-visible {
     border-top: 1px solid var(--border-subtle);
   }
 
-  .sidebar-icon-rail-link,
-  .sidebar-icon-rail-module {
+  .sidebar-icon-rail-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -8240,21 +8239,13 @@ textarea:focus-visible {
     cursor: pointer;
   }
 
-  .sidebar-icon-rail-link svg,
-  .sidebar-icon-rail-module svg {
+  .sidebar-icon-rail-link svg {
     width: 100%;
     height: 100%;
     min-width: 0;
   }
 
-  .sidebar-icon-rail-module {
-    color: var(--text-primary);
-    background: var(--surface-card);
-    border-color: var(--border-subtle);
-  }
-
-  .sidebar-icon-rail-link:hover,
-  .sidebar-icon-rail-module:hover {
+  .sidebar-icon-rail-link:hover {
     color: var(--accent);
     background: var(--accent-soft);
   }
@@ -8266,8 +8257,7 @@ textarea:focus-visible {
     background: var(--accent-soft);
   }
 
-  .sidebar-icon-rail-link:focus-visible,
-  .sidebar-icon-rail-module:focus-visible {
+  .sidebar-icon-rail-link:focus-visible {
     box-shadow: var(--focus-ring);
   }
 

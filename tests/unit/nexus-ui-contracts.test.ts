@@ -75,7 +75,7 @@ describe("Nexus UI contracts", () => {
     expect(styles).toContain("padding-left: calc(var(--collapsed-rail-width) + var(--collapsed-content-gap));");
   });
 
-  it("renders an authorized icon-only navigation rail inside the existing collapsed gutter", () => {
+  it("renders only authorized submodules in the collapsed rail", () => {
     const shell = readSource("src/app/layout/AppShell.tsx");
     const rail = readSource("src/app/layout/CollapsedNavigationRail.tsx");
     const styles = readSource("src/styles/global.css");
@@ -85,9 +85,24 @@ describe("Nexus UI contracts", () => {
     expect(rail).toContain('className="sidebar-icon-rail"');
     expect(rail).toContain('aria-label="Navegación compacta"');
     expect(rail).toContain("<CollapsedNavigationItems items={module.items} />");
+    expect(rail).not.toContain("homeNavigationItem");
+    expect(rail).not.toContain("sidebar-icon-rail-module");
+    expect(rail).not.toContain("<button");
     expect(styles).toContain("--collapsed-rail-width: clamp(1.5rem, 2.2vw, 3.25rem);");
     expect(styles).toContain("--collapsed-content-gap: 0.75rem;");
     expect(styles).toContain("width: var(--collapsed-rail-width);");
+    expect(styles).toContain(".sidebar-icon-rail-group");
     expect(styles).toContain(".sidebar-icon-rail-link-active");
+    expect(styles).not.toContain(".sidebar-icon-rail-module");
+  });
+
+  it("keeps request tracking without a local search filter", () => {
+    const approvals = readSource("src/modules/dashboard/components/widgets/ApprovalTrackingWidget.tsx");
+
+    expect(approvals).not.toContain("dashboard-approval-tracking-search");
+    expect(approvals).not.toContain("Folio, cargo, contrato o aprobador");
+    expect(approvals).not.toContain("searchTerm");
+    expect(approvals).not.toContain("filteredApprovals");
+    expect(approvals).toContain("No hay aprobaciones en curso.");
   });
 });

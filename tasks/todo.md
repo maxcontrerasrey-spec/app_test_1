@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Rail compacto solo con submódulos y seguimiento sin buscador - 2026-09-15
+
+- [x] Retirar Inicio, enlaces directos e iconos de módulo del rail plegado.
+- [x] Mantener submódulos autorizados, ruta activa, tooltips y separadores por módulo.
+- [x] Eliminar el buscador y la lógica de filtrado de Seguimiento de solicitudes.
+- [x] Actualizar pruebas contractuales y smoke autenticado para la nueva jerarquía.
+- [ ] Ejecutar build, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
 ## Separación elegante entre rail compacto y contenido - 2026-09-15
 
 - [x] Definir un gutter visual adicional sin modificar el ancho del rail compacto.

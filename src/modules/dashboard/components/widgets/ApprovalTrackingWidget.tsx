@@ -1,5 +1,4 @@
-import React, { useMemo, useState } from "react";
-import { TextField } from "../../../../shared/ui";
+import React, { useState } from "react";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import type { DashboardApprovalTrackingItem, DashboardDataBundle } from "../../types";
 import { toTravelMethodologyLabel } from "../../../recruitment/services/hiringWorkflow";
@@ -13,45 +12,13 @@ type ApprovalTrackingWidgetProps = {
 
 export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackingWidgetProps) {
   const approvals = dashboardData?.approvalTrackingData ?? [];
-  const [searchTerm, setSearchTerm] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const filteredApprovals = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return approvals;
-
-    return approvals.filter((approval) =>
-      [
-        approval.folio,
-        approval.job_position_name,
-        approval.contract_name,
-        approval.cost_center_code,
-        approval.requester_name,
-        approval.current_step_name,
-        approval.current_approver_name
-      ]
-        .filter(Boolean)
-        .some((value) => value?.toLowerCase().includes(normalizedSearch))
-    );
-  }, [approvals, searchTerm]);
 
   return (
     <DashboardWidgetFrame
       title={title}
       className="widget-tasks widget-fill-height"
     >
-      <div className="dashboard-folios-toolbar">
-        <TextField
-          id="dashboard-approval-tracking-search"
-          label="Buscar aprobación en curso"
-          hideLabel
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Folio, cargo, contrato o aprobador"
-          className="dashboard-folios-search"
-        />
-      </div>
-
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
           <table className="tracking-table">
@@ -66,8 +33,8 @@ export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackin
               </tr>
             </thead>
             <tbody>
-              {filteredApprovals.length > 0 ? (
-                filteredApprovals.map((approval: DashboardApprovalTrackingItem) => {
+              {approvals.length > 0 ? (
+                approvals.map((approval: DashboardApprovalTrackingItem) => {
                   const isExpanded = expandedId === approval.id;
 
                   return (
@@ -269,7 +236,7 @@ export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackin
               ) : (
                 <tr>
                   <td colSpan={6} className="tracking-empty-state">
-                    No hay aprobaciones en curso para el filtro actual.
+                    No hay aprobaciones en curso.
                   </td>
                 </tr>
               )}

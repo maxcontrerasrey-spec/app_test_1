@@ -691,10 +691,7 @@ export function AppShell() {
           </div>
         </div>
 
-        <CollapsedNavigationRail
-          modules={visibleModules}
-          onExpand={() => setIsSidebarCollapsed(false)}
-        />
+        <CollapsedNavigationRail modules={visibleModules} />
 
         {openModule?.items && openModule.items.length > 0 ? (
           <div className="top-nav-mobile-panel" aria-label={`Opciones de ${openModule.label}`}>

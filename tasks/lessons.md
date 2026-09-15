@@ -3705,3 +3705,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Reutilizar el ancho exacto del rail como `padding-left` deja el workspace tocando visualmente su divisor, aunque técnicamente no exista superposición.
 - El estado plegado debe sumar un gutter visual pequeño después del rail sin ensanchar la navegación ni alterar el estado expandido.
 - La verificación debe medir la separación entre el borde derecho del rail y el inicio real del contenido, no solo el crecimiento total del workspace.
+
+## 2026-09-15 - El rail compacto puede ser un índice de submódulos, no una copia de la sidebar
+
+- Cuando el usuario pide solo submódulos, no conservar Inicio, enlaces directos ni cabeceras de módulo como atajos implícitos.
+- La pertenencia sigue siendo necesaria visualmente: agrupar los submódulos por su módulo autorizado y mantener una línea divisoria entre grupos, sin renderizar el icono del padre.
+- Si se elimina un buscador de un widget, retirar también estado, memo, imports y mensajes que todavía hablen de un filtro activo.

@@ -149,6 +149,10 @@ async function assertNexusHomeLayout(page) {
       Math.abs(queueGeometry.tasks.width - queueGeometry.requests.width) <= 2,
     "Pending tasks and request tracking must use the same full-width axis."
   );
+  assert(
+    (await requestsZone.getByRole("textbox").count()) === 0,
+    "Request tracking must render its table without a local search field."
+  );
 
   const sidebarToggle = page.getByRole("button", { name: /Ocultar barra lateral|Mostrar barra lateral/ });
   await sidebarToggle.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
@@ -188,14 +192,15 @@ async function assertNexusHomeLayout(page) {
   const compactRailGeometry = await compactRail.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const links = Array.from(element.querySelectorAll("a"));
-    const modules = Array.from(element.querySelectorAll("button"));
+    const groups = Array.from(element.querySelectorAll(".sidebar-icon-rail-group"));
     return {
       width: rect.width,
       height: rect.height,
       linkCount: links.length,
-      moduleCount: modules.length,
+      groupCount: groups.length,
+      buttonCount: element.querySelectorAll("button").length,
       allLinksNamed: links.every((link) => Boolean(link.getAttribute("aria-label"))),
-      allModulesNamed: modules.every((button) => Boolean(button.getAttribute("aria-label")))
+      allGroupsSeparated: groups.every((group) => getComputedStyle(group).borderTopWidth === "1px")
     };
   });
   assert(
@@ -213,12 +218,16 @@ async function assertNexusHomeLayout(page) {
     "Collapsed workspace content must keep a subtle 12px gap after the icon rail."
   );
   assert(
-    compactRailGeometry.linkCount >= 2 && compactRailGeometry.moduleCount >= 1,
-    "Collapsed icon rail must expose authorized module and submodule destinations."
+    compactRailGeometry.linkCount >= 2 && compactRailGeometry.groupCount >= 1,
+    "Collapsed icon rail must expose authorized submodule destinations grouped by module."
   );
   assert(
-    compactRailGeometry.allLinksNamed && compactRailGeometry.allModulesNamed,
-    "Every compact navigation icon must keep an accessible name."
+    compactRailGeometry.buttonCount === 0 && compactRailGeometry.allGroupsSeparated,
+    "Collapsed icon rail must omit module controls while preserving group separators."
+  );
+  assert(
+    compactRailGeometry.allLinksNamed,
+    "Every compact submodule icon must keep an accessible name."
   );
   await page.getByRole("button", { name: "Mostrar barra lateral" }).click();
 
