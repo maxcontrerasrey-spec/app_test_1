@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Carga de nómina 8X4/6X3 desde imagen — 2026-09-15
+
+- [x] Validar las 46 filas visibles, RUT, contrato, ciclo y fecha Día 1.
+- [x] Conciliar cada trabajador contra `employees_active_current` y revisar duplicados por trabajador/fecha.
+- [x] Crear las pautas faltantes `8X4` (8/4) y `6X3` (6/3) y asignar mediante `assign_hr_worker_roster_v2`.
+- [x] Verificar producción por pauta, fecha, contrato y conteo final.
+- [x] Ejecutar auditorías proporcionales y publicar la trazabilidad.
+
+Resultado productivo: las 46 personas de la nómina fueron encontradas por RUT en producción. Se cargaron 43 jornadas `8X4` y 3 jornadas `6X3`, conservando las fechas Día 1 de la fuente; no hubo duplicados ni conflictos de pauta. La comprobación final devolvió 46 filas con la nota operativa de origen, distribuidas exactamente en `8x4 = 43` y `6x3 = 3`.
+
 ## Carga de ciclos de turno desde imagen — 2026-09-15
 
 - [x] Transcribir y validar los 18 registros visibles, RUT, cargo, ciclo y fecha Día 1.
