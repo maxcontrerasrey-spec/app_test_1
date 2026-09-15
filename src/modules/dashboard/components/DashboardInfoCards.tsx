@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useDashboardWeather } from "../hooks/useDashboardWeather";
 import type { DashboardBirthdayItem, DashboardOperationalSummary } from "../types";
 import { DashboardBirthdayCard } from "./DashboardBirthdayCard";
-import { DashboardEconomicCard } from "./DashboardEconomicCard";
 import { DashboardOperationalSummaryCard } from "./DashboardOperationalSummaryCard";
 import { DashboardWeatherCard } from "./DashboardWeatherCard";
 
@@ -83,7 +82,6 @@ export function DashboardInfoCards({
         onSelect={setBirthdayIndex}
       />
 
-      <DashboardEconomicCard />
       <DashboardOperationalSummaryCard summary={operationalSummary} />
     </section>
   );

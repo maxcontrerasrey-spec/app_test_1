@@ -3687,3 +3687,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Los encabezados de módulo y cada submódulo requieren iconos semánticos distintos; un icono genérico repetido degrada la orientación y no cumple una réplica estructural.
 - Un grupo abierto debe comunicar pertenencia con un eje vertical continuo, no solo con indentación, y los grupos inactivos no deben quedar abiertos por defecto.
 - En hojas CSS heredadas con varias cascadas, una regla correcta puede quedar anulada por bloques posteriores; la verificación visual debe comprobar estilos computados por resultado, no asumir que el último cambio aplicado domina.
+
+## 2026-09-15 - Las vistas del mismo proceso deben compartir un contrato de densidad
+
+- Si Inicio y Control de Contrataciones representan los mismos folios, deben reutilizar clases, formateadores y reglas de tabla; duplicar CSS permite que códigos, estados e indicadores vuelvan a quebrarse de forma distinta.
+- Los códigos auxiliares no deben anexarse al nombre visible del contrato cuando ya existen como dato estructurado; el formateador debe retirar solo el sufijo numérico para no alterar nombres legítimos con paréntesis.
+- Cuando se elimina una tarjeta informativa, la grilla debe redistribuir explícitamente las restantes y retirar también componente y estilos huérfanos; ocultarla sin recomponer el eje conserva el problema espacial.

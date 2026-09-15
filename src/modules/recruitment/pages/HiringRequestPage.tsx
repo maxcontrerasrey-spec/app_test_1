@@ -283,7 +283,7 @@ export function HiringRequestPage() {
       <div className="minimal-page-header">
         <h1>Solicitud de Contrataciones</h1>
       </div>
-      <div className="hiring-layout-grid">
+      <div className="hiring-layout-grid hiring-request-layout">
         <div className="hiring-main-column">
 
           <div className="form-card">
@@ -499,9 +499,9 @@ export function HiringRequestPage() {
             </div>
           </div>
 
-          <aside className="summary-panel">
-            <span className="section-chip">Resumen de solicitud</span>
-            <div className="summary-grid">
+          <section className="form-card mobility-summary-card hiring-request-summary-card">
+            <h3>Resumen de solicitud</h3>
+            <div className="summary-grid summary-grid-horizontal hiring-request-summary-grid">
               {summaryRows.map((row) => (
                 <div key={row.label}>
                   <small>{row.label}</small>
@@ -509,7 +509,7 @@ export function HiringRequestPage() {
                 </div>
               ))}
             </div>
-          </aside>
+          </section>
         </div>
 
         {generatedRequest ? (

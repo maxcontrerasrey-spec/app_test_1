@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.33
+version: 1.0.34
 status: Activo
 language: es-CL
 owner: Quality
@@ -151,7 +151,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 267236,
+  "cssTotalBytes": 267437,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

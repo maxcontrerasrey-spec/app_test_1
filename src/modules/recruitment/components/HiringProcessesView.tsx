@@ -4,6 +4,7 @@ import { getRecruitmentCaseHeadcountBreakdown, resolveRecruitmentProcessSearchFi
 import { toTravelMethodologyLabel } from "../services/hiringWorkflow";
 import { useRecruitmentCaseDetail, useRecruitmentPendingApprovalsPage, useRecruitmentProcessesPage } from "../hooks/useRecruitmentQueries";
 import { caseFilterOptions, formatDateValue, formatDateTimeValue } from "./hiringControlViewUtils";
+import { formatContractDisplayName } from "../lib/contractPresentation";
 import { ApprovalModal } from "./ApprovalModal";
 import { TrackingPagination } from "./TrackingPagination";
 import { formatOpenDuration } from "../lib/openDuration";
@@ -24,7 +25,7 @@ const SORTABLE_HEADERS: ReadonlyArray<{ column: SortColumn; label: string }> = [
   { column: "contract_name", label: "Contrato" },
   { column: "vacancies", label: "Cupos" },
   { column: "candidate_count", label: "Candidatos activos" },
-  { column: "opened_at", label: "Tiempo Abierto" }
+  { column: "opened_at", label: "Abierto" }
 ];
 
 type HiringProcessesViewProps = {
@@ -407,7 +408,7 @@ export function HiringProcessesView({
 
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
-          <table className="tracking-table hiring-processes-table">
+          <table className="tracking-table recruitment-processes-table hiring-processes-table">
             <thead>
               <tr>
                 {SORTABLE_HEADERS.map(({ column, label }) => (
@@ -467,7 +468,7 @@ export function HiringProcessesView({
                           </span>
                         </td>
                         <td>{caseRow.job_position_name}</td>
-                        <td>{caseRow.contract_name}</td>
+                        <td>{formatContractDisplayName(caseRow.contract_name)}</td>
                         <td>
                           {caseRow.filled_vacancies}/{caseRow.requested_vacancies}
                         </td>

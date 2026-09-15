@@ -34,12 +34,34 @@ describe("Nexus UI contracts", () => {
 
   it("preserves one-line hiring identifiers and grouped candidate counters", () => {
     const view = readSource("src/modules/recruitment/components/HiringProcessesView.tsx");
+    const folios = readSource("src/modules/dashboard/components/widgets/ActiveFoliosWidget.tsx");
     const styles = readSource("src/styles/global.css");
 
-    expect(view).toContain('className="tracking-table hiring-processes-table"');
+    expect(view).toContain("recruitment-processes-table hiring-processes-table");
+    expect(folios).toContain("recruitment-processes-table dashboard-folios-table");
     expect(view.match(/candidate-count-item/g)).toHaveLength(3);
-    expect(styles).toContain(".hiring-processes-table .candidate-count-item");
+    expect(folios.match(/candidate-count-item/g)).toHaveLength(3);
+    expect(styles).toContain(".recruitment-processes-table .candidate-count-item");
     expect(styles).toContain("white-space: nowrap !important;");
+    expect(styles).toContain(".recruitment-processes-table .candidate-count-indicator");
+    expect(view).toContain('{ column: "opened_at", label: "Abierto" }');
+    expect(folios).toContain('{ key: "opened_at", label: "Abierto" }');
+    expect(folios).toContain('{ key: "contract_name", label: "Contrato" }');
+    expect(folios).not.toContain('label: "Contrato / CC"');
+  });
+
+  it("uses three top widgets and places the hiring request summary below the form", () => {
+    const cards = readSource("src/modules/dashboard/components/DashboardInfoCards.tsx");
+    const request = readSource("src/modules/recruitment/pages/HiringRequestPage.tsx");
+    const globalStyles = readSource("src/styles/global.css");
+    const dashboardStyles = readSource("src/modules/dashboard/styles/dashboard.css");
+
+    expect(cards).not.toContain("DashboardEconomicCard");
+    expect(cards.match(/<Dashboard[A-Z][A-Za-z]+Card/g)).toHaveLength(3);
+    expect(dashboardStyles).toContain("grid-template-columns: repeat(3, minmax(0, 1fr));");
+    expect(request).toContain('className="hiring-layout-grid hiring-request-layout"');
+    expect(request).toContain("mobility-summary-card hiring-request-summary-card");
+    expect(globalStyles).toContain(".hiring-request-summary-grid");
   });
 
   it("persists the collapsed workspace under the Nexus namespace", () => {

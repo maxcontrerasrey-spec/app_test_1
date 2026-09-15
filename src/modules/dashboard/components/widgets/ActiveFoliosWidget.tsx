@@ -13,6 +13,7 @@ import {
   type RecruitmentCaseListRow,
   type RecruitmentProcessesPageSummary
 } from "../../../recruitment/services/hiringControl";
+import { formatContractDisplayName } from "../../../recruitment/lib/contractPresentation";
 import type { DashboardDataBundle } from "../../types";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import { formatDashboardDate, formatDashboardDateTime } from "../../lib/formatters";
@@ -41,10 +42,10 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
     { key: "case_code", label: "Caso" },
     { key: "status", label: "Estado" },
     { key: "job_position_name", label: "Cargo" },
-    { key: "contract_name", label: "Contrato / CC" },
+    { key: "contract_name", label: "Contrato" },
     { key: "vacancies", label: "Cupos" },
     { key: "candidate_count", label: "Candidatos activos" },
-    { key: "opened_at", label: "Días Abierto" }
+    { key: "opened_at", label: "Abierto" }
   ] as const;
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -222,7 +223,7 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
 
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
-          <table className="tracking-table">
+          <table className="tracking-table recruitment-processes-table dashboard-folios-table">
             <thead>
               <tr>
                 {sortableColumns.map((column) => (
@@ -273,35 +274,38 @@ export function ActiveFoliosWidget({ title, dashboardData }: ActiveFoliosWidgetP
                           </span>
                         </td>
                         <td>{folio.job_position_name}</td>
-                        <td>
-                          {folio.contract_name}{" "}
-                          {folio.cost_center_code ? `(${folio.cost_center_code})` : ""}
-                        </td>
+                        <td>{formatContractDisplayName(folio.contract_name)}</td>
                         <td>
                           <span title="Cupos cubiertos / requeridos en el folio">
                             {folio.filled_vacancies}/{folio.requested_vacancies}
                           </span>
                         </td>
                         <td>
-                          <div className="candidate-count-indicator">
-                            <span className="candidate-circle candidate-circle-neutral">
-                              {headcount.activeCandidates}
+                          <div className="candidate-count-indicator" aria-label="Distribución de candidatos">
+                            <span className="candidate-count-item">
+                              <span className="candidate-circle candidate-circle-neutral">
+                                {headcount.activeCandidates}
+                              </span>
+                              <span className="candidate-circle-label">Activos</span>
                             </span>
-                            <span className="candidate-circle-label">Activos</span>
-                            <span
-                              className="candidate-circle candidate-circle-filled"
-                              title="Contratados efectivos del folio que ya consumieron cupo"
-                            >
-                              {headcount.hiredCandidates}
+                            <span className="candidate-count-item">
+                              <span
+                                className="candidate-circle candidate-circle-filled"
+                                title="Contratados efectivos del folio que ya consumieron cupo"
+                              >
+                                {headcount.hiredCandidates}
+                              </span>
+                              <span className="candidate-circle-label">Contratados</span>
                             </span>
-                            <span className="candidate-circle-label">Contratados</span>
-                            <span
-                              className="candidate-circle candidate-circle-warning"
-                              title="Movilidades internas pendientes o aprobadas asociadas al folio"
-                            >
-                              {headcount.internalMobility}
+                            <span className="candidate-count-item">
+                              <span
+                                className="candidate-circle candidate-circle-warning"
+                                title="Movilidades internas pendientes o aprobadas asociadas al folio"
+                              >
+                                {headcount.internalMobility}
+                              </span>
+                              <span className="candidate-circle-label">Movilidad interna</span>
                             </span>
-                            <span className="candidate-circle-label">Movilidad Interna</span>
                           </div>
                         </td>
                         <td>{getDaysSince(folio.opened_at) ?? "—"}</td>

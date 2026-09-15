@@ -121,6 +121,9 @@ async function signIn(page, baseUrl, config) {
 
 async function assertNexusHomeLayout(page) {
   await page.locator('img[alt="Logo Nexus"]').waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  const infoCards = page.locator(".dashboard-info-row > .dashboard-info-card");
+  await infoCards.first().waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  assert((await infoCards.count()) === 3, "Dashboard must render exactly three informative widgets.");
   const tasksZone = page.locator(".dashboard-zone-tasks");
   const requestsZone = page.locator(".dashboard-zone-approvals");
   await tasksZone.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
@@ -180,35 +183,87 @@ async function assertNexusHomeLayout(page) {
     "Collapsing the sidebar must materially increase the usable workspace width."
   );
   await page.getByRole("button", { name: "Mostrar barra lateral" }).click();
+
+  const foliosTable = page.locator(".dashboard-folios-table");
+  await foliosTable.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  const foliosLayout = await readRecruitmentTableLayout(foliosTable);
+  assertRecruitmentTableLayout(foliosLayout, "Dashboard active folios");
 }
 
 async function assertHiringProcessesLayout(page) {
   const table = page.locator(".hiring-processes-table");
   await table.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
 
-  const layout = await table.evaluate((element) => {
+  const layout = await readRecruitmentTableLayout(table);
+  assertRecruitmentTableLayout(layout, "Hiring processes");
+}
+
+async function readRecruitmentTableLayout(table) {
+  return table.evaluate((element) => {
     const caseCode = element.querySelector(".case-code-toggle");
     const candidateIndicator = element.querySelector(".candidate-count-indicator");
+    const headings = Array.from(element.querySelectorAll("thead th"), (heading) =>
+      heading.textContent?.replace(/[↕↑↓]/g, "").trim() ?? ""
+    );
+    const contractValues = Array.from(element.querySelectorAll("tbody tr:not(.tracking-table-expanded-row) td:nth-child(4)"), (cell) =>
+      cell.textContent?.trim() ?? ""
+    );
+
     return {
       tableLayout: window.getComputedStyle(element).tableLayout,
       caseWhiteSpace: caseCode ? window.getComputedStyle(caseCode).whiteSpace : null,
       indicatorWhiteSpace: candidateIndicator
         ? window.getComputedStyle(candidateIndicator).whiteSpace
         : null,
-      indicatorHeight: candidateIndicator?.getBoundingClientRect().height ?? null
+      indicatorHeight: candidateIndicator?.getBoundingClientRect().height ?? null,
+      headings,
+      contractValues
     };
   });
+}
 
+function assertRecruitmentTableLayout(layout, label) {
   assert(layout.tableLayout === "auto", "Hiring processes table must use automatic column sizing.");
+  assert(layout.headings.includes("Abierto"), `${label} must use the compact Abierto heading.`);
+  assert(!layout.headings.includes("Días Abierto"), `${label} must not render Días Abierto.`);
+  assert(
+    layout.contractValues.every((value) => !/\(\d+\)$/.test(value)),
+    `${label} must omit trailing numeric contract codes.`
+  );
   if (layout.caseWhiteSpace !== null) {
-    assert(layout.caseWhiteSpace === "nowrap", "Recruitment case codes must remain on one line.");
+    assert(layout.caseWhiteSpace === "nowrap", `${label} case codes must remain on one line.`);
   }
   if (layout.indicatorWhiteSpace !== null) {
     assert(
       layout.indicatorWhiteSpace === "nowrap" && layout.indicatorHeight <= 28,
-      "Candidate counters and labels must remain on one compact line."
+      `${label} candidate counters and labels must remain on one compact line.`
     );
   }
+}
+
+async function assertHiringRequestLayout(page) {
+  const form = page.locator(".hiring-main-column");
+  const summary = page.locator(".hiring-request-summary-card");
+  await form.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  await summary.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+
+  const geometry = await page.evaluate(() => {
+    const formRect = document.querySelector(".hiring-main-column")?.getBoundingClientRect();
+    const summaryRect = document.querySelector(".hiring-request-summary-card")?.getBoundingClientRect();
+    if (!formRect || !summaryRect) return null;
+    return {
+      form: { left: formRect.left, right: formRect.right, bottom: formRect.bottom },
+      summary: { left: summaryRect.left, right: summaryRect.right, top: summaryRect.top }
+    };
+  });
+
+  assert(geometry, "Hiring request form geometry is unavailable.");
+  assert(geometry.summary.top >= geometry.form.bottom, "Hiring request summary must render below the form.");
+  assert(
+    Math.abs(geometry.summary.left - geometry.form.left) <= 2 &&
+      Math.abs(geometry.summary.right - geometry.form.right) <= 2,
+    "Hiring request form and summary must share the full horizontal axis."
+  );
 }
 
 async function assertNexusLayoutContracts(page, currentPath) {
@@ -217,6 +272,9 @@ async function assertNexusLayoutContracts(page, currentPath) {
   }
   if (currentPath === "/control-contrataciones") {
     await assertHiringProcessesLayout(page);
+  }
+  if (currentPath === "/solicitud-contrataciones") {
+    await assertHiringRequestLayout(page);
   }
 }
 

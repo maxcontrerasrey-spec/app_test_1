@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Ajuste final de densidad en Inicio y Solicitud de Contrataciones - 2026-09-15
+
+- [x] Retirar Información financiera y redistribuir los tres widgets restantes en columnas amplias y simétricas.
+- [x] Aplicar a Folios en curso el contrato de una sola línea usado en Control de Contrataciones.
+- [x] Renombrar la columna temporal a `Abierto` y ocultar códigos numéricos anexos al nombre del contrato en ambas tablas.
+- [x] Mover el resumen de Solicitud de Contrataciones bajo el formulario, a ancho completo, con distribución horizontal adaptable.
+- [x] Agregar pruebas contractuales y visuales para evitar regresiones de orden, wrapping y geometría.
+- [ ] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
 ## Identidad Nexus y composición fluida final - 2026-09-15
 
 - [x] Incorporar la identidad Nexus como marca global del ERP, favicon y superficies públicas, conservando exclusivamente el logo JM en el login.
