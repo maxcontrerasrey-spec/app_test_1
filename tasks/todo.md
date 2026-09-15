@@ -7,7 +7,9 @@
 - [x] Renombrar la columna temporal a `Abierto` y ocultar códigos numéricos anexos al nombre del contrato en ambas tablas.
 - [x] Mover el resumen de Solicitud de Contrataciones bajo el formulario, a ancho completo, con distribución horizontal adaptable.
 - [x] Agregar pruebas contractuales y visuales para evitar regresiones de orden, wrapping y geometría.
-- [ ] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+- [x] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
+Resultado productivo: Inicio conserva Clima, Cumpleaños y Resumen operativo en tres columnas amplias; se retiraron el componente financiero y sus estilos huérfanos. Folios en curso y Control de Contrataciones comparten ahora el mismo contrato de tabla compacta: códigos RC, estados e indicadores permanecen en una línea, la columna temporal se llama `Abierto` y el nombre visible del contrato omite únicamente su sufijo numérico. Solicitud de Contrataciones usa el ancho completo y muestra su resumen debajo del formulario en una grilla simétrica y adaptable. El commit funcional `918ab04` quedó en `main`; Guardian aprobó con 0 errores y 0 advertencias, las pruebas focalizadas pasaron 6/6 y el workflow 35017435918 aprobó los smokes autenticados y toda la matriz. Producción sirve los chunks y estilos nuevos con los contratos visuales esperados.
 
 ## Identidad Nexus y composición fluida final - 2026-09-15
 
