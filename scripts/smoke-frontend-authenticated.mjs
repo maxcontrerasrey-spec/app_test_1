@@ -197,6 +197,7 @@ async function assertNexusHomeLayout(page) {
       width: rect.width,
       height: rect.height,
       linkCount: links.length,
+      firstLinkLabel: links[0]?.getAttribute("aria-label") ?? null,
       groupCount: groups.length,
       buttonCount: element.querySelectorAll("button").length,
       allLinksNamed: links.every((link) => Boolean(link.getAttribute("aria-label"))),
@@ -219,7 +220,11 @@ async function assertNexusHomeLayout(page) {
   );
   assert(
     compactRailGeometry.linkCount >= 2 && compactRailGeometry.groupCount >= 1,
-    "Collapsed icon rail must expose authorized submodule destinations grouped by module."
+    "Collapsed icon rail must expose Home and authorized submodule destinations grouped by module."
+  );
+  assert(
+    compactRailGeometry.firstLinkLabel === "Inicio",
+    "Collapsed icon rail must preserve Home as its first destination."
   );
   assert(
     compactRailGeometry.buttonCount === 0 && compactRailGeometry.allGroupsSeparated,

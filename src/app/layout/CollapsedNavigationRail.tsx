@@ -1,5 +1,9 @@
 import { NavLink } from "react-router";
-import type { NavigationItem, NavigationModule } from "../../shared/config/navigation";
+import {
+  homeNavigationItem,
+  type NavigationItem,
+  type NavigationModule
+} from "../../shared/config/navigation";
 import { preloadRouteModulesForPath } from "../router/routeModules";
 import { NavigationIcon } from "./NavigationIcon";
 
@@ -39,6 +43,21 @@ function CollapsedNavigationItems({ items }: { items: NavigationItem[] }) {
 export function CollapsedNavigationRail({ modules }: CollapsedNavigationRailProps) {
   return (
     <nav className="sidebar-icon-rail" aria-label="Navegación compacta">
+      <NavLink
+        to={homeNavigationItem.to}
+        reloadDocument
+        aria-label={homeNavigationItem.label}
+        title={homeNavigationItem.label}
+        onMouseEnter={() => preloadNavigationPath(homeNavigationItem.to)}
+        onFocus={() => preloadNavigationPath(homeNavigationItem.to)}
+        className={({ isActive }) =>
+          isActive
+            ? "sidebar-icon-rail-link sidebar-icon-rail-link-active"
+            : "sidebar-icon-rail-link"
+        }
+      >
+        <NavigationIcon iconKey={homeNavigationItem.iconKey} />
+      </NavLink>
       {modules.flatMap((module) =>
         module.items?.length ? [
           <section key={module.label} className="sidebar-icon-rail-group" aria-label={module.label}>

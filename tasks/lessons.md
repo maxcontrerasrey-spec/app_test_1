@@ -3708,6 +3708,6 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 ## 2026-09-15 - El rail compacto puede ser un índice de submódulos, no una copia de la sidebar
 
-- Cuando el usuario pide solo submódulos, no conservar Inicio, enlaces directos ni cabeceras de módulo como atajos implícitos.
+- Cuando el usuario pide solo submódulos, retirar enlaces directos y cabeceras de módulo, pero confirmar por separado si Inicio debe conservarse como destino raíz; en este ERP es la única excepción fija.
 - La pertenencia sigue siendo necesaria visualmente: agrupar los submódulos por su módulo autorizado y mantener una línea divisoria entre grupos, sin renderizar el icono del padre.
 - Si se elimina un buscador de un widget, retirar también estado, memo, imports y mensajes que todavía hablen de un filtro activo.

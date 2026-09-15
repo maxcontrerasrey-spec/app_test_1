@@ -75,7 +75,7 @@ describe("Nexus UI contracts", () => {
     expect(styles).toContain("padding-left: calc(var(--collapsed-rail-width) + var(--collapsed-content-gap));");
   });
 
-  it("renders only authorized submodules in the collapsed rail", () => {
+  it("renders Home followed only by authorized submodules in the collapsed rail", () => {
     const shell = readSource("src/app/layout/AppShell.tsx");
     const rail = readSource("src/app/layout/CollapsedNavigationRail.tsx");
     const styles = readSource("src/styles/global.css");
@@ -84,8 +84,10 @@ describe("Nexus UI contracts", () => {
     expect(shell).toContain("modules={visibleModules}");
     expect(rail).toContain('className="sidebar-icon-rail"');
     expect(rail).toContain('aria-label="Navegación compacta"');
+    expect(rail).toContain("homeNavigationItem");
+    expect(rail).toContain("to={homeNavigationItem.to}");
+    expect(rail).toContain("aria-label={homeNavigationItem.label}");
     expect(rail).toContain("<CollapsedNavigationItems items={module.items} />");
-    expect(rail).not.toContain("homeNavigationItem");
     expect(rail).not.toContain("sidebar-icon-rail-module");
     expect(rail).not.toContain("<button");
     expect(styles).toContain("--collapsed-rail-width: clamp(1.5rem, 2.2vw, 3.25rem);");
