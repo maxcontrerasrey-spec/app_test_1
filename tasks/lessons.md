@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 349. Una jornada no puede seguir vigente después de un cambio de contrato BUK
+
+- La asignación histórica debe conservarse, pero solo puede alimentar el calendario y los KPI mientras contrato y área almacenados en la asignación coincidan con la proyección BUK actual.
+- Si BUK mueve al trabajador, el universo operativo debe mostrarlo en el nuevo contrato como pendiente de jornada; no se debe trasladar ni reutilizar automáticamente la pauta anterior.
+- La comparación debe usar `buk_employee_id`, contrato y área, nunca solo nombre o identidad del trabajador.
+
 ## 348. Un ciclo recibido no debe mapearse por similitud cuando falta en el catálogo
 
 - Antes de asignar jornadas, conciliar cada ciclo de la fuente contra `hr_shift_patterns` por código/semántica exacta.

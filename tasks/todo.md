@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Vigencia de jornadas contra contrato y área BUK - 2026-09-15
+
+- [x] Definir el contrato de vigencia: una asignación deja de ser operativa cuando contrato o área vigente BUK no coinciden.
+- [x] Ajustar consultas de búsqueda, resumen, calendario y detalle para mostrar al trabajador en su nuevo contrato sin jornada.
+- [x] Mantener asignaciones anteriores como historial y bloquear nuevas asignaciones incompatibles.
+- [x] Cubrir la regresión con pruebas y verificar el caso productivo de Wilfredo Quispe.
+- [x] Ejecutar Guardian, auditorías, diff check y publicar el cambio en producción.
+
+Resultado productivo: se aplicó `20260915173000_align_roster_assignment_with_current_buk_contract.sql`. La vigencia operativa compara `buk_employee_id`, contrato y área BUK; las asignaciones históricas no se eliminan. Wilfredo Quispe (`43553`) queda sin jornada vigente compatible y disponible para asignación bajo el contrato/área que BUK informe.
+
 ## Carga de ciclos desde `Ciclo de Turnos.xlsx` — 2026-09-15
 
 - [x] Leer las hojas `base` y `diccionario`, validar filas, RUT, ciclos y fechas.
