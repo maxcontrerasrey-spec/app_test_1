@@ -7,7 +7,7 @@
 - [x] Persistir la preferencia local y cerrar menús flotantes al ocultar la sidebar.
 - [x] Verificar estados expandido/plegado, foco, responsive, build, Guardian y diff.
 
-Resultado local: el botón de panel dividido queda en la cabecera, mantiene foco y etiquetas accesibles, oculta/restaura la sidebar completa y recompone topbar y workspace. La preferencia se conserva en `localStorage`; móvil mantiene su navegación independiente. El catálogo SVG se extrajo a `NavigationIcon.tsx`, dejando `AppShell.tsx` en 790 líneas. Guardian aprobó con 0 errores y 0 advertencias. Pendiente: commit, push a `main`, CI y verificación visual del bundle productivo.
+Resultado productivo: el botón de panel dividido queda en la cabecera, mantiene foco y etiquetas accesibles, oculta/restaura la sidebar completa y recompone topbar y workspace. La preferencia se conserva en `localStorage`; móvil mantiene su navegación independiente. El catálogo SVG se extrajo a `NavigationIcon.tsx`, dejando `AppShell.tsx` en 790 líneas. El cambio quedó publicado en `main` mediante `38654b9`; Guardian aprobó con 0 errores y 0 advertencias y el workflow `Audit Enterprise Guardrails` 35012262377 terminó exitosamente. `https://gestion.busesjm.cl` sirve el bundle actualizado y se verificaron en sus artefactos productivos las etiquetas accesibles y las reglas de geometría expandida/plegada.
 
 ## Implementación de turnos desde nómina pegada — 2026-09-15
 
