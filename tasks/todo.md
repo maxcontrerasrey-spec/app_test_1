@@ -5,7 +5,9 @@
 - [x] Corregir la precedencia de tokens para que la capa Nexus no reactive valores claros en modo oscuro.
 - [x] Normalizar shell, sidebar, rail, tarjetas, tablas, controles y widgets del Inicio con superficies oscuras coherentes.
 - [x] Verificar contraste, legibilidad y ausencia de superficies claras mediante navegador y pruebas contractuales.
-- [ ] Ejecutar build, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+- [x] Ejecutar build, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
+Resultado productivo: el modo noche Nexus quedó coherente en Safari y Chromium, con lienzo, navegación expandida/compacta, cabecera, widgets, tablas, formularios y controles sobre la misma paleta oscura. La causa era el selector tardío del tema claro basado en exclusiones; se reemplazó por `:root[data-theme="light"]` para impedir que Safari reactivara tokens claros. Las pruebas contractuales pasaron 8/8, el build completó 1.018 módulos, Guardian terminó con 0 errores y 0 advertencias, el CSS quedó 60 bytes bajo el baseline, el workflow 35035231132 aprobó y producción sirve `index-4R930tI6.css`. La comprobación visual final se realizó en Safari con la barra lateral plegada y expandida.
 
 ## Restaurar Inicio en el rail compacto — 2026-09-15
 
