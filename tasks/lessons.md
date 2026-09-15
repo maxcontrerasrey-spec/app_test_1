@@ -3711,3 +3711,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Cuando el usuario pide solo submódulos, retirar enlaces directos y cabeceras de módulo, pero confirmar por separado si Inicio debe conservarse como destino raíz; en este ERP es la única excepción fija.
 - La pertenencia sigue siendo necesaria visualmente: agrupar los submódulos por su módulo autorizado y mantener una línea divisoria entre grupos, sin renderizar el icono del padre.
 - Si se elimina un buscador de un widget, retirar también estado, memo, imports y mensajes que todavía hablen de un filtro activo.
+
+## 2026-09-15 - BUK puede entregar paginacion siguiente como URL completa
+
+- Los endpoints de catalogo BUK pueden devolver `pagination.next` como URL y no como numero de pagina; el cliente debe resolver ambos formatos antes de considerar completa la lectura.
+- Una sincronizacion parcial de roles o areas puede aparentar exito y dejar contratos sin cargos, por lo que hay que comparar el universo sincronizado contra el catalogo BUK y probar un contrato de una pagina posterior.

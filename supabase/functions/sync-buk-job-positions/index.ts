@@ -184,7 +184,15 @@ function resolveNextPage(payload: unknown, currentPage: number) {
   if (typeof next === "number" && Number.isFinite(next)) return Math.trunc(next);
   if (typeof next === "string" && next.trim()) {
     const parsed = Number(next);
-    return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
+    if (Number.isFinite(parsed)) return Math.trunc(parsed);
+
+    try {
+      const nextUrl = new URL(next);
+      const page = Number(nextUrl.searchParams.get("page"));
+      return Number.isFinite(page) ? Math.trunc(page) : null;
+    } catch {
+      return null;
+    }
   }
 
   const totalPages = pagination.total_pages ?? pagination.totalPages;
