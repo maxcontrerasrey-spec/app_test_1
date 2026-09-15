@@ -1,5 +1,12 @@
 # Tareas y Roadmap de Desarrollo
 
+## Reemplazo de identidad visual JM por Atlas - 2026-09-14
+
+- [x] Revisar los puntos del ERP que usan el logo JM y conservar sus contenedores y proporciones.
+- [x] Preparar el isotipo Atlas en formato transparente y reutilizable.
+- [x] Reemplazar el logo en navegación, acceso, favicon y pantallas documentales del ERP.
+- [x] Validar compilación y referencias visuales; dejar la publicación para el siguiente despliegue del frontend.
+
 ## Auditoría de cierre y publicación a main — 2026-09-14
 
 - [x] Revisar cambios locales, migraciones nuevas y su correspondencia con producción.

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
-import jmLogoUrl from "../../competencies/assets/jm.png";
+import jmLogoUrl from "../../../assets/atlas-mark.png";
 import "../../competencies/styles/competencies.css";
 import {
   verifyHiringDocument,
@@ -73,7 +73,7 @@ export function HiringDocumentVerificationPage() {
     <main className="competency-verification-page">
       <section className="competency-verification-card">
         <header className="competency-verification-header">
-          <img src={jmLogoUrl} alt="JM" />
+          <img src={jmLogoUrl} alt="Atlas" />
           <div>
             <p>Portal de validación ERP</p>
             <h1>Validación de Solicitud de Contratación</h1>

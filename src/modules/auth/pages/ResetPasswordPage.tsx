@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
-import logo from "../../../assets/app-logo.png";
+import logo from "../../../assets/atlas-mark.png";
 import { useAuth } from "../context/AuthContext";
 
 export function ResetPasswordPage() {
@@ -88,7 +88,7 @@ export function ResetPasswordPage() {
         <div className="login-form-panel login-form-panel-single">
           <form className="login-card" onSubmit={handleSubmit}>
             <div className="login-brand-top login-brand-top-centered">
-              <img alt="Logo JM" className="app-logo app-logo-login" src={logo} />
+            <img alt="Logo Atlas" className="app-logo app-logo-login" src={logo} />
             </div>
 
             <div className="login-card-copy">

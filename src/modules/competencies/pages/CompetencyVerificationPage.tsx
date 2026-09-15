@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { verifyCompetencyCertificate } from "../services/competencyCoreApi";
 import type { CompetencyPublicVerification } from "../types";
-import jmLogoUrl from "../assets/jm.png";
+import jmLogoUrl from "../../../assets/atlas-mark.png";
 import "../styles/competencies.css";
 
 function buildErrorMessage(error: unknown) {
@@ -85,7 +85,7 @@ export function CompetencyVerificationPage() {
     <main className="competency-verification-page">
       <section className="competency-verification-card">
         <header className="competency-verification-header">
-          <img src={jmLogoUrl} alt="JM" />
+          <img src={jmLogoUrl} alt="Atlas" />
           <div>
             <p>Portal de validacion ERP</p>
             <h1>Validacion de certificado de competencias</h1>

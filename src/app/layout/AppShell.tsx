@@ -6,7 +6,7 @@ import {
   navigationModules,
   type NavigationItem
 } from "../../shared/config/navigation";
-import logo from "../../assets/app-logo.png";
+import logo from "../../assets/atlas-mark.png";
 import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
 import { AupPolicyModal } from "../../modules/auth/components/AupPolicyModal";
@@ -448,7 +448,7 @@ export function AppShell() {
             to="/"
             reloadDocument
           >
-            <img alt="Logo JM" className="app-logo app-logo-topbar" src={logo} />
+            <img alt="Logo Atlas" className="app-logo app-logo-topbar" src={logo} />
           </NavLink>
 
           <div className="top-nav-stage">
