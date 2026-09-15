@@ -3594,3 +3594,10 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Si `git push` detecta una credencial vencida, mantener y observar el proceso `gh auth login` hasta que termine; el navegador es parte del flujo oficial de la CLI, no un reemplazo del push por terminal.
 - Después de renovar la sesión, volver a comprobar `gh auth status` y ejecutar inmediatamente `git push`, `git ls-remote` y el seguimiento del workflow antes de informar un bloqueo.
+
+## 2026-09-14 - Las features de una pantalla deben conservarse en cada RPC
+
+- Un permiso global construido como OR de todas las features del módulo colapsa la separación entre Registro, Aprobaciones, Historial y Configuración; ocultar pestañas en la UI no constituye autorización.
+- Cada RPC público debe validar la feature exacta del actor autenticado, mientras implementaciones y helpers `SECURITY DEFINER` permanecen sin `EXECUTE` para `authenticated`.
+- Una selección contractual derivada de BUK debe volver a validarse al calcular y crear; si falta homologación, el sistema debe devolver una lista vacía y un mensaje accionable, nunca todos los contratos activos.
+- Las reglas de monto con igual alcance y prioridad no pueden tener vigencias activas superpuestas, aunque hoy produzcan el mismo resultado; deben consolidarse y bloquear futuras ambigüedades en base de datos.

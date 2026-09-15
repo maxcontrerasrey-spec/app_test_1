@@ -342,7 +342,9 @@ export function IncentiveRegistrationForm({
                 ? "Cargando contratos..."
                 : workerContextQuery.isError
                   ? "No fue posible cargar el contrato operativo"
-                  : "Selecciona el contrato aplicable"
+                  : areaOptions.length === 0 && selectedWorker
+                    ? "Sin contrato BUK homologado"
+                    : "Selecciona el contrato aplicable"
             }
           />
 
@@ -350,6 +352,19 @@ export function IncentiveRegistrationForm({
             <div className="hr-incentives-grid-span-2">
               <p className="form-status form-status-error">
                 {workerContextQuery.error.message}
+              </p>
+            </div>
+          ) : null}
+
+          {selectedWorker &&
+          !workerContextQuery.isLoading &&
+          !workerContextQuery.isError &&
+          workerContextQuery.data &&
+          areaOptions.length === 0 ? (
+            <div className="hr-incentives-grid-span-2">
+              <p className="form-status form-status-error">
+                Este trabajador no tiene un contrato BUK homologado en el ERP. Corrige el mapeo
+                contractual antes de registrar el incentivo.
               </p>
             </div>
           ) : null}

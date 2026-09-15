@@ -3236,3 +3236,15 @@ Resultado de implementación: se creó `20260914160000_align_roster_summary_with
 - [ ] Releer producción, confirmar fechas/patrón/duplicados y documentar excepciones.
 
 Verificación en vivo: la sesión quedó iniciada. Tras alinear el resumen con el calendario, sin filtro la tarjeta muestra 378 asignadas y 1.305 pendientes; en CODELCO DRT muestra 177 asignadas y 1 pendiente, coincidiendo con `Todas 178` y `Sin Jornada 1` del calendario. La carga de nuevas jornadas 5x2 sigue pendiente de cruce y autorización operativa; no se hicieron altas parciales ni se modificaron jornadas.
+## Auditoría final y salida a producción de Incentivos Extraordinarios - 2026-09-14
+
+- [x] Reconstruir el flujo vigente de registro, cálculo, aprobación, anulación, historial, configuración y BI.
+- [x] Auditar en producción tablas, RLS, grants, funciones privilegiadas, triggers, índices y migraciones aplicadas.
+- [x] Reconciliar estados, aprobaciones, folios, montos, idempotencia, jornadas, ausencias y datos BUK con consultas de solo lectura.
+- [x] Corregir únicamente hallazgos demostrados con migraciones forward-only y cambios frontend acotados.
+- [x] Ampliar pruebas para cubrir las regresiones corregidas y ejecutar Guardian, build y auditorías SQL.
+- [x] Aplicar cambios en producción, verificar por roles y confirmar el resultado publicado.
+
+Resultado productivo: se separó la autorización backend de Registro, Aprobaciones, Historial y Configuración, y se retiró ejecución directa sobre implementaciones y helpers internos. La matriz se probó con usuarios reales de `administrativo`, `operaciones_l_2`, `operaciones_l_1`, `control_contratos` y `admin`: cada lectura permitida funcionó y los cruces de permisos fueron rechazados. El selector y el backend ahora limitan los contratos a asociaciones BUK homologadas del trabajador; un contrato ajeno se bloquea antes del cálculo o la creación y la UI explica el mapeo faltante. También se consolidaron dos reglas generales de sobretiempo equivalentes en una sola regla activa y se agregó un trigger que impide vigencias superpuestas con el mismo alcance y prioridad.
+
+Verificación: las tres migraciones quedaron registradas en producción como `20260914200625`, `20260914201449` y `20260914201913`; no se persistieron registros de prueba. Las pruebas focalizadas pasaron 27/27, el build frontend completó, las auditorías de migraciones/destructividad/seguridad aprobaron y los advisors no reportaron hallazgos nuevos específicos de Incentivos. El folio 6 continúa pendiente de decisión operativa porque su período 202607 y primera aprobación vigente son consistentes; no se alteró ese dato de negocio.
