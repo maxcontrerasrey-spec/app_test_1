@@ -28,7 +28,7 @@ export function DashboardGrid({ isLoading, dashboardData, onRefresh }: Dashboard
 
       <div className="dashboard-zone dashboard-zone-full dashboard-module-section dashboard-zone-approvals">
         <div className="dashboard-zone-column">
-          <ApprovalTrackingWidget title="Seguimiento de aprobaciones" dashboardData={dashboardData} />
+          <ApprovalTrackingWidget title="Seguimiento de solicitudes" dashboardData={dashboardData} />
         </div>
       </div>
 

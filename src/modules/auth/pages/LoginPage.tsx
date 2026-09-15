@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
-import logo from "../../../assets/atlas-mark.png";
+import jmLogo from "../../../assets/app-logo.png";
 import { useAuth } from "../context/AuthContext";
 import {
   getPasswordResetErrorMessage,
@@ -110,7 +110,7 @@ export function LoginPage() {
     <section className="login-shell">
       <div className="login-glass-card">
         <div className="login-brand-top">
-          <img alt="Logo Atlas" className="app-logo-login" src={logo} />
+          <img alt="Logo JM" className="app-logo-login" src={jmLogo} />
         </div>
         
         <div className="login-header-copy">

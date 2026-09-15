@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
-import logo from "../../../assets/atlas-mark.png";
+import nexusBrand from "../../../assets/nexus-brand.png";
 import { useAuth } from "../context/AuthContext";
 
 export function ResetPasswordPage() {
@@ -88,7 +88,7 @@ export function ResetPasswordPage() {
         <div className="login-form-panel login-form-panel-single">
           <form className="login-card" onSubmit={handleSubmit}>
             <div className="login-brand-top login-brand-top-centered">
-            <img alt="Logo Atlas" className="app-logo app-logo-login" src={logo} />
+            <img alt="Nexus, Personas, Procesos e Innovación" className="app-logo app-logo-login app-logo-nexus-brand" src={nexusBrand} />
             </div>
 
             <div className="login-card-copy">

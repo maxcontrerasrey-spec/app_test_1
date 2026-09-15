@@ -1,5 +1,17 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 357. Una excepción de marca debe expresarse como contrato de assets
+
+- Si el ERP cambia de identidad pero el login conserva la marca anterior, no se debe reemplazar un asset compartido de forma global.
+- El login debe importar explícitamente JM y las superficies Nexus deben importar assets Nexus; textos alternativos, favicon y título también forman parte del alcance.
+- Un logo entregado con fondo y márgenes debe normalizarse sin redibujarlo, conservando proporción y transparencia para funcionar en temas claros y oscuros.
+
+## 356. El ancho recuperado por una sidebar debe llegar hasta los componentes internos
+
+- Quitar el margen lateral del `main` no basta cuando dashboards o tablas conservan `max-width`, columnas forzadas o alturas heredadas.
+- El estado plegado debe ampliar el workspace y sus contenedores internos; las colas que requieren lectura horizontal deben ocupar filas completas.
+- En tablas densas, agrupar número y etiqueta como una unidad `nowrap` evita cortes absurdos; si el viewport no alcanza, el contenedor debe ofrecer scroll horizontal en vez de quebrar identificadores.
+
 ## 355. Plegar una sidebar requiere recomponer todas sus reservas de espacio
 
 - Ocultar solo el panel deja márgenes vacíos si el contenido principal y la barra superior conservan su desplazamiento lateral.

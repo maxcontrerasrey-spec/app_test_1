@@ -7,7 +7,7 @@ import {
   type NavigationIconKey,
   type NavigationItem
 } from "../../shared/config/navigation";
-import logo from "../../assets/atlas-mark.png";
+import nexusMark from "../../assets/nexus-mark.png";
 import { hasModuleAccess } from "../../modules/auth/config/access";
 import { useAuth } from "../../modules/auth/context/AuthContext";
 import { AupPolicyModal } from "../../modules/auth/components/AupPolicyModal";
@@ -72,7 +72,7 @@ export function AppShell() {
       return false;
     }
 
-    return window.localStorage.getItem("atlas-sidebar-collapsed") === "true";
+    return window.localStorage.getItem("nexus-sidebar-collapsed") === "true";
   });
   const [workspaceSearchQuery, setWorkspaceSearchQuery] = useState("");
   const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(0);
@@ -324,7 +324,7 @@ export function AppShell() {
   }, [location.pathname]);
 
   useEffect(() => {
-    window.localStorage.setItem("atlas-sidebar-collapsed", String(isSidebarCollapsed));
+    window.localStorage.setItem("nexus-sidebar-collapsed", String(isSidebarCollapsed));
     if (isSidebarCollapsed) {
       clearPinnedNavigation();
       setIsNotificationsOpen(false);
@@ -571,7 +571,7 @@ export function AppShell() {
             to="/"
             reloadDocument
           >
-            <img alt="Logo Atlas" className="app-logo app-logo-topbar" src={logo} />
+            <img alt="Logo Nexus" className="app-logo app-logo-topbar" src={nexusMark} />
           </NavLink>
 
           <div className="top-nav-stage">

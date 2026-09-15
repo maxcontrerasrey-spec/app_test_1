@@ -1703,3 +1703,35 @@
 .dashboard-container .widget-card {
   min-width: 0;
 }
+
+/* Final home composition: each operational queue owns a complete horizontal axis. */
+.dashboard-container {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.dashboard-grid {
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 0;
+  row-gap: 1rem;
+}
+
+.dashboard-zone-tasks,
+.dashboard-zone-approvals,
+.dashboard-zone-folios {
+  grid-column: 1;
+  grid-row: auto;
+  min-height: 0;
+}
+
+.dashboard-zone-column,
+.dashboard-zone-column > .widget-card {
+  height: auto;
+}
+
+.dashboard-zone-tasks .tracking-table,
+.dashboard-zone-approvals .tracking-table {
+  min-width: 56rem;
+  table-layout: auto;
+}

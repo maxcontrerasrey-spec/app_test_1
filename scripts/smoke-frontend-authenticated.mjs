@@ -119,6 +119,107 @@ async function signIn(page, baseUrl, config) {
   assert(!loginError, "Authenticated smoke could not sign in with the provided test credentials.");
 }
 
+async function assertNexusHomeLayout(page) {
+  await page.locator('img[alt="Logo Nexus"]').waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  const tasksZone = page.locator(".dashboard-zone-tasks");
+  const requestsZone = page.locator(".dashboard-zone-approvals");
+  await tasksZone.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  await requestsZone.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+
+  const queueGeometry = await page.evaluate(() => {
+    const tasks = document.querySelector(".dashboard-zone-tasks")?.getBoundingClientRect();
+    const requests = document.querySelector(".dashboard-zone-approvals")?.getBoundingClientRect();
+    if (!tasks || !requests) return null;
+    return {
+      tasks: { left: tasks.left, right: tasks.right, bottom: tasks.bottom, width: tasks.width },
+      requests: { left: requests.left, right: requests.right, top: requests.top, width: requests.width }
+    };
+  });
+
+  assert(queueGeometry, "Dashboard queue geometry is unavailable.");
+  assert(
+    queueGeometry.requests.top >= queueGeometry.tasks.bottom,
+    "Request tracking must render below pending tasks."
+  );
+  assert(
+    Math.abs(queueGeometry.tasks.left - queueGeometry.requests.left) <= 2 &&
+      Math.abs(queueGeometry.tasks.width - queueGeometry.requests.width) <= 2,
+    "Pending tasks and request tracking must use the same full-width axis."
+  );
+
+  const sidebarToggle = page.getByRole("button", { name: /Ocultar barra lateral|Mostrar barra lateral/ });
+  await sidebarToggle.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  if ((await sidebarToggle.getAttribute("aria-expanded")) !== "true") {
+    await sidebarToggle.click();
+  }
+
+  const expandedGeometry = await page.locator("main.main-content").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { left: rect.left, width: rect.width };
+  });
+  await page.getByRole("button", { name: "Ocultar barra lateral" }).click();
+  await page.locator(".app-shell-sidebar-collapsed").waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  await page.waitForFunction(
+    ({ expandedLeft, expandedWidth }) => {
+      const main = document.querySelector("main.main-content");
+      if (!main) return false;
+      const rect = main.getBoundingClientRect();
+      return rect.left < expandedLeft - 100 && rect.width > expandedWidth + 100;
+    },
+    { expandedLeft: expandedGeometry.left, expandedWidth: expandedGeometry.width },
+    { timeout: DEFAULT_TIMEOUT_MS }
+  );
+  const collapsedGeometry = await page.locator("main.main-content").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { left: rect.left, width: rect.width };
+  });
+
+  assert(
+    collapsedGeometry.left < expandedGeometry.left - 100 &&
+      collapsedGeometry.width > expandedGeometry.width + 100,
+    "Collapsing the sidebar must materially increase the usable workspace width."
+  );
+  await page.getByRole("button", { name: "Mostrar barra lateral" }).click();
+}
+
+async function assertHiringProcessesLayout(page) {
+  const table = page.locator(".hiring-processes-table");
+  await table.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+
+  const layout = await table.evaluate((element) => {
+    const caseCode = element.querySelector(".case-code-toggle");
+    const candidateIndicator = element.querySelector(".candidate-count-indicator");
+    return {
+      tableLayout: window.getComputedStyle(element).tableLayout,
+      caseWhiteSpace: caseCode ? window.getComputedStyle(caseCode).whiteSpace : null,
+      indicatorWhiteSpace: candidateIndicator
+        ? window.getComputedStyle(candidateIndicator).whiteSpace
+        : null,
+      indicatorHeight: candidateIndicator?.getBoundingClientRect().height ?? null
+    };
+  });
+
+  assert(layout.tableLayout === "auto", "Hiring processes table must use automatic column sizing.");
+  if (layout.caseWhiteSpace !== null) {
+    assert(layout.caseWhiteSpace === "nowrap", "Recruitment case codes must remain on one line.");
+  }
+  if (layout.indicatorWhiteSpace !== null) {
+    assert(
+      layout.indicatorWhiteSpace === "nowrap" && layout.indicatorHeight <= 28,
+      "Candidate counters and labels must remain on one compact line."
+    );
+  }
+}
+
+async function assertNexusLayoutContracts(page, currentPath) {
+  if (currentPath === "/") {
+    await assertNexusHomeLayout(page);
+  }
+  if (currentPath === "/control-contrataciones") {
+    await assertHiringProcessesLayout(page);
+  }
+}
+
 async function assertAuthenticatedState(page, baseUrl, config) {
   const forcedPasswordReset = await page
     .getByRole("heading", { name: /Restablecer contraseña/i })
@@ -177,6 +278,7 @@ async function assertAuthenticatedState(page, baseUrl, config) {
   }
 
   await page.waitForLoadState("domcontentloaded", { timeout: DEFAULT_TIMEOUT_MS });
+  await assertNexusLayoutContracts(page, currentPath);
   return {
     target_result: "authenticated_route_loaded",
     final_path: currentPath

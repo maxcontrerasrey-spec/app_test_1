@@ -7436,7 +7436,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   }
 
   .top-brand-block::after {
-    content: "Atlas\A Plataforma de Gestión";
+    content: "Nexus\A Personas · Procesos · Innovación";
     white-space: pre;
     color: var(--text-secondary);
     font-size: 0.68rem;
@@ -7786,7 +7786,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   }
 }
 
-/* Atlas Ops visual refresh: quiet surfaces, one accent, operational density. */
+/* Nexus visual system: quiet surfaces, one accent, operational density. */
 :root {
   --font-sans: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   --font-display: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
@@ -8138,4 +8138,113 @@ textarea:focus-visible {
     margin-left: 0;
     padding: 0.85rem 0.85rem 2rem;
   }
+}
+
+/* Nexus identity and fluid desktop workspace. Kept last to govern the legacy cascade. */
+.app-logo-nexus-brand {
+  width: min(15rem, 68vw);
+  max-height: 9rem;
+}
+
+@media (min-width: 769px) {
+  .app-shell-topnav .top-brand-block {
+    min-height: 3.8rem;
+    padding: 0.42rem 0.5rem;
+  }
+
+  .app-shell-topnav .top-brand-block::after {
+    content: "Nexus\A Personas · Procesos · Innovación";
+    max-width: 8.6rem;
+    white-space: pre-line;
+    color: var(--text-secondary);
+    font-size: 0.61rem;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  .app-shell-topnav .top-brand-block::first-line {
+    color: var(--text-primary);
+  }
+
+  .app-shell-topnav .app-logo-topbar {
+    width: 2.25rem;
+  }
+
+  .app-shell-topnav.app-shell-sidebar-collapsed .top-shell {
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .app-shell-topnav.app-shell-sidebar-collapsed .top-shell-right {
+    left: 0;
+  }
+
+  .app-shell-topnav.app-shell-sidebar-collapsed .main-content,
+  .app-shell-topnav.app-shell-sidebar-collapsed .main-content-topnav {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    padding-inline: clamp(1.5rem, 2.2vw, 3.25rem);
+  }
+}
+
+/* Control de Contrataciones is horizontally dense by design: preserve scan lines. */
+.hiring-processes-table {
+  min-width: 74rem;
+  table-layout: auto !important;
+}
+
+.hiring-processes-table th,
+.hiring-processes-table td {
+  padding-inline: 0.62rem;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.hiring-processes-table td {
+  font-size: 0.76rem;
+}
+
+.hiring-processes-table th:first-child,
+.hiring-processes-table td:first-child {
+  width: 7rem;
+}
+
+.hiring-processes-table th:nth-child(6),
+.hiring-processes-table td:nth-child(6) {
+  min-width: 20rem;
+}
+
+.hiring-processes-table .case-code-toggle,
+.hiring-processes-table .candidate-count-indicator,
+.hiring-processes-table .candidate-count-item {
+  white-space: nowrap;
+}
+
+.hiring-processes-table .candidate-count-indicator {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.62rem;
+}
+
+.hiring-processes-table .candidate-count-item {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0.28rem;
+}
+
+.hiring-processes-table .candidate-circle {
+  min-width: 1.3rem;
+  height: 1.3rem;
+  padding-inline: 0.3rem;
+  font-size: 0.69rem;
+}
+
+.hiring-processes-table .candidate-circle-label {
+  margin-right: 0;
+  font-size: 0.66rem;
 }

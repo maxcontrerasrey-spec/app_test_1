@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
-import appLogo from "../../../assets/atlas-mark.png";
+import appLogo from "../../../assets/nexus-mark.png";
 import { formatRut, validateRut } from "../../../shared/lib/rut";
 import {
   acceptPsychConsents,
@@ -308,7 +308,7 @@ export function PsychometricAssessmentPage() {
     return (
       <main className="psych-public">
         <section className="psych-finished">
-          <img src={appLogo} alt="Atlas" className="psych-public-logo" />
+          <img src={appLogo} alt="Nexus" className="psych-public-logo" />
           <h1>Enlace inválido</h1>
           <p>Solicita a Reclutamiento un nuevo enlace de evaluación.</p>
         </section>
@@ -318,7 +318,7 @@ export function PsychometricAssessmentPage() {
     return (
       <main className="psych-public">
         <section className="psych-access">
-          <img src={appLogo} alt="Atlas" className="psych-public-logo" />
+          <img src={appLogo} alt="Nexus" className="psych-public-logo" />
           <span className="psych-eyebrow">Proceso de selección</span>
           <h1>Evaluación psicolaboral</h1>
           <p>
@@ -370,7 +370,7 @@ export function PsychometricAssessmentPage() {
     return (
       <main className="psych-public">
         <section className="psych-finished">
-          <img src={appLogo} alt="Atlas" className="psych-public-logo" />
+          <img src={appLogo} alt="Nexus" className="psych-public-logo" />
           <h1>El tiempo terminó</h1>
           <p>La sesión de 90 minutos expiró. Comunícate con Reclutamiento.</p>
         </section>
@@ -380,7 +380,7 @@ export function PsychometricAssessmentPage() {
     return (
       <main className="psych-public">
         <section className="psych-finished">
-          <img src={appLogo} alt="Atlas" className="psych-public-logo" />
+          <img src={appLogo} alt="Nexus" className="psych-public-logo" />
           <h1>Evaluación no disponible</h1>
           <p>El proceso de selección asociado ya no se encuentra activo.</p>
         </section>
@@ -392,7 +392,7 @@ export function PsychometricAssessmentPage() {
         <section className="psych-consents">
           <header>
             <div>
-              <img src={appLogo} alt="Atlas" className="psych-public-logo" />
+              <img src={appLogo} alt="Nexus" className="psych-public-logo" />
               <span className="psych-eyebrow">Paso obligatorio</span>
               <h1>Consentimientos informados</h1>
             </div>
@@ -451,7 +451,7 @@ export function PsychometricAssessmentPage() {
     return (
       <main className="psych-public">
         <section className="psych-finished">
-          <img src={appLogo} alt="Atlas" className="psych-public-logo" />
+          <img src={appLogo} alt="Nexus" className="psych-public-logo" />
           <span className="psych-finished__mark" aria-hidden="true">
             ✓
           </span>
@@ -469,7 +469,7 @@ export function PsychometricAssessmentPage() {
     <main className="psych-runner">
       <header className="psych-runner__header">
         <div className="psych-runner__identity">
-          <img src={appLogo} alt="Atlas" />
+          <img src={appLogo} alt="Nexus" />
           <div>
             <span>{session.candidate.full_name}</span>
             <small>

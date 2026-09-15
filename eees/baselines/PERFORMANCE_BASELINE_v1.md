@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.32
+version: 1.0.33
 status: Activo
 language: es-CL
 owner: Quality
@@ -102,6 +102,8 @@ Revision 2026-09-15 búsqueda y legibilidad transversal: CSS sube 3,429 bytes pa
 
 Revision 2026-09-15 sidebar plegable: CSS sube 1,533 bytes para incorporar el control accesible de la cabecera, ocultar la navegación lateral y recomponer el ancho útil del workspace. La preferencia se conserva localmente y el catálogo SVG se separa del shell para mantener cada componente bajo el umbral de 800 líneas; no agrega dependencias, vendors ni permisos.
 
+Revision 2026-09-15 identidad Nexus y composición fluida: CSS queda en 267,236 bytes al separar la identidad JM del login y aplicar Nexus al resto del ERP, apilar las colas del inicio, ampliar el workspace plegado y mantener en una línea los identificadores e indicadores de Control de Contrataciones. Los dos assets Nexus se derivan del original entregado, se recortan, transparentan y reducen a su resolución de uso; no agrega dependencias ni vendors y conserva el presupuesto posterior en tolerancia cero.
+
 Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sube 1,866 bytes por ampliar la autoridad del flujo a gerente de área DSAL, Director de Operaciones y Reclutamiento, además de incorporar el detalle expandible de cada precandidato. No agrega vendors, CSS ni assets.
 
 Revision 2026-08-14 Psych AI V5: el total global sube 1,780 bytes, JS sube 1,521 bytes y CSS sube 259 bytes por reconstruir la salida metodologica del informe psicolaboral integrado, schema V5 y secciones de revisión profesional. No agrega vendors ni assets trackeados; el cambio permanece en el módulo lazy Gestión Psicolaboral y Edge Functions.
@@ -149,7 +151,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 265120,
+  "cssTotalBytes": 267236,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

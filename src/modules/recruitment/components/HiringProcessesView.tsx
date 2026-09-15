@@ -407,7 +407,7 @@ export function HiringProcessesView({
 
       <div className="tracking-table-wrap tracking-table-wrap-full">
         <div className="tracking-table-scroll tracking-table-scroll-wide">
-          <table className="tracking-table">
+          <table className="tracking-table hiring-processes-table">
             <thead>
               <tr>
                 {SORTABLE_HEADERS.map(({ column, label }) => (
@@ -472,25 +472,31 @@ export function HiringProcessesView({
                           {caseRow.filled_vacancies}/{caseRow.requested_vacancies}
                         </td>
                         <td>
-                          <div className="candidate-count-indicator">
-                            <span className="candidate-circle candidate-circle-neutral" title="Candidatos activos en el proceso">
-                              {headcount.activeCandidates}
+                          <div className="candidate-count-indicator" aria-label="Distribución de candidatos">
+                            <span className="candidate-count-item">
+                              <span className="candidate-circle candidate-circle-neutral" title="Candidatos activos en el proceso">
+                                {headcount.activeCandidates}
+                              </span>
+                              <span className="candidate-circle-label">Activos</span>
                             </span>
-                            <span className="candidate-circle-label">Activos</span>
-                            <span
-                              className="candidate-circle candidate-circle-filled"
-                              title="Contratados efectivos del folio que ya consumieron cupo"
-                            >
-                              {headcount.hiredCandidates}
+                            <span className="candidate-count-item">
+                              <span
+                                className="candidate-circle candidate-circle-filled"
+                                title="Contratados efectivos del folio que ya consumieron cupo"
+                              >
+                                {headcount.hiredCandidates}
+                              </span>
+                              <span className="candidate-circle-label">Contratados</span>
                             </span>
-                            <span className="candidate-circle-label">Contratados</span>
-                            <span
-                              className="candidate-circle candidate-circle-warning"
-                              title="Movilidades internas pendientes o aprobadas asociadas al folio"
-                            >
-                              {headcount.internalMobility}
+                            <span className="candidate-count-item">
+                              <span
+                                className="candidate-circle candidate-circle-warning"
+                                title="Movilidades internas pendientes o aprobadas asociadas al folio"
+                              >
+                                {headcount.internalMobility}
+                              </span>
+                              <span className="candidate-circle-label">Movilidad interna</span>
                             </span>
-                            <span className="candidate-circle-label">Movilidad Interna</span>
                           </div>
                         </td>
                         <td>{formatOpenDuration(caseRow.opened_at)}</td>
