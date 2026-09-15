@@ -3320,3 +3320,12 @@ Resultado productivo: la búsqueda de trabajadores ahora usa una proyección pri
 La analítica dejó de descargar solicitudes sin límite para construir la tendencia diaria: PostgreSQL entrega únicamente los totales por fecha. Las migraciones `20260915122747` y `20260915143000` quedaron aplicadas y registradas; la caché coincide 1.684/1.684 con el universo activo, ninguna implementación interna auditada es ejecutable por `authenticated` y las comprobaciones de lotes obsoletos no persistieron datos de negocio.
 
 Validación final: la analítica completa respondió en 55,6 ms en producción; las pruebas focalizadas pasaron, el build frontend completó y Guardian terminó con 0 errores y 0 advertencias.
+## Excluir rol privado del módulo Jornadas — 2026-09-15
+
+- [x] Confirmar en producción los valores de `private_role` y el universo actualmente visible en Jornadas.
+- [x] Inspeccionar las RPC actuales de búsqueda, resumen, calendario y asignación.
+- [x] Aplicar una migración forward-only que excluya roles privados de filtros, vista y nuevas asignaciones, sin borrar históricos.
+- [x] Verificar conteos, filtros y permisos en producción contra el universo no privado.
+- [x] Ejecutar pruebas focalizadas, auditorías SQL, Guardian, diff check y publicar en `main`.
+
+Resultado: producción tiene 24 trabajadores activos con `raw_payload.private_role = true`; uno de ellos tenía una jornada histórica. La migración `20260915160000_exclude_private_roles_from_hr_roster.sql` excluye ese grupo de búsqueda, calendario general y resumen KPI, y bloquea nuevas asignaciones sin borrar registros existentes. En producción, el calendario mensual devuelve 1.658 trabajadores, `private_bulk_month_rows = 0`, la búsqueda devuelve `private_search_rows = 0`, y el intento controlado de asignación a un rol privado fue rechazado por backend. La migración quedó aplicada y registrada en Supabase.
