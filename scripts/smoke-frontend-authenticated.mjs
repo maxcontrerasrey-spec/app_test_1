@@ -202,6 +202,16 @@ async function assertNexusHomeLayout(page) {
     compactRailGeometry.width <= 54 && compactRailGeometry.height > 0,
     "Collapsed icon rail must stay inside the existing narrow gutter."
   );
+  const collapsedContentGap = await page.evaluate(() => {
+    const rail = document.querySelector(".sidebar-icon-rail");
+    const content = document.querySelector(".dashboard-container");
+    if (!rail || !content) return null;
+    return content.getBoundingClientRect().left - rail.getBoundingClientRect().right;
+  });
+  assert(
+    collapsedContentGap !== null && collapsedContentGap >= 10 && collapsedContentGap <= 14,
+    "Collapsed workspace content must keep a subtle 12px gap after the icon rail."
+  );
   assert(
     compactRailGeometry.linkCount >= 2 && compactRailGeometry.moduleCount >= 1,
     "Collapsed icon rail must expose authorized module and submodule destinations."

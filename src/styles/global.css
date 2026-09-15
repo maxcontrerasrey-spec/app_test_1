@@ -8176,6 +8176,7 @@ textarea:focus-visible {
 
   .app-shell-topnav.app-shell-sidebar-collapsed {
     --collapsed-rail-width: clamp(1.5rem, 2.2vw, 3.25rem);
+    --collapsed-content-gap: 0.75rem;
   }
 
   .app-shell-topnav.app-shell-sidebar-collapsed .top-shell {
@@ -8279,7 +8280,8 @@ textarea:focus-visible {
     width: 100%;
     max-width: none;
     margin-left: 0;
-    padding-inline: clamp(1.5rem, 2.2vw, 3.25rem);
+    padding-left: calc(var(--collapsed-rail-width) + var(--collapsed-content-gap));
+    padding-right: clamp(1.5rem, 2.2vw, 3.25rem);
   }
 }
 

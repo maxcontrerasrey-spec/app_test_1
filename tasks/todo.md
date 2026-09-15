@@ -1,5 +1,12 @@
 # Tareas y Roadmap de Desarrollo
 
+## Separación elegante entre rail compacto y contenido - 2026-09-15
+
+- [x] Definir un gutter visual adicional sin modificar el ancho del rail compacto.
+- [x] Aplicar el ajuste solo al workspace plegado y conservar el espaciado del estado expandido.
+- [x] Cubrir la distancia rail/contenido mediante prueba contractual y smoke autenticado.
+- [ ] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
 ## Rail compacto de navegación al plegar la sidebar - 2026-09-15
 
 - [x] Renderizar en el gutter plegado los iconos autorizados de Inicio, módulos y submódulos.

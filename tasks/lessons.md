@@ -3699,3 +3699,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - La navegación compacta solicitada pertenece únicamente al estado plegado y debe ocupar el gutter que ya existe; no corresponde restaurar una columna adicional ni reducir nuevamente el workspace.
 - El rail debe derivarse de la misma navegación filtrada por permisos que la sidebar completa, incluyendo módulos y submódulos, para no revelar destinos ni mantener dos catálogos divergentes.
 - Los iconos sin texto visible necesitan nombre accesible, tooltip, foco y estado activo; el encabezado de módulo puede restaurar la sidebar mientras cada submódulo conserva navegación directa.
+
+## 2026-09-15 - El ancho del rail y el respiro del contenido son medidas distintas
+
+- Reutilizar el ancho exacto del rail como `padding-left` deja el workspace tocando visualmente su divisor, aunque técnicamente no exista superposición.
+- El estado plegado debe sumar un gutter visual pequeño después del rail sin ensanchar la navegación ni alterar el estado expandido.
+- La verificación debe medir la separación entre el borde derecho del rail y el inicio real del contenido, no solo el crecimiento total del workspace.

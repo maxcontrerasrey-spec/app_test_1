@@ -71,7 +71,8 @@ describe("Nexus UI contracts", () => {
     expect(shell).toContain('localStorage.getItem("nexus-sidebar-collapsed")');
     expect(shell).toContain('localStorage.setItem("nexus-sidebar-collapsed"');
     expect(styles).toContain(".app-shell-topnav.app-shell-sidebar-collapsed .main-content");
-    expect(styles).toContain("padding-inline: clamp(1.5rem, 2.2vw, 3.25rem);");
+    expect(styles).toContain("--collapsed-content-gap: 0.75rem;");
+    expect(styles).toContain("padding-left: calc(var(--collapsed-rail-width) + var(--collapsed-content-gap));");
   });
 
   it("renders an authorized icon-only navigation rail inside the existing collapsed gutter", () => {
@@ -85,6 +86,7 @@ describe("Nexus UI contracts", () => {
     expect(rail).toContain('aria-label="Navegación compacta"');
     expect(rail).toContain("<CollapsedNavigationItems items={module.items} />");
     expect(styles).toContain("--collapsed-rail-width: clamp(1.5rem, 2.2vw, 3.25rem);");
+    expect(styles).toContain("--collapsed-content-gap: 0.75rem;");
     expect(styles).toContain("width: var(--collapsed-rail-width);");
     expect(styles).toContain(".sidebar-icon-rail-link-active");
   });

@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.35
+version: 1.0.36
 status: Activo
 language: es-CL
 owner: Quality
@@ -151,7 +151,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 269150,
+  "cssTotalBytes": 269259,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -246,6 +246,8 @@ Revision 2026-09-15 ajuste de densidad y ejes: CSS queda en 258,603 bytes por no
 Revision 2026-09-15 interacción de navegación: CSS queda en 259,051 bytes por agregar grupos de módulos desplegables con chevron y estados accesibles. No cambia contenido, rutas, roles ni permisos.
 
 Revision 2026-09-15 control de densidad de sidebar: CSS queda en 259,123 bytes por limitar la navegación a un módulo activo abierto y aislar el scroll vertical del menú. No cambia contenido, rutas, roles ni permisos.
+
+Revision 2026-09-15 separación del rail compacto: CSS queda en 269,259 bytes por agregar un gutter visual de 12 px entre el divisor de la navegación plegada y el workspace. No ensancha el rail, no agrega dependencias y no altera rutas, roles ni permisos.
 
 ## Politica de actualizacion
 
