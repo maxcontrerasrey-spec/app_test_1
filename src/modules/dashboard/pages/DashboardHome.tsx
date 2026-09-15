@@ -46,12 +46,18 @@ export function DashboardHome() {
 
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header dashboard-hero" style={{ paddingBottom: "1.5rem" }}>
+      <header className="dashboard-header dashboard-hero">
         <div className="dashboard-greeting dashboard-hero-copy">
+          <span className="dashboard-eyebrow">Centro de control</span>
           <h2>Bienvenido(a), {displayName}</h2>
           <p className="helper-copy">
             Aquí tienes tu resumen operativo y tareas pendientes de hoy.
           </p>
+        </div>
+        <div className="dashboard-header-actions dashboard-hero-actions">
+          <button type="button" className="dashboard-refresh-button" onClick={() => void refresh()}>
+            Actualizar datos
+          </button>
         </div>
       </header>
 

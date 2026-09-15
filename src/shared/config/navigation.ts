@@ -2,8 +2,31 @@ import type { AppModuleCode, AppRole } from "../../modules/auth/config/access";
 
 export const homeNavigationItem = {
   to: "/",
-  label: "Inicio"
+  label: "Inicio",
+  iconKey: "home" as const
 };
+
+export type NavigationIconKey =
+  | "home"
+  | "users"
+  | "heart-pulse"
+  | "bus"
+  | "chart-pie"
+  | "user-plus"
+  | "arrow-right-left"
+  | "clipboard-list"
+  | "brain"
+  | "user-check"
+  | "calendar-clock"
+  | "wallet"
+  | "gavel"
+  | "id-card"
+  | "award"
+  | "gauge"
+  | "route"
+  | "sparkles"
+  | "download"
+  | "trending-up";
 
 export type NavigationItem = {
   moduleCode: AppModuleCode;
@@ -11,13 +34,14 @@ export type NavigationItem = {
   label: string;
   description?: string;
   subgroup?: string;
-  iconKey?: "document" | "certificate" | "user-plus" | "arrow-right-left" | "clipboard-list" | "bar-chart" | "briefcase" | "zap" | "download" | "calendar-clock" | "wallet" | "trending-up" | "badge-check" | "handshake";
+  iconKey?: NavigationIconKey;
   visibleForRoles?: AppRole[];
   items?: NavigationItem[];
 };
 
 export type NavigationModule = {
   label: string;
+  iconKey: NavigationIconKey;
   moduleCode?: AppModuleCode;
   to?: string;
   items?: NavigationItem[];
@@ -27,6 +51,7 @@ export type NavigationModule = {
 export const navigationModules: NavigationModule[] = [
   {
     label: "Reclutamiento",
+    iconKey: "users",
     items: [
       {
         moduleCode: "solicitud_contrataciones",
@@ -54,20 +79,21 @@ export const navigationModules: NavigationModule[] = [
         to: "/gestion-psicolaboral",
         label: "Gestión Psicolaboral",
         description: "Envía baterías, supervisa ejecución y registra la decisión psicolaboral.",
-        iconKey: "certificate"
+        iconKey: "brain"
       },
       {
         moduleCode: "alta_operacional_personal",
         to: "/alta-operacional",
         label: "Onboarding",
         description: "Configura las plantillas de alta operacional.",
-        iconKey: "handshake",
+        iconKey: "user-check",
         visibleForRoles: ["admin"]
       }
     ]
   },
   {
     label: "Recursos Humanos",
+    iconKey: "heart-pulse",
     items: [
       {
         moduleCode: "jornadas_turnos",
@@ -88,7 +114,7 @@ export const navigationModules: NavigationModule[] = [
         to: "/recursos-humanos/sanciones",
         label: "Solicitud de Sanciones",
         description: "Ingreso, revisión y cierre trazable de sanciones disciplinarias.",
-        iconKey: "document",
+        iconKey: "gavel",
         visibleForRoles: ["admin"]
       },
       {
@@ -96,40 +122,41 @@ export const navigationModules: NavigationModule[] = [
         to: "/recursos-humanos/acreditacion/dashboard",
         label: "Acreditación de Personas",
         description: "Matriz documental, vigencias y estado operacional por trabajador.",
-        iconKey: "badge-check"
+        iconKey: "id-card"
       },
       {
         moduleCode: "certificados",
         to: "/certificados",
         label: "Certificación de Competencias",
         description: "Emisión y seguimiento de competencias de conductores con carga a BUK.",
-        iconKey: "certificate"
+        iconKey: "award"
       }
     ]
   },
   {
     label: "Operaciones",
+    iconKey: "bus",
     items: [
       {
         moduleCode: "operaciones",
         to: "/operaciones/resumen",
         label: "Resumen",
         description: "Vista general y métricas operacionales.",
-        iconKey: "bar-chart"
+        iconKey: "gauge"
       },
       {
         moduleCode: "operaciones",
         to: "/operaciones/registros-base",
         label: "Registro de servicios base",
         description: "Planificación de servicios por contrato.",
-        iconKey: "briefcase"
+        iconKey: "route"
       },
       {
         moduleCode: "operaciones",
         to: "/operaciones/registros-especiales",
         label: "Registro de servicios especiales",
         description: "Gestión de requerimientos no programados.",
-        iconKey: "zap"
+        iconKey: "sparkles"
       },
       {
         moduleCode: "operaciones",
@@ -142,6 +169,7 @@ export const navigationModules: NavigationModule[] = [
   },
   {
     label: "Business Intelligence",
+    iconKey: "chart-pie",
     moduleCode: "bi_analytics",
     to: "/bi/dotacion"
   }

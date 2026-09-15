@@ -1,5 +1,76 @@
 # Tareas y Roadmap de Desarrollo
 
+## Sidebar plegable desde la cabecera - 2026-09-15
+
+- [x] Incorporar el botón semántico de mostrar/ocultar sidebar en el eje izquierdo de la cabecera.
+- [x] Plegar la navegación completa y expandir contenido y barra superior sin dejar espacios residuales.
+- [x] Persistir la preferencia local y cerrar menús flotantes al ocultar la sidebar.
+- [x] Verificar estados expandido/plegado, foco, responsive, build, Guardian y diff.
+
+Resultado local: el botón de panel dividido queda en la cabecera, mantiene foco y etiquetas accesibles, oculta/restaura la sidebar completa y recompone topbar y workspace. La preferencia se conserva en `localStorage`; móvil mantiene su navegación independiente. El catálogo SVG se extrajo a `NavigationIcon.tsx`, dejando `AppShell.tsx` en 790 líneas. Guardian aprobó con 0 errores y 0 advertencias. Pendiente: commit, push a `main`, CI y verificación visual del bundle productivo.
+
+## Implementación de turnos desde nómina pegada — 2026-09-15
+
+- [x] Validar las 93 filas, RUT, ciclo y fecha Día 1.
+- [x] Cruzar trabajadores contra la nómina BUK vigente y confirmar contrato/área.
+- [x] Revisar catálogo de pautas y jornadas existentes por trabajador/fecha.
+- [x] Cargar solo filas válidas mediante la ruta autoritativa de jornadas.
+- [x] Verificar producción, duplicados, contrato/área y conteos finales.
+- [x] Ejecutar Guardian, auditorías proporcionales, diff y publicar trazabilidad.
+
+Resultado productivo: se procesaron las 93 filas de la nómina, con 93 trabajadores distintos y sin duplicados de trabajador/fecha. Se cargaron 69 jornadas `10X5+5`, 2 `8X6`, 8 `14X14`, 7 `10X10` y 7 `4X3 Ordinaria`. La resolución exigió coincidencia del RUT normalizado, pauta activa y área BUK vigente compatible con el contrato informado; no se crearon identidades ni pautas sustitutas. La operación quedó registrada con la nota de origen y es idempotente.
+
+## Legibilidad transversal, cabecera compacta y búsqueda autorizada - 2026-09-15
+
+- [x] Auditar tablas y superficies densas de todos los módulos para evitar superposición, clipping ilegible y desborde del contenedor.
+- [x] Eliminar la alerta introductoria del inicio y recomponer la cabecera para aprovechar el espacio vertical.
+- [x] Alinear `Actualizar datos` en el mismo eje horizontal del saludo, al extremo derecho.
+- [x] Convertir la búsqueda global en navegación funcional con sugerencias derivadas solo de módulos y rutas autorizadas para la sesión.
+- [x] Validar teclado, foco, estados vacío/cerrado y navegación de la búsqueda sin ampliar permisos del backend.
+- [x] Ejecutar build, Guardian, diff y revisión visual en inicio y módulos representativos con tablas.
+
+Resultado: se retiró la alerta redundante y se compactó el inicio; `Actualizar datos` queda alineado con el saludo. La búsqueda centrada indexa únicamente la navegación efectiva filtrada por permisos backend, recomienda destinos y permite navegación por teclado. Las tablas conservan encabezados legibles y encapsulan contenido largo mediante wrapping o scroll horizontal. La revisión final retiró además la línea decorativa inferior de todas las tarjetas informativas porque no representaba ningún estado real. Build, auditoría de performance y `git diff --check` aprobaron; Guardian cerró con 0 errores y una advertencia no bloqueante por el tamaño de `AppShell.tsx`. La navegación autenticada desde búsqueda se validó en Safari.
+
+## Corrección de navegación y controles según referencia - 2026-09-15
+
+- [x] Mover notificaciones, tema y usuario al pie izquierdo de la sidebar, fuera del contenido.
+- [x] Incorporar el eje vertical continuo para los submódulos del grupo abierto.
+- [x] Asignar iconos semánticos y no repetidos a Inicio, módulos y submódulos.
+- [x] Revisar espaciado, tamaños, estados activos y scroll contra la referencia en desktop y móvil.
+- [x] Ejecutar build, Guardian, diff y verificación visual/interactiva del localhost.
+
+Resultado: la revisión autenticada en Safari confirma una sidebar única de 228 px, bloque Atlas compacto, controles de notificación/tema/perfil anclados al pie y popovers que abren hacia arriba. Los grupos parten cerrados en Inicio; al abrir Reclutamiento aparece un eje vertical continuo y cinco iconos distintos y semánticos para sus submódulos. Se reemplazó el activo morado macizo por el estado neutro de la referencia y se mantuvo la fuente Inter. La revisión visual final se repitió después de eliminar CSS redundante; `npm run build`, Guardian completo y `git diff --check` aprobaron con 0 errores y 0 advertencias.
+
+## Corrección visual según referencia Shadcn Dashboard - 2026-09-15
+
+- [x] Retirar completamente el rail vertical y el bloque visual de Atlas agregado por error.
+- [x] Reestructurar el shell en sidebar única + header de workspace + contenido centrado, sin cambiar rutas, roles ni datos.
+- [x] Alinear Inicio y módulos al patrón de navegación de la referencia, usando los nombres reales del ERP.
+- [x] Ajustar dashboard actual a la composición de tarjetas, espacios y jerarquía de la referencia.
+- [x] Verificar fuente Inter, responsive, build, Guardian y diff final.
+
+Resultado: se corrigió la composición eliminando el rail vertical de Atlas. El ERP queda con una sola sidebar, navegación por módulos reales con acordeones nativos, header superior del workspace con breadcrumb y búsqueda, y contenido centrado en una grilla de tarjetas. Se igualaron los ejes de tareas/aprobaciones, se aisló el overflow de tablas y se conservan Inter, datos, rutas, roles y permisos. La verificación del localhost confirmó carga sin error de runtime, grupos colapsados por defecto y apertura real de Reclutamiento; la revisión visual se realizó en viewport desktop y móvil.
+
+## Rediseño estructural ERP inspirado en NexaERP - 2026-09-15
+
+- [x] Auditar shell, dashboard de inicio, tokens globales, tipografía y estados responsivos contra la referencia visual.
+- [x] Replantear el alcance: conservar contenido y contratos, pero transformar la estructura global a app web con sidebar, topbar, alerta, KPIs y grilla de paneles.
+- [x] Implementar sidebar contextual y topbar en componentes existentes, sin cambiar rutas, roles ni RPCs.
+- [x] Recomponer el dashboard de inicio con el contenido actual en la estructura de la referencia.
+- [x] Verificar build, pruebas frontend aplicables, Guardian/diff y revisión visual en viewport desktop y estrecho.
+- [x] Registrar resultado y cualquier desviación aceptada.
+
+Resultado: el ERP conserva las consultas, widgets, datos, rutas y autorización existentes, pero adopta un shell desktop tipo app con sidebar fija, área de trabajo amplia, cabecera contextual, alerta operacional, tarjetas KPI y grilla de paneles. En viewport móvil se mantiene la navegación superior existente y los bloques pasan a una sola columna. Build, Guardian y `git diff --check` aprobaron; la comprobación autenticada del dashboard quedó limitada porque no existe una sesión local de prueba disponible.
+
+Refinamiento de navegación tipo app - 2026-09-15:
+
+- [x] Separar visualmente los encabezados propios del ERP de sus enlaces internos.
+- [x] Mantener la fuente Inter y los iconos funcionales existentes.
+- [x] Evitar categorías genéricas y conservar rutas/permisos actuales.
+- [x] Verificar overflow, solapamientos y gates finales.
+
+Resultado del refinamiento: se probó y descartó el rail vertical por no corresponder a la referencia final. La navegación queda en una sidebar única con los nombres reales de cada módulo (`Inicio`, `Reclutamiento`, `Recursos Humanos`, `Operaciones` y `Business Intelligence`), submódulos anidados y grupos desplegables. Se mantuvo Inter, el contenido/rutas/permisos y el control de overflow. Build, Guardian y `git diff --check` aprobaron; la revisión autenticada del dashboard continúa limitada por no existir una sesión local disponible.
+
 ## Vigencia de jornadas contra contrato y área BUK - 2026-09-15
 
 - [x] Definir el contrato de vigencia: una asignación deja de ser operativa cuando contrato o área vigente BUK no coinciden.

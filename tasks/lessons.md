@@ -1,5 +1,41 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 355. Plegar una sidebar requiere recomponer todas sus reservas de espacio
+
+- Ocultar solo el panel deja márgenes vacíos si el contenido principal y la barra superior conservan su desplazamiento lateral.
+- El estado plegado debe actualizar conjuntamente sidebar, topbar y workspace, cerrar popovers dependientes y mantener siempre visible el control de restauración.
+- Persistir la preferencia en el cliente evita que una navegación con recarga vuelva a abrir inesperadamente la barra; el responsive móvil debe permanecer independiente.
+
+## 354. Un adorno repetido en widgets puede comunicar un estado inexistente
+
+- No agregar líneas, barras o acentos en una esquina de todas las tarjetas si no representan progreso, selección o una métrica real.
+- En dashboards operativos, cada marca visual debe tener semántica; los adornos ambiguos compiten con indicadores y estados auténticos.
+- Revisar los pseudo-elementos compartidos cuando un ruido visual aparece de forma idéntica en varios widgets.
+
+## 352. Evitar superposición no basta si la tabla deja de ser legible
+
+- No resolver una tabla angosta permitiendo cortes en cualquier carácter: los encabezados pueden quedar verticales y perder legibilidad aunque no se superpongan.
+- Conservar un ancho mínimo coherente para la tabla, encabezados en una línea y `overflow-x: auto` dentro de su tarjeta; permitir wrapping seguro principalmente en las celdas de datos largas.
+- La validación debe ser visual en el viewport real, porque el build y el árbol de accesibilidad no revelan una compresión tipográfica defectuosa.
+
+## 353. La búsqueda global debe indexar la navegación efectiva, no el catálogo completo
+
+- Las sugerencias deben derivarse de los módulos ya filtrados por los permisos efectivos entregados por backend.
+- La búsqueda no reemplaza los guards: al navegar, la ruta protegida y la autorización backend siguen siendo la autoridad final.
+- Validar consulta, estado vacío, teclado y navegación real con una sesión autenticada antes de considerarla funcional.
+
+## 350. Un rediseño visual puede requerir cambiar la estructura, no solo los tokens
+
+- Cuando el usuario entrega una referencia de producto y pide emularla, distinguir entre paleta/estilos y arquitectura visual.
+- Si la referencia organiza la experiencia con sidebar, topbar, alertas, KPIs y paneles, conservar el contenido existente dentro de esa composición en lugar de limitarse a cambiar colores.
+- Antes de cerrar un refresh, confirmar que la forma de navegación y la jerarquía espacial responden al modelo solicitado, no solo que el build compile.
+
+## 351. Los encabezados de navegación deben conservar el vocabulario del ERP
+
+- Si el usuario pide trasladar la lógica visual de una referencia, los rótulos `MAIN`, `INSIGHTS` y `SYSTEM` son posiciones estructurales, no nombres que deban copiarse.
+- El menú debe mostrar los encabezados reales del ERP (`Inicio`, `Reclutamiento`, `Recursos Humanos`, `Operaciones`, etc.) y anidar debajo sus submódulos autorizados.
+- No introducir categorías genéricas nuevas cuando el usuario ya tiene un vocabulario de módulos definido.
+
 ## 349. Una jornada no puede seguir vigente después de un cambio de contrato BUK
 
 - La asignación histórica debe conservarse, pero solo puede alimentar el calendario y los KPI mientras contrato y área almacenados en la asignación coincidan con la proyección BUK actual.
@@ -3621,3 +3657,15 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - El permiso de Aprobaciones no implica lectura global: la cola y el detalle deben limitarse al aprobador asignado, reservando la vista total para administración o una feature explícita de historial.
 - Los gráficos no deben descargar tablas operativas completas para agregar en el navegador; la base debe devolver series resumidas cuyo tamaño dependa de fechas o categorías, no del número de solicitudes.
 - Todo helper `SECURITY DEFINER` interno debe quedar sin `EXECUTE` para `authenticated`, aunque la función pública que lo envuelve valide correctamente a `auth.uid()`.
+## 2026-09-15 - La referencia visual debe separar sidebar y workspace sin inventar un rail
+
+- Si el usuario entrega una segunda referencia estructural, no basta con aproximar colores o agregar componentes: hay que comparar la composición completa (sidebar única, header del workspace, búsqueda, breadcrumb, contenedor y grilla).
+- No agregar una barra de iconos o branding lateral si la referencia no la necesita; conservar solo la navegación existente y aplicar el contenido actual dentro de la nueva estructura.
+- En dashboards operativos, las tarjetas que comparten una fila deben usar una altura gobernada por la grilla; las tablas deben tener un contenedor de overflow propio para que las columnas largas no invadan otras tarjetas.
+
+## 2026-09-15 - Los controles globales y la jerarquía del sidebar deben seguir la geometría de la referencia
+
+- No ubicar perfil, notificaciones o tema en una franja superior si la referencia los resuelve como footer del sidebar; validar su posición real y también la dirección de apertura de sus popovers.
+- Los encabezados de módulo y cada submódulo requieren iconos semánticos distintos; un icono genérico repetido degrada la orientación y no cumple una réplica estructural.
+- Un grupo abierto debe comunicar pertenencia con un eje vertical continuo, no solo con indentación, y los grupos inactivos no deben quedar abiertos por defecto.
+- En hojas CSS heredadas con varias cascadas, una regla correcta puede quedar anulada por bloques posteriores; la verificación visual debe comprobar estilos computados por resultado, no asumir que el último cambio aplicado domina.

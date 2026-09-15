@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { preloadRouteModulesForPath } from "../router/routeModules";
 import {
   homeNavigationItem,
   navigationModules,
+  type NavigationIconKey,
   type NavigationItem
 } from "../../shared/config/navigation";
 import logo from "../../assets/atlas-mark.png";
@@ -14,145 +15,45 @@ import { useDashboard } from "../../modules/dashboard/hooks/useDashboard";
 import { canViewHrIncentiveAnalytics } from "../../modules/incentives/lib/analyticsAccess";
 import { useTheme } from "../../shared/context/ThemeContext";
 import { TopNotificationsMenu } from "./TopNotificationsMenu";
+import { NavigationIcon } from "./NavigationIcon";
 
-function SubmenuIcon({ iconKey }: { iconKey?: NavigationItem["iconKey"] }) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const
-  };
+type WorkspaceSearchDestination = {
+  id: string;
+  label: string;
+  moduleLabel: string;
+  description: string;
+  to: string;
+  iconKey?: NavigationIconKey;
+};
 
-  switch (iconKey) {
-    case "user-plus":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-          <circle {...commonProps} cx="9" cy="7" r="4" />
-          <line {...commonProps} x1="19" x2="19" y1="8" y2="14" />
-          <line {...commonProps} x1="22" x2="16" y1="11" y2="11" />
-        </svg>
-      );
-    case "arrow-right-left":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="m16 3 4 4-4 4" />
-          <path {...commonProps} d="M20 7H4" />
-          <path {...commonProps} d="m8 21-4-4 4-4" />
-          <path {...commonProps} d="M4 17h16" />
-        </svg>
-      );
-    case "clipboard-list":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <rect {...commonProps} width="8" height="4" x="8" y="2" rx="1" ry="1" />
-          <path {...commonProps} d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-          <path {...commonProps} d="M12 11h4" />
-          <path {...commonProps} d="M12 16h4" />
-          <path {...commonProps} d="M8 11h.01" />
-          <path {...commonProps} d="M8 16h.01" />
-        </svg>
-      );
-    case "bar-chart":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <line {...commonProps} x1="12" x2="12" y1="20" y2="10" />
-          <line {...commonProps} x1="18" x2="18" y1="20" y2="4" />
-          <line {...commonProps} x1="6" x2="6" y1="20" y2="16" />
-        </svg>
-      );
-    case "briefcase":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-          <rect {...commonProps} width="20" height="14" x="2" y="6" rx="2" />
-        </svg>
-      );
-    case "zap":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <polygon {...commonProps} points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-      );
-    case "download":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline {...commonProps} points="7 10 12 15 17 10" />
-          <line {...commonProps} x1="12" x2="12" y1="15" y2="3" />
-        </svg>
-      );
-    case "calendar-clock":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" />
-          <path {...commonProps} d="M16 2v4" />
-          <path {...commonProps} d="M8 2v4" />
-          <path {...commonProps} d="M3 10h5" />
-          <path {...commonProps} d="M17.5 17.5 16 16.3V14" />
-          <circle {...commonProps} cx="16" cy="16" r="6" />
-        </svg>
-      );
-    case "wallet":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
-          <path {...commonProps} d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
-        </svg>
-      );
-    case "trending-up":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <polyline {...commonProps} points="22 7 13.5 15.5 8.5 10.5 2 17" />
-          <polyline {...commonProps} points="16 7 22 7 22 13" />
-        </svg>
-      );
-    case "handshake":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M3 18h3l3-3-3-3H3v6z" />
-          <path {...commonProps} d="M21 18h-3l-3-3 3-3h3v6z" />
-          <path {...commonProps} d="m9 15 2.5 2.5a1.5 1.5 0 0 0 2.1 0L17 14" />
-          <path {...commonProps} d="m15 13-2-2a1.5 1.5 0 0 0-2.1 0L9 13" />
-          <path {...commonProps} d="M11.5 15.5c.3-.3.7-.3 1 0" />
-          <path {...commonProps} d="M12.5 16.5c.3-.3.7-.3 1 0" />
-          <path {...commonProps} stroke="var(--soft-accent, #3b82f6)" strokeWidth={2.4} d="m9.5 5 2 2L16 3.5" />
-        </svg>
-      );
-    case "badge-check":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
-          <path {...commonProps} d="m9 12 2 2 4-4" />
-        </svg>
-      );
-    case "certificate":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M6 3h10l4 4v14H6V3Z" />
-          <path {...commonProps} d="M16 3v5h4" />
-          <path {...commonProps} d="M9 9h5" />
-          <path {...commonProps} d="M9 12h6" />
-          <circle {...commonProps} cx="11" cy="16.5" r="2" />
-          <path {...commonProps} d="m9.6 18.1-.6 2.4 2-1 2 1-.6-2.4" />
-        </svg>
-      );
-    case "document":
-    default:
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path {...commonProps} d="M8 4h6l4 4v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-          <path {...commonProps} d="M14 4v4h4" />
-          <path {...commonProps} d="M9 13h6" />
-        </svg>
-      );
-  }
+function SidebarToggleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3.5" y="4" width="17" height="16" rx="3" />
+      <path d="M9 4v16" />
+    </svg>
+  );
+}
+
+function normalizeSearchValue(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-CL")
+    .trim();
 }
 
 function collectNavigationPaths(items: NavigationItem[] = []): string[] {
   return items.flatMap((item) =>
     item.items?.length ? [item.to, ...collectNavigationPaths(item.items)] : [item.to]
+  );
+}
+
+function navigationItemContainsPath(item: NavigationItem, pathname: string): boolean {
+  return (
+    pathname === item.to ||
+    pathname.startsWith(`${item.to}/`) ||
+    Boolean(item.items?.some((child) => navigationItemContainsPath(child, pathname)))
   );
 }
 
@@ -165,11 +66,23 @@ export function AppShell() {
   const { theme, setTheme } = useTheme();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isWorkspaceSearchOpen, setIsWorkspaceSearchOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.localStorage.getItem("atlas-sidebar-collapsed") === "true";
+  });
+  const [workspaceSearchQuery, setWorkspaceSearchQuery] = useState("");
+  const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(0);
   const [hoveredModule, setHoveredModule] = useState<string | null>(null);
   const [pinnedModule, setPinnedModule] = useState<string | null>(null);
   const [hoveredMegaItem, setHoveredMegaItem] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsMenuRef = useRef<HTMLDivElement>(null);
+  const workspaceSearchRef = useRef<HTMLDivElement>(null);
+  const workspaceSearchInputRef = useRef<HTMLInputElement>(null);
   const thirdTrayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnterMegaItem = (label: string) => {
@@ -294,6 +207,89 @@ export function AppShell() {
     [accessibleModules, appRoles, isSuperAdmin]
   );
 
+  const workspaceSearchDestinations = useMemo(() => {
+    const destinations = new Map<string, WorkspaceSearchDestination>();
+    destinations.set(homeNavigationItem.to, {
+      id: "workspace-search-home",
+      label: homeNavigationItem.label,
+      moduleLabel: "Inicio",
+      description: "Resumen operativo, indicadores y tareas pendientes.",
+      to: homeNavigationItem.to,
+      iconKey: homeNavigationItem.iconKey
+    });
+
+    const addItems = (items: NavigationItem[], moduleLabel: string) => {
+      items.forEach((item) => {
+        destinations.set(item.to, {
+          id: `workspace-search-${item.moduleCode}-${item.to}`,
+          label: item.label,
+          moduleLabel,
+          description: item.description ?? `Ir a ${item.label}.`,
+          to: item.to,
+          iconKey: item.iconKey
+        });
+
+        if (item.items?.length) {
+          addItems(item.items, moduleLabel);
+        }
+      });
+    };
+
+    visibleModules.forEach((module) => {
+      if (module.items?.length) {
+        addItems(module.items, module.label);
+        return;
+      }
+
+      if (module.to) {
+        destinations.set(module.to, {
+          id: `workspace-search-${module.moduleCode ?? module.label}`,
+          label: "Dashboard",
+          moduleLabel: module.label,
+          description: `Indicadores y análisis de ${module.label}.`,
+          to: module.to,
+          iconKey: module.iconKey
+        });
+      }
+    });
+
+    return Array.from(destinations.values());
+  }, [visibleModules]);
+
+  const workspaceSearchResults = useMemo(() => {
+    const normalizedQuery = normalizeSearchValue(workspaceSearchQuery);
+    if (!normalizedQuery) {
+      return workspaceSearchDestinations.slice(0, 7);
+    }
+
+    return workspaceSearchDestinations
+      .map((destination) => {
+        const label = normalizeSearchValue(destination.label);
+        const moduleLabel = normalizeSearchValue(destination.moduleLabel);
+        const description = normalizeSearchValue(destination.description);
+        const route = normalizeSearchValue(destination.to.replace(/\//g, " "));
+        const searchableValue = `${label} ${moduleLabel} ${description} ${route}`;
+
+        if (!searchableValue.includes(normalizedQuery)) {
+          return null;
+        }
+
+        const score = label.startsWith(normalizedQuery)
+          ? 0
+          : label.includes(normalizedQuery)
+            ? 1
+            : moduleLabel.includes(normalizedQuery)
+              ? 2
+              : 3;
+
+        return { destination, score };
+      })
+      .filter((result): result is { destination: WorkspaceSearchDestination; score: number } => Boolean(result))
+      .sort((left, right) => left.score - right.score || left.destination.label.localeCompare(right.destination.label, "es-CL"))
+      .slice(0, 7)
+      .map(({ destination }) => destination);
+  }, [workspaceSearchDestinations, workspaceSearchQuery]);
+
   const openModuleLabel = pinnedModule ?? hoveredModule;
   const openModule = visibleModules.find(
     (module) => module.items?.length && module.label === openModuleLabel
@@ -323,7 +319,88 @@ export function AppShell() {
   }, [displayName]);
   useEffect(() => {
     clearPinnedNavigation();
+    setIsWorkspaceSearchOpen(false);
+    setWorkspaceSearchQuery("");
   }, [location.pathname]);
+
+  useEffect(() => {
+    window.localStorage.setItem("atlas-sidebar-collapsed", String(isSidebarCollapsed));
+    if (isSidebarCollapsed) {
+      clearPinnedNavigation();
+      setIsNotificationsOpen(false);
+      setIsUserMenuOpen(false);
+    }
+  }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    setActiveSearchResultIndex(0);
+  }, [workspaceSearchQuery, workspaceSearchDestinations]);
+
+  useEffect(() => {
+    const handleWorkspaceSearchShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase("es-CL") === "k") {
+        event.preventDefault();
+        setIsWorkspaceSearchOpen(true);
+        workspaceSearchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleWorkspaceSearchShortcut);
+    return () => document.removeEventListener("keydown", handleWorkspaceSearchShortcut);
+  }, []);
+
+  useEffect(() => {
+    if (!isWorkspaceSearchOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!workspaceSearchRef.current?.contains(event.target as Node)) {
+        setIsWorkspaceSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isWorkspaceSearchOpen]);
+
+  const openSearchDestination = (destination: WorkspaceSearchDestination) => {
+    preloadNavigationPath(destination.to);
+    setIsWorkspaceSearchOpen(false);
+    setWorkspaceSearchQuery("");
+    navigate(destination.to);
+  };
+
+  const handleWorkspaceSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setIsWorkspaceSearchOpen(false);
+      workspaceSearchInputRef.current?.blur();
+      return;
+    }
+
+    if (workspaceSearchResults.length === 0) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSearchResultIndex((current) => (current + 1) % workspaceSearchResults.length);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSearchResultIndex((current) =>
+        current === 0 ? workspaceSearchResults.length - 1 : current - 1
+      );
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      openSearchDestination(workspaceSearchResults[activeSearchResultIndex] ?? workspaceSearchResults[0]);
+    }
+  };
 
   useEffect(() => {
     if (!isUserMenuOpen && !isNotificationsOpen && !pinnedModule) {
@@ -399,7 +476,7 @@ export function AppShell() {
           }
         >
           <span className="top-nav-dropdown-icon">
-            <SubmenuIcon iconKey={item.iconKey} />
+            <NavigationIcon iconKey={item.iconKey} />
           </span>
           <span>{item.label}</span>
           {item.items && item.items.length > 0 && (
@@ -425,7 +502,7 @@ export function AppShell() {
                 }
               >
                 <span className="top-nav-dropdown-icon">
-                  <SubmenuIcon iconKey={subItem.iconKey} />
+                  <NavigationIcon iconKey={subItem.iconKey} />
                 </span>
                 <span>{subItem.label}</span>
               </NavLink>
@@ -435,9 +512,55 @@ export function AppShell() {
       </div>
     ));
 
+  const renderSidebarModules = (modules: typeof visibleModules) =>
+    modules.map((module) => {
+      const isActive = Boolean(module.items?.some((item) => navigationItemContainsPath(item, location.pathname)));
+      return (
+        <details
+          key={module.label}
+          className="sidebar-module-group"
+          open={isActive}
+        >
+          <summary className="sidebar-section-toggle">
+            <span className="sidebar-section-heading">
+              <span className="sidebar-section-icon" aria-hidden="true">
+                <NavigationIcon iconKey={module.iconKey} />
+              </span>
+              <span className="sidebar-section-label">{module.label}</span>
+            </span>
+            <span className="sidebar-section-chevron" aria-hidden="true">⌄</span>
+          </summary>
+          {module.items?.length ? (
+            <div className="sidebar-module-items">{renderNavigationDropdownItems(module.items)}</div>
+          ) : (
+            <NavLink
+              to={module.to ?? "/"}
+              end
+              reloadDocument
+              onMouseEnter={() => preloadNavigationPath(module.to)}
+              onFocus={() => preloadNavigationPath(module.to)}
+              className={({ isActive }) =>
+                isActive || (module.to && location.pathname.startsWith(module.to))
+                  ? "top-nav-link top-nav-link-active"
+                  : "top-nav-link"
+              }
+            >
+              <span className="top-nav-icon" aria-hidden="true">
+                <NavigationIcon iconKey="trending-up" />
+              </span>
+              <span>Dashboard</span>
+            </NavLink>
+          )}
+        </details>
+      );
+    });
+
   return (
-    <div className="app-shell app-shell-topnav">
+    <div className={isSidebarCollapsed
+      ? "app-shell app-shell-topnav app-shell-sidebar-collapsed"
+      : "app-shell app-shell-topnav"}>
       <header
+        id="erp-sidebar"
         className={openModule ? "top-shell top-shell--nav-open" : "top-shell"}
         ref={navMenuRef}
       >
@@ -452,7 +575,8 @@ export function AppShell() {
           </NavLink>
 
           <div className="top-nav-stage">
-            <nav className="top-nav" aria-label="Modulos">
+            <nav className="top-nav" aria-label="Módulos">
+              <span className="sidebar-section-label">Inicio</span>
               <NavLink
                 key={homeNavigationItem.to}
                 to={homeNavigationItem.to}
@@ -464,77 +588,12 @@ export function AppShell() {
                   isActive ? "top-nav-link top-nav-link-active" : "top-nav-link"
                 }
               >
+                <span className="top-nav-icon" aria-hidden="true">
+                  <NavigationIcon iconKey={homeNavigationItem.iconKey} />
+                </span>
                 <span>{homeNavigationItem.label}</span>
               </NavLink>
-
-              {visibleModules.map((module) => {
-                const hasChildren = Boolean(module.items?.length);
-                const isModuleActive = hasChildren
-                  ? module.items?.some((item) => location.pathname.startsWith(item.to))
-                  : Boolean(module.to && location.pathname.startsWith(module.to));
-                const isModuleOpen = openModuleLabel === module.label && hasChildren;
-
-                if (!hasChildren || !module.items) {
-                  return (
-                    <NavLink
-                      key={module.label}
-                      to={module.to ?? "/"}
-                      end
-                      reloadDocument
-                      onMouseEnter={() => preloadNavigationPath(module.to)}
-                      onFocus={() => preloadNavigationPath(module.to)}
-                      className={({ isActive }) =>
-                        isActive || isModuleActive
-                          ? "top-nav-link top-nav-link-active"
-                          : "top-nav-link"
-                      }
-                    >
-                      <span>{module.label}</span>
-                    </NavLink>
-                  );
-                }
-
-                return (
-                  <div
-                    key={module.label}
-                    className="top-nav-group"
-                    onMouseEnter={() => {
-                      handleMouseEnterModule(module.label);
-                      module.items?.forEach((item) => preloadNavigationPath(item.to));
-                    }}
-                    onMouseLeave={() => handleMouseLeaveModule(module.label)}
-                  >
-                    <button
-                      type="button"
-                      className={
-                        isModuleActive || isModuleOpen
-                          ? "top-nav-link top-nav-link-active top-nav-toggle"
-                          : "top-nav-link top-nav-toggle"
-                      }
-                      onClick={() =>
-                        setPinnedModule((current) => {
-                          const nextPinned = current === module.label ? null : module.label;
-                          setHoveredModule(nextPinned);
-                          return nextPinned;
-                        })
-                      }
-                      aria-expanded={isModuleOpen}
-                    >
-                      <span>{module.label}</span>
-                      <span className="top-nav-indicator" aria-hidden="true">
-                        {isModuleOpen ? "▴" : "▾"}
-                      </span>
-                    </button>
-
-                    {isModuleOpen && module.items && module.items.length > 0 && (
-                      <div className="top-nav-dropdown-panel top-nav-dropdown-panel--desktop">
-                        {renderNavigationDropdownItems(module.items)}
-                      </div>
-                    )}
-
-                  </div>
-                );
-              })}
+              {renderSidebarModules(visibleModules)}
 
             </nav>
           </div>
@@ -639,6 +698,89 @@ export function AppShell() {
       </header>
 
       <main className="main-content main-content-topnav">
+        <div className="workspace-header">
+          <div className="workspace-leading">
+            <button
+              type="button"
+              className="workspace-sidebar-toggle"
+              aria-controls="erp-sidebar"
+              aria-expanded={!isSidebarCollapsed}
+              aria-label={isSidebarCollapsed ? "Mostrar barra lateral" : "Ocultar barra lateral"}
+              title={isSidebarCollapsed ? "Mostrar barra lateral" : "Ocultar barra lateral"}
+              onClick={() => setIsSidebarCollapsed((current) => !current)}
+            >
+              <SidebarToggleIcon />
+            </button>
+            <span className="workspace-leading-divider" aria-hidden="true" />
+            <div className="workspace-breadcrumb" aria-label="Ruta actual">
+              <span>Inicio</span>
+              <span aria-hidden="true">›</span>
+              <strong>Centro de control</strong>
+            </div>
+          </div>
+          <div className="workspace-search-shell" ref={workspaceSearchRef}>
+            <label className="workspace-search">
+              <span aria-hidden="true">⌕</span>
+              <input
+                ref={workspaceSearchInputRef}
+                type="search"
+                placeholder="Buscar módulos y funciones..."
+                aria-label="Buscar en el ERP"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="workspace-search-results"
+                aria-expanded={isWorkspaceSearchOpen}
+                aria-activedescendant={workspaceSearchResults[activeSearchResultIndex]?.id}
+                value={workspaceSearchQuery}
+                onFocus={() => setIsWorkspaceSearchOpen(true)}
+                onChange={(event) => {
+                  setWorkspaceSearchQuery(event.target.value);
+                  setIsWorkspaceSearchOpen(true);
+                }}
+                onKeyDown={handleWorkspaceSearchKeyDown}
+              />
+              <kbd>⌘ K</kbd>
+            </label>
+            {isWorkspaceSearchOpen ? (
+              <div className="workspace-search-results" id="workspace-search-results" role="listbox">
+                <span className="workspace-search-results-label">
+                  {workspaceSearchQuery.trim() ? "Destinos recomendados" : "Accesos disponibles"}
+                </span>
+                {workspaceSearchResults.length > 0 ? (
+                  workspaceSearchResults.map((destination, index) => (
+                    <button
+                      key={destination.to}
+                      id={destination.id}
+                      type="button"
+                      role="option"
+                      aria-selected={index === activeSearchResultIndex}
+                      className={index === activeSearchResultIndex
+                        ? "workspace-search-result workspace-search-result-active"
+                        : "workspace-search-result"}
+                      onMouseEnter={() => setActiveSearchResultIndex(index)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => openSearchDestination(destination)}
+                    >
+                      <span className="workspace-search-result-icon" aria-hidden="true">
+                        <NavigationIcon iconKey={destination.iconKey} />
+                      </span>
+                      <span className="workspace-search-result-copy">
+                        <strong>{destination.label}</strong>
+                        <small>{destination.description}</small>
+                      </span>
+                      <span className="workspace-search-result-module">{destination.moduleLabel}</span>
+                    </button>
+                  ))
+                ) : (
+                  <span className="workspace-search-empty">
+                    No hay destinos autorizados que coincidan con la búsqueda.
+                  </span>
+                )}
+              </div>
+            ) : null}
+          </div>
+          <span className="workspace-header-spacer" aria-hidden="true" />
+        </div>
         <Outlet />
       </main>
 

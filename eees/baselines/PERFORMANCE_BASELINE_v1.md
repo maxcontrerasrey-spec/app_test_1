@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.29
+version: 1.0.32
 status: Activo
 language: es-CL
 owner: Quality
@@ -30,7 +30,7 @@ Baseline inicial de performance P4 medido desde el build productivo y smokes eje
 - Archivos JS: 51.
 - JS total: 2,632,397 bytes.
 - Archivos CSS: 10.
-- CSS total: 216,605 bytes.
+- CSS total: 265,120 bytes.
 - Fondo de acceso: `dist/assets/fondo-BHbpeV8v.webp`, 65,132 bytes.
 - Mayor mapa: `dist/maps/chile.json`, 1,454,860 bytes.
 - Mayor vendor JS: `echarts-vendor`, 512,504 bytes.
@@ -94,6 +94,14 @@ Revision 2026-08-11 representantes sindicales DSAL: el total sube 634 bytes, JS 
 
 Revision 2026-08-08 auditoria DSAL: el total sube 419 bytes y JS sube 419 bytes por exigir folio con cupo en la aprobacion de precandidatos y mostrar la instruccion operativa cuando no hay destino habilitado. No agrega vendors, CSS ni assets.
 
+Revision 2026-09-15 rediseño NexaERP: CSS sube 5,958 bytes por convertir el shell del ERP a una app web con sidebar, navegación contextual, alerta operacional y composición de dashboard responsive. Se conserva la tipografía Inter, los contratos de datos, las rutas y la autorización; no agrega vendors ni assets.
+
+Revision 2026-09-15 navegación Shadcn: CSS sube 1,035 bytes para anclar perfil, notificaciones y tema al pie del sidebar, incorporar el eje vertical de submódulos y compactar la navegación. La regla redundante detectada por Guardian fue eliminada antes de actualizar este límite; no agrega vendors, rutas ni assets.
+
+Revision 2026-09-15 búsqueda y legibilidad transversal: CSS sube 3,429 bytes para centrar el buscador autorizado, mostrar recomendaciones navegables y encapsular textos largos y tablas mediante wrapping seguro o desplazamiento horizontal. Se retira la alerta redundante del inicio y se compacta su cabecera; no agrega vendors, assets ni permisos frontend alternativos.
+
+Revision 2026-09-15 sidebar plegable: CSS sube 1,533 bytes para incorporar el control accesible de la cabecera, ocultar la navegación lateral y recomponer el ancho útil del workspace. La preferencia se conserva localmente y el catálogo SVG se separa del shell para mantener cada componente bajo el umbral de 800 líneas; no agrega dependencias, vendors ni permisos.
+
 Revision 2026-08-08 revisores y detalle DSAL: el total sube 1,866 bytes y JS sube 1,866 bytes por ampliar la autoridad del flujo a gerente de área DSAL, Director de Operaciones y Reclutamiento, además de incorporar el detalle expandible de cada precandidato. No agrega vendors, CSS ni assets.
 
 Revision 2026-08-14 Psych AI V5: el total global sube 1,780 bytes, JS sube 1,521 bytes y CSS sube 259 bytes por reconstruir la salida metodologica del informe psicolaboral integrado, schema V5 y secciones de revisión profesional. No agrega vendors ni assets trackeados; el cambio permanece en el módulo lazy Gestión Psicolaboral y Edge Functions.
@@ -141,7 +149,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 247156,
+  "cssTotalBytes": 265120,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -226,6 +234,16 @@ Revision 2026-08-17 firma legal RUN CI: GitHub Actions `Audit Enterprise Guardra
 Revision 2026-08-18 carga BUK DSAL en contingencia: el total sube 776 bytes y JS sube 776 bytes por exponer en el detalle de Control de candidatos el flujo auditado de `enqueue_buk_generation_contingency`, con motivo obligatorio y sin mover la etapa ERP. No agrega vendors, CSS, rutas ni assets trackeados.
 
 Revision 2026-08-27 retiro ORION y mapa legado: se elimina el asset sin consumidores `public/maps/chile.json` y deja de exigirse en `trackedAssets`. El BI de regiones usa barras y no realiza solicitudes al mapa; la reducción se mide nuevamente en la auditoría integral del árbol actual.
+
+Revision 2026-09-15 navegación app ERP: CSS sube 1,542 bytes por agregar el rail lateral de accesos rápidos y agrupar la navegación expandida con los nombres reales de los módulos ERP. Se mantienen Inter, iconos existentes, rutas, permisos y contenido funcional.
+
+Revision 2026-09-15 corrección de composición: CSS queda en 256,732 bytes por retirar el rail lateral y establecer una sidebar única con header de workspace, breadcrumb, búsqueda y contenedor centrado al estilo de la referencia Shadcn. No cambia contenido, rutas, roles ni permisos.
+
+Revision 2026-09-15 ajuste de densidad y ejes: CSS queda en 258,603 bytes por normalizar alturas de tarjetas, igualar la fila de tareas/aprobaciones y encapsular tablas con overflow interno. No cambia contenido, rutas, roles ni permisos.
+
+Revision 2026-09-15 interacción de navegación: CSS queda en 259,051 bytes por agregar grupos de módulos desplegables con chevron y estados accesibles. No cambia contenido, rutas, roles ni permisos.
+
+Revision 2026-09-15 control de densidad de sidebar: CSS queda en 259,123 bytes por limitar la navegación a un módulo activo abierto y aislar el scroll vertical del menú. No cambia contenido, rutas, roles ni permisos.
 
 ## Politica de actualizacion
 
