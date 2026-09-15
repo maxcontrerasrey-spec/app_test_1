@@ -7797,7 +7797,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   --radius-sm: 8px;
 }
 
-:root:not([data-theme="dark"]):not([data-theme="e-ink"]) {
+:root[data-theme="light"] {
   --surface-page: #f5f5f7;
   --surface-card: #ffffff;
   --surface-soft: #f8f8fb;

@@ -3715,6 +3715,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 ## 2026-09-15 - Una capa visual tardía debe cerrar también su contrato oscuro
 
 - Un bloque `:root` agregado al final de una hoja puede empatar en especificidad y sobrescribir los tokens de `[data-theme="dark"]`; toda capa visual tardía debe declarar su variante oscura después de sus valores claros.
+- Para compatibilidad real entre motores, el bloque cromático claro debe apuntar al estado positivo `:root[data-theme="light"]`; encadenar exclusiones con varios `:not(...)` dejó una cascada distinta en Safari aunque Chromium pasara.
 - No usar reglas globales como `[data-theme="dark"] a` para colorear toda la navegación: los enlaces con clase deben conservar sus estados semánticos y el color global debe limitarse a enlaces sin clase.
 - La prueba del tema debe medir estilos computados sobre shell, sidebar, controles y tarjetas autenticadas; comprobar solo que existe `data-theme="dark"` no detecta una interfaz mitad clara y mitad oscura.
 
