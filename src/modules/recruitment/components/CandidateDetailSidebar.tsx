@@ -761,6 +761,10 @@ export function CandidateDetailSidebar({
         <CandidateDocumentChecklist
           caseCandidateId={selectedCandidate.id}
           candidateStageCode={selectedCandidate.stage_code}
+          allowHiredDocumentRecovery={
+            mode === "personnel_contracted" &&
+            selectedCaseDetail?.case.case_code === "RC-0142"
+          }
           readOnly={readOnly}
           onChecklistUpdated={onCandidateFileUpdated}
         />

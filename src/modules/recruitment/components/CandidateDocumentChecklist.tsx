@@ -22,6 +22,7 @@ type ChecklistModalState =
 type CandidateDocumentChecklistProps = {
   caseCandidateId: string;
   candidateStageCode?: string | null;
+  allowHiredDocumentRecovery?: boolean;
   readOnly?: boolean;
   onChecklistUpdated?: () => Promise<void>;
 };
@@ -29,6 +30,7 @@ type CandidateDocumentChecklistProps = {
 export function CandidateDocumentChecklist({
   caseCandidateId,
   candidateStageCode,
+  allowHiredDocumentRecovery = false,
   readOnly = false,
   onChecklistUpdated
 }: CandidateDocumentChecklistProps) {
@@ -45,7 +47,7 @@ export function CandidateDocumentChecklist({
   const [modalState, setModalState] = useState<ChecklistModalState>({ mode: "closed" });
 
   async function loadChecklist() {
-    if (candidateStageCode === "hired") {
+    if (candidateStageCode === "hired" && !allowHiredDocumentRecovery) {
       setChecklist(null);
       setErrorMsg("");
       setIsLoading(false);
@@ -65,10 +67,10 @@ export function CandidateDocumentChecklist({
 
   useEffect(() => {
     void loadChecklist();
-  }, [caseCandidateId, candidateStageCode]);
+  }, [allowHiredDocumentRecovery, caseCandidateId, candidateStageCode]);
 
   async function handleRealUploadStart(doc: CandidateDocumentRow) {
-    if (candidateStageCode === "hired") {
+    if (candidateStageCode === "hired" && !allowHiredDocumentRecovery) {
       setUploadError("Los documentos de candidatos contratados están resguardados en BUK.");
       return;
     }
@@ -274,7 +276,7 @@ export function CandidateDocumentChecklist({
 
   const isHiredCandidate = candidateStageCode === "hired";
 
-  if (isHiredCandidate) {
+  if (isHiredCandidate && !allowHiredDocumentRecovery) {
     return (
       <div className="control-detail-body document-checklist-container">
         <div className="document-buk-archive-panel">
@@ -317,6 +319,16 @@ export function CandidateDocumentChecklist({
 
   return (
     <div className="control-detail-body document-checklist-container">
+      {isHiredCandidate && allowHiredDocumentRecovery ? (
+        <div className="document-buk-archive-panel">
+          <small>Recuperación documental temporal</small>
+          <strong>Folio habilitado para completar documentos</strong>
+          <p>
+            Esta ventana permite ver, cargar y validar documentos faltantes del folio autorizado.
+            Cada operación queda registrada y no reabre la contratación ni modifica la ficha BUK.
+          </p>
+        </div>
+      ) : null}
       <div className="document-semaphore-banner">
         <div className={semaphoreClass}></div>
         <span><strong>Estado Documental:</strong> {semaphoreText}</span>

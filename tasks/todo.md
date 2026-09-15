@@ -1,5 +1,17 @@
 # Tareas y Roadmap de Desarrollo
 
+## Apertura documental temporal RC-0142 - 2026-09-15
+
+- [x] Corregir la interfaz de Personal contratado para mostrar el checklist del folio temporalmente habilitado.
+- [x] Definir y verificar el mecanismo productivo para habilitar carga documental histórica sin reabrir contratación ni recrear fichas BUK.
+- [x] Restringir el alcance exclusivamente a los candidatos afectados del folio RC-0142 y conservar autorización/trazabilidad.
+- [ ] Ejecutar la carga documental desde ERP hacia las fichas BUK existentes usando el backfill idempotente autorizado.
+- [ ] Verificar en producción candidato por candidato: archivos origen, respuesta BUK, IDs documentales y ausencia de duplicados.
+- [ ] Cerrar la ventana temporal del folio y ejecutar Guardian, auditorías y diff final.
+
+Resultado parcial productivo: se habilitó el backfill documental aislado y se procesó exitosamente a Victor Raúl Osorio Ponce (`BUK 42876`), con Solicitud de Contratación `SC-2026-000103` y carga documental BUK confirmada. Los otros 16 candidatos quedaron correctamente bloqueados porque su validación documental continúa `pending`; no se aprobaron documentos automáticamente.
+
+
 ## Informes completos en pestaña Contratados de Psicolaboral - 2026-09-15
 
 - [x] Auditar la diferencia entre los estados `completed`/`approved` y `hired` en la vista expandida.
