@@ -98,19 +98,28 @@ export function HiringRequestPage() {
   const hiringRoles = (catalogsData?.hiringRoles ?? []) as HiringRole[];
   const contractCatalog = (catalogsData?.contractCatalog ?? []) as ContractCatalogItem[];
   const shiftCatalog = (catalogsData?.shiftCatalog ?? []) as ShiftCatalogItem[];
+  const jobPositionContractAccess = catalogsData?.jobPositionContractAccess ?? [];
   const catalogsError =
     catalogsQueryError instanceof Error ? catalogsQueryError.message : "";
 
   const contractOptions = useMemo(
-    () =>
-      [...contractCatalog].sort((left, right) =>
-        left.contractName.localeCompare(right.contractName, "es")
-      ),
+    () => Array.from(
+      new Map(contractCatalog.map((contract) => [contract.id, contract])).values()
+    ).sort((left, right) => left.contractName.localeCompare(right.contractName, "es")),
     [contractCatalog]
   );
 
   const selectedContract =
     contractOptions.find((contract) => contract.contractName === nombreContrato) ?? null;
+  const availableHiringRoles = useMemo(() => {
+    if (!selectedContract) return [];
+    const enabledIds = new Set(
+      jobPositionContractAccess
+        .filter((access) => access.contractId === selectedContract.id)
+        .map((access) => access.jobPositionId)
+    );
+    return hiringRoles.filter((role) => enabledIds.has(role.id));
+  }, [hiringRoles, jobPositionContractAccess, selectedContract]);
   const fechaTermino = addThreeMonths(fechaInicio);
   const selectedRequestedDate = fechaSolicitadaIngreso
     ? parseDateValue(fechaSolicitadaIngreso)
@@ -194,7 +203,7 @@ export function HiringRequestPage() {
     }
 
     const selectedJobPosition =
-      hiringRoles.find((role) => role.name === cargoSolicitado) ?? null;
+      availableHiringRoles.find((role) => role.name === cargoSolicitado) ?? null;
     const selectedShift = shiftCatalog.find((shift) => shift.name === turno) ?? null;
 
     if (!selectedJobPosition || !selectedShift) {
@@ -302,6 +311,29 @@ export function HiringRequestPage() {
               />
             </div>
 
+            <div className="contract-grid">
+              <SelectField
+                id="nombre-contrato"
+                label="Contrato de destino"
+                value={nombreContrato}
+                onChange={(e) => {
+                  setNombreContrato(e.target.value);
+                  setCargoSolicitado("");
+                }}
+                disabled={isCatalogsLoading || Boolean(catalogsError)}
+                options={contractOptions.map((c) => ({ value: c.contractName, label: c.contractName }))}
+                placeholder="Seleccione primero el contrato"
+              />
+
+              <TextField
+                id="numero-contrato"
+                label="Numero contrato"
+                value={selectedContract?.contractNumber ?? ""}
+                placeholder="Se completa automaticamente"
+                readOnly
+              />
+            </div>
+
             <div className="request-primary-grid">
               <SelectField
                 id="cargo-solicitado"
@@ -309,10 +341,14 @@ export function HiringRequestPage() {
                 className="request-primary-grid-wide"
                 value={cargoSolicitado}
                 onChange={(e) => setCargoSolicitado(e.target.value)}
-                disabled={isCatalogsLoading || Boolean(catalogsError)}
-                options={hiringRoles.map((role) => ({ value: role.name, label: role.name }))}
-                placeholder="Seleccione el cargo"
+                disabled={isCatalogsLoading || Boolean(catalogsError) || !selectedContract}
+                options={availableHiringRoles.map((role) => ({ value: role.name, label: role.name }))}
+                placeholder={selectedContract ? "Seleccione el cargo habilitado en BUK" : "Seleccione primero el contrato"}
               />
+
+              {selectedContract && !isCatalogsLoading && !catalogsError && availableHiringRoles.length === 0 ? (
+                <p className="form-status">No hay cargos activos habilitados en BUK para este contrato.</p>
+              ) : null}
 
               <TextField
                 id="numero-vacantes"
@@ -330,26 +366,6 @@ export function HiringRequestPage() {
                 value={fechaSolicitadaIngreso}
                 onChange={setFechaSolicitadaIngreso}
                 minValue={todayValue}
-              />
-            </div>
-
-            <div className="contract-grid">
-              <SelectField
-                id="nombre-contrato"
-                label="Nombre de contrato"
-                value={nombreContrato}
-                onChange={(e) => setNombreContrato(e.target.value)}
-                disabled={isCatalogsLoading || Boolean(catalogsError)}
-                options={contractOptions.map((c) => ({ value: c.contractName, label: c.contractName }))}
-                placeholder="Seleccione el contrato"
-              />
-
-              <TextField
-                id="numero-contrato"
-                label="Numero contrato"
-                value={selectedContract?.contractNumber ?? ""}
-                placeholder="Se completa automaticamente"
-                readOnly
               />
             </div>
 

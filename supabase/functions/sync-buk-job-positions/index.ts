@@ -15,6 +15,12 @@ type JobPositionPayload = {
   is_active: boolean;
 };
 
+type BukAreaRecord = Record<string, unknown>;
+type ContractMapping = {
+  contract_id: number;
+  buk_area_name: string;
+};
+
 type ExistingJobPosition = {
   id: number;
   code: string;
@@ -214,6 +220,54 @@ async function fetchAllBukRoles() {
   return allRoles;
 }
 
+async function fetchAllBukAreas() {
+  const allAreas: BukAreaRecord[] = [];
+
+  for (let page = 1; page <= 100; page += 1) {
+    const url = new URL(buildBukTenantApiUrl("/api/v1/organization/areas"));
+    url.searchParams.set("page", String(page));
+    url.searchParams.set("page_size", "100");
+
+    const payload = await fetchBukJson(url.toString());
+    const rows = extractBukObjectRows(payload);
+    allAreas.push(...rows);
+
+    const nextPage = resolveNextPage(payload, page);
+    if (!nextPage || rows.length === 0) break;
+    page = nextPage - 1;
+  }
+
+  return allAreas;
+}
+
+function readNumericId(record: BukRoleRecord, keys: string[]) {
+  const value = readText(record, keys);
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function normalizeBukAreaLabel(value: string | null | undefined) {
+  return normalizeText(value).replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+function areaLabels(area: BukAreaRecord) {
+  const parent = area.parent_area;
+  const parentRecord = parent && typeof parent === "object" && !Array.isArray(parent)
+    ? parent as BukAreaRecord
+    : null;
+
+  return [
+    readText(area, ["name", "area_name"]),
+    readText(area, ["second_level_name", "department_name"]),
+    parentRecord ? readText(parentRecord, ["name", "area_name"]) : ""
+  ].map(normalizeBukAreaLabel).filter(Boolean);
+}
+
+function readAreaActive(area: BukAreaRecord) {
+  const status = readText(area, ["status", "estado", "active", "is_active"]);
+  return !status || !["inactive", "inactivo", "disabled", "deshabilitado", "archived"].includes(normalizeText(status));
+}
+
 async function assertCatalogSyncAccess(accessToken: string) {
   const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
   const serviceRoleKey = getSupabaseSecretKey();
@@ -254,10 +308,12 @@ async function assertCatalogSyncAccess(accessToken: string) {
 
 async function syncJobPositions(
   supabase: EdgeClient,
-  positions: JobPositionPayload[]
+  positions: JobPositionPayload[],
+  roles: BukRoleRecord[],
+  areas: BukAreaRecord[]
 ) {
   if (positions.length === 0) {
-    return 0;
+    throw new Error("BUK no devolvio cargos para sincronizar");
   }
 
   const { data: existingRows, error: existingError } = await supabase
@@ -311,7 +367,101 @@ async function syncJobPositions(
     synced += inserts.length;
   }
 
-  return synced;
+  const { data: syncedRows, error: syncedRowsError } = await supabase
+    .from("job_positions")
+    .select("id, code, name")
+    .in("code", positions.map((position) => position.code));
+
+  if (syncedRowsError) {
+    throw new Error(`No fue posible resolver cargos BUK sincronizados: ${syncedRowsError.message}`);
+  }
+
+  const positionByCode = new Map(
+    ((syncedRows ?? []) as ExistingJobPosition[]).map((row) => [row.code, row])
+  );
+  const { data: mappings, error: mappingsError } = await supabase
+    .from("buk_contract_mappings")
+    .select("contract_id, buk_area_name, contracts!inner(is_active)")
+    .eq("is_operational", true)
+    .eq("is_one_to_one", true)
+    .eq("contracts.is_active", true)
+    .not("contract_id", "is", null);
+
+  if (mappingsError) {
+    throw new Error(`No fue posible leer contratos BUK: ${mappingsError.message}`);
+  }
+
+  const mappingByArea = new Map<string, ContractMapping[]>();
+  for (const row of (mappings ?? []) as Array<ContractMapping & { contract_id: number | null }>) {
+    if (!row.contract_id) continue;
+    const key = normalizeBukAreaLabel(row.buk_area_name);
+    const current = mappingByArea.get(key) ?? [];
+    current.push({ contract_id: row.contract_id, buk_area_name: row.buk_area_name });
+    mappingByArea.set(key, current);
+  }
+
+  const areaById = new Map<number, BukAreaRecord>();
+  for (const area of areas) {
+    const id = readNumericId(area, ["id", "area_id"]);
+    if (id) areaById.set(id, area);
+  }
+
+  const accessRows = new Map<string, Record<string, unknown>>();
+  for (const role of roles) {
+    if (!readActive(role)) continue;
+    const roleId = readNumericId(role, ["id", "role_id"]);
+    const position = roleId ? positionByCode.get(`BUK-ROLE-${roleId}`) : null;
+    if (!roleId || !position) continue;
+    const rawAreaIds = Array.isArray(role.area_ids) ? role.area_ids : [];
+
+    for (const rawAreaId of rawAreaIds) {
+      const areaId = Number(rawAreaId);
+      const area = Number.isSafeInteger(areaId) ? areaById.get(areaId) : null;
+      if (!area || !readAreaActive(area)) continue;
+
+      for (const label of areaLabels(area)) {
+        for (const mapping of mappingByArea.get(label) ?? []) {
+          const key = `${position.id}:${mapping.contract_id}:${areaId}`;
+          accessRows.set(key, {
+            job_position_id: position.id,
+            contract_id: mapping.contract_id,
+            buk_role_id: roleId,
+            buk_area_id: areaId,
+            buk_area_name: readText(area, ["name", "area_name"]) || mapping.buk_area_name,
+            is_active: true,
+            synced_at: new Date().toISOString()
+          });
+        }
+        if (mappingByArea.has(label)) break;
+      }
+    }
+  }
+
+  if (accessRows.size === 0) {
+    throw new Error("BUK no devolvio habilitaciones cargo-contrato compatibles");
+  }
+
+  const syncStartedAt = new Date().toISOString();
+  const rows = [...accessRows.values()].map((row) => ({ ...row, synced_at: syncStartedAt }));
+  const { error: accessUpsertError } = await supabase
+    .from("buk_job_position_contract_access")
+    .upsert(rows, { onConflict: "job_position_id,contract_id,buk_area_id" });
+
+  if (accessUpsertError) {
+    throw new Error(`No fue posible guardar habilitaciones cargo-contrato: ${accessUpsertError.message}`);
+  }
+
+  const { error: deactivateError } = await supabase
+    .from("buk_job_position_contract_access")
+    .update({ is_active: false })
+    .eq("is_active", true)
+    .lt("synced_at", syncStartedAt);
+
+  if (deactivateError) {
+    throw new Error(`No fue posible cerrar habilitaciones obsoletas: ${deactivateError.message}`);
+  }
+
+  return { synced, contractAccessSynced: rows.length };
 }
 
 Deno.serve(async (req) => {
@@ -336,21 +486,23 @@ Deno.serve(async (req) => {
 
     const supabase = await assertCatalogSyncAccess(accessToken);
     const roles = await fetchAllBukRoles();
+    const areas = await fetchAllBukAreas();
     const positions = roles
       .map(mapBukRoleToJobPosition)
       .filter((position): position is NonNullable<typeof position> => Boolean(position));
 
-    const uniqueByName = new Map<string, { code: string; name: string; is_active: boolean }>();
+    const uniqueByCode = new Map<string, { code: string; name: string; is_active: boolean }>();
     for (const position of positions) {
-      uniqueByName.set(normalizeText(position.name), position);
+      uniqueByCode.set(position.code, position);
     }
 
-    const syncedCount = await syncJobPositions(supabase, [...uniqueByName.values()]);
+    const syncResult = await syncJobPositions(supabase, [...uniqueByCode.values()], roles, areas);
 
     return new Response(
       JSON.stringify({
-        synced: syncedCount,
-        source: "buk_roles"
+        synced: syncResult.synced,
+        contractAccessSynced: syncResult.contractAccessSynced,
+        source: "buk_roles_and_areas"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );

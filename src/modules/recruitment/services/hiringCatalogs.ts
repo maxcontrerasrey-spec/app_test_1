@@ -28,6 +28,11 @@ export type ShiftCatalogItem = {
   active: boolean;
 };
 
+export type HiringJobPositionContractAccess = {
+  jobPositionId: number;
+  contractId: number;
+};
+
 type JobPositionRow = {
   id: number;
   code: string;
@@ -60,6 +65,11 @@ type ShiftRow = {
   is_active: boolean;
 };
 
+type JobPositionContractAccessRow = {
+  job_position_id: number;
+  contract_id: number;
+};
+
 export async function syncBukJobPositionsBestEffort() {
   if (!supabase) {
     return false;
@@ -83,11 +93,12 @@ export async function fetchHiringCatalogs() {
       hiringRoles: [] as HiringRole[],
       contractCatalog: [] as ContractCatalogItem[],
       shiftCatalog: [] as ShiftCatalogItem[],
+      jobPositionContractAccess: [] as HiringJobPositionContractAccess[],
       error: "Supabase no está configurado en este entorno."
     };
   }
 
-  const [jobPositionsResponse, contractsResponse, shiftsResponse] = await Promise.all([
+  const [jobPositionsResponse, contractsResponse, shiftsResponse, accessResponse] = await Promise.all([
     supabase
       .from("job_positions")
       .select("id, code, name, is_active")
@@ -106,17 +117,22 @@ export async function fetchHiringCatalogs() {
       .from("shifts")
       .select("id, code, name, is_active")
       .eq("is_active", true)
-      .order("name", { ascending: true })
+      .order("name", { ascending: true }),
+    supabase
+      .from("buk_job_position_contract_access")
+      .select("job_position_id, contract_id")
+      .eq("is_active", true)
   ]);
 
-  if (jobPositionsResponse.error || contractsResponse.error || shiftsResponse.error) {
+  if (jobPositionsResponse.error || contractsResponse.error || shiftsResponse.error || accessResponse.error) {
     const firstError =
-      jobPositionsResponse.error ?? contractsResponse.error ?? shiftsResponse.error;
+      jobPositionsResponse.error ?? contractsResponse.error ?? shiftsResponse.error ?? accessResponse.error;
 
     return {
       hiringRoles: [] as HiringRole[],
       contractCatalog: [] as ContractCatalogItem[],
       shiftCatalog: [] as ShiftCatalogItem[],
+      jobPositionContractAccess: [] as HiringJobPositionContractAccess[],
       error: firstError
         ? getSupabaseErrorMessage(
             firstError,
@@ -167,10 +183,17 @@ export async function fetchHiringCatalogs() {
       active: row.is_active
     })) ?? [];
 
+  const jobPositionContractAccess =
+    (accessResponse.data as JobPositionContractAccessRow[] | null)?.map((row) => ({
+      jobPositionId: row.job_position_id,
+      contractId: row.contract_id
+    })) ?? [];
+
   return {
     hiringRoles,
     contractCatalog,
     shiftCatalog,
+    jobPositionContractAccess,
     error: null
   };
 }
