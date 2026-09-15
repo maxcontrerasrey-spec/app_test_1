@@ -6,7 +6,9 @@
 - [x] Mantener submódulos autorizados, ruta activa, tooltips y separadores por módulo.
 - [x] Eliminar el buscador y la lógica de filtrado de Seguimiento de solicitudes.
 - [x] Actualizar pruebas contractuales y smoke autenticado para la nueva jerarquía.
-- [ ] Ejecutar build, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+- [x] Ejecutar build, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
+Resultado productivo: el rail compacto muestra exclusivamente los submódulos autorizados y conserva una línea separadora entre cada grupo funcional; se retiraron Inicio, los iconos de cabecera de módulo y los módulos sin submódulos. En Seguimiento de solicitudes se eliminó el buscador local y toda su lógica de filtrado, manteniendo intactos la tabla y sus estados. El commit funcional `08d04d4` quedó en `main`; las pruebas contractuales pasaron 7/7, Guardian cerró con 0 errores y 0 advertencias y el workflow 35031139660 aprobó los smokes autenticados y la matriz completa. Producción sirve `index-CGNqBxK9.css`, el rail sin controles padre y `HomePage-Rh1O66FA.js` sin el buscador retirado.
 
 ## Separación elegante entre rail compacto y contenido - 2026-09-15
 
