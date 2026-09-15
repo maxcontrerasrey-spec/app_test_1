@@ -318,6 +318,78 @@ async function assertHiringRequestLayout(page) {
   );
 }
 
+async function assertDarkThemeIntegrity(page) {
+  await page.evaluate(() => localStorage.setItem("ui-theme", "dark"));
+  await page.reload({ waitUntil: "domcontentloaded", timeout: DEFAULT_TIMEOUT_MS });
+  await page.waitForFunction(
+    () => document.documentElement.getAttribute("data-theme") === "dark",
+    undefined,
+    { timeout: DEFAULT_TIMEOUT_MS }
+  );
+
+  const audit = await page.evaluate(() => {
+    const parseColor = (value) => {
+      const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+      return {
+        red: channels[0] ?? 0,
+        green: channels[1] ?? 0,
+        blue: channels[2] ?? 0,
+        alpha: channels[3] ?? 1
+      };
+    };
+    const luminance = ({ red, green, blue }) => {
+      const linear = [red, green, blue].map((channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.03928
+          ? normalized / 12.92
+          : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    const selectors = [
+      "body",
+      ".app-shell-topnav",
+      ".top-shell",
+      ".top-brand-block",
+      ".theme-toggle",
+      ".top-user-panel",
+      ".dashboard-info-card",
+      ".hiring-request-summary-card"
+    ];
+    const surfaces = selectors.flatMap((selector) => {
+      const element = document.querySelector(selector);
+      if (!element) return [];
+      const backgroundColor = getComputedStyle(element).backgroundColor;
+      const parsed = parseColor(backgroundColor);
+      return [{ selector, backgroundColor, alpha: parsed.alpha, luminance: luminance(parsed) }];
+    });
+    const heading = document.querySelector("main h1");
+    const headingColor = heading ? parseColor(getComputedStyle(heading).color) : null;
+
+    return {
+      theme: document.documentElement.getAttribute("data-theme"),
+      colorScheme: getComputedStyle(document.documentElement).colorScheme,
+      surfaces,
+      headingLuminance: headingColor ? luminance(headingColor) : null
+    };
+  });
+
+  assert(audit.theme === "dark", "Authenticated UI must resolve the requested dark theme.");
+  assert(audit.colorScheme === "dark", "Dark mode must expose the native dark color scheme.");
+  assert(
+    audit.surfaces.length >= 6 &&
+      audit.surfaces.every((surface) => surface.alpha < 0.7 || surface.luminance < 0.12),
+    `Dark mode contains light shell surfaces: ${audit.surfaces
+      .filter((surface) => surface.alpha >= 0.7 && surface.luminance >= 0.12)
+      .map((surface) => `${surface.selector}=${surface.backgroundColor}`)
+      .join(", ")}`
+  );
+  assert(
+    audit.headingLuminance === null || audit.headingLuminance > 0.62,
+    "Dark mode headings must keep strong foreground contrast."
+  );
+}
+
 async function assertNexusLayoutContracts(page, currentPath) {
   if (currentPath === "/") {
     await assertNexusHomeLayout(page);
@@ -388,6 +460,7 @@ async function assertAuthenticatedState(page, baseUrl, config) {
   }
 
   await page.waitForLoadState("domcontentloaded", { timeout: DEFAULT_TIMEOUT_MS });
+  await assertDarkThemeIntegrity(page);
   await assertNexusLayoutContracts(page, currentPath);
   return {
     target_result: "authenticated_route_loaded",

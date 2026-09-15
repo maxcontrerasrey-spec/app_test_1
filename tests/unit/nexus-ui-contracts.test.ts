@@ -107,4 +107,19 @@ describe("Nexus UI contracts", () => {
     expect(approvals).not.toContain("filteredApprovals");
     expect(approvals).toContain("No hay aprobaciones en curso.");
   });
+
+  it("keeps the final Nexus layer theme-aware after the legacy cascade", () => {
+    const styles = readSource("src/styles/global.css");
+    const nexusLayer = styles.lastIndexOf("/* Nexus visual system:");
+    const nexusStyles = styles.slice(nexusLayer);
+
+    expect(nexusLayer).toBeGreaterThan(-1);
+    expect(nexusStyles).toContain(':root:not([data-theme="e-ink"])');
+    expect(nexusStyles).toContain(':root:not([data-theme="dark"]):not([data-theme="e-ink"])');
+    expect(nexusStyles).toContain("background: var(--top-shell-bg);");
+    expect(nexusStyles).toContain("background: var(--surface-card);");
+    expect(nexusStyles).toContain("background: var(--sidebar-surface);");
+    expect(styles).toContain("--color-primary: #9b8ced;");
+    expect(styles).toContain('[data-theme="dark"] a:not([class])');
+  });
 });

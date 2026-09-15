@@ -3712,6 +3712,12 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - La pertenencia sigue siendo necesaria visualmente: agrupar los submódulos por su módulo autorizado y mantener una línea divisoria entre grupos, sin renderizar el icono del padre.
 - Si se elimina un buscador de un widget, retirar también estado, memo, imports y mensajes que todavía hablen de un filtro activo.
 
+## 2026-09-15 - Una capa visual tardía debe cerrar también su contrato oscuro
+
+- Un bloque `:root` agregado al final de una hoja puede empatar en especificidad y sobrescribir los tokens de `[data-theme="dark"]`; toda capa visual tardía debe declarar su variante oscura después de sus valores claros.
+- No usar reglas globales como `[data-theme="dark"] a` para colorear toda la navegación: los enlaces con clase deben conservar sus estados semánticos y el color global debe limitarse a enlaces sin clase.
+- La prueba del tema debe medir estilos computados sobre shell, sidebar, controles y tarjetas autenticadas; comprobar solo que existe `data-theme="dark"` no detecta una interfaz mitad clara y mitad oscura.
+
 ## 2026-09-15 - BUK puede entregar paginacion siguiente como URL completa
 
 - Los endpoints de catalogo BUK pueden devolver `pagination.next` como URL y no como numero de pagina; el cliente debe resolver ambos formatos antes de considerar completa la lectura.

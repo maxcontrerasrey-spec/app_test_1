@@ -1,5 +1,12 @@
 # Tareas y Roadmap de Desarrollo
 
+## Coherencia integral del modo noche con la estética Nexus — 2026-09-15
+
+- [x] Corregir la precedencia de tokens para que la capa Nexus no reactive valores claros en modo oscuro.
+- [x] Normalizar shell, sidebar, rail, tarjetas, tablas, controles y widgets del Inicio con superficies oscuras coherentes.
+- [x] Verificar contraste, legibilidad y ausencia de superficies claras mediante navegador y pruebas contractuales.
+- [ ] Ejecutar build, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
 ## Restaurar Inicio en el rail compacto — 2026-09-15
 
 - [x] Restaurar Inicio como única excepción antes de los grupos de submódulos.
