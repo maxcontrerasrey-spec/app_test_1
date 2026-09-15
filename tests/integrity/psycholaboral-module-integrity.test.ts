@@ -109,8 +109,15 @@ describe("Gestión Psicolaboral", () => {
     expect(decisionSeparationMigration).toContain("perform public.advance_recruitment_candidate_stage(");
     expect(managementPage).toContain('{ key: "approved", label: "Aprobados" }');
     expect(managementPage).toContain('"completed", "approved"] as const');
-    expect(managementPage).toContain('row.display_status === "completed" ||');
-    expect(managementPage).toContain('row.display_status === "approved"');
+    expect(managementPage).toContain('"completed",');
+    expect(managementPage).toContain('"approved",');
+  });
+
+  it("muestra el detalle completo del informe también para contratados", () => {
+    expect(managementPage).toContain('"hired",');
+    expect(managementPage).toContain("reportActionStatuses.has(row.display_status)");
+    expect(managementPage).toContain("Descargar informe");
+    expect(managementPage).toContain("Revisar informe");
   });
 
   it("mantiene una variante cromática única para cada tarjeta de estado", () => {

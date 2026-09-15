@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Informes completos en pestaña Contratados de Psicolaboral - 2026-09-15
+
+- [x] Auditar la diferencia entre los estados `completed`/`approved` y `hired` en la vista expandida.
+- [x] Habilitar para `hired` las mismas acciones de resultados, revisión, informe y PDF, manteniendo los bloqueos de aprobación.
+- [x] Agregar regresión y validar frontend, Guardian y diff final.
+
+Resultado: la pestaña Contratados conserva sus datos históricos y ahora la vista expandida muestra el mismo conjunto de resultados, revisión de informe, descarga de certificado e informe que las evaluaciones terminadas/aprobadas. Se mantuvo el bloqueo cuando el informe ya está validado y generado. Vitest (38 pruebas), TypeScript, build frontend, Guardian y `git diff --check` aprobaron.
+
 ## Reemplazo de identidad visual JM por Atlas - 2026-09-14
 
 - [x] Revisar los puntos del ERP que usan el logo JM y conservar sus contenedores y proporciones.

@@ -41,6 +41,11 @@ const statusCardClasses = {
   hired: "tracking-kpi-card-contratados",
 } as const;
 const PAGE_SIZE = 50;
+const reportActionStatuses = new Set<PsychCandidate["display_status"]>([
+  "completed",
+  "approved",
+  "hired",
+]);
 const aiStatusLabels: Record<string, string> = {
   NOT_REQUESTED: "No solicitado",
   QUEUED: "En cola",
@@ -532,8 +537,7 @@ export function PsycholaboralManagementPage() {
                                   {row.display_status === "expired" ? "Reenviar test" : "Enviar test"}
                                 </button>
                               ) : null}
-                              {(row.display_status === "completed" ||
-                                row.display_status === "approved") ? (
+                              {reportActionStatuses.has(row.display_status) ? (
                                 <>
                                   <button
                                     className="psych-secondary-action"
