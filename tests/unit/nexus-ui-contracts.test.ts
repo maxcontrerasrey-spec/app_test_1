@@ -119,6 +119,9 @@ describe("Nexus UI contracts", () => {
     expect(nexusStyles).toContain("background: var(--top-shell-bg);");
     expect(nexusStyles).toContain("background: var(--surface-card);");
     expect(nexusStyles).toContain("background: var(--sidebar-surface);");
+    expect(styles).toContain("background: var(--surface-float);");
+    expect(styles).not.toContain("background: rgba(255, 255, 255, 0.98);");
+    expect(styles).not.toContain("background: #f4f4f5;");
     expect(styles).toContain("--color-primary: #9b8ced;");
     expect(styles).toContain('[data-theme="dark"] a:not([class])');
   });

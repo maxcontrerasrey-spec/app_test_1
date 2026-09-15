@@ -3723,3 +3723,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Los endpoints de catalogo BUK pueden devolver `pagination.next` como URL y no como numero de pagina; el cliente debe resolver ambos formatos antes de considerar completa la lectura.
 - Una sincronizacion parcial de roles o areas puede aparentar exito y dejar contratos sin cargos, por lo que hay que comparar el universo sincronizado contra el catalogo BUK y probar un contrato de una pagina posterior.
+
+## 2026-09-15 - El modo oscuro debe probar estados interactivos abiertos
+
+- Una captura en reposo no detecta fondos literales que aparecen solo con `focus-within`, resultados abiertos, selección activa o popovers; la verificación visual y automatizada debe activar esos estados explícitamente.
+- Los overlays y controles elevados deben resolver fondo, borde, sombra, foco y tipografía desde tokens semánticos del tema; una transparencia clara casi opaca produce una superficie blanca aunque el lienzo base sea oscuro.
+- En hojas heredadas, auditar selectores de mayor especificidad y duplicados posteriores antes de agregar excepciones; consolidar la regla dominante mantiene coherencia entre Chromium y Safari y evita crecimiento CSS innecesario.

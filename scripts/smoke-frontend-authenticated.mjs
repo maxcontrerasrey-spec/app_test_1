@@ -319,13 +319,20 @@ async function assertHiringRequestLayout(page) {
 }
 
 async function assertDarkThemeIntegrity(page) {
-  await page.evaluate(() => localStorage.setItem("ui-theme", "dark"));
+  await page.evaluate(() => {
+    localStorage.setItem("ui-theme", "dark");
+    localStorage.setItem("nexus-sidebar-collapsed", "false");
+  });
   await page.reload({ waitUntil: "domcontentloaded", timeout: DEFAULT_TIMEOUT_MS });
   await page.waitForFunction(
     () => document.documentElement.getAttribute("data-theme") === "dark",
     undefined,
     { timeout: DEFAULT_TIMEOUT_MS }
   );
+
+  const workspaceSearch = page.getByRole("combobox", { name: "Buscar en el ERP" });
+  await workspaceSearch.focus();
+  await page.locator(".workspace-search-results").waitFor({ timeout: DEFAULT_TIMEOUT_MS });
 
   const audit = await page.evaluate(() => {
     const parseColor = (value) => {
@@ -351,8 +358,12 @@ async function assertDarkThemeIntegrity(page) {
       ".app-shell-topnav",
       ".top-shell",
       ".top-brand-block",
+      ".top-nav-link-active",
       ".theme-toggle",
       ".top-user-panel",
+      ".workspace-search",
+      ".workspace-search-results",
+      ".workspace-search-result-active",
       ".dashboard-info-card",
       ".hiring-request-summary-card"
     ];
@@ -363,21 +374,26 @@ async function assertDarkThemeIntegrity(page) {
       const parsed = parseColor(backgroundColor);
       return [{ selector, backgroundColor, alpha: parsed.alpha, luminance: luminance(parsed) }];
     });
-    const heading = document.querySelector("main h1");
-    const headingColor = heading ? parseColor(getComputedStyle(heading).color) : null;
+    const foregroundSelectors = ["main h1, main h2", ".workspace-search-result-copy strong"];
+    const foregrounds = foregroundSelectors.flatMap((selector) => {
+      const element = document.querySelector(selector);
+      if (!element) return [];
+      const color = getComputedStyle(element).color;
+      return [{ selector, color, luminance: luminance(parseColor(color)) }];
+    });
 
     return {
       theme: document.documentElement.getAttribute("data-theme"),
       colorScheme: getComputedStyle(document.documentElement).colorScheme,
       surfaces,
-      headingLuminance: headingColor ? luminance(headingColor) : null
+      foregrounds
     };
   });
 
   assert(audit.theme === "dark", "Authenticated UI must resolve the requested dark theme.");
   assert(audit.colorScheme === "dark", "Dark mode must expose the native dark color scheme.");
   assert(
-    audit.surfaces.length >= 6 &&
+    audit.surfaces.length >= 9 &&
       audit.surfaces.every((surface) => surface.alpha < 0.7 || surface.luminance < 0.12),
     `Dark mode contains light shell surfaces: ${audit.surfaces
       .filter((surface) => surface.alpha >= 0.7 && surface.luminance >= 0.12)
@@ -385,9 +401,13 @@ async function assertDarkThemeIntegrity(page) {
       .join(", ")}`
   );
   assert(
-    audit.headingLuminance === null || audit.headingLuminance > 0.62,
-    "Dark mode headings must keep strong foreground contrast."
+    audit.foregrounds.length >= 2 && audit.foregrounds.every((foreground) => foreground.luminance > 0.5),
+    `Dark mode foregrounds must keep strong contrast: ${audit.foregrounds
+      .filter((foreground) => foreground.luminance <= 0.5)
+      .map((foreground) => `${foreground.selector}=${foreground.color}`)
+      .join(", ")}`
   );
+  await page.keyboard.press("Escape");
 }
 
 async function assertNexusLayoutContracts(page, currentPath) {
