@@ -460,6 +460,10 @@ export function mapAnalyticsPayload(payload: unknown): HrIncentiveAnalyticsPaylo
       approvedAmount: readNumber(item.approved_amount),
       rejectedAmount: readNumber(item.rejected_amount)
     })),
+    totalAmountByDate: asArray<Record<string, unknown>>(source.total_amount_by_date).map((item) => ({
+      serviceDate: String(item.service_date ?? ""),
+      totalAmount: readNumber(item.total_amount)
+    })),
     countByIncentiveType: asArray<Record<string, unknown>>(source.count_by_incentive_type).map((item) => ({
       incentiveTypeId: String(item.incentive_type_id ?? ""),
       incentiveTypeName: String(item.incentive_type_name ?? ""),

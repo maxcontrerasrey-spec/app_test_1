@@ -136,7 +136,9 @@ export function IncentiveApprovalsView() {
   const totalPages = totalCount > 0 ? Math.ceil(totalCount / APPROVALS_PAGE_SIZE) : 0;
 
   useEffect(() => {
-    if (page > 0 && totalPages > 0 && page >= totalPages) {
+    if (page > 0 && totalPages === 0) {
+      setPage(0);
+    } else if (page > 0 && page >= totalPages) {
       setPage(totalPages - 1);
     }
   }, [page, totalPages]);

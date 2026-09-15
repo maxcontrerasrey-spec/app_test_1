@@ -107,7 +107,7 @@ export function useHrIncentiveRequestDetail(requestId: string, enabled = true) {
 export function useHrIncentiveWorkerSearch(search: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.incentives.workerSearch(search),
-    queryFn: () => searchHrIncentiveEligibleWorkers(search),
+    queryFn: ({ signal }) => searchHrIncentiveEligibleWorkers(search, 12, signal),
     staleTime: INCENTIVES_SEARCH_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     enabled: enabled && search.trim().length >= 2

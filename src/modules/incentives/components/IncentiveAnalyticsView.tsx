@@ -15,7 +15,7 @@ import {
   formatPercentValue
 } from "../../../shared/lib/format";
 import { formatDateForDisplay } from "../../../shared/lib/date";
-import { useHrIncentivesAnalytics, useHrIncentiveRequests } from "../hooks/useIncentivesQueries";
+import { useHrIncentivesAnalytics } from "../hooks/useIncentivesQueries";
 import { buildBiPeriodCode, isBiPeriodRangeValid } from "../../../shared/lib/biPeriod";
 
 type ChartClickParams = {
@@ -218,35 +218,9 @@ export function IncentiveAnalyticsView() {
       }));
   }, [allPeriodsAnalyticsQuery.data?.totalAmountByPeriod]);
 
-  const actualPeriodCode = periodCodeFilter || (periodTrendData.length > 0 ? periodTrendData[periodTrendData.length - 1].periodCode : undefined);
-
-  const requestsQuery = useHrIncentiveRequests({
-    periodCode: periodCodeFilter?.includes("-") ? undefined : actualPeriodCode,
-    contractCodes: contractCodeFilter.length > 0 ? contractCodeFilter : undefined,
-    typeIds: typeIdFilter.length > 0 ? typeIdFilter : undefined,
-    statuses: statusFilter.length > 0 ? statusFilter : undefined
-  }, Boolean(actualPeriodCode));
-
   const dateTrendData = useMemo(() => {
-    if (!requestsQuery.data) return [];
-
-    const aggregated: Record<string, number> = {};
-    const [rangeFrom, rangeTo] = periodCodeFilter?.split("-") ?? [];
-    for (const req of requestsQuery.data) {
-      if (rangeFrom && rangeTo && (req.periodCode < rangeFrom || req.periodCode > rangeTo)) {
-        continue;
-      }
-      const datePart = req.serviceDate.split("T")[0];
-      aggregated[datePart] = (aggregated[datePart] ?? 0) + req.calculatedAmount;
-    }
-
-    return Object.entries(aggregated)
-      .map(([date, amount]) => ({
-        serviceDate: date,
-        totalAmount: amount
-      }))
-      .sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
-  }, [periodCodeFilter, requestsQuery.data]);
+    return analyticsQuery.data?.totalAmountByDate ?? [];
+  }, [analyticsQuery.data?.totalAmountByDate]);
 
   const evolutionChartData = timeView === "period" ? periodTrendData : dateTrendData;
 
@@ -529,7 +503,7 @@ export function IncentiveAnalyticsView() {
         name: contractLabel,
         stack: "workerAmount",
         data: amountByWorkerData.map((item) => Number(item[contractLabel] ?? 0)),
-        itemStyle: { 
+        itemStyle: {
           color: CHART_PALETTE[index % CHART_PALETTE.length], 
           borderRadius: 4,
           borderWidth: 1,
@@ -654,7 +628,7 @@ export function IncentiveAnalyticsView() {
           <EChartSurface
             height={280}
             option={evolutionOption}
-            loading={analyticsQuery.isLoading || (timeView === "date" && requestsQuery.isLoading)}
+            loading={analyticsQuery.isLoading}
             empty={evolutionChartData.length === 0}
             emptyMessage={timeView === "period" ? "No hay períodos para el filtro actual." : "No hay datos para el período actual."}
             onEvents={{

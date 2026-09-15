@@ -3255,3 +3255,18 @@ Verificación en vivo: la sesión quedó iniciada. Tras alinear el resumen con e
 Resultado productivo: se separó la autorización backend de Registro, Aprobaciones, Historial y Configuración, y se retiró ejecución directa sobre implementaciones y helpers internos. La matriz se probó con usuarios reales de `administrativo`, `operaciones_l_2`, `operaciones_l_1`, `control_contratos` y `admin`: cada lectura permitida funcionó y los cruces de permisos fueron rechazados. El selector y el backend ahora limitan los contratos a asociaciones BUK homologadas del trabajador; un contrato ajeno se bloquea antes del cálculo o la creación y la UI explica el mapeo faltante. También se consolidaron dos reglas generales de sobretiempo equivalentes en una sola regla activa y se agregó un trigger que impide vigencias superpuestas con el mismo alcance y prioridad.
 
 Verificación: las tres migraciones quedaron registradas en producción como `20260914200625`, `20260914201449` y `20260914201913`; no se persistieron registros de prueba. Las pruebas focalizadas pasaron 27/27, el build frontend completó, las auditorías de migraciones/destructividad/seguridad aprobaron y los advisors no reportaron hallazgos nuevos específicos de Incentivos. El folio 6 continúa pendiente de decisión operativa porque su período 202607 y primera aprobación vigente son consistentes; no se alteró ese dato de negocio.
+
+## Auditoría de seguridad y capacidad operativa de Incentivos - 2026-09-15
+
+- [x] Revalidar superficie RPC, funciones privilegiadas, grants, RLS y vínculo obligatorio con `auth.uid()`.
+- [x] Medir búsqueda de trabajadores sobre el volumen productivo y revisar filtros, paginación, índices y planes de ejecución.
+- [x] Medir cola, detalle y decisiones de aprobación bajo volumen, incluyendo concurrencia, idempotencia y bloqueos.
+- [x] Corregir únicamente vulnerabilidades o cuellos de botella demostrados mediante cambios forward-only y pruebas de regresión.
+- [x] Ejecutar suites focalizadas, auditorías SQL/seguridad/rendimiento, build, Guardian y verificación productiva.
+- [x] Publicar el alcance de Incentivos sin incorporar cambios ajenos al módulo.
+
+Resultado productivo: la búsqueda de trabajadores ahora usa una proyección privada sincronizada de 1.684 personas activas, sin acceso directo desde el cliente. Las búsquedas amplias medidas bajaron de 0,97-2,84 segundos a 26-45 ms, y una búsqueda por nombre bajó de 116 ms a 16 ms. La cola de aprobaciones quedó limitada a 100 filas por página y al aprobador asignado, salvo administradores; el detalle aplica el mismo alcance. Las decisiones masivas aceptan hasta 100 aprobaciones, omiten filas bloqueadas, aíslan errores por fila y toleran reintentos idénticos sin duplicar decisiones. Se revocó además la ejecución pública del reconciliador de jornadas y se retiraron salario base y horas semanales del contexto visible en navegador.
+
+La analítica dejó de descargar solicitudes sin límite para construir la tendencia diaria: PostgreSQL entrega únicamente los totales por fecha. Las migraciones `20260915122747` y `20260915143000` quedaron aplicadas y registradas; la caché coincide 1.684/1.684 con el universo activo, ninguna implementación interna auditada es ejecutable por `authenticated` y las comprobaciones de lotes obsoletos no persistieron datos de negocio.
+
+Validación final: la analítica completa respondió en 55,6 ms en producción; las pruebas focalizadas pasaron, el build frontend completó y Guardian terminó con 0 errores y 0 advertencias.

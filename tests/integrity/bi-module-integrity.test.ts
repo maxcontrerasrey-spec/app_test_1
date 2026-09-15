@@ -28,15 +28,13 @@ describe("BI module navigation integrity", () => {
     expect(styles).toContain("align-items: stretch;");
   });
 
-  it("does not fetch the incentive request list until a concrete period exists", () => {
-    const hook = read("src/modules/incentives/hooks/useIncentivesQueries.ts");
+  it("uses the bounded analytics payload for the daily incentive trend", () => {
     const analytics = read("src/modules/incentives/components/IncentiveAnalyticsView.tsx");
+    const mapper = read("src/modules/incentives/services/incentivesApiMappers.ts");
 
-    expect(hook).toContain(
-      "export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters, enabled = true)"
-    );
-    expect(hook).toContain("enabled");
-    expect(analytics).toContain("}, Boolean(actualPeriodCode));");
+    expect(analytics).not.toContain("useHrIncentiveRequests");
+    expect(analytics).toContain("analyticsQuery.data?.totalAmountByDate ?? []");
+    expect(mapper).toContain("source.total_amount_by_date");
   });
 
   it("passes the dotacion period to every headcount query", () => {

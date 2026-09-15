@@ -359,6 +359,11 @@ export type HrIncentiveAnalyticsAmountByPeriodItem = {
   rejectedAmount: number;
 };
 
+export type HrIncentiveAnalyticsAmountByDateItem = {
+  serviceDate: string;
+  totalAmount: number;
+};
+
 export type HrIncentiveAnalyticsCountByTypeItem = {
   incentiveTypeId: string;
   incentiveTypeName: string;
@@ -395,6 +400,7 @@ export interface HrIncentiveAnalyticsAmountByWorkerItem {
 export type HrIncentiveAnalyticsPayload = {
   summaryCards: HrIncentiveAnalyticsSummaryCards;
   totalAmountByPeriod: HrIncentiveAnalyticsAmountByPeriodItem[];
+  totalAmountByDate: HrIncentiveAnalyticsAmountByDateItem[];
   countByIncentiveType: HrIncentiveAnalyticsCountByTypeItem[];
   amountByContract: HrIncentiveAnalyticsAmountByContractItem[];
   amountByWorker: HrIncentiveAnalyticsAmountByWorkerItem[];

@@ -3601,3 +3601,11 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Cada RPC público debe validar la feature exacta del actor autenticado, mientras implementaciones y helpers `SECURITY DEFINER` permanecen sin `EXECUTE` para `authenticated`.
 - Una selección contractual derivada de BUK debe volver a validarse al calcular y crear; si falta homologación, el sistema debe devolver una lista vacía y un mensaje accionable, nunca todos los contratos activos.
 - Las reglas de monto con igual alcance y prioridad no pueden tener vigencias activas superpuestas, aunque hoy produzcan el mismo resultado; deben consolidarse y bloquear futuras ambigüedades en base de datos.
+
+## 2026-09-15 - La capacidad de Incentivos se protege en el backend
+
+- Una búsqueda indexada sigue siendo lenta si reconstruye texto desde JSON por cada coincidencia; para catálogos vivos de trabajadores, mantener una proyección privada sincronizada permite que el índice opere sobre valores ya normalizados.
+- Una aprobación masiva debe tener límite de lote, bloqueo no bloqueante, error aislado por fila e idempotencia de reintento; declarar resultados parciales en el contrato no sirve si una sola fila revierte toda la transacción.
+- El permiso de Aprobaciones no implica lectura global: la cola y el detalle deben limitarse al aprobador asignado, reservando la vista total para administración o una feature explícita de historial.
+- Los gráficos no deben descargar tablas operativas completas para agregar en el navegador; la base debe devolver series resumidas cuyo tamaño dependa de fechas o categorías, no del número de solicitudes.
+- Todo helper `SECURITY DEFINER` interno debe quedar sin `EXECUTE` para `authenticated`, aunque la función pública que lo envuelve valide correctamente a `auth.uid()`.

@@ -33,6 +33,16 @@ type WorkerLookupFieldProps<TWorker, TSearchContext = unknown> = {
   filterResults?: (workers: TWorker[]) => TWorker[];
 };
 
+export function isWorkerLookupSearchReady(value: string, minSearchLength = 2) {
+  const normalizedValue = value.trim();
+  const digitCount = normalizedValue.replace(/\D/g, "").length;
+  const isNumericLookup = /^[\d.\-\skK]+$/.test(normalizedValue);
+
+  return isNumericLookup
+    ? digitCount >= Math.max(4, minSearchLength)
+    : normalizedValue.length >= minSearchLength;
+}
+
 export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   id,
   label,
@@ -86,9 +96,10 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
     onSearchChange?.(debouncedSearch);
   }, [debouncedSearch, onSearchChange]);
 
-  const hasSearchableText =
-    debouncedSearch.length >= minSearchLength ||
-    debouncedSearch.replace(/\D/g, "").length >= Math.max(4, minSearchLength);
+  const hasSearchableText = isWorkerLookupSearchReady(
+    debouncedSearch,
+    minSearchLength
+  );
 
   const workerSearchQuery = useSearchQuery(
     debouncedSearch,

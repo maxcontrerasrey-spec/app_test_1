@@ -43,12 +43,17 @@ export async function fetchHrIncentiveSetupCatalogs() {
   return mapSetupCatalogs(data);
 }
 
-export async function searchHrIncentiveEligibleWorkers(search: string, limit = 12) {
+export async function searchHrIncentiveEligibleWorkers(
+  search: string,
+  limit = 12,
+  signal?: AbortSignal
+) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("search_hr_incentive_eligible_workers", {
+  const request = client.rpc("search_hr_incentive_eligible_workers", {
     p_search: search.trim() || null,
     p_limit: limit
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
 
   if (error) {
     throw new Error(
@@ -400,6 +405,7 @@ function mergeIncentiveAnalyticsPayloads(payloads: HrIncentiveAnalyticsPayload[]
   const byContract = new Map<string, { contractCode: string; areaName: string | null; totalAmount: number }>();
   const byWorker = new Map<string, { workerName: string; totalAmount: number; contracts: Map<string, { contractCode: string; contractLabel: string; amount: number }> }>();
   const totalAmountByPeriod = payloads.flatMap((payload) => payload.totalAmountByPeriod).sort((a, b) => a.periodCode.localeCompare(b.periodCode));
+  const totalAmountByDate = payloads.flatMap((payload) => payload.totalAmountByDate).sort((a, b) => a.serviceDate.localeCompare(b.serviceDate));
 
   for (const payload of payloads) {
     for (const item of payload.countByIncentiveType) {
@@ -430,6 +436,7 @@ function mergeIncentiveAnalyticsPayloads(payloads: HrIncentiveAnalyticsPayload[]
   return {
     summaryCards: summary,
     totalAmountByPeriod,
+    totalAmountByDate,
     countByIncentiveType: [...byType.values()],
     amountByContract: [...byContract.values()],
     amountByWorker: [...byWorker.values()].map((item) => ({ ...item, contracts: [...item.contracts.values()] })),
