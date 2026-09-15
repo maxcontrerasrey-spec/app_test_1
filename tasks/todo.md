@@ -5,8 +5,10 @@
 - [x] Renderizar en el gutter plegado los iconos autorizados de Inicio, módulos y submódulos.
 - [x] Conservar el ancho útil actual del workspace sin reservar una nueva columna.
 - [x] Mantener navegación, ruta activa, tooltips, foco de teclado y restauración de la sidebar.
-- [ ] Verificar geometría expandida/plegada y visibilidad del rail mediante smoke autenticado.
-- [ ] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+- [x] Verificar geometría expandida/plegada y visibilidad del rail mediante smoke autenticado.
+- [x] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
+Resultado productivo: el estado plegado conserva el mismo gutter fluido y ahora lo utiliza como rail vertical de iconos para Inicio, módulos y todos sus submódulos autorizados. Los iconos de módulo restauran la sidebar completa; los de submódulo navegan directamente, indican la ruta activa y mantienen nombre accesible y tooltip. El rail deriva exclusivamente de `visibleModules`, sin duplicar permisos ni reducir nuevamente el workspace. El commit funcional `80f38e3` quedó en `main`; Guardian aprobó con 0 errores y 0 advertencias y el workflow 35019730205 validó ancho, destinos autorizados, accesibilidad y expansión mediante smoke autenticado. Producción sirve el bundle y CSS con el rail compacto activo.
 
 ## Ajuste final de densidad en Inicio y Solicitud de Contrataciones - 2026-09-15
 
