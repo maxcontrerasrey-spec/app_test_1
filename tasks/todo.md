@@ -6,10 +6,10 @@
 - [x] Apilar Tareas pendientes y Seguimiento de solicitudes en filas independientes de ancho completo.
 - [x] Hacer que el workspace y sus contenedores internos aprovechen dinámicamente el ancho recuperado al plegar la sidebar.
 - [x] Compactar la tabla de Control de Contrataciones para mantener RC e indicadores de candidatos en una sola línea legible.
-- [ ] Verificar visualmente estados expandido/plegado, inicio y Control de Contrataciones en desktop y responsive.
-- [ ] Ejecutar build, Guardian, auditorías, diff, publicar en `main`, esperar CI y comprobar producción.
+- [x] Verificar visualmente estados expandido/plegado, inicio y Control de Contrataciones en desktop y responsive.
+- [x] Ejecutar build, Guardian, auditorías, diff, publicar en `main`, esperar CI y comprobar producción.
 
-Resultado local: identidad Nexus aplicada a shell, favicon, recuperación, verificadores y evaluación; el login conserva explícitamente JM. Inicio usa tres ejes completos y el workspace elimina límites internos al plegarse. Control de Contrataciones conserva RC y los tres indicadores de candidatos en una sola línea con overflow contenido. Build, smoke de rutas, prueba contractual Nexus (4/4), revisión pública de login/verificador a 1440 px y Guardian aprobaron; pendiente publicación y prueba productiva autenticada de geometría.
+Resultado productivo: identidad Nexus aplicada a shell, favicon, recuperación, verificadores y evaluación; el login conserva explícitamente JM. Inicio usa tres ejes completos y el workspace elimina límites internos al plegarse. Control de Contrataciones conserva RC y los tres indicadores de candidatos en una sola línea con overflow contenido. El commit `37592e0` quedó en `main`; build, smoke de rutas, prueba contractual Nexus (4/4), revisión pública a 1440 px y Guardian aprobaron. El workflow `Audit Enterprise Guardrails` 35015259162 pasó incluyendo geometría autenticada de Inicio/sidebar y la matriz de Control de Contrataciones. Producción sirve el título, assets y chunks Nexus nuevos con los marcadores de layout esperados.
 
 ## Sidebar plegable desde la cabecera - 2026-09-15
 
