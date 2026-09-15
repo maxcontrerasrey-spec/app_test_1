@@ -3647,7 +3647,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Un permiso global construido como OR de todas las features del módulo colapsa la separación entre Registro, Aprobaciones, Historial y Configuración; ocultar pestañas en la UI no constituye autorización.
 - Cada RPC público debe validar la feature exacta del actor autenticado, mientras implementaciones y helpers `SECURITY DEFINER` permanecen sin `EXECUTE` para `authenticated`.
-- Una selección contractual derivada de BUK debe volver a validarse al calcular y crear; si falta homologación, el sistema debe devolver una lista vacía y un mensaje accionable, nunca todos los contratos activos.
+- La pertenencia BUK del trabajador y el contrato donde presta un servicio extraordinario son conceptos distintos: cálculo y creación deben aceptar cualquier contrato activo homologado con BUK, conservando la pertenencia solo como referencia principal.
 - Las reglas de monto con igual alcance y prioridad no pueden tener vigencias activas superpuestas, aunque hoy produzcan el mismo resultado; deben consolidarse y bloquear futuras ambigüedades en base de datos.
 
 ## 2026-09-15 - La capacidad de Incentivos se protege en el backend
@@ -3657,6 +3657,12 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - El permiso de Aprobaciones no implica lectura global: la cola y el detalle deben limitarse al aprobador asignado, reservando la vista total para administración o una feature explícita de historial.
 - Los gráficos no deben descargar tablas operativas completas para agregar en el navegador; la base debe devolver series resumidas cuyo tamaño dependa de fechas o categorías, no del número de solicitudes.
 - Todo helper `SECURITY DEFINER` interno debe quedar sin `EXECUTE` para `authenticated`, aunque la función pública que lo envuelve valide correctamente a `auth.uid()`.
+
+## 2026-09-15 - Un conductor puede prestar servicios fuera de su contrato de pertenencia
+
+- No interpretar el área actual del trabajador en BUK como una lista de contratos permitidos: indica su pertenencia, no limita dónde puede realizar un servicio extraordinario.
+- El selector de Incentivos debe usar el catálogo global de mapeos BUK operativos, unívocos y vinculados a contratos ERP activos; el contrato propio se ordena primero y se identifica como principal.
+- La misma regla debe validarse en contexto, tipos elegibles, cálculo y creación. Para catálogos amplios, el selector debe permitir búsqueda por código o nombre.
 ## 2026-09-15 - La referencia visual debe separar sidebar y workspace sin inventar un rail
 
 - Si el usuario entrega una segunda referencia estructural, no basta con aproximar colores o agregar componentes: hay que comparar la composición completa (sidebar única, header del workspace, búsqueda, breadcrumb, contenedor y grilla).

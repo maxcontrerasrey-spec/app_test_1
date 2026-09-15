@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import { DatePickerField, SelectField, TextField } from "../../../shared/ui";
+import { DatePickerField, SearchableSelectField, SelectField, TextField } from "../../../shared/ui";
 import { formatCurrencyValue } from "../../../shared/lib/format";
 import { formatRut } from "../../../shared/lib/rut";
 import { formatDateForDisplay, toTodayDateValue } from "../../../shared/lib/date";
@@ -330,7 +330,7 @@ export function IncentiveRegistrationForm({
             readOnly
           />
 
-          <SelectField
+          <SearchableSelectField
             id="incentive-worker-area"
             label="Área / contrato"
             value={selectedAreaValue}
@@ -343,7 +343,7 @@ export function IncentiveRegistrationForm({
                 : workerContextQuery.isError
                   ? "No fue posible cargar el contrato operativo"
                   : areaOptions.length === 0 && selectedWorker
-                    ? "Sin contrato BUK homologado"
+                    ? "Sin contratos BUK homologados"
                     : "Selecciona el contrato aplicable"
             }
           />
@@ -363,8 +363,8 @@ export function IncentiveRegistrationForm({
           areaOptions.length === 0 ? (
             <div className="hr-incentives-grid-span-2">
               <p className="form-status form-status-error">
-                Este trabajador no tiene un contrato BUK homologado en el ERP. Corrige el mapeo
-                contractual antes de registrar el incentivo.
+                No hay contratos activos homologados con BUK. Corrige el catálogo contractual
+                antes de registrar el incentivo.
               </p>
             </div>
           ) : null}

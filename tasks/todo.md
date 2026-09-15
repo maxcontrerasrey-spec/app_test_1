@@ -3401,6 +3401,19 @@ Resultado productivo: la búsqueda de trabajadores ahora usa una proyección pri
 La analítica dejó de descargar solicitudes sin límite para construir la tendencia diaria: PostgreSQL entrega únicamente los totales por fecha. Las migraciones `20260915122747` y `20260915143000` quedaron aplicadas y registradas; la caché coincide 1.684/1.684 con el universo activo, ninguna implementación interna auditada es ejecutable por `authenticated` y las comprobaciones de lotes obsoletos no persistieron datos de negocio.
 
 Validación final: la analítica completa respondió en 55,6 ms en producción; las pruebas focalizadas pasaron, el build frontend completó y Guardian terminó con 0 errores y 0 advertencias.
+
+## Contratos BUK transversales para Incentivos - 2026-09-15
+
+- [x] Confirmar el catálogo productivo de contratos homologados con BUK y reproducir el contexto del conductor reportado.
+- [x] Reemplazar la restricción por pertenencia del trabajador por validación contra contratos BUK operativos y activos.
+- [x] Mantener el contrato de pertenencia como opción principal, sin limitar los servicios extraordinarios a ese contrato.
+- [x] Cubrir contexto, cálculo, tipos elegibles y creación con pruebas de regresión sin persistir datos operativos.
+- [x] Ejecutar build, auditorías, Guardian y verificación productiva por usuario autorizado.
+- [x] Desplegar, publicar en `main` y registrar la corrección de la regla de negocio en lessons.
+
+Resultado productivo: el catálogo contiene 95 contratos BUK operativos y activos, todos con administrador de contrato y gerente de área configurados. Para el conductor reportado, la RPC devuelve su contrato DMH como principal y 94 contratos alternativos; una selección transversal completa correctamente la consulta de tipos elegibles. La implementación interna permanece sin ejecución para `authenticated` y la migración `20260915163137` quedó aplicada y registrada. No se crearon solicitudes de incentivo durante la verificación.
+
+Validación local: build, pruebas focalizadas y auditorías de migraciones, seguridad y destructividad aprobaron. Guardian aprobó todos sus gates salvo el baseline de CSS, afectado por 2.116 bytes de cambios visuales concurrentes ajenos a Incentivos; el pipeline remoto se ejecutará sobre el commit limpio y aislado.
 ## Excluir rol privado del módulo Jornadas — 2026-09-15
 
 - [x] Confirmar en producción los valores de `private_role` y el universo actualmente visible en Jornadas.
