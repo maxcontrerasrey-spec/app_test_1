@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 348. Un ciclo recibido no debe mapearse por similitud cuando falta en el catálogo
+
+- Antes de asignar jornadas, conciliar cada ciclo de la fuente contra `hr_shift_patterns` por código/semántica exacta.
+- Si el ciclo solicitado no existe, detener la fila o crear explícitamente la pauta mediante `upsert_hr_shift_pattern` con sus días de trabajo y descanso; nunca sustituirla silenciosamente por otra.
+- Verificar después de la carga la pareja trabajador/fecha/pauta y documentar el origen en `notes`, manteniendo el flujo idempotente.
+
 ## 347. No encadenar migraciones compensatorias destructivas sin necesidad
 
 - Si un cambio de acceso es aditivo, la migración debe insertar o actualizar únicamente el alcance solicitado.

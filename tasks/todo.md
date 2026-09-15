@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Carga de ciclos de turno desde imagen — 2026-09-15
+
+- [x] Transcribir y validar los 18 registros visibles, RUT, cargo, ciclo y fecha Día 1.
+- [x] Conciliar cada trabajador con BUK/ERP y revisar jornadas existentes para evitar duplicados.
+- [x] Cargar únicamente registros compatibles mediante `assign_hr_worker_roster_v2`.
+- [x] Verificar producción por trabajador, pauta, fecha, contrato y contadores finales.
+- [x] Ejecutar auditorías proporcionales, documentar excepciones y cerrar con diff/commit/push.
+
+Resultado productivo: los 18 trabajadores de la imagen fueron encontrados por RUT en `employees_active_current`, sin jornadas previas en las fechas solicitadas. Se cargaron 13 pautas `10X5+5`, 2 `4X3 Ordinaria`, 2 `5X2` y 1 `8X6`; esta última no existía en el catálogo y fue creada de forma explícita como 8 días de trabajo y 6 de descanso antes de asignarla. La verificación posterior devolvió `expected = 18`, `loaded = 18`, `mismatched = 0`, `missing = []`; la operación quedó registrada en las notas de las jornadas y es idempotente para reejecución.
+
 ## Apertura documental temporal RC-0142 - 2026-09-15
 
 - [x] Corregir la interfaz de Personal contratado para mostrar el checklist del folio temporalmente habilitado.
