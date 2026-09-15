@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Armonización completa de superficies oscuras Nexus — 2026-09-15
+
+- [x] Inventariar superficies claras residuales en navegación, buscador, overlays, foco y estados activos.
+- [x] Reemplazar colores literales por tokens semánticos y transparencias compatibles con cada tema.
+- [x] Ampliar la prueba contractual y el smoke autenticado para cubrir menús abiertos y estados de foco.
+- [x] Verificar visualmente en Safari y Chromium, con sidebar expandida/plegada y buscador abierto.
+- [x] Ejecutar build, Guardian y performance; publicar en `main`, esperar CI y comprobar producción.
+
+Resultado productivo: el modo oscuro Nexus ahora mantiene superficies, bordes, foco y tipografía coherentes también al abrir el buscador, seleccionar un acceso, plegar la navegación y mostrar elementos elevados. Se retiraron los fondos blancos literales de marca, navegación activa, buscador y overlays, sustituyéndolos por tokens compartidos entre Claro, Oscuro y Tinta Electrónica. La prueba contractual cerró 8/8, el build completó 1018 módulos, Guardian pasó con 0 errores y 0 advertencias y el CSS quedó 21 bytes bajo la línea base. El workflow 35036230511 aprobó el smoke autenticado en Chromium y la revisión visual productiva en Safari confirmó sidebar expandida/plegada y buscador abierto. El commit funcional `a7e1bf5` quedó en `main` y producción sirve `index-BP0LD_V5.css`.
+
 ## Coherencia integral del modo noche con la estética Nexus — 2026-09-15
 
 - [x] Corregir la precedencia de tokens para que la capa Nexus no reactive valores claros en modo oscuro.
