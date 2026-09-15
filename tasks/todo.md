@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Carga de ciclos desde `Ciclo de Turnos.xlsx` — 2026-09-15
+
+- [x] Leer las hojas `base` y `diccionario`, validar filas, RUT, ciclos y fechas.
+- [x] Conciliar el universo contra BUK/ERP y jornadas existentes, separando duplicados y excepciones.
+- [x] Cargar únicamente filas compatibles mediante `assign_hr_worker_roster_v2`.
+- [x] Verificar producción por trabajador, pauta, fecha, contrato y conteos finales.
+- [x] Ejecutar auditorías proporcionales, documentar el resultado y publicar la trazabilidad.
+
+Resultado productivo: la hoja `base` contiene 105 filas válidas (las filas vacías restantes del libro fueron ignoradas). Los 105 RUT fueron encontrados en producción y no tenían jornadas previas para su fecha Día 1. Se cargaron 48 pautas `10X5+5`, 36 `10X10`, 14 `5X2`, 5 `4X3` y 2 `6X1`; las pautas `10X10` y `6X1` se incorporaron explícitamente al catálogo con sus ciclos 10/10 y 6/1. La verificación final devolvió 105 filas, 105 trabajadores distintos y cero notas faltantes o conflictos.
+
 ## Carga de nómina 8X4/6X3 desde imagen — 2026-09-15
 
 - [x] Validar las 46 filas visibles, RUT, contrato, ciclo y fecha Día 1.
