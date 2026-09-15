@@ -5,7 +5,9 @@
 - [x] Definir un gutter visual adicional sin modificar el ancho del rail compacto.
 - [x] Aplicar el ajuste solo al workspace plegado y conservar el espaciado del estado expandido.
 - [x] Cubrir la distancia rail/contenido mediante prueba contractual y smoke autenticado.
-- [ ] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+- [x] Ejecutar build, pruebas, Guardian y diff; publicar en `main`, esperar CI y comprobar producción.
+
+Resultado productivo: al plegar la sidebar, el workspace comienza 12 px después del borde derecho del rail compacto. El rail conserva exactamente su ancho fluido anterior y el estado expandido no cambia. La prueba contractual pasó 6/6, Guardian cerró con 0 errores y 0 advertencias, y el workflow 35020880618 aprobó la medición autenticada del gutter junto con la matriz completa. Producción sirve el CSS `index-BmSsrWIU.css` con `--collapsed-content-gap: .75rem` y el `padding-left` compuesto.
 
 ## Rail compacto de navegación al plegar la sidebar - 2026-09-15
 
