@@ -5,9 +5,9 @@
 - [x] Restaurar Inicio como única excepción antes de los grupos de submódulos.
 - [x] Mantener fuera los módulos padre y conservar separadores, accesibilidad y permisos.
 - [x] Validar pruebas, build y Guardian.
-- [ ] Publicar en `main`, esperar CI y comprobar producción.
+- [x] Publicar en `main`, esperar CI y comprobar producción.
 
-Resultado local: Inicio vuelve a ser el primer destino del rail compacto y permanece separado de los grupos que contienen exclusivamente submódulos autorizados. Las pruebas contractuales pasaron 7/7, el build de producción completó 1018 módulos y Guardian cerró con 0 errores y 0 advertencias. Pendiente únicamente la evidencia remota de CI y producción.
+Resultado productivo: Inicio vuelve a ser el primer destino del rail compacto y permanece separado de los grupos que contienen exclusivamente submódulos autorizados. Los módulos padre continúan fuera del rail. Las pruebas contractuales pasaron 7/7, el build completó 1018 módulos, Guardian cerró con 0 errores y 0 advertencias y el workflow 35033024710 aprobó el smoke autenticado que exige `Inicio` como primer enlace. El commit funcional `80ab465` quedó en `main` y producción responde 200 sirviendo `index-B_UxBUpj.js`, con navegación compacta e Inicio presentes y sin controles de módulo padre.
 
 ## Rail compacto solo con submódulos y seguimiento sin buscador - 2026-09-15
 
