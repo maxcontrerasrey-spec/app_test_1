@@ -5,6 +5,10 @@ const migration = readFileSync(
   "supabase/migrations/20260916012845_make_buk_roster_sync_authoritative.sql",
   "utf8"
 );
+const runtimeHardeningMigration = readFileSync(
+  "supabase/migrations/20260916122050_harden_buk_sync_finalize_runtime.sql",
+  "utf8"
+);
 const syncScript = readFileSync("scripts/sync-buk-employees.mjs", "utf8");
 const rosterPage = readFileSync("src/modules/roster/pages/RosterPage.tsx", "utf8");
 
@@ -16,6 +20,8 @@ describe("authoritative BUK to roster synchronization", () => {
     expect(syncScript).toContain("rawFetched !== synced || synced !== seenEmployeeIds.size");
     expect(syncScript).toContain('table: "buk_employee_sync_staging"');
     expect(syncScript).toContain("sync_run_id: syncRunId");
+    expect(syncScript).toContain("chunkSize: 100");
+    expect(syncScript).toContain("mark authoritative BUK employee sync as failed");
     expect(migration).toContain("public.buk_employee_sync_staging");
     expect(migration).toContain("from public.buk_employee_sync_staging s");
     expect(migration).toContain("seen_workers <> p_expected_count");
@@ -48,5 +54,12 @@ describe("authoritative BUK to roster synchronization", () => {
     );
     expect(migration).toContain("alter table public.buk_employee_sync_runs enable row level security");
     expect(rosterPage).toContain('{ table: "buk_employee_sync_runs", event: "UPDATE" }');
+  });
+
+  it("allows the atomic finalizer enough runtime without weakening the public API timeout", () => {
+    expect(runtimeHardeningMigration).toContain("alter function public.finalize_buk_employee_sync");
+    expect(runtimeHardeningMigration).toContain("set statement_timeout = '120s'");
+    expect(runtimeHardeningMigration).not.toContain("alter role");
+    expect(runtimeHardeningMigration).not.toContain("alter database");
   });
 });

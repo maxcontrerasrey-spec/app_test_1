@@ -619,7 +619,7 @@ async function main() {
           table: "buk_employee_sync_staging",
           rows: employees,
           onConflict: "sync_run_id,buk_employee_id",
-          chunkSize: 25,
+          chunkSize: 100,
           retries: 5,
           baseDelayMs: 5000,
           page,
@@ -680,10 +680,14 @@ async function main() {
   } catch (error) {
     if (syncRunId) {
       try {
-        await supabase.rpc("fail_buk_employee_sync", {
-          p_sync_run_id: syncRunId,
-          p_error_message: error instanceof Error ? error.message : "Unknown BUK employee sync failure.",
-        });
+        await runSupabaseOperationWithRetry(
+          "mark authoritative BUK employee sync as failed",
+          async () =>
+            supabase.rpc("fail_buk_employee_sync", {
+              p_sync_run_id: syncRunId,
+              p_error_message: error instanceof Error ? error.message : "Unknown BUK employee sync failure.",
+            }),
+        );
       } catch (failureUpdateError) {
         console.error("Unable to mark BUK employee sync as failed.", failureUpdateError);
       }
