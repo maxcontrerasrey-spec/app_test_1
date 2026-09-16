@@ -11,6 +11,17 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+function normalizeBukContractCode(value) {
+  const normalized = (value ?? "").toString().trim();
+
+  if (!normalized) return null;
+  if (/^\d+(?:\.0+|\.)$/.test(normalized)) {
+    return normalized.replace(/(?:\.0+|\.)$/, "");
+  }
+
+  return normalized;
+}
+
 function readEnvFile() {
   try {
     return Object.fromEntries(
@@ -234,7 +245,7 @@ function getRegionName(employee) {
 
 function getContractCode(employee) {
   const currentJob = getCurrentJob(employee);
-  return (
+  return normalizeBukContractCode(
     employee.contract_code ??
     getCurrentJobCustomAttribute(employee, "Código Área Funcional") ??
     currentJob?.cost_center ??
@@ -556,77 +567,130 @@ async function main() {
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const areaLookup = await fetchBukAreas(env);
+  let syncRunId = null;
 
-  let page = 1;
-  let hasMore = true;
-  let synced = 0;
-  let pagesProcessed = 0;
+  try {
+    const startedAt = new Date().toISOString();
+    const { data: startedRun } = await runSupabaseOperationWithRetry(
+      "start authoritative BUK employee sync",
+      async () =>
+        supabase.rpc("start_buk_employee_sync", {
+          p_metadata: {
+            source: "scripts/sync-buk-employees.mjs",
+            started_at: startedAt,
+          },
+        }),
+    );
 
-  while (hasMore) {
-    const result = await fetchBukEmployeesPage(env, page);
-    const employees = result.rawEmployees.map((employee) => normalizeBukEmployee(employee, areaLookup)).filter(Boolean);
-    pagesProcessed += 1;
-
-    if (employees.length > 0) {
-      await upsertInChunks(supabase, {
-        table: "employees",
-        rows: employees,
-        onConflict: "buk_employee_id",
-        chunkSize: 25,
-        retries: 5,
-        baseDelayMs: 5000,
-        page,
-      });
-
-      synced += employees.length;
+    syncRunId = typeof startedRun === "string" ? startedRun : null;
+    if (!syncRunId) {
+      throw new Error("BUK employee sync did not return a run id.");
     }
 
-    console.log(`Page ${page}/${result.totalPages || "?"}: synced ${employees.length} employees`);
+    const areaLookup = await fetchBukAreas(env);
+    const seenEmployeeIds = new Set();
+    let page = 1;
+    let hasMore = true;
+    let synced = 0;
+    let pagesProcessed = 0;
+    let rawFetched = 0;
 
-    if (result.nextPage) {
-      page = result.nextPage;
-      hasMore = result.rawCount > 0;
-    } else if (result.totalPages > 0 && page < result.totalPages) {
-      page += 1;
-      hasMore = true;
-    } else if (result.rawCount === 100) {
-      page += 1;
-      hasMore = true;
-    } else {
-      hasMore = false;
+    while (hasMore) {
+      const result = await fetchBukEmployeesPage(env, page);
+      rawFetched += result.rawCount;
+      const employees = result.rawEmployees
+        .map((employee) => normalizeBukEmployee(employee, areaLookup))
+        .filter(Boolean)
+        .map((employee) => ({
+          ...employee,
+          sync_run_id: syncRunId,
+        }));
+      pagesProcessed += 1;
+
+      for (const employee of employees) {
+        if (seenEmployeeIds.has(employee.buk_employee_id)) {
+          throw new Error(`BUK returned duplicate employee id ${employee.buk_employee_id}.`);
+        }
+        seenEmployeeIds.add(employee.buk_employee_id);
+      }
+
+      if (employees.length > 0) {
+        await upsertInChunks(supabase, {
+          table: "buk_employee_sync_staging",
+          rows: employees,
+          onConflict: "sync_run_id,buk_employee_id",
+          chunkSize: 25,
+          retries: 5,
+          baseDelayMs: 5000,
+          page,
+        });
+
+        synced += employees.length;
+      }
+
+      console.log(`Page ${page}/${result.totalPages || "?"}: staged ${employees.length} employees`);
+
+      if (result.nextPage) {
+        page = result.nextPage;
+        hasMore = result.rawCount > 0;
+      } else if (result.totalPages > 0 && page < result.totalPages) {
+        page += 1;
+        hasMore = true;
+      } else if (result.rawCount === 100) {
+        page += 1;
+        hasMore = true;
+      } else {
+        hasMore = false;
+      }
     }
+
+    if (rawFetched !== synced || synced !== seenEmployeeIds.size) {
+      throw new Error(
+        `BUK employee sync is incomplete: fetched=${rawFetched}, normalized=${synced}, unique=${seenEmployeeIds.size}.`,
+      );
+    }
+
+    const { data: reconciliation } = await runSupabaseOperationWithRetry(
+      "finalize authoritative BUK employee sync",
+      async () =>
+        supabase.rpc("finalize_buk_employee_sync", {
+          p_sync_run_id: syncRunId,
+          p_expected_count: seenEmployeeIds.size,
+          p_metadata: {
+            pages_processed: pagesProcessed,
+            raw_fetched: rawFetched,
+            normalized: synced,
+          },
+        }),
+    );
+
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          syncRunId,
+          pagesProcessed,
+          synced,
+          reconciliation,
+        },
+        null,
+        2,
+      ),
+    );
+  } catch (error) {
+    if (syncRunId) {
+      try {
+        await supabase.rpc("fail_buk_employee_sync", {
+          p_sync_run_id: syncRunId,
+          p_error_message: error instanceof Error ? error.message : "Unknown BUK employee sync failure.",
+        });
+      } catch (failureUpdateError) {
+        console.error("Unable to mark BUK employee sync as failed.", failureUpdateError);
+      }
+    }
+
+    throw error;
   }
-
-  const { count, error } = await runSupabaseOperationWithRetry(
-    "employees total count",
-    async () => supabase.from("employees").select("id", { count: "planned", head: true }),
-  );
-  if (error) throw error;
-
-  const { count: activeCount, error: activeCountError } = await runSupabaseOperationWithRetry(
-    "employees active count",
-    async () =>
-      supabase
-        .from("employees")
-        .select("id", { count: "planned", head: true })
-        .eq("is_active", true),
-  );
-  if (activeCountError) throw activeCountError;
-
-  console.log(
-    JSON.stringify(
-      {
-        ok: true,
-        pagesProcessed,
-        synced,
-        finalCount: count,
-        activeCount,
-      },
-      null,
-      2,
-    ),
-  );
 }
 
 main().catch((error) => {

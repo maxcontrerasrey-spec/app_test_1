@@ -1,5 +1,12 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 358. Una auditoría BUK no sustituye una sincronización autoritativa de Jornadas
+
+- Si Jornadas alimenta Incentivos, la Sync BUK debe cerrar una corrida completa y reconciliar altas, cambios y ausencias; un `upsert` aislado deja activos fantasma y no constituye sincronía.
+- Los cambios de contrato o área deben invalidar inmediatamente la pauta operativa anterior sin borrar el historial ni trasladar automáticamente el ciclo a otro contrato.
+- Calendario, resumen, detalle y validación de Incentivos deben consumir el mismo resolvedor backend; corregir solo la vista permite que una función interna siga usando una jornada desactualizada.
+- La desactivación por ausencia solo puede ejecutarse tras comprobar que todas las páginas BUK fueron obtenidas y persistidas; una corrida parcial debe fallar cerrada y no causar bajas masivas.
+
 ## 357. Una excepción de marca debe expresarse como contrato de assets
 
 - Si el ERP cambia de identidad pero el login conserva la marca anterior, no se debe reemplazar un asset compartido de forma global.

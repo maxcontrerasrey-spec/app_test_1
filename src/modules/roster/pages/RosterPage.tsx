@@ -240,6 +240,7 @@ export function RosterPage() {
     channelName: `roster:${isPatternsView ? "patterns" : selectedWorker?.bukEmployeeId ?? "calendar"}`,
     invalidate: refreshRoster,
     subscriptions: [
+      { table: "buk_employee_sync_runs", event: "UPDATE" },
       { table: "hr_shift_patterns" },
       { table: "hr_worker_rosters" },
       { table: "hr_roster_exceptions" }
