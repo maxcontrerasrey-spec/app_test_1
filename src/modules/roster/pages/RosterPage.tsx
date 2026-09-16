@@ -185,13 +185,13 @@ export function RosterPage() {
 
   const setupCatalogsQuery = useRosterSetupCatalogs(canViewCalendar || canManagePatterns);
   const monthValue = periodStart.slice(0, 7);
+  const hasRosterScopeFilter = Boolean(operationalAreaFilter.trim());
   const rosterCalendarSummaryQuery = useRosterCalendarSummary({
     monthValue,
     search: workerSearchTerm,
     areaFilter: operationalAreaFilter,
-    enabled: !isPatternsView
+    enabled: !isPatternsView && !hasRosterScopeFilter
   });
-  const hasRosterScopeFilter = Boolean(operationalAreaFilter.trim());
   const rosterBulkCalendarQuery = useRosterBulkCalendar({
     startDate: periodStart,
     endDate: periodEnd,
@@ -199,6 +199,30 @@ export function RosterPage() {
     areaFilter: operationalAreaFilter,
     enabled: !isPatternsView && hasRosterScopeFilter
   });
+  const scopedRosterSummary = useMemo(() => {
+    if (!hasRosterScopeFilter || !rosterBulkCalendarQuery.data) {
+      return null;
+    }
+
+    const workers = rosterBulkCalendarQuery.data.workers;
+    const assignedCount = workers.filter((worker) =>
+      worker.days.some((day) => Boolean(day.assignmentId))
+    ).length;
+
+    return {
+      assignedCount,
+      pendingCount: workers.length - assignedCount
+    };
+  }, [hasRosterScopeFilter, rosterBulkCalendarQuery.data]);
+  const rosterSummaryIsLoading = hasRosterScopeFilter
+    ? rosterBulkCalendarQuery.isLoading
+    : rosterCalendarSummaryQuery.isLoading;
+  const visibleAssignedCount = scopedRosterSummary?.assignedCount
+    ?? rosterCalendarSummaryQuery.data?.assignedCount
+    ?? 0;
+  const visiblePendingCount = scopedRosterSummary?.pendingCount
+    ?? rosterCalendarSummaryQuery.data?.pendingCount
+    ?? 0;
   const operationalAreaOptions = setupCatalogsQuery.data?.operationalAreas ?? [];
   const monthRange = useMemo(() => buildMonthRange(monthValue), [monthValue]);
   const workerScheduleQuery = useWorkerSchedule({
@@ -416,22 +440,18 @@ export function RosterPage() {
               <article className="tracking-kpi-card tracking-kpi-card-generado">
                 <span>Personas con jornada asignada</span>
                 <strong>
-                  {rosterCalendarSummaryQuery.isLoading
-                    ? "..."
-                    : rosterCalendarSummaryQuery.data?.assignedCount ?? 0}
+                  {rosterSummaryIsLoading ? "..." : visibleAssignedCount}
                 </strong>
               </article>
               <article className="tracking-kpi-card tracking-kpi-card-pendiente">
                 <span>Personas pendientes</span>
                 <strong>
-                  {rosterCalendarSummaryQuery.isLoading
-                    ? "..."
-                    : rosterCalendarSummaryQuery.data?.pendingCount ?? 0}
+                  {rosterSummaryIsLoading ? "..." : visiblePendingCount}
                 </strong>
               </article>
             </div>
 
-            {rosterCalendarSummaryQuery.error ? (
+            {!hasRosterScopeFilter && rosterCalendarSummaryQuery.error ? (
               <section className="info-card">
                 <p className="form-status form-status-error">
                   {rosterCalendarSummaryQuery.error.message}

@@ -44,13 +44,13 @@ export function useRosterCalendarSummary(params: {
       contractFilter,
       areaFilter
     }),
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       fetchRosterCalendarSummary({
         monthValue,
         search,
         contractFilter,
         areaFilter
-      }),
+      }, signal),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
     refetchOnWindowFocus: false,
@@ -70,7 +70,7 @@ export function useRosterBulkCalendar(params: {
   const { startDate, endDate, search = "", contractFilter = "", areaFilter = "", enabled = true } = params;
   return useQuery({
     queryKey: queryKeys.roster.bulkCalendar({ monthValue: `${startDate}:${endDate}`, search, contractFilter, areaFilter }),
-    queryFn: () => fetchRosterBulkCalendar({ startDate, endDate, search, contractFilter, areaFilter }),
+    queryFn: ({ signal }) => fetchRosterBulkCalendar({ startDate, endDate, search, contractFilter, areaFilter }, signal),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
     refetchOnWindowFocus: false,
@@ -80,12 +80,16 @@ export function useRosterBulkCalendar(params: {
 }
 
 export function useRosterWorkerSearch(search: string, enabled = true) {
+  const normalizedSearch = search.trim().toLocaleLowerCase("es-CL");
+
   return useQuery({
-    queryKey: queryKeys.roster.workerSearch(search),
-    queryFn: () => searchRosterWorkers(search),
-    staleTime: 15_000,
+    queryKey: queryKeys.roster.workerSearch(normalizedSearch),
+    queryFn: ({ signal }) => searchRosterWorkers(normalizedSearch, 12, signal),
+    staleTime: 5 * 60_000,
     gcTime: ROSTER_GC_TIME_MS,
-    enabled: enabled && search.trim().length >= 2
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: enabled && normalizedSearch.length >= 2
   });
 }
 

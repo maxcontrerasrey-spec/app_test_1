@@ -1,0 +1,329 @@
+-- EEES-DB-005: approved
+-- owner: Human Resources / Operations
+-- rollback: forward-only; restore the prior RPC bodies in a later migration while retaining the additive BUK exit projection.
+begin;
+
+alter function public.extract_buk_employee_exit_date(jsonb) immutable parallel safe;
+
+alter table public.employees
+  add column if not exists buk_exit_date date
+  generated always as (public.extract_buk_employee_exit_date(raw_payload)) stored;
+
+create index if not exists idx_employees_inactive_buk_exit_date
+  on public.employees (buk_exit_date, buk_employee_id)
+  where is_active = false and buk_exit_date is not null;
+
+create index if not exists idx_employees_active_roster_area
+  on public.employees (
+    public.normalize_buk_area_name(coalesce(area_name, contract_code, '')),
+    buk_employee_id
+  )
+  where is_active = true
+    and coalesce(lower(trim(raw_payload ->> 'private_role')), 'false')
+      not in ('true', '1', 'yes', 'si', 'sí');
+
+create or replace function public.search_hr_roster_workers(
+  p_search text default null,
+  p_limit integer default 12
+)
+returns table (
+  buk_employee_id text,
+  full_name text,
+  document_number text,
+  document_type text,
+  job_title text,
+  contract_code text,
+  area_name text,
+  display_label text
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $function$
+declare
+  current_user_id uuid := auth.uid();
+  normalized_search text := public.normalize_recruitment_search_text(trim(coalesce(p_search, '')));
+  safe_limit integer := least(greatest(coalesce(p_limit, 12), 1), 50);
+begin
+  if not public.user_can_view_hr_roster(current_user_id) then
+    raise exception 'Sin permisos para consultar trabajadores de jornadas';
+  end if;
+
+  return query
+  with matching_workers as (
+    select
+      cache.buk_employee_id,
+      cache.full_name,
+      cache.resolved_document_number,
+      coalesce(nullif(trim(e.document_type), ''), 'rut') as resolved_document_type,
+      cache.resolved_job_title,
+      nullif(trim(e.contract_code), '') as resolved_contract_code,
+      cache.area_name,
+      cache.name_search_key,
+      cache.identity_key,
+      cache.employee_updated_at,
+      cache.employee_created_at,
+      row_number() over (
+        partition by cache.identity_key
+        order by
+          cache.employee_updated_at desc nulls last,
+          cache.employee_created_at desc nulls last,
+          cache.buk_employee_id desc
+      ) as identity_rank
+    from private.hr_incentive_worker_search_cache cache
+    join public.employees e on e.id = cache.employee_id
+    where coalesce(lower(trim(e.raw_payload ->> 'private_role')), 'false')
+            not in ('true', '1', 'yes', 'si', 'sí')
+      and (normalized_search = '' or cache.search_text like '%' || normalized_search || '%')
+  )
+  select
+    mw.buk_employee_id,
+    mw.full_name,
+    mw.resolved_document_number,
+    mw.resolved_document_type,
+    mw.resolved_job_title,
+    mw.resolved_contract_code,
+    mw.area_name,
+    concat_ws(
+      ' | ',
+      coalesce(mw.resolved_document_number, 'Sin RUT'),
+      coalesce(mw.resolved_job_title, 'Sin cargo'),
+      mw.full_name,
+      coalesce(mw.area_name, mw.resolved_contract_code, 'Sin contrato')
+    )
+  from matching_workers mw
+  where mw.identity_rank = 1
+  order by
+    case
+      when normalized_search <> '' and mw.name_search_key like normalized_search || '%' then 0
+      when normalized_search <> '' and lower(mw.full_name) like normalized_search || '%' then 1
+      else 2
+    end,
+    mw.full_name,
+    mw.buk_employee_id
+  limit safe_limit;
+end;
+$function$;
+
+create or replace function public.get_hr_roster_bulk_calendar(
+  p_start_date date default current_date,
+  p_end_date date default current_date,
+  p_search text default null,
+  p_contract_filter text default null,
+  p_area_filter text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  current_user_id uuid := auth.uid();
+  range_start date := coalesce(p_start_date, current_date);
+  range_end date := coalesce(p_end_date, range_start);
+  projection_horizon_end date := (date_trunc('month', current_date)::date + interval '7 months' - interval '1 day')::date;
+  normalized_search text := lower(trim(coalesce(p_search, '')));
+  normalized_contract text := lower(trim(coalesce(p_contract_filter, '')));
+  normalized_area text := lower(trim(coalesce(p_area_filter, '')));
+begin
+  if not public.user_can_view_hr_roster(current_user_id) then raise exception 'Sin permisos para consultar jornadas'; end if;
+  if range_end < range_start then raise exception 'El periodo de jornadas no puede terminar antes de comenzar'; end if;
+  if range_end > projection_horizon_end then raise exception 'La proyección de jornadas solo permite consultar hasta el cierre de los próximos 6 meses'; end if;
+  if range_end - range_start > 184 then raise exception 'El periodo de jornadas no puede superar 6 meses'; end if;
+
+  return jsonb_build_object(
+    'range', jsonb_build_object('start_date', range_start, 'end_date', range_end),
+    'workers', coalesce((
+      with active_workers as (
+        select
+          e.buk_employee_id,
+          e.full_name,
+          coalesce(e.document_number, e.raw_payload ->> 'document_number', e.raw_payload ->> 'rut') as document_number,
+          coalesce(e.document_type, e.raw_payload ->> 'document_type', 'rut') as document_type,
+          coalesce(nullif(trim(e.job_title), ''), nullif(trim(e.raw_payload -> 'current_job' -> 'role' ->> 'name'), ''), nullif(trim(e.raw_payload -> 'current_job' -> 'custom_attributes' ->> 'Nuevo cargo'), ''), nullif(trim(e.raw_payload ->> 'job_title'), '')) as job_title,
+          nullif(trim(e.contract_code), '') as contract_code,
+          nullif(trim(e.area_name), '') as area_name,
+          e.buk_exit_date as exit_date,
+          public.build_buk_employee_name_search_key(e.full_name, e.raw_payload) as name_search_key
+        from public.employees e
+        where (e.is_active = true or e.buk_exit_date >= range_start)
+          and coalesce(lower(trim(e.raw_payload ->> 'private_role')), 'false') not in ('true', '1', 'yes', 'si', 'sí')
+      ), filtered_workers as (
+        select aw.*
+        from active_workers aw
+        where (normalized_search = '' or lower(concat_ws(' ', aw.name_search_key, aw.full_name, aw.document_number, aw.job_title, aw.contract_code, aw.area_name)) like '%' || normalized_search || '%')
+          and (normalized_contract = '' or public.normalize_buk_contract_code(aw.contract_code) like '%' || public.normalize_buk_contract_code(normalized_contract) || '%')
+          and (normalized_area = '' or public.normalize_buk_area_name(coalesce(aw.area_name, aw.contract_code, '')) = public.normalize_buk_area_name(normalized_area))
+      ), worker_days as (
+        select
+          fw.buk_employee_id, fw.full_name, fw.document_number, fw.document_type, fw.job_title,
+          fw.contract_code, fw.area_name, fw.exit_date, gs.day_date::date as day_date,
+          assignment.assignment_id, assignment.pattern_id, assignment.pattern_name,
+          assignment.working_days, assignment.resting_days, assignment.cycle_length,
+          assignment.assignment_start_date, assignment.assignment_end_date,
+          case when assignment.assignment_id is null then null else mod((gs.day_date::date - assignment.assignment_start_date), assignment.cycle_length) + 1 end as cycle_day,
+          case when assignment.assignment_id is null then 'unassigned' when mod((gs.day_date::date - assignment.assignment_start_date), assignment.cycle_length) < assignment.working_days then 'working' else 'resting' end as base_status,
+          case when fw.exit_date is not null and gs.day_date::date >= fw.exit_date then 'termination' when exception.exception_type is null and assignment.assignment_id is null then null when exception.exception_type = 'extra_shift' then 'extra_shift' when exception.exception_type = 'training' then 'training' else exception.exception_type end as exception_type,
+          case when fw.exit_date is not null and gs.day_date::date >= fw.exit_date then 'Salida' when exception.exception_type is null then null else public.get_hr_roster_exception_type_label(exception.exception_type) end as exception_label,
+          case when fw.exit_date is not null and gs.day_date::date >= fw.exit_date then format('Fecha de salida BUK: %s', to_char(fw.exit_date, 'DD/MM/YYYY')) else exception.notes end as exception_notes,
+          case when fw.exit_date is not null and gs.day_date::date >= fw.exit_date then false else assignment.assignment_id is not null and mod((gs.day_date::date - assignment.assignment_start_date), assignment.cycle_length) < assignment.working_days end as is_working_day,
+          case when fw.exit_date is not null and gs.day_date::date >= fw.exit_date then false else assignment.assignment_id is not null and mod((gs.day_date::date - assignment.assignment_start_date), assignment.cycle_length) >= assignment.working_days end as is_rest_day
+        from filtered_workers fw
+        cross join lateral generate_series(range_start, range_end, interval '1 day') gs(day_date)
+        left join lateral (
+          select
+            wr.id as assignment_id,
+            hp.id as pattern_id,
+            hp.name as pattern_name,
+            hp.working_days,
+            hp.resting_days,
+            hp.cycle_length,
+            wr.start_date as assignment_start_date,
+            case
+              when wr.invalidated_effective_date is null then wr.end_date
+              else least(coalesce(wr.end_date, wr.invalidated_effective_date - 1), wr.invalidated_effective_date - 1)
+            end as assignment_end_date
+          from public.hr_worker_rosters wr
+          join public.hr_shift_patterns hp on hp.id = wr.pattern_id
+          where wr.employee_buk_employee_id = fw.buk_employee_id
+            and wr.start_date <= gs.day_date::date
+            and coalesce(wr.end_date, 'infinity'::date) >= gs.day_date::date
+            and public.hr_roster_assignment_applies_on_buk_date(
+              wr.contract_code,
+              wr.area_name,
+              wr.invalidated_at,
+              wr.invalidated_effective_date,
+              fw.contract_code,
+              fw.area_name,
+              gs.day_date::date
+            )
+          order by wr.start_date desc, wr.created_at desc
+          limit 1
+        ) assignment on true
+        left join lateral (
+          select hre.exception_type, hre.notes
+          from public.hr_roster_exceptions hre
+          where hre.employee_buk_employee_id = fw.buk_employee_id
+            and hre.exception_date = gs.day_date::date
+            and hre.is_active = true
+          limit 1
+        ) exception on true
+      ), worker_payloads as (
+        select wd.buk_employee_id, wd.full_name,
+          jsonb_build_object(
+            'buk_employee_id', wd.buk_employee_id,
+            'full_name', wd.full_name,
+            'document_number', wd.document_number,
+            'document_type', wd.document_type,
+            'job_title', wd.job_title,
+            'contract_code', wd.contract_code,
+            'area_name', wd.area_name,
+            'exit_date', wd.exit_date,
+            'summary', jsonb_build_object(
+              'working_days', count(*) filter (where wd.base_status = 'working'),
+              'resting_days', count(*) filter (where wd.base_status = 'resting'),
+              'exception_days', count(*) filter (where wd.exception_type is not null),
+              'unassigned_days', count(*) filter (where wd.base_status = 'unassigned')
+            ),
+            'days', jsonb_agg(jsonb_build_object(
+              'date', wd.day_date,
+              'assignment_id', wd.assignment_id,
+              'pattern_id', wd.pattern_id,
+              'pattern_name', wd.pattern_name,
+              'cycle_day', wd.cycle_day,
+              'base_status', wd.base_status,
+              'effective_status', case when wd.exception_type = 'termination' then 'medical_leave' when wd.exception_type is not null then wd.exception_type else wd.base_status end,
+              'exception_type', wd.exception_type,
+              'exception_label', wd.exception_label,
+              'exception_notes', wd.exception_notes,
+              'is_working_day', wd.is_working_day,
+              'is_rest_day', wd.is_rest_day
+            ) order by wd.day_date)
+          ) as payload
+        from worker_days wd
+        group by wd.buk_employee_id, wd.full_name, wd.document_number, wd.document_type, wd.job_title, wd.contract_code, wd.area_name, wd.exit_date
+      )
+      select jsonb_agg(wp.payload order by wp.full_name) from worker_payloads wp
+    ), '[]'::jsonb)
+  );
+end;
+$function$;
+
+create or replace function public.get_hr_roster_calendar_summary(
+  p_month date default current_date,
+  p_search text default null,
+  p_contract_filter text default null,
+  p_area_filter text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  current_user_id uuid := auth.uid();
+  target_month date := coalesce(p_month, current_date);
+  month_start date := date_trunc('month', target_month)::date;
+  month_end date := (date_trunc('month', target_month) + interval '1 month - 1 day')::date;
+  normalized_search text := lower(trim(coalesce(p_search, '')));
+  normalized_contract text := lower(trim(coalesce(p_contract_filter, '')));
+  normalized_area text := lower(trim(coalesce(p_area_filter, '')));
+begin
+  if not public.user_can_view_hr_roster(current_user_id) then raise exception 'Sin permisos para consultar el resumen de jornadas'; end if;
+
+  return (
+    with active_workers as (
+      select
+        e.buk_employee_id,
+        nullif(trim(e.contract_code), '') as contract_code,
+        nullif(trim(e.area_name), '') as area_name,
+        e.buk_exit_date as exit_date,
+        public.build_active_employee_search_text(e.full_name, e.document_number, e.job_title, e.contract_code, coalesce(e.area_name, e.contract_code), e.raw_payload) as search_text
+      from public.employees e
+      where (e.is_active = true or e.buk_exit_date >= month_start)
+        and coalesce(lower(trim(e.raw_payload ->> 'private_role')), 'false') not in ('true', '1', 'yes', 'si', 'sí')
+    ), filtered_workers as (
+      select aw.*
+      from active_workers aw
+      where (normalized_search = '' or aw.search_text like '%' || normalized_search || '%')
+        and (normalized_contract = '' or public.normalize_buk_contract_code(aw.contract_code) like '%' || public.normalize_buk_contract_code(normalized_contract) || '%')
+        and (normalized_area = '' or public.normalize_buk_area_name(coalesce(aw.area_name, aw.contract_code, '')) = public.normalize_buk_area_name(normalized_area))
+    ), assigned_workers as (
+      select distinct fw.buk_employee_id
+      from filtered_workers fw
+      join public.hr_worker_rosters wr
+        on wr.employee_buk_employee_id = fw.buk_employee_id
+      where wr.start_date <= month_end
+        and coalesce(wr.end_date, 'infinity'::date) >= month_start
+        and public.hr_roster_assignment_applies_on_buk_date(
+          wr.contract_code,
+          wr.area_name,
+          wr.invalidated_at,
+          wr.invalidated_effective_date,
+          fw.contract_code,
+          fw.area_name,
+          greatest(wr.start_date, month_start)
+        )
+    )
+    select jsonb_build_object(
+      'month_start', month_start,
+      'month_end', month_end,
+      'assigned_count', (select count(*) from assigned_workers),
+      'pending_count', (select count(*) from filtered_workers fw where not exists (select 1 from assigned_workers aw where aw.buk_employee_id = fw.buk_employee_id)),
+      'total_count', (select count(*) from filtered_workers)
+    )
+  );
+end;
+$function$;
+
+revoke all on function public.search_hr_roster_workers(text, integer) from public, anon, authenticated;
+grant execute on function public.search_hr_roster_workers(text, integer) to authenticated;
+revoke all on function public.get_hr_roster_bulk_calendar(date, date, text, text, text) from public, anon, authenticated;
+grant execute on function public.get_hr_roster_bulk_calendar(date, date, text, text, text) to authenticated;
+revoke all on function public.get_hr_roster_calendar_summary(date, text, text, text) from public, anon, authenticated;
+grant execute on function public.get_hr_roster_calendar_summary(date, text, text, text) to authenticated;
+
+notify pgrst, 'reload schema';
+
+commit;

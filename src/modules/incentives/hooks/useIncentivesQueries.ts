@@ -24,7 +24,6 @@ const INCENTIVES_CATALOGS_STALE_TIME_MS = 5 * 60_000;
 const INCENTIVES_REQUESTS_STALE_TIME_MS = 30_000;
 const INCENTIVES_REQUESTS_REFETCH_MS = 5 * 60_000;
 const INCENTIVES_WORKER_CONTEXT_STALE_TIME_MS = 60_000;
-const INCENTIVES_SEARCH_STALE_TIME_MS = 15_000;
 const INCENTIVES_CACHE_GC_TIME_MS = 20 * 60_000;
 
 export function useHrIncentiveSetupCatalogs(enabled = true) {
@@ -105,12 +104,16 @@ export function useHrIncentiveRequestDetail(requestId: string, enabled = true) {
 }
 
 export function useHrIncentiveWorkerSearch(search: string, enabled = true) {
+  const normalizedSearch = search.trim().toLocaleLowerCase("es-CL");
+
   return useQuery({
-    queryKey: queryKeys.incentives.workerSearch(search),
-    queryFn: ({ signal }) => searchHrIncentiveEligibleWorkers(search, 12, signal),
-    staleTime: INCENTIVES_SEARCH_STALE_TIME_MS,
+    queryKey: queryKeys.incentives.workerSearch(normalizedSearch),
+    queryFn: ({ signal }) => searchHrIncentiveEligibleWorkers(normalizedSearch, 12, signal),
+    staleTime: 5 * 60_000,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
-    enabled: enabled && search.trim().length >= 2
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: enabled && normalizedSearch.length >= 2
   });
 }
 

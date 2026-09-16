@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Rendimiento de selección en Jornadas e Incentivos — 2026-09-16
+
+- [x] Medir en producción la latencia y los planes de búsqueda, selección de trabajador y selección de contrato/área.
+- [x] Eliminar consultas duplicadas o competitivas en el frontend sin alterar permisos, vigencia BUK ni reglas de Incentivos.
+- [x] Optimizar las rutas SQL críticas con caché/índices acotados y mantener las RPC públicas compatibles.
+- [x] Agregar pruebas contractuales y una comprobación medible de regresión de rendimiento.
+- [x] Ejecutar TypeScript, pruebas, build, auditorías Supabase, Guardian y `git diff --check`.
+- [x] Aplicar en producción, repetir mediciones, publicar en `main` y registrar evidencia final.
+
+Resultado productivo: la selección de contrato en Jornadas deja de ejecutar una segunda RPC de resumen y deriva sus KPI desde el calendario ya autorizado. La fecha de salida BUK queda proyectada e indexada, la búsqueda de Jornadas reutiliza la caché privada sincronizada de trabajadores y ambos módulos cancelan solicitudes obsoletas, normalizan claves y reducen el debounce a 150 ms. En producción, el calendario de 353 trabajadores bajó de 1.599 ms a 1.202 ms, el resumen de 5.902 ms a 1.093 ms y la búsqueda de Jornadas de 492 ms a 258 ms; al seleccionar contrato el frontend realiza solo la consulta de calendario. TypeScript, 43 pruebas contractuales, 93 de integridad, build de 1.018 módulos, auditorías Supabase, Guardian y diff aprobaron sin relajar permisos ni alterar la vigencia BUK/Incentivos.
+
 ## Sincronía autoritativa BUK → Jornadas → Incentivos — 2026-09-15
 
 - [x] Convertir cada Sync BUK en una corrida identificable, completa y fail-closed.

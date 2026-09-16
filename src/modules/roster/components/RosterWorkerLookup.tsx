@@ -31,6 +31,7 @@ export function RosterWorkerLookup({
       disabled={disabled}
       useSearchQuery={useRosterWorkerSearch}
       loadingMessage="Buscando trabajadores..."
+      debounceMs={150}
       onSearchChange={onSearchChange}
     />
   );

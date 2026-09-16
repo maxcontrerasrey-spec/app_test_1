@@ -1,5 +1,12 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 359. Una selección lenta puede ejecutar trabajo ajeno al control elegido
+
+- Medir por separado búsqueda, selección de trabajador, contexto y cambio de contrato; el spinner visible no identifica necesariamente la consulta costosa.
+- No reprocesar campos derivados de `raw_payload` en cada interacción: las proyecciones deterministas y los índices deben actualizarse al sincronizar BUK y leerse en el hot path.
+- Si una respuesta ya contiene los datos para KPI asociados, derivarlos en cliente evita una segunda RPC concurrente sin debilitar la autoridad del backend.
+- Las búsquedas incrementales deben normalizar la query key, cancelar solicitudes obsoletas y reutilizar caché; acelerar SQL sin consumir `AbortSignal` todavía desperdicia capacidad al escribir rápido.
+
 ## 358. Una auditoría BUK no sustituye una sincronización autoritativa de Jornadas
 
 - Si Jornadas alimenta Incentivos, la Sync BUK debe cerrar una corrida completa y reconciliar altas, cambios y ausencias; un `upsert` aislado deja activos fantasma y no constituye sincronía.

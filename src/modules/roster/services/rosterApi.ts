@@ -213,17 +213,18 @@ export async function fetchRosterCalendarSummary(params: {
   search?: string;
   contractFilter?: string;
   areaFilter?: string;
-}) {
+}, signal?: AbortSignal) {
   const client = getSupabaseClient();
   const [year, month] = params.monthValue.split("-");
   const normalizedMonth =
     year && month ? `${year}-${month}-01` : `${new Date().toISOString().slice(0, 7)}-01`;
-  const { data, error } = await client.rpc("get_hr_roster_calendar_summary", {
+  const request = client.rpc("get_hr_roster_calendar_summary", {
     p_month: normalizedMonth,
     p_search: params.search?.trim() || null,
     p_contract_filter: params.contractFilter?.trim() || null,
     p_area_filter: params.areaFilter?.trim() || null
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
 
   if (error) {
     throw new Error(
@@ -240,27 +241,33 @@ export async function fetchRosterBulkCalendar(params: {
   search?: string;
   contractFilter?: string;
   areaFilter?: string;
-}) {
+}, signal?: AbortSignal) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("get_hr_roster_bulk_calendar", {
+  const request = client.rpc("get_hr_roster_bulk_calendar", {
     p_start_date: params.startDate,
     p_end_date: params.endDate,
     p_search: params.search?.trim() || null,
     p_contract_filter: params.contractFilter?.trim() || null,
     p_area_filter: params.areaFilter?.trim() || null
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
   if (error) {
     throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar el calendario de trabajadores.", "message"));
   }
   return mapBulkCalendar(data);
 }
 
-export async function searchRosterWorkers(search: string, limit = 12) {
+export async function searchRosterWorkers(
+  search: string,
+  limit = 12,
+  signal?: AbortSignal
+) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("search_hr_roster_workers", {
+  const request = client.rpc("search_hr_roster_workers", {
     p_search: search.trim() || null,
     p_limit: limit
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
 
   if (error) {
     throw new Error(
