@@ -9,6 +9,14 @@ const runtimeHardeningMigration = readFileSync(
   "supabase/migrations/20260916122050_harden_buk_sync_finalize_runtime.sql",
   "utf8"
 );
+const runtimeBudgetMigration = readFileSync(
+  "supabase/migrations/20260916123726_extend_authoritative_buk_finalize_budget.sql",
+  "utf8"
+);
+const incentiveRosterGuardMigration = readFileSync(
+  "supabase/migrations/20260904134428_block_hr_incentives_without_roster.sql",
+  "utf8"
+);
 const syncScript = readFileSync("scripts/sync-buk-employees.mjs", "utf8");
 const rosterPage = readFileSync("src/modules/roster/pages/RosterPage.tsx", "utf8");
 
@@ -43,6 +51,9 @@ describe("authoritative BUK to roster synchronization", () => {
     expect(migration).toContain("employee_row.area_name");
     expect(migration).toContain("create or replace function public.get_hr_roster_bulk_calendar");
     expect(migration).toContain("create or replace function public.get_worker_schedule");
+    expect(incentiveRosterGuardMigration).toContain("assert_hr_incentive_roster_assignment");
+    expect(incentiveRosterGuardMigration).toContain("resolve_hr_roster_day_status");
+    expect(incentiveRosterGuardMigration).toContain("trg_block_hr_incentive_without_roster");
   });
 
   it("keeps synchronization RPCs service-role only and refreshes an open roster after completion", () => {
@@ -61,5 +72,8 @@ describe("authoritative BUK to roster synchronization", () => {
     expect(runtimeHardeningMigration).toContain("set statement_timeout = '120s'");
     expect(runtimeHardeningMigration).not.toContain("alter role");
     expect(runtimeHardeningMigration).not.toContain("alter database");
+    expect(runtimeBudgetMigration).toContain("set statement_timeout = '300s'");
+    expect(runtimeBudgetMigration).not.toContain("alter role");
+    expect(runtimeBudgetMigration).not.toContain("alter database");
   });
 });

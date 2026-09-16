@@ -1,5 +1,27 @@
 # Tareas y Roadmap de Desarrollo
 
+## Sincronía autoritativa BUK → Jornadas → Incentivos — 2026-09-15
+
+- [x] Convertir cada Sync BUK en una corrida identificable, completa y fail-closed.
+- [x] Marcar inmediatamente altas/cambios y desactivar de forma segura los trabajadores ausentes de una corrida completa.
+- [x] Invalidar jornadas incompatibles preservando historial y normalizar códigos BUK equivalentes.
+- [x] Alinear calendario, detalle, resumen y resolución consumida por Incentivos con la proyección BUK vigente.
+- [x] Registrar auditoría por corrida y por cambio sin ampliar permisos de lectura o escritura.
+- [x] Cubrir sincronización completa, corrida parcial, bajas, cambios de contrato/área y consumo de Incentivos mediante pruebas.
+- [x] Aplicar migración, ejecutar Sync BUK, verificar producción, Guardian, CI y publicar en `main`.
+
+Resultado productivo: la corrida autoritativa `6722add5-0a9a-44e3-bb73-b12ea7f1ede1` cerró 5.440/5.440 fichas BUK, dejó 1.678 activas, desactivó 7 ausentes y eliminó los activos fantasma. Jornadas conserva 769 asignaciones históricas, 21 invalidadas sin borrado y 0 pautas vigentes incompatibles; el staging completo quedó vacío. Incentivos mantiene activo su trigger obligatorio y consume el mismo resolvedor de jornada BUK-aware. Permanecen 6 trabajadores en 4 áreas BUK sin contrato maestro ERP equivalente; siguen visibles con su contrato/área BUK y no se inventó ningún mapeo.
+
+## Auditoría Jornadas vs última Sync BUK — 2026-09-15
+
+- [x] Identificar la última sincronización BUK completa y su universo efectivo de trabajadores.
+- [x] Reconstruir el contrato esperado por trabajador desde el área BUK vigente y los mapeos operativos.
+- [x] Comparar trabajadores visibles en Jornadas y asignaciones vigentes contra el contrato esperado.
+- [x] Cuantificar coincidencias, faltantes, duplicados, contratos desactualizados y áreas sin mapeo.
+- [x] Entregar evidencia de producción y riesgos sin modificar asignaciones.
+
+Resultado de auditoría productiva: la API BUK y la última corrida coinciden en 5.440 registros refrescados; el universo vigente de Jornadas contiene 1.650 trabajadores activos no privados y 27 privados correctamente excluidos. De los 1.650, 1.643 resuelven a un contrato activo único mediante el catálogo operacional y 7 quedan sin mapeo contractual, distribuidos en ANDINA, ARAMARK SPENCE, ICV DMH CHUQUI y SK SALARES NORTE. La proyección ERP conserva además 7 registros marcados activos que ya no existen en el listado BUK actual. En jornadas vigentes hay 618 coincidencias exactas, 1.016 trabajadores sin pauta, 14 asignaciones bloqueadas solo por la variante numérica `.0`, 2 incompatibilidades reales de contrato/área y 0 duplicados. No se modificaron trabajadores, mapeos ni jornadas.
+
 ## Armonización completa de superficies oscuras Nexus — 2026-09-15
 
 - [x] Inventariar superficies claras residuales en navegación, buscador, overlays, foco y estados activos.
