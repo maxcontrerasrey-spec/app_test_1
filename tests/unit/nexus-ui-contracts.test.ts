@@ -10,12 +10,23 @@ describe("Nexus UI contracts", () => {
   it("keeps JM exclusively on login and uses Nexus in the application shell", () => {
     const login = readSource("src/modules/auth/pages/LoginPage.tsx");
     const shell = readSource("src/app/layout/AppShell.tsx");
+    const styles = readSource("src/styles/global.css");
 
     expect(login).toContain('import jmLogo from "../../../assets/app-logo.png"');
     expect(login).toContain('alt="Logo JM"');
     expect(login).not.toContain("nexus-mark.png");
     expect(shell).toContain('import nexusMark from "../../assets/nexus-mark.png"');
     expect(shell).toContain('alt="Logo Nexus"');
+    expect(styles).toContain('content: "Nexus\\A Plataforma de gestión y procesos";');
+    expect(styles).not.toContain("Personas · Procesos · Innovación");
+  });
+
+  it("offsets only the desktop greeting copy beyond the widget axis", () => {
+    const styles = readSource("src/modules/dashboard/styles/dashboard.css");
+
+    expect(styles).toContain("@media (min-width: 721px)");
+    expect(styles).toContain(".dashboard-hero-copy");
+    expect(styles).toContain("padding-inline-start: 0.75rem;");
   });
 
   it("stacks pending tasks, request tracking and active folios in that order", () => {

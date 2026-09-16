@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Alineación del saludo e identidad lateral Nexus — 2026-09-16
+
+- [x] Desplazar únicamente el bloque textual del saludo ligeramente a la derecha del eje de los widgets en escritorio.
+- [x] Cambiar la leyenda lateral a `Nexus` y `Plataforma de gestión y procesos` sin alterar el logo JM del login.
+- [x] Conservar la geometría móvil, el rail plegado, los temas y la distribución de widgets.
+- [x] Agregar contrato de regresión y ejecutar pruebas, build, Guardian y `git diff --check`.
+- [ ] Publicar en `main`, esperar CI y comprobar el bundle servido en producción.
+
+Resultado previo a publicación: el texto del saludo queda 12 px hacia el interior respecto del borde izquierdo de los widgets únicamente desde 721 px; móvil conserva su eje original. La sidebar expandida muestra `Nexus` y `Plataforma de gestión y procesos`, mientras el login mantiene JM. La prueba Nexus pasó 9/9, el build completó 1.018 módulos, Guardian cerró con 0 errores y 0 advertencias y la línea base registra únicamente 49 bytes CSS adicionales, sin JS, dependencias ni assets nuevos.
+
 ## Rendimiento de selección en Jornadas e Incentivos — 2026-09-16
 
 - [x] Medir en producción la latencia y los planes de búsqueda, selección de trabajador y selección de contrato/área.

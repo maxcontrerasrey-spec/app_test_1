@@ -7434,7 +7434,7 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   }
 
   .top-brand-block::after {
-    content: "Nexus\A Personas · Procesos · Innovación";
+    content: "Nexus\A Plataforma de gestión y procesos";
     white-space: pre;
     color: var(--text-secondary);
     font-size: 0.68rem;
@@ -8156,7 +8156,7 @@ textarea:focus-visible {
   }
 
   .app-shell-topnav .top-brand-block::after {
-    content: "Nexus\A Personas · Procesos · Innovación";
+    content: "Nexus\A Plataforma de gestión y procesos";
     max-width: 8.6rem;
     white-space: pre-line;
     color: var(--text-secondary);

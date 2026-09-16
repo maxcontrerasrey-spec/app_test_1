@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 360. La alineación óptica del encabezado puede diferir del eje de las tarjetas
+
+- Cuando el usuario pide que el saludo quede apenas más adentro que los widgets, desplazar solo el bloque de texto y no todo el contenedor del dashboard.
+- El ajuste debe ser pequeño, explícito y limitado a escritorio para conservar el ancho útil y el ritmo responsive.
+- Los textos de marca visibles no deben depender de copias históricas: su contenido exacto debe quedar cubierto por una prueba contractual.
+
 ## 359. Una selección lenta puede ejecutar trabajo ajeno al control elegido
 
 - Medir por separado búsqueda, selección de trabajador, contexto y cambio de contrato; el spinner visible no identifica necesariamente la consulta costosa.

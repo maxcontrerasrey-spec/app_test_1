@@ -838,6 +838,12 @@
   gap: 0.9rem;
 }
 
+@media (min-width: 721px) {
+  .dashboard-hero-copy {
+    padding-inline-start: 0.75rem;
+  }
+}
+
 @media (max-width: 720px) {
   .dashboard-header-actions.dashboard-hero-actions {
     width: 100%;

@@ -124,6 +124,26 @@ async function assertNexusHomeLayout(page) {
   const infoCards = page.locator(".dashboard-info-row > .dashboard-info-card");
   await infoCards.first().waitFor({ timeout: DEFAULT_TIMEOUT_MS });
   assert((await infoCards.count()) === 3, "Dashboard must render exactly three informative widgets.");
+  const homeIdentityGeometry = await page.evaluate(() => {
+    const greeting = document.querySelector(".dashboard-hero-copy")?.getBoundingClientRect();
+    const firstWidget = document.querySelector(".dashboard-info-card")?.getBoundingClientRect();
+    const brand = document.querySelector(".top-brand-block");
+    if (!greeting || !firstWidget || !brand) return null;
+    return {
+      greetingOffset: greeting.left - firstWidget.left,
+      brandCopy: getComputedStyle(brand, "::after").content
+    };
+  });
+  assert(homeIdentityGeometry, "Dashboard identity geometry is unavailable.");
+  assert(
+    homeIdentityGeometry.greetingOffset >= 10 && homeIdentityGeometry.greetingOffset <= 14,
+    "Desktop greeting copy must sit 12px inside the widget axis."
+  );
+  assert(
+    homeIdentityGeometry.brandCopy.includes("Nexus") &&
+      homeIdentityGeometry.brandCopy.includes("Plataforma de gestión y procesos"),
+    "Expanded sidebar must expose the current Nexus platform description."
+  );
   const tasksZone = page.locator(".dashboard-zone-tasks");
   const requestsZone = page.locator(".dashboard-zone-approvals");
   await tasksZone.waitFor({ timeout: DEFAULT_TIMEOUT_MS });
