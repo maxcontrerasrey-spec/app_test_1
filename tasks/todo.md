@@ -6,9 +6,9 @@
 - [x] Cambiar la leyenda lateral a `Nexus` y `Plataforma de gestión y procesos` sin alterar el logo JM del login.
 - [x] Conservar la geometría móvil, el rail plegado, los temas y la distribución de widgets.
 - [x] Agregar contrato de regresión y ejecutar pruebas, build, Guardian y `git diff --check`.
-- [ ] Publicar en `main`, esperar CI y comprobar el bundle servido en producción.
+- [x] Publicar en `main`, esperar CI y comprobar el bundle servido en producción.
 
-Resultado previo a publicación: el texto del saludo queda 12 px hacia el interior respecto del borde izquierdo de los widgets únicamente desde 721 px; móvil conserva su eje original. La sidebar expandida muestra `Nexus` y `Plataforma de gestión y procesos`, mientras el login mantiene JM. La prueba Nexus pasó 9/9, el build completó 1.018 módulos, Guardian cerró con 0 errores y 0 advertencias y la línea base registra únicamente 49 bytes CSS adicionales, sin JS, dependencias ni assets nuevos.
+Resultado productivo: el texto del saludo queda 12 px hacia el interior respecto del borde izquierdo de los widgets únicamente desde 721 px; móvil conserva su eje original. La sidebar expandida muestra `Nexus` y `Plataforma de gestión y procesos`, mientras el login mantiene JM. La prueba Nexus pasó 9/9, el build completó 1.018 módulos, Guardian cerró con 0 errores y 0 advertencias y la línea base registra únicamente 49 bytes CSS adicionales, sin JS, dependencias ni assets nuevos. El commit funcional `67e5121` quedó en `main`, el workflow `35116355878` aprobó la matriz completa y producción sirve `index-BhrtO1ey.css` junto con `HomePage-CVKV2b12.css`, ambos con los contratos visuales nuevos.
 
 ## Rendimiento de selección en Jornadas e Incentivos — 2026-09-16
 
