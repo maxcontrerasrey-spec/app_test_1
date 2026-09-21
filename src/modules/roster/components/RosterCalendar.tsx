@@ -126,10 +126,8 @@ export function RosterCalendar({
               title={scheduleDay ? `${formatRequestDate(dayValue)} · ${getDayLabel(scheduleDay)}` : formatRequestDate(dayValue)}
             >
               <strong>{calendarDay.value.getDate()}</strong>
-              <span>{scheduleDay?.baseStatus === "working"
-                ? scheduleDay.cycleDay && scheduleDay.patternId
-                  ? patternsById.get(scheduleDay.patternId)?.workdayLabels?.[scheduleDay.cycleDay - 1] ?? "T"
-                  : "T"
+              <span>{scheduleDay?.cycleDay && scheduleDay.patternId
+                ? patternsById.get(scheduleDay.patternId)?.workdayLabels?.[scheduleDay.cycleDay - 1] ?? getDayLabel(scheduleDay)
                 : getDayLabel(scheduleDay)}</span>
             </button>
           );

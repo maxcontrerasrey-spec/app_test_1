@@ -6,7 +6,12 @@ import type { RosterBulkWorker, ShiftPattern, WorkerScheduleDay } from "../types
 type Props = { startDate: string; endDate: string; workers: RosterBulkWorker[]; patterns: ShiftPattern[]; isLoading?: boolean };
 const NO_PATTERN_FILTER = "__no_pattern__";
 
-function tone(day: WorkerScheduleDay | undefined) {
+function getPatternShiftLabel(day: WorkerScheduleDay | undefined, patternsById: Map<string, ShiftPattern>) {
+  if (!day || !day.cycleDay || !day.patternId) return null;
+  return patternsById.get(day.patternId)?.workdayLabels?.[day.cycleDay - 1] ?? null;
+}
+
+function tone(day: WorkerScheduleDay | undefined, patternsById: Map<string, ShiftPattern>) {
   if (!day || day.baseStatus === "unassigned") return "roster-bulk-cell--unassigned";
   if (day.exceptionType === "vacation") return "roster-bulk-cell--vacation";
   if (day.exceptionType === "medical_leave") return "roster-bulk-cell--medical-leave";
@@ -14,17 +19,17 @@ function tone(day: WorkerScheduleDay | undefined) {
   if (day.exceptionType === "absent" || day.exceptionType === "administrative_leave") return "roster-bulk-cell--absent";
   if (day.exceptionType === "extra_shift") return "roster-bulk-cell--extra";
   if (day.exceptionType === "training" || day.exceptionType === "union_leave") return "roster-bulk-cell--training";
-  return day.baseStatus === "working" ? "roster-bulk-cell--working" : "roster-bulk-cell--resting";
+  return getPatternShiftLabel(day, patternsById) || day.baseStatus === "working"
+    ? "roster-bulk-cell--working"
+    : "roster-bulk-cell--resting";
 }
 
 function label(day: WorkerScheduleDay | undefined, patternsById: Map<string, ShiftPattern>) {
   if (!day) return "—";
   if (day.exceptionLabel) return day.exceptionLabel.slice(0, 3).toUpperCase();
-  if (day.baseStatus === "working") {
-    const pattern = day.patternId ? patternsById.get(day.patternId) : undefined;
-    const shiftLabel = day.cycleDay && pattern?.workdayLabels?.[day.cycleDay - 1];
-    return shiftLabel ?? "T";
-  }
+  const shiftLabel = getPatternShiftLabel(day, patternsById);
+  if (shiftLabel) return shiftLabel;
+  if (day.baseStatus === "working") return "T";
   return day.baseStatus === "resting" ? "D" : "—";
 }
 
@@ -211,7 +216,7 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
               const jornadaLabel = resolveWorkerPatternLabel(worker.days);
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
                 <div className="roster-bulk-worker"><strong>{worker.fullName}</strong><span title={jornadaLabel}>{worker.documentNumber} · {jornadaLabel}</span></div>
-                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day, patternsById)}</strong></div>; })}
+                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day, patternsById)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day, patternsById)}</strong></div>; })}
               </div>;
             })}
           </div>
