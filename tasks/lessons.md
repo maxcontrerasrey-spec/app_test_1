@@ -3766,3 +3766,4 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - A/B/T no debe inferirse desde el nombre visible ni quedar hardcodeado por trabajador; debe vivir en el patrón backend y resolverse por `cycle_day`.
 - Una carga desde nómina debe conciliar por RUT y contrato/área activo antes de insertar; si un RUT aparece dos veces con contratos incompatibles, se conserva solo la fila que coincide con la ficha viva y se deja evidencia.
+- Si un ciclo visual contiene dos bloques de trabajo dentro de una misma pauta (por ejemplo 4 A y luego 4 B), `working_days + resting_days` no puede seguir representando solo la primera vuelta; el período persistido debe cubrir toda la secuencia antes de validar el calendario.

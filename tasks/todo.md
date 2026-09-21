@@ -3581,4 +3581,4 @@ Resultado: `sync-buk-candidates` quedó desplegada en el proyecto productivo `pz
 - [x] Verificar en producción los calendarios representativos, cobertura total y ausencia de duplicados o asignaciones incorrectas.
 - [x] Registrar resultado, pendientes y evidencia de producción.
 
-Resultado: se cargaron 371 trabajadores únicos del workbook; el duplicado de 12.579.300-2 con contrato ENAEX se descartó porque su ficha activa corresponde a CODELCO. Producción confirmó 371 asignaciones, 371 RUT únicos y 0 duplicados. Se crearon 14 patrones DAND con etiquetas backend A/B/T; la interfaz compilada muestra esas etiquetas en calendario individual y general.
+Resultado: se cargaron 371 trabajadores únicos del workbook; el duplicado de 12.579.300-2 con contrato ENAEX se descartó porque su ficha activa corresponde a CODELCO. Producción confirmó 371 asignaciones, 371 RUT únicos y 0 duplicados. Se crearon 14 patrones DAND con etiquetas backend A/B/T; 4x4 usa periodo completo de 16 días y 7x7 de 28 días. La interfaz compilada muestra esas etiquetas en calendario individual y general.
