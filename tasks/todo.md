@@ -71,6 +71,17 @@ Resultado productivo: el modo noche Nexus quedó coherente en Safari y Chromium,
 
 Resultado productivo: Inicio vuelve a ser el primer destino del rail compacto y permanece separado de los grupos que contienen exclusivamente submódulos autorizados. Los módulos padre continúan fuera del rail. Las pruebas contractuales pasaron 7/7, el build completó 1018 módulos, Guardian cerró con 0 errores y 0 advertencias y el workflow 35033024710 aprobó el smoke autenticado que exige `Inicio` como primer enlace. El commit funcional `80ab465` quedó en `main` y producción responde 200 sirviendo `index-B_UxBUpj.js`, con navegación compacta e Inicio presentes y sin controles de módulo padre.
 
+## Cargos habilitados por contrato BUK en solicitud de contratación — 2026-09-15
+
+- [x] Inspeccionar el catálogo BUK de roles/áreas y el contrato actual de solicitudes.
+- [x] Persistir la habilitación cargo-contrato desde la sincronización BUK, conservando histórico.
+- [x] Filtrar el cargo en la interfaz después de seleccionar contrato y limpiar selecciones incompatibles.
+- [x] Rechazar en backend cualquier combinación contrato/cargo no habilitada o inactiva.
+- [x] Verificar catálogo actual, flujo UI, regresiones, seguridad y producción.
+- [x] Publicar frontend, migración y función BUK con evidencia de cierre.
+
+Resultado productivo: la solicitud de contratación exige seleccionar primero el contrato de destino. El cargo queda deshabilitado hasta entonces y solo muestra cargos activos con habilitación vigente en BUK para ese contrato; cambiar contrato limpia el cargo anterior. La tabla `buk_job_position_contract_access` quedó sincronizada con 233 habilitaciones activas, 12 contratos y 74 cargos, y el trigger `enforce_hiring_request_buk_job_position()` rechaza combinaciones no habilitadas aunque se intente omitir la interfaz. Se publicó la migración, la Edge Function `sync-buk-job-positions` y el frontend en el commit `4a1a6f3`.
+
 ## Rail compacto solo con submódulos y seguimiento sin buscador - 2026-09-15
 
 - [x] Retirar Inicio, enlaces directos e iconos de módulo del rail plegado.
@@ -3545,3 +3556,20 @@ Validación local: build, pruebas focalizadas y auditorías de migraciones, segu
 - [x] Ejecutar pruebas focalizadas, auditorías SQL, Guardian, diff check y publicar en `main`.
 
 Resultado: producción tiene 24 trabajadores activos con `raw_payload.private_role = true`; uno de ellos tenía una jornada histórica. La migración `20260915160000_exclude_private_roles_from_hr_roster.sql` excluye ese grupo de búsqueda, calendario general y resumen KPI, y bloquea nuevas asignaciones sin borrar registros existentes. En producción, el calendario mensual devuelve 1.658 trabajadores, `private_bulk_month_rows = 0`, la búsqueda devuelve `private_search_rows = 0`, y el intento controlado de asignación a un rol privado fue rechazado por backend. La migración quedó aplicada y registrada en Supabase.
+## Liberar candidato a Sin Folio — RUT 14.619.161-4 (2026-09-16)
+
+- [x] Confirmar identidad, folio, etapa terminal y existencia de duplicados en producción.
+- [x] Validar la ruta autoritativa y ajustar la operación auditada para etapas terminales no contratadas.
+- [x] Ejecutar la liberación específica en producción preservando el historial de rechazo.
+- [x] Verificar que quede visible en Sin Folio y disponible para reasignación, sin afectar otros registros.
+
+Resultado: el RUT 14.619.161-4 quedó visible en Sin Folio, con 0 procesos activos y 1 auditoría de liberación; no se eliminó su historial ni el motivo original del rechazo.
+## Corrección timeout de documentos BUK en Personal a Contratar — 2026-09-21
+
+- [x] Confirmar el flujo actual de generación, estados y checkpoints documentales BUK.
+- [x] Implementar conciliación remota idempotente antes de reintentar cargas con resultado incierto.
+- [x] Cubrir timeout, documento ya existente y ausencia confirmada con pruebas de contrato.
+- [x] Ejecutar check de Edge Function, auditoría de migraciones y diff check.
+- [x] Publicar la corrección y verificar el contrato real del endpoint de documentos BUK.
+
+Resultado: `sync-buk-candidates` quedó desplegada en el proyecto productivo `pzblmbahnoyntrhistea`. Ante un timeout, el siguiente intento consulta `GET /employees/{id}/docs`; si el nombre exacto ya existe, registra el checkpoint local sin duplicar; si BUK confirma que no existe, habilita un único reintento; si la consulta falla o también expira, mantiene el bloqueo de conciliación. Se validó en BUK que la respuesta productiva usa `employee_files` y que el endpoint responde 200.

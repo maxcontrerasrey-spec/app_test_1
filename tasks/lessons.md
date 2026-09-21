@@ -3749,3 +3749,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Una captura en reposo no detecta fondos literales que aparecen solo con `focus-within`, resultados abiertos, selección activa o popovers; la verificación visual y automatizada debe activar esos estados explícitamente.
 - Los overlays y controles elevados deben resolver fondo, borde, sombra, foco y tipografía desde tokens semánticos del tema; una transparencia clara casi opaca produce una superficie blanca aunque el lienzo base sea oscuro.
 - En hojas heredadas, auditar selectores de mayor especificidad y duplicados posteriores antes de agregar excepciones; consolidar la regla dominante mantiene coherencia entre Chromium y Safari y evita crecimiento CSS innecesario.
+
+## 2026-09-21 - Un timeout documental BUK debe reconciliarse por el archivo real
+
+- Marcar una carga incierta como `reconciliation_required` evita duplicados, pero no completa el flujo si el siguiente intento solo bloquea manualmente.
+- Antes de permitir un nuevo POST, consultar `GET /employees/{id}/docs` y distinguir tres estados: archivo confirmado existente, ausencia confirmada o consulta inconclusa. Solo la ausencia confirmada habilita la nueva carga.
+- El endpoint productivo devuelve la colección en `employee_files`; además, `path` identifica el archivo, no necesariamente la carpeta. La conciliación debe comparar el nombre exacto y no asumir una forma de payload distinta.

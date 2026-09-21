@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
   buildBukBaseUrl,
   extractBukDocumentMetadata,
+  reconcileBukDocumentUpload,
   uploadBukDocument
 } from "../_shared/bukDocuments.ts";
 import {
@@ -3309,7 +3310,59 @@ async function processRecruitmentHiringDocument(
 
   const row = data as RecruitmentHiringDocumentRow;
   if (row.buk_upload_status === "reconciliation_required") {
-    throw new Error("La carga BUK de la Solicitud de Contratación requiere conciliación manual antes de reintentar.");
+    const fileName = row.buk_document_name ?? `${row.folio}.pdf`;
+    try {
+      const remoteDocument = await reconcileBukDocumentUpload(employeeId, fileName, { path: "Postulación" });
+      if (remoteDocument.found) {
+        const checkpoint = {
+          documentId: row.id,
+          folio: row.folio,
+          pdfSha256: row.pdf_sha256,
+          bukDocumentId: remoteDocument.bukDocumentId,
+          bukDocumentUrl: remoteDocument.bukDocumentUrl,
+          bukEmployeeFolderId: remoteDocument.bukEmployeeFolderId,
+          bukDocumentName: remoteDocument.bukDocumentName,
+          bukUploadedAt: new Date().toISOString(),
+          transport: "reconciled_remote",
+          origin,
+          status: "success"
+        };
+        jobResultSnapshot.hiringRequestDocument = checkpoint;
+        await persistHiringDocumentBukSuccess(supabase, row, employeeId, checkpoint);
+        if (persistSourceJobCheckpoint) {
+          await markJobState(supabase, job.id, {
+            status: "processing",
+            result_snapshot: jobResultSnapshot
+          });
+        }
+        return checkpoint;
+      }
+
+      const { error: resetError } = await supabase
+        .from("recruitment_hiring_documents")
+        .update({
+          buk_upload_status: "failed",
+          buk_last_error: "Conciliación BUK sin coincidencia; se habilitó un reintento seguro."
+        })
+        .eq("id", row.id)
+        .eq("buk_upload_status", "reconciliation_required");
+      if (resetError) {
+        throw new Error(`No fue posible habilitar el reintento seguro de la Solicitud de Contratación: ${resetError.message}`);
+      }
+      await recordHiringDocumentAudit(supabase, {
+        documentId: row.id,
+        jobId: job.id,
+        eventType: "buk_reconciliation_not_found",
+        summary: "La conciliación BUK no encontró el documento; se habilitó un reintento seguro",
+        payload: { document_name: fileName, origin }
+      });
+    } catch (reconciliationError) {
+      const message = toErrorMessage(reconciliationError);
+      if (message.includes("reconciliation failed") || message.includes("reconciliation timeout")) {
+        throw new Error("La carga BUK sigue requiriendo conciliación: no fue posible confirmar el estado remoto.");
+      }
+      throw reconciliationError;
+    }
   }
   if (row.buk_upload_status === "processing") {
     const processingStartedAt = row.buk_upload_started_at
@@ -3514,6 +3567,7 @@ async function processDocuments(
   employeeId: string,
   uploadedDocuments: Array<Record<string, unknown>>,
   alreadyUploadedDocumentIds: Set<string>,
+  options: { reconcileRemoteDocuments?: boolean } = {}
 ) {
   for (const document of payload.documents) {
     if (alreadyUploadedDocumentIds.has(document.id)) {
@@ -3541,6 +3595,37 @@ async function processDocuments(
     }
 
     const bukFileName = buildBukDocumentFileName(payload, document.document_name);
+    if (options.reconcileRemoteDocuments) {
+      const remoteDocument = await reconcileBukDocumentUpload(employeeId, bukFileName);
+      if (remoteDocument.found) {
+        uploadedDocuments.push({
+          sourceDocumentId: document.id,
+          sourceDocumentName: document.document_name,
+          sourceFilePath: document.file_path,
+          bukDocumentId: remoteDocument.bukDocumentId,
+          bukDocumentUrl: remoteDocument.bukDocumentUrl,
+          bukEmployeeFolderId: remoteDocument.bukEmployeeFolderId,
+          bukDocumentName: remoteDocument.bukDocumentName,
+          transport: "reconciled_remote",
+          status: 200
+        });
+        alreadyUploadedDocumentIds.add(document.id);
+        jobResultSnapshot.documents = uploadedDocuments;
+        await markJobState(supabase, jobId, {
+          status: "processing",
+          result_snapshot: jobResultSnapshot
+        });
+
+        const { error: removeReconciledError } = await supabase.storage
+          .from("candidate-docs")
+          .remove([document.file_path]);
+        if (removeReconciledError) {
+          throw new Error(`El documento ya estaba en BUK, pero no se pudo eliminar ${document.document_name} de Supabase Storage: ${removeReconciledError.message}`);
+        }
+        continue;
+      }
+    }
+
     const uploadResult = await uploadBukDocument(employeeId, bukFileName, fileData);
     const uploadPayload = uploadResult.payload;
     const { bukDocumentId, bukDocumentUrl, bukEmployeeFolderId } = extractBukDocumentMetadata(uploadPayload);
@@ -4074,7 +4159,8 @@ Deno.serve(async (req) => {
             payload,
             employeeId,
             uploadedDocuments,
-            alreadyUploadedDocumentIds
+            alreadyUploadedDocumentIds,
+            { reconcileRemoteDocuments: job.attempts > 1 }
           );
           jobResultSnapshot.documents = uploadedDocuments;
 

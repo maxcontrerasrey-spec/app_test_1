@@ -102,4 +102,28 @@ describe("Solicitud de Contratación ERP", () => {
     expect(edge).toContain('.eq("buk_upload_status", "processing")');
     expect(edge).toContain('buk_upload_status: "reconciliation_required"');
   });
+
+  it("reconcilia el documento remoto antes de habilitar un reintento", () => {
+    const documents = read("supabase/functions/_shared/bukDocuments.ts");
+    const edge = read("supabase/functions/sync-buk-candidates/index.ts");
+
+    expect(documents).toContain("export async function reconcileBukDocumentUpload");
+    expect(documents).toContain("Buk document reconciliation timeout");
+    expect(documents).toContain("documentRowName");
+    expect(documents).toContain("payload.employee_files");
+    expect(documents).toContain("row.filename");
+    expect(documents).not.toContain("const value = row.path ?? row.folder");
+    expect(edge).toContain("reconcileBukDocumentUpload(employeeId, fileName, { path: \"Postulación\" })");
+    expect(edge).toContain('eventType: "buk_reconciliation_not_found"');
+    expect(edge).toContain('buk_upload_status: "failed"');
+    expect(edge).toContain('transport: "reconciled_remote"');
+  });
+
+  it("reconcilia documentos generales solo en reintentos del job", () => {
+    const edge = read("supabase/functions/sync-buk-candidates/index.ts");
+
+    expect(edge).toContain("options: { reconcileRemoteDocuments?: boolean } = {}");
+    expect(edge).toContain("if (options.reconcileRemoteDocuments)");
+    expect(edge).toContain("{ reconcileRemoteDocuments: job.attempts > 1 }");
+  });
 });

@@ -9,6 +9,7 @@ function requireEnv(value: string | undefined, label: string) {
 
 const DEFAULT_BUK_DOCUMENTS_PATH = "Postulación";
 const BUK_DOCUMENT_UPLOAD_TIMEOUT_MS = 30_000;
+const BUK_DOCUMENT_RECONCILIATION_TIMEOUT_MS = 15_000;
 
 function normalizeDocumentsTemplate(template: string) {
   const trimmed = template.trim();
@@ -75,6 +76,38 @@ async function parseBukResponse(response: Response) {
   return { rawBody, payload };
 }
 
+function extractDocumentRows(payload: Record<string, unknown> | null) {
+  if (!payload) return [] as Record<string, unknown>[];
+
+  const candidates = [
+    payload.data,
+    payload.documents,
+    payload.employee_files,
+    payload.files,
+    payload.items,
+    payload.results,
+    (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)
+      ? (payload.data as Record<string, unknown>).documents
+      : null),
+    (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)
+      ? (payload.data as Record<string, unknown>).employee_files
+      : null),
+    (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)
+      ? (payload.data as Record<string, unknown>).items
+      : null)
+  ];
+
+  for (const candidate of candidates) {
+    if (!Array.isArray(candidate)) continue;
+    return candidate.filter(
+      (entry): entry is Record<string, unknown> =>
+        Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
+    );
+  }
+
+  return [] as Record<string, unknown>[];
+}
+
 async function sendDocumentRequest(url: string, authToken: string, formData: FormData) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), BUK_DOCUMENT_UPLOAD_TIMEOUT_MS);
@@ -90,7 +123,10 @@ async function sendDocumentRequest(url: string, authToken: string, formData: For
       signal: controller.signal
     });
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
+    if (
+      (error instanceof DOMException && error.name === "AbortError") ||
+      (error instanceof Error && error.name === "AbortError")
+    ) {
       throw new Error("Buk document upload timeout; el resultado remoto debe reconciliarse antes de reintentar");
     }
     throw error;
@@ -182,6 +218,89 @@ function appendBukDocumentsQuery(url: string, params: Record<string, string>) {
   }
 
   return parsedUrl.toString();
+}
+
+function documentRowName(row: Record<string, unknown>) {
+  const value =
+    row.name ??
+    row.filename ??
+    row.file_name ??
+    row.document_name ??
+    row.title ??
+    (row.file && typeof row.file === "object" && !Array.isArray(row.file)
+      ? (row.file as Record<string, unknown>).name
+      : null);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function documentRowPath(row: Record<string, unknown>) {
+  const value = row.folder ?? row.folder_name ?? row.category ?? null;
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function listBukDocuments(employeeId: string, path: string | null) {
+  const authToken = requireEnv(Deno.env.get("BUK_AUTH_TOKEN"), "BUK_AUTH_TOKEN");
+  const url = appendBukDocumentsQuery(buildBukDocumentsUrl(employeeId), {
+    ...(path ? { path } : {})
+  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BUK_DOCUMENT_RECONCILIATION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        auth_token: authToken
+      },
+      signal: controller.signal
+    });
+    const parsed = await parseBukResponse(response);
+    if (!response.ok) {
+      throw new Error(`Buk document reconciliation failed (${response.status})`);
+    }
+
+    return extractDocumentRows(parsed.payload);
+  } catch (error) {
+    if (
+      (error instanceof DOMException && error.name === "AbortError") ||
+      (error instanceof Error && error.name === "AbortError")
+    ) {
+      throw new Error("Buk document reconciliation timeout; no se pudo confirmar el estado remoto");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function reconcileBukDocumentUpload(
+  employeeId: string,
+  documentName: string,
+  options: { path?: string | null } = {}
+) {
+  const targetPath = resolveBukDocumentsPath(options.path);
+  const rows = await listBukDocuments(employeeId, targetPath);
+  const normalizedName = documentName.trim().toLocaleLowerCase("es-CL");
+  const match = rows.find((row) => {
+    const name = documentRowName(row).toLocaleLowerCase("es-CL");
+    const rowPath = documentRowPath(row).toLocaleLowerCase("es-CL");
+    const expectedPath = (targetPath ?? "").trim().toLocaleLowerCase("es-CL");
+    return name === normalizedName && (!expectedPath || !rowPath || rowPath === expectedPath);
+  });
+
+  if (!match) {
+    return { found: false as const };
+  }
+
+  const metadata = extractBukDocumentMetadata(match);
+  return {
+    found: true as const,
+    bukDocumentId: metadata.bukDocumentId,
+    bukDocumentUrl: metadata.bukDocumentUrl,
+    bukEmployeeFolderId: metadata.bukEmployeeFolderId,
+    bukDocumentName: documentRowName(match) || documentName
+  };
 }
 
 export async function uploadBukDocument(
