@@ -3755,3 +3755,14 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Marcar una carga incierta como `reconciliation_required` evita duplicados, pero no completa el flujo si el siguiente intento solo bloquea manualmente.
 - Antes de permitir un nuevo POST, consultar `GET /employees/{id}/docs` y distinguir tres estados: archivo confirmado existente, ausencia confirmada o consulta inconclusa. Solo la ausencia confirmada habilita la nueva carga.
 - El endpoint productivo devuelve la colección en `employee_files`; además, `path` identifica el archivo, no necesariamente la carpeta. La conciliación debe comparar el nombre exacto y no asumir una forma de payload distinta.
+
+## 2026-09-21 - Los ciclos DAND rotativos deben repetirse de forma continua
+
+- En un ciclo rotativo como 4x4, la secuencia es continua: 4 días A, 4 días de descanso, 4 días B y nuevamente 4 días A, sin detenerse después de la primera vuelta.
+- En 6x3, los 6 días trabajados mantienen siempre la misma configuración: 3 días A y luego 3 días B, seguidos por 3 días de descanso.
+- Para la visualización de DAND, `A` representa mañana, `B` representa tarde y `T` se conserva para trabajadores `AC`, igual que la jornada trabajada de los demás contratos. El código interno `C` del archivo no debe mostrarse como nomenclatura de calendario.
+
+## 2026-09-21 - Las etiquetas de jornada deben ser datos del patrón
+
+- A/B/T no debe inferirse desde el nombre visible ni quedar hardcodeado por trabajador; debe vivir en el patrón backend y resolverse por `cycle_day`.
+- Una carga desde nómina debe conciliar por RUT y contrato/área activo antes de insertar; si un RUT aparece dos veces con contratos incompatibles, se conserva solo la fila que coincide con la ficha viva y se deja evidencia.

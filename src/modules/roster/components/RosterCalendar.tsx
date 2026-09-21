@@ -1,10 +1,11 @@
 import { buildCalendarDays, formatDateValue, parseDateValue, toTodayDateValue } from "../../../shared/lib/date";
 import { formatRequestDate } from "../../../shared/lib/format";
-import type { WorkerScheduleDay } from "../types";
+import type { ShiftPattern, WorkerScheduleDay } from "../types";
 
 type RosterCalendarProps = {
   monthValue: string;
   days: WorkerScheduleDay[];
+  patterns: ShiftPattern[];
   selectedDate: string;
   onSelectDate: (date: string) => void;
 };
@@ -72,12 +73,14 @@ export function RosterCalendar({
   monthValue,
   days,
   selectedDate,
-  onSelectDate
+  onSelectDate,
+  patterns
 }: RosterCalendarProps) {
   const viewDate = parseDateValue(`${monthValue}-01`);
   const calendarDays = buildCalendarDays(viewDate);
   const todayValue = toTodayDateValue();
   const daysByDate = new Map(days.map((day) => [day.date, day]));
+  const patternsById = new Map(patterns.map((pattern) => [pattern.id, pattern]));
 
   return (
     <section className="info-card roster-calendar-card">
@@ -123,7 +126,11 @@ export function RosterCalendar({
               title={scheduleDay ? `${formatRequestDate(dayValue)} · ${getDayLabel(scheduleDay)}` : formatRequestDate(dayValue)}
             >
               <strong>{calendarDay.value.getDate()}</strong>
-              <span>{getDayLabel(scheduleDay)}</span>
+              <span>{scheduleDay?.baseStatus === "working"
+                ? scheduleDay.cycleDay && scheduleDay.patternId
+                  ? patternsById.get(scheduleDay.patternId)?.workdayLabels?.[scheduleDay.cycleDay - 1] ?? "T"
+                  : "T"
+                : getDayLabel(scheduleDay)}</span>
             </button>
           );
         })}

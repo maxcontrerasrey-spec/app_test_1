@@ -465,6 +465,7 @@ export function RosterPage() {
                 startDate={periodStart}
                 endDate={periodEnd}
                 workers={rosterBulkCalendarQuery.data?.workers ?? []}
+                patterns={setupCatalogsQuery.data?.patterns ?? []}
                 isLoading={rosterBulkCalendarQuery.isLoading}
               />
             ) : (
@@ -524,6 +525,7 @@ export function RosterPage() {
                 <RosterCalendar
                   monthValue={monthValue}
                   days={workerScheduleQuery.data.days}
+                  patterns={setupCatalogsQuery.data?.patterns ?? []}
                   selectedDate={selectedDate}
                   onSelectDate={setSelectedDate}
                 />

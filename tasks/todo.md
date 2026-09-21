@@ -3573,3 +3573,12 @@ Resultado: el RUT 14.619.161-4 quedó visible en Sin Folio, con 0 procesos activ
 - [x] Publicar la corrección y verificar el contrato real del endpoint de documentos BUK.
 
 Resultado: `sync-buk-candidates` quedó desplegada en el proyecto productivo `pzblmbahnoyntrhistea`. Ante un timeout, el siguiente intento consulta `GET /employees/{id}/docs`; si el nombre exacto ya existe, registra el checkpoint local sin duplicar; si BUK confirma que no existe, habilita un único reintento; si la consulta falla o también expira, mantiene el bloqueo de conciliación. Se validó en BUK que la respuesta productiva usa `employee_files` y que el endpoint responde 200.
+## Carga de turnos DAND desde workbook (2026-09-21)
+
+- [x] Revisar el contrato real de Jornadas: patrones, asignación, representación A/B/T y permisos.
+- [x] Conciliar por RUT el workbook DAND con trabajadores/contratos activos en producción; separar faltantes y conflictos.
+- [x] Cargar los patrones y asignaciones de forma idempotente, respetando la fecha de inicio y las rotaciones acordadas.
+- [x] Verificar en producción los calendarios representativos, cobertura total y ausencia de duplicados o asignaciones incorrectas.
+- [x] Registrar resultado, pendientes y evidencia de producción.
+
+Resultado: se cargaron 371 trabajadores únicos del workbook; el duplicado de 12.579.300-2 con contrato ENAEX se descartó porque su ficha activa corresponde a CODELCO. Producción confirmó 371 asignaciones, 371 RUT únicos y 0 duplicados. Se crearon 14 patrones DAND con etiquetas backend A/B/T; la interfaz compilada muestra esas etiquetas en calendario individual y general.

@@ -27,6 +27,7 @@ export type ShiftPattern = {
   restingDays: number;
   cycleLength: number;
   colorHex: string | null;
+  workdayLabels: Array<string | null> | null;
   isActive: boolean;
   createdAt: string;
 };

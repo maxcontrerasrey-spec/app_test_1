@@ -1,9 +1,9 @@
 import { parseDateValue, formatDateValue } from "../../../shared/lib/date";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import type { RosterBulkWorker, WorkerScheduleDay } from "../types";
+import type { RosterBulkWorker, ShiftPattern, WorkerScheduleDay } from "../types";
 
-type Props = { startDate: string; endDate: string; workers: RosterBulkWorker[]; isLoading?: boolean };
+type Props = { startDate: string; endDate: string; workers: RosterBulkWorker[]; patterns: ShiftPattern[]; isLoading?: boolean };
 const NO_PATTERN_FILTER = "__no_pattern__";
 
 function tone(day: WorkerScheduleDay | undefined) {
@@ -17,10 +17,15 @@ function tone(day: WorkerScheduleDay | undefined) {
   return day.baseStatus === "working" ? "roster-bulk-cell--working" : "roster-bulk-cell--resting";
 }
 
-function label(day: WorkerScheduleDay | undefined) {
+function label(day: WorkerScheduleDay | undefined, patternsById: Map<string, ShiftPattern>) {
   if (!day) return "—";
   if (day.exceptionLabel) return day.exceptionLabel.slice(0, 3).toUpperCase();
-  return day.baseStatus === "working" ? "T" : day.baseStatus === "resting" ? "D" : "—";
+  if (day.baseStatus === "working") {
+    const pattern = day.patternId ? patternsById.get(day.patternId) : undefined;
+    const shiftLabel = day.cycleDay && pattern?.workdayLabels?.[day.cycleDay - 1];
+    return shiftLabel ?? "T";
+  }
+  return day.baseStatus === "resting" ? "D" : "—";
 }
 
 function resolveWorkerPatternLabel(days: WorkerScheduleDay[]) {
@@ -89,9 +94,10 @@ async function exportRosterCalendar(
   writeFile(workbook, `${suffix}-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-export function RosterBulkCalendar({ startDate, endDate, workers, isLoading = false }: Props) {
+export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLoading = false }: Props) {
   const [selectedPattern, setSelectedPattern] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const patternsById = useMemo(() => new Map(patterns.map((pattern) => [pattern.id, pattern])), [patterns]);
   const patternOptions = useMemo(() => {
     const workerCounts = new Map<string, number>();
     workers.forEach((worker) => {
@@ -205,7 +211,7 @@ export function RosterBulkCalendar({ startDate, endDate, workers, isLoading = fa
               const jornadaLabel = resolveWorkerPatternLabel(worker.days);
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
                 <div className="roster-bulk-worker"><strong>{worker.fullName}</strong><span title={jornadaLabel}>{worker.documentNumber} · {jornadaLabel}</span></div>
-                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day)}</strong></div>; })}
+                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day, patternsById)}</strong></div>; })}
               </div>;
             })}
           </div>

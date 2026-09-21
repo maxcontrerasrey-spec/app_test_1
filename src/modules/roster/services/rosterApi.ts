@@ -31,6 +31,9 @@ function mapShiftPattern(row: Record<string, unknown>): ShiftPattern {
     restingDays: Number(row.resting_days ?? 0),
     cycleLength: Number(row.cycle_length ?? 0),
     colorHex: readNullableText(row.color_hex),
+    workdayLabels: Array.isArray(row.workday_labels)
+      ? row.workday_labels.map((label) => (label == null ? null : String(label)))
+      : null,
     isActive: Boolean(row.is_active),
     createdAt: String(row.created_at ?? "")
   };
