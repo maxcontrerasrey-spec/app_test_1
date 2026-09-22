@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Carga documental contingente para RC-0173 — 2026-09-22
+
+- [x] Habilitar el checklist documental de los 10 candidatos contratados sin cambiar su etapa ni sacarles de la vista.
+- [x] Mantener bloqueados los cambios de ficha trabajador y cualquier sincronización/generación BUK desde esta superficie.
+- [x] Verificar build, pruebas contractuales, diff y publicación productiva.
+
+Resultado: Personal contratado conserva los 10 candidatos de RC-0173 y ahora permite abrir, cargar, reemplazar y revisar documentos. La ficha trabajador permanece de solo lectura y no se agregó ninguna acción de generación o sincronización BUK.
+
 ## Reconciliación Personal contratado RC-0173 — 2026-09-22
 
 - [x] Reproducir en producción la ausencia de los contratados del folio y localizar la condición de exclusión.

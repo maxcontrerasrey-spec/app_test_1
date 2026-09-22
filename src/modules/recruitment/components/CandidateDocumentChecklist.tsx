@@ -325,7 +325,8 @@ export function CandidateDocumentChecklist({
           <strong>Folio habilitado para completar documentos</strong>
           <p>
             Esta ventana permite ver, cargar y validar documentos faltantes del folio autorizado.
-            Cada operación queda registrada y no reabre la contratación ni modifica la ficha BUK.
+            Cada operación queda registrada; no reabre la contratación, modifica la ficha trabajador
+            ni genera una sincronización con BUK.
           </p>
         </div>
       ) : null}

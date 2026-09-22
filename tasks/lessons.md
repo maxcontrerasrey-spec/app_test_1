@@ -201,6 +201,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 - Al reconciliar una contingencia con un candidato ERP, la fila externa deja de ser una ocupación adicional; conservarla como evidencia activa produce doble conteo de cupos y estados de folio incorrectos.
 - Las migraciones forward-only deben tolerar estados ya corregidos en producción y no asumir que una fila previa sigue presente solo porque la migración aún no figura aplicada.
 
+### 345. La carga documental posterior a la contratación debe ser una excepción de superficie
+
+- Si un contratado contingente necesita completar documentos, habilitar únicamente el checklist documental en la vista autorizada; mantener la ficha trabajador, el cambio de etapa y la generación BUK bloqueados.
+- La excepción debe quedar acotada al folio contingente autorizado y conservar la auditoría de cada carga/revisión.
+
 ## 342. La forma de pago define campos bancarios obligatorios en toda la cadena BUK
 
 - `Transferencia Bancaria` requiere banco, tipo de cuenta y número de cuenta; validar solo forma y período permite que el error llegue tarde desde BUK.
