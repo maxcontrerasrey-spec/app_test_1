@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Permisos de consulta para gerentes y administradores de Jornadas — 2026-09-22
+
+- [x] Confirmar en producción el acceso de gerentes y administradores al calendario, filtros y exportación.
+- [x] Restringir `Asignar pauta` al administrador del sistema sin retirar el acceso de consulta.
+- [x] Verificar migración, pruebas, build, CI y permisos efectivos en producción.
+
+Resultado: Luciano Fischer, Cristian Jimenez y Andres Barraza conservan acceso de consulta a Jornadas. Los administradores Angel Guerra, Isac Arratia, Javier Plaza, Jose Irribarren, Jose Orellana, Marcelo Villarroel y Ricardo Mella también cuentan con el rol de consulta. Mario Pizarro y Oscar Poblete figuran como administradores de contratos, pero actualmente no tienen un rol que les habilite Jornadas; no se les asignó acceso automáticamente para no ampliar permisos sin autorización. `Asignar pauta` quedó habilitado solo para `admin`/superadministrador.
+
+
 ## Carga documental contingente para RC-0173 — 2026-09-22
 
 - [x] Habilitar el checklist documental de los 10 candidatos contratados sin cambiar su etapa ni sacarles de la vista.
