@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corrección de nomenclatura DAND para turno tarde — 2026-09-22
+
+- [x] Verificar pautas DAND activas, etiquetas y cantidad de asignaciones afectadas.
+- [x] Cambiar solo la nomenclatura visible de tarde de `B` a `C`, sin recrear pautas ni jornadas.
+- [x] Agregar un contrato que impida reintroducir `B` en las pautas DAND de tarde.
+- [x] Aplicar en producción y ejecutar pruebas, auditorías y `git diff --check`.
+- [x] Verificar en producción las pautas y asignaciones después del cambio.
+
+Resultado productivo: `dand_4x3_c`, `dand_4x4_c`, `dand_6x1_c` y `dand_7x7_c` ahora muestran `C` en nombre, descripción y `workday_labels`. Se conservaron los mismos `pattern_id`, ciclos, fechas y asignaciones: 8, 51, 1 y 5 asignaciones respectivamente. La prueba de contrato, 46 pruebas de contrato, 93 de integridad, build y diff pasaron. Guardian conserva únicamente el error preexistente de cabecera EEES en `20260916103000_allow_release_terminal_candidate_without_folio.sql`.
+
 ## Restaurar catálogo contrato/área de Jornadas — 2026-09-22
 
 - [x] Reproducir la ausencia de `operational_areas` en la RPC productiva y confirmar el universo esperado.

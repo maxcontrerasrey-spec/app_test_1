@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 362. La nomenclatura operativa confirmada prevalece sobre una instrucción anterior
+
+- Si el usuario corrige una etiqueta de jornada, se debe actualizar el catálogo autoritativo y no crear pautas paralelas.
+- El cambio de nomenclatura debe conservar `pattern_id`, ciclos, fechas y asignaciones históricas; solo se modifican nombre, descripción y etiquetas visibles.
+- Las pautas DAND de turno tarde deben quedar cubiertas por una prueba que bloquee la reintroducción de `B` cuando la convención vigente sea `C`.
+
 ## 361. Una redefinición de RPC debe conservar todo su contrato de respuesta
 
 - Al extender una RPC de catálogo para una necesidad puntual, no se debe reconstruir la respuesta omitiendo campos consumidos por el frontend.
