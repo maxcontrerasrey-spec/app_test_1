@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Restaurar catálogo contrato/área de Jornadas — 2026-09-22
+
+- [x] Reproducir la ausencia de `operational_areas` en la RPC productiva y confirmar el universo esperado.
+- [x] Restaurar el catálogo en una migración forward-only, preservando pautas, excepciones, permisos y etiquetas DAND.
+- [x] Agregar un contrato de regresión que exija el catálogo backend y su consumo frontend.
+- [x] Aplicar en producción, ejecutar pruebas, build, auditorías y `git diff --check`.
+- [x] Verificar productivamente que la RPC entregue contratos/áreas y que el selector pueda consumirlos.
+
+Resultado productivo: la migración `20260922120000_restore_hr_roster_operational_areas.sql` restauró `operational_areas` en `get_hr_roster_setup_catalogs()` sin alterar trabajadores, asignaciones, permisos ni las etiquetas DAND. La definición productiva confirma `operational_areas` y `workday_labels`; el universo actual contiene 1.669 trabajadores activos en 101 contratos/áreas. La prueba de contrato evita que una redefinición futura omita el catálogo sin ser detectada. 45 pruebas de contrato, 93 de integridad, build, auditorías de migraciones/seguridad y diff pasaron. Guardian conserva únicamente el error preexistente de cabecera EEES en `20260916103000_allow_release_terminal_candidate_without_folio.sql`.
+
 ## Folio de destino en solicitudes de movilidad interna — 2026-09-22
 
 - [x] Inspeccionar UI, tipos, servicio/hook y RPC de solicitudes visibles.

@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 361. Una redefinición de RPC debe conservar todo su contrato de respuesta
+
+- Al extender una RPC de catálogo para una necesidad puntual, no se debe reconstruir la respuesta omitiendo campos consumidos por el frontend.
+- Los catálogos compartidos deben tener una prueba de contrato que exija las claves críticas en backend y su conexión con el consumidor.
+- Una migración posterior y forward-only debe restaurar el contrato completo, preservando los campos nuevos y las reglas de autorización existentes.
+
 ## 360. La alineación óptica del encabezado puede diferir del eje de las tarjetas
 
 - Cuando el usuario pide que el saludo quede apenas más adentro que los widgets, desplazar solo el bloque de texto y no todo el contenedor del dashboard.
