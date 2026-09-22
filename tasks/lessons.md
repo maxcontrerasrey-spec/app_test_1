@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 363. Los filtros de jornada deben representar el ciclo, no la variante operativa
+
+- En una vista general, A/C/T y las variantes rotativas son atributos de la pauta, no filtros independientes para la nómina.
+- El conteo debe usar trabajadores únicos por ciclo y la selección debe incluir todas las variantes equivalentes.
+- El detalle diario puede conservar la etiqueta operativa exacta aunque el filtro se muestre agrupado.
+
 ## 362. La nomenclatura operativa confirmada prevalece sobre una instrucción anterior
 
 - Si el usuario corrige una etiqueta de jornada, se debe actualizar el catálogo autoritativo y no crear pautas paralelas.

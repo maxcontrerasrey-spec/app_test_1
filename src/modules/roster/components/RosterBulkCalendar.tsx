@@ -5,6 +5,12 @@ import type { RosterBulkWorker, ShiftPattern, WorkerScheduleDay } from "../types
 
 type Props = { startDate: string; endDate: string; workers: RosterBulkWorker[]; patterns: ShiftPattern[]; isLoading?: boolean };
 const NO_PATTERN_FILTER = "__no_pattern__";
+const SHIFT_CYCLE_PATTERN = /\b\d+\s*[xX]\s*\d+(?:\s*\+\s*\d+)?\b/;
+
+export function resolvePatternCycle(patternName: string | null | undefined) {
+  const match = patternName?.match(SHIFT_CYCLE_PATTERN)?.[0];
+  return match ? match.replace(/\s+/g, "").toUpperCase() : patternName ?? "";
+}
 
 function getPatternShiftLabel(day: WorkerScheduleDay | undefined, patternsById: Map<string, ShiftPattern>) {
   if (!day || !day.cycleDay || !day.patternId) return null;
@@ -110,6 +116,8 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
         worker.days
           .map((day) => day.patternName)
           .filter((pattern): pattern is string => Boolean(pattern))
+          .map(resolvePatternCycle)
+          .filter(Boolean)
       );
       if (workerPatterns.size === 0) {
         workerCounts.set(NO_PATTERN_FILTER, (workerCounts.get(NO_PATTERN_FILTER) ?? 0) + 1);
@@ -129,7 +137,7 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
         ? workers.filter((worker) =>
             selectedPattern === NO_PATTERN_FILTER
               ? worker.days.every((day) => !day.patternName)
-              : worker.days.some((day) => day.patternName === selectedPattern)
+              : worker.days.some((day) => resolvePatternCycle(day.patternName) === selectedPattern)
           )
         : workers,
     [selectedPattern, workers]
