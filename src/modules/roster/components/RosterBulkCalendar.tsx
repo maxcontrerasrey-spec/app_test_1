@@ -1,4 +1,4 @@
-import { parseDateValue, formatDateValue } from "../../../shared/lib/date";
+import { parseDateValue, formatDateValue, toTodayDateValue } from "../../../shared/lib/date";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { RosterBulkWorker, ShiftPattern, WorkerScheduleDay } from "../types";
@@ -144,6 +144,7 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
   );
   const start = parseDateValue(startDate);
   const end = parseDateValue(endDate);
+  const todayValue = toTodayDateValue();
   const totalDays = Math.max(0, Math.floor((Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()) - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000) + 1);
   const dates = Array.from({ length: totalDays }, (_, index) => {
     const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
@@ -218,13 +219,39 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
         <div className="roster-bulk-scroll">
           <div className="roster-bulk-grid" style={{ "--roster-day-count": totalDays } as CSSProperties}>
             <div className="roster-bulk-worker-header">Trabajador</div>
-            {dates.map((date) => <div className="roster-bulk-date" key={date.value}><small>{date.month}</small><span>{date.weekday}</span><strong>{date.day}</strong></div>)}
+            {dates.map((date) => (
+              <div
+                className={`roster-bulk-date ${date.value === todayValue ? "roster-bulk-date--today" : ""}`}
+                key={date.value}
+                aria-label={date.value === todayValue ? `${date.weekday} ${date.day}, hoy` : `${date.weekday} ${date.day}`}
+              >
+                <small>{date.month}</small>
+                <span>{date.weekday}</span>
+                <strong>{date.day}</strong>
+              </div>
+            ))}
             {visibleWorkers.map((worker) => {
               const days = new Map(worker.days.map((day) => [day.date, day]));
               const jornadaLabel = resolveWorkerPatternLabel(worker.days);
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
-                <div className="roster-bulk-worker"><strong>{worker.fullName}</strong><span title={jornadaLabel}>{worker.documentNumber} · {jornadaLabel}</span></div>
-                {dates.map((date) => { const day = days.get(date.value); return <div className={`roster-bulk-cell ${tone(day, patternsById)}`} key={date.value} title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}><strong>{label(day, patternsById)}</strong></div>; })}
+                <div className="roster-bulk-worker" title={`${worker.fullName} · ${worker.documentNumber}`}>
+                  <strong>{worker.fullName}</strong>
+                  <span>{worker.jobTitle}</span>
+                  <small title={jornadaLabel}>{jornadaLabel}</small>
+                </div>
+                {dates.map((date) => {
+                  const day = days.get(date.value);
+                  const isToday = date.value === todayValue;
+                  return (
+                    <div
+                      className={`roster-bulk-cell ${tone(day, patternsById)} ${isToday ? "roster-bulk-cell--today" : ""}`}
+                      key={date.value}
+                      title={`${worker.fullName} · ${date.value} · ${day?.exceptionLabel ?? (day?.baseStatus === "working" ? "Trabajo" : day?.baseStatus === "resting" ? "Descanso" : "Sin pauta")}`}
+                    >
+                      <strong>{label(day, patternsById)}</strong>
+                    </div>
+                  );
+                })}
               </div>;
             })}
           </div>
