@@ -64,6 +64,10 @@ function formatExportDate(dateValue: string) {
   return year && month && day ? `${day}-${month}-${year}` : dateValue;
 }
 
+export function resolveRosterExportContractLabel(worker: Pick<RosterBulkWorker, "areaName" | "contractCode">) {
+  return worker.areaName?.trim() || worker.contractCode?.trim() || "—";
+}
+
 async function exportRosterCalendar(
   workers: RosterBulkWorker[],
   dates: Array<{ value: string }>,
@@ -76,7 +80,8 @@ async function exportRosterCalendar(
         Nombre: worker.fullName,
         RUT: worker.documentNumber,
         Cargo: worker.jobTitle,
-        Contrato: worker.contractCode ?? "—"
+        Contrato: resolveRosterExportContractLabel(worker),
+        "Código contrato": worker.contractCode ?? "—"
       }))
     : workers.flatMap((worker) => {
         const days = new Map(worker.days.map((day) => [day.date, day]));
@@ -86,7 +91,8 @@ async function exportRosterCalendar(
             Nombre: worker.fullName,
             RUT: worker.documentNumber,
             Cargo: worker.jobTitle,
-            Contrato: worker.contractCode ?? "—",
+            Contrato: resolveRosterExportContractLabel(worker),
+            "Código contrato": worker.contractCode ?? "—",
             Jornada: day?.patternName ?? "Sin jornada",
             Fecha: formatExportDate(date.value),
             Estatus: day ? resolveDayStatus(day) : "Sin jornada"
@@ -97,8 +103,8 @@ async function exportRosterCalendar(
   if (rows.length === 0) return;
   const worksheet = utils.json_to_sheet(rows);
   worksheet["!cols"] = isNoPatternExport
-    ? [{ wch: 32 }, { wch: 16 }, { wch: 34 }, { wch: 28 }]
-    : [{ wch: 32 }, { wch: 16 }, { wch: 34 }, { wch: 28 }, { wch: 24 }, { wch: 14 }, { wch: 24 }];
+    ? [{ wch: 32 }, { wch: 16 }, { wch: 34 }, { wch: 34 }, { wch: 18 }]
+    : [{ wch: 32 }, { wch: 16 }, { wch: 34 }, { wch: 34 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 24 }];
   const workbook = utils.book_new();
   utils.book_append_sheet(workbook, worksheet, "Calendario");
   const suffix = selectedPattern === NO_PATTERN_FILTER ? "sin-jornada" : "sabana-calendario";

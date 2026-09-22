@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolvePatternCycle } from "../../src/modules/roster/components/RosterBulkCalendar";
+import {
+  resolvePatternCycle,
+  resolveRosterExportContractLabel
+} from "../../src/modules/roster/components/RosterBulkCalendar";
 
 describe("roster bulk calendar cycle filters", () => {
   it("reduces pattern variants to their base cycle", () => {
@@ -12,5 +15,20 @@ describe("roster bulk calendar cycle filters", () => {
   it("keeps an unknown label instead of losing a filter option", () => {
     expect(resolvePatternCycle("Jornada especial")).toBe("Jornada especial");
     expect(resolvePatternCycle(null)).toBe("");
+  });
+
+  it("exports the real operational area before the numeric contract code", () => {
+    expect(resolveRosterExportContractLabel({
+      areaName: "CODELCO - DRT",
+      contractCode: "7605030115:0002"
+    })).toBe("CODELCO - DRT");
+    expect(resolveRosterExportContractLabel({
+      areaName: null,
+      contractCode: "7605030115:0002"
+    })).toBe("7605030115:0002");
+    expect(resolveRosterExportContractLabel({
+      areaName: "  ",
+      contractCode: null
+    })).toBe("—");
   });
 });
