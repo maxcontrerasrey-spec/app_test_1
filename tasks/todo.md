@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Restaurar ARAMARK DCH en Solicitud de Contrataciones — 2026-09-22
+
+- [x] Reproducir la ausencia en el catálogo productivo y localizar la condición que lo excluye.
+- [x] Confirmar que `SCHWAGER DCH` quedó asociado erróneamente al mismo contrato ERP y anuló `is_one_to_one`.
+- [x] Separar ese mapeo BUK conservando su historial y restaurar el mapeo único de `ARAMARK - DCH`.
+- [x] Verificar que el contrato vuelva a aparecer en el catálogo; la sincronización automática reconstruirá sus habilitaciones cargo-contrato al abrir/refrescar el módulo.
+- [x] Ejecutar pruebas, auditorías, `git diff --check` y publicar la corrección.
+
+Resultado productivo: la causa era un mapeo agregado de `SCHWAGER DCH` al contrato ERP 100 (`ARAMARK - DCH`). El guard de uno-a-uno marcó ambos mapeos como ambiguos y el selector los ocultó. Se conservó el registro SCHWAGER para auditoría, se retiró su asociación al contrato ERP y `ARAMARK - DCH` quedó operativo y uno-a-uno nuevamente.
+
 ## Carga de segunda nómina de turnos — 2026-09-22
 
 - [x] Validar los 24 RUT visibles contra trabajadores BUK activos y revisar contratos/áreas.
