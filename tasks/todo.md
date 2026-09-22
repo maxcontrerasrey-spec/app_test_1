@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Reconciliación Personal contratado RC-0173 — 2026-09-22
+
+- [x] Reproducir en producción la ausencia de los contratados del folio y localizar la condición de exclusión.
+- [x] Comparar los 10 candidatos ERP con empleados BUK activos y con la tabla de contratación externa.
+- [x] Implementar una reconciliación idempotente por RUT/ID BUK, preservando historial y evitando doble conteo.
+- [x] Hacer que Personal contratado consuma la evidencia BUK contingente reconciliada.
+- [x] Verificar los 10 candidatos en producción, métricas del folio, auditoría, pruebas, build y publicación.
+
+Resultado productivo: RC-0173 tenía 10 candidatos en `lead`, pese a que los 10 RUT estaban activos en BUK. La tabla de contingencia no era consumida por la pestaña y además una ejecución anterior había dejado 10 ocupaciones externas duplicadas. Se reconciliaron los 10 por RUT/ID BUK, se registraron las transiciones auditadas a `hired`, se preservó como histórico el registro de Gustavo Cortés sin candidato ERP vigente y se corrigió el doble conteo. La RPC productiva devuelve 10 filas para Personal contratado; el folio queda en 13/15 (10 contratados + 3 movilidades aprobadas), estado `partially_filled`.
+
 ## Restaurar ARAMARK DCH en Solicitud de Contrataciones — 2026-09-22
 
 - [x] Reproducir la ausencia en el catálogo productivo y localizar la condición que lo excluye.

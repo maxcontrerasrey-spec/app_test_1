@@ -22,8 +22,8 @@ begin
   where public.normalize_buk_area_name(buk_area_name) = public.normalize_buk_area_name('SCHWAGER DCH')
     and contract_id = 100;
 
-  if aramark_count <> 1 or schwager_count <> 1 then
-    raise exception 'Se esperaba un mapeo único ARAMARK - DCH y un mapeo SCHWAGER DCH asociado al contrato 100; encontrados: %, %', aramark_count, schwager_count;
+  if aramark_count <> 1 or schwager_count > 1 then
+    raise exception 'Se esperaba un mapeo único ARAMARK - DCH y como máximo un mapeo SCHWAGER DCH asociado al contrato 100; encontrados: %, %', aramark_count, schwager_count;
   end if;
 end;
 $assert$;

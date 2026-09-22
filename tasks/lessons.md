@@ -195,6 +195,12 @@ Cuando el filtro de contrato devuelve muchos trabajadores, ejecutar una función
 
 Este archivo consolida las decisiones de arquitectura, los patrones de diseño y las trampas comunes descubiertas durante el desarrollo de la plataforma, sirviendo como guía de conocimiento.
 
+### 344. La contingencia BUK debe participar en la vista de contratados y en las métricas
+
+- Registrar una contratación manual en una tabla de evidencia no basta: la RPC de Personal contratado debe consumir esa evidencia o la persona queda invisible aunque exista activa en BUK.
+- Al reconciliar una contingencia con un candidato ERP, la fila externa deja de ser una ocupación adicional; conservarla como evidencia activa produce doble conteo de cupos y estados de folio incorrectos.
+- Las migraciones forward-only deben tolerar estados ya corregidos en producción y no asumir que una fila previa sigue presente solo porque la migración aún no figura aplicada.
+
 ## 342. La forma de pago define campos bancarios obligatorios en toda la cadena BUK
 
 - `Transferencia Bancaria` requiere banco, tipo de cuenta y número de cuenta; validar solo forma y período permite que el error llegue tarde desde BUK.
