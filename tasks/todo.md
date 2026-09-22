@@ -1,5 +1,17 @@
 # Tareas y Roadmap de Desarrollo
 
+## Carga de segunda nómina de turnos — 2026-09-22
+
+- [x] Validar los 24 RUT visibles contra trabajadores BUK activos y revisar contratos/áreas.
+- [x] Confirmar pautas existentes y detectar que falta `5X5`.
+- [x] Cargar las 20 coincidencias exactas con cierre seguro de cualquier pauta anterior abierta.
+- [x] Verificar fechas, solapamientos, duplicados y visibilidad productiva.
+- [x] Ejecutar pruebas, auditorías, `git diff --check` y publicar el registro.
+
+Hallazgo previo: se dejan 4 filas pendientes por seguridad: `25.527.998-8` no aparece en BUK activo; `12.137.650-4`, `11.558.788-9` y `10.062.368-4` figuran actualmente en `DMC CENTINELA`, mientras la captura indica otra área.
+
+Resultado productivo: se creó la pauta `5X5` y se cargaron 20 asignaciones por RUT y área validada contra BUK. La distribución quedó en 11 `10X10`, 6 `5X5`, 2 `5X2` y 1 `6X1`, sin duplicados. La asignación previa de `9.506.063-3` se cerró el 2026-08-31 antes de iniciar la nueva pauta el 2026-09-01.
+
 ## Carga de nómina de turnos desde captura — 2026-09-22
 
 - [x] Validar el catálogo productivo y confirmar que `10X5` no existía, manteniendo las pautas ya existentes.
