@@ -6,9 +6,9 @@
 - [x] Agrupar variantes A/C/T y rotativas bajo su ciclo base (`4X4`, `6X3`, etc.).
 - [x] Mantener `Sin Jornada`, conteos únicos por trabajador y el detalle diario sin cambios.
 - [x] Ejecutar pruebas, build y `git diff --check`.
-- [ ] Publicar en producción y verificar los botones agrupados.
+- [x] Publicar en producción y verificar los botones agrupados.
 
-Resultado local: los filtros ya se generan por ciclo base, conservan `Sin Jornada` y al seleccionar `4X4` incluyen todas sus variantes sin alterar la pauta mostrada en cada trabajador.
+Resultado productivo: los filtros se generan por ciclo base, conservan `Sin Jornada` y al seleccionar `4X4` incluyen todas sus variantes sin alterar la pauta mostrada en cada trabajador. Producción sirve `RosterPage-B9qA7_TT.js` con la lógica agrupada.
 
 ## Corrección de nomenclatura DAND para turno tarde — 2026-09-22
 
