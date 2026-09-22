@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Carga de nómina de turnos desde captura — 2026-09-22
+
+- [x] Validar el catálogo productivo y confirmar que `10X5` no existía, manteniendo las pautas ya existentes.
+- [x] Cruzar los 35 RUT de la captura contra trabajadores BUK activos y verificar contrato/área.
+- [x] Crear la pauta `10X5` y cargar las 35 asignaciones con fecha de inicio exacta.
+- [x] Verificar asignaciones, ausencia de duplicados y visibilidad productiva en Jornadas.
+- [x] Ejecutar pruebas, auditorías, `git diff --check` y publicar el cambio.
+
+Resultado productivo: se creó la pauta `10X5` (10 días de trabajo y 5 de descanso) y se cargaron 35 asignaciones desde la nómina de la captura, siempre por RUT y con prefijo de contrato/área validado contra BUK. La distribución quedó en 20 `10X5`, 8 `10X5+5`, 4 `10X10`, 2 `14X14` y 1 `5X2`; no quedaron duplicados. La carga aborta completa si alguna fila no coincide con una única identidad BUK/pauta.
+
 ## Filtros de jornadas por ciclo base — 2026-09-22
 
 - [x] Revisar la generación actual de filtros y su lógica de selección.
