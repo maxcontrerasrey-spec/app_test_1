@@ -236,8 +236,10 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
                 <div className="roster-bulk-worker" title={`${worker.fullName} · ${worker.documentNumber}`}>
                   <strong>{worker.fullName}</strong>
-                  <span>{worker.jobTitle}</span>
-                  <small title={jornadaLabel}>{jornadaLabel}</small>
+                  <span>
+                    {worker.jobTitle}
+                    <small title={jornadaLabel}> · {jornadaLabel}</small>
+                  </span>
                 </div>
                 {dates.map((date) => {
                   const day = days.get(date.value);
