@@ -765,6 +765,10 @@ export function CandidateDetailSidebar({
             mode === "personnel_contracted" &&
             ["RC-0142", "RC-0173"].includes(selectedCaseDetail?.case.case_code ?? "")
           }
+          documentUploadOnly={
+            mode === "personnel_contracted" &&
+            selectedCaseDetail?.case.case_code === "RC-0173"
+          }
           readOnly={readOnly}
           onChecklistUpdated={onCandidateFileUpdated}
         />

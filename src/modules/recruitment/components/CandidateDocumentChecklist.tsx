@@ -23,6 +23,7 @@ type CandidateDocumentChecklistProps = {
   caseCandidateId: string;
   candidateStageCode?: string | null;
   allowHiredDocumentRecovery?: boolean;
+  documentUploadOnly?: boolean;
   readOnly?: boolean;
   onChecklistUpdated?: () => Promise<void>;
 };
@@ -31,6 +32,7 @@ export function CandidateDocumentChecklist({
   caseCandidateId,
   candidateStageCode,
   allowHiredDocumentRecovery = false,
+  documentUploadOnly = false,
   readOnly = false,
   onChecklistUpdated
 }: CandidateDocumentChecklistProps) {
@@ -324,7 +326,9 @@ export function CandidateDocumentChecklist({
           <small>Recuperación documental temporal</small>
           <strong>Folio habilitado para completar documentos</strong>
           <p>
-            Esta ventana permite ver, cargar y validar documentos faltantes del folio autorizado.
+            {documentUploadOnly
+              ? "Esta ventana permite ver, cargar y reemplazar documentos faltantes del folio autorizado. No permite aprobar, rechazar ni eliminar documentos, modificar la ficha ni sincronizar con BUK."
+              : "Esta ventana permite ver, cargar y validar documentos faltantes del folio autorizado."}
             Cada operación queda registrada; no reabre la contratación, modifica la ficha trabajador
             ni genera una sincronización con BUK.
           </p>
@@ -380,7 +384,7 @@ export function CandidateDocumentChecklist({
               </p>
             ) : null}
 
-            {!readOnly ? <div className="document-validation-actions">
+            {!readOnly && !documentUploadOnly ? <div className="document-validation-actions">
               <button
                 type="button"
                 className="soft-primary-button approval-button-approve"
@@ -463,7 +467,7 @@ export function CandidateDocumentChecklist({
                 </button>
               ) : null}
 
-              {!readOnly && doc.file_path ? (
+              {!readOnly && !documentUploadOnly && doc.file_path ? (
                 <button
                   type="button"
                   className="soft-primary-button soft-primary-button-sm document-danger-button"
@@ -474,7 +478,7 @@ export function CandidateDocumentChecklist({
                 </button>
               ) : null}
 
-              {!readOnly && doc.status === "uploaded" ? (
+              {!readOnly && !documentUploadOnly && doc.status === "uploaded" ? (
                 <>
                   <button 
                     type="button" 
