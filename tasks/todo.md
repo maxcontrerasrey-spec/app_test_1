@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Folio de destino en solicitudes de movilidad interna — 2026-09-22
+
+- [x] Inspeccionar UI, tipos, servicio/hook y RPC de solicitudes visibles.
+- [x] Verificar en producción qué campo identifica el folio de destino y cómo se aplica actualmente la búsqueda.
+- [x] Implementar la visualización y el filtro por folio de destino preservando el alcance por rol.
+- [x] Ejecutar pruebas, build, auditorías proporcionales y `git diff --check`.
+- [x] Publicar en producción y verificar una solicitud con destino y una búsqueda por su folio.
+
+Resultado: el folio destino se deriva del mismo valor persistido por la solicitud (`source_folio`, que corresponde al folio del caso seleccionado) y ahora se expone como `destinationFolio` en el contrato frontend. La columna DESTINO muestra el código RC y el folio numérico, y la búsqueda local incluye ambos valores. No fue necesaria una migración ni se modificó el alcance de permisos: la RPC existente ya entrega el dato dentro del conjunto autorizado. La validación productiva confirmó las parejas MI-0090/RC-0215/0215, MI-0089/RC-0145/0145 y MI-0088/RC-0209/0209. Build, 43 pruebas de contrato, auditoría de migraciones y diff pasaron; Guardian dejó solo el error preexistente de cabecera EEES en `20260916103000_allow_release_terminal_candidate_without_folio.sql`.
+
 ## Alineación del saludo e identidad lateral Nexus — 2026-09-16
 
 - [x] Desplazar únicamente el bloque textual del saludo ligeramente a la derecha del eje de los widgets en escritorio.

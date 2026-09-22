@@ -163,7 +163,9 @@ export function InternalMobilityPage() {
         row.currentAreaName,
         row.destinationAreaName,
         row.currentCompanyName,
-        row.destinationCompanyName
+        row.destinationCompanyName,
+        row.recruitmentCaseCode,
+        row.destinationFolio
       ]
         .filter(Boolean)
         .some((value) => value?.toLowerCase().includes(normalizedSearch))
@@ -601,6 +603,10 @@ export function InternalMobilityPage() {
                             </td>
                             <td>
                               <span className="dashboard-contract-inline">
+                                <strong>{request.recruitmentCaseCode ?? "—"}</strong>
+                                <br />
+                                <span>Folio {request.destinationFolio ?? "—"}</span>
+                                <br />
                                 {request.destinationAreaName}
                                 <br />
                                 {request.destinationCompanyName}
@@ -661,8 +667,8 @@ export function InternalMobilityPage() {
                                           </strong>
                                         </div>
                                         <div>
-                                          <small>Folio reclutamiento</small>
-                                          <strong>{requestDetail.request.sourceFolio ?? requestDetail.request.recruitmentCaseCode ?? "—"}</strong>
+                                          <small>Folio destino</small>
+                                          <strong>{requestDetail.request.destinationFolio ?? requestDetail.request.recruitmentCaseCode ?? "—"}</strong>
                                         </div>
                                         <div>
                                           <small>Días abierta</small>

@@ -91,6 +91,7 @@ export type InternalMobilityRequestSummary = {
   currentShiftName: string | null;
   recruitmentCaseCode: string | null;
   sourceFolio: string | null;
+  destinationFolio: string | null;
   destinationJobTitle: string;
   destinationAreaName: string;
   destinationShiftName: string | null;
@@ -159,6 +160,7 @@ export type InternalMobilityRequestDetail = {
     hiringRequestId: string | null;
     recruitmentCaseCode: string | null;
     sourceFolio: string | null;
+    destinationFolio: string | null;
     destinationJobTitle: string;
     destinationContractId: number | null;
     destinationContractCode: string | null;
