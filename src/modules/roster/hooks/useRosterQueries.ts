@@ -65,12 +65,34 @@ export function useRosterBulkCalendar(params: {
   search?: string;
   contractFilter?: string;
   areaFilter?: string;
+  contractAdministratorFilter?: string;
   enabled?: boolean;
 }) {
-  const { startDate, endDate, search = "", contractFilter = "", areaFilter = "", enabled = true } = params;
+  const {
+    startDate,
+    endDate,
+    search = "",
+    contractFilter = "",
+    areaFilter = "",
+    contractAdministratorFilter = "",
+    enabled = true
+  } = params;
   return useQuery({
-    queryKey: queryKeys.roster.bulkCalendar({ monthValue: `${startDate}:${endDate}`, search, contractFilter, areaFilter }),
-    queryFn: ({ signal }) => fetchRosterBulkCalendar({ startDate, endDate, search, contractFilter, areaFilter }, signal),
+    queryKey: queryKeys.roster.bulkCalendar({
+      monthValue: `${startDate}:${endDate}`,
+      search,
+      contractFilter,
+      areaFilter,
+      contractAdministratorFilter
+    }),
+    queryFn: ({ signal }) => fetchRosterBulkCalendar({
+      startDate,
+      endDate,
+      search,
+      contractFilter,
+      areaFilter,
+      contractAdministratorFilter
+    }, signal),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
     refetchOnWindowFocus: false,

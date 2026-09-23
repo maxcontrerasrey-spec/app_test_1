@@ -5,7 +5,7 @@
 
 .roster-toolbar-grid {
   display: grid;
-  grid-template-columns: minmax(320px, 1.7fr) minmax(132px, 0.42fr) minmax(260px, 1.05fr);
+  grid-template-columns: minmax(280px, 1.45fr) minmax(132px, 0.42fr) minmax(220px, 1fr) minmax(220px, 1fr);
   gap: 0.9rem;
   align-items: end;
 }
@@ -632,7 +632,8 @@
   font-weight: 700;
 }
 
-.roster-filter-area {
+.roster-filter-area,
+.roster-filter-contract-administrator {
   width: 100%;
   min-width: 0;
 }
@@ -642,7 +643,8 @@
     grid-template-columns: minmax(360px, 1fr) minmax(132px, 0.38fr);
   }
 
-  .roster-filter-area {
+  .roster-filter-area,
+  .roster-filter-contract-administrator {
     grid-column: 1 / -1;
   }
 
@@ -688,7 +690,8 @@
     grid-template-columns: 1fr;
   }
 
-  .roster-filter-area {
+  .roster-filter-area,
+  .roster-filter-contract-administrator {
     grid-column: auto;
   }
 

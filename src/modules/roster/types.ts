@@ -42,10 +42,16 @@ export type RosterOperationalAreaOption = {
   label: string;
 };
 
+export type RosterContractAdministratorOption = {
+  value: string;
+  label: string;
+};
+
 export type RosterSetupCatalogs = {
   patterns: ShiftPattern[];
   exceptionTypes: RosterExceptionTypeOption[];
   operationalAreas: RosterOperationalAreaOption[];
+  contractAdministrators: RosterContractAdministratorOption[];
 };
 
 export type RosterWorkerSearchItem = BukEmployeeWithDocumentType;

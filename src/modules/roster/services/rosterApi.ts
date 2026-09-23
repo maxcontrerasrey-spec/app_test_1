@@ -51,6 +51,10 @@ function mapSetupCatalogs(payload: unknown): RosterSetupCatalogs {
     operationalAreas: asArray<Record<string, unknown>>(source.operational_areas).map((item) => ({
       value: String(item.value ?? ""),
       label: String(item.label ?? "")
+    })),
+    contractAdministrators: asArray<Record<string, unknown>>(source.contract_administrators).map((item) => ({
+      value: String(item.value ?? ""),
+      label: String(item.label ?? "")
     }))
   };
 }
@@ -244,6 +248,7 @@ export async function fetchRosterBulkCalendar(params: {
   search?: string;
   contractFilter?: string;
   areaFilter?: string;
+  contractAdministratorFilter?: string;
 }, signal?: AbortSignal) {
   const client = getSupabaseClient();
   const request = client.rpc("get_hr_roster_bulk_calendar", {
@@ -251,7 +256,8 @@ export async function fetchRosterBulkCalendar(params: {
     p_end_date: params.endDate,
     p_search: params.search?.trim() || null,
     p_contract_filter: params.contractFilter?.trim() || null,
-    p_area_filter: params.areaFilter?.trim() || null
+    p_area_filter: params.areaFilter?.trim() || null,
+    p_contract_admin_filter: params.contractAdministratorFilter?.trim() || null
   });
   const { data, error } = await (signal ? request.abortSignal(signal) : request);
   if (error) {

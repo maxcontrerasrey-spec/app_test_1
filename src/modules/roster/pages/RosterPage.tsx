@@ -174,6 +174,7 @@ export function RosterPage() {
   const [periodStart, setPeriodStart] = useState(() => monthStartDate(todayMonthValue()));
   const [periodEnd, setPeriodEnd] = useState(() => monthEndDate(todayMonthValue()));
   const [operationalAreaFilter, setOperationalAreaFilter] = useState("");
+  const [contractAdministratorFilter, setContractAdministratorFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState(toTodayDateValue());
   const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
   const [exceptionDate, setExceptionDate] = useState(toTodayDateValue());
@@ -185,7 +186,9 @@ export function RosterPage() {
 
   const setupCatalogsQuery = useRosterSetupCatalogs(canViewCalendar || canManagePatterns);
   const monthValue = periodStart.slice(0, 7);
-  const hasRosterScopeFilter = Boolean(operationalAreaFilter.trim());
+  const hasRosterScopeFilter = Boolean(
+    operationalAreaFilter.trim() || contractAdministratorFilter.trim()
+  );
   const rosterCalendarSummaryQuery = useRosterCalendarSummary({
     monthValue,
     search: workerSearchTerm,
@@ -197,6 +200,7 @@ export function RosterPage() {
     endDate: periodEnd,
     search: workerSearchTerm,
     areaFilter: operationalAreaFilter,
+    contractAdministratorFilter,
     enabled: !isPatternsView && hasRosterScopeFilter
   });
   const scopedRosterSummary = useMemo(() => {
@@ -224,6 +228,7 @@ export function RosterPage() {
     ?? rosterCalendarSummaryQuery.data?.pendingCount
     ?? 0;
   const operationalAreaOptions = setupCatalogsQuery.data?.operationalAreas ?? [];
+  const contractAdministratorOptions = setupCatalogsQuery.data?.contractAdministrators ?? [];
   const monthRange = useMemo(() => buildMonthRange(monthValue), [monthValue]);
   const workerScheduleQuery = useWorkerSchedule({
     bukEmployeeId: selectedWorker?.bukEmployeeId ?? "",
@@ -425,10 +430,26 @@ export function RosterPage() {
                   id="roster-operational-area"
                   label="Contrato / Área"
                   value={operationalAreaFilter}
-                  onChange={(event) => setOperationalAreaFilter(event.target.value)}
+                  onChange={(event) => {
+                    setOperationalAreaFilter(event.target.value);
+                    setContractAdministratorFilter("");
+                  }}
                   options={operationalAreaOptions}
                   placeholder="Todos los contratos / áreas"
                   className="roster-filter-area"
+                />
+
+                <SelectField
+                  id="roster-contract-administrator"
+                  label="Administrador del contrato"
+                  value={contractAdministratorFilter}
+                  onChange={(event) => {
+                    setContractAdministratorFilter(event.target.value);
+                    setOperationalAreaFilter("");
+                  }}
+                  options={contractAdministratorOptions}
+                  placeholder="Todos los administradores"
+                  className="roster-filter-contract-administrator"
                 />
               </div>
 
@@ -461,7 +482,7 @@ export function RosterPage() {
 
             {hasRosterScopeFilter ? (
               <RosterBulkCalendar
-                key={operationalAreaFilter}
+                key={`${operationalAreaFilter}:${contractAdministratorFilter}`}
                 startDate={periodStart}
                 endDate={periodEnd}
                 workers={rosterBulkCalendarQuery.data?.workers ?? []}
@@ -473,7 +494,7 @@ export function RosterPage() {
                 <div className="tracking-toolbar-copy">
                   <h3>Calendario general</h3>
                   <span className="tracking-filter-caption">
-                    Selecciona un contrato o área para cargar la vista general.
+                    Selecciona un contrato, área o administrador para cargar la vista general.
                   </span>
                 </div>
               </section>
