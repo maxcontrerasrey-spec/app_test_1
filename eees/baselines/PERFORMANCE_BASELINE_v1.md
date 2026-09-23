@@ -153,7 +153,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 269823,
+  "cssTotalBytes": 269824,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -176,6 +176,8 @@ Revision 2026-09-02 calendario multi-trabajador Jornadas: GitHub Actions `336477
 Revision 2026-09-22 calendario general por contrato: el rediseño de la vista añade 444 bytes CSS medidos por Guardian (5,090,222 bytes totales y 269,752 bytes CSS). Corresponde a la jerarquia nombre/cargo/jornada, colores de trabajo y descanso, y la guia vertical del dia actual; no agrega vendors ni assets trackeados.
 
 Revision 2026-09-22 filtro de administrador de contrato en Jornadas: CSS queda en 269,823 bytes, +71 bytes medidos por Guardian para la nueva selección de administrador y su comportamiento responsive. No agrega JS, vendors, assets trackeados ni modifica permisos.
+
+Revision 2026-09-23 comentarios de revisión psicolaboral: CSS queda en 269,824 bytes, +1 byte medido por Guardian para ampliar el campo visible de observaciones profesionales a 220 px. No agrega dependencias, permisos ni cambios de datos.
 
 Revision 2026-08-19 reconciliación de certificados de competencia aprobados legalmente: el dashboard y el flujo de generación incorporan la recuperación automática de certificados aprobados que aún estaban en cola.
 

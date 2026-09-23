@@ -214,7 +214,12 @@ export function PsychAIReviewDialog({
           {renderOutput(baseOutput, selectedRecommendation, setSelectedRecommendation)}
           <label className="psych-ai-comment">
             Comentarios y validación de Psicólogo
-            <textarea value={comment} onChange={(event) => setComment(event.target.value)} />
+            <textarea
+              rows={8}
+              aria-label="Comentarios y validación de Psicólogo"
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+            />
           </label>
           {error ? <p className="psych-feedback psych-feedback--error">{error}</p> : null}
           <div className="psych-actions psych-ai-review-actions">

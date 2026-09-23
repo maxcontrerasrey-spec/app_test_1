@@ -221,6 +221,14 @@ describe("Gestión Psicolaboral", () => {
     expect(psychologistValidationMigration).not.toMatch(/left\s*\(\s*coalesce\(p_comment/i);
   });
 
+  it("deja espacio suficiente para la observación profesional sin limitar el texto", () => {
+    expect(aiReviewDialog).toContain("rows={8}");
+    expect(aiReviewDialog).toContain('aria-label="Comentarios y validación de Psicólogo"');
+    expect(aiReviewDialog).not.toContain("maxLength");
+    expect(assessmentStyles).toContain(".psych-ai-comment textarea");
+    expect(assessmentStyles).toContain("min-height: 220px");
+  });
+
   it("mantiene el encabezado documental y las tarjetas de síntesis alineadas", () => {
     expect(certificate).toContain('const REPORT_TITLE_LINES = ["Informe de Evaluación", "Psicolaboral"]');
     expect(certificate).toContain('const REPORT_METADATA = { code: "F-RH-009", date: "17-08-26", version: "1" }');
