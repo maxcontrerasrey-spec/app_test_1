@@ -8224,6 +8224,7 @@ textarea:focus-visible {
   }
 
   .sidebar-icon-rail-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -8236,6 +8237,13 @@ textarea:focus-visible {
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
+    transform-origin: center center;
+    --rail-magnification-duration: 0ms;
+    transition:
+      transform var(--rail-magnification-duration) cubic-bezier(0.16, 1, 0.3, 1),
+      color 140ms ease,
+      background-color 140ms ease,
+      border-color 140ms ease;
   }
 
   .sidebar-icon-rail-link svg {
@@ -8258,6 +8266,34 @@ textarea:focus-visible {
 
   .sidebar-icon-rail-link:focus-visible {
     box-shadow: var(--focus-ring);
+  }
+
+  /* Dock-style magnification stays inside the collapsed rail and never changes layout geometry. */
+  @media (prefers-reduced-motion: no-preference) {
+    .app-shell-topnav.app-shell-sidebar-collapsed .sidebar-icon-rail-link {
+      --rail-magnification-duration: 180ms;
+    }
+
+    .sidebar-icon-rail-link:hover,
+    .sidebar-icon-rail-link:focus-visible {
+      transform: scale(1.18);
+      z-index: 2;
+    }
+
+    .sidebar-icon-rail-item-wrap:is(
+      :has(+ .sidebar-icon-rail-item-wrap > .sidebar-icon-rail-link:hover),
+      :hover + .sidebar-icon-rail-item-wrap
+    ) > .sidebar-icon-rail-link {
+      transform: scale(1.08);
+      z-index: 1;
+    }
+
+    .sidebar-icon-rail-item-wrap:is(
+      :has(+ .sidebar-icon-rail-item-wrap + .sidebar-icon-rail-item-wrap > .sidebar-icon-rail-link:hover),
+      :hover + .sidebar-icon-rail-item-wrap + .sidebar-icon-rail-item-wrap
+    ) > .sidebar-icon-rail-link {
+      transform: scale(1.03);
+    }
   }
 
   .app-shell-topnav.app-shell-sidebar-collapsed .top-shell-right {

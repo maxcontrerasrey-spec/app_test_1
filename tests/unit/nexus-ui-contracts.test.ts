@@ -106,6 +106,11 @@ describe("Nexus UI contracts", () => {
     expect(styles).toContain("width: var(--collapsed-rail-width);");
     expect(styles).toContain(".sidebar-icon-rail-group");
     expect(styles).toContain(".sidebar-icon-rail-link-active");
+    expect(styles).toContain(".sidebar-icon-rail-link:hover");
+    expect(styles).toContain("transform: scale(1.18);");
+    expect(styles).toContain(".sidebar-icon-rail-item-wrap:is(");
+    expect(styles).toContain(":has(+ .sidebar-icon-rail-item-wrap > .sidebar-icon-rail-link:hover)");
+    expect(styles).toContain("@media (prefers-reduced-motion: no-preference)");
     expect(styles).not.toContain(".sidebar-icon-rail-module");
   });
 
