@@ -3,11 +3,11 @@
 ## Dinamismo visual del login — 2026-09-24
 
 - [x] Auditar la composición actual del login y sus recursos visuales.
-- [x] Implementar movimiento ambiental y microinteracciones preservando colores, fotografías y autenticación.
+- [x] Implementar compactación del glass y expansión diagonal por puntero, preservando colores, fotografías y autenticación.
 - [x] Validar accesibilidad, responsive, reduced motion y build frontend.
 - [x] Publicar únicamente después de superar los gates locales y remotos.
 
-Resultado: login publicado en `main` mediante `fc2b16b`; conserva la fotografía `fondo.webp`, el logo JM, la paleta corporativa y la autenticación. Guardian local y CI remoto `36037130431` finalizaron exitosamente.
+Resultado: el glass parte compacto mostrando solo correo y contraseña; al entrar con el puntero o enfocar el formulario se expande diagonalmente al tamaño completo, mostrando acciones y recuperación. Se retiraron las formas semicirculares laterales. Conserva `fondo.webp`, el logo JM, la paleta corporativa y la autenticación. Guardian local pasó sin errores ni advertencias.
 
 ## Auditoría integral del árbol y publicación — 2026-09-24
 
