@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Seleccionar ficha BUK en movilidad interna — 2026-09-24
+
+- [ ] Confirmar el contrato productivo de búsqueda, contexto y creación de movilidad interna.
+- [ ] Permitir que la búsqueda del módulo devuelva cada ficha BUK activa sin deduplicar por RUT.
+- [ ] Identificar visualmente las personas con múltiples fichas y conservar la ficha seleccionada por `buk_employee_id`.
+- [ ] Validar en backend la ficha activa exacta y mantener los bloqueos transaccionales por ficha.
+- [ ] Ejecutar pruebas, auditorías, Guardian, build y verificación productiva sin afectar otros módulos.
+
 ## Dinamismo visual del login — 2026-09-24
 
 - [x] Auditar la composición actual del login y sus recursos visuales.
@@ -7,7 +15,7 @@
 - [x] Validar accesibilidad, responsive, reduced motion y build frontend.
 - [x] Publicar únicamente después de superar los gates locales y remotos.
 
-Resultado: el glass parte compacto mostrando solo correo y contraseña; al entrar con el puntero o enfocar el formulario se expande diagonalmente al tamaño completo, mostrando acciones y recuperación. Se retiraron las formas semicirculares laterales. Conserva `fondo.webp`, el logo JM, la paleta corporativa y la autenticación. Guardian local pasó sin errores ni advertencias.
+Resultado: el glass parte compacto mostrando correo, contraseña, logo y bienvenida; al entrar con el puntero o enfocar el formulario se expande diagonalmente al tamaño completo, mostrando acciones y recuperación. Se retiraron las formas semicirculares laterales y se agregó un borde con recorrido sutil, sin nuevas dependencias. Conserva `fondo.webp`, el logo JM, la paleta corporativa y la autenticación. Guardian local pasó sin errores ni advertencias.
 
 ## Auditoría integral del árbol y publicación — 2026-09-24
 

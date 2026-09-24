@@ -112,6 +112,10 @@ export function LoginPage() {
         <div className="login-glass-card">
         <div className="login-brand-top">
           <img alt="Logo JM" className="app-logo-login" src={jmLogo} />
+          <div className="login-welcome-mark">
+            <span>Bienvenido</span>
+            <small>Plataforma de Control</small>
+          </div>
         </div>
         
         <div className="login-header-copy">

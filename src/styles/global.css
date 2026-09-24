@@ -1967,13 +1967,60 @@ textarea {
   transition: transform 560ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 360ms ease;
 }
 
+.login-glass-card::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 210deg,
+    rgba(255, 255, 255, 0.46) 238deg,
+    rgba(45, 99, 255, 0.36) 258deg,
+    transparent 290deg 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.74;
+  animation: login-border-travel 9s linear infinite;
+}
+
+.login-brand-top {
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.login-welcome-mark {
+  display: grid;
+  gap: 0.12rem;
+  text-align: left;
+}
+
+.login-welcome-mark span {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.login-welcome-mark small {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .login-glass-card:hover,
 .login-glass-card:focus-within {
   transform: scale(1) translate3d(0, 0, 0);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
-.login-glass-card:not(:hover):not(:focus-within) > .login-brand-top,
 .login-glass-card:not(:hover):not(:focus-within) .login-actions,
 .login-glass-card:not(:hover):not(:focus-within) .login-error,
 .login-glass-card:not(:hover):not(:focus-within) .login-success {
@@ -8572,10 +8619,16 @@ textarea:focus-visible {
   66%, 100% { transform: translateX(70%) rotate(8deg); opacity: 0; }
 }
 
+@keyframes login-border-travel {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .login-shell::before,
   .login-shell::after,
   .login-glass-card,
+  .login-glass-card::after,
   .app-logo-login,
   .login-form-content {
     animation: none;
