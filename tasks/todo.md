@@ -3975,3 +3975,8 @@ Resultado: Acreditación usa navegación plana, controles de 2,45 rem, filtros e
 - [x] Cerrar con evidencia de validación y riesgos/missing data documentados en este archivo.
 
 Resultado: el submódulo quedó implementado como lectura gerencial para contratos BUK operativos asociados a DSAL. Los cargos se leen desde `buk_job_position_contract_access`; la estructura de renta y presupuesto se leen desde las nuevas tablas protegidas y no se muestran montos estimados cuando faltan parametrizaciones. Validado con TypeScript, build frontend, 54 pruebas contractuales, Guardian, auditoría de migraciones, auditoría de performance, dry-run de `supabase db push --linked` y `git diff --check`.
+## Ajuste estético Control Estructuras de Renta — 2026-09-24
+
+- [x] Comparar la superficie actual con Acreditaciones y aislar la divergencia visual.
+- [x] Rehacer la composición con el patrón compacto, plano y minimalista del módulo de Acreditaciones.
+- [x] Validar TypeScript, build frontend, Guardian y publicación del bundle.

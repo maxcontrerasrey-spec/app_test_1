@@ -56,13 +56,12 @@ export function RentStructuresPage() {
 
   return (
     <PageShell className="rent-structures-page">
-      <header className="rent-page-header">
+      <header className="minimal-page-header rent-page-header">
         <div>
           <span className="rent-eyebrow">Recursos Humanos · Control gerencial</span>
           <h1>Control Estructuras de Renta</h1>
-          <p>Consulta la renta definida y el presupuesto mensual por cargo habilitado en BUK.</p>
         </div>
-        <div className="rent-security-note">Vista reservada para gerencia y dirección</div>
+        <p className="description rent-page-description">Consulta la renta definida y el presupuesto mensual por cargo habilitado en BUK.</p>
       </header>
 
       {query.isError ? <div className="rent-feedback rent-feedback-error">{(query.error as Error).message}</div> : null}

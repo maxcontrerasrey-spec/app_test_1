@@ -3917,3 +3917,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Un lookup genérico que colapsa a nombre/RUT permite seleccionar un registro pero oculta las alternativas después del primer click.
 - Cuando `active_record_count > 1`, mostrar un selector explícito por `buk_employee_id` y área, y conservar ese ID en contexto y submit.
 - El backend debe validar ese ID exacto; no deduplicar por RUT ni cambiar de ficha por similitud.
+## 2026-09-24 - Las nuevas vistas RRHH deben heredar la densidad visual de Acreditaciones
+
+- Una vista nueva puede ser funcional y aun así fallar estéticamente si introduce tarjetas grandes, alturas artificiales, sombras y encabezados sobredimensionados.
+- Para superficies operativas de RRHH, reutilizar la gramática de Acreditaciones: `minimal-page-header`, controles compactos, líneas sutiles, tarjetas planas y estados discretos; no copiar la pantalla completa, sino sus decisiones de jerarquía y densidad.
