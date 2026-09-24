@@ -20,6 +20,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `alta_operacional_personal` | `/alta-operacional` | `RoleProtectedRoute` |
 | `operaciones` | `/operaciones/*` | `RoleProtectedRoute` |
 | `recursos_humanos` | `/recursos-humanos/*` | `RoleProtectedRoute` + roles para analytics |
+| `control_estructuras_renta` | `/recursos-humanos/estructuras-renta` | `RoleProtectedRoute` + RPC gerencial |
 | `solicitud_sanciones` | `/recursos-humanos/sanciones` | `RoleProtectedRoute` |
 | `jornadas_turnos` | `/roster` | `RoleProtectedRoute` |
 | `acreditacion_personas` | `/recursos-humanos/acreditacion/*` | `RoleProtectedRoute` |
@@ -43,9 +44,9 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `control_contratos` | control de contrataciones (solo lectura en resumen de procesos, precandidatos, control de candidatos, personal a contratar y movilidad interna), solicitud, movilidad, RRHH, roster, acreditacion, BI |
 | `operaciones` | operaciones, roster, acreditacion |
 | `gerencia` | solicitud, movilidad, roster, acreditacion, BI |
-| `director_eje` | solicitud, movilidad, roster, acreditacion, BI |
-| `director_op` | solicitud, movilidad, roster, acreditacion, BI, capability `can_approve_who_stage` |
-| `gerente_general` | solicitud, control, movilidad, roster, acreditacion, BI, capability `can_approve_who_stage` |
+| `director_eje` | solicitud, movilidad, roster, acreditacion, BI, Control Estructuras de Renta |
+| `director_op` | solicitud, movilidad, roster, acreditacion, BI, Control Estructuras de Renta, capability `can_approve_who_stage` |
+| `gerente_general` | solicitud, control, movilidad, roster, acreditacion, BI, Control Estructuras de Renta, capability `can_approve_who_stage` |
 | `operaciones_l_1` | solicitud, movilidad, roster, acreditacion, BI |
 | `operaciones_l_2` | solicitud, movilidad, roster, acreditacion |
 | `administrativo` | solicitud, movilidad, roster, acreditacion |

@@ -19,6 +19,7 @@ export type NavigationIconKey =
   | "user-check"
   | "calendar-clock"
   | "wallet"
+  | "coins"
   | "gavel"
   | "id-card"
   | "award"
@@ -108,6 +109,14 @@ export const navigationModules: NavigationModule[] = [
         label: "Gestión de Incentivos Extraordinarios",
         description: "Registro y control de incentivos extraordinarios.",
         iconKey: "wallet"
+      },
+      {
+        moduleCode: "control_estructuras_renta",
+        to: "/recursos-humanos/estructuras-renta",
+        label: "Control Estructuras de Renta",
+        description: "Consulta la estructura y el presupuesto por cargo habilitado en BUK.",
+        iconKey: "coins",
+        visibleForRoles: ["admin", "gerencia", "director_eje", "director_op", "gerente_general"]
       },
       {
         moduleCode: "solicitud_sanciones",

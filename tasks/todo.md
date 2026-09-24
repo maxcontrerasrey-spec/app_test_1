@@ -3954,3 +3954,13 @@ Resultado parcial: producción tiene la migración aplicada y el despliegue `eeb
 - [x] Registrar evidencia final, límites del cambio y revisión visual.
 
 Resultado: Acreditación usa navegación plana, controles de 2,45 rem, filtros en una sola barra cuando hay ancho, filas separadas por líneas y una ficha que ya no se estira con el listado vacío. Se verificó visualmente a 1440x900 con sidebar de 228 px, 1024x768 y 390x844, sin solapamientos ni scroll horizontal. Build, 140 pruebas unitarias, smoke de rutas, performance y Guardian aprobaron; el baseline CSS quedó versionado en 276.014 bytes con tolerancia futura cero.
+## Control Estructuras de Renta — 2026-09-24
+
+- [x] Confirmar el contrato real de datos para contratos, cargos BUK, conceptos y presupuesto; no reutilizar una fuente de texto libre.
+- [x] Registrar el submódulo `control_estructuras_renta` en autorización SQL, tipado frontend, navegación y ruta protegida solo para gerencia hacia arriba.
+- [x] Implementar la lectura backend de Codelco DSAL: contrato BUK, cargos habilitados y detalle de estructura de renta por cargo.
+- [x] Construir la vista de dos paneles con estados de carga, vacío, error y selección; usar iconos semánticos por tipo de concepto.
+- [x] Agregar pruebas contractuales de autorización, contrato de respuesta y ruta; ejecutar guardian, build frontend, auditorías y diff check.
+- [x] Cerrar con evidencia de validación y riesgos/missing data documentados en este archivo.
+
+Resultado: el submódulo quedó implementado como lectura gerencial para contratos BUK operativos asociados a DSAL. Los cargos se leen desde `buk_job_position_contract_access`; la estructura de renta y presupuesto se leen desde las nuevas tablas protegidas y no se muestran montos estimados cuando faltan parametrizaciones. Validado con TypeScript, build frontend, 54 pruebas contractuales, Guardian, auditoría de migraciones, auditoría de performance, dry-run de `supabase db push --linked` y `git diff --check`.

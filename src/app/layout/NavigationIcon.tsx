@@ -38,6 +38,8 @@ export function NavigationIcon({ iconKey }: { iconKey?: NavigationIconKey }) {
       return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...commonProps} d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5M16 2v4M8 2v4M3 10h5m9.5 7.5L16 16.3V14" /><circle {...commonProps} cx="16" cy="16" r="6" /></svg>;
     case "wallet":
       return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...commonProps} d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" /></svg>;
+    case "coins":
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse {...commonProps} cx="12" cy="6" rx="7" ry="3" /><path {...commonProps} d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M8 20c1.1.6 2.5 1 4 1 3.9 0 7-1.3 7-3" /></svg>;
     case "brain":
       return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...commonProps} d="M9.5 4A3.5 3.5 0 0 0 6 7.5v.3A3.5 3.5 0 0 0 4 14a3.5 3.5 0 0 0 3.5 3.5H9V4h.5ZM14.5 4A3.5 3.5 0 0 1 18 7.5v.3a3.5 3.5 0 0 1 2 6.2 3.5 3.5 0 0 1-3.5 3.5H15V4h-.5ZM9 9H7.5M15 9h1.5M9 14H7M15 14h2M12 4v16" /></svg>;
     case "user-check":

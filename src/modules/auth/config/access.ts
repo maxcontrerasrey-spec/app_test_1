@@ -44,6 +44,7 @@ export type AppModuleCode =
 
   | "operaciones"
   | "recursos_humanos"
+  | "control_estructuras_renta"
   | "jornadas_turnos"
   | "acreditacion_personas"
   | "certificados"
@@ -102,6 +103,7 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
 
   "operaciones",
   "recursos_humanos",
+  "control_estructuras_renta",
   "jornadas_turnos",
   "acreditacion_personas",
   "certificados",

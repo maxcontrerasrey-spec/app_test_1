@@ -33,6 +33,10 @@ const HumanResourcesDashboard = lazyWithRetry(
   "human-resources-dashboard",
   routeModuleImporters.humanResourcesDashboard
 );
+const RentStructuresPage = lazyWithRetry(
+  "rent-structures-page",
+  routeModuleImporters.rentStructuresPage
+);
 const SanctionsPage = lazyWithRetry("sanctions-page", routeModuleImporters.sanctionsPage);
 const RosterPage = lazyWithRetry("roster-page", routeModuleImporters.rosterPage);
 const AccreditationPage = lazyWithRetry(
@@ -178,6 +182,14 @@ export function AppRouter() {
               element={
                 <RoleProtectedRoute moduleCode="solicitud_sanciones">
                   <SanctionsPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/recursos-humanos/estructuras-renta"
+              element={
+                <RoleProtectedRoute moduleCode="control_estructuras_renta">
+                  <RentStructuresPage />
                 </RoleProtectedRoute>
               }
             />

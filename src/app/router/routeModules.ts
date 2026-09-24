@@ -43,6 +43,9 @@ export const routeModuleImporters = {
       await import("../../modules/incentives/pages/HumanResourcesDashboard")
     ).HumanResourcesDashboard
   }),
+  rentStructuresPage: async () => ({
+    default: (await import("../../modules/rent_structures/pages/RentStructuresPage")).RentStructuresPage
+  }),
   sanctionsPage: async () => ({
     default: (await import("../../modules/sanctions/pages/SanctionsPage")).SanctionsPage
   }),
@@ -128,6 +131,10 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/recursos-humanos/sanciones")) {
     return ["sanctionsPage"];
+  }
+
+  if (normalizedPath.startsWith("/recursos-humanos/estructuras-renta")) {
+    return ["rentStructuresPage"];
   }
 
   if (normalizedPath.startsWith("/recursos-humanos")) {

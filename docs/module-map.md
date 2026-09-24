@@ -51,6 +51,16 @@
 - Servicio: `src/modules/incentives/services/incentivesApi.ts`
 - Riesgo: servicio y vistas grandes; mezcla setup, analytics, cola y registro
 
+### Control Estructuras de Renta
+
+- Ruta: `/recursos-humanos/estructuras-renta`
+- Página: `src/modules/rent_structures/pages/RentStructuresPage.tsx`
+- Hook: `src/modules/rent_structures/hooks/useRentStructuresQueries.ts`
+- Servicio: `src/modules/rent_structures/services/rentStructuresApi.ts`
+- Backend: RPC `get_hr_rent_structure_control`, tablas `hr_rent_structures` y `hr_rent_structure_lines`
+- Alcance inicial: contratos BUK operativos asociados a DSAL y cargos de `buk_job_position_contract_access`; lectura reservada a admin, gerencia, dirección ejecutiva, dirección de operaciones y gerencia general.
+- Riesgo abierto: la tabla de estructuras requiere parametrización de conceptos y montos; la UI no presenta valores estimados si no existe una estructura vigente.
+
 ### Solicitud de sanciones
 
 - Ruta: `/recursos-humanos/sanciones`
