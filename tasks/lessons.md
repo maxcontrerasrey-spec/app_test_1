@@ -3933,3 +3933,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - `MI-####` identifica la solicitud de movilidad, pero no reemplaza el folio del proceso de contratación destino.
 - En la bandeja común de aprobaciones, mostrar ambos valores en la fila y en el detalle evita que el aprobador tenga que abrir otro módulo para identificar el destino.
 - El detalle de movilidad debe usar una variante compacta propia; no se debe comprimir globalmente el detalle de solicitudes de contratación.
+## 2026-09-24 - La estimación previsional debe validarse contra liquidaciones cerradas
+
+- Cuando una estimación de renta deba aproximar una liquidación chilena, no usar una AFP referencial fija: versionar comisión por administradora y período, topes/UF por mes, modalidad y plan de salud, y tipo de contrato para AFC.
+- Antes de publicar, contrastar fórmulas contra liquidaciones BUK cerradas anonimizadas y comprobar diferencias en pesos.

@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Motor previsional dinámico por cargo — 2026-09-24
+
+- [x] Investigar normativa chilena vigente para AFP y salud, incluidos topes, comisiones, Isapre/Fonasa y vigencias.
+- [x] Auditar los campos previsionales disponibles en BUK y definir el escenario configurable por contrato/cargo sin inventar datos individuales.
+- [x] Versionar parámetros legales y escenarios por cargo, con cálculo backend autoritativo y trazabilidad de fuentes.
+- [x] Extender Configuración y Control para seleccionar AFP, modalidad de salud y plan, mostrando bases, tasas y supuestos usados.
+- [x] Ejecutar pruebas runtime, migraciones, seguridad, build, Guardian y verificación productiva.
+
+Resultado: el motor dejó de usar Habitat como referencia fija y ahora resuelve por mes las siete AFP, UF de cierre, topes previsionales, Fonasa/Isapre y AFC según tipo de contrato. La muestra BUK de agosto incluyó 94 liquidaciones DSAL y 28 casos comparables de mes completo; AFP, salud 7% y AFC coincidieron al peso, y cuatro planes Isapre reprodujeron la separación BUK entre cotización obligatoria y adicional. La migración quedó aplicada en producción; las pruebas transaccionales con rollback reprodujeron $101.283 + $74.679 para un plan Consalud de 4,305 UF. Guardian terminó con 0 errores y 0 advertencias.
+
+
 ## Evolución Control Estructuras de Renta — 2026-09-24
 
 - [x] Auditar fuentes reales BUK/Jornadas para contratado y presente equivalente, y cerrar parámetros legales versionados.

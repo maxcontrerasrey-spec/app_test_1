@@ -157,7 +157,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 293046,
+  "cssTotalBytes": 294873,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -271,6 +271,8 @@ Revision 2026-09-15 interacción de navegación: CSS queda en 259,051 bytes por 
 Revision 2026-09-15 control de densidad de sidebar: CSS queda en 259,123 bytes por limitar la navegación a un módulo activo abierto y aislar el scroll vertical del menú. No cambia contenido, rutas, roles ni permisos.
 
 Revision 2026-09-24 Control Estructuras de Renta: CSS sube 5,202 bytes para incorporar la vista lazy de consulta gerencial de contratos DSAL, cargos BUK y líneas de renta con estados operativos, iconografía semántica y composición responsive. No agrega vendors, assets ni rutas eager; la autorización se mantiene en SQL y el frontend solo expone la ruta a roles gerenciales.
+
+Revision 2026-09-24 motor previsional dinámico: CSS sube 1,827 bytes para configurar AFP, modalidad y plan de salud, tipo de contrato y contexto legal mensual dentro del módulo lazy de Estructuras de Renta. No agrega dependencias, vendors, assets ni rutas eager; los cálculos permanecen en la RPC protegida y el frontend solo presenta parámetros y resultados auditables.
 
 Revision 2026-09-15 separación del rail compacto: CSS queda en 269,259 bytes por agregar un gutter visual de 12 px entre el divisor de la navegación plegada y el workspace. No ensancha el rail, no agrega dependencias y no altera rutas, roles ni permisos.
 
