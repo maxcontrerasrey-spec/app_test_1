@@ -11,6 +11,7 @@ import {
 } from "../../../recruitment/services/hiringWorkflow";
 import { approveCandidateStageWho, rejectCandidateStageWho, toWhoCauseTypeLabel } from "../../../recruitment/services/hiringControl";
 import { decideInternalMobilityApproval } from "../../../internal_mobility/services/internalMobilityApi";
+import { useInternalMobilityRequests } from "../../../internal_mobility/hooks/useInternalMobilityQueries";
 import { formatDashboardDate } from "../../lib/formatters";
 
 type TasksWidgetProps = {
@@ -21,6 +22,11 @@ type TasksWidgetProps = {
 
 export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProps) {
   const tasks = filterHomeTasks(dashboardData?.tasksData ?? []);
+  const hasMobilityTasks = tasks.some((task) => task.module_code === "movilidad_interna");
+  const mobilityRequestsQuery = useInternalMobilityRequests(hasMobilityTasks);
+  const mobilityRequestsByFolio = new Map(
+    (mobilityRequestsQuery.data ?? []).map((request) => [request.folio, request])
+  );
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
   // Estados para acciones integradas (Aprobar/Rechazar)
@@ -151,6 +157,10 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
               ) : (
                 tasks.map((task: DashboardTaskItem) => {
                   const isExpanded = expandedTaskId === task.id;
+                  const mobilityRequest =
+                    task.module_code === "movilidad_interna"
+                      ? mobilityRequestsByFolio.get(task.folio ?? "")
+                      : undefined;
                   const requiresTravelMethodology =
                     task.step_code === "contracts_control" && task.flight_tickets_required === true;
                   
@@ -163,7 +173,14 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                         <td>
                           <span className="case-code-toggle">
                             <span className={`expand-chevron ${isExpanded ? "expand-chevron-open" : ""}`}>▸</span>
-                            {task.folio}
+                            <span>
+                              {task.folio}
+                              {mobilityRequest?.destinationFolio ? (
+                                <small className="dashboard-task-destination-folio">
+                                  Destino {mobilityRequest.destinationFolio}
+                                </small>
+                              ) : null}
+                            </span>
                           </span>
                         </td>
                         <td>
@@ -264,13 +281,21 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                             ) : null}
 
                             {task.type === "approval" && task.module_code === "movilidad_interna" ? (
-                              <div className="expanded-case-detail-grid">
+                              <div className="expanded-case-detail-grid mobility-task-detail-grid">
                                 <div className="expanded-detail-section">
                                   <h4>Trabajador y solicitud</h4>
                                   <div className="expanded-detail-fields">
                                     <div>
                                       <small>Folio</small>
                                       <strong>{task.folio ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Folio destino</small>
+                                      <strong>{mobilityRequest?.destinationFolio ?? "—"}</strong>
+                                    </div>
+                                    <div>
+                                      <small>Caso destino</small>
+                                      <strong>{mobilityRequest?.recruitmentCaseCode ?? "—"}</strong>
                                     </div>
                                     <div>
                                       <small>Trabajador</small>

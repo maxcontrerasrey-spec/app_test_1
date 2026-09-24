@@ -47,13 +47,14 @@ export function useInternalMobilityWorkerContext(bukEmployeeId: string, enabled 
   });
 }
 
-export function useInternalMobilityRequests() {
+export function useInternalMobilityRequests(enabled = true) {
   return useQuery({
     queryKey: queryKeys.internalMobility.requests(),
     queryFn: fetchInternalMobilityRequests,
     staleTime: INTERNAL_MOBILITY_REQUESTS_STALE_TIME_MS,
     gcTime: INTERNAL_MOBILITY_CACHE_GC_TIME_MS,
     refetchInterval: INTERNAL_MOBILITY_REQUESTS_REFETCH_MS,
+    enabled,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
   });

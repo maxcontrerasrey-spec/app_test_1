@@ -4722,6 +4722,16 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   font-weight: 600;
 }
 
+.dashboard-task-destination-folio {
+  display: block;
+  margin-top: 0.16rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
 .tracking-case-code-toggle {
   gap: 0.45rem;
 }
@@ -4874,6 +4884,46 @@ details.mobility-detail-card[open] .mobility-detail-summary {
 
 .expanded-detail-fields strong .tracking-status-pill {
   vertical-align: middle;
+}
+
+.mobility-task-detail-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mobility-task-detail-grid .expanded-detail-section {
+  padding: 0.85rem 1rem;
+}
+
+.mobility-task-detail-grid .expanded-detail-section h4 {
+  margin-bottom: 0.55rem;
+  font-size: 0.68rem;
+}
+
+.mobility-task-detail-grid .expanded-detail-fields {
+  gap: 0.48rem 0.7rem;
+}
+
+.mobility-task-detail-grid .expanded-detail-fields small {
+  font-size: 0.63rem;
+}
+
+.mobility-task-detail-grid .expanded-detail-fields strong {
+  font-size: 0.76rem;
+}
+
+@media (max-width: 820px) {
+  .mobility-task-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mobility-task-detail-grid .expanded-detail-section {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .mobility-task-detail-grid .expanded-detail-section:last-child {
+    border-bottom: none;
+  }
 }
 
 .expanded-case-loading {
