@@ -12,6 +12,7 @@ import {
   uploadAccreditationDocumentToBuk,
   uploadAccreditationDocumentToR2
 } from "../services/accreditationApi";
+import { formatAccreditationStatus } from "../lib/accreditationPresentation";
 import type { AccreditationDocumentStatus } from "../types";
 
 const statusOptions = [
@@ -230,7 +231,10 @@ export function AccreditationWorkersView() {
 
       <div className="accreditation-workers-layout">
         <article className="info-card accreditation-list-card">
-          <h3>Trabajadores</h3>
+          <div className="accreditation-card-heading">
+            <h3>Trabajadores</h3>
+            <span>{workerQuery.isLoading ? "Cargando" : `${(workerQuery.data ?? []).length} resultados`}</span>
+          </div>
           <div className="accreditation-list-table">
             {(workerQuery.data ?? []).map((worker) => {
               const rowKey = `${worker.bukEmployeeId}:${worker.siteId ?? siteId}`;
@@ -246,7 +250,7 @@ export function AccreditationWorkersView() {
                     setDocumentForm((current) => ({ ...current, requirementId: "" }));
                   }}
                 >
-                  <div>
+                  <div className="accreditation-worker-copy">
                     <strong>{worker.fullName}</strong>
                     <p>
                       {worker.documentNumber ?? "Sin RUT"} · {worker.jobTitle ?? "Sin cargo"}
@@ -255,7 +259,7 @@ export function AccreditationWorkersView() {
                   </div>
                   <div className="accreditation-mini-stats">
                     <span className={`accreditation-status accreditation-status-${worker.accreditationStatus}`}>
-                      {worker.accreditationStatus}
+                      {formatAccreditationStatus(worker.accreditationStatus)}
                     </span>
                     <span>{worker.approvedDocumentsTotal}/{worker.requiredDocumentsTotal} documentos</span>
                     <span>{worker.rosterPatternName ?? "Sin jornada activa"}</span>
@@ -274,10 +278,16 @@ export function AccreditationWorkersView() {
         </article>
 
         <article className="info-card accreditation-detail-card">
-          <h3>Ficha de Acreditacion</h3>
+          <div className="accreditation-card-heading">
+            <h3>Ficha de acreditación</h3>
+            {profileQuery.data ? <span>{profileQuery.data.worker.documentNumber ?? "Sin RUT"}</span> : null}
+          </div>
           {profileQuery.isLoading ? <p className="tracking-filter-caption">Cargando detalle del trabajador...</p> : null}
           {!selectedBukEmployeeId ? (
-            <p className="tracking-filter-caption">Selecciona un trabajador para revisar sus requisitos y documentos.</p>
+            <div className="accreditation-empty-detail">
+              <strong>Sin trabajador seleccionado</strong>
+              <p>Selecciona una fila para revisar requisitos y documentos.</p>
+            </div>
           ) : null}
 
           {profileQuery.data ? (
@@ -294,7 +304,7 @@ export function AccreditationWorkersView() {
                 </div>
                 <div className="accreditation-mini-stats">
                   <span className={`accreditation-status accreditation-status-${profileQuery.data.worker.accreditationStatus}`}>
-                    {profileQuery.data.worker.accreditationStatus}
+                    {formatAccreditationStatus(profileQuery.data.worker.accreditationStatus)}
                   </span>
                   <span>Vence: {profileQuery.data.worker.accreditationExpiryDate ?? "Sin fecha"}</span>
                 </div>
@@ -415,7 +425,7 @@ export function AccreditationWorkersView() {
                     </div>
                     <div className="accreditation-mini-stats">
                       <span className={`accreditation-status accreditation-status-${document.status}`}>
-                        {document.status}
+                        {formatAccreditationStatus(document.status)}
                       </span>
                       <span>{document.blocksAccreditation ? "Bloqueante" : "No bloqueante"}</span>
                     </div>

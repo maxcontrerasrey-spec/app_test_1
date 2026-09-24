@@ -15,11 +15,11 @@ const ACCREDITATION_VIEWS = [
   {
     key: "workers",
     label: "Trabajadores",
-    description: "Detalle documental, upload a BUK y trazabilidad por trabajador."
+    description: "Detalle documental, carga a BUK y trazabilidad por trabajador."
   },
   {
     key: "settings",
-    label: "Configuracion",
+    label: "Configuración",
     description: "Mantenedores de faenas, requisitos y matriz por cargo."
   }
 ] as const;
@@ -43,14 +43,14 @@ export function AccreditationPage() {
   );
 
   return (
-    <PageShell>
+    <PageShell className="accreditation-page">
       <div className="minimal-page-header">
-        <h1>Acreditacion de Personas</h1>
+        <h1>Acreditación de Personas</h1>
         <p className="description accreditation-description">{activeMeta.description}</p>
       </div>
 
-      <section className="accreditation-tab-shell">
-        <div className="approval-chip-row">
+      <nav className="accreditation-tab-shell" aria-label="Secciones de acreditación">
+        <div className="approval-chip-row accreditation-view-tabs">
           {ACCREDITATION_VIEWS.map((item) => (
             <button
               type="button"
@@ -63,7 +63,7 @@ export function AccreditationPage() {
             </button>
           ))}
         </div>
-      </section>
+      </nav>
 
       {activeView === "dashboard" ? (
         <AccreditationDashboardView

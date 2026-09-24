@@ -1,6 +1,7 @@
 import { ChangeEvent } from "react";
 import { SelectField, TextField } from "../../../shared/ui";
 import { useAccreditationDashboard, useAccreditationSetupCatalogs } from "../hooks/useAccreditationQueries";
+import { formatAccreditationStatus } from "../lib/accreditationPresentation";
 
 type Props = {
   siteId: string;
@@ -116,7 +117,7 @@ export function AccreditationDashboardView({
                       <span>{worker.jobTitle ?? "Sin cargo"}</span>
                       <span>{worker.accreditationExpiryDate ?? "Sin vencimiento"}</span>
                       <span className={`accreditation-status accreditation-status-${worker.status}`}>
-                        {worker.status}
+                        {formatAccreditationStatus(worker.status)}
                       </span>
                     </div>
                   </div>
