@@ -49,6 +49,7 @@ type BukCandidateDocumentJobRow = {
   source_file_path: string | null;
   status: "pending" | "processing" | "success" | "failed" | "reconciliation_required";
   attempts: number;
+  next_attempt_at: string | null;
   response_snapshot: Record<string, unknown> | null;
   payload_snapshot: Record<string, unknown> | null;
 };
@@ -3706,6 +3707,11 @@ function requireBukDocumentReference(
   return metadata;
 }
 
+function getDocumentRetryDelayMs(attempts: number) {
+  const normalizedAttempts = Math.max(1, Math.floor(attempts));
+  return Math.min(60 * 60 * 1000, 5 * 60 * 1000 * (2 ** Math.max(0, normalizedAttempts - 1)));
+}
+
 function buildDocumentQueueSummary(rows: Array<Record<string, unknown>>) {
   const statuses = ["pending", "processing", "success", "failed", "reconciliation_required"] as const;
   return {
@@ -3772,6 +3778,7 @@ async function completeCandidateDocumentJob(
       transport: uploadedDocument.transport ?? null,
       response_snapshot: uploadedDocument.response ?? {},
       last_error: null,
+      next_attempt_at: null,
       finished_at: uploadedAt
     })
     .eq("id", documentJob.id)
@@ -3961,6 +3968,9 @@ async function runCandidateDocumentQueue(
         .update({
           status: nextStatus,
           last_error: message,
+          next_attempt_at: new Date(
+            Date.now() + getDocumentRetryDelayMs(documentJob.attempts)
+          ).toISOString(),
           finished_at: new Date().toISOString()
         })
         .eq("id", documentJob.id)

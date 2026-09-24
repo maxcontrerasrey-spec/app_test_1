@@ -154,5 +154,11 @@ describe("Solicitud de Contratación ERP", () => {
     );
     expect(hardeningMigration).toContain("jsonb_array_length(\n              case");
     expect(hardeningMigration).toContain("jsonb_typeof(coalesce(p_existing_documents");
+
+    const retryMigration = read(
+      "supabase/migrations/20260924150000_add_buk_document_retry_backoff.sql"
+    );
+    expect(retryMigration).toContain("next_attempt_at");
+    expect(retryMigration).toContain("next_attempt_at = case");
   });
 });
