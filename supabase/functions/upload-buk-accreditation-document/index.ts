@@ -67,7 +67,9 @@ function sanitizeFileName(fileName: string, documentNumber: string, employeeId: 
     ? safeBaseName.slice(safeBaseName.lastIndexOf("."))
     : ".pdf";
   const stem = safeBaseName.replace(/\.[^.]+$/, "");
-  return `${stem || "documento"}_${normalizeBukDocumentNumber("rut", documentNumber || employeeId)}${extension}`;
+  const normalizedNumber = normalizeBukDocumentNumber("rut", documentNumber || employeeId);
+  const suffix = `_${normalizedNumber}`;
+  return `${stem.endsWith(suffix) ? stem : `${stem}${suffix}`}${extension}`;
 }
 
 async function assertAccreditationAccess(

@@ -672,6 +672,7 @@ export async function uploadAccreditationDocumentToR2(input: {
   return {
     objectKey: readText(payload.objectKey),
     fileSha256: readText(payload.fileSha256),
+    documentName: readText(payload.documentName),
     bukSyncStatus: readText(payload.bukSyncStatus),
     trackingId: readText(payload.trackingId)
   };

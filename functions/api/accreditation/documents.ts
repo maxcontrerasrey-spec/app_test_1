@@ -38,6 +38,14 @@ function safeSegment(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120);
 }
 
+function addVersionToDocumentName(documentName: string, fileSha256: string) {
+  const normalized = safeSegment(documentName || "documento.pdf");
+  const extensionIndex = normalized.lastIndexOf(".");
+  const stem = extensionIndex > 0 ? normalized.slice(0, extensionIndex) : normalized;
+  const extension = extensionIndex > 0 ? normalized.slice(extensionIndex) : ".pdf";
+  return `${stem}_sha${fileSha256.slice(0, 12)}${extension}`;
+}
+
 async function authenticatedUser(env: AccreditationStorageEnv, token: string) {
   const supabaseUrl = env.SUPABASE_URL?.trim();
   const anonKey = env.SUPABASE_ANON_KEY?.trim();
@@ -95,8 +103,8 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
     const bytes = await file.arrayBuffer();
     if (!signatureMatches(new Uint8Array(bytes), file.type)) throw new Error("El contenido no coincide con el formato declarado.");
     const fileSha256 = await sha256Hex(bytes);
-    const normalizedName = documentName || `${file.name}`;
-    const objectKey = `accreditation/${safeSegment(contractCode)}/${safeSegment(documentNumber)}/${safeSegment(requirementCode)}/${safeSegment(normalizedName)}`;
+    const versionedName = addVersionToDocumentName(documentName || file.name, fileSha256);
+    const objectKey = `accreditation/${safeSegment(contractCode)}/${safeSegment(documentNumber)}/${safeSegment(requirementCode)}/${versionedName}`;
     const existing = await env.R2_BUCKET.head(objectKey);
     if (!existing) {
       await env.R2_BUCKET.put(objectKey, bytes, {
@@ -127,7 +135,7 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
       }
     });
 
-    return json({ success: true, trackingId, storageProvider: "cloudflare_r2", objectKey, fileSha256, bukSyncStatus: "pending" });
+    return json({ success: true, trackingId, storageProvider: "cloudflare_r2", objectKey, fileSha256, documentName: versionedName, bukSyncStatus: "pending" });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const status = message === "Unauthorized" ? 401 : message.includes("Sin permisos") ? 403 : message.includes("RPC") ? 400 : 500;

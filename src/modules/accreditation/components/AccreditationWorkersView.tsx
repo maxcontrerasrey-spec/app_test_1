@@ -128,7 +128,7 @@ export function AccreditationWorkersView() {
           setFeedback("No fue posible resolver contrato y requisito para la ruta del documento.");
           return;
         }
-        await uploadAccreditationDocumentToR2({
+        const r2Upload = await uploadAccreditationDocumentToR2({
           employeeId: selectedBukEmployeeId,
           documentNumber,
           contractCode,
@@ -144,7 +144,7 @@ export function AccreditationWorkersView() {
         await uploadAccreditationDocumentToBuk({
           employeeId: selectedBukEmployeeId,
           documentNumber,
-          documentName: selectedFile.name,
+          documentName: r2Upload.documentName || selectedFile.name,
           file: selectedFile,
           siteId: selectedSiteId,
           requirementId: documentForm.requirementId,
