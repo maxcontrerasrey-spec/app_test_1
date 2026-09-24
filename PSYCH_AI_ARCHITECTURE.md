@@ -1,3 +1,17 @@
+Status: HISTORICAL
+Document Type: HISTORICAL_EVIDENCE
+Owner: Engineering + Psicología
+Version: archived
+Effective Date: 2026-08-13
+Last Reviewed: 2026-09-22
+Next Review: N/A
+Source of Truth: docs/architecture/AI_ARCHITECTURE.md y runtime
+Supersedes: none
+Related Controls: PSYCH_AI_CONTRACT
+Change Approval: Engineering Governance
+
+> Do Not Use As Current Production Contract. Este documento conserva una arquitectura anterior; el contrato vigente está en docs/contracts/PSYCH_AI_CONTRACT.md.
+
 # Arquitectura Psych AI
 
 Estado: implementado con feature flag apagado por defecto.

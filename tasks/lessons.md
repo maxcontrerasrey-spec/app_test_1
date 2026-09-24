@@ -1,5 +1,62 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## Leccion 2026-09-24 — Una migracion PL/pgSQL necesita prueba de ejecucion y la cola necesita worker persistente
+
+- Una migracion puede aplicar aunque el cuerpo de una RPC tenga una referencia de columna incorrecta; los contratos estaticos no sustituyen una prueba transaccional o una definicion viva inspeccionada.
+- Una cola disparada solo desde el navegador no garantiza continuidad: debe existir un worker programado o una invocacion backend equivalente, con concurrencia acotada y sin solapamiento.
+- Un `2xx` del proveedor no es un checkpoint documental suficiente sin un identificador o URL remota; no se debe purgar Storage cuando la evidencia de custodia externa es incompleta.
+
+## 2026-09-24 - Una ruta BUK informada debe quedar en `buk_area_code`
+
+- Tener contrato, nombre de área e indicador operativo no basta para generar en BUK: la validación de generación exige un `buk_area_code` no vacío.
+- Cuando Operaciones entrega una ruta contractual, se debe reconciliar contra `contract_number` y persistir el código en el mapping operativo, manteniendo `is_one_to_one` y verificando el registro final.
+
+## 369. Candidatos activos y Psicolaboral deben compartir la misma población
+
+- Una evaluación psicolaboral ausente no debe hacer desaparecer a un candidato activo: el estado correcto es `No realizado` y debe permitir enviar la batería.
+- Si el candidato está en `hired` pero el caso aún no es terminal, Psicolaboral debe incluirlo; filtrar `hired` antes de revisar la existencia de assessment crea una divergencia silenciosa con Candidatos.
+- Los contadores y el listado deben derivar de la misma regla de población, incluyendo los casos sin assessment y conservando fuera solo los casos terminales o etapas rechazadas/retiradas.
+
+## 368. Los ciclos fijos 4X3 y 5X2 deben anclarse a lunes
+
+- `start_date` es el día 1 del ciclo: para 4X3 define lunes-jueves y para 5X2 lunes-viernes; validar solo `working_days/resting_days` no garantiza esa semántica.
+- La corrección debe limitarse a pautas vigentes/futuras, verificar identidad y solapamientos, conservar la fecha original en evidencia auditable y no reescribir pautas históricas ya invalidadas.
+- Un trigger de base de datos debe rechazar nuevas altas o cambios de patrón 4X3/5X2 con inicio distinto de lunes para que la regla no dependa únicamente de la interfaz.
+
+## 366. La fecha de salida BUK debe venir de la ficha vigente y gobernar SAL
+
+- La fecha operativa se debe resolver primero desde `current_job` (`end_date`, `active_until` o `Fecha de salida`) y solo después desde campos generales de la ficha.
+- El buscador no puede confiar únicamente en una caché de trabajadores: debe validar `employees.is_active` y que la fecha de salida aún no haya pasado.
+- El calendario conserva al trabajador para el período que corresponde y marca `SAL` desde la fecha BUK; no se debe inventar ni copiar una fecha histórica cuando la Sync actual no la entrega.
+
+## 367. Una Sync completa no prueba que la ficha BUK tenga la fecha correcta
+
+- Validar siempre el registro individual y su `current_job` después de una corrida BUK completa; `5.449/5.449` procesados solo demuestra cobertura de la corrida, no que cada atributo operativo venga informado.
+- Si BUK entrega `is_active = true` y `current_job.end_date = null`, Jornadas debe conservar la evidencia recibida y no fabricar `SAL` desde una ficha histórica.
+
+## 365. Una reconciliación contingente no debe reemplazar el universo de contratados
+
+- Una tabla de evidencia para un folio específico debe incorporarse como fuente adicional de contratación, no convertirse en el `JOIN` exclusivo de la vista global.
+- Las RPC de Personal contratado deben conservar el alcance común por generación BUK efectiva y admitir evidencia contingente vinculada por `recruitment_case_candidate_id` como fallback auditable.
+- Toda corrección de un folio excepcional debe verificarse contra el total global, la distribución por folio y búsquedas de folios antiguos y recientes antes de publicar.
+
+## 2026-09-23 - La capacidad de observación profesional debe distinguir UI de persistencia
+
+- Si la revisión profesional se guarda en una columna `text` y la RPC no recorta `p_comment`, una observación que parece limitada puede ser solo un textarea demasiado bajo.
+- Para ampliar capacidad sin cambiar el flujo, aumentar el espacio visible y conservar la ausencia de `maxLength`; cubrir ambas propiedades con una prueba de integridad.
+
+## 2026-09-22 - El alcance multi-contrato debe filtrarse desde la homologación BUK
+
+- Para reunir el calendario de un administrador no se debe inferir el alcance desde la cuenta del usuario ni desde un texto libre; la fuente es `buk_contract_mappings.contract_admin_name` junto con su área BUK normalizada.
+- El catálogo debe limitarse a mapeos operativos, uno-a-uno y asociados a un contrato ERP, y el selector de administrador debe limpiar el selector de contrato/área para evitar una intersección ambigua.
+- La RPC nueva debe conservar la autorización de consulta existente y mantener la firma anterior para no romper consumidores legacy.
+
+## 364. La exportación de Jornadas debe priorizar el área operacional sobre el código contractual
+
+- El backend ya puede entregar area_name y contract_code; no se debe presentar el identificador numérico como si fuera el nombre operativo.
+- El Excel debe mostrar el área real en la columna legible y conservar el código contractual en una columna separada para trazabilidad.
+- Cubrir la transformación con una prueba unitaria de prioridad area_name y fallback al código cuando el área no exista.
+
 ## 363. Los filtros de jornada deben representar el ciclo, no la variante operativa
 
 - En una vista general, A/C/T y las variantes rotativas son atributos de la pauta, no filtros independientes para la nómina.
@@ -205,6 +262,11 @@ Este archivo consolida las decisiones de arquitectura, los patrones de diseño y
 
 - Si un contratado contingente necesita completar documentos, habilitar únicamente el checklist documental en la vista autorizada; mantener la ficha trabajador, el cambio de etapa y la generación BUK bloqueados.
 - La excepción debe quedar acotada al folio contingente autorizado y conservar la auditoría de cada carga/revisión.
+
+## 362. La cola de Personal a Contratar no puede inferir estado desde el job BUK
+
+- Un candidato `hired` sin job BUK exitoso no debe volver a la cola `ready_for_hire`; la etapa operacional es la autoridad para separar Personal a Contratar de Personal contratado.
+- Una excepción documental posterior a la contratación debe habilitar solo el checklist autorizado y no alterar la pertenencia al bucket ni reabrir el proceso.
 
 ## 342. La forma de pago define campos bancarios obligatorios en toda la cadena BUK
 
@@ -3796,3 +3858,38 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - A/B/T no debe inferirse desde el nombre visible ni quedar hardcodeado por trabajador; debe vivir en el patrón backend y resolverse por `cycle_day`.
 - Una carga desde nómina debe conciliar por RUT y contrato/área activo antes de insertar; si un RUT aparece dos veces con contratos incompatibles, se conserva solo la fila que coincide con la ficha viva y se deja evidencia.
 - Si un ciclo visual contiene dos bloques de trabajo dentro de una misma pauta (por ejemplo 4 A y luego 4 B), `working_days + resting_days` no puede seguir representando solo la primera vuelta; el período persistido debe cubrir toda la secuencia antes de validar el calendario.
+
+## 2026-09-22 - El calendario general debe priorizar densidad y separación
+
+- Nombre, cargo y jornada deben resolverse en una ficha compacta: cargo y jornada comparten la misma línea; no se debe agregar una tercera línea que aumente la altura de cada trabajador.
+- Las celdas de estados diarios necesitan separación visible entre sí, además del color, para distinguir rápidamente `T`, `D`, `VAC`, licencias y otros estados.
+# Leccion 2026-09-24 — Errores de Edge Functions
+
+- Una invocacion `supabase.functions.invoke` no debe mostrar solo el mensaje de transporte `non-2xx`: `FunctionsHttpError` conserva la respuesta JSON del backend en `context` y debe leerse antes de aplicar el fallback.
+- En flujos que cargan evidencia antes de crear la solicitud, verificar siempre los objetos huérfanos y el registro transaccional por separado; un archivo en Storage no demuestra que la solicitud haya sido creada.
+
+## Leccion 2026-09-24 — La Solicitud de Contratación no debe compartir timeout con sus adjuntos
+
+- Un checkpoint exitoso de la Solicitud puede convivir con un error posterior de un documento general; el estado visible debe distinguir ambos resultados.
+- Una Edge Function que procesa hasta 50 jobs y varios documentos secuenciales no es una cola: el tiempo total crece con la cantidad de candidatos y archivos y puede superar el límite de ejecución aunque cada llamada individual sea correcta.
+- La concurrencia debe limitarse contra BUK y por documento, con conciliación ante respuestas ambiguas; no corresponde limitar la capacidad de contratación del negocio ni reintentar ciegamente una carga que pudo haber sido aceptada.
+
+## Leccion 2026-09-24 — La cola documental debe ser independiente del cierre contractual
+
+- La provision BUK y la Solicitud de Contratación deben cerrar con checkpoint propio; los adjuntos no pueden mantener abierto el mismo job HTTP.
+- Cada archivo necesita una identidad idempotente, claim transaccional y estado auditable para evitar duplicados cuando BUK responde tarde o de forma ambigua.
+- El limite de concurrencia debe proteger al proveedor mediante una fila de control bloqueada, sin reducir el volumen de contrataciones que el negocio puede iniciar.
+
+## Leccion 2026-09-24 — Las RPC PL/pgSQL deben probarse en runtime, no solo al aplicar la migracion
+
+- PostgreSQL puede aceptar una migracion `create or replace function` y fallar recien al ejecutar un camino con nombres ambiguos entre parametros de salida y columnas; una simulacion transaccional con rollback es obligatoria para RPC nuevas o reemplazadas.
+- En `ON CONFLICT`, usar la restriccion unica por nombre cuando un parametro de salida comparte el nombre de una columna; esto evita que el parser PL/pgSQL resuelva el conflicto de forma ambigua.
+- Los reintentos de estados `failed` y `reconciliation_required` deben persistir `next_attempt_at` con backoff y limite, para que un worker periodico no repita llamadas al proveedor sin pausa.
+- En funciones `RETURNS TABLE`, todos los nombres de salida actuan como variables PL/pgSQL; no basta con corregir el `INSERT`: cada `WHERE`, `UPDATE` y fila de control debe usar alias de tabla explicitos.
+- Un worker programado no debe autenticarse implicitamente con la misma clave interna que usa el cliente de base de datos cuando conviven claves modernas y legacy; necesita un secreto de webhook dedicado, restringido al modo que opera y configurado en ambos extremos.
+
+## Leccion 2026-09-24 — Una interfaz operativa compacta no debe anidar tarjetas
+
+- En módulos de revisión masiva, el contenedor general, cada lista y cada fila no pueden competir como superficies elevadas; una sola envolvente y divisores de 1 px ofrecen mejor lectura y más densidad.
+- Las columnas deben usar `align-items: start` para que una ficha lateral vacía no herede la altura del listado; el cambio debe probarse con la sidebar expandida, no solo a viewport completo.
+- Cuando un rediseño CSS legítimo supera un baseline de tolerancia cero, medir el artefacto minificado, documentar el incremento y versionar solo el límite afectado después de que Guardian y las capturas responsive pasen.

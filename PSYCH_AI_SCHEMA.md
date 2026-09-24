@@ -1,3 +1,17 @@
+Status: HISTORICAL
+Document Type: HISTORICAL_EVIDENCE
+Owner: Psicología + Engineering
+Version: archived
+Effective Date: 2026-08-13
+Last Reviewed: 2026-09-22
+Next Review: N/A
+Source of Truth: runtime versionado de su fecha
+Supersedes: none
+Related Controls: docs/contracts/PSYCH_AI_CONTRACT.md
+Change Approval: Engineering Governance
+
+> Do Not Use As Current Production Contract. Este schema conserva una versión anterior; el runtime vigente está documentado en el contrato V6.3.
+
 # Schema Psych AI
 
 Versión activa: `psych-ai-schema-v2`

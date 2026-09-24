@@ -1,3 +1,17 @@
+Status: HISTORICAL
+Document Type: HISTORICAL_EVIDENCE
+Owner: Engineering + Psicología
+Version: archived
+Effective Date: 2026-08-13
+Last Reviewed: 2026-09-22
+Next Review: N/A
+Source of Truth: runtime fechado de su ejecución
+Supersedes: none
+Related Controls: docs/contracts/PSYCH_AI_CONTRACT.md
+Change Approval: Engineering Governance
+
+> Do Not Use As Current Production Contract. Este informe describe una etapa anterior basada en gpt-5-mini.
+
 # Auditoría de implementación IA psicolaboral
 
 Fecha: 2026-08-13  

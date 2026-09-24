@@ -1,3 +1,17 @@
+Status: HISTORICAL
+Document Type: HISTORICAL_EVIDENCE
+Owner: Psicología + Engineering
+Version: archived
+Effective Date: 2026-08-14
+Last Reviewed: 2026-09-22
+Next Review: N/A
+Source of Truth: runtime fechado de la migración
+Supersedes: none
+Related Controls: docs/contracts/PSYCH_AI_CONTRACT.md
+Change Approval: Engineering Governance
+
+> Do Not Use As Current Production Contract. Este informe describe la migración V5.3; el contrato vigente es V6.3.
+
 # Psych AI - auditoría de migración GPT-5.6 Luna
 
 Fecha: 2026-08-14

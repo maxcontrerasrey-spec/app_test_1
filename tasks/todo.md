@@ -1,5 +1,21 @@
 # Tareas y Roadmap de Desarrollo
 
+## Auditoría integral del árbol y publicación — 2026-09-24
+
+- [x] Auditar estado de ramas, cambios locales, árbol documental, migraciones, seguridad, integridad y build.
+- [x] Corregir únicamente bloqueos reproducibles y atribuibles al árbol actual, preservando cambios ajenos.
+- [x] Ejecutar Guardian y los gates productivos completos.
+- [ ] Publicar en `main` solo el conjunto validado y verificar CI remoto.
+
+## Carga de jornadas desde captura 2026-09-24 — 2026-09-24
+
+- [x] Validar en producción los cinco RUT, nombres, cargos y contratos antes de asignar.
+- [x] Aplicar `5X2` a Katerin Pérez, Cristopher Quispe, Liliana García y María Jesús Henríquez con inicio lunes `2026-08-31`.
+- [x] Aplicar `10X10` a Roberto Flores con inicio `2026-09-15`, sin normalizar a lunes.
+- [x] Verificar en el calendario operativo la confirmación productiva y la proyección de cada jornada.
+
+Resultado: las cinco pautas quedaron asignadas en producción. Las cuatro jornadas `5X2` tienen inicio lunes `2026-08-31`, aunque la captura informaba `2026-09-01`; la jornada `10X10` conserva `2026-09-15`. Cada asignación dejó trazabilidad en `notes`.
+
 ## Magnificación de la barra lateral comprimida — 2026-09-24
 
 - [x] Auditar el rail colapsado, su DOM y los estilos desktop existentes.
@@ -3890,3 +3906,13 @@ Resultado: producción devuelve `Personal a Contratar = 0` y `Personal contratad
 - [x] Ejecutar pruebas de contrato, build, Guardian y validación de producción; publicar solo después de evidencia satisfactoria.
 
 Resultado parcial: producción tiene la migración aplicada y el despliegue `eebe179e` activo en Cloudflare Pages. El endpoint R2 responde `401` sin sesión, confirmando que la ruta está protegida. La lectura/descarga autenticada queda como siguiente capa antes de cerrar completamente el rediseño de custodia.
+
+## Rediseño compacto de Acreditación — 2026-09-24
+
+- [x] Auditar la jerarquía visual, densidad, estados y respuesta con la barra lateral expandida.
+- [x] Compactar cabecera, navegación, filtros, listado y ficha sin alterar contratos funcionales.
+- [x] Unificar estados y superficies del módulo con radios discretos, líneas y tipografía operativa.
+- [x] Validar build, rutas y capturas de escritorio/móvil con el menú lateral abierto y cerrado.
+- [x] Registrar evidencia final, límites del cambio y revisión visual.
+
+Resultado: Acreditación usa navegación plana, controles de 2,45 rem, filtros en una sola barra cuando hay ancho, filas separadas por líneas y una ficha que ya no se estira con el listado vacío. Se verificó visualmente a 1440x900 con sidebar de 228 px, 1024x768 y 390x844, sin solapamientos ni scroll horizontal. Build, 140 pruebas unitarias, smoke de rutas, performance y Guardian aprobaron; el baseline CSS quedó versionado en 276.014 bytes con tolerancia futura cero.
