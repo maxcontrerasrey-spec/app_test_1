@@ -1974,13 +1974,23 @@ textarea {
 }
 
 .login-glass-card:not(:hover):not(:focus-within) > .login-brand-top,
-.login-glass-card:not(:hover):not(:focus-within) > .login-header-copy,
-.login-glass-card:not(:hover):not(:focus-within) > .login-caption,
 .login-glass-card:not(:hover):not(:focus-within) .login-actions,
 .login-glass-card:not(:hover):not(:focus-within) .login-error,
-.login-glass-card:not(:hover):not(:focus-within) .login-success,
-.login-glass-card:not(:hover):not(:focus-within) .glass-submit-button {
+.login-glass-card:not(:hover):not(:focus-within) .login-success {
   display: none;
+}
+
+.login-glass-card:not(:hover):not(:focus-within) > .login-header-copy,
+.login-glass-card:not(:hover):not(:focus-within) > .login-caption,
+.login-glass-card:not(:hover):not(:focus-within) .glass-submit-button {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+}
+
+.login-header-copy,
+.glass-submit-button {
+  transition: opacity 360ms ease, transform 360ms ease;
 }
 
 .login-glass-card:not(:hover):not(:focus-within) {
