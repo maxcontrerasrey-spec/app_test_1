@@ -3921,3 +3921,15 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Una vista nueva puede ser funcional y aun así fallar estéticamente si introduce tarjetas grandes, alturas artificiales, sombras y encabezados sobredimensionados.
 - Para superficies operativas de RRHH, reutilizar la gramática de Acreditaciones: `minimal-page-header`, controles compactos, líneas sutiles, tarjetas planas y estados discretos; no copiar la pantalla completa, sino sus decisiones de jerarquía y densidad.
+
+## 2026-09-24 - Los indicadores de renta deben conservar la identidad BUK y declarar sus supuestos
+
+- La dotación no debe inferirse por texto del cargo cuando BUK entrega `role.id` y `area_id`; esos identificadores evitan mezclar cargos homónimos entre áreas.
+- Presente debe reutilizar el resolvedor de Jornadas y mostrar el resultado como equivalente mensual, no como una dotación física exacta.
+- AFP, salud y cesantía requieren parámetros con vigencia, fuente y etiqueta de estimación; no se deben presentar como liquidación individual sin la ficha previsional del trabajador.
+
+## 2026-09-24 - La aprobación de movilidad necesita distinguir folio de movilidad y folio destino
+
+- `MI-####` identifica la solicitud de movilidad, pero no reemplaza el folio del proceso de contratación destino.
+- En la bandeja común de aprobaciones, mostrar ambos valores en la fila y en el detalle evita que el aprobador tenga que abrir otro módulo para identificar el destino.
+- El detalle de movilidad debe usar una variante compacta propia; no se debe comprimir globalmente el detalle de solicitudes de contratación.

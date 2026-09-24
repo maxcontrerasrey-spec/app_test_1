@@ -1,5 +1,25 @@
 # Tareas y Roadmap de Desarrollo
 
+## Evolución Control Estructuras de Renta — 2026-09-24
+
+- [x] Auditar fuentes reales BUK/Jornadas para contratado y presente equivalente, y cerrar parámetros legales versionados.
+- [x] Ampliar el contrato Supabase con configuración auditable por cargo, cupos autorizados, indicadores de dotación y cálculo estimado de descuentos legales.
+- [x] Incorporar pestañas tipo globo para Control y Configuración, cinco tarjetas compactas y estructura por secciones con iconos.
+- [x] Agregar RPCs y servicios con autorización gerencial, invalidación de caché y estados de carga/error completos.
+- [x] Ejecutar pruebas focalizadas, TypeScript, build frontend, auditorías, Guardian y diff; publicar solo con evidencia productiva.
+
+Resultado: el control calcula contratado por rol/área BUK, presente mediante el resolvedor de Jornadas y cupos autorizados configurables. La estructura separa haberes imponibles, no imponibles y descuentos legales estimados con parámetros versionados y deja auditoría de cada guardado. Migración aplicada en Supabase enlazado; Guardian terminó con 0 errores y 0 advertencias.
+
+
+## Folio destino y detalle compacto en aprobaciones de movilidad — 2026-09-24
+
+- [x] Inspeccionar el contrato de la bandeja de aprobaciones y confirmar dónde se pierde el folio destino.
+- [x] Exponer el folio destino en las tareas de movilidad para todos los aprobadores autorizados.
+- [x] Mostrarlo en la fila y compactar el cuadro desplegable de movilidad sin alterar otras aprobaciones.
+- [x] Agregar cobertura de contrato, ejecutar Guardian/build, publicar y verificar el bundle productivo.
+
+Resultado: la bandeja común de aprobaciones muestra el folio de movilidad `MI-####` y el folio/caso de destino cuando la tarea corresponde a movilidad interna. El detalle desplegable usa una variante compacta y responsive; el resto de aprobaciones mantiene su presentación. Se validaron 56 pruebas contractuales, TypeScript/build y el bundle público de Cloudflare.
+
 ## Selector explícito de fichas BUK en movilidad interna — 2026-09-24
 
 - [x] Confirmar fichas activas duplicadas y el comportamiento actual del selector.

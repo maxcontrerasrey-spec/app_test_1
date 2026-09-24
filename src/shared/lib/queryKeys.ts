@@ -107,8 +107,8 @@ export const queryKeys = {
     preview: (params: Record<string, unknown>) => ["incentives", "preview", params] as const
   },
   rentStructures: {
-    control: (contractId: number | null, jobPositionId: number | null) =>
-      ["rent-structures", "control", contractId, jobPositionId] as const
+    control: (contractId: number | null, jobPositionId: number | null, month?: string) =>
+      ["rent-structures", "control", contractId, jobPositionId, month] as const
   },
   sanctions: {
     setupCatalogs: () => ["sanctions", "setup-catalogs"] as const,

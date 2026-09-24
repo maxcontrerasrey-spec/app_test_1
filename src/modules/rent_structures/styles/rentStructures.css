@@ -48,3 +48,44 @@
 @keyframes rent-shimmer { to { background-position: -200% 0; } }
 @media (max-width: 1180px) { .rent-workspace { grid-template-columns: 1fr; } }
 @media (max-width: 768px) { .rent-page-header { display: grid; gap: 0.25rem; } .rent-page-description { text-align: left; } .rent-selector-panel { grid-template-columns: 1fr; } .rent-selector-meta { justify-self: start; padding-bottom: 0; } .rent-workspace { grid-template-columns: 1fr; } }
+
+.rent-tab-shell { border-bottom: 1px solid var(--border-subtle); }
+.rent-view-tabs { gap: 0.2rem; }
+.rent-view-tabs .approval-chip { min-height: 2.1rem; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--text-secondary); font-size: 0.72rem; }
+.rent-view-tabs .approval-chip.tracking-kpi-card-active { border-bottom-color: var(--accent); background: transparent; color: var(--title); }
+.rent-selector-panel input[type="month"] { min-height: 2.45rem; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-card); color: var(--title); padding: 0 0.65rem; font: inherit; font-size: 0.8rem; }
+.rent-stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.45rem; }
+.rent-stat-card { display: grid; gap: 0.15rem; min-width: 0; padding: 0.55rem 0.6rem; border: 1px solid var(--border-subtle); border-radius: 5px; background: var(--surface-soft); }
+.rent-stat-card span { color: var(--text-secondary); font-size: 0.64rem; font-weight: 650; }
+.rent-stat-card strong { color: var(--title); font-size: 1rem; font-weight: 680; font-variant-numeric: tabular-nums; }
+.rent-stat-card small { color: var(--text-tertiary); font-size: 0.6rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rent-stat-card-accent { border-color: var(--accent-border); background: var(--accent-soft); }
+.rent-stat-card-positive strong { color: #166534; }
+.rent-stat-card-danger { border-color: rgba(185, 28, 28, 0.2); background: rgba(254, 242, 242, 0.72); }
+.rent-stat-card-danger strong { color: #b91c1c; }
+.rent-structure-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.65rem; }
+.rent-structure-section { overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 5px; }
+.rent-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 2rem; padding: 0.45rem 0.65rem; background: var(--surface-soft); color: var(--title); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.rent-section-heading strong { font-size: 0.74rem; font-variant-numeric: tabular-nums; }
+.rent-section-empty { padding: 0.6rem 0.65rem; color: var(--text-tertiary); font-size: 0.68rem; }
+.rent-line { min-height: 2rem; padding: 0.38rem 0.65rem; }
+.rent-line-label { font-size: 0.72rem; }
+.rent-line strong { font-size: 0.72rem; }
+.rent-concept-icon-legal_discount { background: rgba(254, 226, 226, 0.7); color: #b91c1c; }
+.rent-total-summary { display: flex; align-items: center; justify-content: space-between; margin-top: 0.65rem; padding: 0.62rem 0.7rem; background: var(--accent-soft); color: var(--title); font-size: 0.75rem; font-weight: 650; }
+.rent-total-summary strong { font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.rent-config-editor { display: grid; gap: 0.75rem; }
+.rent-config-topline { display: flex; align-items: end; justify-content: space-between; gap: 0.75rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--border-subtle); }
+.rent-config-topline label { display: grid; gap: 0.3rem; max-width: 13rem; }
+.rent-config-topline label span, .rent-config-section > .rent-section-heading span { color: var(--text-secondary); font-size: 0.68rem; font-weight: 650; }
+.rent-config-topline input, .rent-config-row input { min-height: 2.15rem; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-card); color: var(--title); padding: 0 0.55rem; font: inherit; font-size: 0.75rem; }
+.rent-primary-button { min-height: 2.15rem; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: white; padding: 0 0.8rem; font: inherit; font-size: 0.72rem; font-weight: 650; cursor: pointer; }
+.rent-primary-button:disabled { cursor: wait; opacity: 0.6; }
+.rent-config-section { display: grid; gap: 0.4rem; }
+.rent-config-section .rent-section-heading { padding: 0.25rem 0; background: transparent; }
+.rent-link-button, .rent-remove-button { border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 0.68rem; cursor: pointer; }
+.rent-config-row { display: grid; grid-template-columns: minmax(0, 1fr) 9rem auto; gap: 0.4rem; align-items: center; }
+.rent-remove-button { width: 1.8rem; color: var(--text-tertiary); font-size: 1rem; }
+.rent-config-note { margin: 0; padding: 0.6rem 0.65rem; border: 1px solid var(--border-subtle); background: var(--surface-soft); color: var(--text-tertiary); font-size: 0.68rem; line-height: 1.45; }
+@media (max-width: 1100px) { .rent-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 768px) { .rent-stat-grid, .rent-structure-grid { grid-template-columns: 1fr; } .rent-config-topline { align-items: stretch; flex-direction: column; } .rent-config-row { grid-template-columns: minmax(0, 1fr) 7rem auto; } }

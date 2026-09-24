@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-14",
-  "count": 87,
-  "fingerprintSha256": "cef9e6827a33aa6cdefb21c8cf63bc681245b1f8fbab2e869df1e234b2e68df5",
+  "baselineDate": "2026-09-24",
+  "count": 88,
+  "fingerprintSha256": "4f8e9e000deed39d4148d5298f95fb61caae3d82d2b6f6dc1e2ec5f88d9db680",
   "policy": "Any fingerprint change requires review; warnings cannot offset each other by count."
 }

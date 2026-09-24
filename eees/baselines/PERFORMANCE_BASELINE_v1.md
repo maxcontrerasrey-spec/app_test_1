@@ -157,7 +157,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 287888,
+  "cssTotalBytes": 293046,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

@@ -1,106 +1,51 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "../../../shared/ui";
-import { useRentStructureControl } from "../hooks/useRentStructuresQueries";
-import type { RentStructureLine } from "../services/rentStructuresApi";
+import { useRentStructureControl, useSaveRentStructureConfig } from "../hooks/useRentStructuresQueries";
+import type { RentStructureConfigLine, RentStructureLine } from "../services/rentStructuresApi";
 import "../styles/rentStructures.css";
 
 const money = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
+const decimal = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+type ViewKey = "control" | "configuracion";
 
-function ConceptIcon({ type }: { type: string }) {
-  const symbol = type.includes("total") ? "Σ" : type === "liquido" ? "$" : type === "no_imponible" ? "◇" : "＋";
-  return <span className={`rent-concept-icon rent-concept-icon-${type}`} aria-hidden="true">{symbol}</span>;
+function formatAmount(amount: number | null) { return amount === null ? "—" : `$ ${money.format(amount)}`; }
+function iconFor(type: string) { return type === "legal_discount" ? "−" : type === "no_imponible" ? "◇" : "＋"; }
+function ConceptIcon({ type }: { type: string }) { return <span className={`rent-concept-icon rent-concept-icon-${type}`} aria-hidden="true">{iconFor(type)}</span>; }
+
+function StructureSection({ title, code, lines, total }: { title: string; code: string; lines: RentStructureLine[]; total: number }) {
+  const sectionLines = lines.filter((line) => line.sectionCode === code);
+  return <section className="rent-structure-section" aria-label={title}><div className="rent-section-heading"><span>{title}</span><strong>{formatAmount(total)}</strong></div>{sectionLines.length ? sectionLines.map((line) => <div className="rent-line" key={line.id}><div className="rent-line-label"><ConceptIcon type={line.conceptType} />{line.conceptName}</div><strong>{formatAmount(line.amount)}</strong></div>) : <div className="rent-section-empty">Sin conceptos configurados.</div>}</section>;
 }
 
-function formatAmount(amount: number | null) {
-  return amount === null ? "—" : `$ ${money.format(amount)}`;
-}
+function StatCard({ label, value, detail, tone = "default" }: { label: string; value: string; detail: string; tone?: string }) { return <div className={`rent-stat-card rent-stat-card-${tone}`}><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>; }
 
-function StructureLines({ lines }: { lines: RentStructureLine[] }) {
-  if (!lines.length) {
-    return <div className="rent-empty-panel">Este cargo aún no tiene una estructura de renta configurada.</div>;
-  }
-
-  return (
-    <div className="rent-lines" role="table" aria-label="Estructura de renta">
-      {lines.map((line) => (
-        <div className={`rent-line rent-line-${line.conceptType}`} key={line.id} role="row">
-          <div className="rent-line-label" role="cell"><ConceptIcon type={line.conceptType} />{line.conceptName}</div>
-          <strong role="cell">{formatAmount(line.amount)}</strong>
-        </div>
-      ))}
-    </div>
-  );
+function ConfigEditor({ authorizedHeadcount, lines, onHeadcountChange, onLinesChange, onSave, isSaving }: { authorizedHeadcount: number; lines: RentStructureConfigLine[]; onHeadcountChange: (value: number) => void; onLinesChange: (lines: RentStructureConfigLine[]) => void; onSave: () => void; isSaving: boolean }) {
+  const addLine = (sectionCode: "imponible" | "no_imponible") => onLinesChange([...lines, { conceptCode: `concepto_${lines.length + 1}`, conceptName: "Nuevo concepto", sectionCode, amount: 0, sortOrder: lines.length * 10 + 10 }]);
+  const updateLine = (index: number, patch: Partial<RentStructureConfigLine>) => onLinesChange(lines.map((line, lineIndex) => lineIndex === index ? { ...line, ...patch } : line));
+  return <div className="rent-config-editor"><div className="rent-config-topline"><label><span>Cupos autorizados</span><input type="number" min="0" step="1" value={authorizedHeadcount} onChange={(event) => onHeadcountChange(Math.max(0, Number(event.target.value) || 0))} /></label><button className="rent-primary-button" type="button" onClick={onSave} disabled={isSaving}>{isSaving ? "Guardando…" : "Guardar configuración"}</button></div>{(["imponible", "no_imponible"] as const).map((sectionCode) => <section className="rent-config-section" key={sectionCode}><div className="rent-section-heading"><span>{sectionCode === "imponible" ? "Haberes imponibles" : "Haberes no imponibles"}</span><button className="rent-link-button" type="button" onClick={() => addLine(sectionCode)}>+ Agregar concepto</button></div>{lines.map((line, index) => line.sectionCode === sectionCode ? <div className="rent-config-row" key={`${line.conceptCode}-${index}`}><input aria-label="Nombre del concepto" value={line.conceptName} onChange={(event) => updateLine(index, { conceptName: event.target.value })} /><input aria-label="Monto del concepto" type="number" min="0" step="1" value={line.amount} onChange={(event) => updateLine(index, { amount: Math.max(0, Number(event.target.value) || 0) })} /><button className="rent-remove-button" type="button" aria-label={`Eliminar ${line.conceptName}`} onClick={() => onLinesChange(lines.filter((_, lineIndex) => lineIndex !== index))}>×</button></div> : null)}{!lines.some((line) => line.sectionCode === sectionCode) ? <div className="rent-section-empty">Agrega los conceptos que componen esta sección.</div> : null}</section>)}<p className="rent-config-note">Los descuentos legales se calculan automáticamente con parámetros vigentes versionados. No se editan como montos fijos.</p></div>;
 }
 
 export function RentStructuresPage() {
+  const [view, setView] = useState<ViewKey>("control");
   const [contractId, setContractId] = useState<number | null>(null);
   const [jobPositionId, setJobPositionId] = useState<number | null>(null);
-  const query = useRentStructureControl(contractId, jobPositionId);
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [authorizedHeadcount, setAuthorizedHeadcount] = useState(0);
+  const [configLines, setConfigLines] = useState<RentStructureConfigLine[]>([]);
+  const query = useRentStructureControl(contractId, jobPositionId, month);
+  const saveMutation = useSaveRentStructureConfig(contractId, jobPositionId, month);
   const contracts = query.data?.contracts ?? [];
   const positions = query.data?.positions ?? [];
-  const selectedPosition = useMemo(
-    () => positions.find((position) => position.id === jobPositionId) ?? null,
-    [jobPositionId, positions]
-  );
+  const selectedPosition = useMemo(() => positions.find((position) => position.id === jobPositionId) ?? null, [jobPositionId, positions]);
+  const detail = query.data?.structure ?? null;
 
-  useEffect(() => {
-    if (!contractId && contracts.length) {
-      const dsal = contracts.find((contract) => `${contract.contractName} ${contract.code}`.toLocaleLowerCase("es-CL").includes("dsal"));
-      setContractId((dsal ?? contracts[0]).id);
-    }
-  }, [contractId, contracts]);
+  useEffect(() => { if (!contractId && contracts.length) { const dsal = contracts.find((contract) => `${contract.contractName} ${contract.code}`.toLocaleLowerCase("es-CL").includes("dsal")); setContractId((dsal ?? contracts[0]).id); } }, [contractId, contracts]);
+  useEffect(() => { if (jobPositionId && !positions.some((position) => position.id === jobPositionId)) setJobPositionId(null); }, [jobPositionId, positions]);
+  useEffect(() => { setAuthorizedHeadcount(detail?.authorizedHeadcount ?? selectedPosition?.authorizedHeadcount ?? 0); setConfigLines((detail?.lines ?? []).filter((line) => line.sectionCode === "imponible" || line.sectionCode === "no_imponible").map((line) => ({ conceptCode: line.conceptCode, conceptName: line.conceptName, sectionCode: line.sectionCode as "imponible" | "no_imponible", amount: line.amount, sortOrder: line.sortOrder }))); }, [detail, selectedPosition]);
 
-  useEffect(() => {
-    if (jobPositionId && !positions.some((position) => position.id === jobPositionId)) setJobPositionId(null);
-  }, [jobPositionId, positions]);
+  const save = () => saveMutation.mutate({ authorizedHeadcount, lines: configLines });
+  const balanceLabel = !selectedPosition || selectedPosition.balance === null ? "Presupuesto pendiente" : selectedPosition.balance < 0 ? "Sobredotación" : "Cupos disponibles";
+  const legalLines = detail?.lines.filter((line) => line.sectionCode === "legal_discount") ?? [];
 
-  return (
-    <PageShell className="rent-structures-page">
-      <header className="minimal-page-header rent-page-header">
-        <div>
-          <span className="rent-eyebrow">Recursos Humanos · Control gerencial</span>
-          <h1>Control Estructuras de Renta</h1>
-        </div>
-        <p className="description rent-page-description">Consulta la renta definida y el presupuesto mensual por cargo habilitado en BUK.</p>
-      </header>
-
-      {query.isError ? <div className="rent-feedback rent-feedback-error">{(query.error as Error).message}</div> : null}
-
-      <section className="rent-selector-panel" aria-label="Selección de contrato y cargo">
-        <label>
-          <span>Contrato BUK</span>
-          <select value={contractId ?? ""} onChange={(event) => { setContractId(Number(event.target.value) || null); setJobPositionId(null); }} disabled={query.isLoading && !contracts.length}>
-            <option value="">Seleccione un contrato</option>
-            {contracts.map((contract) => <option value={contract.id} key={contract.id}>{contract.contractName}</option>)}
-          </select>
-        </label>
-        <div className="rent-selector-meta">{contractId ? `${positions.length} cargos habilitados por BUK` : "Partimos con el catálogo de Codelco DSAL"}</div>
-      </section>
-
-      <section className="rent-workspace">
-        <aside className="rent-position-panel">
-          <div className="rent-panel-heading"><div><span>Catálogo BUK</span><h2>Cargos habilitados</h2></div><b>{positions.length}</b></div>
-          {!contractId ? <div className="rent-empty-panel">Selecciona un contrato para ver sus cargos.</div> : null}
-          {contractId && query.isFetching && !positions.length ? <div className="rent-skeleton-list" aria-label="Cargando cargos"><i /><i /><i /></div> : null}
-          <div className="rent-position-list">
-            {positions.map((position) => (
-              <button type="button" className={`rent-position-item ${position.id === jobPositionId ? "is-active" : ""}`} key={position.id} onClick={() => setJobPositionId(position.id)}>
-                <span><strong>{position.name}</strong><small>{position.code}</small></span>
-                <span className={`rent-position-status ${position.hasStructure ? "is-ready" : ""}`}>{position.hasStructure ? "Definida" : "Pendiente"}</span>
-              </button>
-            ))}
-          </div>
-        </aside>
-
-        <section className="rent-detail-panel">
-          <div className="rent-panel-heading"><div><span>Estructura vigente</span><h2>{selectedPosition?.name ?? "Selecciona un cargo"}</h2></div></div>
-          {selectedPosition ? <div className="rent-budget-strip"><span>Presupuesto mensual por cargo</span><strong>{formatAmount(query.data?.structure?.monthlyBudget ?? selectedPosition.monthlyBudget)}</strong></div> : null}
-          {!selectedPosition ? <div className="rent-empty-panel">Elige un cargo a la izquierda para revisar sus conceptos.</div> : null}
-          {selectedPosition && query.isFetching ? <div className="rent-skeleton-lines"><i /><i /><i /><i /></div> : null}
-          {selectedPosition && !query.isFetching ? <StructureLines lines={query.data?.structure?.lines ?? []} /> : null}
-          {selectedPosition && !query.isFetching && !query.data?.structure ? <div className="rent-detail-footnote">La estructura está pendiente de parametrización; no se muestran montos estimados.</div> : null}
-        </section>
-      </section>
-    </PageShell>
-  );
+  return <PageShell className="rent-structures-page"><header className="minimal-page-header rent-page-header"><div><span className="rent-eyebrow">Recursos Humanos · Control gerencial</span><h1>Control Estructuras de Renta</h1></div><p className="description rent-page-description">Consulta, configura y compara la renta definida por cargo habilitado en BUK.</p></header><nav className="rent-tab-shell" aria-label="Secciones de estructuras de renta"><div className="approval-chip-row rent-view-tabs"><button type="button" className={`approval-chip ${view === "control" ? "tracking-kpi-card-active" : ""}`} onClick={() => setView("control")}>Control</button>{query.data?.canConfigure ? <button type="button" className={`approval-chip ${view === "configuracion" ? "tracking-kpi-card-active" : ""}`} onClick={() => setView("configuracion")}>Configuración</button> : null}</div></nav>{query.isError ? <div className="rent-feedback rent-feedback-error">{(query.error as Error).message}</div> : null}{saveMutation.isError ? <div className="rent-feedback rent-feedback-error">{(saveMutation.error as Error).message}</div> : null}<section className="rent-selector-panel" aria-label="Selección de contrato, cargo y mes"><label><span>Contrato BUK</span><select value={contractId ?? ""} onChange={(event) => { setContractId(Number(event.target.value) || null); setJobPositionId(null); }} disabled={query.isLoading && !contracts.length}><option value="">Seleccione un contrato</option>{contracts.map((contract) => <option value={contract.id} key={contract.id}>{contract.contractName}</option>)}</select></label><label><span>Mes de control</span><input type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label><div className="rent-selector-meta">{contractId ? `${positions.length} cargos habilitados por BUK` : "Catálogo inicial: Codelco DSAL"}</div></section><section className="rent-workspace"><aside className="rent-position-panel"><div className="rent-panel-heading"><div><span>Catálogo BUK</span><h2>Cargos habilitados</h2></div><b>{positions.length}</b></div>{!contractId ? <div className="rent-empty-panel">Selecciona un contrato para ver sus cargos.</div> : null}{contractId && query.isFetching && !positions.length ? <div className="rent-skeleton-list" aria-label="Cargando cargos"><i /><i /><i /></div> : null}<div className="rent-position-list">{positions.map((position) => <button type="button" className={`rent-position-item ${position.id === jobPositionId ? "is-active" : ""}`} key={position.id} onClick={() => setJobPositionId(position.id)}><span><strong>{position.name}</strong><small>{position.code}</small></span><span className={`rent-position-status ${position.hasStructure ? "is-ready" : ""}`}>{position.hasStructure ? "Definida" : "Pendiente"}</span></button>)}</div></aside><section className="rent-detail-panel"><div className="rent-panel-heading"><div><span>{view === "control" ? "Estructura vigente" : "Mantenedor de renta"}</span><h2>{selectedPosition?.name ?? "Selecciona un cargo"}</h2></div></div>{!selectedPosition ? <div className="rent-empty-panel">Elige un cargo a la izquierda para revisar o configurar sus conceptos.</div> : null}{selectedPosition && view === "control" ? <><div className="rent-stat-grid"><StatCard label="Presupuesto" value={String(selectedPosition.authorizedHeadcount)} detail="cupos autorizados" tone="accent" /><StatCard label="Contratado" value={String(selectedPosition.contractedCount)} detail="personas activas BUK" /><StatCard label="Presente" value={decimal.format(selectedPosition.presentEquivalent)} detail="equivalentes / 30 días" /><StatCard label="Balance" value={selectedPosition.balance === null ? "—" : selectedPosition.balance > 0 ? `+${selectedPosition.balance}` : String(selectedPosition.balance)} detail={balanceLabel} tone={selectedPosition.balance === null ? "default" : selectedPosition.balance < 0 ? "danger" : "positive"} /><StatCard label="Cobertura" value={selectedPosition.coverage === null ? "—" : `${Math.round(selectedPosition.coverage * 100)}%`} detail="presente / presupuesto" /></div>{query.isFetching ? <div className="rent-skeleton-lines"><i /><i /><i /><i /></div> : detail ? <div className="rent-structure-grid"><div><StructureSection title="Haberes imponibles" code="imponible" lines={detail.lines} total={detail.totals.imponible} /><StructureSection title="Haberes no imponibles" code="no_imponible" lines={detail.lines} total={detail.totals.noImponible} /></div><div><StructureSection title="Descuentos legales" code="legal_discount" lines={legalLines} total={detail.totals.legalDiscounts} /><div className="rent-total-summary"><span>Líquido estimado</span><strong>{formatAmount(detail.totals.liquidoEstimated)}</strong></div><p className="rent-detail-footnote">Estimación referencial; AFP, salud, tipo de contrato y topes deben validarse con la ficha individual.</p></div></div> : <div className="rent-empty-panel">Este cargo aún no tiene una estructura de renta configurada.</div>}</> : null}{selectedPosition && view === "configuracion" ? <ConfigEditor authorizedHeadcount={authorizedHeadcount} lines={configLines} onHeadcountChange={setAuthorizedHeadcount} onLinesChange={setConfigLines} onSave={save} isSaving={saveMutation.isPending} /> : null}</section></section></PageShell>;
 }
