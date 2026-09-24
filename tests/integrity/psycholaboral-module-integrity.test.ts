@@ -18,6 +18,7 @@ const psychologistDocumentMigration = readFileSync("supabase/migrations/20260817
 const psychologistReviewHashFixMigration = readFileSync("supabase/migrations/20260818233000_fix_psych_review_output_hash_ambiguity.sql", "utf8");
 const psychologistDocumentTypeFixMigration = readFileSync("supabase/migrations/20260819131500_fix_psych_report_document_type_ambiguity.sql", "utf8");
 const decisionSeparationMigration = readFileSync("supabase/migrations/20260819230000_separate_psycholaboral_report_decisions.sql", "utf8");
+const contingencyEligibilityMigration = readFileSync("supabase/migrations/20260924120000_allow_psycholaboral_for_contingency_hires.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
@@ -93,6 +94,17 @@ describe("Gestión Psicolaboral", () => {
     expect(migration).not.toContain("jsonb_object_length(");
     expect(migration).toContain("extensions.digest(");
     expect(migration).toContain("private.jsonb_object_size");
+  });
+
+  it("permite evaluar a contratados por contingencia solo con evidencia BUK verificable", () => {
+    expect(contingencyEligibilityMigration).toContain("psycholaboral_candidate_has_eligible_process");
+    expect(contingencyEligibilityMigration).toContain("rcc.stage_code = 'hired'");
+    expect(contingencyEligibilityMigration).toContain("recruitment_case_external_hires");
+    expect(contingencyEligibilityMigration).toContain("is_effective_buk_generation_success");
+    expect(contingencyEligibilityMigration).toContain("El candidato ya no tiene un proceso elegible para evaluación");
+    expect(contingencyEligibilityMigration).not.toContain("update public.recruitment_case_candidates");
+    expect(contingencyEligibilityMigration).toContain("revoke all on function public.psycholaboral_candidate_has_eligible_process(uuid)");
+    expect(contingencyEligibilityMigration).toContain("public.psycholaboral_candidate_has_eligible_process(a.recruitment_case_candidate_id)");
   });
 
   it("no automatiza el rechazo por puntaje y usa la transición oficial", () => {

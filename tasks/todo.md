@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Permitir psicotest a contratados por contingencia — 2026-09-24
+
+- [x] Identificar la validación que bloquea el envío y la evidencia autoritativa de contratación BUK/contingencia.
+- [x] Reemplazar el guard de envío y de acceso público por una regla común, acotada a candidatos contratados con respaldo BUK verificable.
+- [x] Agregar cobertura de integridad para impedir que el bypass se convierta en una autorización general.
+- [x] Ejecutar auditorías SQL, pruebas, Guardian, validar el flujo productivo y publicar la corrección.
+
+Resultado: la migración `20260924120000_allow_psycholaboral_for_contingency_hires` quedó aplicada en producción. Los candidatos `hired` por contingencia pueden recibir y abrir el test únicamente si tienen un ID BUK efectivo o una evidencia de alta BUK externa vinculada; no se reabren procesos ni se relaja el acceso a candidatos sin respaldo. Pasaron integridad, auditorías, build y Guardian (`0 errores, 0 warnings`).
+
 ## Seleccionar ficha BUK en movilidad interna — 2026-09-24
 
 - [x] Confirmar el contrato productivo de búsqueda, contexto y creación de movilidad interna.

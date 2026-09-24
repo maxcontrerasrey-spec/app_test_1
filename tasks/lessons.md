@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 370. La población psicolaboral y su guard de envío deben compartir la misma elegibilidad
+
+- Mostrar un candidato `hired` en Psicolaboral sin actualizar el RPC de preparación produce una fila visible como `No realizado` cuyo botón siempre falla.
+- Los contratados por contingencia deben habilitarse solo con evidencia BUK autoritativa vinculada al candidato: generación efectiva o alta externa reconciliada; nunca por la etapa `hired` sola.
+- La misma regla debe gobernar preparación, canje del enlace y reanudación de sesión, sin reabrir folios, cambiar etapas ni ampliar permisos.
+
 ## Leccion 2026-09-24 — Una migracion PL/pgSQL necesita prueba de ejecucion y la cola necesita worker persistente
 
 - Una migracion puede aplicar aunque el cuerpo de una RPC tenga una referencia de columna incorrecta; los contratos estaticos no sustituyen una prueba transaccional o una definicion viva inspeccionada.
