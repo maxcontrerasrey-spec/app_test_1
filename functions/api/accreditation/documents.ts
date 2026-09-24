@@ -7,7 +7,7 @@ interface AccreditationStorageEnv {
   };
 }
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 1024 * 1024;
 const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 
 function json(body: Record<string, unknown>, status = 200) {
@@ -74,6 +74,8 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
     const formData = await request.formData();
     const employeeId = String(formData.get("employeeId") ?? "").trim();
     const documentNumber = String(formData.get("documentNumber") ?? "").trim();
+    const contractCode = String(formData.get("contractCode") ?? "").trim();
+    const requirementCode = String(formData.get("requirementCode") ?? "").trim();
     const siteId = String(formData.get("siteId") ?? "").trim();
     const requirementId = String(formData.get("requirementId") ?? "").trim();
     const status = String(formData.get("status") ?? "submitted").trim();
@@ -83,21 +85,23 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
     const file = formData.get("file");
     const documentName = String(formData.get("documentName") ?? (file instanceof File ? file.name : "documento.pdf")).trim();
 
-    if (!employeeId || !siteId || !requirementId) throw new Error("Debe indicar trabajador, faena y requisito.");
+    if (!employeeId || !siteId || !requirementId || !contractCode || !documentNumber || !requirementCode) {
+      throw new Error("Faltan contrato, RUT o requisito para construir la ruta documental.");
+    }
     if (!(file instanceof File) || file.size <= 0) throw new Error("Debe adjuntar un archivo.");
-    if (file.size > MAX_FILE_SIZE_BYTES) throw new Error("El archivo supera el maximo permitido de 10 MB.");
+    if (file.size >= MAX_FILE_SIZE_BYTES) throw new Error("El archivo debe pesar menos de 1 MB.");
     if (!ALLOWED_FILE_TYPES.has(file.type)) throw new Error("Solo se permiten archivos PDF, PNG o JPG.");
 
     const bytes = await file.arrayBuffer();
     if (!signatureMatches(new Uint8Array(bytes), file.type)) throw new Error("El contenido no coincide con el formato declarado.");
     const fileSha256 = await sha256Hex(bytes);
     const normalizedName = documentName || `${file.name}`;
-    const objectKey = `accreditation/${safeSegment(siteId)}/${safeSegment(documentNumber || employeeId)}/${safeSegment(requirementId)}/${safeSegment(normalizedName)}`;
+    const objectKey = `accreditation/${safeSegment(contractCode)}/${safeSegment(documentNumber)}/${safeSegment(requirementCode)}/${safeSegment(normalizedName)}`;
     const existing = await env.R2_BUCKET.head(objectKey);
     if (!existing) {
       await env.R2_BUCKET.put(objectKey, bytes, {
         httpMetadata: { contentType: file.type, contentDisposition: `inline; filename="${file.name.replace(/[\"\r\n]/g, "_")}"` },
-        customMetadata: { module: "accreditation", employeeId, documentNumber, siteId, requirementId, sha256: fileSha256 }
+        customMetadata: { module: "accreditation", employeeId, documentNumber, contractCode, siteId, requirementId, requirementCode, sha256: fileSha256 }
       });
     }
 

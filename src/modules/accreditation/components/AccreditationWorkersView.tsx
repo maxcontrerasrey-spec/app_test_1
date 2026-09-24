@@ -29,6 +29,8 @@ const accreditationStatusOptions = [
   { value: "expired", label: "Vencido" }
 ];
 
+const MAX_ACCREDITATION_FILE_BYTES = 1024 * 1024;
+
 export function AccreditationWorkersView() {
   const queryClient = useQueryClient();
   const setupQuery = useAccreditationSetupCatalogs();
@@ -110,10 +112,27 @@ export function AccreditationWorkersView() {
 
     try {
       if (selectedFile) {
+        if (selectedFile.size >= MAX_ACCREDITATION_FILE_BYTES) {
+          setFeedback("El archivo debe pesar menos de 1 MB para cargarlo en Acreditación.");
+          setSelectedFile(null);
+          return;
+        }
         const documentNumber = profileQuery.data?.worker.documentNumber ?? null;
+        const contractCode = profileQuery.data?.worker.contractCode
+          ?? setupQuery.data?.sites.find((site) => site.id === selectedSiteId)?.contractCode
+          ?? "";
+        const selectedDocument = (profileQuery.data?.documents ?? []).find(
+          (document) => document.requirementId === documentForm.requirementId
+        );
+        if (!contractCode || !selectedDocument?.requirementCode) {
+          setFeedback("No fue posible resolver contrato y requisito para la ruta del documento.");
+          return;
+        }
         await uploadAccreditationDocumentToR2({
           employeeId: selectedBukEmployeeId,
           documentNumber,
+          contractCode,
+          requirementCode: selectedDocument.requirementCode,
           file: selectedFile,
           siteId: selectedSiteId,
           requirementId: documentForm.requirementId,
@@ -357,7 +376,17 @@ export function AccreditationWorkersView() {
                     id="accreditation-document-file"
                     className="text-field"
                     type="file"
-                    onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      if (file && file.size >= MAX_ACCREDITATION_FILE_BYTES) {
+                        setSelectedFile(null);
+                        setFeedback("El archivo debe pesar menos de 1 MB para cargarlo en Acreditación.");
+                        event.target.value = "";
+                        return;
+                      }
+                      setFeedback(null);
+                      setSelectedFile(file);
+                    }}
                   />
                 </div>
               </div>

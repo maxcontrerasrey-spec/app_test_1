@@ -628,6 +628,8 @@ export async function uploadAccreditationDocumentToBuk(input: {
 export async function uploadAccreditationDocumentToR2(input: {
   employeeId: string;
   documentNumber?: string | null;
+  contractCode: string;
+  requirementCode: string;
   file: File;
   siteId: string;
   requirementId: string;
@@ -646,6 +648,8 @@ export async function uploadAccreditationDocumentToR2(input: {
   const formData = new FormData();
   formData.append("employeeId", input.employeeId);
   formData.append("documentNumber", input.documentNumber ?? "");
+  formData.append("contractCode", input.contractCode);
+  formData.append("requirementCode", input.requirementCode);
   formData.append("documentName", buildAccreditationDocumentFileName(input.file.name, input.documentNumber));
   formData.append("file", input.file);
   formData.append("siteId", input.siteId);
