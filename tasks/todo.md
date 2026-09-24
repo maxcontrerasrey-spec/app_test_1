@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corregir radios de respuestas psicolaborales — 2026-09-24
+
+- [x] Confirmar si la respuesta está persistida y aislar la diferencia entre valor guardado y valor visual.
+- [x] Normalizar la comparación y el valor controlado de las alternativas del test.
+- [x] Agregar cobertura de integridad, ejecutar build, Guardian y publicar en producción.
+
+Resultado: la respuesta de Geraline Alejandra Aguirre Soto estaba persistida en producción, pero la selección visual podía fallar cuando el valor recuperado llegaba como texto. El frontend ahora normaliza valores numéricos/textuales, mantiene el radio y la clase visual seleccionados y publica la corrección mediante el build productivo.
+
 ## Permitir psicotest a contratados por contingencia — 2026-09-24
 
 - [x] Identificar la validación que bloquea el envío y la evidencia autoritativa de contratación BUK/contingencia.

@@ -6,6 +6,12 @@
 - Los contratados por contingencia deben habilitarse solo con evidencia BUK autoritativa vinculada al candidato: generación efectiva o alta externa reconciliada; nunca por la etapa `hired` sola.
 - La misma regla debe gobernar preparación, canje del enlace y reanudación de sesión, sin reabrir folios, cambiar etapas ni ampliar permisos.
 
+## 371. Las respuestas psicolaborales deben normalizarse antes de compararlas en UI
+
+- La respuesta puede estar correctamente persistida en JSON como número y llegar al navegador como texto según el transporte o una sesión recuperada.
+- Comparar con `===` el valor recibido contra la opción puede mostrar una alternativa como no seleccionada aunque el dato exista; normalizar ambos lados conserva la respuesta y su indicador visual.
+- La prueba debe cubrir persistencia y representación, no solo el conteo de respuestas completadas.
+
 ## Leccion 2026-09-24 — Una migracion PL/pgSQL necesita prueba de ejecucion y la cola necesita worker persistente
 
 - Una migracion puede aplicar aunque el cuerpo de una RPC tenga una referencia de columna incorrecta; los contratos estaticos no sustituyen una prueba transaccional o una definicion viva inspeccionada.

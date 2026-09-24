@@ -45,6 +45,13 @@ describe("Gestión Psicolaboral", () => {
     expect(assessmentStyles).toContain("button[aria-current=\"step\"]");
   });
 
+  it("mantiene marcada una respuesta recuperada aunque el transporte cambie su tipo", () => {
+    expect(assessmentPage).toContain("const answerValue = (value: number | string | null | undefined) =>");
+    expect(assessmentPage).toContain("answerValue(answers[String(question.order)]) ===");
+    expect(assessmentPage).toContain("aria-checked={answerValue(answers[String(question.order)]) === answerValue(option.value)}");
+    expect(assessmentPage).toContain("[String(question.order)]: answerValue(option.value)");
+  });
+
   it("serializa los autoguardados y espera el último avance antes de finalizar", () => {
     expect(assessmentPage).toContain("const saveQueueRef = useRef<Promise<void> | null>(null)");
     expect(assessmentPage).toContain("pendingSaveRef.current = { code: instrument.code, snapshot }");

@@ -18,6 +18,8 @@ const remaining = (deadline: string) =>
   Math.max(0, Math.floor((new Date(deadline).getTime() - Date.now()) / 1000));
 const clock = (seconds: number) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+const answerValue = (value: number | string | null | undefined) =>
+  Number(value);
 
 export function PsychometricAssessmentPage() {
   const [params] = useSearchParams();
@@ -540,7 +542,8 @@ export function PsychometricAssessmentPage() {
                     <label
                       key={option.value}
                       className={
-                        answers[String(question.order)] === option.value
+                        answerValue(answers[String(question.order)]) ===
+                        answerValue(option.value)
                           ? "selected"
                           : ""
                       }
@@ -549,13 +552,12 @@ export function PsychometricAssessmentPage() {
                         type="radio"
                         name={`${instrument.code}-${question.order}`}
                         value={option.value}
-                        checked={
-                          answers[String(question.order)] === option.value
-                        }
+                        checked={answerValue(answers[String(question.order)]) === answerValue(option.value)}
+                        aria-checked={answerValue(answers[String(question.order)]) === answerValue(option.value)}
                         onChange={() => {
                           setAnswers((current) => ({
                             ...current,
-                            [String(question.order)]: option.value,
+                            [String(question.order)]: answerValue(option.value),
                           }));
                           setSaved("Cambios pendientes");
                         }}
