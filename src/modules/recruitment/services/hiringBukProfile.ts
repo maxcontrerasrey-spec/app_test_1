@@ -1,6 +1,9 @@
 import { supabase } from "../../../shared/lib/supabase";
 import { formatRut, normalizeRut } from "../../../shared/lib/rut";
-import { getSupabaseErrorMessage } from "../../../shared/lib/supabaseRpc";
+import {
+  getSupabaseErrorMessage,
+  getSupabaseFunctionErrorMessage
+} from "../../../shared/lib/supabaseRpc";
 import type { CandidateBukProfileDetails, CandidateDocumentValidationSummary, CandidateWorkerFile } from "./hiringControlTypes";
 
 export async function fetchCandidateBukProfile(caseCandidateId: string): Promise<{
@@ -369,10 +372,9 @@ export async function enqueueCandidatesToBukContingency(
     return {
       data: queuedJobs,
       error: null,
-      dispatchError: getSupabaseErrorMessage(
+      dispatchError: await getSupabaseFunctionErrorMessage(
         dispatch.error,
-        "La carga quedó encolada, pero no fue posible iniciar la sincronización con BUK.",
-        "message"
+        "La carga quedó encolada, pero no fue posible iniciar la sincronización con BUK."
       )
     };
   }
@@ -524,10 +526,9 @@ async function dispatchBukCandidateDocumentQueue(jobIds: string[]) {
     if (error) {
       return {
         queues,
-        error: getSupabaseErrorMessage(
+        error: await getSupabaseFunctionErrorMessage(
           error,
-          "La Solicitud quedó cargada, pero no fue posible continuar la cola documental BUK.",
-          "message"
+          "La Solicitud quedó cargada, pero no fue posible continuar la cola documental BUK."
         )
       };
     }
@@ -622,10 +623,9 @@ export async function generateCandidatesInBuk(candidateIds: string[]) {
           continue;
         }
       }
-      dispatchError = dispatchError ?? getSupabaseErrorMessage(
+      dispatchError = dispatchError ?? await getSupabaseFunctionErrorMessage(
         error,
-        "No fue posible ejecutar la sincronización automática con BUK.",
-        "message"
+        "No fue posible ejecutar la sincronización automática con BUK."
       );
       continue;
     }

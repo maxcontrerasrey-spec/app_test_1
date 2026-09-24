@@ -129,6 +129,7 @@ describe("Solicitud de Contratación ERP", () => {
 
   it("separa documentos generales en una cola acotada y reintentable", () => {
     const edge = read("supabase/functions/sync-buk-candidates/index.ts");
+    const client = read("src/modules/recruitment/services/hiringBukProfile.ts");
     const migration = read(
       "supabase/migrations/20260924110000_separate_buk_candidate_document_queue.sql"
     );
@@ -138,6 +139,7 @@ describe("Solicitud de Contratación ERP", () => {
     expect(edge).toContain("runCandidateDocumentQueue");
     expect(edge).toContain("isAmbiguousBukDocumentError");
     expect(edge).not.toContain("await processDocuments(");
+    expect(client.match(/await getSupabaseFunctionErrorMessage\(/g)).toHaveLength(3);
     expect(migration).toContain("claim_buk_candidate_document_jobs");
     expect(migration).toContain("max_concurrency integer not null default 3");
     expect(migration).toContain("for update skip locked");
