@@ -153,7 +153,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 276014,
+  "cssTotalBytes": 279631,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -178,6 +178,8 @@ Revision 2026-09-22 calendario general por contrato: el rediseño de la vista a�
 Revision 2026-09-22 filtro de administrador de contrato en Jornadas: CSS queda en 269,823 bytes, +71 bytes medidos por Guardian para la nueva selección de administrador y su comportamiento responsive. No agrega JS, vendors, assets trackeados ni modifica permisos.
 
 Revision 2026-09-23 comentarios de revisión psicolaboral: CSS queda en 269,824 bytes, +1 byte medido por Guardian para ampliar el campo visible de observaciones profesionales a 220 px. No agrega dependencias, permisos ni cambios de datos.
+
+Revision 2026-09-24 dinamismo de acceso: CSS queda en 279,631 bytes por incorporar movimiento ambiental, entrada escalonada, brillo sutil del panel y soporte `prefers-reduced-motion` al login. Mantiene `fondo.webp`, el logo JM, la paleta existente y la lógica de autenticación; no agrega dependencias, vendors ni assets trackeados.
 Revision 2026-09-24 magnificación de sidebar comprimida: CSS queda en 270,737 bytes, +913 bytes medidos por Guardian para la interacción Dock del rail de navegación. No agrega dependencias, JS, permisos ni cambios de layout fuera del estado colapsado.
 
 Revision 2026-09-24 Acreditación compacta: CSS queda en 276,014 bytes, +5,277 bytes medidos por Guardian para reemplazar tarjetas anidadas por filas planas, compactar filtros, limitar el listado y responder con la sidebar expandida en escritorio, ancho intermedio y móvil. El módulo permanece lazy, no agrega dependencias, vendors, assets ni cambios de datos; la tolerancia vuelve a cero sobre el artefacto validado.

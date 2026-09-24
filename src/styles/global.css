@@ -8408,3 +8408,180 @@ textarea:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Login motion layer: preserves the existing JM palette and fondo.webp asset. */
+.login-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.login-shell::before,
+.login-shell::after {
+  position: absolute;
+  inset: -18%;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+}
+
+.login-shell::before {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.16), transparent 20%),
+    radial-gradient(circle at 78% 72%, rgba(45, 99, 255, 0.14), transparent 24%);
+  animation: login-atmosphere-drift 18s ease-in-out infinite alternate;
+}
+
+.login-shell::after {
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.08) 48%, transparent 60%);
+  transform: translateX(-70%) rotate(8deg);
+  animation: login-background-sheen 14s ease-in-out infinite;
+}
+
+.login-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.login-ambient-orbit,
+.login-ambient-glint {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  transform: rotate(-18deg);
+}
+
+.login-ambient-orbit-one {
+  width: min(64vw, 720px);
+  height: min(22vw, 250px);
+  right: -14%;
+  bottom: 9%;
+  box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.015), 0 0 0 38px rgba(45, 99, 255, 0.02);
+  animation: login-orbit-float 12s ease-in-out infinite alternate;
+}
+
+.login-ambient-orbit-two {
+  width: min(42vw, 520px);
+  height: min(16vw, 180px);
+  top: 11%;
+  left: -12%;
+  border-color: rgba(255, 255, 255, 0.1);
+  animation: login-orbit-float-reverse 16s ease-in-out infinite alternate;
+}
+
+.login-ambient-glint {
+  width: 7px;
+  height: 7px;
+  top: 28%;
+  right: 24%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 0 18px 4px rgba(255, 255, 255, 0.28);
+  animation: login-glint-pulse 4.5s ease-in-out infinite;
+}
+
+.login-glass-card {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  animation: login-card-enter 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.login-glass-card::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.14), transparent 27%, transparent 72%, rgba(255, 255, 255, 0.05));
+  opacity: 0.8;
+}
+
+.login-glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.app-logo-login {
+  animation: login-logo-float 5s ease-in-out 180ms infinite;
+}
+
+.login-form-content {
+  animation: login-content-reveal 680ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.glass-input-group {
+  transition: border-color 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+}
+
+.glass-input-group:focus-within {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.glass-submit-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+@keyframes login-card-enter {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes login-content-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes login-logo-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(-1deg); }
+}
+
+@keyframes login-atmosphere-drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to { transform: translate3d(2%, 1%, 0) scale(1.04); }
+}
+
+@keyframes login-background-sheen {
+  0%, 32% { transform: translateX(-70%) rotate(8deg); opacity: 0; }
+  48% { opacity: 1; }
+  66%, 100% { transform: translateX(70%) rotate(8deg); opacity: 0; }
+}
+
+@keyframes login-orbit-float {
+  from { transform: translate3d(0, 0, 0) rotate(-18deg); }
+  to { transform: translate3d(-2%, -8%, 0) rotate(-14deg); }
+}
+
+@keyframes login-orbit-float-reverse {
+  from { transform: translate3d(0, 0, 0) rotate(-18deg); }
+  to { transform: translate3d(8%, 5%, 0) rotate(-23deg); }
+}
+
+@keyframes login-glint-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shell::before,
+  .login-shell::after,
+  .login-ambient-orbit,
+  .login-ambient-glint,
+  .login-glass-card,
+  .app-logo-login,
+  .login-form-content {
+    animation: none;
+  }
+
+  .login-glass-card,
+  .login-form-content {
+    opacity: 1;
+    transform: none;
+  }
+}

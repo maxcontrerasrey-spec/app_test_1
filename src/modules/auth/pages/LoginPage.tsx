@@ -108,6 +108,11 @@ export function LoginPage() {
 
   return (
     <section className="login-shell">
+      <div className="login-ambient" aria-hidden="true">
+        <span className="login-ambient-orbit login-ambient-orbit-one" />
+        <span className="login-ambient-orbit login-ambient-orbit-two" />
+        <span className="login-ambient-glint" />
+      </div>
       <div className="login-glass-card">
         <div className="login-brand-top">
           <img alt="Logo JM" className="app-logo-login" src={jmLogo} />

@@ -1,5 +1,12 @@
 # Tareas y Roadmap de Desarrollo
 
+## Dinamismo visual del login — 2026-09-24
+
+- [x] Auditar la composición actual del login y sus recursos visuales.
+- [x] Implementar movimiento ambiental y microinteracciones preservando colores, fotografías y autenticación.
+- [x] Validar accesibilidad, responsive, reduced motion y build frontend.
+- [ ] Publicar únicamente después de superar los gates locales y remotos.
+
 ## Auditoría integral del árbol y publicación — 2026-09-24
 
 - [x] Auditar estado de ramas, cambios locales, árbol documental, migraciones, seguridad, integridad y build.
