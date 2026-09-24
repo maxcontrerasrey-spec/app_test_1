@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.38
+version: 1.0.39
 status: Activo
 language: es-CL
 owner: Quality
@@ -69,6 +69,8 @@ Revision 2026-07-30 navegacion movil: el total global sube 2,464 bytes, JS sube 
 Revision 2026-07-30 navegacion movil reapertura: el total global sube 330 bytes, JS sube 199 bytes y CSS sube 131 bytes por renderizar el panel movil como hermano directo del header, fuera del scroller horizontal, y elevarlo sobre widgets flotantes como ORION. No agrega vendors, rutas lazy ni assets trackeados.
 
 Revision 2026-07-30 ficha BUK obligatoria: el total global sube 189 bytes y JS sube 189 bytes por mostrar campos faltantes de la ficha del candidato y exigir tallas antes de habilitar el avance a `Listo para contratar`. No agrega vendors, rutas lazy, CSS ni assets trackeados.
+
+Revision 2026-09-24 selector explícito de fichas BUK en movilidad interna: CSS sube 857 bytes, de 285,866 a 286,723, para mostrar una elección persistente entre fichas activas del mismo RUT. No agrega vendors ni assets, y conserva el ID BUK exacto enviado al backend.
 
 Revision 2026-08-03 auditoria integral: se eliminan el generador PDF local sin consumidores, cinco lecturas duplicadas del servicio de competencias y las dependencias frontend PDF/QR asociadas. El cambio reduce 903 lineas de codigo, 642,227 bytes de `dist`, 478,046 bytes de JS y tres chunks respecto del baseline machine-readable anterior. La generacion de certificados permanece en su Edge Function con dependencias propias y el frontend conserva ECharts/XLSX lazy.
 
@@ -153,7 +155,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 285866,
+  "cssTotalBytes": 286723,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

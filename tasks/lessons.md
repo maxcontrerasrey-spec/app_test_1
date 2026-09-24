@@ -3911,3 +3911,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Si un proceso admite legítimamente más de una ficha activa para el mismo RUT, no debe consultar una vista deduplicada por identidad: debe resolver, validar y persistir el `buk_employee_id` seleccionado.
 - La excepción debe quedar limitada al módulo que la necesita; no corresponde retirar la deduplicación global de trabajadores porque cambiaría Jornadas, Incentivos y otros flujos.
 - La selección visual no basta: bloqueos, idempotencia, snapshots y auditoría deben operar sobre la misma ficha exacta para impedir que una validación posterior vuelva a escoger otra ficha del trabajador.
+
+## Leccion 2026-09-24 — La selección de ficha BUK debe persistir cuando un RUT tiene duplicados activos
+
+- Un lookup genérico que colapsa a nombre/RUT permite seleccionar un registro pero oculta las alternativas después del primer click.
+- Cuando `active_record_count > 1`, mostrar un selector explícito por `buk_employee_id` y área, y conservar ese ID en contexto y submit.
+- El backend debe validar ese ID exacto; no deduplicar por RUT ni cambiar de ficha por similitud.

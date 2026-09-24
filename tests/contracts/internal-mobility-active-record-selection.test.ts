@@ -51,6 +51,9 @@ describe("internal mobility active BUK record selection", () => {
   it("makes the exceptional choice explicit without changing the normal flow", () => {
     expect(service).toContain("activeRecordCount: Math.max(1");
     expect(lookup).toContain("getAreaName={buildInternalMobilityWorkerRecordLabel}");
+    expect(lookup).toContain("Selecciona la ficha BUK que será movilizada");
+    expect(lookup).toContain("aria-pressed={worker.bukEmployeeId === selectedBukEmployeeId}");
+    expect(lookup).toContain("worker.documentNumber.replace(/[^0-9Kk]/g, \"\").toUpperCase() === selectedDocument");
     expect(page).toContain("selectedWorker.activeRecordCount > 1");
     expect(page).toContain("afectará únicamente la ficha");
   });

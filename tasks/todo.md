@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Selector explícito de fichas BUK en movilidad interna — 2026-09-24
+
+- [x] Confirmar fichas activas duplicadas y el comportamiento actual del selector.
+- [x] Mostrar una selección persistente de fichas cuando el RUT tenga más de una ficha activa.
+- [x] Mantener el ID BUK exacto en contexto y envío, con cobertura de contrato.
+- [x] Ejecutar build, Guardian, publicar y verificar el bundle productivo.
+
+Resultado parcial: Ivan Rodrigo Arriagada Melo tiene dos fichas BUK activas (11244 en CODELCO VP CHUQUI y 33588 en NEWREST ANTUCOYA SIMSA). El lookup ahora muestra ambas fichas en botones persistentes; la ficha elegida se conserva por `buk_employee_id` y se envía al backend sin modificar el contrato existente.
+
+Resultado final: las pruebas contractuales (54), el build frontend y Guardian (0 errores, 0 warnings) pasaron. Falta únicamente publicar y comprobar el chunk público.
+
 ## Corregir radios de respuestas psicolaborales — 2026-09-24
 
 - [x] Confirmar si la respuesta está persistida y aislar la diferencia entre valor guardado y valor visual.
