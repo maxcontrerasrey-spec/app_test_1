@@ -2,11 +2,13 @@
 
 ## Seleccionar ficha BUK en movilidad interna — 2026-09-24
 
-- [ ] Confirmar el contrato productivo de búsqueda, contexto y creación de movilidad interna.
-- [ ] Permitir que la búsqueda del módulo devuelva cada ficha BUK activa sin deduplicar por RUT.
-- [ ] Identificar visualmente las personas con múltiples fichas y conservar la ficha seleccionada por `buk_employee_id`.
-- [ ] Validar en backend la ficha activa exacta y mantener los bloqueos transaccionales por ficha.
-- [ ] Ejecutar pruebas, auditorías, Guardian, build y verificación productiva sin afectar otros módulos.
+- [x] Confirmar el contrato productivo de búsqueda, contexto y creación de movilidad interna.
+- [x] Permitir que la búsqueda del módulo devuelva cada ficha BUK activa sin deduplicar por RUT.
+- [x] Identificar visualmente las personas con múltiples fichas y conservar la ficha seleccionada por `buk_employee_id`.
+- [x] Validar en backend la ficha activa exacta y mantener los bloqueos transaccionales por ficha.
+- [x] Ejecutar pruebas, auditorías, Guardian, build y verificación productiva sin afectar otros módulos.
+
+Resultado: Movilidad Interna devuelve cada ficha BUK activa y solo muestra el selector explícito cuando un mismo RUT conserva más de una. La ficha elegida queda identificada por `buk_employee_id` en contexto, solicitud, snapshot, auditoría y bloqueo transaccional; las personas con una ficha mantienen el flujo anterior y no se alteró la deduplicación global utilizada por otros módulos. La migración quedó aplicada en producción y la entrega superó pruebas focalizadas, TypeScript, auditorías, build y Guardian sin errores ni advertencias.
 
 ## Dinamismo visual del login — 2026-09-24
 

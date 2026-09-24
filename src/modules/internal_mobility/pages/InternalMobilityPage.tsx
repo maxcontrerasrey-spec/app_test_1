@@ -274,6 +274,17 @@ export function InternalMobilityPage() {
                 readOnly
               />
             </div>
+            {selectedWorker && selectedWorker.activeRecordCount > 1 ? (
+              <div className="mobility-company-alert mobility-block-spaced" role="status">
+                <strong>Ficha BUK {selectedWorker.bukEmployeeId} seleccionada.</strong>{" "}
+                Esta persona tiene {selectedWorker.activeRecordCount} fichas activas. La movilidad
+                afectará únicamente la ficha correspondiente a{" "}
+                {selectedWorker.areaName ??
+                  selectedWorker.contractCode ??
+                  "el contrato indicado"}
+                .
+              </div>
+            ) : null}
             <div className="field-group mobility-block-spaced">
               <SelectField
                 id="mobility-target-folio"

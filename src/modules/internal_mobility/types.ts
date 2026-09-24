@@ -1,6 +1,8 @@
 import type { BukEmployeeWithCompany } from "../../shared/types/buk";
 
-export type InternalMobilityEligibleWorker = BukEmployeeWithCompany;
+export type InternalMobilityEligibleWorker = BukEmployeeWithCompany & {
+  activeRecordCount: number;
+};
 
 export type InternalMobilityWorkerContext = {
   worker: {

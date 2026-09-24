@@ -286,6 +286,7 @@ export async function searchInternalMobilityWorkers(search: string, limit = 12) 
         typeof item.company_name === "string" && item.company_name.trim()
           ? item.company_name
           : null,
+      activeRecordCount: Math.max(1, Number(item.active_record_count ?? 1)),
       displayLabel: String(item.display_label ?? "")
     })
   );

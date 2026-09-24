@@ -3893,3 +3893,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - En módulos de revisión masiva, el contenedor general, cada lista y cada fila no pueden competir como superficies elevadas; una sola envolvente y divisores de 1 px ofrecen mejor lectura y más densidad.
 - Las columnas deben usar `align-items: start` para que una ficha lateral vacía no herede la altura del listado; el cambio debe probarse con la sidebar expandida, no solo a viewport completo.
 - Cuando un rediseño CSS legítimo supera un baseline de tolerancia cero, medir el artefacto minificado, documentar el incremento y versionar solo el límite afectado después de que Guardian y las capturas responsive pasen.
+
+## Leccion 2026-09-24 — Las excepciones de identidad BUK deben conservar la ficha exacta
+
+- Si un proceso admite legítimamente más de una ficha activa para el mismo RUT, no debe consultar una vista deduplicada por identidad: debe resolver, validar y persistir el `buk_employee_id` seleccionado.
+- La excepción debe quedar limitada al módulo que la necesita; no corresponde retirar la deduplicación global de trabajadores porque cambiaría Jornadas, Incentivos y otros flujos.
+- La selección visual no basta: bloqueos, idempotencia, snapshots y auditoría deben operar sobre la misma ficha exacta para impedir que una validación posterior vuelva a escoger otra ficha del trabajador.

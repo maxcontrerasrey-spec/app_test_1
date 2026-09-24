@@ -1,5 +1,6 @@
 import { StandardWorkerLookupField } from "../../../shared/ui";
 import { useInternalMobilityWorkerSearch } from "../hooks/useInternalMobilityQueries";
+import { buildInternalMobilityWorkerRecordLabel } from "../lib/workerPresentation";
 import type { InternalMobilityEligibleWorker } from "../types";
 
 type InternalMobilityWorkerLookupProps = {
@@ -30,6 +31,7 @@ export function InternalMobilityWorkerLookup({
       useSearchQuery={useInternalMobilityWorkerSearch}
       loadingMessage="Buscando trabajadores activos..."
       fallbackLineLabel="Sin área activa"
+      getAreaName={buildInternalMobilityWorkerRecordLabel}
       includeCompanyName
     />
   );
