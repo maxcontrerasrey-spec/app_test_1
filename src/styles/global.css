@@ -2015,6 +2015,10 @@ textarea {
   text-transform: uppercase;
 }
 
+.login-header-copy p {
+  display: none;
+}
+
 .login-glass-card:hover,
 .login-glass-card:focus-within {
   transform: scale(1) translate3d(0, 0, 0);
