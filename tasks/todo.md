@@ -5,7 +5,9 @@
 - [x] Auditar la composición actual del login y sus recursos visuales.
 - [x] Implementar movimiento ambiental y microinteracciones preservando colores, fotografías y autenticación.
 - [x] Validar accesibilidad, responsive, reduced motion y build frontend.
-- [ ] Publicar únicamente después de superar los gates locales y remotos.
+- [x] Publicar únicamente después de superar los gates locales y remotos.
+
+Resultado: login publicado en `main` mediante `fc2b16b`; conserva la fotografía `fondo.webp`, el logo JM, la paleta corporativa y la autenticación. Guardian local y CI remoto `36037130431` finalizaron exitosamente.
 
 ## Auditoría integral del árbol y publicación — 2026-09-24
 
