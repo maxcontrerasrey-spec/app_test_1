@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractBukDocumentMetadata, uploadBukDocument } from "../_shared/bukDocuments.ts";
 import { getSupabasePublishableKey, getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
+import { normalizeBukDocumentNumber } from "../_shared/bukIdentity.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,7 +56,7 @@ function resolveErrorStatus(error: unknown) {
   return 500;
 }
 
-function sanitizeFileName(fileName: string, employeeId: string) {
+function sanitizeFileName(fileName: string, documentNumber: string, employeeId: string) {
   const safeBaseName = fileName
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -66,7 +67,7 @@ function sanitizeFileName(fileName: string, employeeId: string) {
     ? safeBaseName.slice(safeBaseName.lastIndexOf("."))
     : ".pdf";
   const stem = safeBaseName.replace(/\.[^.]+$/, "");
-  return `${stem || "documento"}_${employeeId}${extension}`;
+  return `${stem || "documento"}_${normalizeBukDocumentNumber("rut", documentNumber || employeeId)}${extension}`;
 }
 
 async function assertAccreditationAccess(
@@ -138,6 +139,7 @@ Deno.serve(async (req) => {
 
     const formData = await req.formData();
     const employeeId = String(formData.get("employeeId") ?? "").trim();
+    const documentNumber = String(formData.get("documentNumber") ?? "").trim();
     const documentName = String(formData.get("documentName") ?? "").trim();
     const siteId = String(formData.get("siteId") ?? "").trim();
     const requirementId = String(formData.get("requirementId") ?? "").trim();
@@ -239,7 +241,7 @@ Deno.serve(async (req) => {
     }
 
     if (!uploadSnapshot || !["buk_uploaded", "success"].includes(existingJob?.status ?? "")) {
-      const bukFileName = sanitizeFileName(documentName || file.name, employeeId);
+      const bukFileName = sanitizeFileName(documentName || file.name, documentNumber, employeeId);
       const uploadResult = await uploadBukDocument(
         employeeId,
         bukFileName,

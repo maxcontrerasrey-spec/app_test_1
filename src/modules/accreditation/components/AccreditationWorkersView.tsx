@@ -110,8 +110,10 @@ export function AccreditationWorkersView() {
 
     try {
       if (selectedFile) {
+        const documentNumber = profileQuery.data?.worker.documentNumber ?? null;
         await uploadAccreditationDocumentToR2({
           employeeId: selectedBukEmployeeId,
+          documentNumber,
           file: selectedFile,
           siteId: selectedSiteId,
           requirementId: documentForm.requirementId,
@@ -122,6 +124,7 @@ export function AccreditationWorkersView() {
         });
         await uploadAccreditationDocumentToBuk({
           employeeId: selectedBukEmployeeId,
+          documentNumber,
           documentName: selectedFile.name,
           file: selectedFile,
           siteId: selectedSiteId,

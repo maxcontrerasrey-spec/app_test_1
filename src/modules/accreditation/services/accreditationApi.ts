@@ -17,6 +17,19 @@ import type {
   AccreditationWorkerRow
 } from "../types";
 
+function buildAccreditationDocumentFileName(fileName: string, documentNumber: string | null | undefined) {
+  const safeName = fileName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+  const extension = safeName.includes(".") ? safeName.slice(safeName.lastIndexOf(".")) : ".pdf";
+  const stem = safeName.replace(/\.[^.]+$/, "") || "documento";
+  const normalizedDocumentNumber = (documentNumber ?? "").replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
+  return `${stem}_${normalizedDocumentNumber || "sin_identificador"}${extension}`;
+}
+
 function mapSetupOption(item: Record<string, unknown>) {
   return {
     value: readText(item.value),
@@ -566,6 +579,7 @@ export async function saveWorkerAccreditationDocument(input: {
 
 export async function uploadAccreditationDocumentToBuk(input: {
   employeeId: string;
+  documentNumber?: string | null;
   documentName: string;
   file: File;
   siteId: string;
@@ -578,6 +592,7 @@ export async function uploadAccreditationDocumentToBuk(input: {
   const client = getSupabaseClient();
   const formData = new FormData();
   formData.append("employeeId", input.employeeId);
+  formData.append("documentNumber", input.documentNumber ?? "");
   formData.append("documentName", input.documentName);
   formData.append("file", input.file);
   formData.append("siteId", input.siteId);
@@ -612,6 +627,7 @@ export async function uploadAccreditationDocumentToBuk(input: {
 
 export async function uploadAccreditationDocumentToR2(input: {
   employeeId: string;
+  documentNumber?: string | null;
   file: File;
   siteId: string;
   requirementId: string;
@@ -629,6 +645,8 @@ export async function uploadAccreditationDocumentToR2(input: {
 
   const formData = new FormData();
   formData.append("employeeId", input.employeeId);
+  formData.append("documentNumber", input.documentNumber ?? "");
+  formData.append("documentName", buildAccreditationDocumentFileName(input.file.name, input.documentNumber));
   formData.append("file", input.file);
   formData.append("siteId", input.siteId);
   formData.append("requirementId", input.requirementId);

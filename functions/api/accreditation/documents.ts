@@ -34,14 +34,6 @@ async function sha256Hex(value: ArrayBuffer) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function extension(fileName: string, mimeType: string) {
-  const normalized = fileName.toLowerCase();
-  if (mimeType === "application/pdf") return ".pdf";
-  if (mimeType === "image/png") return ".png";
-  if (normalized.endsWith(".jpeg")) return ".jpeg";
-  return ".jpg";
-}
-
 function safeSegment(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120);
 }
@@ -81,6 +73,7 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
   try {
     const formData = await request.formData();
     const employeeId = String(formData.get("employeeId") ?? "").trim();
+    const documentNumber = String(formData.get("documentNumber") ?? "").trim();
     const siteId = String(formData.get("siteId") ?? "").trim();
     const requirementId = String(formData.get("requirementId") ?? "").trim();
     const status = String(formData.get("status") ?? "submitted").trim();
@@ -88,6 +81,7 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
     const expiryDate = String(formData.get("expiryDate") ?? "").trim() || null;
     const reviewerNotes = String(formData.get("reviewerNotes") ?? "").trim() || null;
     const file = formData.get("file");
+    const documentName = String(formData.get("documentName") ?? (file instanceof File ? file.name : "documento.pdf")).trim();
 
     if (!employeeId || !siteId || !requirementId) throw new Error("Debe indicar trabajador, faena y requisito.");
     if (!(file instanceof File) || file.size <= 0) throw new Error("Debe adjuntar un archivo.");
@@ -97,12 +91,13 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
     const bytes = await file.arrayBuffer();
     if (!signatureMatches(new Uint8Array(bytes), file.type)) throw new Error("El contenido no coincide con el formato declarado.");
     const fileSha256 = await sha256Hex(bytes);
-    const objectKey = `accreditation/${safeSegment(siteId)}/${safeSegment(employeeId)}/${safeSegment(requirementId)}/${fileSha256}${extension(file.name, file.type)}`;
+    const normalizedName = documentName || `${file.name}`;
+    const objectKey = `accreditation/${safeSegment(siteId)}/${safeSegment(documentNumber || employeeId)}/${safeSegment(requirementId)}/${safeSegment(normalizedName)}`;
     const existing = await env.R2_BUCKET.head(objectKey);
     if (!existing) {
       await env.R2_BUCKET.put(objectKey, bytes, {
         httpMetadata: { contentType: file.type, contentDisposition: `inline; filename="${file.name.replace(/[\"\r\n]/g, "_")}"` },
-        customMetadata: { module: "accreditation", employeeId, siteId, requirementId, sha256: fileSha256 }
+        customMetadata: { module: "accreditation", employeeId, documentNumber, siteId, requirementId, sha256: fileSha256 }
       });
     }
 
