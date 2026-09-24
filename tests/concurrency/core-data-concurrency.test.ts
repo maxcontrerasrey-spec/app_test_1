@@ -86,5 +86,22 @@ describe("CORE concurrency guards", () => {
     expect(runtimeFixSql).toContain(
       "on conflict on constraint buk_candidate_document_jobs_buk_sync_job_id_source_document_key"
     );
+    const claimRuntimeFixSql = fs.readFileSync(
+      path.join(
+        root,
+        "supabase/migrations/20260924152000_fix_buk_candidate_document_queue_claim_runtime_conflict.sql"
+      ),
+      "utf8"
+    );
+    expect(claimRuntimeFixSql).toContain("where queue_control.id = true");
+    const claimStatusRuntimeFixSql = fs.readFileSync(
+      path.join(
+        root,
+        "supabase/migrations/20260924153000_fix_buk_candidate_document_queue_claim_status_conflict.sql"
+      ),
+      "utf8"
+    );
+    expect(claimStatusRuntimeFixSql).toContain("where stale_job.status = 'processing'");
+    expect(claimStatusRuntimeFixSql).toContain("where active_job.status = 'processing'");
   });
 });

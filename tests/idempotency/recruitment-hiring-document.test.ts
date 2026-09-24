@@ -119,6 +119,11 @@ describe("Solicitud de Contratación ERP", () => {
     expect(edge).toContain('transport: "reconciled_remote"');
     expect(edge).toContain("requireBukDocumentMetadata");
     expect(edge).toContain("requireBukDocumentReference");
+    expect(edge).toContain("legacyServiceRoleKey");
+    expect(edge).toContain('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")');
+    expect(edge).toContain("BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET");
+    expect(edge).toContain("isDocumentQueueInvocation");
+    expect(edge).toContain('mode === "documents"');
     expect(documents).toContain("export function requireBukDocumentMetadata");
   });
 

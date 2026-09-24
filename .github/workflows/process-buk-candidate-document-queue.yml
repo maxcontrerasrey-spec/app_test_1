@@ -31,9 +31,11 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET: ${{ secrets.BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET }}
         run: |
           test -n "${VITE_SUPABASE_URL:-${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}}" || { echo "Missing Supabase URL"; exit 1; }
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
+          test -n "$BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET" || { echo "Missing BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET"; exit 1; }
 
       - name: Process bounded BUK document queue
         env:
@@ -41,4 +43,5 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET: ${{ secrets.BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET }}
         run: node scripts/process-buk-candidate-document-queue.mjs

@@ -4186,6 +4186,7 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
   const serviceRoleKey = getSupabaseSecretKey();
+  const legacyServiceRoleKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
@@ -4195,13 +4196,21 @@ Deno.serve(async (req) => {
     const suppliedWebhookSecret = (req.headers.get("x-internal-webhook-secret") ?? "").trim();
     const isInternalInvocation =
       internalWebhookSecret.length > 0 && suppliedWebhookSecret === internalWebhookSecret;
+    const documentQueueSecret = (Deno.env.get("BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET") ?? "").trim();
+    const suppliedDocumentQueueSecret = (
+      req.headers.get("x-buk-document-queue-secret") ?? ""
+    ).trim();
     const backfillSecret = (Deno.env.get("HIRING_DOCUMENT_BACKFILL_SECRET") ?? "").trim();
     const suppliedBackfillSecret = (req.headers.get("x-hiring-document-backfill-secret") ?? "").trim();
     const isBackfillSecretInvocation = safeSecretEquals(suppliedBackfillSecret, backfillSecret);
     const requestBody = req.method === "POST" ? ((await req.json().catch(() => ({}))) as SyncRequest) : {};
     const suppliedApiKey = (req.headers.get("apikey") ?? "").trim();
-    const isServiceRoleInvocation = safeSecretEquals(suppliedApiKey, serviceRoleKey);
+    const isServiceRoleInvocation = [serviceRoleKey, legacyServiceRoleKey]
+      .filter(Boolean)
+      .some((configuredKey) => safeSecretEquals(suppliedApiKey, configuredKey));
     const mode = requestBody.mode ?? "sync";
+    const isDocumentQueueInvocation =
+      mode === "documents" && safeSecretEquals(suppliedDocumentQueueSecret, documentQueueSecret);
 
     if (mode === "hiring_document_backfill") {
       if (!isInternalInvocation && !isServiceRoleInvocation && !isBackfillSecretInvocation) {
@@ -4223,7 +4232,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!isInternalInvocation && !isServiceRoleInvocation) {
+    if (!isInternalInvocation && !isServiceRoleInvocation && !isDocumentQueueInvocation) {
       if (!accessToken) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,

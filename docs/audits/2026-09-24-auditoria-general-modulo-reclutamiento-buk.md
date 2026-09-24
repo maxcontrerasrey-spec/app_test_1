@@ -11,6 +11,8 @@ La arquitectura queda operable para produccion despues de corregir cuatro debili
 2. La cola dependia del navegador para continuar. Se agrego un worker de GitHub Actions cada cinco minutos, con ejecucion no solapable y limite de tres documentos por invocacion.
 3. Una respuesta `2xx` sin `id` ni `url` remota podia marcar un documento como exitoso y purgar el archivo local. Ahora se exige evidencia remota y, si falta, el documento queda para conciliacion.
 4. La primera ejecucion real de la RPC de encolado revelo una ambiguedad de PostgreSQL entre el parametro de salida `source_document_id` y el `ON CONFLICT` por columnas. Se corrigio con `20260924151000`, usando la restriccion unica por nombre y verificando el cuerpo vivo de la funcion.
+5. La primera generacion posterior detecto que la RPC de claim tambien tenia referencias ambiguas en `id` y `status`. Las migraciones `20260924152000` y `20260924153000` califican todas las columnas de control y procesamiento; la simulacion transaccional confirmo `claim_count=1` antes del rollback.
+6. El worker programado dependia de una clave legacy que dejo de coincidir al habilitar `SUPABASE_SECRET_KEYS`. Se incorporo un secreto dedicado `BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET`, limitado a `mode: documents`, configurado tanto en Supabase como en GitHub Actions.
 
 ## Controles verificados
 
@@ -22,15 +24,18 @@ La arquitectura queda operable para produccion despues de corregir cuatro debili
 - Los estados `failed` y `reconciliation_required` usan `next_attempt_at` con backoff exponencial de 5 minutos, 10 minutos y hasta 1 hora, evitando martillar BUK ante errores persistentes.
 - El frontend mantiene estados diferenciados para Solicitud confirmada, documentos pendientes, conciliacion requerida y fallos terminales.
 - El worker programado no muta directamente la base: invoca la Edge Function autorizada con `service_role` y conserva los checkpoints existentes.
+- La autenticacion del worker usa un secreto dedicado y comparacion de tiempo constante; no otorga acceso a los modos de generacion ni backfill.
 
 ## Evidencia productiva
 
-- Migraciones `20260924110000`, `20260924133000`, `20260924143000`, `20260924150000` y `20260924151000` aplicadas y sincronizadas.
+- Migraciones `20260924110000`, `20260924133000`, `20260924143000`, `20260924150000`, `20260924151000`, `20260924152000` y `20260924153000` aplicadas y sincronizadas.
 - `sync-buk-candidates` redeployada despues de incorporar la validacion de metadata remota.
 - Definicion viva de `enqueue_buk_candidate_document_jobs` confirmada con `source_document_id` como columna de salida, `v_source_document_id` como valor, guard de tipo JSON y `ON CONFLICT ON CONSTRAINT` para evitar ambiguedad PL/pgSQL.
 - Privilegios vivos: `anon = false`, `authenticated = false`, `service_role = true`.
 - La cola productiva no tenia filas pendientes, en procesamiento, fallidas ni en conciliacion al momento de la revision.
 - La simulacion runtime invoco la RPC contra el job productivo `9fbb10b0-e854-45ed-a930-5dff80c57bcd` con 16 documentos y un payload JSON no-array; devolvio `16/16` en ambos casos y se revirtio deliberadamente mediante una excepcion controlada. La cola continuo en cero y el job permanecio `success`.
+- La simulacion runtime de claim reprodujo primero las ambiguedades `id` y `status`; despues de las correcciones reclamo una fila y se revirtio sin alterar la cola.
+- La ejecucion productiva acotada del worker reclamo 3 documentos y completo los 3 en BUK, sin fallos ni conciliaciones requeridas.
 - No se ejecutaron cargas BUK ni se modificaron candidatos durante la auditoria.
 
 ## Validacion tecnica

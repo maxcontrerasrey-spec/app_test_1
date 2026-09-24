@@ -5,14 +5,18 @@ const supabaseUrl = (
   ""
 ).replace(/\/$/, "");
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const documentQueueSecret = process.env.BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET || "";
 
-if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error("Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY.");
+if (!supabaseUrl || !serviceRoleKey || !documentQueueSecret) {
+  throw new Error(
+    "Faltan SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY o BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET."
+  );
 }
 
 const headers = {
   apikey: serviceRoleKey,
   Authorization: `Bearer ${serviceRoleKey}`,
+  "x-buk-document-queue-secret": documentQueueSecret,
   "Content-Type": "application/json"
 };
 
