@@ -184,6 +184,17 @@ export function extractBukDocumentMetadata(payload: Record<string, unknown>) {
   };
 }
 
+export function requireBukDocumentMetadata(
+  payload: Record<string, unknown>,
+  context = "La carga documental BUK"
+) {
+  const metadata = extractBukDocumentMetadata(payload);
+  if (!metadata.bukDocumentId && !metadata.bukDocumentUrl) {
+    throw new Error(`${context} terminó con 2xx, pero BUK no devolvió un identificador ni una URL del documento.`);
+  }
+  return metadata;
+}
+
 export function buildBukBaseUrl() {
   return (Deno.env.get("BUK_EMPLOYEES_URL") ?? "https://busesjm.buk.cl/api/v1/chile/employees").trim();
 }

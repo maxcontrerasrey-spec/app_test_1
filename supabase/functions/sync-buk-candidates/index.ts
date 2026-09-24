@@ -2,8 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
   buildBukBaseUrl,
-  extractBukDocumentMetadata,
   reconcileBukDocumentUpload,
+  requireBukDocumentMetadata,
   uploadBukDocument
 } from "../_shared/bukDocuments.ts";
 import {
@@ -3339,6 +3339,7 @@ async function processRecruitmentHiringDocument(
     try {
       const remoteDocument = await reconcileBukDocumentUpload(employeeId, fileName, { path: "Postulación" });
       if (remoteDocument.found) {
+        requireBukDocumentReference(remoteDocument, fileName);
         const checkpoint = {
           documentId: row.id,
           folio: row.folio,
@@ -3544,7 +3545,10 @@ async function processRecruitmentHiringDocument(
   }
 
   try {
-    const metadata = extractBukDocumentMetadata(uploadResult.payload);
+    const metadata = requireBukDocumentMetadata(
+      uploadResult.payload,
+      "La Solicitud de Contratación BUK"
+    );
     const uploadedAt = new Date().toISOString();
     const checkpoint = {
       documentId: row.id,
@@ -3689,7 +3693,17 @@ async function finalizeSuccessfulJob(
 
 function isAmbiguousBukDocumentError(error: unknown) {
   const message = toErrorMessage(error).toLowerCase();
-  return /timeout|timed out|fetch failed|network|connection|reset|\b5\d{2}\b/.test(message);
+  return /timeout|timed out|fetch failed|network|connection|reset|sin .*identificador|\b5\d{2}\b/.test(message);
+}
+
+function requireBukDocumentReference(
+  metadata: { bukDocumentId?: string | null; bukDocumentUrl?: string | null },
+  documentName: string
+) {
+  if (!metadata.bukDocumentId && !metadata.bukDocumentUrl) {
+    throw new Error(`BUK no devolvió evidencia remota para ${documentName}: falta identificador o URL del documento.`);
+  }
+  return metadata;
 }
 
 function buildDocumentQueueSummary(rows: Array<Record<string, unknown>>) {
@@ -3805,6 +3819,7 @@ async function processCandidateDocumentJob(
   if (documentJob.attempts > 1) {
     const remoteDocument = await reconcileBukDocumentUpload(documentJob.buk_employee_id, bukFileName);
     if (remoteDocument.found) {
+      requireBukDocumentReference(remoteDocument, documentJob.source_document_name);
       await completeCandidateDocumentJob(supabase, documentJob, {
         bukDocumentId: remoteDocument.bukDocumentId,
         bukDocumentUrl: remoteDocument.bukDocumentUrl,
@@ -3833,7 +3848,10 @@ async function processCandidateDocumentJob(
     bukFileName,
     fileData
   );
-  const { bukDocumentId, bukDocumentUrl, bukEmployeeFolderId } = extractBukDocumentMetadata(uploadResult.payload);
+  const { bukDocumentId, bukDocumentUrl, bukEmployeeFolderId } = requireBukDocumentMetadata(
+    uploadResult.payload,
+    `El documento ${documentJob.source_document_name}`
+  );
   await completeCandidateDocumentJob(supabase, documentJob, {
     bukDocumentId,
     bukDocumentUrl,

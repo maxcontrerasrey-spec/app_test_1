@@ -117,6 +117,9 @@ describe("Solicitud de Contratación ERP", () => {
     expect(edge).toContain('eventType: "buk_reconciliation_not_found"');
     expect(edge).toContain('buk_upload_status: "failed"');
     expect(edge).toContain('transport: "reconciled_remote"');
+    expect(edge).toContain("requireBukDocumentMetadata");
+    expect(edge).toContain("requireBukDocumentReference");
+    expect(documents).toContain("export function requireBukDocumentMetadata");
   });
 
   it("separa documentos generales en una cola acotada y reintentable", () => {
@@ -134,5 +137,22 @@ describe("Solicitud de Contratación ERP", () => {
     expect(migration).toContain("max_concurrency integer not null default 3");
     expect(migration).toContain("for update skip locked");
     expect(migration).toContain("reconciliation_required");
+  });
+
+  it("mantiene la RPC de encolado ejecutable despues del despliegue", () => {
+    const migration = read(
+      "supabase/migrations/20260924133000_fix_buk_candidate_document_queue_enqueue.sql"
+    );
+
+    expect(migration).toContain("source_document_id,\n      source_document_name");
+    expect(migration).toContain("normalized_employee_id,\n      v_source_document_id,");
+    expect(migration).not.toContain("v_source_document_id,\n      source_document_name");
+    expect(migration).toContain("grant execute on function public.enqueue_buk_candidate_document_jobs");
+
+    const hardeningMigration = read(
+      "supabase/migrations/20260924143000_harden_buk_candidate_document_queue_enqueue.sql"
+    );
+    expect(hardeningMigration).toContain("jsonb_array_length(\n              case");
+    expect(hardeningMigration).toContain("jsonb_typeof(coalesce(p_existing_documents");
   });
 });
