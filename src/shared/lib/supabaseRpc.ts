@@ -149,3 +149,33 @@ export function getSupabaseErrorMessage(
 ) {
   return formatSupabaseError(error, mode) || fallback;
 }
+
+/**
+ * Supabase FunctionsHttpError keeps the function response in `context`.
+ * Read that response so callers can show the server's controlled error rather
+ * than the generic "non-2xx" transport message.
+ */
+export async function getSupabaseFunctionErrorMessage(
+  error: unknown,
+  fallback: string
+) {
+  const context =
+    error && typeof error === "object" && "context" in error
+      ? (error as { context?: unknown }).context
+      : null;
+
+  if (context instanceof Response) {
+    try {
+      const payload = await context.clone().json();
+      const payloadRecord = asRecord(payload);
+      const serverMessage = readText(payloadRecord.error || payloadRecord.message).trim();
+      if (serverMessage) {
+        return serverMessage;
+      }
+    } catch {
+      // Fall through to the normal Supabase/network formatter.
+    }
+  }
+
+  return getSupabaseErrorMessage(error, fallback, "message");
+}

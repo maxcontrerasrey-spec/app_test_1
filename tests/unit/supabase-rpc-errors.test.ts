@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatSupabaseError, getSupabaseErrorMessage } from "../../src/shared/lib/supabaseRpc";
+import {
+  formatSupabaseError,
+  getSupabaseErrorMessage,
+  getSupabaseFunctionErrorMessage
+} from "../../src/shared/lib/supabaseRpc";
 
 describe("Supabase RPC error formatting", () => {
   it("convierte errores de red en mensaje operacional sin stack", () => {
@@ -22,5 +26,18 @@ describe("Supabase RPC error formatting", () => {
 
   it("usa fallback cuando Supabase no entrega mensaje util", () => {
     expect(getSupabaseErrorMessage({}, "Error controlado", "plain")).toBe("Error controlado");
+  });
+
+  it("extrae el error controlado de una Edge Function non-2xx", async () => {
+    const error = Object.assign(new Error("Edge Function returned a non-2xx status code"), {
+      context: new Response(JSON.stringify({ error: "Instructor activo no encontrado" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      })
+    });
+
+    await expect(
+      getSupabaseFunctionErrorMessage(error, "No fue posible generar el certificado.")
+    ).resolves.toBe("Instructor activo no encontrado");
   });
 });

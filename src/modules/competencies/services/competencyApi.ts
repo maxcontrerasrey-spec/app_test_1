@@ -1,6 +1,7 @@
 import {
   asRecord,
   getSupabaseClientOrThrow as getSupabaseClient,
+  getSupabaseFunctionErrorMessage,
   getSupabaseErrorMessage,
   readBoolean,
   readNullableText,
@@ -131,7 +132,7 @@ export async function generateCompetencyCertificate(requestId: string) {
   });
 
   if (error) {
-    throw new Error(getSupabaseErrorMessage(error, "No fue posible generar el certificado.", "message"));
+    throw new Error(await getSupabaseFunctionErrorMessage(error, "No fue posible generar el certificado."));
   }
 
   const payload = asRecord(data);
