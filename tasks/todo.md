@@ -5,7 +5,9 @@
 - [x] Auditar estado de ramas, cambios locales, árbol documental, migraciones, seguridad, integridad y build.
 - [x] Corregir únicamente bloqueos reproducibles y atribuibles al árbol actual, preservando cambios ajenos.
 - [x] Ejecutar Guardian y los gates productivos completos.
-- [ ] Publicar en `main` solo el conjunto validado y verificar CI remoto.
+- [x] Publicar en `main` solo el conjunto validado y verificar CI remoto.
+
+Resultado: publicado en `main` mediante `ab5a0c47`; Guardian local y CI remoto exitosos, con árbol de trabajo limpio.
 
 ## Carga de jornadas desde captura 2026-09-24 — 2026-09-24
 
