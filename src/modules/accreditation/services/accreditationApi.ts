@@ -609,3 +609,48 @@ export async function uploadAccreditationDocumentToBuk(input: {
     payload: asRecord(payload.payload)
   };
 }
+
+export async function uploadAccreditationDocumentToR2(input: {
+  employeeId: string;
+  file: File;
+  siteId: string;
+  requirementId: string;
+  status: AccreditationDocumentStatus;
+  issueDate?: string | null;
+  expiryDate?: string | null;
+  reviewerNotes?: string | null;
+}) {
+  const client = getSupabaseClient();
+  const { data: sessionData } = await client.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) {
+    throw new Error("La sesion expiro. Vuelve a iniciar sesion para cargar el documento.");
+  }
+
+  const formData = new FormData();
+  formData.append("employeeId", input.employeeId);
+  formData.append("file", input.file);
+  formData.append("siteId", input.siteId);
+  formData.append("requirementId", input.requirementId);
+  formData.append("status", input.status);
+  formData.append("issueDate", input.issueDate ?? "");
+  formData.append("expiryDate", input.expiryDate ?? "");
+  formData.append("reviewerNotes", input.reviewerNotes ?? "");
+
+  const response = await fetch("/api/accreditation/documents", {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}` },
+    body: formData
+  });
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok || payload.error) {
+    throw new Error(readText(payload.error) || "No fue posible guardar el documento en R2.");
+  }
+
+  return {
+    objectKey: readText(payload.objectKey),
+    fileSha256: readText(payload.fileSha256),
+    bukSyncStatus: readText(payload.bukSyncStatus),
+    trackingId: readText(payload.trackingId)
+  };
+}

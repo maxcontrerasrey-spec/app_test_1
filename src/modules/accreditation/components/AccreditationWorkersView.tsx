@@ -9,7 +9,8 @@ import {
 } from "../hooks/useAccreditationQueries";
 import {
   saveWorkerAccreditationDocument,
-  uploadAccreditationDocumentToBuk
+  uploadAccreditationDocumentToBuk,
+  uploadAccreditationDocumentToR2
 } from "../services/accreditationApi";
 import type { AccreditationDocumentStatus } from "../types";
 
@@ -109,6 +110,16 @@ export function AccreditationWorkersView() {
 
     try {
       if (selectedFile) {
+        await uploadAccreditationDocumentToR2({
+          employeeId: selectedBukEmployeeId,
+          file: selectedFile,
+          siteId: selectedSiteId,
+          requirementId: documentForm.requirementId,
+          status: documentForm.status,
+          issueDate: documentForm.issueDate || null,
+          expiryDate: documentForm.expiryDate || null,
+          reviewerNotes: documentForm.reviewerNotes || null
+        });
         await uploadAccreditationDocumentToBuk({
           employeeId: selectedBukEmployeeId,
           documentName: selectedFile.name,
@@ -335,9 +346,9 @@ export function AccreditationWorkersView() {
                   }
                   placeholder="Comentario de revision o contexto"
                 />
-                <div className="field-group">
+                  <div className="field-group">
                   <label className="field-label" htmlFor="accreditation-document-file">
-                    Archivo para BUK
+                    Archivo de acreditacion
                   </label>
                   <input
                     id="accreditation-document-file"
@@ -367,7 +378,7 @@ export function AccreditationWorkersView() {
                       <strong>{document.requirementName}</strong>
                       <p>{document.category} · {document.processScope}</p>
                       <small>
-                        {document.bukDocumentName ?? "Sin archivo BUK"} · vence {document.expiryDate ?? "N/A"}
+                        {document.metadata.r2_object_key ? "Guardado en R2" : "Sin archivo R2"} · {document.bukDocumentName ?? "Sin copia BUK"} · vence {document.expiryDate ?? "N/A"}
                       </small>
                     </div>
                     <div className="accreditation-mini-stats">

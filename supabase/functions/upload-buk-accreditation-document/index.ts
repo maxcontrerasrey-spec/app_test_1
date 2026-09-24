@@ -277,7 +277,12 @@ Deno.serve(async (req) => {
       p_buk_document_name: uploadSnapshot.documentName ?? null,
       p_buk_document_url: uploadSnapshot.bukDocumentUrl ?? null,
       p_reviewer_notes: reviewerNotes,
-      p_metadata: { upload_source: "buk_edge_function", upload_operation_key: operationKey, buk_payload: uploadSnapshot.payload ?? {} }
+      p_metadata: {
+        upload_source: "buk_edge_function",
+        upload_operation_key: operationKey,
+        buk_sync_status: "synced",
+        buk_payload: uploadSnapshot.payload ?? {}
+      }
     });
     if (trackingError) throw new Error(`BUK recibió el documento, pero el tracking local debe reintentarse: ${trackingError.message}`);
 

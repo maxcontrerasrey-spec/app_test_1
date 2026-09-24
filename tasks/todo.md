@@ -1,5 +1,179 @@
 # Tareas y Roadmap de Desarrollo
 
+## Magnificación de la barra lateral comprimida — 2026-09-24
+
+- [x] Auditar el rail colapsado, su DOM y los estilos desktop existentes.
+- [x] Aplicar magnificación Dock en el icono activo por puntero/foco y sus vecinos, sin alterar layout ni navegación.
+- [x] Cubrir la regla visual con contrato unitario y respetar `prefers-reduced-motion`.
+- [x] Ejecutar pruebas frontend, Guardian, build y diff; documentar el resultado.
+
+Resultado: el rail comprimido aplica escalas `1.18 / 1.08 / 1.03` al icono bajo el puntero y sus vecinos mediante `transform`, sin cambiar la geometría del layout. El efecto queda limitado a escritorio, mantiene navegación y foco, y se desactiva con `prefers-reduced-motion`. Guardian finalizó con `0 errores, 0 warnings` y el crecimiento CSS de 913 bytes quedó documentado en el baseline de performance.
+
+## Auditoria general post-separacion documental BUK — 2026-09-24
+
+- [x] Mapear el modulo completo y revisar contratos UI, servicio, Edge, RPC, tablas, RLS y observabilidad.
+- [x] Verificar idempotencia, concurrencia, reintentos, estados terminales, reconciliacion y limites ante volumen.
+- [x] Ejecutar pruebas, auditorias, Guardian, build y verificacion productiva sin mutar datos de negocio.
+- [x] Corregir debilidades encontradas y documentar el resultado final.
+
+Resultado: la revision detecto y corrigio las RPC de encolado y claim documental, agrego evidencia remota obligatoria antes de purgar Storage, incorporo backoff exponencial para fallos persistentes y dejo un worker programado cada cinco minutos para que la cola no dependa del navegador. Las simulaciones runtime con rollback revelaron y corrigieron ambiguedades reales en `source_document_id`, `id` y `status`; el worker quedo autenticado con un secreto dedicado y una tanda productiva cargo 3/3 documentos sin errores. Evidencia completa en `docs/audits/2026-09-24-auditoria-general-modulo-reclutamiento-buk.md`.
+
+## Separar carga documental BUK de la Solicitud de Contratacion — 2026-09-24
+
+- [x] Crear cola documental por archivo con estados, claims, reconciliacion y limite global de proveedor.
+- [x] Cambiar `sync-buk-candidates` para cerrar la provision y la Solicitud sin bloquearse por adjuntos.
+- [x] Agregar worker documental acotado, reintentable y compatible con jobs historicos.
+- [x] Ajustar el servicio/UI para ejecutar lotes pequenos y mostrar Solicitud confirmada con documentos pendientes.
+- [x] Agregar pruebas de idempotencia, concurrencia y contratos; ejecutar migraciones, seguridad, Guardian y build.
+- [x] Verificar produccion, revisar jobs/documentos pendientes y dejar registro auditable.
+
+Resultado: la cola `buk_candidate_document_jobs` quedó aplicada en producción con concurrencia global máxima de 3; `sync-buk-candidates` fue desplegada y la generación quedó separada del procesamiento documental. La validación pasó pruebas de idempotencia, concurrencia, integridad, Edge, build, auditorías y Guardian (`0 errores, 0 warnings`). El frontend queda publicado mediante el commit de esta corrección para activar el drenaje de la cola desde la interfaz.
+
+## Auditoria de timeouts en generación de Solicitud de Contratación BUK — 2026-09-24
+
+- [x] Medir producción por etapa: generación PDF, llamadas BUK, carga documental, conciliación, checkpoints y duración total del job.
+- [x] Revisar límites de lote, concurrencia, claims, reintentos y comportamiento ante respuestas remotas ambiguas.
+- [x] Determinar si el timeout es causado por código, proveedor BUK, duración acumulada o volumen simultáneo.
+- [x] Documentar la separación de procesos necesaria y las correcciones inmediatas de bajo riesgo.
+- [x] Registrar el resultado de la auditoría sin modificar datos productivos.
+
+Resultado: la Solicitud de Contratación no es el cuello de botella medido; el flujo síncrono acumula alta BUK y hasta 17 documentos secuenciales. Con 16 documentos el p95 histórico es 192,10 s y el máximo 1.617,49 s. El timeout explícito del 2026-09-21 ocurrió después de que la Solicitud ya tenía checkpoint exitoso. La auditoría completa queda en `docs/audits/2026-09-24-auditoria-timeouts-solicitud-contratacion-buk.md`.
+
+## Diagnosticar error de generación de certificados de competencias — 2026-09-24
+
+- [x] Reproducir el caso de Gustavo Adolfo Cortés León y capturar la causa real detrás del `non-2xx`.
+- [x] Auditar solicitud, evaluación aprobada, instructor, modelos, permisos y checkpoints productivos.
+- [x] Corregir la pérdida del mensaje controlado y mantener intactos los registros productivos.
+- [x] Verificar producción, pruebas de integridad, auditorías, Guardian y diff; documentar el resultado.
+
+Resultado: el RUT `15.612.051-0` tiene trabajador activo en BUK y el instructor Fernando Maza está activo, pero no existe solicitud, evaluación ni certificado productivo. Sí quedó un archivo de evaluación huérfano en Storage creado antes del rechazo de `create_competency_request`. El cliente ocultaba el cuerpo JSON de la Edge Function y solo mostraba `Edge Function returned a non-2xx status code`; ahora extrae y muestra el error controlado devuelto por el backend para identificar la validación exacta en el siguiente intento.
+
+## Corregir ruta BUK de CASINO ENJOY — 2026-09-24
+
+- [x] Confirmar el contrato, mapping operativo y código de ruta informado por Operaciones.
+- [x] Completar `buk_area_code` con la ruta BUK autoritativa, sin duplicar ni reemplazar el contrato.
+- [x] Ejecutar pruebas, auditorías de migración, Guardian y verificación productiva de la generación.
+
+Resultado: la ficha BUK confirmó que `9959890001:0001` es la subárea visible y que `728` es el código operacional del centro de costos consumido por la generación. El mapping productivo quedó con `buk_area_code = 728`, activo y uno a uno. Pruebas focalizadas, auditoría de migraciones, Guardian y CI pasaron; no se reintentó automáticamente ningún candidato fallido.
+
+## Alinear candidatos activos con Psicolaboral — 2026-09-23
+
+- [x] Reproducir el caso de Aliro Monrroy por RUT y folio en ambas superficies y revisar la evaluación psicolaboral.
+- [x] Identificar la divergencia de universo entre `get_recruitment_candidates_page` y las RPC de Psicolaboral.
+- [x] Corregir ambas RPC para incluir candidatos de casos no terminales aunque estén en etapa `hired` y aún no tengan evaluación.
+- [x] Verificar el caso, los contadores, seguridad, pruebas, Guardian y publicación productiva.
+
+Resultado: Aliro Andres Monrroy Monrroy (`17.819.956-0`, RC-0173) ahora aparece en Psicolaboral como `No realizado`. La migración `20260923160000` alineó listado y resumen para incluir candidatos de casos no terminales en etapa `hired` sin assessment; se conservaron la etapa y los datos del candidato.
+
+## Cargar jornadas desde info.xlsx — 2026-09-23
+
+- [x] Leer y validar la estructura del Excel, fechas, ciclos y duplicados.
+- [x] Conciliar cada fila contra BUK por RUT, identidad activa y contrato/área exacto.
+- [x] Cargar de forma idempotente solo las filas inequívocas, preservando historial y evitando solapamientos.
+- [x] Verificar producción, calendario, duplicados, pruebas y auditorías; dejar pendientes las divergencias.
+
+Resultado: `info.xlsx` contenía 45 filas para el 2026-09-07. Se cargaron 44 jornadas en producción: 3 `4X3` y 41 `5X2`, todas iniciando lunes, sin duplicados ni solapamientos. Se excluyó `10.528.715-1` porque BUK mantiene dos fichas activas para el mismo RUT y requiere resolución previa.
+
+## Normalizar inicio lunes para jornadas 4X3 y 5X2 — 2026-09-23
+
+- [x] Auditar en producción el catálogo y todas las asignaciones vigentes 4X3/5X2, incluyendo fechas, contratos y solapamientos.
+- [x] Definir el conjunto exacto de filas que contradice la regla lunes–jueves/lunes–viernes.
+- [x] Corregir de forma idempotente y auditable solo las filas afectadas, preservando historial y otras pautas.
+- [x] Verificar calendario, duplicados, fechas de inicio, pruebas, Guardian y evidencia productiva.
+
+Resultado: producción tenía 9 asignaciones vigentes/futuras 4X3/5X2 con inicio distinto de lunes. Se normalizaron a lunes de la misma semana, se conservaron las fechas originales en `notes`, y la fila histórica de Francisco Cordero no se reescribió. La migración `20260923140000` dejó 0 incumplimientos vigentes, validó solapamientos y agregó un trigger que rechaza nuevas fechas no lunes.
+
+## Excluir trabajadores con salida BUK de Jornadas — 2026-09-23
+
+- [x] Reproducir la presencia de Gioanny Alexanders Carvajal Zumaran y verificar fecha de salida, `is_active` y última Sync BUK.
+- [x] Corregir búsqueda/calendario desde la fuente autoritativa sin borrar historial ni excepciones.
+- [x] Ejecutar pruebas, auditorías, Guardian y verificación productiva del trabajador y del universo activo.
+- [x] Registrar la lección técnica y la evidencia de cierre.
+
+Resultado: la migración `20260923120000` prioriza la fecha de salida de `current_job` en BUK, valida el estado vigente en el buscador y excluye del alcance futuro a trabajadores cuya salida ya pasó. La prueba productiva transaccional confirmó `Salida` desde la fecha exacta y se revirtió. La corrida BUK del 2026-09-23 procesó 5.449/5.449 registros sin error; Gioanny aún llega con `is_active = true`, `current_job.end_date = null` y sin `Fecha de salida`, por lo que falta corregir el dato en BUK o su ficha vigente antes de proyectar `SAL`.
+
+## Corregir visibilidad de Personal contratado — 2026-09-23
+
+- [x] Reproducir el filtro de Personal contratado en código y producción, identificando el folio 173 y los folios omitidos.
+- [x] Corregir la causa raíz sin alterar estados, historial, permisos ni conteos de contratación.
+- [x] Ejecutar pruebas, `npm run build:frontend-check`, `npm run guardian`, `git diff --check` y validar la vista productiva con todos los folios.
+- [x] Registrar la lección técnica y dejar evidencia del resultado productivo.
+
+Resultado: la RPC productiva había quedado limitada al `JOIN` de la contingencia de RC-0173. La migración `20260923100000` restauró el universo común de contratados, conserva la evidencia contingente vinculada y dejó verificados 180 contratados en 42 folios; búsquedas RC-0132, RC-0142 y RC-0173 devuelven 19, 19 y 10 registros respectivamente.
+
+## Ampliar comentarios de revisión psicolaboral — 2026-09-23
+
+- [x] Confirmar que el comentario de la psicóloga se persiste como texto sin truncamiento.
+- [x] Aumentar el espacio visible del campo previo a la validación sin alterar el flujo de aprobación.
+- [x] Agregar cobertura de contrato, ejecutar build, Guardian y verificar el bundle productivo.
+
+Resultado: el textarea de revisión profesional queda con 8 filas visibles y altura mínima de 220 px; conserva el texto completo y el mismo flujo `Guardar comentario`, `Observar` y `Validar y generar informe`. Integrity, build frontend y Guardian pasaron sin cambios de permisos ni datos.
+
+## Diagnóstico de entrega de correos psicolaborales — 2026-09-23
+
+- [x] Revisar el flujo de envío y la confirmación del proveedor.
+- [x] Contrastar los estados productivos, auditoría y correos recientes.
+- [x] Identificar correos malformados y la brecha entre aceptado por proveedor y entregado.
+- [ ] Implementar validación de dominio y tracking de entrega solo después de confirmar alcance.
+
+## Filtro de jornadas por administrador de contrato — 2026-09-22
+
+- [x] Confirmar el catálogo autoritativo de administradores y el vínculo administrador → área BUK/contrato.
+- [x] Extender el catálogo de Jornadas y el calendario general para consultar todos los contratos del administrador seleccionado.
+- [x] Mantener el filtro Contrato / Área, permisos actuales, búsqueda, KPIs y exportación sin regresiones.
+- [x] Agregar pruebas de contrato/frontend y ejecutar TypeScript, pruebas, build, auditorías, Guardian y diff.
+- [x] Aplicar la migración y publicar en producción; verificar catálogo, cantidad de trabajadores y exportación productiva.
+
+Resultado: Jornadas incorpora el filtro `Administrador del contrato`. El backend construye el catálogo desde mapeos BUK operativos, uno-a-uno y asociados a contrato ERP; el calendario general y Excel consultan todo el alcance de sus áreas. La migración `20260922200000` quedó aplicada en Supabase, el commit `0f1eb2d` quedó publicado en `main`, CI/Guardian pasaron y producción sirve el chunk `RosterPage-D-q83FhQ.js` con el selector, `contract_administrators` y `p_contract_admin_filter`.
+
+## Exportación Excel de Jornadas con área contractual — 2026-09-22
+
+- [x] Confirmar si el backend ya entrega area_name en el calendario exportable.
+- [x] Corregir la transformación Excel para mostrar el área real y conservar el código contractual.
+- [x] Agregar prueba de contrato del exportador y ejecutar build, Guardian y diff.
+- [x] Verificar que no se modifiquen filtros, permisos ni datos del calendario.
+
+Resultado: la exportación Excel usa area_name como valor visible de Contrato (por ejemplo CODELCO - DRT) y conserva contract_code en Código contrato. El commit 327cbdbb quedó publicado en main; CI, Guardian y el bundle productivo confirmaron el cambio.
+
+## Corrección de densidad y separación del calendario general — 2026-09-22
+
+- [x] Mantener cargo y jornada en el mismo eje visual para no aumentar la altura.
+- [x] Reducir la altura de la fila y reforzar la separación entre estados diarios.
+- [ ] Ejecutar pruebas, Guardian y verificación del bundle productivo.
+
+## EEES Guardian cleanup 100% — 2026-09-22
+
+- [x] Ejecutar audit:destructive-migrations e identificar exclusivamente la migración 20260916103000.
+- [x] Confirmar que la migración ya está aplicada en producción antes de tocarla.
+- [x] Corregir únicamente su cabecera documental EEES-DB-005, owner y rollback, sin cambiar SQL ejecutable.
+- [x] Comparar y eliminar la copia redundante local .git/info/refs 2, conservando .git/info/refs.
+- [x] Ejecutar audit:destructive-migrations y audit:repository-cleanup.
+- [x] Ejecutar Guardian y la batería enterprise final.
+
+Resultado: Guardian terminó con 0 error(s), 0 warning(s). No hubo despliegues, migraciones remotas, cambios de permisos, cambios de datos ni modificación funcional del ERP.
+
+## Rediseño visual del calendario general por contrato — 2026-09-22
+
+- [x] Adaptar la ficha fija del trabajador a nombre, cargo y jornada, sin alterar filtros ni exportación.
+- [x] Mejorar cabeceras, colores de estados y marcador vertical del día actual.
+- [x] Verificar responsive, pruebas, build y publicación productiva.
+
+Resultado: el calendario general por contrato ahora presenta nombre, cargo y jornada en la columna fija; las celdas usan una lectura visual diferenciada para trabajo, descanso y excepciones; y el día actual queda marcado con una guía vertical continua y un indicador superior.
+
+
+## Normalización documental y gobernanza Atlas — 2026-09-22
+
+- [x] Inventariar y clasificar los 129 archivos Markdown del repositorio sin eliminar evidencia histórica.
+- [x] Validar contra runtime los contratos de Psych AI, permisos, auditoría, BUK e integraciones.
+- [x] Crear el índice documental y los documentos maestros de gobernanza, arquitectura, contratos y runbooks.
+- [x] Marcar contradicciones históricas y separar explícitamente estado actual, objetivo y evidencia.
+- [x] Ejecutar los gates documentales, de seguridad, migraciones, integridad, build y Guardian sin tocar el runtime.
+- [x] Entregar informe de normalización con riesgos residuales y próximos pasos.
+
+Alcance aprobado para esta iteración: normalización documental y de gobernanza, sin cambios funcionales, migraciones, permisos, datos, secretos, despliegues ni configuración productiva.
+
+Resultado: se creó docs/DOCUMENTATION_INDEX.md y 16 documentos maestros. Las referencias Psych V4/V5/gpt-5-mini quedaron marcadas como HISTORICAL y el contrato V6.3 Luna quedó centralizado. Todos los gates pasaron salvo Guardian, que conserva dos bloqueos preexistentes: cabecera EEES faltante en 20260916103000_allow_release_terminal_candidate_without_folio.sql y copia conflictiva .git/info/refs.
+
 ## Permisos de consulta para gerentes y administradores de Jornadas — 2026-09-22
 
 - [x] Confirmar en producción el acceso de gerentes y administradores al calendario, filtros y exportación.
@@ -3681,3 +3855,38 @@ Resultado: `sync-buk-candidates` quedó desplegada en el proyecto productivo `pz
 - [x] Registrar resultado, pendientes y evidencia de producción.
 
 Resultado: se cargaron 371 trabajadores únicos del workbook; el duplicado de 12.579.300-2 con contrato ENAEX se descartó porque su ficha activa corresponde a CODELCO. Producción confirmó 371 asignaciones, 371 RUT únicos y 0 duplicados. Se crearon 14 patrones DAND con etiquetas backend A/B/T; 4x4 usa periodo completo de 16 días y 7x7 de 28 días. La interfaz compilada muestra esas etiquetas en calendario individual y general.
+
+## Separar folio 173 entre Personal a Contratar y Personal contratado — 2026-09-22
+
+- [x] Reproducir en producción la doble aparición de los 10 candidatos de RC-0173.
+- [x] Corregir el criterio de bucket sin alterar la excepción documental temporal del folio.
+- [x] Verificar que los 10 queden solo en Personal contratado y que sigan disponibles para carga documental.
+- [x] Ejecutar validación productiva de RPCs y checklist documental.
+
+Resultado: producción devuelve `Personal a Contratar = 0` y `Personal contratado = 10` para RC-0173. El checklist documental responde para un contratado del folio y conserva 13 documentos obligatorios pendientes, por lo que la ventana de carga sigue disponible.
+
+## Separar folio 173 entre Personal a Contratar y Personal contratado — 2026-09-22
+
+- [ ] Reproducir en producción la doble aparición de los 10 candidatos de RC-0173.
+- [ ] Corregir la RPC de bucket sin alterar la excepción documental temporal del folio.
+- [ ] Verificar que los 10 queden solo en Personal contratado y que sigan disponibles para carga documental.
+- [ ] Ejecutar pruebas, auditorías y publicación productiva.
+## Integración R2 aislada para nuevo módulo — 2026-09-24
+
+- [x] Identificar el runtime de Cloudflare Pages/Functions y el mecanismo actual de configuración del despliegue.
+- [x] Definir el contrato de comunicación ERP ↔ Supabase Auth ↔ Cloudflare/R2 sin mover archivos existentes.
+- [x] Diseñar el endpoint de diagnóstico y generación de enlaces temporales en modo solo lectura.
+- [x] Validar que los flujos actuales de Supabase Storage no se modifiquen.
+- [x] Implementar únicamente el esqueleto aislado; falta configurar los bindings/secrets en Cloudflare.
+- [ ] Ejecutar build, Guardian y pruebas de contrato; no publicar archivos ni activar migración hasta contar con evidencia.
+
+## R2 como repositorio principal de Acreditación — 2026-09-24
+
+- [x] Inspeccionar contratos actuales de Acreditación, Cloudflare Pages Functions y carga BUK antes de editar.
+- [x] Agregar metadata de almacenamiento R2, estados de custodia y auditoría sin alterar Supabase Storage existente.
+- [x] Implementar carga privada a R2 con validación de sesión, permisos de Acreditación, tamaño, MIME, checksum e idempotencia.
+- [x] Integrar la ficha de Acreditación para guardar primero en R2 y conservar la sincronización posterior con BUK.
+- [ ] Agregar lectura mediante enlaces temporales y estados visibles de R2/BUK.
+- [x] Ejecutar pruebas de contrato, build, Guardian y validación de producción; publicar solo después de evidencia satisfactoria.
+
+Resultado parcial: producción tiene la migración aplicada y el despliegue `eebe179e` activo en Cloudflare Pages. El endpoint R2 responde `401` sin sesión, confirmando que la ruta está protegida. La lectura/descarga autenticada queda como siguiente capa antes de cerrar completamente el rediseño de custodia.
