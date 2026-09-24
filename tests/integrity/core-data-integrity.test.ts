@@ -44,8 +44,8 @@ describe("CORE data integrity", () => {
 
   it("persists BUK checkpoints before deleting local source documents", () => {
     const sync = read("supabase/functions/sync-buk-candidates/index.ts");
-    const checkpoint = sync.indexOf("jobResultSnapshot.documents = uploadedDocuments");
-    const removal = sync.indexOf('.from("candidate-docs")\n      .remove([document.file_path])', checkpoint);
+    const checkpoint = sync.indexOf('status: "success",\n      buk_document_id:');
+    const removal = sync.indexOf('.from("candidate-docs")\n      .remove([documentJob.source_file_path])', checkpoint);
     expect(checkpoint).toBeGreaterThan(0);
     expect(removal).toBeGreaterThan(checkpoint);
   });

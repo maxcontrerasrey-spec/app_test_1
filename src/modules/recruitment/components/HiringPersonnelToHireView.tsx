@@ -341,14 +341,25 @@ export function HiringPersonnelToHireView({
         return;
       }
 
-      const queuedCount = data.filter((job) => job.status === "pending").length;
       const processingCount = data.filter((job) => job.status === "processing").length;
       const successCount = processed.filter((job) => job.status === "success").length;
       const failedJobs = processed.filter((job) => job.status === "error");
+      const pendingDocumentCount = processed.reduce(
+        (total, job) => total + Number(job.documentQueue?.pending ?? 0),
+        0
+      );
+      const documentReconciliationCount = processed.reduce(
+        (total, job) => total + Number(job.documentQueue?.reconciliation_required ?? 0),
+        0
+      );
+      const failedDocumentCount = processed.reduce(
+        (total, job) => total + Number(job.documentQueue?.failed ?? 0),
+        0
+      );
 
       if (dispatchError) {
         setExportMessage(
-          `Se encolaron ${queuedCount} persona(s), pero no se pudo ejecutar la sincronización automática con BUK. ${dispatchError}`
+          `${successCount > 0 ? `BUK confirmó ${successCount} persona(s), pero ` : ""}la cola BUK quedó con procesamiento pendiente. ${dispatchError}`
         );
         return;
       }
@@ -361,9 +372,9 @@ export function HiringPersonnelToHireView({
               .map((job) => job.error)
               .filter(Boolean)
               .join(" | ")}`
-          : processingCount > 0
-            ? `BUK procesó ${successCount} persona(s). ${processingCount} siguen en procesamiento en segundo plano.`
-            : `BUK procesó ${successCount} persona(s) correctamente.`
+          : processingCount > 0 || pendingDocumentCount > 0 || documentReconciliationCount > 0 || failedDocumentCount > 0
+            ? `BUK confirmó ${successCount} persona(s). ${pendingDocumentCount + documentReconciliationCount + failedDocumentCount} documento(s) requieren seguimiento en la cola documental.`
+            : `BUK procesó ${successCount} persona(s) correctamente, incluida su Solicitud de Contratación.`
       );
       if (generatableSelection.omittedIds.length > 0) {
         setExportMessage((previous) =>

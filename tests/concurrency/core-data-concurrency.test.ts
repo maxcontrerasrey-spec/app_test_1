@@ -51,4 +51,21 @@ describe("CORE concurrency guards", () => {
     expect(sql).toContain("No hay cupos disponibles para generar este candidato en BUK.");
     expect(sql).toContain("source', 'claim_buk_sync_jobs'");
   });
+
+  it("limits document-provider concurrency independently from hiring capacity", () => {
+    const sql = fs.readFileSync(
+      path.join(
+        root,
+        "supabase/migrations/20260924110000_separate_buk_candidate_document_queue.sql"
+      ),
+      "utf8"
+    );
+
+    expect(sql).toContain("buk_candidate_document_queue_control");
+    expect(sql).toContain("max_concurrency integer not null default 3");
+    expect(sql).toContain("control_row public.buk_candidate_document_queue_control%rowtype");
+    expect(sql).toContain("control_row.max_concurrency - active_count");
+    expect(sql).toContain("for update skip locked");
+    expect(sql).toContain("started_at < timezone('utc', now()) - interval '10 minutes'");
+  });
 });

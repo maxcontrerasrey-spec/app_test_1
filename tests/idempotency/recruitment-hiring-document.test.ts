@@ -72,9 +72,9 @@ describe("Solicitud de Contratación ERP", () => {
     );
     const documentProcessor = edge.slice(
       edge.indexOf("async function processRecruitmentHiringDocument"),
-      edge.indexOf("async function processDocuments")
+      edge.indexOf("function extractUploadedDocumentsFromSnapshot")
     );
-    expect(edge).toContain('mode?: "sync" | "hiring_document_backfill"');
+    expect(edge).toContain('mode?: "sync" | "documents" | "hiring_document_backfill"');
     expect(edge).toContain("HIRING_DOCUMENT_BACKFILL_SECRET");
     expect(edge).toContain("safeSecretEquals(suppliedBackfillSecret, backfillSecret)");
     expect(edge).toContain("persistSourceJobCheckpoint: false");
@@ -119,11 +119,20 @@ describe("Solicitud de Contratación ERP", () => {
     expect(edge).toContain('transport: "reconciled_remote"');
   });
 
-  it("reconcilia documentos generales solo en reintentos del job", () => {
+  it("separa documentos generales en una cola acotada y reintentable", () => {
     const edge = read("supabase/functions/sync-buk-candidates/index.ts");
+    const migration = read(
+      "supabase/migrations/20260924110000_separate_buk_candidate_document_queue.sql"
+    );
 
-    expect(edge).toContain("options: { reconcileRemoteDocuments?: boolean } = {}");
-    expect(edge).toContain("if (options.reconcileRemoteDocuments)");
-    expect(edge).toContain("{ reconcileRemoteDocuments: job.attempts > 1 }");
+    expect(edge).toContain('if (mode === "documents")');
+    expect(edge).toContain("enqueueCandidateDocumentJobs");
+    expect(edge).toContain("runCandidateDocumentQueue");
+    expect(edge).toContain("isAmbiguousBukDocumentError");
+    expect(edge).not.toContain("await processDocuments(");
+    expect(migration).toContain("claim_buk_candidate_document_jobs");
+    expect(migration).toContain("max_concurrency integer not null default 3");
+    expect(migration).toContain("for update skip locked");
+    expect(migration).toContain("reconciliation_required");
   });
 });

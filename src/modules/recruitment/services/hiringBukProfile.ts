@@ -403,6 +403,14 @@ type BukSyncProcessedRow = {
   status: "success" | "error";
   bukEmployeeId?: string;
   error?: string;
+  documentQueue?: {
+    total?: number;
+    pending?: number;
+    processing?: number;
+    success?: number;
+    failed?: number;
+    reconciliation_required?: number;
+  } | null;
 };
 
 const MAX_BUK_SYNC_ERROR_MESSAGE_LENGTH = 220;
@@ -499,6 +507,72 @@ function mapStatusRowsToProcessed(statusRows: BukSyncQueueStatusRow[]) {
     }));
 }
 
+async function dispatchBukCandidateDocumentQueue(jobIds: string[]) {
+  if (!supabase || jobIds.length === 0) {
+    return {
+      queues: new Map<string, BukSyncProcessedRow["documentQueue"]>(),
+      error: null as string | null
+    };
+  }
+
+  const queues = new Map<string, BukSyncProcessedRow["documentQueue"]>();
+  let reconciliationPasses = 0;
+  for (let pass = 0; pass < 8; pass += 1) {
+    const { data, error } = await supabase.functions.invoke("sync-buk-candidates", {
+      body: { mode: "documents", jobIds, limit: 3 }
+    });
+    if (error) {
+      return {
+        queues,
+        error: getSupabaseErrorMessage(
+          error,
+          "La Solicitud quedó cargada, pero no fue posible continuar la cola documental BUK.",
+          "message"
+        )
+      };
+    }
+
+    const payload = data && typeof data === "object"
+      ? data as { processed?: unknown[]; claimed?: number }
+      : null;
+    const processedRows = Array.isArray(payload?.processed)
+      ? payload.processed as Array<{
+          jobId?: unknown;
+          status?: unknown;
+          queueStatus?: unknown;
+          documentQueue?: unknown;
+        }>
+      : [];
+    if (processedRows.length === 0 || payload?.claimed === 0) {
+      break;
+    }
+
+    let hasPendingDocuments = false;
+    let hasReconciliationError = false;
+    let hasTerminalError = false;
+    for (const row of processedRows) {
+      if (typeof row.jobId !== "string" || !row.jobId) continue;
+      const queue = row.documentQueue && typeof row.documentQueue === "object"
+        ? row.documentQueue as BukSyncProcessedRow["documentQueue"]
+        : null;
+      queues.set(row.jobId, queue);
+      hasPendingDocuments = hasPendingDocuments || Number(queue?.pending ?? 0) > 0;
+      hasReconciliationError = hasReconciliationError || row.queueStatus === "reconciliation_required";
+      hasTerminalError = hasTerminalError || row.status === "error" && row.queueStatus !== "reconciliation_required";
+    }
+
+    if (hasTerminalError) break;
+    if (hasReconciliationError) {
+      if (reconciliationPasses >= 1) break;
+      reconciliationPasses += 1;
+      continue;
+    }
+    if (!hasPendingDocuments) break;
+  }
+
+  return { queues, error: null as string | null };
+}
+
 export async function generateCandidatesInBuk(candidateIds: string[]) {
   const queueResult = await enqueueCandidatesToBuk(candidateIds);
   if (queueResult.error) {
@@ -533,61 +607,70 @@ export async function generateCandidatesInBuk(candidateIds: string[]) {
     };
   }
 
-  const { data, error } = await supabase.functions.invoke("sync-buk-candidates", {
-    body: { jobIds: pendingJobIds }
-  });
-
-  if (error) {
-    const statusResult = await fetchBukSyncJobsStatus(pendingJobIds);
-    if (!statusResult.error) {
-      const hasProcessingEvidence = statusResult.data.some(
-        (job) =>
-          job.status !== "pending" ||
-          job.started_at !== null ||
-          job.finished_at !== null
-      );
-
-      if (hasProcessingEvidence) {
-        return {
-          data: mergeQueuedJobsWithStatus(queuedJobs, statusResult.data),
-          processed: mapStatusRowsToProcessed(statusResult.data),
-          error: null,
-          dispatchError: null
-        };
+  const processed: BukSyncProcessedRow[] = [];
+  let dispatchError: string | null = null;
+  for (const jobId of pendingJobIds) {
+    const { data, error } = await supabase.functions.invoke("sync-buk-candidates", {
+      body: { jobIds: [jobId], limit: 1 }
+    });
+    if (error) {
+      const statusResult = await fetchBukSyncJobsStatus([jobId]);
+      if (!statusResult.error) {
+        const recovered = mapStatusRowsToProcessed(statusResult.data);
+        processed.push(...recovered);
+        if (recovered.some((job) => job.status === "success" || job.status === "error")) {
+          continue;
+        }
       }
-    }
-
-    return {
-      data: queuedJobs,
-      processed: [] as BukSyncProcessedRow[],
-      error: null,
-      dispatchError: getSupabaseErrorMessage(
+      dispatchError = dispatchError ?? getSupabaseErrorMessage(
         error,
         "No fue posible ejecutar la sincronización automática con BUK.",
         "message"
-      )
-    };
+      );
+      continue;
+    }
+
+    const payload = data && typeof data === "object"
+      ? data as { error?: unknown; processed?: unknown }
+      : null;
+    const functionError =
+      payload?.error && typeof payload.error === "string"
+        ? payload.error
+        : payload?.error
+          ? String(payload.error)
+          : null;
+    if (Array.isArray(payload?.processed)) {
+      processed.push(...payload.processed.map((row) => ({
+        ...(row as BukSyncProcessedRow),
+        error: sanitizeBukSyncErrorMessage((row as BukSyncProcessedRow).error)
+      })));
+    }
+    if (functionError) {
+      dispatchError = dispatchError ?? sanitizeBukSyncErrorMessage(functionError) ?? functionError;
+    }
   }
 
-  const payload =
-    data && typeof data === "object" ? (data as { error?: unknown; processed?: unknown }) : null;
-  const functionError =
-    payload?.error && typeof payload.error === "string"
-      ? payload.error
-      : payload?.error
-        ? String(payload.error)
-        : null;
+  const successfulJobIds = processed
+    .filter((job) => job.status === "success")
+    .map((job) => job.jobId)
+    .filter((jobId): jobId is string => Boolean(jobId));
+  const documentDispatch = await dispatchBukCandidateDocumentQueue(
+    Array.from(new Set(successfulJobIds))
+  );
+  if (documentDispatch.error) {
+    dispatchError = dispatchError ?? documentDispatch.error;
+  }
+  for (const job of processed) {
+    job.documentQueue = documentDispatch.queues.get(job.jobId) ?? job.documentQueue ?? null;
+  }
+
+  const statusResult = await fetchBukSyncJobsStatus(pendingJobIds);
 
   return {
-    data: queuedJobs,
-    processed: Array.isArray(payload?.processed)
-      ? (payload.processed as BukSyncProcessedRow[]).map((row) => ({
-          ...row,
-          error: sanitizeBukSyncErrorMessage(row.error)
-        }))
-      : [],
+    data: statusResult.error ? queuedJobs : mergeQueuedJobsWithStatus(queuedJobs, statusResult.data),
+    processed,
     error: null,
-    dispatchError: sanitizeBukSyncErrorMessage(functionError) ?? null
+    dispatchError
   };
 }
 

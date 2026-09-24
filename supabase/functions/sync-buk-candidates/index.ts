@@ -22,7 +22,7 @@ import {
 type SyncRequest = {
   jobIds?: string[];
   limit?: number;
-  mode?: "sync" | "hiring_document_backfill";
+  mode?: "sync" | "documents" | "hiring_document_backfill";
   candidateIds?: string[];
   dryRun?: boolean;
 };
@@ -36,6 +36,21 @@ type BukJobRow = {
   attempts: number;
   payload_snapshot: Record<string, unknown> | null;
   result_snapshot: Record<string, unknown> | null;
+};
+
+type BukCandidateDocumentJobRow = {
+  id: string;
+  buk_sync_job_id: string;
+  recruitment_case_candidate_id: string;
+  candidate_profile_id: string;
+  buk_employee_id: string;
+  source_document_id: string;
+  source_document_name: string;
+  source_file_path: string | null;
+  status: "pending" | "processing" | "success" | "failed" | "reconciliation_required";
+  attempts: number;
+  response_snapshot: Record<string, unknown> | null;
+  payload_snapshot: Record<string, unknown> | null;
 };
 
 type HiringDocumentBackfillRow = {
@@ -1185,14 +1200,24 @@ function buildBukLocationsUrl() {
 
 async function fetchBukJson(url: string, init: RequestInit = {}) {
   const authToken = requireEnv(Deno.env.get("BUK_AUTH_TOKEN"), "BUK_AUTH_TOKEN");
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      auth_token: authToken,
-      ...(init.headers ?? {})
+  const hasCallerSignal = Boolean(init.signal);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(15_000),
+      headers: {
+        Accept: "application/json",
+        auth_token: authToken,
+        ...(init.headers ?? {})
+      }
+    });
+  } catch (error) {
+    if (!hasCallerSignal && error instanceof DOMException && error.name === "TimeoutError") {
+      throw new Error(`BUK no respondió dentro de 15 segundos: ${url}`);
     }
-  });
+    throw error;
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -3559,108 +3584,6 @@ async function processRecruitmentHiringDocument(
   }
 }
 
-async function processDocuments(
-  supabase: SupabaseAdminClient,
-  jobId: string,
-  jobResultSnapshot: Record<string, unknown>,
-  payload: BukCandidateSyncPayload,
-  employeeId: string,
-  uploadedDocuments: Array<Record<string, unknown>>,
-  alreadyUploadedDocumentIds: Set<string>,
-  options: { reconcileRemoteDocuments?: boolean } = {}
-) {
-  for (const document of payload.documents) {
-    if (alreadyUploadedDocumentIds.has(document.id)) {
-      if (document.file_path) {
-        const { error: cleanupError } = await supabase.storage
-          .from("candidate-docs")
-          .remove([document.file_path]);
-        if (cleanupError) {
-          throw new Error(`No fue posible completar la limpieza local de ${document.document_name}: ${cleanupError.message}`);
-        }
-      }
-      continue;
-    }
-
-    if (!document.file_path) {
-      continue;
-    }
-
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from("candidate-docs")
-      .download(document.file_path);
-
-    if (downloadError || !fileData) {
-      throw new Error(`No fue posible descargar ${document.document_name}: ${downloadError?.message ?? "sin archivo"}`);
-    }
-
-    const bukFileName = buildBukDocumentFileName(payload, document.document_name);
-    if (options.reconcileRemoteDocuments) {
-      const remoteDocument = await reconcileBukDocumentUpload(employeeId, bukFileName);
-      if (remoteDocument.found) {
-        uploadedDocuments.push({
-          sourceDocumentId: document.id,
-          sourceDocumentName: document.document_name,
-          sourceFilePath: document.file_path,
-          bukDocumentId: remoteDocument.bukDocumentId,
-          bukDocumentUrl: remoteDocument.bukDocumentUrl,
-          bukEmployeeFolderId: remoteDocument.bukEmployeeFolderId,
-          bukDocumentName: remoteDocument.bukDocumentName,
-          transport: "reconciled_remote",
-          status: 200
-        });
-        alreadyUploadedDocumentIds.add(document.id);
-        jobResultSnapshot.documents = uploadedDocuments;
-        await markJobState(supabase, jobId, {
-          status: "processing",
-          result_snapshot: jobResultSnapshot
-        });
-
-        const { error: removeReconciledError } = await supabase.storage
-          .from("candidate-docs")
-          .remove([document.file_path]);
-        if (removeReconciledError) {
-          throw new Error(`El documento ya estaba en BUK, pero no se pudo eliminar ${document.document_name} de Supabase Storage: ${removeReconciledError.message}`);
-        }
-        continue;
-      }
-    }
-
-    const uploadResult = await uploadBukDocument(employeeId, bukFileName, fileData);
-    const uploadPayload = uploadResult.payload;
-    const { bukDocumentId, bukDocumentUrl, bukEmployeeFolderId } = extractBukDocumentMetadata(uploadPayload);
-
-    uploadedDocuments.push({
-      sourceDocumentId: document.id,
-      sourceDocumentName: document.document_name,
-      sourceFilePath: document.file_path,
-      bukDocumentId,
-      bukDocumentUrl,
-      bukEmployeeFolderId,
-      bukDocumentName: bukFileName,
-      transport: uploadResult.transport,
-      status: uploadResult.status,
-      response: uploadPayload
-    });
-    alreadyUploadedDocumentIds.add(document.id);
-    jobResultSnapshot.documents = uploadedDocuments;
-    await markJobState(supabase, jobId, {
-      status: "processing",
-      result_snapshot: jobResultSnapshot
-    });
-
-    const { error: removeError } = await supabase.storage
-      .from("candidate-docs")
-      .remove([document.file_path]);
-
-    if (removeError) {
-      throw new Error(`El documento se subió a Buk, pero no se pudo eliminar ${document.document_name} de Supabase Storage: ${removeError.message}`);
-    }
-  }
-
-  return uploadedDocuments;
-}
-
 function extractUploadedDocumentsFromSnapshot(snapshot: Record<string, unknown> | null) {
   const documents = snapshot?.documents;
   if (!Array.isArray(documents)) {
@@ -3764,6 +3687,298 @@ async function finalizeSuccessfulJob(
   }
 }
 
+function isAmbiguousBukDocumentError(error: unknown) {
+  const message = toErrorMessage(error).toLowerCase();
+  return /timeout|timed out|fetch failed|network|connection|reset|\b5\d{2}\b/.test(message);
+}
+
+function buildDocumentQueueSummary(rows: Array<Record<string, unknown>>) {
+  const statuses = ["pending", "processing", "success", "failed", "reconciliation_required"] as const;
+  return {
+    total: rows.length,
+    ...Object.fromEntries(
+      statuses.map((status) => [
+        status,
+        rows.filter((row) => row.status === status).length
+      ])
+    ),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function enqueueCandidateDocumentJobs(
+  supabase: SupabaseAdminClient,
+  job: BukJobRow,
+  employeeId: string,
+  existingDocuments: Array<Record<string, unknown>>
+) {
+  const { data, error } = await supabase.rpc("enqueue_buk_candidate_document_jobs", {
+    p_buk_sync_job_id: job.id,
+    p_buk_employee_id: employeeId,
+    p_existing_documents: existingDocuments
+  });
+  if (error) {
+    throw new Error(`No fue posible encolar los documentos del candidato: ${error.message}`);
+  }
+  return (data ?? []) as Array<Record<string, unknown>>;
+}
+
+async function claimCandidateDocumentJobs(
+  supabase: SupabaseAdminClient,
+  request: SyncRequest
+) {
+  const normalizedLimit = Math.min(Math.max(request.limit ?? 3, 1), 3);
+  const normalizedJobIds = Array.from(
+    new Set((request.jobIds ?? []).map((jobId) => jobId.trim()).filter(Boolean))
+  );
+  const { data, error } = await supabase.rpc("claim_buk_candidate_document_jobs", {
+    p_limit: normalizedLimit,
+    p_buk_sync_job_ids: normalizedJobIds.length > 0 ? normalizedJobIds : null
+  });
+  if (error) {
+    throw new Error(`No fue posible reclamar la cola documental BUK: ${error.message}`);
+  }
+  return (data ?? []) as BukCandidateDocumentJobRow[];
+}
+
+async function completeCandidateDocumentJob(
+  supabase: SupabaseAdminClient,
+  documentJob: BukCandidateDocumentJobRow,
+  uploadedDocument: Record<string, unknown>
+) {
+  const uploadedAt = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("buk_candidate_document_jobs")
+    .update({
+      status: "success",
+      buk_document_id: uploadedDocument.bukDocumentId ?? null,
+      buk_document_url: uploadedDocument.bukDocumentUrl ?? null,
+      buk_employee_folder_id: uploadedDocument.bukEmployeeFolderId ?? null,
+      buk_document_name: uploadedDocument.bukDocumentName ?? null,
+      transport: uploadedDocument.transport ?? null,
+      response_snapshot: uploadedDocument.response ?? {},
+      last_error: null,
+      finished_at: uploadedAt
+    })
+    .eq("id", documentJob.id)
+    .eq("status", "processing")
+    .select("id")
+    .maybeSingle();
+  if (error) {
+    throw new Error(`No fue posible confirmar el documento ${documentJob.source_document_name}: ${error.message}`);
+  }
+  if (!data) {
+    throw new Error(`El documento ${documentJob.source_document_name} perdió su claim antes de confirmar la carga.`);
+  }
+
+  if (documentJob.source_file_path) {
+    const { error: removeError } = await supabase.storage
+      .from("candidate-docs")
+      .remove([documentJob.source_file_path]);
+    if (removeError) {
+      await supabase
+        .from("buk_candidate_document_jobs")
+        .update({
+          storage_cleanup_error: removeError.message
+        })
+        .eq("id", documentJob.id)
+        .eq("status", "success");
+    }
+  }
+}
+
+async function processCandidateDocumentJob(
+  supabase: SupabaseAdminClient,
+  documentJob: BukCandidateDocumentJobRow
+) {
+  const sourceJob: BukJobRow = {
+    id: documentJob.buk_sync_job_id,
+    recruitment_case_candidate_id: documentJob.recruitment_case_candidate_id,
+    status: "success",
+    attempts: 0,
+    payload_snapshot: documentJob.payload_snapshot,
+    result_snapshot: null
+  };
+  const payload = resolveAuthorizedPayload(sourceJob);
+  const bukFileName = buildBukDocumentFileName(payload, documentJob.source_document_name);
+
+  if (documentJob.attempts > 1) {
+    const remoteDocument = await reconcileBukDocumentUpload(documentJob.buk_employee_id, bukFileName);
+    if (remoteDocument.found) {
+      await completeCandidateDocumentJob(supabase, documentJob, {
+        bukDocumentId: remoteDocument.bukDocumentId,
+        bukDocumentUrl: remoteDocument.bukDocumentUrl,
+        bukEmployeeFolderId: remoteDocument.bukEmployeeFolderId,
+        bukDocumentName: remoteDocument.bukDocumentName,
+        transport: "reconciled_remote",
+        response: { reconciled: true }
+      });
+      return;
+    }
+  }
+
+  if (!documentJob.source_file_path) {
+    throw new Error(`El documento ${documentJob.source_document_name} no tiene archivo en Supabase Storage.`);
+  }
+
+  const { data: fileData, error: downloadError } = await supabase.storage
+    .from("candidate-docs")
+    .download(documentJob.source_file_path);
+  if (downloadError || !fileData) {
+    throw new Error(`No fue posible descargar ${documentJob.source_document_name}: ${downloadError?.message ?? "sin archivo"}`);
+  }
+
+  const uploadResult = await uploadBukDocument(
+    documentJob.buk_employee_id,
+    bukFileName,
+    fileData
+  );
+  const { bukDocumentId, bukDocumentUrl, bukEmployeeFolderId } = extractBukDocumentMetadata(uploadResult.payload);
+  await completeCandidateDocumentJob(supabase, documentJob, {
+    bukDocumentId,
+    bukDocumentUrl,
+    bukEmployeeFolderId,
+    bukDocumentName: bukFileName,
+    transport: uploadResult.transport,
+    response: uploadResult.payload
+  });
+}
+
+async function refreshBukSyncJobDocumentCheckpoint(
+  supabase: SupabaseAdminClient,
+  bukSyncJobId: string
+) {
+  const [{ data: sourceJob, error: sourceError }, { data: queueRows, error: queueError }] = await Promise.all([
+    supabase
+      .from("buk_sync_jobs")
+      .select("id, status, buk_employee_id, result_snapshot")
+      .eq("id", bukSyncJobId)
+      .maybeSingle(),
+    supabase
+      .from("buk_candidate_document_jobs")
+      .select("*")
+      .eq("buk_sync_job_id", bukSyncJobId)
+      .order("created_at", { ascending: true })
+  ]);
+  if (sourceError || !sourceJob) {
+    throw new Error(`No fue posible leer el job BUK para actualizar el checkpoint documental: ${sourceError?.message ?? "job no encontrado"}`);
+  }
+  if (queueError) {
+    throw new Error(`No fue posible leer la cola documental BUK: ${queueError.message}`);
+  }
+
+  const rows = (queueRows ?? []) as Array<Record<string, unknown>>;
+  const documentsBySourceId = new Map<string, Record<string, unknown>>();
+  for (const document of extractUploadedDocumentsFromSnapshot(
+    sourceJob.result_snapshot && typeof sourceJob.result_snapshot === "object"
+      ? sourceJob.result_snapshot as Record<string, unknown>
+      : null
+  )) {
+    if (typeof document.sourceDocumentId === "string") {
+      documentsBySourceId.set(document.sourceDocumentId, document);
+    }
+  }
+  for (const row of rows) {
+    if (row.status !== "success" || typeof row.source_document_id !== "string") continue;
+    documentsBySourceId.set(row.source_document_id, {
+      sourceDocumentId: row.source_document_id,
+      sourceDocumentName: row.source_document_name,
+      sourceFilePath: row.source_file_path,
+      bukDocumentId: row.buk_document_id,
+      bukDocumentUrl: row.buk_document_url,
+      bukEmployeeFolderId: row.buk_employee_folder_id,
+      bukDocumentName: row.buk_document_name,
+      transport: row.transport,
+      status: 200,
+      response: row.response_snapshot
+    });
+  }
+
+  const resultSnapshot = {
+    ...(
+      sourceJob.result_snapshot && typeof sourceJob.result_snapshot === "object"
+        ? sourceJob.result_snapshot as Record<string, unknown>
+        : {}
+    ),
+    documents: Array.from(documentsBySourceId.values()),
+    documentQueue: buildDocumentQueueSummary(rows)
+  };
+  const { error: updateError } = await supabase
+    .from("buk_sync_jobs")
+    .update({ result_snapshot: resultSnapshot })
+    .eq("id", bukSyncJobId);
+  if (updateError) {
+    throw new Error(`No fue posible persistir el checkpoint documental BUK: ${updateError.message}`);
+  }
+
+  const allDocumentsComplete = rows.length === 0 || rows.every((row) => row.status === "success");
+  if (allDocumentsComplete && sourceJob.buk_employee_id) {
+    await finalizeSuccessfulJob(supabase, bukSyncJobId, sourceJob.buk_employee_id, resultSnapshot);
+  }
+  return resultSnapshot.documentQueue;
+}
+
+async function runCandidateDocumentQueue(
+  supabase: SupabaseAdminClient,
+  request: SyncRequest
+) {
+  const documentJobs = await claimCandidateDocumentJobs(supabase, request);
+  const processed = await Promise.all(documentJobs.map(async (documentJob) => {
+    try {
+      await processCandidateDocumentJob(supabase, documentJob);
+      return {
+        jobId: documentJob.buk_sync_job_id,
+        documentJobId: documentJob.id,
+        candidateId: documentJob.recruitment_case_candidate_id,
+        sourceDocumentId: documentJob.source_document_id,
+        status: "success"
+      };
+    } catch (error) {
+      const message = toErrorMessage(error);
+      const nextStatus = isAmbiguousBukDocumentError(error)
+        ? "reconciliation_required"
+        : "failed";
+      const { error: updateError } = await supabase
+        .from("buk_candidate_document_jobs")
+        .update({
+          status: nextStatus,
+          last_error: message,
+          finished_at: new Date().toISOString()
+        })
+        .eq("id", documentJob.id)
+        .eq("status", "processing");
+      if (updateError) {
+        throw new Error(`No fue posible registrar el error documental BUK: ${updateError.message}`);
+      }
+      return {
+        jobId: documentJob.buk_sync_job_id,
+        documentJobId: documentJob.id,
+        candidateId: documentJob.recruitment_case_candidate_id,
+        sourceDocumentId: documentJob.source_document_id,
+        status: "error",
+        queueStatus: nextStatus,
+        error: message
+      };
+    }
+  }));
+  const sourceJobIds = Array.from(new Set(documentJobs.map((job) => job.buk_sync_job_id)));
+  const documentQueues = new Map<string, unknown>();
+  for (const sourceJobId of sourceJobIds) {
+    documentQueues.set(
+      sourceJobId,
+      await refreshBukSyncJobDocumentCheckpoint(supabase, sourceJobId)
+    );
+  }
+  return {
+    mode: "documents",
+    claimed: documentJobs.length,
+    processed: processed.map((row) => ({
+      ...row,
+      documentQueue: documentQueues.get(String(row.jobId)) ?? null
+    }))
+  };
+}
+
 async function finalizeExistingActiveEmployeeJob(
   supabase: SupabaseAdminClient,
   jobId: string,
@@ -3787,7 +4002,7 @@ async function claimJobs(
   supabase: SupabaseAdminClient,
   request: SyncRequest
 ) {
-  const normalizedLimit = Math.min(Math.max(request.limit ?? 10, 1), 50);
+  const normalizedLimit = Math.min(Math.max(request.limit ?? 1, 1), 3);
   const normalizedJobIds = Array.from(
     new Set((request.jobIds ?? []).map((jobId) => jobId.trim()).filter(Boolean))
   );
@@ -4008,6 +4223,18 @@ Deno.serve(async (req) => {
 
       await authorizeRequestedJobs(supabase, user.id, requestBody);
     }
+
+    if (mode === "documents") {
+      const result = await runCandidateDocumentQueue(supabase, requestBody);
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      });
+    }
+
     const jobs = await claimJobs(supabase, requestBody);
     const locations = await resolveBukLocations(supabase);
     const results: Array<Record<string, unknown>> = [];
@@ -4152,17 +4379,16 @@ Deno.serve(async (req) => {
             );
           }
 
-          await processDocuments(
+          const documentQueueRows = await enqueueCandidateDocumentJobs(
             supabase,
-            job.id,
-            jobResultSnapshot,
-            payload,
+            job,
             employeeId,
-            uploadedDocuments,
-            alreadyUploadedDocumentIds,
-            { reconcileRemoteDocuments: job.attempts > 1 }
+            uploadedDocuments
           );
-          jobResultSnapshot.documents = uploadedDocuments;
+          jobResultSnapshot.documents = uploadedDocuments.filter(
+            (document) => typeof document.sourceDocumentId === "string"
+          );
+          jobResultSnapshot.documentQueue = buildDocumentQueueSummary(documentQueueRows);
 
           // A successful retry must not keep provider errors from a previous attempt
           // visible in the ERP snapshot.
