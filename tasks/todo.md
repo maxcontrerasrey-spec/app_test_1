@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Homologar selector de impuesto en Configuración — 2026-09-25
+
+- [x] Reemplazar el checkbox diferenciado por un selector con la misma estructura visual de AFP, Salud y Tipo de contrato.
+- [x] Conservar exactamente la bandera persistida y sus estados incluir/no incluir.
+- [x] Actualizar cobertura, ejecutar Guardian, publicar y verificar el bundle productivo.
+
+Resultado: el impuesto usa ahora el mismo patrón label + select del resto de parámetros legales, con opciones explícitas `No incluir` e `Incluir cálculo SII`. Se retiraron 556 bytes de CSS específico sin alterar el booleano persistido ni el cálculo backend.
+
 ## Impuesto único opcional en Estructuras de Renta — 2026-09-25
 
 - [x] Inspeccionar el contrato vigente de configuración, cálculo y presentación por cargo.

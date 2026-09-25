@@ -67,8 +67,10 @@ describe("calculador permanente de estructuras de renta", () => {
   it("mantiene el impuesto único desactivado por defecto y lo configura por cargo", () => {
     expect(incomeTaxMigration).toContain("include_income_tax boolean not null default false");
     expect(api).toContain("p_include_income_tax: legal.includeIncomeTax");
-    expect(page).toContain('type="checkbox"');
-    expect(page).toContain("Incluir impuesto único");
+    expect(page).not.toContain('type="checkbox"');
+    expect(page).toContain("Impuesto único");
+    expect(page).toContain("No incluir");
+    expect(page).toContain("Incluir cálculo SII");
     expect(incomeTaxAuditFix).toContain("latest_audit.changed_at desc");
     expect(incomeTaxAuditFix).not.toContain("latest_audit.created_at");
   });

@@ -81,9 +81,12 @@ function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, onHeadcountC
           {isIsapre ? <label><span>Institución</span><input value={legal.healthProviderName} onChange={(event) => onLegalChange({ ...legal, healthProviderName: event.target.value })} placeholder="Nombre de Isapre" /></label> : null}
           {isIsapre ? <label><span>Valor plan ({planUnit})</span><input type="number" min="0" step={legal.healthMode === "isapre_uf" ? "0.001" : legal.healthMode === "isapre_percentage" ? "0.01" : "1"} value={legal.healthPlanValue} onChange={(event) => onLegalChange({ ...legal, healthPlanValue: Math.max(0, Number(event.target.value) || 0) })} /></label> : null}
           <label><span>Tipo de contrato</span><select value={legal.unemploymentContractType} onChange={(event) => onLegalChange({ ...legal, unemploymentContractType: event.target.value as RentStructureLegalConfig["unemploymentContractType"] })}><option value="indefinite">Indefinido · trabajador 0,6%</option><option value="fixed_term">Plazo fijo u obra · trabajador 0%</option></select></label>
-          <label className="rent-tax-option">
-            <input type="checkbox" checked={legal.includeIncomeTax} onChange={(event) => onLegalChange({ ...legal, includeIncomeTax: event.target.checked })} />
-            <span><strong>Incluir impuesto único</strong><small>Calcula automáticamente el tramo SII vigente.</small></span>
+          <label>
+            <span>Impuesto único</span>
+            <select value={legal.includeIncomeTax ? "include" : "exclude"} onChange={(event) => onLegalChange({ ...legal, includeIncomeTax: event.target.value === "include" })}>
+              <option value="exclude">No incluir</option>
+              <option value="include">Incluir cálculo SII</option>
+            </select>
           </label>
         </div>
       </section>

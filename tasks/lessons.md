@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 373. Las opciones equivalentes deben compartir el mismo patrón de formulario
+
+- Si AFP, Salud y Tipo de contrato se presentan como label más selector, una opción tributaria vecina no debe introducir una tarjeta-checkbox con altura, texto y jerarquía distintos.
+- La opcionalidad puede representarse con valores explícitos `No incluir` / `Incluir cálculo` dentro del selector existente, sin cambiar el contrato booleano persistido.
+- Antes de agregar estilo local, comparar el control con sus hermanos inmediatos y reutilizar exactamente su estructura.
+
 ## 372. Los wrappers de guardado deben probar el esquema vivo de su auditoría
 
 - Una RPC nueva puede compilar aunque una columna referenciada dentro del cuerpo PL/pgSQL no exista; el fallo aparece recién al ejecutar esa rama.
