@@ -5,9 +5,9 @@
 - [x] Confirmar el permiso backend y la regla adicional de visibilidad del menú.
 - [x] Corregir la visibilidad del módulo sin ampliar permisos a otros roles.
 - [x] Agregar regresión y ejecutar pruebas, auditorías, build y Guardian.
-- [ ] Publicar y comprobar la ruta productiva.
+- [x] Publicar y comprobar la ruta productiva.
 
-Resultado previo a publicación: `control_contratos` ya tenía acceso en `role_module_access` y en los RPC de Estructuras de Renta, pero una restricción frontend `visibleForRoles` ocultaba el módulo. Se agregó el rol a esa lista y se incorporó una prueba contractual para evitar la divergencia.
+Resultado: `control_contratos` ya tenía acceso en `role_module_access` y en los RPC de Estructuras de Renta, pero una restricción frontend `visibleForRoles` ocultaba el módulo. Se agregó el rol a esa lista, se incorporó una prueba contractual para evitar la divergencia y se publicó en producción mediante `bea3d364`. Cloudflare promovió la revisión a producción y el bundle de `gestion.busesjm.cl` fue verificado.
 
 ## Contrato primero y cargos activos por contrato en solicitudes — 2026-09-25
 
