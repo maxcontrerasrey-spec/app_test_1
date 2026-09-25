@@ -4052,4 +4052,6 @@ Resultado: los montos CLP de conceptos y planes Isapre en pesos aceptan un campo
 - [x] Separar autorización de lectura y configuración usando los roles reales del ERP.
 - [x] Permitir configurar solo a superadministradores explícitos y `control_contratos`.
 - [x] Cerrar sobrecargas RPC antiguas para impedir escrituras fuera de la nueva regla.
-- [ ] Probar permisos, migración, frontend y Guardian; aplicar y verificar en producción.
+- [x] Probar permisos, migración, frontend y Guardian; aplicar y verificar en producción.
+
+Resultado: la configuración quedó limitada a `profiles.is_super_admin = true` y al rol `control_contratos`; el resto de la gerencia mantiene solo lectura. Control de Contratos recibió acceso al módulo, el frontend consume `can_configure` desde backend y las firmas antiguas de escritura quedaron sin ejecución para `authenticated`. Las migraciones `20260925120000` y `20260925121500` fueron aplicadas en producción; la segunda validó con usuarios reales ambos accesos permitidos, el rechazo de un gerente ordinario, su lectura conservada y los privilegios de cada RPC. Pruebas contractuales, auditorías SQL, build y Guardian aprobaron.
