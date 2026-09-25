@@ -5,6 +5,10 @@ const migration = readFileSync(
   "supabase/migrations/20260925120000_restrict_hr_rent_configuration_roles.sql",
   "utf8"
 );
+const verificationMigration = readFileSync(
+  "supabase/migrations/20260925121500_verify_hr_rent_configuration_scope.sql",
+  "utf8"
+);
 const page = readFileSync(
   "src/modules/rent_structures/pages/RentStructuresPage.tsx",
   "utf8"
@@ -36,5 +40,13 @@ describe("acceso a configuración de estructuras de renta", () => {
   it("muestra la pestaña únicamente desde la señal autorizada por backend", () => {
     expect(page).toContain("query.data?.canConfigure ?");
     expect(page).toContain('setView("configuracion")');
+  });
+
+  it("verifica el alcance contra usuarios y privilegios reales al desplegar", () => {
+    expect(verificationMigration).toContain("has_function_privilege");
+    expect(verificationMigration).toContain("El superadministrador no quedó autorizado");
+    expect(verificationMigration).toContain("Control de Contratos no quedó autorizado");
+    expect(verificationMigration).toContain("Un gerente ordinario conserva acceso indebido");
+    expect(verificationMigration).toContain("El gerente ordinario perdió el acceso de lectura");
   });
 });
