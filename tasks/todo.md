@@ -4044,6 +4044,6 @@ Resultado: el submódulo quedó implementado como lectura gerencial para contrat
 - [x] Confirmar la causa del cero persistente y delimitar los campos monetarios afectados.
 - [x] Implementar entrada CLP vaciable con separación automática de miles, conservando valores numéricos para el guardado.
 - [x] Cubrir vacío, miles, millones y caracteres pegados con pruebas focalizadas.
-- [ ] Ejecutar pruebas, build, Guardian, publicar y verificar el bundle productivo.
+- [x] Ejecutar pruebas, build, Guardian, publicar y verificar el bundle productivo.
 
-Resultado local: los montos CLP de conceptos y planes Isapre en pesos aceptan un campo vacío como cero y agregan puntos de miles y millones durante la escritura. La persistencia continúa recibiendo números enteros; cupos, UF y porcentajes mantienen sus controles específicos. Validación local: 145 pruebas unitarias, 70 contractuales, build frontend, performance y Guardian sin errores.
+Resultado: los montos CLP de conceptos y planes Isapre en pesos aceptan un campo vacío como cero y agregan puntos de miles y millones durante la escritura. La persistencia continúa recibiendo números enteros; cupos, UF y porcentajes mantienen sus controles específicos. Validación: 145 pruebas unitarias, 70 contractuales, build frontend, performance, Guardian, CI y Cloudflare sin errores; el bundle productivo fue inspeccionado y contiene el formateador publicado.
