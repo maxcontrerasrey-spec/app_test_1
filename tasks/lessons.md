@@ -3937,3 +3937,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Cuando una estimación de renta deba aproximar una liquidación chilena, no usar una AFP referencial fija: versionar comisión por administradora y período, topes/UF por mes, modalidad y plan de salud, y tipo de contrato para AFC.
 - Antes de publicar, contrastar fórmulas contra liquidaciones BUK cerradas anonimizadas y comprobar diferencias en pesos.
+# Lección — separar estructura permanente de renta y métricas por período (2026-09-24)
+
+- Si el usuario solicita una estructura de renta por cargo, no introducir un selector de mes ni presentar el resultado como liquidación periódica: los haberes configurados son la base permanente y los parámetros legales vigentes se resuelven internamente.
+- No mezclar en el RPC principal cálculos de jornadas trabajador × día. El catálogo, la configuración y el cálculo previsional deben cargar primero; cualquier indicador operacional periódico debe resolverse por separado y sin bloquear la vista.
+- En una estimación por cargo, mostrar visualmente haberes imponibles, haberes no imponibles, descuentos legales y líquido estimado, dejando explícito que no es una liquidación individual.
+- No mezclar el catálogo contrato-cargo de este mantenedor con fichas o dotación BUK. La asociación de cargos debe pertenecer al dominio de estructuras de renta y BUK no debe participar en la lectura ni en el guardado.

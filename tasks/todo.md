@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corregir cálculo permanente y rendimiento de Estructuras de Renta — 2026-09-24
+
+- [x] Reproducir y medir el timeout productivo, aislando el cálculo innecesario que bloquea contratos y cargos.
+- [x] Eliminar el concepto de mes de la interfaz y del contrato consumido por el frontend; usar parámetros legales vigentes solo como insumo interno.
+- [x] Calcular AFP, salud y AFC exclusivamente sobre los haberes imponibles configurados para el cargo.
+- [x] Rediseñar el detalle como liquidación compacta: haberes a la izquierda, descuentos a la derecha y resumen imponible/líquido al pie.
+- [x] Validar runtime y latencia productiva, pruebas, build, Guardian, publicación y bundle público.
+
+Resultado: se eliminó del runtime la lectura de fichas, dotación y jornadas BUK. El módulo usa una relación propia contrato-cargo, carga el catálogo en aproximadamente 5 ms en la prueba SQL productiva y calcula AFP, salud y AFC únicamente desde los imponibles configurados. La prueba transaccional reprodujo $109.219 de AFP, $67.838 de salud y $5.815 de AFC sobre $969.115 imponibles, sin persistir los datos de ensayo. Las migraciones quedaron aplicadas en producción y Guardian terminó con 0 errores y 0 advertencias.
+
 ## Motor previsional dinámico por cargo — 2026-09-24
 
 - [x] Investigar normativa chilena vigente para AFP y salud, incluidos topes, comisiones, Isapre/Fonasa y vigencias.

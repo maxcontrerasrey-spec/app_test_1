@@ -16,10 +16,6 @@ export type RentStructurePosition = {
   authorizedHeadcount: number;
   monthlyBudget: number | null;
   currencyCode: string;
-  contractedCount: number;
-  presentEquivalent: number;
-  balance: number | null;
-  coverage: number | null;
 };
 
 export type RentStructureLine = {
@@ -42,14 +38,10 @@ export type RentLegalScenario = {
   healthProviderName: string;
   healthPlanValue: number;
   unemploymentContractType: "indefinite" | "fixed_term";
-  ufMonthEndClp: number | null;
-  pensionHealthCapUf: number | null;
-  unemploymentCapUf: number | null;
 };
 
 export type RentLegalCatalog = {
   afps: Array<{ code: string; name: string; commissionRate: number }>;
-  indicator: { periodMonth: string; ufMonthEndClp: number; pensionHealthCapUf: number; unemploymentCapUf: number } | null;
 };
 
 export type RentStructureDetail = {
@@ -61,7 +53,16 @@ export type RentStructureDetail = {
   calculationAvailable: boolean;
   legalScenario: RentLegalScenario;
   lines: RentStructureLine[];
-  totals: { imponible: number; noImponible: number; haberes: number; legalDiscounts: number | null; liquidoEstimated: number | null };
+  totals: {
+    imponible: number;
+    noImponible: number;
+    haberes: number;
+    pensionHealthBase: number;
+    unemploymentBase: number;
+    legalDiscounts: number | null;
+    liquidoEstimated: number | null;
+    authorizedPayroll: number;
+  };
   legalAssumptions: string[];
 } | null;
 
@@ -70,26 +71,23 @@ export type RentStructureControlPayload = {
   positions: RentStructurePosition[];
   structure: RentStructureDetail;
   canConfigure: boolean;
-  month: string;
   legalCatalog: RentLegalCatalog;
 };
 
 type RawPayload = {
   contracts?: Array<{ id: number; code: string; contract_number: string; contract_name: string }>;
-  positions?: Array<{ id: number; code: string; name: string; has_structure: boolean; authorized_headcount: number; monthly_budget: number | null; currency_code: string; contracted_count: number; present_equivalent: number; balance: number; coverage: number | null }>;
-  legal_catalog?: { afps?: Array<{ code: string; name: string; commission_rate: number }>; indicator?: { period_month: string; uf_month_end_clp: number; pension_health_cap_uf: number; unemployment_cap_uf: number } | null };
-  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"]; uf_month_end_clp: number | null; pension_health_cap_uf: number | null; unemployment_cap_uf: number | null }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; legal_discounts: number | null; liquido_estimated: number | null }; legal_assumptions?: string[] };
+  positions?: Array<{ id: number; code: string; name: string; has_structure: boolean; authorized_headcount: number; monthly_budget: number | null; currency_code: string }>;
+  legal_catalog?: { afps?: Array<{ code: string; name: string; commission_rate: number }> };
+  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"] }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; pension_health_base: number; unemployment_base: number; legal_discounts: number | null; liquido_estimated: number | null; authorized_payroll: number }; legal_assumptions?: string[] };
   can_configure?: boolean;
-  month?: string;
 };
 
-export async function fetchRentStructureControl(contractId: number | null, jobPositionId: number | null, month?: string) {
+export async function fetchRentStructureControl(contractId: number | null, jobPositionId: number | null) {
   if (!supabase) throw new Error("Supabase no está configurado en este entorno.");
 
   const { data, error } = await supabase.rpc("get_hr_rent_structure_control", {
     p_contract_id: contractId,
-    p_job_position_id: jobPositionId,
-    p_month: month ? `${month}-01` : null
+    p_job_position_id: jobPositionId
   });
 
   if (error) {
@@ -111,11 +109,7 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
       hasStructure: row.has_structure,
       authorizedHeadcount: row.authorized_headcount ?? 0,
       monthlyBudget: row.monthly_budget,
-      currencyCode: row.currency_code,
-      contractedCount: row.contracted_count ?? 0,
-      presentEquivalent: row.present_equivalent ?? 0,
-      balance: row.balance ?? 0,
-      coverage: row.coverage ?? null
+      currencyCode: row.currency_code
     })),
     structure: payload.structure?.id
       ? {
@@ -132,10 +126,7 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
             healthMode: payload.structure.legal_scenario?.health_mode ?? "fonasa",
             healthProviderName: payload.structure.legal_scenario?.health_provider_name ?? "Fonasa",
             healthPlanValue: payload.structure.legal_scenario?.health_plan_value ?? 0,
-            unemploymentContractType: payload.structure.legal_scenario?.unemployment_contract_type ?? "indefinite",
-            ufMonthEndClp: payload.structure.legal_scenario?.uf_month_end_clp ?? null,
-            pensionHealthCapUf: payload.structure.legal_scenario?.pension_health_cap_uf ?? null,
-            unemploymentCapUf: payload.structure.legal_scenario?.unemployment_cap_uf ?? null
+            unemploymentContractType: payload.structure.legal_scenario?.unemployment_contract_type ?? "indefinite"
           },
           lines: (payload.structure.lines ?? []).map((line) => ({
             id: line.id,
@@ -152,22 +143,18 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
             imponible: payload.structure.totals?.imponible ?? 0,
             noImponible: payload.structure.totals?.no_imponible ?? 0,
             haberes: payload.structure.totals?.haberes ?? 0,
+            pensionHealthBase: payload.structure.totals?.pension_health_base ?? 0,
+            unemploymentBase: payload.structure.totals?.unemployment_base ?? 0,
             legalDiscounts: payload.structure.totals?.legal_discounts ?? null,
-            liquidoEstimated: payload.structure.totals?.liquido_estimated ?? null
+            liquidoEstimated: payload.structure.totals?.liquido_estimated ?? null,
+            authorizedPayroll: payload.structure.totals?.authorized_payroll ?? 0
           },
           legalAssumptions: payload.structure.legal_assumptions ?? []
         }
       : null,
     canConfigure: payload.can_configure ?? false,
-    month: payload.month ?? month ?? "",
     legalCatalog: {
-      afps: (payload.legal_catalog?.afps ?? []).map((afp) => ({ code: afp.code, name: afp.name, commissionRate: afp.commission_rate })),
-      indicator: payload.legal_catalog?.indicator ? {
-        periodMonth: payload.legal_catalog.indicator.period_month,
-        ufMonthEndClp: payload.legal_catalog.indicator.uf_month_end_clp,
-        pensionHealthCapUf: payload.legal_catalog.indicator.pension_health_cap_uf,
-        unemploymentCapUf: payload.legal_catalog.indicator.unemployment_cap_uf
-      } : null
+      afps: (payload.legal_catalog?.afps ?? []).map((afp) => ({ code: afp.code, name: afp.name, commissionRate: afp.commission_rate }))
     }
   } satisfies RentStructureControlPayload;
 }

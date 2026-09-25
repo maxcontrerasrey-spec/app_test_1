@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.39
+version: 1.0.40
 status: Activo
 language: es-CL
 owner: Quality
@@ -157,7 +157,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
   "cssFileCount": 12,
-  "cssTotalBytes": 294873,
+  "cssTotalBytes": 295253,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -190,6 +190,7 @@ Revision 2026-09-24 compactación accesible del login: CSS queda en 279,735 byte
 Revision 2026-09-24 identidad y borde del login: CSS queda en 280,630 bytes por integrar logo y bienvenida en el estado compacto y añadir un recorrido de borde con gradiente conico de baja intensidad. Mantiene la paleta, `fondo.webp`, el logo JM y la autenticación; no agrega dependencias, vendors ni assets trackeados.
 
 Revision 2026-09-24 saludo sin duplicación: CSS queda en 280,664 bytes; el saludo permanece junto al logo compacto y el encabezado expandido muestra solo `Iniciar sesión`. No agrega dependencias, vendors ni assets trackeados.
+Revision 2026-09-24 estructura de renta permanente: CSS queda en 295,253 bytes, +380 bytes medidos por Guardian para presentar haberes, descuentos legales, bases y líquido estimado en una composición compacta tipo liquidación, retirando las tarjetas de dotación. El módulo permanece lazy y no agrega dependencias, vendors ni assets trackeados.
 Revision 2026-09-24 magnificación de sidebar comprimida: CSS queda en 270,737 bytes, +913 bytes medidos por Guardian para la interacción Dock del rail de navegación. No agrega dependencias, JS, permisos ni cambios de layout fuera del estado colapsado.
 
 Revision 2026-09-24 Acreditación compacta: CSS queda en 276,014 bytes, +5,277 bytes medidos por Guardian para reemplazar tarjetas anidadas por filas planas, compactar filtros, limitar el listado y responder con la sidebar expandida en escritorio, ancho intermedio y móvil. El módulo permanece lazy, no agrega dependencias, vendors, assets ni cambios de datos; la tolerancia vuelve a cero sobre el artefacto validado.
