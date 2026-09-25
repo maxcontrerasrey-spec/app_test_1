@@ -3960,3 +3960,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Convertir cada cambio vacío con `Number(value) || 0` hace que React vuelva a mostrar `0` inmediatamente y obliga al usuario a reposicionar el cursor.
 - Para montos CLP enteros, la representación editable debe ser texto con teclado numérico: vacío representa cero, los dígitos se normalizan y la vista aplica separadores de miles sin cambiar el valor numérico persistido.
 - Cupos, porcentajes y UF no son montos CLP; el formato con puntos debe limitarse a pesos para no alterar su semántica.
+## 2026-09-25 - La visibilidad de una pestaña sensible debe provenir del permiso de escritura real
+
+- No reutilizar una regla amplia de lectura gerencial como `can_configure`; consulta y mutación son capacidades distintas.
+- Ocultar la pestaña en frontend no protege el dato: el RPC de escritura debe validar el rol y las firmas heredadas deben quedar sin ejecución para `authenticated`.
+- `user_is_admin` incluye tanto superadministradores como el rol `admin`; cuando el requisito dice solo superadmin, se debe comprobar explícitamente `profiles.is_super_admin`.

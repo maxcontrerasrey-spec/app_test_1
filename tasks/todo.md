@@ -4047,3 +4047,9 @@ Resultado: el submódulo quedó implementado como lectura gerencial para contrat
 - [x] Ejecutar pruebas, build, Guardian, publicar y verificar el bundle productivo.
 
 Resultado: los montos CLP de conceptos y planes Isapre en pesos aceptan un campo vacío como cero y agregan puntos de miles y millones durante la escritura. La persistencia continúa recibiendo números enteros; cupos, UF y porcentajes mantienen sus controles específicos. Validación: 145 pruebas unitarias, 70 contractuales, build frontend, performance, Guardian, CI y Cloudflare sin errores; el bundle productivo fue inspeccionado y contiene el formateador publicado.
+## Restringir Configuración de Estructuras de Renta — 2026-09-25
+
+- [x] Separar autorización de lectura y configuración usando los roles reales del ERP.
+- [x] Permitir configurar solo a superadministradores explícitos y `control_contratos`.
+- [x] Cerrar sobrecargas RPC antiguas para impedir escrituras fuera de la nueva regla.
+- [ ] Probar permisos, migración, frontend y Guardian; aplicar y verificar en producción.
