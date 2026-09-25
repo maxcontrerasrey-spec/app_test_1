@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Eliminar timeout del checklist documental — 2026-09-25
+
+- [x] Confirmar el camino costoso que provoca `57014` y separar lectura documental de resolución BUK.
+- [x] Publicar una corrección backend acotada que mantenga la validación sin escaneo masivo.
+- [x] Agregar regresión, validar migración/seguridad, build, Guardian y latencia del flujo.
+- [x] Publicar y verificar la ruta productiva de Control Documental.
+
+Resultado: `get_candidate_checklist(uuid)` ya no invoca el resolvedor que escanea el registro completo de empleados BUK; lee únicamente el código persistido en la ficha del candidato. La migración `20260925123000_optimize_candidate_checklist_code_resolution.sql` quedó aplicada en Supabase y la verificación SQL productiva confirmó que la referencia costosa desapareció. Se conserva la validación de `Código de ficha` cuando el dato falta.
+
 ## Alinear cargos de Estructuras de Renta con la sync BUK — 2026-09-25
 
 - [x] Confirmar la causa del cargo inactivo visible y auditar la fuente diaria de cargos/contratos.

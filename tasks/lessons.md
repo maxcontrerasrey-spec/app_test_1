@@ -3971,3 +3971,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - No reutilizar una regla amplia de lectura gerencial como `can_configure`; consulta y mutación son capacidades distintas.
 - Ocultar la pestaña en frontend no protege el dato: el RPC de escritura debe validar el rol y las firmas heredadas deben quedar sin ejecución para `authenticated`.
 - `user_is_admin` incluye tanto superadministradores como el rol `admin`; cuando el requisito dice solo superadmin, se debe comprobar explícitamente `profiles.is_super_admin`.
+
+## 2026-09-25 - Las lecturas del checklist no deben resolver identidad contra todo BUK
+
+- Un RPC de lectura que calcula códigos faltantes consultando `employees` con normalización por fila y regex sobre JSON puede provocar `57014` aunque la pantalla solo solicite un candidato.
+- La resolución de códigos BUK debe permanecer en los flujos de generación/reserva; el checklist debe leer el valor persistido en `candidate_worker_files` y conservar el campo como faltante si aún no existe.
+- Toda optimización de este tipo debe protegerse con una migración forward-only que valide el fragmento reemplazado, además de una prueba de integridad que impida reintroducir el escaneo en lecturas.
