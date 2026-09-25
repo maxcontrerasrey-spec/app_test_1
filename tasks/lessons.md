@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 374. Un catálogo BUK copiado una vez no conserva el estado operativo
+
+- Una tabla propia puede conservar asociaciones y configuraciones históricas, pero no debe decidir por sí sola si un cargo sigue disponible cuando BUK es la fuente autoritativa.
+- La disponibilidad efectiva debe ser la intersección entre la relación histórica del módulo y la asociación contrato-cargo activa de la sync BUK; lectura, detalle y guardado deben usar la misma regla.
+- Si la vigencia depende de un catálogo remoto, su refresco debe formar parte del job diario existente y no quedar condicionado a que alguien visite otro módulo del ERP.
+
 ## 373. Las opciones equivalentes deben compartir el mismo patrón de formulario
 
 - Si AFP, Salud y Tipo de contrato se presentan como label más selector, una opción tributaria vecina no debe introducir una tarjeta-checkbox con altura, texto y jerarquía distintos.

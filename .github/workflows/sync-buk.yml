@@ -84,3 +84,19 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/sync-buk-employees.mjs
+
+      - name: Sync active BUK roles by contract
+        if: steps.local_window.outputs.run_sync == 'true'
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          API_URL="${VITE_SUPABASE_URL:-${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}}"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "$API_URL/functions/v1/sync-buk-job-positions" \
+            --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "Content-Type: application/json" \
+            --data '{}'

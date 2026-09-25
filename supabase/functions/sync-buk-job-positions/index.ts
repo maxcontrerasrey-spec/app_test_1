@@ -29,6 +29,17 @@ type ExistingJobPosition = {
 
 type EdgeClient = ReturnType<typeof createClient<any, "public", any>>;
 
+function secretsMatch(candidate: string, expected: string) {
+  if (candidate.length !== expected.length) return false;
+
+  let mismatch = 0;
+  for (let index = 0; index < candidate.length; index += 1) {
+    mismatch |= candidate.charCodeAt(index) ^ expected.charCodeAt(index);
+  }
+
+  return mismatch === 0;
+}
+
 function requireEnv(value: string | undefined, label: string) {
   const normalized = value?.trim();
   if (!normalized) {
@@ -280,6 +291,11 @@ async function assertCatalogSyncAccess(accessToken: string) {
   const supabaseUrl = requireEnv(Deno.env.get("SUPABASE_URL"), "SUPABASE_URL");
   const serviceRoleKey = getSupabaseSecretKey();
   const supabase = createClient<any, "public", any>(supabaseUrl, serviceRoleKey);
+
+  if (secretsMatch(accessToken, serviceRoleKey)) {
+    return supabase;
+  }
+
   const {
     data: { user },
     error: authError
