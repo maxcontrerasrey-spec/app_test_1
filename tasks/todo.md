@@ -5,9 +5,11 @@
 - [x] Confirmar la causa del cargo inactivo visible y auditar la fuente diaria de cargos/contratos.
 - [x] Filtrar lectura y guardado por la asociación activa sincronizada desde BUK, conservando la configuración histórica.
 - [x] Incorporar la sincronización de cargos al flujo diario BUK y cubrir la desactivación de `BUK-ROLE-68`.
-- [ ] Ejecutar pruebas, auditorías, Guardian y verificación productiva del catálogo resultante.
+- [x] Ejecutar pruebas, auditorías, Guardian y verificación productiva del catálogo resultante.
 
 Plan validado: `hr_rent_contract_positions` seguirá siendo la relación histórica propia del módulo, pero ya no podrá habilitar por sí sola un cargo. La disponibilidad efectiva será la intersección con `buk_job_position_contract_access.is_active`, actualizada por la sincronización del catálogo BUK; el guardado aplicará la misma regla para evitar accesos por llamadas directas.
+
+Resultado: el RPC de Estructuras de Renta muestra y permite configurar solo la intersección entre su relación histórica y los cargos activos de la sync BUK. El job diario incorporó el refresco de roles/áreas y su ejecución manual productiva sincronizó 227 cargos y 924 asociaciones contrato-cargo. La verificación SQL viva confirmó que `BUK-ROLE-68` no conserva asociaciones activas, no aparece en el catálogo ni expone su estructura, mientras su relación histórica permanece intacta. Guardian y CI finalizaron sin errores ni advertencias atribuibles al cambio.
 
 ## Homologar selector de impuesto en Configuración — 2026-09-25
 

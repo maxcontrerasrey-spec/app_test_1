@@ -11,6 +11,10 @@ const edgeFunction = readFileSync(
 );
 const workflow = readFileSync(".github/workflows/sync-buk.yml", "utf8");
 const supabaseConfig = readFileSync("supabase/config.toml", "utf8");
+const productionVerification = readFileSync(
+  "supabase/migrations/20260925131500_verify_inactive_buk_role_rent_scope.sql",
+  "utf8"
+);
 
 describe("alcance activo BUK de estructuras de renta", () => {
   it("intersecta el catalogo historico con cargos activos sincronizados", () => {
@@ -39,5 +43,13 @@ describe("alcance activo BUK de estructuras de renta", () => {
     expect(workflow).toContain("Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY");
     expect(edgeFunction).toContain("secretsMatch(accessToken, serviceRoleKey)");
     expect(supabaseConfig).toMatch(/\[functions\.sync-buk-job-positions\]\nverify_jwt = false/);
+  });
+
+  it("verifica BUK-ROLE-68 contra la sync y el RPC productivo", () => {
+    expect(productionVerification).toContain("position_row.code = 'BUK-ROLE-68'");
+    expect(productionVerification).toContain("access_row.is_active = true");
+    expect(productionVerification).toContain("public.get_hr_rent_structure_control(");
+    expect(productionVerification).toContain("La relacion historica de BUK-ROLE-68");
+    expect(productionVerification).not.toMatch(/delete\s+from/i);
   });
 });
