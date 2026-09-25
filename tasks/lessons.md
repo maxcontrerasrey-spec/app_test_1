@@ -3983,3 +3983,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Filtrar cargos solo en React no constituye un límite estructural: el RPC de catálogo debe devolver únicamente asociaciones activas provenientes de la sync BUK.
 - El contrato debe ser la primera selección y la asociación `buk_job_position_contract_access` debe ser la fuente de verdad para habilitar cargos por centro de costos/contrato.
 - Mantener además el guard de inserción en base de datos; la UI reduce errores y la base impide solicitudes manipuladas o desactualizadas.
+
+## 2026-09-25 - La visibilidad de navegación debe mantener el mismo contrato que el permiso backend
+
+- No basta con insertar el rol en `role_module_access`: una lista frontend `visibleForRoles` puede ocultar el módulo aunque `get_my_effective_permissions()` ya lo entregue.
+- Cuando se habilita un rol para un módulo, validar siempre las tres capas: RPC de permisos, guard de ruta y filtro de navegación.
+- Cubrir la lista de roles visible del menú con una prueba contractual para evitar que futuras restricciones visuales revoquen accidentalmente un permiso ya aprobado.

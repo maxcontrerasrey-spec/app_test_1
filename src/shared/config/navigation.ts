@@ -116,7 +116,14 @@ export const navigationModules: NavigationModule[] = [
         label: "Control Estructuras de Renta",
         description: "Consulta la estructura y el presupuesto por cargo habilitado en BUK.",
         iconKey: "coins",
-        visibleForRoles: ["admin", "gerencia", "director_eje", "director_op", "gerente_general"]
+        visibleForRoles: [
+          "admin",
+          "control_contratos",
+          "gerencia",
+          "director_eje",
+          "director_op",
+          "gerente_general"
+        ]
       },
       {
         moduleCode: "solicitud_sanciones",

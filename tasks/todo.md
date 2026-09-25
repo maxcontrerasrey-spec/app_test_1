@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Exponer Estructuras de Renta a Control de Contratos — 2026-09-25
+
+- [x] Confirmar el permiso backend y la regla adicional de visibilidad del menú.
+- [x] Corregir la visibilidad del módulo sin ampliar permisos a otros roles.
+- [x] Agregar regresión y ejecutar pruebas, auditorías, build y Guardian.
+- [ ] Publicar y comprobar la ruta productiva.
+
+Resultado previo a publicación: `control_contratos` ya tenía acceso en `role_module_access` y en los RPC de Estructuras de Renta, pero una restricción frontend `visibleForRoles` ocultaba el módulo. Se agregó el rol a esa lista y se incorporó una prueba contractual para evitar la divergencia.
+
 ## Contrato primero y cargos activos por contrato en solicitudes — 2026-09-25
 
 - [x] Confirmar el catálogo actual, la fuente de la sync BUK y el guard backend de cargo-contrato.
