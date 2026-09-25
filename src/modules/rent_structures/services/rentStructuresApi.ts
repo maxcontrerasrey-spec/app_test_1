@@ -38,6 +38,8 @@ export type RentLegalScenario = {
   healthProviderName: string;
   healthPlanValue: number;
   unemploymentContractType: "indefinite" | "fixed_term";
+  includeIncomeTax: boolean;
+  iuscUtmClp: number | null;
 };
 
 export type RentLegalCatalog = {
@@ -59,6 +61,8 @@ export type RentStructureDetail = {
     haberes: number;
     pensionHealthBase: number;
     unemploymentBase: number;
+    taxableBase: number | null;
+    incomeTax: number | null;
     legalDiscounts: number | null;
     liquidoEstimated: number | null;
     authorizedPayroll: number;
@@ -78,7 +82,7 @@ type RawPayload = {
   contracts?: Array<{ id: number; code: string; contract_number: string; contract_name: string }>;
   positions?: Array<{ id: number; code: string; name: string; has_structure: boolean; authorized_headcount: number; monthly_budget: number | null; currency_code: string }>;
   legal_catalog?: { afps?: Array<{ code: string; name: string; commission_rate: number }> };
-  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"] }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; pension_health_base: number; unemployment_base: number; legal_discounts: number | null; liquido_estimated: number | null; authorized_payroll: number }; legal_assumptions?: string[] };
+  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"]; include_income_tax?: boolean; iusc_utm_clp?: number | null }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; pension_health_base: number; unemployment_base: number; taxable_base?: number | null; income_tax?: number | null; legal_discounts: number | null; liquido_estimated: number | null; authorized_payroll: number }; legal_assumptions?: string[] };
   can_configure?: boolean;
 };
 
@@ -126,7 +130,9 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
             healthMode: payload.structure.legal_scenario?.health_mode ?? "fonasa",
             healthProviderName: payload.structure.legal_scenario?.health_provider_name ?? "Fonasa",
             healthPlanValue: payload.structure.legal_scenario?.health_plan_value ?? 0,
-            unemploymentContractType: payload.structure.legal_scenario?.unemployment_contract_type ?? "indefinite"
+            unemploymentContractType: payload.structure.legal_scenario?.unemployment_contract_type ?? "indefinite",
+            includeIncomeTax: payload.structure.legal_scenario?.include_income_tax ?? false,
+            iuscUtmClp: payload.structure.legal_scenario?.iusc_utm_clp ?? null
           },
           lines: (payload.structure.lines ?? []).map((line) => ({
             id: line.id,
@@ -145,6 +151,8 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
             haberes: payload.structure.totals?.haberes ?? 0,
             pensionHealthBase: payload.structure.totals?.pension_health_base ?? 0,
             unemploymentBase: payload.structure.totals?.unemployment_base ?? 0,
+            taxableBase: payload.structure.totals?.taxable_base ?? null,
+            incomeTax: payload.structure.totals?.income_tax ?? null,
             legalDiscounts: payload.structure.totals?.legal_discounts ?? null,
             liquidoEstimated: payload.structure.totals?.liquido_estimated ?? null,
             authorizedPayroll: payload.structure.totals?.authorized_payroll ?? 0
@@ -161,7 +169,7 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
 
 export type RentStructureConfigLine = Pick<RentStructureLine, "conceptCode" | "conceptName" | "amount" | "sortOrder"> & { sectionCode: "imponible" | "no_imponible" };
 
-export type RentStructureLegalConfig = Pick<RentLegalScenario, "afpCode" | "healthMode" | "healthProviderName" | "healthPlanValue" | "unemploymentContractType">;
+export type RentStructureLegalConfig = Pick<RentLegalScenario, "afpCode" | "healthMode" | "healthProviderName" | "healthPlanValue" | "unemploymentContractType" | "includeIncomeTax">;
 
 export async function saveRentStructureConfig(contractId: number, jobPositionId: number, authorizedHeadcount: number, lines: RentStructureConfigLine[], legal: RentStructureLegalConfig) {
   if (!supabase) throw new Error("Supabase no está configurado en este entorno.");
@@ -180,7 +188,8 @@ export async function saveRentStructureConfig(contractId: number, jobPositionId:
     p_health_mode: legal.healthMode,
     p_health_provider_name: legal.healthProviderName,
     p_health_plan_value: legal.healthPlanValue,
-    p_unemployment_contract_type: legal.unemploymentContractType
+    p_unemployment_contract_type: legal.unemploymentContractType,
+    p_include_income_tax: legal.includeIncomeTax
   });
   if (error) throw new Error(getSupabaseErrorMessage(error, "No fue posible guardar la estructura de renta.", "message"));
   return String(data);

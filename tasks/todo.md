@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Impuesto único opcional en Estructuras de Renta — 2026-09-25
+
+- [x] Inspeccionar el contrato vigente de configuración, cálculo y presentación por cargo.
+- [x] Persistir una opción por estructura para incluir el Impuesto Único de Segunda Categoría, desactivada por defecto.
+- [x] Calcular en backend la base tributable y el tramo SII vigente mediante UTM, incorporando el impuesto solo cuando la opción esté activa.
+- [x] Integrar el control junto a AFP, salud y tipo de contrato, y presentar impuesto, base y líquido estimado sin alterar estructuras desactivadas.
+- [x] Agregar cobertura contractual y ejecutar migraciones, pruebas, build, auditorías, Guardian y verificación productiva.
+
+Resultado: la configuración por cargo incorpora un checkbox opcional, desactivado por defecto, que aplica el IUSC sobre la renta tributable posterior a AFP, salud y AFC. UTM y tramos quedan versionados en tablas protegidas. La prueba productiva transaccional del Conductor de Bus reprodujo base $1.177.676, impuesto $8.378 y líquido $1.349.298; el guardado y su auditoría también se validaron con rollback. Migraciones aplicadas y Guardian finalizó con 0 errores y 0 advertencias.
+
 ## Corregir cálculo permanente y rendimiento de Estructuras de Renta — 2026-09-24
 
 - [x] Reproducir y medir el timeout productivo, aislando el cálculo innecesario que bloquea contratos y cargos.

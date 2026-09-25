@@ -81,6 +81,10 @@ function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, onHeadcountC
           {isIsapre ? <label><span>Institución</span><input value={legal.healthProviderName} onChange={(event) => onLegalChange({ ...legal, healthProviderName: event.target.value })} placeholder="Nombre de Isapre" /></label> : null}
           {isIsapre ? <label><span>Valor plan ({planUnit})</span><input type="number" min="0" step={legal.healthMode === "isapre_uf" ? "0.001" : legal.healthMode === "isapre_percentage" ? "0.01" : "1"} value={legal.healthPlanValue} onChange={(event) => onLegalChange({ ...legal, healthPlanValue: Math.max(0, Number(event.target.value) || 0) })} /></label> : null}
           <label><span>Tipo de contrato</span><select value={legal.unemploymentContractType} onChange={(event) => onLegalChange({ ...legal, unemploymentContractType: event.target.value as RentStructureLegalConfig["unemploymentContractType"] })}><option value="indefinite">Indefinido · trabajador 0,6%</option><option value="fixed_term">Plazo fijo u obra · trabajador 0%</option></select></label>
+          <label className="rent-tax-option">
+            <input type="checkbox" checked={legal.includeIncomeTax} onChange={(event) => onLegalChange({ ...legal, includeIncomeTax: event.target.checked })} />
+            <span><strong>Incluir impuesto único</strong><small>Calcula automáticamente el tramo SII vigente.</small></span>
+          </label>
         </div>
       </section>
 
@@ -91,7 +95,7 @@ function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, onHeadcountC
           {!lines.some((line) => line.sectionCode === sectionCode) ? <div className="rent-section-empty">Agrega los conceptos que componen esta sección.</div> : null}
         </section>
       ))}
-      <p className="rent-config-note">El sistema suma los haberes imponibles definidos para el cargo y aplica sobre esa base AFP, salud y seguro de cesantía. Los topes y tasas legales se actualizan centralmente, sin convertir esta vista en una liquidación mensual.</p>
+      <p className="rent-config-note">El sistema suma los haberes imponibles definidos para el cargo y aplica sobre esa base AFP, salud y seguro de cesantía. Si activas el impuesto único, se descuenta sobre la base tributable resultante con la UTM y el tramo SII vigentes.</p>
     </div>
   );
 }
@@ -102,7 +106,7 @@ export function RentStructuresPage() {
   const [jobPositionId, setJobPositionId] = useState<number | null>(null);
   const [authorizedHeadcount, setAuthorizedHeadcount] = useState(0);
   const [configLines, setConfigLines] = useState<RentStructureConfigLine[]>([]);
-  const [legalConfig, setLegalConfig] = useState<RentStructureLegalConfig>({ afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite" });
+  const [legalConfig, setLegalConfig] = useState<RentStructureLegalConfig>({ afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite", includeIncomeTax: false });
   const query = useRentStructureControl(contractId, jobPositionId);
   const saveMutation = useSaveRentStructureConfig(contractId, jobPositionId);
   const contracts = query.data?.contracts ?? [];
@@ -123,7 +127,7 @@ export function RentStructuresPage() {
   useEffect(() => {
     setAuthorizedHeadcount(detail?.authorizedHeadcount ?? selectedPosition?.authorizedHeadcount ?? 0);
     setConfigLines((detail?.lines ?? []).filter((line) => line.sectionCode === "imponible" || line.sectionCode === "no_imponible").map((line) => ({ conceptCode: line.conceptCode, conceptName: line.conceptName, sectionCode: line.sectionCode as "imponible" | "no_imponible", amount: line.amount, sortOrder: line.sortOrder })));
-    setLegalConfig(detail ? { afpCode: detail.legalScenario.afpCode, healthMode: detail.legalScenario.healthMode, healthProviderName: detail.legalScenario.healthProviderName, healthPlanValue: detail.legalScenario.healthPlanValue, unemploymentContractType: detail.legalScenario.unemploymentContractType } : { afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite" });
+    setLegalConfig(detail ? { afpCode: detail.legalScenario.afpCode, healthMode: detail.legalScenario.healthMode, healthProviderName: detail.legalScenario.healthProviderName, healthPlanValue: detail.legalScenario.healthPlanValue, unemploymentContractType: detail.legalScenario.unemploymentContractType, includeIncomeTax: detail.legalScenario.includeIncomeTax } : { afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite", includeIncomeTax: false });
   }, [detail, selectedPosition]);
 
   const save = () => saveMutation.mutate({ authorizedHeadcount, lines: configLines, legal: legalConfig });
@@ -154,17 +158,17 @@ export function RentStructuresPage() {
           {!selectedPosition ? <div className="rent-empty-panel">Elige un cargo a la izquierda para revisar o configurar sus conceptos.</div> : null}
           {selectedPosition && view === "control" ? <>
             {query.isFetching ? <div className="rent-skeleton-lines"><i /><i /><i /><i /></div> : detail ? <>
-              <div className="rent-legal-context"><span>{detail.authorizedHeadcount} cupos autorizados</span><span>{detail.legalScenario.afpName}</span><span>{detail.legalScenario.healthMode === "fonasa" ? "Fonasa" : detail.legalScenario.healthProviderName}</span><span>{detail.legalScenario.unemploymentContractType === "indefinite" ? "Contrato indefinido" : "Plazo fijo u obra"}</span></div>
+              <div className="rent-legal-context"><span>{detail.authorizedHeadcount} cupos autorizados</span><span>{detail.legalScenario.afpName}</span><span>{detail.legalScenario.healthMode === "fonasa" ? "Fonasa" : detail.legalScenario.healthProviderName}</span><span>{detail.legalScenario.unemploymentContractType === "indefinite" ? "Contrato indefinido" : "Plazo fijo u obra"}</span>{detail.legalScenario.includeIncomeTax ? <span className="is-tax-active">Impuesto único incluido</span> : null}</div>
               {!detail.calculationAvailable ? <div className="rent-feedback rent-feedback-error">No existen parámetros legales vigentes para calcular la estimación.</div> : null}
               <div className="rent-pay-slip">
                 <div className="rent-pay-slip-columns">
                   <div><StructureSection title="Haberes imponibles" code="imponible" lines={detail.lines} total={detail.totals.imponible} /><StructureSection title="Haberes no imponibles" code="no_imponible" lines={detail.lines} total={detail.totals.noImponible} /><div className="rent-column-total"><span>Total haberes</span><strong>{formatAmount(detail.totals.haberes)}</strong></div></div>
                   <div><StructureSection title="Descuentos legales" code="legal_discount" lines={legalLines} total={detail.totals.legalDiscounts} /><div className="rent-column-total rent-column-total-discount"><span>Total descuentos</span><strong>{formatAmount(detail.totals.legalDiscounts)}</strong></div></div>
                 </div>
-                <div className="rent-base-strip"><span>Base AFP / salud <strong>{formatAmount(detail.totals.pensionHealthBase)}</strong></span><span>Base cesantía <strong>{formatAmount(detail.totals.unemploymentBase)}</strong></span><span>Masa autorizada <strong>{formatAmount(detail.totals.authorizedPayroll)}</strong></span></div>
+                <div className={`rent-base-strip ${detail.legalScenario.includeIncomeTax ? "has-tax" : ""}`}><span>Base AFP / salud <strong>{formatAmount(detail.totals.pensionHealthBase)}</strong></span><span>Base cesantía <strong>{formatAmount(detail.totals.unemploymentBase)}</strong></span>{detail.legalScenario.includeIncomeTax ? <span>Base tributable <strong>{formatAmount(detail.totals.taxableBase)}</strong></span> : null}<span>Masa autorizada <strong>{formatAmount(detail.totals.authorizedPayroll)}</strong></span></div>
                 <div className="rent-liquid-total"><span>Líquido estimado por cargo</span><strong>{formatAmount(detail.totals.liquidoEstimated)}</strong></div>
               </div>
-              <p className="rent-detail-footnote">Estimación estructural del cargo. No corresponde a la liquidación de una persona ni incorpora impuestos, APV u otros descuentos individuales.</p>
+              <p className="rent-detail-footnote">Estimación estructural del cargo. No corresponde a la liquidación de una persona{detail.legalScenario.includeIncomeTax ? " e incorpora el impuesto único estimado según la tabla SII vigente" : " ni incorpora impuestos"}, APV u otros descuentos individuales.</p>
             </> : <div className="rent-empty-panel">Este cargo aún no tiene una estructura de renta configurada.</div>}
           </> : null}
           {selectedPosition && view === "configuracion" ? <ConfigEditor authorizedHeadcount={authorizedHeadcount} lines={configLines} legal={legalConfig} catalog={query.data?.legalCatalog ?? { afps: [] }} onHeadcountChange={setAuthorizedHeadcount} onLinesChange={setConfigLines} onLegalChange={setLegalConfig} onSave={save} isSaving={saveMutation.isPending} /> : null}

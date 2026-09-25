@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 372. Los wrappers de guardado deben probar el esquema vivo de su auditoría
+
+- Una RPC nueva puede compilar aunque una columna referenciada dentro del cuerpo PL/pgSQL no exista; el fallo aparece recién al ejecutar esa rama.
+- Antes de publicar un wrapper que completa un snapshot, se deben inspeccionar los nombres reales del registro de auditoría y ejecutar guardado, lectura y rollback contra la función desplegada.
+- La validación debe comprobar tanto el estado operacional como el valor incorporado al snapshot, evitando declarar éxito solo porque la migración fue aceptada.
+
 ## 370. La población psicolaboral y su guard de envío deben compartir la misma elegibilidad
 
 - Mostrar un candidato `hired` en Psicolaboral sin actualizar el RPC de preparación produce una fila visible como `No realizado` cuyo botón siempre falla.

@@ -17,6 +17,14 @@ const decouplingMigration = readFileSync(
   "supabase/migrations/20260924234000_decouple_hr_rent_positions_from_buk.sql",
   "utf8"
 );
+const incomeTaxMigration = readFileSync(
+  "supabase/migrations/20260925110000_add_optional_iusc_to_hr_rent_structures.sql",
+  "utf8"
+);
+const incomeTaxAuditFix = readFileSync(
+  "supabase/migrations/20260925113000_fix_optional_iusc_audit_timestamp.sql",
+  "utf8"
+);
 
 describe("calculador permanente de estructuras de renta", () => {
   it("elimina el periodo del contrato frontend y conserva compatibilidad sin usarlo", () => {
@@ -54,5 +62,29 @@ describe("calculador permanente de estructuras de renta", () => {
     expect(page).toContain("Descuentos legales");
     expect(page).toContain("Líquido estimado por cargo");
     expect(page).toContain("No corresponde a la liquidación de una persona");
+  });
+
+  it("mantiene el impuesto único desactivado por defecto y lo configura por cargo", () => {
+    expect(incomeTaxMigration).toContain("include_income_tax boolean not null default false");
+    expect(api).toContain("p_include_income_tax: legal.includeIncomeTax");
+    expect(page).toContain('type="checkbox"');
+    expect(page).toContain("Incluir impuesto único");
+    expect(incomeTaxAuditFix).toContain("latest_audit.changed_at desc");
+    expect(incomeTaxAuditFix).not.toContain("latest_audit.created_at");
+  });
+
+  it("calcula el IUSC sobre la base imponible menos descuentos previsionales", () => {
+    expect(incomeTaxMigration).toContain("structure_payload #>> '{totals,imponible}'");
+    expect(incomeTaxMigration).toContain("- social_security_discounts");
+    expect(incomeTaxMigration).toContain("taxable_base * bracket_factor - bracket_rebate_utm * utm_value");
+    expect(incomeTaxMigration).toContain("'concept_name', 'Impuesto Único de Segunda Categoría'");
+  });
+
+  it("versiona la UTM y los ocho tramos SII sin reintroducir un mes en la UI", () => {
+    expect(incomeTaxMigration).toContain("hr_rent_utm_values");
+    expect(incomeTaxMigration).toContain("hr_rent_iusc_brackets");
+    expect(incomeTaxMigration.match(/date '2026-01-01', [0-9.]+, (?:[0-9.]+|null), 0\./g)?.length).toBe(7);
+    expect(incomeTaxMigration).toContain("date '2026-01-01', 0, 13.5, 0, 0");
+    expect(page).not.toContain("Mes de control");
   });
 });
