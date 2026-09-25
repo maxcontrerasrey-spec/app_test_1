@@ -3955,3 +3955,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - No mezclar en el RPC principal cálculos de jornadas trabajador × día. El catálogo, la configuración y el cálculo previsional deben cargar primero; cualquier indicador operacional periódico debe resolverse por separado y sin bloquear la vista.
 - En una estimación por cargo, mostrar visualmente haberes imponibles, haberes no imponibles, descuentos legales y líquido estimado, dejando explícito que no es una liquidación individual.
 - No mezclar el catálogo contrato-cargo de este mantenedor con fichas o dotación BUK. La asociación de cargos debe pertenecer al dominio de estructuras de renta y BUK no debe participar en la lectura ni en el guardado.
+## 2026-09-25 - Los campos monetarios controlados no deben reinyectar cero durante la edición
+
+- Convertir cada cambio vacío con `Number(value) || 0` hace que React vuelva a mostrar `0` inmediatamente y obliga al usuario a reposicionar el cursor.
+- Para montos CLP enteros, la representación editable debe ser texto con teclado numérico: vacío representa cero, los dígitos se normalizan y la vista aplica separadores de miles sin cambiar el valor numérico persistido.
+- Cupos, porcentajes y UF no son montos CLP; el formato con puntos debe limitarse a pesos para no alterar su semántica.

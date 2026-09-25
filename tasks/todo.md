@@ -4039,3 +4039,11 @@ Resultado: el submódulo quedó implementado como lectura gerencial para contrat
 - [x] Comparar la superficie actual con Acreditaciones y aislar la divergencia visual.
 - [x] Rehacer la composición con el patrón compacto, plano y minimalista del módulo de Acreditaciones.
 - [x] Validar TypeScript, build frontend, Guardian y publicación del bundle.
+## Corregir edición y formato de montos en Estructuras de Renta — 2026-09-25
+
+- [x] Confirmar la causa del cero persistente y delimitar los campos monetarios afectados.
+- [x] Implementar entrada CLP vaciable con separación automática de miles, conservando valores numéricos para el guardado.
+- [x] Cubrir vacío, miles, millones y caracteres pegados con pruebas focalizadas.
+- [ ] Ejecutar pruebas, build, Guardian, publicar y verificar el bundle productivo.
+
+Resultado local: los montos CLP de conceptos y planes Isapre en pesos aceptan un campo vacío como cero y agregan puntos de miles y millones durante la escritura. La persistencia continúa recibiendo números enteros; cupos, UF y porcentajes mantienen sus controles específicos. Validación local: 145 pruebas unitarias, 70 contractuales, build frontend, performance y Guardian sin errores.

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "../../../shared/ui";
 import { useRentStructureControl, useSaveRentStructureConfig } from "../hooks/useRentStructuresQueries";
+import { formatClpInputValue, parseClpInputValue } from "../lib/rentAmountInput";
 import type { RentLegalCatalog, RentStructureConfigLine, RentStructureLegalConfig, RentStructureLine } from "../services/rentStructuresApi";
 import "../styles/rentStructures.css";
 
@@ -9,6 +10,21 @@ type ViewKey = "control" | "configuracion";
 
 function formatAmount(amount: number | null) {
   return amount === null ? "—" : `$ ${money.format(amount)}`;
+}
+
+function ClpAmountInput({ value, onChange, ariaLabel }: { value: number; onChange: (value: number) => void; ariaLabel: string }) {
+  return (
+    <input
+      aria-label={ariaLabel}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9.]*"
+      autoComplete="off"
+      placeholder="0"
+      value={formatClpInputValue(value)}
+      onChange={(event) => onChange(parseClpInputValue(event.target.value))}
+    />
+  );
 }
 
 function ConceptIcon({ type }: { type: string }) {
@@ -79,7 +95,7 @@ function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, onHeadcountC
             </select>
           </label>
           {isIsapre ? <label><span>Institución</span><input value={legal.healthProviderName} onChange={(event) => onLegalChange({ ...legal, healthProviderName: event.target.value })} placeholder="Nombre de Isapre" /></label> : null}
-          {isIsapre ? <label><span>Valor plan ({planUnit})</span><input type="number" min="0" step={legal.healthMode === "isapre_uf" ? "0.001" : legal.healthMode === "isapre_percentage" ? "0.01" : "1"} value={legal.healthPlanValue} onChange={(event) => onLegalChange({ ...legal, healthPlanValue: Math.max(0, Number(event.target.value) || 0) })} /></label> : null}
+          {isIsapre ? <label><span>Valor plan ({planUnit})</span>{legal.healthMode === "isapre_pesos" ? <ClpAmountInput ariaLabel="Valor del plan de salud en pesos" value={legal.healthPlanValue} onChange={(healthPlanValue) => onLegalChange({ ...legal, healthPlanValue })} /> : <input type="number" min="0" step={legal.healthMode === "isapre_uf" ? "0.001" : "0.01"} value={legal.healthPlanValue} onChange={(event) => onLegalChange({ ...legal, healthPlanValue: Math.max(0, Number(event.target.value) || 0) })} />}</label> : null}
           <label><span>Tipo de contrato</span><select value={legal.unemploymentContractType} onChange={(event) => onLegalChange({ ...legal, unemploymentContractType: event.target.value as RentStructureLegalConfig["unemploymentContractType"] })}><option value="indefinite">Indefinido · trabajador 0,6%</option><option value="fixed_term">Plazo fijo u obra · trabajador 0%</option></select></label>
           <label>
             <span>Impuesto único</span>
@@ -94,7 +110,7 @@ function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, onHeadcountC
       {(["imponible", "no_imponible"] as const).map((sectionCode) => (
         <section className="rent-config-section" key={sectionCode}>
           <div className="rent-section-heading"><span>{sectionCode === "imponible" ? "Haberes imponibles" : "Haberes no imponibles"}</span><button className="rent-link-button" type="button" onClick={() => addLine(sectionCode)}>+ Agregar concepto</button></div>
-          {lines.map((line, index) => line.sectionCode === sectionCode ? <div className="rent-config-row" key={`${line.conceptCode}-${index}`}><input aria-label="Nombre del concepto" value={line.conceptName} onChange={(event) => updateLine(index, { conceptName: event.target.value })} /><input aria-label="Monto del concepto" type="number" min="0" step="1" value={line.amount} onChange={(event) => updateLine(index, { amount: Math.max(0, Number(event.target.value) || 0) })} /><button className="rent-remove-button" type="button" aria-label={`Eliminar ${line.conceptName}`} onClick={() => onLinesChange(lines.filter((_, lineIndex) => lineIndex !== index))}>×</button></div> : null)}
+          {lines.map((line, index) => line.sectionCode === sectionCode ? <div className="rent-config-row" key={`${line.conceptCode}-${index}`}><input aria-label="Nombre del concepto" value={line.conceptName} onChange={(event) => updateLine(index, { conceptName: event.target.value })} /><ClpAmountInput ariaLabel={`Monto de ${line.conceptName}`} value={line.amount} onChange={(amount) => updateLine(index, { amount })} /><button className="rent-remove-button" type="button" aria-label={`Eliminar ${line.conceptName}`} onClick={() => onLinesChange(lines.filter((_, lineIndex) => lineIndex !== index))}>×</button></div> : null)}
           {!lines.some((line) => line.sectionCode === sectionCode) ? <div className="rent-section-empty">Agrega los conceptos que componen esta sección.</div> : null}
         </section>
       ))}

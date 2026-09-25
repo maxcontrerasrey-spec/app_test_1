@@ -9,6 +9,10 @@ const page = readFileSync(
   "src/modules/rent_structures/pages/RentStructuresPage.tsx",
   "utf8"
 );
+const amountInput = readFileSync(
+  "src/modules/rent_structures/lib/rentAmountInput.ts",
+  "utf8"
+);
 const api = readFileSync(
   "src/modules/rent_structures/services/rentStructuresApi.ts",
   "utf8"
@@ -62,6 +66,14 @@ describe("calculador permanente de estructuras de renta", () => {
     expect(page).toContain("Descuentos legales");
     expect(page).toContain("Líquido estimado por cargo");
     expect(page).toContain("No corresponde a la liquidación de una persona");
+  });
+
+  it("permite vaciar y formatea como CLP los montos configurables", () => {
+    expect(page).toContain("ClpAmountInput");
+    expect(page).toContain('inputMode="numeric"');
+    expect(amountInput).toContain('value <= 0) return ""');
+    expect(amountInput).toContain('value.replace(/\\D/g, "")');
+    expect(amountInput).toContain('new Intl.NumberFormat("es-CL"');
   });
 
   it("mantiene el impuesto único desactivado por defecto y lo configura por cargo", () => {
