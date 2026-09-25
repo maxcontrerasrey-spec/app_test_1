@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Contrato primero y cargos activos por contrato en solicitudes — 2026-09-25
+
+- [x] Confirmar el catálogo actual, la fuente de la sync BUK y el guard backend de cargo-contrato.
+- [x] Exponer un catálogo RPC que entregue contratos operativos y cargos activos únicamente asociados a cada contrato.
+- [x] Cambiar el frontend para consumir el catálogo acotado y mantener contrato antes que cargo.
+- [x] Agregar regresión, validar seguridad, build, Guardian y sincronización productiva.
+
+Resultado: la solicitud de contratación consume `get_hiring_request_catalogs()`, que devuelve contratos operativos y cargos con asociación activa en BUK por contrato. El frontend ya no descarga el catálogo global de cargos; el cargo queda bloqueado hasta elegir contrato y la base mantiene el guard de inserción cargo-contrato.
+
 ## Eliminar timeout del checklist documental — 2026-09-25
 
 - [x] Confirmar el camino costoso que provoca `57014` y separar lectura documental de resolución BUK.

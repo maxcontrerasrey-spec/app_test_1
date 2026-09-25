@@ -3977,3 +3977,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Un RPC de lectura que calcula códigos faltantes consultando `employees` con normalización por fila y regex sobre JSON puede provocar `57014` aunque la pantalla solo solicite un candidato.
 - La resolución de códigos BUK debe permanecer en los flujos de generación/reserva; el checklist debe leer el valor persistido en `candidate_worker_files` y conservar el campo como faltante si aún no existe.
 - Toda optimización de este tipo debe protegerse con una migración forward-only que valide el fragmento reemplazado, además de una prueba de integridad que impida reintroducir el escaneo en lecturas.
+
+## 2026-09-25 - El catálogo de contratación debe ser cargo-contrato, no cargo global
+
+- Filtrar cargos solo en React no constituye un límite estructural: el RPC de catálogo debe devolver únicamente asociaciones activas provenientes de la sync BUK.
+- El contrato debe ser la primera selección y la asociación `buk_job_position_contract_access` debe ser la fuente de verdad para habilitar cargos por centro de costos/contrato.
+- Mantener además el guard de inserción en base de datos; la UI reduce errores y la base impide solicitudes manipuladas o desactualizadas.
