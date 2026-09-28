@@ -377,7 +377,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const { data, error } = await fetchEffectivePermissions();
+        const [permissionsResult, operatorResult] = await Promise.all([
+          fetchEffectivePermissions(),
+          fetchSharedLoginOperatorOptions()
+        ]);
+        const { data, error } = permissionsResult;
 
         if (!isCurrentLoad()) {
           return;
@@ -417,7 +421,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setAccessibleFeatures(Array.from(new Set(nextFeatures)));
 
-        const { data: operatorData, error: operatorError } = await fetchSharedLoginOperatorOptions();
+        const { data: operatorData, error: operatorError } = operatorResult;
 
         if (!isCurrentLoad()) {
           return;

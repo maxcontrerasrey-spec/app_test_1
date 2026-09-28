@@ -8,7 +8,10 @@ export function useRentStructureControl(contractId: number | null, jobPositionId
     queryFn: () => fetchRentStructureControl(contractId, jobPositionId),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    // El RPC vuelve a entregar catálogo + detalle. Conservamos la lista mientras
+    // cambia el detalle para que el click no parezca perdido durante la consulta.
+    placeholderData: (previous) => previous
   });
 }
 

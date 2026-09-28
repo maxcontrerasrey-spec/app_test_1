@@ -3989,3 +3989,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - No basta con insertar el rol en `role_module_access`: una lista frontend `visibleForRoles` puede ocultar el módulo aunque `get_my_effective_permissions()` ya lo entregue.
 - Cuando se habilita un rol para un módulo, validar siempre las tres capas: RPC de permisos, guard de ruta y filtro de navegación.
 - Cubrir la lista de roles visible del menú con una prueba contractual para evitar que futuras restricciones visuales revoquen accidentalmente un permiso ya aprobado.
+
+## 2026-09-28 - Los cambios de selección no deben desmontar el catálogo visible
+
+- Cuando una query usa la selección como parte de su clave, cambiar de elemento puede dejar `data` indefinido mientras llega la respuesta; si la UI renderiza la lista desde ese `data`, el click parece no haber funcionado.
+- Para catálogos con detalle remoto, conservar el payload anterior durante el fetch y mostrar el estado de carga sobre el detalle; la lista y la selección deben seguir siendo operables.
+- En la carga inicial de sesión, las lecturas independientes de permisos y opciones auxiliares deben ejecutarse en paralelo; no serializar llamadas que no dependen entre sí.

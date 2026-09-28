@@ -14,6 +14,11 @@ const page = readFileSync(
   "utf8"
 );
 const navigation = readFileSync("src/shared/config/navigation.ts", "utf8");
+const rentQueries = readFileSync(
+  "src/modules/rent_structures/hooks/useRentStructuresQueries.ts",
+  "utf8"
+);
+const authContext = readFileSync("src/modules/auth/context/AuthContext.tsx", "utf8");
 
 describe("acceso a configuración de estructuras de renta", () => {
   it("limita la configuración a superadmin explícito y control de contratos", () => {
@@ -50,6 +55,14 @@ describe("acceso a configuración de estructuras de renta", () => {
 
     expect(moduleStart).toBeGreaterThanOrEqual(0);
     expect(moduleDefinition).toContain('"control_contratos"');
+  });
+
+  it("mantiene el catálogo visible mientras carga el detalle del cargo", () => {
+    expect(rentQueries).toContain("placeholderData: (previous) => previous");
+  });
+
+  it("no serializa lecturas independientes durante la autorización inicial", () => {
+    expect(authContext).toContain("Promise.all([\n          fetchEffectivePermissions(),\n          fetchSharedLoginOperatorOptions()\n        ])");
   });
 
   it("verifica el alcance contra usuarios y privilegios reales al desplegar", () => {
