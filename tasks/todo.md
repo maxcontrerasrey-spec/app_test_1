@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Cargar nómina de Jornadas recibida el 2026-09-28
+
+- [x] Transcribir las 28 filas de la captura y revisar reglas vigentes de identidad, pauta y día 1.
+- [x] Conciliar cada RUT con una ficha BUK activa, área, cargo y pauta inequívocos.
+- [x] Insertar solo asignaciones faltantes, cerrar pautas anteriores cuando corresponda y preservar las ya correctas.
+- [x] Verificar las asignaciones conciliadas en producción, ejecutar auditorías/Guardian y documentar el resultado.
+
+Plan validado: la carga será atómica e idempotente. El RUT y el área exacta seleccionarán la ficha BUK; una asignación existente en la misma fecha solo será aceptada si coincide en pauta, y cualquier ambigüedad, área distinta o solapamiento futuro abortará el lote completo.
+
+Resultado: la migración `20260928160000_import_rosters_from_capture_20260928.sql` quedó aplicada en producción y verificó 26 asignaciones con su fecha de inicio y pauta correspondientes. Se excluyeron de forma explícita a Roman Aaron Garces Isla, porque no existe una ficha BUK activa, y a Manuel Rogelio Briceño Soumastres, porque su ficha activa pertenece a ARAMARK MINISTRO HALES INTERNO y no al contrato ACCIONA informado en la captura. Las pruebas contractuales, auditorías SQL y Guardian finalizaron correctamente; Guardian reportó 0 errores y 0 advertencias.
+
 ## Mejorar selección de cargos y carga de sesión — 2026-09-28
 
 - [x] Confirmar el reemplazo de datos durante el click y la secuencia de autorización inicial.
