@@ -5,9 +5,9 @@
 - [x] Confirmar el reemplazo de datos durante el click y la secuencia de autorización inicial.
 - [x] Mantener la lista de cargos estable mientras carga el detalle seleccionado.
 - [x] Paralelizar lecturas independientes de autorización y agregar regresiones.
-- [ ] Ejecutar pruebas, build, auditorías, Guardian, publicar y verificar producción.
+- [x] Ejecutar pruebas, build, auditorías, Guardian, publicar y verificar producción.
 
-Resultado previo a publicación: cada cambio de cargo reemplazaba temporalmente el payload de React Query y ocultaba la lista mientras el RPC cargaba el detalle. Además, la autorización esperaba en serie los permisos y las opciones de operador. Se agregó `placeholderData` para conservar el catálogo visible y ambas lecturas ahora se ejecutan en paralelo.
+Resultado: cada cambio de cargo reemplazaba temporalmente el payload de React Query y ocultaba la lista mientras el RPC cargaba el detalle. Además, la autorización esperaba en serie los permisos y las opciones de operador. Se agregó `placeholderData` para conservar el catálogo visible y ambas lecturas ahora se ejecutan en paralelo. La revisión `3afad49a` fue publicada en `gestion.busesjm.cl`; el bundle principal y el chunk de Estructuras de Renta contienen la corrección.
 
 ## Exponer Estructuras de Renta a Control de Contratos — 2026-09-25
 
