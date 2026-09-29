@@ -20,7 +20,7 @@ export const candidateStageFilterOptions = [
   { key: "document_review", label: "Revisión Documental" },
   { key: "ready_for_hire", label: "Listos para contratar" },
   { key: "without_folio", label: "Sin Folio" },
-  { key: "discarded", label: "Descartados" }
+  { key: "discarded", label: "Rechazados / desistidos" }
 ] as const;
 
 export function formatDateValue(value: string | null | undefined) {

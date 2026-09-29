@@ -228,14 +228,18 @@ export function CandidateDetailSidebar({
             {toRecruitmentCandidateStageLabel(selectedCandidate.stage_code)}
           </span>
         </div>
-        {!readOnly && onTransferCandidateRequested && selectedCandidate.stage_code !== "hired" && selectedCandidate.stage_code !== "rejected" && selectedCandidate.stage_code !== "withdrawn" && (
+        {!readOnly && onTransferCandidateRequested && selectedCandidate.stage_code !== "hired" && (
           <button
             type="button"
             className="soft-primary-button control-compact-button"
-            title="Trasladar a otro folio"
+            title={selectedCandidate.stage_code === "rejected" || selectedCandidate.stage_code === "withdrawn"
+              ? "Reactivar y asignar a un folio o Sin Folio"
+              : "Trasladar a otro folio"}
             onClick={onTransferCandidateRequested}
           >
-            Trasladar
+            {selectedCandidate.stage_code === "rejected" || selectedCandidate.stage_code === "withdrawn"
+              ? "Reactivar"
+              : "Trasladar"}
           </button>
         )}
       </div>

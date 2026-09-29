@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { TextField } from "../../../shared/ui/forms/TextField";
 import { SearchableSelectField as SelectField } from "../../../shared/ui/forms/SearchableSelectField";
 import {
+  addCandidateToRecruitmentCase,
   releaseCandidateWithoutFolio,
   transferCandidateToCase,
   type RecruitmentCandidateControlRow,
@@ -28,14 +29,16 @@ export function TransferCandidateModal({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const isReactivation = candidate?.stage_code === "rejected" || candidate?.stage_code === "withdrawn";
+
   const availableCases = useMemo(() => {
     if (!candidate) return [];
     return activeCases.filter(
       (c) =>
-        c.id !== candidate.recruitment_case_id &&
+        (isReactivation || c.id !== candidate.recruitment_case_id) &&
         !["filled", "closed_unfilled", "cancelled"].includes(c.status)
     );
-  }, [activeCases, candidate]);
+  }, [activeCases, candidate, isReactivation]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -58,11 +61,19 @@ export function TransferCandidateModal({
     setIsLoading(true);
     setErrorMessage("");
 
-    const result = await transferCandidateToCase({
-      caseCandidateId: candidate.id,
-      targetCaseId,
-      comment
-    });
+    const result = isReactivation
+      ? await addCandidateToRecruitmentCase({
+          caseId: targetCaseId,
+          nationalId: candidate.national_id,
+          fullName: candidate.full_name,
+          email: candidate.email ?? undefined,
+          phone: candidate.phone ?? undefined
+        })
+      : await transferCandidateToCase({
+          caseCandidateId: candidate.id,
+          targetCaseId,
+          comment
+        });
 
     if (result.error) {
       setErrorMessage(result.error);
@@ -111,18 +122,23 @@ export function TransferCandidateModal({
       >
         <div className="home-section-header">
           <div>
-            <h3 id="transfer-modal-title">Trasladar Candidato</h3>
+            <h3 id="transfer-modal-title">
+              {isReactivation ? "Reactivar candidato" : "Trasladar candidato"}
+            </h3>
             <p>
-              Trasladar a <strong>{candidate.full_name}</strong>{
+              {isReactivation ? "Reiniciar el flujo de " : "Trasladar a "}
+              <strong>{candidate.full_name}</strong>{
                 candidate.is_without_folio || candidate.case_status === "filled" || candidate.case_status === "closed_unfilled"
                   ? ""
                   : candidate.case_code
-                    ? ` desde ${candidate.case_code}`
+                    ? isReactivation ? ` desde ${candidate.case_code}` : ` desde ${candidate.case_code}`
                     : ""
-              } a otro folio activo.
+              } {isReactivation ? "desde Lead en el folio seleccionado." : "a otro folio activo."}
             </p>
             <p className="tracking-filter-caption">
-              También puedes conservarlo en la nómina y dejarlo disponible en <strong>Sin Folio</strong>.
+              {isReactivation
+                ? <>El rechazo original se conserva en el historial. También puedes dejarlo disponible en <strong>Sin Folio</strong>.</>
+                : <>También puedes conservarlo en la nómina y dejarlo disponible en <strong>Sin Folio</strong>.</>}
             </p>
           </div>
           <button
@@ -137,7 +153,7 @@ export function TransferCandidateModal({
         <div className="form-layout" style={{ marginTop: "1.5rem" }}>
           <SelectField
             id="transfer-target-case"
-            label="Folio destino"
+            label={isReactivation ? "Reactivar en folio" : "Folio destino"}
             value={targetCaseId}
             onChange={(e) => setTargetCaseId(e.target.value)}
             options={caseOptions}
@@ -146,18 +162,22 @@ export function TransferCandidateModal({
           />
           {caseOptions.length === 0 && (
             <p className="tracking-filter-caption" style={{ marginTop: "-1rem", marginBottom: "1rem" }}>
-              No hay otros folios activos disponibles para trasladar.
+              {isReactivation
+                ? "No hay folios activos disponibles para reactivar al candidato."
+                : "No hay otros folios activos disponibles para trasladar."}
             </p>
           )}
 
-          <TextField
-            id="transfer-comment"
-            label="Motivo del traslado (Opcional)"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Ej. El folio original se cerró..."
-            disabled={isLoading}
-          />
+          {!isReactivation ? (
+            <TextField
+              id="transfer-comment"
+              label="Motivo del traslado (Opcional)"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Ej. El folio original se cerró..."
+              disabled={isLoading}
+            />
+          ) : null}
 
           {errorMessage && <p className="form-status form-status-error">{errorMessage}</p>}
 
@@ -176,14 +196,14 @@ export function TransferCandidateModal({
               onClick={() => void handleTransfer()}
               disabled={isLoading || !targetCaseId}
             >
-              Confirmar Traslado
+              {isReactivation ? "Confirmar reactivación" : "Confirmar traslado"}
             </button>
             <button
               type="button"
               className="soft-primary-button"
               onClick={() => void handleReleaseWithoutFolio()}
               disabled={isLoading || Boolean(candidate.is_without_folio)}
-              title="Conservar al candidato y liberarlo del folio actual"
+              title="Reiniciar el flujo y dejar al candidato disponible sin folio"
             >
               Dejar en Sin Folio
             </button>

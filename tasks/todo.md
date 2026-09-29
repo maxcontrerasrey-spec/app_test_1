@@ -2,11 +2,13 @@
 
 ## Reactivar candidatos rechazados desde Control de Contrataciones — 2026-09-29
 
-- [ ] Confirmar contratos backend existentes para reactivación en folio y Sin Folio.
-- [ ] Exponer la acción únicamente a Reclutamiento/usuarios con gestión del caso.
-- [ ] Permitir reactivar desde Control de Contrataciones hacia un folio activo o Sin Folio.
-- [ ] Preservar rechazo, historial, auditoría e idempotencia; impedir contratación como reactivación.
-- [ ] Ejecutar pruebas, build, Guardian, auditorías y verificación productiva.
+- [x] Confirmar contratos backend existentes para reactivación en folio y Sin Folio.
+- [x] Exponer la acción únicamente a Reclutamiento/usuarios con gestión del caso.
+- [x] Permitir reactivar desde Control de Contrataciones hacia un folio activo o Sin Folio.
+- [x] Preservar rechazo, historial, auditoría e idempotencia; impedir contratación como reactivación.
+- [x] Ejecutar pruebas, build, Guardian, auditorías y verificación productiva.
+
+Resultado: Control de Contrataciones muestra los rechazados/desistidos en un filtro explícito y permite reactivar desde Lead en un folio activo o dejar al candidato en Sin Folio. Se conservaron los RPC existentes de alta/release, el historial del rechazo y los permisos de Reclutamiento; los candidatos contratados no se pueden reactivar. Pruebas focalizadas, build frontend y Guardian finalizaron correctamente.
 
 ## Corregir reenvío de psicotest caducados — 2026-09-29
 
