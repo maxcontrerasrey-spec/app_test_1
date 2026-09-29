@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Reconciliar Gustavo Cortés para psicotest de contratado — 2026-09-29
+
+- [x] Confirmar evidencia BUK, registro externo, folio y ausencia de candidato duplicado.
+- [x] Vincular el registro histórico con un candidato ERP contratado en RC-0173, preservando auditoría.
+- [x] Verificar elegibilidad psicolaboral y que el candidato aparezca como No realizado.
+- [x] Aplicar en producción, ejecutar gates y probar el envío sin enviar una invitación accidental.
+
+Resultado: Gustavo Adolfo Cortés León quedó reconciliado como candidato ERP único y contratado en RC-0173, enlazado con la ficha BUK activa `43950` y elegible para recibir Psicolaboral. No tenía evaluaciones previas y no se envió ningún correo automáticamente. La migración, pruebas de integridad, auditorías, Guardian y build frontend finalizaron correctamente.
+
 ## Reactivar candidatos rechazados desde Control de Contrataciones — 2026-09-29
 
 - [x] Confirmar contratos backend existentes para reactivación en folio y Sin Folio.
