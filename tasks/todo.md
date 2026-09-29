@@ -1,5 +1,22 @@
 # Tareas y Roadmap de Desarrollo
 
+## Reactivar candidatos rechazados desde Control de Contrataciones — 2026-09-29
+
+- [ ] Confirmar contratos backend existentes para reactivación en folio y Sin Folio.
+- [ ] Exponer la acción únicamente a Reclutamiento/usuarios con gestión del caso.
+- [ ] Permitir reactivar desde Control de Contrataciones hacia un folio activo o Sin Folio.
+- [ ] Preservar rechazo, historial, auditoría e idempotencia; impedir contratación como reactivación.
+- [ ] Ejecutar pruebas, build, Guardian, auditorías y verificación productiva.
+
+## Corregir reenvío de psicotest caducados — 2026-09-29
+
+- [x] Confirmar la regresión entre la migración de reenvío y la de contingencia.
+- [x] Restaurar el cierre transaccional de invitaciones caducadas antes de crear el nuevo envío.
+- [x] Cubrir el caso caducado, idempotencia y preservación del historial.
+- [x] Aplicar migración, ejecutar gates, publicar Edge Function si corresponde y verificar producción.
+
+Resultado: la migración `20260929110000_restore_psycholaboral_expired_resend.sql` restauró el cierre de evaluaciones caducadas antes del nuevo insert, preservó el historial y mantuvo la elegibilidad de contingencia. Fue aplicada en Supabase producción. La prueba runtime con `prepare_psycholaboral_dispatch` pasó dentro de una transacción revertida sobre un candidato caducado, sin enviar correo ni mutar datos permanentes.
+
 ## Cargar nómina de Jornadas recibida el 2026-09-28
 
 - [x] Transcribir las 28 filas de la captura y revisar reglas vigentes de identidad, pauta y día 1.

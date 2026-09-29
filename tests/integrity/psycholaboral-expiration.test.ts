@@ -16,6 +16,9 @@ const statusMigration = read(
 const inviteStatusMigration = read(
   "supabase/migrations/20260902135139_show_expired_psycholaboral_invites.sql",
 );
+const resendRegressionMigration = read(
+  "supabase/migrations/20260929110000_restore_psycholaboral_expired_resend.sql",
+);
 
 describe("Psycholaboral expiration contract", () => {
   it("expires abandoned 90-minute sessions only at the backend boundary", () => {
@@ -39,5 +42,13 @@ describe("Psycholaboral expiration contract", () => {
     expect(inviteStatusMigration).toContain("invite_expires_at <= timezone('utc', now())");
     expect(inviteStatusMigration).toContain("invite_consumed_at is null");
     expect(statusMigration).toContain("display_status = p_status");
+  });
+
+  it("cierra la evaluación caducada antes de crear el reenvío", () => {
+    expect(resendRegressionMigration).toContain("execution_status = 'expired'");
+    expect(resendRegressionMigration).toContain("invite_expired_for_resend");
+    expect(resendRegressionMigration).toContain("replaced_expired_assessment_id");
+    expect(resendRegressionMigration).toContain("psychometric_one_open_assessment");
+    expect(resendRegressionMigration).toContain("eligibility_path");
   });
 });

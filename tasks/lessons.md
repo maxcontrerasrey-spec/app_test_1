@@ -3995,3 +3995,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Cuando una query usa la selección como parte de su clave, cambiar de elemento puede dejar `data` indefinido mientras llega la respuesta; si la UI renderiza la lista desde ese `data`, el click parece no haber funcionado.
 - Para catálogos con detalle remoto, conservar el payload anterior durante el fetch y mostrar el estado de carga sobre el detalle; la lista y la selección deben seguir siendo operables.
 - En la carga inicial de sesión, las lecturas independientes de permisos y opciones auxiliares deben ejecutarse en paralelo; no serializar llamadas que no dependen entre sí.
+
+## 2026-09-29 - Las migraciones posteriores deben preservar los invariantes de reenvío
+
+- Cuando una migración reemplaza una RPC completa, no basta con conservar la regla nueva: hay que comparar el cuerpo vigente contra todos los invariantes introducidos después, especialmente expiración, reintento e idempotencia.
+- El índice parcial `psychometric_one_open_assessment` exige cerrar primero la evaluación caducada dentro de la misma transacción; insertar el reemplazo sin ese paso produce una violación de unicidad.
+- El reenvío debe dejar la evaluación anterior como historial terminal y auditar el vínculo con el nuevo envío; nunca se debe eliminar ni reutilizar el registro histórico.
