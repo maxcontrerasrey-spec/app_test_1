@@ -7,7 +7,7 @@
 - [x] Verificar elegibilidad psicolaboral y que el candidato aparezca como No realizado.
 - [x] Aplicar en producción, ejecutar gates y probar el envío sin enviar una invitación accidental.
 
-Resultado: Gustavo Adolfo Cortés León quedó reconciliado como candidato ERP único y contratado en RC-0173, enlazado con la ficha BUK activa `43950` y elegible para recibir Psicolaboral. No tenía evaluaciones previas y no se envió ningún correo automáticamente. La migración, pruebas de integridad, auditorías, Guardian y build frontend finalizaron correctamente.
+Resultado: Gustavo Adolfo Cortés León quedó reconciliado como candidato ERP único y contratado en RC-0173, enlazado con la ficha BUK activa `43950` y elegible para recibir Psicolaboral. Además, las RPC de listado y resumen ahora muestran contratados con evaluación pendiente aunque el folio esté lleno. La verificación productiva devuelve `total_count = 1`, `display_status = hired` y `hired = 1`; no se envió ningún correo automáticamente.
 
 ## Reactivar candidatos rechazados desde Control de Contrataciones — 2026-09-29
 

@@ -4001,3 +4001,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Cuando una migración reemplaza una RPC completa, no basta con conservar la regla nueva: hay que comparar el cuerpo vigente contra todos los invariantes introducidos después, especialmente expiración, reintento e idempotencia.
 - El índice parcial `psychometric_one_open_assessment` exige cerrar primero la evaluación caducada dentro de la misma transacción; insertar el reemplazo sin ese paso produce una violación de unicidad.
 - El reenvío debe dejar la evaluación anterior como historial terminal y auditar el vínculo con el nuevo envío; nunca se debe eliminar ni reutilizar el registro histórico.
+## 2026-09-29 - Un contratado pendiente de Psicolaboral no puede depender de tener assessment
+
+- La clasificación `hired` debe depender del estado contratado y de la elegibilidad BUK, no de que exista ya un assessment.
+- Un folio `filled` no debe ocultar a un trabajador `hired` con evidencia BUK válida si todavía falta enviar la evaluación psicolaboral.
+- Listado, resumen y guard de envío deben compartir la misma regla: contratado verificable, assessment opcional y envío todavía habilitado.
