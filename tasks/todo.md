@@ -14,6 +14,16 @@ Estado inicial: el secreto existe en Supabase, pero el formulario de Variables a
 
 Resultado de preparación: 109 pruebas de integridad y build frontend pasan; Deno check de las funciones modificadas pasa; auditoría de migraciones pasa y Guardian reporta 0 errores/0 warnings. La revisión productiva encontró 14 cargas psicolaborales históricas ya exitosas en BUK, 9 documentos aprobados y 108 cargados en `candidate_documents`; no hay jobs psicolaborales pendientes. Esos registros históricos se conservan. Implementación aún no desplegada por el secreto de Pages sin valor guardado; falta ejecutar migración, deploy de Pages/Edge Functions y canario sintético autorizado.
 
+## Unificar altura y forma de campos de Operaciones — 2026-09-30
+
+- [x] Consolidar altura, padding, radio y tipografía de inputs de una línea y selectores en un solo token CSS, sin afectar radio/checkbox.
+- [x] Aplicar la regla compartida a filtros, fechas, formularios de planificación/configuración y diálogo de incidencias en las siete vistas.
+- [x] Mantener textareas multilínea con crecimiento/filas útiles, compartiendo borde y radio con los campos compactos.
+- [x] Ejecutar build frontend, Guardian y `git diff --check`; mantener intactos los cambios ajenos ya presentes.
+- [x] Registrar resultado y lección visual del ajuste.
+
+Resultado: todos los controles de una línea de Operaciones usan `--ops-control-height: 2.35rem`, radio de 6px, padding y tipografía compartidos. La regla abarca campos de fecha/búsqueda, filtros y formularios de las siete vistas; textareas conservan altura multilínea y radio común, y radios/checkboxes mantienen su tratamiento nativo. Build frontend, Guardian (0 errores/advertencias) y `git diff --check` pasan. El cambio se publica como actualización exclusiva de frontend, sin migraciones ni cambios de datos/permisos.
+
 ## Completar experiencia Atlas Operations Control Tower — 2026-09-30
 
 - [x] Inspeccionar la página actual y reutilizar los patrones visuales del ERP y la referencia FleetOps sin cambiar el contrato superadmin-only.

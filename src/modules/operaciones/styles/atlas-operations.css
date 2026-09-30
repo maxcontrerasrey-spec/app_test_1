@@ -10,6 +10,7 @@
   --ops-space-2: 0.75rem;
   --ops-space-3: 1rem;
   --ops-space-4: 1.25rem;
+  --ops-control-height: 2.35rem;
   --ops-radius: 6px;
   color: var(--ops-ink);
   gap: 0.7rem;
@@ -131,8 +132,19 @@
 .atlas-ops__form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
 .atlas-ops__field { display: grid; align-content: start; gap: 0.3rem; min-width: 0; color: var(--ops-muted); font-size: 0.7rem; font-weight: 600; }
 .atlas-ops__field--wide { grid-column: 1 / -1; }
-.atlas-ops input:not([type="radio"]):not([type="checkbox"]), .atlas-ops select, .atlas-ops textarea { width: 100%; min-height: 2.45rem; border: 1px solid var(--ops-border); border-radius: 5px; padding: 0.5rem 0.65rem; background: var(--ops-surface); color: var(--ops-ink); font-size: 0.78rem; }
-.atlas-ops textarea { resize: vertical; }
+.atlas-ops input:not([type="radio"]):not([type="checkbox"]), .atlas-ops select, .atlas-ops textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-radius);
+  padding: 0 0.65rem;
+  background: var(--ops-surface);
+  color: var(--ops-ink);
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+.atlas-ops input:not([type="radio"]):not([type="checkbox"]), .atlas-ops select { height: var(--ops-control-height); min-height: var(--ops-control-height); }
+.atlas-ops textarea { min-height: 4.75rem; padding-block: 0.5rem; line-height: 1.4; resize: vertical; }
 .atlas-ops :is(input, select, textarea, button):focus-visible { outline: 2px solid color-mix(in srgb, var(--ops-accent) 45%, transparent); outline-offset: 2px; }
 .atlas-ops__driver-results { grid-column: 1 / -1; display: grid; gap: 0.35rem; max-height: 11rem; overflow: auto; }
 .atlas-ops__driver-option { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem; border: 1px solid var(--ops-border-soft); border-radius: 5px; cursor: pointer; }
@@ -181,14 +193,11 @@
 
 /* Control Tower shared scale and map/list work surface */
 .atlas-ops {
-  --ops-control-height: 2.35rem;
-  --ops-radius: 6px;
   --ops-panel-padding: 0.9rem;
   --ops-gap: 0.75rem;
 }
 .atlas-ops__toolbar { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(13rem, 1.15fr) minmax(11rem, 0.8fr) auto; align-items: end; gap: var(--ops-gap); }
 .atlas-ops__toolbar .atlas-ops__button { min-height: var(--ops-control-height); }
-.atlas-ops__toolbar select, .atlas-ops__toolbar input { min-height: var(--ops-control-height); border: 1px solid var(--ops-border); border-radius: var(--ops-radius); padding: 0.45rem 0.65rem; background: var(--ops-surface); color: var(--ops-ink); font-size: 0.75rem; }
 .atlas-ops__search { min-width: 0; }
 .atlas-ops__search input { width: 100%; }
 .atlas-ops__work-modes { display: flex; justify-self: end; width: max-content; gap: 0.15rem; padding: 0.18rem; border: 1px solid var(--ops-border-soft); border-radius: var(--ops-radius); background: var(--ops-surface); }

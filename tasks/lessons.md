@@ -4012,6 +4012,12 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Revisar migraciones, adaptadores, interfaz, documentación y RLS en conjunto; una migración sin `INSERT ... SELECT` aún puede dejar al frontend leyendo tablas antiguas o exponer el nuevo módulo fuera del contrato autorizado.
 - Si la primera salida se limita a superadministración, exigir `profiles.is_super_admin` activo de forma independiente en navegación, ruta, RPC y RLS; no asumir que `admin` ni una matriz de roles operacionales equivalen a superadmin.
 
+## 2026-09-30 - Los campos operacionales deben usar una altura fija compartida
+
+- `min-height` no normaliza controles nativos: `select`, `input` de texto, fecha y número pueden quedar con alturas distintas por su caja intrínseca y el padding.
+- Definir altura, padding, tipografía y radio una sola vez para los campos de una línea en todo el módulo; conservar una excepción multilínea para `textarea` y excluir checkbox/radio.
+- No añadir un override a cada formulario: las siete vistas reutilizan una hoja acotada al módulo y deben heredar la misma escala.
+
 ## 2026-09-30 - Un módulo vacío también necesita una composición operativa completa
 
 - Ante feedback estético, localizar primero una superficie existente del ERP que el usuario ya reconoce y replicar su escala, retícula y densidad antes de inventar otro lenguaje local.
