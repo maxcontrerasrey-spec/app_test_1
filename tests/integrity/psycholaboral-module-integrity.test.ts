@@ -19,12 +19,15 @@ const psychologistReviewHashFixMigration = readFileSync("supabase/migrations/202
 const psychologistDocumentTypeFixMigration = readFileSync("supabase/migrations/20260819131500_fix_psych_report_document_type_ambiguity.sql", "utf8");
 const decisionSeparationMigration = readFileSync("supabase/migrations/20260819230000_separate_psycholaboral_report_decisions.sql", "utf8");
 const contingencyEligibilityMigration = readFileSync("supabase/migrations/20260924120000_allow_psycholaboral_for_contingency_hires.sql", "utf8");
+const r2Migration = readFileSync("supabase/migrations/20260930213946_psycholaboral_cloudflare_r2_storage.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
 const psychAiIndex = readFileSync("supabase/functions/_shared/psychAi/index.ts", "utf8");
 const psychAi = readFileSync("supabase/functions/_shared/psychAi/providers.ts", "utf8");
 const psychAiGuardrails = readFileSync("supabase/functions/_shared/psychAi/guardrails.ts", "utf8");
 const psychAiSemantic = readFileSync("supabase/functions/_shared/psychAi/semantic.ts", "utf8");
 const certificate = readFileSync("supabase/functions/generate-psycholaboral-certificate/index.ts", "utf8");
+const r2Gateway = readFileSync("functions/api/psycholaboral/storage.ts", "utf8");
+const bukSync = readFileSync("supabase/functions/sync-buk-candidates/index.ts", "utf8");
 const resultDialog = readFileSync("src/modules/psycholaboral/components/PsychResultDialog.tsx", "utf8");
 const aiReviewDialog = readFileSync("src/modules/psycholaboral/components/PsychAIReviewDialog.tsx", "utf8");
 const managementPage = readFileSync("src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx", "utf8");
@@ -34,6 +37,23 @@ const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
 const access = readFileSync("src/modules/auth/config/access.ts", "utf8");
 
 describe("Gestión Psicolaboral", () => {
+  it("usa R2 privado para nuevos PDFs, mantiene lectura histórica y excluye informes de BUK", () => {
+    expect(r2Migration).toContain("default 'supabase_storage'");
+    expect(r2Migration).toContain("certificate_storage_provider");
+    expect(r2Migration).toContain("report_storage_provider");
+    expect(certificate).toContain("storePsycholaboralPdf(assessmentId, \"certificate\"");
+    expect(certificate).toContain("storePsycholaboralPdf(assessmentId, \"integrated_report\"");
+    expect(certificate).not.toContain('storage.from("psychometric_documents")');
+    expect(certificate).not.toContain("register_psycholaboral_report_document");
+    expect(edge).toContain("storage_provider === \"cloudflare_r2\"");
+    expect(edge).toContain("admin.storage");
+    expect(r2Gateway).toContain("get_psycholaboral_certificate_artifact");
+    expect(r2Gateway).toContain("cache-control");
+    expect(bukSync).toContain("isPsycholaboralDocument(document.document_name)");
+    expect(r2Migration).toContain("guard_buk_psycholaboral_document_job");
+    expect(r2Migration).toContain("'excluded'");
+  });
+
   it("identifica visualmente qué páginas tienen respuestas pendientes", () => {
     expect(assessmentPage).toContain("const blockCompletion = useMemo");
     expect(assessmentPage).toContain("Object.prototype.hasOwnProperty.call(answers, String(question.order))");
@@ -214,15 +234,15 @@ describe("Gestión Psicolaboral", () => {
     expect(psychologistReviewHashFixMigration).not.toContain("coalesce(output_hash, reviewed_output_hash)");
   });
 
-  it("carga automáticamente el informe validado sin eliminar la carga manual", () => {
+  it("mantiene intacta la regla histórica de carga manual y evita registrar nuevos informes en BUK", () => {
     expect(psychologistDocumentMigration).toContain("register_psycholaboral_report_document(uuid,text,text)");
     expect(psychologistDocumentMigration).toContain("Informe Evaluación Psicolaboral");
     expect(psychologistDocumentMigration).toContain("existing_rec.file_path like 'psycholaboral-auto/%'");
     expect(psychologistDocumentMigration).toContain("psycholaboral_report_document_preserved");
-    expect(certificate).toContain('CANDIDATE_DOCUMENTS_BUCKET = "candidate-docs"');
-    expect(certificate).toContain("register_psycholaboral_report_document");
-    expect(certificate).toContain("candidateDocumentPath");
-    expect(certificate).toContain("preservedFileCleanupError");
+    expect(certificate).not.toContain('storage.from("candidate-docs")');
+    expect(certificate).not.toContain("register_psycholaboral_report_document");
+    expect(certificate).not.toContain("candidateDocumentPath");
+    expect(certificate).toContain("storePsycholaboralPdf(assessmentId, \"integrated_report\"");
     expect(certificate).toContain("function publicErrorMessage(error: unknown): string");
     expect(edge).toContain("const certificatePayload = await certificateResponse.json().catch(() => ({}))");
     expect(edge).toContain("certificatePayload.error");

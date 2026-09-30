@@ -55,7 +55,9 @@ async function authenticatedUser(env: AccreditationStorageEnv, token: string) {
     headers: { apikey: anonKey, authorization: `Bearer ${token}` }
   });
   if (!response.ok) throw new Error("Unauthorized");
-  return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), anonKey };
+  const user = await response.json().catch(() => null) as { id?: unknown } | null;
+  if (typeof user?.id !== "string") throw new Error("Unauthorized");
+  return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), anonKey, userId: user.id };
 }
 
 async function rpc(env: AccreditationStorageEnv, token: string, name: string, body: Record<string, unknown>) {
@@ -70,7 +72,7 @@ async function rpc(env: AccreditationStorageEnv, token: string, name: string, bo
   return payload;
 }
 
-export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ request, env }) => {
+export const onRequest = async ({ request, env }: { request: Request; env: AccreditationStorageEnv }) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
@@ -92,6 +94,10 @@ export const onRequest: PagesFunction<AccreditationStorageEnv> = async ({ reques
     const reviewerNotes = String(formData.get("reviewerNotes") ?? "").trim() || null;
     const file = formData.get("file");
     const documentName = String(formData.get("documentName") ?? (file instanceof File ? file.name : "documento.pdf")).trim();
+
+    const userContext = await authenticatedUser(env, token);
+    const canManageAccreditation = await rpc(env, token, "user_can_manage_accreditation", { p_user_id: userContext.userId });
+    if (canManageAccreditation !== true) throw new Error("Sin permisos para registrar documentos de acreditacion");
 
     if (!employeeId || !siteId || !requirementId || !contractCode || !documentNumber || !requirementCode) {
       throw new Error("Faltan contrato, RUT o requisito para construir la ruta documental.");

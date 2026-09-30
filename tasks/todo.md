@@ -1,5 +1,19 @@
 # Tareas y Roadmap de Desarrollo
 
+## Publicar almacenamiento Psicolaboral en Cloudflare R2 — 2026-09-30
+
+- [x] Registrar el plan de corte: R2 privado para PDFs nuevos, lectura autenticada ERP, lectura histórica Supabase y exclusión expresa de Psicolaboral hacia BUK.
+- [x] Agregar metadata de proveedor R2 preservando referencias históricas, claims, reintentos e idempotencia de generación.
+- [x] Implementar gateway Pages con HMAC para escritura Edge→R2 y lectura ERP autorizada; corregir la autorización previa al `put` de Acreditación.
+- [x] Cambiar generación y consumidor ERP; impedir que informes psicolaborales se incorporen a cola/snapshot BUK.
+- [x] Cubrir contratos, pruebas de autorización/integridad/lectura histórica; ejecutar Deno checks, pruebas focalizadas, build, auditorías y Guardian.
+- [ ] Configurar el mismo secreto cifrado en Cloudflare Pages sin imprimirlo, desplegar en orden y comprobar la ruta productiva y un PDF sintético.
+- [ ] Documentar qué queda en Supabase, verificar que nuevas generaciones no escriben en Storage ni BUK y conservar todos los documentos históricos sin purga.
+
+Estado inicial: el secreto existe en Supabase, pero el formulario de Variables and secrets de Pages muestra el nombre `PSYCHOLABORAL_R2_HMAC_SECRET` con el valor vacío/no guardado. No se publica hasta confirmar la configuración segura de Pages.
+
+Resultado de preparación: 109 pruebas de integridad y build frontend pasan; Deno check de las funciones modificadas pasa; auditoría de migraciones pasa y Guardian reporta 0 errores/0 warnings. La revisión productiva encontró 14 cargas psicolaborales históricas ya exitosas en BUK, 9 documentos aprobados y 108 cargados en `candidate_documents`; no hay jobs psicolaborales pendientes. Esos registros históricos se conservan. Implementación aún no desplegada por el secreto de Pages sin valor guardado; falta ejecutar migración, deploy de Pages/Edge Functions y canario sintético autorizado.
+
 ## Completar experiencia Atlas Operations Control Tower — 2026-09-30
 
 - [x] Inspeccionar la página actual y reutilizar los patrones visuales del ERP y la referencia FleetOps sin cambiar el contrato superadmin-only.

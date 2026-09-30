@@ -17,8 +17,7 @@ import {
   JM_LOGO_BASE64,
 } from "../generate-competency-certificate/logos.ts";
 
-const BUCKET = "psychometric_documents";
-const CANDIDATE_DOCUMENTS_BUCKET = "candidate-docs";
+const R2_GATEWAY_PATH = "/api/psycholaboral/storage";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://gestion.busesjm.cl",
   "Content-Type": "application/json",
@@ -165,6 +164,42 @@ async function sha256(bytes: Uint8Array) {
     new Uint8Array(digest),
     (byte) => byte.toString(16).padStart(2, "0"),
   ).join("");
+}
+
+async function hmacSha256(secret: string, message: string) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function storePsycholaboralPdf(assessmentId: string, kind: "certificate" | "integrated_report", bytes: Uint8Array, expectedHash: string) {
+  const secret = Deno.env.get("PSYCHOLABORAL_R2_HMAC_SECRET")?.trim();
+  const origin = (Deno.env.get("PUBLIC_APP_URL") ?? "https://gestion.busesjm.cl").replace(/\/$/, "");
+  if (!secret || secret.length < 32) throw new Error("No está configurada la autenticación del almacenamiento R2 psicolaboral.");
+  const timestamp = String(Date.now());
+  const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const canonical = ["POST", R2_GATEWAY_PATH, timestamp, nonce, expectedHash].join("\n");
+  const signature = await hmacSha256(secret, canonical);
+  const body = new Uint8Array(bytes.length);
+  body.set(bytes);
+  const response = await fetch(`${origin}${R2_GATEWAY_PATH}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/pdf",
+      "x-psych-assessment-id": assessmentId,
+      "x-psych-artifact-kind": kind,
+      "x-psych-content-sha256": expectedHash,
+      "x-psych-timestamp": timestamp,
+      "x-psych-nonce": nonce,
+      "x-psych-signature": signature,
+    },
+    body: body.buffer,
+  });
+  const result = await response.json().catch(() => null) as { stored?: boolean; objectKey?: string; sha256?: string; error?: string } | null;
+  if (!response.ok || !result?.stored || result.sha256 !== expectedHash || !result.objectKey) {
+    throw new Error(`Cloudflare R2 no confirmó el artefacto psicolaboral (${result?.error ?? response.status}).`);
+  }
+  return result.objectKey;
 }
 
 function wrap(text: string, font: PDFFont, size: number, maxWidth: number) {
@@ -1221,44 +1256,19 @@ Deno.serve(async (request) => {
     const reportBytes = await report.save();
     const hash = await sha256(certificateBytes);
     const reportHash = await sha256(reportBytes);
-    const path =
-      `${payload.assessment_id}/certificado-psicolaboral-${payload.public_id}.pdf`;
-    const reportPath = `${payload.assessment_id}/informe-psicolaboral-integrado-${payload.public_id}.pdf`;
-    const { error: uploadError } = await client.storage.from(BUCKET).upload(
-      path,
-      certificateBytes,
-      { contentType: "application/pdf", upsert: true },
-    );
-    if (uploadError) throw new Error(uploadError.message);
-    const { error: reportUploadError } = await client.storage.from(BUCKET).upload(reportPath, reportBytes, { contentType: "application/pdf", upsert: true });
-    if (reportUploadError) throw new Error(reportUploadError.message);
-    const candidateDocumentPath = `psycholaboral-auto/${assessmentId}/informe-psicolaboral-integrado-${payload.public_id}.pdf`;
-    const { error: candidateDocumentUploadError } = await client.storage
-      .from(CANDIDATE_DOCUMENTS_BUCKET)
-      .upload(candidateDocumentPath, reportBytes, { contentType: "application/pdf", upsert: true });
-    if (candidateDocumentUploadError) throw new Error(`No fue posible cargar el informe en la ficha del candidato: ${candidateDocumentUploadError.message}`);
-    const { data: candidateDocumentRegistration, error: candidateDocumentRegistrationError } = await client.rpc(
-      "register_psycholaboral_report_document",
-      { p_assessment_id: assessmentId, p_file_path: candidateDocumentPath, p_sha256: reportHash },
-    );
-    if (candidateDocumentRegistrationError) throw new Error(candidateDocumentRegistrationError.message);
-    if (!(candidateDocumentRegistration as { stored?: boolean } | null)?.stored) {
-      const { error: preservedFileCleanupError } = await client.storage
-        .from(CANDIDATE_DOCUMENTS_BUCKET)
-        .remove([candidateDocumentPath]);
-      if (preservedFileCleanupError) throw new Error(`El informe quedó generado, pero no se pudo limpiar la copia automática preservando el documento manual: ${preservedFileCleanupError.message}`);
-    }
+    const path = await storePsycholaboralPdf(assessmentId, "certificate", certificateBytes, hash);
+    const reportPath = await storePsycholaboralPdf(assessmentId, "integrated_report", reportBytes, reportHash);
     const { error: completeError } = await client.rpc(
       "complete_psycholaboral_certificate",
       {
         p_assessment_id: assessmentId,
         p_claim_token: claimToken,
         p_success: true,
-        p_bucket: BUCKET,
+        p_bucket: "cloudflare_r2",
         p_path: path,
         p_sha256: hash,
         p_error: null,
-        p_report_bucket: BUCKET,
+        p_report_bucket: "cloudflare_r2",
         p_report_path: reportPath,
         p_report_sha256: reportHash,
       },

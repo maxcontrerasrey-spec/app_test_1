@@ -47,7 +47,7 @@ type BukCandidateDocumentJobRow = {
   source_document_id: string;
   source_document_name: string;
   source_file_path: string | null;
-  status: "pending" | "processing" | "success" | "failed" | "reconciliation_required";
+  status: "pending" | "processing" | "success" | "failed" | "reconciliation_required" | "excluded";
   attempts: number;
   next_attempt_at: string | null;
   response_snapshot: Record<string, unknown> | null;
@@ -3233,7 +3233,7 @@ async function assertCandidateDocumentFilesExist(
   const missingDocuments: string[] = [];
 
   for (const document of payload.documents) {
-    if (alreadyUploadedDocumentIds.has(document.id) || !document.file_path) {
+    if (isPsycholaboralDocument(document.document_name) || alreadyUploadedDocumentIds.has(document.id) || !document.file_path) {
       continue;
     }
 
@@ -3713,7 +3713,7 @@ function getDocumentRetryDelayMs(attempts: number) {
 }
 
 function buildDocumentQueueSummary(rows: Array<Record<string, unknown>>) {
-  const statuses = ["pending", "processing", "success", "failed", "reconciliation_required"] as const;
+  const statuses = ["pending", "processing", "success", "failed", "reconciliation_required", "excluded"] as const;
   return {
     total: rows.length,
     ...Object.fromEntries(
@@ -3724,6 +3724,10 @@ function buildDocumentQueueSummary(rows: Array<Record<string, unknown>>) {
     ),
     updatedAt: new Date().toISOString()
   };
+}
+
+function isPsycholaboralDocument(name: string | null | undefined) {
+  return (name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("psicolaboral");
 }
 
 async function enqueueCandidateDocumentJobs(
@@ -3936,7 +3940,7 @@ async function refreshBukSyncJobDocumentCheckpoint(
     throw new Error(`No fue posible persistir el checkpoint documental BUK: ${updateError.message}`);
   }
 
-  const allDocumentsComplete = rows.length === 0 || rows.every((row) => row.status === "success");
+  const allDocumentsComplete = rows.length === 0 || rows.every((row) => row.status === "success" || row.status === "excluded");
   if (allDocumentsComplete && sourceJob.buk_employee_id) {
     await finalizeSuccessfulJob(supabase, bukSyncJobId, sourceJob.buk_employee_id, resultSnapshot);
   }
@@ -3949,6 +3953,22 @@ async function runCandidateDocumentQueue(
 ) {
   const documentJobs = await claimCandidateDocumentJobs(supabase, request);
   const processed = await Promise.all(documentJobs.map(async (documentJob) => {
+    if (isPsycholaboralDocument(documentJob.source_document_name)) {
+      const { error } = await supabase.from("buk_candidate_document_jobs").update({
+        status: "excluded",
+        last_error: "Documento psicolaboral excluido de BUK por política de almacenamiento R2.",
+        next_attempt_at: null,
+        finished_at: new Date().toISOString()
+      }).eq("id", documentJob.id).eq("status", "processing");
+      if (error) throw new Error(`No fue posible excluir el documento psicolaboral de la cola BUK: ${error.message}`);
+      return {
+        jobId: documentJob.buk_sync_job_id,
+        documentJobId: documentJob.id,
+        candidateId: documentJob.recruitment_case_candidate_id,
+        sourceDocumentId: documentJob.source_document_id,
+        status: "excluded"
+      };
+    }
     try {
       await processCandidateDocumentJob(supabase, documentJob);
       return {

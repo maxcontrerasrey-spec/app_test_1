@@ -129,6 +129,7 @@ export async function getPsychCertificateUrl(assessmentId: string) {
     action: "certificate_url",
     assessment_id: assessmentId,
   });
+  if (typeof data.r2_url === "string") return downloadPrivatePsychArtifact(data.r2_url);
   return String(data.signed_url);
 }
 export async function getPsychReportUrl(assessmentId: string) {
@@ -136,7 +137,18 @@ export async function getPsychReportUrl(assessmentId: string) {
     action: "report_url",
     assessment_id: assessmentId,
   });
+  if (typeof data.r2_url === "string") return downloadPrivatePsychArtifact(data.r2_url);
   return String(data.signed_url);
+}
+
+async function downloadPrivatePsychArtifact(url: string) {
+  const client = getSupabaseClientOrThrow();
+  const { data, error } = await client.auth.getSession();
+  const accessToken = data.session?.access_token;
+  if (error || !accessToken) throw new Error("La sesión expiró. Inicia sesión nuevamente para ver el documento.");
+  const response = await fetch(url, { headers: { authorization: `Bearer ${accessToken}` }, cache: "no-store" });
+  if (!response.ok) throw new Error("No fue posible abrir el documento psicolaboral desde R2.");
+  return URL.createObjectURL(await response.blob());
 }
 export async function generatePsychCertificate(assessmentId: string) {
   return invoke({

@@ -528,7 +528,11 @@ Deno.serve(async (request) => {
       if (artifactError || !artifact) {
         return response({ error: "El certificado todavía no está disponible." }, 409);
       }
-      const item = artifact as { bucket: string; path: string };
+      const item = artifact as { bucket: string; path: string; storage_provider?: string };
+      if (item.storage_provider === "cloudflare_r2" && item.bucket === "cloudflare_r2") {
+        const kind = action === "report_url" ? "integrated_report" : "certificate";
+        return response({ r2_url: `${APP_ORIGIN}/api/psycholaboral/storage?assessment_id=${encodeURIComponent(assessmentId)}&kind=${kind}` });
+      }
       const { data: signed, error: signedError } = await admin.storage
         .from(item.bucket)
         .createSignedUrl(item.path, 60);
