@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode, type FormEvent } from "re
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
+import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
@@ -39,6 +40,16 @@ const VIEWS: Array<{ id: View; label: string }> = [
   { id: "historial", label: "Historial" },
   { id: "configuracion", label: "Configuración" }
 ];
+
+const VIEW_DESCRIPTIONS: Record<View, string> = {
+  "control-tower": "Visibilidad diaria de servicios, hitos y excepciones operacionales.",
+  planificacion: "Prepara servicios con contrato, jornada y recursos validados.",
+  despacho: "Revisa servicios listos y controla su publicación.",
+  excepciones: "Prioriza alertas abiertas y revisa su trazabilidad.",
+  conductor: "Consulta servicios publicados y gestiona su recepción.",
+  historial: "Revisa servicios y eventos asociados a la fecha seleccionada.",
+  configuracion: "Administra catálogos y vínculos de Atlas Operations."
+};
 
 function localDate(offset = 0) {
   const date = new Date();
@@ -116,6 +127,7 @@ export function OperationsControlTowerPage() {
   };
 
   const currentTitle = VIEWS.find((item) => item.id === view)?.label ?? "Control Tower";
+  const usesServiceDate = view !== "configuracion" && view !== "conductor";
 
   async function submitDispatch(form: FormData) {
     const contractId = Number(form.get("contract_id"));
@@ -159,21 +171,20 @@ export function OperationsControlTowerPage() {
   }
 
   return (
-    <main className="atlas-ops">
-      <header className="atlas-ops__header">
-        <div>
-          <div className="atlas-ops__eyebrow">ATLAS / OPERACIONES</div>
+    <PageShell className="atlas-ops">
+      <header className="atlas-ops__header minimal-page-header">
+        <div className="atlas-ops__header-copy">
           <h1>{currentTitle}</h1>
-          <p>Plan operativo, asignaciones y gestión por excepciones.</p>
+          <p>{VIEW_DESCRIPTIONS[view]}</p>
         </div>
         <div className="atlas-ops__header-actions">
-          <label className="atlas-ops__date">Fecha<input type="date" value={day} onChange={(event) => setDay(event.target.value)} /></label>
+          {usesServiceDate && <label className="atlas-ops__date">Fecha<input type="date" value={day} onChange={(event) => setDay(event.target.value)} /></label>}
           <button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => { void refresh(); }} type="button">Actualizar</button>
         </div>
       </header>
 
       <nav className="atlas-ops__tabs" aria-label="Vistas de Operaciones">
-        {VIEWS.map((item) => <button key={item.id} className={view === item.id ? "is-active" : ""} onClick={() => navigate(`/operaciones/${item.id}`)} type="button">{item.label}</button>)}
+        {VIEWS.map((item) => <button key={item.id} className={view === item.id ? "is-active" : ""} aria-current={view === item.id ? "page" : undefined} onClick={() => navigate(`/operaciones/${item.id}`)} type="button">{item.label}</button>)}
       </nav>
 
       {error && <div className="atlas-ops__feedback atlas-ops__feedback--error" role="alert">{error}</div>}
@@ -192,7 +203,25 @@ export function OperationsControlTowerPage() {
           <Metric label="Normal" value={counts.green} tone="green" />
         </section>
         {view === "excepciones" && <AlertTable rows={alertQuery.data ?? []} loading={alertQuery.isLoading} onSelect={setSelectedDispatch} canOperate={canOperate} onAcknowledge={(id) => mutation.mutate(() => acknowledgeAtlasAlert(id))} onResolve={(id) => mutation.mutate(() => resolveAtlasAlert(id, "Revisada desde Control Tower"))} />}
-        <DispatchTable rows={view === "excepciones" ? ordered.filter((row) => row.risk_status !== "green") : ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={(id, action) => mutation.mutate(() => transitionAtlasDispatch(id, action))} canOperate={canOperate} />
+        {view === "control-tower" && dispatchQuery.isError ? (
+          <div className="atlas-ops__query-error" role="alert">
+            <p>No se pudo cargar la operación de esta fecha. {dispatchQuery.error instanceof Error ? dispatchQuery.error.message : "Intenta nuevamente."}</p>
+            <button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => { void dispatchQuery.refetch(); }} type="button">Reintentar</button>
+          </div>
+        ) : view === "control-tower" && dispatchQuery.isSuccess && ordered.length === 0 ? (
+          <ControlTowerEmptyState
+            hasUnfilteredDispatches={(dispatchQuery.data ?? []).length > 0}
+            templatesCount={catalogs?.templates.length ?? 0}
+            vehiclesCount={catalogs?.vehicles.length ?? 0}
+            contractsCount={editableContracts.length}
+            catalogsState={catalogsQuery.isLoading ? "loading" : catalogsQuery.isError ? "error" : "ready"}
+            onPlan={() => navigate("/operaciones/planificacion")}
+            onConfigure={() => navigate("/operaciones/configuracion")}
+            onClearFilter={() => setFilterContract("")}
+          />
+        ) : (
+          <DispatchTable rows={view === "excepciones" ? ordered.filter((row) => row.risk_status !== "green") : ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={(id, action) => mutation.mutate(() => transitionAtlasDispatch(id, action))} canOperate={canOperate} />
+        )}
       </>}
 
       {view === "planificacion" && <section className="atlas-ops__workspace">
@@ -244,9 +273,61 @@ export function OperationsControlTowerPage() {
       </div>}
 
       {incidentFor && <IncidentDialog pending={mutation.isPending} onClose={() => setIncidentFor("")} onSubmit={(category, severity, description) => mutation.mutate(() => driverReportIncident(incidentFor, category, severity, description))} />}
-      {catalogsQuery.isError && <p className="atlas-ops__empty">{catalogsQuery.error instanceof Error ? catalogsQuery.error.message : "No fue posible cargar catálogos."}</p>}
-    </main>
+      {catalogsQuery.isError && <p className="atlas-ops__empty" role="alert">{catalogsQuery.error instanceof Error ? catalogsQuery.error.message : "No fue posible cargar catálogos."}</p>}
+    </PageShell>
   );
+}
+
+function ControlTowerEmptyState({
+  hasUnfilteredDispatches,
+  templatesCount,
+  vehiclesCount,
+  contractsCount,
+  catalogsState,
+  onPlan,
+  onConfigure,
+  onClearFilter
+}: {
+  hasUnfilteredDispatches: boolean;
+  templatesCount: number;
+  vehiclesCount: number;
+  contractsCount: number;
+  catalogsState: "loading" | "error" | "ready";
+  onPlan: () => void;
+  onConfigure: () => void;
+  onClearFilter: () => void;
+}) {
+  return <section className="atlas-ops__empty-dashboard" aria-label="Estado de la operación">
+    <article className="atlas-ops__panel atlas-ops__empty-welcome">
+      <span className="atlas-ops__eyebrow">INICIO DE JORNADA</span>
+      <div className="atlas-ops__empty-count" aria-label="Cero servicios">0</div>
+      <h2>{hasUnfilteredDispatches ? "No hay resultados para este contrato" : "La jornada está lista para planificarse"}</h2>
+      <p>{hasUnfilteredDispatches ? "Hay servicios en esta fecha. Cambia el contrato seleccionado para volver a verlos." : "Al crear la primera planificación, los despachos, hitos y alertas de esta fecha aparecerán aquí."}</p>
+      {hasUnfilteredDispatches
+        ? <button className="atlas-ops__button atlas-ops__button--quiet" onClick={onClearFilter} type="button">Ver todos los contratos</button>
+        : <button className="atlas-ops__button atlas-ops__button--primary" onClick={onPlan} type="button">Programar primer servicio</button>}
+    </article>
+    <article className="atlas-ops__panel atlas-ops__readiness">
+      <div className="atlas-ops__panel-heading"><div><h2>Preparación operacional</h2><p>Estado actual de los catálogos e integración.</p></div></div>
+      <div className="atlas-ops__readiness-list">
+        <ReadinessRow label="Contratos disponibles" value={catalogsState === "ready" ? String(contractsCount) : catalogsState === "loading" ? "…" : "—"} status={catalogReadinessStatus(catalogsState, contractsCount)} />
+        <ReadinessRow label="Servicios base" value={catalogsState === "ready" ? String(templatesCount) : catalogsState === "loading" ? "…" : "—"} status={catalogReadinessStatus(catalogsState, templatesCount)} />
+        <ReadinessRow label="Vehículos activos" value={catalogsState === "ready" ? String(vehiclesCount) : catalogsState === "loading" ? "…" : "—"} status={catalogReadinessStatus(catalogsState, vehiclesCount)} />
+        <ReadinessRow label="Telemetría TrackTec" value="—" status="Pendiente de integración" />
+      </div>
+      <button className="atlas-ops__button atlas-ops__button--quiet" onClick={onConfigure} type="button">Revisar configuración</button>
+    </article>
+  </section>;
+}
+
+function ReadinessRow({ label, value, status }: { label: string; value: string; status: string }) {
+  return <div className="atlas-ops__readiness-row"><span>{label}</span><strong>{value}</strong><small>{status}</small></div>;
+}
+
+function catalogReadinessStatus(state: "loading" | "error" | "ready", count: number) {
+  if (state === "loading") return "Cargando";
+  if (state === "error") return "Sin conexión";
+  return count > 0 ? "Listo" : "Pendiente";
 }
 
 function Metric({ label, value, tone }: { label: string; value: number; tone: string }) {

@@ -4011,3 +4011,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Cuando el usuario aclara que es un montaje de cero, tratar entidades y capturas previas como datos a retirar, no como fuente de arranque ni de compatibilidad. Mantener únicamente dominios compartidos expresamente confirmados (contratos, identidad, BUK, roster, autenticación y roles).
 - Revisar migraciones, adaptadores, interfaz, documentación y RLS en conjunto; una migración sin `INSERT ... SELECT` aún puede dejar al frontend leyendo tablas antiguas o exponer el nuevo módulo fuera del contrato autorizado.
 - Si la primera salida se limita a superadministración, exigir `profiles.is_super_admin` activo de forma independiente en navegación, ruta, RPC y RLS; no asumir que `admin` ni una matriz de roles operacionales equivalen a superadmin.
+
+## 2026-09-30 - Un módulo vacío también necesita una composición operativa completa
+
+- Ante feedback estético, localizar primero una superficie existente del ERP que el usuario ya reconoce y replicar su escala, retícula y densidad antes de inventar otro lenguaje local.
+- Mantener iguales los componentes hermanos (indicadores, pestañas, paneles y controles) con una escala compartida de espacios, alturas y bordes; probar el reflujo en tablet y móvil.
+- Si el dominio se monta desde cero, reemplazar tablas vacías visualmente abruptas por un estado útil que muestre cero real, explique el siguiente paso y exponga preparación basada solo en catálogos confirmados; no completar el espacio con datos ficticios.
