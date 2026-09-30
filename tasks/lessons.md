@@ -4006,3 +4006,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - La clasificación `hired` debe depender del estado contratado y de la elegibilidad BUK, no de que exista ya un assessment.
 - Un folio `filled` no debe ocultar a un trabajador `hired` con evidencia BUK válida si todavía falta enviar la evaluación psicolaboral.
 - Listado, resumen y guard de envío deben compartir la misma regla: contratado verificable, assessment opcional y envío todavía habilitado.
+# Lección — Un reemplazo de módulo declarado desde cero no debe migrar datos del módulo anterior
+
+- Cuando el usuario aclara que es un montaje de cero, tratar entidades y capturas previas como datos a retirar, no como fuente de arranque ni de compatibilidad. Mantener únicamente dominios compartidos expresamente confirmados (contratos, identidad, BUK, roster, autenticación y roles).
+- Revisar migraciones, adaptadores, interfaz, documentación y RLS en conjunto; una migración sin `INSERT ... SELECT` aún puede dejar al frontend leyendo tablas antiguas o exponer el nuevo módulo fuera del contrato autorizado.
+- Si la primera salida se limita a superadministración, exigir `profiles.is_super_admin` activo de forma independiente en navegación, ruta, RPC y RLS; no asumir que `admin` ni una matriz de roles operacionales equivalen a superadmin.

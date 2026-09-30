@@ -66,8 +66,6 @@ Este smoke no imprime contraseña ni tokens, no usa service role en el navegador
 - `director-op-bi-dotacion`: usa `FRONTEND_AUTH_SMOKE_DIRECTOR_OP_EMAIL` y `FRONTEND_AUTH_SMOKE_DIRECTOR_OP_PASSWORD`, abre `/bi/dotacion`, exige heading `Inteligencia de Negocios`;
 - `gerente-general-bi-dotacion`: usa `FRONTEND_AUTH_SMOKE_GERENTE_GENERAL_EMAIL` y `FRONTEND_AUTH_SMOKE_GERENTE_GENERAL_PASSWORD`, abre `/bi/dotacion`, exige heading `Inteligencia de Negocios`;
 - `operaciones-accreditation`: usa `FRONTEND_AUTH_SMOKE_OPERACIONES_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERACIONES_PASSWORD`, abre `/recursos-humanos/acreditacion/dashboard`, exige heading `Acreditacion de Personas`;
-- `operations-l1-summary`: usa `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD`, abre `/operaciones/resumen`, exige acceso de modulo y ruta final exacta;
-- `operations-l2-summary`: usa `FRONTEND_AUTH_SMOKE_OPERATIONS_L2_EMAIL` y `FRONTEND_AUTH_SMOKE_OPERATIONS_L2_PASSWORD`, abre `/operaciones/resumen`, exige acceso de modulo y ruta final exacta;
 - `certificaciones-form`: usa `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_EMAIL` y `FRONTEND_AUTH_SMOKE_CERTIFICACIONES_PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`;
 - `instructor-form`: usa `FRONTEND_AUTH_SMOKE_INSTRUCTOR_EMAIL` y `FRONTEND_AUTH_SMOKE_INSTRUCTOR_PASSWORD`, abre `/certificados`, exige heading `Certificacion de Competencias`.
 
@@ -77,7 +75,7 @@ El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. 
 
 - valida que el manifiesto no tenga campos `email`, `password` ni `token`;
 - valida que cada escenario use roles conocidos, rutas internas y `requireModuleAccess`;
-- exige cobertura P1 para `admin`, `reclutamiento`, `control_contratos`, `operaciones`, `gerencia`, `director_eje`, `director_op`, `gerente_general`, `operaciones_l_1`, `operaciones_l_2`, `administrativo`, `jefe_administrativo`, `certificaciones` e `instructor`;
+- exige cobertura P1 para los roles que mantienen escenarios autenticados de producto; Operaciones Control Tower se excluye de la matriz por rol porque la ruta exige `profiles.is_super_admin`;
 - exige que `.github/workflows/audit-supabase-migrations.yml` mapee cada secret declarado por el manifiesto;
 - exige que el workflow permita activar `FRONTEND_AUTH_SMOKE_MATRIX_REQUIRED` desde variables de repositorio;
 - exige que `docs/smoke-tests.md` documente cada escenario, secret esperado, ruta y heading.
@@ -87,7 +85,6 @@ El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. 
 - lee `tests/smoke/frontend-authenticated.scenarios.json`;
 - busca perfiles `active` que no esten forzados a resetear password y tengan AUP aceptada;
 - valida rol requerido y modulo requerido segun ruta;
-- para `operations-l1-summary`, exige al menos un contrato editable activo;
 - para `instructor-form`, exige instructor activo vinculado a la cuenta;
 - no crea usuarios, no cambia passwords, no imprime tokens y enmascara el correo recomendado;
 - con `SUPABASE_AUTH_SMOKE_CANDIDATES_REQUIRED=1`, falla si algun escenario no tiene candidato elegible.
@@ -111,26 +108,7 @@ El manifiesto solo versiona IDs, roles, rutas, headings y nombres de variables. 
 
 Este smoke no escribe datos ni crea usuarios. Requiere que el proyecto este linkeado con Supabase CLI y que el operador tenga acceso para `supabase db query --linked`.
 
-`npm run smoke:operations-rpc` valida de forma funcional contra el proyecto Supabase linkeado:
-
-- `user_contracts` y `operations_editable_contracts` no exponen filas sin `auth.uid()`;
-- se selecciona un perfil activo con modulo `operaciones`, priorizando usuarios con matriz editable activa, o se usa `SUPABASE_OPERATIONS_SMOKE_USER_ID`;
-- se simula el claim `request.jwt.claim.sub` dentro de una transaccion `read only`;
-- el usuario autenticado ve contratos visibles, servicios base, contratos activos y equipos activos;
-- las consultas read-only de `service_entries` para resumen/exportador responden sin crear ni modificar planificaciones.
-
-Este smoke no ejecuta `submit_service_entries_batch(...)` ni escribe `service_entries`.
-
-`npm run smoke:operations-write-rpc` valida de forma funcional el guardado de Operaciones contra el proyecto Supabase linkeado:
-
-- selecciona un usuario activo L1/L2 con contrato editable vigente, o usa `SUPABASE_OPERATIONS_SMOKE_USER_ID`;
-- selecciona un servicio base real del contrato editable;
-- simula `request.jwt.claim.sub` en una transaccion controlada;
-- ejecuta `submit_service_entries_batch(...)` dos veces con estado `not_performed` para cubrir insercion y actualizacion sobre la misma llave operacional;
-- confirma que dentro de la transaccion aparece exactamente una fila y que el segundo guardado actualiza sin duplicar;
-- ejecuta `ROLLBACK` y verifica desde una consulta posterior que el conteo persistente de `service_entries` no cambio.
-
-Este smoke prueba la frontera de escritura sin dejar planificaciones reales ni documentos operativos falsos.
+Atlas Operations Control usa pruebas contractuales focalizadas y smoke de ruta que comprueban su nueva frontera exclusiva para `profiles.is_super_admin`. No utiliza las consultas ni los smoke RPC del módulo anterior; su esquema productivo nuevo comienza vacío.
 
 Cuando hay SQL/RPCs nuevas o modificadas:
 

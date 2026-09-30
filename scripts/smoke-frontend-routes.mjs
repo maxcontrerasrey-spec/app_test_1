@@ -86,7 +86,7 @@ async function assertLoginPage(page, baseUrl) {
 }
 
 async function assertProtectedRouteRedirects(page, baseUrl) {
-  await page.goto(`${baseUrl}/operaciones/resumen`, {
+  await page.goto(`${baseUrl}/operaciones/control-tower`, {
     waitUntil: "domcontentloaded",
     timeout: DEFAULT_TIMEOUT_MS
   });
@@ -149,8 +149,8 @@ async function main() {
           smoke: "frontend-routes",
           browser: "chromium",
           base_url: server.baseUrl,
-          checked_routes: ["/login", "/verificar/documento", "/operaciones/resumen"],
-          protected_route_result: "/operaciones/resumen redirected to /login without session"
+          checked_routes: ["/login", "/verificar/documento", "/operaciones/control-tower"],
+          protected_route_result: "/operaciones/control-tower redirected to /login without session"
         },
         null,
         2

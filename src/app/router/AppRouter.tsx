@@ -6,7 +6,8 @@ import { routeModuleImporters } from "./routeModules";
 import {
   ProtectedRoute,
   PublicOnlyRoute,
-  RoleProtectedRoute
+  RoleProtectedRoute,
+  SuperAdminProtectedRoute
 } from "../../modules/auth/components/RouteGuards";
 import { HR_INCENTIVE_ANALYTICS_ALLOWED_ROLES } from "../../modules/incentives/lib/analyticsAccess";
 
@@ -28,7 +29,7 @@ const LoginPage = lazyWithRetry("login-page", routeModuleImporters.loginPage);
 const ResetPasswordPage = lazyWithRetry("reset-password-page", routeModuleImporters.resetPasswordPage);
 const RecoveryLinkPage = lazyWithRetry("recovery-link-page", routeModuleImporters.recoveryLinkPage);
 const AccessDeniedPage = lazyWithRetry("access-denied-page", routeModuleImporters.accessDeniedPage);
-const OperacionesDashboard = lazyWithRetry("operaciones-dashboard", routeModuleImporters.operacionesDashboard);
+const OperationsControlTower = lazyWithRetry("operations-control-tower", routeModuleImporters.operacionesDashboard);
 const HumanResourcesDashboard = lazyWithRetry(
   "human-resources-dashboard",
   routeModuleImporters.humanResourcesDashboard
@@ -148,14 +149,14 @@ export function AppRouter() {
 
             <Route
               path="/operaciones"
-              element={<Navigate to="/operaciones/resumen" replace />}
+              element={<Navigate to="/operaciones/control-tower" replace />}
             />
             <Route
               path="/operaciones/:view"
               element={
-                <RoleProtectedRoute moduleCode="operaciones">
-                  <OperacionesDashboard />
-                </RoleProtectedRoute>
+                <SuperAdminProtectedRoute>
+                  <OperationsControlTower />
+                </SuperAdminProtectedRoute>
               }
             />
             <Route

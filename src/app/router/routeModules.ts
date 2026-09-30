@@ -36,7 +36,7 @@ export const routeModuleImporters = {
     default: (await import("../../modules/auth/pages/AccessDeniedPage")).AccessDeniedPage
   }),
   operacionesDashboard: async () => ({
-    default: (await import("../../modules/operaciones/pages/OperacionesDashboard")).OperacionesDashboard
+    default: (await import("../../modules/operaciones/pages/OperationsControlTowerPage")).OperationsControlTowerPage
   }),
   humanResourcesDashboard: async () => ({
     default: (

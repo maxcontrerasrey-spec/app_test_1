@@ -33,8 +33,6 @@ const minimumRoleCoverage = [
   "director_eje",
   "director_op",
   "gerente_general",
-  "operaciones_l_1",
-  "operaciones_l_2",
   "administrativo",
   "jefe_administrativo",
   "certificaciones",

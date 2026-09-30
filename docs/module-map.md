@@ -99,10 +99,10 @@
 ### Operaciones
 
 - Ruta: `/operaciones/:view`
-- Pagina: `src/modules/operaciones/pages/OperacionesDashboard.tsx`
-- Servicio: `src/modules/operaciones/services/operacionesApi.ts`
+- Pagina: `src/modules/operaciones/pages/OperationsControlTowerPage.tsx`
+- Servicio: `src/modules/operaciones/services/atlasOperationsApi.ts`
 - Riesgo: dashboard unico muy largo y con responsabilidad amplia
-- Hallazgo de acoplamiento: `OperacionesDashboard.tsx` todavia mezcla estado de pagina con lecturas directas a Supabase ademas de `operacionesApi.ts`
+- El módulo anterior se retiró. La implementación nueva usa RPC transaccionales y RLS con acceso temporal exclusivo para superadministradores activos; el padrón operativo parte vacío.
 
 ### Business Intelligence
 

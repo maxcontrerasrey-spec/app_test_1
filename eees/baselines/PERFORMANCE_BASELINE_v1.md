@@ -139,13 +139,13 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 - `/login`: carga publica validada por `smoke:frontend-routes`.
 - `/postulacion-dsal`: postulacion publica DSAL, lazy y sin lectura de datos privados.
 - `/verificar/documento`: verificador publico de Solicitud de Contratacion, lazy y sin datos privados.
-- `/operaciones/resumen`: ruta protegida valida redirect a `/login` sin sesion.
+- `/operaciones/control-tower`: ruta protegida valida redirect a `/login` sin sesion; tras login exige superadmin activo.
 - Resultado smoke: PASS.
 
 ## Superficie critica clasificada
 
-- Queries costosas ya optimizadas y protegidas: `submit_service_entries_batch(jsonb)` usa preparacion set-based materializada una vez; `search` operacional BUK limita por texto y ranking antes de enriquecer.
-- RPCs criticas con smokes/audits: operaciones batch, dashboard/auth routes, migraciones, seguridad Supabase, sync BUK Edge Function.
+- Queries costosas ya optimizadas y protegidas: `atlas_ops_search_drivers(text,date,integer)` reutiliza la proyeccion BUK y el resolvedor canónico de roster; limita resultados y exige superadmin activo.
+- RPCs criticas con smokes/audits: Atlas Operations greenfield, permisos superadmin, dashboard/auth routes, migraciones, seguridad Supabase, sync BUK Edge Function.
 - Vendors pesados esperados fuera del entry inicial: ECharts y XLSX siguen lazy por modulo/accion; PDF/QR se generan en la Edge Function de certificados y ya no forman parte del bundle frontend.
 
 ## Control machine-readable

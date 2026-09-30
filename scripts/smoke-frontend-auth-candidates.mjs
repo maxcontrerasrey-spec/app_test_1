@@ -164,18 +164,6 @@ function main() {
           )
         ) as has_required_module,
         case
-          when s.id = 'operations-l1-summary' then (
-            select count(*)
-            from public.operations_contract_editors oce
-            join public.contracts c
-              on c.id = oce.contract_id
-             and c.is_active = true
-            where oce.user_id = p.id
-              and oce.is_active = true
-          )
-          else null
-        end as editable_contract_count,
-        case
           when s.id = 'instructor-form' then (
             select count(*)
             from public.competency_instructors ci
@@ -196,10 +184,6 @@ function main() {
           and aup_accepted = true
           and has_required_role = true
           and has_required_module = true
-          and (
-            scenario_id <> 'operations-l1-summary'
-            or coalesce(editable_contract_count, 0) > 0
-          )
           and (
             scenario_id <> 'instructor-form'
             or coalesce(linked_instructor_count, 0) > 0
@@ -228,7 +212,6 @@ function main() {
       max(r.user_id) filter (where r.rn = 1) as recommended_user_id,
       max(r.email) filter (where r.rn = 1) as recommended_email,
       max(r.full_name) filter (where r.rn = 1) as recommended_full_name,
-      max(r.editable_contract_count) filter (where r.rn = 1) as editable_contract_count,
       max(r.linked_instructor_count) filter (where r.rn = 1) as linked_instructor_count
     from scenario s
     left join ranked r
@@ -248,10 +231,6 @@ function main() {
     recommended_user_id: row.recommended_user_id ?? null,
     recommended_email_masked: maskEmail(row.recommended_email),
     recommended_full_name: row.recommended_full_name ?? null,
-    editable_contract_count:
-      row.editable_contract_count === null || row.editable_contract_count === undefined
-        ? null
-        : Number(row.editable_contract_count),
     linked_instructor_count:
       row.linked_instructor_count === null || row.linked_instructor_count === undefined
         ? null

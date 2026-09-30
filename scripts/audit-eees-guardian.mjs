@@ -404,17 +404,6 @@ function validatePureLogicTestCoverage() {
       tests: ["tests/contracts/incentives-rpc-contracts.test.ts"]
     },
     {
-      source: "src/modules/operaciones/lib/service-entry.ts",
-      tests: [
-        "tests/unit/operations-service-entry.test.ts",
-        "tests/contracts/operations-service-entry-contract.test.ts"
-      ]
-    },
-    {
-      source: "src/modules/operaciones/lib/transformers.ts",
-      tests: ["tests/unit/operations-transformers.test.ts"]
-    },
-    {
       source: "src/modules/recruitment/lib/candidateBukWorkerRules.ts",
       tests: ["tests/unit/recruitment-candidate-buk-worker-rules.test.ts"]
     },

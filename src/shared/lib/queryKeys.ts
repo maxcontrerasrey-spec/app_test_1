@@ -131,8 +131,15 @@ export const queryKeys = {
     assignmentsRoot: () => ["roster", "assignments"] as const
   },
   operations: {
+    all: () => ["atlas-operations"] as const,
+    catalogs: () => [...queryKeys.operations.all(), "catalogs"] as const,
+    adminUsers: () => [...queryKeys.operations.all(), "admin-users"] as const,
+    dispatches: (day: string) => [...queryKeys.operations.all(), "dispatches", day] as const,
+    alerts: (day: string, dispatchIds: string[] = []) => [...queryKeys.operations.all(), "alerts", day, dispatchIds] as const,
+    driverDispatches: () => [...queryKeys.operations.all(), "driver-dispatches"] as const,
+    events: (dispatchId: string) => [...queryKeys.operations.all(), "events", dispatchId] as const,
     driverSearch: (params: Record<string, unknown>) =>
-      ["operations", "driver-search", params] as const
+      [...queryKeys.operations.all(), "driver-search", params] as const
   },
   accreditation: {
     all: () => ["accreditation"] as const,

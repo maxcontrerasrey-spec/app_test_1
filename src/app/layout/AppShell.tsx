@@ -173,7 +173,7 @@ export function AppShell() {
             !module.visibleForRoles?.length ||
             module.visibleForRoles.some((role) => appRoles.includes(role));
 
-          if (!roleAllowed) {
+          if (!roleAllowed || (module.superAdminOnly && !isSuperAdmin)) {
             return null;
           }
 

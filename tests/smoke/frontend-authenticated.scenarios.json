@@ -134,26 +134,6 @@
       "requireModuleAccess": true
     },
     {
-      "id": "operations-l1-summary",
-      "role": "operaciones_l_1",
-      "description": "Valida que una cuenta L1 controlada pueda entrar a Resumen de Operaciones.",
-      "emailEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L1_EMAIL",
-      "passwordEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L1_PASSWORD",
-      "targetPath": "/operaciones/resumen",
-      "expectedPath": "/operaciones/resumen",
-      "requireModuleAccess": true
-    },
-    {
-      "id": "operations-l2-summary",
-      "role": "operaciones_l_2",
-      "description": "Valida que una cuenta L2 controlada pueda entrar a Resumen de Operaciones.",
-      "emailEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L2_EMAIL",
-      "passwordEnv": "FRONTEND_AUTH_SMOKE_OPERATIONS_L2_PASSWORD",
-      "targetPath": "/operaciones/resumen",
-      "expectedPath": "/operaciones/resumen",
-      "requireModuleAccess": true
-    },
-    {
       "id": "certificaciones-form",
       "role": "certificaciones",
       "description": "Valida que una cuenta de certificaciones pueda abrir el formulario de certificacion.",

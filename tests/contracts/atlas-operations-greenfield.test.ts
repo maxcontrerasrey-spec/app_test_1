@@ -1,0 +1,87 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { MockTelematicsProvider } from "../../src/modules/operaciones/telematics/provider";
+import { purgeLegacyOperationsDrafts } from "../../src/modules/operaciones/lib/legacyCleanup";
+
+const migration = readFileSync(
+  new URL("../../supabase/migrations/20260930174145_atlas_operations_control_tower.sql", import.meta.url),
+  "utf8"
+);
+const superAdminMigration = readFileSync(
+  new URL("../../supabase/migrations/20260930174333_lock_atlas_operations_superadmin_only.sql", import.meta.url),
+  "utf8"
+);
+const page = readFileSync(new URL("../../src/modules/operaciones/pages/OperationsControlTowerPage.tsx", import.meta.url), "utf8");
+const router = readFileSync(new URL("../../src/app/router/AppRouter.tsx", import.meta.url), "utf8");
+const guards = readFileSync(new URL("../../src/modules/auth/components/RouteGuards.tsx", import.meta.url), "utf8");
+const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts", import.meta.url), "utf8");
+
+describe("Atlas Operations greenfield replacement", () => {
+  it("retires prior module-owned storage without importing rows into the new schema", () => {
+    expect(migration).toMatch(/drop table public\.service_entries/i);
+    expect(migration).toMatch(/drop table public\.base_services/i);
+    expect(migration).toMatch(/drop table public\.equipment/i);
+    expect(migration).toMatch(/drop table public\.operations_contract_editors/i);
+    expect(migration).not.toMatch(/insert\s+into\s+public\.atlas_ops_[\w]+\s+select/i);
+    expect(migration).toMatch(/references public\.contracts/i);
+    expect(migration).toMatch(/references public\.profiles/i);
+  });
+
+  it("keeps reads contract-scoped and retires direct legacy writes", () => {
+    expect(migration).toMatch(/atlas_ops_can_edit_contract\(\(select auth\.uid\(\)\), contract_id\)/i);
+    expect(migration).toMatch(/revoke all on function public\.atlas_ops_create_dispatch\(jsonb\) from public, anon/i);
+    expect(migration).toMatch(/revoke all on function public\.atlas_ops_transition_dispatch\(uuid, text\) from public, anon/i);
+    expect(page).toContain("OperationsControlTowerPage");
+    expect(page).not.toContain("base_services");
+    expect(page).not.toContain("service_entries");
+  });
+
+  it("limits the route, navigation and database policies to active profile superadmins", () => {
+    expect(router).toMatch(/<SuperAdminProtectedRoute>[\s\S]*?<OperationsControlTower\s*\/>[\s\S]*?<\/SuperAdminProtectedRoute>/);
+    expect(guards).toMatch(/if \(!isSuperAdmin\)[\s\S]*?Navigate to="\/sin-acceso"/);
+    expect(navigation).toMatch(/label: "Operaciones",[\s\S]{0,100}superAdminOnly: true/);
+    expect(migration).toMatch(/p\.status = 'active' and p\.is_super_admin = true/);
+    expect(migration).toMatch(/delete from public\.role_module_access where module_code = 'operaciones'/);
+    expect(migration).not.toMatch(/user_is_admin\(\)/);
+    expect(page).toContain("const canOperate = auth.isSuperAdmin");
+    for (const rpc of [
+      "atlas_ops_driver_acknowledge",
+      "atlas_ops_driver_mark_milestone",
+      "atlas_ops_driver_get_dispatches",
+      "atlas_ops_driver_report_incident"
+    ]) {
+      const functionBody = superAdminMigration.slice(superAdminMigration.indexOf(`function public.${rpc}`));
+      expect(functionBody).toMatch(/if not public\.atlas_ops_is_current_super_admin\(\) then raise exception/);
+    }
+  });
+
+  it("keeps mock telemetry explicitly simulated and deterministically ordered", async () => {
+    const provider = new MockTelematicsProvider([
+      { provider: "mock", externalVehicleId: "vehicle-1", externalEventId: "later", latitude: 0, longitude: 0, recordedAt: "2026-01-02T00:00:00Z", receivedAt: "2026-01-02T00:00:01Z" },
+      { provider: "mock", externalVehicleId: "vehicle-1", externalEventId: "earlier", latitude: 0, longitude: 0, recordedAt: "2026-01-01T00:00:00Z", receivedAt: "2026-01-01T00:00:01Z" }
+    ]);
+    const positions = await provider.getPositions("vehicle-1", new Date("2026-01-01"), new Date("2026-01-03"));
+
+    expect(positions.map((position) => position.externalEventId)).toEqual(["earlier", "later"]);
+    expect((await provider.healthCheck()).detail).toContain("no es evidencia GPS real");
+    expect(() => new MockTelematicsProvider([
+      { provider: "tracktec", externalVehicleId: "vehicle-1", externalEventId: "real", latitude: 0, longitude: 0, recordedAt: "2026-01-01T00:00:00Z", receivedAt: "2026-01-01T00:00:01Z" }
+    ])).toThrow("provider=mock");
+  });
+
+  it("purges retired browser drafts instead of restoring them into the new module", () => {
+    const values = new Map<string, string>([
+      ["operations:base-register:draft:v1:operator-a", "old"],
+      ["operations:base-register:draft:v2:operator-b", "old"],
+      ["atlas-operations:unrelated", "keep"]
+    ]);
+    const storage = {
+      get length() { return values.size; },
+      key: (index: number) => [...values.keys()][index] ?? null,
+      removeItem: (key: string) => values.delete(key)
+    };
+
+    purgeLegacyOperationsDrafts(storage);
+    expect([...values.keys()]).toEqual(["atlas-operations:unrelated"]);
+  });
+});

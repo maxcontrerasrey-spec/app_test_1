@@ -47,6 +47,7 @@ export type NavigationModule = {
   to?: string;
   items?: NavigationItem[];
   visibleForRoles?: AppRole[];
+  superAdminOnly?: boolean;
 };
 
 export const navigationModules: NavigationModule[] = [
@@ -152,33 +153,55 @@ export const navigationModules: NavigationModule[] = [
   {
     label: "Operaciones",
     iconKey: "bus",
+    superAdminOnly: true,
     items: [
       {
         moduleCode: "operaciones",
-        to: "/operaciones/resumen",
-        label: "Resumen",
-        description: "Vista general y métricas operacionales.",
+        to: "/operaciones/control-tower",
+        label: "Control Tower",
+        description: "Excepciones, atrasos e hitos de servicios publicados.",
         iconKey: "gauge"
       },
       {
         moduleCode: "operaciones",
-        to: "/operaciones/registros-base",
-        label: "Registro de servicios base",
-        description: "Planificación de servicios por contrato.",
+        to: "/operaciones/planificacion",
+        label: "Planificación",
+        description: "Programa servicios y valida recursos.",
         iconKey: "route"
       },
       {
         moduleCode: "operaciones",
-        to: "/operaciones/registros-especiales",
-        label: "Registro de servicios especiales",
-        description: "Gestión de requerimientos no programados.",
+        to: "/operaciones/despacho",
+        label: "Despacho",
+        description: "Valida y publica servicios a conductores.",
         iconKey: "sparkles"
       },
       {
         moduleCode: "operaciones",
-        to: "/operaciones/exportador",
-        label: "Exportador de Información",
-        description: "Descarga reportes operacionales detallados.",
+        to: "/operaciones/excepciones",
+        label: "Excepciones",
+        description: "Gestiona servicios que requieren atención.",
+        iconKey: "gauge"
+      },
+      {
+        moduleCode: "operaciones",
+        to: "/operaciones/conductor",
+        label: "Conductor",
+        description: "Consulta y confirma servicios asignados.",
+        iconKey: "bus"
+      },
+      {
+        moduleCode: "operaciones",
+        to: "/operaciones/historial",
+        label: "Historial",
+        description: "Timeline auditable de cada servicio.",
+        iconKey: "clipboard-list"
+      },
+      {
+        moduleCode: "operaciones",
+        to: "/operaciones/configuracion",
+        label: "Configuración operacional",
+        description: "Administra flota, servicios, SLA y accesos.",
         iconKey: "download"
       }
     ]

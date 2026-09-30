@@ -56,17 +56,29 @@ for (let index = 0; index < routePathMatches.length; index += 1) {
   const nextMatch = routePathMatches[index + 1];
   const routeSegment = appRouterSource.slice(match.index, nextMatch?.index ?? appRouterSource.length);
   const moduleMatch = routeSegment.match(/<RoleProtectedRoute\s+moduleCode="([^"]+)"/);
+  const superAdminOnly = routeSegment.includes("<SuperAdminProtectedRoute");
 
-  if (!moduleMatch) {
+  if (!moduleMatch && !superAdminOnly) {
     continue;
   }
 
   roleProtectedRoutes.push({
     path: match[1],
     basePath: normalizeBaseRoute(match[1]),
-    moduleCode: moduleMatch[1]
+    moduleCode: moduleMatch?.[1] ?? "operaciones",
+    superAdminOnly
   });
 }
+
+addCheck(
+  roleProtectedRoutes.some((route) => route.path === "/operaciones/:view" && route.superAdminOnly),
+  "ruta /operaciones/:view exige superadministrador"
+);
+addCheck(
+  navigationSource.includes('label: "Operaciones",') &&
+    navigationSource.includes("superAdminOnly: true"),
+  "grupo de navegación Operaciones está limitado a superadministración"
+);
 
 for (const route of roleProtectedRoutes) {
   addCheck(
@@ -104,6 +116,9 @@ for (const item of navigationItems) {
       routeMatch.moduleCode === item.moduleCode,
       `navegacion ${item.to} coincide con guard ${routeMatch.moduleCode}`
     );
+    if (item.moduleCode === "operaciones") {
+      addCheck(routeMatch.superAdminOnly, `navegacion ${item.to} exige superadministrador`);
+    }
   }
 }
 

@@ -26,7 +26,7 @@ Se mapearon 15 flujos críticos desde entrada hasta persistencia, auditoría y r
 | CT-07 | Movilidad interna | RPCs de movilidad | solicitud, aprobaciones, historial | advisory lock por trabajador |
 | CT-08 | Incentivos | `create_hr_incentive_request` y aprobaciones | solicitud, approvals, roster exception | idempotency key, locks y estados |
 | CT-09 | Jornadas | `assign_hr_worker_roster_v2` | `hr_worker_rosters` | advisory lock por trabajador |
-| CT-10 | Operaciones | `submit_service_entries_batch` | `service_entries` | unique operacional y `ON CONFLICT` |
+| CT-10 | Atlas Operations | `atlas_ops_create_dispatch`, `atlas_ops_transition_dispatch`, eventos y timeline | `atlas_ops_dispatches`, `atlas_ops_dispatch_events`, milestones | RPC transaccional, estado previo, locking por dispatch y append-only audit; migración desde cero sin datos del módulo anterior |
 | CT-11 | Alta operacional | RPCs de onboarding | casos, tareas, evidencia, activity logs | escritura directa revocada; audit RPC |
 | CT-12 | Acreditación | RPCs y Edge BUK | acreditación y tracking documental | unique trabajador/faena; BUK externo |
 | CT-13 | Competencias | RPC + Edge certificado | request, evaluación, certificado | advisory lock, hash y estados de retry |
