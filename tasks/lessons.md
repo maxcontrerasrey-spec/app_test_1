@@ -4017,3 +4017,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Ante feedback estético, localizar primero una superficie existente del ERP que el usuario ya reconoce y replicar su escala, retícula y densidad antes de inventar otro lenguaje local.
 - Mantener iguales los componentes hermanos (indicadores, pestañas, paneles y controles) con una escala compartida de espacios, alturas y bordes; probar el reflujo en tablet y móvil.
 - Si el dominio se monta desde cero, reemplazar tablas vacías visualmente abruptas por un estado útil que muestre cero real, explique el siguiente paso y exponga preparación basada solo en catálogos confirmados; no completar el espacio con datos ficticios.
+
+## 2026-09-30 - El mapa operacional debe estar conectado al despacho y a telemetría real
+
+- En una torre de control, el mapa y la lista de servicios son dos accesos a la misma selección: abrir un punto debe llevar al detalle/timeline del despacho, y la lista debe indicar si existe posición GPS.
+- No poner marcadores de ejemplo ni inferir coordenadas desde origen/destino; mostrar la ausencia de señal y mantener la cartografía navegable hasta recibir telemetría vinculada al vehículo.
+- Mantener attribution y URL conforme a la política vigente del proveedor cartográfico. Los tamaños del encabezado, conmutador, filtros, indicadores y paneles deben salir de una escala común y reducirse por reflujo en móvil.

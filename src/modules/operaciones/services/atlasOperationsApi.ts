@@ -21,10 +21,19 @@ export type AtlasDispatch = {
   service_name: string | null;
   driver_name_snapshot: string | null;
   vehicle_code: string | null;
+  vehicle_id: string | null;
   plate: string | null;
   planning_status: string;
   execution_status: string;
   risk_status: "green" | "attention" | "at_risk" | "critical";
+};
+
+export type AtlasVehiclePosition = {
+  vehicle_id: string;
+  latitude: number;
+  longitude: number;
+  speed_kph: number | null;
+  observed_at: string;
 };
 
 export type AtlasTemplate = {
@@ -63,6 +72,32 @@ export async function getAtlasDispatches(from: string, to: string) {
   const result = await client().from("atlas_ops_control_tower").select("*").gte("service_date", from).lte("service_date", to).order("planned_start_at", { ascending: true });
   if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar los servicios.", "message"));
   return asArray<AtlasDispatch>(result.data);
+}
+
+/** Reads the latest indexed telemetry point for each vehicle assigned to the visible dispatches. */
+export async function getAtlasLatestVehiclePositions(vehicleIds: string[]): Promise<AtlasVehiclePosition[]> {
+  const ids = [...new Set(vehicleIds.filter(Boolean))];
+  if (!ids.length) return [];
+
+  const db = client();
+  const positions: AtlasVehiclePosition[] = [];
+  const batchSize = 8;
+  for (let index = 0; index < ids.length; index += batchSize) {
+    const batch = ids.slice(index, index + batchSize);
+    const results = await Promise.all(batch.map(async (vehicleId) => {
+      const result = await db.from("atlas_ops_telemetry_events")
+        .select("vehicle_id, latitude, longitude, speed_kph, observed_at")
+        .eq("vehicle_id", vehicleId)
+        .eq("processing_status", "processed")
+        .order("observed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar posiciones GPS.", "message"));
+      return result.data as AtlasVehiclePosition | null;
+    }));
+    positions.push(...results.filter((row): row is AtlasVehiclePosition => row !== null));
+  }
+  return positions;
 }
 
 export async function getAtlasAlerts(dispatchIds: string[]) {

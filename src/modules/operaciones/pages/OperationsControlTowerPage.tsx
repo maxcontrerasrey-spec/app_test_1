@@ -6,6 +6,7 @@ import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
+import { OperationsLiveMap } from "../components/OperationsLiveMap";
 import {
   createAtlasDispatch,
   driverAcknowledgeDispatch,
@@ -13,6 +14,7 @@ import {
   driverReportIncident,
   getAtlasDispatchEvents,
   getAtlasDispatches,
+  getAtlasLatestVehiclePositions,
   getAtlasDriverDispatches,
   getAtlasOperationsCatalogs,
   getAtlasAdminUsers,
@@ -77,9 +79,18 @@ export function OperationsControlTowerPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [incidentFor, setIncidentFor] = useState("");
+  const [presentation, setPresentation] = useState<"map" | "list">("map");
+  const [serviceSearch, setServiceSearch] = useState("");
 
   const catalogsQuery = useQuery({ queryKey: queryKeys.operations.catalogs(), queryFn: getAtlasOperationsCatalogs, staleTime: 30_000 });
   const dispatchQuery = useQuery({ queryKey: queryKeys.operations.dispatches(day), queryFn: () => getAtlasDispatches(day, day), staleTime: 10_000 });
+  const activeVehicleIds = useMemo(() => [...new Set((dispatchQuery.data ?? []).map((row) => row.vehicle_id).filter((id): id is string => Boolean(id)))].sort(), [dispatchQuery.data]);
+  const positionsQuery = useQuery({
+    queryKey: queryKeys.operations.vehiclePositions(activeVehicleIds),
+    queryFn: () => getAtlasLatestVehiclePositions(activeVehicleIds),
+    enabled: view === "control-tower" && presentation === "map" && activeVehicleIds.length > 0,
+    staleTime: 10_000
+  });
   const alertDispatchIds = (dispatchQuery.data ?? []).map((row) => row.id);
   const alertQuery = useQuery({ queryKey: queryKeys.operations.alerts(day, alertDispatchIds), queryFn: () => getAtlasAlerts(alertDispatchIds), enabled: (view === "excepciones" || view === "control-tower") && dispatchQuery.isSuccess, staleTime: 10_000 });
   const driverQuery = useQuery({ queryKey: queryKeys.operations.driverSearch({ search: driverSearch, day }), queryFn: () => searchAtlasDrivers(driverSearch, day), enabled: canOperate && driverSearch.trim().length >= 2, staleTime: 15_000 });
@@ -114,7 +125,13 @@ export function OperationsControlTowerPage() {
     return all.filter((contract) => ids.has(contract.id));
   }, [catalogs, isAdmin]);
 
-  const filtered = (dispatchQuery.data ?? []).filter((row) => !filterContract || String(row.contract_id) === filterContract);
+  const filtered = (dispatchQuery.data ?? []).filter((row) => {
+    const matchesContract = !filterContract || String(row.contract_id) === filterContract;
+    const term = serviceSearch.trim().toLocaleLowerCase("es-CL");
+    const matchesSearch = !term || [row.service_name, row.contract_code, row.driver_name_snapshot, row.vehicle_code, row.plate]
+      .some((value) => value?.toLocaleLowerCase("es-CL").includes(term));
+    return matchesContract && matchesSearch;
+  });
   const ordered = [...filtered].sort((a, b) => {
     const priority = { critical: 0, at_risk: 1, attention: 2, green: 3 };
     return priority[a.risk_status] - priority[b.risk_status] || (a.planned_start_at ?? "").localeCompare(b.planned_start_at ?? "");
@@ -127,6 +144,7 @@ export function OperationsControlTowerPage() {
   };
 
   const currentTitle = VIEWS.find((item) => item.id === view)?.label ?? "Control Tower";
+  const selectedDispatchRecord = (dispatchQuery.data ?? []).find((item) => item.id === selectedDispatch);
   const usesServiceDate = view !== "configuracion" && view !== "conductor";
 
   async function submitDispatch(form: FormData) {
@@ -192,7 +210,8 @@ export function OperationsControlTowerPage() {
 
       {(view === "control-tower" || view === "excepciones") && <>
         <section className="atlas-ops__toolbar">
-          <div><strong>{view === "excepciones" ? "Cola de excepciones" : "Prioridad operacional"}</strong><span>{filtered.length} servicios para {day}</span></div>
+          <div><strong>{view === "excepciones" ? "Cola de excepciones" : "Control de la jornada"}</strong><span>{filtered.length} servicios para {day}</span></div>
+          <label className="atlas-ops__search">Buscar<input type="search" value={serviceSearch} onChange={(event) => setServiceSearch(event.target.value)} placeholder="Servicio, conductor o vehículo" /></label>
           <label>Contrato<select value={filterContract} onChange={(event) => setFilterContract(event.target.value)}><option value="">Todos</option>{catalogs?.contracts.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.contract_name}</option>)}</select></label>
           {canOperate && <button className="atlas-ops__button atlas-ops__button--quiet" disabled={mutation.isPending} onClick={() => mutation.mutate(() => refreshAtlasSlaAlerts())} type="button">Evaluar hitos SLA</button>}
         </section>
@@ -203,11 +222,17 @@ export function OperationsControlTowerPage() {
           <Metric label="Normal" value={counts.green} tone="green" />
         </section>
         {view === "excepciones" && <AlertTable rows={alertQuery.data ?? []} loading={alertQuery.isLoading} onSelect={setSelectedDispatch} canOperate={canOperate} onAcknowledge={(id) => mutation.mutate(() => acknowledgeAtlasAlert(id))} onResolve={(id) => mutation.mutate(() => resolveAtlasAlert(id, "Revisada desde Control Tower"))} />}
+        {view === "control-tower" && <div className="atlas-ops__work-modes" role="group" aria-label="Presentación de servicios">
+          <button type="button" className={presentation === "map" ? "is-active" : ""} aria-pressed={presentation === "map"} onClick={() => setPresentation("map")}>Mapa</button>
+          <button type="button" className={presentation === "list" ? "is-active" : ""} aria-pressed={presentation === "list"} onClick={() => setPresentation("list")}>Lista</button>
+        </div>}
         {view === "control-tower" && dispatchQuery.isError ? (
           <div className="atlas-ops__query-error" role="alert">
             <p>No se pudo cargar la operación de esta fecha. {dispatchQuery.error instanceof Error ? dispatchQuery.error.message : "Intenta nuevamente."}</p>
             <button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => { void dispatchQuery.refetch(); }} type="button">Reintentar</button>
           </div>
+        ) : view === "control-tower" && presentation === "map" ? (
+          <OperationsLiveMap dispatches={ordered} positions={positionsQuery.data ?? []} loading={positionsQuery.isLoading} positionError={positionsQuery.error instanceof Error ? positionsQuery.error.message : ""} onSelectDispatch={setSelectedDispatch} onPlan={() => navigate("/operaciones/planificacion")} />
         ) : view === "control-tower" && dispatchQuery.isSuccess && ordered.length === 0 ? (
           <ControlTowerEmptyState
             hasUnfilteredDispatches={(dispatchQuery.data ?? []).length > 0}
@@ -268,7 +293,16 @@ export function OperationsControlTowerPage() {
       {selectedDispatch && <div className="atlas-ops__drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedDispatch(""); }}>
         <aside className="atlas-ops__drawer" aria-label="Detalle del servicio">
           <div className="atlas-ops__drawer-header"><div><span>DETALLE OPERACIONAL</span><h2>Timeline del servicio</h2></div><button onClick={() => setSelectedDispatch("")} type="button" aria-label="Cerrar">×</button></div>
-          {eventsQuery.isLoading ? <p>Cargando historial…</p> : <ol className="atlas-ops__timeline">{eventsQuery.data?.map((event) => <li key={String(event.id)}><span className="atlas-ops__timeline-dot" /><div><strong>{readableStatus(String(event.event_type))}</strong><small>{new Date(String(event.occurred_at)).toLocaleString("es-CL")} · {String(event.source)}</small></div></li>)}</ol>}
+          {selectedDispatchRecord && <dl className="atlas-ops__detail-facts">
+            <div><dt>Servicio</dt><dd>{selectedDispatchRecord.service_name ?? "Sin nombre"}</dd></div>
+            <div><dt>Contrato</dt><dd>{selectedDispatchRecord.contract_code}</dd></div>
+            <div><dt>Conductor</dt><dd>{selectedDispatchRecord.driver_name_snapshot ?? "Sin asignar"}</dd></div>
+            <div><dt>Vehículo</dt><dd>{selectedDispatchRecord.vehicle_code ?? "Sin asignar"}{selectedDispatchRecord.plate ? ` · ${selectedDispatchRecord.plate}` : ""}</dd></div>
+            <div><dt>Planificación</dt><dd><Status value={selectedDispatchRecord.planning_status} /></dd></div>
+            <div><dt>Riesgo</dt><dd><Risk value={selectedDispatchRecord.risk_status} /></dd></div>
+          </dl>}
+          <h3 className="atlas-ops__timeline-title">Actividad registrada</h3>
+          {eventsQuery.isLoading ? <p className="atlas-ops__timeline-state">Cargando historial…</p> : eventsQuery.isError ? <p className="atlas-ops__timeline-state" role="alert">No se pudo cargar el historial.</p> : eventsQuery.data?.length ? <ol className="atlas-ops__timeline">{eventsQuery.data.map((event) => <li key={String(event.id)}><span className="atlas-ops__timeline-dot" /><div><strong>{readableStatus(String(event.event_type))}</strong><small>{new Date(String(event.occurred_at)).toLocaleString("es-CL")} · {String(event.source)}</small></div></li>)}</ol> : <p className="atlas-ops__timeline-state">Este servicio aún no registra eventos de actividad.</p>}
         </aside>
       </div>}
 
@@ -343,11 +377,11 @@ function DispatchTable({ rows, loading, onSelect, onTransition, canOperate, disp
 }) {
   return <div className="atlas-ops__table-wrap"><table className="atlas-ops__table"><thead><tr><th>Servicio / Hora</th><th>Contrato</th><th>Conductor</th><th>Vehículo</th><th>Plan</th><th>Ejecución</th><th>Riesgo</th><th /></tr></thead>
     <tbody>{loading ? <tr><td colSpan={8}>Cargando servicios…</td></tr> : rows.length === 0 ? <tr><td colSpan={8} className="atlas-ops__empty">Sin servicios para los filtros seleccionados.</td></tr> : rows.map((row) => <tr key={row.id}>
-      <td><button className="atlas-ops__service-link" onClick={() => onSelect(row.id)} type="button">{row.service_name ?? "Servicio importado"}<small>{row.planned_start_at ? new Date(row.planned_start_at).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "Hora pendiente"} · {row.shift}</small></button></td>
-      <td>{row.contract_code}</td><td>{row.driver_name_snapshot ?? <span className="atlas-ops__muted">Sin asignar</span>}</td>
-      <td>{row.vehicle_code ?? <span className="atlas-ops__muted">Sin asignar</span>}{row.plate ? <small className="atlas-ops__cell-sub">{row.plate}</small> : null}</td>
-      <td><Status value={row.planning_status} /></td><td>{readableStatus(row.execution_status)}</td><td><Risk value={row.risk_status} /></td>
-      <td className="atlas-ops__actions">{canOperate && row.planning_status === "planning" && <button onClick={() => onTransition(row.id, "ready")} type="button">Validar</button>}{canOperate && row.planning_status === "ready" && <button onClick={() => onTransition(row.id, "publish")} type="button">Publicar</button>}{dispatchMode && row.execution_status === "not_started" && row.acknowledged_at && <button onClick={() => onTransition(row.id, "start")} type="button">Iniciar</button>}</td>
+      <td data-label="Servicio / Hora"><button className="atlas-ops__service-link" onClick={() => onSelect(row.id)} type="button">{row.service_name ?? "Servicio importado"}<small>{row.planned_start_at ? new Date(row.planned_start_at).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "Hora pendiente"} · {row.shift}</small></button></td>
+      <td data-label="Contrato">{row.contract_code}</td><td data-label="Conductor">{row.driver_name_snapshot ?? <span className="atlas-ops__muted">Sin asignar</span>}</td>
+      <td data-label="Vehículo">{row.vehicle_code ?? <span className="atlas-ops__muted">Sin asignar</span>}{row.plate ? <small className="atlas-ops__cell-sub">{row.plate}</small> : null}</td>
+      <td data-label="Plan"><Status value={row.planning_status} /></td><td data-label="Ejecución">{readableStatus(row.execution_status)}</td><td data-label="Riesgo"><Risk value={row.risk_status} /></td>
+      <td data-label="Acciones" className="atlas-ops__actions">{canOperate && row.planning_status === "planning" && <button onClick={() => onTransition(row.id, "ready")} type="button">Validar</button>}{canOperate && row.planning_status === "ready" && <button onClick={() => onTransition(row.id, "publish")} type="button">Publicar</button>}{dispatchMode && row.execution_status === "not_started" && row.acknowledged_at && <button onClick={() => onTransition(row.id, "start")} type="button">Iniciar</button>}</td>
     </tr>)}</tbody></table></div>;
 }
 
@@ -358,9 +392,9 @@ function AlertTable({ rows, loading, onSelect, canOperate, onAcknowledge, onReso
   return <section className="atlas-ops__panel atlas-ops__alert-list"><div className="atlas-ops__panel-heading"><div><h2>Alertas activas</h2><p>Los eventos y la atención quedan en el historial del servicio.</p></div></div>
     <div className="atlas-ops__table-wrap"><table className="atlas-ops__table"><thead><tr><th>Severidad</th><th>Excepción</th><th>Estado</th><th>Desde</th><th /></tr></thead><tbody>
       {loading ? <tr><td colSpan={5}>Cargando alertas…</td></tr> : rows.length === 0 ? <tr><td className="atlas-ops__empty" colSpan={5}>No hay alertas activas para esta fecha.</td></tr> : rows.map((row) => <tr key={String(row.id)}>
-        <td><Risk value={String(row.alert_type)} /></td><td><button className="atlas-ops__service-link" onClick={() => onSelect(String(row.dispatch_id))} type="button">{String(row.message)}</button></td>
-        <td><Status value={String(row.status)} /></td><td>{new Date(String(row.opened_at)).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}</td>
-        <td className="atlas-ops__actions">{canOperate && row.status === "open" && <button onClick={() => onAcknowledge(String(row.id))} type="button">Atender</button>}{canOperate && <button onClick={() => onResolve(String(row.id))} type="button">Resolver</button>}</td>
+        <td data-label="Severidad"><Risk value={String(row.alert_type)} /></td><td data-label="Excepción"><button className="atlas-ops__service-link" onClick={() => onSelect(String(row.dispatch_id))} type="button">{String(row.message)}</button></td>
+        <td data-label="Estado"><Status value={String(row.status)} /></td><td data-label="Desde">{new Date(String(row.opened_at)).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}</td>
+        <td data-label="Acciones" className="atlas-ops__actions">{canOperate && row.status === "open" && <button onClick={() => onAcknowledge(String(row.id))} type="button">Atender</button>}{canOperate && <button onClick={() => onResolve(String(row.id))} type="button">Resolver</button>}</td>
       </tr>)}
     </tbody></table></div>
   </section>;

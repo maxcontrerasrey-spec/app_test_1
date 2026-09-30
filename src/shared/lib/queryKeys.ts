@@ -135,6 +135,7 @@ export const queryKeys = {
     catalogs: () => [...queryKeys.operations.all(), "catalogs"] as const,
     adminUsers: () => [...queryKeys.operations.all(), "admin-users"] as const,
     dispatches: (day: string) => [...queryKeys.operations.all(), "dispatches", day] as const,
+    vehiclePositions: (vehicleIds: string[]) => [...queryKeys.operations.all(), "vehicle-positions", vehicleIds] as const,
     alerts: (day: string, dispatchIds: string[] = []) => [...queryKeys.operations.all(), "alerts", day, dispatchIds] as const,
     driverDispatches: () => [...queryKeys.operations.all(), "driver-dispatches"] as const,
     events: (dispatchId: string) => [...queryKeys.operations.all(), "events", dispatchId] as const,
