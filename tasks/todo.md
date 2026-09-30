@@ -1,5 +1,18 @@
 # Tareas y Roadmap de Desarrollo
 
+## Completar experiencia Atlas Operations Control Tower — 2026-09-30
+
+- [x] Inspeccionar la página actual y reutilizar los patrones visuales del ERP y la referencia FleetOps sin cambiar el contrato superadmin-only.
+- [x] Completar la composición operacional con mapa integrado, resumen, filtros, modos de trabajo y estados vacíos/carga/error reales.
+- [x] Homologar tamaños de controles, indicadores y superficies; asegurar reflujo en tablet y móvil.
+- [x] Revisar que cada acción visible tenga comportamiento conectado a servicios existentes y que estados no simulen datos.
+- [x] Ejecutar build frontend, Guardian y `git diff --check`; documentar límites de datos/TrackTec y cerrar este plan.
+- [x] Publicar el cambio aislado en `main` y comprobar que Pages sirve el bundle de Operaciones y el CSS nuevos sin ampliar acceso.
+
+Resultado: Control Tower incorpora mapa interactivo de Chile con última posición procesada por vehículo desde `atlas_ops_telemetry_events`, lista vinculada, búsqueda, filtro por contrato y apertura del detalle/timeline. Las señales no disponibles se indican sin coordenadas ficticias; los servicios se distinguen por riesgo. El detalle muestra contrato, conductor, vehículo, estado y actividad, y las tablas cambian a fichas etiquetadas en móvil. Se conservan las siete vistas y el acceso superadmin-only. La cartografía usa OpenStreetMap con atribución visible; sus tiles son best-effort sin SLA. No se alteraron tablas ni permisos.
+
+Build frontend, auditoría de performance, Guardian (0 errores y 0 advertencias) y `git diff --check` pasan. El commit `dfa97f2e` quedó en `main`; Cloudflare Pages sirve el nuevo chunk de Operaciones y CSS, ambos con respuesta 200 y con el mapa/telemetría en el bundle. La sesión de navegador disponible no está autenticada y conserva la protección por superadmin. El mapa queda listo para mostrar telemetría una vez activo el proveedor; TrackTec real aún requiere su integración oficial.
+
 ## Reconciliar Gustavo Cortés para psicotest de contratado — 2026-09-29
 
 - [x] Confirmar evidencia BUK, registro externo, folio y ausencia de candidato duplicado.
