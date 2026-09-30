@@ -215,7 +215,7 @@ export function PsychAIReviewDialog({
           <label className="psych-ai-comment">
             Comentarios y validación de Psicólogo
             <textarea
-              rows={8}
+              rows={16}
               aria-label="Comentarios y validación de Psicólogo"
               value={comment}
               onChange={(event) => setComment(event.target.value)}

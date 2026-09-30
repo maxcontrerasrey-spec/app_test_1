@@ -241,11 +241,11 @@ describe("Gestión Psicolaboral", () => {
   });
 
   it("deja espacio suficiente para la observación profesional sin limitar el texto", () => {
-    expect(aiReviewDialog).toContain("rows={8}");
+    expect(aiReviewDialog).toContain("rows={16}");
     expect(aiReviewDialog).toContain('aria-label="Comentarios y validación de Psicólogo"');
     expect(aiReviewDialog).not.toContain("maxLength");
     expect(assessmentStyles).toContain(".psych-ai-comment textarea");
-    expect(assessmentStyles).toContain("min-height: 220px");
+    expect(assessmentStyles).toContain("min-height: 320px");
   });
 
   it("mantiene el encabezado documental y las tarjetas de síntesis alineadas", () => {

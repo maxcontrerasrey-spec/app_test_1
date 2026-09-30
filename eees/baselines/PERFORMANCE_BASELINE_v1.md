@@ -156,8 +156,8 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
   "distTotalBytes": 5090222,
   "jsFileCount": 62,
   "jsTotalBytes": 2759808,
-  "cssFileCount": 12,
-  "cssTotalBytes": 300311,
+  "cssFileCount": 11,
+  "cssTotalBytes": 300675,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -289,3 +289,5 @@ Revision 2026-09-15 separación del rail compacto: CSS queda en 269,259 bytes po
 - Si una ruta critica nueva se agrega al ERP, debe sumarse a smokes o quedar clasificada con owner.
 
 Revision 2026-09-30 Atlas Operations Control Tower: CSS medido en 300,311 bytes (+4,894) y `app-framework` en 276,311 bytes (+20) para incorporar Leaflet y el mapa interactivo con su lista de servicios en la ruta lazy de Operaciones. JS total y bundles grandes permanecen bajo sus límites; el build y Guardian validan la separación de carga.
+
+Revision 2026-09-30 reconciliacion de medicion Atlas: el build reproducible del `main` con Leaflet mide 300,675 bytes CSS en 11 archivos; se corrige el valor machine-readable que declaraba 300,311 bytes en 12 archivos. El cambio del alto del comentario Psicolaboral conserva la misma longitud CSS (220px a 320px) y no explica el delta medido.

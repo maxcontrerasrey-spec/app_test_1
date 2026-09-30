@@ -13,6 +13,16 @@ Resultado: Control Tower incorpora mapa interactivo de Chile con última posici�
 
 Build frontend, auditoría de performance, Guardian (0 errores y 0 advertencias) y `git diff --check` pasan. El commit `dfa97f2e` quedó en `main`; Cloudflare Pages sirve el nuevo chunk de Operaciones y CSS, ambos con respuesta 200 y con el mapa/telemetría en el bundle. La sesión de navegador disponible no está autenticada y conserva la protección por superadmin. El mapa queda listo para mostrar telemetría una vez activo el proveedor; TrackTec real aún requiere su integración oficial.
 
+## Ampliar comentarios de validación Psicolaboral — 2026-09-30
+
+- [x] Confirmar que la persistencia no trunca el comentario y que ocho líneas era solo el alto visible.
+- [x] Ampliar el campo a 16 filas y 320 px, sin límite de caracteres ni cambio de base de datos.
+- [x] Validar pruebas, build frontend, Guardian completo y diff; reconciliar el baseline CSS contra el artefacto medido del `main`.
+- [ ] Publicar el cambio aislado y comprobar los assets servidos en producción.
+
+Resultado: `reviewer_comment` es `text` y la RPC persiste el valor íntegro. No se necesita migración.
+Pruebas focalizadas (39/39), build frontend y `npm run guardian:full` finalizaron correctamente (0 errores, 0 warnings) después de conciliar la medición reproducible del baseline CSS (300,675 bytes, 11 archivos). El cambio queda listo para publicar; falta comprobar Cloudflare Pages.
+
 ## Reconciliar Gustavo Cortés para psicotest de contratado — 2026-09-29
 
 - [x] Confirmar evidencia BUK, registro externo, folio y ausencia de candidato duplicado.
