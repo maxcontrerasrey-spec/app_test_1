@@ -18,10 +18,10 @@ Build frontend, auditoría de performance, Guardian (0 errores y 0 advertencias)
 - [x] Confirmar que la persistencia no trunca el comentario y que ocho líneas era solo el alto visible.
 - [x] Ampliar el campo a 16 filas y 320 px, sin límite de caracteres ni cambio de base de datos.
 - [x] Validar pruebas, build frontend, Guardian completo y diff; reconciliar el baseline CSS contra el artefacto medido del `main`.
-- [ ] Publicar el cambio aislado y comprobar los assets servidos en producción.
+- [x] Publicar el cambio aislado y comprobar los assets servidos en producción.
 
 Resultado: `reviewer_comment` es `text` y la RPC persiste el valor íntegro. No se necesita migración.
-Pruebas focalizadas (39/39), build frontend y `npm run guardian:full` finalizaron correctamente (0 errores, 0 warnings) después de conciliar la medición reproducible del baseline CSS (300,675 bytes, 11 archivos). El cambio queda listo para publicar; falta comprobar Cloudflare Pages.
+Pruebas focalizadas (39/39), build frontend y `npm run guardian:full` finalizaron correctamente (0 errores, 0 warnings) después de conciliar la medición reproducible del baseline CSS (300,675 bytes, 11 archivos). Publicado en `main` mediante `7566f38`; CI `36773458948` pasó todos los gates. Cloudflare Pages sirve `psycholaboral-DGkXaGcw.css` con `.psych-ai-comment textarea{min-height:320px}` y respuesta HTTP 200, junto al chunk Psicolaboral HTTP 200.
 
 ## Reconciliar Gustavo Cortés para psicotest de contratado — 2026-09-29
 
