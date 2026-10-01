@@ -6,9 +6,9 @@
 - [x] Publicar el planificador detrás de la ruta protegida para superadministradores y añadir un acceso visible desde Operaciones.
 - [x] Mantenerlo como vista previa sin IA ni persistencia de servicios; aclarar en pantalla los límites de Photon, Valhalla y perfil de vehículo.
 - [x] Ejecutar build, Guardian, auditorías de migraciones/seguridad y smoke de la ruta directa.
-- [ ] Publicar el cambio y confirmar el bundle/ruta productiva con el usuario.
+- [x] Publicar el cambio y confirmar el bundle/ruta productiva con el usuario.
 
-Resultado: la compilación productiva contiene una pantalla de planificador diferida en `/operaciones/planificador-rutas`, con acceso desde la Torre de Control y el mismo guard de superadministrador. Es una vista previa con búsqueda Photon, ruteo Valhalla y navegación Ferrostar simulada; no persiste rutas ni incluye IA. Guardian, TypeScript/build, auditoría de migraciones y seguridad pasan. Publicación pendiente.
+Resultado: commit `6637989c` publicado en `main`. La portada productiva carga el shell actualizado; el chunk publicado de Operaciones contiene `/operaciones/planificador-rutas` y el acceso visible `Planificador de rutas`. El chunk de Ferrostar y el WASM responden HTTP 200. La pantalla exige superadministrador, ofrece búsqueda Photon, ruteo Valhalla y navegación simulada, y no persiste rutas ni incluye IA. Guardian (0 errores/0 warnings), build, auditorías de migraciones/seguridad, smoke de rutas y diff check pasan.
 
 ## Completar Atlas Operations para operación productiva y telemetría de bajo consumo — 2026-10-01
 
