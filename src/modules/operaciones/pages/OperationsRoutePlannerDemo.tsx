@@ -14,6 +14,8 @@ setWorkerUrl(mapLibreWorkerUrl);
 const PHOTON_URL = "https://photon.komoot.io/api/";
 const VALHALLA_URL = "https://valhalla1.openstreetmap.de/route";
 const CALAMA = { lat: -22.4544, lng: -68.9294 };
+const PHOTON_CACHE_TTL_MS = 5 * 60 * 1000;
+const PHOTON_CACHE = new Map<string, { expiresAt: number; results: Array<{ label: string; lat: number; lng: number }> }>();
 const MAP_STYLE = {
   version: 8 as const,
   sources: {
@@ -29,7 +31,7 @@ const MAP_STYLE = {
 
 type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination" };
 type PhotonFeature = { properties: Record<string, unknown>; geometry: { coordinates: [number, number] } };
-type SearchState = { id: string; query: string; results: Array<{ label: string; lat: number; lng: number }>; status: "idle" | "loading" | "ready" | "error"; error?: string };
+type SearchState = { id: string; query: string; revision?: number; results: Array<{ label: string; lat: number; lng: number }>; status: "idle" | "loading" | "ready" | "error"; error?: string };
 type SuggestionAnchor = { top: number; left: number; width: number; maxHeight: number };
 
 const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -45,6 +47,10 @@ function featureLabel(feature: PhotonFeature) {
 }
 
 async function searchPhoton(query: string, signal?: AbortSignal) {
+  const cacheKey = query.trim().toLocaleLowerCase("es-CL");
+  const cached = PHOTON_CACHE.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.results;
+  if (cached) PHOTON_CACHE.delete(cacheKey);
   const url = new URL(PHOTON_URL);
   url.searchParams.set("q", query);
   url.searchParams.set("lat", String(CALAMA.lat));
@@ -53,7 +59,10 @@ async function searchPhoton(query: string, signal?: AbortSignal) {
   const response = await fetch(url, { signal });
   if (!response.ok) throw new Error(`Photon respondió ${response.status}.`);
   const data = await response.json() as { features?: PhotonFeature[] };
-  return (data.features ?? []).map((feature) => ({ label: featureLabel(feature), lng: feature.geometry.coordinates[0], lat: feature.geometry.coordinates[1] })).filter((item) => item.label && Number.isFinite(item.lat) && Number.isFinite(item.lng));
+  const results = (data.features ?? []).map((feature) => ({ label: featureLabel(feature), lng: feature.geometry.coordinates[0], lat: feature.geometry.coordinates[1] })).filter((item) => item.label && Number.isFinite(item.lat) && Number.isFinite(item.lng));
+  while (PHOTON_CACHE.size >= 80) PHOTON_CACHE.delete(PHOTON_CACHE.keys().next().value!);
+  PHOTON_CACHE.set(cacheKey, { expiresAt: Date.now() + PHOTON_CACHE_TTL_MS, results });
+  return results;
 }
 
 function locationAt(stop: Stop): UserLocation {
@@ -117,6 +126,7 @@ export function OperationsRoutePlannerDemo() {
   const [notice, setNotice] = useState("");
   const [adding, setAdding] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapPickingStopId, setMapPickingStopId] = useState<string | null>(null);
 
   const core = useMemo(() => {
     const instance = new FerrostarCore();
@@ -197,12 +207,12 @@ export function OperationsRoutePlannerDemo() {
         if (controller.signal.aborted) return;
         setSearch((current) => current?.id === searchId && current.query.trim() === query ? { ...current, results: [], status: "error", error: reason instanceof Error ? reason.message : "No fue posible buscar la dirección." } : current);
       });
-    }, 320);
+    }, 180);
     return () => {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [search?.id, search?.query]);
+  }, [search?.id, search?.query, search?.revision]);
 
   const showSearchPopover = Boolean(search && search.query.trim().length >= 3 && search.status !== "idle");
 
@@ -239,18 +249,6 @@ export function OperationsRoutePlannerDemo() {
     };
   }, [search?.id, search?.query, search?.status, showSearchPopover]);
 
-  async function searchAddressNow(stopId: string) {
-    const query = search?.id === stopId ? search.query.trim() : "";
-    if (query.length < 3) return;
-    setSearch((current) => current?.id === stopId ? { ...current, status: "loading", results: [], error: undefined } : current);
-    try {
-      const results = await searchPhoton(query);
-      setSearch((current) => current?.id === stopId && current.query.trim() === query ? { ...current, results, status: "ready", error: undefined } : current);
-    } catch (reason) {
-      setSearch((current) => current?.id === stopId && current.query.trim() === query ? { ...current, results: [], status: "error", error: reason instanceof Error ? reason.message : "No fue posible buscar la dirección." } : current);
-    }
-  }
-
   function chooseResult(stopId: string, result: { label: string; lat: number; lng: number }) {
     const existing = stops.find((stop) => stop.id === stopId);
     const kind = existing?.label ? existing.kind : (!stops.some((stop) => stop.kind === "origin") ? "origin" : !stops.some((stop) => stop.kind === "destination") ? "destination" : "stop");
@@ -266,6 +264,25 @@ export function OperationsRoutePlannerDemo() {
     setRoute(null);
     setRouteState("idle");
     setError("");
+  }
+
+  function startMapPick(stop: Stop) {
+    const map = mapRef.current;
+    setSearch(null);
+    setMapPickingStopId(stop.id);
+    if (stop.label && map) map.flyTo({ center: [stop.lng, stop.lat], zoom: Math.max(map.getZoom(), 16), duration: 450 });
+  }
+
+  function confirmMapPick() {
+    const stopId = mapPickingStopId;
+    const center = mapRef.current?.getCenter();
+    if (!stopId || !center) return;
+    const lat = Number(center.lat.toFixed(6));
+    const lng = Number(center.lng.toFixed(6));
+    chooseResult(stopId, { label: `Punto en mapa (${lat.toFixed(5)}, ${lng.toFixed(5)})`, lat, lng });
+    setMapPickingStopId(null);
+    setAdding(false);
+    setNotice("Punto manual seleccionado. Puedes calcular la ruta con estas coordenadas.");
   }
 
   function addStop() {
@@ -390,7 +407,7 @@ export function OperationsRoutePlannerDemo() {
               <span className={`ops-route-demo__stop-pin ops-route-demo__stop-pin--${stop.kind}`}>{stop.kind === "origin" ? "A" : stop.kind === "destination" ? "B" : index}</span>
               <div className="ops-route-demo__stop-input-wrap">
                 <label htmlFor={`route-${stop.id}`}>{stop.kind === "origin" ? "Origen" : stop.kind === "destination" ? "Destino" : `Parada ${index}`}</label>
-                <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder="Busca una dirección en Calama" onChange={(event) => setSearch({ id: stop.id, query: event.target.value, results: [], status: "idle" })} onFocus={(event) => setSearch({ id: stop.id, query: event.target.value, results: [], status: "idle" })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void searchAddressNow(stop.id); } }} />{stop.label && stop.kind === "stop" && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
+                <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder="Busca una dirección en Calama" onChange={(event) => { const query = event.target.value; setSearch({ id: stop.id, query, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); }} onFocus={() => { if (!stop.label) setSearch({ id: stop.id, query: "", results: [], status: "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para ${stop.kind === "origin" ? "el origen" : stop.kind === "destination" ? "el destino" : `la parada ${index + 1}`}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{stop.label && stop.kind === "stop" && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
               </div>
               <div className="ops-route-demo__stop-actions"><button type="button" title="Subir parada" aria-label="Subir parada" disabled={stop.kind !== "stop" || index === 1} onClick={() => moveStop(stop.id, -1)}>↑</button><button type="button" title="Bajar parada" aria-label="Bajar parada" disabled={stop.kind !== "stop" || index === stops.length - 1} onClick={() => moveStop(stop.id, 1)}>↓</button></div>
             </div>)}
@@ -408,7 +425,7 @@ export function OperationsRoutePlannerDemo() {
       </section>
       <section className="ops-route-demo__map-section" aria-label="Mapa y ruta">
         <div className="ops-route-demo__map-topline"><div><span className="ops-route-demo__eyebrow">{activeView === "planning" ? "MAPA DE PLANIFICACIÓN" : "NAVEGACIÓN SIMULADA"}</span><strong>Calama, Región de Antofagasta</strong></div><div className="ops-route-demo__map-legend"><span><i className="is-start" />Inicio</span><span><i className="is-stop" />Parada</span><span><i className="is-end" />Destino</span></div></div>
-        <div className="ops-route-demo__map-frame"><div className="ops-route-demo__map-canvas" ref={mapContainerRef} />{activeView === "driver" && <ferrostar-map ref={(node) => { ferrostarMapRef.current = node; }} className="ops-route-demo__ferrostar" show-navigation-ui show-user-marker system="metric" />} {!route && routeState !== "loading" && <div className="ops-route-demo__map-empty"><span>＋</span><strong>Tu ruta aparecerá aquí</strong><small>Agrega direcciones o carga el ejemplo de Calama.</small></div>}{routeState === "loading" && <div className="ops-route-demo__map-loading">Calculando ruta…</div>}</div>
+        <div className={`ops-route-demo__map-frame${mapPickingStopId ? " is-picking" : ""}`}><div className="ops-route-demo__map-canvas" ref={mapContainerRef} />{activeView === "driver" && <ferrostar-map ref={(node) => { ferrostarMapRef.current = node; }} className="ops-route-demo__ferrostar" show-navigation-ui show-user-marker system="metric" />} {!route && routeState !== "loading" && !mapPickingStopId && <div className="ops-route-demo__map-empty"><span>＋</span><strong>Tu ruta aparecerá aquí</strong><small>Agrega direcciones o carga el ejemplo de Calama.</small></div>}{mapPickingStopId && <><div className="ops-route-demo__map-center-pin" aria-hidden="true"><svg viewBox="0 0 28 36"><path d="M14 1C6.82 1 1 6.82 1 14c0 9.1 13 21 13 21s13-11.9 13-21C27 6.82 21.18 1 14 1Z" /><circle cx="14" cy="14" r="4.5" /></svg></div><div className="ops-route-demo__map-pick-hint" role="status">Mueve el mapa hasta ubicar el punto bajo el marcador</div><div className="ops-route-demo__map-pick-actions"><button type="button" className="ops-route-demo__primary" onClick={confirmMapPick}>Usar este punto</button><button type="button" className="ops-route-demo__secondary" onClick={() => setMapPickingStopId(null)}>Cancelar</button></div></>}{routeState === "loading" && <div className="ops-route-demo__map-loading">Calculando ruta…</div>}</div>
         <div className="ops-route-demo__map-foot"><span><i /> Ruta y maniobras de Valhalla</span><span>Mapa © OpenStreetMap contributors</span></div>
       </section>
     </div>
@@ -420,7 +437,7 @@ export function OperationsRoutePlannerDemo() {
         aria-label="Sugerencias de direcciones"
         aria-live="polite"
       >
-        {search.status === "loading" && <div className="ops-route-demo__suggestion-hint" role="status">Buscando direcciones…</div>}
+        {search.status === "loading" && <div className="ops-route-demo__suggestion-hint" role="status">Buscando direcciones… Si no aparece, puedes elegir el punto en el mapa.</div>}
         {search.status === "ready" && search.results.map((result) => <button type="button" role="option" key={`${result.lat}-${result.lng}`} onClick={() => { chooseResult(search.id, result); setAdding(false); }}>{result.label}</button>)}
         {search.status === "ready" && search.results.length === 0 && <div className="ops-route-demo__suggestion-hint" role="status">No encontramos coincidencias. Prueba con calle y ciudad; presiona Enter para reintentar.</div>}
         {search.status === "error" && <div className="ops-route-demo__suggestion-hint" role="alert">No se pudo consultar Photon. {search.error} Presiona Enter para reintentar.</div>}

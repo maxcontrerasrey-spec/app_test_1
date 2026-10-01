@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Agilizar búsqueda de direcciones y selección manual en mapa — 2026-10-01
+
+- [ ] Medir y revisar búsqueda actual: debounce, llamadas redundantes, caché y estado de espera.
+- [ ] Reducir espera percibida con debounce más corto, feedback inmediato y caché de consultas repetidas sin cambiar proveedor ni filtrar resultados de Calama.
+- [ ] Permitir elegir el centro visible del mapa para una parada mediante paneo y confirmación, guardando coordenadas reales en el estado de ruta.
+- [ ] Verificar búsqueda, selección manual, interacción del mapa, responsive y ausencia de regresiones; ejecutar build frontend, Guardian y `git diff --check`.
+- [ ] Publicar en producción y comprobar ambos flujos en la experiencia servida.
+
+Resultado: pendiente.
+
 ## Hacer visible el desplegable de direcciones — 2026-10-01
 
 - [x] Reproducir la consulta de la captura en Photon y en la estructura visual productiva.
