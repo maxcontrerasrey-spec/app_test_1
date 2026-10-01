@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Hacer visible en producción el planificador de rutas — 2026-10-01
+
+- [x] Comparar el release con el checkout local; confirmar que la demo Ferrostar estaba excluida del bundle productivo.
+- [x] Publicar el planificador detrás de la ruta protegida para superadministradores y añadir un acceso visible desde Operaciones.
+- [x] Mantenerlo como vista previa sin IA ni persistencia de servicios; aclarar en pantalla los límites de Photon, Valhalla y perfil de vehículo.
+- [x] Ejecutar build, Guardian, auditorías de migraciones/seguridad y smoke de la ruta directa.
+- [ ] Publicar el cambio y confirmar el bundle/ruta productiva con el usuario.
+
+Resultado: la compilación productiva contiene una pantalla de planificador diferida en `/operaciones/planificador-rutas`, con acceso desde la Torre de Control y el mismo guard de superadministrador. Es una vista previa con búsqueda Photon, ruteo Valhalla y navegación Ferrostar simulada; no persiste rutas ni incluye IA. Guardian, TypeScript/build, auditoría de migraciones y seguridad pasan. Publicación pendiente.
+
 ## Completar Atlas Operations para operación productiva y telemetría de bajo consumo — 2026-10-01
 
 - [x] Reconciliar la bitácora de migraciones de producción con el repositorio, identificando la migración remota de R2 y evitando repetir cambios ajenos.

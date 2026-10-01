@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
@@ -34,6 +34,8 @@ import {
 } from "../services/atlasOperationsApi";
 import "../styles/atlas-operations.css";
 
+const OperationsRoutePlannerDemo = lazy(() => import("./OperationsRoutePlannerDemo").then(({ OperationsRoutePlannerDemo: Page }) => ({ default: Page })));
+
 type View = "control-tower" | "planificacion" | "despacho" | "excepciones" | "conductor" | "historial" | "configuracion";
 const VIEWS: Array<{ id: View; label: string }> = [
   { id: "control-tower", label: "Control Tower" },
@@ -66,6 +68,12 @@ function readableStatus(value: string) {
 }
 
 export function OperationsControlTowerPage() {
+  const { view } = useParams();
+  if (view === "planificador-rutas") return <Suspense fallback={<p>Cargando planificador de rutas…</p>}><OperationsRoutePlannerDemo /></Suspense>;
+  return <OperationsControlTowerApp />;
+}
+
+function OperationsControlTowerApp() {
   useEffect(() => { purgeLegacyOperationsDrafts(); }, []);
   const { view: routeView } = useParams();
   const navigate = useNavigate();
@@ -228,6 +236,7 @@ export function OperationsControlTowerPage() {
           <p>{VIEW_DESCRIPTIONS[view]}</p>
         </div>
         <div className="atlas-ops__header-actions">
+          <button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => navigate("/operaciones/planificador-rutas")} type="button">Planificador de rutas</button>
           {usesServiceDate && <label className="atlas-ops__date">Fecha<input type="date" value={day} onChange={(event) => setDay(event.target.value)} /></label>}
           <button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => { void refresh(); }} type="button">Actualizar</button>
         </div>

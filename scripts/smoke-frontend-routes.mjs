@@ -86,18 +86,20 @@ async function assertLoginPage(page, baseUrl) {
 }
 
 async function assertProtectedRouteRedirects(page, baseUrl) {
-  await page.goto(`${baseUrl}/operaciones/control-tower`, {
-    waitUntil: "domcontentloaded",
-    timeout: DEFAULT_TIMEOUT_MS
-  });
+  for (const route of ["/operaciones/control-tower", "/operaciones/planificador-rutas"]) {
+    await page.goto(`${baseUrl}${route}`, {
+      waitUntil: "domcontentloaded",
+      timeout: DEFAULT_TIMEOUT_MS
+    });
 
-  await page.waitForURL(/\/login$/, {
-    timeout: DEFAULT_TIMEOUT_MS
-  });
+    await page.waitForURL(/\/login$/, {
+      timeout: DEFAULT_TIMEOUT_MS
+    });
 
-  await page
-    .getByRole("heading", { name: "Iniciar sesión" })
-    .waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+    await page
+      .getByRole("heading", { name: "Iniciar sesión" })
+      .waitFor({ timeout: DEFAULT_TIMEOUT_MS });
+  }
 }
 
 async function assertHiringDocumentVerifierIsPublic(page, baseUrl) {
@@ -149,8 +151,8 @@ async function main() {
           smoke: "frontend-routes",
           browser: "chromium",
           base_url: server.baseUrl,
-          checked_routes: ["/login", "/verificar/documento", "/operaciones/control-tower"],
-          protected_route_result: "/operaciones/control-tower redirected to /login without session"
+          checked_routes: ["/login", "/verificar/documento", "/operaciones/control-tower", "/operaciones/planificador-rutas"],
+          protected_route_result: "operaciones routes redirected to /login without session"
         },
         null,
         2

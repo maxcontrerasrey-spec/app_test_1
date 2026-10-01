@@ -153,11 +153,11 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 5090222,
+  "distTotalBytes": 6251648,
   "jsFileCount": 62,
-  "jsTotalBytes": 2759808,
-  "cssFileCount": 11,
-  "cssTotalBytes": 300675,
+  "jsTotalBytes": 4267045,
+  "cssFileCount": 12,
+  "cssTotalBytes": 394866,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -291,3 +291,5 @@ Revision 2026-09-15 separación del rail compacto: CSS queda en 269,259 bytes po
 Revision 2026-09-30 Atlas Operations Control Tower: CSS medido en 300,311 bytes (+4,894) y `app-framework` en 276,311 bytes (+20) para incorporar Leaflet y el mapa interactivo con su lista de servicios en la ruta lazy de Operaciones. JS total y bundles grandes permanecen bajo sus límites; el build y Guardian validan la separación de carga.
 
 Revision 2026-09-30 reconciliacion de medicion Atlas: el build reproducible del `main` con Leaflet mide 300,675 bytes CSS en 11 archivos; se corrige el valor machine-readable que declaraba 300,311 bytes en 12 archivos. El cambio del alto del comentario Psicolaboral conserva la misma longitud CSS (220px a 320px) y no explica el delta medido.
+
+Revision 2026-10-01 vista previa del planificador Atlas: el build sube a 6,251,648 bytes en total, 4,267,045 bytes JS y 394,866 bytes CSS. El acceso se carga desde la ruta protegida de Operaciones y la pantalla se importa de forma diferida; el chunk JS de 1,202,593 bytes, el worker de MapLibre de 508,042 bytes y WASM de Ferrostar de 883,416 bytes no forman parte de la carga inicial. Este aumento medido habilita la vista previa de planificación con búsqueda Photon, ruteo Valhalla y navegación simulada; no habilita IA ni persistencia de rutas. Se actualiza el baseline exacto según la política vigente.

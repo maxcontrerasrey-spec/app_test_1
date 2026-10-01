@@ -4029,3 +4029,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - En una torre de control, el mapa y la lista de servicios son dos accesos a la misma selección: abrir un punto debe llevar al detalle/timeline del despacho, y la lista debe indicar si existe posición GPS.
 - No poner marcadores de ejemplo ni inferir coordenadas desde origen/destino; mostrar la ausencia de señal y mantener la cartografía navegable hasta recibir telemetría vinculada al vehículo.
 - Mantener attribution y URL conforme a la política vigente del proveedor cartográfico. Los tamaños del encabezado, conmutador, filtros, indicadores y paneles deben salir de una escala común y reducirse por reflujo en móvil.
+
+## 2026-10-01 - Una publicación productiva debe comprobar la experiencia visible
+
+- Un release de base de datos y backend no basta para afirmar que el usuario ya ve la implementación. Confirmar que la ruta protegida existe en el build, que el módulo tiene un acceso visible y que la pantalla productiva muestra el flujo solicitado.
+- Si una funcionalidad se dejó solo en `import.meta.env.DEV`, no describirla como incluida en producción; revisar expresamente la diferencia entre el checkout local y el bundle publicado antes de cerrar.

@@ -1,13 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import wasm from "vite-plugin-wasm";
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(() => ({
+  plugins: [react(), wasm()],
+  optimizeDeps: { exclude: ["maplibre-gl"] },
   server: {
     host: true,
     port: 5173
   },
   build: {
+    target: "es2022",
     chunkSizeWarningLimit: 520,
     rollupOptions: {
       output: {
@@ -52,4 +55,4 @@ export default defineConfig({
       }
     }
   }
-});
+}));
