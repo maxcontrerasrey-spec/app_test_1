@@ -1,5 +1,14 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corregir sugerencias Photon y definir vínculo ruta-servicio — 2026-10-01
+
+- [x] Reproducir la respuesta productiva de Photon y corregir el parámetro incompatible que bloquea la búsqueda.
+- [x] Validar con una consulta real de Balmaceda en Calama y verificar el bundle final publicado.
+- [x] Documentar el alcance actual de la vista previa y la relación propuesta ruta N:1 servicio base, incluyendo clave de ruta y uso futuro en despacho.
+- [x] Ejecutar build, Guardian y `git diff --check`; publicar el fix de autocompletado en producción.
+
+Resultado: Photon rechazaba `lang=es` con HTTP 400 (actualmente admite `default`, `de`, `en` y `fr`); la misma consulta sin `lang` devuelve cuatro coincidencias de Balmaceda en Calama. Se elimina el parámetro incompatible y se agrega un guard de regresión. La vista actual es de demostración: ni rutas ni paradas se guardan; el esquema productivo tiene `atlas_ops_service_templates`, pero no una tabla de rutas ni FK de ruta en despachos. La asociación prevista es servicio base 1:N rutas, identificando cada ruta con el código `nombre_servicio_subprefijo`; al despachar se elegirá una ruta de ese servicio y se conservarán sus paradas ordenadas. Build, Guardian y smoke pasan. Fix publicado pendiente de comprobar en Cloudflare Pages.
+
 ## Hacer visible en producción el planificador de rutas — 2026-10-01
 
 - [x] Comparar el release con el checkout local; confirmar que la demo Ferrostar estaba excluida del bundle productivo.

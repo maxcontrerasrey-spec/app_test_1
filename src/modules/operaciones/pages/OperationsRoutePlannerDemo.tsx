@@ -48,7 +48,6 @@ async function searchPhoton(query: string, signal?: AbortSignal) {
   url.searchParams.set("lat", String(CALAMA.lat));
   url.searchParams.set("lon", String(CALAMA.lng));
   url.searchParams.set("limit", "6");
-  url.searchParams.set("lang", "es");
   const response = await fetch(url, { signal });
   if (!response.ok) throw new Error(`Photon respondió ${response.status}.`);
   const data = await response.json() as { features?: PhotonFeature[] };

@@ -4034,3 +4034,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Un release de base de datos y backend no basta para afirmar que el usuario ya ve la implementación. Confirmar que la ruta protegida existe en el build, que el módulo tiene un acceso visible y que la pantalla productiva muestra el flujo solicitado.
 - Si una funcionalidad se dejó solo en `import.meta.env.DEV`, no describirla como incluida en producción; revisar expresamente la diferencia entre el checkout local y el bundle publicado antes de cerrar.
+
+## 2026-10-01 - Verificar parámetros vivos de geocodificación
+
+- Un endpoint puede cambiar su contrato sin cambios en nuestro código: contrastar los parámetros reales contra una petición actual cuando producción no muestra sugerencias.
+- No fijar un idioma no soportado por Photon; su error 400 provoca que la UI no reciba resultados aunque la calle exista en OpenStreetMap.
+- Antes de afirmar que una ruta pertenece a un servicio, confirmar que existe una relación persistida y protegida; una vista previa en estado React no la crea.

@@ -42,6 +42,7 @@ const appRouterSource = readFile("src/app/router/AppRouter.tsx");
 const navigationSource = readFile("src/shared/config/navigation.ts");
 const routeModulesSource = readFile("src/app/router/routeModules.ts");
 const operationsPageSource = readFile("src/modules/operaciones/pages/OperationsControlTowerPage.tsx");
+const routePlannerSource = readFile("src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx");
 
 const knownModuleCodes = extractStringUnion(accessSource, "AppModuleCode");
 const knownRoles = extractStringUnion(accessSource, "AppRole");
@@ -79,6 +80,11 @@ addCheck(
   operationsPageSource.includes('view === "planificador-rutas"') &&
     operationsPageSource.includes('navigate("/operaciones/planificador-rutas")'),
   "el planificador de rutas tiene pantalla y acceso desde Operaciones bajo la misma ruta protegida"
+);
+addCheck(
+  routePlannerSource.includes('url.searchParams.set("q", query)') &&
+    !routePlannerSource.includes('url.searchParams.set("lang", "es")'),
+  "la geocodificación Photon usa parámetros compatibles con su servicio actual"
 );
 addCheck(
   navigationSource.includes('label: "Operaciones",') &&
