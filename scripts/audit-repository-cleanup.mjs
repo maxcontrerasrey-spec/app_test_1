@@ -5,6 +5,14 @@ import { execFileSync } from "node:child_process";
 const repoRoot = process.cwd();
 const checks = [];
 
+function gitDirectory() {
+  const gitEntry = path.join(repoRoot, ".git");
+  if (!fs.existsSync(gitEntry)) return null;
+  if (fs.statSync(gitEntry).isDirectory()) return gitEntry;
+  const pointer = fs.readFileSync(gitEntry, "utf8").match(/^gitdir:\s*(.+)\s*$/m);
+  return pointer ? path.resolve(repoRoot, pointer[1]) : null;
+}
+
 function addCheck(ok, message) {
   checks.push({ ok, message });
 }
@@ -116,10 +124,13 @@ addCheck(trackedZipCount === 0, "0 zip versionados activos");
 addCheck(trackedDsStoreCount === 0, "0 .DS_Store versionados activos");
 addCheck(trackedTsBuildInfoCount === 0, "0 tsbuildinfo versionados activos");
 
+const metadataDirectory = gitDirectory();
 const localConflictCopies = [
   // node_modules is disposable dependency-manager output. Numeric paths under
   // it are not repository debt and are intentionally outside this audit.
-  ...findNumericConflictCopies(".git/info")
+  ...(metadataDirectory
+    ? findNumericConflictCopies(path.relative(repoRoot, path.join(metadataDirectory, "info")))
+    : [])
 ];
 for (const entry of fs.readdirSync(repoRoot)) {
   if (/^node_modules \d+$/.test(entry)) {
@@ -129,8 +140,8 @@ for (const entry of fs.readdirSync(repoRoot)) {
 for (const file of localConflictCopies) {
   addCheck(false, `${file} parece una copia conflictiva local`);
 }
-for (const entry of fs.existsSync(path.join(repoRoot, ".git"))
-  ? fs.readdirSync(path.join(repoRoot, ".git"))
+for (const entry of metadataDirectory
+  ? fs.readdirSync(metadataDirectory)
   : []) {
   if (/^index \d+$/.test(entry)) {
     addCheck(false, `.git/${entry} parece una copia conflictiva local`);

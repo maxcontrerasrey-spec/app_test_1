@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import type { LatLngBoundsExpression } from "leaflet";
 import type { AtlasDispatch, AtlasVehiclePosition } from "../services/atlasOperationsApi";
@@ -8,14 +8,18 @@ const CHILE_CENTER: [number, number] = [-33.45, -70.66];
 
 function FitPositions({ positions }: { positions: AtlasVehiclePosition[] }) {
   const map = useMap();
+  const positionsRef = useRef(positions);
+  positionsRef.current = positions;
+  const vehicleKey = positions.map((position) => position.vehicle_id).sort().join("\u001f");
   useEffect(() => {
-    if (positions.length === 1) {
-      map.setView([positions[0].latitude, positions[0].longitude], 12, { animate: false });
-    } else if (positions.length > 1) {
-      const bounds: LatLngBoundsExpression = positions.map(({ latitude, longitude }) => [latitude, longitude]);
+    const currentPositions = positionsRef.current;
+    if (currentPositions.length === 1) {
+      map.setView([currentPositions[0].latitude, currentPositions[0].longitude], 12, { animate: false });
+    } else if (currentPositions.length > 1) {
+      const bounds: LatLngBoundsExpression = currentPositions.map(({ latitude, longitude }) => [latitude, longitude]);
       map.fitBounds(bounds, { padding: [42, 42], maxZoom: 12, animate: false });
     }
-  }, [map, positions]);
+  }, [map, vehicleKey]);
   return null;
 }
 

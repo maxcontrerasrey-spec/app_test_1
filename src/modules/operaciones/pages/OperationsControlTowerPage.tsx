@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { PageShell } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
+import { supabase } from "../../../shared/lib/supabase";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
 import { OperationsLiveMap } from "../components/OperationsLiveMap";
 import {
@@ -28,7 +29,8 @@ import {
   searchAtlasDrivers,
   setAtlasContractEditor,
   transitionAtlasDispatch,
-  type AtlasDispatch
+  type AtlasDispatch,
+  type AtlasVehiclePosition
 } from "../services/atlasOperationsApi";
 import "../styles/atlas-operations.css";
 
@@ -89,8 +91,39 @@ export function OperationsControlTowerPage() {
     queryKey: queryKeys.operations.vehiclePositions(activeVehicleIds),
     queryFn: () => getAtlasLatestVehiclePositions(activeVehicleIds),
     enabled: view === "control-tower" && presentation === "map" && activeVehicleIds.length > 0,
-    staleTime: 10_000
+    staleTime: 10_000,
+    refetchInterval: 60_000
   });
+  useEffect(() => {
+    const realtimeClient = supabase;
+    if (!realtimeClient || !isAdmin || view !== "control-tower" || presentation !== "map" || activeVehicleIds.length === 0) return;
+    const positionsKey = queryKeys.operations.vehiclePositions(activeVehicleIds);
+    const visibleVehicles = new Set(activeVehicleIds);
+    const channel = realtimeClient
+      .channel("atlas-ops:positions", { config: { private: true } })
+      .on("broadcast", { event: "positions.updated" }, ({ payload }) => {
+        const updates = payload && typeof payload === "object" ? (payload as { positions?: unknown }).positions : null;
+        if (!Array.isArray(updates)) return;
+        const incoming = updates.filter((item): item is AtlasVehiclePosition => {
+          if (!item || typeof item !== "object") return false;
+          const position = item as Partial<AtlasVehiclePosition>;
+          return typeof position.vehicle_id === "string" && visibleVehicles.has(position.vehicle_id)
+            && typeof position.latitude === "number" && typeof position.longitude === "number"
+            && typeof position.observed_at === "string";
+        });
+        if (!incoming.length) return;
+        queryClient.setQueryData<AtlasVehiclePosition[]>(positionsKey, (current = []) => {
+          const latest = new Map(current.map((position) => [position.vehicle_id, position]));
+          incoming.forEach((position) => {
+            const previous = latest.get(position.vehicle_id);
+            if (!previous || position.observed_at >= previous.observed_at) latest.set(position.vehicle_id, position);
+          });
+          return [...latest.values()];
+        });
+      })
+      .subscribe();
+    return () => { void realtimeClient.removeChannel(channel); };
+  }, [activeVehicleIds, isAdmin, presentation, queryClient, view]);
   const alertDispatchIds = (dispatchQuery.data ?? []).map((row) => row.id);
   const alertQuery = useQuery({ queryKey: queryKeys.operations.alerts(day, alertDispatchIds), queryFn: () => getAtlasAlerts(alertDispatchIds), enabled: (view === "excepciones" || view === "control-tower") && dispatchQuery.isSuccess, staleTime: 10_000 });
   const driverQuery = useQuery({ queryKey: queryKeys.operations.driverSearch({ search: driverSearch, day }), queryFn: () => searchAtlasDrivers(driverSearch, day), enabled: canOperate && driverSearch.trim().length >= 2, staleTime: 15_000 });
@@ -104,8 +137,7 @@ export function OperationsControlTowerPage() {
     subscriptions: [
       { table: "atlas_ops_dispatches" },
       { table: "atlas_ops_dispatch_events" },
-      { table: "atlas_ops_alerts" },
-      { table: "atlas_ops_telemetry_events" }
+      { table: "atlas_ops_alerts" }
     ],
     queryKeys: [queryKeys.operations.all()],
     enabled: Boolean(auth.user?.id)

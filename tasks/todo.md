@@ -1,5 +1,17 @@
 # Tareas y Roadmap de Desarrollo
 
+## Completar Atlas Operations para operación productiva y telemetría de bajo consumo — 2026-10-01
+
+- [x] Reconciliar la bitácora de migraciones de producción con el repositorio, identificando la migración remota de R2 y evitando repetir cambios ajenos.
+- [x] Implementar la persistencia de posición vigente por vehículo, historial geográfico en R2 y eventos de geocerca durables, evitando acumular puntos GPS en los 8 GB de Supabase.
+- [x] Cambiar Control Tower a una consulta agregada de posiciones y a Broadcast privado acotado, conservando lectura y acciones solo para superadministradores.
+- [x] Implementar la ingesta server-side provider-neutral, con validación, compresión, deduplicación de lote y reintentos; no activar un formato o secreto TrackTec inventado.
+- [x] Ejecutar pruebas de contrato para autenticación, validación, archivado/reintento y orden R2→Supabase→limpieza; ejecutar Guardian, build, auditorías de migraciones/seguridad y diff check. La detección de geocercas se verificó por esquema y privilegios productivos; falta una prueba con GPS TrackTec real.
+- [ ] Desplegar migraciones y frontend a producción solo tras reconciliar estado remoto; comprobar esquema, RLS, R2, última posición y vista productiva.
+- [ ] Registrar resultado, límites externos de TrackTec y evidencia productiva en este plan.
+
+Resultado: migración productiva aplicada como `20261001022413_atlas_operations_telemetry_archive`. `db push --dry-run` confirma que producción está sincronizada. La tabla de posiciones ocupa 24 kB vacía; no hay puntos GPS retenidos. RLS permite lectura solo a superadministradores, y las RPC de ingesta y limpieza solo a `service_role`. La migración previa R2 de Psicolaboral se alineó con su versión remota `20260930231956` sin repetir SQL.
+
 ## Publicar almacenamiento Psicolaboral en Cloudflare R2 — 2026-09-30
 
 - [x] Registrar el plan de corte: R2 privado para PDFs nuevos, lectura autenticada ERP, lectura histórica Supabase y exclusión expresa de Psicolaboral hacia BUK.

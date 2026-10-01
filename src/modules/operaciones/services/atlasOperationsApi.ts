@@ -33,6 +33,8 @@ export type AtlasVehiclePosition = {
   latitude: number;
   longitude: number;
   speed_kph: number | null;
+  heading_degrees: number | null;
+  ignition: boolean | null;
   observed_at: string;
 };
 
@@ -74,30 +76,17 @@ export async function getAtlasDispatches(from: string, to: string) {
   return asArray<AtlasDispatch>(result.data);
 }
 
-/** Reads the latest indexed telemetry point for each vehicle assigned to the visible dispatches. */
+/** Reads the compact current-position snapshot for all vehicles assigned to visible dispatches. */
 export async function getAtlasLatestVehiclePositions(vehicleIds: string[]): Promise<AtlasVehiclePosition[]> {
   const ids = [...new Set(vehicleIds.filter(Boolean))];
   if (!ids.length) return [];
 
-  const db = client();
-  const positions: AtlasVehiclePosition[] = [];
-  const batchSize = 8;
-  for (let index = 0; index < ids.length; index += batchSize) {
-    const batch = ids.slice(index, index + batchSize);
-    const results = await Promise.all(batch.map(async (vehicleId) => {
-      const result = await db.from("atlas_ops_telemetry_events")
-        .select("vehicle_id, latitude, longitude, speed_kph, observed_at")
-        .eq("vehicle_id", vehicleId)
-        .eq("processing_status", "processed")
-        .order("observed_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar posiciones GPS.", "message"));
-      return result.data as AtlasVehiclePosition | null;
-    }));
-    positions.push(...results.filter((row): row is AtlasVehiclePosition => row !== null));
-  }
-  return positions;
+  const result = await client().from("atlas_ops_vehicle_positions")
+    .select("vehicle_id, latitude, longitude, speed_kph, heading_degrees, ignition, observed_at")
+    .in("vehicle_id", ids)
+    .order("observed_at", { ascending: false });
+  if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar posiciones GPS.", "message"));
+  return asArray<AtlasVehiclePosition>(result.data);
 }
 
 export async function getAtlasAlerts(dispatchIds: string[]) {
