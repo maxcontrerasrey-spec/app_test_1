@@ -7,10 +7,10 @@
 - [x] Cambiar Control Tower a una consulta agregada de posiciones y a Broadcast privado acotado, conservando lectura y acciones solo para superadministradores.
 - [x] Implementar la ingesta server-side provider-neutral, con validación, compresión, deduplicación de lote y reintentos; no activar un formato o secreto TrackTec inventado.
 - [x] Ejecutar pruebas de contrato para autenticación, validación, archivado/reintento y orden R2→Supabase→limpieza; ejecutar Guardian, build, auditorías de migraciones/seguridad y diff check. La detección de geocercas se verificó por esquema y privilegios productivos; falta una prueba con GPS TrackTec real.
-- [ ] Desplegar migraciones y frontend a producción solo tras reconciliar estado remoto; comprobar esquema, RLS, R2, última posición y vista productiva.
-- [ ] Registrar resultado, límites externos de TrackTec y evidencia productiva en este plan.
+- [x] Desplegar migración y frontend; comprobar esquema, RLS, endpoint server-side, bundle productivo, rutas y acciones de CI.
+- [x] Registrar límites externos de TrackTec y evidencia productiva en este plan.
 
-Resultado: migración productiva aplicada como `20261001022413_atlas_operations_telemetry_archive`. `db push --dry-run` confirma que producción está sincronizada. La tabla de posiciones ocupa 24 kB vacía; no hay puntos GPS retenidos. RLS permite lectura solo a superadministradores, y las RPC de ingesta y limpieza solo a `service_role`. La migración previa R2 de Psicolaboral se alineó con su versión remota `20260930231956` sin repetir SQL.
+Resultado final: commit `c73e0875` publicado en `main`; Cloudflare Pages sirve el bundle nuevo y la ruta `/api/atlas/telemetry/ingest`. La migración productiva es `20261001022413_atlas_operations_telemetry_archive`; `db push --dry-run` confirmó sincronía. Tabla de posiciones: 24 kB vacía, cero puntos GPS retenidos; RLS solo superadmin; RPC solo `service_role`. GitHub Actions/Guardian: 0 errores y 0 advertencias, incluidas pruebas, TypeScript, build, smoke público/protegido y auditorías. El endpoint devuelve `503 telemetry_ingest_not_configured` hasta cargar token Atlas y secreto server-side; la integración real además espera contrato, autenticación e IDs estables de TrackTec. No se contrató ni cambió el mapa, el demo Ferrostar permanece fuera del release y la IA sigue excluida.
 
 ## Publicar almacenamiento Psicolaboral en Cloudflare R2 — 2026-09-30
 
