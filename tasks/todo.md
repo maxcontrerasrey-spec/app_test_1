@@ -6,9 +6,9 @@
 - [x] Corregir el recorte del desplegable causado por el contenedor con `overflow: auto`; ubicar resultados en una capa flotante fuera del scroll.
 - [x] Mantener el anclaje al campo al desplazar/redimensionar y mostrar estados de carga, coincidencias, vacío y error.
 - [x] Ejecutar build, Guardian y `git diff --check`.
-- [ ] Publicar y comprobar el chunk actualizado en Pages.
+- [x] Publicar y comprobar el chunk actualizado en Pages y en la UI autenticada.
 
-Estado: publicación pendiente. Photon devuelve cinco coincidencias para `granaderos` en Calama; su UI quedaba recortada por el contenedor de scroll. El popover ahora se monta en portal y sigue el campo al hacer scroll o redimensionar. Guardian: 0 errores y 0 advertencias.
+Resultado: Photon devuelve cinco coincidencias para `granaderos` en Calama. La primera corrección retiró `lang=es` (HTTP 400); la captura posterior reveló que el menú seguía recortado por un contenedor con scroll. El popover ahora se monta en portal y sigue el campo al hacer scroll o redimensionar. En Safari, con la sesión productiva autenticada, se escribió `granaderos`, apareció `Granaderos Gran Avenida Sur Región de Antofagasta` y al elegirlo quedó asignado a la parada. El bundle servido contiene el portal. Commit `3d97fd7f` desplegado en Pages, deployment exitoso `6135644c-f382-4f57-ab6a-5c1b82f4ce03`. Guardian: 0 errores y 0 advertencias; build y `git diff --check` pasan.
 
 ## Corregir sugerencias Photon y definir vínculo ruta-servicio — 2026-10-01
 
