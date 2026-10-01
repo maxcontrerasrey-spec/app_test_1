@@ -153,11 +153,11 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6251648,
+  "distTotalBytes": 6252247,
   "jsFileCount": 62,
-  "jsTotalBytes": 4267045,
+  "jsTotalBytes": 4267860,
   "cssFileCount": 12,
-  "cssTotalBytes": 394866,
+  "cssTotalBytes": 394650,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -293,3 +293,5 @@ Revision 2026-09-30 Atlas Operations Control Tower: CSS medido en 300,311 bytes 
 Revision 2026-09-30 reconciliacion de medicion Atlas: el build reproducible del `main` con Leaflet mide 300,675 bytes CSS en 11 archivos; se corrige el valor machine-readable que declaraba 300,311 bytes en 12 archivos. El cambio del alto del comentario Psicolaboral conserva la misma longitud CSS (220px a 320px) y no explica el delta medido.
 
 Revision 2026-10-01 vista previa del planificador Atlas: el build sube a 6,251,648 bytes en total, 4,267,045 bytes JS y 394,866 bytes CSS. El acceso se carga desde la ruta protegida de Operaciones y la pantalla se importa de forma diferida; el chunk JS de 1,202,593 bytes, el worker de MapLibre de 508,042 bytes y WASM de Ferrostar de 883,416 bytes no forman parte de la carga inicial. Este aumento medido habilita la vista previa de planificación con búsqueda Photon, ruteo Valhalla y navegación simulada; no habilita IA ni persistencia de rutas. Se actualiza el baseline exacto según la política vigente.
+
+Revision 2026-10-01 desplegable Photon fuera del contenedor de scroll: el total sube 599 bytes, JS sube 815 bytes y CSS baja 216 bytes. La lista de sugerencias se monta en un portal fijo anclado al campo activo y reposiciona con scroll/resize, evitando que el `overflow: auto` de las paradas oculte el resultado. Se mantienen mapa y Ferrostar en el chunk lazy de la vista de planificación.

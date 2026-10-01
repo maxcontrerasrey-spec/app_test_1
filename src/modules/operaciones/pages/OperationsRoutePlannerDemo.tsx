@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
 import * as maplibregl from "maplibre-gl";
 import { setWorkerUrl, type Map as MapLibreMap, type Marker } from "maplibre-gl";
@@ -29,6 +30,7 @@ const MAP_STYLE = {
 type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination" };
 type PhotonFeature = { properties: Record<string, unknown>; geometry: { coordinates: [number, number] } };
 type SearchState = { id: string; query: string; results: Array<{ label: string; lat: number; lng: number }>; status: "idle" | "loading" | "ready" | "error"; error?: string };
+type SuggestionAnchor = { top: number; left: number; width: number; maxHeight: number };
 
 const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const formatDistance = (meters: number) => `${(meters / 1000).toFixed(1)} km`;
@@ -106,6 +108,7 @@ export function OperationsRoutePlannerDemo() {
   const markersRef = useRef<Marker[]>([]);
   const [stops, setStops] = useState<Stop[]>([]);
   const [search, setSearch] = useState<SearchState | null>(null);
+  const [suggestionAnchor, setSuggestionAnchor] = useState<SuggestionAnchor | null>(null);
   const [route, setRoute] = useState<Route | null>(null);
   const [routeState, setRouteState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [activeView, setActiveView] = useState<"planning" | "driver">("planning");
@@ -200,6 +203,41 @@ export function OperationsRoutePlannerDemo() {
       controller.abort();
     };
   }, [search?.id, search?.query]);
+
+  const showSearchPopover = Boolean(search && search.query.trim().length >= 3 && search.status !== "idle");
+
+  useEffect(() => {
+    if (!search || !showSearchPopover) {
+      setSuggestionAnchor(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const input = document.getElementById(`route-${search.id}`);
+      if (!input) return;
+      const rect = input.getBoundingClientRect();
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8));
+      const width = Math.min(rect.width, window.innerWidth - 16);
+      const spaceBelow = window.innerHeight - rect.bottom - 12;
+      const spaceAbove = rect.top - 12;
+      const openAbove = spaceBelow < 150 && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(96, Math.min(220, openAbove ? spaceAbove : spaceBelow));
+      setSuggestionAnchor({
+        top: openAbove ? Math.max(8, rect.top - maxHeight - 4) : rect.bottom + 4,
+        left,
+        width,
+        maxHeight
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [search?.id, search?.query, search?.status, showSearchPopover]);
 
   async function searchAddressNow(stopId: string) {
     const query = search?.id === stopId ? search.query.trim() : "";
@@ -353,10 +391,6 @@ export function OperationsRoutePlannerDemo() {
               <div className="ops-route-demo__stop-input-wrap">
                 <label htmlFor={`route-${stop.id}`}>{stop.kind === "origin" ? "Origen" : stop.kind === "destination" ? "Destino" : `Parada ${index}`}</label>
                 <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder="Busca una dirección en Calama" onChange={(event) => setSearch({ id: stop.id, query: event.target.value, results: [], status: "idle" })} onFocus={(event) => setSearch({ id: stop.id, query: event.target.value, results: [], status: "idle" })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void searchAddressNow(stop.id); } }} />{stop.label && stop.kind === "stop" && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
-                {search?.id === stop.id && search.results.length > 0 && <div className="ops-route-demo__suggestions">{search.results.map((result) => <button type="button" key={`${result.lat}-${result.lng}`} onClick={() => { chooseResult(stop.id, result); setAdding(false); }}>{result.label}</button>)}</div>}
-                {search?.id === stop.id && search.query.trim().length >= 3 && search.status === "loading" && <div className="ops-route-demo__suggestion-hint" role="status">Buscando direcciones…</div>}
-                {search?.id === stop.id && search.query.trim().length >= 3 && search.status === "ready" && search.results.length === 0 && <div className="ops-route-demo__suggestion-hint" role="status">No encontramos coincidencias. Prueba con calle y ciudad; puedes presionar Enter para reintentar.</div>}
-                {search?.id === stop.id && search.status === "error" && <div className="ops-route-demo__suggestion-hint" role="alert">No se pudo consultar Photon. {search.error} Presiona Enter para reintentar.</div>}
               </div>
               <div className="ops-route-demo__stop-actions"><button type="button" title="Subir parada" aria-label="Subir parada" disabled={stop.kind !== "stop" || index === 1} onClick={() => moveStop(stop.id, -1)}>↑</button><button type="button" title="Bajar parada" aria-label="Bajar parada" disabled={stop.kind !== "stop" || index === stops.length - 1} onClick={() => moveStop(stop.id, 1)}>↓</button></div>
             </div>)}
@@ -378,5 +412,20 @@ export function OperationsRoutePlannerDemo() {
         <div className="ops-route-demo__map-foot"><span><i /> Ruta y maniobras de Valhalla</span><span>Mapa © OpenStreetMap contributors</span></div>
       </section>
     </div>
+    {showSearchPopover && search && suggestionAnchor && createPortal(
+      <div
+        className="ops-route-demo__suggestions"
+        style={{ top: suggestionAnchor.top, left: suggestionAnchor.left, width: suggestionAnchor.width, maxHeight: suggestionAnchor.maxHeight }}
+        role="region"
+        aria-label="Sugerencias de direcciones"
+        aria-live="polite"
+      >
+        {search.status === "loading" && <div className="ops-route-demo__suggestion-hint" role="status">Buscando direcciones…</div>}
+        {search.status === "ready" && search.results.map((result) => <button type="button" role="option" key={`${result.lat}-${result.lng}`} onClick={() => { chooseResult(search.id, result); setAdding(false); }}>{result.label}</button>)}
+        {search.status === "ready" && search.results.length === 0 && <div className="ops-route-demo__suggestion-hint" role="status">No encontramos coincidencias. Prueba con calle y ciudad; presiona Enter para reintentar.</div>}
+        {search.status === "error" && <div className="ops-route-demo__suggestion-hint" role="alert">No se pudo consultar Photon. {search.error} Presiona Enter para reintentar.</div>}
+      </div>,
+      document.body
+    )}
   </main>;
 }

@@ -4040,3 +4040,4 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Un endpoint puede cambiar su contrato sin cambios en nuestro código: contrastar los parámetros reales contra una petición actual cuando producción no muestra sugerencias.
 - No fijar un idioma no soportado por Photon; su error 400 provoca que la UI no reciba resultados aunque la calle exista en OpenStreetMap.
 - Antes de afirmar que una ruta pertenece a un servicio, confirmar que existe una relación persistida y protegida; una vista previa en estado React no la crea.
+- Un resultado de API 200 tampoco prueba que el usuario vea la sugerencia: verificar que el popover no quede recortado por ancestros con `overflow: auto/hidden`. Para listas con scroll, anclar el desplegable en un portal/capa flotante y recalcular posición al desplazar o redimensionar.

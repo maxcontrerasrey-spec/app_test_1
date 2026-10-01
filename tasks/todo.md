@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Hacer visible el desplegable de direcciones — 2026-10-01
+
+- [x] Reproducir la consulta de la captura en Photon y en la estructura visual productiva.
+- [x] Corregir el recorte del desplegable causado por el contenedor con `overflow: auto`; ubicar resultados en una capa flotante fuera del scroll.
+- [x] Mantener el anclaje al campo al desplazar/redimensionar y mostrar estados de carga, coincidencias, vacío y error.
+- [x] Ejecutar build, Guardian y `git diff --check`.
+- [ ] Publicar y comprobar el chunk actualizado en Pages.
+
+Estado: publicación pendiente. Photon devuelve cinco coincidencias para `granaderos` en Calama; su UI quedaba recortada por el contenedor de scroll. El popover ahora se monta en portal y sigue el campo al hacer scroll o redimensionar. Guardian: 0 errores y 0 advertencias.
+
 ## Corregir sugerencias Photon y definir vínculo ruta-servicio — 2026-10-01
 
 - [x] Reproducir la respuesta productiva de Photon y corregir el parámetro incompatible que bloquea la búsqueda.

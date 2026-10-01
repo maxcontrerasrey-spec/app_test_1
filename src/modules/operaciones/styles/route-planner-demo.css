@@ -47,10 +47,10 @@
 .ops-route-demo__input-action input { width: 100%; min-width: 0; height: 100%; padding: 0 10px; border: 0; outline: none; background: transparent; color: #30303e; font: inherit; font-size: 11px; }
 .ops-route-demo__input-action input::placeholder { color: #a1a1ae; }
 .ops-route-demo__input-action button { width: 32px; height: 100%; border: 0; background: transparent; color: #777887; font-size: 19px; cursor: pointer; }
-.ops-route-demo__suggestions { position: absolute; top: calc(100% + 3px); right: 0; left: 0; z-index: 5; display: grid; max-height: 190px; overflow: auto; padding: 4px; border: 1px solid var(--ops-demo-line); border-radius: 7px; background: #fff; box-shadow: 0 7px 22px rgb(25 25 45 / 13%); }
+.ops-route-demo__suggestions { position: fixed; z-index: 10000; display: grid; overflow: auto; padding: 4px; border: 1px solid var(--ops-demo-line); border-radius: 7px; background: #fff; box-shadow: 0 7px 22px rgb(25 25 45 / 13%); }
 .ops-route-demo__suggestions button { padding: 9px; border: 0; border-radius: 4px; background: transparent; color: #353545; text-align: left; font: inherit; font-size: 11px; cursor: pointer; }
 .ops-route-demo__suggestions button:hover { background: #f4f2ff; }
-.ops-route-demo__suggestion-hint { position: absolute; top: calc(100% + 3px); z-index: 4; width: 100%; padding: 9px; border: 1px solid var(--ops-demo-line); border-radius: 6px; background: #fff; color: #777787; font-size: 10px; box-shadow: 0 7px 22px rgb(25 25 45 / 10%); }
+.ops-route-demo__suggestion-hint { padding: 9px; color: #777787; font-size: 10px; }
 .ops-route-demo__stop-actions { display: grid; gap: 3px; padding-top: 13px; }
 .ops-route-demo__stop-actions button { width: 28px; height: 20px; border: 1px solid #ebebf0; border-radius: 4px; background: #fff; color: #666677; font-size: 11px; cursor: pointer; }
 .ops-route-demo__stop-actions button:disabled { color: #c3c3cc; cursor: default; }
