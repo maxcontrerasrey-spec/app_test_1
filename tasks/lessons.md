@@ -4041,3 +4041,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - No fijar un idioma no soportado por Photon; su error 400 provoca que la UI no reciba resultados aunque la calle exista en OpenStreetMap.
 - Antes de afirmar que una ruta pertenece a un servicio, confirmar que existe una relación persistida y protegida; una vista previa en estado React no la crea.
 - Un resultado de API 200 tampoco prueba que el usuario vea la sugerencia: verificar que el popover no quede recortado por ancestros con `overflow: auto/hidden`. Para listas con scroll, anclar el desplegable en un portal/capa flotante y recalcular posición al desplazar o redimensionar.
+
+## 2026-10-01 - Medir proveedor antes de atribuir lentitud al frontend
+
+- Cronometrar TTFB del geocodificador con consultas reales antes de ajustar el debounce. Reducirlo solo recorta la espera previa a la petición y puede elevar la frecuencia de llamadas; no acelera un servidor que tarda varios segundos.
+- Usar caché acotada para repetir búsquedas y mostrar el estado de carga de inmediato. Para el primer resultado lento, ofrecer selección de coordenadas sobre el mapa sin bloquear el recorrido y comparar un proveedor de autocomplete distinto antes de migrar.

@@ -2,13 +2,14 @@
 
 ## Agilizar búsqueda de direcciones y selección manual en mapa — 2026-10-01
 
-- [ ] Medir y revisar búsqueda actual: debounce, llamadas redundantes, caché y estado de espera.
-- [ ] Reducir espera percibida con debounce más corto, feedback inmediato y caché de consultas repetidas sin cambiar proveedor ni filtrar resultados de Calama.
-- [ ] Permitir elegir el centro visible del mapa para una parada mediante paneo y confirmación, guardando coordenadas reales en el estado de ruta.
-- [ ] Verificar búsqueda, selección manual, interacción del mapa, responsive y ausencia de regresiones; ejecutar build frontend, Guardian y `git diff --check`.
-- [ ] Publicar en producción y comprobar ambos flujos en la experiencia servida.
+- [x] Medir y revisar búsqueda actual: debounce, llamadas redundantes, caché y estado de espera.
+- [x] Reducir espera percibida con debounce más corto, feedback inmediato y caché de consultas repetidas sin cambiar proveedor ni filtrar resultados de Calama.
+- [x] Permitir elegir el centro visible del mapa para una parada mediante paneo y confirmación, guardando coordenadas reales en el estado de ruta.
+- [x] Ejecutar build frontend, Guardian, auditoría de performance y `git diff --check`.
+- [x] Publicar en producción y confirmar que HTML, chunks JS y CSS nuevos están servidos.
+- [ ] Completar la verificación interactiva de selección manual en la sesión autenticada; Safari tomó el foco durante la prueba y no continué operando la ventana.
 
-Resultado: pendiente.
+Resultado: mediciones reales a Photon devolvieron HTTP 200, TTFB 4.34–4.49 s. El código baja el debounce 320→180 ms, muestra carga desde el tercer carácter y cachea hasta 80 búsquedas durante cinco minutos; la consulta nueva aún depende de la latencia de Photon. Cada campo incorpora “Mapa”: el modo de selección deja fija una chincheta al centro mientras se panea el mapa y “Usar este punto” añade sus coordenadas al recorrido como punto manual. Publicado en `main` como commit `efa04d67`; producción sirve `index-BqntQsMR.js`, el chunk nuevo de Operaciones y `OperationsRoutePlannerDemo-CBpn-xx5.js` (HTTP 200), con los estilos del selector manual. `npm run build:frontend-check`, Guardian (0 errores/0 warnings), auditoría de performance y `git diff --check` pasan. La ventana de Safari cambió de foco durante la prueba, así que no afirmo haber completado la selección manual de extremo a extremo en la UI productiva. Para acelerar mucho más la primera búsqueda habría que sustituir el Photon público; no se cambia a un plan pagado sin autorización, respetando la decisión previa de posponer mejoras pagadas.
 
 ## Hacer visible el desplegable de direcciones — 2026-10-01
 
