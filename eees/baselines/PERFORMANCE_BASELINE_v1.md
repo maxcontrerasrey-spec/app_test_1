@@ -154,12 +154,14 @@ Revision 2026-10-02 Atlas TomTom: el build local agrega 9,237 bytes locales al `
 
 
 Revision 2026-10-02 orden y diagnóstico de ruta Atlas: Guardian CI midio 378 bytes adicionales en `dist` y JS (0.01%) para agregar el reordenamiento completo de puntos y traducir causas estructuradas del error TomTom. Se conservan los presupuestos de tolerancia cero y el chunk del planificador sigue siendo lazy.
+
+Revision 2026-10-02 geometría y sentido de ruta Atlas: Guardian CI midio 940 bytes adicionales en `dist` y JS (0.02%) para reconciliar fuente/capas MapLibre y dibujar flechas direccionales sobre la ruta. No incorpora dependencias ni adelanta el chunk lazy del planificador. Se registra el tamaño exacto; la tolerancia permanece en cero.
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6268449,
+  "distTotalBytes": 6269389,
   "jsFileCount": 62,
-  "jsTotalBytes": 4281497,
+  "jsTotalBytes": 4282437,
   "cssFileCount": 12,
   "cssTotalBytes": 397215,
   "budgetPolicy": {

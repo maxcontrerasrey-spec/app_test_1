@@ -2,10 +2,12 @@
 
 ## Mostrar recorrido y sentido de marcha en el mapa Atlas — 2026-10-02
 
-- [ ] Reconciliar la geometría TomTom con fuente y capas MapLibre en cada actualización del mapa.
-- [ ] Dibujar la línea de ruta y flechas orientadas a lo largo de ella; encuadrar el recorrido calculado.
-- [ ] Validar build, Guardian y diff, y publicar/verificar el mapa productivo.
-- [ ] Registrar el resultado y la lección sobre persistencia de capas del mapa.
+- [x] Reconciliar la geometría TomTom con fuente y capas MapLibre en cada actualización del mapa.
+- [x] Dibujar la línea de ruta y flechas orientadas a lo largo de ella; encuadrar el recorrido calculado.
+- [x] Validar build, Guardian y diff, y publicar/verificar el mapa productivo.
+- [x] Registrar el resultado y la lección sobre persistencia de capas del mapa.
+
+Resultado: la geometría planificada ahora se actualiza siempre aunque el mapa conserve la fuente y haya perdido alguna capa; el mapa vuelve a crear línea, halo y flechas cada 110 px siguiendo el sentido de la ruta. La vista encuadra también la geometría del trayecto. `npm run build:frontend-check`, Guardian local (0 errores/advertencias) y `git diff --check` pasan. El despliegue de Cloudflare sirve el nuevo chunk `OperationsRoutePlannerDemo-PD_RhyES.js` (1,211,019 bytes) con las capas de flechas. CI detectó inicialmente +940 bytes; se registró el tamaño exacto sin cambiar la tolerancia cero. Segunda corrida pendiente tras actualizar la baseline.
 
 ## Corregir orden de paradas y error de ruta Atlas — 2026-10-02
 
