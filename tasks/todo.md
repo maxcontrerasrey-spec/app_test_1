@@ -6,8 +6,10 @@
 - [x] Añadir una selección múltiple de lunes a domingo junto a Jornada y exigir al menos un día.
 - [x] Persistir días ISO (1=lunes…7=domingo) mediante migración forward-only y RPC existente.
 - [x] Validar migración, permisos, build, Guardian y diff; aplicar el esquema productivo.
-- [ ] Publicar el frontend y comprobar el bundle productivo.
-- [ ] Registrar resultado final y lección reutilizable.
+- [x] Publicar el frontend y comprobar el bundle productivo.
+- [x] Registrar resultado final y lección reutilizable.
+
+Resultado final: el catálogo productivo permite elegir uno o varios días de lunes a domingo junto a Jornada. La UI exige al menos uno; la RPC conserva la autorización superadmin y valida rango/unicidad, y la columna `operating_days` aplica el control en base de datos. La migración `20261002144349` quedó aplicada en Supabase; probé el guardado como superadmin con lunes/miércoles/viernes dentro de una transacción revertida y verifiqué que no quedaron filas de prueba. Cloudflare Pages sirve el chunk `OperationsControlTowerPage-DbFKKW1Q.js`, que contiene el selector. Build frontend y Guardian local pasan; CI `37023463456` terminó exitosamente. Commits `efbdf3a5` (implementación) y `d0a6058e` (baseline exacto de CI, tolerancia cero).
 
 ## TomTom en planificacion productiva Atlas — 2026-10-02
 
