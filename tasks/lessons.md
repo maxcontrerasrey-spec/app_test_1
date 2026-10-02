@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 378. Los días de operación son un atributo del servicio base, no de la jornada
+
+- Mantener `Jornada` como texto operativo y guardar los días de semana por separado; una jornada como “Noche” no determina qué días se ejecuta el servicio.
+- Usar valores ISO de lunes=1 a domingo=7, exigir al menos uno y validar rango/unicidad también en la RPC y la base de datos.
+- Integrar el selector múltiple en el formulario existente y conservar la misma altura de los demás campos.
+
 ## 376. Una respuesta CORS `204` no puede llevar cuerpo JSON en Deno
 
 - Safari dispara `OPTIONS` antes del `POST` cross-origin; responder `204` usando un helper que siempre serializa JSON provoca `TypeError: Response with null body status cannot have body` y un `500 EDGE_FUNCTION_ERROR`.

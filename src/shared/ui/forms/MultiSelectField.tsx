@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type CSSProperties } from "react";
 import type { SelectOption } from "./SelectField";
 
 type MultiSelectFieldProps = {
@@ -13,6 +13,7 @@ type MultiSelectFieldProps = {
   hideLabel?: boolean;
   disabled?: boolean;
   className?: string;
+  triggerStyle?: CSSProperties;
 };
 
 export function MultiSelectField({
@@ -26,7 +27,8 @@ export function MultiSelectField({
   searchable = false,
   hideLabel = false,
   disabled = false,
-  className = ""
+  className = "",
+  triggerStyle
 }: MultiSelectFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -85,6 +87,7 @@ export function MultiSelectField({
 
       <div
         className={`text-field select-trigger multi-select-trigger ${disabled ? "disabled" : ""}`}
+        style={triggerStyle}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         role="button"
         aria-haspopup="listbox"

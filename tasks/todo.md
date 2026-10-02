@@ -1,3 +1,14 @@
+# Tareas y Roadmap de Desarrollo
+
+## Días de operación en servicio base Atlas — 2026-10-02
+
+- [x] Confirmar el formulario de Configuración, el contrato de guardado y la autorización productiva.
+- [x] Añadir una selección múltiple de lunes a domingo junto a Jornada y exigir al menos un día.
+- [x] Persistir días ISO (1=lunes…7=domingo) mediante migración forward-only y RPC existente.
+- [x] Validar migración, permisos, build, Guardian y diff; aplicar el esquema productivo.
+- [ ] Publicar el frontend y comprobar el bundle productivo.
+- [ ] Registrar resultado final y lección reutilizable.
+
 ## TomTom en planificacion productiva Atlas — 2026-10-02
 
 - [x] Revisar la versión productiva, la base de datos, el planificador existente y la clave local sin imprimirla.
