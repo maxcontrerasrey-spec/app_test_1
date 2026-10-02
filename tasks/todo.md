@@ -7,8 +7,10 @@
 - [x] Implementar reintentos acotados con backoff exponencial, jitter, `Retry-After` y sin reintento de errores permanentes/abortos.
 - [x] Cubrir 503 recuperable, Retry-After, backoff y error 401 con pruebas unitarias.
 - [x] Ejecutar pruebas focalizadas, Guardian (0 errores/advertencias) y `git diff --check`.
-- [ ] Publicar de forma aislada sobre `origin/main` y volver a ejecutar la Sync BUK en producción.
-- [ ] Verificar el estado final de la corrida y que la etapa de sincronización de cargos también concluya.
+- [x] Publicar de forma aislada sobre `origin/main` y volver a ejecutar la Sync BUK en producción.
+- [x] Verificar el estado de la corrida y constatar el bloqueo aguas arriba: la API de áreas BUK continúa respondiendo HTTP 503, por lo que la etapa dependiente de cargos no se ejecutó.
+
+Resultado: commit `c2c6f86b` publicado en `main`. El intento productivo `37004411350` agotó los cinco intentos de llamada a `/api/v1/chile/organization/areas`; una comprobación independiente del mismo endpoint también devolvió HTTP 503. Supabase guardó el intento `d2a114bd-d069-41d6-b385-076a173b1e03` como `failed` y dejó cero filas de staging. No se aplicó ningún snapshot parcial ni se desactivaron trabajadores. La corrección permanente de reintentos quedó desplegada, pero la sincronización real del padrón y cargos requiere que BUK restablezca ese endpoint y volver a ejecutar el workflow.
 
 
 ## Agilizar búsqueda de direcciones y selección manual en mapa — 2026-10-01
