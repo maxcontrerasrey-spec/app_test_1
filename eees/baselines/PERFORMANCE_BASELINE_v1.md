@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.43
+version: 1.0.44
 status: Activo
 language: es-CL
 owner: Quality
@@ -152,12 +152,14 @@ Revision 2026-10-02 Atlas TomTom: el build local agrega 9,237 bytes locales al `
 
 ## Control machine-readable
 
+
+Revision 2026-10-02 orden y diagnóstico de ruta Atlas: Guardian CI midio 378 bytes adicionales en `dist` y JS (0.01%) para agregar el reordenamiento completo de puntos y traducir causas estructuradas del error TomTom. Se conservan los presupuestos de tolerancia cero y el chunk del planificador sigue siendo lazy.
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6268071,
+  "distTotalBytes": 6268449,
   "jsFileCount": 62,
-  "jsTotalBytes": 4281119,
+  "jsTotalBytes": 4281497,
   "cssFileCount": 12,
   "cssTotalBytes": 397215,
   "budgetPolicy": {
@@ -166,11 +168,26 @@ Revision 2026-10-02 Atlas TomTom: el build local agrega 9,237 bytes locales al `
     "errorPercent": 0
   },
   "trackedAssets": [
-    { "match": "fondo-", "maxBytes": 65132 },
-    { "match": "echarts-vendor", "maxBytes": 512504 },
-    { "match": "xlsx-vendor", "maxBytes": 500059 },
-    { "match": "supabase-vendor", "maxBytes": 221867 },
-    { "match": "app-framework", "maxBytes": 276311 }
+    {
+      "match": "fondo-",
+      "maxBytes": 65132
+    },
+    {
+      "match": "echarts-vendor",
+      "maxBytes": 512504
+    },
+    {
+      "match": "xlsx-vendor",
+      "maxBytes": 500059
+    },
+    {
+      "match": "supabase-vendor",
+      "maxBytes": 221867
+    },
+    {
+      "match": "app-framework",
+      "maxBytes": 276311
+    }
   ]
 }
 ```

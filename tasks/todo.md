@@ -8,7 +8,7 @@
 - [x] Validar pruebas, Deno, build, Guardian y diff; desplegar proxy y publicar frontend.
 - [ ] Confirmar el resultado visual y el nuevo mensaje con una ruta autenticada en producción.
 
-Resultado parcial: el orden visible es ahora la fuente de verdad; al agregar una dirección queda al final, y las flechas mueven cualquier punto, reasignando origen/paradas/destino por posición. La función `atlas-tomtom-planning` v4 mantiene JWT obligatorio y traduce los códigos de error de ruteo de TomTom a causas operativas sin incluir la clave. Pruebas unitarias: 141/141; `deno check`, build frontend, Guardian (0 errores/advertencias) y `git diff --check` pasan. Falta un recálculo autenticado de la ruta en producción para confirmar el código concreto del punto rechazado y la experiencia final.
+Resultado: el orden visible es ahora la fuente de verdad; al agregar una dirección queda al final, y las flechas mueven cualquier punto, reasignando origen/paradas/destino por posición. La función `atlas-tomtom-planning` v4 mantiene JWT obligatorio y traduce los códigos de error de ruteo de TomTom a causas operativas sin incluir la clave. Pruebas unitarias: 141/141; `deno check`, build frontend, Guardian (0 errores/advertencias) y `git diff --check` pasan. El primer CI detectó +378 bytes sobre la baseline estricta; se registró el incremento medido en `eees/baselines/PERFORMANCE_BASELINE_v1.md` sin cambiar la tolerancia cero. Guardian completo volvió a pasar con 0 errores/advertencias. Falta el recálculo autenticado de ruta en producción para identificar el código concreto del punto rechazado y validar la experiencia final.
 
 ## Días de operación en servicio base Atlas — 2026-10-02
 
