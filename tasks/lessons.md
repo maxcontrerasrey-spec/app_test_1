@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 376. Una respuesta CORS `204` no puede llevar cuerpo JSON en Deno
+
+- Safari dispara `OPTIONS` antes del `POST` cross-origin; responder `204` usando un helper que siempre serializa JSON provoca `TypeError: Response with null body status cannot have body` y un `500 EDGE_FUNCTION_ERROR`.
+- El preflight debe contestarse con body `null` (y sin `content-type` de JSON); verificarlo contra logs productivos y hacer smoke real de `OPTIONS` antes de cerrar una integración del navegador.
+- Nunca atribuir “Load failed” directamente al proveedor externo: comprobar primero consola/network y logs del proxy, porque el request puede no haber llegado a TomTom.
+
 ## 375. La Sync BUK debe tolerar indisponibilidades breves sin confundir un workflow omitido con una sincronización exitosa
 
 - Ante HTTP 408/425/429/5xx y fallos de red transitorios, aplicar reintentos acotados con backoff exponencial y respetar `Retry-After`; no reintentar errores permanentes ni cancelaciones explícitas.

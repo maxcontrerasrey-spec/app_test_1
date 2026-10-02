@@ -13,6 +13,18 @@ Resultado final: integración publicada en `main` (`bd2a90f2`, seguida de baseli
 
 # Tareas y Roadmap de Desarrollo
 
+## Corregir búsqueda TomTom que falla en producción — 2026-10-02
+
+- [x] Reproducir el error con evidencia de navegador, respuesta del proxy y logs de Supabase/TomTom; localizar el punto exacto de fallo.
+- [x] Comparar contrato del frontend con Edge Function/configuración desplegada y documentación Supabase actual.
+- [x] Aplicar la corrección mínima sin ampliar acceso ni exponer la clave TomTom.
+- [ ] Ejecutar pruebas/Guardian pertinentes, desplegar en producción y verificar una búsqueda real de dirección.
+- [x] Registrar causa raíz, resultado y lección para que el estado visual de error muestre la causa operativa.
+
+Diagnóstico: los logs de Supabase registraron el `OPTIONS` de Safari con `500 EDGE_FUNCTION_ERROR`. La función construía `new Response(JSON.stringify({}), { status: 204 })`; Deno v2.1.4 lo rechaza porque un 204 no puede tener cuerpo. Al fallar el preflight, el navegador bloqueaba la búsqueda y mostraba “Load failed”. El proxy responde ahora sin body ni `content-type` para 204/205/304, manteniendo CORS restringido al origen productivo y localhost autorizado. No se alteró el JWT ni la validación superadmin.
+
+Verificación local: `deno check --no-config supabase/functions/atlas-tomtom-planning/index.ts`, `npm run build:frontend-check`, `npm run guardian` (0 errores/advertencias) y `git diff --check` pasan. Pendiente desplegar la Edge Function y probar el preflight/búsqueda en producción.
+
 ## Auditoría de alineación Git, migraciones y Supabase — 2026-10-02
 
 - [x] Comparar `main`, `origin/main` y el estado local sin sobrescribir cambios de trabajo.

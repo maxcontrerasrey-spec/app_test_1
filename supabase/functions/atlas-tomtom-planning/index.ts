@@ -13,16 +13,20 @@ type Point = { lat: number; lng: number };
 
 function response(body: unknown, status: number, origin: string | null) {
   const allowedOrigin = origin && ALLOWED_ORIGINS.has(origin) ? origin : "https://gestion.busesjm.cl";
-  return new Response(JSON.stringify(body), {
+  // Fetch forbids a response body for 204/205/304. In particular, browsers
+  // preflight cross-origin TomTom requests with OPTIONS and require a valid 204.
+  const responseBody = status === 204 || status === 205 || status === 304 ? null : JSON.stringify(body);
+  const headers = new Headers({
+    "cache-control": "no-store",
+    "access-control-allow-origin": allowedOrigin,
+    "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
+    "access-control-allow-methods": "POST, OPTIONS",
+    "vary": "Origin"
+  });
+  if (responseBody !== null) headers.set("content-type", "application/json; charset=utf-8");
+  return new Response(responseBody, {
     status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-      "access-control-allow-origin": allowedOrigin,
-      "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
-      "access-control-allow-methods": "POST, OPTIONS",
-      "vary": "Origin"
-    }
+    headers
   });
 }
 
