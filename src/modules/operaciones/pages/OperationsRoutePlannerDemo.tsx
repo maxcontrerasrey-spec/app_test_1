@@ -7,6 +7,7 @@ import mapLibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiamaps/ferrostar-webcomponents";
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
 import { calculateAtlasTomTomRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasServiceRoute, type TomTomRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
+import { appendRouteStop, moveRouteStop, normalizeRouteStops } from "../lib/routeStopOrder";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -278,17 +279,14 @@ export function OperationsRoutePlannerDemo() {
   }, [search?.id, search?.query, search?.status, showSearchPopover]);
 
   function chooseResult(stopId: string, result: { id?: string | null; label: string; lat: number; lng: number; source?: "tomtom" | "map_pin" }) {
-    const existing = stops.find((stop) => stop.id === stopId);
-    const kind = existing?.label ? existing.kind : (!stops.some((stop) => stop.kind === "origin") ? "origin" : !stops.some((stop) => stop.kind === "destination") ? "destination" : "stop");
     const { id: placeId, ...coordinates } = result;
     const location = { ...coordinates, providerPlaceId: placeId ?? null, source: result.source ?? "tomtom" as const };
     setStops((current) => {
       const found = current.some((stop) => stop.id === stopId);
-      if (found) return current.map((stop) => stop.id === stopId ? { ...stop, ...location, kind } : stop);
-      const next: Stop = { id: stopId, ...location, kind };
-      if (kind === "origin") return [next, ...current];
-      if (kind === "destination") return [...current, next];
-      return [...current.filter((stop) => stop.kind !== "destination"), next, ...current.filter((stop) => stop.kind === "destination")];
+      const updated = found
+        ? current.map((stop) => stop.id === stopId ? { ...stop, ...location } : stop)
+        : [...current, { id: stopId, ...location, kind: "stop" as const }];
+      return normalizeRouteStops(updated);
     });
     setSearch(null);
     setPlanningRoute(null);
@@ -333,31 +331,20 @@ export function OperationsRoutePlannerDemo() {
 
   function addStop() {
     const stop: Stop = { id: uid(), label: "", lat: 0, lng: 0, kind: "stop", providerPlaceId: null, source: "tomtom" };
-    setStops((current) => {
-      const index = current.findIndex((item) => item.kind === "destination");
-      if (index < 0) return [...current, stop];
-      return [...current.slice(0, index), stop, ...current.slice(index)];
-    });
+    setStops((current) => appendRouteStop(current, stop));
     setSearch({ id: stop.id, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" });
     setAdding(true);
   }
 
   function removeStop(id: string) {
-    setStops((current) => current.filter((stop) => stop.id !== id));
+    setStops((current) => normalizeRouteStops(current.filter((stop) => stop.id !== id)));
     setPlanningRoute(null);
     setRoute(null);
     setRouteState("idle");
   }
 
   function moveStop(id: string, direction: -1 | 1) {
-    setStops((current) => {
-      const index = current.findIndex((stop) => stop.id === id);
-      const nextIndex = index + direction;
-      if (index < 0 || nextIndex < 0 || nextIndex >= current.length || current[index]?.kind !== "stop" || current[nextIndex]?.kind === "origin" || current[nextIndex]?.kind === "destination") return current;
-      const reordered = [...current];
-      [reordered[index], reordered[nextIndex]] = [reordered[nextIndex], reordered[index]];
-      return reordered;
-    });
+    setStops((current) => moveRouteStop(current, id, direction));
     setRoute(null);
     setRouteState("idle");
   }
@@ -532,7 +519,7 @@ export function OperationsRoutePlannerDemo() {
                 <label htmlFor={`route-${stop.id}`}>{stop.kind === "origin" ? "Origen" : stop.kind === "destination" ? "Destino" : `Parada ${index}`}</label>
                 <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder="Busca una dirección en Calama" onChange={(event) => { const query = event.target.value; const sessionId = search?.id === stop.id ? search.sessionId : crypto.randomUUID(); setSearch({ id: stop.id, query, sessionId, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); setPlanningRoute(null); setRoute(null); setRouteState("idle"); }} onFocus={() => { if (!stop.label) setSearch({ id: stop.id, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para ${stop.kind === "origin" ? "el origen" : stop.kind === "destination" ? "el destino" : `la parada ${index + 1}`}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{stop.label && stop.kind === "stop" && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
               </div>
-              <div className="ops-route-demo__stop-actions"><button type="button" title="Subir parada" aria-label="Subir parada" disabled={stop.kind !== "stop" || index === 1} onClick={() => moveStop(stop.id, -1)}>↑</button><button type="button" title="Bajar parada" aria-label="Bajar parada" disabled={stop.kind !== "stop" || index === stops.length - 1} onClick={() => moveStop(stop.id, 1)}>↓</button></div>
+              <div className="ops-route-demo__stop-actions"><button type="button" title="Subir punto" aria-label={`Subir ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === 0} onClick={() => moveStop(stop.id, -1)}>↑</button><button type="button" title="Bajar punto" aria-label={`Bajar ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === stops.length - 1} onClick={() => moveStop(stop.id, 1)}>↓</button></div>
             </div>)}
             {stops.length === 0 && <div className="ops-route-demo__empty"><div className="ops-route-demo__empty-icon">A</div><strong>Agrega un origen y un destino</strong><span>Luego puedes insertar tantas paradas como necesites.</span></div>}
           </div>

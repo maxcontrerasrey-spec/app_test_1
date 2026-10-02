@@ -93,6 +93,13 @@ async function callTomTom(path: string, body: Record<string, unknown>, sessionId
   if (!result.ok) {
     if (result.status === 429) throw new Error("tomtom_rate_limited");
     if (result.status === 403) throw new Error("tomtom_key_or_plan_rejected");
+    if (result.status === 400 && path.includes("/routing/routes/calculate")) {
+      const errorBody = await result.json().catch(() => null) as { detailedError?: { code?: unknown } } | null;
+      const providerCode = typeof errorBody?.detailedError?.code === "string" ? errorBody.detailedError.code : "";
+      if (providerCode === "MAP_MATCHING_FAILURE") throw new Error("tomtom_route_point_not_routable");
+      if (providerCode === "NO_ROUTE_FOUND") throw new Error("tomtom_route_not_found");
+      if (providerCode === "BAD_INPUT") throw new Error("tomtom_route_bad_input");
+    }
     throw new Error(`tomtom_http_${result.status}`);
   }
   return await result.json() as Record<string, unknown>;

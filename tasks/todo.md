@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corregir orden de paradas y error de ruta Atlas — 2026-10-02
+
+- [x] Reproducir cómo se clasificaba cada dirección y por qué las flechas no modificaban el orden esperado.
+- [x] Hacer que una nueva dirección se agregue al final y que origen/destino se deriven del orden visible.
+- [x] Permitir reordenar todos los puntos y exponer causas específicas de error entregadas por TomTom.
+- [x] Validar pruebas, Deno, build, Guardian y diff; desplegar proxy y publicar frontend.
+- [ ] Confirmar el resultado visual y el nuevo mensaje con una ruta autenticada en producción.
+
+Resultado parcial: el orden visible es ahora la fuente de verdad; al agregar una dirección queda al final, y las flechas mueven cualquier punto, reasignando origen/paradas/destino por posición. La función `atlas-tomtom-planning` v4 mantiene JWT obligatorio y traduce los códigos de error de ruteo de TomTom a causas operativas sin incluir la clave. Pruebas unitarias: 141/141; `deno check`, build frontend, Guardian (0 errores/advertencias) y `git diff --check` pasan. Falta un recálculo autenticado de la ruta en producción para confirmar el código concreto del punto rechazado y la experiencia final.
+
 ## Días de operación en servicio base Atlas — 2026-10-02
 
 - [x] Confirmar el formulario de Configuración, el contrato de guardado y la autorización productiva.

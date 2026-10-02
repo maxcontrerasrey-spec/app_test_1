@@ -250,7 +250,15 @@ export async function calculateAtlasTomTomRoute(stops: Array<{ lat: number; lng:
     signal
   });
   const payload = await response.json() as TomTomRoute & { error?: string };
-  if (!response.ok) throw new Error(`No fue posible calcular la ruta (${payload.error ?? response.status}).`);
+  if (!response.ok) {
+    const friendlyErrors: Record<string, string> = {
+      tomtom_route_point_not_routable: "TomTom no pudo conectar uno de los puntos con una calle transitable. Acerca ese punto a una calle y vuelve a calcular.",
+      tomtom_route_not_found: "TomTom no encontró un recorrido transitable entre esos puntos. Revisa las ubicaciones y su orden.",
+      tomtom_route_bad_input: "TomTom rechazó la combinación de puntos. Revisa que origen, paradas y destino tengan ubicaciones válidas.",
+      tomtom_http_400: "TomTom no pudo calcular la ruta. Revisa que los puntos estén cerca de calles transitables."
+    };
+    throw new Error(friendlyErrors[payload.error ?? ""] ?? `No fue posible calcular la ruta (${payload.error ?? response.status}).`);
+  }
   return payload;
 }
 

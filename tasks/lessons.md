@@ -4070,3 +4070,10 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Cronometrar TTFB del geocodificador con consultas reales antes de ajustar el debounce. Reducirlo solo recorta la espera previa a la petición y puede elevar la frecuencia de llamadas; no acelera un servidor que tarda varios segundos.
 - Usar caché acotada para repetir búsquedas y mostrar el estado de carga de inmediato. Para el primer resultado lento, ofrecer selección de coordenadas sobre el mapa sin bloquear el recorrido y comparar un proveedor de autocomplete distinto antes de migrar.
+
+
+## 2026-10-02 - El orden de la lista de rutas debe gobernar sus extremos
+
+- No asignar origen/destino como roles fijos al crear una parada: agregar siempre al final y derivar origen, intermedias y destino desde la posición actual.
+- Las flechas deben poder mover todo punto dentro de los límites de la lista; después de cada movimiento, actualizar las etiquetas y enviar coordenadas en ese mismo orden al proveedor.
+- Envolver errores HTTP de un proveedor de rutas con un código genérico destruye el diagnóstico. Conservar los códigos estructurados permitidos y traducirlos en el cliente, sin propagar payloads arbitrarios ni secretos.
