@@ -148,16 +148,16 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 - RPCs criticas con smokes/audits: Atlas Operations greenfield, permisos superadmin, dashboard/auth routes, migraciones, seguridad Supabase, sync BUK Edge Function.
 - Vendors pesados esperados fuera del entry inicial: ECharts y XLSX siguen lazy por modulo/accion; PDF/QR se generan en la Edge Function de certificados y ya no forman parte del bundle frontend.
 
-Revision 2026-10-02 Atlas TomTom: el build local agrega 9,237 bytes al `dist` (8,182 JS y 1,055 CSS) sobre la baseline canónica anterior. Corresponde al proxy y resolución Places Details, persistencia y selección de rutas por servicio base, y apertura de la ruta asignada. No agrega dependencias ni vendors.
+Revision 2026-10-02 Atlas TomTom: el build local agrega 9,237 bytes locales al `dist` (8,182 JS y 1,055 CSS); el build Ubuntu/Node 24 de GitHub midió 1,706 bytes JS adicionales frente al build local. Se fijan los totales exactos del artefacto CI, manteniendo tolerancia cero. Corresponde al proxy y resolución Places Details, persistencia y selección de rutas por servicio base, y apertura de la ruta asignada. No agrega dependencias ni vendors.
 
 ## Control machine-readable
 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6265195,
+  "distTotalBytes": 6266901,
   "jsFileCount": 62,
-  "jsTotalBytes": 4278243,
+  "jsTotalBytes": 4279949,
   "cssFileCount": 12,
   "cssTotalBytes": 397215,
   "budgetPolicy": {
