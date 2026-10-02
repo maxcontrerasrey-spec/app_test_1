@@ -30,6 +30,7 @@ const statusLabels = {
   expired: "Envío caducado",
   completed: "Terminado",
   approved: "Aprobados",
+  rejected: "Rechazo psicolaboral",
   hired: "Contratados",
 } as const;
 const statusCardClasses = {
@@ -38,6 +39,7 @@ const statusCardClasses = {
   expired: "tracking-kpi-card-desierto",
   completed: "tracking-kpi-card-terminado",
   approved: "tracking-kpi-card-aprobados",
+  rejected: "tracking-kpi-card-desierto",
   hired: "tracking-kpi-card-contratados",
 } as const;
 const PAGE_SIZE = 50;
@@ -82,7 +84,7 @@ export function PsycholaboralManagementPage() {
   const rows = candidates.data?.items ?? [];
   const totalVisible = candidates.data?.total_count ?? 0;
   const counts: Record<string, number> = statusSummary.data ?? {};
-  const statusItems = ["not_sent", "sent", "expired", "completed", "approved"] as const;
+  const statusItems = ["not_sent", "sent", "expired", "completed", "approved", "rejected"] as const;
   const tabs = [
     { key: "", label: "Todos" },
     { key: "not_sent", label: "No realizado" },
@@ -90,6 +92,7 @@ export function PsycholaboralManagementPage() {
     { key: "expired", label: "Envío caducado" },
     { key: "completed", label: "Terminado" },
     { key: "approved", label: "Aprobados" },
+    { key: "rejected", label: "Rechazo psicolaboral" },
     { key: "hired", label: "Contratados" },
   ] as const;
   const refresh = async () =>
@@ -123,19 +126,22 @@ export function PsycholaboralManagementPage() {
     decision: "approved" | "rejected",
   ) => {
     if (!row.assessment_id) return;
-    const comment =
-      decision === "rejected"
-        ? window
-            .prompt(
-              "Indica el motivo del rechazo. El candidato será descartado del proceso:",
-            )
-            ?.trim()
-        : undefined;
-    if (decision === "rejected" && !comment) return;
+    const terminalCandidate = ["hired", "rejected", "withdrawn"].includes(row.stage_code);
+    const promptedComment = decision === "rejected"
+      ? window.prompt("Indica el motivo del rechazo psicolaboral:")
+      : null;
+    if (decision === "rejected" && promptedComment === null) return;
+    const comment = promptedComment?.trim();
+    if (decision === "rejected" && !comment) {
+      setFeedback("Debes indicar el motivo del rechazo psicolaboral.");
+      return;
+    }
     if (
       !window.confirm(
         decision === "rejected"
-          ? "¿Rechazar y descartar al candidato del proceso activo?"
+          ? terminalCandidate
+            ? "¿Registrar el rechazo psicolaboral? El estado y los documentos del proceso se mantendrán sin cambios."
+            : "¿Registrar el rechazo psicolaboral y descartar al candidato del proceso activo?"
           : "¿Aprobar la evaluación psicolaboral?",
       )
     )

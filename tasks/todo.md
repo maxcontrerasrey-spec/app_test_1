@@ -4255,3 +4255,12 @@ Resultado: los montos CLP de conceptos y planes Isapre en pesos aceptan un campo
 - [x] Probar permisos, migración, frontend y Guardian; aplicar y verificar en producción.
 
 Resultado: la configuración quedó limitada a `profiles.is_super_admin = true` y al rol `control_contratos`; el resto de la gerencia mantiene solo lectura. Control de Contratos recibió acceso al módulo, el frontend consume `can_configure` desde backend y las firmas antiguas de escritura quedaron sin ejecución para `authenticated`. Las migraciones `20260925120000` y `20260925121500` fueron aplicadas en producción; la segunda validó con usuarios reales ambos accesos permitidos, el rechazo de un gerente ordinario, su lectura conservada y los privilegios de cada RPC. Pruebas contractuales, auditorías SQL, build y Guardian aprobaron.
+
+## Corregir decisión psicolaboral en candidatos terminales — 2026-10-02
+
+- [x] Registrar invariantes: permisos sin cambios; etapas activas conservan transición actual; etapas terminales conservan su estado y reciben decisión/auditoría psicolaboral.
+- [x] Crear migración forward-only que corrija el RPC transaccional y clasifique las decisiones psicolaborales rechazadas sin modificar Reclutamiento.
+- [x] Actualizar la vista para mostrar una categoría explícita de rechazo psicolaboral y explicar el efecto antes de confirmar.
+- [x] Agregar pruebas de integridad/RPC y ejecutar tests, build frontend, auditorías de migraciones/seguridad y Guardian.
+- [ ] Aplicar migración y desplegar la SPA con el release productivo vigente; verificar backend, bundle y estado de María Inés sin ejecutar decisión por Paola.
+- [ ] Registrar resultado y cualquier límite operativo.

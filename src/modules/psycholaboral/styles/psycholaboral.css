@@ -79,6 +79,10 @@
   background: #dcf7e8;
   color: #17663d;
 }
+.psych-status--rejected {
+  background: #ffe6e6;
+  color: #a61b24;
+}
 .psych-status--hired {
   background: #e8efff;
   color: #315ca8;

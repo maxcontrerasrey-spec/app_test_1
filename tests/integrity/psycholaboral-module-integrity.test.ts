@@ -18,6 +18,7 @@ const psychologistDocumentMigration = readFileSync("supabase/migrations/20260817
 const psychologistReviewHashFixMigration = readFileSync("supabase/migrations/20260818233000_fix_psych_review_output_hash_ambiguity.sql", "utf8");
 const psychologistDocumentTypeFixMigration = readFileSync("supabase/migrations/20260819131500_fix_psych_report_document_type_ambiguity.sql", "utf8");
 const decisionSeparationMigration = readFileSync("supabase/migrations/20260819230000_separate_psycholaboral_report_decisions.sql", "utf8");
+const terminalDecisionMigration = readFileSync("supabase/migrations/20261002124040_preserve_terminal_candidate_on_psycholaboral_rejection.sql", "utf8");
 const contingencyEligibilityMigration = readFileSync("supabase/migrations/20260924120000_allow_psycholaboral_for_contingency_hires.sql", "utf8");
 const r2Migration = readFileSync("supabase/migrations/20260930231956_psycholaboral_cloudflare_r2_storage.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
@@ -146,8 +147,10 @@ describe("Gestión Psicolaboral", () => {
     expect(decisionSeparationMigration).toContain("rcc.stage_code <> 'rejected' or a.decision in ('approved', 'rejected')");
     expect(decisionSeparationMigration).toContain("Rechazo de evaluación psicolaboral: ");
     expect(decisionSeparationMigration).toContain("perform public.advance_recruitment_candidate_stage(");
+    expect(terminalDecisionMigration).toContain("candidate_stage in ('hired', 'rejected', 'withdrawn')");
     expect(managementPage).toContain('{ key: "approved", label: "Aprobados" }');
-    expect(managementPage).toContain('"completed", "approved"] as const');
+    expect(managementPage).toContain('"completed", "approved", "rejected"] as const');
+    expect(managementPage).toContain('{ key: "rejected", label: "Rechazo psicolaboral" }');
     expect(managementPage).toContain('"completed",');
     expect(managementPage).toContain('"approved",');
   });
