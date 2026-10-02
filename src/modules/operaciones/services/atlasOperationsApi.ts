@@ -50,6 +50,29 @@ export type AtlasTemplate = {
 export type AtlasVehicle = { id: string; code: string; plate: string | null; vehicle_type: string | null };
 export type AtlasContract = { id: number; code: string; contract_name: string };
 export type AtlasDriver = { buk_employee_id: string; full_name: string; document_number: string | null; display_label: string; contract_code: string | null; is_working_day: boolean; is_rest_day: boolean };
+export type AtlasServiceRoute = {
+  id: string;
+  service_template_id: number;
+  prefix: string;
+  route_code: string;
+  version: number;
+  is_active: boolean;
+  planning_distance_meters: number | null;
+  planning_duration_seconds: number | null;
+  atlas_ops_service_route_stops: Array<{
+    id: string;
+    stop_order: number;
+    label: string;
+    latitude: number;
+    longitude: number;
+    provider_place_id: string | null;
+    location_source: "tomtom" | "map_pin";
+  }>;
+};
+
+export type TomTomSuggestion = { id: string | null; type: "address" | "street" | "intersection" | null; label: string };
+export type TomTomPlaceMatch = { id: string | null; type: string | null; label: string; lat: number; lng: number };
+export type TomTomRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "tomtom"; travelMode: "car" };
 
 export async function getAtlasOperationsCatalogs() {
   const db = client();
@@ -142,6 +165,93 @@ export async function driverReportIncident(id: string, category: string, severit
 
 export async function saveAtlasServiceTemplate(payload: Record<string, unknown>) {
   await unwrap<number>(client().rpc("atlas_ops_save_service_template", { p_payload: payload }), "No fue posible guardar el servicio base.");
+}
+
+export async function getAtlasServiceRoutes(serviceTemplateId: number): Promise<AtlasServiceRoute[]> {
+  const result = await client().from("atlas_ops_service_routes")
+    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
+    .eq("service_template_id", serviceTemplateId)
+    .order("created_at", { ascending: false });
+  if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar las rutas del servicio base."));
+  return asArray<AtlasServiceRoute>(result.data);
+}
+
+export async function getAtlasServiceRoute(routeId: string): Promise<AtlasServiceRoute> {
+  const result = await client().from("atlas_ops_service_routes")
+    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
+    .eq("id", routeId).single();
+  if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar la ruta asignada."));
+  return result.data as AtlasServiceRoute;
+}
+
+export async function saveAtlasServiceRoute(input: {
+  serviceTemplateId: number;
+  prefix: string;
+  stops: Array<{ label: string; lat: number; lng: number; providerPlaceId?: string | null; source: "tomtom" | "map_pin" }>;
+  distanceMeters: number;
+  durationSeconds: number;
+}) {
+  return unwrap<string>(client().rpc("atlas_ops_save_service_route", {
+    p_service_template_id: input.serviceTemplateId,
+    p_prefix: input.prefix,
+    p_stops: input.stops,
+    p_distance_meters: Math.round(input.distanceMeters),
+    p_duration_seconds: Math.round(input.durationSeconds)
+  }), "No fue posible guardar la ruta.");
+}
+
+export async function searchAtlasTomTom(query: string, sessionId: string, signal?: AbortSignal): Promise<TomTomSuggestion[]> {
+  const db = client();
+  const { data: sessionData } = await db.auth.getSession();
+  const session = sessionData.session;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  if (!session?.access_token || !supabaseUrl || !anonKey) throw new Error("Inicia sesión como superadministrador para buscar direcciones.");
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-tomtom-planning`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ action: "suggest", query, sessionId }),
+    signal
+  });
+  const payload = await response.json() as { suggestions?: TomTomSuggestion[]; error?: string };
+  if (!response.ok) throw new Error(payload.error === "tomtom_not_configured" ? "La búsqueda TomTom aún no está configurada en producción." : `No fue posible buscar la dirección (${payload.error ?? response.status}).`);
+  return payload.suggestions ?? [];
+}
+
+export async function resolveAtlasTomTomSuggestion(suggestion: TomTomSuggestion, sessionId: string, signal?: AbortSignal): Promise<TomTomPlaceMatch> {
+  const db = client();
+  const { data: sessionData } = await db.auth.getSession();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken || !supabaseUrl || !anonKey || !suggestion.id || !suggestion.type) throw new Error("Selecciona una sugerencia válida de TomTom.");
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-tomtom-planning`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ action: "details", id: suggestion.id, type: suggestion.type, sessionId }),
+    signal
+  });
+  const payload = await response.json() as { suggestion?: TomTomPlaceMatch; error?: string };
+  if (!response.ok || !payload.suggestion) throw new Error(`No fue posible obtener la ubicación exacta (${payload.error ?? response.status}).`);
+  return payload.suggestion;
+}
+
+export async function calculateAtlasTomTomRoute(stops: Array<{ lat: number; lng: number }>, signal?: AbortSignal): Promise<TomTomRoute> {
+  const db = client();
+  const { data: sessionData } = await db.auth.getSession();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const accessToken = sessionData.session?.access_token;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  if (!accessToken || !supabaseUrl || !anonKey) throw new Error("Inicia sesión como superadministrador para calcular rutas.");
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-tomtom-planning`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ action: "route", stops: stops.map(({ lat, lng }) => ({ lat, lng })) }),
+    signal
+  });
+  const payload = await response.json() as TomTomRoute & { error?: string };
+  if (!response.ok) throw new Error(`No fue posible calcular la ruta (${payload.error ?? response.status}).`);
+  return payload;
 }
 
 export async function saveAtlasMilestoneTemplate(payload: Record<string, unknown>) {

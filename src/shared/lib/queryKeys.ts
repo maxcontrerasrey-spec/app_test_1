@@ -138,6 +138,7 @@ export const queryKeys = {
     vehiclePositions: (vehicleIds: string[]) => [...queryKeys.operations.all(), "vehicle-positions", vehicleIds] as const,
     alerts: (day: string, dispatchIds: string[] = []) => [...queryKeys.operations.all(), "alerts", day, dispatchIds] as const,
     driverDispatches: () => [...queryKeys.operations.all(), "driver-dispatches"] as const,
+    serviceRoutes: (serviceTemplateId: number | string) => [...queryKeys.operations.all(), "service-routes", serviceTemplateId] as const,
     events: (dispatchId: string) => [...queryKeys.operations.all(), "events", dispatchId] as const,
     driverSearch: (params: Record<string, unknown>) =>
       [...queryKeys.operations.all(), "driver-search", params] as const

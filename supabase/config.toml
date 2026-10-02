@@ -40,6 +40,9 @@ entrypoint = "./functions/generate-competency-certificate/index.ts"
 [functions.request-password-reset]
 verify_jwt = false
 
+[functions.atlas-tomtom-planning]
+verify_jwt = true
+
 [functions.psycholaboral-assessment]
 verify_jwt = false
 

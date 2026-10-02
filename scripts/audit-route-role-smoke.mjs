@@ -82,9 +82,11 @@ addCheck(
   "el planificador de rutas tiene pantalla y acceso desde Operaciones bajo la misma ruta protegida"
 );
 addCheck(
-  routePlannerSource.includes('url.searchParams.set("q", query)') &&
-    !routePlannerSource.includes('url.searchParams.set("lang", "es")'),
-  "la geocodificación Photon usa parámetros compatibles con su servicio actual"
+  routePlannerSource.includes("searchAtlasTomTom(query") &&
+    routePlannerSource.includes("calculateAtlasTomTomRoute") &&
+    routePlannerSource.includes("Ferrostar") &&
+    routePlannerSource.includes("Valhalla"),
+  "la planificación usa TomTom y conserva Ferrostar + Valhalla para navegación"
 );
 addCheck(
   navigationSource.includes('label: "Operaciones",') &&

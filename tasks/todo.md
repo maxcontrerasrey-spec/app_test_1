@@ -1,3 +1,16 @@
+## TomTom en planificacion productiva Atlas — 2026-10-02
+
+- [x] Revisar la versión productiva, la base de datos, el planificador existente y la clave local sin imprimirla.
+- [x] Acordar contrato: TomTom busca y calcula la vista previa; las coordenadas/orden/subprefijo se guardan ligadas al servicio; conductor conserva Ferrostar + Valhalla.
+- [x] Agregar esquema y RPC transaccional versionados, superadmin-only, para rutas y paradas por servicio base.
+- [x] Crear proxy TomTom autenticado, de alcance acotado, que resuelva sugerencias y ruta sin exponer la clave al navegador.
+- [x] Convertir el planificador actual en flujo productivo: servicio base, subprefijo/código, direcciones TomTom, mapa/ruta, guardado y reapertura de rutas.
+- [x] Conectar la vista conductor con las paradas persistidas y el cálculo actual Ferrostar + Valhalla.
+- [ ] Validar migración, permisos, búsquedas, creación/lectura de ruta, build, Guardian y diff; publicar con verificación productiva, sin IA.
+- [ ] Registrar resultado y cualquier dependencia de secretos/configuración externa.
+
+Validación parcial: Guardian (0 errores/0 advertencias), TypeScript, build frontend, auditorías de ruta/roles, migraciones, seguridad Supabase, Deno check y diff check pasan. La migración 20261002130716 está aplicada en producción; ambas tablas nuevas tienen RLS activo y RPCs limitados a `authenticated` con verificación superadmin en código. El secreto TomTom quedó configurado en Supabase y `atlas-tomtom-planning` desplegada con JWT obligatorio; el smoke sin JWT devuelve 401. La documentación oficial confirma que Places Suggest no entrega coordenadas: al seleccionar se consulta Details dentro de la misma sesión. TomTom Orbis Routing v3 no ofrece `bus`, así que la previsualización usa perfil automóvil; el conductor conserva el recálculo con Ferrostar + Valhalla. Pendiente publicar el frontend y comprobar el bundle productivo.
+
 # Tareas y Roadmap de Desarrollo
 
 ## Auditoría de alineación Git, migraciones y Supabase — 2026-10-02

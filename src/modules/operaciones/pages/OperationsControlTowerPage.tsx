@@ -18,6 +18,7 @@ import {
   getAtlasLatestVehiclePositions,
   getAtlasDriverDispatches,
   getAtlasOperationsCatalogs,
+  getAtlasServiceRoutes,
   getAtlasAdminUsers,
   getAtlasAlerts,
   acknowledgeAtlasAlert,
@@ -91,8 +92,11 @@ function OperationsControlTowerApp() {
   const [incidentFor, setIncidentFor] = useState("");
   const [presentation, setPresentation] = useState<"map" | "list">("map");
   const [serviceSearch, setServiceSearch] = useState("");
+  const [dispatchServiceTemplateId, setDispatchServiceTemplateId] = useState("");
+  const [dispatchRouteId, setDispatchRouteId] = useState("");
 
   const catalogsQuery = useQuery({ queryKey: queryKeys.operations.catalogs(), queryFn: getAtlasOperationsCatalogs, staleTime: 30_000 });
+  const dispatchRoutesQuery = useQuery({ queryKey: queryKeys.operations.serviceRoutes(dispatchServiceTemplateId), queryFn: () => getAtlasServiceRoutes(Number(dispatchServiceTemplateId)), enabled: view === "planificacion" && Boolean(dispatchServiceTemplateId), staleTime: 30_000 });
   const dispatchQuery = useQuery({ queryKey: queryKeys.operations.dispatches(day), queryFn: () => getAtlasDispatches(day, day), staleTime: 10_000 });
   const activeVehicleIds = useMemo(() => [...new Set((dispatchQuery.data ?? []).map((row) => row.vehicle_id).filter((id): id is string => Boolean(id)))].sort(), [dispatchQuery.data]);
   const positionsQuery = useQuery({
@@ -196,6 +200,7 @@ function OperationsControlTowerApp() {
     await mutation.mutateAsync(() => createAtlasDispatch({
       contract_id: contractId,
       service_template_id: Number(form.get("service_template_id")) || null,
+      route_id: String(form.get("route_id") ?? "") || null,
       planned_start_at: start.toISOString(),
       planned_end_at: localEnd ? new Date(localEnd).toISOString() : null,
       service_date: date,
@@ -295,7 +300,8 @@ function OperationsControlTowerApp() {
           <div className="atlas-ops__panel-heading"><div><h2>Programar servicio</h2><p>La ficha BUK exacta y su roster se validan en el servidor.</p></div><span className="atlas-ops__step">01 / PLAN</span></div>
           <div className="atlas-ops__form-grid">
             <Field label="Contrato"><select name="contract_id" required defaultValue=""><option value="" disabled>Selecciona contrato</option>{editableContracts.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.contract_name}</option>)}</select></Field>
-            <Field label="Servicio base"><select name="service_template_id" required defaultValue=""><option value="" disabled>Selecciona servicio</option>{catalogs?.templates.map((item) => <option value={item.id} key={item.id}>{item.name} · {item.service_type}</option>)}</select></Field>
+            <Field label="Servicio base"><select name="service_template_id" required value={dispatchServiceTemplateId} onChange={(event) => { setDispatchServiceTemplateId(event.target.value); setDispatchRouteId(""); }}><option value="" disabled>Selecciona servicio</option>{catalogs?.templates.map((item) => <option value={item.id} key={item.id}>{item.name} · {item.service_type}</option>)}</select></Field>
+            <Field label="Ruta del servicio"><select name="route_id" value={dispatchRouteId} onChange={(event) => setDispatchRouteId(event.target.value)} required={(dispatchRoutesQuery.data?.filter((route) => route.is_active).length ?? 0) > 0} disabled={!dispatchServiceTemplateId || dispatchRoutesQuery.isLoading}><option value="">{dispatchRoutesQuery.isLoading ? "Cargando rutas…" : "Sin ruta asignada"}</option>{dispatchRoutesQuery.data?.filter((route) => route.is_active).map((route) => <option value={route.id} key={route.id}>{route.route_code} · versión {route.version}</option>)}</select></Field>
             <Field label="Inicio planificado"><input type="datetime-local" name="planned_start_at" required /></Field>
             <Field label="Fin estimado"><input type="datetime-local" name="planned_end_at" /></Field>
             <Field label="Turno"><input name="shift" placeholder="AM / PM / A / B" required /></Field>
@@ -322,7 +328,7 @@ function OperationsControlTowerApp() {
         <DispatchTable rows={ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={(id, action) => mutation.mutate(() => transitionAtlasDispatch(id, action))} canOperate={canOperate} dispatchMode />
       </>}
 
-      {view === "conductor" && <DriverView rows={driverDispatchQuery.data ?? []} loading={driverDispatchQuery.isLoading} onAcknowledge={(id) => mutation.mutate(() => driverAcknowledgeDispatch(id))} onIncident={(id) => setIncidentFor(id)} />}
+      {view === "conductor" && <DriverView rows={driverDispatchQuery.data ?? []} loading={driverDispatchQuery.isLoading} onAcknowledge={(id) => mutation.mutate(() => driverAcknowledgeDispatch(id))} onIncident={(id) => setIncidentFor(id)} onOpenRoute={(id) => navigate(`/operaciones/planificador-rutas?routeId=${encodeURIComponent(id)}`)} />}
 
       {view === "historial" && <>
         <section className="atlas-ops__toolbar"><div><strong>Timeline de servicio</strong><span>Selecciona un servicio para revisar eventos auditables.</span></div></section>
@@ -444,9 +450,9 @@ function AlertTable({ rows, loading, onSelect, canOperate, onAcknowledge, onReso
 function Status({ value }: { value: string }) { return <span className={`atlas-ops__status atlas-ops__status--${value}`}>{readableStatus(value)}</span>; }
 function Risk({ value }: { value: string }) { return <span className={`atlas-ops__risk atlas-ops__risk--${value}`}><i />{value === "green" ? "Normal" : readableStatus(value)}</span>; }
 
-function DriverView({ rows, loading, onAcknowledge, onIncident }: { rows: Record<string, unknown>[]; loading: boolean; onAcknowledge: (id: string) => void; onIncident: (id: string) => void }) {
+function DriverView({ rows, loading, onAcknowledge, onIncident, onOpenRoute }: { rows: Record<string, unknown>[]; loading: boolean; onAcknowledge: (id: string) => void; onIncident: (id: string) => void; onOpenRoute: (id: string) => void }) {
   return <section className="atlas-ops__driver-list"><div className="atlas-ops__toolbar"><div><strong>Mis próximos servicios</strong><span>Acceso asociado a una identidad BUK verificada.</span></div></div>
-    {loading ? <p className="atlas-ops__empty">Cargando servicios…</p> : rows.length === 0 ? <div className="atlas-ops__panel atlas-ops__empty">No hay servicios publicados para esta cuenta. Si eres conductor, solicita a administración vincular tu cuenta Atlas con tu ficha BUK exacta.</div> : rows.map((row) => <article className="atlas-ops__driver-card" key={String(row.id)}><div><span className="atlas-ops__eyebrow">{String(row.shift)} · {String(row.service_date)}</span><h2>{String(row.service_name ?? "Servicio asignado")}</h2><p>{String(row.origin_label ?? "Origen pendiente")} → {String(row.destination_label ?? "Destino pendiente")}</p><div className="atlas-ops__driver-facts"><span>{row.planned_start_at ? new Date(String(row.planned_start_at)).toLocaleString("es-CL") : "Horario pendiente"}</span><span>Vehículo {String(row.vehicle_code ?? "pendiente")}{row.plate ? ` · ${String(row.plate)}` : ""}</span></div><p>{String(row.instructions ?? "")}</p></div><div className="atlas-ops__driver-actions">{!row.acknowledged_at && <button className="atlas-ops__button atlas-ops__button--primary" onClick={() => onAcknowledge(String(row.id))} type="button">Confirmar recepción</button>}<button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => onIncident(String(row.id))} type="button">Reportar incidencia</button></div></article>)}</section>;
+    {loading ? <p className="atlas-ops__empty">Cargando servicios…</p> : rows.length === 0 ? <div className="atlas-ops__panel atlas-ops__empty">No hay servicios publicados para esta cuenta. Si eres conductor, solicita a administración vincular tu cuenta Atlas con tu ficha BUK exacta.</div> : rows.map((row) => <article className="atlas-ops__driver-card" key={String(row.id)}><div><span className="atlas-ops__eyebrow">{String(row.shift)} · {String(row.service_date)}</span><h2>{String(row.service_name ?? "Servicio asignado")}</h2><p>{String(row.origin_label ?? "Origen pendiente")} → {String(row.destination_label ?? "Destino pendiente")}</p><div className="atlas-ops__driver-facts"><span>{row.planned_start_at ? new Date(String(row.planned_start_at)).toLocaleString("es-CL") : "Horario pendiente"}</span><span>Vehículo {String(row.vehicle_code ?? "pendiente")}{row.plate ? ` · ${String(row.plate)}` : ""}</span>{typeof row.route_code === "string" && <span>Ruta {row.route_code}</span>}</div><p>{String(row.instructions ?? "")}</p></div><div className="atlas-ops__driver-actions">{typeof row.route_id === "string" && <button className="atlas-ops__button atlas-ops__button--primary" onClick={() => onOpenRoute(row.route_id as string)} type="button">Ver ruta asignada</button>}{!row.acknowledged_at && <button className="atlas-ops__button atlas-ops__button--primary" onClick={() => onAcknowledge(String(row.id))} type="button">Confirmar recepción</button>}<button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => onIncident(String(row.id))} type="button">Reportar incidencia</button></div></article>)}</section>;
 }
 
 function ConfigurationView({ contracts, templates, users, drivers, driverSearch, onDriverSearchChange, canAdmin, onSaveTemplate, onSaveMilestone, onSaveVehicle, onSaveEditor, onBindDriver, pending }: {
