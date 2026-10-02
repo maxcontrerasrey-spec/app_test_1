@@ -48,31 +48,27 @@ function point(value: unknown): Point {
   return { lat, lng };
 }
 
-async function isActiveSuperAdmin(accessToken: string) {
+async function isActiveSuperAdmin(accessToken: string, apiKey: string | null) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) throw new Error("auth_config_missing");
+  if (!supabaseUrl || !apiKey) throw new Error("auth_config_missing");
 
-  const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}` }
+  // Use the caller's JWT and public API key so Postgres evaluates auth.uid()
+  // with the same identity and canonical guard used by Atlas RLS and RPCs.
+  const profileResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/atlas_ops_is_current_super_admin`, {
+    method: "POST",
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+      accept: "application/json"
+    },
+    body: "{}",
+    signal: AbortSignal.timeout(5_000)
   });
-  if (!userResponse.ok) return false;
-  const user = await userResponse.json() as { id?: string };
-  if (!user.id) return false;
-
-  const profileUrl = new URL(`${supabaseUrl}/rest/v1/profiles`);
-  profileUrl.searchParams.set("select", "id");
-  profileUrl.searchParams.set("id", `eq.${user.id}`);
-  profileUrl.searchParams.set("status", "eq.active");
-  profileUrl.searchParams.set("is_super_admin", "eq.true");
-  profileUrl.searchParams.set("limit", "1");
-  const profileResponse = await fetch(profileUrl, {
-    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
-  });
-  if (!profileResponse.ok) throw new Error("profile_check_failed");
-  const profiles = await profileResponse.json() as Array<{ id: string }>;
-  return profiles.some((profile) => profile.id === user.id);
+  if (!profileResponse.ok) throw new Error("superadmin_check_failed");
+  const allowed = await profileResponse.json() as unknown;
+  if (typeof allowed !== "boolean") throw new Error("superadmin_check_invalid_response");
+  return allowed;
 }
 
 async function callTomTom(path: string, body: Record<string, unknown>, sessionId?: string) {
@@ -172,7 +168,7 @@ Deno.serve(async (request) => {
   if (contentLength > MAX_BODY_BYTES) return response({ error: "request_too_large" }, 413, origin);
 
   try {
-    if (!await isActiveSuperAdmin(token)) return response({ error: "superadmin_only" }, 403, origin);
+    if (!await isActiveSuperAdmin(token, request.headers.get("apikey"))) return response({ error: "superadmin_only" }, 403, origin);
     const raw = await request.text();
     if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) return response({ error: "request_too_large" }, 413, origin);
     const payload = JSON.parse(raw) as Record<string, unknown>;
@@ -253,7 +249,9 @@ Deno.serve(async (request) => {
     return response({ error: "unsupported_action" }, 400, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : "request_failed";
-    const status = message === "tomtom_not_configured" ? 503 : message === "tomtom_rate_limited" ? 429 : 400;
+    const status = message === "tomtom_not_configured" || message.startsWith("superadmin_check_") || message === "auth_config_missing"
+      ? 503
+      : message === "tomtom_rate_limited" ? 429 : 400;
     return response({ error: message }, status, origin);
   }
 });

@@ -6,6 +6,12 @@
 - El preflight debe contestarse con body `null` (y sin `content-type` de JSON); verificarlo contra logs productivos y hacer smoke real de `OPTIONS` antes de cerrar una integración del navegador.
 - Nunca atribuir “Load failed” directamente al proveedor externo: comprobar primero consola/network y logs del proxy, porque el request puede no haber llegado a TomTom.
 
+## 377. El proxy debe usar la misma fuente de autorización que RLS y las RPC del módulo
+
+- No reconstruir el guard con llamadas separadas a Auth y una lectura privilegiada de `profiles`: las credenciales/env de servicio pueden no coincidir con las API keys actuales y rechazar a un usuario que la base confirma como superadministrador.
+- Para Atlas, reenviar el JWT y la API key pública de la solicitud a `atlas_ops_is_current_super_admin()` conserva `auth.uid()` y aplica exactamente la regla vigente de estado activo y superadmin.
+- Validar tanto un actor autorizado como un actor sin permisos; no resolver discrepancias reduciendo o desactivando la barrera de acceso.
+
 ## 375. La Sync BUK debe tolerar indisponibilidades breves sin confundir un workflow omitido con una sincronización exitosa
 
 - Ante HTTP 408/425/429/5xx y fallos de red transitorios, aplicar reintentos acotados con backoff exponencial y respetar `Retry-After`; no reintentar errores permanentes ni cancelaciones explícitas.

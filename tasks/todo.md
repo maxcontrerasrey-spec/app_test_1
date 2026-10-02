@@ -13,6 +13,14 @@ Resultado final: integración publicada en `main` (`bd2a90f2`, seguida de baseli
 
 # Tareas y Roadmap de Desarrollo
 
+## Alinear autorización superadmin del proxy TomTom — 2026-10-02
+
+- [x] Correlacionar los `POST` fallidos con el usuario y revisar su estado/flag actual en `profiles`.
+- [x] Comparar el guard del proxy con `atlas_ops_is_current_super_admin()` usado por RLS y RPC del módulo.
+- [x] Validar el contrato de la RPC en contexto `authenticated` y confirmar que devuelve `true` para el perfil activo verificado.
+- [ ] Desplegar la Edge Function y confirmar búsqueda real desde la sesión superadmin; verificar rechazo de sesión no superadmin/sin JWT.
+- [ ] Registrar resultado, ejecución CI y lección.
+
 ## Corregir búsqueda TomTom que falla en producción — 2026-10-02
 
 - [x] Reproducir el error con evidencia de navegador, respuesta del proxy y logs de Supabase/TomTom; localizar el punto exacto de fallo.
