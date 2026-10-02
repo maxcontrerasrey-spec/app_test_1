@@ -1,5 +1,19 @@
 # Tareas y Roadmap de Desarrollo
 
+## Auditoría de alineación Git, migraciones y Supabase — 2026-10-02
+
+- [x] Comparar `main`, `origin/main` y el estado local sin sobrescribir cambios de trabajo.
+- [x] Comparar inventario/versiones de `supabase/migrations` con el historial real productivo y buscar diferencias de nombre/versión.
+- [x] Revisar los últimos cambios SQL, controles de migración/seguridad y estado del dry-run; clasificar deuda preexistente versus regresión nueva.
+- [x] Corregir únicamente divergencias confirmadas mediante cambios forward-only y verificar sin repetir DDL aplicado.
+- [x] Registrar resultado, riesgos residuales y pruebas en esta bitácora.
+
+Resultado: `origin/main` (`c43c924c`) y el historial productivo de Supabase están alineados: 590 archivos locales y 590 versiones remotas, cero faltantes en ambos sentidos, cero colisiones y cero discrepancias de nombre. Las versiones recientes `20260930231956`, `20261001022413` y `20261002124040` aparecen aplicadas en producción y tienen archivo local correspondiente. La versión histórica `20260617001200` no trae etiqueta `name` en la API de historial, pero sí tiene su archivo local `add_buk_bi_analytics_views`; no falta ni se vuelve a ejecutar. No se aplicó SQL correctivo porque no se encontró drift.
+
+Validación local: `npm run audit:migrations` pasa (590 canónicas, cero inválidas/duplicadas); `npm run guardian` y `npm run guardian:full` pasan con 0 errores/advertencias; `git diff --check` pasa. `npm run audit:supabase-security` sale con código 0 pero emite 88 advertencias heurísticas sobre 80 migraciones históricas; ninguna corresponde a las tres migraciones más recientes. Se conserva como deuda a revisar por alcance, sin reescribir historia aplicada. `supabase db push --linked --dry-run` no está disponible desde este worktree porque no está enlazado a un project ref; la comparación directa del historial productivo sí se completó.
+
+Estado de GitHub: `Audit Enterprise Guardrails` para `c43c924c` reprodujo dos veces que el artefacto Ubuntu/Node 24 mide 78 bytes más que la baseline macOS. Se corrigió la baseline a las métricas exactas del artefacto canónico de CI, manteniendo tolerancia cero; localmente el build queda 78 bytes por debajo y la auditoría pasa. Falta confirmar la nueva corrida remota tras publicar esta calibración. El checkout principal `main` sigue 18 commits detrás de `origin/main` y tiene modificaciones locales superpuestas en archivos incluidos en esos commits; se preservó intacto y no se hizo fast-forward/merge para evitar sobrescribir trabajo del usuario.
+
 ## Estabilizar Sync BUK ante indisponibilidad transitoria — 2026-10-02
 
 - [x] Inspeccionar la última ejecución fallida de GitHub Actions y corroborar el estado de la corrida en Supabase.

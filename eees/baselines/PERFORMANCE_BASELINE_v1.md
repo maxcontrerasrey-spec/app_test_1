@@ -153,9 +153,9 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6255880,
+  "distTotalBytes": 6255958,
   "jsFileCount": 62,
-  "jsTotalBytes": 4269983,
+  "jsTotalBytes": 4270061,
   "cssFileCount": 12,
   "cssTotalBytes": 396160,
   "budgetPolicy": {
@@ -299,3 +299,5 @@ Revision 2026-10-01 desplegable Photon fuera del contenedor de scroll: el total 
 Revision 2026-10-01 búsqueda y punto manual de rutas: el total sube 3,179 bytes, JS sube 1,726 bytes y CSS sube 1,453 bytes. El buscador reduce debounce de 320 a 180 ms, comunica la búsqueda al escribir y cachea hasta 80 consultas por cinco minutos. Se agrega selección manual del centro del mapa con paneo y confirmación, sin nuevos vendors ni carga inicial; se conserva lazy el chunk del planificador.
 
 Revision 2026-10-02 rechazo psicolaboral independiente: build medido en 6,255,880 bytes totales, 4,269,983 bytes JS y 396,160 bytes CSS. Los incrementos (454/397/57 bytes) corresponden a la clasificación explícita del resultado psicolaboral rechazado y al mensaje contextual; sin dependencias, vendors ni assets nuevos.
+
+Revision 2026-10-02 canonizacion del artefacto CI: Ubuntu en GitHub Actions (Node 24 y variables publicas de Supabase) mide 6,255,958 bytes totales y 4,270,061 bytes JS para el mismo commit, 78 bytes sobre la medicion local macOS. Se fija la baseline exacta al artefacto de CI, que ya se declara canonico en el alcance; la tolerancia absoluta y porcentual permanece en cero.
