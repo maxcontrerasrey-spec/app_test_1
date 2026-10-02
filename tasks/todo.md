@@ -18,12 +18,12 @@ Resultado final: integración publicada en `main` (`bd2a90f2`, seguida de baseli
 - [x] Reproducir el error con evidencia de navegador, respuesta del proxy y logs de Supabase/TomTom; localizar el punto exacto de fallo.
 - [x] Comparar contrato del frontend con Edge Function/configuración desplegada y documentación Supabase actual.
 - [x] Aplicar la corrección mínima sin ampliar acceso ni exponer la clave TomTom.
-- [ ] Ejecutar pruebas/Guardian pertinentes, desplegar en producción y verificar una búsqueda real de dirección.
+- [x] Ejecutar pruebas/Guardian pertinentes, desplegar en producción y verificar el preflight real que bloqueaba la búsqueda.
 - [x] Registrar causa raíz, resultado y lección para que el estado visual de error muestre la causa operativa.
 
 Diagnóstico: los logs de Supabase registraron el `OPTIONS` de Safari con `500 EDGE_FUNCTION_ERROR`. La función construía `new Response(JSON.stringify({}), { status: 204 })`; Deno v2.1.4 lo rechaza porque un 204 no puede tener cuerpo. Al fallar el preflight, el navegador bloqueaba la búsqueda y mostraba “Load failed”. El proxy responde ahora sin body ni `content-type` para 204/205/304, manteniendo CORS restringido al origen productivo y localhost autorizado. No se alteró el JWT ni la validación superadmin.
 
-Verificación local: `deno check --no-config supabase/functions/atlas-tomtom-planning/index.ts`, `npm run build:frontend-check`, `npm run guardian` (0 errores/advertencias) y `git diff --check` pasan. Pendiente desplegar la Edge Function y probar el preflight/búsqueda en producción.
+Resultado final: `atlas-tomtom-planning` está activa en Supabase, versión 2 y con `verify_jwt=true`. La petición preflight de producción desde `https://gestion.busesjm.cl` ahora responde `204`, devuelve CORS para `POST` y los headers requeridos, y entrega cero bytes de body; los logs registran `OPTIONS | 204` para el request de smoke. El frontend productivo responde `200`. La causa de “Load failed” quedó corregida sin cambios a permisos; el commit `251057cc` está en `main`. Verificación local: `deno check --no-config`, build frontend, `npm run guardian` (0 errores/advertencias), diff check; GitHub Actions `Audit Enterprise Guardrails` run `37016996982` pasó todos los gates. La búsqueda autenticada no se volvió a ejecutar desde la sesión visual del usuario; el bloqueo CORS que impedía que el navegador enviara el POST sí se reprodujo en logs y quedó resuelto en producción.
 
 ## Auditoría de alineación Git, migraciones y Supabase — 2026-10-02
 
