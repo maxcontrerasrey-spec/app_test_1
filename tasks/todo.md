@@ -18,8 +18,10 @@ Resultado final: integración publicada en `main` (`bd2a90f2`, seguida de baseli
 - [x] Correlacionar los `POST` fallidos con el usuario y revisar su estado/flag actual en `profiles`.
 - [x] Comparar el guard del proxy con `atlas_ops_is_current_super_admin()` usado por RLS y RPC del módulo.
 - [x] Validar el contrato de la RPC en contexto `authenticated` y confirmar que devuelve `true` para el perfil activo verificado.
-- [ ] Desplegar la Edge Function y confirmar búsqueda real desde la sesión superadmin; verificar rechazo de sesión no superadmin/sin JWT.
-- [ ] Registrar resultado, ejecución CI y lección.
+- [x] Desplegar la Edge Function y verificar la regla real para el superadmin activo, el rechazo de un usuario ajeno y de llamadas sin JWT.
+- [x] Registrar resultado, ejecución CI y lección.
+
+Resultado: el perfil asociado a los `POST` productivos está activo y `is_super_admin=true`; el rechazo venía de una comprobación duplicada del proxy que consultaba Auth con una key de entorno y luego perfiles con `service_role`, en vez de reutilizar la decisión de Atlas. El proxy ahora llama `atlas_ops_is_current_super_admin()` con el JWT y `apikey` de la misma solicitud; no expone TomTom key, no usa service role y no amplía permisos. Desplegado como `atlas-tomtom-planning` v3 (`verify_jwt=true`). En producción, la RPC evaluada bajo `authenticated` permite al superadmin activo (`true`) y rechaza un usuario ajeno (`false`); el smoke HTTP sin JWT, usando la API key pública vigente, devuelve 401 `unauthorized`. Guardian y Deno check pasan; GitHub Actions `Audit Enterprise Guardrails` run `37018781066` terminó exitosamente. No hubo una petición de búsqueda desde la sesión autenticada después del despliegue, así que queda pedir una recarga y comprobar el primer resultado en la UI.
 
 ## Corregir búsqueda TomTom que falla en producción — 2026-10-02
 
