@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 379. Las capas de ruta del mapa deben reconciliarse y mostrar su sentido
+
+- Una fuente GeoJSON existente no garantiza que las capas que la presentan sigan montadas; verificar y restaurar por separado la fuente y cada capa en cada actualización.
+- Dibujar inicio/destino sin la geometría debe distinguirse del cálculo: comprobar coordenadas y presencia de la capa para no confundir un cálculo exitoso con una ruta visible.
+- En planificación, mostrar flechas espaciadas sobre la línea y encuadrar los límites de la geometría completa para que se entiendan recorrido y dirección.
+
 ## 378. Los días de operación son un atributo del servicio base, no de la jornada
 
 - Mantener `Jornada` como texto operativo y guardar los días de semana por separado; una jornada como “Noche” no determina qué días se ejecuta el servicio.

@@ -1,5 +1,12 @@
 # Tareas y Roadmap de Desarrollo
 
+## Mostrar recorrido y sentido de marcha en el mapa Atlas — 2026-10-02
+
+- [ ] Reconciliar la geometría TomTom con fuente y capas MapLibre en cada actualización del mapa.
+- [ ] Dibujar la línea de ruta y flechas orientadas a lo largo de ella; encuadrar el recorrido calculado.
+- [ ] Validar build, Guardian y diff, y publicar/verificar el mapa productivo.
+- [ ] Registrar el resultado y la lección sobre persistencia de capas del mapa.
+
 ## Corregir orden de paradas y error de ruta Atlas — 2026-10-02
 
 - [x] Reproducir cómo se clasificaba cada dirección y por qué las flechas no modificaban el orden esperado.
