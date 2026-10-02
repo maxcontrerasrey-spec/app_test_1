@@ -1,6 +1,7 @@
 import fs from "fs";
 
 import { createClient } from "@supabase/supabase-js";
+import { fetchBukWithRetry } from "./lib/buk-http.mjs";
 
 function normalizeText(value) {
   return (value ?? "")
@@ -331,28 +332,6 @@ function normalizeBukEmployee(employee, areaLookup = new Map()) {
   };
 }
 
-async function fetchWithRetry(url, options, retries = 3) {
-  let lastError;
-
-  for (let attempt = 1; attempt <= retries; attempt += 1) {
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`Buk sync failed with status ${response.status}.`);
-      }
-
-      return response;
-    } catch (error) {
-      lastError = error;
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
-      }
-    }
-  }
-
-  throw lastError instanceof Error ? lastError : new Error("Buk fetch failed.");
-}
-
 function isStatementTimeoutError(error) {
   if (!error) return false;
 
@@ -451,7 +430,7 @@ async function fetchBukEmployeesPage(env, page = 1) {
   url.searchParams.set("page", String(page));
   url.searchParams.set("page_size", "100");
 
-  const response = await fetchWithRetry(url, {
+  const response = await fetchBukWithRetry(url, {
     headers: {
       auth_token: authToken,
       Accept: "application/json",
@@ -492,7 +471,7 @@ async function fetchBukAreasPage(env, page = 1) {
   url.searchParams.set("page", String(page));
   url.searchParams.set("page_size", "100");
 
-  const response = await fetchWithRetry(url, {
+  const response = await fetchBukWithRetry(url, {
     headers: {
       auth_token: authToken,
       Accept: "application/json",

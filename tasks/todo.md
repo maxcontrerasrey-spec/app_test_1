@@ -1,5 +1,16 @@
 # Tareas y Roadmap de Desarrollo
 
+## Estabilizar Sync BUK ante indisponibilidad transitoria — 2026-10-02
+
+- [x] Inspeccionar la última ejecución fallida de GitHub Actions y corroborar el estado de la corrida en Supabase.
+- [x] Confirmar que un HTTP 503 en endpoint de áreas BUK fallaba tras reintentos breves y que la siguiente ejecución programada se omitió por ventana horaria.
+- [x] Implementar reintentos acotados con backoff exponencial, jitter, `Retry-After` y sin reintento de errores permanentes/abortos.
+- [x] Cubrir 503 recuperable, Retry-After, backoff y error 401 con pruebas unitarias.
+- [x] Ejecutar pruebas focalizadas, Guardian (0 errores/advertencias) y `git diff --check`.
+- [ ] Publicar de forma aislada sobre `origin/main` y volver a ejecutar la Sync BUK en producción.
+- [ ] Verificar el estado final de la corrida y que la etapa de sincronización de cargos también concluya.
+
+
 ## Agilizar búsqueda de direcciones y selección manual en mapa — 2026-10-01
 
 - [x] Medir y revisar búsqueda actual: debounce, llamadas redundantes, caché y estado de espera.

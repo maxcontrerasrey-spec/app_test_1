@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 375. La Sync BUK debe tolerar indisponibilidades breves sin confundir un workflow omitido con una sincronización exitosa
+
+- Ante HTTP 408/425/429/5xx y fallos de red transitorios, aplicar reintentos acotados con backoff exponencial y respetar `Retry-After`; no reintentar errores permanentes ni cancelaciones explícitas.
+- Un `success` de GitHub Actions no confirma que hubo sync: revisar los pasos ejecutados y el estado persistido de `buk_employee_sync_runs`; una corrida omitida por ventana horaria no es recuperación.
+- La carga en staging solo se vuelve autoridad al finalizar un snapshot completo; si falla una lectura previa, preservar el padrón anterior, limpiar staging y dejar el intento auditado como fallido.
+
 ## 374. Un catálogo BUK copiado una vez no conserva el estado operativo
 
 - Una tabla propia puede conservar asociaciones y configuraciones históricas, pero no debe decidir por sí sola si un cargo sigue disponible cuando BUK es la fuente autoritativa.
