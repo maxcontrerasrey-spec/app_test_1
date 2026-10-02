@@ -4262,5 +4262,7 @@ Resultado: la configuración quedó limitada a `profiles.is_super_admin = true` 
 - [x] Crear migración forward-only que corrija el RPC transaccional y clasifique las decisiones psicolaborales rechazadas sin modificar Reclutamiento.
 - [x] Actualizar la vista para mostrar una categoría explícita de rechazo psicolaboral y explicar el efecto antes de confirmar.
 - [x] Agregar pruebas de integridad/RPC y ejecutar tests, build frontend, auditorías de migraciones/seguridad y Guardian.
-- [ ] Aplicar migración y desplegar la SPA con el release productivo vigente; verificar backend, bundle y estado de María Inés sin ejecutar decisión por Paola.
-- [ ] Registrar resultado y cualquier límite operativo.
+- [x] Aplicar migración y desplegar la SPA con el release productivo vigente; verificar backend, bundle y estado de María Inés sin ejecutar decisión por Paola.
+- [x] Registrar resultado y cualquier límite operativo.
+
+Resultado: la migración `20261002124040_preserve_terminal_candidate_on_psycholaboral_rejection` quedó aplicada en Supabase producción; las tres RPC conservaron `SECURITY DEFINER`, `authenticated` conserva EXECUTE y `anon` no tiene EXECUTE. Cloudflare Pages confirmó `Production / main` en commit `0d136ddf`; el dominio productivo sirve el nuevo bundle con la categoría “Rechazo psicolaboral” y el aviso de que el proceso/documentos terminales no se alteran. María Inés Pérez Cañete (RC-0218) sigue con etapa `rejected`, evaluación `pending` y sin `decided_at`; no se tomó la decisión por Paola. Guardian: 0 errores/advertencias; build frontend, integridad psicolaboral (46 pruebas focalizadas), auditorías de migraciones/seguridad/performance y `git diff --check` aprobados. `supabase db push --linked --dry-run` no pudo ejecutarse porque este worktree no está enlazado a un project ref; la aplicación/verificación se hizo con la conexión Supabase productiva administrada y el registro de migraciones.
