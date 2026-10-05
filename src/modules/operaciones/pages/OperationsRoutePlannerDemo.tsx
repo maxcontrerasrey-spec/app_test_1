@@ -219,7 +219,10 @@ export function OperationsRoutePlannerDemo() {
     if (!mapContainerRef.current) return;
     const map = new maplibregl.Map({ container: mapContainerRef.current, style: MAP_STYLE, center: [CALAMA.lng, CALAMA.lat], zoom: 12.2 });
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
-    map.once("load", () => setMapReady(true));
+    map.once("load", () => {
+      ensurePlannedRouteLayers(map);
+      setMapReady(true);
+    });
     mapRef.current = map;
     return () => {
       markersRef.current.forEach((marker) => marker.remove());
@@ -233,13 +236,15 @@ export function OperationsRoutePlannerDemo() {
     const map = mapRef.current;
     if (!map) return;
     markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = stops.map((stop, index) => {
+    const locatedStops = stops.filter((stop) => stop.label.trim().length > 0);
+    markersRef.current = locatedStops.map((stop) => {
+      const index = stops.findIndex((item) => item.id === stop.id);
       const node = document.createElement("div");
       node.className = `ops-route-demo__map-marker ops-route-demo__map-marker--${stop.kind}`;
       node.textContent = stop.kind === "origin" ? "A" : stop.kind === "destination" ? "B" : String(index);
       return new maplibregl.Marker({ element: node }).setLngLat([stop.lng, stop.lat]).addTo(map);
     });
-    if (!mapReady || !map.isStyleLoaded()) return;
+    if (!mapReady) return;
     const planningCoordinates = planningRoute?.coordinates ?? [];
     const geo = activeView === "planning" && planningCoordinates.length > 1
       ? { type: "Feature" as const, properties: {}, geometry: { type: "LineString" as const, coordinates: planningCoordinates } }
@@ -251,7 +256,7 @@ export function OperationsRoutePlannerDemo() {
     source.setData(geo ?? { type: "FeatureCollection", features: [] });
     if (stops.length && activeView === "planning") {
       const bounds = new maplibregl.LngLatBounds();
-      stops.forEach((stop) => bounds.extend([stop.lng, stop.lat]));
+      locatedStops.forEach((stop) => bounds.extend([stop.lng, stop.lat]));
       planningCoordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
       map.fitBounds(bounds, { padding: { top: 80, bottom: 80, left: 65, right: 65 }, maxZoom: 15, duration: 500 });
     }
@@ -376,7 +381,11 @@ export function OperationsRoutePlannerDemo() {
   }
 
   function addStop() {
-    const stop: Stop = { id: uid(), label: "", lat: 0, lng: 0, kind: "stop", providerPlaceId: null, source: "tomtom" };
+    const center = mapRef.current?.getCenter();
+    const stop: Stop = {
+      id: uid(), label: "", lat: center?.lat ?? CALAMA.lat, lng: center?.lng ?? CALAMA.lng,
+      kind: "stop", providerPlaceId: null, source: "tomtom"
+    };
     setStops((current) => appendRouteStop(current, stop));
     setSearch({ id: stop.id, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" });
     setAdding(true);

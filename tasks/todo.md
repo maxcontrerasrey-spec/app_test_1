@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corregir primera visualización de ruta y punto de parada Atlas — 2026-10-05
+
+- [x] Asegurar fuente/capas del recorrido al terminar la carga del mapa para que el primer cálculo actualice un origen ya listo.
+- [x] Evitar que paradas vacías entren al encuadre y centrar su coordenada inicial en el mapa visible.
+- [x] Documentar en un prompt Markdown los siete componentes, integraciones, permisos, estado real y límites del módulo.
+- [ ] Ejecutar build, Guardian, smoke disponible y `git diff --check`; publicar los cambios funcionales y verificar artefactos productivos.
+- [ ] Registrar el resultado y el límite de verificación visual autenticada.
+
 ## Mostrar recorrido y sentido de marcha en el mapa Atlas — 2026-10-02
 
 - [x] Reconciliar la geometría TomTom con fuente y capas MapLibre en cada actualización del mapa.
