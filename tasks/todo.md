@@ -1,3 +1,27 @@
+## Portal de Comunicaciones corporativo con documentos en R2 — 2026-10-05
+
+- [x] Revisar correo y página SharePoint con sesión autorizada; distinguir diseño/contenido de muestra de publicaciones reales y confirmar archivos recibidos.
+- [x] Inspeccionar arquitectura de módulos/permisos y rutas Cloudflare Pages/R2 ya existentes; definir lectura general, publicación restringida y archivos privados.
+- [x] Implementar módulo lazy-loaded del Portal con noticias, comunicados, eventos y boletines; estados de carga, error y vacío, filtros y búsqueda.
+- [x] Agregar modelo/RPCs protegidas para borrador, publicación, edición y archivo lógico; dar lectura a usuarios ERP activos y edición solo a `admin`/`comunicador_`.
+- [x] Incorporar upload y descarga autenticados de PDF mediante Cloudflare Pages + binding R2, validando usuario, permiso, tamaño y tipo de archivo.
+- [x] Integrar `portal_comunicaciones` a ruta, navegación, catálogo de módulos/roles y permisos; actualizar matriz documental.
+- [x] Validar build frontend, contratos/seguridad SQL, Guardian, auditorías aplicables y `git diff --check`; no cargar contenido de muestra ni publicar SharePoint.
+
+Alcance de evidencia: la página SharePoint consultada muestra “Vista previa · Fotografías y contenidos de ejemplo”, no tiene boletines publicados ni eventos próximos. El correo solo enlaza a SharePoint y menciona boletines compartidos por OneDrive; no adjunta el paquete `.sppkg` ni los PDF. El módulo queda preparado para cargar archivos reales cuando Comunicaciones los entregue.
+
+Revisión de implementación: módulo lazy y responsive; catálogo editorial consultado por RPC con RLS y acceso directo a tabla revocado; edición para `admin`/`comunicador_`; boletines requieren PDF para publicarse. Pages Function valida sesión y permiso antes de aceptar PDF, limita a 20 MiB, verifica firma y SHA-256, guarda en R2 privado y descarga tras comprobar publicación e integridad. Los resultados de muestra del SharePoint no se cargaron. El 2026-10-05 se aplicaron en Supabase producción las migraciones `communications_portal` (`20261005170407`) y `communications_visual_editor` (`20261005170414`). Se verificaron tablas, RPC, rol y módulo activos, portal inicial publicado y lecturas directas denegadas. La publicación de frontend y Pages Function queda ligada a integrar este PR en `main`; se reutilizan los bindings R2/Supabase existentes del proyecto Pages. La asignación de `comunicador_` a publicadores específicos queda pendiente de sus identidades.
+
+## Editor visual del Portal de Comunicaciones — 2026-10-05
+
+- [x] Incorporar Puck como editor lazy con bloques React permitidos, propiedades fáciles de editar y controles de tema con paletas/fuentes aprobadas.
+- [x] Separar datos del borrador de diseño de las publicaciones; crear versiones publicadas inmutables, restauración como nueva versión y protección ante guardados concurrentes.
+- [x] Dar lectura a toda cuenta ERP activa y edición completa del portal solo a `admin`/`comunicador_`; alinear permisos en AuthContext, navegación, guardas y RPCs.
+- [x] Añadir vista previa responsive, guardar borrador, publicar, historial y restauración desde una experiencia accesible para una persona sin conocimientos técnicos.
+- [x] Actualizar contratos, documentación y baseline; validar con build, Guardian, auditorías Supabase/migración y `git diff --check`.
+
+Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 0 advertencias), `npm run audit:migrations`, `npm run audit:supabase-security`, auditoría de performance, los 8 contratos focalizados y `git diff --check` pasan. El editor Puck queda en chunk lazy. Tras el despliegue de backend, los asesores de Supabase reportan 88 hallazgos previos y ninguno de seguridad para objetos `communications`; sí listan índices faltantes en claves foráneas de tablas editoriales y dos índices aún sin uso antes del tráfico real. Las funciones SECURITY DEFINER accesibles a `authenticated` son RPC intencionales y deben conservar sus comprobaciones internas de autorización; no se concedió acceso anónimo. Producción aún requiere desplegar frontend/Pages al integrar el PR. No se asignó `comunicador_` a una cuenta sin identidad confirmada.
+
 # Tareas y Roadmap de Desarrollo
 
 ## Fijar destinos y sugerir ubicaciones frecuentes Atlas — 2026-10-05

@@ -46,6 +46,12 @@ export const routeModuleImporters = {
   rentStructuresPage: async () => ({
     default: (await import("../../modules/rent_structures/pages/RentStructuresPage")).RentStructuresPage
   }),
+  communicationsPage: async () => ({
+    default: (await import("../../modules/communications/pages/CommunicationsPage")).CommunicationsPage
+  }),
+  communicationsDesignPage: async () => ({
+    default: (await import("../../modules/communications/pages/CommunicationsDesignPage")).CommunicationsDesignPage
+  }),
   sanctionsPage: async () => ({
     default: (await import("../../modules/sanctions/pages/SanctionsPage")).SanctionsPage
   }),
@@ -123,6 +129,14 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
 
   if (normalizedPath.startsWith("/operaciones")) {
     return ["operacionesDashboard"];
+  }
+
+  if (normalizedPath.startsWith("/comunicaciones/diseno")) {
+    return ["communicationsDesignPage"];
+  }
+
+  if (normalizedPath.startsWith("/comunicaciones")) {
+    return ["communicationsPage"];
   }
 
   if (normalizedPath.startsWith("/recursos-humanos/acreditacion")) {

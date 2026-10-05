@@ -27,6 +27,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `certificados` | `/certificados` | `RoleProtectedRoute` |
 | `seguimiento_certificados` | `/seguimiento-certificados` | `RoleProtectedRoute` + redirect a `/certificados` |
 | `bi_analytics` | `/bi/*` | `RoleProtectedRoute` |
+| `portal_comunicaciones` | `/comunicaciones` | `RoleProtectedRoute` + RPCs: toda cuenta ERP activa puede leer; `admin`/`comunicador_` pueden publicar contenido y diseño |
 
 ## Capabilities finas vigentes
 
@@ -40,6 +41,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | Rol | Modulos/responsabilidades actuales |
 | --- | --- |
 | `admin` | todos los modulos activos y todas las capabilities activas |
+| `comunicador_` | edición integral de noticias, comunicados, eventos, boletines y diseño visual del Portal de Comunicaciones |
 | `reclutamiento` | solicitud, control, movilidad y Gestión Psicolaboral; capability `candidate_control_access` |
 | `control_contratos` | control de contrataciones (solo lectura en resumen de procesos, precandidatos, control de candidatos, personal a contratar y movilidad interna), solicitud, movilidad, RRHH, roster, acreditacion, BI |
 | `operaciones` | operaciones, roster, acreditacion |

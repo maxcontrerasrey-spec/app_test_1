@@ -15,6 +15,7 @@ export type AppRole =
   | "jefe_administrativo"
   | "certificaciones"
   | "instructor"
+  | "comunicador_"
   | "guest";
 
 export type AppCapability = "can_approve_who_stage" | "candidate_control_access";
@@ -50,7 +51,8 @@ export type AppModuleCode =
   | "certificados"
   | "seguimiento_certificados"
   | "alta_operacional_personal"
-  | "bi_analytics";
+  | "bi_analytics"
+  | "portal_comunicaciones";
 
 const KNOWN_ROLE_CODES = new Set<AppRole>([
   "admin",
@@ -67,6 +69,7 @@ const KNOWN_ROLE_CODES = new Set<AppRole>([
   "operaciones_l_2",
   "administrativo",
   "jefe_administrativo",
+  "comunicador_",
   "certificaciones",
   "instructor",
   "guest"
@@ -109,7 +112,8 @@ const KNOWN_MODULE_CODES = new Set<AppModuleCode>([
   "certificados",
   "seguimiento_certificados",
   "alta_operacional_personal",
-  "bi_analytics"
+  "bi_analytics",
+  "portal_comunicaciones"
 ]);
 
 export function normalizeRoleCode(value: string | null | undefined): AppRole | null {

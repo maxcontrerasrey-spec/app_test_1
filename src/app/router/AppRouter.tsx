@@ -38,6 +38,8 @@ const RentStructuresPage = lazyWithRetry(
   "rent-structures-page",
   routeModuleImporters.rentStructuresPage
 );
+const CommunicationsPage = lazyWithRetry("communications-page", routeModuleImporters.communicationsPage);
+const CommunicationsDesignPage = lazyWithRetry("communications-design-page", routeModuleImporters.communicationsDesignPage);
 const SanctionsPage = lazyWithRetry("sanctions-page", routeModuleImporters.sanctionsPage);
 const RosterPage = lazyWithRetry("roster-page", routeModuleImporters.rosterPage);
 const AccreditationPage = lazyWithRetry(
@@ -191,6 +193,22 @@ export function AppRouter() {
               element={
                 <RoleProtectedRoute moduleCode="control_estructuras_renta">
                   <RentStructuresPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/comunicaciones"
+              element={
+                <RoleProtectedRoute moduleCode="portal_comunicaciones">
+                  <CommunicationsPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/comunicaciones/diseno"
+              element={
+                <RoleProtectedRoute moduleCode="portal_comunicaciones">
+                  <CommunicationsDesignPage />
                 </RoleProtectedRoute>
               }
             />

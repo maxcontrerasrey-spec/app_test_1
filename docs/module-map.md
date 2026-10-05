@@ -61,6 +61,19 @@
 - Alcance inicial: contratos BUK operativos asociados a DSAL y cargos de `buk_job_position_contract_access`; lectura reservada a admin, gerencia, dirección ejecutiva, dirección de operaciones y gerencia general.
 - Riesgo abierto: la tabla de estructuras requiere parametrización de conceptos y montos; la UI no presenta valores estimados si no existe una estructura vigente.
 
+### Portal de Comunicaciones
+
+- Ruta: `/comunicaciones`
+- Página: `src/modules/communications/pages/CommunicationsPage.tsx`
+- Hooks/servicio: `src/modules/communications/hooks/useCommunicationsQueries.ts`, `src/modules/communications/services/communicationsApi.ts`
+- Backend: RPCs en `communications_items`, diseño versionado en `communications_site_state`/`communications_site_versions` y endpoint `functions/api/comunicaciones/files.ts` para PDF privado en Cloudflare R2.
+- Editor visual: `src/modules/communications/pages/CommunicationsDesignPage.tsx` y `src/modules/communications/site/communicationsSiteConfig.tsx`; Puck compone bloques React permitidos y tokens institucionales.
+- Rutas: `/comunicaciones` para todas las cuentas ERP activas y `/comunicaciones/diseno` para `admin`/`comunicador_`.
+- Publicaciones: noticias, comunicados, eventos y boletines; los boletines publicados requieren PDF.
+- Permisos: las RPCs autorizan lectura a cualquier perfil ERP activo y reservan mantenimiento a `admin`/`comunicador_`.
+- Publicación: borrador con control de revisión concurrente, instantáneas inmutables e historial restaurable como nueva versión.
+- Almacenamiento: Postgres conserva contenido y metadatos; el archivo queda en R2 y se descarga con sesión ERP. No se importa contenido de muestra de SharePoint.
+
 ### Solicitud de sanciones
 
 - Ruta: `/recursos-humanos/sanciones`

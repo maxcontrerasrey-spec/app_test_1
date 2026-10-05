@@ -1,0 +1,42 @@
+.communications-design-page { min-height: 100dvh; padding: 0 20px 20px; background: #f4f5f6; color: #172338; }
+.communications-design-toolbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 76px; margin: 0 -20px 12px; padding: 11px 22px; border-bottom: 1px solid #e0e3e6; background: rgba(255,255,255,.96); }
+.communications-design-brand { display: flex; align-items: center; gap: 12px; }
+.communications-design-brand > a { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #e1e4e7; color: #4c596a; font-size: 20px; text-decoration: none; }
+.communications-design-brand > div { display: grid; gap: 4px; }
+.communications-design-brand > div > span { color: #b3262c; font-size: 8px; font-weight: 800; letter-spacing: .15em; }
+.communications-design-brand h1 { margin: 0; font-size: 16px; font-weight: 730; letter-spacing: -.025em; }
+.communications-design-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.communications-design-actions .communications-primary-button, .communications-design-actions .communications-secondary-button { min-height: 35px; padding: 8px 11px; font-size: 10px; }
+.communications-design-version { margin-right: 4px; color: #657184; font-size: 10px; }
+.communications-design-canvas { min-height: calc(100dvh - 130px); overflow: hidden; border: 1px solid #e1e4e7; background: #fff; }
+.communications-design-canvas [class*="Puck"] { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.communications-design-canvas .communications-site-layout { max-width: 100%; }
+.communications-design-preview { max-width: 1360px; min-height: calc(100dvh - 130px); margin: 0 auto; border: 1px solid #e1e4e7; background: #fff; }
+.communications-design-page > .communications-feedback { max-width: 1360px; margin: 10px auto; }
+.communications-history-dialog { width: min(100%, 620px); max-height: 85dvh; overflow: auto; padding: 24px; background: white; box-shadow: 0 24px 70px rgba(13,22,36,.22); }
+.communications-history-dialog > header { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding-bottom: 14px; border-bottom: 1px solid #e8e9eb; }
+.communications-history-dialog h2 { margin: 5px 0 0; font-size: 22px; letter-spacing: -.04em; }
+.communications-history-dialog > p { color: #697587; font-size: 12px; line-height: 1.6; }
+.communications-history-dialog > ol { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.communications-history-dialog li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid #eceef0; }
+.communications-history-dialog li > div { display: grid; gap: 5px; }
+.communications-history-dialog li strong { color: #202c40; font-size: 12px; }
+.communications-history-dialog li small { color: #7b8490; font-size: 10px; }
+.communications-history-dialog li .communications-secondary-button { min-height: 32px; padding: 7px 10px; font-size: 10px; }
+.communications-design-loading { display: grid; min-height: 70dvh; align-content: center; justify-items: center; gap: 12px; padding: 25px; color: #657184; text-align: center; }
+.communications-design-loading h1 { margin: 9px 0 0; color: #18243a; font-size: 23px; }
+.communications-design-loading p { margin: 0; font-size: 12px; }
+.communications-design-loading > button { padding: 9px 13px; border: 1px solid #d7dade; background: #fff; font: inherit; cursor: pointer; }
+
+@media (max-width: 860px) {
+  .communications-design-toolbar { align-items: flex-start; flex-direction: column; }
+  .communications-design-actions { width: 100%; justify-content: flex-start; overflow-x: auto; }
+  .communications-design-version { white-space: nowrap; }
+}
+@media (max-width: 560px) {
+  .communications-design-page { padding: 0 9px 10px; }
+  .communications-design-toolbar { margin: 0 -9px 8px; padding: 10px 12px; }
+  .communications-design-actions { gap: 6px; }
+  .communications-design-actions .communications-primary-button, .communications-design-actions .communications-secondary-button { white-space: nowrap; }
+  .communications-history-dialog { padding: 19px; }
+}

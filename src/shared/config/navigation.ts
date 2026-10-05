@@ -27,7 +27,8 @@ export type NavigationIconKey =
   | "route"
   | "sparkles"
   | "download"
-  | "trending-up";
+  | "trending-up"
+  | "megaphone";
 
 export type NavigationItem = {
   moduleCode: AppModuleCode;
@@ -205,6 +206,12 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "download"
       }
     ]
+  },
+  {
+    label: "Portal de Comunicaciones",
+    iconKey: "megaphone",
+    moduleCode: "portal_comunicaciones",
+    to: "/comunicaciones"
   },
   {
     label: "Business Intelligence",
