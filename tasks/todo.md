@@ -1,5 +1,15 @@
 # Tareas y Roadmap de Desarrollo
 
+## Ocultar estado vacío tras proponer recorrido optimizado en Atlas — 2026-10-05
+
+- [x] Identificar por qué el mapa mantenía el recuadro vacío después de calcular una propuesta optimizada.
+- [x] Hacer que el estado vacío considere los tres estados válidos de ruta: propuesta, ruta planificada y navegación.
+- [x] Ejecutar validación de build frontend y `git diff --check`; inspeccionar la condición renderizada.
+- [ ] Publicar el ajuste y comprobar que el bundle de producción incluye la condición corregida.
+- [ ] Registrar resultado y lección para estados vacíos coordinados con nuevos estados del planificador.
+
+Revisión: el trazado optimizado vive en `proposal.route`, no en `planningRoute`; la condición previa del recuadro solo comprobaba `planningRoute` y `route`. La corrección debe ocultar el estado vacío también cuando exista `proposal`.
+
 ## Propuesta de secuencia optimizada para rutas Atlas — 2026-10-05
 
 - [x] Inspeccionar contratos actuales de planificador, proxy TomTom, RPC/tabla de rutas y límites del Valhalla productivo.
