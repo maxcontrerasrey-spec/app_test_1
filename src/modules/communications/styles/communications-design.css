@@ -60,7 +60,15 @@
 .communications-site-empty { margin: 0; padding: 20px; border: 1px dashed var(--site-line); color: var(--site-muted); font-size: 12px; line-height: 1.6; }
 .communications-site-events { padding: 23px; background: var(--site-tint); }
 .communications-site-event-list { display: grid; }
+.communications-site-event-list.is-tarjetas-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.communications-site-event-list.is-tarjetas-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
 .communications-site-event { display: grid; grid-template-columns: 55px minmax(0, 1fr) 18px; align-items: center; gap: 15px; width: 100%; padding: 14px 0; border: 0; border-top: 1px solid var(--site-line); background: transparent; color: var(--site-ink); text-align: left; cursor: pointer; }
+.communications-site-event-list.is-tarjetas-2 .communications-site-event, .communications-site-event-list.is-tarjetas-3 .communications-site-event { position: relative; display: flex; min-height: 205px; align-items: flex-start; flex-direction: column; justify-content: flex-start; gap: 17px; padding: 19px; border: 1px solid var(--site-line); background: var(--site-paper); text-align: left; }
+.communications-site-event-list.is-tarjetas-2 .communications-site-event > span:nth-child(2), .communications-site-event-list.is-tarjetas-3 .communications-site-event > span:nth-child(2) { gap: 9px; }
+.communications-site-event-list.is-tarjetas-2 .communications-site-event strong, .communications-site-event-list.is-tarjetas-3 .communications-site-event strong { font-size: 15px; line-height: 1.45; }
+.communications-site-event-list.is-tarjetas-2 .communications-site-event > span:last-child, .communications-site-event-list.is-tarjetas-3 .communications-site-event > span:last-child { position: absolute; right: 17px; bottom: 16px; color: var(--site-accent); }
+.communications-site-event-list.is-tarjetas-2 .communications-site-event-date, .communications-site-event-list.is-tarjetas-3 .communications-site-event-date { min-width: 54px; padding: 0 7px; }
+.communications-site-events.is-tarjetas-2, .communications-site-events.is-tarjetas-3 { padding: 23px; background: var(--site-tint); }
 .communications-site-event-date { display: grid; min-height: 45px; place-items: center; border-left: 2px solid var(--site-accent); background: #fff; color: var(--site-accent); font-size: 11px; font-weight: 800; text-transform: uppercase; }
 .communications-site-event > span:nth-child(2) { display: grid; gap: 5px; }
 .communications-site-event strong, .communications-site-bulletin strong { font-size: 12px; font-weight: 740; }
@@ -109,6 +117,7 @@
 .communications-feature-section { padding-top: 1px; }
 .communications-feature-story { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr); width: 100%; min-height: 285px; overflow: hidden; padding: 0; border: 1px solid var(--site-line); background: #fff; color: var(--site-ink); text-align: left; cursor: pointer; transition: border-color .18s ease, transform .18s ease; }
 .communications-site-layout.shape-suave .communications-feature-story, .communications-site-layout.shape-redondeada .communications-feature-story, .communications-site-layout.shape-suave .communications-site-news .communications-item, .communications-site-layout.shape-redondeada .communications-site-news .communications-item, .communications-site-layout.shape-suave .communications-site-events, .communications-site-layout.shape-redondeada .communications-site-events, .communications-site-layout.shape-suave .communications-site-bulletins, .communications-site-layout.shape-redondeada .communications-site-bulletins, .communications-site-layout.shape-suave .communications-site-message, .communications-site-layout.shape-redondeada .communications-site-message, .communications-site-layout.shape-suave .communications-site-empty, .communications-site-layout.shape-redondeada .communications-site-empty { border-radius: var(--site-card-radius); }
+.communications-site-layout.shape-suave .communications-site-event-list.is-tarjetas-2 .communications-site-event, .communications-site-layout.shape-redondeada .communications-site-event-list.is-tarjetas-2 .communications-site-event, .communications-site-layout.shape-suave .communications-site-event-list.is-tarjetas-3 .communications-site-event, .communications-site-layout.shape-redondeada .communications-site-event-list.is-tarjetas-3 .communications-site-event { border-radius: var(--site-card-radius); }
 .communications-feature-story:hover { border-color: #c5cbd0; transform: translateY(-1px); }
 .communications-feature-story-image { display: block; width: 100%; height: 100%; min-height: 285px; object-fit: cover; background: #e8e9e9; }
 .communications-image-placeholder { display: grid; place-items: center; min-height: 150px; background: linear-gradient(140deg, #26364b, #687687); color: rgba(255,255,255,.72); font-size: 11px; font-weight: 800; letter-spacing: .22em; }
@@ -162,10 +171,12 @@
   .communications-feature-story { grid-template-columns: 1fr; }
   .communications-feature-story-image { min-height: 190px; max-height: 220px; }
   .communications-site-news.is-grilla { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  .communications-site-event-list.is-tarjetas-3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .communications-pending-notice { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
 @media (max-width: 500px) {
   .communications-site-news.is-grilla { grid-template-columns: 1fr; }
+  .communications-site-event-list.is-tarjetas-2, .communications-site-event-list.is-tarjetas-3 { grid-template-columns: 1fr; }
   .communications-editor-grid { grid-template-columns: 1fr; }
   .communications-reading-cover { width: calc(100% + 48px); margin-top: -24px; margin-right: -24px; margin-left: -24px; }
 }

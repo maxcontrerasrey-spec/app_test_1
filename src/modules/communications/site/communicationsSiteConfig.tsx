@@ -10,6 +10,7 @@ export type CommunicationsContentWidth = "estandar" | "amplio";
 export type CommunicationsShape = "recta" | "suave" | "redondeada";
 export type CommunicationsTone = "destacado" | "claro" | "oscuro";
 export type CommunicationsLayout = "grilla" | "lista";
+export type CommunicationsEventsLayout = "lista" | "tarjetas-2" | "tarjetas-3";
 
 export type CommunicationsRootProps = {
   title: string;
@@ -25,7 +26,7 @@ export type CommunicationsRootProps = {
 type HeroProps = { eyebrow: string; title: string; summary: string; tone: CommunicationsTone };
 type FeaturedProps = { title: string; description: string };
 type NewsProps = { title: string; description: string; limit: number; layout: CommunicationsLayout };
-type EventsProps = { title: string; description: string; limit: number };
+type EventsProps = { title: string; description: string; limit: number; layout: CommunicationsEventsLayout };
 type BulletinsProps = { title: string; description: string; limit: number };
 type MessageProps = { title: string; message: string; tone: CommunicationsTone };
 type DividerProps = { label: string };
@@ -122,14 +123,14 @@ function NewsSectionView({ title, description, limit, layout }: NewsProps) {
   );
 }
 
-function EventsSectionView({ title, description, limit }: EventsProps) {
+function EventsSectionView({ title, description, limit, layout = "lista" }: EventsProps) {
   const { items, onOpen } = useSiteContent();
   const events = items.filter((item) => item.contentType === "evento" && item.startsAt && new Date(item.startsAt).getTime() >= Date.now())
     .sort((left, right) => new Date(left.startsAt || 0).getTime() - new Date(right.startsAt || 0).getTime()).slice(0, limit);
   return (
-    <section className="communications-site-section communications-site-events">
+    <section className={`communications-site-section communications-site-events is-${layout}`}>
       <header className="communications-site-section-heading"><div><span className="communications-kicker">ENCUENTROS</span><h2>{title}</h2><p>{description}</p></div></header>
-      {events.length ? <div className="communications-site-event-list">{events.map((event) => <button type="button" className="communications-site-event" key={event.id} onClick={() => onOpen(event)}><span className="communications-site-event-date">{event.startsAt ? new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "short" }).format(new Date(event.startsAt)) : "—"}</span><span><strong>{event.title}</strong><small>{formatDate(event.startsAt, true)}</small></span><span aria-hidden="true">→</span></button>)}</div> : <p className="communications-site-empty">Cuando haya actividades publicadas, las verás aquí.</p>}
+      {events.length ? <div className={`communications-site-event-list is-${layout}`}>{events.map((event) => <button type="button" className="communications-site-event" key={event.id} onClick={() => onOpen(event)}><span className="communications-site-event-date">{event.startsAt ? new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "short" }).format(new Date(event.startsAt)) : "—"}</span><span><strong>{event.title}</strong><small>{formatDate(event.startsAt, true)}</small></span><span aria-hidden="true">→</span></button>)}</div> : <p className="communications-site-empty">Cuando haya actividades publicadas, las verás aquí.</p>}
     </section>
   );
 }
@@ -208,9 +209,10 @@ export const communicationsSiteConfig: Config<CommunicationsComponents, Communic
       fields: {
         title: { type: "text", label: "Título de sección" },
         description: { type: "textarea", label: "Descripción" },
-        limit: { type: "number", label: "Cantidad de eventos", min: 1, max: 12 }
+        limit: { type: "number", label: "Cantidad de eventos", min: 1, max: 12 },
+        layout: { type: "select", label: "Presentación", options: selectOptions([["lista", "Lista horizontal"], ["tarjetas-2", "Tarjetas · 2 columnas"], ["tarjetas-3", "Tarjetas · 3 columnas"]]) }
       },
-      defaultProps: { title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3 },
+      defaultProps: { title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3, layout: "lista" },
       render: (props) => <EventsSectionView {...props} />
     },
     BulletinsSection: {
@@ -247,7 +249,7 @@ export const DEFAULT_COMMUNICATIONS_SITE: CommunicationsSiteData = {
   content: [
     { type: "FeaturedSection", props: { id: "destacada-inicial", title: "Una mirada a nuestra semana", description: "Novedades y buenas historias de nuestros equipos." } },
     { type: "NewsSection", props: { id: "noticias-inicial", title: "Últimas publicaciones", description: "Lo nuevo en Buses JM.", limit: 3, layout: "grilla" } },
-    { type: "EventsSection", props: { id: "agenda-inicial", title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3 } },
+    { type: "EventsSection", props: { id: "agenda-inicial", title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3, layout: "lista" } },
     { type: "BulletinsSection", props: { id: "boletines-inicial", title: "Boletines", description: "Lee y descarga las últimas ediciones.", limit: 4 } }
   ],
   zones: {}
@@ -272,7 +274,7 @@ function renderLayoutBlock(block: { type: string; props: Record<string, unknown>
     case "FeaturedSection": return <FeaturedSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} />;
     case "HeroSection": return <HeroSectionView key={key} eyebrow={String(p.eyebrow ?? "")} title={String(p.title ?? "")} summary={String(p.summary ?? "")} tone={(p.tone as CommunicationsTone) ?? "destacado"} />;
     case "NewsSection": return <NewsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 6)} layout={(p.layout as CommunicationsLayout) ?? "grilla"} />;
-    case "EventsSection": return <EventsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 3)} />;
+    case "EventsSection": return <EventsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 3)} layout={(p.layout as CommunicationsEventsLayout) ?? "lista"} />;
     case "BulletinsSection": return <BulletinsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 4)} />;
     case "MessageSection": return <MessageSectionView key={key} title={String(p.title ?? "")} message={String(p.message ?? "")} tone={(p.tone as CommunicationsTone) ?? "claro"} />;
     case "DividerSection": return <DividerSectionView key={key} label={String(p.label ?? "")} />;

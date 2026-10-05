@@ -4522,3 +4522,13 @@ Revisión adicional post-migración: Supabase Performance Advisor encontró tres
 - [x] Ejecutar Guardian, build, auditorías Supabase/migraciones y `git diff --check`; revisar cambios y registrar resultado.
 
 Revisión: el editor ahora ofrece cinco paletas, tres tipografías, tres escalas tipográficas, dos anchos y tres estilos de esquina, manteniendo edición de textos, opciones de sección, arrastre y previsualización móvil/tablet/escritorio. `FeaturedSection` ya se muestra en la portada y es aceptado por el RPC. Los valores usan listas permitidas; los diseños antiguos que no incluyen las nuevas propiedades toman valores por defecto. Pasaron `npm run build:frontend-check`, `npm run guardian` (0 errores/advertencias), `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check`. Auditoría SQL reporta 88 advertencias históricas del repositorio. Baseline de performance actualizado con medición local exacta; falta reconciliar el artefacto canónico CI al integrar.
+
+## Diseños alternativos para Próximas actividades — 2026-10-05
+
+- [x] Añadir al bloque Agenda controles para lista horizontal y tarjetas de dos o tres columnas.
+- [x] Hacer que las tarjetas se reorganicen en móvil y tablet sin desbordarse, respetando tema y forma global del portal.
+- [x] Extender el validador SQL con opciones permitidas manteniendo layouts guardados y publicados.
+- [x] Validar build, Guardian, auditorías SQL y `git diff --check`.
+- [ ] Desplegar la migración y el frontend; verificar los estilos servidos en producción.
+
+Revisión local: Puck ofrece “Lista horizontal”, “Tarjetas · 2 columnas” y “Tarjetas · 3 columnas”. El diseño responde a tableta y móvil; el valor anterior ausente conserva la lista horizontal. SQL acepta solo esos tres valores para Agenda y mantiene la validación de noticias sin cambios. `npm run guardian` pasó con 0 errores y 0 advertencias; `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check` pasaron. La sincronización productiva queda pendiente de integrar este PR.
