@@ -1,5 +1,11 @@
 # Tareas y Roadmap de Desarrollo
 
+## Corregir búsqueda de conductores BUK en Planificación Atlas — 2026-10-05
+
+- [x] Comparar la búsqueda Atlas con el control BUK compartido y revisar la consulta/RPC productiva.
+- [x] Enlazar Planificación al selector estándar con debounce, selección BUK y estados de carga/error/sin coincidencias.
+- [ ] Ejecutar build, Guardian y `git diff --check`; publicar y verificar la corrección productiva.
+
 ## Revisar nómina actualizada para alta de flota Atlas — 2026-10-05
 
 - [x] Leer las columnas J Código, T Patente, U Tipo y N Cliente del archivo adjunto; identificar encabezados, filas válidas y anomalías.
