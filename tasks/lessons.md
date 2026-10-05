@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 382. El estado vacío del mapa debe reconocer una propuesta optimizada
+
+- El optimizador guarda el trazado en `proposal.route` antes de que el usuario lo aplique; la condición del estado vacío debe comprobar propuesta, ruta planificada y ruta de navegación.
+- Al sumar un nuevo estado válido al flujo, revisar también las condiciones vacías superpuestas para evitar que un mensaje de “aún no hay ruta” tape un trazado ya visible.
+
 ## 381. Optimizar direcciones sin asumir origen y destino requiere un recorrido abierto explícito
 
 - La lista de direcciones de entrada no debe confundirse con la secuencia operacional: calcular la matriz dirigida de tiempos por calle, proponer la secuencia completa y derivar de ella primer y último punto.
