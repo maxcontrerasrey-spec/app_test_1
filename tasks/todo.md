@@ -1,5 +1,25 @@
 # Tareas y Roadmap de Desarrollo
 
+## Auditar y alinear cambios locales con producción y main — 2026-10-05
+
+- [x] Inventariar cambios staged/unstaged/untracked, comparar contra `origin/main` y revisar la función BUK desplegada.
+- [x] Respaldar los cambios originales y avanzar `main` sin perderlos.
+- [x] Retirar del cambio publicable el planificador Photon antiguo y regresiones de Psicolaboral; identificar por separado el documento de diseño R2.
+- [x] Preparar un cambio acotado para reconciliar en Git la fuente de `sync-buk-job-positions` v100 y su evidencia.
+- [x] Ejecutar Guardian, build y `git diff --check`.
+- [ ] Publicar mediante PR e integrar el cambio; dejar el checkout principal limpio y alineado.
+
+Revisión: el checkout principal estaba 51 commits detrás de `origin/main`. Las ediciones locales de Atlas reintroducían una demo Photon y revertían ruta guardada, días operativos, despacho y realtime ya mergeados. Los cambios locales de Psicolaboral retiraban el estado de rechazo vigente y reducían controles de UI; se excluyeron. La función BUK remota está en v100 y su fuente desplegada contiene la normalización de ambas direcciones de asociación y la protección del código canónico presentes en el archivo local.
+
+## Reconciliar fuente de la sincronización BUK de cargos — 2026-10-05
+
+- [x] Confirmar el despliegue y comparar el comportamiento de `sync-buk-job-positions` con la fuente local.
+- [x] Mantener la asociación desde `role.area_ids` y `area.role_ids`, normalizando relaciones numéricas y objetos.
+- [x] Evitar cambiar el código BUK canónico cuando se resuelve un alias por un único nombre local.
+- [x] Validar el cambio con Deno check, Guardian y build; integrar el snapshot fuente sin volver a ejecutar ni desplegar la sincronización productiva.
+
+Resultado previo: el cargo `COORDINADOR DE SERVICIOS` quedó disponible en el catálogo bajo `CODELCO ANDINA 2022` tras activar la relación exacta 40/27/736 respaldada por la fuente BUK. La Sync v100 está desplegada y contiene las protecciones descritas; su siguiente ejecución desde la sesión del ERP no se confirmó porque devolvió 401. El Deno check detectó y se corrigieron dos estrechamientos TypeScript de valores `number | null`; luego pasaron `npm run check:edge:sync-buk-job-positions`, `npm run guardian` (0 errores/advertencias), `npm run build:frontend-check` y `git diff --check`. La fuente desplegada sigue siendo v100 y no se ejecutó ni redeplegó la sincronización masiva. El documento R2 se excluyó de este cambio funcional y quedó preservado en el stash de recuperación. No se ejecutará una nueva sincronización masiva como parte de la alineación del repositorio.
+
 ## Ocultar estado vacío tras proponer recorrido optimizado en Atlas — 2026-10-05
 
 - [x] Identificar por qué el mapa mantenía el recuadro vacío después de calcular una propuesta optimizada.
