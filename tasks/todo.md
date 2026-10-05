@@ -4501,4 +4501,6 @@ Resultado: PR #28 quedó integrado en `main` (2ec9a3cd); Cloudflare Pages public
 
 Revisión del plan: conservar el editor Puck para estética/layout del portal y separar ese flujo de la edición de artículos. La programación y el vencimiento se resolverán en las RPC de lectura por fecha del servidor; no dependerán de tareas frontend. La visibilidad por audiencia y los acuses oficiales se validarán en backend; contenido enriquecido se serializará en bloques permitidos, sin HTML arbitrario. Portadas y adjuntos seguirán en R2 privado con autorización y comprobación de integridad.
 
-Avance: contrato SQL, R2 privado y CMS implementados. Contratos (108 pruebas), TypeScript, build, auditoría de migraciones, baseline de performance y Guardian pasan localmente; queda pendiente CI, migración y publicación/validación productivas.
+Avance: contrato SQL, R2 privado y CMS implementados. Contratos (108 pruebas), TypeScript, build, auditoría de migraciones, baseline de performance y Guardian pasan localmente. Las migraciones `20261005190355` y `20261005190545` están aplicadas en producción; queda CI del último commit, despliegue de la interfaz y smoke de la ruta/almacenamiento en producción.
+
+Revisión adicional post-migración: Supabase Performance Advisor encontró tres relaciones nuevas sin índice de apoyo. Se agregaron índices en una segunda migración productiva (`communications_fk_indexes`) y se reflejarán en el historial local antes de continuar con CI y merge.

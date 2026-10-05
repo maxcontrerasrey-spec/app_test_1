@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync("supabase/migrations/20261005165138_communications_portal.sql", "utf8");
 const designMigration = readFileSync("supabase/migrations/20261005165140_communications_visual_editor.sql", "utf8");
 const nestingMigration = readFileSync("supabase/migrations/20261005180221_nest_communications_portal_under_hr.sql", "utf8");
-const cmsMigration = readFileSync("supabase/migrations/20261005182805_communications_editorial_official_cms.sql", "utf8");
+const cmsMigration = readFileSync("supabase/migrations/20261005190355_communications_editorial_official_cms.sql", "utf8");
 const storageRoute = readFileSync("functions/api/comunicaciones/files.ts", "utf8");
 const assetRoute = readFileSync("functions/api/comunicaciones/assets.ts", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
