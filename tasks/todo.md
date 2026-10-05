@@ -5,10 +5,10 @@
 - [x] Confirmar el estado de puntos y límites cuando se agrega una parada vacía.
 - [x] Evitar `fitBounds` cuando no existan coordenadas válidas para encuadrar.
 - [x] Ejecutar build frontend, Guardian y `git diff --check`; corregir fallas atribuibles al cambio.
-- [ ] Publicar en producción y verificar que los artefactos activos contienen la corrección.
-- [ ] Registrar resultado y lección para límites vacíos de MapLibre.
+- [x] Publicar en producción y verificar que los artefactos activos contienen la corrección.
+- [x] Registrar resultado y lección para límites vacíos de MapLibre.
 
-Nota de CI: Guardian local pasó; el artefacto Ubuntu/Node 24 detectó +29 bytes en `dist` y JS. Se documentó el tamaño exacto, sin relajar la tolerancia cero; falta repetir Guardian CI.
+Resultado: al agregar una parada vacía, `stops.length` era verdadero aunque el límite no tuviera `_sw`/`_ne`; `fitBounds` fallaba dentro de MapLibre. Ahora solo se arma/ajusta el encuadre si hay puntos confirmados o geometría, y se verifica `bounds.isEmpty()`. Build frontend, Guardian completo local y diff check pasan. El primer CI detectó +29 bytes sobre la baseline; se registró el tamaño exacto del artefacto Ubuntu/Node 24 conservando tolerancia cero. El run `37310817335` pasó todos los gates. Cloudflare sirve `index-HnKfiSQx.js` → `OperationsControlTowerPage-0TJEsAnc.js` → `OperationsRoutePlannerDemo-CElDTn8J.js`; el chunk productivo contiene la guarda `.isEmpty()`. Commits `da713345` (corrección) y `d767926a` (baseline exacta). No se modificó base de datos ni permisos.
 
 ## Corregir primera visualización de ruta y punto de parada Atlas — 2026-10-05
 
