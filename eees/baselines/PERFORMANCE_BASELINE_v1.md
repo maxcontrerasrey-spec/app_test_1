@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.49
+version: 1.0.50
 status: Activo
 language: es-CL
 owner: Quality
@@ -170,14 +170,16 @@ Revision 2026-10-05 CMS Editorial/Oficial de Comunicaciones: el build combinado 
 
 Revision 2026-10-05 métrica canónica Ubuntu/Node 24 para PR #30: el artefacto `dist`/JS mide 2.120 bytes más que el build local macOS; se registra la medición exacta observada por el audit CI. CSS y dependencias no cambian; tolerancia cero.
 
+Revision 2026-10-05 ampliacion Puck: el build local mide 7,448,897 bytes totales, 5,329,436 bytes JS y 529,724 bytes CSS. Los 1,036 bytes de incremento total y 1,955 bytes CSS corresponden a cinco paletas seguras, tres fuentes, escala tipografica, ancho y forma de tarjetas en el editor de portada; no agrega dependencias ni adelanta la carga lazy. Se conserva tolerancia cero y la medicion canonica CI debe reconciliar cualquier diferencia de plataforma.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7447861,
+  "distTotalBytes": 7448897,
   "jsFileCount": 74,
-  "jsTotalBytes": 5330355,
+  "jsTotalBytes": 5329436,
   "cssFileCount": 15,
-  "cssTotalBytes": 527769,
+  "cssTotalBytes": 529724,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

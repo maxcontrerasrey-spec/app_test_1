@@ -4506,3 +4506,12 @@ Resultado final: PR #30 integrado en `main` como `44ee82e8`; Cloudflare Pages pu
 Límite de verificación: CI omitió los dos smoke tests de sesión autenticada porque el job no tenía credenciales para ejecutarlos. Se verificó el rechazo anónimo, los grants/RLS y la regla de acceso en código/SQL; falta una prueba interactiva con una cuenta lectora y otra con el rol `comunicador_`. No se cargó contenido de demostración ni se migraron boletines del SharePoint.
 
 Revisión adicional post-migración: Supabase Performance Advisor encontró tres relaciones nuevas sin índice de apoyo. Se agregaron índices en una segunda migración productiva (`communications_fk_indexes`) y se alineó su archivo local con la versión generada en producción.
+
+## Ampliar editor visual Puck del Portal — 2026-10-05
+
+- [x] Alinear el bloque `FeaturedSection` entre catálogo, render publicado y validador SQL.
+- [x] Ampliar controles de identidad visual con paletas, tipografía, tamaño, ancho y forma predefinidos, manteniendo compatibilidad con diseños ya guardados.
+- [x] Aplicar los tokens idénticos a la vista previa y a la portada publicada; validar cada token también en el RPC.
+- [x] Ejecutar Guardian, build, auditorías Supabase/migraciones y `git diff --check`; revisar cambios y registrar resultado.
+
+Revisión: el editor ahora ofrece cinco paletas, tres tipografías, tres escalas tipográficas, dos anchos y tres estilos de esquina, manteniendo edición de textos, opciones de sección, arrastre y previsualización móvil/tablet/escritorio. `FeaturedSection` ya se muestra en la portada y es aceptado por el RPC. Los valores usan listas permitidas; los diseños antiguos que no incluyen las nuevas propiedades toman valores por defecto. Pasaron `npm run build:frontend-check`, `npm run guardian` (0 errores/advertencias), `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check`. Auditoría SQL reporta 88 advertencias históricas del repositorio. Baseline de performance actualizado con medición local exacta; falta reconciliar el artefacto canónico CI al integrar.

@@ -6,6 +6,9 @@
   --site-paper: #fff;
   --site-tint: #f7f4f1;
   --site-line: #e8e6e3;
+  --site-content-width: 1220px;
+  --site-type-scale: 1;
+  --site-card-radius: 0px;
   width: 100%;
   padding: clamp(18px, 4vw, 44px) clamp(14px, 3vw, 35px) 20px;
   background: var(--site-paper);
@@ -13,21 +16,29 @@
 }
 .communications-site-layout.theme-andino { --site-accent: #286b5e; --site-accent-dark: #1e5148; --site-tint: #f0f5f2; --site-line: #dfe9e4; }
 .communications-site-layout.theme-neutro { --site-accent: #48586d; --site-accent-dark: #344356; --site-tint: #f2f4f6; --site-line: #e0e4e8; }
+.communications-site-layout.theme-oceano { --site-accent: #28638a; --site-accent-dark: #1c4a69; --site-tint: #eff5f8; --site-line: #dce7ed; }
+.communications-site-layout.theme-energia { --site-accent: #a65a20; --site-accent-dark: #7c4219; --site-tint: #faf3e9; --site-line: #eee2d1; }
 .communications-site-layout.font-sistema { font-family: Arial, Helvetica, sans-serif; }
 .communications-site-layout.font-institucional { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-.communications-site-masthead { display: flex; align-items: center; gap: 13px; max-width: 1220px; margin: 0 auto 26px; padding-bottom: 18px; border-bottom: 1px solid var(--site-line); }
+.communications-site-layout.font-editorial { font-family: Georgia, "Times New Roman", serif; }
+.communications-site-layout.type-scale-compacta { --site-type-scale: .92; }
+.communications-site-layout.type-scale-amplia { --site-type-scale: 1.1; }
+.communications-site-layout.content-width-amplio { --site-content-width: 1440px; }
+.communications-site-layout.shape-suave { --site-card-radius: 8px; }
+.communications-site-layout.shape-redondeada { --site-card-radius: 18px; }
+.communications-site-masthead { display: flex; align-items: center; gap: 13px; max-width: var(--site-content-width); margin: 0 auto 26px; padding-bottom: 18px; border-bottom: 1px solid var(--site-line); }
 .communications-site-brand { display: grid; width: 43px; height: 43px; flex: 0 0 auto; place-items: center; border-radius: 13px 13px 13px 3px; background: var(--site-accent); color: #fff; font-size: 21px; font-weight: 800; letter-spacing: -.08em; }
 .communications-site-masthead > div { display: grid; gap: 4px; }
 .communications-site-masthead strong { color: var(--site-ink); font-size: 14px; font-weight: 780; letter-spacing: -.025em; }
 .communications-site-masthead small { color: var(--site-muted); font-size: 11px; }
-.communications-site-layout > main { display: grid; max-width: 1220px; gap: clamp(23px, 4vw, 43px); margin: 0 auto; }
+.communications-site-layout > main { display: grid; max-width: var(--site-content-width); gap: clamp(23px, 4vw, 43px); margin: 0 auto; }
 .communications-site-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(210px, .43fr); align-items: center; min-height: 280px; overflow: hidden; padding: clamp(25px, 5vw, 55px); background: var(--site-tint); }
 .communications-site-hero.tone-oscuro { background: #202e41; color: #fff; }
 .communications-site-hero.tone-oscuro .communications-site-hero-copy h1, .communications-site-hero.tone-oscuro .communications-site-hero-copy p { color: #fff; }
 .communications-site-hero.tone-claro { background: #fff; border: 1px solid var(--site-line); }
 .communications-site-hero-copy { position: relative; z-index: 1; max-width: 710px; }
 .communications-site-hero-copy .communications-kicker, .communications-site-section-heading .communications-kicker, .communications-site-message .communications-kicker { color: var(--site-accent); }
-.communications-site-hero-copy h1 { margin: 13px 0 10px; color: var(--site-ink); font-size: clamp(34px, 5vw, 59px); font-weight: 710; letter-spacing: -.065em; line-height: 1.03; }
+.communications-site-hero-copy h1 { margin: 13px 0 10px; color: var(--site-ink); font-size: clamp(calc(34px * var(--site-type-scale)), calc(5vw * var(--site-type-scale)), calc(59px * var(--site-type-scale))); font-weight: 710; letter-spacing: -.065em; line-height: 1.03; }
 .communications-site-hero-copy > p { max-width: 570px; margin: 0; color: var(--site-muted); font-size: 14px; line-height: 1.7; }
 .communications-site-hero-copy .communications-primary-button { margin-top: 21px; background: var(--site-accent); border-color: var(--site-accent); }
 .communications-site-hero-art { position: relative; display: grid; min-height: 190px; place-items: center; color: var(--site-accent); }
@@ -37,7 +48,7 @@
 .communications-site-art-label { position: absolute; bottom: 2px; color: var(--site-muted); font-size: 8px; font-weight: 800; letter-spacing: .2em; }
 .communications-site-section { padding: clamp(7px, 1.5vw, 15px) 0; }
 .communications-site-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 14px; }
-.communications-site-section-heading h2, .communications-site-message h2 { margin: 6px 0 5px; color: var(--site-ink); font-size: clamp(22px, 3vw, 32px); letter-spacing: -.045em; }
+.communications-site-section-heading h2, .communications-site-message h2 { margin: 6px 0 5px; color: var(--site-ink); font-size: clamp(calc(22px * var(--site-type-scale)), calc(3vw * var(--site-type-scale)), calc(32px * var(--site-type-scale))); letter-spacing: -.045em; }
 .communications-site-section-heading p { max-width: 650px; margin: 0; color: var(--site-muted); font-size: 12px; line-height: 1.6; }
 .communications-site-news.is-grilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; }
 .communications-site-news.is-list { display: grid; grid-template-columns: 1fr; }
@@ -68,7 +79,7 @@
 .communications-site-message p { max-width: 850px; margin: 0; color: var(--site-muted); font-size: 13px; line-height: 1.8; white-space: pre-line; }
 .communications-site-divider { display: flex; align-items: center; gap: 12px; color: var(--site-muted); font-size: 10px; font-weight: 700; }
 .communications-site-divider::before, .communications-site-divider::after { height: 1px; flex: 1; background: var(--site-line); content: ""; }
-.communications-site-footer { display: flex; justify-content: space-between; gap: 18px; max-width: 1220px; margin: 29px auto 0; padding-top: 16px; border-top: 1px solid var(--site-line); color: var(--site-muted); font-size: 10px; }
+.communications-site-footer { display: flex; justify-content: space-between; gap: 18px; max-width: var(--site-content-width); margin: 29px auto 0; padding-top: 16px; border-top: 1px solid var(--site-line); color: var(--site-muted); font-size: 10px; }
 .communications-topbar-actions { display: flex; align-items: center; gap: 8px; }
 .communications-topbar-button { padding: 9px 11px; border: 1px solid var(--comm-line); background: #fff; color: #445064; font: inherit; font-size: 10px; font-weight: 720; cursor: pointer; }
 .communications-topbar-button:hover { border-color: var(--comm-red); color: var(--comm-red-dark); }
@@ -97,6 +108,7 @@
 .communications-site-section-heading h2 { font-size: 24px; }
 .communications-feature-section { padding-top: 1px; }
 .communications-feature-story { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr); width: 100%; min-height: 285px; overflow: hidden; padding: 0; border: 1px solid var(--site-line); background: #fff; color: var(--site-ink); text-align: left; cursor: pointer; transition: border-color .18s ease, transform .18s ease; }
+.communications-site-layout.shape-suave .communications-feature-story, .communications-site-layout.shape-redondeada .communications-feature-story, .communications-site-layout.shape-suave .communications-site-news .communications-item, .communications-site-layout.shape-redondeada .communications-site-news .communications-item, .communications-site-layout.shape-suave .communications-site-events, .communications-site-layout.shape-redondeada .communications-site-events, .communications-site-layout.shape-suave .communications-site-bulletins, .communications-site-layout.shape-redondeada .communications-site-bulletins, .communications-site-layout.shape-suave .communications-site-message, .communications-site-layout.shape-redondeada .communications-site-message, .communications-site-layout.shape-suave .communications-site-empty, .communications-site-layout.shape-redondeada .communications-site-empty { border-radius: var(--site-card-radius); }
 .communications-feature-story:hover { border-color: #c5cbd0; transform: translateY(-1px); }
 .communications-feature-story-image { display: block; width: 100%; height: 100%; min-height: 285px; object-fit: cover; background: #e8e9e9; }
 .communications-image-placeholder { display: grid; place-items: center; min-height: 150px; background: linear-gradient(140deg, #26364b, #687687); color: rgba(255,255,255,.72); font-size: 11px; font-weight: 800; letter-spacing: .22em; }
