@@ -1,5 +1,12 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 381. Optimizar direcciones sin asumir origen y destino requiere un recorrido abierto explícito
+
+- La lista de direcciones de entrada no debe confundirse con la secuencia operacional: calcular la matriz dirigida de tiempos por calle, proponer la secuencia completa y derivar de ella primer y último punto.
+- Mantener la propuesta revisable antes de guardarla y persistir método/proveedor junto a las métricas; rutas históricas conservan su interpretación previa.
+- Si el runtime no puede alojar OR-Tools, describir la heurística real (multisalida + vecino más cercano + mejora 2-opt) y no presentarla como IA ni como óptimo global.
+- Alinear costing/profile entre matriz, trazado de planificación y conductor; indicar claramente si el recorrido termina en destino o regresa al inicio.
+
 ## 380. MapLibre no debe encuadrar límites vacíos al crear una parada
 
 - `new LngLatBounds()` permanece vacío hasta extenderlo con una coordenada; llamar `fitBounds` en ese estado puede fallar internamente al leer `_sw.lng`.

@@ -83,10 +83,11 @@ addCheck(
 );
 addCheck(
   routePlannerSource.includes("searchAtlasTomTom(query") &&
-    routePlannerSource.includes("calculateAtlasTomTomRoute") &&
+    routePlannerSource.includes("optimizeAtlasOpenRoute") &&
+    routePlannerSource.includes("calculateAtlasValhallaRoute") &&
     routePlannerSource.includes("Ferrostar") &&
     routePlannerSource.includes("Valhalla"),
-  "la planificación usa TomTom y conserva Ferrostar + Valhalla para navegación"
+  "la búsqueda usa TomTom, la planificación optimiza con Valhalla y conserva Ferrostar + Valhalla para navegación"
 );
 addCheck(
   navigationSource.includes('label: "Operaciones",') &&

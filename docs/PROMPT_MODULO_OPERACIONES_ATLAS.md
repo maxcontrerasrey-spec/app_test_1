@@ -11,7 +11,7 @@ El objetivo de producto es tener una fuente única y trazable por servicio y des
 ## Flujo de punta a punta
 
 1. **Configurar el servicio base.** Se vincula a un contrato existente, se identifica con nombre/tipo/jornada y se seleccionan los días de semana en que opera. La configuración también puede asociarse a hitos SLA y a una o más rutas.
-2. **Configurar rutas del servicio.** El planificador permite definir origen, paradas ordenadas y destino, revisar la geometría en el mapa y guardar la ruta con un prefijo. Un servicio base puede tener varias rutas, por ejemplo una por turno.
+2. **Configurar rutas del servicio.** Se agregan direcciones sin decidir el orden ni los extremos. El planificador propone un recorrido abierto, quien configura revisa inicio/destino y trazado, aplica la propuesta y guarda la ruta con un prefijo. Un servicio base puede tener varias rutas, por ejemplo una por turno.
 3. **Planificar un despacho.** Se seleccionan fecha/hora, contrato, servicio base, conductor y vehículo. La identidad del conductor y su jornada se validan contra BUK/roster; los datos de catálogo no se copian para reemplazar esas fuentes.
 4. **Despachar.** El servicio pasa por estados explícitos de preparación/publicación. No se debe publicar si faltan datos obligatorios o validaciones.
 5. **Registrar ejecución.** Los hitos se completan por acciones autorizadas o, cuando exista una integración validada, por eventos GPS. Las incidencias y confirmaciones del conductor quedan asociadas al despacho.
@@ -34,7 +34,7 @@ La navegación funcional tiene siete vistas. El planificador de rutas es una pan
 - Crea una ocurrencia de servicio con fecha, jornada, horarios e instrucciones.
 - Permite elegir el servicio base, buscar conductores y asignar vehículo.
 - La selección de conductor debe respetar la ficha BUK exacta y el roster para la fecha.
-- La ruta planificada se asocia al servicio base y puede vincularse al despacho. La lista visible de paradas define el orden real; origen y destino se derivan de ese orden.
+- La ruta planificada se asocia al servicio base y puede vincularse al despacho. La propuesta determina el orden y deriva origen y destino; el orden aplicado es la secuencia que se persiste y utiliza el conductor.
 
 ### 3. Despacho
 
@@ -70,10 +70,10 @@ La navegación funcional tiene siete vistas. El planificador de rutas es una pan
 
 ## Planificador y navegación de rutas
 
-- **Búsqueda/planificación:** TomTom se usa para sugerir y resolver direcciones y calcular la vista previa de ruta. La clave vive únicamente en el proxy backend `atlas-tomtom-planning`; el navegador envía una sesión autenticada. Seleccionar un resultado confirmado obtiene coordenadas exactas. La búsqueda de direcciones y el cálculo TomTom son para planificación.
-- **Mapa de planificación:** MapLibre presenta cartografía raster de OpenStreetMap con atribución visible. Debe dibujar la geometría devuelta por TomTom, una línea legible, halo y flechas de sentido, y encuadrar el recorrido completo. También existe selección manual de un punto desplazando el mapa y confirmando el centro.
-- **Paradas:** pueden agregarse, eliminarse y reordenarse. Al agregar una parada vacía, su marcador provisional no debe llevar el mapa a `[0,0]`; debe permanecer en el contexto visible de la ruta. Las paradas sin ubicación confirmada no participan en el encuadre ni en el cálculo.
-- **Código y persistencia:** las rutas se guardan vinculadas a un servicio base y admiten varias alternativas/versiones. El código se forma con el nombre normalizado del servicio base, guion bajo y el prefijo ingresado; por ejemplo, `OPERATIVO_MINA_1_TURNO_B`. La lista debe conservar el orden de paradas, coordenadas, fuente y versión.
+- **Búsqueda/planificación:** TomTom sugiere y resuelve direcciones numeradas. La clave vive únicamente en el proxy autenticado `atlas-tomtom-planning`. Para planificar, Valhalla calcula una matriz de tiempos de conducción; un algoritmo determinista multisalida con vecino más cercano y mejora 2-opt propone el orden abierto y Valhalla entrega el trazado final. Quien configura revisa y aplica o descarta la propuesta.
+- **Mapa de planificación:** MapLibre presenta OpenStreetMap con atribución visible. Dibuja la geometría Valhalla, halo y flechas de sentido, y encuadra la propuesta. También existe selección manual de punto al centro del mapa.
+- **Paradas:** se ingresan como direcciones equivalentes, sin origen/destino predefinidos. Se pueden agregar, eliminar y reordenar antes de proponer. Las paradas sin dirección verificada no habilitan el cálculo; la secuencia aplicada determina origen y destino.
+- **Código y persistencia:** las rutas se guardan vinculadas a un servicio base y admiten alternativas/versiones. El código se forma con el nombre normalizado del servicio base, guion bajo y prefijo ingresado; por ejemplo, `OPERATIVO_MINA_1_TURNO_B`. Se persisten orden, coordenadas, proveedor/método, métricas, fuente y versión; los registros históricos conservan su proveedor previo.
 - **Conductor/navegación:** la decisión vigente es conservar Ferrostar + Valhalla para la experiencia de navegación, reutilizando las paradas guardadas y recalculando la geometría con ese motor. TomTom no gobierna la navegación del conductor. El perfil `auto` es una aproximación de automóvil: no representa restricciones de bus, dimensiones, faena ni caminos privados.
 - **Calidad cartográfica:** direcciones numeradas se deben verificar con proveedor y coordenadas resueltas; un nombre de calle escrito libremente no equivale a una dirección confirmada. Los proveedores públicos de mapa/ruteo pueden ser best-effort y no tienen SLA de producción garantizado.
 
@@ -98,10 +98,10 @@ La navegación funcional tiene siete vistas. El planificador de rutas es una pan
 
 ## Qué no se ha desarrollado / límites explícitos
 
-1. No hay optimizador de rutas con IA; IA permanece fuera del alcance actual.
+1. El optimizador actual es una heurística determinista de ruta abierta, no una IA ni una garantía de óptimo global. Minimiza duración estimada entre puntos y no considera ventanas horarias, capacidad, pausas, múltiples vehículos, prioridades ni retorno al inicio.
 2. TrackTec real está desactivado hasta recibir contrato oficial y credenciales. El mapa que muestra posiciones depende de que existan eventos procesados.
 3. La navegación Ferrostar del planificador puede simular avance; no equivale a la app del conductor con GPS real del dispositivo lista para operar.
-4. TomTom usa perfil automóvil para planificación y no aplica restricciones específicas de bus/faena.
+4. TomTom resuelve direcciones; Valhalla usa el perfil `auto` para matriz y geometría, sin restricciones específicas de bus/faena.
 5. No afirmar ETA operacional, tráfico en vivo, geocercas activas o cierre automático de hitos salvo evidencia de su proveedor/job productivo actual.
 6. OSM/Valhalla públicos sirven para desarrollo/validación, pero su disponibilidad, cobertura y SLA deben evaluarse antes de soportar una operación crítica.
 7. No afirmar “verificado en producción” solo porque compile el frontend, exista una tabla o el bundle responda HTTP 200. Verificar la ruta, datos, permiso y experiencia real disponibles.

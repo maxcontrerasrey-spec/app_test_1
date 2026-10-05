@@ -1,5 +1,19 @@
 # Tareas y Roadmap de Desarrollo
 
+## Propuesta de secuencia optimizada para rutas Atlas — 2026-10-05
+
+- [x] Inspeccionar contratos actuales de planificador, proxy TomTom, RPC/tabla de rutas y límites del Valhalla productivo.
+- [x] Implementar un optimizador determinista de ruta abierta que recibe direcciones sin orden fijo, usa matriz de tiempos Valhalla y devuelve orden, geometría y métricas; TomTom queda para búsqueda y Ferrostar/Valhalla para conductor.
+- [x] Ajustar el planificador para mostrar todos los puntos como direcciones por ordenar, revisar/aplicar la propuesta antes de guardarla y preservar asociación a servicio base/código de ruta.
+- [x] Crear migración forward-only para persistir proveedor y método de planificación sin alterar rutas históricas ni permisos superadmin.
+- [x] Cubrir solver y contratos con pruebas focalizadas; ejecutar Deno check, build, Guardian, auditorías SQL y `git diff --check`.
+- [ ] Aplicar migración y desplegar Edge Function/frontend en producción; verificar autorización sin JWT, disponibilidad pública de matriz/ruta y artefactos productivos.
+- [ ] Registrar resultados y límites reales de verificación en esta tarea y `tasks/lessons.md`.
+
+Revisión de plan: supuesto operativo fase 1 = recorrido abierto que visita cada punto una vez; optimizador elige primer y último punto y no regresa al inicio. La propuesta se revisa antes de guardar; no se incorpora IA generativa ni restricciones de bus/faena que no entrega el perfil disponible.
+
+Avance de producción: migración `20261005131845` aplicada en Supabase y `atlas-tomtom-planning` desplegada como versión 5 con JWT obligatorio. La llamada de optimización sin sesión devuelve 401. Valhalla público respondió 200 para matriz y geometría en Calama. Falta publicar el frontend y confirmar la versión activa.
+
 ## Evitar error al agregar parada sin coordenadas confirmadas en Atlas — 2026-10-05
 
 - [x] Confirmar el estado de puntos y límites cuando se agrega una parada vacía.
