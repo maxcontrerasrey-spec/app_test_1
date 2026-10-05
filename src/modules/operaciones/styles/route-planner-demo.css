@@ -79,7 +79,8 @@
 .ops-route-demo__empty span { font-size: 11px; }
 .ops-route-demo__add-stop { display: flex; align-items: center; gap: 9px; align-self: flex-start; margin: 13px 0 16px 30px; padding: 4px 0; border: 0; background: transparent; color: #5144b6; font: inherit; font-size: 18px; cursor: pointer; }
 .ops-route-demo__add-stop span { font-size: 11px; font-weight: 650; }
-.ops-route-demo__add-stop:disabled { opacity: .45; cursor: wait; }
+.ops-route-demo__add-stop:disabled { opacity: .45; cursor: not-allowed; }
+.ops-route-demo__pending-stop { margin: -10px 0 12px 30px; color: #777587; font-size: 10px; line-height: 1.45; }
 .ops-route-demo__panel-divider { height: 1px; background: var(--ops-demo-line); }
 .ops-route-demo__summary, .ops-route-demo__driver-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
 .ops-route-demo__summary div, .ops-route-demo__driver-stats div { display: grid; gap: 4px; padding: 11px; border: 1px solid #ececf1; border-radius: 6px; }

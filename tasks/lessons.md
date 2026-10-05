@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-05 - Un punto de ruta vacío no debe parecer una interfaz congelada
+
+- Al añadir una dirección, desplazar y enfocar el nuevo campo dentro de la lista; si ya existe uno vacío, «Agregar» debe llevar a ese campo en lugar de quedar deshabilitado con cursor de espera.
+- Permitir eliminar el punto vacío y explicar que la propuesta requiere completar o quitarlo; deshabilitar acciones con cursor `wait` cuando no hay una operación en curso confunde validación con carga.
+
 ## 2026-10-05 - Los ejemplos de ruta deben usar el catálogo para destinos conocidos
 
 - No volver a geocodificar por proveedor nombres internos de faenas que ya tienen coordenadas aprobadas en el catálogo; el proveedor puede no reconocerlos aunque el mapa ya tenga el punto preciso.
