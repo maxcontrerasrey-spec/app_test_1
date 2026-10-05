@@ -1,5 +1,17 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-05 - No perder asociaciones cargo-área cuando BUK expone ambos lados
+
+- La API puede exponer la misma asociación desde `role.area_ids` y desde `area.role_ids`; reconciliar ambos lados con deduplicación por ID evita depender de un único payload.
+- Los arrays de relaciones pueden contener IDs numéricos, strings u objetos con `id`, `role_id` o `area_id`; normalizarlos antes de resolver el área.
+- Confirmar el vínculo exacto en la tabla cargo-contrato y en el selector consumidor; el número de trabajadores no permite inferir el ID BUK.
+
+## 2026-10-05 - Resolver alias de cargo BUK sin cambiar la identidad canónica
+
+- Si dos IDs BUK con el mismo nombre convergen en una única posición ERP, el nombre solo sirve como alias cuando hay exactamente una candidata local.
+- Un alias no debe sobrescribir el código BUK canónico; actualizar solo el estado de vigencia y mantener la relación identificada por el ID recibido.
+- La fuente del Edge Function desplegado debe quedar reconciliada con Git; una llamada de sync que devuelve 401 no verifica la actualización posterior del catálogo.
+
 ## 382. El estado vacío del mapa debe reconocer una propuesta optimizada
 
 - El optimizador guarda el trazado en `proposal.route` antes de que el usuario lo aplique; la condición del estado vacío debe comprobar propuesta, ruta planificada y ruta de navegación.

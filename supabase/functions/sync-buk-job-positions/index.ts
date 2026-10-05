@@ -265,6 +265,19 @@ function readNumericId(record: BukRoleRecord, keys: string[]) {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+function readRelatedIds(value: unknown, keys: string[]) {
+  if (!Array.isArray(value)) return [] as number[];
+
+  return [...new Set(value.flatMap((entry) => {
+    const candidate = entry && typeof entry === "object" && !Array.isArray(entry)
+      ? readNumericId(entry as BukRoleRecord, keys)
+      : Number(entry);
+    return typeof candidate === "number" && Number.isSafeInteger(candidate) && candidate > 0
+      ? [candidate]
+      : [];
+  }))];
+}
+
 function normalizeBukAreaLabel(value: string | null | undefined) {
   return normalizeText(value).replace(/\s*\([^)]*\)\s*$/, "").trim();
 }
@@ -280,6 +293,25 @@ function areaLabels(area: BukAreaRecord) {
     readText(area, ["second_level_name", "department_name"]),
     parentRecord ? readText(parentRecord, ["name", "area_name"]) : ""
   ].map(normalizeBukAreaLabel).filter(Boolean);
+}
+
+function readRoleAreaIds(role: BukRoleRecord, areaById: Map<number, BukAreaRecord>) {
+  const ids = new Set<number>();
+  for (const id of readRelatedIds(role.area_ids, ["id", "area_id"])) {
+    if (typeof id === "number" && Number.isSafeInteger(id) && areaById.has(id)) ids.add(id);
+  }
+
+  // BUK exposes the same relationship from both sides: role.area_ids and
+  // area.role_ids. Use the area-side list as a fallback for tenants where
+  // the role endpoint has not reflected the latest area assignment yet.
+  const roleId = readNumericId(role, ["id", "role_id"]);
+  if (roleId) {
+    for (const [areaId, area] of areaById) {
+      if (readRelatedIds(area.role_ids, ["id", "role_id"]).includes(roleId)) ids.add(areaId);
+    }
+  }
+
+  return [...ids];
 }
 
 function readAreaActive(area: BukAreaRecord) {
@@ -349,27 +381,35 @@ async function syncJobPositions(
   }
 
   const existingByCode = new Map<string, ExistingJobPosition>();
-  const existingByName = new Map<string, ExistingJobPosition>();
+  const existingByName = new Map<string, ExistingJobPosition[]>();
 
   for (const row of (existingRows ?? []) as ExistingJobPosition[]) {
     existingByCode.set(row.code, row);
-    existingByName.set(normalizeText(row.name), row);
+    const name = normalizeText(row.name);
+    const matches = existingByName.get(name) ?? [];
+    matches.push(row);
+    existingByName.set(name, matches);
   }
 
   let synced = 0;
   const inserts: JobPositionPayload[] = [];
 
   for (const position of positions) {
-    const existing = existingByCode.get(position.code) ?? existingByName.get(normalizeText(position.name));
+    const exactMatch = existingByCode.get(position.code);
+    const nameMatches = existingByName.get(normalizeText(position.name)) ?? [];
+    const existing = exactMatch ?? (nameMatches.length === 1 ? nameMatches[0] : null);
 
     if (!existing) {
       inserts.push(position);
       continue;
     }
 
+    // A matching display name can attach a BUK alias to one unique ERP
+    // position, but it must never replace that position's canonical BUK code.
+    const update = exactMatch ? position : { is_active: position.is_active };
     const { error } = await supabase
       .from("job_positions")
-      .update(position)
+      .update(update)
       .eq("id", existing.id);
 
     if (error) {
@@ -403,6 +443,13 @@ async function syncJobPositions(
   const positionByCode = new Map(
     ((syncedRows ?? []) as ExistingJobPosition[]).map((row) => [row.code, row])
   );
+  const positionIdsByName = new Map<string, number[]>();
+  for (const row of (existingRows ?? []) as ExistingJobPosition[]) {
+    const key = normalizeText(row.name);
+    const ids = positionIdsByName.get(key) ?? [];
+    ids.push(row.id);
+    positionIdsByName.set(key, ids);
+  }
   const { data: mappings, error: mappingsError } = await supabase
     .from("buk_contract_mappings")
     .select("contract_id, buk_area_name, contracts!inner(is_active)")
@@ -434,13 +481,15 @@ async function syncJobPositions(
   for (const role of roles) {
     if (!readActive(role)) continue;
     const roleId = readNumericId(role, ["id", "role_id"]);
-    const position = roleId ? positionByCode.get(`BUK-ROLE-${roleId}`) : null;
+    const roleName = normalizeText(readText(role, ["name", "nombre", "title", "role_name"]));
+    const sameNamePositionIds = positionIdsByName.get(roleName) ?? [];
+    const position = (roleId ? positionByCode.get(`BUK-ROLE-${roleId}`) : null) ??
+      (sameNamePositionIds.length === 1
+        ? ((existingRows ?? []) as ExistingJobPosition[]).find((row) => row.id === sameNamePositionIds[0])
+        : null);
     if (!roleId || !position) continue;
-    const rawAreaIds = Array.isArray(role.area_ids) ? role.area_ids : [];
-
-    for (const rawAreaId of rawAreaIds) {
-      const areaId = Number(rawAreaId);
-      const area = Number.isSafeInteger(areaId) ? areaById.get(areaId) : null;
+    for (const areaId of readRoleAreaIds(role, areaById)) {
+      const area = areaById.get(areaId);
       if (!area || !readAreaActive(area)) continue;
 
       for (const label of areaLabels(area)) {
