@@ -4487,4 +4487,6 @@ Resultado: la migración `20261002124040_preserve_terminal_candidate_on_psychola
 - [x] Confirmar que el overlay se condicionaba solo a una ruta calculada y no a direcciones ingresadas.
 - [x] Ocultar el overlay cuando el recorrido tenga al menos una etiqueta de dirección, manteniéndolo para el mapa realmente vacío.
 - [x] Validar el build y registrar el delta CI de 74 bytes en `dist`/JS, manteniendo presupuesto de tolerancia cero.
-- [ ] Publicar en producción y confirmar el bundle servido.
+- [x] Publicar en producción y confirmar el bundle servido.
+
+Resultado: PR #28 quedó integrado en `main` (2ec9a3cd); Cloudflare Pages publicó `Production / main` (23a8a241). El bundle servido por `gestion.busesjm.cl` evalúa `stops.some(stop => stop.label.trim().length > 0)` y oculta el estado vacío con la primera dirección. Build frontend y Guardian aprobaron; Guardian CI: 0 errores y 0 advertencias después de registrar el delta de 74 bytes sin cambiar la tolerancia cero.
