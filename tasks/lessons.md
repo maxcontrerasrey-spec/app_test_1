@@ -4141,3 +4141,4 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - No asignar origen/destino como roles fijos al crear una parada: agregar siempre al final y derivar origen, intermedias y destino desde la posición actual.
 - Las flechas deben poder mover todo punto dentro de los límites de la lista; después de cada movimiento, actualizar las etiquetas y enviar coordenadas en ese mismo orden al proveedor.
 - Envolver errores HTTP de un proveedor de rutas con un código genérico destruye el diagnóstico. Conservar los códigos estructurados permitidos y traducirlos en el cliente, sin propagar payloads arbitrarios ni secretos.
+- Un estado vacío del mapa debe depender de que no existan puntos ingresados, no solo de que aún no haya geometría calculada. Ocultar el overlay cuando aparece la primera dirección para evitar tapar el mapa y sus marcadores.

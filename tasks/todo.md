@@ -4482,3 +4482,9 @@ Resultado: la configuración quedó limitada a `profiles.is_super_admin = true` 
 - [x] Registrar resultado y cualquier límite operativo.
 
 Resultado: la migración `20261002124040_preserve_terminal_candidate_on_psycholaboral_rejection` quedó aplicada en Supabase producción; las tres RPC conservaron `SECURITY DEFINER`, `authenticated` conserva EXECUTE y `anon` no tiene EXECUTE. Cloudflare Pages confirmó `Production / main` en commit `0d136ddf`; el dominio productivo sirve el nuevo bundle con la categoría “Rechazo psicolaboral” y el aviso de que el proceso/documentos terminales no se alteran. María Inés Pérez Cañete (RC-0218) sigue con etapa `rejected`, evaluación `pending` y sin `decided_at`; no se tomó la decisión por Paola. Guardian: 0 errores/advertencias; build frontend, integridad psicolaboral (46 pruebas focalizadas), auditorías de migraciones/seguridad/performance y `git diff --check` aprobados. `supabase db push --linked --dry-run` no pudo ejecutarse porque este worktree no está enlazado a un project ref; la aplicación/verificación se hizo con la conexión Supabase productiva administrada y el registro de migraciones.
+## Ocultar estado vacío del mapa tras ingresar una dirección — 2026-10-05
+
+- [x] Confirmar que el overlay se condicionaba solo a una ruta calculada y no a direcciones ingresadas.
+- [x] Ocultar el overlay cuando el recorrido tenga al menos una etiqueta de dirección, manteniéndolo para el mapa realmente vacío.
+- [x] Validar el build y registrar el delta CI de 74 bytes en `dist`/JS, manteniendo presupuesto de tolerancia cero.
+- [ ] Publicar en producción y confirmar el bundle servido.

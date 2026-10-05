@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.48
+version: 1.0.49
 status: Activo
 language: es-CL
 owner: Quality
@@ -164,12 +164,14 @@ Revision 2026-10-05 límites vacíos del planificador Atlas: Guardian CI midió 
 Revision 2026-10-05 jornada AM/PM Atlas: el selector múltiple de jornada agrega 752 bytes medidos en `dist` y JS, sin cambio CSS, dependencias ni alteración del bundle inicial. Se registra el tamaño exacto y se conserva la tolerancia cero.
 Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327 bytes a `dist` y 709 bytes a JS, mientras CSS baja 382 bytes para reutilizar `StandardWorkerLookupField` con debounce, ficha BUK exacta y estados visibles de carga/error/sin coincidencias. No agrega dependencias, CSS ni adelanta carga de rutas lazy; los presupuestos siguen con tolerancia cero.
 
+Revision 2026-10-05 estado vacío del mapa Atlas: Guardian CI midió 74 bytes adicionales en `dist` y JS para retirar el overlay en cuanto se ingresa una dirección. CSS y dependencias no cambian; se registra el delta exacto y los presupuestos mantienen tolerancia cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7425276,
+  "distTotalBytes": 7425350,
   "jsFileCount": 74,
-  "jsTotalBytes": 5314784,
+  "jsTotalBytes": 5314858,
   "cssFileCount": 15,
   "cssTotalBytes": 520755,
   "budgetPolicy": {
