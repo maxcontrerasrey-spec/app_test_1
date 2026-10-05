@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Evitar error al agregar parada sin coordenadas confirmadas en Atlas — 2026-10-05
+
+- [x] Confirmar el estado de puntos y límites cuando se agrega una parada vacía.
+- [x] Evitar `fitBounds` cuando no existan coordenadas válidas para encuadrar.
+- [x] Ejecutar build frontend, Guardian y `git diff --check`; corregir fallas atribuibles al cambio.
+- [ ] Publicar en producción y verificar que los artefactos activos contienen la corrección.
+- [ ] Registrar resultado y lección para límites vacíos de MapLibre.
+
 ## Corregir primera visualización de ruta y punto de parada Atlas — 2026-10-05
 
 - [x] Asegurar fuente/capas del recorrido al terminar la carga del mapa para que el primer cálculo actualice un origen ya listo.

@@ -254,11 +254,13 @@ export function OperationsRoutePlannerDemo() {
     ensurePlannedRouteLayers(map);
     const source = map.getSource("planned-route") as maplibregl.GeoJSONSource;
     source.setData(geo ?? { type: "FeatureCollection", features: [] });
-    if (stops.length && activeView === "planning") {
+    if (activeView === "planning" && (locatedStops.length > 0 || planningCoordinates.length > 0)) {
       const bounds = new maplibregl.LngLatBounds();
       locatedStops.forEach((stop) => bounds.extend([stop.lng, stop.lat]));
       planningCoordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
-      map.fitBounds(bounds, { padding: { top: 80, bottom: 80, left: 65, right: 65 }, maxZoom: 15, duration: 500 });
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: { top: 80, bottom: 80, left: 65, right: 65 }, maxZoom: 15, duration: 500 });
+      }
     }
   }, [stops, route, planningRoute, activeView, mapReady]);
 

@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 380. MapLibre no debe encuadrar límites vacíos al crear una parada
+
+- `new LngLatBounds()` permanece vacío hasta extenderlo con una coordenada; llamar `fitBounds` en ese estado puede fallar internamente al leer `_sw.lng`.
+- La condición debe depender de puntos confirmados o geometría disponible y validarse con `bounds.isEmpty()` antes de ajustar la cámara.
+- Al crear un campo de parada sin dirección, verificar el ciclo completo de renderizado aunque el pin todavía no deba aparecer en el mapa.
+
 ## 379. Las capas de ruta del mapa deben reconciliarse y mostrar su sentido
 
 - Una fuente GeoJSON existente no garantiza que las capas que la presentan sigan montadas; verificar y restaurar por separado la fuente y cada capa en cada actualización.
