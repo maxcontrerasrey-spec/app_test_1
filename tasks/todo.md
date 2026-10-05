@@ -5,10 +5,10 @@
 - [x] Identificar por qué el mapa mantenía el recuadro vacío después de calcular una propuesta optimizada.
 - [x] Hacer que el estado vacío considere los tres estados válidos de ruta: propuesta, ruta planificada y navegación.
 - [x] Ejecutar validación de build frontend y `git diff --check`; inspeccionar la condición renderizada.
-- [ ] Publicar el ajuste y comprobar que el bundle de producción incluye la condición corregida.
-- [ ] Registrar resultado y lección para estados vacíos coordinados con nuevos estados del planificador.
+- [x] Publicar el ajuste y comprobar que el bundle de producción incluye la condición corregida.
+- [x] Registrar resultado y lección para estados vacíos coordinados con nuevos estados del planificador.
 
-Revisión: el trazado optimizado vive en `proposal.route`, no en `planningRoute`; la condición previa del recuadro solo comprobaba `planningRoute` y `route`. La corrección debe ocultar el estado vacío también cuando exista `proposal`.
+Revisión: el trazado optimizado vive en `proposal.route`, no en `planningRoute`; la condición previa del recuadro solo comprobaba `planningRoute` y `route`. Se agregó `proposal` a la condición de visibilidad. `npm run build:frontend-check` y `git diff --check` pasan; CI `37322391224` pasó Guardian, build, smokes y auditorías. El ajuste quedó integrado en PR #17, commit `91bb5895ea96690482c00cd767d11559e813d381`. El 5 de octubre de 2026, `gestion.busesjm.cl` sirvió `OperationsRoutePlannerDemo-BP19nuVe.js` con HTTP 200; inspección del fragmento confirmó que el overlay solo renderiza si no existe propuesta, ruta planificada ni ruta de conducción. Se mantiene oculta durante el cálculo y selección manual de punto.
 
 ## Propuesta de secuencia optimizada para rutas Atlas — 2026-10-05
 
