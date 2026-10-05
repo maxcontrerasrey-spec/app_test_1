@@ -1,3 +1,27 @@
+## Portal de Comunicaciones corporativo con documentos en R2 — 2026-10-05
+
+- [x] Revisar correo y página SharePoint con sesión autorizada; distinguir diseño/contenido de muestra de publicaciones reales y confirmar archivos recibidos.
+- [x] Inspeccionar arquitectura de módulos/permisos y rutas Cloudflare Pages/R2 ya existentes; definir lectura general, publicación restringida y archivos privados.
+- [x] Implementar módulo lazy-loaded del Portal con noticias, comunicados, eventos y boletines; estados de carga, error y vacío, filtros y búsqueda.
+- [x] Agregar modelo/RPCs protegidas para borrador, publicación, edición y archivo lógico; dar lectura a usuarios ERP activos y edición solo a `admin`/`comunicador_`.
+- [x] Incorporar upload y descarga autenticados de PDF mediante Cloudflare Pages + binding R2, validando usuario, permiso, tamaño y tipo de archivo.
+- [x] Integrar `portal_comunicaciones` a ruta, navegación, catálogo de módulos/roles y permisos; actualizar matriz documental.
+- [x] Validar build frontend, contratos/seguridad SQL, Guardian, auditorías aplicables y `git diff --check`; no cargar contenido de muestra ni publicar SharePoint.
+
+Alcance de evidencia: la página SharePoint consultada muestra “Vista previa · Fotografías y contenidos de ejemplo”, no tiene boletines publicados ni eventos próximos. El correo solo enlaza a SharePoint y menciona boletines compartidos por OneDrive; no adjunta el paquete `.sppkg` ni los PDF. El módulo queda preparado para cargar archivos reales cuando Comunicaciones los entregue.
+
+Revisión de implementación: módulo lazy y responsive; catálogo editorial consultado por RPC con RLS y acceso directo a tabla revocado; edición para `admin`/`comunicador_`; boletines requieren PDF para publicarse. Pages Function valida sesión y permiso antes de aceptar PDF, limita a 20 MiB, verifica firma y SHA-256, guarda en R2 privado y descarga tras comprobar publicación e integridad. Los resultados de muestra del SharePoint no se cargaron. La migración y Pages Function siguen pendientes de despliegue; confirmar el binding/secretos R2 y asignar `comunicador_` a sus publicadores son tareas de salida a producción.
+
+## Editor visual del Portal de Comunicaciones — 2026-10-05
+
+- [x] Incorporar Puck como editor lazy con bloques React permitidos, propiedades fáciles de editar y controles de tema con paletas/fuentes aprobadas.
+- [x] Separar datos del borrador de diseño de las publicaciones; crear versiones publicadas inmutables, restauración como nueva versión y protección ante guardados concurrentes.
+- [x] Dar lectura a toda cuenta ERP activa y edición completa del portal solo a `admin`/`comunicador_`; alinear permisos en AuthContext, navegación, guardas y RPCs.
+- [x] Añadir vista previa responsive, guardar borrador, publicar, historial y restauración desde una experiencia accesible para una persona sin conocimientos técnicos.
+- [x] Actualizar contratos, documentación y baseline; validar con build, Guardian, auditorías Supabase/migración y `git diff --check`.
+
+Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 0 advertencias), `npm run audit:migrations`, `npm run audit:supabase-security`, auditoría de performance, los 8 contratos focalizados y `git diff --check` pasan. La auditoría Supabase conserva 88 advertencias heredadas y no identifica advertencias en las dos migraciones nuevas. El editor Puck queda en chunk lazy; la migración no se aplicó porque el runtime Supabase local requiere Docker/Podman, ausente en este entorno. No se modificó producción.
+
 # Tareas y Roadmap de Desarrollo
 
 ## Fijar destinos y sugerir ubicaciones frecuentes Atlas — 2026-10-05

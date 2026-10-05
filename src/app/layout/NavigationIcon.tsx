@@ -52,6 +52,8 @@ export function NavigationIcon({ iconKey }: { iconKey?: NavigationIconKey }) {
       return <svg viewBox="0 0 24 24" aria-hidden="true"><circle {...commonProps} cx="12" cy="8" r="5" /><path {...commonProps} d="m8.5 12-1 9 4.5-2 4.5 2-1-9M10 8l1.3 1.3L14 6.5" /></svg>;
     case "trending-up":
       return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...commonProps} d="m22 7-8.5 8.5-5-5L2 17M16 7h6v6" /></svg>;
+    case "megaphone":
+      return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...commonProps} d="m3 11 15-5v12L3 13v-2Zm0 2 2 7h4l-2-6M18 9a4 4 0 0 1 0 6M21 7a7 7 0 0 1 0 10" /></svg>;
     default:
       return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...commonProps} d="M8 4h6l4 4v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm6 0v4h4M9 13h6" /></svg>;
   }

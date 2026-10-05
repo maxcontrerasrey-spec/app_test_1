@@ -407,6 +407,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .map((moduleCode) => normalizeModuleCode(moduleCode))
           .filter((moduleCode): moduleCode is AppModuleCode => moduleCode !== null);
 
+        if (nextProfile?.status === "active") nextModules.push("portal_comunicaciones");
+
         setAccessibleModules(Array.from(new Set(nextModules)));
 
         const nextCapabilities = normalizeStringArray(payload?.capabilities)

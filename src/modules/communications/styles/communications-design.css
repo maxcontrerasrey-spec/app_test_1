@@ -1,0 +1,103 @@
+.communications-site-layout {
+  --site-accent: #bd272d;
+  --site-accent-dark: #922128;
+  --site-ink: #18243a;
+  --site-muted: #657184;
+  --site-paper: #fff;
+  --site-tint: #f7f4f1;
+  --site-line: #e8e6e3;
+  width: 100%;
+  padding: clamp(18px, 4vw, 44px) clamp(14px, 3vw, 35px) 20px;
+  background: var(--site-paper);
+  color: var(--site-ink);
+}
+.communications-site-layout.theme-andino { --site-accent: #286b5e; --site-accent-dark: #1e5148; --site-tint: #f0f5f2; --site-line: #dfe9e4; }
+.communications-site-layout.theme-neutro { --site-accent: #48586d; --site-accent-dark: #344356; --site-tint: #f2f4f6; --site-line: #e0e4e8; }
+.communications-site-layout.font-sistema { font-family: Arial, Helvetica, sans-serif; }
+.communications-site-layout.font-institucional { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.communications-site-masthead { display: flex; align-items: center; gap: 13px; max-width: 1220px; margin: 0 auto 26px; padding-bottom: 18px; border-bottom: 1px solid var(--site-line); }
+.communications-site-brand { display: grid; width: 43px; height: 43px; flex: 0 0 auto; place-items: center; border-radius: 13px 13px 13px 3px; background: var(--site-accent); color: #fff; font-size: 21px; font-weight: 800; letter-spacing: -.08em; }
+.communications-site-masthead > div { display: grid; gap: 4px; }
+.communications-site-masthead strong { color: var(--site-ink); font-size: 14px; font-weight: 780; letter-spacing: -.025em; }
+.communications-site-masthead small { color: var(--site-muted); font-size: 11px; }
+.communications-site-layout > main { display: grid; max-width: 1220px; gap: clamp(23px, 4vw, 43px); margin: 0 auto; }
+.communications-site-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(210px, .43fr); align-items: center; min-height: 280px; overflow: hidden; padding: clamp(25px, 5vw, 55px); background: var(--site-tint); }
+.communications-site-hero.tone-oscuro { background: #202e41; color: #fff; }
+.communications-site-hero.tone-oscuro .communications-site-hero-copy h1, .communications-site-hero.tone-oscuro .communications-site-hero-copy p { color: #fff; }
+.communications-site-hero.tone-claro { background: #fff; border: 1px solid var(--site-line); }
+.communications-site-hero-copy { position: relative; z-index: 1; max-width: 710px; }
+.communications-site-hero-copy .communications-kicker, .communications-site-section-heading .communications-kicker, .communications-site-message .communications-kicker { color: var(--site-accent); }
+.communications-site-hero-copy h1 { margin: 13px 0 10px; color: var(--site-ink); font-size: clamp(34px, 5vw, 59px); font-weight: 710; letter-spacing: -.065em; line-height: 1.03; }
+.communications-site-hero-copy > p { max-width: 570px; margin: 0; color: var(--site-muted); font-size: 14px; line-height: 1.7; }
+.communications-site-hero-copy .communications-primary-button { margin-top: 21px; background: var(--site-accent); border-color: var(--site-accent); }
+.communications-site-hero-art { position: relative; display: grid; min-height: 190px; place-items: center; color: var(--site-accent); }
+.communications-site-orbit { position: absolute; width: 174px; aspect-ratio: 1; border: 1px solid currentColor; border-radius: 50%; opacity: .23; }
+.communications-site-orbit::before { position: absolute; inset: 19px; border: 1px solid currentColor; border-radius: 50%; content: ""; }
+.communications-site-monogram { display: grid; width: 76px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: #fff; box-shadow: 0 10px 30px rgba(27,42,61,.12); font-size: 25px; font-weight: 800; letter-spacing: -.08em; }
+.communications-site-art-label { position: absolute; bottom: 2px; color: var(--site-muted); font-size: 8px; font-weight: 800; letter-spacing: .2em; }
+.communications-site-section { padding: clamp(7px, 1.5vw, 15px) 0; }
+.communications-site-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 14px; }
+.communications-site-section-heading h2, .communications-site-message h2 { margin: 6px 0 5px; color: var(--site-ink); font-size: clamp(22px, 3vw, 32px); letter-spacing: -.045em; }
+.communications-site-section-heading p { max-width: 650px; margin: 0; color: var(--site-muted); font-size: 12px; line-height: 1.6; }
+.communications-site-news.is-grilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; }
+.communications-site-news.is-list { display: grid; grid-template-columns: 1fr; }
+.communications-site-news .communications-item { padding: 16px 1px; border-color: var(--site-line); }
+.communications-site-news .communications-item-title { color: var(--site-ink); }
+.communications-site-news .communications-item-title:hover { color: var(--site-accent); }
+.communications-site-news .communications-item > p { color: var(--site-muted); }
+.communications-site-news .communications-item-footer .communications-text-link { color: var(--site-accent); }
+.communications-site-empty { margin: 0; padding: 20px; border: 1px dashed var(--site-line); color: var(--site-muted); font-size: 12px; line-height: 1.6; }
+.communications-site-events { padding: 23px; background: var(--site-tint); }
+.communications-site-event-list { display: grid; }
+.communications-site-event { display: grid; grid-template-columns: 55px minmax(0, 1fr) 18px; align-items: center; gap: 15px; width: 100%; padding: 14px 0; border: 0; border-top: 1px solid var(--site-line); background: transparent; color: var(--site-ink); text-align: left; cursor: pointer; }
+.communications-site-event-date { display: grid; min-height: 45px; place-items: center; border-left: 2px solid var(--site-accent); background: #fff; color: var(--site-accent); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.communications-site-event > span:nth-child(2) { display: grid; gap: 5px; }
+.communications-site-event strong, .communications-site-bulletin strong { font-size: 12px; font-weight: 740; }
+.communications-site-event small, .communications-site-bulletin small { color: var(--site-muted); font-size: 10px; }
+.communications-site-event:hover strong { color: var(--site-accent); }
+.communications-site-bulletins { padding: 25px; border: 1px solid var(--site-line); }
+.communications-site-bulletin-list { display: grid; }
+.communications-site-bulletin { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 0; border-top: 1px solid var(--site-line); }
+.communications-site-bulletin > div { display: grid; gap: 5px; }
+.communications-site-bulletin > button { padding: 8px 10px; border: 1px solid var(--site-line); background: #fff; color: var(--site-accent); font: inherit; font-size: 10px; font-weight: 730; cursor: pointer; }
+.communications-site-bulletin > button:hover { border-color: var(--site-accent); }
+.communications-site-message { padding: clamp(22px, 4vw, 39px); background: var(--site-tint); }
+.communications-site-message.tone-oscuro { background: #202e41; }
+.communications-site-message.tone-oscuro h2, .communications-site-message.tone-oscuro p { color: #fff; }
+.communications-site-message.tone-claro { background: #fff; border: 1px solid var(--site-line); }
+.communications-site-message p { max-width: 850px; margin: 0; color: var(--site-muted); font-size: 13px; line-height: 1.8; white-space: pre-line; }
+.communications-site-divider { display: flex; align-items: center; gap: 12px; color: var(--site-muted); font-size: 10px; font-weight: 700; }
+.communications-site-divider::before, .communications-site-divider::after { height: 1px; flex: 1; background: var(--site-line); content: ""; }
+.communications-site-footer { display: flex; justify-content: space-between; gap: 18px; max-width: 1220px; margin: 29px auto 0; padding-top: 16px; border-top: 1px solid var(--site-line); color: var(--site-muted); font-size: 10px; }
+.communications-topbar-actions { display: flex; align-items: center; gap: 8px; }
+.communications-topbar-button { padding: 9px 11px; border: 1px solid var(--comm-line); background: #fff; color: #445064; font: inherit; font-size: 10px; font-weight: 720; cursor: pointer; }
+.communications-topbar-button:hover { border-color: var(--comm-red); color: var(--comm-red-dark); }
+.communications-topbar .communications-new-button { position: static; }
+.communications-drafts-panel { display: grid; gap: 9px; margin: 25px 0 10px; padding: 17px; border: 1px solid var(--comm-line); background: #fbfaf8; }
+.communications-drafts-panel h3 { margin: 5px 0 6px; font-size: 16px; }
+.communications-draft-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 0; border-top: 1px solid var(--comm-line); }
+.communications-draft-row > span { display: grid; gap: 4px; }
+.communications-draft-row strong { font-size: 11px; }
+.communications-draft-row small { color: #828b95; font-size: 10px; }
+
+@media (max-width: 760px) {
+  .communications-site-news.is-grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+  .communications-site-hero { grid-template-columns: minmax(0, 1fr) minmax(130px, .38fr); }
+  .communications-site-orbit { width: 140px; }
+}
+@media (max-width: 560px) {
+  .communications-site-masthead { margin-bottom: 16px; }
+  .communications-site-hero { grid-template-columns: 1fr; min-height: unset; padding: 25px 21px; }
+  .communications-site-hero-art { position: absolute; top: 16px; right: 5px; min-height: 95px; opacity: .22; }
+  .communications-site-orbit { width: 88px; }
+  .communications-site-monogram { width: 48px; font-size: 17px; }
+  .communications-site-art-label { display: none; }
+  .communications-site-hero-copy { padding-top: 15px; }
+  .communications-site-hero-copy h1 { max-width: 90%; font-size: 36px; }
+  .communications-site-news.is-grilla { grid-template-columns: 1fr; }
+  .communications-site-events, .communications-site-bulletins { padding: 17px; }
+  .communications-site-footer { flex-direction: column; }
+  .communications-topbar { align-items: flex-start; }
+  .communications-topbar-actions { align-items: flex-end; flex-direction: column; }
+  .communications-draft-row { align-items: flex-start; flex-direction: column; }
+}

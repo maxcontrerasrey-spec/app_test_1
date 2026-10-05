@@ -110,6 +110,10 @@ export const queryKeys = {
     control: (contractId: number | null, jobPositionId: number | null) =>
       ["rent-structures", "control", contractId, jobPositionId] as const
   },
+  communications: {
+    portal: () => ["communications", "portal"] as const,
+    site: () => ["communications", "site"] as const
+  },
   sanctions: {
     setupCatalogs: () => ["sanctions", "setup-catalogs"] as const,
     workerSearch: (search: string) => ["sanctions", "worker-search", search] as const,
