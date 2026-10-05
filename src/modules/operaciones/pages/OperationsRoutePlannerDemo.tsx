@@ -8,7 +8,7 @@ import { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiam
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
 import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
-import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
+import { buildCalamaExampleStops, CALAMA_EXAMPLE_ADDRESS_QUERIES, matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -453,21 +453,20 @@ export function OperationsRoutePlannerDemo() {
 
   async function loadExample() {
     setError("");
-    setNotice("Buscando tres puntos de ejemplo en Calama…");
+    setNotice("Buscando las direcciones de ejemplo en Calama…");
     setPlanningRoute(null);
     setProposal(null);
     setRoute(null);
     setRouteState("idle");
-    const queries = ["Av. Balmaceda 3242, Calama, Chile", "Frei Bonn 3516, Calama, Chile", "División Ministro Hales, Calama, Chile"];
     try {
-      const sessions = queries.map(() => crypto.randomUUID());
-      const located = await Promise.all(queries.map((query, index) => searchAtlasTomTom(query, sessions[index]!)));
+      const sessions = CALAMA_EXAMPLE_ADDRESS_QUERIES.map(() => crypto.randomUUID());
+      const located = await Promise.all(CALAMA_EXAMPLE_ADDRESS_QUERIES.map((query, index) => searchAtlasTomTom(query, sessions[index]!)));
       const matches = await Promise.all(located.map((list, index) => {
         const suggestion = list[0];
-        if (!suggestion) throw new Error(`TomTom no encontró: ${queries[index]}`);
+        if (!suggestion) throw new Error(`TomTom no encontró: ${CALAMA_EXAMPLE_ADDRESS_QUERIES[index]}`);
         return resolveAtlasTomTomSuggestion(suggestion, sessions[index]!);
       }));
-      const mapped = normalizeRouteStops(matches.map((match, index) => ({ id: uid(), label: match.label, lat: match.lat, lng: match.lng, providerPlaceId: match.id, source: "tomtom" as const, kind: "stop" as const, fixedDestination: index === matches.length - 1 })));
+      const mapped = buildCalamaExampleStops(matches.map((match) => ({ label: match.label, lat: match.lat, lng: match.lng, providerPlaceId: match.id })), uid);
       setStops(mapped);
       setPlanningRoute(null);
       setProposal(null);

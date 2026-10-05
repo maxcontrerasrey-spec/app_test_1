@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchRouteDestinationPresets, ROUTE_DESTINATION_PRESETS } from "../../src/modules/operaciones/lib/routeDestinationCatalog";
+import { buildCalamaExampleStops, CALAMA_EXAMPLE_ADDRESS_QUERIES, matchRouteDestinationPresets, ROUTE_DESTINATION_PRESETS } from "../../src/modules/operaciones/lib/routeDestinationCatalog";
 
 describe("Atlas route destination catalog", () => {
   it("keeps the three confirmed destination coordinates", () => {
@@ -22,5 +22,28 @@ describe("Atlas route destination catalog", () => {
 
   it("offers every curated destination when the destination field is empty", () => {
     expect(matchRouteDestinationPresets("").map(({ id }) => id)).toEqual(ROUTE_DESTINATION_PRESETS.map(({ id }) => id));
+  });
+
+  it("loads the Calama example destination from the confirmed preset without geocoding its internal name", () => {
+    const stops = buildCalamaExampleStops([
+      { label: "Av. Balmaceda 3242, Calama", lat: -22.45, lng: -68.92, providerPlaceId: "tomtom-1" },
+      { label: "Frei Bonn 3516, Calama", lat: -22.44, lng: -68.91, providerPlaceId: "tomtom-2" }
+    ], (() => {
+      let id = 0;
+      return () => `example-${++id}`;
+    })());
+
+    expect(CALAMA_EXAMPLE_ADDRESS_QUERIES).toHaveLength(2);
+    expect(stops.map(({ source }) => source)).toEqual(["tomtom", "tomtom", "preset"]);
+    expect(stops.at(-1)).toMatchObject({
+      id: "example-3",
+      kind: "destination",
+      fixedDestination: true,
+      label: ROUTE_DESTINATION_PRESETS[0]!.label,
+      lat: -22.358077,
+      lng: -68.902838,
+      providerPlaceId: null,
+      source: "preset"
+    });
   });
 });
