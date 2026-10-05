@@ -1,5 +1,12 @@
 ## Portal de Comunicaciones corporativo con documentos en R2 — 2026-10-05
 
+### Corrección: Portal como submódulo de RRHH
+
+- [x] Mover el acceso bajo la sección RRHH y canonicalizar las rutas en `/recursos-humanos/comunicaciones`, conservando redirección desde `/comunicaciones`.
+- [x] Actualizar metadato de ruta del módulo en migración forward-only y preservar los permisos existentes de lectura/edición.
+- [x] Alinear matriz, mapa de módulos y contratos; ejecutar Guardian, build, auditorías Supabase/migraciones y diff check.
+- [ ] Desplegar y comprobar en producción navegación, redirección anterior y ruta canónica.
+
 - [x] Revisar correo y página SharePoint con sesión autorizada; distinguir diseño/contenido de muestra de publicaciones reales y confirmar archivos recibidos.
 - [x] Inspeccionar arquitectura de módulos/permisos y rutas Cloudflare Pages/R2 ya existentes; definir lectura general, publicación restringida y archivos privados.
 - [x] Implementar módulo lazy-loaded del Portal con noticias, comunicados, eventos y boletines; estados de carga, error y vacío, filtros y búsqueda.

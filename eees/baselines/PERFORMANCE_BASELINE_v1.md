@@ -167,9 +167,9 @@ Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7424791,
+  "distTotalBytes": 7425276,
   "jsFileCount": 74,
-  "jsTotalBytes": 5314299,
+  "jsTotalBytes": 5314784,
   "cssFileCount": 15,
   "cssTotalBytes": 520755,
   "budgetPolicy": {
@@ -342,3 +342,5 @@ Revision 2026-10-05 destinos Atlas: GitHub Actions `Audit Enterprise Guardrails`
 Revision 2026-10-05 ejemplo Calama Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37353876310` midió 300 bytes adicionales en `dist` y JS al incorporar el destino BCD DMH desde el catálogo local en vez de geocodificar el nombre interno de la faena. CSS, vendors y assets pesados no cambian; el presupuesto conserva tolerancia cero.
 
 Revision 2026-10-05 editor visual del Portal: GitHub Actions run `37344840104` mide 7,424,491 bytes totales, 5,313,999 bytes JS y 520,755 bytes CSS. Puck se carga solo en `/comunicaciones/diseno` (574,640 bytes JS, 164,920 gzip; 94,430 bytes CSS, 14,500 gzip), fuera de la carga inicial. `app-framework` mide 296,608 bytes con el editor. Se registra la medición canónica de CI con tolerancia cero.
+
+Revision 2026-10-05 Portal como submódulo RRHH: GitHub Actions run `37353515714` midió 485 bytes adicionales en `dist` y JS, sin cambio CSS, para la ruta canónica bajo `/recursos-humanos` y los alias compatibles. No agrega dependencias ni assets; se fija el nuevo baseline exacto de CI y la tolerancia permanece en cero.

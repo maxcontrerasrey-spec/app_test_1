@@ -143,6 +143,13 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "id-card"
       },
       {
+        moduleCode: "portal_comunicaciones",
+        to: "/recursos-humanos/comunicaciones",
+        label: "Portal de Comunicaciones",
+        description: "Noticias, comunicados, actividades y boletines corporativos.",
+        iconKey: "megaphone"
+      },
+      {
         moduleCode: "certificados",
         to: "/certificados",
         label: "Certificación de Competencias",
@@ -206,12 +213,6 @@ export const navigationModules: NavigationModule[] = [
         iconKey: "download"
       }
     ]
-  },
-  {
-    label: "Portal de Comunicaciones",
-    iconKey: "megaphone",
-    moduleCode: "portal_comunicaciones",
-    to: "/comunicaciones"
   },
   {
     label: "Business Intelligence",

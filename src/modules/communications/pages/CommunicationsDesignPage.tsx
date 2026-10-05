@@ -126,7 +126,7 @@ export function CommunicationsDesignPage() {
     <CommunicationsSiteContextProvider value={renderContext}>
       <main className="communications-design-page">
         <header className="communications-design-toolbar">
-          <div className="communications-design-brand"><a href="/comunicaciones" aria-label="Volver al portal">←</a><div><span>PORTAL DE COMUNICACIONES</span><h1>Diseñar portada</h1></div></div>
+          <div className="communications-design-brand"><a href="/recursos-humanos/comunicaciones" aria-label="Volver al portal">←</a><div><span>PORTAL DE COMUNICACIONES</span><h1>Diseñar portada</h1></div></div>
           <div className="communications-design-actions">
             <span className="communications-design-version">Publicado · v{siteQuery.data?.publishedVersion ?? 1}</span>
             <button type="button" className="communications-secondary-button" onClick={() => setShowHistory(true)} disabled={busy}>Historial</button>

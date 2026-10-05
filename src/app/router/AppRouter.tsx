@@ -197,7 +197,7 @@ export function AppRouter() {
               }
             />
             <Route
-              path="/comunicaciones"
+              path="/recursos-humanos/comunicaciones"
               element={
                 <RoleProtectedRoute moduleCode="portal_comunicaciones">
                   <CommunicationsPage />
@@ -205,12 +205,20 @@ export function AppRouter() {
               }
             />
             <Route
-              path="/comunicaciones/diseno"
+              path="/recursos-humanos/comunicaciones/diseno"
               element={
                 <RoleProtectedRoute moduleCode="portal_comunicaciones">
                   <CommunicationsDesignPage />
                 </RoleProtectedRoute>
               }
+            />
+            <Route
+              path="/comunicaciones"
+              element={<Navigate to="/recursos-humanos/comunicaciones" replace />}
+            />
+            <Route
+              path="/comunicaciones/diseno"
+              element={<Navigate to="/recursos-humanos/comunicaciones/diseno" replace />}
             />
             <Route
               path="/recursos-humanos/acreditacion/:view"

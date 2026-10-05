@@ -63,12 +63,14 @@
 
 ### Portal de Comunicaciones
 
-- Ruta: `/comunicaciones`
+- Ubicación: submódulo de Recursos Humanos.
+- Ruta canónica: `/recursos-humanos/comunicaciones`; diseño en `/recursos-humanos/comunicaciones/diseno`.
+- Compatibilidad: `/comunicaciones` y `/comunicaciones/diseno` redirigen a las rutas canónicas bajo RRHH.
 - Página: `src/modules/communications/pages/CommunicationsPage.tsx`
 - Hooks/servicio: `src/modules/communications/hooks/useCommunicationsQueries.ts`, `src/modules/communications/services/communicationsApi.ts`
 - Backend: RPCs en `communications_items`, diseño versionado en `communications_site_state`/`communications_site_versions` y endpoint `functions/api/comunicaciones/files.ts` para PDF privado en Cloudflare R2.
 - Editor visual: `src/modules/communications/pages/CommunicationsDesignPage.tsx` y `src/modules/communications/site/communicationsSiteConfig.tsx`; Puck compone bloques React permitidos y tokens institucionales.
-- Rutas: `/comunicaciones` para todas las cuentas ERP activas y `/comunicaciones/diseno` para `admin`/`comunicador_`.
+- Rutas: portal para todas las cuentas ERP activas y diseño para `admin`/`comunicador_`; ambos permanecen autorizados con el código específico `portal_comunicaciones`.
 - Publicaciones: noticias, comunicados, eventos y boletines; los boletines publicados requieren PDF.
 - Permisos: las RPCs autorizan lectura a cualquier perfil ERP activo y reservan mantenimiento a `admin`/`comunicador_`.
 - Publicación: borrador con control de revisión concurrente, instantáneas inmutables e historial restaurable como nueva versión.

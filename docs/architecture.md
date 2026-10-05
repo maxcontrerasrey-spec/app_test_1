@@ -40,7 +40,7 @@ El ERP opera hoy como una SPA en `React 18 + TypeScript + Vite`, con `React Rout
 
 - Reclutamiento: solicitudes, folios, casos, candidatos, aprobaciones, documentos, dashboard operativo.
 - Movilidad interna: solicitud de traslado, aprobaciones, ejecucion RRHH, reuso de folios de reclutamiento.
-- RRHH: incentivos extraordinarios, jornadas/turnos, acreditacion.
+- RRHH: incentivos extraordinarios, jornadas/turnos, acreditacion y Portal de Comunicaciones.
 - Operaciones: registros base/especiales y reportabilidad operacional.
 - BI: dotacion, ausentismo y analitica de reclutamiento.
 - Alta operacional: templates, tasks, evidencias y activity log.

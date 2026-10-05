@@ -27,7 +27,7 @@ Eso significa que el frontend filtra navegacion, pero la autorizacion real vive 
 | `certificados` | `/certificados` | `RoleProtectedRoute` |
 | `seguimiento_certificados` | `/seguimiento-certificados` | `RoleProtectedRoute` + redirect a `/certificados` |
 | `bi_analytics` | `/bi/*` | `RoleProtectedRoute` |
-| `portal_comunicaciones` | `/comunicaciones` | `RoleProtectedRoute` + RPCs: toda cuenta ERP activa puede leer; `admin`/`comunicador_` pueden publicar contenido y diseño |
+| `portal_comunicaciones` | `/recursos-humanos/comunicaciones` (submódulo de RRHH) | `RoleProtectedRoute` + RPCs: toda cuenta ERP activa puede leer; `admin`/`comunicador_` pueden publicar contenido y diseño |
 
 ## Capabilities finas vigentes
 
