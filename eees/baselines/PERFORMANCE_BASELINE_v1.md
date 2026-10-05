@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.47
+version: 1.0.48
 status: Activo
 language: es-CL
 owner: Quality
@@ -167,9 +167,9 @@ Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7424491,
+  "distTotalBytes": 7424791,
   "jsFileCount": 74,
-  "jsTotalBytes": 5313999,
+  "jsTotalBytes": 5314299,
   "cssFileCount": 15,
   "cssTotalBytes": 520755,
   "budgetPolicy": {
@@ -338,5 +338,7 @@ Revision 2026-10-05 optimizador de rutas Atlas: GitHub Actions `Audit Enterprise
 Revision 2026-10-05 estado vacio de ruta Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37321941550` midio 4 bytes adicionales en `dist` y JS (sin cambio CSS) para ocultar el estado vacío cuando existe una propuesta optimizada. Es una corrección funcional del mismo chunk lazy, sin dependencias; baseline actualizado con tolerancia cero.
 
 Revision 2026-10-05 destinos Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37339758827` midió 4.351 bytes adicionales en `dist`, 3.414 en JS y 937 en CSS para seleccionar un destino fijo, sugerir ubicaciones frecuentes y conservar la elección al optimizar. El cambio permanece en la pantalla lazy de planificación, no agrega vendors ni assets pesados y mantiene la tolerancia en cero.
+
+Revision 2026-10-05 ejemplo Calama Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37353876310` midió 300 bytes adicionales en `dist` y JS al incorporar el destino BCD DMH desde el catálogo local en vez de geocodificar el nombre interno de la faena. CSS, vendors y assets pesados no cambian; el presupuesto conserva tolerancia cero.
 
 Revision 2026-10-05 editor visual del Portal: GitHub Actions run `37344840104` mide 7,424,491 bytes totales, 5,313,999 bytes JS y 520,755 bytes CSS. Puck se carga solo en `/comunicaciones/diseno` (574,640 bytes JS, 164,920 gzip; 94,430 bytes CSS, 14,500 gzip), fuera de la carga inicial. `app-framework` mide 296,608 bytes con el editor. Se registra la medición canónica de CI con tolerancia cero.
