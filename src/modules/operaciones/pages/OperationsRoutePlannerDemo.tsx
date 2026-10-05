@@ -140,6 +140,8 @@ export function OperationsRoutePlannerDemo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const stopsListRef = useRef<HTMLDivElement>(null);
+  const stopInputRefs = useRef(new Map<string, HTMLInputElement>());
   const mapRef = useRef<MapLibreMap | null>(null);
   const ferrostarMapRef = useRef<FerrostarMap | null>(null);
   const coreRef = useRef<FerrostarCore | null>(null);
@@ -222,6 +224,18 @@ export function OperationsRoutePlannerDemo() {
   }, []);
 
   const hasEnteredDirection = (proposal?.stops ?? stops).some((stop) => stop.label.trim().length > 0);
+
+  useEffect(() => {
+    if (!adding) return;
+    const pending = [...stops].reverse().find((stop) => !stop.label.trim());
+    if (!pending) return;
+    const frame = window.requestAnimationFrame(() => {
+      const list = stopsListRef.current;
+      if (list) list.scrollTop = list.scrollHeight;
+      stopInputRefs.current.get(pending.id)?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [adding, stops]);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -407,6 +421,14 @@ export function OperationsRoutePlannerDemo() {
   }
 
   function addStop() {
+    const pendingIndex = stops.findIndex((stop) => !stop.label.trim());
+    if (pendingIndex >= 0) {
+      const pending = stops[pendingIndex];
+      stopsListRef.current?.scrollTo({ top: stopsListRef.current.scrollHeight, behavior: "smooth" });
+      stopInputRefs.current.get(pending.id)?.focus();
+      setNotice(`Completa o elimina la dirección ${pendingIndex + 1} antes de agregar otra.`);
+      return;
+    }
     const center = mapRef.current?.getCenter();
     const stop: Stop = {
       id: uid(), label: "", lat: center?.lat ?? CALAMA.lat, lng: center?.lng ?? CALAMA.lng,
@@ -423,6 +445,10 @@ export function OperationsRoutePlannerDemo() {
 
   function removeStop(id: string) {
     setStops((current) => normalizeRouteStops(current.filter((stop) => stop.id !== id)));
+    if (search?.id === id) {
+      setSearch(null);
+      setAdding(false);
+    }
     setPlanningRoute(null);
     setProposal(null);
     setRoute(null);
@@ -605,7 +631,6 @@ export function OperationsRoutePlannerDemo() {
 
   const nextInstruction = tripState && "Navigating" in tripState ? tripState.Navigating.spokenInstruction?.text : "Listo para simular el recorrido";
   const allStopsPresent = stops.length >= 2 && stops.every((stop) => stop.label && (search?.id !== stop.id || search.query.trim() === stop.label));
-  const addingSearchId = adding ? search?.id : undefined;
   const selectedTemplate = catalog?.templates.find((item) => String(item.id) === selectedServiceId);
   const selectedContract = catalog?.contracts.find((item) => item.id === selectedTemplate?.contract_id);
   const routeCodePreview = `${selectedTemplate?.name ?? "SERVICIO"}_${routePrefix.trim() || "PREFIJO"}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "").toUpperCase();
@@ -640,21 +665,22 @@ export function OperationsRoutePlannerDemo() {
           <button type="button" role="tab" aria-selected={activeView === "driver"} className={activeView === "driver" ? "is-active" : ""} onClick={() => route && void startSimulation()}>Conductor</button>
         </div>
         {activeView === "planning" ? <>
-          <div className="ops-route-demo__stops">
+          <div className="ops-route-demo__stops" ref={stopsListRef}>
             {stops.map((stop, index) => <div key={stop.id} className="ops-route-demo__stop-row">
               {index === 0
                 ? <span className="ops-route-demo__stop-pin ops-route-demo__stop-pin--stop">{index + 1}</span>
                 : <button type="button" className={`ops-route-demo__stop-pin ops-route-demo__stop-pin--stop ops-route-demo__stop-pin--toggle${stop.fixedDestination ? " ops-route-demo__stop-pin--destination" : ""}`} aria-pressed={Boolean(stop.fixedDestination)} aria-label={stop.fixedDestination ? `Liberar destino ${stop.label || index + 1}` : `Fijar dirección ${index + 1} como destino`} title={stop.fixedDestination ? "Quitar destino fijo" : "Fijar como destino"} onClick={() => toggleDestination(stop.id)}>{stop.fixedDestination ? "D" : index + 1}</button>}
               <div className="ops-route-demo__stop-input-wrap">
                 <label htmlFor={`route-${stop.id}`}>{stop.fixedDestination ? "Destino fijado" : `Dirección ${index + 1}`}</label>
-                <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder={stop.fixedDestination ? "Busca un destino frecuente o dirección" : "Busca una dirección en Calama"} onChange={(event) => { const query = event.target.value; const sessionId = search?.id === stop.id ? search.sessionId : crypto.randomUUID(); setSearch({ id: stop.id, query, sessionId, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); setPlanningRoute(null); setProposal(null); setRoute(null); setRouteState("idle"); }} onFocus={() => { if (!stop.label || stop.fixedDestination) setSearch({ id: stop.id, query: stop.label && stop.fixedDestination ? stop.label : "", sessionId: crypto.randomUUID(), results: [], status: stop.label && stop.fixedDestination ? "ready" : "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para dirección ${index + 1}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{stop.label && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
+                <div className="ops-route-demo__input-action"><input ref={(node) => { if (node) stopInputRefs.current.set(stop.id, node); else stopInputRefs.current.delete(stop.id); }} id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder={stop.fixedDestination ? "Busca un destino frecuente o dirección" : "Busca una dirección en Calama"} onChange={(event) => { const query = event.target.value; const sessionId = search?.id === stop.id ? search.sessionId : crypto.randomUUID(); setSearch({ id: stop.id, query, sessionId, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); setPlanningRoute(null); setProposal(null); setRoute(null); setRouteState("idle"); }} onFocus={() => { if (!stop.label || stop.fixedDestination) setSearch({ id: stop.id, query: stop.label && stop.fixedDestination ? stop.label : "", sessionId: crypto.randomUUID(), results: [], status: stop.label && stop.fixedDestination ? "ready" : "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para dirección ${index + 1}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{(stop.label || (adding && search?.id === stop.id)) && <button type="button" aria-label={`Quitar dirección ${index + 1}`} title="Quitar dirección" onClick={() => removeStop(stop.id)}>×</button>}</div>
               </div>
               <div className="ops-route-demo__stop-actions"><button type="button" title="Subir punto" aria-label={`Subir ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === 0} onClick={() => moveStop(stop.id, -1)}>↑</button><button type="button" title="Bajar punto" aria-label={`Bajar ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === stops.length - 1} onClick={() => moveStop(stop.id, 1)}>↓</button></div>
             </div>)}
             {stops.length === 0 && <div className="ops-route-demo__empty"><div className="ops-route-demo__empty-icon">＋</div><strong>Agrega las direcciones del recorrido</strong><span>No necesitas definir el inicio ni el destino: se determinan en la propuesta.</span></div>}
           </div>
           {stops.length > 1 && <p className="ops-route-demo__destination-help">Haz clic en el número de una dirección para fijarla como destino final. El punto 1 queda como inicio.</p>}
-          <button type="button" className="ops-route-demo__add-stop" onClick={addStop} disabled={Boolean(addingSearchId)}>＋ <span>Agregar una dirección</span></button>
+          <button type="button" className="ops-route-demo__add-stop" onClick={addStop} disabled={Boolean(mapPickingStopId)} aria-describedby={stops.some((stop) => !stop.label.trim()) ? "ops-route-pending-stop" : undefined}>＋ <span>Agregar una dirección</span></button>
+          {stops.some((stop) => !stop.label.trim()) && <p id="ops-route-pending-stop" className="ops-route-demo__pending-stop" role="status">Completa o elimina la dirección {stops.findIndex((stop) => !stop.label.trim()) + 1} para proponer el recorrido.</p>}
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button><button type="button" className="ops-route-demo__secondary" onClick={() => void loadExample()}>Cargar ejemplo Calama</button></div>

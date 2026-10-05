@@ -171,15 +171,16 @@ Revision 2026-10-05 CMS Editorial/Oficial de Comunicaciones: el build combinado 
 Revision 2026-10-05 métrica canónica Ubuntu/Node 24 para PR #30: el artefacto `dist`/JS mide 2.120 bytes más que el build local macOS; se registra la medición exacta observada por el audit CI. CSS y dependencias no cambian; tolerancia cero.
 
 Revision 2026-10-05 ampliacion Puck: el build local mide 7,448,897 bytes totales, 5,329,436 bytes JS y 529,724 bytes CSS. Los 1,036 bytes de incremento total y 1,955 bytes CSS corresponden a cinco paletas seguras, tres fuentes, escala tipografica, ancho y forma de tarjetas en el editor de portada; no agrega dependencias ni adelanta la carga lazy. Se conserva tolerancia cero y la medicion canonica CI debe reconciliar cualquier diferencia de plataforma.
+Revision 2026-10-05 interacción de parada pendiente Atlas: Guardian CI midió +1.131 bytes en `dist` (+1.023 JS y +108 CSS) para llevar la dirección nueva a la vista, recuperar el campo pendiente desde «Agregar», eliminarlo vacío y explicar la validación. No agrega dependencias ni cambia la carga inicial; se registran los deltas canónicos con tolerancia cero.
 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7448897,
+  "distTotalBytes": 7450028,
   "jsFileCount": 74,
-  "jsTotalBytes": 5329436,
+  "jsTotalBytes": 5330459,
   "cssFileCount": 15,
-  "cssTotalBytes": 529724,
+  "cssTotalBytes": 529832,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

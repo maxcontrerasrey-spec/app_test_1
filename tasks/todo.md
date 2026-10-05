@@ -31,6 +31,13 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 # Tareas y Roadmap de Desarrollo
 
+## Evitar bloqueo aparente al agregar una dirección Atlas — 2026-10-05
+
+- [x] Hacer visible y enfocar la nueva dirección vacía; permitir volver a ella desde «Agregar una dirección».
+- [x] Permitir quitar una dirección vacía y explicar por qué aún no se puede proponer la ruta.
+- [x] Ejecutar build frontend, Guardian completo y `git diff --check`.
+- [ ] Promover el cambio a producción y comprobar el bundle publicado sin recargar la sesión del usuario.
+
 ## Corregir el destino del ejemplo Calama Atlas — 2026-10-05
 
 - [x] Eliminar la consulta TomTom del ejemplo para el nombre interno “División Ministro Hales”.
