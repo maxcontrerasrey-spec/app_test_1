@@ -4486,4 +4486,5 @@ Resultado: la migración `20261002124040_preserve_terminal_candidate_on_psychola
 
 - [x] Confirmar que el overlay se condicionaba solo a una ruta calculada y no a direcciones ingresadas.
 - [x] Ocultar el overlay cuando el recorrido tenga al menos una etiqueta de dirección, manteniéndolo para el mapa realmente vacío.
-- [ ] Validar el build, registrar la medición de rendimiento, publicar en producción y confirmar el bundle servido.
+- [x] Validar el build y registrar el delta CI de 74 bytes en `dist`/JS, manteniendo presupuesto de tolerancia cero.
+- [ ] Publicar en producción y confirmar el bundle servido.
