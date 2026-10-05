@@ -6,7 +6,7 @@ import { setWorkerUrl, type Map as MapLibreMap, type Marker } from "maplibre-gl"
 import mapLibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiamaps/ferrostar-webcomponents";
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
-import { calculateAtlasTomTomRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasServiceRoute, type TomTomRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
+import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops } from "../lib/routeStopOrder";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
@@ -29,6 +29,7 @@ const MAP_STYLE = {
 };
 
 type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination"; providerPlaceId: string | null; source: "tomtom" | "map_pin" };
+type RouteProposal = { stops: Stop[]; route: AtlasOptimizedRoute };
 type SearchState = { id: string; query: string; sessionId: string; revision?: number; results: TomTomSuggestion[]; status: "idle" | "loading" | "ready" | "error"; error?: string };
 type SuggestionAnchor = { top: number; left: number; width: number; maxHeight: number };
 
@@ -38,6 +39,10 @@ const formatDuration = (seconds: number) => {
   const minutes = Math.round(seconds / 60);
   return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
 };
+
+function isOptimizedRoute(route: AtlasPlannedRoute): route is AtlasOptimizedRoute {
+  return "optimizationMethod" in route && route.optimizationMethod === "valhalla_matrix_open_path_v1";
+}
 
 function locationAt(stop: Stop): UserLocation {
   return {
@@ -143,7 +148,8 @@ export function OperationsRoutePlannerDemo() {
   const [stops, setStops] = useState<Stop[]>([]);
   const [search, setSearch] = useState<SearchState | null>(null);
   const [suggestionAnchor, setSuggestionAnchor] = useState<SuggestionAnchor | null>(null);
-  const [planningRoute, setPlanningRoute] = useState<TomTomRoute | null>(null);
+  const [planningRoute, setPlanningRoute] = useState<AtlasPlannedRoute | null>(null);
+  const [proposal, setProposal] = useState<RouteProposal | null>(null);
   const [route, setRoute] = useState<Route | null>(null);
   const [routeState, setRouteState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [activeView, setActiveView] = useState<"planning" | "driver">("planning");
@@ -173,7 +179,7 @@ export function OperationsRoutePlannerDemo() {
       const loaded: Stop[] = ordered.map((stop, index) => ({ id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude, kind: index === 0 ? "origin" : index === ordered.length - 1 ? "destination" : "stop", providerPlaceId: stop.provider_place_id, source: stop.location_source }));
       setStops(loaded);
       setRouteState("loading");
-      const preview = await calculateAtlasTomTomRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
+      const preview = await calculateAtlasValhallaRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
       if (!active) return;
       setPlanningRoute(preview);
       setRouteState("ready");
@@ -236,16 +242,17 @@ export function OperationsRoutePlannerDemo() {
     const map = mapRef.current;
     if (!map) return;
     markersRef.current.forEach((marker) => marker.remove());
-    const locatedStops = stops.filter((stop) => stop.label.trim().length > 0);
+    const visibleStops = proposal?.stops ?? stops;
+    const locatedStops = visibleStops.filter((stop) => stop.label.trim().length > 0);
     markersRef.current = locatedStops.map((stop) => {
-      const index = stops.findIndex((item) => item.id === stop.id);
+      const index = visibleStops.findIndex((item) => item.id === stop.id);
       const node = document.createElement("div");
       node.className = `ops-route-demo__map-marker ops-route-demo__map-marker--${stop.kind}`;
-      node.textContent = stop.kind === "origin" ? "A" : stop.kind === "destination" ? "B" : String(index);
+      node.textContent = stop.kind === "origin" ? "A" : stop.kind === "destination" ? "B" : String(index + 1);
       return new maplibregl.Marker({ element: node }).setLngLat([stop.lng, stop.lat]).addTo(map);
     });
     if (!mapReady) return;
-    const planningCoordinates = planningRoute?.coordinates ?? [];
+    const planningCoordinates = proposal?.route.coordinates ?? planningRoute?.coordinates ?? [];
     const geo = activeView === "planning" && planningCoordinates.length > 1
       ? { type: "Feature" as const, properties: {}, geometry: { type: "LineString" as const, coordinates: planningCoordinates } }
       : activeView === "driver" && route?.geometry.length
@@ -262,7 +269,7 @@ export function OperationsRoutePlannerDemo() {
         map.fitBounds(bounds, { padding: { top: 80, bottom: 80, left: 65, right: 65 }, maxZoom: 15, duration: 500 });
       }
     }
-  }, [stops, route, planningRoute, activeView, mapReady]);
+  }, [stops, route, planningRoute, proposal, activeView, mapReady]);
 
   useEffect(() => {
     const ferrostarMap = ferrostarMapRef.current;
@@ -343,6 +350,7 @@ export function OperationsRoutePlannerDemo() {
     });
     setSearch(null);
     setPlanningRoute(null);
+    setProposal(null);
     setRoute(null);
     setRouteState("idle");
     setError("");
@@ -366,6 +374,10 @@ export function OperationsRoutePlannerDemo() {
   function startMapPick(stop: Stop) {
     const map = mapRef.current;
     setSearch(null);
+    setPlanningRoute(null);
+    setProposal(null);
+    setRoute(null);
+    setRouteState("idle");
     setMapPickingStopId(stop.id);
     if (stop.label && map) map.flyTo({ center: [stop.lng, stop.lat], zoom: Math.max(map.getZoom(), 16), duration: 450 });
   }
@@ -389,6 +401,10 @@ export function OperationsRoutePlannerDemo() {
       kind: "stop", providerPlaceId: null, source: "tomtom"
     };
     setStops((current) => appendRouteStop(current, stop));
+    setPlanningRoute(null);
+    setProposal(null);
+    setRoute(null);
+    setRouteState("idle");
     setSearch({ id: stop.id, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" });
     setAdding(true);
   }
@@ -396,19 +412,26 @@ export function OperationsRoutePlannerDemo() {
   function removeStop(id: string) {
     setStops((current) => normalizeRouteStops(current.filter((stop) => stop.id !== id)));
     setPlanningRoute(null);
+    setProposal(null);
     setRoute(null);
     setRouteState("idle");
   }
 
   function moveStop(id: string, direction: -1 | 1) {
     setStops((current) => moveRouteStop(current, id, direction));
+    setPlanningRoute(null);
     setRoute(null);
+    setProposal(null);
     setRouteState("idle");
   }
 
   async function loadExample() {
     setError("");
     setNotice("Buscando tres puntos de ejemplo en Calama…");
+    setPlanningRoute(null);
+    setProposal(null);
+    setRoute(null);
+    setRouteState("idle");
     const queries = ["Av. Balmaceda 3242, Calama, Chile", "Frei Bonn 3516, Calama, Chile", "División Ministro Hales, Calama, Chile"];
     try {
       const sessions = queries.map(() => crypto.randomUUID());
@@ -421,6 +444,7 @@ export function OperationsRoutePlannerDemo() {
       const mapped: Stop[] = matches.map((match, index) => ({ id: uid(), label: match.label, lat: match.lat, lng: match.lng, providerPlaceId: match.id, source: "tomtom" as const, kind: index === 0 ? "origin" as const : index === 2 ? "destination" as const : "stop" as const }));
       setStops(mapped);
       setPlanningRoute(null);
+      setProposal(null);
       setRoute(null);
       setRouteState("idle");
       setNotice("Ejemplo cargado. Genera la ruta para continuar.");
@@ -432,22 +456,37 @@ export function OperationsRoutePlannerDemo() {
 
   async function generateRoute() {
     if (stops.length < 2 || stops.some((stop) => !stop.label || !Number.isFinite(stop.lat) || !Number.isFinite(stop.lng))) {
-      setError("Agrega origen, destino y direcciones válidas antes de calcular.");
+      setError("Agrega al menos dos direcciones verificadas para proponer el recorrido.");
       return;
     }
     setRouteState("loading");
     setError("");
     setNotice("");
+    setPlanningRoute(null);
+    setProposal(null);
+    setRoute(null);
     try {
-      const result = await calculateAtlasTomTomRoute(stops.map(({ lat, lng }) => ({ lat, lng })));
-      setPlanningRoute(result);
+      const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })));
+      const proposedStops = normalizeRouteStops(result.order.map((index) => stops[index]!));
+      setProposal({ stops: proposedStops, route: result });
+      setPlanningRoute(null);
       setRoute(null);
       setRouteState("ready");
-      setNotice("Vista previa de planificación calculada por TomTom · perfil vial de automóvil; las restricciones de bus no están disponibles en esta API.");
+      setNotice("Propuesta lista. Revisa el inicio, el destino y el trazado; aplícala para guardarla o continuar al conductor.");
     } catch (reason) {
       setRouteState("error");
       setError(reason instanceof Error ? reason.message : "No fue posible calcular la ruta.");
     }
+  }
+
+  function applyProposal() {
+    if (!proposal) return;
+    setStops(proposal.stops);
+    setPlanningRoute(proposal.route);
+    setProposal(null);
+    setRoute(null);
+    setRouteState("ready");
+    setNotice("Orden propuesto aplicado. El primer punto es el inicio y el último es el destino; el recorrido termina allí.");
   }
 
   async function startSimulation() {
@@ -484,7 +523,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   async function saveRoute() {
-    if (!selectedServiceId || !routePrefix.trim() || !planningRoute) return;
+    if (!selectedServiceId || !routePrefix.trim() || !planningRoute || !isOptimizedRoute(planningRoute)) return;
     setSaving(true);
     setError("");
     try {
@@ -493,7 +532,9 @@ export function OperationsRoutePlannerDemo() {
         prefix: routePrefix,
         stops: stops.map((stop) => ({ label: stop.label, lat: stop.lat, lng: stop.lng, providerPlaceId: stop.providerPlaceId, source: stop.source })),
         distanceMeters: planningRoute.distanceMeters,
-        durationSeconds: planningRoute.durationSeconds
+        durationSeconds: planningRoute.durationSeconds,
+        matrixDurationSeconds: planningRoute.matrixDurationSeconds,
+        inputOrderMatrixDurationSeconds: planningRoute.inputOrderMatrixDurationSeconds
       });
       const routes = await getAtlasServiceRoutes(Number(selectedServiceId));
       setSavedRoutes(routes);
@@ -518,11 +559,12 @@ export function OperationsRoutePlannerDemo() {
     setStops(loaded);
     setRoutePrefix(selected.prefix);
     setPlanningRoute(null);
+    setProposal(null);
     setRoute(null);
     setRouteState("loading");
     setSelectedSavedRouteId(routeId);
     try {
-      const preview = await calculateAtlasTomTomRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
+      const preview = await calculateAtlasValhallaRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
       setPlanningRoute(preview);
       setRouteState("ready");
       setNotice(`Ruta ${selected.route_code} · versión ${selected.version} cargada.`);
@@ -533,7 +575,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   const nextInstruction = tripState && "Navigating" in tripState ? tripState.Navigating.spokenInstruction?.text : "Listo para simular el recorrido";
-  const allStopsPresent = stops.length >= 2 && stops.every((stop) => stop.label);
+  const allStopsPresent = stops.length >= 2 && stops.every((stop) => stop.label && (search?.id !== stop.id || search.query.trim() === stop.label));
   const addingSearchId = adding ? search?.id : undefined;
   const selectedTemplate = catalog?.templates.find((item) => String(item.id) === selectedServiceId);
   const selectedContract = catalog?.contracts.find((item) => item.id === selectedTemplate?.contract_id);
@@ -542,13 +584,13 @@ export function OperationsRoutePlannerDemo() {
   return <main className="ops-route-demo">
     <header className="ops-route-demo__header">
       <div><span className="ops-route-demo__eyebrow">ATLAS OPERATIONS · PLANIFICACIÓN</span><h1>Planificador de rutas</h1><p>Define direcciones y revisa el recorrido con giro a giro en Calama.</p></div>
-      <div className="ops-route-demo__header-actions"><span className="ops-route-demo__local-pill"><i /> TomTom conectado</span><button type="button" className="ops-route-demo__secondary" onClick={() => navigate("/operaciones/control-tower")}>Volver a Operaciones</button></div>
+      <div className="ops-route-demo__header-actions"><span className="ops-route-demo__local-pill"><i /> TomTom + Valhalla</span><button type="button" className="ops-route-demo__secondary" onClick={() => navigate("/operaciones/control-tower")}>Volver a Operaciones</button></div>
     </header>
     <div className="ops-route-demo__workspace">
       <section className="ops-route-demo__panel" aria-label="Planificador de recorrido">
-        <div className="ops-route-demo__panel-head"><div><h2>{activeView === "planning" ? "Recorrido del servicio" : "Vista del conductor"}</h2><p>{activeView === "planning" ? "Define el orden real de las paradas." : "Simulación de avance por instrucciones."}</p></div><span className="ops-route-demo__counter">{stops.length} paradas</span></div>
+        <div className="ops-route-demo__panel-head"><div><h2>{activeView === "planning" ? "Recorrido del servicio" : "Vista del conductor"}</h2><p>{activeView === "planning" ? "Agrega direcciones en cualquier orden; sugeriremos el recorrido." : "Simulación de avance por instrucciones."}</p></div><span className="ops-route-demo__counter">{stops.length} direcciones</span></div>
         {activeView === "planning" && <div className="ops-route-demo__route-config">
-          <label>Servicio base<select value={selectedServiceId} onChange={(event) => { setSelectedServiceId(event.target.value); setStops([]); setPlanningRoute(null); setRoute(null); setRoutePrefix(""); setError(""); }}>
+          <label>Servicio base<select value={selectedServiceId} onChange={(event) => { setSelectedServiceId(event.target.value); setStops([]); setPlanningRoute(null); setProposal(null); setRoute(null); setRoutePrefix(""); setError(""); }}>
             <option value="">Selecciona servicio base</option>
             {catalog?.templates.map((item) => {
               const contract = catalog.contracts.find((candidate) => candidate.id === item.contract_id);
@@ -571,29 +613,30 @@ export function OperationsRoutePlannerDemo() {
         {activeView === "planning" ? <>
           <div className="ops-route-demo__stops">
             {stops.map((stop, index) => <div key={stop.id} className="ops-route-demo__stop-row">
-              <span className={`ops-route-demo__stop-pin ops-route-demo__stop-pin--${stop.kind}`}>{stop.kind === "origin" ? "A" : stop.kind === "destination" ? "B" : index}</span>
+              <span className="ops-route-demo__stop-pin ops-route-demo__stop-pin--stop">{index + 1}</span>
               <div className="ops-route-demo__stop-input-wrap">
-                <label htmlFor={`route-${stop.id}`}>{stop.kind === "origin" ? "Origen" : stop.kind === "destination" ? "Destino" : `Parada ${index}`}</label>
-                <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder="Busca una dirección en Calama" onChange={(event) => { const query = event.target.value; const sessionId = search?.id === stop.id ? search.sessionId : crypto.randomUUID(); setSearch({ id: stop.id, query, sessionId, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); setPlanningRoute(null); setRoute(null); setRouteState("idle"); }} onFocus={() => { if (!stop.label) setSearch({ id: stop.id, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para ${stop.kind === "origin" ? "el origen" : stop.kind === "destination" ? "el destino" : `la parada ${index + 1}`}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{stop.label && stop.kind === "stop" && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
+                <label htmlFor={`route-${stop.id}`}>Dirección {index + 1}</label>
+                <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder="Busca una dirección en Calama" onChange={(event) => { const query = event.target.value; const sessionId = search?.id === stop.id ? search.sessionId : crypto.randomUUID(); setSearch({ id: stop.id, query, sessionId, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); setPlanningRoute(null); setProposal(null); setRoute(null); setRouteState("idle"); }} onFocus={() => { if (!stop.label) setSearch({ id: stop.id, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para dirección ${index + 1}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{stop.label && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
               </div>
               <div className="ops-route-demo__stop-actions"><button type="button" title="Subir punto" aria-label={`Subir ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === 0} onClick={() => moveStop(stop.id, -1)}>↑</button><button type="button" title="Bajar punto" aria-label={`Bajar ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === stops.length - 1} onClick={() => moveStop(stop.id, 1)}>↓</button></div>
             </div>)}
-            {stops.length === 0 && <div className="ops-route-demo__empty"><div className="ops-route-demo__empty-icon">A</div><strong>Agrega un origen y un destino</strong><span>Luego puedes insertar tantas paradas como necesites.</span></div>}
+            {stops.length === 0 && <div className="ops-route-demo__empty"><div className="ops-route-demo__empty-icon">＋</div><strong>Agrega las direcciones del recorrido</strong><span>No necesitas definir el inicio ni el destino: se determinan en la propuesta.</span></div>}
           </div>
-          <button type="button" className="ops-route-demo__add-stop" onClick={addStop} disabled={Boolean(addingSearchId)}>＋ <span>Agregar una parada</span></button>
+          <button type="button" className="ops-route-demo__add-stop" onClick={addStop} disabled={Boolean(addingSearchId)}>＋ <span>Agregar una dirección</span></button>
           <div className="ops-route-demo__panel-divider" />
-          {planningRoute && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia estimada · TomTom</span><strong>{formatDistance(planningRoute.distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration(planningRoute.durationSeconds)}</strong></div></div>}
-          <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Calculando ruta…" : "Calcular ruta"}</button><button type="button" className="ops-route-demo__secondary" onClick={() => void loadExample()}>Cargar ejemplo Calama</button></div>
-          {planningRoute && <><button type="button" className="ops-route-demo__driver-launch" onClick={() => void startSimulation()}><span><strong>Probar navegación del conductor</strong><small>Recalcula con Ferrostar + Valhalla desde las mismas paradas</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button></>}
+          {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
+          <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button><button type="button" className="ops-route-demo__secondary" onClick={() => void loadExample()}>Cargar ejemplo Calama</button></div>
+          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
+          {planningRoute && !proposal && <><button type="button" className="ops-route-demo__driver-launch" onClick={() => void startSimulation()}><span><strong>Probar navegación del conductor</strong><small>Ferrostar + Valhalla desde el orden aplicado</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving || !isOptimizedRoute(planningRoute)} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button>{!isOptimizedRoute(planningRoute) && <small>Para guardar una nueva versión, vuelve a proponer el recorrido.</small>}</>}
         </> : <div className="ops-route-demo__driver-panel"><div className="ops-route-demo__guidance"><span>PRÓXIMA INSTRUCCIÓN</span><strong>{nextInstruction}</strong><small>Ferrostar + Valhalla · simulación de referencia</small></div><div className="ops-route-demo__driver-stats"><div><span>Recorrido</span><strong>{route ? formatDistance(route.distance) : "—"}</strong></div><div><span>Tiempo base</span><strong>{route ? formatDuration(route.steps.reduce((total, step) => total + step.duration, 0)) : "—"}</strong></div></div><button type="button" className="ops-route-demo__secondary" onClick={() => void stopSimulation()}>Detener navegación</button><p>Se usan las coordenadas guardadas de las paradas; Valhalla puede elegir calles distintas a la vista previa de TomTom.</p></div>}
         {error && <div className="ops-route-demo__message ops-route-demo__message--error" role="alert">{error}</div>}
         {notice && <div className="ops-route-demo__message" role="status">{notice}</div>}
-        <div className="ops-route-demo__limitations"><strong>Cómo se conectan los motores</strong><p>TomTom busca direcciones y calcula el trazado de planificación. Al navegar, Ferrostar + Valhalla recalculan desde las mismas coordenadas; las calles elegidas pueden variar. TomTom calcula como automóvil (sin restricciones específicas de bus o faena). La IA queda fuera de esta etapa.</p></div>
+        <div className="ops-route-demo__limitations"><strong>Cómo se conectan los motores</strong><p>TomTom busca direcciones; Valhalla (perfil auto) propone y traza. Ferrostar + Valhalla navegan la secuencia aplicada. Termina en el último punto, sin regreso al inicio. No considera restricciones de buses/faena. La heurística es determinista, no es IA ni garantiza el óptimo global.</p></div>
       </section>
       <section className="ops-route-demo__map-section" aria-label="Mapa y ruta">
         <div className="ops-route-demo__map-topline"><div><span className="ops-route-demo__eyebrow">{activeView === "planning" ? "MAPA DE PLANIFICACIÓN" : "NAVEGACIÓN DEL CONDUCTOR"}</span><strong>{selectedContract?.contract_name ?? "Calama, Región de Antofagasta"}</strong></div><div className="ops-route-demo__map-legend"><span><i className="is-start" />Inicio</span><span><i className="is-stop" />Parada</span><span><i className="is-end" />Destino</span></div></div>
         <div className={`ops-route-demo__map-frame${mapPickingStopId ? " is-picking" : ""}`}><div className="ops-route-demo__map-canvas" ref={mapContainerRef} />{activeView === "driver" && <ferrostar-map ref={(node) => { ferrostarMapRef.current = node; }} className="ops-route-demo__ferrostar" show-navigation-ui show-user-marker system="metric" />} {!planningRoute && !route && routeState !== "loading" && !mapPickingStopId && <div className="ops-route-demo__map-empty"><span>＋</span><strong>Tu ruta aparecerá aquí</strong><small>Agrega direcciones o carga el ejemplo de Calama.</small></div>}{mapPickingStopId && <><div className="ops-route-demo__map-center-pin" aria-hidden="true"><svg viewBox="0 0 28 36"><path d="M14 1C6.82 1 1 6.82 1 14c0 9.1 13 21 13 21s13-11.9 13-21C27 6.82 21.18 1 14 1Z" /><circle cx="14" cy="14" r="4.5" /></svg></div><div className="ops-route-demo__map-pick-hint" role="status">Mueve el mapa hasta ubicar el punto bajo el marcador</div><div className="ops-route-demo__map-pick-actions"><button type="button" className="ops-route-demo__primary" onClick={confirmMapPick}>Usar este punto</button><button type="button" className="ops-route-demo__secondary" onClick={() => setMapPickingStopId(null)}>Cancelar</button></div></>}{routeState === "loading" && <div className="ops-route-demo__map-loading">Calculando ruta…</div>}</div>
-        <div className="ops-route-demo__map-foot"><span><i /> Planificación TomTom © TomTom · conductor Ferrostar + Valhalla</span><span>Mapa © OpenStreetMap contributors</span></div>
+        <div className="ops-route-demo__map-foot"><span><i /> Búsqueda TomTom · planificación Valhalla · conductor Ferrostar + Valhalla</span><span>Mapa © OpenStreetMap contributors</span></div>
       </section>
     </div>
     {showSearchPopover && search && suggestionAnchor && createPortal(

@@ -72,7 +72,8 @@ export type AtlasServiceRoute = {
 
 export type TomTomSuggestion = { id: string | null; type: "address" | "street" | "intersection" | null; label: string };
 export type TomTomPlaceMatch = { id: string | null; type: string | null; label: string; lat: number; lng: number };
-export type TomTomRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "tomtom"; travelMode: "car" };
+export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "auto" };
+export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; optimizationMethod: "valhalla_matrix_open_path_v1" };
 
 export async function getAtlasOperationsCatalogs() {
   const db = client();
@@ -190,13 +191,17 @@ export async function saveAtlasServiceRoute(input: {
   stops: Array<{ label: string; lat: number; lng: number; providerPlaceId?: string | null; source: "tomtom" | "map_pin" }>;
   distanceMeters: number;
   durationSeconds: number;
+  matrixDurationSeconds: number;
+  inputOrderMatrixDurationSeconds: number | null;
 }) {
-  return unwrap<string>(client().rpc("atlas_ops_save_service_route", {
+  return unwrap<string>(client().rpc("atlas_ops_save_optimized_service_route", {
     p_service_template_id: input.serviceTemplateId,
     p_prefix: input.prefix,
     p_stops: input.stops,
     p_distance_meters: Math.round(input.distanceMeters),
-    p_duration_seconds: Math.round(input.durationSeconds)
+    p_duration_seconds: Math.round(input.durationSeconds),
+    p_optimization_matrix_duration_seconds: Math.round(input.matrixDurationSeconds),
+    p_input_order_matrix_duration_seconds: input.inputOrderMatrixDurationSeconds === null ? null : Math.round(input.inputOrderMatrixDurationSeconds)
   }), "No fue posible guardar la ruta.");
 }
 
@@ -236,7 +241,15 @@ export async function resolveAtlasTomTomSuggestion(suggestion: TomTomSuggestion,
   return payload.suggestion;
 }
 
-export async function calculateAtlasTomTomRoute(stops: Array<{ lat: number; lng: number }>, signal?: AbortSignal): Promise<TomTomRoute> {
+export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; lng: number }>, signal?: AbortSignal): Promise<AtlasPlannedRoute> {
+  return callAtlasValhalla({ action: "route", stops }, signal);
+}
+
+export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, signal?: AbortSignal): Promise<AtlasOptimizedRoute> {
+  return callAtlasValhalla({ action: "optimize", stops }, signal);
+}
+
+async function callAtlasValhalla<T extends AtlasPlannedRoute>(body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
   const db = client();
   const { data: sessionData } = await db.auth.getSession();
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -246,20 +259,19 @@ export async function calculateAtlasTomTomRoute(stops: Array<{ lat: number; lng:
   const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-tomtom-planning`, {
     method: "POST",
     headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ action: "route", stops: stops.map(({ lat, lng }) => ({ lat, lng })) }),
+    body: JSON.stringify(body),
     signal
   });
-  const payload = await response.json() as TomTomRoute & { error?: string };
+  const payload = await response.json() as T & { error?: string };
   if (!response.ok) {
     const friendlyErrors: Record<string, string> = {
-      tomtom_route_point_not_routable: "TomTom no pudo conectar uno de los puntos con una calle transitable. Acerca ese punto a una calle y vuelve a calcular.",
-      tomtom_route_not_found: "TomTom no encontró un recorrido transitable entre esos puntos. Revisa las ubicaciones y su orden.",
-      tomtom_route_bad_input: "TomTom rechazó la combinación de puntos. Revisa que origen, paradas y destino tengan ubicaciones válidas.",
-      tomtom_http_400: "TomTom no pudo calcular la ruta. Revisa que los puntos estén cerca de calles transitables."
+      valhalla_matrix_http_429: "El planificador de rutas está temporalmente ocupado. Espera unos segundos y vuelve a intentar.",
+      valhalla_matrix_invalid_response: "Valhalla devolvió una matriz incompleta. Intenta nuevamente.",
+      valhalla_route_not_returned: "Valhalla no encontró un recorrido transitable entre todas las direcciones. Revisa sus ubicaciones."
     };
     throw new Error(friendlyErrors[payload.error ?? ""] ?? `No fue posible calcular la ruta (${payload.error ?? response.status}).`);
   }
-  return payload;
+  return payload as T;
 }
 
 export async function saveAtlasMilestoneTemplate(payload: Record<string, unknown>) {

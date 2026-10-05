@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "https://gestion.busesjm.cl",
@@ -7,6 +8,8 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_STOPS = 151;
+const MATRIX_BLOCK_SIZE = 40;
+const VALHALLA = "https://valhalla1.openstreetmap.de";
 const CALAMA = { longitude: -68.9294, latitude: -22.4544 };
 
 type Point = { lat: number; lng: number };
@@ -46,6 +49,78 @@ function point(value: unknown): Point {
     throw new Error("invalid_point");
   }
   return { lat, lng };
+}
+
+async function valhallaMatrix(sites: Point[]) {
+  const matrix = Array.from({ length: sites.length }, () => Array<number>(sites.length).fill(Number.POSITIVE_INFINITY));
+  const blocks: Array<{ row: number; col: number }> = [];
+  for (let row = 0; row < sites.length; row += MATRIX_BLOCK_SIZE) {
+    for (let col = 0; col < sites.length; col += MATRIX_BLOCK_SIZE) blocks.push({ row, col });
+  }
+  for (let offset = 0; offset < blocks.length; offset += 3) {
+    // Execute a small number of matrix blocks concurrently, keeping requests bounded.
+    const selected = blocks.slice(offset, offset + 3);
+    await Promise.all(selected.map(async ({ row, col }) => {
+      const sources = sites.slice(row, Math.min(row + MATRIX_BLOCK_SIZE, sites.length)).map(({ lat, lng }) => ({ lat, lon: lng }));
+      const targets = sites.slice(col, Math.min(col + MATRIX_BLOCK_SIZE, sites.length)).map(({ lat, lng }) => ({ lat, lon: lng }));
+      const query = new URLSearchParams({ json: JSON.stringify({ sources, targets, costing: "auto", costing_options: { auto: { use_ferry: 0, use_tolls: 0.5 } }, units: "kilometers", verbose: false }) });
+      const response = await fetch(`${VALHALLA}/sources_to_targets?${query}`, { signal: AbortSignal.timeout(18_000) });
+      if (!response.ok) throw new Error(`valhalla_matrix_http_${response.status}`);
+      const payload = await response.json() as { sources_to_targets?: { durations?: unknown } };
+      const durations = payload.sources_to_targets?.durations;
+      if (!Array.isArray(durations) || durations.length !== sources.length) throw new Error("valhalla_matrix_invalid_response");
+      durations.forEach((line, rowOffset) => {
+        if (!Array.isArray(line) || line.length !== targets.length) throw new Error("valhalla_matrix_invalid_response");
+        line.forEach((value, colOffset) => {
+          if (typeof value === "number" && Number.isFinite(value) && value >= 0) matrix[row + rowOffset]![col + colOffset] = value;
+        });
+      });
+    }));
+  }
+  return matrix;
+}
+
+function decodePolyline6(value: string): [number, number][] {
+  const coordinates: [number, number][] = [];
+  let index = 0;
+  let latitude = 0;
+  let longitude = 0;
+  while (index < value.length) {
+    const read = () => {
+      let result = 0;
+      let shift = 0;
+      let byte: number;
+      do {
+        if (index >= value.length || shift > 30) throw new Error("valhalla_route_invalid_geometry");
+        byte = value.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+      return result & 1 ? ~(result >> 1) : result >> 1;
+    };
+    latitude += read();
+    longitude += read();
+    coordinates.push([longitude / 1e6, latitude / 1e6]);
+  }
+  return coordinates;
+}
+
+async function valhallaRoute(sites: Point[]) {
+  const routeResponse = await fetch(`${VALHALLA}/route`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ locations: sites.map(({ lat, lng }) => ({ lat, lon: lng })), costing: "auto", costing_options: { auto: { use_ferry: 0, use_tolls: 0.5 } }, units: "kilometers", shape_format: "polyline6" }),
+    signal: AbortSignal.timeout(18_000)
+  });
+  if (!routeResponse.ok) throw new Error(`valhalla_route_http_${routeResponse.status}`);
+  const payload = await routeResponse.json() as { trip?: { status?: number; summary?: { length?: number; time?: number }; legs?: Array<{ shape?: string }> } };
+  const summary = payload.trip?.summary;
+  const coordinates = (payload.trip?.legs ?? []).flatMap((leg) => typeof leg.shape === "string" ? decodePolyline6(leg.shape) : []);
+  const deduplicated = coordinates.filter((coordinate, index) => index === 0 || coordinate[0] !== coordinates[index - 1]![0] || coordinate[1] !== coordinates[index - 1]![1]);
+  if (payload.trip?.status !== 0 || typeof summary?.length !== "number" || typeof summary.time !== "number" || deduplicated.length < 2 || !Number.isFinite(summary.length) || !Number.isFinite(summary.time)) {
+    throw new Error("valhalla_route_not_returned");
+  }
+  return { coordinates: deduplicated, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), provider: "valhalla" as const, travelMode: "auto" as const };
 }
 
 async function isActiveSuperAdmin(accessToken: string, apiKey: string | null) {
@@ -210,55 +285,31 @@ Deno.serve(async (request) => {
       if (!suggestion) return response({ error: "place_coordinates_missing" }, 422, origin);
       return response({ suggestion }, 200, origin);
     }
-    if (action === "route") {
+    if (action === "optimize") {
       if (!Array.isArray(payload.stops) || payload.stops.length < 2 || payload.stops.length > MAX_STOPS) {
         return response({ error: "route_requires_2_to_151_stops" }, 400, origin);
       }
       const stops = payload.stops.map(point);
-      const locations = {
-        origin: { type: "Point", coordinates: [stops[0]!.lng, stops[0]!.lat] },
-        ...(stops.length > 2 ? { waypoints: { type: "MultiPoint", coordinates: stops.slice(1, -1).map((stop) => [stop.lng, stop.lat]) } } : {}),
-        destination: { type: "Point", coordinates: [stops.at(-1)!.lng, stops.at(-1)!.lat] }
-      };
-      const responseBody = await callTomTom("/maps/orbis/routing/routes/calculate", {
-        routePlanningLocations: locations,
-        routeType: "fast",
-        travelMode: "car",
-        traffic: "historical"
-      });
-      const routes = Array.isArray(responseBody.routes) ? responseBody.routes : [];
-      const route = routes[0] as Record<string, unknown> | undefined;
-      const legs = Array.isArray(route?.legs) ? route.legs as Array<Record<string, unknown>> : [];
-      const summary = route?.summary as Record<string, unknown> | undefined;
-      const normalizedCoordinates: number[][] = [];
-      for (const leg of legs) {
-        const legPath = leg.path as { coordinates?: unknown } | undefined;
-        if (!Array.isArray(legPath?.coordinates)) continue;
-        for (const coordinate of legPath.coordinates) {
-          if (!Array.isArray(coordinate) || coordinate.length < 2) throw new Error("invalid_route_geometry");
-          const lng = Number(coordinate[0]);
-          const lat = Number(coordinate[1]);
-          if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error("invalid_route_geometry");
-          const previous = normalizedCoordinates.at(-1);
-          if (previous?.[0] === lng && previous[1] === lat) continue;
-          normalizedCoordinates.push([lng, lat]);
-        }
+      const matrix = await valhallaMatrix(stops);
+      const optimized = optimizeOpenRoute(matrix);
+      const orderedStops = optimized.order.map((index) => stops[index]!);
+      const route = await valhallaRoute(orderedStops);
+      return response({ ...route, order: optimized.order, matrixDurationSeconds: optimized.durationSeconds, inputOrderMatrixDurationSeconds: optimized.inputOrderDurationSeconds, optimizationMethod: "valhalla_matrix_open_path_v1" }, 200, origin);
+    }
+    if (action === "route") {
+      if (!Array.isArray(payload.stops) || payload.stops.length < 2 || payload.stops.length > MAX_STOPS) {
+        return response({ error: "route_requires_2_to_151_stops" }, 400, origin);
       }
-      if (normalizedCoordinates.length < 2 || !summary) return response({ error: "route_not_returned" }, 502, origin);
-      return response({
-        coordinates: normalizedCoordinates,
-        distanceMeters: Number(summary.lengthInMeters),
-        durationSeconds: Number(summary.travelDurationInSeconds),
-        provider: "tomtom",
-        travelMode: "car"
-      }, 200, origin);
+      return response(await valhallaRoute(payload.stops.map(point)), 200, origin);
     }
     return response({ error: "unsupported_action" }, 400, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : "request_failed";
     const status = message === "tomtom_not_configured" || message.startsWith("superadmin_check_") || message === "auth_config_missing"
       ? 503
-      : message === "tomtom_rate_limited" ? 429 : 400;
+      : message === "tomtom_rate_limited" ? 429
+      : message.startsWith("valhalla_") ? 502
+      : 400;
     return response({ error: message }, status, origin);
   }
 });
