@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.50
+version: 1.0.52
 status: Activo
 language: es-CL
 owner: Quality
@@ -173,14 +173,16 @@ Revision 2026-10-05 métrica canónica Ubuntu/Node 24 para PR #30: el artefacto 
 Revision 2026-10-05 ampliacion Puck: el build local mide 7,448,897 bytes totales, 5,329,436 bytes JS y 529,724 bytes CSS. Los 1,036 bytes de incremento total y 1,955 bytes CSS corresponden a cinco paletas seguras, tres fuentes, escala tipografica, ancho y forma de tarjetas en el editor de portada; no agrega dependencias ni adelanta la carga lazy. Se conserva tolerancia cero y la medicion canonica CI debe reconciliar cualquier diferencia de plataforma.
 Revision 2026-10-05 interacción de parada pendiente Atlas: Guardian CI midió +1.131 bytes en `dist` (+1.023 JS y +108 CSS) para llevar la dirección nueva a la vista, recuperar el campo pendiente desde «Agregar», eliminarlo vacío y explicar la validación. No agrega dependencias ni cambia la carga inicial; se registran los deltas canónicos con tolerancia cero.
 
+Revision 2026-10-05 presentaciones de actividades: tras integrar la interacción Atlas medida por CI, el build local mide 7,452,434 bytes totales, 5,330,714 bytes JS y 531,983 bytes CSS. Frente al baseline CI de main, la presentación agrega 2,406 bytes (255 JS y 2,151 CSS) para lista y tarjetas de dos/tres columnas adaptables; la tolerancia continúa en cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7450028,
+  "distTotalBytes": 7452434,
   "jsFileCount": 74,
-  "jsTotalBytes": 5330459,
+  "jsTotalBytes": 5330714,
   "cssFileCount": 15,
-  "cssTotalBytes": 529832,
+  "cssTotalBytes": 531983,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
