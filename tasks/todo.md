@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Seleccionar jornadas AM/PM al crear un servicio base — 2026-10-05
+
+- [x] Reemplazar el texto libre de Jornada por el selector múltiple con AM (A) y PM (C).
+- [x] Guardar una o ambas opciones en el `schedule_label` existente, sin migrar datos.
+- [x] Validar build frontend, Guardian y `git diff --check`.
+
+Resultado: Jornada usa el mismo desplegable multiselección de Días de operación. Exige al menos una opción y guarda `AM (A)`, `PM (C)` o ambas en el campo de texto existente; no requiere migración.
+
 ## Auditar y alinear cambios locales con producción y main — 2026-10-05
 
 - [x] Inventariar cambios staged/unstaged/untracked, comparar contra `origin/main` y revisar la función BUK desplegada.

@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-05 - Jornada de un servicio base es una selección controlada
+
+- Separar el turno operativo AM (A) / PM (C) de la pauta semanal: ambos son multiselección independiente y no texto libre.
+- Reutilizar el campo `schedule_label` existente con etiquetas legibles para no migrar ni reinterpretar datos guardados.
+
 ## 2026-10-05 - No perder asociaciones cargo-área cuando BUK expone ambos lados
 
 - La API puede exponer la misma asociación desde `role.area_ids` y desde `area.role_ids`; reconciliar ambos lados con deduplicación por ID evita depender de un único payload.

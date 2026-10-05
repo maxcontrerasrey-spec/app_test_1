@@ -213,9 +213,10 @@ function OperationsControlTowerApp() {
     }));
   }
 
-  async function saveTemplate(form: FormData, operatingDays: string[]) {
+  async function saveTemplate(form: FormData, operatingDays: string[], shifts: string[]) {
     const payload: Record<string, unknown> = Object.fromEntries(form.entries());
     payload.operating_days = operatingDays.map(Number);
+    payload.schedule_label = shifts.join(", ");
     await mutation.mutateAsync(() => saveAtlasServiceTemplate(payload));
   }
 
@@ -461,31 +462,40 @@ function ConfigurationView({ contracts, templates, users, drivers, driverSearch,
   contracts: Array<{ id: number; code: string; contract_name: string }>; templates: Array<{ id: number; contract_id: number; name: string; service_type: string }>;
   users: Array<{ id: string; email: string; full_name: string }>; drivers: Array<{ buk_employee_id: string; full_name: string; display_label: string }>;
   driverSearch: string; onDriverSearchChange: (value: string) => void;
-  canAdmin: boolean; onSaveTemplate: (form: FormData, operatingDays: string[]) => Promise<void>; onSaveMilestone: (form: FormData) => Promise<void>;
+  canAdmin: boolean; onSaveTemplate: (form: FormData, operatingDays: string[], shifts: string[]) => Promise<void>; onSaveMilestone: (form: FormData) => Promise<void>;
   onSaveVehicle: (form: FormData) => Promise<void>; onSaveEditor: (form: FormData) => Promise<void>; onBindDriver: (form: FormData) => Promise<void>; pending: boolean;
 }) {
   const [operatingDays, setOperatingDays] = useState<string[]>([]);
+  const [shifts, setShifts] = useState<string[]>([]);
   const [daysError, setDaysError] = useState(false);
+  const [shiftsError, setShiftsError] = useState(false);
   const weekdays = [
     { value: "1", label: "Lunes" }, { value: "2", label: "Martes" },
     { value: "3", label: "Miércoles" }, { value: "4", label: "Jueves" },
     { value: "5", label: "Viernes" }, { value: "6", label: "Sábado" },
     { value: "7", label: "Domingo" }
   ];
+  const shiftOptions = [
+    { value: "AM (A)", label: "AM (A)" },
+    { value: "PM (C)", label: "PM (C)" }
+  ];
   async function submitServiceTemplate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (operatingDays.length === 0) {
-      setDaysError(true);
-      return;
-    }
+    const missingDays = operatingDays.length === 0;
+    const missingShifts = shifts.length === 0;
+    setDaysError(missingDays);
+    setShiftsError(missingShifts);
+    if (missingDays || missingShifts) return;
     setDaysError(false);
-    await onSaveTemplate(new FormData(event.currentTarget), operatingDays);
+    setShiftsError(false);
+    await onSaveTemplate(new FormData(event.currentTarget), operatingDays, shifts);
   }
   return <section className="atlas-ops__config-grid">
     <form className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => { void submitServiceTemplate(event); }}><div className="atlas-ops__panel-heading"><div><h2>Nuevo servicio base</h2><p>Catálogo propio de Atlas Operations.</p></div></div><div className="atlas-ops__form-grid">
       <Field label="Contrato"><select name="contract_id" required defaultValue=""><option value="" disabled>Selecciona</option>{contracts.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.contract_name}</option>)}</select></Field>
       <Field label="Nombre"><input name="name" required /></Field><Field label="Tipo"><input name="service_type" required /></Field>
-      <Field label="Proveedor"><input name="provider_name" /></Field><Field label="Nombre contractual"><input name="contractual_name" /></Field><Field label="Jornada"><input name="schedule_label" /></Field>
+      <Field label="Proveedor"><input name="provider_name" /></Field><Field label="Nombre contractual"><input name="contractual_name" /></Field>
+      <div><MultiSelectField id="service-shifts" label="Jornada" className="atlas-ops__field" value={shifts} onChange={(values) => { setShifts(values); if (values.length) setShiftsError(false); }} options={shiftOptions} placeholder="Selecciona AM o PM" triggerStyle={{ height: "var(--ops-control-height)", minHeight: "var(--ops-control-height)", flexWrap: "nowrap", boxSizing: "border-box" }} /><small style={{ display: "block", marginTop: "0.25rem", color: "var(--ops-muted)", fontSize: "0.65rem", fontWeight: 400 }}>Elige AM (A), PM (C) o ambas.</small>{shiftsError && <small role="alert" style={{ display: "block", color: "#b42318", fontSize: "0.65rem" }}>Selecciona al menos una jornada.</small>}</div>
       <div><MultiSelectField id="service-operating-days" label="Días de operación" className="atlas-ops__field" value={operatingDays} onChange={(days) => { setOperatingDays(days); if (days.length) setDaysError(false); }} options={weekdays} placeholder="Selecciona los días" triggerStyle={{ height: "var(--ops-control-height)", minHeight: "var(--ops-control-height)", flexWrap: "nowrap", boxSizing: "border-box" }} /><small style={{ display: "block", marginTop: "0.25rem", color: "var(--ops-muted)", fontSize: "0.65rem", fontWeight: 400 }}>Elige uno o más días de la semana.</small>{daysError && <small role="alert" style={{ display: "block", color: "#b42318", fontSize: "0.65rem" }}>Selecciona al menos un día.</small>}</div>
     </div><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || !canAdmin}>Agregar servicio</button></form>
     <form className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void onSaveMilestone(new FormData(event.currentTarget)); }}><div className="atlas-ops__panel-heading"><div><h2>Versión de hitos SLA</h2><p>Las nuevas reglas aplican a despachos futuros.</p></div></div><div className="atlas-ops__form-grid">
