@@ -158,12 +158,14 @@ Revision 2026-10-02 orden y diagnóstico de ruta Atlas: Guardian CI midio 378 by
 Revision 2026-10-02 geometría y sentido de ruta Atlas: Guardian CI midio 940 bytes adicionales en `dist` y JS (0.02%) para reconciliar fuente/capas MapLibre y dibujar flechas direccionales sobre la ruta. No incorpora dependencias ni adelanta el chunk lazy del planificador. Se registra el tamaño exacto; la tolerancia permanece en cero.
 
 Revision 2026-10-05 primera ruta y parada provisional Atlas: Guardian CI midió 128 bytes adicionales en `dist` y JS para crear las capas del recorrido al cargar el mapa y evitar incluir paradas sin dirección en el encuadre. No incorpora dependencias; la tolerancia permanece en cero.
+
+Revision 2026-10-05 límites vacíos del planificador Atlas: Guardian CI midió 29 bytes adicionales en `dist` y JS al proteger `fitBounds` ante paradas aún sin coordenadas. Se registra el delta exacto del artefacto Ubuntu/Node 24; la tolerancia permanece en cero.
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6269517,
+  "distTotalBytes": 6269546,
   "jsFileCount": 62,
-  "jsTotalBytes": 4282565,
+  "jsTotalBytes": 4282594,
   "cssFileCount": 12,
   "cssTotalBytes": 397215,
   "budgetPolicy": {

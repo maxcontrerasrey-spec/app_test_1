@@ -8,6 +8,8 @@
 - [ ] Publicar en producción y verificar que los artefactos activos contienen la corrección.
 - [ ] Registrar resultado y lección para límites vacíos de MapLibre.
 
+Nota de CI: Guardian local pasó; el artefacto Ubuntu/Node 24 detectó +29 bytes en `dist` y JS. Se documentó el tamaño exacto, sin relajar la tolerancia cero; falta repetir Guardian CI.
+
 ## Corregir primera visualización de ruta y punto de parada Atlas — 2026-10-05
 
 - [x] Asegurar fuente/capas del recorrido al terminar la carga del mapa para que el primer cálculo actualice un origen ya listo.
