@@ -160,12 +160,14 @@ Revision 2026-10-02 geometría y sentido de ruta Atlas: Guardian CI midio 940 by
 Revision 2026-10-05 primera ruta y parada provisional Atlas: Guardian CI midió 128 bytes adicionales en `dist` y JS para crear las capas del recorrido al cargar el mapa y evitar incluir paradas sin dirección en el encuadre. No incorpora dependencias; la tolerancia permanece en cero.
 
 Revision 2026-10-05 límites vacíos del planificador Atlas: Guardian CI midió 29 bytes adicionales en `dist` y JS al proteger `fitBounds` ante paradas aún sin coordenadas. Se registra el delta exacto del artefacto Ubuntu/Node 24; la tolerancia permanece en cero.
+
+Revision 2026-10-05 jornada AM/PM Atlas: el selector múltiple de jornada agrega 752 bytes medidos en `dist` y JS, sin cambio CSS, dependencias ni alteración del bundle inicial. Se registra el tamaño exacto y se conserva la tolerancia cero.
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6271548,
+  "distTotalBytes": 6272300,
   "jsFileCount": 62,
-  "jsTotalBytes": 4284596,
+  "jsTotalBytes": 4285348,
   "cssFileCount": 12,
   "cssTotalBytes": 397215,
   "budgetPolicy": {
