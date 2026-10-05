@@ -167,9 +167,9 @@ Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7422371,
+  "distTotalBytes": 7424491,
   "jsFileCount": 74,
-  "jsTotalBytes": 5311879,
+  "jsTotalBytes": 5313999,
   "cssFileCount": 15,
   "cssTotalBytes": 520755,
   "budgetPolicy": {
@@ -339,4 +339,4 @@ Revision 2026-10-05 estado vacio de ruta Atlas: GitHub Actions `Audit Enterprise
 
 Revision 2026-10-05 destinos Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37339758827` midió 4.351 bytes adicionales en `dist`, 3.414 en JS y 937 en CSS para seleccionar un destino fijo, sugerir ubicaciones frecuentes y conservar la elección al optimizar. El cambio permanece en la pantalla lazy de planificación, no agrega vendors ni assets pesados y mantiene la tolerancia en cero.
 
-Revision 2026-10-05 editor visual del Portal: el build local del árbol integrado mide 7,422,371 bytes totales, 5,311,879 bytes JS y 520,755 bytes CSS (+1,145,393 / +1,022,408 / +122,985 frente al registro anterior). Puck se carga solo en `/comunicaciones/diseno` (574,640 bytes JS, 164,920 gzip; 94,430 bytes CSS, 14,500 gzip), fuera de la carga inicial. `app-framework` mide 296,608 bytes con el editor. Se actualizan los límites exactos locales; CI deberá canonizar la medida al validar el commit.
+Revision 2026-10-05 editor visual del Portal: GitHub Actions run `37344840104` mide 7,424,491 bytes totales, 5,313,999 bytes JS y 520,755 bytes CSS. Puck se carga solo en `/comunicaciones/diseno` (574,640 bytes JS, 164,920 gzip; 94,430 bytes CSS, 14,500 gzip), fuera de la carga inicial. `app-framework` mide 296,608 bytes con el editor. Se registra la medición canónica de CI con tolerancia cero.
