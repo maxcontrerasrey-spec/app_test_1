@@ -7,12 +7,14 @@
 - [x] Ajustar el planificador para mostrar todos los puntos como direcciones por ordenar, revisar/aplicar la propuesta antes de guardarla y preservar asociación a servicio base/código de ruta.
 - [x] Crear migración forward-only para persistir proveedor y método de planificación sin alterar rutas históricas ni permisos superadmin.
 - [x] Cubrir solver y contratos con pruebas focalizadas; ejecutar Deno check, build, Guardian, auditorías SQL y `git diff --check`.
-- [ ] Aplicar migración y desplegar Edge Function/frontend en producción; verificar autorización sin JWT, disponibilidad pública de matriz/ruta y artefactos productivos.
-- [ ] Registrar resultados y límites reales de verificación en esta tarea y `tasks/lessons.md`.
+- [x] Aplicar migración y desplegar Edge Function/frontend en producción; verificar autorización sin JWT, disponibilidad pública de matriz/ruta y artefactos productivos.
+- [x] Registrar resultados y límites reales de verificación en esta tarea y `tasks/lessons.md`.
 
 Revisión de plan: supuesto operativo fase 1 = recorrido abierto que visita cada punto una vez; optimizador elige primer y último punto y no regresa al inicio. La propuesta se revisa antes de guardar; no se incorpora IA generativa ni restricciones de bus/faena que no entrega el perfil disponible.
 
-Avance de producción: migración `20261005131845` aplicada en Supabase y `atlas-tomtom-planning` desplegada como versión 5 con JWT obligatorio. La llamada de optimización sin sesión devuelve 401. Valhalla público respondió 200 para matriz y geometría en Calama. Falta publicar el frontend y confirmar la versión activa.
+Resultado final: la migración `20261005131845` está aplicada; las versiones históricas siguen intactas. `atlas-tomtom-planning` v5 está activa con JWT obligatorio y la optimización sin sesión devuelve 401. La PR #15 fue integrada a `main` en `9e7e2c624386bbb5e2f326fe525fb08f88cc1ea4`; Pages sirve `index-CXhBhAlp.js` y el chunk del planificador `OperationsRoutePlannerDemo-COgJbGCB.js`, que contiene propuesta, orden completo revisable y cálculo Valhalla. CI `37317390391` pasó todos los gates. Matriz y trazado público de Valhalla respondieron 200 en Calama; la heurística local procesó 151 puntos en 35 ms. TomTom conserva la búsqueda; Ferrostar + Valhalla mantienen la conducción.
+
+Límites de fase: es una heurística determinista (múltiples inicios, vecino más cercano y 2-opt), no IA ni garantía de óptimo global. Resuelve un trayecto abierto que termina en la última dirección, con perfil `auto`; no modela capacidad/restricciones de buses, faena, horarios ni retorno al inicio. El usuario puede revisar y aceptar la propuesta antes de guardar.
 
 ## Evitar error al agregar parada sin coordenadas confirmadas en Atlas — 2026-10-05
 
