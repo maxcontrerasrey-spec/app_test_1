@@ -4,7 +4,9 @@
 
 - [x] Comparar la búsqueda Atlas con el control BUK compartido y revisar la consulta/RPC productiva.
 - [x] Enlazar Planificación al selector estándar con debounce, selección BUK y estados de carga/error/sin coincidencias.
-- [ ] Ejecutar build, Guardian y `git diff --check`; publicar y verificar la corrección productiva.
+- [x] Ejecutar build, Guardian y `git diff --check`; publicar y verificar la corrección productiva.
+
+Resultado: PR #22 integrado en `main` (commit `87aad1c1`). Build frontend y Guardian local pasan; GitHub Actions `37336675819` y Cloudflare Pages terminan exitosamente. `gestion.busesjm.cl` sirve el chunk de Planificación y el selector compartido con HTTP 200; se verificaron los textos de carga y sin coincidencias en el bundle publicado.
 
 ## Revisar nómina actualizada para alta de flota Atlas — 2026-10-05
 
