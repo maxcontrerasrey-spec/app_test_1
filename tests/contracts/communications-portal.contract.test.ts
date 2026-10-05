@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync("supabase/migrations/20261005165138_communications_portal.sql", "utf8");
 const designMigration = readFileSync("supabase/migrations/20261005165140_communications_visual_editor.sql", "utf8");
 const nestingMigration = readFileSync("supabase/migrations/20261005180221_nest_communications_portal_under_hr.sql", "utf8");
+const cmsMigration = readFileSync("supabase/migrations/20261005190355_communications_editorial_official_cms.sql", "utf8");
 const storageRoute = readFileSync("functions/api/comunicaciones/files.ts", "utf8");
+const assetRoute = readFileSync("functions/api/comunicaciones/assets.ts", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
 const routeModules = readFileSync("src/app/router/routeModules.ts", "utf8");
 const navigation = readFileSync("src/shared/config/navigation.ts", "utf8");
@@ -103,5 +105,30 @@ describe("Portal de Comunicaciones", () => {
     expect(designPage).toContain("Vista previa");
     expect(designPage).toContain("Historial de versiones");
     expect(designPage).toContain("Restaurar");
+  });
+
+  it("separa Editorial y Oficial, limita la audiencia por roles y permite exigir acuse", () => {
+    expect(cmsMigration).toContain("channel in ('editorial', 'oficial')");
+    expect(cmsMigration).toContain("public.user_has_role(actor_id, audience.role_code)");
+    expect(cmsMigration).toContain("communications_acknowledgements");
+    expect(cmsMigration).toContain("ack_communications_item");
+    expect(cmsMigration).toContain("Solo las publicaciones oficiales pueden exigir acuse de lectura");
+    expect(modulePage).toContain('Editorial<span>Historias y vida en Buses JM</span>');
+    expect(modulePage).toContain('Oficial<span>Comunicados e información vigente</span>');
+    expect(modulePage).toContain("Confirmar lectura");
+  });
+
+  it("programa y vence por hora de servidor y mantiene archivos privados verificados en R2", () => {
+    expect(cmsMigration).toContain("publish_at timestamptz");
+    expect(cmsMigration).toContain("expires_at timestamptz");
+    expect(cmsMigration).toContain("item.expires_at > timezone('utc', now())");
+    expect(cmsMigration).toContain("item.publish_at > timezone('utc', now())");
+    expect(cmsMigration).toContain("body_blocks jsonb");
+    expect(assetRoute).toContain("signatureMatches");
+    expect(assetRoute).toContain("customMetadata?.sha256 !== asset.sha256");
+    expect(assetRoute).toContain('request.method === "POST"');
+    expect(modulePage).toContain("Programar publicación");
+    expect(modulePage).toContain("Previsualizar");
+    expect(modulePage).toContain("Vencimiento (opcional)");
   });
 });

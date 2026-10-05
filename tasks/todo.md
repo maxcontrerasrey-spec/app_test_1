@@ -4490,3 +4490,17 @@ Resultado: la migración `20261002124040_preserve_terminal_candidate_on_psychola
 - [x] Publicar en producción y confirmar el bundle servido.
 
 Resultado: PR #28 quedó integrado en `main` (2ec9a3cd); Cloudflare Pages publicó `Production / main` (23a8a241). El bundle servido por `gestion.busesjm.cl` evalúa `stops.some(stop => stop.label.trim().length > 0)` y oculta el estado vacío con la primera dirección. Build frontend y Guardian aprobaron; Guardian CI: 0 errores y 0 advertencias después de registrar el delta de 74 bytes sin cambiar la tolerancia cero.
+
+## Experiencia Editorial/Oficial y CMS de Comunicaciones — 2026-10-05
+
+- [x] Formalizar niveles Editorial/Oficial, categorías, audiencia por roles ERP y acuse individual para publicaciones oficiales que exijan lectura; revisar restricciones y grants existentes antes de migrar.
+- [x] Extender el contrato de publicación con programación, vencimiento, portada y recursos privados R2, manteniendo borradores e historial existentes.
+- [x] Rediseñar la portada según la referencia: destacado con imagen, tarjetas de últimas publicaciones, boletines y navegación separada Editorial/Oficial.
+- [x] Completar el CMS con contenido enriquecido seguro, adjuntos/imágenes, audiencia, fechas, borrador, previsualización y publicación programada.
+- [ ] Validar el recorrido como lector y como comunicador, controles negativos de permisos, Guardian, build, auditorías Supabase/migraciones y diff check; aplicar migración y desplegar backend/frontend con evidencia productiva.
+
+Revisión del plan: conservar el editor Puck para estética/layout del portal y separar ese flujo de la edición de artículos. La programación y el vencimiento se resolverán en las RPC de lectura por fecha del servidor; no dependerán de tareas frontend. La visibilidad por audiencia y los acuses oficiales se validarán en backend; contenido enriquecido se serializará en bloques permitidos, sin HTML arbitrario. Portadas y adjuntos seguirán en R2 privado con autorización y comprobación de integridad.
+
+Avance: contrato SQL, R2 privado y CMS implementados. Contratos (108 pruebas), TypeScript, build, auditoría de migraciones, baseline de performance y Guardian pasan localmente. Las migraciones `20261005190355` y `20261005190545` están aplicadas en producción; queda CI del último commit, despliegue de la interfaz y smoke de la ruta/almacenamiento en producción.
+
+Revisión adicional post-migración: Supabase Performance Advisor encontró tres relaciones nuevas sin índice de apoyo. Se agregaron índices en una segunda migración productiva (`communications_fk_indexes`) y se reflejarán en el historial local antes de continuar con CI y merge.

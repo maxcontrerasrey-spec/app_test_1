@@ -166,14 +166,18 @@ Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327
 
 Revision 2026-10-05 estado vacío del mapa Atlas: Guardian CI midió 74 bytes adicionales en `dist` y JS para retirar el overlay en cuanto se ingresa una dirección. CSS y dependencias no cambian; se registra el delta exacto y los presupuestos mantienen tolerancia cero.
 
+Revision 2026-10-05 CMS Editorial/Oficial de Comunicaciones: el build combinado con el cambio de estado vacío del mapa registra esos 74 bytes adicionales de `dist` y JS; este módulo agrega sus vistas bajo carga diferida y 7.014 bytes de CSS. No agrega dependencias ni adelanta la carga del editor Puck; los presupuestos mantienen tolerancia cero.
+
+Revision 2026-10-05 métrica canónica Ubuntu/Node 24 para PR #30: el artefacto `dist`/JS mide 2.120 bytes más que el build local macOS; se registra la medición exacta observada por el audit CI. CSS y dependencias no cambian; tolerancia cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7425350,
+  "distTotalBytes": 7447861,
   "jsFileCount": 74,
-  "jsTotalBytes": 5314858,
+  "jsTotalBytes": 5330355,
   "cssFileCount": 15,
-  "cssTotalBytes": 520755,
+  "cssTotalBytes": 527769,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -346,3 +350,5 @@ Revision 2026-10-05 ejemplo Calama Atlas: GitHub Actions `Audit Enterprise Guard
 Revision 2026-10-05 editor visual del Portal: GitHub Actions run `37344840104` mide 7,424,491 bytes totales, 5,313,999 bytes JS y 520,755 bytes CSS. Puck se carga solo en `/comunicaciones/diseno` (574,640 bytes JS, 164,920 gzip; 94,430 bytes CSS, 14,500 gzip), fuera de la carga inicial. `app-framework` mide 296,608 bytes con el editor. Se registra la medición canónica de CI con tolerancia cero.
 
 Revision 2026-10-05 Portal como submódulo RRHH: GitHub Actions run `37353515714` midió 485 bytes adicionales en `dist` y JS, sin cambio CSS, para la ruta canónica bajo `/recursos-humanos` y los alias compatibles. No agrega dependencias ni assets; se fija el nuevo baseline exacto de CI y la tolerancia permanece en cero.
+
+Revision 2026-10-05 estructura Editorial/Oficial del Portal: el build local mide 7,445,667 bytes totales, 5,328,161 bytes JS y 527,769 bytes CSS. El CMS de publicaciones y su acceso R2 permanecen en rutas/chunks lazy de RRHH; no agrega vendors. El destacado, grilla reciente, boletines, editor enriquecido, calendario de publicación/vencimiento y acuse oficial justifican el aumento, que se reconciliará con el artefacto canónico CI antes del cierre.
