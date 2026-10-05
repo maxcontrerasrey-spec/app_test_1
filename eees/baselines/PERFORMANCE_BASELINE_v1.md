@@ -166,12 +166,14 @@ Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327
 
 Revision 2026-10-05 estado vacío del mapa Atlas: Guardian CI midió 74 bytes adicionales en `dist` y JS para retirar el overlay en cuanto se ingresa una dirección. CSS y dependencias no cambian; se registra el delta exacto y los presupuestos mantienen tolerancia cero.
 
+Revision 2026-10-05 CMS Editorial/Oficial de Comunicaciones: el build combinado con el cambio de estado vacío del mapa registra esos 74 bytes adicionales de `dist` y JS; este módulo agrega sus vistas bajo carga diferida y 7.014 bytes de CSS. No agrega dependencias ni adelanta la carga del editor Puck; los presupuestos mantienen tolerancia cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7445667,
+  "distTotalBytes": 7445741,
   "jsFileCount": 74,
-  "jsTotalBytes": 5328161,
+  "jsTotalBytes": 5328235,
   "cssFileCount": 15,
   "cssTotalBytes": 527769,
   "budgetPolicy": {
