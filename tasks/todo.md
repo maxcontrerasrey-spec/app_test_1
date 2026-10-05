@@ -24,6 +24,13 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 # Tareas y Roadmap de Desarrollo
 
+## Corregir el destino del ejemplo Calama Atlas — 2026-10-05
+
+- [x] Eliminar la consulta TomTom del ejemplo para el nombre interno “División Ministro Hales”.
+- [x] Construir el ejemplo usando el preset BCD DMH ya confirmado y mantener TomTom solo para las dos direcciones de calle.
+- [x] Añadir prueba focalizada del orden, coordenadas y fuente del destino de ejemplo.
+- [ ] Ejecutar build, Guardian, auditorías aplicables y `git diff --check`; desplegar y verificar el bundle de producción.
+
 ## Fijar destinos y sugerir ubicaciones frecuentes Atlas — 2026-10-05
 
 - [x] Añadir catálogo local de BCD DMH, Casa de Cambio Mina DMH y Portería Minera El Abra con aliases buscables y coordenadas de las capturas.

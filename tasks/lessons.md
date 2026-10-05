@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-05 - Los ejemplos de ruta deben usar el catálogo para destinos conocidos
+
+- No volver a geocodificar por proveedor nombres internos de faenas que ya tienen coordenadas aprobadas en el catálogo; el proveedor puede no reconocerlos aunque el mapa ya tenga el punto preciso.
+- Mantener las búsquedas externas solo para direcciones de calle que sí requieren geocodificación y combinar su resultado con el preset local antes de publicar el estado del ejemplo.
+
 ## 2026-10-05 - Un destino fijado debe mantenerse en toda la cadena de planificación
 
 - Un marcador visual de destino no basta: el índice seleccionado debe llegar al optimizador servidor, quedar al final tras la heurística y sobrevivir en el orden persistido para la reapertura.
