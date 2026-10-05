@@ -163,9 +163,9 @@ Revision 2026-10-05 límites vacíos del planificador Atlas: Guardian CI midió 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6269546,
+  "distTotalBytes": 6271544,
   "jsFileCount": 62,
-  "jsTotalBytes": 4282594,
+  "jsTotalBytes": 4284592,
   "cssFileCount": 12,
   "cssTotalBytes": 397215,
   "budgetPolicy": {
@@ -328,3 +328,5 @@ Revision 2026-10-02 rechazo psicolaboral independiente: build medido en 6,255,88
 Revision 2026-10-02 canonizacion del artefacto CI: Ubuntu en GitHub Actions (Node 24 y variables publicas de Supabase) mide 6,255,958 bytes totales y 4,270,061 bytes JS para el mismo commit, 78 bytes sobre la medicion local macOS. Se fija la baseline exacta al artefacto de CI, que ya se declara canonico en el alcance; la tolerancia absoluta y porcentual permanece en cero.
 
 Revision 2026-10-02 dias de operacion Atlas: GitHub Actions midio 1,170 bytes adicionales totales y JS para incorporar el selector semanal multiple al alta de servicio base. El dato queda almacenado como dias ISO y validado en la RPC; no agrega CSS ni dependencias. Se actualiza el baseline exacto medido por CI y se conserva tolerancia cero.
+
+Revision 2026-10-05 optimizador de rutas Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37316897209` midio 1,998 bytes adicionales en `dist` y JS (sin cambio CSS) para calcular matrices Valhalla, proponer el orden abierto de direcciones y permitir revisarlo antes de aplicar. El planificador sigue lazy y no agrega dependencias ni cambia el bundle inicial. Se actualizan solo los totales canonicos; la tolerancia absoluta y porcentual permanece en cero.
