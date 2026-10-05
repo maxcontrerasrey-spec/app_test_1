@@ -168,12 +168,14 @@ Revision 2026-10-05 estado vacío del mapa Atlas: Guardian CI midió 74 bytes ad
 
 Revision 2026-10-05 CMS Editorial/Oficial de Comunicaciones: el build combinado con el cambio de estado vacío del mapa registra esos 74 bytes adicionales de `dist` y JS; este módulo agrega sus vistas bajo carga diferida y 7.014 bytes de CSS. No agrega dependencias ni adelanta la carga del editor Puck; los presupuestos mantienen tolerancia cero.
 
+Revision 2026-10-05 métrica canónica Ubuntu/Node 24 para PR #30: el artefacto `dist`/JS mide 2.120 bytes más que el build local macOS; se registra la medición exacta observada por el audit CI. CSS y dependencias no cambian; tolerancia cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7445741,
+  "distTotalBytes": 7447861,
   "jsFileCount": 74,
-  "jsTotalBytes": 5328235,
+  "jsTotalBytes": 5330355,
   "cssFileCount": 15,
   "cssTotalBytes": 527769,
   "budgetPolicy": {
