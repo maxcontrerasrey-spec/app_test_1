@@ -131,11 +131,13 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
     return ["operacionesDashboard"];
   }
 
-  if (normalizedPath.startsWith("/comunicaciones/diseno")) {
+  if (normalizedPath.startsWith("/recursos-humanos/comunicaciones/diseno")
+    || normalizedPath.startsWith("/comunicaciones/diseno")) {
     return ["communicationsDesignPage"];
   }
 
-  if (normalizedPath.startsWith("/comunicaciones")) {
+  if (normalizedPath.startsWith("/recursos-humanos/comunicaciones")
+    || normalizedPath.startsWith("/comunicaciones")) {
     return ["communicationsPage"];
   }
 

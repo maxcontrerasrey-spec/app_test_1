@@ -4094,6 +4094,12 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Revisar migraciones, adaptadores, interfaz, documentación y RLS en conjunto; una migración sin `INSERT ... SELECT` aún puede dejar al frontend leyendo tablas antiguas o exponer el nuevo módulo fuera del contrato autorizado.
 - Si la primera salida se limita a superadministración, exigir `profiles.is_super_admin` activo de forma independiente en navegación, ruta, RPC y RLS; no asumir que `admin` ni una matriz de roles operacionales equivalen a superadmin.
 
+## 2026-10-05 - Representar un submódulo en su dominio desde la navegación hasta la URL
+
+- Cuando Comunicaciones pertenece a RRHH, ubicar su acceso dentro de esa sección y usar una ruta bajo `/recursos-humanos`; no agregarlo como entrada raíz independiente.
+- Mantener el permiso específico del submódulo para no convertir la ubicación visual en una ampliación de autorizaciones; preservar acceso de lectura/editor explícitamente requerido.
+- Si la ruta ya circula, mantener alias de redirección y actualizar `app_modules.route`, el mapa, la matriz y los enlaces internos en el mismo cambio.
+
 ## 2026-09-30 - Los campos operacionales deben usar una altura fija compartida
 
 - `min-height` no normaliza controles nativos: `select`, `input` de texto, fecha y número pueden quedar con alturas distintas por su caja intrínseca y el padding.

@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 
 const migration = readFileSync("supabase/migrations/20261005165138_communications_portal.sql", "utf8");
 const designMigration = readFileSync("supabase/migrations/20261005165140_communications_visual_editor.sql", "utf8");
+const nestingMigration = readFileSync("supabase/migrations/20261005180221_nest_communications_portal_under_hr.sql", "utf8");
 const storageRoute = readFileSync("functions/api/comunicaciones/files.ts", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
+const routeModules = readFileSync("src/app/router/routeModules.ts", "utf8");
+const navigation = readFileSync("src/shared/config/navigation.ts", "utf8");
 const access = readFileSync("src/modules/auth/config/access.ts", "utf8");
 const modulePage = readFileSync("src/modules/communications/pages/CommunicationsPage.tsx", "utf8");
 const designPage = readFileSync("src/modules/communications/pages/CommunicationsDesignPage.tsx", "utf8");
@@ -22,6 +25,24 @@ describe("Portal de Comunicaciones", () => {
     expect(access).toContain('"portal_comunicaciones"');
     expect(access).toContain('"comunicador_"');
     expect(authContext).toContain('nextModules.push("portal_comunicaciones")');
+  });
+
+  it("lo contiene en la sección RRHH y conserva alias a la ruta canónica", () => {
+    const rrhhStart = navigation.indexOf('label: "Recursos Humanos"');
+    const operationsStart = navigation.indexOf('label: "Operaciones"');
+    const rrhhNavigation = navigation.slice(rrhhStart, operationsStart);
+
+    expect(rrhhStart).toBeGreaterThanOrEqual(0);
+    expect(operationsStart).toBeGreaterThan(rrhhStart);
+    expect(rrhhNavigation).toContain('moduleCode: "portal_comunicaciones"');
+    expect(rrhhNavigation).toContain('to: "/recursos-humanos/comunicaciones"');
+    expect(navigation.slice(operationsStart)).not.toContain('moduleCode: "portal_comunicaciones"');
+    expect(router).toContain('path="/recursos-humanos/comunicaciones"');
+    expect(router).toContain('path="/recursos-humanos/comunicaciones/diseno"');
+    expect(router).toMatch(/path="\/comunicaciones"\s+element=\{<Navigate to="\/recursos-humanos\/comunicaciones"/);
+    expect(router).toMatch(/path="\/comunicaciones\/diseno"\s+element=\{<Navigate to="\/recursos-humanos\/comunicaciones\/diseno"/);
+    expect(routeModules).toContain('normalizedPath.startsWith("/recursos-humanos/comunicaciones")');
+    expect(nestingMigration).toContain("set route = '/recursos-humanos/comunicaciones'");
   });
 
   it("mantiene el contenido detrás de RPCs y sin acceso directo a la tabla", () => {
@@ -76,7 +97,8 @@ describe("Portal de Comunicaciones", () => {
   });
 
   it("carga la edición visual como ruta protegida e incluye vista previa e historial", () => {
-    expect(router).toContain("/comunicaciones/diseno");
+    expect(router).toContain("/recursos-humanos/comunicaciones/diseno");
+    expect(designPage).toContain('href="/recursos-humanos/comunicaciones"');
     expect(designPage).toContain("onPublish={publish}");
     expect(designPage).toContain("Vista previa");
     expect(designPage).toContain("Historial de versiones");
