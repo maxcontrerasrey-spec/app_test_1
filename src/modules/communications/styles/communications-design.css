@@ -80,6 +80,84 @@
 .communications-draft-row strong { font-size: 11px; }
 .communications-draft-row small { color: #828b95; font-size: 10px; }
 
+/* Editorial / Oficial portal structure */
+.communications-topbar-search { margin-left: auto; margin-right: 18px; }
+.communications-page > .communications-main { padding-top: 18px; }
+.communications-levels { display: flex; gap: 5px; margin: 0 0 30px; border-bottom: 1px solid var(--comm-line); }
+.communications-levels button { display: grid; gap: 4px; min-width: 170px; padding: 15px 18px 13px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #596574; font: inherit; font-size: 14px; font-weight: 720; text-align: left; cursor: pointer; }
+.communications-levels button span { color: #8a929b; font-size: 10px; font-weight: 450; }
+.communications-levels button:hover, .communications-levels button.is-active { color: var(--comm-red-dark); }
+.communications-levels button.is-active { border-bottom-color: var(--comm-red); }
+.communications-pending-notice { display: flex; align-items: center; gap: 12px; margin: 14px 0; padding: 12px 15px; border-left: 3px solid #bf7b22; background: #fbf6ee; color: #694817; font-size: 11px; }
+.communications-pending-notice span { color: #806a48; }
+.communications-site-masthead { display: none; }
+.communications-site-layout { padding: 0 0 20px; }
+.communications-site-layout > main { gap: 29px; }
+.communications-site-section-heading { margin-bottom: 13px; }
+.communications-site-section-heading h2 { font-size: 24px; }
+.communications-feature-section { padding-top: 1px; }
+.communications-feature-story { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr); width: 100%; min-height: 285px; overflow: hidden; padding: 0; border: 1px solid var(--site-line); background: #fff; color: var(--site-ink); text-align: left; cursor: pointer; transition: border-color .18s ease, transform .18s ease; }
+.communications-feature-story:hover { border-color: #c5cbd0; transform: translateY(-1px); }
+.communications-feature-story-image { display: block; width: 100%; height: 100%; min-height: 285px; object-fit: cover; background: #e8e9e9; }
+.communications-image-placeholder { display: grid; place-items: center; min-height: 150px; background: linear-gradient(140deg, #26364b, #687687); color: rgba(255,255,255,.72); font-size: 11px; font-weight: 800; letter-spacing: .22em; }
+.communications-feature-story-copy { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: clamp(21px, 4vw, 40px); }
+.communications-feature-story-copy small { margin-bottom: 12px; color: var(--site-accent); font-size: 9px; font-weight: 760; letter-spacing: .08em; text-transform: uppercase; }
+.communications-feature-story-copy strong { margin-bottom: 11px; font-size: clamp(22px, 3vw, 33px); font-weight: 690; letter-spacing: -.045em; line-height: 1.14; }
+.communications-feature-story-copy > span { color: var(--site-muted); font-size: 12px; line-height: 1.7; }
+.communications-feature-story-copy em { display: inline-flex; gap: 9px; margin-top: 20px; color: var(--site-accent); font-size: 10px; font-style: normal; font-weight: 760; }
+.communications-site-news.is-grilla { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 22px; }
+.communications-site-news .communications-item { display: grid; align-content: start; min-height: 152px; padding: 15px 14px 14px; border: 1px solid var(--site-line); background: #fff; }
+.communications-site-news .communications-news-card-image { display: block; width: calc(100% + 28px); height: 145px; margin: -15px -14px 13px; object-fit: cover; background: #e8e9e9; }
+.communications-required-tag { margin-left: auto; color: #9a661b; font-size: 9px; font-weight: 750; }
+.communications-site-news .communications-item-title { font-size: 15px; }
+.communications-site-news .communications-item-footer { margin-top: auto; padding-top: 15px; }
+.communications-reading-cover { display: block; width: calc(100% + clamp(48px, 10vw, 104px)); max-height: 330px; margin: calc(clamp(24px, 5vw, 52px) * -1) calc(clamp(24px, 5vw, 52px) * -1) 25px; object-fit: cover; background: #e8e9e9; }
+.communications-reading-heading { margin: 23px 0 8px; color: var(--comm-ink); font-size: 20px; letter-spacing: -.025em; }
+.communications-reading-quote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--comm-red); color: #536073; font-size: 14px; line-height: 1.7; }
+.communications-reading-list { display: grid; gap: 7px; padding-left: 24px; color: #626e7c; font-size: 13px; line-height: 1.75; }
+.communications-reading-assets { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--comm-line); }
+.communications-reading-assets h3 { margin: 0 0 12px; font-size: 14px; }
+.communications-reading-assets > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.communications-reading-gallery-image { width: min(180px, 45%); max-height: 150px; object-fit: cover; }
+.communications-reading-video { width: min(100%, 640px); max-height: 360px; background: #111; }
+.communications-acknowledgement { display: grid; gap: 10px; margin: 22px 0 12px; padding: 15px; border: 1px solid #ead8ba; background: #fcf8f1; color: #644b28; font-size: 12px; }
+.communications-acknowledgement.is-done { border-color: #d4e3d2; background: #f4f8f2; color: #405f3b; }
+.communications-acknowledgement small { color: #79838d; }
+.communications-acknowledgement .communications-primary-button { width: fit-content; }
+.communications-editor { width: min(100%, 810px); }
+.communications-editor.is-previewing { width: min(100%, 900px); }
+.communications-editor-form select[multiple] { min-height: 112px; }
+.communications-field-help { color: #78818c; font-size: 10px; font-weight: 450; line-height: 1.5; }
+.communications-block-editor { display: grid; gap: 10px; padding: 15px; border: 1px solid var(--comm-line); background: #fafafa; }
+.communications-block-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.communications-block-editor-heading > div { display: grid; gap: 4px; }
+.communications-block-editor-heading > div span { color: var(--comm-red); font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.communications-block-editor-heading > div small { color: #78818c; font-size: 10px; }
+.communications-content-block { display: grid; gap: 8px; padding: 12px; border: 1px solid #e5e7e9; background: #fff; }
+.communications-content-block .communications-editor-grid { grid-template-columns: minmax(0,1fr) auto; align-items: center; }
+.communications-content-block .communications-edit-link { justify-self: end; }
+.communications-content-block textarea { min-height: 80px; }
+.communications-editor-preview { max-width: 760px; margin: 0 auto; padding: clamp(22px,5vw,56px); border: 1px solid var(--comm-line); background: white; }
+.communications-editor-preview > h2 { margin: 17px 0 8px; font-size: clamp(27px, 4vw, 42px); letter-spacing: -.045em; line-height: 1.12; }
+.communications-editor-preview > small { display: block; margin-top: 18px; color: #775b31; }
+
+@media (max-width: 720px) {
+  .communications-topbar { flex-wrap: wrap; gap: 10px; padding: 12px 0; }
+  .communications-topbar-search { order: 3; width: 100%; margin: 0; }
+  .communications-topbar-actions { gap: 5px; }
+  .communications-topbar-button { padding: 8px; }
+  .communications-levels button { flex: 1; min-width: 0; padding-right: 10px; padding-left: 10px; }
+  .communications-feature-story { grid-template-columns: 1fr; }
+  .communications-feature-story-image { min-height: 190px; max-height: 220px; }
+  .communications-site-news.is-grilla { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  .communications-pending-notice { align-items: flex-start; flex-direction: column; gap: 4px; }
+}
+@media (max-width: 500px) {
+  .communications-site-news.is-grilla { grid-template-columns: 1fr; }
+  .communications-editor-grid { grid-template-columns: 1fr; }
+  .communications-reading-cover { width: calc(100% + 48px); margin-top: -24px; margin-right: -24px; margin-left: -24px; }
+}
+
 @media (max-width: 760px) {
   .communications-site-news.is-grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
   .communications-site-hero { grid-template-columns: minmax(0, 1fr) minmax(130px, .38fr); }

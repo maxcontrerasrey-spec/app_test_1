@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { Config, Data } from "@puckeditor/core";
 import type { CommunicationItem } from "../services/communicationsApi";
+import { CommunicationAssetImage } from "../components/CommunicationAssetImage";
 
 export type CommunicationsTheme = "buses-jm" | "andino" | "neutro";
 export type CommunicationsFont = "institucional" | "sistema";
@@ -16,6 +17,7 @@ export type CommunicationsRootProps = {
 };
 
 type HeroProps = { eyebrow: string; title: string; summary: string; tone: CommunicationsTone };
+type FeaturedProps = { title: string; description: string };
 type NewsProps = { title: string; description: string; limit: number; layout: CommunicationsLayout };
 type EventsProps = { title: string; description: string; limit: number };
 type BulletinsProps = { title: string; description: string; limit: number };
@@ -24,6 +26,7 @@ type DividerProps = { label: string };
 
 type CommunicationsComponents = {
   HeroSection: HeroProps;
+  FeaturedSection: FeaturedProps;
   NewsSection: NewsProps;
   EventsSection: EventsProps;
   BulletinsSection: BulletinsProps;
@@ -72,16 +75,17 @@ function formatDate(value: string | null, includeTime = false) {
 }
 
 const kindLabels = { noticia: "Noticia", comunicado: "Comunicado", evento: "Evento", boletin: "Boletín" } as const;
-const categoryLabels = { empresa: "Empresa", beneficios: "Beneficios", personas: "Personas", cultura: "Cultura", general: "General" } as const;
+const categoryLabels: Record<string, string> = { empresa: "Empresa", beneficios: "Beneficios", personas: "Personas", cultura: "Cultura", general: "General", operaciones: "Operaciones", seguridad: "Seguridad", reconocimientos: "Reconocimientos", contratos: "Contratos", equipos: "Equipos", actividades: "Actividades", campanas: "Campañas", aniversarios: "Aniversarios", hitos: "Hitos", procedimientos: "Procedimientos", instrucciones: "Instrucciones" };
 
 function PublicationCard({ item, layout = "grilla" }: { item: CommunicationItem; layout?: CommunicationsLayout }) {
   const { onOpen } = useSiteContent();
   return (
     <article className={`communications-item communications-item-${item.contentType} communications-layout-${layout}`}>
-      <div className="communications-item-topline"><span className={`communications-type communications-type-${item.contentType}`}>{kindLabels[item.contentType]}</span><span>{categoryLabels[item.category]}</span></div>
+      {item.coverAssetId ? <CommunicationAssetImage assetId={item.coverAssetId} alt={item.title} className="communications-news-card-image" /> : null}
+      <div className="communications-item-topline"><span className={`communications-type communications-type-${item.contentType}`}>{kindLabels[item.contentType]}</span><span>{categoryLabels[item.category] ?? item.category}</span>{item.requiresAcknowledgement ? <span className="communications-required-tag">Lectura requerida</span> : null}</div>
       <button className="communications-item-title" type="button" onClick={() => onOpen(item)}>{item.title}</button>
       <p>{item.summary}</p>
-      <div className="communications-item-footer"><span>{formatDate(item.contentType === "evento" ? item.startsAt : item.publishedAt, item.contentType === "evento")}</span><button className="communications-text-link" type="button" onClick={() => onOpen(item)}>Leer más <span aria-hidden="true">→</span></button></div>
+      <div className="communications-item-footer"><span>{formatDate(item.contentType === "evento" ? item.startsAt : item.publishAt ?? item.publishedAt, item.contentType === "evento")}</span><button className="communications-text-link" type="button" onClick={() => onOpen(item)}>Leer más <span aria-hidden="true">→</span></button></div>
     </article>
   );
 }
@@ -94,6 +98,11 @@ function HeroSectionView({ eyebrow, title, summary, tone }: HeroProps) {
       <div className="communications-site-hero-art" aria-hidden="true"><span className="communications-site-orbit" /><span className="communications-site-monogram">JM</span><span className="communications-site-art-label">EN COMUNIDAD</span></div>
     </section>
   );
+}
+
+function FeaturedSectionView({ title, description }: FeaturedProps) {
+  const { featured, onOpen } = useSiteContent();
+  return <section className="communications-feature-section" aria-label="Publicación destacada"><header className="communications-site-section-heading"><div><span className="communications-kicker">DESTACADO</span><h2>{title}</h2><p>{description}</p></div></header>{featured ? <button className="communications-feature-story" type="button" onClick={() => onOpen(featured)}><CommunicationAssetImage assetId={featured.coverAssetId} alt={featured.title} className="communications-feature-story-image" /><span className="communications-feature-story-copy"><small>{categoryLabels[featured.category] ?? featured.category} · {formatDate(featured.publishAt ?? featured.publishedAt)}</small><strong>{featured.title}</strong><span>{featured.summary}</span><em>Leer publicación <b aria-hidden="true">→</b></em></span></button> : <p className="communications-site-empty">La próxima historia destacada aparecerá aquí.</p>}</section>;
 }
 
 function NewsSectionView({ title, description, limit, layout }: NewsProps) {
@@ -154,9 +163,15 @@ export const communicationsSiteConfig: Config<CommunicationsComponents, Communic
     render: ({ children, title, tagline, theme, font, footer }) => <div className={`communications-site-layout theme-${theme} font-${font}`}><header className="communications-site-masthead"><span className="communications-site-brand">jm</span><div><strong>{title}</strong><small>{tagline}</small></div></header><main>{children}</main><footer className="communications-site-footer"><span>{title}</span><span>{footer}</span></footer></div>
   },
   categories: {
-    contenido: { title: "Secciones", components: ["HeroSection", "NewsSection", "EventsSection", "BulletinsSection", "MessageSection", "DividerSection"] }
+    contenido: { title: "Secciones", components: ["FeaturedSection", "HeroSection", "NewsSection", "EventsSection", "BulletinsSection", "MessageSection", "DividerSection"] }
   },
   components: {
+    FeaturedSection: {
+      label: "Historia destacada",
+      fields: { title: { type: "text", label: "Título de sección" }, description: { type: "textarea", label: "Descripción" } },
+      defaultProps: { title: "La historia de esta semana", description: "Personas, equipos e ideas que mueven a Buses JM." },
+      render: (props) => <FeaturedSectionView {...props} />
+    },
     HeroSection: {
       label: "Portada destacada",
       fields: {
@@ -221,10 +236,10 @@ export const communicationsSiteConfig: Config<CommunicationsComponents, Communic
 export const DEFAULT_COMMUNICATIONS_SITE: CommunicationsSiteData = {
   root: { props: { title: "Comunicaciones", tagline: "Un espacio para informarnos, compartir y crecer juntos.", theme: "buses-jm", font: "institucional", footer: "Portal interno · Buses JM" } },
   content: [
-    { type: "HeroSection", props: { id: "hero-inicial", eyebrow: "PORTAL CORPORATIVO", title: "Comunicaciones Buses JM", summary: "Noticias, historias y novedades de nuestros equipos.", tone: "destacado" } },
-    { type: "NewsSection", props: { id: "noticias-inicial", title: "Lo que está pasando", description: "Noticias y comunicados de nuestra comunidad.", limit: 6, layout: "grilla" } },
+    { type: "FeaturedSection", props: { id: "destacada-inicial", title: "Una mirada a nuestra semana", description: "Novedades y buenas historias de nuestros equipos." } },
+    { type: "NewsSection", props: { id: "noticias-inicial", title: "Últimas publicaciones", description: "Lo nuevo en Buses JM.", limit: 3, layout: "grilla" } },
     { type: "EventsSection", props: { id: "agenda-inicial", title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3 } },
-    { type: "BulletinsSection", props: { id: "boletines-inicial", title: "Nuestros boletines", description: "Lee y descarga las últimas ediciones.", limit: 4 } }
+    { type: "BulletinsSection", props: { id: "boletines-inicial", title: "Boletines", description: "Lee y descarga las últimas ediciones.", limit: 4 } }
   ],
   zones: {}
 };
