@@ -7,7 +7,8 @@ import mapLibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiamaps/ferrostar-webcomponents";
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
 import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
-import { appendRouteStop, moveRouteStop, normalizeRouteStops } from "../lib/routeStopOrder";
+import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
+import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -28,11 +29,10 @@ const MAP_STYLE = {
   layers: [{ id: "osm", type: "raster" as const, source: "osm" }]
 };
 
-type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination"; providerPlaceId: string | null; source: "tomtom" | "map_pin" };
+type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination"; providerPlaceId: string | null; source: "tomtom" | "map_pin" | "preset"; fixedDestination?: boolean };
 type RouteProposal = { stops: Stop[]; route: AtlasOptimizedRoute };
 type SearchState = { id: string; query: string; sessionId: string; revision?: number; results: TomTomSuggestion[]; status: "idle" | "loading" | "ready" | "error"; error?: string };
 type SuggestionAnchor = { top: number; left: number; width: number; maxHeight: number };
-
 const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const formatDistance = (meters: number) => `${(meters / 1000).toFixed(1)} km`;
 const formatDuration = (seconds: number) => {
@@ -176,7 +176,7 @@ export function OperationsRoutePlannerDemo() {
       setRoutePrefix(saved.prefix);
       setSelectedSavedRouteId(saved.id);
       const ordered = [...saved.atlas_ops_service_route_stops].sort((a, b) => a.stop_order - b.stop_order);
-      const loaded: Stop[] = ordered.map((stop, index) => ({ id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude, kind: index === 0 ? "origin" : index === ordered.length - 1 ? "destination" : "stop", providerPlaceId: stop.provider_place_id, source: stop.location_source }));
+      const loaded = normalizeRouteStops(ordered.map((stop, index) => ({ id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude, kind: "stop" as const, fixedDestination: index === ordered.length - 1, providerPlaceId: stop.provider_place_id, source: stop.location_source })));
       setStops(loaded);
       setRouteState("loading");
       const preview = await calculateAtlasValhallaRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
@@ -303,7 +303,12 @@ export function OperationsRoutePlannerDemo() {
     };
   }, [search?.id, search?.query, search?.sessionId, search?.revision]);
 
-  const showSearchPopover = Boolean(search && search.query.trim().length >= 3 && search.status !== "idle");
+  const destinationSearchStop = search ? stops.find((stop) => stop.id === search.id && stop.fixedDestination) : undefined;
+  const localDestinationMatches = destinationSearchStop ? matchRouteDestinationPresets(search?.query ?? "") : [];
+  const showSearchPopover = Boolean(search && (
+    search.query.trim().length >= 3 && search.status !== "idle"
+    || destinationSearchStop && search.status === "idle"
+  ));
 
   useEffect(() => {
     if (!search || !showSearchPopover) {
@@ -338,7 +343,7 @@ export function OperationsRoutePlannerDemo() {
     };
   }, [search?.id, search?.query, search?.status, showSearchPopover]);
 
-  function chooseResult(stopId: string, result: { id?: string | null; label: string; lat: number; lng: number; source?: "tomtom" | "map_pin" }) {
+  function chooseResult(stopId: string, result: { id?: string | null; label: string; lat: number; lng: number; source?: "tomtom" | "map_pin" | "preset" }) {
     const { id: placeId, ...coordinates } = result;
     const location = { ...coordinates, providerPlaceId: placeId ?? null, source: result.source ?? "tomtom" as const };
     setStops((current) => {
@@ -369,6 +374,11 @@ export function OperationsRoutePlannerDemo() {
     } catch (reason) {
       setSearch((current) => current?.id === stopId ? { ...current, status: "error", error: reason instanceof Error ? reason.message : "No se pudo resolver la ubicación." } : current);
     }
+  }
+
+  function selectDestinationPreset(stopId: string, destination: RouteDestinationPreset) {
+    chooseResult(stopId, { label: destination.label, lat: destination.lat, lng: destination.lng, source: "preset" });
+    setNotice(`Destino seleccionado: ${destination.label}.`);
   }
 
   function startMapPick(stop: Stop) {
@@ -425,6 +435,22 @@ export function OperationsRoutePlannerDemo() {
     setRouteState("idle");
   }
 
+  function toggleDestination(stopId: string) {
+    const selected = stops.find((stop) => stop.id === stopId);
+    if (!selected || stops[0]?.id === stopId) return;
+    const shouldOpenDestinationSearch = !selected.fixedDestination;
+    setStops((current) => setFixedDestination(current, stopId));
+    setPlanningRoute(null);
+    setProposal(null);
+    setRoute(null);
+    setRouteState("idle");
+    setError("");
+    setNotice(shouldOpenDestinationSearch ? "Destino fijado. Elige uno frecuente o busca por nombre." : "Destino liberado; el optimizador volverá a elegir el extremo final.");
+    setSearch(shouldOpenDestinationSearch
+      ? { id: stopId, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" }
+      : (search?.id === stopId ? null : search));
+  }
+
   async function loadExample() {
     setError("");
     setNotice("Buscando tres puntos de ejemplo en Calama…");
@@ -441,7 +467,7 @@ export function OperationsRoutePlannerDemo() {
         if (!suggestion) throw new Error(`TomTom no encontró: ${queries[index]}`);
         return resolveAtlasTomTomSuggestion(suggestion, sessions[index]!);
       }));
-      const mapped: Stop[] = matches.map((match, index) => ({ id: uid(), label: match.label, lat: match.lat, lng: match.lng, providerPlaceId: match.id, source: "tomtom" as const, kind: index === 0 ? "origin" as const : index === 2 ? "destination" as const : "stop" as const }));
+      const mapped = normalizeRouteStops(matches.map((match, index) => ({ id: uid(), label: match.label, lat: match.lat, lng: match.lng, providerPlaceId: match.id, source: "tomtom" as const, kind: "stop" as const, fixedDestination: index === matches.length - 1 })));
       setStops(mapped);
       setPlanningRoute(null);
       setProposal(null);
@@ -466,7 +492,8 @@ export function OperationsRoutePlannerDemo() {
     setProposal(null);
     setRoute(null);
     try {
-      const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })));
+      const fixedDestinationIndex = stops.findIndex((stop) => stop.fixedDestination);
+      const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
       const proposedStops = normalizeRouteStops(result.order.map((index) => stops[index]!));
       setProposal({ stops: proposedStops, route: result });
       setPlanningRoute(null);
@@ -551,11 +578,12 @@ export function OperationsRoutePlannerDemo() {
     const selected = savedRoutes.find((item) => item.id === routeId);
     if (!selected) return;
     const orderedStops = [...selected.atlas_ops_service_route_stops].sort((a, b) => a.stop_order - b.stop_order);
-    const loaded: Stop[] = orderedStops.map((stop, index) => ({
+    const loaded = normalizeRouteStops(orderedStops.map((stop, index) => ({
       id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude,
-      kind: index === 0 ? "origin" : index === orderedStops.length - 1 ? "destination" : "stop",
+      kind: "stop" as const,
+      fixedDestination: index === orderedStops.length - 1,
       providerPlaceId: stop.provider_place_id, source: stop.location_source
-    }));
+    })));
     setStops(loaded);
     setRoutePrefix(selected.prefix);
     setPlanningRoute(null);
@@ -613,15 +641,18 @@ export function OperationsRoutePlannerDemo() {
         {activeView === "planning" ? <>
           <div className="ops-route-demo__stops">
             {stops.map((stop, index) => <div key={stop.id} className="ops-route-demo__stop-row">
-              <span className="ops-route-demo__stop-pin ops-route-demo__stop-pin--stop">{index + 1}</span>
+              {index === 0
+                ? <span className="ops-route-demo__stop-pin ops-route-demo__stop-pin--stop">{index + 1}</span>
+                : <button type="button" className={`ops-route-demo__stop-pin ops-route-demo__stop-pin--stop ops-route-demo__stop-pin--toggle${stop.fixedDestination ? " ops-route-demo__stop-pin--destination" : ""}`} aria-pressed={Boolean(stop.fixedDestination)} aria-label={stop.fixedDestination ? `Liberar destino ${stop.label || index + 1}` : `Fijar dirección ${index + 1} como destino`} title={stop.fixedDestination ? "Quitar destino fijo" : "Fijar como destino"} onClick={() => toggleDestination(stop.id)}>{stop.fixedDestination ? "D" : index + 1}</button>}
               <div className="ops-route-demo__stop-input-wrap">
-                <label htmlFor={`route-${stop.id}`}>Dirección {index + 1}</label>
-                <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder="Busca una dirección en Calama" onChange={(event) => { const query = event.target.value; const sessionId = search?.id === stop.id ? search.sessionId : crypto.randomUUID(); setSearch({ id: stop.id, query, sessionId, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); setPlanningRoute(null); setProposal(null); setRoute(null); setRouteState("idle"); }} onFocus={() => { if (!stop.label) setSearch({ id: stop.id, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para dirección ${index + 1}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{stop.label && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
+                <label htmlFor={`route-${stop.id}`}>{stop.fixedDestination ? "Destino fijado" : `Dirección ${index + 1}`}</label>
+                <div className="ops-route-demo__input-action"><input id={`route-${stop.id}`} value={search?.id === stop.id ? search.query : stop.label} placeholder={stop.fixedDestination ? "Busca un destino frecuente o dirección" : "Busca una dirección en Calama"} onChange={(event) => { const query = event.target.value; const sessionId = search?.id === stop.id ? search.sessionId : crypto.randomUUID(); setSearch({ id: stop.id, query, sessionId, results: [], status: query.trim().length >= 3 ? "loading" : "idle" }); setPlanningRoute(null); setProposal(null); setRoute(null); setRouteState("idle"); }} onFocus={() => { if (!stop.label || stop.fixedDestination) setSearch({ id: stop.id, query: stop.label && stop.fixedDestination ? stop.label : "", sessionId: crypto.randomUUID(), results: [], status: stop.label && stop.fixedDestination ? "ready" : "idle" }); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setSearch((current) => current?.id === stop.id ? { ...current, revision: (current.revision ?? 0) + 1, status: current.query.trim().length >= 3 ? "loading" : "idle" } : current); } }} /><button type="button" className="ops-route-demo__map-pick-button" aria-label={`Elegir punto en el mapa para dirección ${index + 1}`} title="Elegir punto en el mapa" onClick={() => startMapPick(stop)}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5" /><path d="M10 1.5v3M10 15.5v3M1.5 10h3m11 0h3" /></svg><span>Mapa</span></button>{stop.label && <button type="button" aria-label={`Quitar ${stop.label}`} onClick={() => removeStop(stop.id)}>×</button>}</div>
               </div>
               <div className="ops-route-demo__stop-actions"><button type="button" title="Subir punto" aria-label={`Subir ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === 0} onClick={() => moveStop(stop.id, -1)}>↑</button><button type="button" title="Bajar punto" aria-label={`Bajar ${stop.kind === "origin" ? "origen" : stop.kind === "destination" ? "destino" : `parada ${index}`}`} disabled={index === stops.length - 1} onClick={() => moveStop(stop.id, 1)}>↓</button></div>
             </div>)}
             {stops.length === 0 && <div className="ops-route-demo__empty"><div className="ops-route-demo__empty-icon">＋</div><strong>Agrega las direcciones del recorrido</strong><span>No necesitas definir el inicio ni el destino: se determinan en la propuesta.</span></div>}
           </div>
+          {stops.length > 1 && <p className="ops-route-demo__destination-help">Haz clic en el número de una dirección para fijarla como destino final. El punto 1 queda como inicio.</p>}
           <button type="button" className="ops-route-demo__add-stop" onClick={addStop} disabled={Boolean(addingSearchId)}>＋ <span>Agregar una dirección</span></button>
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
@@ -647,9 +678,16 @@ export function OperationsRoutePlannerDemo() {
         aria-label="Sugerencias de direcciones"
         aria-live="polite"
       >
+        {destinationSearchStop && localDestinationMatches.length > 0 && <>
+          <div className="ops-route-demo__suggestion-group-label">Destinos frecuentes</div>
+          {localDestinationMatches.map((destination) => <button type="button" role="option" className="ops-route-demo__destination-option" key={destination.id} onClick={() => selectDestinationPreset(search.id, destination)}>
+            <strong>{destination.shortLabel}</strong>
+            <span>{destination.label}</span>
+          </button>)}
+        </>}
         {search.status === "loading" && <div className="ops-route-demo__suggestion-hint" role="status">Buscando direcciones… Si no aparece, puedes elegir el punto en el mapa.</div>}
         {search.status === "ready" && search.results.map((result) => <button type="button" role="option" key={result.id ?? result.label} onClick={() => { void selectSuggestion(search.id, result); }}>{result.label}</button>)}
-        {search.status === "ready" && search.results.length === 0 && <div className="ops-route-demo__suggestion-hint" role="status">No encontramos coincidencias. Prueba con calle y ciudad; presiona Enter para reintentar.</div>}
+        {search.status === "ready" && search.results.length === 0 && localDestinationMatches.length === 0 && <div className="ops-route-demo__suggestion-hint" role="status">No encontramos coincidencias. Prueba con calle y ciudad; presiona Enter para reintentar.</div>}
         {search.status === "error" && <div className="ops-route-demo__suggestion-hint" role="alert">No se pudo consultar TomTom. {search.error} Presiona Enter para reintentar.</div>}
       </div>,
       document.body

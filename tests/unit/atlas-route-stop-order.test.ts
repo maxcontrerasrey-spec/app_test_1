@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendRouteStop, moveRouteStop, normalizeRouteStops } from "../../src/modules/operaciones/lib/routeStopOrder";
+import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../../src/modules/operaciones/lib/routeStopOrder";
 
 const makeStops = (...ids: string[]) => normalizeRouteStops(ids.map((id) => ({ id, kind: "stop" as const })));
 
@@ -23,5 +23,23 @@ describe("Atlas route stop order", () => {
 
     expect(moveRouteStop(stops, "origin", -1)).toBe(stops);
     expect(moveRouteStop(stops, "destination", 1)).toBe(stops);
+  });
+
+  it("allows one non-first point to be fixed as destination and toggled off", () => {
+    const stops = makeStops("origin", "point-1", "point-2", "point-3");
+    const fixed = setFixedDestination(stops, "point-2");
+
+    expect(fixed.filter(({ fixedDestination }) => fixedDestination).map(({ id }) => id)).toEqual(["point-2"]);
+    expect(fixed.find(({ id }) => id === "point-2")?.kind).toBe("destination");
+    expect(fixed.find(({ id }) => id === "point-3")?.kind).toBe("stop");
+
+    const cleared = setFixedDestination(fixed, "point-2");
+    expect(cleared.some(({ fixedDestination }) => fixedDestination)).toBe(false);
+    expect(cleared.at(-1)?.kind).toBe("destination");
+  });
+
+  it("does not allow converting the first point into a fixed destination", () => {
+    const stops = makeStops("origin", "point-1");
+    expect(setFixedDestination(stops, "origin").some(({ fixedDestination }) => fixedDestination)).toBe(false);
   });
 });

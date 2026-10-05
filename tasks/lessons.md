@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-05 - Un destino fijado debe mantenerse en toda la cadena de planificación
+
+- Un marcador visual de destino no basta: el índice seleccionado debe llegar al optimizador servidor, quedar al final tras la heurística y sobrevivir en el orden persistido para la reapertura.
+- Los destinos de catálogo deben tener identidad de origen propia en el contrato de guardado y la restricción de base de datos, manteniendo el guard existente del RPC.
+
 ## 2026-10-05 - Búsquedas BUK nuevas deben usar el selector compartido
 
 - No implementar un input y una lista de resultados propia cuando existe `StandardWorkerLookupField`: el selector estándar ya resuelve debounce, identidad BUK, carga, errores y estado sin coincidencias.

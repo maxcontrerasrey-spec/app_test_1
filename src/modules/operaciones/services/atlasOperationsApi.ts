@@ -66,7 +66,7 @@ export type AtlasServiceRoute = {
     latitude: number;
     longitude: number;
     provider_place_id: string | null;
-    location_source: "tomtom" | "map_pin";
+    location_source: "tomtom" | "map_pin" | "preset";
   }>;
 };
 
@@ -188,7 +188,7 @@ export async function getAtlasServiceRoute(routeId: string): Promise<AtlasServic
 export async function saveAtlasServiceRoute(input: {
   serviceTemplateId: number;
   prefix: string;
-  stops: Array<{ label: string; lat: number; lng: number; providerPlaceId?: string | null; source: "tomtom" | "map_pin" }>;
+  stops: Array<{ label: string; lat: number; lng: number; providerPlaceId?: string | null; source: "tomtom" | "map_pin" | "preset" }>;
   distanceMeters: number;
   durationSeconds: number;
   matrixDurationSeconds: number;
@@ -245,8 +245,8 @@ export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; ln
   return callAtlasValhalla({ action: "route", stops }, signal);
 }
 
-export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, signal?: AbortSignal): Promise<AtlasOptimizedRoute> {
-  return callAtlasValhalla({ action: "optimize", stops }, signal);
+export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, fixedDestinationIndex?: number, signal?: AbortSignal): Promise<AtlasOptimizedRoute> {
+  return callAtlasValhalla({ action: "optimize", stops, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }) }, signal);
 }
 
 async function callAtlasValhalla<T extends AtlasPlannedRoute>(body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {

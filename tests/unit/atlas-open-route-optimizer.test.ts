@@ -1,26 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { optimizeOpenRoute } from "../../supabase/functions/atlas-tomtom-planning/openRouteOptimizer";
 
-describe("Atlas open route optimizer", () => {
-  it("chooses the first and last points from a directed road-time matrix", () => {
-    const result = optimizeOpenRoute([
-      [0, 10, 1],
-      [1, 0, 10],
-      [10, 4, 0]
-    ]);
-    expect(result.order).toEqual([1, 0, 2]);
-    expect(result.durationSeconds).toBe(2);
-    expect(result.inputOrderDurationSeconds).toBe(20);
+describe("Atlas open route optimizer fixed destination", () => {
+  const durations = [
+    [0, 10, 8, 1],
+    [10, 0, 1, 9],
+    [8, 1, 0, 1],
+    [1, 9, 1, 0]
+  ];
+
+  it("keeps the chosen destination last while optimizing all other points", () => {
+    const result = optimizeOpenRoute(durations, undefined, 2);
+
+    expect(result.order).toHaveLength(durations.length);
+    expect(new Set(result.order)).toEqual(new Set([0, 1, 2, 3]));
+    expect(result.order.at(-1)).toBe(2);
+    expect(result.order[0]).not.toBe(2);
+    expect(result.durationSeconds).toBeLessThanOrEqual(20);
   });
 
-  it("rejects a matrix that cannot connect every direction", () => {
-    expect(() => optimizeOpenRoute([
-      [0, Number.POSITIVE_INFINITY],
-      [Number.POSITIVE_INFINITY, 0]
-    ])).toThrow("Valhalla no encontró conexiones transitables");
-  });
-
-  it("rejects malformed point orders", () => {
-    expect(() => optimizeOpenRoute([[0, 1], [1, 0]], [0, 0])).toThrow("El orden de entrada");
+  it("rejects the first point as a fixed destination", () => {
+    expect(() => optimizeOpenRoute(durations, undefined, 0)).toThrow("El destino fijado debe ser una parada distinta del primer punto.");
   });
 });

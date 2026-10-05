@@ -1,5 +1,12 @@
 # Tareas y Roadmap de Desarrollo
 
+## Fijar destinos y sugerir ubicaciones frecuentes Atlas — 2026-10-05
+
+- [x] Añadir catálogo local de BCD DMH, Casa de Cambio Mina DMH y Portería Minera El Abra con aliases buscables y coordenadas de las capturas.
+- [x] Permitir fijar un punto numerado como destino y mantenerlo al final al optimizar; preservar selección al reabrir una ruta guardada.
+- [x] Registrar correctamente ubicaciones de catálogo como fuente propia en la persistencia y restringir/validar el optimizador en servidor.
+- [ ] Añadir cobertura focalizada, ejecutar Guardian, build, auditoría de migraciones/seguridad y `git diff --check`; desplegar DB/Edge/frontend y verificar producción.
+
 ## Corregir búsqueda de conductores BUK en Planificación Atlas — 2026-10-05
 
 - [x] Comparar la búsqueda Atlas con el control BUK compartido y revisar la consulta/RPC productiva.
