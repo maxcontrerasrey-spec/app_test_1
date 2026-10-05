@@ -162,14 +162,16 @@ Revision 2026-10-05 primera ruta y parada provisional Atlas: Guardian CI midió 
 Revision 2026-10-05 límites vacíos del planificador Atlas: Guardian CI midió 29 bytes adicionales en `dist` y JS al proteger `fitBounds` ante paradas aún sin coordenadas. Se registra el delta exacto del artefacto Ubuntu/Node 24; la tolerancia permanece en cero.
 
 Revision 2026-10-05 jornada AM/PM Atlas: el selector múltiple de jornada agrega 752 bytes medidos en `dist` y JS, sin cambio CSS, dependencias ni alteración del bundle inicial. Se registra el tamaño exacto y se conserva la tolerancia cero.
+Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327 bytes a `dist` y 709 bytes a JS, mientras CSS baja 382 bytes para reutilizar `StandardWorkerLookupField` con debounce, ficha BUK exacta y estados visibles de carga/error/sin coincidencias. No agrega dependencias, CSS ni adelanta carga de rutas lazy; los presupuestos siguen con tolerancia cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6272300,
+  "distTotalBytes": 6272627,
   "jsFileCount": 62,
-  "jsTotalBytes": 4285348,
+  "jsTotalBytes": 4286057,
   "cssFileCount": 12,
-  "cssTotalBytes": 397215,
+  "cssTotalBytes": 396833,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

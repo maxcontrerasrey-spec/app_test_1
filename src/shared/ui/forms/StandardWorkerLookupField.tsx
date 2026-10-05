@@ -40,6 +40,7 @@ type StandardWorkerLookupFieldProps<
   clearLabel?: string;
   debounceMs?: number;
   disabled?: boolean;
+  required?: boolean;
   minSearchLength?: number;
   onSearchChange?: (value: string) => void;
   filterResults?: (workers: TWorker[]) => TWorker[];

@@ -28,6 +28,7 @@ type WorkerLookupFieldProps<TWorker, TSearchContext = unknown> = {
   clearLabel?: string;
   debounceMs?: number;
   disabled?: boolean;
+  required?: boolean;
   minSearchLength?: number;
   onSearchChange?: (value: string) => void;
   filterResults?: (workers: TWorker[]) => TWorker[];
@@ -60,6 +61,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   clearLabel = "Limpiar",
   debounceMs = 250,
   disabled = false,
+  required = false,
   minSearchLength = 2,
   onSearchChange,
   filterResults
@@ -124,6 +126,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
           value={searchValue}
           placeholder={placeholder}
           disabled={disabled}
+          required={required && !selectedWorker}
           autoComplete="nope"
           spellCheck={false}
           autoCorrect="off"

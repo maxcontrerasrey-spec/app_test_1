@@ -141,7 +141,9 @@ export const queryKeys = {
     serviceRoutes: (serviceTemplateId: number | string) => [...queryKeys.operations.all(), "service-routes", serviceTemplateId] as const,
     events: (dispatchId: string) => [...queryKeys.operations.all(), "events", dispatchId] as const,
     driverSearch: (params: Record<string, unknown>) =>
-      [...queryKeys.operations.all(), "driver-search", params] as const
+      [...queryKeys.operations.all(), "driver-search", params] as const,
+    driverLookup: (params: Record<string, unknown>) =>
+      [...queryKeys.operations.all(), "driver-lookup", params] as const
   },
   accreditation: {
     all: () => ["accreditation"] as const,

@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-05 - Búsquedas BUK nuevas deben usar el selector compartido
+
+- No implementar un input y una lista de resultados propia cuando existe `StandardWorkerLookupField`: el selector estándar ya resuelve debounce, identidad BUK, carga, errores y estado sin coincidencias.
+- Una consulta fallida no debe parecer una lista vacía; propagar el error real al control y conservar el ID BUK seleccionado como valor enviado al backend.
+
 ## 2026-10-05 - Jornada de un servicio base es una selección controlada
 
 - Separar el turno operativo AM (A) / PM (C) de la pauta semanal: ambos son multiselección independiente y no texto libre.

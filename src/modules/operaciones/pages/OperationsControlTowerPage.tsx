@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode, type Form
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
-import { MultiSelectField, PageShell } from "../../../shared/ui";
+import { MultiSelectField, PageShell, StandardWorkerLookupField } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { supabase } from "../../../shared/lib/supabase";
@@ -31,6 +31,7 @@ import {
   setAtlasContractEditor,
   transitionAtlasDispatch,
   type AtlasDispatch,
+  type AtlasDriver,
   type AtlasVehiclePosition
 } from "../services/atlasOperationsApi";
 import "../styles/atlas-operations.css";
@@ -38,6 +39,68 @@ import "../styles/atlas-operations.css";
 const OperationsRoutePlannerDemo = lazy(() => import("./OperationsRoutePlannerDemo").then(({ OperationsRoutePlannerDemo: Page }) => ({ default: Page })));
 
 type View = "control-tower" | "planificacion" | "despacho" | "excepciones" | "conductor" | "historial" | "configuracion";
+type PlanningDriver = {
+  bukEmployeeId: string;
+  fullName: string;
+  documentNumber: string;
+  jobTitle: string;
+  contractCode: string | null;
+  isWorkingDay: boolean;
+  isRestDay: boolean;
+};
+
+function useAtlasPlanningDriverSearch(search: string, enabled: boolean, serviceDate = localDate()) {
+  const query = useQuery({
+    queryKey: queryKeys.operations.driverLookup({ search, serviceDate }),
+    queryFn: () => searchAtlasDrivers(search, serviceDate),
+    enabled: enabled && search.trim().length >= 2,
+    staleTime: 15_000
+  });
+
+  return {
+    data: query.data?.map(mapPlanningDriver),
+    error: query.error,
+    isLoading: query.isLoading || query.isFetching
+  };
+}
+
+function mapPlanningDriver(driver: AtlasDriver): PlanningDriver {
+  return {
+    bukEmployeeId: driver.buk_employee_id,
+    fullName: driver.full_name,
+    documentNumber: driver.document_number ?? "",
+    jobTitle: "Conductor",
+    contractCode: driver.contract_code,
+    isWorkingDay: driver.is_working_day,
+    isRestDay: driver.is_rest_day
+  };
+}
+
+function PlanningDriverLookup({ serviceDate, disabled }: { serviceDate: string; disabled: boolean }) {
+  const [selectedDriver, setSelectedDriver] = useState<PlanningDriver | null>(null);
+
+  return (
+    <div className="atlas-ops__field--wide">
+      <StandardWorkerLookupField<PlanningDriver, string>
+        id="atlas-planning-driver"
+        label="Conductor BUK"
+        placeholder="Buscar por nombre o RUT"
+        selectedWorker={selectedDriver}
+        onSelect={setSelectedDriver}
+        useSearchQuery={useAtlasPlanningDriverSearch}
+        searchContext={serviceDate}
+        loadingMessage="Buscando conductores BUK…"
+        emptyMessage="No hay conductores BUK activos que coincidan con esta búsqueda."
+        disabled={disabled}
+        required
+        minSearchLength={2}
+      />
+      <input type="hidden" name="driver_buk_employee_id" value={selectedDriver?.bukEmployeeId ?? ""} />
+      {selectedDriver ? <small className="atlas-ops__driver-status">{selectedDriver.isWorkingDay && !selectedDriver.isRestDay ? "En jornada" : "Jornada no validada"}</small> : null}
+    </div>
+  );
+}
+
 const VIEWS: Array<{ id: View; label: string }> = [
   { id: "control-tower", label: "Control Tower" },
   { id: "planificacion", label: "Planificación" },
@@ -138,7 +201,7 @@ function OperationsControlTowerApp() {
   }, [activeVehicleIds, isAdmin, presentation, queryClient, view]);
   const alertDispatchIds = (dispatchQuery.data ?? []).map((row) => row.id);
   const alertQuery = useQuery({ queryKey: queryKeys.operations.alerts(day, alertDispatchIds), queryFn: () => getAtlasAlerts(alertDispatchIds), enabled: (view === "excepciones" || view === "control-tower") && dispatchQuery.isSuccess, staleTime: 10_000 });
-  const driverQuery = useQuery({ queryKey: queryKeys.operations.driverSearch({ search: driverSearch, day }), queryFn: () => searchAtlasDrivers(driverSearch, day), enabled: canOperate && driverSearch.trim().length >= 2, staleTime: 15_000 });
+  const driverQuery = useQuery({ queryKey: queryKeys.operations.driverSearch({ search: driverSearch, day }), queryFn: () => searchAtlasDrivers(driverSearch, day), enabled: view === "configuracion" && canOperate && driverSearch.trim().length >= 2, staleTime: 15_000 });
   const driverDispatchQuery = useQuery({ queryKey: queryKeys.operations.driverDispatches(), queryFn: getAtlasDriverDispatches, enabled: view === "conductor", retry: false });
   const eventsQuery = useQuery({ queryKey: queryKeys.operations.events(selectedDispatch), queryFn: () => getAtlasDispatchEvents(selectedDispatch), enabled: Boolean(selectedDispatch) });
   const adminUsersQuery = useQuery({ queryKey: queryKeys.operations.adminUsers(), queryFn: getAtlasAdminUsers, enabled: view === "configuracion" && isAdmin });
@@ -309,14 +372,7 @@ function OperationsControlTowerApp() {
             <Field label="Fin estimado"><input type="datetime-local" name="planned_end_at" /></Field>
             <Field label="Turno"><input name="shift" placeholder="AM / PM / A / B" required /></Field>
             <Field label="Vehículo"><select name="vehicle_id" defaultValue=""><option value="">Pendiente de asignar</option>{catalogs?.vehicles.map((item) => <option value={item.id} key={item.id}>{item.code}{item.plate ? ` · ${item.plate}` : ""}</option>)}</select></Field>
-            <Field label="Conductor BUK"><input autoComplete="off" value={driverSearch} onChange={(event) => setDriverSearch(event.target.value)} placeholder="Nombre o RUT" /></Field>
-            <div className="atlas-ops__driver-results" role="listbox" aria-label="Resultados de conductor">
-              {driverQuery.data?.map((driver) => <label className="atlas-ops__driver-option" key={driver.buk_employee_id}>
-                <input type="radio" name="driver_buk_employee_id" value={driver.buk_employee_id} required />
-                <span><strong>{driver.full_name}</strong><small>{driver.document_number} · {driver.contract_code ?? "Sin contrato"} · {driver.is_working_day && !driver.is_rest_day ? "En jornada" : "Jornada no validada"}</small></span>
-              </label>)}
-              {driverSearch.trim().length >= 2 && driverQuery.data?.length === 0 && <small>No hay coincidencias activas con jornada disponible.</small>}
-            </div>
+            <PlanningDriverLookup serviceDate={day} disabled={!canOperate} />
             <Field label="Origen"><input name="origin_label" placeholder="Taller / terminal" /></Field>
             <Field label="Destino / postura"><input name="destination_label" placeholder="Faena o punto de servicio" /></Field>
             <Field label="Instrucciones" wide><textarea name="instructions" rows={3} placeholder="Indicaciones para coordinación y conductor" /></Field>
