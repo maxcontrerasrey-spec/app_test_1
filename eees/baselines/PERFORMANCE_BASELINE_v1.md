@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.44
+version: 1.0.45
 status: Activo
 language: es-CL
 owner: Quality
@@ -163,9 +163,9 @@ Revision 2026-10-05 límites vacíos del planificador Atlas: Guardian CI midió 
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6271544,
+  "distTotalBytes": 6271548,
   "jsFileCount": 62,
-  "jsTotalBytes": 4284592,
+  "jsTotalBytes": 4284596,
   "cssFileCount": 12,
   "cssTotalBytes": 397215,
   "budgetPolicy": {
@@ -330,3 +330,5 @@ Revision 2026-10-02 canonizacion del artefacto CI: Ubuntu en GitHub Actions (Nod
 Revision 2026-10-02 dias de operacion Atlas: GitHub Actions midio 1,170 bytes adicionales totales y JS para incorporar el selector semanal multiple al alta de servicio base. El dato queda almacenado como dias ISO y validado en la RPC; no agrega CSS ni dependencias. Se actualiza el baseline exacto medido por CI y se conserva tolerancia cero.
 
 Revision 2026-10-05 optimizador de rutas Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37316897209` midio 1,998 bytes adicionales en `dist` y JS (sin cambio CSS) para calcular matrices Valhalla, proponer el orden abierto de direcciones y permitir revisarlo antes de aplicar. El planificador sigue lazy y no agrega dependencias ni cambia el bundle inicial. Se actualizan solo los totales canonicos; la tolerancia absoluta y porcentual permanece en cero.
+
+Revision 2026-10-05 estado vacio de ruta Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37321941550` midio 4 bytes adicionales en `dist` y JS (sin cambio CSS) para ocultar el estado vacío cuando existe una propuesta optimizada. Es una corrección funcional del mismo chunk lazy, sin dependencias; baseline actualizado con tolerancia cero.
