@@ -1,5 +1,13 @@
 # Tareas y Roadmap de Desarrollo
 
+## Revisar nómina actualizada para alta de flota Atlas — 2026-10-05
+
+- [x] Leer las columnas J Código, T Patente, U Tipo y N Cliente del archivo adjunto; identificar encabezados, filas válidas y anomalías.
+- [x] Comparar la nómina con los códigos y patentes del catálogo actual para separar altas, coincidencias y conflictos.
+- [x] Cargar únicamente registros no ambiguos por el mecanismo autorizado y verificar el catálogo resultante.
+
+Resultado: `Flota (34).xlsx` contiene 756 filas válidas en la hoja `Flota`; los encabezados confirman J=`N° Interno`, N=`Cliente Actual`, T=`Placa`, U=`Tipo`. El catálogo estaba vacío, no había códigos ni patentes repetidas en la fuente, y las 756 unidades figuran con `Estado Flota=Activo`. Se cargaron como activas las cuatro columnas indicadas, sin completar campos ajenos al mapeo. Validación cruzada fila por fila: 756 revisadas, 0 faltantes y 0 diferencias; el catálogo productivo quedó con 756 códigos activos únicos. Se conservaron vacías 4 patentes y 15 tipos que faltaban en el archivo; cliente completo en las 756. La tabla ya se incluye en el selector de vehículos activos de Atlas.
+
 ## Seleccionar jornadas AM/PM al crear un servicio base — 2026-10-05
 
 - [x] Reemplazar el texto libre de Jornada por el selector múltiple con AM (A) y PM (C).
