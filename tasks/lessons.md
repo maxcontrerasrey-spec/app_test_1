@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-05 - Las secciones editoriales requieren un inset constante
+
+- Dar a títulos y contenido un padding interior común en todas las superficies; no dejar encabezados al ras del borde.
+- Usar estados vacíos compactos y sin marco punteado anidado para que el portal se lea como una publicación editorial, no como un formulario.
+- Revisar en escritorio y móvil con el contenido real o una maqueta fiel antes de dar por terminado un ajuste visual.
+
 ## 2026-10-05 - Un punto de ruta vacío no debe parecer una interfaz congelada
 
 - Al añadir una dirección, desplazar y enfocar el nuevo campo dentro de la lista; si ya existe uno vacío, «Agregar» debe llevar a ese campo en lugar de quedar deshabilitado con cursor de espera.
