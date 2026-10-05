@@ -3,8 +3,11 @@ import type { Config, Data } from "@puckeditor/core";
 import type { CommunicationItem } from "../services/communicationsApi";
 import { CommunicationAssetImage } from "../components/CommunicationAssetImage";
 
-export type CommunicationsTheme = "buses-jm" | "andino" | "neutro";
-export type CommunicationsFont = "institucional" | "sistema";
+export type CommunicationsTheme = "buses-jm" | "andino" | "neutro" | "oceano" | "energia";
+export type CommunicationsFont = "institucional" | "sistema" | "editorial";
+export type CommunicationsTypeScale = "compacta" | "estandar" | "amplia";
+export type CommunicationsContentWidth = "estandar" | "amplio";
+export type CommunicationsShape = "recta" | "suave" | "redondeada";
 export type CommunicationsTone = "destacado" | "claro" | "oscuro";
 export type CommunicationsLayout = "grilla" | "lista";
 
@@ -13,6 +16,9 @@ export type CommunicationsRootProps = {
   tagline: string;
   theme: CommunicationsTheme;
   font: CommunicationsFont;
+  typeScale: CommunicationsTypeScale;
+  contentWidth: CommunicationsContentWidth;
+  shape: CommunicationsShape;
   footer: string;
 };
 
@@ -155,12 +161,15 @@ export const communicationsSiteConfig: Config<CommunicationsComponents, Communic
     fields: {
       title: { type: "text", label: "Nombre del portal" },
       tagline: { type: "textarea", label: "Frase de bienvenida" },
-      theme: { type: "select", label: "Paleta de colores", options: selectOptions([["buses-jm", "Buses JM"], ["andino", "Andino"], ["neutro", "Neutro"]]) },
-      font: { type: "select", label: "Tipografía", options: selectOptions([["institucional", "Institucional"], ["sistema", "Sistema"]]) },
+      theme: { type: "select", label: "Paleta de colores", options: selectOptions([["buses-jm", "Buses JM"], ["andino", "Andino"], ["neutro", "Neutro"], ["oceano", "Océano"], ["energia", "Energía"]]) },
+      font: { type: "select", label: "Tipografía", options: selectOptions([["institucional", "Moderna · Inter"], ["sistema", "Sistema"], ["editorial", "Editorial · serif"]]) },
+      typeScale: { type: "select", label: "Tamaño de textos", options: selectOptions([["compacta", "Compacto"], ["estandar", "Estándar"], ["amplia", "Amplio"]]) },
+      contentWidth: { type: "select", label: "Ancho del contenido", options: selectOptions([["estandar", "Estándar"], ["amplio", "Amplio"]]) },
+      shape: { type: "select", label: "Forma de tarjetas", options: selectOptions([["recta", "Recta"], ["suave", "Suave"], ["redondeada", "Redondeada"]]) },
       footer: { type: "text", label: "Texto al pie" }
     },
-    defaultProps: { title: "Comunicaciones", tagline: "Un espacio para informarnos, compartir y crecer juntos.", theme: "buses-jm", font: "institucional", footer: "Portal interno · Buses JM" },
-    render: ({ children, title, tagline, theme, font, footer }) => <div className={`communications-site-layout theme-${theme} font-${font}`}><header className="communications-site-masthead"><span className="communications-site-brand">jm</span><div><strong>{title}</strong><small>{tagline}</small></div></header><main>{children}</main><footer className="communications-site-footer"><span>{title}</span><span>{footer}</span></footer></div>
+    defaultProps: { title: "Comunicaciones", tagline: "Un espacio para informarnos, compartir y crecer juntos.", theme: "buses-jm", font: "institucional", typeScale: "estandar", contentWidth: "estandar", shape: "suave", footer: "Portal interno · Buses JM" },
+    render: ({ children, title, tagline, theme, font, typeScale, contentWidth, shape, footer }) => <div className={siteLayoutClass({ theme, font, typeScale, contentWidth, shape })}><header className="communications-site-masthead"><span className="communications-site-brand">jm</span><div><strong>{title}</strong><small>{tagline}</small></div></header><main>{children}</main><footer className="communications-site-footer"><span>{title}</span><span>{footer}</span></footer></div>
   },
   categories: {
     contenido: { title: "Secciones", components: ["FeaturedSection", "HeroSection", "NewsSection", "EventsSection", "BulletinsSection", "MessageSection", "DividerSection"] }
@@ -234,7 +243,7 @@ export const communicationsSiteConfig: Config<CommunicationsComponents, Communic
 };
 
 export const DEFAULT_COMMUNICATIONS_SITE: CommunicationsSiteData = {
-  root: { props: { title: "Comunicaciones", tagline: "Un espacio para informarnos, compartir y crecer juntos.", theme: "buses-jm", font: "institucional", footer: "Portal interno · Buses JM" } },
+  root: { props: { title: "Comunicaciones", tagline: "Un espacio para informarnos, compartir y crecer juntos.", theme: "buses-jm", font: "institucional", typeScale: "estandar", contentWidth: "estandar", shape: "suave", footer: "Portal interno · Buses JM" } },
   content: [
     { type: "FeaturedSection", props: { id: "destacada-inicial", title: "Una mirada a nuestra semana", description: "Novedades y buenas historias de nuestros equipos." } },
     { type: "NewsSection", props: { id: "noticias-inicial", title: "Últimas publicaciones", description: "Lo nuevo en Buses JM.", limit: 3, layout: "grilla" } },
@@ -248,9 +257,19 @@ function safeRootProps(data: CommunicationsSiteData): CommunicationsRootProps {
   return { ...communicationsSiteConfig.root!.defaultProps!, ...data.root?.props } as CommunicationsRootProps;
 }
 
+function siteLayoutClass(root: Pick<CommunicationsRootProps, "theme" | "font" | "typeScale" | "contentWidth" | "shape">) {
+  const themes: CommunicationsTheme[] = ["buses-jm", "andino", "neutro", "oceano", "energia"];
+  const fonts: CommunicationsFont[] = ["institucional", "sistema", "editorial"];
+  const scales: CommunicationsTypeScale[] = ["compacta", "estandar", "amplia"];
+  const widths: CommunicationsContentWidth[] = ["estandar", "amplio"];
+  const shapes: CommunicationsShape[] = ["recta", "suave", "redondeada"];
+  return ["communications-site-layout", `theme-${themes.includes(root.theme) ? root.theme : "buses-jm"}`, `font-${fonts.includes(root.font) ? root.font : "institucional"}`, `type-scale-${scales.includes(root.typeScale) ? root.typeScale : "estandar"}`, `content-width-${widths.includes(root.contentWidth) ? root.contentWidth : "estandar"}`, `shape-${shapes.includes(root.shape) ? root.shape : "suave"}`].join(" ");
+}
+
 function renderLayoutBlock(block: { type: string; props: Record<string, unknown> }, key: string) {
   const p = block.props;
   switch (block.type) {
+    case "FeaturedSection": return <FeaturedSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} />;
     case "HeroSection": return <HeroSectionView key={key} eyebrow={String(p.eyebrow ?? "")} title={String(p.title ?? "")} summary={String(p.summary ?? "")} tone={(p.tone as CommunicationsTone) ?? "destacado"} />;
     case "NewsSection": return <NewsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 6)} layout={(p.layout as CommunicationsLayout) ?? "grilla"} />;
     case "EventsSection": return <EventsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 3)} />;
@@ -263,5 +282,5 @@ function renderLayoutBlock(block: { type: string; props: Record<string, unknown>
 
 export function CommunicationsSiteLayout({ data }: { data: CommunicationsSiteData }) {
   const root = safeRootProps(data);
-  return <div className={`communications-site-layout theme-${root.theme} font-${root.font}`}><header className="communications-site-masthead"><span className="communications-site-brand">jm</span><div><strong>{root.title}</strong><small>{root.tagline}</small></div></header><main>{data.content?.map((block, index) => renderLayoutBlock(block as { type: string; props: Record<string, unknown> }, String(block.props.id ?? index)))}</main><footer className="communications-site-footer"><span>{root.title}</span><span>{root.footer}</span></footer></div>;
+  return <div className={siteLayoutClass(root)}><header className="communications-site-masthead"><span className="communications-site-brand">jm</span><div><strong>{root.title}</strong><small>{root.tagline}</small></div></header><main>{data.content?.map((block, index) => renderLayoutBlock(block as { type: string; props: Record<string, unknown> }, String(block.props.id ?? index)))}</main><footer className="communications-site-footer"><span>{root.title}</span><span>{root.footer}</span></footer></div>;
 }
