@@ -5,8 +5,10 @@
 - [x] Asegurar fuente/capas del recorrido al terminar la carga del mapa para que el primer cálculo actualice un origen ya listo.
 - [x] Evitar que paradas vacías entren al encuadre y centrar su coordenada inicial en el mapa visible.
 - [x] Documentar en un prompt Markdown los siete componentes, integraciones, permisos, estado real y límites del módulo.
-- [ ] Ejecutar build, Guardian, smoke disponible y `git diff --check`; publicar los cambios funcionales y verificar artefactos productivos.
-- [ ] Registrar el resultado y el límite de verificación visual autenticada.
+- [x] Ejecutar build, Guardian, smoke disponible y `git diff --check`; publicar los cambios funcionales y verificar artefactos productivos.
+- [x] Registrar el resultado y el límite de verificación visual autenticada.
+
+Resultado: las capas GeoJSON de ruta/halo/flechas se preparan al terminar de cargar el mapa; el primer cálculo actualiza esa fuente sin depender de un segundo clic. Las paradas nuevas toman coordenadas del centro visible y las vacías se excluyen de marcadores y `fitBounds`, evitando el salto a `(0,0)`. El prompt detallado quedó en `docs/PROMPT_MODULO_OPERACIONES_ATLAS.md`, con los siete componentes, TomTom, MapLibre/OSM, Ferrostar/Valhalla, telemetría, TrackTec e IA diferenciados por estado real. Build frontend, Guardian completo (0 errores/advertencias) y diff check pasan. Tras registrar el delta CI exacto de 128 bytes con tolerancia cero, Actions `37308297748` pasó todos los gates. Pages sirve el nuevo entry `index-I670RjNX.js` y chunk `OperationsRoutePlannerDemo-BbqtG0Mm.js` (1,211,147 bytes) con el código desplegado. La verificación visual interactiva autenticada queda fuera de esta corrida; se validó el artefacto productivo y los smokes autenticados de CI.
 
 ## Mostrar recorrido y sentido de marcha en el mapa Atlas — 2026-10-02
 

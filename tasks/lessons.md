@@ -3,6 +3,8 @@
 ## 379. Las capas de ruta del mapa deben reconciliarse y mostrar su sentido
 
 - Una fuente GeoJSON existente no garantiza que las capas que la presentan sigan montadas; verificar y restaurar por separado la fuente y cada capa en cada actualización.
+- Preparar las capas cuando termina la carga del estilo y no descartar la primera geometría por un `isStyleLoaded()` transitorio sin registrar un reintento.
+- Una parada todavía vacía no debe empezar en coordenadas `0,0` ni entrar al `fitBounds`; usar el centro actual del mapa y encuadrar solo puntos confirmados.
 - Dibujar inicio/destino sin la geometría debe distinguirse del cálculo: comprobar coordenadas y presencia de la capa para no confundir un cálculo exitoso con una ruta visible.
 - En planificación, mostrar flechas espaciadas sobre la línea y encuadrar los límites de la geometría completa para que se entiendan recorrido y dirección.
 
