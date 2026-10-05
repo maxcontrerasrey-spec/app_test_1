@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.45
+version: 1.0.46
 status: Activo
 language: es-CL
 owner: Quality
@@ -167,11 +167,11 @@ Revision 2026-10-05 selector BUK de Planificacion Atlas: el build local suma 327
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 6272627,
+  "distTotalBytes": 6276978,
   "jsFileCount": 62,
-  "jsTotalBytes": 4286057,
+  "jsTotalBytes": 4289471,
   "cssFileCount": 12,
-  "cssTotalBytes": 396833,
+  "cssTotalBytes": 397770,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -336,3 +336,5 @@ Revision 2026-10-02 dias de operacion Atlas: GitHub Actions midio 1,170 bytes ad
 Revision 2026-10-05 optimizador de rutas Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37316897209` midio 1,998 bytes adicionales en `dist` y JS (sin cambio CSS) para calcular matrices Valhalla, proponer el orden abierto de direcciones y permitir revisarlo antes de aplicar. El planificador sigue lazy y no agrega dependencias ni cambia el bundle inicial. Se actualizan solo los totales canonicos; la tolerancia absoluta y porcentual permanece en cero.
 
 Revision 2026-10-05 estado vacio de ruta Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37321941550` midio 4 bytes adicionales en `dist` y JS (sin cambio CSS) para ocultar el estado vacío cuando existe una propuesta optimizada. Es una corrección funcional del mismo chunk lazy, sin dependencias; baseline actualizado con tolerancia cero.
+
+Revision 2026-10-05 destinos Atlas: GitHub Actions `Audit Enterprise Guardrails` run `37339758827` midió 4.351 bytes adicionales en `dist`, 3.414 en JS y 937 en CSS para seleccionar un destino fijo, sugerir ubicaciones frecuentes y conservar la elección al optimizar. El cambio permanece en la pantalla lazy de planificación, no agrega vendors ni assets pesados y mantiene la tolerancia en cero.

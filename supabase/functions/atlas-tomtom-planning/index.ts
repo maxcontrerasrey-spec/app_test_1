@@ -290,8 +290,12 @@ Deno.serve(async (request) => {
         return response({ error: "route_requires_2_to_151_stops" }, 400, origin);
       }
       const stops = payload.stops.map(point);
+      const fixedDestinationIndex = payload.fixedDestinationIndex;
+      if (fixedDestinationIndex !== undefined && (!Number.isInteger(fixedDestinationIndex) || (fixedDestinationIndex as number) <= 0 || (fixedDestinationIndex as number) >= stops.length)) {
+        return response({ error: "invalid_fixed_destination_index" }, 400, origin);
+      }
       const matrix = await valhallaMatrix(stops);
-      const optimized = optimizeOpenRoute(matrix);
+      const optimized = optimizeOpenRoute(matrix, undefined, fixedDestinationIndex as number | undefined);
       const orderedStops = optimized.order.map((index) => stops[index]!);
       const route = await valhallaRoute(orderedStops);
       return response({ ...route, order: optimized.order, matrixDurationSeconds: optimized.durationSeconds, inputOrderMatrixDurationSeconds: optimized.inputOrderDurationSeconds, optimizationMethod: "valhalla_matrix_open_path_v1" }, 200, origin);

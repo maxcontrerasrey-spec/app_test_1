@@ -43,9 +43,14 @@
 .ops-route-demo__stop-row { position: relative; display: grid; grid-template-columns: 26px minmax(0, 1fr) 34px; align-items: center; gap: 8px; }
 .ops-route-demo__stop-row:not(:last-child)::after { position: absolute; top: 27px; bottom: -14px; left: 12px; z-index: 0; border-left: 1px dashed #c9c8d5; content: ""; }
 .ops-route-demo__stop-pin { position: relative; z-index: 1; display: grid; width: 25px; height: 25px; place-items: center; border: 2px solid #fff; border-radius: 50%; background: #a7a4b2; color: #fff; box-shadow: 0 0 0 1px #d5d4de; font-size: 10px; font-weight: 750; }
+.ops-route-demo__stop-pin--toggle { appearance: none; padding: 0; font: inherit; font-size: 10px; cursor: pointer; }
+.ops-route-demo__stop-pin--toggle:not(.ops-route-demo__stop-pin--destination):hover { background: #777285; }
+.ops-route-demo__stop-pin--toggle:focus-visible { outline: 2px solid #7667d8; outline-offset: 3px; }
+.ops-route-demo__stop-pin--toggle.ops-route-demo__stop-pin--destination { border-radius: 50%; transform: none; }
 .ops-route-demo__stop-pin--origin { background: #008e9b; box-shadow: 0 0 0 1px #008e9b; }
 .ops-route-demo__stop-pin--destination { border-radius: 5px 5px 5px 0; background: #d44e54; box-shadow: 0 0 0 1px #d44e54; transform: rotate(-45deg); }
 .ops-route-demo__stop-pin--destination { line-height: 1; }
+.ops-route-demo__destination-help { margin: -3px 0 8px 34px; color: #777587; font-size: 9px; line-height: 1.4; }
 .ops-route-demo__stop-pin--destination::first-letter { transform: rotate(45deg); }
 .ops-route-demo__stop-input-wrap { position: relative; min-width: 0; }
 .ops-route-demo__stop-input-wrap label { display: block; margin: 0 0 4px 1px; color: #6f7080; font-size: 10px; font-weight: 650; }
@@ -60,6 +65,10 @@
 .ops-route-demo__suggestions { position: fixed; z-index: 10000; display: grid; overflow: auto; padding: 4px; border: 1px solid var(--ops-demo-line); border-radius: 7px; background: #fff; box-shadow: 0 7px 22px rgb(25 25 45 / 13%); }
 .ops-route-demo__suggestions button { padding: 9px; border: 0; border-radius: 4px; background: transparent; color: #353545; text-align: left; font: inherit; font-size: 11px; cursor: pointer; }
 .ops-route-demo__suggestions button:hover { background: #f4f2ff; }
+.ops-route-demo__suggestion-group-label { padding: 7px 9px 4px; color: #777587; font-size: 9px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.ops-route-demo__suggestions button.ops-route-demo__destination-option { display: grid; gap: 3px; border-bottom: 1px solid #f0eff4; }
+.ops-route-demo__destination-option strong { color: #37324f; font-size: 11px; }
+.ops-route-demo__destination-option span { color: #777587; font-size: 9px; line-height: 1.35; }
 .ops-route-demo__suggestion-hint { padding: 9px; color: #777787; font-size: 10px; }
 .ops-route-demo__stop-actions { display: grid; gap: 3px; padding-top: 13px; }
 .ops-route-demo__stop-actions button { width: 28px; height: 20px; border: 1px solid #ebebf0; border-radius: 4px; background: #fff; color: #666677; font-size: 11px; cursor: pointer; }
