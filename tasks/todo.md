@@ -61,10 +61,19 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 - [x] Confirmar identidad y contrato del trabajador contra el registro ERP productivo, las fichas BUK y la cola de generación/documentos.
 - [x] Reproducir el desacople: BUK devuelve HTTP 400 por RUT duplicado, mientras `GET /employees?document_number=...` no devuelve coincidencias al consultar activo, inactivo y pendiente.
 - [x] Corregir la conciliación para buscar todos los estados documentados y registrar una causa/acción específica sin crear fichas ni asociar documentos a una identidad incierta.
-- [ ] Desbloquear el índice/registro huérfano desde BUK; después reintentar este mismo job, generar la ficha y completar la cola documental. Bloqueado fuera del ERP: la API BUK no expone la identidad que el alta considera duplicada.
+- [ ] Resolver con BUK la entidad que ocupa el RUT; después reintentar este mismo job, generar la ficha y completar su cola documental. La causa interna exacta no es visible en la API ni en las 5.479 fichas consultables.
 - [x] Validar tests focalizados (153 unitarios, 13 de contrato/concurrencia), Deno check y diff; desplegar en producción y verificar el diagnóstico persistido. Guardian posterior a instalación limpia falla únicamente por el presupuesto de tamaño del bundle frontend (`dist` +20.868 B / +0,28%); no se cambió el presupuesto.
 
-Resultado productivo: el job RC-0226 queda en `error`, sin `buk_employee_id` y sin cola documental, con auditoría `buk_duplicate_identity_not_resolvable` que identifica HTTP 400, endpoint y estados consultados. La ficha y sus documentos no pueden completarse hasta que BUK libere/rectifique el índice de unicidad. La cola documental general no mostró fallas recientes durante la auditoría; en este caso no se encoló porque aún no existe una ficha BUK asociada.
+Resultado productivo: el job RC-0226 queda en `error`, sin `buk_employee_id` y sin cola documental, con auditoría `buk_duplicate_identity_not_resolvable` que identifica HTTP 400, endpoint y estados consultados. La ficha y sus documentos no pueden completarse hasta que BUK identifique y resuelva la restricción de unicidad. En una segunda auditoría se detectaron además 18 documentos pendientes de otros dos empleados: el cron de GitHub no los había procesado oportunamente.
+
+### Reinvestigación y cierre operativo de documentos — 2026-10-06
+
+- [x] Contrastar el RUT 10.208.703-8 con BUK directo: filtros por documento y estado, lectura individual, barrido íntegro de 5.479 fichas y maestros/snapshots ERP.
+- [x] Identificar si el atasco documental es independiente: 18 pendientes de dos empleados con identidad BUK confirmada, cero intentos y brechas de horas en GitHub Actions.
+- [x] Procesar esos 18 documentos y comprobar `buk_document_id`, estado final y cero trabajos pendientes.
+- [x] Implementar una programación confiable en Supabase con secreto específico, conservando la cola idempotente y GitHub como respaldo.
+- [ ] Validar autenticación, ejecución real, historial cron, pruebas de seguridad/migración y Guardian; desplegar y registrar el resultado. Cron productivo ya respondió HTTP 200 con `claimed:0` tras procesar los 18 pendientes.
+- [ ] Determinar qué entidad interna BUK considera dueño del RUT RC-0226; escalar con evidencia precisa si la API no lo expone y reintentar solo cuando se pueda vincular una identidad cierta.
 
 ## Rediseñar el Portal de Comunicaciones y sus bloques editables — 2026-10-06
 

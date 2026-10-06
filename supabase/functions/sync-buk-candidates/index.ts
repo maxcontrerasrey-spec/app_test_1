@@ -4240,6 +4240,7 @@ Deno.serve(async (req) => {
     const isInternalInvocation =
       internalWebhookSecret.length > 0 && suppliedWebhookSecret === internalWebhookSecret;
     const documentQueueSecret = (Deno.env.get("BUK_DOCUMENT_QUEUE_WEBHOOK_SECRET") ?? "").trim();
+    const documentCronSecret = (Deno.env.get("BUK_DOCUMENT_CRON_SECRET") ?? "").trim();
     const suppliedDocumentQueueSecret = (
       req.headers.get("x-buk-document-queue-secret") ?? ""
     ).trim();
@@ -4253,7 +4254,10 @@ Deno.serve(async (req) => {
       .some((configuredKey) => safeSecretEquals(suppliedApiKey, configuredKey));
     const mode = requestBody.mode ?? "sync";
     const isDocumentQueueInvocation =
-      mode === "documents" && safeSecretEquals(suppliedDocumentQueueSecret, documentQueueSecret);
+      mode === "documents" && (
+        safeSecretEquals(suppliedDocumentQueueSecret, documentQueueSecret) ||
+        safeSecretEquals(suppliedDocumentQueueSecret, documentCronSecret)
+      );
 
     if (mode === "hiring_document_backfill") {
       if (!isInternalInvocation && !isServiceRoleInvocation && !isBackfillSecretInvocation) {
