@@ -6,6 +6,12 @@
 - Mantener la autorización de confidencialidad del módulo en el backend; no convertir la visibilidad transversal por estado en lectura abierta a toda cuenta ERP.
 - Diferenciar visualmente el certificado del informe integrado firmado para que el acceso PDF existente no haga pensar que incluye ambos documentos.
 
+## 2026-10-06 - Cada cargo define sus jornadas antes de configurar renta
+
+- No asumir que todo cargo puede operar con cada jornada del catálogo general.
+- Persistir por contrato/cargo qué jornadas aplican antes de crear una estructura de remuneración; cada jornada habilitada tendrá su estructura independiente.
+- Aplicar la restricción en la interfaz y en la RPC, y no permitir deshabilitar jornadas que ya tengan una estructura vigente.
+
 ## 2026-10-06 - Igualar el alto visible completo de un selector, no solo su caja externa
 
 - En un multiselect con una opción elegida, revisar por separado el trigger y el chip interno: limitar la altura del trigger en CSS puede no bastar si estilos compartidos influyen en la caja renderizada.
@@ -4098,6 +4104,13 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - No mezclar en el RPC principal cálculos de jornadas trabajador × día. El catálogo, la configuración y el cálculo previsional deben cargar primero; cualquier indicador operacional periódico debe resolverse por separado y sin bloquear la vista.
 - En una estimación por cargo, mostrar visualmente haberes imponibles, haberes no imponibles, descuentos legales y líquido estimado, dejando explícito que no es una liquidación individual.
 - No mezclar el catálogo contrato-cargo de este mantenedor con fichas o dotación BUK. La asociación de cargos debe pertenecer al dominio de estructuras de renta y BUK no debe participar en la lectura ni en el guardado.
+
+## 2026-10-06 — Cada jornada puede requerir una estructura de renta independiente
+
+- Si el mismo cargo se remunera de forma distinta según la jornada, la clave de una estructura debe incluir contrato, cargo y jornada. No guardar varias jornadas en una lista vinculada a una sola remuneración.
+- Mostrar el nombre operativo de la jornada (por ejemplo, `4x3`) y conservar el código del catálogo solo como identificador interno.
+- Mantener cupos y haberes por variante; el total del cargo suma sus variantes sin replicar la dotación BUK, que sigue perteneciendo al cargo.
+- Al convertir estructuras legadas, asignar jornada solo con una asociación unívoca. No duplicar conceptos ni cupos entre jornadas por inferencia.
 ## 2026-09-25 - Los campos monetarios controlados no deben reinyectar cero durante la edición
 
 - Convertir cada cambio vacío con `Number(value) || 0` hace que React vuelva a mostrar `0` inmediatamente y obliga al usuario a reposicionar el cursor.

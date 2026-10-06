@@ -8,7 +8,15 @@ export type RentStructureContract = {
   contractName: string;
 };
 
-export type RentShift = { id: number; code: string; name: string };
+export type RentShift = { id: number; name: string };
+
+export type RentStructureVariant = {
+  id: string;
+  shiftId: number | null;
+  shiftName: string | null;
+  legalRegimeCode: "art_25" | "ordinario" | null;
+  authorizedHeadcount: number;
+};
 
 export type RentStructurePosition = {
   id: number;
@@ -18,6 +26,8 @@ export type RentStructurePosition = {
   authorizedHeadcount: number;
   monthlyBudget: number | null;
   currencyCode: string;
+  structures: RentStructureVariant[];
+  applicableShiftIds: number[];
 };
 
 export type RentStructureLine = {
@@ -57,6 +67,8 @@ export type RentStructureDetail = {
   calculationAvailable: boolean;
   legalScenario: RentLegalScenario;
   shiftIds: number[];
+  shiftId: number | null;
+  shiftName: string | null;
   legalRegimeCode: "art_25" | "ordinario" | null;
   shiftClassificationPending: boolean;
   lines: RentStructureLine[];
@@ -86,19 +98,21 @@ export type RentStructureControlPayload = {
 
 type RawPayload = {
   contracts?: Array<{ id: number; code: string; contract_number: string; contract_name: string }>;
-  positions?: Array<{ id: number; code: string; name: string; has_structure: boolean; authorized_headcount: number; monthly_budget: number | null; currency_code: string }>;
+  positions?: Array<{ id: number; code: string; name: string; has_structure: boolean; authorized_headcount: number; monthly_budget: number | null; currency_code: string; applicable_shift_ids?: number[]; structure_variants?: Array<{ id: string; shift_id: number | null; shift_name: string | null; legal_regime_code: "art_25" | "ordinario" | null; authorized_headcount: number }> }>;
   legal_catalog?: { afps?: Array<{ code: string; name: string; commission_rate: number }> };
   shift_catalog?: RentShift[];
-  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; shift_ids?: number[]; legal_regime_code?: "art_25" | "ordinario" | null; shift_classification_pending?: boolean; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"]; include_income_tax?: boolean; iusc_utm_clp?: number | null }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; pension_health_base: number; unemployment_base: number; taxable_base?: number | null; income_tax?: number | null; legal_discounts: number | null; liquido_estimated: number; authorized_payroll: number }; legal_assumptions?: string[] };
+  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; shift_ids?: number[]; shift_id?: number | null; shift_name?: string | null; legal_regime_code?: "art_25" | "ordinario" | null; shift_classification_pending?: boolean; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"]; include_income_tax?: boolean; iusc_utm_clp?: number | null }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; pension_health_base: number; unemployment_base: number; taxable_base?: number | null; income_tax?: number | null; legal_discounts: number | null; liquido_estimated: number; authorized_payroll: number }; legal_assumptions?: string[] };
   can_configure?: boolean;
 };
 
-export async function fetchRentStructureControl(contractId: number | null, jobPositionId: number | null) {
+export async function fetchRentStructureControl(contractId: number | null, jobPositionId: number | null, shiftId: number | null, structureId: string | null) {
   if (!supabase) throw new Error("Supabase no está configurado en este entorno.");
 
-  const { data, error } = await supabase.rpc("get_hr_rent_structure_control", {
+  const { data, error } = await supabase.rpc("get_hr_rent_structure_variant_control", {
     p_contract_id: contractId,
-    p_job_position_id: jobPositionId
+    p_job_position_id: jobPositionId,
+    p_shift_id: shiftId,
+    p_structure_id: structureId
   });
 
   if (error) {
@@ -120,7 +134,15 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
       hasStructure: row.has_structure,
       authorizedHeadcount: row.authorized_headcount ?? 0,
       monthlyBudget: row.monthly_budget,
-      currencyCode: row.currency_code
+      currencyCode: row.currency_code,
+      applicableShiftIds: row.applicable_shift_ids ?? [],
+      structures: (row.structure_variants ?? []).map((variant) => ({
+        id: variant.id,
+        shiftId: variant.shift_id,
+        shiftName: variant.shift_name,
+        legalRegimeCode: variant.legal_regime_code,
+        authorizedHeadcount: variant.authorized_headcount
+      }))
     })),
     structure: payload.structure?.id
       ? {
@@ -142,6 +164,8 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
             iuscUtmClp: payload.structure.legal_scenario?.iusc_utm_clp ?? null
           },
           shiftIds: payload.structure.shift_ids ?? [],
+          shiftId: payload.structure.shift_id ?? null,
+          shiftName: payload.structure.shift_name ?? null,
           legalRegimeCode: payload.structure.legal_regime_code ?? null,
           shiftClassificationPending: payload.structure.shift_classification_pending ?? true,
           lines: (payload.structure.lines ?? []).map((line) => ({
@@ -183,11 +207,13 @@ export type RentStructureConfigLine = Pick<RentStructureLine, "conceptCode" | "c
 export type RentStructureLegalConfig = Pick<RentLegalScenario, "afpCode" | "healthMode" | "healthProviderName" | "healthPlanValue" | "unemploymentContractType" | "includeIncomeTax">;
 export type RentRegimeCode = "art_25" | "ordinario";
 
-export async function saveRentStructureConfig(contractId: number, jobPositionId: number, authorizedHeadcount: number, lines: RentStructureConfigLine[], legal: RentStructureLegalConfig, shiftIds: number[], legalRegimeCode: RentRegimeCode | null) {
+export async function saveRentStructureConfig(contractId: number, jobPositionId: number, structureId: string | null, shiftId: number, authorizedHeadcount: number, lines: RentStructureConfigLine[], legal: RentStructureLegalConfig, legalRegimeCode: RentRegimeCode | null) {
   if (!supabase) throw new Error("Supabase no está configurado en este entorno.");
-  const { data, error } = await supabase.rpc("save_hr_rent_structure_config", {
+  const { data, error } = await supabase.rpc("save_hr_rent_structure_variant", {
     p_contract_id: contractId,
     p_job_position_id: jobPositionId,
+    p_structure_id: structureId,
+    p_shift_id: shiftId,
     p_authorized_headcount: authorizedHeadcount,
     p_lines: lines.map((line) => ({
       concept_code: line.conceptCode,
@@ -202,9 +228,18 @@ export async function saveRentStructureConfig(contractId: number, jobPositionId:
     p_health_plan_value: legal.healthPlanValue,
     p_unemployment_contract_type: legal.unemploymentContractType,
     p_include_income_tax: legal.includeIncomeTax,
-    p_shift_ids: shiftIds,
     p_legal_regime_code: legalRegimeCode
   });
   if (error) throw new Error(getSupabaseErrorMessage(error, "No fue posible guardar la estructura de renta.", "message"));
   return String(data);
+}
+
+export async function saveRentPositionShifts(contractId: number, jobPositionId: number, shiftIds: number[]) {
+  if (!supabase) throw new Error("Supabase no está configurado en este entorno.");
+  const { error } = await supabase.rpc("save_hr_rent_position_shifts", {
+    p_contract_id: contractId,
+    p_job_position_id: jobPositionId,
+    p_shift_ids: shiftIds
+  });
+  if (error) throw new Error(getSupabaseErrorMessage(error, "No fue posible guardar las jornadas aplicables.", "message"));
 }
