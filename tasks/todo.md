@@ -4626,3 +4626,5 @@ Revisión final: Puck ofrece “Lista horizontal”, “Tarjetas · 2 columnas�
 - [ ] Integrar a `main`, desplegar y comprobar el módulo publicado en producción.
 
 Diagnóstico: el efecto de hidratación dependía del objeto `detail` y de `selectedPosition`; cada respuesta/refetch recreaba esos objetos y volvía a reemplazar todos los campos del formulario. Además, `placeholderData` mantenía el detalle anterior mientras cambiaba el cargo. La corrección hidrata una sola vez por selección y espera la respuesta real antes de mostrar el editor.
+
+CI del PR #46 detectó el incremento esperado de 246 bytes contra el baseline exacto. Se registró la medición canónica sin cambiar la tolerancia cero; Guardian, baseline de performance y `git diff --check` pasan localmente después del ajuste.
