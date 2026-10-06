@@ -12,7 +12,9 @@ import {
   type RecruitmentHiringDocumentRow
 } from "../_shared/recruitmentHiringDocument.ts";
 import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
-import { normalizeBukDocumentNumber as normalizeDocumentNumber } from "../_shared/bukIdentity.ts";
+import {
+  normalizeBukDocumentNumber as normalizeDocumentNumber
+} from "../_shared/bukIdentity.ts";
 import {
   filterExactBukRolesByName,
   parseBukRoleIdFromJobPositionCode,
@@ -1470,25 +1472,35 @@ async function patchBukEmployeeJob(employeeId: string, jobId: string | number, p
 }
 
 async function lookupBukEmployeesByDocumentNumber(payload: BukCandidateSyncPayload) {
-  const url = new URL(buildBukBaseUrl());
   const queriedDocumentNumber = normalizeDocumentNumber(
     payload.profile.document_type,
     payload.profile.document_number
   );
-  url.searchParams.set("document_number", queriedDocumentNumber);
-  url.searchParams.set("page_size", "100");
-  url.searchParams.set("page", "1");
+  const employeesByStatus = await Promise.all(
+    ["activo", "inactivo", "pendiente"].map(async (status) => {
+      const url = new URL(buildBukBaseUrl());
+      url.searchParams.set("document_number", queriedDocumentNumber);
+      url.searchParams.set("status", status);
+      url.searchParams.set("page_size", "100");
+      url.searchParams.set("page", "1");
 
-  const response = await fetchBukJson(url.toString());
-  const employees = extractBukObjectRows(response)
-    .filter((entry): entry is BukEmployeeRecord => Boolean(entry) && typeof entry === "object")
-    .map((employee) => ({
-      ...employee,
-      document_query_identity: queriedDocumentNumber,
-      identity_hydrated: Boolean(employee.document_number ?? employee.rut)
-    }));
+      const response = await fetchBukJson(url.toString());
+      return extractBukObjectRows(response)
+        .filter((entry): entry is BukEmployeeRecord => Boolean(entry) && typeof entry === "object")
+        .map((employee) => ({
+          ...employee,
+          document_query_identity: queriedDocumentNumber,
+          identity_hydrated: Boolean(employee.document_number ?? employee.rut)
+        }));
+    })
+  );
+  const employees = Array.from(
+    new Map(
+      employeesByStatus.flat().map((employee) => [String(employee.id), employee])
+    ).values()
+  );
 
-  const hydratedEmployees = await Promise.all(
+  const hydratedEmployees: BukEmployeeRecord[] = await Promise.all(
     employees.map(async (employee) => {
       if (employee.document_number ?? employee.rut) {
         return employee;
@@ -3134,7 +3146,18 @@ async function resolveBukEmployeeForSync(
 
     const matchingEmployees = await lookupBukEmployeesByDocumentNumber(payload);
     if (matchingEmployees.length === 0) {
-      throw error;
+      throw new BukEmployeeResolutionError(
+        "BUK rechazó la creación porque el RUT ya está en uso, pero la búsqueda por documento no devolvió fichas activas, inactivas ni pendientes. No se creó la ficha ni se encolaron documentos. Un administrador de BUK debe revisar/liberar el registro de identidad bloqueado; luego se puede reintentar este mismo folio.",
+        [{
+          type: "buk_duplicate_identity_not_resolvable",
+          providerStatus: error instanceof BukApiError ? error.status : null,
+          providerEndpoint: error instanceof BukApiError ? error.endpoint : null,
+          lookupEndpoint: new URL(buildBukBaseUrl()).pathname,
+          queriedStatuses: ["activo", "inactivo", "pendiente"],
+          exactDocumentMatches: 0,
+          nextAction: "Revisar/liberar el índice de unicidad del documento en BUK y reintentar el job existente."
+        }]
+      );
     }
 
     const erpProvisionedEmployee = matchingEmployees.find((employee) =>

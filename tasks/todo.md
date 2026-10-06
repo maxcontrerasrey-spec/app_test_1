@@ -56,6 +56,16 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 # Tareas y Roadmap de Desarrollo
 
+## Reparar generación BUK y carga documental para RC-0226 — 2026-10-06
+
+- [x] Confirmar identidad y contrato del trabajador contra el registro ERP productivo, las fichas BUK y la cola de generación/documentos.
+- [x] Reproducir el desacople: BUK devuelve HTTP 400 por RUT duplicado, mientras `GET /employees?document_number=...` no devuelve coincidencias al consultar activo, inactivo y pendiente.
+- [x] Corregir la conciliación para buscar todos los estados documentados y registrar una causa/acción específica sin crear fichas ni asociar documentos a una identidad incierta.
+- [ ] Desbloquear el índice/registro huérfano desde BUK; después reintentar este mismo job, generar la ficha y completar la cola documental. Bloqueado fuera del ERP: la API BUK no expone la identidad que el alta considera duplicada.
+- [x] Validar tests focalizados (153 unitarios, 13 de contrato/concurrencia), Deno check y diff; desplegar en producción y verificar el diagnóstico persistido. Guardian posterior a instalación limpia falla únicamente por el presupuesto de tamaño del bundle frontend (`dist` +20.868 B / +0,28%); no se cambió el presupuesto.
+
+Resultado productivo: el job RC-0226 queda en `error`, sin `buk_employee_id` y sin cola documental, con auditoría `buk_duplicate_identity_not_resolvable` que identifica HTTP 400, endpoint y estados consultados. La ficha y sus documentos no pueden completarse hasta que BUK libere/rectifique el índice de unicidad. La cola documental general no mostró fallas recientes durante la auditoría; en este caso no se encoló porque aún no existe una ficha BUK asociada.
+
 ## Rediseñar el Portal de Comunicaciones y sus bloques editables — 2026-10-06
 
 - [x] Documentar referencias actuales y criterios visuales para una intranet editorial compacta.
