@@ -27,8 +27,10 @@ Validación: Guardian local 0 errores/0 advertencias; workflow GitHub `375264186
 
 - [x] Medir en producción etiquetas, cajas y coordenadas: alturas iguales de 30,09 px, pero el control de jornadas empezaba 2,39 px más abajo.
 - [x] Localizar la cascada: `.field-group` aplica `gap: 0.45rem`; el selector legal usa `gap: 0.28rem`.
-- [ ] Igualar el espacio entre etiqueta y caja, validar con una jornada seleccionada, ejecutar build/Guardian y publicar.
-- [ ] Medir en Safari productivo que los controles comienzan en el mismo eje y dejar evidencia final.
+- [x] Igualar el espacio entre etiqueta y caja, validar con una jornada seleccionada, ejecutar build/Guardian y publicar.
+- [x] Medir en Safari productivo que los controles comienzan en el mismo eje y dejar evidencia final.
+
+Resultado final: con `TURNO-012 · 10X10` seleccionado, ambos controles midieron `y = 417,296875 px` y `height = 30,09375 px` en Safari de producción. La selección se usó solo para la comprobación visual; se recargó el perfil y no se guardaron cambios. Corrección de alineación integrada en `24728adf` (PR #55); hoja productiva `RentStructuresPage-DRW43DDT.css` confirmada con `gap: .28rem`.
 
 ## Revisar y preparar boletines compartidos por Comunicaciones — 2026-10-06
 
