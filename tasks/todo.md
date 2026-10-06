@@ -58,9 +58,11 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 ## Corregir selector de jornadas en Estructuras de Renta — 2026-10-06
 
-- [ ] Ajustar la escala del campo de jornadas para que tenga la misma altura que el régimen y no parta el texto del placeholder en anchos de escritorio.
-- [ ] Evitar que el contenedor de aplicación recorte el menú; mantener opciones con altura uniforme, contraste y área clickeable suficiente.
+- [x] Ajustar la escala del campo de jornadas para que tenga la misma altura que el régimen y no parta el texto del placeholder en anchos de escritorio.
+- [x] Evitar que el contenedor de aplicación recorte el menú y excluir los checkboxes de las reglas de tamaño para campos de texto.
 - [ ] Verificar desktop y móvil con build, Guardian y diff check; publicar y comprobar el control en producción.
+
+Revisión productiva intermedia: el selector y el menú ya cargan fuera del marco, pero la comprobación visual en Safari encontró que la regla de inputs de texto también se aplicaba a los checkboxes. Se corrige antes de cerrar y se repetirá la prueba con opciones visibles/clickeables.
 
 ## Reparar generación BUK y carga documental para RC-0226 — 2026-10-06
 
