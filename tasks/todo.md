@@ -4,7 +4,9 @@
 - [x] Definir y probar resolución por código operativo/ID de área; nombres duplicados no enlazan áreas distintas y los mappings sin identificadores solo usan fallback cuando ambos lados son únicos.
 - [x] Integrar la resolución exacta al sync de cargos, preservando auth, snapshot completo y desactivación de asociaciones obsoletas.
 - [x] Ejecutar pruebas focalizadas, verificación Deno, auditoría de guards BUK, Guardian y `git diff --check`.
-- [ ] Publicar la Edge Function corregida y refrescar solo el catálogo de cargos-contrato; verificar que desaparece la asociación falsa de RC-0114 y sobreviven asociaciones válidas.
+- [x] Añadir y probar una opción manual restringida para refrescar solo cargos/áreas BUK, sin instalar ni ejecutar la sincronización completa de trabajadores.
+- [x] Publicar la Edge Function corregida; falta ejecutar el refresh exclusivo de catálogo y verificar las asociaciones persistidas.
+- [ ] Refrescar solo el catálogo de cargos-contrato; verificar que desaparece la asociación falsa de RC-0114 y sobreviven asociaciones válidas.
 - [ ] Reconciliar código desplegado con Git, registrar límites (BUK aún debe habilitar el cargo en área exacta) y evidencia final.
 
 # Retiro integral de precandidatos y enlaces públicos — 2026-10-06

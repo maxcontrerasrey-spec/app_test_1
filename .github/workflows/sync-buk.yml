@@ -4,7 +4,13 @@ on:
   schedule:
     - cron: '0 23 * * *' # ventana posible para 20:00 Chile en horario de verano
     - cron: '0 0 * * *' # ventana posible para 20:00 Chile en horario estándar
-  workflow_dispatch: # Permite ejecución manual desde GitHub
+  workflow_dispatch:
+    inputs:
+      catalog_only:
+        description: "Sincroniza solo cargos y áreas BUK, sin recalcular el padrón de trabajadores"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   sync:
@@ -35,31 +41,34 @@ jobs:
           fi
 
       - name: Report sync window decision
+        env:
+          CATALOG_ONLY: ${{ inputs.catalog_only }}
         run: |
           echo "event=${{ github.event_name }}"
           echo "cron_trigger=${{ steps.local_window.outputs.cron_trigger }}"
           echo "local_offset=${{ steps.local_window.outputs.local_offset }}"
           echo "run_sync=${{ steps.local_window.outputs.run_sync }}"
+          echo "catalog_only=$CATALOG_ONLY"
 
       - name: Checkout Repository
-        if: steps.local_window.outputs.run_sync == 'true'
+        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only != true
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
       - name: Setup Node.js
-        if: steps.local_window.outputs.run_sync == 'true'
+        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only != true
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: 'npm'
 
       - name: Install Dependencies
-        if: steps.local_window.outputs.run_sync == 'true'
+        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only != true
         run: npm ci --omit=dev
 
       - name: Validate required sync variables
-        if: steps.local_window.outputs.run_sync == 'true'
+        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only != true
         env:
           BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
           BUK_AREAS_URL: ${{ secrets.BUK_AREAS_URL }}
@@ -73,8 +82,19 @@ jobs:
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
           test -n "${VITE_SUPABASE_URL:-${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}}" || { echo "Missing VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL"; exit 1; }
 
+      - name: Validate catalog sync variables
+        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only == true
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
+          test -n "${VITE_SUPABASE_URL:-${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}}" || { echo "Missing VITE_SUPABASE_URL, SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL"; exit 1; }
+
       - name: Run BUK Sync Script
-        if: steps.local_window.outputs.run_sync == 'true'
+        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only != true
         env:
           BUK_EMPLOYEES_URL: ${{ secrets.BUK_EMPLOYEES_URL }}
           BUK_AREAS_URL: ${{ secrets.BUK_AREAS_URL }}
