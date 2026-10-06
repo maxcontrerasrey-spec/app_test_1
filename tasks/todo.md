@@ -74,6 +74,19 @@ Resultado productivo: el job RC-0226 queda en `error`, sin `buk_employee_id` y s
 - [x] Implementar una programación confiable en Supabase con secreto específico, conservando la cola idempotente y GitHub como respaldo.
 - [ ] Validar autenticación, ejecución real, historial cron, pruebas de seguridad/migración y Guardian; desplegar y registrar el resultado. Cron productivo ya respondió HTTP 200 con `claimed:0` tras procesar los 18 pendientes.
 - [ ] Determinar qué entidad interna BUK considera dueño del RUT RC-0226; escalar con evidencia precisa si la API no lo expone y reintentar solo cuando se pueda vincular una identidad cierta.
+## Variantes de Estructuras de Renta por jornada — 2026-10-06
+
+- [x] Confirmar el contrato entre Solicitudes de Contratación y Estructuras de Renta: usar filas activas de `public.shifts` como catálogo canónico y conservar su ID; no derivar opciones de `hiring_requests.shift_name` ni de `hr_shift_patterns`.
+- [x] Auditar esquema, RPCs, cálculos, datos y permisos productivos actuales; definir cómo mostrar y clasificar estructuras existentes sin copiarlas ni asignarles jornadas por inferencia.
+- [x] Implementar configuraciones por contrato/cargo/régimen legal con selección múltiple de jornadas activas; persistir las asociaciones y validar las jornadas contra el catálogo en la RPC transaccional.
+- [x] Actualizar RPC/API/hooks y vistas Control/Configuración para elegir jornada y régimen; mantener intactos los permisos actuales.
+- [x] Agregar cobertura contractual para catálogo, asignación, histórico, permisos y UI; ejecutar build, Guardian, auditorías Supabase/migraciones y `git diff --check`.
+- [x] Aplicar la migración en Supabase producción; verificar funciones, permisos, RLS y conservación de las 13 estructuras existentes sin jornada/regimen asignados.
+- [ ] Publicar frontend en producción y verificar el bundle servido junto con el RPC nuevo.
+
+Revisión inicial: Solicitudes de Contratación consume `get_hiring_request_catalogs.shiftCatalog`, que consulta filas activas de `public.shifts` y entrega ID/código/nombre. Estructuras de Renta actualmente admite una fila por contrato/cargo, y sus RPCs calculan sobre esa única fila. Las estructuras existentes se preservarán sin duplicar y quedarán pendientes de clasificación hasta asignar explícitamente las jornadas que les corresponden.
+
+Estado de producción: la migración `20261006140707_add_hr_rent_shift_regime_variants` está aplicada. La verificación productiva confirma 15 jornadas activas, 13 estructuras conservadas, cero asociaciones asignadas automáticamente, RLS activo sin acceso directo de `authenticated`, RPC de guardado solo para `authenticated` y no para `anon`. El frontend aún debe integrarse y publicarse.
 
 ## Rediseñar el Portal de Comunicaciones y sus bloques editables — 2026-10-06
 

@@ -74,6 +74,8 @@ Revision 2026-09-24 selector explícito de fichas BUK en movilidad interna: CSS 
 
 Revision 2026-09-24 Control Estructuras de Renta compacto: CSS sube 1,165 bytes, de 286,723 a 287,888, para alinear el submódulo con la gramática visual de Acreditaciones: superficies planas, controles compactos, listas densas y estados discretos. No agrega vendors, assets ni rutas eager.
 
+Revision 2026-10-06 jornadas en Estructuras de Renta: JS y total suben 210 bytes para cargar el catálogo activo de `public.shifts`, permitir multiselección de jornadas y persistir la clasificación de régimen. CSS, vendors y assets no cambian; el campo usa `MultiSelectField` ya incluido.
+
 Revision 2026-08-03 auditoria integral: se eliminan el generador PDF local sin consumidores, cinco lecturas duplicadas del servicio de competencias y las dependencias frontend PDF/QR asociadas. El cambio reduce 903 lineas de codigo, 642,227 bytes de `dist`, 478,046 bytes de JS y tres chunks respecto del baseline machine-readable anterior. La generacion de certificados permanece en su Edge Function con dependencias propias y el frontend conserva ECharts/XLSX lazy.
 
 Revision 2026-08-04 Solicitud de Contratacion: el total y JS suben 13,470 bytes en la medicion canonica de Guardian full por la nueva ruta publica lazy `/verificar/documento`, su mapeo allowlist y los estados de autenticidad/conciliacion. No agrega vendors, CSS ni assets; el PDF y QR permanecen en Edge Functions. El smoke de rutas valida que el verificador sea publico sin debilitar las rutas autenticadas.
@@ -184,9 +186,9 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7465193,
+  "distTotalBytes": 7465403,
   "jsFileCount": 74,
-  "jsTotalBytes": 5336470,
+  "jsTotalBytes": 5336680,
   "cssFileCount": 15,
   "cssTotalBytes": 538986,
   "budgetPolicy": {

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { PageShell } from "../../../shared/ui";
+import { MultiSelectField, PageShell } from "../../../shared/ui";
 import { useRentStructureControl, useSaveRentStructureConfig } from "../hooks/useRentStructuresQueries";
 import { formatClpInputValue, parseClpInputValue } from "../lib/rentAmountInput";
-import type { RentLegalCatalog, RentStructureConfigLine, RentStructureLegalConfig, RentStructureLine } from "../services/rentStructuresApi";
+import type { RentLegalCatalog, RentRegimeCode, RentStructureConfigLine, RentStructureLegalConfig, RentStructureLine, RentShift } from "../services/rentStructuresApi";
 import "../styles/rentStructures.css";
 
 const money = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
@@ -47,14 +47,19 @@ function StructureSection({ title, code, lines, total }: { title: string; code: 
   );
 }
 
-function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, onHeadcountChange, onLinesChange, onLegalChange, onSave, isSaving }: {
+function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, shiftCatalog, shiftIds, legalRegimeCode, onHeadcountChange, onLinesChange, onLegalChange, onShiftIdsChange, onLegalRegimeChange, onSave, isSaving }: {
   authorizedHeadcount: number;
   lines: RentStructureConfigLine[];
   legal: RentStructureLegalConfig;
   catalog: RentLegalCatalog;
+  shiftCatalog: RentShift[];
+  shiftIds: number[];
+  legalRegimeCode: RentRegimeCode | null;
   onHeadcountChange: (value: number) => void;
   onLinesChange: (lines: RentStructureConfigLine[]) => void;
   onLegalChange: (legal: RentStructureLegalConfig) => void;
+  onShiftIdsChange: (ids: number[]) => void;
+  onLegalRegimeChange: (code: RentRegimeCode | null) => void;
   onSave: () => void;
   isSaving: boolean;
 }) {
@@ -67,8 +72,17 @@ function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, onHeadcountC
     <div className="rent-config-editor">
       <div className="rent-config-topline">
         <label><span>Cupos autorizados</span><input type="number" min="0" step="1" value={authorizedHeadcount} onChange={(event) => onHeadcountChange(Math.max(0, Number(event.target.value) || 0))} /></label>
-        <button className="rent-primary-button" type="button" onClick={onSave} disabled={isSaving}>{isSaving ? "Guardando…" : "Guardar configuración"}</button>
+        <button className="rent-primary-button" type="button" onClick={onSave} disabled={isSaving || !shiftIds.length || !legalRegimeCode || !shiftCatalog.length}>{isSaving ? "Guardando…" : "Guardar configuración"}</button>
       </div>
+
+      <section className="rent-legal-config" aria-label="Aplicación de la estructura">
+        <div className="rent-legal-config-heading"><div><span>Aplicación</span><strong>Define a qué jornadas y régimen corresponde este perfil.</strong></div></div>
+        <div className="rent-legal-fields">
+          <MultiSelectField id="rent-shift-catalog" label="Jornadas aplicables" value={shiftIds.map(String)} onChange={(values) => onShiftIdsChange(values.map(Number).filter(Number.isFinite))} options={shiftCatalog.map((shift) => ({ value: String(shift.id), label: `${shift.code} · ${shift.name}` }))} placeholder="Selecciona una o más jornadas" searchable searchPlaceholder="Buscar jornada" />
+          <label><span>Régimen legal</span><select value={legalRegimeCode ?? ""} onChange={(event) => onLegalRegimeChange((event.target.value || null) as RentRegimeCode | null)}><option value="">Selecciona un régimen</option><option value="art_25">Artículo 25</option><option value="ordinario">Régimen ordinario</option></select></label>
+        </div>
+        {!shiftCatalog.length ? <p className="rent-config-note">No hay jornadas activas disponibles en el catálogo de Solicitudes de Contratación.</p> : null}
+      </section>
 
       <section className="rent-legal-config" aria-label="Parámetros previsionales del cargo">
         <div className="rent-legal-config-heading">
@@ -126,6 +140,8 @@ export function RentStructuresPage() {
   const [authorizedHeadcount, setAuthorizedHeadcount] = useState(0);
   const [configLines, setConfigLines] = useState<RentStructureConfigLine[]>([]);
   const [legalConfig, setLegalConfig] = useState<RentStructureLegalConfig>({ afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite", includeIncomeTax: false });
+  const [shiftIds, setShiftIds] = useState<number[]>([]);
+  const [legalRegimeCode, setLegalRegimeCode] = useState<RentRegimeCode | null>(null);
   const query = useRentStructureControl(contractId, jobPositionId);
   const saveMutation = useSaveRentStructureConfig(contractId, jobPositionId);
   const contracts = query.data?.contracts ?? [];
@@ -147,9 +163,11 @@ export function RentStructuresPage() {
     setAuthorizedHeadcount(detail?.authorizedHeadcount ?? selectedPosition?.authorizedHeadcount ?? 0);
     setConfigLines((detail?.lines ?? []).filter((line) => line.sectionCode === "imponible" || line.sectionCode === "no_imponible").map((line) => ({ conceptCode: line.conceptCode, conceptName: line.conceptName, sectionCode: line.sectionCode as "imponible" | "no_imponible", amount: line.amount, sortOrder: line.sortOrder })));
     setLegalConfig(detail ? { afpCode: detail.legalScenario.afpCode, healthMode: detail.legalScenario.healthMode, healthProviderName: detail.legalScenario.healthProviderName, healthPlanValue: detail.legalScenario.healthPlanValue, unemploymentContractType: detail.legalScenario.unemploymentContractType, includeIncomeTax: detail.legalScenario.includeIncomeTax } : { afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite", includeIncomeTax: false });
+    setShiftIds(detail?.shiftIds ?? []);
+    setLegalRegimeCode(detail?.legalRegimeCode ?? null);
   }, [detail, selectedPosition]);
 
-  const save = () => saveMutation.mutate({ authorizedHeadcount, lines: configLines, legal: legalConfig });
+  const save = () => saveMutation.mutate({ authorizedHeadcount, lines: configLines, legal: legalConfig, shiftIds, legalRegimeCode });
   const legalLines = detail?.lines.filter((line) => line.sectionCode === "legal_discount") ?? [];
 
   return (
@@ -177,7 +195,8 @@ export function RentStructuresPage() {
           {!selectedPosition ? <div className="rent-empty-panel">Elige un cargo a la izquierda para revisar o configurar sus conceptos.</div> : null}
           {selectedPosition && view === "control" ? <>
             {query.isFetching ? <div className="rent-skeleton-lines"><i /><i /><i /><i /></div> : detail ? <>
-              <div className="rent-legal-context"><span>{detail.authorizedHeadcount} cupos autorizados</span><span>{detail.legalScenario.afpName}</span><span>{detail.legalScenario.healthMode === "fonasa" ? "Fonasa" : detail.legalScenario.healthProviderName}</span><span>{detail.legalScenario.unemploymentContractType === "indefinite" ? "Contrato indefinido" : "Plazo fijo u obra"}</span>{detail.legalScenario.includeIncomeTax ? <span className="is-tax-active">Impuesto único incluido</span> : null}</div>
+              <div className="rent-legal-context"><span>{detail.authorizedHeadcount} cupos autorizados</span><span>{detail.legalRegimeCode === "art_25" ? "Artículo 25" : detail.legalRegimeCode === "ordinario" ? "Régimen ordinario" : "Régimen pendiente"}</span><span>{detail.shiftIds.length ? `${detail.shiftIds.map((id) => query.data?.shiftCatalog.find((shift) => shift.id === id)?.code ?? id).join(", ")}` : "Jornadas pendientes de clasificar"}</span><span>{detail.legalScenario.afpName}</span><span>{detail.legalScenario.healthMode === "fonasa" ? "Fonasa" : detail.legalScenario.healthProviderName}</span><span>{detail.legalScenario.unemploymentContractType === "indefinite" ? "Contrato indefinido" : "Plazo fijo u obra"}</span>{detail.legalScenario.includeIncomeTax ? <span className="is-tax-active">Impuesto único incluido</span> : null}</div>
+              {detail.shiftClassificationPending ? <div className="rent-feedback">Esta estructura existente se conserva y debe clasificarse con sus jornadas y régimen antes de considerarla completa.</div> : null}
               {!detail.calculationAvailable ? <div className="rent-feedback rent-feedback-error">No existen parámetros legales vigentes para calcular la estimación.</div> : null}
               <div className="rent-pay-slip">
                 <div className="rent-pay-slip-columns">
@@ -190,7 +209,7 @@ export function RentStructuresPage() {
               <p className="rent-detail-footnote">Estimación estructural del cargo. No corresponde a la liquidación de una persona{detail.legalScenario.includeIncomeTax ? " e incorpora el impuesto único estimado según la tabla SII vigente" : " ni incorpora impuestos"}, APV u otros descuentos individuales.</p>
             </> : <div className="rent-empty-panel">Este cargo aún no tiene una estructura de renta configurada.</div>}
           </> : null}
-          {selectedPosition && view === "configuracion" ? <ConfigEditor authorizedHeadcount={authorizedHeadcount} lines={configLines} legal={legalConfig} catalog={query.data?.legalCatalog ?? { afps: [] }} onHeadcountChange={setAuthorizedHeadcount} onLinesChange={setConfigLines} onLegalChange={setLegalConfig} onSave={save} isSaving={saveMutation.isPending} /> : null}
+          {selectedPosition && view === "configuracion" ? <ConfigEditor authorizedHeadcount={authorizedHeadcount} lines={configLines} legal={legalConfig} catalog={query.data?.legalCatalog ?? { afps: [] }} shiftCatalog={query.data?.shiftCatalog ?? []} shiftIds={shiftIds} legalRegimeCode={legalRegimeCode} onHeadcountChange={setAuthorizedHeadcount} onLinesChange={setConfigLines} onLegalChange={setLegalConfig} onShiftIdsChange={setShiftIds} onLegalRegimeChange={setLegalRegimeCode} onSave={save} isSaving={saveMutation.isPending} /> : null}
         </section>
       </section>
     </PageShell>
