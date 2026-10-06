@@ -178,11 +178,11 @@ Revision 2026-10-05 presentaciones de actividades: tras integrar la interacción
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7454554,
+  "distTotalBytes": 7455976,
   "jsFileCount": 74,
   "jsTotalBytes": 5332834,
   "cssFileCount": 15,
-  "cssTotalBytes": 531983,
+  "cssTotalBytes": 533405,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -212,6 +212,8 @@ Revision 2026-10-05 presentaciones de actividades: tras integrar la interacción
   ]
 }
 ```
+
+Revision 2026-10-05 superficies Portal de Comunicaciones: GitHub Actions `Audit Enterprise Guardrails` run `37402162939` mide 7,455,976 bytes totales, 5,332,834 bytes JS y 533,405 bytes CSS (+1,422 CSS respecto al baseline de `main`). El incremento CSS corresponde a espaciado común, superficies consistentes y estados vacíos compactos; no agrega dependencias, vendors ni assets. Se registra la medición canónica CI con tolerancia cero.
 
 Revision 2026-08-25 reingreso BUK: GitHub Actions `32853600278`, con Node 22 y las variables publicas productivas, midio 5,082,308 bytes totales y 2,754,896 bytes JS. El cambio funcional vive en Edge Functions, SQL y tooling operativo; se reconcilian solo los dos totales canonicos de CI (+521/+126 bytes), sin modificar CSS, vendors, assets trackeados ni los presupuestos de tolerancia cero.
 
