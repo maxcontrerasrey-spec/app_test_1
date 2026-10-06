@@ -20,8 +20,15 @@ Validación: Guardian local 0 errores/0 advertencias; workflow GitHub `375264186
 
 - [x] Reproducir en producción la diferencia y localizar la causa: jornadas tenía altura explícita, régimen legal solo `min-height`, que Safari renderizaba a 18 px.
 - [x] Fijar altura explícita uniforme para ambos controles y mantener el chip dentro de la misma caja.
-- [ ] Ejecutar build, Guardian y `git diff --check`; desplegar mediante PR y confirmar visualmente ambas medidas en producción.
-- [ ] Registrar verificación final de producción.
+- [x] Ejecutar build, Guardian y `git diff --check`; publicar el selector legal con altura explícita y comprobar en Safari productivo ambos campos a 30,09 px.
+- [x] Registrar que las cajas aún quedaban desfasadas 2,39 px en el eje vertical y abrir la corrección del espacio entre etiqueta y control.
+
+## Alinear en el mismo eje las etiquetas y controles de jornadas/régimen — 2026-10-06
+
+- [x] Medir en producción etiquetas, cajas y coordenadas: alturas iguales de 30,09 px, pero el control de jornadas empezaba 2,39 px más abajo.
+- [x] Localizar la cascada: `.field-group` aplica `gap: 0.45rem`; el selector legal usa `gap: 0.28rem`.
+- [ ] Igualar el espacio entre etiqueta y caja, validar con una jornada seleccionada, ejecutar build/Guardian y publicar.
+- [ ] Medir en Safari productivo que los controles comienzan en el mismo eje y dejar evidencia final.
 
 ## Revisar y preparar boletines compartidos por Comunicaciones — 2026-10-06
 
