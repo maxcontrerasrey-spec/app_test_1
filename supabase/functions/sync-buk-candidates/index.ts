@@ -3147,7 +3147,7 @@ async function resolveBukEmployeeForSync(
     const matchingEmployees = await lookupBukEmployeesByDocumentNumber(payload);
     if (matchingEmployees.length === 0) {
       throw new BukEmployeeResolutionError(
-        "BUK rechazó la creación porque el RUT ya está en uso, pero la búsqueda por documento no devolvió fichas activas, inactivas ni pendientes. No se creó la ficha ni se encolaron documentos. Un administrador de BUK debe revisar/liberar el registro de identidad bloqueado; luego se puede reintentar este mismo folio.",
+        "BUK rechazó la creación porque el RUT ya está en uso, pero la búsqueda por documento no devolvió fichas activas, inactivas ni pendientes. No se creó la ficha ni se encolaron documentos. BUK debe identificar y resolver la entidad o restricción que ocupa el RUT antes de reintentar este mismo folio.",
         [{
           type: "buk_duplicate_identity_not_resolvable",
           providerStatus: error instanceof BukApiError ? error.status : null,
@@ -3155,7 +3155,7 @@ async function resolveBukEmployeeForSync(
           lookupEndpoint: new URL(buildBukBaseUrl()).pathname,
           queriedStatuses: ["activo", "inactivo", "pendiente"],
           exactDocumentMatches: 0,
-          nextAction: "Revisar/liberar el índice de unicidad del documento en BUK y reintentar el job existente."
+          nextAction: "Identificar con BUK la entidad o restricción que ocupa el documento; rectificarla y reintentar el job existente."
         }]
       );
     }
