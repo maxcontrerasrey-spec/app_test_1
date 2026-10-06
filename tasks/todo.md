@@ -98,12 +98,14 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 Resultado: la causa era que el botón del informe estaba dentro de un bloque de acciones limitado a `completed`, `approved` y `hired`; el estado `rejected` quedaba excluido. En producción, Edwar Muñoz (RC-0245, candidato rechazado) tiene `report_status=generated`, certificado e informe integrados en R2. La interfaz ahora muestra `INF` en la fila y “Descargar informe psicolaboral” en el detalle para cualquier estado cuando el artefacto está generado. La RPC de descarga conserva la autorización de usuarios con acceso al módulo. Integrado en PR #57; CI y Cloudflare Pages pasaron. Se verificó que `gestion.busesjm.cl` publica el nuevo bundle con ambas etiquetas de descarga.
 ## Permitir una estructura de renta por cargo y jornada — 2026-10-06
 
-- [ ] Preservar el trabajo existente y revisar en producción el estado real de estructuras y jornadas asociadas; no inferir jornada para estructuras legadas sin clasificación.
-- [ ] Cambiar el modelo a una estructura por contrato + cargo + jornada, manteniendo autorización BUK, auditoría, cálculos y RLS; cupos quedan asociados a cada variante.
-- [ ] Persistir en cada contrato/cargo qué jornadas aplican, independiente de que ya tengan una estructura, y permitir configurarlo antes de crear estructuras.
-- [ ] Ajustar RPC de lectura/guardado y frontend para elegir una jornada aplicable por estructura, crear más de una para el mismo cargo y mostrar el nombre comprensible (ej. `4x3`) sin código interno.
-- [ ] Cubrir con pruebas: dos jornadas mismo cargo con datos separados, guardar una sin alterar otra, impedir configurar jornadas no aplicables, control de duplicados, preservar estructuras sin jornada y mantener bloqueos de permisos/BUK.
-- [ ] Ejecutar validación EEES, Guardian, build, auditorías Supabase y diff-check; desplegar a producción por el flujo vigente y verificar una segunda estructura real de prueba en la ruta de negocio.
+- [x] Preservar el trabajo existente y revisar en producción el estado real de estructuras y jornadas asociadas; no inferir jornada para estructuras legadas sin clasificación.
+- [x] Cambiar el modelo a una estructura por contrato + cargo + jornada, manteniendo autorización BUK, auditoría, cálculos y RLS; cupos quedan asociados a cada variante.
+- [x] Persistir en cada contrato/cargo qué jornadas aplican, independiente de que ya tengan una estructura, y permitir configurarlo antes de crear estructuras.
+- [x] Ajustar RPC de lectura/guardado y frontend para elegir una jornada aplicable por estructura, crear más de una para el mismo cargo y mostrar el nombre comprensible (ej. `4x3`) sin código interno.
+- [x] Cubrir con pruebas: dos jornadas mismo cargo con datos separados, guardar una sin alterar otra, impedir configurar jornadas no aplicables, control de duplicados, preservar estructuras sin jornada y mantener bloqueos de permisos/BUK.
+- [ ] Ejecutar validación EEES, build, auditorías Supabase y diff-check; desplegar a producción por el flujo vigente y comprobar el flujo con una cuenta autenticada.
+
+Resultado productivo al 2026-10-06: PR #59 integrado. La interfaz publicada incluye la selección de jornadas aplicables por cargo y la base contiene la migración `20261006224546`; `hr_rent_position_shifts` conserva la única asociación histórica inequívoca y las otras 12 estructuras permanecen sin jornada. Las tres RPC nuevas exigen autenticación; `anon` no puede ejecutarlas. Guardian local y CI, build de preview y migración productiva pasaron. Safari quedó en la pantalla de login, por lo que falta comprobar con sesión autenticada el flujo interactivo de selección/guardado.
 
 Corrección de alcance: cada cargo define su propio conjunto de jornadas aplicables. Se deben guardar esas jornadas primero; solo las jornadas guardadas habilitan crear una estructura.
 

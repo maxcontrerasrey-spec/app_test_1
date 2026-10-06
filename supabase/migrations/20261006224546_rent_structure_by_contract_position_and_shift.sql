@@ -63,7 +63,7 @@ comment on column public.hr_rent_structures.shift_id is
 
 -- Keep the established legal calculator while scoping its result to one jornada profile.
 create or replace function public.get_hr_rent_structure_detail_variant_base(
-  p_contract_id bigint default null,
+  p_contract_id bigint,
   p_job_position_id bigint,
   p_structure_id uuid,
   p_month date default current_date
@@ -320,7 +320,7 @@ end;
 $function$;
 
 create or replace function public.get_hr_rent_structure_detail_variant(
-  p_contract_id bigint default null,
+  p_contract_id bigint,
   p_job_position_id bigint,
   p_structure_id uuid,
   p_month date default current_date
