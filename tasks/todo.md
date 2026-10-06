@@ -11,6 +11,10 @@ Resultado de revisión: 147 PDF (73 JM y 74 CA; 768.451.547 bytes, aprox. 733 Mi
 
 ## Carga de boletines como borradores y mejora de ficha editorial — 2026-10-06
 
+- [x] Investigar el rechazo R2 de producción: el RPC guardaba el borrador, pero una validación redundante a `/auth/v1/user` rechazaba el JWT (`session_not_found`) aunque PostgREST aceptaba ese mismo JWT.
+- [x] Unificar el guard del endpoint con las RPC `user_can_manage_communications` y `can_upload_communications_pdf`, que aplican el rol y el estado del borrador en base de datos.
+- [ ] Ejecutar verificaciones locales, desplegar el arreglo y reintentar el PDF del borrador existente; comprobar objeto, hash y metadatos en R2 sin publicar.
+
 - [x] Recuperar sesión autenticada ERP; revisar la ruta viva, el editor existente y el esquema/R2 productivos antes de cargar.
 - [x] Revisar el contrato editorial/catálogo: la bajada ya era editable; faltaban persistencia y representación de icono por boletín.
 - [x] Implementar icono de catálogo cerrado en el editor y mostrar icono, título, bajada y fecha en la lista; conservar `comunicador_`/`admin` como únicos editores.

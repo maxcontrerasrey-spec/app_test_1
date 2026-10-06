@@ -67,7 +67,9 @@ describe("Portal de Comunicaciones", () => {
   });
 
   it("valida sesión, formato, tamaño e integridad antes de servir archivos privados de R2", () => {
-    expect(storageRoute).toContain("/auth/v1/user");
+    expect(storageRoute).toContain('"user_can_manage_communications"');
+    expect(storageRoute).toContain('"can_upload_communications_pdf"');
+    expect(storageRoute).not.toContain("/auth/v1/user");
     expect(storageRoute).toContain("application/pdf");
     expect(storageRoute).toContain("MAX_PDF_BYTES = 20 * 1024 * 1024");
     expect(storageRoute).toContain("isPdfSignature");

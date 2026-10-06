@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-06 - Los endpoints R2 deben validar con el mismo JWT y el mismo guard que las RPC
+
+- No agregar una consulta separada a `/auth/v1/user` antes de llamar RPCs protegidas si PostgREST ya valida el JWT y la RPC vuelve a comprobar cuenta activa, rol y estado del registro.
+- Las sesiones revocadas pueden dejar un JWT aceptable por PostgREST hasta su vencimiento mientras Auth ya no encuentra la sesión; esa doble validación crea un fallo solo en el endpoint auxiliar.
+- Cubrir ambas caras: un JWT no válido debe ser rechazado por Supabase, y un usuario autenticado sin perfil/rol activo debe fallar en la RPC de autorización; no reemplazar esto por service role ni permisos abiertos.
+
 ## 2026-10-06 - El layout elegido debe sobrevivir a los estados vacíos del Portal
 
 - No basta con leer la selección guardada en Puck: renderizar el mismo contenedor de grilla/tarjetas cuando la consulta no devuelve publicaciones, para que la composición sea visible y comprobable antes de cargar contenido.

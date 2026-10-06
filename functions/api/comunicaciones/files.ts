@@ -52,23 +52,15 @@ async function configuration(env: CommunicationsStorageEnv) {
   return { baseUrl, anonKey };
 }
 
-async function authenticatedUser(env: CommunicationsStorageEnv, token: string) {
-  const config = await configuration(env);
-  const response = await fetch(`${config.baseUrl}/auth/v1/user`, {
-    headers: { apikey: config.anonKey, authorization: `Bearer ${token}` }
-  });
-  if (!response.ok) throw new Error("unauthorized");
-  return config;
-}
-
 async function rpc(env: CommunicationsStorageEnv, token: string, name: string, body: Record<string, unknown>) {
-  const { baseUrl, anonKey } = await authenticatedUser(env, token);
+  const { baseUrl, anonKey } = await configuration(env);
   const response = await fetch(`${baseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: { apikey: anonKey, authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify(body)
   });
   const payload = await response.json().catch(() => null) as { message?: string } | null;
+  if (response.status === 401) throw new Error("unauthorized");
   if (!response.ok) throw new Error(payload?.message || "communications_storage_operation_failed");
   return payload;
 }
