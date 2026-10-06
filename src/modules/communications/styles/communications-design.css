@@ -239,9 +239,10 @@
 .communications-site-events.is-tarjetas-3 { padding: 0; background: transparent; }
 .communications-site-event-list.is-tarjetas-2,
 .communications-site-event-list.is-tarjetas-3 {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+.communications-site-event-list.is-tarjetas-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .communications-site-event-list.is-tarjetas-2 .communications-site-event,
 .communications-site-event-list.is-tarjetas-3 .communications-site-event {
   aspect-ratio: 1.12 / 1;
@@ -267,11 +268,21 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: clamp(17px, 2.2vw, 25px);
-  border: 1px dashed #ccd3cf;
+  border: 1px solid #dfe4e1;
   border-radius: var(--site-card-radius);
-  background: rgba(255,255,255,.42);
+  background: #fff;
   color: var(--site-muted);
 }
+.communications-site-event-list.is-list.is-empty .communications-site-event-empty {
+  aspect-ratio: auto;
+  min-height: 72px;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 16px;
+}
+.communications-site-event-list.is-list.is-empty .communications-site-event-empty svg { display: none; }
+.communications-site-event-list.is-list.is-empty .communications-site-event-empty > span { margin-top: 0; }
+.communications-site-event-list.is-list.is-empty .communications-site-event-empty strong { font-size: 12px; }
 .communications-site-event-empty svg { width: 24px; height: 24px; color: var(--site-accent); }
 .communications-site-event-empty > span { margin-top: auto; color: var(--site-accent); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .communications-site-event-empty strong { color: var(--site-ink); font-size: 14px; font-weight: 630; }
