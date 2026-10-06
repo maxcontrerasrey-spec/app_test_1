@@ -4166,6 +4166,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - `min-height` no igualó el selector legal con el control personalizado de jornadas: Safari mantuvo el `select` en 18 px aunque la regla declarara el mínimo compartido.
 - Para controles hermanos con el mismo propósito visual, verificar `getBoundingClientRect()` en producción y fijar `height`, `min-height`, `max-height` y `box-sizing` en ambos; no dar por válida la igualdad mirando solo el CSS fuente.
+- Igual altura no garantiza alineación: comparar también las coordenadas `y` y el espacio etiqueta-control. Un wrapper con `.field-group` puede heredar un `gap` distinto del `<label>` hermano; igualar explícitamente ambos espacios.
 
 ## 2026-09-30 - Un módulo vacío también necesita una composición operativa completa
 
