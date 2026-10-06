@@ -7,9 +7,13 @@
 - [x] Añadir y probar una opción manual restringida para refrescar solo cargos/áreas BUK, sin instalar ni ejecutar la sincronización completa de trabajadores.
 - [x] Ejecutar el refresh de catálogo en producción y detectar la diferencia frente a la proyección previa (824 reales vs 827 estimadas).
 - [x] Corregir el recorrido de etiquetas para continuar si una asociación por nombre no supera la validación exacta; agregar regresión.
-- [ ] Publicar esta corrección y refrescar nuevamente solo el catálogo; reconciliar el conteo real.
-- [ ] Verificar que las asociaciones falsas de RC-0114 permanezcan inactivas y sobrevivan relaciones operativas válidas.
-- [ ] Reconciliar código desplegado con Git, registrar límites (BUK aún debe habilitar el cargo en área exacta) y evidencia final.
+- [x] Publicar esta corrección y refrescar nuevamente solo el catálogo; reconciliar el conteo real.
+- [x] Verificar que las asociaciones falsas de RC-0114 permanezcan inactivas y sobrevivan relaciones operativas válidas.
+- [x] Reconciliar código desplegado con Git, registrar límites (BUK aún debe habilitar el cargo en área exacta) y evidencia final.
+
+Resultado productivo final (2026-10-06): PR #61 (`2871e9df`) corrigió la resolución cargo-área por nombre duplicado; PR #62 (`6ccf7d16`) agregó dispatch manual `catalog_only` que omite checkout, instalación y sincronización del padrón; PR #63 (`33b9d4ca`) corrigió el recorrido para seguir con etiquetas más amplias si las más específicas no superan el chequeo exacto. Edge Function `sync-buk-job-positions` activa en versión 105. Los dispatches #37546128604 y #37547259656 terminaron exitosamente, ambos ejecutando solo el catálogo y devolviendo `synced=227`, `contractAccessSynced=824`; las 824 relaciones quedaron activas con marca del último refresh. La proyección manual anterior estimó 827; esa diferencia de tres no se fabricó como relaciones ni se pudo reproducir en las dos corridas con la respuesta actual de BUK.
+
+En `RC-0114`/contrato 45, `CONDUCTOR` (BUK role 165) quedó inactivo para las áreas equivocadas 1160 (padre sin centro de costo) y 1163 (centro 662); no se creó relación para el área operativa 997/centro BUK 535, pues BUK no la habilita aún. La regla queda fail-closed: un administrador BUK debe habilitar el cargo en el área exacta antes de reintentar esa ficha. Una muestra válida de `EMIN - MEL`/contrato 40 mantuvo activos `CONDUCTOR DE BUS` y `CONDUCTOR DE TAXI BUS` para el área 2051. El padrón no se recalculó: la última corrida sigue siendo `d02aa970-1234-43e5-b739-6a63f1427a99`, completed, 5.480/5.480, sin error. No se reencolaron candidatos; las incidencias RUT duplicado y timeout de `RC-0226` son independientes y no se alteraron.
 
 # Retiro integral de precandidatos y enlaces públicos — 2026-10-06
 
