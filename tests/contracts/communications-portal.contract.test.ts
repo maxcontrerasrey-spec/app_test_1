@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const migration = readFileSync("supabase/migrations/20261005165138_communications_portal.sql", "utf8");
 const designMigration = readFileSync("supabase/migrations/20261005165140_communications_visual_editor.sql", "utf8");
+const quickLinksMigration = readFileSync("supabase/migrations/20261006111015_communications_quick_access_links.sql", "utf8");
 const nestingMigration = readFileSync("supabase/migrations/20261005180221_nest_communications_portal_under_hr.sql", "utf8");
 const cmsMigration = readFileSync("supabase/migrations/20261005190355_communications_editorial_official_cms.sql", "utf8");
 const storageRoute = readFileSync("functions/api/comunicaciones/files.ts", "utf8");
@@ -130,5 +131,17 @@ describe("Portal de Comunicaciones", () => {
     expect(modulePage).toContain("Programar publicación");
     expect(modulePage).toContain("Previsualizar");
     expect(modulePage).toContain("Vencimiento (opcional)");
+  });
+
+  it("mantiene accesos directos editables con destinos internos cerrados y mosaicos de agenda visibles sin contenido", () => {
+    expect(siteConfig).toContain('QuickLinksSection: {');
+    expect(siteConfig).toContain('label: "Accesos directos"');
+    expect(siteConfig).toContain('"Mosaico · 3 columnas"');
+    expect(siteConfig).toContain('communications-site-event-empty');
+    expect(siteConfig).toContain('onQuickAccess:');
+    expect(quickLinksMigration).toContain("'QuickLinksSection'");
+    expect(quickLinksMigration).toContain("('actualidad', 'oficial', 'agenda', 'boletines')");
+    expect(quickLinksMigration).not.toMatch(/execute\s+format|dynamic sql|security\s+definer/i);
+    expect(modulePage).not.toContain('communications-brand-mark" aria-hidden="true">jm');
   });
 });

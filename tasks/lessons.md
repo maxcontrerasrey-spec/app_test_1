@@ -1,5 +1,12 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-06 - El layout elegido debe sobrevivir a los estados vacíos del Portal
+
+- No basta con leer la selección guardada en Puck: renderizar el mismo contenedor de grilla/tarjetas cuando la consulta no devuelve publicaciones, para que la composición sea visible y comprobable antes de cargar contenido.
+- Los valores predeterminados nuevos no modifican diseños Puck ya publicados; actualizar la portada existente mediante el flujo versionado normal para conservar historial e identidad de autor.
+- Diagnosticar bordes y superficies mirando los contenedores padre y sus fondos: retirar tarjetas externas anidadas si duplican la superficie blanca y hacen coincidir el borde con el cambio de fondo.
+- Mantener accesos internos como bloques configurables con destinos allowlist; no permitir URLs/HTML libres en el JSON del editor.
+
 ## 2026-10-05 - Las secciones editoriales requieren un inset constante
 
 - Dar a títulos y contenido un padding interior común en todas las superficies; no dejar encabezados al ras del borde.

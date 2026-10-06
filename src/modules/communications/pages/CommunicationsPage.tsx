@@ -250,12 +250,18 @@ export function CommunicationsPage() {
     items: publishedVisibleItems,
     featured: publishedVisibleItems.find((item) => item.isFeatured) ?? publishedVisibleItems.find((item) => item.contentType !== "boletin"),
     onOpen: (item: CommunicationItem) => setOpenItem(item),
-    onDownload: (item: CommunicationItem) => { void download(item); }
+    onDownload: (item: CommunicationItem) => { void download(item); },
+    onQuickAccess: (target: "actualidad" | "oficial" | "agenda" | "boletines") => {
+      if (target === "oficial") setChannel("oficial");
+      else setChannel("editorial");
+      setFilter(target === "agenda" ? "evento" : target === "boletines" ? "boletin" : "todas");
+      window.setTimeout(() => document.getElementById(target === "agenda" ? "communications-agenda" : target === "boletines" ? "communications-bulletins" : "communications-latest")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    }
   };
 
   return (
     <PageShell className="communications-page">
-      <header className="communications-topbar"><div className="communications-brand"><span className="communications-brand-mark" aria-hidden="true">jm</span><span>Comunicaciones <small>BUSES JM</small></span></div><label className="communications-search communications-topbar-search"><Icon name="search" /><input aria-label="Buscar publicaciones" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar" /></label><div className="communications-topbar-actions">{canManage ? <><button type="button" className="communications-topbar-button" onClick={() => navigate("/recursos-humanos/comunicaciones/diseno")}>Diseñar portal</button><button type="button" className="communications-new-button" onClick={() => openEditor()}><Icon name="plus" />Nueva publicación</button></> : null}</div></header>
+      <header className="communications-topbar"><div className="communications-brand"><span>Comunicaciones</span></div><label className="communications-search communications-topbar-search"><Icon name="search" /><input aria-label="Buscar publicaciones" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar" /></label><div className="communications-topbar-actions">{canManage ? <><button type="button" className="communications-topbar-button" onClick={() => navigate("/recursos-humanos/comunicaciones/diseno")}>Diseñar portal</button><button type="button" className="communications-new-button" onClick={() => openEditor()}><Icon name="plus" />Nueva publicación</button></> : null}</div></header>
 
       <section className="communications-main" id="communications-latest">
         <nav className="communications-levels" aria-label="Niveles de comunicaciones"><button type="button" aria-current={channel === "editorial" ? "page" : undefined} className={channel === "editorial" ? "is-active" : ""} onClick={() => { setChannel("editorial"); setFilter("todas"); }}>Editorial<span>Historias y vida en Buses JM</span></button><button type="button" aria-current={channel === "oficial" ? "page" : undefined} className={channel === "oficial" ? "is-active" : ""} onClick={() => { setChannel("oficial"); setFilter("todas"); }}>Oficial<span>Comunicados e información vigente</span></button></nav>
