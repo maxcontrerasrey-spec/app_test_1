@@ -56,6 +56,12 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 # Tareas y Roadmap de Desarrollo
 
+## Corregir selector de jornadas en Estructuras de Renta — 2026-10-06
+
+- [ ] Ajustar la escala del campo de jornadas para que tenga la misma altura que el régimen y no parta el texto del placeholder en anchos de escritorio.
+- [ ] Evitar que el contenedor de aplicación recorte el menú; mantener opciones con altura uniforme, contraste y área clickeable suficiente.
+- [ ] Verificar desktop y móvil con build, Guardian y diff check; publicar y comprobar el control en producción.
+
 ## Reparar generación BUK y carga documental para RC-0226 — 2026-10-06
 
 - [x] Confirmar identidad y contrato del trabajador contra el registro ERP productivo, las fichas BUK y la cola de generación/documentos.
