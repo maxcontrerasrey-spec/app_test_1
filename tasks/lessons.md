@@ -21,6 +21,12 @@
 - Diagnosticar bordes y superficies mirando los contenedores padre y sus fondos: retirar tarjetas externas anidadas si duplican la superficie blanca y hacen coincidir el borde con el cambio de fondo.
 - Mantener accesos internos como bloques configurables con destinos allowlist; no permitir URLs/HTML libres en el JSON del editor.
 
+## 2026-10-06 - No rehidratar un formulario de detalle en cada respuesta de consulta
+
+- Si React Query conserva `placeholderData` al cambiar el registro, nunca usar ese valor transitorio para inicializar el formulario del registro nuevo; mantener visible el catálogo y mostrar carga en el editor hasta recibir la respuesta correspondiente.
+- La hidratación del formulario debe ocurrir una vez por identidad de selección. Las respuestas de fondo del mismo registro no deben borrar cambios locales que la persona todavía está editando.
+- Cubrir ambas condiciones con una prueba: ignorar placeholder de otro registro y no volver a hidratar la misma selección en refetches.
+
 ## 2026-10-05 - Las secciones editoriales requieren un inset constante
 
 - Dar a títulos y contenido un padding interior común en todas las superficies; no dejar encabezados al ras del borde.

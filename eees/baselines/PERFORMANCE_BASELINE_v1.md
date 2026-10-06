@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.53
+version: 1.0.54
 status: Activo
 language: es-CL
 owner: Quality
@@ -186,9 +186,9 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7467523,
+  "distTotalBytes": 7467769,
   "jsFileCount": 74,
-  "jsTotalBytes": 5338800,
+  "jsTotalBytes": 5339046,
   "cssFileCount": 15,
   "cssTotalBytes": 538986,
   "budgetPolicy": {
@@ -220,6 +220,8 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
   ]
 }
 ```
+
+Revision 2026-10-06 Estructuras de Renta: Guardian CI run `37496635129` midió 246 bytes adicionales en `dist` y JS para evitar que la selección de otro cargo rehidrate el borrador activo y para ocultar el editor mientras carga el detalle correcto. CSS, vendors y assets trackeados no cambian. Se actualizan solo los totales canónicos de CI a 7,467,769 bytes y 5,339,046 bytes; la tolerancia permanece en cero.
 
 Revision 2026-10-05 superficies Portal de Comunicaciones: GitHub Actions `Audit Enterprise Guardrails` run `37402162939` mide 7,455,976 bytes totales, 5,332,834 bytes JS y 533,405 bytes CSS (+1,422 CSS respecto al baseline de `main`). El incremento CSS corresponde a espaciado común, superficies consistentes y estados vacíos compactos; no agrega dependencias, vendors ni assets. Se registra la medición canónica CI con tolerancia cero.
 

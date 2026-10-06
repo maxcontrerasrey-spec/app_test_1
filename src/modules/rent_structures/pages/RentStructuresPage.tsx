@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MultiSelectField, PageShell } from "../../../shared/ui";
 import { useRentStructureControl, useSaveRentStructureConfig } from "../hooks/useRentStructuresQueries";
 import { formatClpInputValue, parseClpInputValue } from "../lib/rentAmountInput";
@@ -142,12 +142,14 @@ export function RentStructuresPage() {
   const [legalConfig, setLegalConfig] = useState<RentStructureLegalConfig>({ afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite", includeIncomeTax: false });
   const [shiftIds, setShiftIds] = useState<number[]>([]);
   const [legalRegimeCode, setLegalRegimeCode] = useState<RentRegimeCode | null>(null);
+  const hydratedSelectionRef = useRef<string | null>(null);
   const query = useRentStructureControl(contractId, jobPositionId);
   const saveMutation = useSaveRentStructureConfig(contractId, jobPositionId);
   const contracts = query.data?.contracts ?? [];
   const positions = query.data?.positions ?? [];
   const selectedPosition = useMemo(() => positions.find((position) => position.id === jobPositionId) ?? null, [jobPositionId, positions]);
   const detail = query.data?.structure ?? null;
+  const selectionKey = contractId && jobPositionId ? `${contractId}:${jobPositionId}` : null;
 
   useEffect(() => {
     if (!contractId && contracts.length) {
@@ -160,12 +162,17 @@ export function RentStructuresPage() {
   }, [contractId, contracts]);
   useEffect(() => { if (jobPositionId && !positions.some((position) => position.id === jobPositionId)) setJobPositionId(null); }, [jobPositionId, positions]);
   useEffect(() => {
+    // React Query conserva el resultado anterior como placeholder al cambiar de cargo.
+    // No debe hidratar el formulario con ese detalle ni volver a pisar un borrador
+    // cuando el mismo cargo recibe una actualización de fondo.
+    if (!selectionKey || query.isPlaceholderData || hydratedSelectionRef.current === selectionKey) return;
     setAuthorizedHeadcount(detail?.authorizedHeadcount ?? selectedPosition?.authorizedHeadcount ?? 0);
     setConfigLines((detail?.lines ?? []).filter((line) => line.sectionCode === "imponible" || line.sectionCode === "no_imponible").map((line) => ({ conceptCode: line.conceptCode, conceptName: line.conceptName, sectionCode: line.sectionCode as "imponible" | "no_imponible", amount: line.amount, sortOrder: line.sortOrder })));
     setLegalConfig(detail ? { afpCode: detail.legalScenario.afpCode, healthMode: detail.legalScenario.healthMode, healthProviderName: detail.legalScenario.healthProviderName, healthPlanValue: detail.legalScenario.healthPlanValue, unemploymentContractType: detail.legalScenario.unemploymentContractType, includeIncomeTax: detail.legalScenario.includeIncomeTax } : { afpCode: "habitat", healthMode: "fonasa", healthProviderName: "Fonasa", healthPlanValue: 0, unemploymentContractType: "indefinite", includeIncomeTax: false });
     setShiftIds(detail?.shiftIds ?? []);
     setLegalRegimeCode(detail?.legalRegimeCode ?? null);
-  }, [detail, selectedPosition]);
+    hydratedSelectionRef.current = selectionKey;
+  }, [detail, selectedPosition, selectionKey, query.isPlaceholderData]);
 
   const save = () => saveMutation.mutate({ authorizedHeadcount, lines: configLines, legal: legalConfig, shiftIds, legalRegimeCode });
   const legalLines = detail?.lines.filter((line) => line.sectionCode === "legal_discount") ?? [];
@@ -209,7 +216,7 @@ export function RentStructuresPage() {
               <p className="rent-detail-footnote">Estimación estructural del cargo. No corresponde a la liquidación de una persona{detail.legalScenario.includeIncomeTax ? " e incorpora el impuesto único estimado según la tabla SII vigente" : " ni incorpora impuestos"}, APV u otros descuentos individuales.</p>
             </> : <div className="rent-empty-panel">Este cargo aún no tiene una estructura de renta configurada.</div>}
           </> : null}
-          {selectedPosition && view === "configuracion" ? <ConfigEditor authorizedHeadcount={authorizedHeadcount} lines={configLines} legal={legalConfig} catalog={query.data?.legalCatalog ?? { afps: [] }} shiftCatalog={query.data?.shiftCatalog ?? []} shiftIds={shiftIds} legalRegimeCode={legalRegimeCode} onHeadcountChange={setAuthorizedHeadcount} onLinesChange={setConfigLines} onLegalChange={setLegalConfig} onShiftIdsChange={setShiftIds} onLegalRegimeChange={setLegalRegimeCode} onSave={save} isSaving={saveMutation.isPending} /> : null}
+          {selectedPosition && view === "configuracion" ? query.isPlaceholderData ? <div className="rent-empty-panel" role="status">Cargando la estructura de este cargo…</div> : <ConfigEditor authorizedHeadcount={authorizedHeadcount} lines={configLines} legal={legalConfig} catalog={query.data?.legalCatalog ?? { afps: [] }} shiftCatalog={query.data?.shiftCatalog ?? []} shiftIds={shiftIds} legalRegimeCode={legalRegimeCode} onHeadcountChange={setAuthorizedHeadcount} onLinesChange={setConfigLines} onLegalChange={setLegalConfig} onShiftIdsChange={setShiftIds} onLegalRegimeChange={setLegalRegimeCode} onSave={save} isSaving={saveMutation.isPending} /> : null}
         </section>
       </section>
     </PageShell>
