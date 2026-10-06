@@ -184,11 +184,11 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7462510,
+  "distTotalBytes": 7463073,
   "jsFileCount": 74,
-  "jsTotalBytes": 5335261,
+  "jsTotalBytes": 5334350,
   "cssFileCount": 15,
-  "cssTotalBytes": 537512,
+  "cssTotalBytes": 538986,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -365,3 +365,5 @@ Revision 2026-10-05 editor visual del Portal: GitHub Actions run `37344840104` m
 Revision 2026-10-05 Portal como submódulo RRHH: GitHub Actions run `37353515714` midió 485 bytes adicionales en `dist` y JS, sin cambio CSS, para la ruta canónica bajo `/recursos-humanos` y los alias compatibles. No agrega dependencias ni assets; se fija el nuevo baseline exacto de CI y la tolerancia permanece en cero.
 
 Revision 2026-10-05 estructura Editorial/Oficial del Portal: el build local mide 7,445,667 bytes totales, 5,328,161 bytes JS y 527,769 bytes CSS. El CMS de publicaciones y su acceso R2 permanecen en rutas/chunks lazy de RRHH; no agrega vendors. El destacado, grilla reciente, boletines, editor enriquecido, calendario de publicación/vencimiento y acuse oficial justifican el aumento, que se reconciliará con el artefacto canónico CI antes del cierre.
+
+Revision 2026-10-06 boletines del Portal: la medición local aumenta 563 bytes totales; JS baja 911 bytes y CSS sube 1.474 bytes para mostrar bajada e icono en las fichas editoriales. No agrega dependencias ni aumenta el JavaScript. Se actualizaron las métricas locales exactas; la medición canónica de CI se reconciliará con su artefacto antes de cerrar.

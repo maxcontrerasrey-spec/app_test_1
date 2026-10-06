@@ -6,6 +6,7 @@ const designMigration = readFileSync("supabase/migrations/20261005165140_communi
 const quickLinksMigration = readFileSync("supabase/migrations/20261006111015_communications_quick_access_links.sql", "utf8");
 const nestingMigration = readFileSync("supabase/migrations/20261005180221_nest_communications_portal_under_hr.sql", "utf8");
 const cmsMigration = readFileSync("supabase/migrations/20261005190355_communications_editorial_official_cms.sql", "utf8");
+const bulletinEditorialMigration = readFileSync("supabase/migrations/20261006123602_communications_bulletin_editorial_icon.sql", "utf8");
 const storageRoute = readFileSync("functions/api/comunicaciones/files.ts", "utf8");
 const assetRoute = readFileSync("functions/api/comunicaciones/assets.ts", "utf8");
 const router = readFileSync("src/app/router/AppRouter.tsx", "utf8");
@@ -15,6 +16,7 @@ const access = readFileSync("src/modules/auth/config/access.ts", "utf8");
 const modulePage = readFileSync("src/modules/communications/pages/CommunicationsPage.tsx", "utf8");
 const designPage = readFileSync("src/modules/communications/pages/CommunicationsDesignPage.tsx", "utf8");
 const siteConfig = readFileSync("src/modules/communications/site/communicationsSiteConfig.tsx", "utf8");
+const communicationsApi = readFileSync("src/modules/communications/services/communicationsApi.ts", "utf8");
 const siteStyles = readFileSync("src/modules/communications/styles/communications-design.css", "utf8");
 const authContext = readFileSync("src/modules/auth/context/AuthContext.tsx", "utf8");
 
@@ -132,6 +134,22 @@ describe("Portal de Comunicaciones", () => {
     expect(modulePage).toContain("Programar publicación");
     expect(modulePage).toContain("Previsualizar");
     expect(modulePage).toContain("Vencimiento (opcional)");
+  });
+
+  it("permite configurar icono y bajada en boletines y los muestra en la lista", () => {
+    expect(bulletinEditorialMigration).toContain("add column if not exists icon_key text not null default 'download'");
+    expect(bulletinEditorialMigration).toContain("'icon_key', item.icon_key");
+    expect(bulletinEditorialMigration).toContain("icon_key = excluded.icon_key");
+    expect(bulletinEditorialMigration).toContain("user_can_manage_communications()");
+    expect(bulletinEditorialMigration).toContain("communications_items_icon_key_check");
+    expect(bulletinEditorialMigration).toContain("notify pgrst, 'reload schema'");
+    expect(modulePage).toContain("Icono del boletín");
+    expect(modulePage).toContain("draft.summary");
+    expect(siteConfig).toContain("item.iconKey");
+    expect(siteConfig).toContain("<p>{item.summary}</p>");
+    expect(communicationsApi).toContain("icon_key: item.iconKey");
+    expect(communicationsApi).toContain('iconKey: row.icon_key ?? "download"');
+    expect(siteStyles).toContain("communications-site-bulletin-icon");
   });
 
   it("mantiene accesos directos editables con destinos internos cerrados y mosaicos de agenda visibles sin contenido", () => {

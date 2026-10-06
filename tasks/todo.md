@@ -1,5 +1,26 @@
 ## Portal de Comunicaciones corporativo con documentos en R2 — 2026-10-05
 
+## Revisar y preparar boletines compartidos por Comunicaciones — 2026-10-06
+
+- [x] Inspeccionar el correo y descargar desde los enlaces autorizados de SharePoint los paquetes JM y CA.
+- [x] Inventariar PDFs, fechas, duplicados e integridad; registrar discrepancias en manifiesto.
+- [x] Optimizar copias válidas a 150 dpi, conservar originales, revisar muestras visuales y confirmar límite de 20 MiB del endpoint R2.
+- [ ] Crear registros y cargar en R2 como borradores; pendiente recuperar una sesión ERP autorizada. No publicar sin revisión editorial final.
+
+Resultado de revisión: 147 PDF (73 JM y 74 CA; 768.451.547 bytes, aprox. 733 MiB). 146 válidos optimizados a 99.647.464 bytes (aprox. 95 MiB; reducción de 87%); 130 únicos aptos preparados pesan 85,0 MiB. Se retuvieron 11 documentos con indicios de credenciales/acceso, un PDF dañado y cinco variantes que requieren decisión/confirmación editorial. Las 130 copias preparadas conservan 248 páginas y 156 anotaciones; en dos muestras la extracción de texto seleccionable quedó entre 55% y 57% del original, limitación que requiere revisión antes de publicar. Los originales SharePoint se mantienen intactos. El paquete está en ~/Downloads/BOLETINES_PREPARADOS. No se cargó aún: el ERP redirigió a /login y macOS reportó bloqueada la sesión nativa.
+
+## Carga de boletines como borradores y mejora de ficha editorial — 2026-10-06
+
+- [x] Recuperar sesión autenticada ERP; revisar la ruta viva, el editor existente y el esquema/R2 productivos antes de cargar.
+- [x] Revisar el contrato editorial/catálogo: la bajada ya era editable; faltaban persistencia y representación de icono por boletín.
+- [x] Implementar icono de catálogo cerrado en el editor y mostrar icono, título, bajada y fecha en la lista; conservar `comunicador_`/`admin` como únicos editores.
+- [x] Aplicar y verificar la migración productiva `20261006123602`; confirmar RPC de lectura/escritura, permisos de tabla y ejecución.
+- [x] Validar build, contrato del módulo, Guardian y auditorías de migración/seguridad; queda pendiente la comprobación UI con el nuevo bundle.
+- [ ] Cargar solo los PDF autorizados como borradores privados, validar conteo, hashes/R2 y metadata; no publicar hasta aprobación editorial.
+- [ ] Registrar resultados y pendientes editoriales.
+
+Estado: la sesión del ERP está autenticada; el esquema productivo y el RPC ya incluyen `icon_key`. El editor y la lista están implementados localmente. Las 130 copias preparadas aún están pendientes de carga; no se publicará ninguna sin revisión editorial.
+
 ### Corrección: Portal como submódulo de RRHH
 
 - [x] Mover el acceso bajo la sección RRHH y canonicalizar las rutas en `/recursos-humanos/comunicaciones`, conservando redirección desde `/comunicaciones`.

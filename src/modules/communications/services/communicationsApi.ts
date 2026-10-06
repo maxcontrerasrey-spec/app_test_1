@@ -8,6 +8,7 @@ export type CommunicationStatus = "draft" | "published" | "scheduled" | "expired
 export type CommunicationSaveStatus = Exclude<CommunicationStatus, "scheduled" | "expired">;
 export type CommunicationBlock = { type: "paragraph" | "heading" | "quote" | "bullet_list" | "numbered_list" | "link"; text: string; url?: string };
 export type CommunicationAssetType = "cover" | "image" | "video" | "attachment";
+export type CommunicationIconKey = "megaphone" | "clipboard-list" | "calendar-clock" | "users" | "bus" | "award" | "sparkles" | "download";
 export type CommunicationAsset = { id: string; assetType: CommunicationAssetType; filename: string; mimeType: string; sizeBytes: number };
 export type CommunicationAudience = { code: string; name: string };
 
@@ -17,6 +18,7 @@ export type CommunicationItem = {
   channel: CommunicationChannel;
   title: string;
   summary: string;
+  iconKey: CommunicationIconKey;
   body: string;
   bodyBlocks: CommunicationBlock[];
   category: CommunicationCategory;
@@ -56,6 +58,7 @@ type RawItem = {
   channel?: CommunicationChannel;
   title: string;
   summary: string;
+  icon_key?: CommunicationIconKey | null;
   body: string;
   body_blocks?: CommunicationBlock[];
   category: CommunicationCategory;
@@ -101,6 +104,7 @@ function mapItem(row: RawItem): CommunicationItem {
     channel: row.channel ?? "editorial",
     title: row.title,
     summary: row.summary,
+    iconKey: row.icon_key ?? "download",
     body: row.body,
     bodyBlocks: row.body_blocks ?? [],
     category: row.category,
@@ -150,6 +154,7 @@ export async function saveCommunicationItem(item: CommunicationDraft): Promise<s
       channel: item.channel,
       title: item.title,
       summary: item.summary,
+      icon_key: item.iconKey,
       body: item.bodyBlocks.length ? "" : item.body,
       body_blocks: item.bodyBlocks,
       category: item.category,

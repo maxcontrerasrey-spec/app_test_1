@@ -16,6 +16,7 @@ import {
 } from "../services/communicationsApi";
 import { CommunicationAssetImage } from "../components/CommunicationAssetImage";
 import { CommunicationAssetVideo } from "../components/CommunicationAssetVideo";
+import { NavigationIcon } from "../../../app/layout/NavigationIcon";
 import "../styles/communications.css";
 import "../styles/communications-design.css";
 
@@ -64,6 +65,7 @@ const emptyDraft = (): CommunicationDraft => ({
   channel: "editorial",
   title: "",
   summary: "",
+  iconKey: "download",
   body: "",
   bodyBlocks: [{ type: "paragraph", text: "" }],
   category: "empresa",
@@ -155,10 +157,11 @@ function CommunicationEditor({ initial, audiences, onClose, onSave, saving, erro
     <section className={`communications-editor ${preview ? "is-previewing" : ""}`} role="dialog" aria-modal="true" aria-labelledby="communications-editor-title">
       <header className="communications-editor-header"><div><span>{draft.channel === "editorial" ? "EDITORIAL" : "OFICIAL"} · GESTOR DE PUBLICACIONES</span><h2 id="communications-editor-title">{draft.id ? "Editar publicación" : "Nueva publicación"}</h2></div><div className="communications-topbar-actions"><button type="button" className="communications-topbar-button" onClick={() => setPreview((value) => !value)}>{preview ? "Volver a editar" : "Previsualizar"}</button><button type="button" className="communications-icon-button" aria-label="Cerrar" onClick={onClose} disabled={saving}><Icon name="close" /></button></div></header>
       {submitError || error ? <div className="communications-feedback is-error" role="alert">{submitError || error}</div> : null}
-      {preview ? <article className="communications-editor-preview"><span className="communications-type">{draft.channel === "editorial" ? "Editorial" : "Oficial"} · {categoryLabels[draft.category]}</span><h2>{draft.title || "Título de la publicación"}</h2><p className="communications-reading-summary">{draft.summary || "La bajada aparecerá aquí."}</p>{renderBlocks(draft.bodyBlocks, draft.body)}{draft.requiresAcknowledgement ? <small>Esta publicación solicitará confirmación de lectura a su audiencia.</small> : null}</article> : <form onSubmit={submit} className="communications-editor-form">
+      {preview ? <article className="communications-editor-preview"><span className="communications-type">{draft.channel === "editorial" ? "Editorial" : "Oficial"} · {categoryLabels[draft.category]}</span>{draft.contentType === "boletin" ? <span className="communications-bulletin-preview-icon"><NavigationIcon iconKey={draft.iconKey} /></span> : null}<h2>{draft.title || "Título de la publicación"}</h2><p className="communications-reading-summary">{draft.summary || "La bajada aparecerá aquí."}</p>{renderBlocks(draft.bodyBlocks, draft.body)}{draft.requiresAcknowledgement ? <small>Esta publicación solicitará confirmación de lectura a su audiencia.</small> : null}</article> : <form onSubmit={submit} className="communications-editor-form">
         <div className="communications-editor-grid"><label><span>Nivel</span><select value={draft.channel} onChange={(event) => { const channel = event.target.value as CommunicationChannel; setDraft((current) => ({ ...current, channel, category: (channel === "oficial" ? officialCategories : editorialCategories).includes(current.category) ? current.category : channel === "oficial" ? "general" : "empresa", requiresAcknowledgement: channel === "oficial" ? current.requiresAcknowledgement : false, contentType: channel === "oficial" && current.contentType === "noticia" ? "comunicado" : current.contentType })); }}><option value="editorial">Editorial</option><option value="oficial">Oficial</option></select></label><label><span>Tipo</span><select value={draft.contentType} onChange={(event) => { const contentType = event.target.value as CommunicationKind; set("contentType", contentType); if (contentType !== "evento") { set("startsAt", null); set("endsAt", null); } }}><option value="noticia">Noticia</option><option value="comunicado">Comunicado</option><option value="evento">Actividad / evento</option><option value="boletin">Boletín</option></select></label></div>
         <label><span>Título</span><input required minLength={3} maxLength={160} value={draft.title} onChange={(event) => set("title", event.target.value)} placeholder="Un título claro y cercano" /></label>
         <label><span>Bajada</span><textarea required minLength={3} maxLength={320} rows={2} value={draft.summary} onChange={(event) => set("summary", event.target.value)} placeholder="Resume la noticia en pocas líneas" /></label>
+        {draft.contentType === "boletin" ? <label><span>Icono del boletín</span><select value={draft.iconKey} onChange={(event) => set("iconKey", event.target.value as CommunicationDraft["iconKey"])}><option value="download">Edición / descarga</option><option value="megaphone">Comunicaciones</option><option value="clipboard-list">Información</option><option value="calendar-clock">Fechas y agenda</option><option value="users">Personas</option><option value="bus">Operaciones</option><option value="award">Reconocimientos</option><option value="sparkles">Destacado</option></select><small className="communications-field-help">Se mostrará en la ficha del boletín y en su listado.</small></label> : null}
         <div className="communications-editor-grid"><label><span>Categoría</span><select value={draft.category} onChange={(event) => set("category", event.target.value as CommunicationCategory)}>{categories.map((category) => <option key={category} value={category}>{categoryLabels[category]}</option>)}</select></label><label><span>Publicación</span><select value={scheduleMode} onChange={(event) => { const mode = event.target.value; setScheduleMode(mode); if (mode === "draft") { set("status", "draft"); set("publishAt", null); } else if (mode === "archived") set("status", "archived"); else { set("status", "published"); if (mode === "now") set("publishAt", null); else if (!draft.publishAt || new Date(draft.publishAt).getTime() <= Date.now()) set("publishAt", new Date(Date.now() + 60 * 60_000).toISOString()); } }}><option value="draft">Guardar borrador</option><option value="now">Publicar ahora</option><option value="scheduled">Programar publicación</option>{draft.id ? <option value="archived">Archivar</option> : null}</select></label></div>
         {scheduleMode === "scheduled" ? <label><span>Fecha y hora de publicación</span><input required type="datetime-local" value={dateTimeInput(draft.publishAt)} onChange={(event) => set("publishAt", event.target.value || null)} /></label> : null}
         <label><span>Vencimiento (opcional)</span><input type="datetime-local" value={dateTimeInput(draft.expiresAt)} onChange={(event) => set("expiresAt", event.target.value || null)} /></label>
@@ -221,6 +224,7 @@ export function CommunicationsPage() {
       channel: item.channel,
       title: item.title,
       summary: item.summary,
+      iconKey: item.iconKey,
       body: item.body,
       bodyBlocks: item.bodyBlocks.length ? item.bodyBlocks : item.body.split(/\n{2,}/).filter(Boolean).map((text) => ({ type: "paragraph" as const, text })),
       category: item.category,
