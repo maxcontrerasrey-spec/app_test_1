@@ -139,7 +139,7 @@ Revision 2026-08-24 validacion BUK AFP: el total global sube 126 bytes por el me
 ## Rutas criticas smoke
 
 - `/login`: carga publica validada por `smoke:frontend-routes`.
-- `/postulacion-dsal`: postulacion publica DSAL, lazy y sin lectura de datos privados.
+- Retirada el 2026-10-06: `/postulacion-dsal` y `/ficha-buk-dsal` responden HTTP 410; las revisiones historicas anteriores documentan el peso que esas rutas agregaron.
 - `/verificar/documento`: verificador publico de Solicitud de Contratacion, lazy y sin datos privados.
 - `/operaciones/control-tower`: ruta protegida valida redirect a `/login` sin sesion; tras login exige superadmin activo.
 - Resultado smoke: PASS.

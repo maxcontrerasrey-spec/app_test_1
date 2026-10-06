@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { MultiSelectField, TextField } from "../../../shared/ui";
 import { getRecruitmentCaseHeadcountBreakdown, resolveRecruitmentProcessSearchFilter, toRecruitmentCaseStatusLabel, type RecruitmentCaseListRow } from "../services/hiringControl";
 import { toTravelMethodologyLabel } from "../services/hiringWorkflow";
@@ -11,7 +11,6 @@ import { formatOpenDuration } from "../lib/openDuration";
 
 type SortColumn = "case_code" | "status" | "job_position_name" | "contract_name" | "vacancies" | "candidate_count" | "opened_at";
 const PROCESS_PAGE_SIZE = 50;
-const PROCESS_FETCH_LIMIT = 500;
 const APPROVAL_PAGE_SIZE = 50;
 const BOOLEAN_FILTER_OPTIONS = [
   { value: "si", label: "Sí" },
@@ -72,8 +71,14 @@ export function HiringProcessesView({
     statusFilter: caseFilter,
     sortColumn,
     sortDirection,
-    limit: PROCESS_FETCH_LIMIT,
-    offset: 0
+    limit: PROCESS_PAGE_SIZE,
+    offset: casePage * PROCESS_PAGE_SIZE,
+    filters: {
+      shift: shiftFilter,
+      contract: contractFilter,
+      pasajes: travelFilter,
+      campamento: campFilter
+    }
   });
   const approvalsQuery = useRecruitmentPendingApprovalsPage(
     {
@@ -82,44 +87,11 @@ export function HiringProcessesView({
     },
     isApprovalQueueExpanded
   );
-  const allActiveCases = processesQuery.data?.items ?? [];
-  const shiftOptions = useMemo(
-    () =>
-      buildTextFilterOptions(
-        allActiveCases.map((caseRow) => normalizeProcessFilterValue(caseRow.shift_name ?? caseRow.turno))
-      ),
-    [allActiveCases]
-  );
-  const contractOptions = useMemo(
-    () =>
-      buildTextFilterOptions(
-        allActiveCases.map((caseRow) => normalizeProcessFilterValue(caseRow.contract_name))
-      ),
-    [allActiveCases]
-  );
-  const filteredActiveCases = useMemo(
-    () =>
-      allActiveCases.filter((caseRow) => {
-        const shiftValue = normalizeProcessFilterValue(caseRow.shift_name ?? caseRow.turno);
-        const contractValue = normalizeProcessFilterValue(caseRow.contract_name);
-        const travelValue = formatBooleanFilterValue(caseRow.pasajes);
-        const campValue = formatBooleanFilterValue(caseRow.campamento);
-
-        return (
-          matchesSelectedProcessFilter(shiftValue, shiftFilter) &&
-          matchesSelectedProcessFilter(contractValue, contractFilter) &&
-          matchesSelectedProcessFilter(travelValue, travelFilter) &&
-          matchesSelectedProcessFilter(campValue, campFilter)
-        );
-      }),
-    [allActiveCases, campFilter, contractFilter, shiftFilter, travelFilter]
-  );
-  const activeCases = useMemo(
-    () => filteredActiveCases.slice(casePage * PROCESS_PAGE_SIZE, casePage * PROCESS_PAGE_SIZE + PROCESS_PAGE_SIZE),
-    [casePage, filteredActiveCases]
-  );
+  const activeCases = processesQuery.data?.items ?? [];
+  const shiftOptions = processesQuery.data?.filterOptions.shifts ?? [];
+  const contractOptions = processesQuery.data?.filterOptions.contracts ?? [];
   const pendingApprovals = approvalsQuery.data?.items ?? [];
-  const processTotalCount = filteredActiveCases.length;
+  const processTotalCount = processesQuery.data?.totalCount ?? 0;
   const approvalTotalCount = approvalsQuery.data?.totalCount ?? pendingApprovalCount;
   const processError =
     processesQuery.error instanceof Error ? processesQuery.error.message : "";
@@ -152,10 +124,6 @@ export function HiringProcessesView({
   }, [caseSearchTerm]);
 
   useEffect(() => {
-    setCasePage(0);
-  }, [debouncedSearchTerm, caseFilter, sortColumn, sortDirection, shiftFilter, travelFilter, campFilter, contractFilter]);
-
-  useEffect(() => {
     const normalizedSearch = debouncedSearchTerm.trim();
     const requestId = ++searchFilterRequestIdRef.current;
 
@@ -163,25 +131,22 @@ export function HiringProcessesView({
       return;
     }
 
-    let isCancelled = false;
+    const controller = new AbortController();
 
-    resolveRecruitmentProcessSearchFilter(normalizedSearch)
+    resolveRecruitmentProcessSearchFilter(normalizedSearch, controller.signal)
       .then((result) => {
-        if (isCancelled || requestId !== searchFilterRequestIdRef.current || result.error) {
+        if (controller.signal.aborted || requestId !== searchFilterRequestIdRef.current || result.error) {
           return;
         }
 
-        setCaseFilter((currentFilter) =>
-          currentFilter === result.data ? currentFilter : result.data
-        );
+        setCasePage(0);
+        setCaseFilter(result.data);
       })
       .catch(() => {
         // The main paged query still owns user-visible errors.
       });
 
-    return () => {
-      isCancelled = true;
-    };
+    return () => controller.abort();
   }, [debouncedSearchTerm]);
 
   useEffect(() => {
@@ -204,6 +169,7 @@ export function HiringProcessesView({
   };
 
   const handleSort = (column: SortColumn) => {
+    setCasePage(0);
     if (sortColumn === column) {
       if (sortDirection === "asc") {
         setSortDirection("desc");
@@ -228,6 +194,7 @@ export function HiringProcessesView({
 
   const handleClearCaseSearchFilters = () => {
     searchFilterRequestIdRef.current += 1;
+    setCasePage(0);
     setShiftFilter([]);
     setTravelFilter([]);
     setCampFilter([]);
@@ -334,7 +301,10 @@ export function HiringProcessesView({
               searchPlaceholder="Buscar turno"
               searchable
               options={shiftOptions}
-              onChange={setShiftFilter}
+              onChange={(values) => {
+                setCasePage(0);
+                setShiftFilter(values);
+              }}
               className="tracking-filter-select"
             />
             <MultiSelectField
@@ -344,7 +314,10 @@ export function HiringProcessesView({
               value={travelFilter}
               placeholder="Pasajes"
               options={BOOLEAN_FILTER_OPTIONS}
-              onChange={setTravelFilter}
+              onChange={(values) => {
+                setCasePage(0);
+                setTravelFilter(values);
+              }}
               className="tracking-filter-select"
             />
             <MultiSelectField
@@ -354,7 +327,10 @@ export function HiringProcessesView({
               value={campFilter}
               placeholder="Alojamiento"
               options={BOOLEAN_FILTER_OPTIONS}
-              onChange={setCampFilter}
+              onChange={(values) => {
+                setCasePage(0);
+                setCampFilter(values);
+              }}
               className="tracking-filter-select"
             />
             <MultiSelectField
@@ -366,7 +342,10 @@ export function HiringProcessesView({
               searchPlaceholder="Buscar contrato"
               searchable
               options={contractOptions}
-              onChange={setContractFilter}
+              onChange={(values) => {
+                setCasePage(0);
+                setContractFilter(values);
+              }}
               className="tracking-filter-select tracking-filter-select-contract"
             />
             <button
@@ -385,7 +364,10 @@ export function HiringProcessesView({
             label="Buscar casos"
             value={caseSearchTerm}
             placeholder="Buscar por caso, contrato, cargo, gerencia, area o centro de costo"
-            onChange={(event) => setCaseSearchTerm(event.target.value)}
+            onChange={(event) => {
+              setCasePage(0);
+              setCaseSearchTerm(event.target.value);
+            }}
             className="tracking-search-field"
           />
         </div>
@@ -399,7 +381,10 @@ export function HiringProcessesView({
             key={option.label}
             type="button"
             className={`approval-chip ${caseFilter === option.key ? "tracking-kpi-card-active" : ""}`}
-            onClick={() => setCaseFilter(option.key)}
+            onClick={() => {
+              setCasePage(0);
+              setCaseFilter(option.key);
+            }}
           >
             {option.label}
           </button>
@@ -778,21 +763,4 @@ export function HiringProcessesView({
       />
     </>
   );
-}
-
-function normalizeProcessFilterValue(value: string | null | undefined) {
-  return value?.trim() ?? "";
-}
-
-function formatBooleanFilterValue(value: boolean | null | undefined) {
-  return value === true ? "si" : value === false ? "no" : "";
-}
-
-const matchesSelectedProcessFilter = (value: string, selectedValues: string[]) =>
-  selectedValues.length === 0 || selectedValues.includes(value);
-
-function buildTextFilterOptions(values: string[]) {
-  return Array.from(new Set(values.filter(Boolean))).sort((left, right) =>
-    left.localeCompare(right, "es")
-  ).map((value) => ({ value, label: value }));
 }

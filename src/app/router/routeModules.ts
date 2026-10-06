@@ -17,12 +17,6 @@ export const routeModuleImporters = {
   psychometricAssessmentPage: async () => ({
     default: (await import("../../modules/psycholaboral/pages/PsychometricAssessmentPage")).PsychometricAssessmentPage
   }),
-  dsalPublicApplicationPage: async () => ({
-    default: (await import("../../modules/recruitment/pages/DsalPublicApplicationPage")).DsalPublicApplicationPage
-  }),
-  publicBukWorkerFilePage: async () => ({
-    default: (await import("../../modules/recruitment/pages/PublicBukWorkerFilePage")).PublicBukWorkerFilePage
-  }),
   loginPage: async () => ({
     default: (await import("../../modules/auth/pages/LoginPage")).LoginPage
   }),
@@ -114,14 +108,6 @@ function getRouteModuleKeysForPath(path: string): RouteModuleKey[] {
   }
   if (normalizedPath.startsWith("/gestion-psicolaboral")) return ["psycholaboralManagementPage"];
   if (normalizedPath.startsWith("/evaluacionpsico")) return ["psychometricAssessmentPage"];
-
-  if (normalizedPath.startsWith("/postulacion-dsal")) {
-    return ["dsalPublicApplicationPage"];
-  }
-
-  if (normalizedPath.startsWith("/ficha-buk-dsal")) {
-    return ["publicBukWorkerFilePage"];
-  }
 
   if (normalizedPath.startsWith("/alta-operacional")) {
     return ["onboardingModuleLayout"];
