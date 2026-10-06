@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-06 - Igualar el alto visible completo de un selector, no solo su caja externa
+
+- En un multiselect con una opción elegida, revisar por separado el trigger y el chip interno: limitar la altura del trigger en CSS puede no bastar si estilos compartidos influyen en la caja renderizada.
+- Cuando se exige paridad con un `select` nativo, fijar `box-sizing`, `height`, `min-height` y `max-height` en el trigger y contener el chip; validar el estado con selección real en el navegador productivo.
+
 ## 2026-10-06 - Los endpoints R2 deben validar con el mismo JWT y el mismo guard que las RPC
 
 - No agregar una consulta separada a `/auth/v1/user` antes de llamar RPCs protegidas si PostgREST ya valida el JWT y la RPC vuelve a comprobar cuenta activa, rol y estado del registro.
