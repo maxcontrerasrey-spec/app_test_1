@@ -27,6 +27,12 @@
 - La hidratación del formulario debe ocurrir una vez por identidad de selección. Las respuestas de fondo del mismo registro no deben borrar cambios locales que la persona todavía está editando.
 - Cubrir ambas condiciones con una prueba: ignorar placeholder de otro registro y no volver a hidratar la misma selección en refetches.
 
+## 2026-10-06 - jsonb_set no puede recibir SQL NULL como nuevo valor
+
+- `to_jsonb(nullable_column)` produce SQL NULL cuando la columna es nula; `jsonb_set` propaga ese SQL NULL y puede convertir la respuesta JSON completa de una RPC en SQL NULL.
+- Cuando el contrato espera una propiedad JSON nula, normalizar explícitamente con `coalesce(to_jsonb(value), 'null'::jsonb)` y verificar la respuesta completa del RPC.
+- Probar por separado registros históricos incompletos/clasificados y registros nuevos; una UI que limpia selección ante una respuesta vacía puede ocultar el error del servidor.
+
 ## 2026-10-05 - Las secciones editoriales requieren un inset constante
 
 - Dar a títulos y contenido un padding interior común en todas las superficies; no dejar encabezados al ras del borde.

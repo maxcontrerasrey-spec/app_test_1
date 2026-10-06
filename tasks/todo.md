@@ -4630,3 +4630,13 @@ Diagnóstico: el efecto de hidratación dependía del objeto `detail` y de `sele
 CI del PR #46 detectó el incremento esperado de 246 bytes contra el baseline exacto. Se registró la medición canónica sin cambiar la tolerancia cero; Guardian, baseline de performance y `git diff --check` pasan localmente después del ajuste.
 
 Resultado final: PR #46 quedó integrado en `main` como `58331a90`. Guardian/CI `37497073270` y Cloudflare preview pasaron. Producción sirve el chunk `RentStructuresPage-BTxi1y1E.js` con HTTP 200; se verificaron en el artefacto `isPlaceholderData` y el estado «Cargando la estructura de este cargo…». No hubo cambios de base de datos.
+
+## Corregir reinicio al abrir estructuras existentes de renta — 2026-10-06
+
+- [x] Reproducir el reinicio seleccionando cargos existentes en Safari y compararlo con cargos pendientes sin estructura.
+- [x] Inspeccionar la RPC productiva y confirmar el valor de régimen de estructuras históricas.
+- [x] Corregir el serializado de régimen SQL NULL a JSON null sin modificar estructuras ni permisos.
+- [x] Validar contrato de regresión, migración, build y Guardian.
+- [ ] Aplicar migración en producción, volver a seleccionar cargos existentes en Safari y comprobar el RPC/bundle.
+
+Hallazgo confirmado: los cargos sin estructura abren; las estructuras históricas con `legal_regime_code IS NULL` reinician la selección. La RPC envolvente pasaba `to_jsonb(regime_code)` directamente a `jsonb_set`; cuando el régimen SQL es NULL, `jsonb_set` devolvía SQL NULL para todo el payload. La consulta productiva confirmó el caso en `CODELCO - DSAL / ASEADOR` (contrato 98, cargo 15) y preserva sus datos sin régimen asignado.
