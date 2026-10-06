@@ -1,3 +1,12 @@
+# Corregir asociaciones cargo-área de Sync BUK — 2026-10-06
+
+- [x] Documentar el contrato productivo comprobado: cargo y área del folio RC-0114 frente a las áreas BUK habilitadas para el cargo; acotar errores independientes.
+- [x] Definir y probar resolución por código operativo/ID de área; nombres duplicados no enlazan áreas distintas y los mappings sin identificadores solo usan fallback cuando ambos lados son únicos.
+- [x] Integrar la resolución exacta al sync de cargos, preservando auth, snapshot completo y desactivación de asociaciones obsoletas.
+- [x] Ejecutar pruebas focalizadas, verificación Deno, auditoría de guards BUK, Guardian y `git diff --check`.
+- [ ] Publicar la Edge Function corregida y refrescar solo el catálogo de cargos-contrato; verificar que desaparece la asociación falsa de RC-0114 y sobreviven asociaciones válidas.
+- [ ] Reconciliar código desplegado con Git, registrar límites (BUK aún debe habilitar el cargo en área exacta) y evidencia final.
+
 # Retiro integral de precandidatos y enlaces públicos — 2026-10-06
 
 - [x] Auditar referencias activas en rutas, lazy imports, UI, servicios, permisos, SQL/RPC, tablas, vistas, triggers, grants y datos; comprobar aparte correcciones locales del ciclo previo que el usuario espera en producción.

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 import { buildBukBaseUrl } from "../_shared/bukDocuments.ts";
+import { isExactBukContractAreaMatch, type BukContractAreaMapping } from "../_shared/bukContractAreaMapping.ts";
 import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 const corsHeaders = {
@@ -16,11 +17,6 @@ type JobPositionPayload = {
 };
 
 type BukAreaRecord = Record<string, unknown>;
-type ContractMapping = {
-  contract_id: number;
-  buk_area_name: string;
-};
-
 type ExistingJobPosition = {
   id: number;
   code: string;
@@ -452,7 +448,7 @@ async function syncJobPositions(
   }
   const { data: mappings, error: mappingsError } = await supabase
     .from("buk_contract_mappings")
-    .select("contract_id, buk_area_name, contracts!inner(is_active)")
+    .select("contract_id, buk_area_name, buk_area_code, contract_number, contracts!inner(is_active)")
     .eq("is_operational", true)
     .eq("is_one_to_one", true)
     .eq("contracts.is_active", true)
@@ -462,12 +458,12 @@ async function syncJobPositions(
     throw new Error(`No fue posible leer contratos BUK: ${mappingsError.message}`);
   }
 
-  const mappingByArea = new Map<string, ContractMapping[]>();
-  for (const row of (mappings ?? []) as Array<ContractMapping & { contract_id: number | null }>) {
+  const mappingByArea = new Map<string, BukContractAreaMapping[]>();
+  for (const row of (mappings ?? []) as Array<BukContractAreaMapping & { contract_id: number | null }>) {
     if (!row.contract_id) continue;
     const key = normalizeBukAreaLabel(row.buk_area_name);
     const current = mappingByArea.get(key) ?? [];
-    current.push({ contract_id: row.contract_id, buk_area_name: row.buk_area_name });
+    current.push(row as BukContractAreaMapping);
     mappingByArea.set(key, current);
   }
 
@@ -493,7 +489,11 @@ async function syncJobPositions(
       if (!area || !readAreaActive(area)) continue;
 
       for (const label of areaLabels(area)) {
-        for (const mapping of mappingByArea.get(label) ?? []) {
+        const labelMappings = mappingByArea.get(label);
+        if (!labelMappings) continue;
+
+        for (const mapping of labelMappings) {
+          if (!isExactBukContractAreaMatch(mapping, area, areas, labelMappings.length)) continue;
           const key = `${position.id}:${mapping.contract_id}:${areaId}`;
           accessRows.set(key, {
             job_position_id: position.id,
@@ -505,7 +505,7 @@ async function syncJobPositions(
             synced_at: new Date().toISOString()
           });
         }
-        if (mappingByArea.has(label)) break;
+        break;
       }
     }
   }
