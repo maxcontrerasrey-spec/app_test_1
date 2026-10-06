@@ -49,6 +49,17 @@ describe("alcance activo BUK de estructuras de renta", () => {
     expect(supabaseConfig).toMatch(/\[functions\.sync-buk-job-positions\]\nverify_jwt = false/);
   });
 
+  it("permite refrescar solo el catalogo BUK sin ejecutar la sincronizacion del padron", () => {
+    expect(workflow).toContain("catalog_only:");
+    expect(workflow).toContain("type: boolean");
+    expect(workflow).toContain("CATALOG_ONLY: ${{ inputs.catalog_only }}");
+    expect(workflow).toContain('echo "catalog_only=$CATALOG_ONLY"');
+    expect(workflow).toContain("inputs.catalog_only != true");
+    expect(workflow).toContain("Run BUK Sync Script\n        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only != true");
+    expect(workflow).toContain("Sync active BUK roles by contract\n        if: steps.local_window.outputs.run_sync == 'true'");
+    expect(workflow).toContain("Validate catalog sync variables\n        if: steps.local_window.outputs.run_sync == 'true' && inputs.catalog_only == true");
+  });
+
   it("resuelve habilitaciones contra el identificador de area y no solo por nombre", () => {
     expect(edgeFunction).toContain("buk_area_code, contract_number");
     expect(edgeFunction).toContain("isExactBukContractAreaMatch(mapping, area, areas, labelMappings.length)");
