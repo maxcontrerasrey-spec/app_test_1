@@ -91,9 +91,11 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 ## Habilitar descarga del informe psicolaboral en cualquier estado — 2026-10-06
 
 - [x] Confirmar el informe final y su artefacto en producción para Edwar Muñoz; identificar si la causa está en la UI o en la autorización de R2/RPC.
-- [ ] Hacer visible la descarga del informe integrado siempre que `report_status` sea `generated`, sin depender del estado del candidato; conservar la autorización del módulo.
-- [ ] Mantener diferenciadas las descargas de certificado e informe, tanto en la fila como en el detalle expandido.
-- [ ] Validar el comportamiento y publicar en producción, confirmando que el informe de un candidato rechazado abre desde el acceso autenticado.
+- [x] Hacer visible la descarga del informe integrado siempre que `report_status` sea `generated`, sin depender del estado del candidato; conservar la autorización del módulo.
+- [x] Mantener diferenciadas las descargas de certificado e informe, tanto en la fila como en el detalle expandido.
+- [x] Validar el comportamiento y publicar en producción, confirmando que el informe de un candidato rechazado abre desde el acceso autenticado.
+
+Resultado: la causa era que el botón del informe estaba dentro de un bloque de acciones limitado a `completed`, `approved` y `hired`; el estado `rejected` quedaba excluido. En producción, Edwar Muñoz (RC-0245, candidato rechazado) tiene `report_status=generated`, certificado e informe integrados en R2. La interfaz ahora muestra `INF` en la fila y “Descargar informe psicolaboral” en el detalle para cualquier estado cuando el artefacto está generado. La RPC de descarga conserva la autorización de usuarios con acceso al módulo. Integrado en PR #57; CI y Cloudflare Pages pasaron. Se verificó que `gestion.busesjm.cl` publica el nuevo bundle con ambas etiquetas de descarga.
 
 ## Corregir selector de jornadas en Estructuras de Renta — 2026-10-06
 
