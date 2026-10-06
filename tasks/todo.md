@@ -38,9 +38,9 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 - [x] Revisar la composición en escritorio y móvil; ejecutar build, Guardian y `git diff --check`.
 - [ ] Integrar, desplegar y comprobar el CSS servido en producción.
 
-Revisión visual local con Chromium a 1440 px y 390 px: las tres secciones tienen padding uniforme (26 px escritorio, 16 px móvil), los encabezados ya no tocan el borde y cada estado vacío ocupa 43 px en escritorio. Las tarjetas comparten superficie blanca, borde tenue y sombra discreta; se retiraron los recuadros punteados y se redujo la separación vertical. `npm run build:frontend-check`, `npm run audit:performance-baseline`, `npm run guardian` (0 errores/advertencias) y `git diff --check` pasan. El baseline local registra +1.422 bytes CSS con tolerancia cero; se reconciliará con CI antes de integrar.
+Revisión visual local con Chromium a 1440 px y 390 px: las tres secciones tienen padding uniforme (26 px escritorio, 16 px móvil), los encabezados ya no tocan el borde y cada estado vacío ocupa 43 px en escritorio. Las tarjetas comparten superficie blanca, borde tenue y sombra discreta; se retiraron los recuadros punteados y se redujo la separación vertical. Build, auditoría de rendimiento, Guardian local y `git diff --check` pasan. GitHub Actions `37402162939` confirma todos los checks funcionales/build; su único fallo inicial fue el baseline medido desde macOS. El baseline quedó reconciliado con CI en 7.455.976 bytes totales, 5.332.834 bytes JS y 533.405 bytes CSS (+1.422 CSS respecto de `main`), manteniendo tolerancia cero.
 
-Desbloqueo de CI: el primer run falló antes de ejecutar Guardian por versiones vulnerables de `vitest`/`@vitest/mocker` (4.1.10) y `source-map-js` (1.2.1). Se actualizaron solo dependencias de desarrollo a los parches disponibles; `npm audit` y Guardian local pasan sin vulnerabilidades. La ejecución CI posterior determinará el baseline canónico.
+Desbloqueo de CI: el primer run falló antes de ejecutar Guardian por versiones vulnerables de `vitest`/`@vitest/mocker` (4.1.10) y `source-map-js` (1.2.1). Se actualizaron solo dependencias de desarrollo a los parches disponibles; `npm audit` y Guardian local pasan sin vulnerabilidades.
 
 ## Evitar bloqueo aparente al agregar una dirección Atlas — 2026-10-05
 
