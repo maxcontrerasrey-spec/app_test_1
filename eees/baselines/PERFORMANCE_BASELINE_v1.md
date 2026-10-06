@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.55
+version: 1.0.56
 status: Activo
 language: es-CL
 owner: Quality
@@ -186,9 +186,9 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7469668,
+  "distTotalBytes": 7469887,
   "jsFileCount": 74,
-  "jsTotalBytes": 5339078,
+  "jsTotalBytes": 5339210,
   "cssFileCount": 15,
   "cssTotalBytes": 540940,
   "budgetPolicy": {
@@ -228,6 +228,8 @@ Revision 2026-10-06 selector de jornadas de Estructuras de Renta: Guardian CI `3
 Revision 2026-10-06 etiquetas y checkboxes de jornadas: build macOS mide 7,467,548 bytes totales, 5,336,958 bytes JS y 540,853 bytes CSS (+202 CSS contra Guardian CI `37512565806`). Evita aplicar dimensiones de inputs de texto a checkboxes y mantiene etiqueta/opción clickeable visibles; Guardian CI confirmará los bytes exactos. La tolerancia permanece en cero.
 
 Revision 2026-10-06 igualdad de controles de jornada: CSS suma 87 bytes para fijar dimensiones de trigger y chip seleccionado a la altura de Régimen legal. La medición local pasa a 540.940 bytes CSS; no agrega dependencias ni cambia lógica de datos. El CI confirmará la medición canónica y se mantiene tolerancia cero.
+
+Revision CI Guardian run `37525467217`: el bundle cambia 219 bytes en `dist` y 132 bytes en JS frente al baseline por aplicar el tamaño al trigger desde el componente y CSS; CSS permanece en 540.940 bytes. Se actualizan los valores canónicos exactos y se conserva tolerancia cero.
 
 Revision 2026-10-05 superficies Portal de Comunicaciones: GitHub Actions `Audit Enterprise Guardrails` run `37402162939` mide 7,455,976 bytes totales, 5,332,834 bytes JS y 533,405 bytes CSS (+1,422 CSS respecto al baseline de `main`). El incremento CSS corresponde a espaciado común, superficies consistentes y estados vacíos compactos; no agrega dependencias, vendors ni assets. Se registra la medición canónica CI con tolerancia cero.
 
