@@ -82,11 +82,11 @@ Resultado productivo: el job RC-0226 queda en `error`, sin `buk_employee_id` y s
 - [x] Actualizar RPC/API/hooks y vistas Control/Configuración para elegir jornada y régimen; mantener intactos los permisos actuales.
 - [x] Agregar cobertura contractual para catálogo, asignación, histórico, permisos y UI; ejecutar build, Guardian, auditorías Supabase/migraciones y `git diff --check`.
 - [x] Aplicar la migración en Supabase producción; verificar funciones, permisos, RLS y conservación de las 13 estructuras existentes sin jornada/regimen asignados.
-- [ ] Publicar frontend en producción y verificar el bundle servido junto con el RPC nuevo.
+- [x] Publicar frontend en producción y verificar el bundle servido junto con el RPC nuevo.
 
 Revisión inicial: Solicitudes de Contratación consume `get_hiring_request_catalogs.shiftCatalog`, que consulta filas activas de `public.shifts` y entrega ID/código/nombre. Estructuras de Renta actualmente admite una fila por contrato/cargo, y sus RPCs calculan sobre esa única fila. Las estructuras existentes se preservarán sin duplicar y quedarán pendientes de clasificación hasta asignar explícitamente las jornadas que les corresponden.
 
-Estado de producción: la migración `20261006140707_add_hr_rent_shift_regime_variants` está aplicada. La verificación productiva confirma 15 jornadas activas, 13 estructuras conservadas, cero asociaciones asignadas automáticamente, RLS activo sin acceso directo de `authenticated`, RPC de guardado solo para `authenticated` y no para `anon`. El frontend aún debe integrarse y publicarse.
+Resultado final: PR #44 integrado en `main` como `37ff0a5a`; la migración `20261006140707_add_hr_rent_shift_regime_variants` está aplicada en Supabase. La consulta productiva confirma 15 jornadas activas, 13 estructuras conservadas, cero asociaciones asignadas automáticamente, RLS activo sin acceso directo de `authenticated`, y RPC de guardado ejecutable por `authenticated` pero no `anon`. Cloudflare sirve `/assets/RentStructuresPage-BweGPtM8.js` con HTTP 200; el bundle contiene el selector de jornadas/régimen y los parámetros de guardado. Guardian de `main` `37478300568` terminó exitosamente.
 
 ## Rediseñar el Portal de Comunicaciones y sus bloques editables — 2026-10-06
 
