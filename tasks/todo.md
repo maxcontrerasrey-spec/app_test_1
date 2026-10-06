@@ -4623,8 +4623,10 @@ Revisión final: Puck ofrece “Lista horizontal”, “Tarjetas · 2 columnas�
 - [x] Evitar que datos previos o refetches reescriban el borrador del cargo seleccionado; mostrar carga mientras llega el detalle correcto.
 - [x] Agregar cobertura para la protección contra datos placeholder y rehidratación repetida.
 - [x] Ejecutar pruebas focalizadas, build frontend, Guardian, auditorías requeridas y `git diff --check`.
-- [ ] Integrar a `main`, desplegar y comprobar el módulo publicado en producción.
+- [x] Integrar a `main`, desplegar y comprobar el módulo publicado en producción.
 
 Diagnóstico: el efecto de hidratación dependía del objeto `detail` y de `selectedPosition`; cada respuesta/refetch recreaba esos objetos y volvía a reemplazar todos los campos del formulario. Además, `placeholderData` mantenía el detalle anterior mientras cambiaba el cargo. La corrección hidrata una sola vez por selección y espera la respuesta real antes de mostrar el editor.
 
 CI del PR #46 detectó el incremento esperado de 246 bytes contra el baseline exacto. Se registró la medición canónica sin cambiar la tolerancia cero; Guardian, baseline de performance y `git diff --check` pasan localmente después del ajuste.
+
+Resultado final: PR #46 quedó integrado en `main` como `58331a90`. Guardian/CI `37497073270` y Cloudflare preview pasaron. Producción sirve el chunk `RentStructuresPage-BTxi1y1E.js` con HTTP 200; se verificaron en el artefacto `isPlaceholderData` y el estado «Cargando la estructura de este cargo…». No hubo cambios de base de datos.
