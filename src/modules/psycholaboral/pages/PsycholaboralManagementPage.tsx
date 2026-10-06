@@ -448,6 +448,21 @@ export function PsycholaboralManagementPage() {
                             PDF
                           </button>
                         ) : null}
+                        {row.report_status === "generated" ? (
+                          <button
+                            type="button"
+                            className="psych-icon-action"
+                            title="Descargar informe psicolaboral"
+                            aria-label={`Descargar informe psicolaboral de ${row.full_name}`}
+                            disabled={busy === row.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void downloadReport(row);
+                            }}
+                          >
+                            INF
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -585,14 +600,9 @@ export function PsycholaboralManagementPage() {
                                     </>
                                   )}
                                   {row.certificate_status === "generated" ? (
-                                    <>
-                                      <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void download(row)}>
-                                        Descargar certificado
-                                      </button>
-                                      <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void downloadReport(row)}>
-                                        Descargar informe
-                                      </button>
-                                    </>
+                                    <button className="psych-secondary-action" type="button" disabled={busy === row.id} onClick={() => void download(row)}>
+                                      Descargar certificado
+                                    </button>
                                   ) : (row.certificate_status === "queued" ||
                                     row.certificate_status === "failed") && row.ai_status === "VALIDATED" ? (
                                     <button
@@ -631,6 +641,16 @@ export function PsycholaboralManagementPage() {
                                     </>
                                   ) : null}
                                 </>
+                              ) : null}
+                              {row.report_status === "generated" ? (
+                                <button
+                                  className="psych-secondary-action"
+                                  type="button"
+                                  disabled={busy === row.id}
+                                  onClick={() => void downloadReport(row)}
+                                >
+                                  Descargar informe psicolaboral
+                                </button>
                               ) : null}
                             </div>
                           </section>

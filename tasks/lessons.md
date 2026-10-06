@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-06 - La lectura de informes debe depender de la existencia del artefacto, no del estado del candidato
+
+- Las acciones de revisión o decisión pueden depender de la etapa; la descarga de un informe ya generado debe mostrarse según `report_status` aunque el candidato esté rechazado, contratado u otra etapa terminal.
+- Mantener la autorización de confidencialidad del módulo en el backend; no convertir la visibilidad transversal por estado en lectura abierta a toda cuenta ERP.
+- Diferenciar visualmente el certificado del informe integrado firmado para que el acceso PDF existente no haga pensar que incluye ambos documentos.
+
 ## 2026-10-06 - Igualar el alto visible completo de un selector, no solo su caja externa
 
 - En un multiselect con una opción elegida, revisar por separado el trigger y el chip interno: limitar la altura del trigger en CSS puede no bastar si estilos compartidos influyen en la caja renderizada.

@@ -88,6 +88,13 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 # Tareas y Roadmap de Desarrollo
 
+## Habilitar descarga del informe psicolaboral en cualquier estado — 2026-10-06
+
+- [x] Confirmar el informe final y su artefacto en producción para Edwar Muñoz; identificar si la causa está en la UI o en la autorización de R2/RPC.
+- [ ] Hacer visible la descarga del informe integrado siempre que `report_status` sea `generated`, sin depender del estado del candidato; conservar la autorización del módulo.
+- [ ] Mantener diferenciadas las descargas de certificado e informe, tanto en la fila como en el detalle expandido.
+- [ ] Validar el comportamiento y publicar en producción, confirmando que el informe de un candidato rechazado abre desde el acceso autenticado.
+
 ## Corregir selector de jornadas en Estructuras de Renta — 2026-10-06
 
 - [x] Ajustar la escala del campo de jornadas para que tenga la misma altura que el régimen y no parta el texto del placeholder en anchos de escritorio.
