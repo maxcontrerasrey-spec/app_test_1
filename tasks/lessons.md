@@ -4143,6 +4143,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Ajustar el ancho disponible del control antes de permitir que el placeholder o una selección partan la altura del campo; el trigger debe compartir alto, tipografía y borde con los demás controles del formulario.
 - Los menús desplegables no pueden quedar dentro de una tarjeta con `overflow: hidden`; dejar que la capa se expanda sobre el contenido vecino y dar a cada opción un alto uniforme con área clickeable completa.
 - Verificar el estado abierto en el viewport real: el botón visible no basta si el menú termina tapado por el borde de su contenedor.
+- Mantener los checkboxes fuera de los estilos globales para `input` de texto/número; una regla de formulario demasiado amplia puede estirar el checkbox y desplazar el texto de su opción fuera del menú.
 
 ## 2026-10-05 - Representar un submódulo en su dominio desde la navegación hasta la URL
 
