@@ -36,11 +36,13 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 - [x] Unificar margen interior, fondo, borde y separación de las secciones editoriales.
 - [x] Compactar estados vacíos y evitar cajas punteadas anidadas que parezcan campos de formulario.
 - [x] Revisar la composición en escritorio y móvil; ejecutar build, Guardian y `git diff --check`.
-- [ ] Integrar, desplegar y comprobar el CSS servido en producción.
+- [x] Integrar, desplegar y comprobar el CSS servido en producción.
 
-Revisión visual local con Chromium a 1440 px y 390 px: las tres secciones tienen padding uniforme (26 px escritorio, 16 px móvil), los encabezados ya no tocan el borde y cada estado vacío ocupa 43 px en escritorio. Las tarjetas comparten superficie blanca, borde tenue y sombra discreta; se retiraron los recuadros punteados y se redujo la separación vertical. Build, auditoría de rendimiento, Guardian local y `git diff --check` pasan. GitHub Actions `37402162939` confirma todos los checks funcionales/build; su único fallo inicial fue el baseline medido desde macOS. El baseline quedó reconciliado con CI en 7.455.976 bytes totales, 5.332.834 bytes JS y 533.405 bytes CSS (+1.422 CSS respecto de `main`), manteniendo tolerancia cero.
+Revisión visual local con Chromium a 1440 px y 390 px: las tres secciones tienen padding uniforme (26 px escritorio, 16 px móvil), los encabezados ya no tocan el borde y cada estado vacío ocupa 43 px en escritorio. Las tarjetas comparten superficie blanca, borde tenue y sombra discreta; se retiraron los recuadros punteados y se redujo la separación vertical. Build, auditoría de rendimiento, Guardian local y `git diff --check` pasan. El run CI `37402500998` pasó Guardian; el run de `main` `37402777677` pasó todos los checks. El baseline canónico CI queda en 7.455.976 bytes totales, 5.332.834 bytes JS y 533.405 bytes CSS (+1.422 CSS respecto de `main`), con tolerancia cero.
 
-Desbloqueo de CI: el primer run falló antes de ejecutar Guardian por versiones vulnerables de `vitest`/`@vitest/mocker` (4.1.10) y `source-map-js` (1.2.1). Se actualizaron solo dependencias de desarrollo a los parches disponibles; `npm audit` y Guardian local pasan sin vulnerabilidades.
+Desbloqueo de CI: el primer run falló antes de ejecutar Guardian por versiones vulnerables de `vitest`/`@vitest/mocker` (4.1.10) y `source-map-js` (1.2.1). Se actualizaron solo dependencias de desarrollo a los parches disponibles; `npm audit` y Guardian local pasan sin vulnerabilidades. La siguiente ejecución falló solo por comparar contra tamaños macOS; se registraron las métricas canónicas Linux.
+
+Producción: PR #36 quedó integrado en `main` con commit `9ab669ef3c00e8a1a88eb631840ac7d4b3a72ba4`; Cloudflare Pages informó `Deploy successful`. La ruta `/recursos-humanos/comunicaciones` responde HTTP 200 y la hoja `CommunicationsPage-Bo7P5wxc.css` también responde HTTP 200. Su SHA-256 productivo coincide con el artefacto aprobado: `5f62b85cedf0ef34bbee93539624a76770728ec96db17c91a4804ceb668e7aac`; la hoja incluye los estilos unificados y compactos.
 
 ## Evitar bloqueo aparente al agregar una dirección Atlas — 2026-10-05
 
