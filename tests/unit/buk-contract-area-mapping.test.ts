@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isExactBukContractAreaMatch, type BukContractAreaMapping } from "../../supabase/functions/_shared/bukContractAreaMapping";
+import { findExactBukAreaMappings, isExactBukContractAreaMatch, type BukContractAreaMapping } from "../../supabase/functions/_shared/bukContractAreaMapping";
 
 const mapping: BukContractAreaMapping = {
   contract_id: 45,
@@ -71,5 +71,28 @@ describe("BUK contract-to-area mapping", () => {
     const identifiedMapping = { ...mapping, buk_area_code: "7776182302:0001" };
     expect(isExactBukContractAreaMatch(identifiedMapping, areas[2], areas, 1)).toBe(true);
     expect(isExactBukContractAreaMatch(identifiedMapping, areas[1], areas, 1)).toBe(false);
+  });
+
+  it("continues to a precise parent label when a preceding same-name mapping fails exact validation", () => {
+    const area = {
+      id: 997,
+      name: "AREA OPERATIVA",
+      second_level_name: "FLIX LA SERENA",
+      cost_center: "535"
+    };
+    const mappingsByLabel = new Map<string, BukContractAreaMapping[]>([
+      ["area operativa", [
+        { contract_id: 90, buk_area_name: "AREA OPERATIVA", buk_area_code: "999" },
+        { contract_id: 91, buk_area_name: "AREA OPERATIVA", buk_area_code: "998" }
+      ]],
+      ["flix la serena", [mapping]]
+    ]);
+
+    expect(findExactBukAreaMappings(
+      [area.name, area.second_level_name],
+      mappingsByLabel,
+      area,
+      [area]
+    )).toEqual([mapping]);
   });
 });

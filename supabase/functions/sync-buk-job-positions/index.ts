@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 import { buildBukBaseUrl } from "../_shared/bukDocuments.ts";
-import { isExactBukContractAreaMatch, type BukContractAreaMapping } from "../_shared/bukContractAreaMapping.ts";
+import { findExactBukAreaMappings, type BukContractAreaMapping } from "../_shared/bukContractAreaMapping.ts";
 import { getSupabaseSecretKey } from "../_shared/supabaseKeys.ts";
 
 const corsHeaders = {
@@ -488,24 +488,18 @@ async function syncJobPositions(
       const area = areaById.get(areaId);
       if (!area || !readAreaActive(area)) continue;
 
-      for (const label of areaLabels(area)) {
-        const labelMappings = mappingByArea.get(label);
-        if (!labelMappings) continue;
-
-        for (const mapping of labelMappings) {
-          if (!isExactBukContractAreaMatch(mapping, area, areas, labelMappings.length)) continue;
-          const key = `${position.id}:${mapping.contract_id}:${areaId}`;
-          accessRows.set(key, {
-            job_position_id: position.id,
-            contract_id: mapping.contract_id,
-            buk_role_id: roleId,
-            buk_area_id: areaId,
-            buk_area_name: readText(area, ["name", "area_name"]) || mapping.buk_area_name,
-            is_active: true,
-            synced_at: new Date().toISOString()
-          });
-        }
-        break;
+      const exactMappings = findExactBukAreaMappings(areaLabels(area), mappingByArea, area, areas);
+      for (const mapping of exactMappings) {
+        const key = `${position.id}:${mapping.contract_id}:${areaId}`;
+        accessRows.set(key, {
+          job_position_id: position.id,
+          contract_id: mapping.contract_id,
+          buk_role_id: roleId,
+          buk_area_id: areaId,
+          buk_area_name: readText(area, ["name", "area_name"]) || mapping.buk_area_name,
+          is_active: true,
+          synced_at: new Date().toISOString()
+        });
       }
     }
   }

@@ -62,9 +62,10 @@ describe("alcance activo BUK de estructuras de renta", () => {
 
   it("resuelve habilitaciones contra el identificador de area y no solo por nombre", () => {
     expect(edgeFunction).toContain("buk_area_code, contract_number");
-    expect(edgeFunction).toContain("isExactBukContractAreaMatch(mapping, area, areas, labelMappings.length)");
+    expect(edgeFunction).toContain("findExactBukAreaMappings(areaLabels(area), mappingByArea, area, areas)");
     expect(areaMapping).toContain("cost_center");
     expect(areaMapping).toContain("sameLabelMappingCount === 1");
+    expect(areaMapping).toContain("if (exactMatches.length > 0) return exactMatches");
   });
 
   it("verifica BUK-ROLE-68 contra la sync y el RPC productivo", () => {
