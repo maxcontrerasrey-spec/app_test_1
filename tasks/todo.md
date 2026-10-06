@@ -36,12 +36,14 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 - [x] Documentar referencias actuales y criterios visuales para una intranet editorial compacta.
 - [x] Corregir la causa del contraste/fondo y de la alineación del borde de Actualidad; retirar el logo de marca incorrecto.
 - [x] Hacer visibles y operables los diseños contiguos de Agenda, añadir accesos directos visuales configurables desde Puck.
-- [ ] Validar Puck y el portal publicado en escritorio/móvil, incluyendo estados sin publicaciones; ejecutar Guardian/build/diff.
-- [ ] Integrar y desplegar en producción; verificar la edición y los recursos productivos.
+- [x] Validar Puck y el portal publicado en escritorio/móvil, incluyendo estados sin publicaciones; ejecutar Guardian/build/diff.
+- [x] Integrar y desplegar en producción; verificar la edición y los recursos productivos.
 
 Investigación consultada: Microsoft Learn — [Communication site](https://learn.microsoft.com/en-us/sharepoint/create-communication-site) y [web parts](https://learn.microsoft.com/en-us/sharepoint/dev/design/key-web-part-examples); Axero — [intranet examples](https://axerosolutions.com/resources/intranet-examples/); Digital Workplace Group — [quick links](https://digitalworkplacegroup.com/intranet-homepage-quick-links-six-ways/). Criterios: una superficie editorial común sin cajas anidadas, contenido prioritario escaneable, módulos reordenables, mosaicos con iconos y estados vacíos que mantengan su composición.
 
-Verificación local: `npm run build`, contrato del portal (12/12), `npm run guardian` (0 errores, 0 advertencias) y `git diff --check` pasan. Build macOS: 7.459.857 bytes total, 5.333.141 JS, 536.979 CSS; ajuste registrado en el baseline con tolerancia cero.
+Verificación local: `npm run build`, contrato del portal (12/12), `npm run guardian` (0 errores, 0 advertencias) y `git diff --check` pasan. Build macOS: 7.460.390 bytes total, 5.333.141 JS, 537.512 CSS; ajuste registrado en el baseline con tolerancia cero.
+
+Resultado en producción: PR #38 y PR #39 quedaron integrados en `main` (commits `90ab8022` y `0f673e2f`); Cloudflare Pages y Guardian pasaron para ambos. `gestion.busesjm.cl` sirve el CSS compilado `CommunicationsPage-BCTYMYmt.css`, cuyo SHA-256 coincide con el build local verificado (`4b599f1741ac893ef9b6c63e2a7f1bf89ba9b8f5110ea363ee0ceb6de28349f9`). Con sesión ERP se verificaron el preview/escritorio y móvil, sin logo duplicado, accesos con iconos, vacíos compactos y mosaico responsivo. El borrador se publicó como v4 y después se guardó otra vez como borrador sin cambiar v4; Supabase confirmó `published_version=4`, `draft_revision=6`, cuatro accesos y `tarjetas-3` tanto en borrador como en publicado. El botón «Actividades» activó el filtro «Eventos». En el editor quedan acciones separadas y visibles: «Guardar borrador» y «Publicar portal».
 
 ## Refinar superficies y espaciado del Portal de Comunicaciones — 2026-10-05
 
