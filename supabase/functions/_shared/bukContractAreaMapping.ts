@@ -109,3 +109,28 @@ export function isExactBukContractAreaMatch(
 
   return sameLabelMappingCount === 1 && hasUniqueAreaLabel(area, label, allAreas);
 }
+
+/**
+ * Tries area labels from most specific to broadest. A matching display label
+ * must not stop resolution unless at least one mapping also passes the exact
+ * area/cost-center check.
+ */
+export function findExactBukAreaMappings(
+  labels: string[],
+  mappingByArea: Map<string, BukContractAreaMapping[]>,
+  area: BukRecord,
+  allAreas: BukRecord[]
+) {
+  for (const value of labels) {
+    const label = normalizeAreaLabel(value);
+    const mappings = mappingByArea.get(label);
+    if (!mappings) continue;
+
+    const exactMatches = mappings.filter((mapping) =>
+      isExactBukContractAreaMatch(mapping, area, allAreas, mappings.length)
+    );
+    if (exactMatches.length > 0) return exactMatches;
+  }
+
+  return [] as BukContractAreaMapping[];
+}
