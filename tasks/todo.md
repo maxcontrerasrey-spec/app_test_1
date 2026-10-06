@@ -1,5 +1,12 @@
 ## Portal de Comunicaciones corporativo con documentos en R2 — 2026-10-05
 
+## Ajuste final de altura entre jornadas y régimen legal — 2026-10-06
+
+- [x] Reproducir en producción la diferencia de altura con una jornada seleccionada y localizar las reglas implicadas.
+- [x] Fijar el control completo de jornadas a la misma altura exacta del selector de régimen, incluyendo el chip seleccionado.
+- [ ] Ejecutar build, Guardian y `git diff --check`; desplegar mediante PR y confirmar visualmente ambas medidas en producción.
+- [ ] Registrar verificación final de producción.
+
 ## Revisar y preparar boletines compartidos por Comunicaciones — 2026-10-06
 
 - [x] Inspeccionar el correo y descargar desde los enlaces autorizados de SharePoint los paquetes JM y CA.
