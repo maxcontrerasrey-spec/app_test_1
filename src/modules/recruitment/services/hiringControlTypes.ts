@@ -133,6 +133,22 @@ export type RecruitmentProcessesPageSummary = {
   hiredCandidates: number;
 };
 
+export type RecruitmentProcessFilterOption = {
+  value: string;
+  label: string;
+};
+
+export type RecruitmentProcessesPageFilterOptions = {
+  shifts: RecruitmentProcessFilterOption[];
+  contracts: RecruitmentProcessFilterOption[];
+};
+
+export type RecruitmentProcessesPageStatusCounts = {
+  active: number;
+  filled: number;
+  cancelled: number;
+};
+
 export type RecruitmentCaseHeadcountBreakdown = {
   activeCandidates: number;
   hiredCandidates: number;
@@ -441,4 +457,12 @@ export type RecruitmentPagedResponse<T, S = null> = {
   items: T[];
   totalCount: number;
   summary: S | null;
+};
+
+export type RecruitmentProcessesPageResponse = RecruitmentPagedResponse<
+  RecruitmentCaseListRow,
+  RecruitmentProcessesPageSummary
+> & {
+  filterOptions: RecruitmentProcessesPageFilterOptions;
+  statusCounts: RecruitmentProcessesPageStatusCounts;
 };

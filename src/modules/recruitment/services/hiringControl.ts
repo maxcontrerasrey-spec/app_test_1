@@ -20,9 +20,13 @@ export type {
   RecruitmentCaseStatus,
   RecruitmentDashboardSummary,
   RecruitmentPagedResponse,
+  RecruitmentProcessFilterOption,
   RecruitmentPersonnelToHireRow,
   RecruitmentProcessStatusFilter,
+  RecruitmentProcessesPageFilterOptions,
+  RecruitmentProcessesPageResponse,
   RecruitmentProcessesPageSummary,
+  RecruitmentProcessesPageStatusCounts,
   WhoApprovalCause,
   WhoCauseType
 } from "./hiringControlTypes";
@@ -44,9 +48,13 @@ import type {
   RecruitmentCaseStatus,
   RecruitmentDashboardSummary,
   RecruitmentPagedResponse,
+  RecruitmentProcessFilterOption,
   RecruitmentPersonnelToHireRow,
   RecruitmentProcessStatusFilter,
+  RecruitmentProcessesPageFilterOptions,
+  RecruitmentProcessesPageResponse,
   RecruitmentProcessesPageSummary,
+  RecruitmentProcessesPageStatusCounts,
   WhoApprovalCause,
   WhoCauseType
 } from "./hiringControlTypes";
@@ -98,31 +106,57 @@ function parsePagedPayload<T, S = null>(payload: unknown): RecruitmentPagedRespo
 
 function parseRecruitmentProcessesPagePayload(
   payload: unknown
-): RecruitmentPagedResponse<RecruitmentCaseListRow, RecruitmentProcessesPageSummary> {
+): RecruitmentProcessesPageResponse {
   const parsed = parsePagedPayload<
     RecruitmentCaseListRow,
     Partial<RecruitmentProcessesPageSummary>
   >(payload);
+  const rawPayload = (payload ?? {}) as {
+    filter_options?: Partial<RecruitmentProcessesPageFilterOptions> | null;
+    status_counts?: Partial<RecruitmentProcessesPageStatusCounts> | null;
+  };
+  const rawOptions = rawPayload.filter_options;
+  const rawCounts = rawPayload.status_counts;
   const rawSummary = parsed.summary;
-
-  if (!rawSummary || typeof rawSummary !== "object") {
-    return {
-      ...parsed,
-      summary: null
-    };
-  }
 
   return {
     ...parsed,
-    summary: {
-      activeCases: Number(rawSummary.activeCases ?? 0),
-      requestedVacancies: Number(rawSummary.requestedVacancies ?? 0),
-      inProgressCandidates: Number(rawSummary.inProgressCandidates ?? 0),
-      readyToHireCases: Number(rawSummary.readyToHireCases ?? 0),
-      filledCases: Number(rawSummary.filledCases ?? 0),
-      hiredCandidates: Number(rawSummary.hiredCandidates ?? 0)
+    summary:
+      rawSummary && typeof rawSummary === "object"
+        ? {
+            activeCases: Number(rawSummary.activeCases ?? 0),
+            requestedVacancies: Number(rawSummary.requestedVacancies ?? 0),
+            inProgressCandidates: Number(rawSummary.inProgressCandidates ?? 0),
+            readyToHireCases: Number(rawSummary.readyToHireCases ?? 0),
+            filledCases: Number(rawSummary.filledCases ?? 0),
+            hiredCandidates: Number(rawSummary.hiredCandidates ?? 0)
+          }
+        : null,
+    filterOptions: {
+      shifts: Array.isArray(rawOptions?.shifts)
+        ? rawOptions.shifts.filter(isRecruitmentProcessFilterOption)
+        : [],
+      contracts: Array.isArray(rawOptions?.contracts)
+        ? rawOptions.contracts.filter(isRecruitmentProcessFilterOption)
+        : []
+    },
+    statusCounts: {
+      active: Number(rawCounts?.active ?? 0),
+      filled: Number(rawCounts?.filled ?? 0),
+      cancelled: Number(rawCounts?.cancelled ?? 0)
     }
   };
+}
+
+function isRecruitmentProcessFilterOption(value: unknown): value is RecruitmentProcessFilterOption {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "value" in value &&
+    typeof value.value === "string" &&
+    "label" in value &&
+    typeof value.label === "string"
+  );
 }
 
 export async function fetchRecruitmentControlSummary() {
@@ -195,6 +229,13 @@ export async function fetchRecruitmentProcessesPage(input: {
   sortDirection?: "asc" | "desc";
   limit: number;
   offset: number;
+  filters?: {
+    shift?: string[];
+    contract?: string[];
+    pasajes?: string[];
+    campamento?: string[];
+  };
+  signal?: AbortSignal;
 }) {
   if (!supabase) {
     return {
@@ -203,14 +244,22 @@ export async function fetchRecruitmentProcessesPage(input: {
     };
   }
 
-  const { data, error } = await supabase.rpc("get_recruitment_processes_page", {
+  let request = supabase.rpc("get_recruitment_processes_page_v2", {
     p_search: input.search?.trim() ? input.search.trim() : null,
     p_status_filter: input.statusFilter ?? null,
     p_sort_column: input.sortColumn ?? null,
     p_sort_direction: input.sortDirection ?? "asc",
     p_limit: input.limit,
-    p_offset: input.offset
+    p_offset: input.offset,
+    p_filters: {
+      shift: input.filters?.shift ?? [],
+      contract: input.filters?.contract ?? [],
+      pasajes: input.filters?.pasajes ?? [],
+      campamento: input.filters?.campamento ?? []
+    }
   });
+  if (input.signal) request = request.abortSignal(input.signal);
+  const { data, error } = await request;
 
   if (error) {
     return {
@@ -225,7 +274,10 @@ export async function fetchRecruitmentProcessesPage(input: {
   };
 }
 
-export async function resolveRecruitmentProcessSearchFilter(search: string): Promise<{
+export async function resolveRecruitmentProcessSearchFilter(
+  search: string,
+  signal?: AbortSignal
+): Promise<{
   data: RecruitmentProcessStatusFilter;
   error: string | null;
 }> {
@@ -235,52 +287,44 @@ export async function resolveRecruitmentProcessSearchFilter(search: string): Pro
     return { data: null, error: null };
   }
 
-  const filters: RecruitmentProcessStatusFilter[] = [
-    null,
-    "open",
-    "screening",
-    "ready_to_hire",
-    "filled",
-    "cancelled"
-  ];
-  const results = await Promise.all(
-    filters.map(async (statusFilter) => ({
-      statusFilter,
-      result: await fetchRecruitmentProcessesPage({
-        search: normalizedSearch,
-        statusFilter,
-        sortColumn: "case_code",
-        sortDirection: "asc",
-        limit: 5,
-        offset: 0
-      })
-    }))
-  );
+  const result = await fetchRecruitmentProcessesPage({
+    search: normalizedSearch,
+    statusFilter: "all",
+    sortColumn: "case_code",
+    sortDirection: "asc",
+    limit: 1,
+    offset: 0,
+    signal
+  });
 
-  const firstError = results.find(({ result }) => result.error)?.result.error ?? null;
-
-  if (firstError) {
-    return { data: null, error: firstError };
+  if (result.error || !result.data) {
+    return { data: null, error: result.error ?? "No fue posible buscar el folio." };
   }
 
   const exactSearch = normalizedSearch.toLowerCase().replace(/^rc-/, "");
-  const exactMatch = results.find(({ result }) =>
-    result.data?.items.some((item) => {
-      const caseCode = item.case_code.toLowerCase();
-      const caseNumber = caseCode.replace(/^rc-/, "");
-      const folio = item.folio?.toLowerCase() ?? "";
+  const exactMatch = result.data.items.find((item) => {
+    const caseCode = item.case_code.toLowerCase();
+    const caseNumber = caseCode.replace(/^rc-/, "");
+    const folio = item.folio?.toLowerCase() ?? "";
 
-      return caseCode === normalizedSearch.toLowerCase() || caseNumber === exactSearch || folio === exactSearch;
-    })
-  );
+    return caseCode === normalizedSearch.toLowerCase() || caseNumber === exactSearch || folio === exactSearch;
+  });
 
   if (exactMatch) {
-    return { data: exactMatch.statusFilter, error: null };
+    if (exactMatch.status === "filled") return { data: "filled", error: null };
+    if (exactMatch.status === "cancelled" || exactMatch.status === "closed_unfilled") {
+      return { data: "cancelled", error: null };
+    }
+
+    return { data: null, error: null };
   }
 
-  const firstVisibleMatch = results.find(({ result }) => (result.data?.totalCount ?? 0) > 0);
+  const { active, filled, cancelled } = result.data.statusCounts;
+  if (active > 0) return { data: null, error: null };
+  if (filled > 0) return { data: "filled", error: null };
+  if (cancelled > 0) return { data: "cancelled", error: null };
 
-  return { data: firstVisibleMatch?.statusFilter ?? null, error: null };
+  return { data: null, error: null };
 }
 
 export async function fetchRecruitmentCandidatesPage(input: {

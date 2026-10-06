@@ -17,14 +17,6 @@ const InternalMobilityPage = lazyWithRetry("internal-mobility-page", routeModule
 const HiringStatusPage = lazyWithRetry("hiring-status-page", routeModuleImporters.hiringStatusPage);
 const PsycholaboralManagementPage = lazyWithRetry("psycholaboral-management-page", routeModuleImporters.psycholaboralManagementPage);
 const PsychometricAssessmentPage = lazyWithRetry("psychometric-assessment-page", routeModuleImporters.psychometricAssessmentPage);
-const DsalPublicApplicationPage = lazyWithRetry(
-  "dsal-public-application-page",
-  routeModuleImporters.dsalPublicApplicationPage
-);
-const PublicBukWorkerFilePage = lazyWithRetry(
-  "public-buk-worker-file-page",
-  routeModuleImporters.publicBukWorkerFilePage
-);
 const LoginPage = lazyWithRetry("login-page", routeModuleImporters.loginPage);
 const ResetPasswordPage = lazyWithRetry("reset-password-page", routeModuleImporters.resetPasswordPage);
 const RecoveryLinkPage = lazyWithRetry("recovery-link-page", routeModuleImporters.recoveryLinkPage);
@@ -97,8 +89,6 @@ export function AppRouter() {
         <Route path="/verificar/competencia/:lookup" element={<CompetencyVerificationPage />} />
         <Route path="/verificar/documento" element={<HiringDocumentVerificationPage />} />
         <Route path="/verificar/documento/:lookup" element={<HiringDocumentVerificationPage />} />
-        <Route path="/postulacion-dsal" element={<DsalPublicApplicationPage />} />
-        <Route path="/ficha-buk-dsal" element={<PublicBukWorkerFilePage />} />
         <Route path="/evaluacionpsico" element={<PsychometricAssessmentPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>

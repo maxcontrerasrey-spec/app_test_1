@@ -24,12 +24,10 @@ import { closeHiringRequest } from "../services/hiringWorkflow";
 import { HiringCandidatesView } from "../components/HiringCandidatesView";
 import { HiringInternalMobilityView } from "../components/HiringInternalMobilityView";
 import { HiringPersonnelToHireView } from "../components/HiringPersonnelToHireView";
-import { HiringPrecandidatesView } from "../components/HiringPrecandidatesView";
 import { HiringProcessesView } from "../components/HiringProcessesView";
 
 type RecruitmentInternalView =
   | "processes"
-  | "precandidates"
   | "candidates"
   | "personnel_to_hire"
   | "personnel_contracted"
@@ -65,11 +63,6 @@ export function HiringStatusPage() {
     hasModuleAccess(accessibleModules, "control_contrataciones");
   const canAccessCandidateControl =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_candidate_control");
-  // Reclutamiento puede revisar; los roles de consulta solo pueden leer.
-  const canAccessPrecandidates =
-    isSuperAdmin || appRoles.includes("reclutamiento") ||
-    appRoles.includes("reclutamiento_consulta") ||
-    appRoles.includes("control_contratos");
   const canAccessPersonnelToHire =
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "recruitment_personnel_to_hire");
   const canAccessContractedPersonnel = canAccessPersonnelToHire;
@@ -119,14 +112,6 @@ export function HiringStatusPage() {
         { table: "recruitment_cases" },
         { table: "recruitment_case_candidates" },
         { table: "candidate_stage_approvals" },
-        { table: "candidate_profiles" }
-      ];
-    }
-
-    if (activeView === "precandidates") {
-      return [
-        { table: "recruitment_precandidates" },
-        { table: "recruitment_case_candidates" },
         { table: "candidate_profiles" }
       ];
     }
@@ -185,8 +170,6 @@ export function HiringStatusPage() {
   useEffect(() => {
     const firstAllowedView: RecruitmentInternalView | null = canAccessProcesses
       ? "processes"
-      : canAccessPrecandidates
-        ? "precandidates"
       : canAccessCandidateControl
         ? "candidates"
         : canAccessPersonnelToHire
@@ -199,7 +182,6 @@ export function HiringStatusPage() {
 
     const activeViewAllowed =
       (activeView === "processes" && canAccessProcesses) ||
-      (activeView === "precandidates" && canAccessPrecandidates) ||
       (activeView === "candidates" && canAccessCandidateControl) ||
       (activeView === "personnel_to_hire" && canAccessPersonnelToHire) ||
       (activeView === "personnel_contracted" && canAccessContractedPersonnel) ||
@@ -216,7 +198,6 @@ export function HiringStatusPage() {
   }, [
     activeView,
     canAccessCandidateControl,
-    canAccessPrecandidates,
     canAccessInternalMobility,
     canAccessContractedPersonnel,
     canAccessPersonnelToHire,
@@ -447,15 +428,6 @@ export function HiringStatusPage() {
               Resumen de procesos de contratación
             </button>
           ) : null}
-          {canAccessPrecandidates ? (
-            <button
-              type="button"
-              className={`approval-chip ${activeView === "precandidates" ? "tracking-kpi-card-active" : ""}`}
-              onClick={() => setActiveView("precandidates")}
-            >
-              Precandidatos
-            </button>
-          ) : null}
           {canAccessCandidateControl ? (
             <button
               type="button"
@@ -496,16 +468,6 @@ export function HiringStatusPage() {
 
         {activeView === "processes" && canAccessProcesses ? (
           processesView
-        ) : activeView === "precandidates" && canAccessPrecandidates ? (
-          <HiringPrecandidatesView
-            readOnly={isReadOnlyRecruitment}
-            onCandidateApproved={async (caseId, candidateId) => {
-              setSelectedCaseId(caseId);
-              setSelectedCandidateId(candidateId);
-              setActiveView("candidates");
-              await queryClient.prefetchQuery(getRecruitmentCaseDetailQueryOptions(caseId));
-            }}
-          />
         ) : activeView === "candidates" && canAccessCandidateControl ? (
           <HiringCandidatesView
             readOnly={isReadOnlyRecruitment}

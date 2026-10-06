@@ -25,6 +25,7 @@
 - Hooks: `src/modules/recruitment/hooks/useRecruitmentQueries.ts`
 - Servicios: `src/modules/recruitment/services/hiringRequests.ts`, `src/modules/recruitment/services/hiringWorkflow.ts`, `src/modules/recruitment/services/hiringControl.ts`, `src/modules/recruitment/services/documentChecklistApi.ts`, `src/modules/recruitment/services/hiringCatalogs.ts`
 - Riesgo: `hiringControl.ts` y varios componentes exceden tamano comodo de auditoria
+- Retiro 2026-10-06: los formularios públicos de postulación DSAL y ficha BUK ya no reciben información; los enlaces históricos responden HTTP 410. Los candidatos promovidos conservan perfil, ficha BUK, documentos y auditoría.
 
 ### Gestión Psicolaboral
 

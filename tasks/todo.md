@@ -1,3 +1,13 @@
+# Retiro integral de precandidatos y enlaces públicos — 2026-10-06
+
+- [x] Auditar referencias activas en rutas, lazy imports, UI, servicios, permisos, SQL/RPC, tablas, vistas, triggers, grants y datos; comprobar aparte correcciones locales del ciclo previo que el usuario espera en producción.
+- [x] Confirmar conteos/dependencias de datos; definir borrado solo para artefactos exclusivos de precandidatos, conservando íntegros perfiles, fichas BUK, documentos, etapas y auditoría de candidatos promovidos.
+- [x] Retirar el ingreso y formularios públicos (`/postulacion-dsal`, `/ficha-buk-dsal`), la pestaña/servicios de precandidatos y todos los RPC/grants/tablas solo usados por ese módulo; mantener otros enlaces públicos ajenos.
+- [x] Crear migración forward-only sin `CASCADE` ni cambios de historial; agregar pruebas para rutas cerradas, ausencia del UI/RPC/table APIs y preservación de candidatos vigentes.
+- [x] Ejecutar suite focalizada, build, Guardian, auditorías de migraciones/seguridad, revisión del diff y reauditoría Supabase; reparar hallazgos aplicables.
+- [ ] Publicar y desplegar en producción; verificar migración/ACL/objetos/datos, rutas/bundle productivos y repetir auditorías hasta que no queden riesgos conocidos accionables.
+- [ ] Registrar revisión final, límites residuales y evidencia en esta tarea; no declarar riesgo cero absoluto sin fundamento.
+
 ## Portal de Comunicaciones corporativo con documentos en R2 — 2026-10-05
 
 ## Revisar y preparar boletines compartidos por Comunicaciones — 2026-10-06
