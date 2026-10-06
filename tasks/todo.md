@@ -4616,3 +4616,13 @@ Revisión: el editor ahora ofrece cinco paletas, tres tipografías, tres escalas
 - [x] Desplegar la migración y el frontend; verificar los estilos servidos en producción.
 
 Revisión final: Puck ofrece “Lista horizontal”, “Tarjetas · 2 columnas” y “Tarjetas · 3 columnas”. El diseño responde a tableta y móvil; el valor anterior ausente conserva la lista horizontal. SQL acepta solo esos tres valores para Agenda y mantiene la validación de noticias sin cambios. `npm run guardian` pasó localmente con 0 errores y 0 advertencias; `npm run audit:migrations`, `npm run audit:supabase-security` y `git diff --check` pasaron. PR #34 está integrado; Cloudflare Pages pasó y los bundles productivos incluyen los tres diseños y sus reglas CSS. La migración `20261005210000` quedó aplicada en Supabase y registrada; las pruebas SQL en producción aceptan lista antigua y ambas grillas, y rechazan un cuarto layout. Guardian main run `37370499716` solo falló porque faltaban registrar 2,120 bytes de diferencia Linux/local; el baseline canónico queda corregido en este PR.
+
+## Evitar reinicios al seleccionar Estructuras de Renta — 2026-10-06
+
+- [x] Reproducir en el flujo y confirmar cómo `placeholderData` interactúa con la hidratación del formulario.
+- [x] Evitar que datos previos o refetches reescriban el borrador del cargo seleccionado; mostrar carga mientras llega el detalle correcto.
+- [x] Agregar cobertura para la protección contra datos placeholder y rehidratación repetida.
+- [x] Ejecutar pruebas focalizadas, build frontend, Guardian, auditorías requeridas y `git diff --check`.
+- [ ] Integrar a `main`, desplegar y comprobar el módulo publicado en producción.
+
+Diagnóstico: el efecto de hidratación dependía del objeto `detail` y de `selectedPosition`; cada respuesta/refetch recreaba esos objetos y volvía a reemplazar todos los campos del formulario. Además, `placeholderData` mantenía el detalle anterior mientras cambiaba el cargo. La corrección hidrata una sola vez por selección y espera la respuesta real antes de mostrar el editor.
