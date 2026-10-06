@@ -12,8 +12,8 @@
 
 ## Ajuste final de altura entre jornadas y régimen legal — 2026-10-06
 
-- [x] Reproducir en producción la diferencia de altura con una jornada seleccionada y localizar las reglas implicadas.
-- [x] Fijar el control completo de jornadas a la misma altura exacta del selector de régimen, incluyendo el chip seleccionado.
+- [x] Reproducir en producción la diferencia y localizar la causa: jornadas tenía altura explícita, régimen legal solo `min-height`, que Safari renderizaba a 18 px.
+- [x] Fijar altura explícita uniforme para ambos controles y mantener el chip dentro de la misma caja.
 - [ ] Ejecutar build, Guardian y `git diff --check`; desplegar mediante PR y confirmar visualmente ambas medidas en producción.
 - [ ] Registrar verificación final de producción.
 

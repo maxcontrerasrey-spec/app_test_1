@@ -4162,6 +4162,11 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Definir altura, padding, tipografía y radio una sola vez para los campos de una línea en todo el módulo; conservar una excepción multilínea para `textarea` y excluir checkbox/radio.
 - No añadir un override a cada formulario: las siete vistas reutilizan una hoja acotada al módulo y deben heredar la misma escala.
 
+## 2026-10-06 - El selector nativo de régimen necesita altura explícita en Safari
+
+- `min-height` no igualó el selector legal con el control personalizado de jornadas: Safari mantuvo el `select` en 18 px aunque la regla declarara el mínimo compartido.
+- Para controles hermanos con el mismo propósito visual, verificar `getBoundingClientRect()` en producción y fijar `height`, `min-height`, `max-height` y `box-sizing` en ambos; no dar por válida la igualdad mirando solo el CSS fuente.
+
 ## 2026-09-30 - Un módulo vacío también necesita una composición operativa completa
 
 - Ante feedback estético, localizar primero una superficie existente del ERP que el usuario ya reconoce y replicar su escala, retícula y densidad antes de inventar otro lenguaje local.
