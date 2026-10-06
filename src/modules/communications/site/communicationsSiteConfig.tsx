@@ -159,7 +159,7 @@ function BulletinsSectionView({ title, description, limit }: BulletinsProps) {
   return (
     <section className="communications-site-section communications-site-bulletins" id="communications-bulletins">
       <header className="communications-site-section-heading"><div><span className="communications-kicker">EDICIONES</span><h2>{title}</h2><p>{description}</p></div></header>
-      {bulletins.length ? <div className="communications-site-bulletin-list">{bulletins.map((item) => <article className="communications-site-bulletin" key={item.id}><div><strong>{item.title}</strong><small>{formatDate(item.publishedAt)} · PDF</small></div><button type="button" aria-label={`Descargar ${item.title}`} onClick={() => onDownload(item)}>Descargar <span aria-hidden="true">↓</span></button></article>)}</div> : <p className="communications-site-empty">Aún no hay boletines publicados.</p>}
+      {bulletins.length ? <div className="communications-site-bulletin-list">{bulletins.map((item) => <article className="communications-site-bulletin" key={item.id}><span className="communications-site-bulletin-icon"><NavigationIcon iconKey={item.iconKey} /></span><div className="communications-site-bulletin-copy"><strong>{item.title}</strong><p>{item.summary}</p><small>{formatDate(item.publishedAt)} · PDF</small></div><button type="button" aria-label={`Descargar ${item.title}`} onClick={() => onDownload(item)}><NavigationIcon iconKey="download" /><span>Descargar</span></button></article>)}</div> : <p className="communications-site-empty">Aún no hay boletines publicados.</p>}
     </section>
   );
 }
