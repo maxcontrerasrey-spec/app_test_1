@@ -74,7 +74,7 @@ Revision 2026-09-24 selector explícito de fichas BUK en movilidad interna: CSS 
 
 Revision 2026-09-24 Control Estructuras de Renta compacto: CSS sube 1,165 bytes, de 286,723 a 287,888, para alinear el submódulo con la gramática visual de Acreditaciones: superficies planas, controles compactos, listas densas y estados discretos. No agrega vendors, assets ni rutas eager.
 
-Revision 2026-10-06 jornadas en Estructuras de Renta: JS y total suben 2.120 bytes en el build canónico Linux de CI (210 bytes en macOS) para cargar el catálogo activo de `public.shifts`, permitir multiselección de jornadas y persistir la clasificación de régimen. CSS, vendors y assets no cambian; el campo usa `MultiSelectField` ya incluido.
+Revision 2026-10-06 jornadas en Estructuras de Renta: la función añade 210 bytes en el build canónico Linux de CI. Al integrar el `main` vigente, el artefacto total quedó 2.330 bytes por encima del baseline anterior: 2.120 bytes del contenido que ya venía en `main` y 210 bytes de esta función. CSS, vendors y assets no cambian; el campo usa `MultiSelectField` ya incluido.
 
 Revision 2026-08-03 auditoria integral: se eliminan el generador PDF local sin consumidores, cinco lecturas duplicadas del servicio de competencias y las dependencias frontend PDF/QR asociadas. El cambio reduce 903 lineas de codigo, 642,227 bytes de `dist`, 478,046 bytes de JS y tres chunks respecto del baseline machine-readable anterior. La generacion de certificados permanece en su Edge Function con dependencias propias y el frontend conserva ECharts/XLSX lazy.
 
@@ -186,9 +186,9 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7467313,
+  "distTotalBytes": 7467523,
   "jsFileCount": 74,
-  "jsTotalBytes": 5338590,
+  "jsTotalBytes": 5338800,
   "cssFileCount": 15,
   "cssTotalBytes": 538986,
   "budgetPolicy": {
