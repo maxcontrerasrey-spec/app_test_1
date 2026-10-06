@@ -96,6 +96,16 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 - [x] Validar el comportamiento y publicar en producción, confirmando que el informe de un candidato rechazado abre desde el acceso autenticado.
 
 Resultado: la causa era que el botón del informe estaba dentro de un bloque de acciones limitado a `completed`, `approved` y `hired`; el estado `rejected` quedaba excluido. En producción, Edwar Muñoz (RC-0245, candidato rechazado) tiene `report_status=generated`, certificado e informe integrados en R2. La interfaz ahora muestra `INF` en la fila y “Descargar informe psicolaboral” en el detalle para cualquier estado cuando el artefacto está generado. La RPC de descarga conserva la autorización de usuarios con acceso al módulo. Integrado en PR #57; CI y Cloudflare Pages pasaron. Se verificó que `gestion.busesjm.cl` publica el nuevo bundle con ambas etiquetas de descarga.
+## Permitir una estructura de renta por cargo y jornada — 2026-10-06
+
+- [ ] Preservar el trabajo existente y revisar en producción el estado real de estructuras y jornadas asociadas; no inferir jornada para estructuras legadas sin clasificación.
+- [ ] Cambiar el modelo a una estructura por contrato + cargo + jornada, manteniendo autorización BUK, auditoría, cálculos y RLS; cupos quedan asociados a cada variante.
+- [ ] Persistir en cada contrato/cargo qué jornadas aplican, independiente de que ya tengan una estructura, y permitir configurarlo antes de crear estructuras.
+- [ ] Ajustar RPC de lectura/guardado y frontend para elegir una jornada aplicable por estructura, crear más de una para el mismo cargo y mostrar el nombre comprensible (ej. `4x3`) sin código interno.
+- [ ] Cubrir con pruebas: dos jornadas mismo cargo con datos separados, guardar una sin alterar otra, impedir configurar jornadas no aplicables, control de duplicados, preservar estructuras sin jornada y mantener bloqueos de permisos/BUK.
+- [ ] Ejecutar validación EEES, Guardian, build, auditorías Supabase y diff-check; desplegar a producción por el flujo vigente y verificar una segunda estructura real de prueba en la ruta de negocio.
+
+Corrección de alcance: cada cargo define su propio conjunto de jornadas aplicables. Se deben guardar esas jornadas primero; solo las jornadas guardadas habilitan crear una estructura.
 
 ## Corregir selector de jornadas en Estructuras de Renta — 2026-10-06
 
@@ -104,6 +114,8 @@ Resultado: la causa era que el botón del informe estaba dentro de un bloque de 
 - [ ] Verificar desktop y móvil con build, Guardian y diff check; publicar y comprobar el control en producción.
 
 Revisión productiva intermedia: el selector y el menú ya cargan fuera del marco, pero la comprobación visual en Safari encontró que la regla de inputs de texto también se aplicaba a los checkboxes. Se corrige antes de cerrar y se repetirá la prueba con opciones visibles/clickeables.
+
+Corrección de alcance: los cargos no comparten necesariamente el mismo catálogo de jornadas aplicables. La pantalla debe guardar la selección por cargo primero; solo entonces se habilita crear una estructura por cada jornada seleccionada.
 
 ## Reparar generación BUK y carga documental para RC-0226 — 2026-10-06
 

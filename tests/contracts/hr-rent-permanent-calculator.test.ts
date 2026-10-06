@@ -9,6 +9,10 @@ const page = readFileSync(
   "src/modules/rent_structures/pages/RentStructuresPage.tsx",
   "utf8"
 );
+const rentCss = readFileSync(
+  "src/modules/rent_structures/styles/rentStructures.css",
+  "utf8"
+);
 const amountInput = readFileSync(
   "src/modules/rent_structures/lib/rentAmountInput.ts",
   "utf8"
@@ -79,7 +83,7 @@ describe("calculador permanente de estructuras de renta", () => {
   it("mantiene el impuesto único desactivado por defecto y lo configura por cargo", () => {
     expect(incomeTaxMigration).toContain("include_income_tax boolean not null default false");
     expect(api).toContain("p_include_income_tax: legal.includeIncomeTax");
-    expect(page).not.toContain('type="checkbox"');
+    expect(rentCss).toContain(".rent-legal-fields input:not([type=\"checkbox\"])");
     expect(page).toContain("Impuesto único");
     expect(page).toContain("No incluir");
     expect(page).toContain("Incluir cálculo SII");
