@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import type { Config, Data } from "@puckeditor/core";
 import type { CommunicationItem } from "../services/communicationsApi";
 import { CommunicationAssetImage } from "../components/CommunicationAssetImage";
+import { NavigationIcon } from "../../../app/layout/NavigationIcon";
 
 export type CommunicationsTheme = "buses-jm" | "andino" | "neutro" | "oceano" | "energia";
 export type CommunicationsFont = "institucional" | "sistema" | "editorial";
@@ -30,6 +31,15 @@ type EventsProps = { title: string; description: string; limit: number; layout: 
 type BulletinsProps = { title: string; description: string; limit: number };
 type MessageProps = { title: string; message: string; tone: CommunicationsTone };
 type DividerProps = { label: string };
+type QuickAccessTarget = "actualidad" | "oficial" | "agenda" | "boletines";
+type QuickAccessProps = {
+  title: string;
+  description: string;
+  newsLabel: string; newsTarget: QuickAccessTarget;
+  officialLabel: string; officialTarget: QuickAccessTarget;
+  eventsLabel: string; eventsTarget: QuickAccessTarget;
+  bulletinsLabel: string; bulletinsTarget: QuickAccessTarget;
+};
 
 type CommunicationsComponents = {
   HeroSection: HeroProps;
@@ -39,6 +49,7 @@ type CommunicationsComponents = {
   BulletinsSection: BulletinsProps;
   MessageSection: MessageProps;
   DividerSection: DividerProps;
+  QuickLinksSection: QuickAccessProps;
 };
 
 export type CommunicationsSiteData = Data<CommunicationsComponents, CommunicationsRootProps>;
@@ -48,13 +59,15 @@ export type CommunicationsSiteRenderContext = {
   featured: CommunicationItem | undefined;
   onOpen: (item: CommunicationItem) => void;
   onDownload: (item: CommunicationItem) => void;
+  onQuickAccess: (target: QuickAccessTarget) => void;
 };
 
 const CommunicationsSiteContext = createContext<CommunicationsSiteRenderContext>({
   items: [],
   featured: undefined,
   onOpen: () => undefined,
-  onDownload: () => undefined
+  onDownload: () => undefined,
+  onQuickAccess: () => undefined
 });
 
 export function CommunicationsSiteContextProvider({
@@ -69,6 +82,11 @@ export function CommunicationsSiteContextProvider({
 
 function useSiteContent() {
   return useContext(CommunicationsSiteContext);
+}
+
+function QuickAccessIcon({ name }: { name: "news" | "official" | "events" | "bulletins" }) {
+  const icons = { news: "megaphone", official: "clipboard-list", events: "calendar-clock", bulletins: "download" } as const;
+  return <NavigationIcon iconKey={icons[name]} />;
 }
 
 function formatDate(value: string | null, includeTime = false) {
@@ -116,21 +134,21 @@ function NewsSectionView({ title, description, limit, layout }: NewsProps) {
   const { items } = useSiteContent();
   const news = items.filter((item) => item.contentType !== "boletin" && item.contentType !== "evento").slice(0, limit);
   return (
-    <section className="communications-site-section">
+    <section className="communications-site-section" id="communications-news">
       <header className="communications-site-section-heading"><div><span className="communications-kicker">ACTUALIDAD</span><h2>{title}</h2><p>{description}</p></div></header>
       {news.length ? <div className={`communications-site-news is-${layout}`}>{news.map((item) => <PublicationCard key={item.id} item={item} layout={layout} />)}</div> : <p className="communications-site-empty">Las noticias y comunicados publicados aparecerán aquí.</p>}
     </section>
   );
 }
 
-function EventsSectionView({ title, description, limit, layout = "lista" }: EventsProps) {
+function EventsSectionView({ title, description, limit, layout = "tarjetas-3" }: EventsProps) {
   const { items, onOpen } = useSiteContent();
   const events = items.filter((item) => item.contentType === "evento" && item.startsAt && new Date(item.startsAt).getTime() >= Date.now())
     .sort((left, right) => new Date(left.startsAt || 0).getTime() - new Date(right.startsAt || 0).getTime()).slice(0, limit);
   return (
-    <section className={`communications-site-section communications-site-events is-${layout}`}>
+    <section className={`communications-site-section communications-site-events is-${layout}`} id="communications-agenda">
       <header className="communications-site-section-heading"><div><span className="communications-kicker">ENCUENTROS</span><h2>{title}</h2><p>{description}</p></div></header>
-      {events.length ? <div className={`communications-site-event-list is-${layout}`}>{events.map((event) => <button type="button" className="communications-site-event" key={event.id} onClick={() => onOpen(event)}><span className="communications-site-event-date">{event.startsAt ? new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "short" }).format(new Date(event.startsAt)) : "—"}</span><span><strong>{event.title}</strong><small>{formatDate(event.startsAt, true)}</small></span><span aria-hidden="true">→</span></button>)}</div> : <p className="communications-site-empty">Cuando haya actividades publicadas, las verás aquí.</p>}
+      {events.length ? <div className={`communications-site-event-list is-${layout}`}>{events.map((event) => <button type="button" className="communications-site-event" key={event.id} onClick={() => onOpen(event)}><span className="communications-site-event-date">{event.startsAt ? new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "short" }).format(new Date(event.startsAt)) : "—"}</span><span><strong>{event.title}</strong><small>{formatDate(event.startsAt, true)}</small></span><span aria-hidden="true">→</span></button>)}</div> : <div className={`communications-site-event-list is-${layout} is-empty`}><div className="communications-site-event-empty"><QuickAccessIcon name="events"/><span>Agenda</span><strong>Sin actividades publicadas</strong></div></div>}
     </section>
   );
 }
@@ -139,11 +157,23 @@ function BulletinsSectionView({ title, description, limit }: BulletinsProps) {
   const { items, onDownload } = useSiteContent();
   const bulletins = items.filter((item) => item.contentType === "boletin" && item.hasPdf).slice(0, limit);
   return (
-    <section className="communications-site-section communications-site-bulletins">
+    <section className="communications-site-section communications-site-bulletins" id="communications-bulletins">
       <header className="communications-site-section-heading"><div><span className="communications-kicker">EDICIONES</span><h2>{title}</h2><p>{description}</p></div></header>
       {bulletins.length ? <div className="communications-site-bulletin-list">{bulletins.map((item) => <article className="communications-site-bulletin" key={item.id}><div><strong>{item.title}</strong><small>{formatDate(item.publishedAt)} · PDF</small></div><button type="button" aria-label={`Descargar ${item.title}`} onClick={() => onDownload(item)}>Descargar <span aria-hidden="true">↓</span></button></article>)}</div> : <p className="communications-site-empty">Aún no hay boletines publicados.</p>}
     </section>
   );
+}
+
+const accessTargetOptions = selectOptions([ ["actualidad", "Noticias y actualidad"], ["oficial", "Comunicados oficiales"], ["agenda", "Agenda de actividades"], ["boletines", "Boletines"] ]);
+function QuickLinksSectionView(props: QuickAccessProps) {
+  const { onQuickAccess } = useSiteContent();
+  const links = [
+    { key: "news", label: props.newsLabel, target: props.newsTarget },
+    { key: "official", label: props.officialLabel, target: props.officialTarget },
+    { key: "events", label: props.eventsLabel, target: props.eventsTarget },
+    { key: "bulletins", label: props.bulletinsLabel, target: props.bulletinsTarget }
+  ] as const;
+  return <nav className="communications-site-quicklinks" aria-label={props.title}><header><span>{props.title}</span><small>{props.description}</small></header><div>{links.map((link) => <button key={link.key} type="button" className="communications-site-quicklink" onClick={() => onQuickAccess(link.target)}><QuickAccessIcon name={link.key}/><span>{link.label}</span><b aria-hidden="true">↗</b></button>)}</div></nav>;
 }
 
 function MessageSectionView({ title, message, tone }: MessageProps) {
@@ -154,7 +184,7 @@ function DividerSectionView({ label }: DividerProps) {
   return <div className="communications-site-divider"><span>{label || " "}</span></div>;
 }
 
-const selectOptions = (values: Array<[string, string]>) => values.map(([value, label]) => ({ value, label }));
+function selectOptions(values: Array<[string, string]>) { return values.map(([value, label]) => ({ value, label })); }
 
 export const communicationsSiteConfig: Config<CommunicationsComponents, CommunicationsRootProps> = {
   root: {
@@ -170,10 +200,10 @@ export const communicationsSiteConfig: Config<CommunicationsComponents, Communic
       footer: { type: "text", label: "Texto al pie" }
     },
     defaultProps: { title: "Comunicaciones", tagline: "Un espacio para informarnos, compartir y crecer juntos.", theme: "buses-jm", font: "institucional", typeScale: "estandar", contentWidth: "estandar", shape: "suave", footer: "Portal interno · Buses JM" },
-    render: ({ children, title, tagline, theme, font, typeScale, contentWidth, shape, footer }) => <div className={siteLayoutClass({ theme, font, typeScale, contentWidth, shape })}><header className="communications-site-masthead"><span className="communications-site-brand">jm</span><div><strong>{title}</strong><small>{tagline}</small></div></header><main>{children}</main><footer className="communications-site-footer"><span>{title}</span><span>{footer}</span></footer></div>
+    render: ({ children, theme, font, typeScale, contentWidth, shape, footer }) => <div className={siteLayoutClass({ theme, font, typeScale, contentWidth, shape })}><main>{children}</main><footer className="communications-site-footer"><span>Comunicaciones</span><span>{footer}</span></footer></div>
   },
   categories: {
-    contenido: { title: "Secciones", components: ["FeaturedSection", "HeroSection", "NewsSection", "EventsSection", "BulletinsSection", "MessageSection", "DividerSection"] }
+    contenido: { title: "Secciones", components: ["QuickLinksSection", "FeaturedSection", "HeroSection", "NewsSection", "EventsSection", "BulletinsSection", "MessageSection", "DividerSection"] }
   },
   components: {
     FeaturedSection: {
@@ -210,10 +240,22 @@ export const communicationsSiteConfig: Config<CommunicationsComponents, Communic
         title: { type: "text", label: "Título de sección" },
         description: { type: "textarea", label: "Descripción" },
         limit: { type: "number", label: "Cantidad de eventos", min: 1, max: 12 },
-        layout: { type: "select", label: "Presentación", options: selectOptions([["lista", "Lista horizontal"], ["tarjetas-2", "Tarjetas · 2 columnas"], ["tarjetas-3", "Tarjetas · 3 columnas"]]) }
+        layout: { type: "select", label: "Presentación", options: selectOptions([["lista", "Lista horizontal"], ["tarjetas-2", "Mosaico · 2 columnas"], ["tarjetas-3", "Mosaico · 3 columnas"]]) }
       },
-      defaultProps: { title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3, layout: "lista" },
+      defaultProps: { title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3, layout: "tarjetas-3" },
       render: (props) => <EventsSectionView {...props} />
+    },
+    QuickLinksSection: {
+      label: "Accesos directos",
+      fields: {
+        title: { type: "text", label: "Título" }, description: { type: "text", label: "Descripción" },
+        newsLabel: { type: "text", label: "Texto · Noticias" }, newsTarget: { type: "select", label: "Destino · Noticias", options: accessTargetOptions },
+        officialLabel: { type: "text", label: "Texto · Oficial" }, officialTarget: { type: "select", label: "Destino · Oficial", options: accessTargetOptions },
+        eventsLabel: { type: "text", label: "Texto · Actividades" }, eventsTarget: { type: "select", label: "Destino · Actividades", options: accessTargetOptions },
+        bulletinsLabel: { type: "text", label: "Texto · Boletines" }, bulletinsTarget: { type: "select", label: "Destino · Boletines", options: accessTargetOptions }
+      },
+      defaultProps: { title: "Accesos rápidos", description: "Lo que buscas, a un paso", newsLabel: "Noticias", newsTarget: "actualidad", officialLabel: "Comunicados", officialTarget: "oficial", eventsLabel: "Actividades", eventsTarget: "agenda", bulletinsLabel: "Boletines", bulletinsTarget: "boletines" },
+      render: (props) => <QuickLinksSectionView {...props} />
     },
     BulletinsSection: {
       label: "Archivo de boletines",
@@ -249,7 +291,8 @@ export const DEFAULT_COMMUNICATIONS_SITE: CommunicationsSiteData = {
   content: [
     { type: "FeaturedSection", props: { id: "destacada-inicial", title: "Una mirada a nuestra semana", description: "Novedades y buenas historias de nuestros equipos." } },
     { type: "NewsSection", props: { id: "noticias-inicial", title: "Últimas publicaciones", description: "Lo nuevo en Buses JM.", limit: 3, layout: "grilla" } },
-    { type: "EventsSection", props: { id: "agenda-inicial", title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3, layout: "lista" } },
+    { type: "QuickLinksSection", props: { id: "accesos-inicial", title: "Accesos rápidos", description: "Lo que buscas, a un paso", newsLabel: "Noticias", newsTarget: "actualidad", officialLabel: "Comunicados", officialTarget: "oficial", eventsLabel: "Actividades", eventsTarget: "agenda", bulletinsLabel: "Boletines", bulletinsTarget: "boletines" } },
+    { type: "EventsSection", props: { id: "agenda-inicial", title: "Próximas actividades", description: "Encuentros y actividades para nuestra comunidad.", limit: 3, layout: "tarjetas-3" } },
     { type: "BulletinsSection", props: { id: "boletines-inicial", title: "Boletines", description: "Lee y descarga las últimas ediciones.", limit: 4 } }
   ],
   zones: {}
@@ -274,7 +317,8 @@ function renderLayoutBlock(block: { type: string; props: Record<string, unknown>
     case "FeaturedSection": return <FeaturedSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} />;
     case "HeroSection": return <HeroSectionView key={key} eyebrow={String(p.eyebrow ?? "")} title={String(p.title ?? "")} summary={String(p.summary ?? "")} tone={(p.tone as CommunicationsTone) ?? "destacado"} />;
     case "NewsSection": return <NewsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 6)} layout={(p.layout as CommunicationsLayout) ?? "grilla"} />;
-    case "EventsSection": return <EventsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 3)} layout={(p.layout as CommunicationsEventsLayout) ?? "lista"} />;
+    case "EventsSection": return <EventsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 3)} layout={(p.layout as CommunicationsEventsLayout) ?? "tarjetas-3"} />;
+    case "QuickLinksSection": return <QuickLinksSectionView key={key} {...p as unknown as QuickAccessProps} />;
     case "BulletinsSection": return <BulletinsSectionView key={key} title={String(p.title ?? "")} description={String(p.description ?? "")} limit={Number(p.limit ?? 4)} />;
     case "MessageSection": return <MessageSectionView key={key} title={String(p.title ?? "")} message={String(p.message ?? "")} tone={(p.tone as CommunicationsTone) ?? "claro"} />;
     case "DividerSection": return <DividerSectionView key={key} label={String(p.label ?? "")} />;
@@ -284,5 +328,5 @@ function renderLayoutBlock(block: { type: string; props: Record<string, unknown>
 
 export function CommunicationsSiteLayout({ data }: { data: CommunicationsSiteData }) {
   const root = safeRootProps(data);
-  return <div className={siteLayoutClass(root)}><header className="communications-site-masthead"><span className="communications-site-brand">jm</span><div><strong>{root.title}</strong><small>{root.tagline}</small></div></header><main>{data.content?.map((block, index) => renderLayoutBlock(block as { type: string; props: Record<string, unknown> }, String(block.props.id ?? index)))}</main><footer className="communications-site-footer"><span>{root.title}</span><span>{root.footer}</span></footer></div>;
+  return <div className={siteLayoutClass(root)}><main>{data.content?.map((block, index) => renderLayoutBlock(block as { type: string; props: Record<string, unknown> }, String(block.props.id ?? index)))}</main><footer className="communications-site-footer"><span>Comunicaciones</span><span>{root.footer}</span></footer></div>;
 }

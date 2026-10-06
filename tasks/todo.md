@@ -31,6 +31,18 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 # Tareas y Roadmap de Desarrollo
 
+## Rediseñar el Portal de Comunicaciones y sus bloques editables — 2026-10-06
+
+- [x] Documentar referencias actuales y criterios visuales para una intranet editorial compacta.
+- [x] Corregir la causa del contraste/fondo y de la alineación del borde de Actualidad; retirar el logo de marca incorrecto.
+- [x] Hacer visibles y operables los diseños contiguos de Agenda, añadir accesos directos visuales configurables desde Puck.
+- [ ] Validar Puck y el portal publicado en escritorio/móvil, incluyendo estados sin publicaciones; ejecutar Guardian/build/diff.
+- [ ] Integrar y desplegar en producción; verificar la edición y los recursos productivos.
+
+Investigación consultada: Microsoft Learn — [Communication site](https://learn.microsoft.com/en-us/sharepoint/create-communication-site) y [web parts](https://learn.microsoft.com/en-us/sharepoint/dev/design/key-web-part-examples); Axero — [intranet examples](https://axerosolutions.com/resources/intranet-examples/); Digital Workplace Group — [quick links](https://digitalworkplacegroup.com/intranet-homepage-quick-links-six-ways/). Criterios: una superficie editorial común sin cajas anidadas, contenido prioritario escaneable, módulos reordenables, mosaicos con iconos y estados vacíos que mantengan su composición.
+
+Verificación local: `npm run build`, contrato del portal (12/12), `npm run guardian` (0 errores, 0 advertencias) y `git diff --check` pasan. Build macOS: 7.459.857 bytes total, 5.333.141 JS, 536.979 CSS; ajuste registrado en el baseline con tolerancia cero.
+
 ## Refinar superficies y espaciado del Portal de Comunicaciones — 2026-10-05
 
 - [x] Unificar margen interior, fondo, borde y separación de las secciones editoriales.

@@ -52,7 +52,8 @@ export function CommunicationsDesignPage() {
     items: publishedItems,
     featured: publishedItems.find((item) => item.isFeatured) ?? publishedItems.find((item) => item.contentType !== "boletin"),
     onOpen: (_item: CommunicationItem) => undefined,
-    onDownload: (item: CommunicationItem) => { void downloadCommunicationBulletin(item); }
+    onDownload: (item: CommunicationItem) => { void downloadCommunicationBulletin(item); },
+    onQuickAccess: () => undefined
   };
 
   const saveDraft = async (data = workingData) => {

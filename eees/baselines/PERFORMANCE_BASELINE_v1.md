@@ -175,14 +175,18 @@ Revision 2026-10-05 interacción de parada pendiente Atlas: Guardian CI midió +
 
 Revision 2026-10-05 presentaciones de actividades: tras integrar la interacción Atlas medida por CI, el build local mide 7,452,434 bytes totales, 5,330,714 bytes JS y 531,983 bytes CSS. Frente al baseline CI de main, la presentación agrega 2,406 bytes (255 JS y 2,151 CSS) para lista y tarjetas de dos/tres columnas adaptables. Guardian CI run 37370499716 midió además la diferencia de plataforma de +2,120 bytes en `dist` y JS; el baseline canónico queda en 7,454,554/5,332,834/531,983 bytes, con tolerancia cero.
 
+Revision 2026-10-06 Portal de Comunicaciones editorial: build local macOS en 7,459,857 bytes totales, 5,333,141 bytes JS y 536,979 bytes CSS (+3,881/+307/+3,574). El incremento corresponde a la retícula editorial de superficies abiertas, estados vacíos que conservan el mosaico de agenda y cuatro accesos directos editables con iconos del sistema ERP; no agrega dependencias ni adelanta la carga lazy. El baseline se ajustará al artefacto canónico de CI si la medición Ubuntu/Node 24 difiere.
+
+Revision 2026-10-06 CI Ubuntu/Node 24: Guardian run 37455199312 midio 2.120 bytes mas en `dist` y JS que macOS; CSS coincide. Se registra la medicion canonica 7.461.977 bytes total, 5.335.261 JS y 536.979 CSS, con tolerancia cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7455976,
+  "distTotalBytes": 7461977,
   "jsFileCount": 74,
-  "jsTotalBytes": 5332834,
+  "jsTotalBytes": 5335261,
   "cssFileCount": 15,
-  "cssTotalBytes": 533405,
+  "cssTotalBytes": 536979,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
