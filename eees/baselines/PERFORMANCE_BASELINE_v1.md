@@ -179,14 +179,16 @@ Revision 2026-10-06 Portal de Comunicaciones editorial: build local macOS en 7,4
 
 Revision 2026-10-06 CI Ubuntu/Node 24: Guardian run 37455199312 midio 2.120 bytes mas en `dist` y JS que macOS; CSS coincide. Se registra la medicion canonica 7.461.977 bytes total, 5.335.261 JS y 536.979 CSS, con tolerancia cero.
 
+Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes totales, 5.333.141 JS y 537.512 CSS (+533 CSS); fija la tarjeta vacía a la celda de dos/tres columnas seleccionada, evitando que un solo estado vacío se expanda a toda la fila. Guardian CI conserva la diferencia medida de plataforma de 2.120 bytes en `dist`/JS; baseline canónico 7.462.510/5.335.261/537.512 bytes, tolerancia cero.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7461977,
+  "distTotalBytes": 7462510,
   "jsFileCount": 74,
   "jsTotalBytes": 5335261,
   "cssFileCount": 15,
-  "cssTotalBytes": 536979,
+  "cssTotalBytes": 537512,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,

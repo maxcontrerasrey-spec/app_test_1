@@ -15,6 +15,7 @@ const access = readFileSync("src/modules/auth/config/access.ts", "utf8");
 const modulePage = readFileSync("src/modules/communications/pages/CommunicationsPage.tsx", "utf8");
 const designPage = readFileSync("src/modules/communications/pages/CommunicationsDesignPage.tsx", "utf8");
 const siteConfig = readFileSync("src/modules/communications/site/communicationsSiteConfig.tsx", "utf8");
+const siteStyles = readFileSync("src/modules/communications/styles/communications-design.css", "utf8");
 const authContext = readFileSync("src/modules/auth/context/AuthContext.tsx", "utf8");
 
 describe("Portal de Comunicaciones", () => {
@@ -138,6 +139,8 @@ describe("Portal de Comunicaciones", () => {
     expect(siteConfig).toContain('label: "Accesos directos"');
     expect(siteConfig).toContain('"Mosaico · 3 columnas"');
     expect(siteConfig).toContain('communications-site-event-empty');
+    expect(siteStyles).toContain('grid-template-columns: repeat(3, minmax(0, 1fr))');
+    expect(siteStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
     expect(siteConfig).toContain('onQuickAccess:');
     expect(quickLinksMigration).toContain("'QuickLinksSection'");
     expect(quickLinksMigration).toContain("('actualidad', 'oficial', 'agenda', 'boletines')");
