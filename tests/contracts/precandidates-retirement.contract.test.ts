@@ -53,6 +53,11 @@ describe("retirement of the public DSAL intake", () => {
     }
 
     expect(migration).toContain("status = 'approved'");
+    expect(migration).toContain("left join public.recruitment_cases approved_case");
+    expect(migration).toContain("left join public.recruitment_case_candidates approved_candidate");
+    expect(migration).toContain("regexp_replace(lower(candidate_profile.national_id)");
+    expect(migration).toContain("candidate_profile.id is null");
+    expect(migration).not.toContain("approved_candidate.recruitment_case_id = rp.approved_recruitment_case_id");
     expect(migration).toContain("raise exception");
     expect(migration).not.toMatch(/drop\s+table[^;]*cascade/i);
     expect(migration).not.toMatch(/drop\s+table[^;]*candidate_profiles/i);

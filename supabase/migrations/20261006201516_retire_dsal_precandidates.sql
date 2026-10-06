@@ -5,7 +5,9 @@
 begin;
 
 -- Never discard the only candidate created from an approved application.
--- All approved records must already point to the matching, retained candidate.
+-- A candidate may have been moved to another folio after approval, so the
+-- original approved case is validated independently from the current case.
+-- The retained case-candidate link must still resolve to the same normalized RUT.
 do $$
 declare
   orphaned_approved_count bigint;
@@ -13,15 +15,21 @@ begin
   select count(*)
     into orphaned_approved_count
     from public.recruitment_precandidates rp
-    left join public.recruitment_case_candidates rcc
-      on rcc.id = rp.approved_case_candidate_id
-     and rcc.recruitment_case_id = rp.approved_recruitment_case_id
+    left join public.recruitment_cases approved_case
+      on approved_case.id = rp.approved_recruitment_case_id
+    left join public.recruitment_case_candidates approved_candidate
+      on approved_candidate.id = rp.approved_case_candidate_id
+    left join public.candidate_profiles candidate_profile
+      on candidate_profile.id = approved_candidate.candidate_profile_id
+     and regexp_replace(lower(candidate_profile.national_id), '[^0-9k]', '', 'g')
+       = regexp_replace(lower(rp.national_id), '[^0-9k]', '', 'g')
     where rp.status = 'approved'
       and (
         rp.approved_case_candidate_id is null
         or rp.approved_recruitment_case_id is null
-        or rcc.id is null
-        or rcc.candidate_profile_id is null
+        or approved_case.id is null
+        or approved_candidate.id is null
+        or candidate_profile.id is null
       );
 
   if orphaned_approved_count > 0 then
