@@ -9,6 +9,10 @@ const edgeFunction = readFileSync(
   "supabase/functions/sync-buk-job-positions/index.ts",
   "utf8"
 );
+const areaMapping = readFileSync(
+  "supabase/functions/_shared/bukContractAreaMapping.ts",
+  "utf8"
+);
 const workflow = readFileSync(".github/workflows/sync-buk.yml", "utf8");
 const supabaseConfig = readFileSync("supabase/config.toml", "utf8");
 const productionVerification = readFileSync(
@@ -43,6 +47,13 @@ describe("alcance activo BUK de estructuras de renta", () => {
     expect(workflow).toContain("Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY");
     expect(edgeFunction).toContain("secretsMatch(accessToken, serviceRoleKey)");
     expect(supabaseConfig).toMatch(/\[functions\.sync-buk-job-positions\]\nverify_jwt = false/);
+  });
+
+  it("resuelve habilitaciones contra el identificador de area y no solo por nombre", () => {
+    expect(edgeFunction).toContain("buk_area_code, contract_number");
+    expect(edgeFunction).toContain("isExactBukContractAreaMatch(mapping, area, areas, labelMappings.length)");
+    expect(areaMapping).toContain("cost_center");
+    expect(areaMapping).toContain("sameLabelMappingCount === 1");
   });
 
   it("verifica BUK-ROLE-68 contra la sync y el RPC productivo", () => {

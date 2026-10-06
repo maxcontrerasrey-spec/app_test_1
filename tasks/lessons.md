@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-06 - El nombre visible de un área BUK no prueba que sea el centro operacional del contrato
+
+- Si el mismo nombre aparece en áreas padre y subáreas, no construir cargo-contrato por etiqueta sola: exigir el `buk_area_code` que coincida con el centro de costo o ID BUK y rechazar empates.
+- Usar el nombre como fallback únicamente cuando identifica una sola área BUK activa y un solo mapping operacional local; proyectar primero el efecto del snapshot completo antes de desactivar asociaciones.
+- No exigir que `contract_number` coincida con el nombre de la subárea si el centro de costo sí coincide: BUK puede mostrar un número de subárea distinto para el mismo centro operacional.
+
 ## 2026-10-06 - La lectura de informes debe depender de la existencia del artefacto, no del estado del candidato
 
 - Las acciones de revisión o decisión pueden depender de la etapa; la descarga de un informe ya generado debe mostrarse según `report_status` aunque el candidato esté rechazado, contratado u otra etapa terminal.
