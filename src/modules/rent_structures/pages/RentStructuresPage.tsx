@@ -78,7 +78,7 @@ function ConfigEditor({ authorizedHeadcount, lines, legal, catalog, shiftCatalog
       <section className="rent-legal-config" aria-label="Aplicación de la estructura">
         <div className="rent-legal-config-heading"><div><span>Aplicación</span><strong>Define a qué jornadas y régimen corresponde este perfil.</strong></div></div>
         <div className="rent-legal-fields">
-          <MultiSelectField id="rent-shift-catalog" label="Jornadas aplicables" value={shiftIds.map(String)} onChange={(values) => onShiftIdsChange(values.map(Number).filter(Number.isFinite))} options={shiftCatalog.map((shift) => ({ value: String(shift.id), label: `${shift.code} · ${shift.name}` }))} placeholder="Selecciona una o más jornadas" searchable searchPlaceholder="Buscar jornada" />
+          <MultiSelectField id="rent-shift-catalog" label="Jornadas aplicables" value={shiftIds.map(String)} onChange={(values) => onShiftIdsChange(values.map(Number).filter(Number.isFinite))} options={shiftCatalog.map((shift) => ({ value: String(shift.id), label: `${shift.code} · ${shift.name}` }))} placeholder="Selecciona una o más jornadas" searchable searchPlaceholder="Buscar jornada" className="rent-shift-selector" />
           <label><span>Régimen legal</span><select value={legalRegimeCode ?? ""} onChange={(event) => onLegalRegimeChange((event.target.value || null) as RentRegimeCode | null)}><option value="">Selecciona un régimen</option><option value="art_25">Artículo 25</option><option value="ordinario">Régimen ordinario</option></select></label>
         </div>
         {!shiftCatalog.length ? <p className="rent-config-note">No hay jornadas activas disponibles en el catálogo de Solicitudes de Contratación.</p> : null}

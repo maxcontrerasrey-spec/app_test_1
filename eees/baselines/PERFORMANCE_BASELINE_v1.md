@@ -186,11 +186,11 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7467769,
+  "distTotalBytes": 7469466,
   "jsFileCount": 74,
-  "jsTotalBytes": 5339046,
+  "jsTotalBytes": 5339078,
   "cssFileCount": 15,
-  "cssTotalBytes": 538986,
+  "cssTotalBytes": 540651,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
@@ -222,6 +222,8 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 ```
 
 Revision 2026-10-06 Estructuras de Renta: Guardian CI run `37496635129` midió 246 bytes adicionales en `dist` y JS para evitar que la selección de otro cargo rehidrate el borrador activo y para ocultar el editor mientras carga el detalle correcto. CSS, vendors y assets trackeados no cambian. Se actualizan solo los totales canónicos de CI a 7,467,769 bytes y 5,339,046 bytes; la tolerancia permanece en cero.
+
+Revision 2026-10-06 selector de jornadas de Estructuras de Renta: el build local macOS mide 7,467,346 bytes totales, 5,336,958 bytes JS y 540,651 bytes CSS (+1,665 CSS). El incremento compacta y uniforma el multiselect y permite que sus opciones escapen el contenedor que las recortaba; no añade dependencias. Los totales machine-readable anticipan el offset CI/macOS vigente; CI debe confirmar el artefacto canónico antes del cierre. La tolerancia permanece en cero.
 
 Revision 2026-10-05 superficies Portal de Comunicaciones: GitHub Actions `Audit Enterprise Guardrails` run `37402162939` mide 7,455,976 bytes totales, 5,332,834 bytes JS y 533,405 bytes CSS (+1,422 CSS respecto al baseline de `main`). El incremento CSS corresponde a espaciado común, superficies consistentes y estados vacíos compactos; no agrega dependencias, vendors ni assets. Se registra la medición canónica CI con tolerancia cero.
 

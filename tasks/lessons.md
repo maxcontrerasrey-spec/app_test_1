@@ -4138,6 +4138,12 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Revisar migraciones, adaptadores, interfaz, documentación y RLS en conjunto; una migración sin `INSERT ... SELECT` aún puede dejar al frontend leyendo tablas antiguas o exponer el nuevo módulo fuera del contrato autorizado.
 - Si la primera salida se limita a superadministración, exigir `profiles.is_super_admin` activo de forma independiente en navegación, ruta, RPC y RLS; no asumir que `admin` ni una matriz de roles operacionales equivalen a superadmin.
 
+## 2026-10-06 - Los multiselect deben respetar la escala del formulario y escapar el recorte
+
+- Ajustar el ancho disponible del control antes de permitir que el placeholder o una selección partan la altura del campo; el trigger debe compartir alto, tipografía y borde con los demás controles del formulario.
+- Los menús desplegables no pueden quedar dentro de una tarjeta con `overflow: hidden`; dejar que la capa se expanda sobre el contenido vecino y dar a cada opción un alto uniforme con área clickeable completa.
+- Verificar el estado abierto en el viewport real: el botón visible no basta si el menú termina tapado por el borde de su contenedor.
+
 ## 2026-10-05 - Representar un submódulo en su dominio desde la navegación hasta la URL
 
 - Cuando Comunicaciones pertenece a RRHH, ubicar su acceso dentro de esa sección y usar una ruta bajo `/recursos-humanos`; no agregarlo como entrada raíz independiente.
