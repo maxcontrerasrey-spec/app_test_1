@@ -6,6 +6,14 @@
 - Las sesiones revocadas pueden dejar un JWT aceptable por PostgREST hasta su vencimiento mientras Auth ya no encuentra la sesión; esa doble validación crea un fallo solo en el endpoint auxiliar.
 - Cubrir ambas caras: un JWT no válido debe ser rechazado por Supabase, y un usuario autenticado sin perfil/rol activo debe fallar en la RPC de autorización; no reemplazar esto por service role ni permisos abiertos.
 
+## 2026-10-06 - Un 400 de RUT duplicado no identifica por sí solo la entidad ocupante en BUK
+
+- Si BUK rechaza `POST /employees` por RUT en uso y la persona no aparece en la interfaz ni en `GET /employees`, no asumir que el ERP tiene una ficha local duplicada ni intentar evadir unicidad.
+- Conciliar por `document_number` en los estados activo, inactivo y pendiente; no tratar `GET /employees/{id}` como consulta por RUT si el contrato no lo garantiza.
+- Si el alta sigue rechazándose sin resultados consultables, conservar el job y documentos en estado seguro, persistir auditoría explícita y detener reintentos ciegos. Un barrido íntegro de `GET /employees` sin coincidencias demuestra que no hay ficha consultable, pero no prueba que sea un índice huérfano: BUK debe identificar qué entidad o restricción produce la colisión antes de rectificarla.
+- No crear cola documental hasta contar con `buk_employee_id` confirmado; después usar el job original y la cola idempotente.
+- Auditar también el atraso de la cola general: los cron de GitHub pueden tener brechas de horas pese a estar configurados cada cinco minutos. Mantener un ejecutor periódico cercano a los datos, con credencial de mínimo privilegio y comprobar la respuesta HTTP final, no solo el estado `succeeded` de pg_cron.
+
 ## 2026-10-06 - El layout elegido debe sobrevivir a los estados vacíos del Portal
 
 - No basta con leer la selección guardada en Puck: renderizar el mismo contenedor de grilla/tarjetas cuando la consulta no devuelve publicaciones, para que la composición sea visible y comprobable antes de cargar contenido.

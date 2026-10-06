@@ -105,6 +105,38 @@ describe("BUK employee code reservations", () => {
     );
   });
 
+  it("searches every BUK employee status before attempting creation", () => {
+    const lookupStart = edgeFunction.indexOf(
+      "async function lookupBukEmployeesByDocumentNumber"
+    );
+    const lookupEnd = edgeFunction.indexOf(
+      "function applyReservedBukEmployeeCode",
+      lookupStart
+    );
+    const lookup = edgeFunction.slice(lookupStart, lookupEnd);
+
+    expect(lookup).toContain('["activo", "inactivo", "pendiente"]');
+    expect(lookup).toContain('url.searchParams.set("document_number", queriedDocumentNumber)');
+    expect(lookup).toContain('url.searchParams.set("status", status)');
+    expect(lookup).toContain("employeesByStatus.flat()");
+  });
+
+  it("records a non-resolvable BUK duplicate as an identity reconciliation block", () => {
+    const createResolutionStart = edgeFunction.indexOf(
+      "async function resolveBukEmployeeForSync"
+    );
+    const createResolutionEnd = edgeFunction.indexOf(
+      "function buildBukDocumentFileName",
+      createResolutionStart
+    );
+    const resolution = edgeFunction.slice(createResolutionStart, createResolutionEnd);
+
+    expect(resolution).toContain("buk_duplicate_identity_not_resolvable");
+    expect(resolution).toContain('queriedStatuses: ["activo", "inactivo", "pendiente"]');
+    expect(resolution).toContain("No se creó la ficha ni se encolaron documentos.");
+    expect(resolution).not.toContain("if (matchingEmployees.length === 0) {\n      throw error;");
+  });
+
   it("uses the atomic reservation as the clone code instead of recalculating the correlativo", () => {
     const clonePayloadStart = edgeFunction.indexOf(
       "function buildBukEmployeeClonePayload"
