@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-07 — La matriz Valhalla debe respetar el límite de pares del proveedor
+
+- `sources_to_targets` limita cada solicitud a 100 pares origen-destino, aunque el límite de paradas del producto sea mayor; una matriz 13×13 excede ese máximo y responde HTTP 400.
+- Trocear las filas y columnas de forma que cada submatriz tenga como máximo 100 celdas; comprobar que la reconstrucción cubra cada celda exactamente una vez y preserve los índices originales.
+- Reproducir límites con la respuesta real del proveedor y no inferir el límite por el número de paradas admitidas por la aplicación.
+
 ## 2026-10-07 - Las tarjetas de estado deben reflejar las mismas filas y filtros del listado
 
 - Mantener resumen y listado con idénticos criterios de elegibilidad, estado y normalización de búsqueda; cada estado mostrado debe tener su clave explícita en el agregado y en el tipo cliente, sin convertir una categoría ausente en cero silenciosamente.
