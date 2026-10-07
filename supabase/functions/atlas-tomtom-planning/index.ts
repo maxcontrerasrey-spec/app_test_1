@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
+import { buildMatrixBlocks } from "./matrixBlocks.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "https://gestion.busesjm.cl",
@@ -8,7 +9,7 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_STOPS = 151;
-const MATRIX_BLOCK_SIZE = 40;
+const MATRIX_BLOCK_SIZE = 10;
 const VALHALLA = "https://valhalla1.openstreetmap.de";
 const CALAMA = { longitude: -68.9294, latitude: -22.4544 };
 
@@ -53,10 +54,7 @@ function point(value: unknown): Point {
 
 async function valhallaMatrix(sites: Point[]) {
   const matrix = Array.from({ length: sites.length }, () => Array<number>(sites.length).fill(Number.POSITIVE_INFINITY));
-  const blocks: Array<{ row: number; col: number }> = [];
-  for (let row = 0; row < sites.length; row += MATRIX_BLOCK_SIZE) {
-    for (let col = 0; col < sites.length; col += MATRIX_BLOCK_SIZE) blocks.push({ row, col });
-  }
+  const blocks = buildMatrixBlocks(sites.length, MATRIX_BLOCK_SIZE);
   for (let offset = 0; offset < blocks.length; offset += 3) {
     // Execute a small number of matrix blocks concurrently, keeping requests bounded.
     const selected = blocks.slice(offset, offset + 3);
