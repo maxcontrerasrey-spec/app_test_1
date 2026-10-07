@@ -4722,8 +4722,10 @@ Resultado final: PR #46 quedó integrado en `main` como `58331a90`. Guardian/CI 
 Hallazgo confirmado: los cargos sin estructura abren; las estructuras históricas con `legal_regime_code IS NULL` reinician la selección. La RPC envolvente pasaba `to_jsonb(regime_code)` directamente a `jsonb_set`; cuando el régimen SQL es NULL, `jsonb_set` devolvía SQL NULL para todo el payload. La consulta productiva confirmó el caso en `CODELCO - DSAL / ASEADOR` (contrato 98, cargo 15) y preserva sus datos sin régimen asignado.
 ## Estructuras de renta: selección única y carga productiva — 2026-10-06
 
-- [ ] Confirmar en logs de producción por qué falla el detalle y revisar el contrato de la RPC y las relaciones vigentes, sin modificar datos.
-- [ ] Sustituir los dos controles de jornada por una sola lista clara por cargo, con estados de estructura configurada/pendiente y alta desde esa misma lista.
-- [ ] Corregir la consulta backend para que el catálogo y el detalle no ejecuten cálculos de asistencia que bloquean este mantenedor; conservar permisos y forma de respuesta.
-- [ ] Añadir pruebas de regresión para el selector único y la RPC optimizada; ejecutar build, Guardian, auditorías SQL y `git diff --check`.
-- [ ] Integrar y publicar en producción; verificar el bundle servido y las consultas de la RPC sin timeouts.
+- [x] Confirmar en logs de producción por qué falla el detalle y revisar el contrato de la RPC y las relaciones vigentes, sin modificar datos.
+- [x] Sustituir los dos controles de jornada por una sola lista clara por cargo, con estados de estructura configurada/pendiente y alta desde esa misma lista.
+- [x] Corregir la consulta backend para que el catálogo y el detalle no ejecuten cálculos de asistencia que bloquean este mantenedor; conservar permisos y forma de respuesta.
+- [x] Añadir pruebas de regresión para el selector único y la RPC optimizada; ejecutar build, Guardian, auditorías SQL y `git diff --check`.
+- [x] Integrar y publicar en producción; verificar el bundle servido y las consultas de la RPC sin timeouts.
+
+Revisión final productiva: el incidente era un HTTP 500 por `statement timeout` al recalcular presencia mensual de toda la nómina desde el helper del detalle de renta. La migración `20261007002101_optimize_rent_structure_detail_read` está aplicada y registrada; el helper productivo ya no invoca `resolve_hr_roster_day_status` y conserva sus permisos internos (`postgres` y `service_role`, no `anon` ni `authenticated`). PR #65 integró en `main` la lista única por cargo y jornada. Cloudflare sirve `index-Cw830PjL.js`, que referencia `RentStructuresPage-Y3y_-EIX.js`; el chunk contiene «Jornadas del cargo», «Agregar jornada», «Estructura configurada» y «Crear estructura», y ya no contiene el selector duplicado «Estructura por jornada». Guardian, build frontend, auditorías de migraciones/seguridad, contrato focalizado (7/7) y `git diff --check` pasan. GitHub Actions para la alineación del nombre de migración sigue ejecutándose. No se generaron datos de prueba en producción; no se obtuvo una nueva sesión autenticada para hacer clic en la ficha después del despliegue.
