@@ -7,10 +7,12 @@
 - [x] Ejecutar suite focalizada, TypeScript, build, auditorías de migraciones/seguridad/performance, Guardian completo y `git diff --check` sobre la versión reconciliada con `origin/main`; resultado final: 17/17 pruebas focalizadas y Guardian 0 errores / 0 warnings.
 - [x] Crear rama/commit, rebasear sobre `origin/main` y publicar un árbol remoto idéntico al local; GitHub rechazó `receive-pack` con HTTP 500, por lo que se usó la API de contenidos y se comprobó igualdad exacta del tree SHA antes de continuar.
 - [x] Reversionar la migración no aplicada por encima del último head productivo conocido y reconciliar Git con la versión registrada por Supabase (`20261007153510` > `20261007145851`) para que las RPC existan antes del despliegue frontend.
-- [ ] Abrir PR y exigir CI verde antes de aplicar SQL o integrar.
+- [x] Abrir PR #68 y exigir CI verde antes de integrar; `audit-enterprise-guardrails` finalizó correctamente en 2m26s.
 - [x] Aplicar primero la migración aditiva en producción, verificar firmas, propietarios, ACL, autorización negativa y consultas funcionales acotadas; versión `20261007153510`, smoke de página limitada aprobado y sin carga ni estrés.
-- [ ] Integrar a `main`, esperar Cloudflare Pages y comprobar bundle/ruta autenticada de Jornadas en producción.
-- [ ] Documentar evidencia real, actualizar tracker/reporte y dejar el worktree sin cambios pendientes.
+- [x] Integrar a `main` como `34f4f51d`, publicar Cloudflare Pages y comprobar el bundle productivo exacto de Jornadas; el smoke autenticado de las RPC y el rechazo sin identidad ya habían sido aprobados.
+- [x] Documentar evidencia real, actualizar tracker/reporte y dejar el worktree sin cambios pendientes.
+
+Revisión final productiva (2026-10-07): PR #68 fusionado en `main` como `34f4f51df782dd2f09210911b77e89ca7cc60642`. La migración aditiva `20261007153510` conserva ACL y guards existentes. Cloudflare Pages publicó el artefacto desde ese SHA; `gestion.busesjm.cl` sirve `index-xz0Yf4Yp.js` y `RosterPage-DbekQk1s.js`, cuyos SHA-256 coinciden con el build auditado. No se ejecutaron carga, estrés ni `EXPLAIN ANALYZE` en producción; equivalencia exhaustiva y mediciones continúan bloqueadas exclusivamente por falta de staging.
 
 # ATLAS Performance — reanudación del loop maestro (2026-10-07)
 
