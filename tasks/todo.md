@@ -4814,3 +4814,14 @@ Revisión final productiva: PR #72 integrado en `main` como `4ee068e5`; Guardian
 - [x] Integrar el cambio, desplegar la Edge Function manteniendo JWT obligatorio, y registrar versión y smoke de protección.
 
 Revisión final productiva: PR #75 integrado en `main` como `345c0a75`; Guardian CI y Cloudflare Pages finalizaron correctamente. `atlas-tomtom-planning` está activa en versión 11 con `verify_jwt=true`; el smoke sin JWT responde 401 `unauthorized`. El Valhalla real rechaza una sola solicitud `/route` de 12 puntos con `Exceeded max locations: 10`; los dos tramos solapados (10 y 3 puntos) responden HTTP 200 con 9 y 2 legs. Se agregan geometrías sin duplicar el punto común y se suman distancia/tiempo. Cobertura unitaria 165/165, Deno check, build, Guardian local (0 errores/advertencias) y `git diff --check` pasan. No hubo cambios de base de datos. Falta comprobar desde la sesión del usuario que **Proponer recorrido optimizado** dibuje la ruta completa; no se accedió a su sesión autenticada.
+# Atlas Operations: rutas guardadas y fin estimado — 2026-10-07
+
+- [x] Confirmar contratos de rutas guardadas, versión/historial, duración vial y creación de despachos en `origin/main`; mantener intactos RLS/RPC.
+- [x] Corregir carga de ruta para mostrar sus direcciones en orden, iniciar explícitamente una ruta nueva y evitar selector activo con editor vacío.
+- [x] Conectar inicio planificado + duración de la ruta seleccionada con `Fin estimado`, editable y recalculado al cambiar ruta o inicio; aclarar que no incluye tiempos de detención.
+- [x] Agregar verificación focalizada; ejecutar build frontend, Guardian y `git diff --check`.
+- [ ] Publicar en producción con CI y comprobar que el bundle de `gestion.busesjm.cl` corresponde al commit integrado; dejar evidencia y límites.
+
+Revisión del plan: alcance confirmado como cambio solo frontend; los contratos existentes ya exponen paradas ordenadas y `planning_duration_seconds`, por lo que no se requiere migración ni cambio de permisos. El fin estimado representa recorrido vial desde el primer hasta el último punto guardado; excluye detenciones y queda editable.
+
+Validación local: 10/10 pruebas focalizadas; `npm run build:frontend-check` y `npm run guardian` pasan (0 errores/advertencias); `git diff --check` pasa. Build conserva la advertencia existente de chunk grande del planificador (1.2 MB).

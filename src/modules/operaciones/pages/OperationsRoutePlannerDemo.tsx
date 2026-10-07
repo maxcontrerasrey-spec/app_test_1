@@ -167,6 +167,7 @@ export function OperationsRoutePlannerDemo() {
   const [savedRoutes, setSavedRoutes] = useState<AtlasServiceRoute[]>([]);
   const [selectedSavedRouteId, setSelectedSavedRouteId] = useState("");
   const [saving, setSaving] = useState(false);
+  const routeLoadSequence = useRef(0);
 
   useEffect(() => {
     const routeId = searchParams.get("routeId");
@@ -175,17 +176,7 @@ export function OperationsRoutePlannerDemo() {
     void getAtlasServiceRoute(routeId).then(async (saved) => {
       if (!active) return;
       setSelectedServiceId(String(saved.service_template_id));
-      setRoutePrefix(saved.prefix);
-      setSelectedSavedRouteId(saved.id);
-      const ordered = [...saved.atlas_ops_service_route_stops].sort((a, b) => a.stop_order - b.stop_order);
-      const loaded = normalizeRouteStops(ordered.map((stop, index) => ({ id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude, kind: "stop" as const, fixedDestination: index === ordered.length - 1, providerPlaceId: stop.provider_place_id, source: stop.location_source })));
-      setStops(loaded);
-      setRouteState("loading");
-      const preview = await calculateAtlasValhallaRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
-      if (!active) return;
-      setPlanningRoute(preview);
-      setRouteState("ready");
-      setNotice(`Ruta asignada ${saved.route_code} cargada. La vista de planificación usa TomTom; la navegación recalcula con Valhalla.`);
+      await loadSavedRoute(saved);
     }).catch((reason: unknown) => { if (active) { setRouteState("error"); setError(reason instanceof Error ? reason.message : "No fue posible cargar la ruta asignada."); } });
     return () => { active = false; };
   }, [searchParams]);
@@ -204,11 +195,15 @@ export function OperationsRoutePlannerDemo() {
     void getAtlasServiceRoutes(Number(selectedServiceId)).then((routes) => {
       if (!active) return;
       setSavedRoutes(routes);
+      // A displayed selection must always correspond to stops already loaded in the editor.
+      // Deep links can request a historical route, so do not replace that selection here.
+      if (searchParams.get("routeId")) return;
       const current = routes.find((item) => item.is_active);
-      setSelectedSavedRouteId(current?.id ?? "");
+      if (current) void loadSavedRoute(current);
+      else setSelectedSavedRouteId("");
     }).catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "No fue posible leer las rutas del servicio."); });
     return () => { active = false; };
-  }, [selectedServiceId]);
+  }, [selectedServiceId, searchParams]);
 
   const core = useMemo(() => {
     const instance = new FerrostarCore();
@@ -601,9 +596,26 @@ export function OperationsRoutePlannerDemo() {
     }
   }
 
-  async function loadSavedRoute(routeId: string) {
-    const selected = savedRoutes.find((item) => item.id === routeId);
+  async function loadSavedRoute(routeOrId: string | AtlasServiceRoute) {
+    if (routeOrId === "") {
+      routeLoadSequence.current += 1;
+      setSelectedSavedRouteId("");
+      setRoutePrefix("");
+      setStops([]);
+      setPlanningRoute(null);
+      setProposal(null);
+      setRoute(null);
+      setRouteState("idle");
+      setMapPickingStopId(null);
+      setSearch(null);
+      setSuggestionAnchor(null);
+      setError("");
+      setNotice("Ruta nueva: agrega las direcciones y define un prefijo antes de guardar.");
+      return;
+    }
+    const selected = typeof routeOrId === "string" ? savedRoutes.find((item) => item.id === routeOrId) : routeOrId;
     if (!selected) return;
+    const loadId = ++routeLoadSequence.current;
     const orderedStops = [...selected.atlas_ops_service_route_stops].sort((a, b) => a.stop_order - b.stop_order);
     const loaded = normalizeRouteStops(orderedStops.map((stop, index) => ({
       id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude,
@@ -617,13 +629,19 @@ export function OperationsRoutePlannerDemo() {
     setProposal(null);
     setRoute(null);
     setRouteState("loading");
-    setSelectedSavedRouteId(routeId);
+    setSelectedSavedRouteId(selected.id);
+    setSearch(null);
+    setSuggestionAnchor(null);
+    setError("");
+    setNotice("");
     try {
       const preview = await calculateAtlasValhallaRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
+      if (loadId !== routeLoadSequence.current) return;
       setPlanningRoute(preview);
       setRouteState("ready");
       setNotice(`Ruta ${selected.route_code} · versión ${selected.version} cargada.`);
     } catch (reason) {
+      if (loadId !== routeLoadSequence.current) return;
       setRouteState("error");
       setError(reason instanceof Error ? reason.message : "No se pudo volver a dibujar la ruta.");
     }

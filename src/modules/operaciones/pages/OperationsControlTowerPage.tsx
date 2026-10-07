@@ -7,6 +7,7 @@ import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQ
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { supabase } from "../../../shared/lib/supabase";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
+import { estimateLocalRouteEnd } from "../lib/routeSchedule";
 import { OperationsLiveMap } from "../components/OperationsLiveMap";
 import {
   createAtlasDispatch,
@@ -157,9 +158,15 @@ function OperationsControlTowerApp() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [dispatchServiceTemplateId, setDispatchServiceTemplateId] = useState("");
   const [dispatchRouteId, setDispatchRouteId] = useState("");
+  const [plannedStartLocal, setPlannedStartLocal] = useState("");
+  const [plannedEndLocal, setPlannedEndLocal] = useState("");
 
   const catalogsQuery = useQuery({ queryKey: queryKeys.operations.catalogs(), queryFn: getAtlasOperationsCatalogs, staleTime: 30_000 });
   const dispatchRoutesQuery = useQuery({ queryKey: queryKeys.operations.serviceRoutes(dispatchServiceTemplateId), queryFn: () => getAtlasServiceRoutes(Number(dispatchServiceTemplateId)), enabled: view === "planificacion" && Boolean(dispatchServiceTemplateId), staleTime: 30_000 });
+  const selectedDispatchRoute = dispatchRoutesQuery.data?.find((route) => route.id === dispatchRouteId && route.is_active);
+  useEffect(() => {
+    setPlannedEndLocal(estimateLocalRouteEnd(plannedStartLocal, selectedDispatchRoute?.planning_duration_seconds));
+  }, [plannedStartLocal, selectedDispatchRoute?.id, selectedDispatchRoute?.planning_duration_seconds]);
   const dispatchQuery = useQuery({ queryKey: queryKeys.operations.dispatches(day), queryFn: () => getAtlasDispatches(day, day), staleTime: 10_000 });
   const activeVehicleIds = useMemo(() => [...new Set((dispatchQuery.data ?? []).map((row) => row.vehicle_id).filter((id): id is string => Boolean(id)))].sort(), [dispatchQuery.data]);
   const positionsQuery = useQuery({
@@ -368,8 +375,8 @@ function OperationsControlTowerApp() {
             <Field label="Contrato"><select name="contract_id" required defaultValue=""><option value="" disabled>Selecciona contrato</option>{editableContracts.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.contract_name}</option>)}</select></Field>
             <Field label="Servicio base"><select name="service_template_id" required value={dispatchServiceTemplateId} onChange={(event) => { setDispatchServiceTemplateId(event.target.value); setDispatchRouteId(""); }}><option value="" disabled>Selecciona servicio</option>{catalogs?.templates.map((item) => <option value={item.id} key={item.id}>{item.name} · {item.service_type}</option>)}</select></Field>
             <Field label="Ruta del servicio"><select name="route_id" value={dispatchRouteId} onChange={(event) => setDispatchRouteId(event.target.value)} required={(dispatchRoutesQuery.data?.filter((route) => route.is_active).length ?? 0) > 0} disabled={!dispatchServiceTemplateId || dispatchRoutesQuery.isLoading}><option value="">{dispatchRoutesQuery.isLoading ? "Cargando rutas…" : "Sin ruta asignada"}</option>{dispatchRoutesQuery.data?.filter((route) => route.is_active).map((route) => <option value={route.id} key={route.id}>{route.route_code} · versión {route.version}</option>)}</select></Field>
-            <Field label="Inicio planificado"><input type="datetime-local" name="planned_start_at" required /></Field>
-            <Field label="Fin estimado"><input type="datetime-local" name="planned_end_at" /></Field>
+            <Field label="Inicio planificado"><input type="datetime-local" name="planned_start_at" required value={plannedStartLocal} onChange={(event) => setPlannedStartLocal(event.target.value)} /></Field>
+            <Field label="Fin estimado"><><input type="datetime-local" name="planned_end_at" value={plannedEndLocal} onChange={(event) => setPlannedEndLocal(event.target.value)} /><small>{selectedDispatchRoute?.planning_duration_seconds != null ? "Estimado con duración vial de la ruta; no incluye tiempo de detención. Puedes ajustarlo." : "Selecciona una ruta guardada para calcular el término automáticamente."}</small></></Field>
             <Field label="Turno"><input name="shift" placeholder="AM / PM / A / B" required /></Field>
             <Field label="Vehículo"><select name="vehicle_id" defaultValue=""><option value="">Pendiente de asignar</option>{catalogs?.vehicles.map((item) => <option value={item.id} key={item.id}>{item.code}{item.plate ? ` · ${item.plate}` : ""}</option>)}</select></Field>
             <PlanningDriverLookup serviceDate={day} disabled={!canOperate} />
