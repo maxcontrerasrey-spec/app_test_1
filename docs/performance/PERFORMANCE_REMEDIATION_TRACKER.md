@@ -6,21 +6,21 @@ Estados permitidos: `PENDING`, `IN_ANALYSIS`, `IMPLEMENTED_UNVALIDATED`, `VALIDA
 
 ## Contexto de ejecución
 
-- Base del worktree activo: `5b7f7217d22658e19ef2ab1b91a824c3af6672d3`; mantiene cambios locales Fase 1B sin commit.
+- Base del release activo: `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93`; PR #68 publicado con árbol remoto idéntico al local y CI Enterprise verde.
 - Supabase producción: `pzblmbahnoyntrhistea`. El inventario previo encontró cero branches; no hay PostgreSQL local (Docker/psql). El usuario rechazó crear una rama Preview facturable y pidió esperar staging existente.
-- Alcance seguro: inspección y consultas históricas read-only; cambios, tests sintéticos, build y auditorías locales. No cargar ni desplegar a producción; no ejecutar carga/destructivos contra producción.
+- Alcance seguro actualizado por instrucción expresa del usuario: release productivo controlado, SQL aditivo antes del frontend, sin carga, estrés ni pruebas destructivas contra producción.
 - `BLOCKED_VALIDATION` identifica gates externos no ejecutables; no impide análisis, implementación o validación local de ese mismo módulo.
 
 ## Resumen de hallazgos
 
 | ID | Módulo / severidad | Estado | Evidencia original / siguiente trabajo |
 |---|---|---|---|
-| P0-RELEASE | SHA ↔ esquema y release gate | `BLOCKED_VALIDATION` | Fases 0/P1/1B locales; requiere staging con migraciones aplicadas, smoke autenticado y observación. No liberar mientras siga bloqueado. |
+| P0-RELEASE | SHA ↔ esquema y release gate | `VALIDATING` | Fase 1B en PR #68; migración productiva `20261007153510`, smoke autenticado y autorización negativa aprobados. Pendientes: merge, Cloudflare producción y smoke UI. |
 | P0-OBS | Telemetría UI/RPC/render, percentiles, bytes, throughput | `BLOCKED_VALIDATION` | Instrumentación local disponible; muestreo integrado por ruta/acción exige staging. |
 | P1-ATLAS | Atlas `atlas_ops_search_drivers` | `BLOCKED_VALIDATION` | Implementación local P1; equivalencia, permisos, plan y carga aún requieren PostgreSQL/staging. |
 | P1-MOB | Movilidad `search_internal_mobility_workers` + catálogos | `BLOCKED_VALIDATION` | Cambios locales de búsqueda/cancelación; validar multiplicidad, acentos, RUT, permisos, plan y latencia en staging. |
 | P1-PROJECTION | Proyección común del padrón | `NO_CHANGE_REQUIRED` | No crearla por intuición; reconsiderar solo con evidencia de consumidores, costo de escritura y costo de Sync BUK. |
-| P1-ROSTER | Jornadas calendario general | `BLOCKED_VALIDATION` | RPC v2, cursor y límite de 50 implementados localmente; equivalencia SQL, planes, advisors y load staging pendientes. |
+| P1-ROSTER | Jornadas calendario general | `IMPLEMENTED_UNVALIDATED` | RPC v2, cursor y límite de 50 implementados; SQL productivo y ACL verificados. Equivalencia exhaustiva, planes y carga siguen `BLOCKED_VALIDATION` sin staging. |
 | P1-BI | BI Dotación | `IN_ANALYSIS` | Baseline histórico del prompt: promedio ~1.324 ms, máximo ~7,69 s, ~34.157 shared blocks y ~85 temp blocks/call. Verificar código/telemetría y causa actual antes de optimizar. |
 | P1-HOME | Inicio / Dashboard / `get_dashboard_home_bundle` | `PENDING` | Auditoría reportó 30.773 llamadas, promedio ~1.095 ms, máximo ~7,934 s y ~9.905 blocks/call. Separar criticidad, duplicación, bytes y render. |
 | OBS-AUTH | Auth/permisos → primer render | `PENDING` | Medir cada tramo por separado sin atribuir espera de UI a SQL sin trazas. |
@@ -43,11 +43,11 @@ Cada ficha registra: **fuente/baseline; causa raíz; cambio; pruebas; before/aft
 
 - Fuente/baseline: auditoría del prompt maestro y `PERFORMANCE_PHASE_1B_ROSTER_REPORT.md`; resumen anterior ~1.210 ms (n=2.408), bulk histórico ~1.179–2.101 ms; llamada diagnóstica diferente ~26,7 s promedio / 54,6 s máximo. No son comparaciones controladas.
 - Causa/solución local: cardinalidad trabajador × día transferida antes de paginar; filtros de ciclo, conteos y exportación debían mantenerse equivalentes. RPCs v2 filtran trabajadores antes de `generate_series`, separan facetas y limitan página a 50; exportación pagina bajo demanda.
-- Pruebas locales: Guardian 0 errores/0 warnings; pruebas unit/contract, TypeScript/build, auditoría de migraciones/seguridad, baseline y `git diff --check` pasan según el reporte local. Límite máximo: 50 × 184 = 9.200 celdas por respuesta.
+- Pruebas: Guardian local y CI Enterprise 0 errores/0 warnings; pruebas unit/contract, TypeScript/build, auditoría de migraciones/seguridad, baseline y `git diff --check` pasan. Migración productiva `20261007153510`; smoke acotado de resumen/página y guard negativo aprobados. Límite máximo: 50 × 184 = 9.200 celdas por respuesta.
 - Before/after y p50/p95/p99: before solo diagnósticos anteriores no equivalentes; after `NOT MEASURED`; percentiles `NO MEDIDO`.
-- EXPLAIN/BUFFERS/equivalencia/advisors: `BLOCKED_VALIDATION` sin PostgreSQL staging.
+- EXPLAIN/BUFFERS/equivalencia/carga: `BLOCKED_VALIDATION` sin PostgreSQL staging. Advisors productivos revisados después de DDL, sin hallazgos de performance asociados; los avisos `SECURITY DEFINER` para las dos RPC son intencionales y están mitigados por guard interno, `search_path` fijo y ACL autenticada.
 - Residual: validar personas con varias pautas, excepciones, salidas, `Sin Jornada`, filtros, facetas y consistencia temporal de exportación. Rollback: restaurar cliente/RPC legacy mediante migración forward-only compensatoria; no revertir migraciones aplicadas.
-- SHA: base `5b7f7217d22658e19ef2ab1b91a824c3af6672d3`; trabajo local sin commit.
+- SHA: base `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93`; commits locales `6a043e7c` y `f3adb6b9`; PR #68 publicado mediante árbol equivalente por indisponibilidad transitoria de `receive-pack`.
 
 ### P1-BI — Dotación — auditoría en curso
 
@@ -72,5 +72,5 @@ Cada ficha registra: **fuente/baseline; causa raíz; cambio; pruebas; before/aft
 
 ## Historia
 
-- 2026-10-07: Fase 1B Jornadas quedó implementada y validada localmente, no medida contra PostgreSQL.
+- 2026-10-07: Fase 1B Jornadas quedó implementada, validada localmente y compilada en PostgreSQL productivo mediante migración `20261007153510`; performance posterior aún no medida.
 - 2026-10-07: reanudado loop maestro. Se mantiene la negativa del usuario a crear una rama temporal de costo; staging sigue externo. Sin escrituras ni carga a producción.

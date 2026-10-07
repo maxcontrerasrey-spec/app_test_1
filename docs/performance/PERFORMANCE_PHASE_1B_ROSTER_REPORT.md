@@ -1,12 +1,12 @@
 # ATLAS Performance — Fase 1B: Jornadas
 
-Fecha: 2026-10-07. Base de implementación: `5b7f7217d22658e19ef2ab1b91a824c3af6672d3` (`origin/main` verificado). Alcance: calendario general de Jornadas, filtros/facetas, paginación y Excel. No se desplegó código ni se aplicó SQL.
+Fecha: 2026-10-07. Base de release: `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93` (`origin/main` verificado). Alcance: calendario general de Jornadas, filtros/facetas, paginación y Excel. PR #68; migración SQL aplicada antes del frontend como `20261007153510`.
 
 ## 1. Resumen ejecutivo
 
 Se implementó localmente una lectura paginada por trabajador con cursor compuesto y un resumen/facetas que no genera el producto trabajador×día. La página limita la expansión a 50 trabajadores antes de `generate_series`, rango máximo 184 días (máximo teórico 9.200 celdas por respuesta). La exportación explícita consume el mismo RPC en lotes. Se conservan las funciones legacy para rollback.
 
-No está listo para liberar: no existe una rama/instancia Supabase staging disponible en el proyecto inspeccionado; no se pudo compilar/ejecutar la migración en PostgreSQL ni comparar resultados/planes ni medir carga. `AFTER = NOT MEASURED`. Producción no fue modificada.
+El backend quedó listo para un release frontend controlado: la migración compiló y se ejecutó en PostgreSQL productivo, el smoke acotado devolvió el contrato esperado y la autorización negativa bloqueó una llamada sin identidad. No se ejecutaron carga, estrés, `EXPLAIN ANALYZE` ni una equivalencia exhaustiva sin staging; por eso `AFTER = NOT MEASURED` y la mejora de latencia no se declara resuelta todavía.
 
 ## 2. Hallazgos resueltos en código local
 
@@ -20,8 +20,8 @@ No está listo para liberar: no existe una rama/instancia Supabase staging dispo
 
 ## 3. Validación pendiente / parcial
 
-- La nueva SQL no se ejecutó en PostgreSQL; los tests de contrato revisan límites, orden, composición de permisos, intervalos y cancelación, pero no sustituyen una prueba DB.
-- No hay staging para comparación con RPC legacy, pruebas de múltiples fichas/excepciones/salida, `EXPLAIN (ANALYZE, BUFFERS)`, asesores Supabase ni load test.
+- La SQL se ejecutó en PostgreSQL productivo mediante migración forward-only. El smoke usó una cuenta superadmin, un contrato real, un día y una página de una persona; no sustituye equivalencia exhaustiva ni medición de performance.
+- No hay staging para comparación automatizada con RPC legacy, pruebas sintéticas de múltiples fichas/excepciones/salida, `EXPLAIN (ANALYZE, BUFFERS)` ni load test. Los advisors productivos se revisaron sin ejecutar carga: no detectaron hallazgos de performance nuevos y registran como intencionales las dos RPC `SECURITY DEFINER` autenticadas y protegidas internamente.
 - El cursor evita `OFFSET`, pero una exportación que abarque varias llamadas no comparte snapshot de base de datos; mutaciones concurrentes pueden cambiar resultados entre páginas. Se registra como limitación de consistencia por decidir/validar.
 - El mapeo legacy de `effective_status` al marcar `termination` como `medical_leave` se conserva exactamente para no cambiar semántica; requiere comparación funcional existente y posible issue separado.
 - Guardian local completado: 0 errores / 0 warnings, incluidos `git diff --check`; las pruebas PostgreSQL staging siguen pendientes. El build local y el gate de baseline pasan.
@@ -37,7 +37,7 @@ Se preservan los demás hallazgos del tracker; no se optimizan ni declaran resue
 | Operación | Antes | Después | Evidencia | Estado |
 |---|---|---|---|---|
 | Resumen por mes | Promedio 1.210 ms, máximo 7.730 ms, `n=2.408` (telemetría histórica agregada; no percentiles) | No cambia el resumen mensual global; `AFTER = NOT MEASURED` | Se mantiene el endpoint mensual para `Todos`; resumen de rango/alcance nuevo para calendario general | Parcial |
-| Calendario bulk/PostgREST | Variantes históricas ~1.179–2.101 ms; medición directa diagnóstica ~26,7 s promedio, máximo 54,6 s. Muestras/rutas distintas; no son una comparación controlada | Máximo 50 × D celdas por página (350 / 1.550 / 4.500 / 9.200 para 7 / 31 / 90 / 184 días); latencia y bytes `NOT MEASURED` | SQL local limita antes de `generate_series`; sin Postgres staging | Implementado localmente, no validado |
+| Calendario bulk/PostgREST | Variantes históricas ~1.179–2.101 ms; medición directa diagnóstica ~26,7 s promedio, máximo 54,6 s. Muestras/rutas distintas; no son una comparación controlada | Máximo 50 × D celdas por página (350 / 1.550 / 4.500 / 9.200 para 7 / 31 / 90 / 184 días); latencia y bytes `NOT MEASURED` | SQL productivo limita antes de `generate_series`; smoke acotado aprobado; carga sigue bloqueada sin staging | Implementado, medición pendiente |
 | Ciclos/conteos | Se derivaban de todos los días transferidos al cliente | Facetas globales derivadas de segmentos de intervalos; sin grilla por persona/día | Contrato estático; equivalencia exacta pendiente | Parcial |
 | Excel | Reutilizaba la carga masiva completa | Acción explícita, cursor por lote de 50 y filtros aplicados | Implementación local; memoria/tiempo y snapshot concurrente no medidos | Parcial |
 
@@ -56,6 +56,6 @@ No pueden pasar a `RESUELTO`. Continúan `PARCIAL / EN VALIDACIÓN` por falta de
 
 ## 8. Migración y rollback
 
-Migración local: `supabase/migrations/20261007153000_roster_calendar_pagination_v2.sql`. Su versión es posterior al último head productivo conocido (`20261007145851`) para impedir que el frontend se libere antes que sus RPC. Añade dos entrypoints authenticated y un helper privado; mantiene las firmas legacy. Rollback funcional: revertir frontend a RPC existente. La migración no se aplicó y no se desplegó el frontend.
+Migración aplicada y reconciliada: `supabase/migrations/20261007153510_roster_calendar_pagination_v2.sql`, posterior al head productivo previo `20261007145851`. Añade dos entrypoints `authenticated` y un helper privado, mantiene las firmas legacy y no cambia RLS, roles ni matrices de acceso. Verificación: owner `postgres`; wrappers `SECURITY DEFINER` con `search_path=public, pg_temp`, sin EXECUTE para `anon`; helper `SECURITY INVOKER` sin EXECUTE para roles API; prueba negativa sin identidad bloqueada. Rollback funcional: revertir el frontend a las RPC legacy mediante un cambio forward-only; no borrar historial de migraciones.
 
 ADR: [ADR-ROSTER-CALENDAR-PAGINATION.md](ADR-ROSTER-CALENDAR-PAGINATION.md). Tracker vivo: [PERFORMANCE_REMEDIATION_TRACKER.md](PERFORMANCE_REMEDIATION_TRACKER.md).

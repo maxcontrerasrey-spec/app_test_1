@@ -6,9 +6,9 @@
 - [x] Corregir la población por fecha de salida para mantener exactamente la semántica productiva y rechazar cursores keyset incompletos; agregar regresión.
 - [x] Ejecutar suite focalizada, TypeScript, build, auditorías de migraciones/seguridad/performance, Guardian completo y `git diff --check` sobre la versión reconciliada con `origin/main`; resultado final: 17/17 pruebas focalizadas y Guardian 0 errores / 0 warnings.
 - [x] Crear rama/commit, rebasear sobre `origin/main` y publicar un árbol remoto idéntico al local; GitHub rechazó `receive-pack` con HTTP 500, por lo que se usó la API de contenidos y se comprobó igualdad exacta del tree SHA antes de continuar.
-- [x] Reversionar la migración no aplicada por encima del último head productivo conocido (`20261007153000` > `20261007145851`) para que las RPC existan antes del despliegue frontend.
+- [x] Reversionar la migración no aplicada por encima del último head productivo conocido y reconciliar Git con la versión registrada por Supabase (`20261007153510` > `20261007145851`) para que las RPC existan antes del despliegue frontend.
 - [ ] Abrir PR y exigir CI verde antes de aplicar SQL o integrar.
-- [ ] Aplicar primero la migración aditiva en producción, verificar firmas, propietarios, ACL, autorización negativa y consultas funcionales acotadas; no ejecutar carga ni estrés.
+- [x] Aplicar primero la migración aditiva en producción, verificar firmas, propietarios, ACL, autorización negativa y consultas funcionales acotadas; versión `20261007153510`, smoke de página limitada aprobado y sin carga ni estrés.
 - [ ] Integrar a `main`, esperar Cloudflare Pages y comprobar bundle/ruta autenticada de Jornadas en producción.
 - [ ] Documentar evidencia real, actualizar tracker/reporte y dejar el worktree sin cambios pendientes.
 
