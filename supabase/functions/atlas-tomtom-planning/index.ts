@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
 import { buildMatrixBlocks } from "./matrixBlocks.ts";
+import { buildRouteSegments } from "./routeSegments.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "https://gestion.busesjm.cl",
@@ -10,6 +11,7 @@ const ALLOWED_ORIGINS = new Set([
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_STOPS = 151;
 const MATRIX_BLOCK_SIZE = 10;
+const ROUTE_MAX_LOCATIONS = 10;
 const VALHALLA = "https://valhalla1.openstreetmap.de";
 const CALAMA = { longitude: -68.9294, latitude: -22.4544 };
 
@@ -103,7 +105,7 @@ function decodePolyline6(value: string): [number, number][] {
   return coordinates;
 }
 
-async function valhallaRoute(sites: Point[]) {
+async function valhallaRouteSegment(sites: Point[]) {
   const routeResponse = await fetch(`${VALHALLA}/route`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -119,6 +121,25 @@ async function valhallaRoute(sites: Point[]) {
     throw new Error("valhalla_route_not_returned");
   }
   return { coordinates: deduplicated, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), provider: "valhalla" as const, travelMode: "auto" as const };
+}
+
+async function valhallaRoute(sites: Point[]) {
+  const segments = buildRouteSegments(sites.length, ROUTE_MAX_LOCATIONS);
+  const results: Array<Awaited<ReturnType<typeof valhallaRouteSegment>>> = Array(segments.length);
+  for (let offset = 0; offset < segments.length; offset += 3) {
+    await Promise.all(segments.slice(offset, offset + 3).map(async (segment, segmentOffset) => {
+      results[offset + segmentOffset] = await valhallaRouteSegment(sites.slice(segment.start, segment.end));
+    }));
+  }
+  const complete = results.filter((result): result is Awaited<ReturnType<typeof valhallaRouteSegment>> => Boolean(result));
+  const coordinates = complete.flatMap((result, index) => index === 0 ? result.coordinates : result.coordinates.slice(1));
+  return {
+    coordinates,
+    distanceMeters: complete.reduce((total, result) => total + result.distanceMeters, 0),
+    durationSeconds: complete.reduce((total, result) => total + result.durationSeconds, 0),
+    provider: "valhalla" as const,
+    travelMode: "auto" as const
+  };
 }
 
 async function isActiveSuperAdmin(accessToken: string, apiKey: string | null) {

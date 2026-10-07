@@ -4805,3 +4805,12 @@ Revisión final productiva: el incidente era un HTTP 500 por `statement timeout`
 - [x] Publicar la corrección de la Edge Function con JWT obligatorio, verificar versión/smoke público protegido y documentar el resultado productivo.
 
 Revisión final productiva: PR #72 integrado en `main` como `4ee068e5`; Guardian CI y Cloudflare Pages finalizaron exitosamente. `atlas-tomtom-planning` está activa en versión 10 con `verify_jwt=true`; el smoke sin JWT responde 401 `unauthorized`. La verificación directa contra Valhalla reproduce el error original con 13×13 (HTTP 400, máximo de 100 pares) y confirma que el nuevo troceo obtiene cuatro respuestas HTTP 200 y reconstruye las 169 celdas. No se alteró ni persistió ninguna dirección y no hubo cambios de base de datos. Las pruebas locales (162/162 unitarias, Deno check, build, Guardian sin errores/advertencias y `git diff --check`) pasan. La verificación autenticada con las direcciones de la sesión activa queda pendiente de que el usuario pulse nuevamente **Proponer recorrido optimizado**; el endpoint productivo sigue requiriendo JWT.
+
+## Corregir límite de ubicaciones en trazado Valhalla Atlas — 2026-10-07
+
+- [x] Reproducir el `valhalla_route_http_400` con más de diez ubicaciones y confirmar el límite real del proveedor.
+- [x] Dividir el trazado en tramos de hasta diez ubicaciones que compartan el extremo, y unir geometría y métricas sin perder continuidad.
+- [x] Añadir pruebas de partición y ejecutar verificación real del proveedor para doce puntos, prueba unitaria, Deno check, Guardian y `git diff --check`.
+- [ ] Integrar el cambio, desplegar la Edge Function manteniendo JWT obligatorio, y registrar versión y smoke de protección.
+
+Revisión del plan: una solicitud real `POST /route` con doce ubicaciones devuelve HTTP 400 `Exceeded max locations: 10`, aunque la matriz ya funcione. El trazado se divide en cadenas consecutivas de diez ubicaciones, con una parada solapada entre tramos; las distancias y duraciones se suman y la geometría se concatena en orden. Prueba real tras el cambio: los tramos 0–9 y 9–11 (12 puntos en total) respondieron ambos HTTP 200 con 9 y 2 legs, respectivamente, y métricas válidas. Cobertura unitaria 165/165, Deno check, Guardian (0 errores/advertencias) y `git diff --check` pasan. Pendiente: integrar/desplegar la función y verificar versión.
